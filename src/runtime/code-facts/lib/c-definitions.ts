@@ -7,9 +7,13 @@
 // definition of its own, because one namespace spans many files. A function, a
 // variable, a type, a typedef or alias, an enumerator and a macro are
 // definitions; so is a prototype, because a header declares the interface of
-// its source file with prototypes. A forward declaration (`struct Ledger;`)
-// is not, and nor is anything inside a function body. A whole declaration
-// inside an error node is read, because it parsed (c-unparsed.ts).
+// its source file with prototypes. A prototype, a method declared without its
+// body and an `extern` variable with no value are marked as declarations:
+// their code is in another file, or later in this one. A forward declaration
+// (`struct Ledger;`) is not a definition, nor is an include guard, which
+// names how the file guards itself rather than what it declares, nor anything
+// inside a function body. A whole declaration inside an error node is read,
+// because it parsed (c-unparsed.ts).
 //
 // Visibility is C's own word, which the file alone decides:
 // - `extern`: a function or variable with external linkage, the default at
@@ -72,6 +76,9 @@ const NAMES = new Set([
 	"template_function",
 	"template_type",
 ]);
+
+/** A function's name as a macro before a namespace makes the grammar read it: `namespace detail`. */
+const MISREAD_NAMESPACE = /^namespace\b\s*([\w:\s]*)$/u;
 
 /** The visibility words of a member of a class. */
 const MEMBER_ACCESS = new Set(["public", "protected", "private"]);
@@ -162,9 +169,10 @@ function qualified(walk: Walk, name: string): string {
  * @param name Its own name.
  * @param extent The node it spans.
  * @param linkage Its word at namespace scope.
+ * @param declares Whether its code is elsewhere: a prototype or an `extern` variable.
  * @returns Its qualified symbol.
  */
-function define(walk: Walk, name: string, extent: Node, linkage: string): string {
+function define(walk: Walk, name: string, extent: Node, linkage: string, declares = false): string {
 	const symbol = qualified(walk, name);
 	const { word, exposed } = visibilityOf(walk, linkage);
 	walk.definitions.push({
@@ -173,8 +181,42 @@ function define(walk: Walk, name: string, extent: Node, linkage: string): string
 		end: extent.endPosition.row + 1,
 		visibility: word,
 		exposed,
+		...(declares ? { declaration: true as const } : {}),
 	});
 	return symbol;
+}
+
+/** Declarators that only wrap the one inside them. */
+const WRAPPING = new Set(["parenthesized_declarator", "attributed_declarator"]);
+
+/**
+ * Whether a declared name is a function's: the first declarator around it,
+ * past parentheses, is a function declarator, so `int *open(void)` declares a
+ * function and `int (*open)(void)` a pointer.
+ * @param name The declared name.
+ * @returns True when it is.
+ */
+function namesFunction(name: Node): boolean {
+	let around = name.parent;
+	while (around !== null && WRAPPING.has(around.type)) around = around.parent;
+	return around?.type === "function_declarator";
+}
+
+/**
+ * Whether a declaration names code that is elsewhere: a function or method
+ * declared without its body, or an `extern` variable with no value.
+ * @param node The function definition, declaration or field declaration.
+ * @param declarator One of its declarators.
+ * @param name The name it declares.
+ * @returns True when it does.
+ */
+function declaresOnly(node: Node, declarator: Node, name: Node): boolean {
+	if (node.type === "function_definition") return false;
+	if (namesFunction(name)) return true;
+	const isExtern = node.namedChildren.some(
+		(child) => child.type === "storage_class_specifier" && child.text === "extern",
+	);
+	return isExtern && declarator.type !== "init_declarator";
 }
 
 /**
@@ -198,20 +240,58 @@ function children(walk: Walk, node: Node): void {
 }
 
 /**
+ * The declarations of a namespace's body, qualified by its name.
+ * @param walk Where the namespace stands.
+ * @param name Its name, `a::b` for a nested one; empty for an anonymous one, which is internal.
+ * @param body Its body.
+ */
+function namespaceBody(walk: Walk, name: string, body: Node): void {
+	const names = name === "" ? [] : name.split("::").map((each) => each.trim());
+	const scope = {
+		names: [...walk.scope.names, ...names],
+		internal: walk.scope.internal || name === "",
+	};
+	children({ definitions: walk.definitions, scope }, body);
+}
+
+/**
  * A namespace: its body, qualified by its name, or internal when it has none.
  * @param walk Where it stands.
  * @param node The namespace definition.
  */
 function namespace(walk: Walk, node: Node): void {
-	const name = node.childForFieldName("name");
 	const body = node.childForFieldName("body");
-	if (body === null) return;
-	const names = name === null ? [] : name.text.split("::").map((each) => each.trim());
-	const scope = {
-		names: [...walk.scope.names, ...names],
-		internal: walk.scope.internal || name === null,
-	};
-	children({ definitions: walk.definitions, scope }, body);
+	if (body !== null) namespaceBody(walk, node.childForFieldName("name")?.text ?? "", body);
+}
+
+/**
+ * The name of a namespace that a macro before it hides from the grammar:
+ * `FMT_BEGIN_EXPORT namespace detail {` parses as a function named
+ * `namespace::detail`, whose body holds the namespace's declarations. No
+ * function can have that name, because `namespace` is a keyword. abseil opens
+ * nearly every namespace after `ABSL_NAMESPACE_BEGIN`, 108,713 lines of 494
+ * files.
+ * @param node A function definition.
+ * @returns The namespace's name, empty for an anonymous one, or undefined for a function.
+ */
+function misreadNamespace(node: Node): string | undefined {
+	const declarator =
+		node.type === "function_definition" ? node.childForFieldName("declarator") : null;
+	const name = MISREAD_NAMESPACE.exec(declarator?.text ?? "")?.[1];
+	return name?.replaceAll(/\s+/gu, "");
+}
+
+/**
+ * A function definition, or a namespace a macro hid from the grammar.
+ * @param walk Where it stands.
+ * @param node The function definition.
+ * @param extent What it spans.
+ */
+function functionDefinition(walk: Walk, node: Node, extent: Node): void {
+	const hidden = misreadNamespace(node);
+	const body = node.childForFieldName("body");
+	if (hidden !== undefined && body !== null) namespaceBody(walk, hidden, body);
+	else variables(walk, node, extent);
 }
 
 /**
@@ -229,7 +309,9 @@ function variables(walk: Walk, node: Node, extent: Node): void {
 	);
 	for (const declarator of node.childrenForFieldName("declarator")) {
 		const name = declaredName(declarator);
-		if (name !== undefined) define(walk, spell(name), extent, isStatic ? "static" : "extern");
+		if (name === undefined) continue;
+		const declares = declaresOnly(node, declarator, name);
+		define(walk, spell(name), extent, isStatic ? "static" : "extern", declares);
 	}
 }
 
@@ -351,14 +433,31 @@ function usingAlias(walk: Walk, node: Node, extent: Node): void {
 }
 
 /**
+ * Whether a `#define` is an include guard: a macro with no value, defined
+ * inside the `#ifndef` that tests it.
+ * @param node The `#define`.
+ * @param name Its name.
+ * @returns True when it is.
+ */
+function isIncludeGuard(node: Node, name: Node): boolean {
+	const condition = node.parent;
+	return (
+		node.childForFieldName("value") === null &&
+		condition?.type === "preproc_ifdef" &&
+		condition.childForFieldName("name")?.text === name.text
+	);
+}
+
+/**
  * A macro, which no namespace or class qualifies.
  * @param walk Where it stands.
  * @param node The `#define`.
  */
 function macro(walk: Walk, node: Node): void {
 	const name = node.childForFieldName("name");
+	if (name === null || isIncludeGuard(node, name)) return;
 	const file: Walk = { definitions: walk.definitions, scope: { names: [], internal: false } };
-	if (name !== null) define(file, name.text, node, "macro");
+	define(file, name.text, node, "macro");
 }
 
 /** How each kind of declaration is read. */
@@ -374,7 +473,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
 	namespace_definition: namespace,
 	linkage_specification: linkageBlock,
 	template_declaration: templated,
-	function_definition: variables,
+	function_definition: functionDefinition,
 	declaration: variables,
 	field_declaration: variables,
 	type_definition: typedef,
@@ -423,4 +522,4 @@ function cDefinitionsOf(root: Node): Definition[] {
 	return withMemberAccess(definitions);
 }
 
-export { cDefinitionsOf, spell };
+export { cDefinitionsOf, misreadNamespace, spell };

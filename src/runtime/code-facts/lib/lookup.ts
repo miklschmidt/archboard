@@ -85,7 +85,9 @@ function everyNameEndsWith(qualified: string, symbol: string): boolean {
 }
 
 /**
- * The definitions a symbol names, exact spellings first.
+ * The definitions a symbol names, exact spellings first, and of each spelling
+ * the code before a declaration of it: the body of a C function before its
+ * prototype at the top of the file.
  * @param definitions A file's definitions.
  * @param symbol The symbol.
  * @returns The definitions.
@@ -93,9 +95,18 @@ function everyNameEndsWith(qualified: string, symbol: string): boolean {
 function definitionsNamed(definitions: readonly Definition[], symbol: string): Definition[] {
 	const named = definitions.filter((definition) => endsWithNames(definition.symbol, symbol));
 	const exact = dotted(symbol);
-	return named.toSorted(
-		(left, right) => Number(dotted(right.symbol) === exact) - Number(dotted(left.symbol) === exact),
-	);
+	return named.toSorted((left, right) => rank(left, exact) - rank(right, exact));
+}
+
+/**
+ * How early a definition comes among those a symbol names: an exact spelling
+ * before a tail of it, and code before a declaration of it.
+ * @param definition The definition.
+ * @param exact The symbol, with `::` written as `.`.
+ * @returns Its rank, lowest first.
+ */
+function rank(definition: Definition, exact: string): number {
+	return Number(dotted(definition.symbol) !== exact) * 2 + Number(definition.declaration === true);
 }
 
 /**

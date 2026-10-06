@@ -266,7 +266,9 @@ function siteOf(
  * What a use that an import resolves reaches: the parts that hold its
  * definition, else those that own the file it leads to. A definition of the
  * same file is it only under the name the import leads to, as a compose file
- * defines the service that another of its services depends on.
+ * defines the service that another of its services depends on. A C or C++
+ * include that leads to a declaration whose code is in no file the check can
+ * name matches by name only: a candidate.
  * @param repo The repository's reading.
  * @param facts The file's facts.
  * @param symbol The use as the file spells it.
@@ -285,7 +287,17 @@ async function targetReached(
 		site === undefined || other
 			? ownersOfFile(repo.owners, target.path)
 			: ownersOfSite(repo.owners, site);
-	return { to, resolution: "resolved" };
+	return { to, resolution: resolutionAt(site) };
+}
+
+/**
+ * How sure a use is that an import leads to a site: resolved, unless the site
+ * only declares the name and no file the check can name holds its code.
+ * @param site The site, if any.
+ * @returns The resolution.
+ */
+function resolutionAt(site: DefinitionSite | undefined): CodeEvidence["resolution"] {
+	return site?.definition.declaration === true ? "candidate" : "resolved";
 }
 
 /**
@@ -306,22 +318,7 @@ async function reachedBy(
 		return targetReached(repo, facts, reference.symbol, reference.target);
 	}
 	if (imported.has(reference.symbol.split(".")[0] ?? "")) return undefined;
-	const site = await includedSiteOf(repo, facts, reference.symbol);
-	if (site !== undefined) return { to: ownersOfSite(repo.owners, site), resolution: "resolved" };
 	return serverReached(repo, facts, reference, imported);
-}
-
-/**
- * Where a use in a C or C++ file is defined in another file, through its includes, resolved.
- * @param repo The repository's reading.
- * @param facts The file's facts.
- * @param symbol The use as the file spells it.
- * @returns The site, or undefined when the file has no include or no included header defines it.
- */
-async function includedSiteOf(repo: RepoReading, facts: SyntaxFacts, symbol: string) {
-	if (!facts.imports.some((found) => found.inScope === true)) return undefined;
-	const site = await siteOf(repo, facts.path, symbol);
-	return site?.path === facts.path ? undefined : site;
 }
 
 /**

@@ -7,7 +7,8 @@
 // The checkout `shop` has no `compile_commands.json`: the ledger's public
 // header is under `include/`, its source under `src/`; the ledger rounds
 // through the money module, which a part binds by its header; the mailer
-// calls the notifier; and a C++ app opens a store whose class is declared in
+// calls the notifier, and an audit the ledger's header declares and
+// `audit.c` defines; and a C++ app opens a store whose class is declared in
 // `store.hpp` and defined in `store.cpp`.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
@@ -84,6 +85,7 @@ beforeAll(async () => {
 			"#define LEDGER_MAX 100",
 			"struct Ledger;",
 			"int ledger_post(struct Ledger *ledger, long amount);",
+			"int ledger_audit(long amount);",
 			"#endif",
 			"",
 		].join("\n"),
@@ -112,7 +114,15 @@ beforeAll(async () => {
 		].join("\n"),
 		"src/notify.h": "void notify(int order);\n",
 		"src/notify.c": '#include "notify.h"\n\nvoid notify(int order) { (void)order; }\n',
-		"src/mail.c": '#include "notify.h"\n\nvoid send_mail(int order) { notify(order); }\n',
+		"src/audit.c":
+			'#include "shop/ledger.h"\n\nint ledger_audit(long amount) { return amount > 0; }\n',
+		"src/mail.c": [
+			'#include "notify.h"',
+			'#include "shop/ledger.h"',
+			"",
+			"void send_mail(int order) { notify(order); ledger_audit(order); }",
+			"",
+		].join("\n"),
 		"cpp/store.hpp": [
 			"namespace shop {",
 			"class Store {",
@@ -155,6 +165,7 @@ beforeAll(async () => {
 					part("pA", "Mailer", "src/mail.c"),
 					part("pS", "Store", "cpp/store.cpp"),
 					part("pV", "Save", "cpp/store.cpp", "Store::save"),
+					{ ...part("pO", "Open", "cpp/store.cpp", "Store::open"), parent: "pS" },
 					part("pP", "App", "cpp/app.cpp"),
 				],
 				edges: [
@@ -166,6 +177,8 @@ beforeAll(async () => {
 					edge("e3", ["pN", "pA"], "event"),
 					// The app calls the class its header declares, in the store's pair.
 					edge("e4", ["pP", "pS"], "call"),
+					// The use leads through the header to the method's code, which the part binds.
+					edge("e5", ["pP", "pO"], "call", ["cpp/app.cpp", "shop::Store::open"]),
 				],
 			},
 		},
@@ -192,6 +205,8 @@ test("anchors, binding symbols and the relationships between parts bound to C an
 			"BINDING_SYMBOL_MISSING pB warning",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			"RELATIONSHIP_UNDRAWN pM warning",
+			// The ledger's header only declares the audit, and its source defines none of it.
+			"RELATIONSHIP_UNDRAWN pL information",
 		].toSorted(),
 	);
 	// Nothing was read as text.
@@ -199,7 +214,9 @@ test("anchors, binding symbols and the relationships between parts bound to C an
 });
 
 test("a use reaches the part bound to the pair of the header its include names, resolved", () => {
-	const undrawn = outcome.findings.find((each) => each.code === "RELATIONSHIP_UNDRAWN");
+	const undrawn = outcome.findings.find(
+		(each) => each.code === "RELATIONSHIP_UNDRAWN" && each.subject?.id === "pM",
+	);
 	expect(undrawn?.evidence).toEqual([
 		{
 			kind: "call",

@@ -385,7 +385,9 @@ function undrawnUses(judged: Judged, hidden: SemanticNode): CodeEvidence[] {
 			if (use === undefined) return [];
 			const { repo } = judged.checkout;
 			const { file: path, line, symbol } = use;
-			return [{ kind: "call", resolution: "resolved", to: hidden.id, repo, path, line, symbol }];
+			// A C or C++ declaration whose code is in no file the check can name matches by name only.
+			const resolution = use.site.definition.declaration === true ? "candidate" : "resolved";
+			return [{ kind: "call", resolution, to: hidden.id, repo, path, line, symbol }];
 		});
 }
 

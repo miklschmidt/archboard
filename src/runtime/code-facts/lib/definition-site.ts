@@ -4,13 +4,23 @@
 // a definition found this way is resolved, not a candidate. A name the code
 // reaches only through a value, such as `ledger.post()`, has no import that
 // names its file, so it has no site here: a language server resolves it
-// (TASK-367.13). A name a C or C++ file reaches through its includes is found
-// in the headers they name (include-scope.ts).
+// (TASK-367.13). A name a C or C++ file reaches through its includes leads to
+// the header that declares it (include-scope.ts).
+//
+// A declaration, such as a C prototype, names code that is elsewhere. Its site
+// is the definition of its name in its file's pair, the source file of a
+// header (c-pairs.ts), passed on by the declaring file. Where the pair defines
+// nothing of the name, the code that runs is in a file the include does not
+// name, as leveldb declares `WriteBatchInternal::Append` in
+// `write_batch_internal.h` and defines it in `write_batch.cc`. The site then
+// stays the declaration, which matches by name only: a candidate (ADR 0046),
+// until clangd names the definition (TASK-367.15).
 
+import { pairOf } from "@/runtime/code-facts/lib/c-pairs";
 import type { Definition, SyntaxFacts, Target } from "@/runtime/code-facts/lib/facts";
-import { includedSite } from "@/runtime/code-facts/lib/include-scope";
-import { definitionsNamed, endsWithNames } from "@/runtime/code-facts/lib/lookup";
+import { endsWithNames } from "@/runtime/code-facts/lib/lookup";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
+import { definitionsNamedIn, usesNamed } from "@/runtime/code-facts/lib/name-index";
 import type { FactsPass } from "@/runtime/code-facts/lib/reader";
 
 /** How many files a chain of re-exports may pass through before the search gives up. */
@@ -23,7 +33,8 @@ interface DefinitionSite {
 	readonly definition: Definition;
 	/**
 	 * The files that pass it on between the asking file and the definition:
-	 * each `export ... from`, and the project file of a C# project.
+	 * each `export ... from`, the project file of a C# project, and the header
+	 * that declares a C or C++ name its pair defines.
 	 */
 	readonly via: readonly string[];
 }
@@ -55,13 +66,13 @@ function usedTargets(facts: SyntaxFacts, symbol: string): Target[] {
 	const byPrefix = names.flatMap((_, index) => {
 		const prefix = names.slice(0, names.length - index).join(".");
 		const rest = names.slice(names.length - index);
-		return facts.references.flatMap((reference) =>
+		return usesNamed(facts.references, prefix).flatMap((reference) =>
 			reference.symbol === prefix && reference.target !== undefined
 				? [joined(reference.target, rest)]
 				: [],
 		);
 	});
-	const byTail = facts.references.flatMap((reference) =>
+	const byTail = usesNamed(facts.references, symbol).flatMap((reference) =>
 		reference.target !== undefined && endsWithNames(reference.symbol, symbol)
 			? [reference.target]
 			: [],
@@ -166,12 +177,41 @@ async function follow(
 	const facts = await search.pass.read(search.checkout, target.path);
 	if (facts === undefined || facts.adapter === "text") return undefined;
 	const symbol = ownSpelling(facts.definitions, target.symbol);
-	const definition = definitionsNamed(facts.definitions, symbol)[0];
+	const definition = definitionsNamedIn(facts.definitions, symbol)[0];
 	if (definition !== undefined) return { path: facts.path, definition, via: passedOnBy(target) };
 	const site = await firstSite(reexportTargets(facts, symbol), (next) =>
 		follow(search, next, depth - 1),
 	);
 	return site === undefined ? undefined : { ...site, via: [facts.path, ...site.via] };
+}
+
+/**
+ * Where the code of a declaration is: the definition of its name in its file's
+ * pair, passed on by the declaring file.
+ * @param pass The pass.
+ * @param checkout The checkout and the files the pass may read.
+ * @param site A site.
+ * @returns The site of its code, or the site itself when it is no declaration
+ * or its pair defines nothing of its name.
+ */
+async function codeSiteOf(
+	pass: FactsPass,
+	checkout: CheckoutFiles,
+	site: DefinitionSite,
+): Promise<DefinitionSite> {
+	if (site.definition.declaration !== true) return site;
+	for (const file of pairOf(site.path, checkout.files)) {
+		// oxlint-disable-next-line no-await-in-loop -- the first file of the pair that defines the name ends the search
+		const facts = await pass.read(checkout, file);
+		if (facts === undefined || facts.adapter === "text") continue;
+		const definition = facts.definitions.find(
+			(each) => each.symbol === site.definition.symbol && each.declaration !== true,
+		);
+		if (definition !== undefined) {
+			return { path: file, definition, via: [...site.via, site.path] };
+		}
+	}
+	return site;
 }
 
 /**
@@ -181,7 +221,8 @@ async function follow(
  * @param file The file that names the symbol, relative to the checkout.
  * @param symbol The symbol.
  * @returns The site, or undefined when the file neither defines it nor
- * imports it from a file of the checkout.
+ * imports it from a file of the checkout. A site whose definition is a
+ * declaration is a candidate.
  */
 async function definitionSite(
 	pass: FactsPass,
@@ -191,13 +232,15 @@ async function definitionSite(
 ): Promise<DefinitionSite | undefined> {
 	const facts = await pass.read(checkout, file);
 	if (facts === undefined || facts.adapter === "text") return undefined;
-	const own = definitionsNamed(facts.definitions, symbol)[0];
-	if (own !== undefined) return { path: facts.path, definition: own, via: [] };
+	const own = definitionsNamedIn(facts.definitions, symbol)[0];
+	if (own !== undefined) {
+		return codeSiteOf(pass, checkout, { path: facts.path, definition: own, via: [] });
+	}
 	const search: Search = { pass, checkout, seen: new Set() };
 	const site = await firstSite(usedTargets(facts, symbol), (target) =>
 		follow(search, target, CHAIN_DEPTH),
 	);
-	return site ?? includedSite(pass, checkout, facts, symbol);
+	return site === undefined ? undefined : codeSiteOf(pass, checkout, site);
 }
 
-export { type DefinitionSite, definitionSite };
+export { type DefinitionSite, codeSiteOf, definitionSite };
