@@ -77,13 +77,21 @@ const DEEPEN = 0.55;
  * @param ink The ink, or none to leave the face as it is.
  * @param share How much of it, on each ground.
  * @param palette The theme's colours.
+ * @param deepen How far the ink is shaded on the dark ground: further for a
+ * wash that is to carry more of the ink at the face's own lightness.
  * @returns The washed face.
  */
-function washed(base: string, ink: string | undefined, share: Share, palette: Palette): string {
+function washed(
+	base: string,
+	ink: string | undefined,
+	share: Share,
+	palette: Palette,
+	deepen = DEEPEN,
+): string {
 	if (ink === undefined) return base;
 	return lightDark(
 		mixed(base, ink, share.light),
-		mixed(base, mixed(ink, palette.slabDeep, DEEPEN), share.dark),
+		mixed(base, mixed(ink, palette.slabDeep, deepen), share.dark),
 	);
 }
 
@@ -91,6 +99,13 @@ function washed(base: string, ink: string | undefined, share: Share, palette: Pa
 interface SlabLook {
 	/** Its top face. */
 	readonly face: string;
+	/**
+	 * Its top face before its group tinted it, when it did. A standing washes
+	 * this rather than the tinted face, one tint to a face, so a green or an
+	 * orange wash reads as itself and not as a muddy mix with the group's colour,
+	 * which the front edge still carries.
+	 */
+	readonly ground?: string;
 	/** Its front edge, the side of the block that faces the reader. */
 	readonly edge: string;
 	/** How tall its front edge shows, inside its box along its foot. */
@@ -403,9 +418,11 @@ function standingFace(
 	palette: Palette,
 ): { readonly top: string; readonly below: string; readonly hatch: number } {
 	const ink = standing === undefined ? undefined : standingInk(standing, palette);
-	const hatch = standing === "changed" && look.hatch === true ? 1 : 0;
+	const hatch = Number(standing === "changed" && look.hatch === true);
 	if (look.plate === undefined) {
-		return { top: washed(look.face, ink, WASH, palette), below: look.face, hatch };
+		const top =
+			ink === undefined ? look.face : washed(look.ground ?? look.face, ink, WASH, palette);
+		return { top, below: look.face, hatch };
 	}
 	return {
 		top: look.plate.face,

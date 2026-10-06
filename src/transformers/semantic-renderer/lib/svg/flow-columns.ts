@@ -53,7 +53,7 @@ const BAR_SHADE = 0.4;
  * step deeper. A bar says nothing its arrows do not, so it stays quiet.
  */
 const NEUTRAL_BAR: Share = { light: 0.5, dark: 0.25 };
-const NEUTRAL_BAR_EDGE: Share = { light: 0.3, dark: 0.5 };
+const NEUTRAL_BAR_EDGE: Share = { light: 0.18, dark: 0.5 };
 
 /**
  * A participant's activation bar: a slim slab of the participant itself,
