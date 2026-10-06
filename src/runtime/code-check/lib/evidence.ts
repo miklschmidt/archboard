@@ -278,7 +278,11 @@ async function reachedBy(
  * What a use that no import resolves reaches, as the language server of its
  * file says: the parts that hold the definition it names in the checkout,
  * nothing when it names one only outside, and what the name matches in the
- * same file when no server answers.
+ * same file when no server answers. Only two uses are asked about: a name the
+ * file defines at module level, and a name spelled through a value, `a.b`. A
+ * bare name the file does not define at module level is a local, a parameter
+ * or a global: its definition is in the same function or outside the
+ * checkout, so it never joins two parts.
  * @param repo The repository's reading.
  * @param facts The file's facts.
  * @param reference The use.
@@ -291,8 +295,10 @@ async function serverReached(
 	reference: SyntaxFacts["references"][number],
 	imported: ReadonlySet<string>,
 ): Promise<Reached | undefined> {
+	const candidate = candidateReached(repo, facts, reference, imported);
+	if (candidate === undefined && !reference.symbol.includes(".")) return undefined;
 	const resolved = await repo.reading.resolve(repo.checkout, facts.path, reference);
-	if (resolved.status === "unknown") return candidateReached(repo, facts, reference, imported);
+	if (resolved.status === "unknown") return candidate;
 	if (resolved.status === "elsewhere") return undefined;
 	const definition = { start: resolved.line, end: resolved.line };
 	const site = { path: resolved.path, definition, via: [] };

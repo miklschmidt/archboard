@@ -6,8 +6,9 @@
 //
 // The checkout `shop` holds an address helper whose two functions are bound
 // as two parts, a ledger, an order that calls the ledger through a parameter
-// typed by a type-only import, and a report the board joins to the order by
-// an anchored relationship whose anchor names that call.
+// typed by a type-only import, a memory interface the order calls through a
+// parameter, and a report the board joins to the order by an anchored
+// relationship whose anchor names the call to the ledger.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import {
@@ -85,9 +86,12 @@ beforeAll(async () => {
 		].join("\n"),
 		"src/ledger.ts":
 			"export class Ledger {\n  post(amount: number): number { return amount; }\n}\n",
+		"src/memory.ts": "export interface Memory {\n  remember(): void;\n}\n",
 		"src/order.ts": [
 			'import type { Ledger } from "./ledger";',
 			"export function place(ledger: Ledger): number { return ledger.post(1); }",
+			'import type { Memory } from "./memory";',
+			"export function keep(memory: Memory): void { memory.remember(); }",
 			"",
 		].join("\n"),
 		"src/report.ts": "export function report(): string { return 'r'; }\n",
@@ -103,6 +107,7 @@ beforeAll(async () => {
 					part("pA", "src/address.ts", "addressOf"),
 					part("pN", "src/address.ts", "normalize"),
 					part("pL", "src/ledger.ts"),
+					part("pM", "src/memory.ts"),
 					part("pO", "src/order.ts"),
 					part("pR", "src/report.ts"),
 				],
@@ -167,6 +172,10 @@ test("a call through a value that only a type import names joins its parts, reso
 			symbol: "ledger.post",
 		},
 	]);
+});
+
+test("a call through a value that lands on a member of an interface is no evidence, because no code of the interface runs", () => {
+	expect(finding("RELATIONSHIP_UNDRAWN", "pM")).toBeUndefined();
 });
 
 test("an anchor reached through a value is judged where the server names its definition", () => {

@@ -11,6 +11,14 @@
 // the language's own declarations, reaches no part. A use the server was not
 // asked about, or one it knows no definition of, stays as code facts read it.
 //
+// A use at run time is call evidence only where it reaches code that runs. A
+// use through a value often resolves to a member of the value's type, such as
+// `entry.name` to a field of an interface, or `memory.remember()` to the
+// method an interface declares rather than the one that runs. The outline of
+// the definition's file says what it declares (`declaration`), and a use at
+// run time whose definition is not code stays as code facts read it. A use
+// only as a type counts wherever its definition is.
+//
 // A server names the line of a definition, not its extent, so a site is that
 // one line: the bound code that holds the line holds the definition.
 //
@@ -45,7 +53,7 @@ type UseResolution =
 type Resolve = (
 	checkout: ReadCheckout,
 	file: string,
-	use: Pick<Reference, "line" | "symbol">,
+	use: Pick<Reference, "line" | "symbol" | "kind">,
 ) => Promise<UseResolution>;
 
 /** The answer of a use no server resolved. */
@@ -72,11 +80,16 @@ function resolverOf(servers: LanguageServerSession): Resolve {
 		const question = { root: checkout.root, file, line: use.line, symbol: use.symbol };
 		const answer = await servers.definition(question);
 		if (answer.status === "unasked" || answer.locations.length === 0) return UNKNOWN;
-		for (const location of answer.locations) {
+		const inCheckout = answer.locations.flatMap((location) => {
 			const listed = listedIn(checkout, location.path);
-			if (listed !== undefined) return { status: "site", path: listed, line: location.line };
-		}
-		return { status: "elsewhere" };
+			return listed === undefined ? [] : [{ location, listed }];
+		});
+		const [first] = inCheckout;
+		if (first === undefined) return { status: "elsewhere" };
+		const declares =
+			use.kind === "call" ? await servers.declaration(checkout.root, first.location) : "code";
+		if (declares !== "code") return UNKNOWN;
+		return { status: "site", path: first.listed, line: first.location.line };
 	};
 }
 

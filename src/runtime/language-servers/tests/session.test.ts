@@ -57,7 +57,7 @@ describe("a pass's language servers", () => {
 		]);
 		expect(read).toEqual({
 			status: "answered",
-			locations: [{ path: join(at.root, "src/store.ts"), line: 1 }],
+			locations: [{ path: join(at.root, "src/store.ts"), line: 1, character: 0 }],
 		});
 		expect(helper).toEqual({ status: "answered", locations: [] });
 		expect(again).toEqual(read);
