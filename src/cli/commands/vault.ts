@@ -87,6 +87,7 @@ const checkContract = defineCommand({
 			key: "code",
 			spellings: ["--code"],
 			value: "none",
+			requiredWhen: "with --variant",
 			description:
 				"Then run the code check, which reads the code and Git history of every registered checkout",
 		},
