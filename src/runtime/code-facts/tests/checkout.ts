@@ -1,7 +1,15 @@
 // A checkout this owner writes for itself: a temporary directory and the
 // files in it, which stand for the files Git lists.
 
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	readdirSync,
+	readFileSync,
+	realpathSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { CheckoutFiles } from "@/runtime/code-facts/index";
@@ -48,4 +56,25 @@ function fixtureCheckout(files: Readonly<Record<string, string>>): FixtureChecko
 	};
 }
 
-export { type FixtureCheckout, fixtureCheckout };
+/**
+ * Write a checkout of one fixture directory of this owner, such as the
+ * package `fixtures/python-shop`.
+ * @param name The directory's name under `fixtures`.
+ * @returns The checkout, with every file of the directory.
+ */
+function fixtureDirectory(name: string): FixtureCheckout {
+	const directory = join(import.meta.dir, "fixtures", name);
+	const entries = readdirSync(directory, { recursive: true, withFileTypes: true });
+	return fixtureCheckout(
+		Object.fromEntries(
+			entries
+				.filter((entry) => entry.isFile())
+				.map((entry) => {
+					const file = join(entry.parentPath, entry.name);
+					return [file.slice(directory.length + 1), readFileSync(file, "utf8")];
+				}),
+		),
+	);
+}
+
+export { type FixtureCheckout, fixtureCheckout, fixtureDirectory };

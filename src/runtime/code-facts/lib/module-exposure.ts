@@ -2,24 +2,32 @@
 // container's interface, which the code check holds against the interface a
 // board derives.
 //
-// Each language says what its module is and what it exposes, so the rule sits
-// behind the adapter seam, one entry for each adapter that reads a language.
-// TypeScript's module is a directory, and it exposes what its root files
-// export (typescript-exposure.ts). A language whose adapter has no rule here
-// exposes nothing the check can read, and the check says so. Python adds its
-// rule with its adapter (TASK-367.08): a package's `__init__.py`, and the names
-// `__all__` lists or that do not start with `_`.
+// Each language says what its module is: a directory, the file that stands
+// for it, and the root files callers may use. TypeScript's root files are
+// what its `package.json` `exports` names, else the files directly in the
+// directory (typescript-exposure.ts). A Python package's root file is its
+// `__init__.py`. A language with no rule here exposes nothing the check can
+// read, and the check says so.
+//
+// What a root file exposes reads the same in every language, from its code
+// facts: each definition it exposes (an export, a name `__all__` lists or a
+// public one, and the public members of one), and each name it passes on
+// through a re-export, followed to the file that defines it. Each adapter
+// records the names a file passes on as re-exports: `export ... from` and
+// `export { name }` of an imported name in TypeScript, and in Python each
+// imported name that `from module import *` would pass on.
 
+import type { Definition, ImportedName, SyntaxFacts } from "@/runtime/code-facts/lib/facts";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 import type { FactsPass } from "@/runtime/code-facts/lib/reader";
 import {
 	ENTRY_FILE,
-	type ExposedName,
 	TYPESCRIPT_FILE,
-	typeScriptExposedBy,
 	typeScriptRootFiles,
-	within,
 } from "@/runtime/code-facts/lib/typescript-exposure";
+
+/** How many files a chain of re-exports may pass through. */
+const CHAIN_DEPTH = 16;
 
 /** What one language says about its modules. */
 interface ExposureRule {
@@ -44,17 +52,6 @@ interface ExposureRule {
 		checkout: CheckoutFiles,
 		directory: string,
 	) => Promise<string[]>;
-	/**
-	 * The names one root file exposes, each followed to its definition.
-	 * @param pass The pass.
-	 * @param checkout The checkout.
-	 * @param file The root file.
-	 */
-	readonly exposedBy: (
-		pass: FactsPass,
-		checkout: CheckoutFiles,
-		file: string,
-	) => Promise<ExposedName[]>;
 }
 
 /** TypeScript's rule: a directory whose root files export what it exposes. */
@@ -72,11 +69,59 @@ const TYPESCRIPT: ExposureRule = {
 	 */
 	entry: (name) => ENTRY_FILE.test(name),
 	rootFiles: typeScriptRootFiles,
-	exposedBy: typeScriptExposedBy,
+};
+
+/** A Python file or stub. */
+const PYTHON_FILE = /\.pyi?$/u;
+/** The file of a Python package, which stands for its directory. */
+const PACKAGE_FILE = /^__init__\.pyi?$/u;
+
+/** Python's rule: a package, whose `__init__.py` says what it exposes. */
+const PYTHON: ExposureRule = {
+	/**
+	 * Whether a file is Python or a Python stub.
+	 * @param file The file.
+	 * @returns True when it is.
+	 */
+	writes: (file) => PYTHON_FILE.test(file),
+	/**
+	 * Whether a file is a package's `__init__.py`.
+	 * @param name The file's name.
+	 * @returns True when it is.
+	 */
+	entry: (name) => PACKAGE_FILE.test(name),
+	/**
+	 * The package's `__init__.py`, else its stub; an import of the package
+	 * reads the first of the two, as the resolver does.
+	 * @param _pass The pass.
+	 * @param checkout The checkout.
+	 * @param directory The package's directory.
+	 * @returns The file, or none for a directory that is no package.
+	 */
+	rootFiles: (_pass, checkout, directory) => {
+		const files = ["__init__.py", "__init__.pyi"].map((name) =>
+			directory === "" ? name : `${directory}/${name}`,
+		);
+		return Promise.resolve(files.filter((file) => checkout.files.has(file)).slice(0, 1));
+	},
 };
 
 /** The rule of each adapter that reads a language. */
-const RULES: readonly ExposureRule[] = [TYPESCRIPT];
+const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON];
+
+/** One name a module exposes, and the definition it reaches. */
+interface ExposedName {
+	/**
+	 * The name as a caller spells it after importing the root file: `readBoard`,
+	 * `default`, `Ledger.post` for a public member, `ns.read` through `export * as ns`.
+	 */
+	readonly name: string;
+	/** The file that defines it, relative to the checkout. */
+	readonly path: string;
+	readonly definition: Definition;
+	/** The files that pass it on, the root file first; empty when the root file defines it. */
+	readonly via: readonly string[];
+}
 
 /** What one module exposes, and where its callers can be. */
 interface ModuleExposure {
@@ -91,8 +136,122 @@ interface ModuleExposure {
 }
 
 /**
+ * Whether a path lies in a directory or is it.
+ * @param directory The directory, relative to the checkout; empty for the checkout.
+ * @param file The path.
+ * @returns True when it does.
+ */
+function within(directory: string, file: string): boolean {
+	return directory === "" || file === directory || file.startsWith(`${directory}/`);
+}
+
+/**
+ * The name a caller spells for a definition the file exposes: `default` for
+ * the default export and its members.
+ * @param definition The definition.
+ * @param defaults The names the file exports by default.
+ * @returns The name.
+ */
+function spelled(definition: Definition, defaults: ReadonlySet<string>): string {
+	const [first = "", ...rest] = definition.symbol.split(".");
+	return defaults.has(first) ? ["default", ...rest].join(".") : definition.symbol;
+}
+
+/**
+ * The names one file passes on from another, renamed as the file names them.
+ * @param name What the re-export names.
+ * @param passed What the other file exposes.
+ * @returns The names the file exposes through it.
+ */
+function passedOn(name: ImportedName, passed: readonly ExposedName[]): ExposedName[] {
+	if (name.local === "*") {
+		return passed.filter((each) => each.name !== "default" && !each.name.startsWith("default."));
+	}
+	if (name.imported === "*")
+		return passed.map((each) => ({ ...each, name: `${name.local}.${each.name}` }));
+	return passed.flatMap((each) => {
+		if (each.name === name.imported) return [{ ...each, name: name.local }];
+		const prefix = `${name.imported}.`;
+		return each.name.startsWith(prefix)
+			? [{ ...each, name: `${name.local}.${each.name.slice(prefix.length)}` }]
+			: [];
+	});
+}
+
+/**
+ * One search for the names a module's root files expose: the pass, the
+ * checkout, the files on the chain, and what each file read so far exposes.
+ */
+interface Search {
+	readonly pass: FactsPass;
+	readonly checkout: CheckoutFiles;
+	readonly chain: readonly string[];
+	/** Each file the search has read, and the names it exposes; files re-export one file many times. */
+	readonly read: Map<string, Promise<ExposedName[]>>;
+}
+
+/**
+ * The names one file exposes, each followed to the file that defines it,
+ * read once in a search. A file already on the chain ends a cycle of
+ * re-exports, so it adds nothing there.
+ * @param search The search.
+ * @param file The file.
+ * @returns The names; none for a file no adapter reads.
+ */
+function exposedBy(search: Search, file: string): Promise<ExposedName[]> {
+	if (search.chain.includes(file) || search.chain.length > CHAIN_DEPTH) return Promise.resolve([]);
+	let names = search.read.get(file);
+	if (names === undefined) {
+		names = (async () => {
+			const facts = await search.pass.read(search.checkout, file);
+			if (facts === undefined || facts.adapter === "text") return [];
+			const deeper: Search = { ...search, chain: [...search.chain, file] };
+			return [...ownExposed(facts), ...(await passedExposed(deeper, facts))];
+		})();
+		search.read.set(file, names);
+	}
+	return names;
+}
+
+/**
+ * The names a file exposes that it defines itself.
+ * @param facts The file's facts.
+ * @returns The names.
+ */
+function ownExposed(facts: SyntaxFacts): ExposedName[] {
+	const defaults = new Set(
+		facts.definitions.flatMap((each) =>
+			each.visibility === "export default" ? [each.symbol] : [],
+		),
+	);
+	return facts.definitions.flatMap((definition): ExposedName[] =>
+		definition.exposed
+			? [{ name: spelled(definition, defaults), path: facts.path, definition, via: [] }]
+			: [],
+	);
+}
+
+/**
+ * The names a file passes on from the files its re-exports name.
+ * @param search The search, with the file on its chain.
+ * @param facts The file's facts.
+ * @returns The names, each with the file first among those that pass it on.
+ */
+async function passedExposed(search: Search, facts: SyntaxFacts): Promise<ExposedName[]> {
+	const passed: ExposedName[] = [];
+	for (const found of facts.imports) {
+		if (!found.reexport || found.resolved === undefined) continue;
+		// oxlint-disable-next-line no-await-in-loop -- one re-export at a time keeps the names in the file's order
+		const further = await exposedBy(search, found.resolved);
+		const names = found.names.flatMap((name) => passedOn(name, further));
+		passed.push(...names.map((each) => ({ ...each, via: [facts.path, ...each.via] })));
+	}
+	return passed;
+}
+
+/**
  * The module a bound path names: a directory, or the file that stands for
- * the directory that holds it, such as an `index.ts`.
+ * the directory that holds it, such as an `index.ts` or an `__init__.py`.
  * @param bound The path, relative to its checkout.
  * @param kind Whether it is a file or a directory.
  * @returns The module's directory, or undefined when the path names no module.
@@ -121,10 +280,11 @@ async function moduleExposure(
 		// oxlint-disable-next-line no-await-in-loop -- the first language whose root files the module has decides, so later rules are never read
 		const rootFiles = await rule.rootFiles(pass, checkout, directory);
 		if (rootFiles.length === 0) continue;
+		const search: Search = { pass, checkout, chain: [], read: new Map() };
 		const exposed: ExposedName[] = [];
 		for (const file of rootFiles) {
 			// oxlint-disable-next-line no-await-in-loop -- one root file at a time keeps the names in the root files' order
-			exposed.push(...(await rule.exposedBy(pass, checkout, file)));
+			exposed.push(...(await exposedBy(search, file)));
 		}
 		const outside = [...checkout.files]
 			.filter((file) => rule.writes(file) && !within(directory, file))

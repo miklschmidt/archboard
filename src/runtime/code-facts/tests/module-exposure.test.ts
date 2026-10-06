@@ -1,10 +1,17 @@
-// What a TypeScript module exposes (ADR 0044, TASK-368.10): the names its
-// root files export, each followed through re-exports to its definition, or
-// the files a package's `exports` names.
+// What a module exposes (ADR 0044, TASK-368.10): the names its root files
+// expose, each followed through re-exports to its definition. A TypeScript
+// module's root files are what a package's `exports` names, else the files
+// directly in its directory; a Python package's is its `__init__.py`, read
+// from the fixture package `fixtures/python-shop`.
 
 import { afterAll, expect, test } from "bun:test";
-import { createCodeFacts, moduleExposure, moduleOf } from "@/runtime/code-facts/index";
-import { fixtureCheckout } from "@/runtime/code-facts/tests/checkout";
+import {
+	type CheckoutFiles,
+	createCodeFacts,
+	moduleExposure,
+	moduleOf,
+} from "@/runtime/code-facts/index";
+import { fixtureCheckout, fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
 
 const checkout = fixtureCheckout({
 	"src/store/index.ts": [
@@ -46,19 +53,33 @@ const checkout = fixtureCheckout({
 		"",
 	].join("\n"),
 });
+const pythonShop = fixtureDirectory("python-shop");
 const facts = createCodeFacts();
 
 afterAll(() => {
 	checkout.remove();
+	pythonShop.remove();
 });
 
 /**
  * What a module exposes, read in a new pass.
  * @param directory The module.
+ * @param from The checkout; the TypeScript one when left out.
  * @returns What it exposes.
  */
-function exposureOf(directory: string) {
-	return moduleExposure(facts.pass(new AbortController().signal), checkout, directory);
+function exposureOf(directory: string, from: CheckoutFiles = checkout) {
+	return moduleExposure(facts.pass(new AbortController().signal), from, directory);
+}
+
+/**
+ * Each name a module exposes and the file that defines it, sorted.
+ * @param directory The module.
+ * @param from The checkout.
+ * @returns The names and their files.
+ */
+async function namesOf(directory: string, from?: CheckoutFiles) {
+	const exposure = await exposureOf(directory, from);
+	return exposure?.exposed.map((each) => [each.name, each.path]).toSorted();
 }
 
 test("a module is a directory, and an index file stands for the directory that holds it", () => {
@@ -103,8 +124,7 @@ test("a package's exports names its root files, and exports that name only built
 });
 
 test("a root file exposes a name it imports and exports, under the name it exports it by", async () => {
-	const exposure = await exposureOf("src/passing");
-	expect(exposure?.exposed.map((each) => [each.name, each.path]).toSorted()).toEqual(
+	expect(await namesOf("src/passing")).toEqual(
 		[
 			["readShelf", "src/store/lib/read.ts"],
 			["again", "src/store/lib/read.ts"],
@@ -112,4 +132,26 @@ test("a root file exposes a name it imports and exports, under the name it expor
 			["default", "src/store/index.ts"],
 		].toSorted(),
 	);
+});
+
+test("a Python package is its directory, and its __init__.py exposes what __all__ lists, or else each public name it defines or imports", async () => {
+	expect(moduleOf("lib/ledger/__init__.py", "file")).toBe("lib/ledger");
+	const ledger = await exposureOf("lib/ledger", pythonShop);
+	expect(ledger?.rootFiles).toEqual(["lib/ledger/__init__.py"]);
+	// __all__ lists Ledger, from book.py, and the submodule money; book.py's helper is not in its own __all__.
+	expect(await namesOf("lib/ledger", pythonShop)).toEqual(
+		[
+			["Ledger", "lib/ledger/book.py"],
+			["Ledger.__init__", "lib/ledger/book.py"],
+			["Ledger.post", "lib/ledger/book.py"],
+			["Ledger.rate", "lib/ledger/book.py"],
+			["money.round_amount", "lib/ledger/money.py"],
+		].toSorted(),
+	);
+	// No __all__: the public name it imports is passed on, and _first is not.
+	expect(await namesOf("lib/checkout", pythonShop)).toEqual([["pay", "lib/checkout/pay.py"]]);
+	expect(ledger?.outside).toContain("tools/report.py");
+	expect(ledger?.outside.some((file) => file.startsWith("lib/ledger/"))).toBe(false);
+	// A directory with no __init__.py is no package.
+	expect(await exposureOf("tools", pythonShop)).toBeUndefined();
 });

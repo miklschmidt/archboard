@@ -30,7 +30,7 @@ import type {
 } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { definitionsOf, targetNames } from "@/runtime/code-facts/lib/python-definitions";
-import { dynamicImport, staticImports } from "@/runtime/code-facts/lib/python-imports";
+import { dynamicImport, passedOn, staticImports } from "@/runtime/code-facts/lib/python-imports";
 import { holds, isLocal, type Shadows, shadowsOf } from "@/runtime/code-facts/lib/python-scopes";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { unparsedOf } from "@/runtime/code-facts/lib/unparsed";
@@ -478,13 +478,11 @@ function pythonFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	];
 	const locals = localsOf(written);
 	const references = referencesOf(captured, context);
+	const listed = listedNames(captured);
 	return {
-		definitions: definitionsOf(captured.definition, captured.target, {
-			unparsed,
-			listed: listedNames(captured),
-		}),
+		definitions: definitionsOf(captured.definition, captured.target, { unparsed, listed }),
 		references: distinct(references, locals),
-		imports: withUses(written, references, locals),
+		imports: [...withUses(written, references, locals), ...passedOn(written, listed)],
 		unparsed: unparsedOf(captured.unparsed),
 	};
 }
