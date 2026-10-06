@@ -6,12 +6,13 @@
 import { composeRunners } from "@/runtime/code-check/lib/compose-runners";
 import type { Runner } from "@/runtime/code-check/lib/environment-join";
 import type { PartCode } from "@/runtime/code-check/lib/part-code";
+import { kubernetesRunners } from "@/runtime/code-check/lib/kubernetes-runners";
 import { terraformRunners } from "@/runtime/code-check/lib/terraform-runners";
 import type { FactsPass } from "@/runtime/code-facts/index";
 
 /**
  * The runners every infrastructure reader finds for one board: compose
- * services, then Terraform and OpenTofu resources.
+ * services, Terraform and OpenTofu resources, then Kubernetes workloads.
  * @param codes Each part's bound code, by its id.
  * @param facts The pass.
  * @returns The runners.
@@ -20,7 +21,11 @@ async function infrastructureRunners(
 	codes: ReadonlyMap<string, PartCode>,
 	facts: FactsPass,
 ): Promise<Runner[]> {
-	return [...(await composeRunners(codes, facts)), ...(await terraformRunners(codes, facts))];
+	return [
+		...(await composeRunners(codes, facts)),
+		...(await terraformRunners(codes, facts)),
+		...(await kubernetesRunners(codes, facts)),
+	];
 }
 
 export { infrastructureRunners };

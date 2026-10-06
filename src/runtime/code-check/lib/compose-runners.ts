@@ -13,12 +13,17 @@
 //
 // A value a service sets reaches the parts the address in it names: the
 // parts whose code the named service runs, the outermost bound inside the
-// directory it builds, else the parts that own the service's declaration, as
-// all compose evidence. A name an env file sets is set to a value the check
+// directory it builds or those drawn inside a part bound to it, else the parts
+// that own the service's declaration, as all compose evidence. A name an env file sets is set to a value the check
 // never reads, so it reaches no part.
 
 import path from "node:path";
-import { partsByRepo, type Runner, type Setting } from "@/runtime/code-check/lib/environment-join";
+import {
+	partsByRepo,
+	runningParts,
+	type Runner,
+	type Setting,
+} from "@/runtime/code-check/lib/environment-join";
 import { ownersOf, ownersOfSite } from "@/runtime/code-check/lib/evidence";
 import type { PartCode, ReadPart } from "@/runtime/code-check/lib/part-code";
 import {
@@ -206,11 +211,13 @@ function directoriesOf(service: Service): string[] {
 
 /**
  * The runners of one repository's compose files.
+ * @param codes Each part's bound code, by its id.
  * @param parts The read parts of the board in that repository.
  * @param facts The pass.
  * @returns One runner per service.
  */
 async function runnersIn(
+	codes: ReadonlyMap<string, PartCode>,
 	parts: readonly [ReadPart, ...ReadPart[]],
 	facts: FactsPass,
 ): Promise<Runner[]> {
@@ -220,7 +227,8 @@ async function runnersIn(
 	const { repo } = parts[0].checkout;
 	/**
 	 * The parts a service stands for: those inside the directory it builds,
-	 * else those that own its declaration.
+	 * else those drawn inside a part bound to it, else those that own its
+	 * declaration.
 	 * @param service The service.
 	 * @returns The parts.
 	 */
@@ -229,9 +237,10 @@ async function runnersIn(
 			directory === "" ? [] : outermostIn(parts, directory),
 		);
 		if (inside.length > 0) return inside;
-		return [
-			...new Set(service.blocks.flatMap((block) => ownersOfSite(owners, { ...block, via: [] }))),
-		];
+		const declaring = service.blocks.flatMap((block) =>
+			ownersOfSite(owners, { ...block, via: [] }),
+		);
+		return runningParts(codes, [...new Set(declaring)]);
 	};
 	return [...new Set(services.values())].map((service) => ({
 		repo,
@@ -266,7 +275,7 @@ async function composeRunners(
 	const runners: Runner[] = [];
 	for (const parts of partsByRepo(codes)) {
 		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in board order
-		runners.push(...(await runnersIn(parts, facts)));
+		runners.push(...(await runnersIn(codes, parts, facts)));
 	}
 	return runners;
 }

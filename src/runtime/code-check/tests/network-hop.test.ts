@@ -15,7 +15,9 @@
 // image built elsewhere; the board draws the jobs code inside it, and compose
 // sets the jobs code's `QUEUE_URL` to the queue. Terraform gives a Lambda
 // function `EVENTS_URL`, the URL of a queue, and the board draws the notifier
-// code that reads it inside the function.
+// code that reads it inside the function. A Kubernetes Deployment gives the
+// storefront code drawn inside it `CATALOG_URL`, the address of the Service
+// that picks the catalog Deployment, and `SF_SEARCH_URL` from a ConfigMap.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -161,6 +163,84 @@ beforeAll(async () => {
 			"",
 		].join("\n"),
 		"notifier/handler.ts": "export const handler = () => process.env.EVENTS_URL;\n",
+		"k8s/shop.yaml": [
+			"apiVersion: apps/v1",
+			"kind: Deployment",
+			"metadata:",
+			"  name: storefront",
+			"spec:",
+			"  selector:",
+			"    matchLabels: { app: storefront }",
+			"  template:",
+			"    metadata:",
+			"      labels: { app: storefront }",
+			"    spec:",
+			"      containers:",
+			"        - name: storefront",
+			"          image: shop/storefront:1",
+			"          env:",
+			"            - name: CATALOG_URL",
+			"              value: http://catalog:8080",
+			"          envFrom:",
+			"            - configMapRef: { name: storefront }",
+			"              prefix: SF_",
+			"---",
+			"apiVersion: apps/v1",
+			"kind: Deployment",
+			"metadata:",
+			"  name: catalog",
+			"spec:",
+			"  selector:",
+			"    matchLabels: { app: catalog }",
+			"  template:",
+			"    metadata:",
+			"      labels: { app: catalog }",
+			"    spec:",
+			"      containers:",
+			"        - name: catalog",
+			"          image: shop/catalog:1",
+			"---",
+			"apiVersion: v1",
+			"kind: Service",
+			"metadata:",
+			"  name: catalog",
+			"spec:",
+			"  selector: { app: catalog }",
+			"  ports: [{ port: 8080 }]",
+			"---",
+			"apiVersion: v1",
+			"kind: ConfigMap",
+			"metadata:",
+			"  name: storefront",
+			"data:",
+			"  SEARCH_URL: http://search:9200",
+			"---",
+			"apiVersion: apps/v1",
+			"kind: Deployment",
+			"metadata:",
+			"  name: search",
+			"spec:",
+			"  selector:",
+			"    matchLabels: { app: search }",
+			"  template:",
+			"    metadata:",
+			"      labels: { app: search }",
+			"    spec:",
+			"      containers: [{ name: search, image: shop/search:1 }]",
+			"---",
+			"apiVersion: v1",
+			"kind: Service",
+			"metadata:",
+			"  name: search",
+			"spec:",
+			"  selector: { app: search }",
+			"",
+		].join("\n"),
+		"storefront/main.ts": [
+			"export const catalog = process.env.CATALOG_URL;",
+			"export const search = process.env.SF_SEARCH_URL;",
+			"",
+		].join("\n"),
 	});
 	git(scratch, hops, "add", "-A");
 	git(scratch, hops, "commit", "-q", "--no-gpg-sign", "-m", "the services");
@@ -183,6 +263,10 @@ beforeAll(async () => {
 					part("pF", "Notify function", "infra", { symbol: "aws_lambda_function.notify" }),
 					part("pN", "Notifier", "notifier", { parent: "pF" }),
 					part("pE", "Events", "infra", { symbol: "aws_sqs_queue.events" }),
+					part("pS", "Storefront workload", "k8s/shop.yaml", { symbol: "Deployment/storefront" }),
+					part("pT", "Storefront", "storefront", { parent: "pS" }),
+					part("pG", "Catalog", "k8s/shop.yaml", { symbol: "Deployment/catalog" }),
+					part("pH", "Search", "k8s/shop.yaml", { symbol: "Deployment/search" }),
 				],
 				edges: [
 					edge("e1", ["pW", "pO"], "http"),
@@ -194,6 +278,9 @@ beforeAll(async () => {
 					edge("e7", ["pK", "pQ"], "queue"),
 					edge("e8", ["pN", "pE"], "queue"),
 					edge("e9", ["pF", "pE"], "queue"),
+					edge("e10", ["pT", "pG"], "http"),
+					edge("e11", ["pS", "pG"], "http"),
+					edge("e12", ["pT", "pH"], "http"),
 				],
 			},
 		},
@@ -215,9 +302,13 @@ afterAll(() => {
 test("a value the code reads, set for the service that runs it to another part's address, supports the relationship between the two parts", () => {
 	// TypeScript to Python through the web build, Python to a service through
 	// the Dockerfile's directory, code drawn inside a service with an image
-	// built elsewhere, and code drawn inside a Lambda function that Terraform
-	// gives the queue's URL.
-	for (const supported of ["e1", "e2", "e6", "e8"]) expect(about(supported)).toBeUndefined();
+	// built elsewhere, code drawn inside a Lambda function that Terraform
+	// gives the queue's URL, and code drawn inside a Kubernetes workload that
+	// reaches another through the Service that picks it, also through a key
+	// that envFrom passes on from a ConfigMap.
+	for (const supported of ["e1", "e2", "e6", "e8", "e10", "e12"]) {
+		expect(about(supported)).toBeUndefined();
+	}
 });
 
 test("a joined value no relationship draws is undrawn, with the read and the setting as its evidence", () => {
