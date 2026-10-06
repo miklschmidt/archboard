@@ -30,6 +30,8 @@ process.env["ARCHBOARD_REPOS"] = registry;
 const SHOP = "github.com/test/shop";
 const OTHER = "github.com/test/other";
 const STRANGER = "github.com/test/stranger";
+// Registered, and its checkout is not on this machine any more.
+const GONE = "github.com/test/gone";
 let lens: typeof LensModule;
 let clock = 1_790_000_000;
 
@@ -116,6 +118,8 @@ const PARTS = [
 	},
 	{ id: "pO", name: "Other", kind: "module", binding: { repo: OTHER, path: "lib.ts" } },
 	{ id: "pU", name: "Customer", kind: "person" },
+	{ id: "pG", name: "Coupons", kind: "module", binding: { repo: SHOP, path: "src/coupons.ts" } },
+	{ id: "pV", name: "Vanished", kind: "module", binding: { repo: GONE, path: "x.ts" } },
 ];
 
 /**
@@ -207,9 +211,13 @@ beforeAll(async () => {
 	writeFileSync(
 		registry,
 		JSON.stringify(
-			[SHOP, OTHER].map((repo) => ({
+			[
+				[SHOP, shop],
+				[OTHER, other],
+				[GONE, join(scratch, "gone")],
+			].map(([repo, root]) => ({
 				repo,
-				root: repo === SHOP ? shop : other,
+				root,
 				source: "declared",
 				addedAt: "2026-09-27T00:00:00.000Z",
 			})),
@@ -220,6 +228,7 @@ beforeAll(async () => {
 	write(shop, {
 		"src/a.ts": "1\n",
 		"src/old.ts": "1\n",
+		"src/coupons.ts": "1\n",
 		"src/dir/x.ts": "1\n",
 		"src/dir/sub/y.ts": "1\n",
 		"elsewhere.ts": "1\n",
@@ -238,6 +247,8 @@ beforeAll(async () => {
 	commit(shop, "change the ledger under its former name");
 	git(shop, "mv", "src/old.ts", "src/ledger.ts");
 	commit(shop, "rename the ledger");
+	git(shop, "rm", "-q", "src/coupons.ts");
+	commit(shop, "delete the coupons");
 	write(shop, { "src/a.ts": "4\n" });
 	writeBoard(board(2, [], "a draft edit"));
 	commit(shop, "edit the draft and a.ts");
@@ -280,12 +291,13 @@ test("a binding to a directory counts every file below it, and a part that drill
 	expect(answer.skipped.find((skip) => skip.subject.id === "pU")?.reason).toBe("unbound");
 });
 
-test("a renamed file keeps the history it had under its former name", async () => {
+test("a renamed file keeps the history it had under its former name, and a deleted file is read up to its deletion", async () => {
 	const answer = await behind(board(2, [], "a draft edit"));
 	expect(partSubjects(answer, "pR")).toEqual([
 		"rename the ledger",
 		"change the ledger under its former name",
 	]);
+	expect(partSubjects(answer, "pG")).toEqual(["delete the coupons"]);
 });
 
 test("an unregistered repository stays silent, and a part pinned to a ref its checkout does not have out is skipped", async () => {
@@ -300,12 +312,23 @@ test("an unregistered repository stays silent, and a part pinned to a ref its ch
 		reason: "ref-not-checked-out",
 		ref: { named: "elsewhere", checkedOut: "main" },
 	});
+	expect(answer.skipped.find((skip) => skip.subject.id === "pV")).toMatchObject({
+		reason: "checkout-unavailable",
+		repo: GONE,
+	});
 	expect(answer.commits.every((one) => one.repo !== STRANGER)).toBe(true);
 });
 
-test("a checkout without the last change's commit counts the commits after its time", async () => {
-	const answer = await behind(board(2, [], "a draft edit"));
-	expect(partSubjects(answer, "pO")).toEqual(["other after the board"]);
+test("a checkout without the last change's commit counts the commits after its time, and its next commit reaches a remembered answer", async () => {
+	const reading = lens.createBehindReading();
+	const current = board(2, [], "a draft edit");
+	expect(partSubjects(await behind(current, reading), "pO")).toEqual(["other after the board"]);
+	write(other, { "lib.ts": "3\n" });
+	commit(other, "other later");
+	expect(partSubjects(await behind(current, reading), "pO")).toEqual([
+		"other later",
+		"other after the board",
+	]);
 });
 
 test("an edit in place moves the last change, and the commit that carries it with code counts for nothing", async () => {
@@ -329,8 +352,9 @@ test("a board file Git does not track is a change no commit holds, and one Git i
 	const fresh = join(shop, "vault", "Fresh.semantic.json");
 	writeBoard(board(1), fresh);
 	expect((await behind(board(1), undefined, fresh)).lastChange.kind).toBe("uncommitted");
-	write(shop, { ".gitignore": "vault/Ignored.semantic.json\n" });
-	const ignored = join(shop, "vault", "Ignored.semantic.json");
+	// A space in the name, as most board names have one, must not change what Git answers.
+	write(shop, { ".gitignore": "vault/Ignored board.semantic.json\n" });
+	const ignored = join(shop, "vault", "Ignored board.semantic.json");
 	writeBoard(board(1), ignored);
 	const ignoredAnswer = await behind(board(1), undefined, ignored);
 	expect(ignoredAnswer.lastChange).toEqual({ kind: "unknown", reason: "board-file-ignored" });

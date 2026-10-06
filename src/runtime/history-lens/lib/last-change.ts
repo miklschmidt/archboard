@@ -36,6 +36,14 @@ type LastChange =
 const VERSIONS_PER_BATCH = 8;
 
 /**
+ * The header `git cat-file --batch` writes before an object it found:
+ * `<object id> <type> <size>`. For a name it cannot find it writes the name
+ * and `missing`, and a name holds every space of its path, as most board
+ * names have one, so only this whole shape says that an object follows.
+ */
+const FOUND_HEADER = /^[0-9a-f]{40,64} [a-z]+ (\d+)$/u;
+
+/**
  * A board file as a commit holds it, or undefined when it is not a board this
  * build reads. A version from before a schema migration may not be.
  * @param bytes The file's bytes at that commit.
@@ -111,13 +119,13 @@ async function readBlobs(
 	let at = 0;
 	for (let read = 0; read < specs.length; read += 1) {
 		const end = output.indexOf(0x0a, at);
-		const header = new TextDecoder().decode(output.subarray(at, end)).split(" ");
+		const found = FOUND_HEADER.exec(new TextDecoder().decode(output.subarray(at, end)));
 		at = end + 1;
-		if (header.length !== 3) {
+		if (found === null) {
 			blobs.push(undefined);
 			continue;
 		}
-		const size = Number(header[2]);
+		const size = Number(found[1]);
 		blobs.push(output.subarray(at, at + size));
 		at += size + 1;
 	}
