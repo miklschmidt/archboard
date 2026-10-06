@@ -644,9 +644,9 @@ files outside it.
 TASK-367.10 reads `.m` files with `tree-sitter-objc` 3.0.2, and also each
 `.h` file in which a line outside a comment starts with `@interface`,
 `@protocol`, `@class`, `@end`, `@import` or `#import`. Any other `.h` file is
-read as C++, as before. The text of a header decides how it is read, and its
-pair does not, because the cache keeps facts by the bytes of their file. In
-AFNetworking, 30 of the 31 headers are read as Objective-C; the other one holds
+read as C++, as before. The cache keeps facts by the bytes of their file. So
+the text of a header decides how it is read, and its pair does not. In
+AFNetworking, 30 of the 31 headers are read as Objective-C. The other one holds
 only macros. An Objective-C++ file (`.mm`) is read as text,
 as ADR 0046 decides, and pairs with no header.
 
