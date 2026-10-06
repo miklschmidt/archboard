@@ -265,10 +265,12 @@ The file app.css holds the values for both themes and gives each one a
 
 The picture has a depth vocabulary of its own, and the renderer draws it. Its
 light falls from the upper left. A card is a slab: a lit top face, a front edge
-along its foot and a soft shadow. A container is a plinth with a nameplate
-across its top. The region of a group is a mat with a caption tab. Each shadow
-is a stack of translucent shapes, with no filter or blur. The colors come from
-the `--slab-*`, `--plinth-*` and `--mat-*` tokens in theme.css, in both themes.
+along its foot and a soft shadow. A container is a tray cut into the page, with
+walls in shade at its top and left, a lit lip at its bottom and right, and a
+raised nameplate against its top wall. The region of a group is a mat with a
+caption tab. Each shadow is a stack of translucent shapes, with no filter or
+blur. The colors come from the `--slab-*`, `--tray-*` and `--mat-*` tokens in
+theme.css, in both themes.
 The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the construction.

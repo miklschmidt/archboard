@@ -185,9 +185,10 @@ the palette `--semantic-<name>`, whose names the kinds and groups of a vault
 use.
 `--diagram-edge` paints relationships that have no palette color, and the
 lifelines of a sequence. It is separate from `--muted-foreground`.
-`--diagram-glow` is the light that a traffic pulse mixes into its line. The `--slab-*`, `--plinth-*` and `--mat-*`
-colors paint the faces, front edges and shadows of the picture's cards,
-containers and group regions (ADR 0044).
+`--diagram-glow` is the light that a traffic pulse mixes into its line. The
+`--slab-*` colors paint the faces, front edges and shadows of the picture's
+cards, the `--tray-*` colors its containers, and the `--mat-*` colors its group
+regions (ADR 0044).
 `src/ui/theme/app.css` imports the file and holds every value that is not a
 color.
 
