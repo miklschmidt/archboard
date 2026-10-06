@@ -57,18 +57,17 @@ function lineOf(file: string, symbol?: string, kind: "file" | "directory" = "fil
 }
 
 describe("the line of a bound symbol", () => {
+	// How a symbol matches a definition (`post` finds `Ledger.post`) is the code-facts owner's.
 	test("is where the file defines it, whether a function or a member of a class", async () => {
 		expect(await lineOf("src/ledger.ts", "settle")).toBe(8);
 		expect(await lineOf("src/ledger.ts", "Ledger.post")).toBe(5);
-		expect(await lineOf("src/ledger.ts", "post")).toBe(5);
 	});
 
-	test("is nothing for a binding that names no symbol, a directory, or a symbol the file does not define", async () => {
+	test("is nothing for a binding that names no symbol, a directory, or a symbol the file only uses", async () => {
 		expect(await lineOf("src/ledger.ts")).toBeUndefined();
 		expect(await lineOf("src", "settle", "directory")).toBeUndefined();
-		// `toFixed` is used in the file and `missing` is not there: only a definition counts.
+		// The file uses `toFixed` and does not define it: only a definition counts.
 		expect(await lineOf("src/ledger.ts", "toFixed")).toBeUndefined();
-		expect(await lineOf("src/ledger.ts", "missing")).toBeUndefined();
 	});
 
 	test("is nothing for a file that code facts read as text, or that is gone", async () => {

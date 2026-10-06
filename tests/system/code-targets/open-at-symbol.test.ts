@@ -62,20 +62,17 @@ describe("open code at the bound symbol", () => {
 		});
 	});
 
-	test.each([
-		["a binding without a symbol", { path: "src/ledger.ts" }],
-		["a symbol the file does not define", { path: "src/ledger.ts", symbol: "missing" }],
-		["a symbol on a directory", { path: "src", symbol: "settle" }],
-	])("opens the file as it always did for %s", async (_name, binding) => {
+	// Each way to have no line (no symbol, a directory, text) is the symbol-line owner's.
+	test("opens the file as it always did where the file does not define the symbol", async () => {
 		await using resources = new AsyncDisposableStack();
 		const { fixture, invocation } = await openerAtLine(resources);
-		fixture.writeBinding({ repo: REPOSITORY, ...binding });
+		fixture.writeBinding({ repo: REPOSITORY, path: "src/ledger.ts", symbol: "missing" });
 
 		const result = await open(fixture);
 		expect(result.status).toBe(200);
 		expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({ success: true });
 		expect(await invocation.waitForCapture()).toMatchObject({
-			target: join(fixture.checkout, binding.path),
+			target: join(fixture.checkout, "src/ledger.ts"),
 			extra: ["--at=1"],
 		});
 	});

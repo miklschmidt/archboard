@@ -36,18 +36,11 @@ test.each([
 	expect(githubUrlForBinding(binding)).toBeUndefined();
 });
 
+// Which ref a link names is the tree owner's above.
 test.each([
 	[
-		{ repo: "github.com/acme/repo", path: "src/a b.ts", commit: "deadbeef" },
-		"https://github.com/acme/repo/blob/deadbeef/src/a%20b.ts#L12",
-	],
-	[
-		{ repo: "github.com/acme/repo", path: "src/a.ts", branch: "release/2.1" },
-		"https://github.com/acme/repo/blob/release%2F2.1/src/a.ts#L12",
-	],
-	[
-		{ repo: "github.com/acme/repo", path: "src/a.ts" },
-		"https://github.com/acme/repo/blob/HEAD/src/a.ts#L12",
+		{ repo: "github.com/acme/repo", path: "src/a b.ts", branch: "release/2.1" },
+		"https://github.com/acme/repo/blob/release%2F2.1/src/a%20b.ts#L12",
 	],
 	// The repository root is a directory, which has no line to link to.
 	[{ repo: "github.com/acme/repo", path: "" }, "https://github.com/acme/repo/tree/HEAD"],
