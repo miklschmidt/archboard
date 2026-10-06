@@ -1,18 +1,22 @@
-// A C or C++ header and its source file (ADR 0046, TASK-367.09). A part is
-// often bound to `ledger.c` while its interface is declared in `ledger.h`, so
-// the bound code of a part bound to either file is both: the pair.
+// A C, C++ or Objective-C header and its source file (ADR 0046, TASK-367.09,
+// TASK-367.10). A part is often bound to `ledger.c` while its interface is
+// declared in `ledger.h`, so the bound code of a part bound to either file is
+// both: the pair.
 //
 // The pair of a file is the file of the other role with the same name in the
-// same directory (`ledger.h` beside `ledger.c`, `.hpp` beside `.cpp`). A
-// header kept apart from its source, as `include/shop/ledger.h` for
+// same directory (`ledger.h` beside `ledger.c`, `Ledger.h` beside `Ledger.m`,
+// `.hpp` beside `.cpp`). A header kept apart from its source, as `include/shop/ledger.h` for
 // `src/ledger.c`, pairs only when it is the one file of its name and role in
 // the checkout, because two candidates cannot be told apart without the
 // build.
 
 import path from "node:path";
 
-/** The extensions of a C or C++ source file. */
-const SOURCES: readonly string[] = [".c", ".cc", ".cpp", ".cxx"];
+/**
+ * The extensions of a C, C++ or Objective-C source file. An Objective-C++
+ * file (`.mm`) is read as text (ADR 0046), so it pairs with no header.
+ */
+const SOURCES: readonly string[] = [".c", ".cc", ".cpp", ".cxx", ".m"];
 /** The extensions of a C or C++ header. */
 const HEADERS: readonly string[] = [".h", ".hh", ".hpp", ".hxx"];
 
