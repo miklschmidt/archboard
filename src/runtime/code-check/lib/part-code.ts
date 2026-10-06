@@ -260,5 +260,6 @@ export {
 	type ReadPart,
 	type RepoCheckout,
 	type SkippedPart,
+	isTestPath,
 	partCodesOf,
 };

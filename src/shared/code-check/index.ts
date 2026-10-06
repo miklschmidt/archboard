@@ -15,7 +15,14 @@
 // and the skip `symbol-unparsed`. TASK-367.07 judges the relationships between
 // bound parts by the evidence that joins their code: `RELATIONSHIP_UNDRAWN`,
 // `RELATIONSHIP_BACKWARDS`, `RELATIONSHIP_UNSUPPORTED`, the evidence kind half
-// of `ANCHOR_MISMATCH`, and the skip `ends-overlap`.
+// of `ANCHOR_MISMATCH`, and the skip `ends-overlap`. TASK-368.10 holds each
+// container's interface (ADR 0044) against what the module it binds exposes:
+// `ENTRY_POINT_UNEXPOSED`, a warning on an entry point whose code the module
+// does not expose; `CALLER_UNDRAWN`, a warning (information on a candidate) on
+// a hidden part whose exposed code a file outside the module uses at run time
+// with no caller on the board; `EXPOSED_UNUSED`, information on the container,
+// for exposed names no file outside the module uses; and the skip
+// `exposure-unknown`.
 
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@/shared/semantic-policy/index";
@@ -89,6 +96,10 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  * - `ends-overlap`: a relationship with no anchor whose ends hold one another
  *   or bind the same code. Evidence never joins such parts, so the check
  *   cannot tell whether the code supports it (TASK-367.07).
+ * - `exposure-unknown`: a container bound to a module whose root files no
+ *   language the check reads has, or whose `package.json` `exports` names no
+ *   file of the checkout, so its interface is not held to what the module
+ *   exposes (TASK-368.10). Its `detail` names the module.
  * - `language-server-missing`: no language server for a language on this
  *   machine: it is not installed, `language-servers.json` turns it off, or
  *   that file is not valid. Said once for the language, with no subject and
@@ -117,6 +128,7 @@ const CodeCheckSkipSchema = z
 			"ends-overlap",
 			"language-server-missing",
 			"language-server-failed",
+			"exposure-unknown",
 		]),
 		board: z.string().optional(),
 		variant: z.string().optional(),

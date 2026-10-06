@@ -2,9 +2,10 @@
 // imports, read by tree-sitter where a grammar reads the file and as text
 // everywhere else, and cached in this process by the file's content.
 //
-// The code check asks for the facts of a file and where a symbol is defined.
-// It never sees tree-sitter, a grammar or a query. TypeScript and TSX have an
-// adapter (TASK-367.06); every other file gets the text reading.
+// The code check asks for the facts of a file, where a symbol is defined and
+// what a module exposes. It never sees tree-sitter, a grammar or a query.
+// TypeScript and TSX have an adapter (TASK-367.06); every other file gets the
+// text reading. Each language says what its module exposes (TASK-368.10).
 
 export {
 	type Definition,
@@ -20,6 +21,13 @@ export {
 } from "@/runtime/code-facts/lib/facts";
 export { type DefinitionSite, definitionSite } from "@/runtime/code-facts/lib/definition-site";
 export { type Accept, type Found, findSymbol } from "@/runtime/code-facts/lib/lookup";
+export {
+	type ExposedName,
+	type ModuleExposure,
+	moduleExposure,
+	moduleOf,
+	within,
+} from "@/runtime/code-facts/lib/module-exposure";
 export { type CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 export { neverRead } from "@/runtime/code-facts/lib/never-read";
 export {

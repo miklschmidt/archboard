@@ -478,4 +478,14 @@ async function evidenceOf(
 	return { pieces: firstOfEach(pieces), parsed };
 }
 
-export { type BoardEvidence, type EvidenceReading, type Piece, evidenceOf, lineagesOf };
+export {
+	type BoardEvidence,
+	type EvidenceReading,
+	type Owners,
+	type Piece,
+	evidenceOf,
+	lineagesOf,
+	ownersAtLine,
+	ownersOf,
+	ownersOfSite,
+};
