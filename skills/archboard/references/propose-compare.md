@@ -107,16 +107,17 @@ nothing states where its code will live, so it stays unbound.
 ## Design it twice
 
 The first interface of a module is rarely its best one. When the request asks
-for alternatives, or for the interface of a module that does not exist yet,
-draft two or more designs and put them side by side:
+for alternatives, draft two or more designs. Do the same for the interface of
+a module that nobody has built. Then put the designs side by side:
 
 1. Branch each draft from the same variant, one for each constraint the
    request names or the design leaves open, such as "callers reach one entry
    point" against "each caller reaches the function it uses". Name each draft
    after its constraint. Two drafts under one constraint are one design drawn
    twice.
-2. Draw each draft with steps 1 to 3. The parts the drafts share keep their
-   ids, so every draft compares with the others by identity.
+2. Edit each draft as steps 1 to 3 of the recipe above do. The parts the
+   drafts share keep their ids, so every draft compares with the others by
+   identity.
 3. Put the interface measures side by side:
    `archboard semantic compare <board> --variant <first draft> --beside <second draft>`,
    with one more `--beside` for each further draft. In `interfaceMeasures`,
@@ -126,26 +127,29 @@ draft two or more designs and put them side by side:
    each variant: entry points, hidden parts, callers, outgoing relationships
    and pass-through entry points. The entry points and the pass-through entry
    points are also named. A node with no children on a variant says
-   `holdsParts: false` there. Run
-   `semantic compare --variant <draft>` once for each further draft to read
-   that draft's own `interfaceChanges`.
-4. Draw every draft through the same board view, and open the pictures beside
-   the counts.
+   `holdsParts: false` there. `interfaceChanges` is the first draft's only:
+   run `archboard semantic compare <board> --variant <draft>` for each
+   further draft's.
+4. Render every draft through the same board view, as the recipe above
+   renders its two pictures, and open the pictures beside the counts.
 5. Report the counts of each variant as the answer gives them, and what each
    draft costs its callers. Never combine the counts into one score, rank the
    drafts, or call a module deep or shallow: a board says which parts callers
    reach, not what the code behind them does. A pass-through entry point is a
-   question for the reader, never a fault.
-6. When the request asks for a choice, adopt the chosen draft (step 4) or keep
-   it as a draft. Then shelve each other draft with the reason it lost:
+   question for the reader, never a fault. A draft that draws no caller of a
+   container has no entry points there: say so, not that its interface is
+   small.
+6. When the request picks a draft, shelve each other draft with the reason it
+   lost:
    `archboard semantic shelve <board> --variant <draft> --reason "<why>" --expect-version <n> --doing "..."`.
    A shelved draft keeps its content, so its measures stay readable beside the
-   reason.
+   reason. The chosen draft stays a draft. When the request says to adopt it,
+   adopt it as step 4 of the recipe above does.
 
 Archboard's own board `Board persistence` shows how boards persist. On it,
-`Board store` is the module that reads and writes every board. Its callers
-reach several of its functions. Here are two drafts of its interface, both
-from the current variant:
+`Board store` is the module that reads and writes every board, and
+`Archboard server` calls several of its functions. Here are two drafts of its
+interface, both from the current variant:
 
 ```bash
 archboard semantic branch "Board persistence" --as "One index" --summary "Callers reach the store only through index.ts" --expect-version 28 --doing "drafting a one-index store"
@@ -159,9 +163,9 @@ The answer has one line for `Board store`, with the five counts of
 sends exactly one call on, of the kind it receives, the answer names it as a
 pass-through entry point: ask what it hides before you keep it.
 `Entry per job` has more entry points and fewer hidden parts. Report each
-row and what each draft costs a caller, and let the person choose. When told to keep `One index`, shelve
-`Entry per job` with the reason, for example "each caller then depends on how
-the store splits its work".
+row and what each draft costs a caller, and let the person choose. When told
+to keep `One index`, shelve `Entry per job` with the reason, for example "each
+caller then depends on how the store splits its work".
 
 Read [variants](references/variants.md) for what the comparison counts and
 what it is read against, for a proposal that holds disagreements after its

@@ -396,6 +396,9 @@ Each recipe, and the request it is for:
   name.
 - [propose and compare a change](references/propose-compare.md): propose a
   change as a variant, compare it, settle its disagreements, or adopt it.
+  Competing drafts of one interface follow its
+  [design it twice](references/propose-compare.md#design-it-twice): their
+  measures side by side, and the drafts not kept shelved with a reason.
 - [answer from a saved board](references/read.md): answer a question from a
   saved board, including which of its parts change most often in Git, and
   change nothing.
