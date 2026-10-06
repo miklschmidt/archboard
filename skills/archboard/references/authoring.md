@@ -102,16 +102,18 @@ without one, the part owns the whole file or directory. A changed symbol is a
 changed binding in a comparison. `archboard check` tests the path only;
 `archboard check --code` warns with `BINDING_SYMBOL_MISSING` when the bound
 file or directory does not define the symbol. Code facts read TypeScript and
-TSX, Python, C and C++, C# and .NET project files, Swift, Terraform and
-OpenTofu, Kubernetes manifests, docker-compose files, env files and Nix
-flakes. Any other file is read only as text: it must hold the symbol's last
-name, and nothing that needs references is judged in it. `check --code` names
-the kinds of file that it read as text in its `text-only` skip. A C or C++ part
-bound to a source file also owns its header, and one bound to a header owns its
-source file: the file of the other kind with the same name beside it, or the
-only one of that name in the checkout. So `symbol` can name what either file
-defines, and a C++ name is spelled with `::` or `.`: `shop::Ledger::post`,
-`Ledger.post`, `post`.
+TSX, Python, C and C++, Objective-C, C# and .NET project files, Swift,
+Terraform and OpenTofu, Kubernetes manifests, docker-compose files, env files
+and Nix flakes. Any other file, such as Objective-C++ (`.mm`), is read only as
+text: it must hold the symbol's last name, and nothing that needs references is
+judged in it. `check --code` names the kinds of file that it read as text in
+its `text-only` skip. A C, C++ or Objective-C part bound to a source file also
+owns its header, and one bound to a header owns its source file: the file of
+the other kind with the same name beside it, or the only one of that name in
+the checkout. So `symbol` can name what either file defines, and a C++ name is
+spelled with `::` or `.`: `shop::Ledger::post`, `Ledger.post`, `post`. An
+Objective-C method is named by its class and selector: `Ledger.post:by:`,
+`post:by:`.
 Includes resolve through the nearest `compile_commands.json` that Git lists;
 without one, against the including file's directory, the checkout root and
 each directory named `include`. A use of a name that a header declares reaches
@@ -562,8 +564,8 @@ of the package. It exposes the names that its `__all__` lists. Without
 `__all__`, it exposes every name that it defines or imports and that does not
 start with `_`. In Swift, the module is the directory of a target that
 `Package.swift` declares. It exposes the `open`, `public` and `package`
-declarations of all its files. In C and C++, the module is a bound directory.
-Its public headers are the headers below its `include` directory, or else the
+declarations of all its files. In C, C++ and Objective-C, the module is a
+bound directory. Its public headers are the headers below its `include` directory, or else the
 headers directly in it whose source file is in it too. It exposes what they
 declare. In Terraform and OpenTofu, the module is a directory of `.tf` or
 `.tofu` files, and a module in a directory below it is another module. It

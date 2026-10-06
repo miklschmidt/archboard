@@ -158,7 +158,8 @@ What causes the error lines:
   puts 92% of the file inside `ERROR` nodes. With its 6 uses removed, 1 line is
   in error. SDWebImage `SDWebImageManager.m` (816 lines) has no error lines.
   The Objective-C adapter (TASK-367.10) needs a way around this, for example
-  to remove known attribute macros before it parses.
+  to remove known attribute macros before it parses. It blanks them; see
+  "Reading Objective-C through its adapter".
 - Objective-C++ (`.mm`) has no grammar. `RLMObjectSchema.mm` from
   `realm/realm-swift` has 355 error lines of 399 under the Objective-C grammar.
 
@@ -637,6 +638,110 @@ is, passed on by the header. leveldb's checkout publishes 15 headers under
 headers and 206 names, 98 of them at the code of a source file. Redis's `src`
 has 67 public headers and 6,099 names, and its callers can be in the 577 C
 files outside it.
+
+#### Reading Objective-C through its adapter
+
+TASK-367.10 reads `.m` files with `tree-sitter-objc` 3.0.2, and also each
+`.h` file in which a line starts with `@interface`, `@protocol`, `@class`,
+`@end`, `@import` or `#import`. Any other `.h` file is read as C++, as before.
+The facts of a file depend on its bytes alone, because the cache keeps them by
+the hash of the bytes. So the text of a header decides how it is read, and its
+pair does not. In AFNetworking, 30 of the 31 headers are read as Objective-C;
+the other one holds only macros. An Objective-C++ file (`.mm`) is read as text,
+as ADR 0046 decides, and pairs with no header.
+
+The C adapter reads what an Objective-C file shares with C: functions,
+variables, types, macros, the names that they use, and `#include` and
+`#import`, which include in the same way. The Objective-C adapter adds these:
+
+- Classes, categories and protocols, with their methods, properties and
+  instance variables. A member is qualified with `::`, as the C family
+  qualifies a member, and a method is named by its selector:
+  `Ledger::post:by:`. A category is `Ledger(Audit)`, and its methods belong to
+  the class. A binding can spell a method `Ledger.post:by:`.
+- Message sends. A send is a call of its selector. Where the syntax shows the
+  class of the receiver, the send is qualified by it: a class name, `self`,
+  `[[Ledger alloc] init]`, or a parameter or a local that is declared as
+  `Ledger *`. Any other receiver gives `.post:by:`, which only a language
+  server can resolve (TASK-367.15).
+- An `@interface` and its methods are declarations. Their code is the
+  `@implementation`, which is in the same file or in the pair of the header.
+  So a send that an `#import` finds is resolved at the method's code.
+- A header exposes its interfaces, categories and protocols. A class
+  extension, `@interface Ledger ()`, exposes nothing, and nothing in an `.m`
+  file is exposed. The module rule of C and C++ reads an Objective-C directory
+  in the same way: its public headers are the headers whose `.m` file is in it.
+- `@import Name;` names a module, not a file. It is read as
+  `#import <Name/Name.h>`, the umbrella header of a framework, and
+  `@import Name.Part;` as `#import <Name/Part.h>`. The SDK's modules, such as
+  `Foundation`, are outside the checkout and resolve to no file.
+
+Before the parse, the adapter replaces the macros that the grammar cannot read
+with spaces of the same length. Every line break stays, so every line keeps its
+place. It blanks these macros:
+
+- The attribute macros of Apple's SDK, from its own list: availability,
+  nullability regions such as `NS_ASSUME_NONNULL_BEGIN`, Swift names,
+  initializer and ownership notes. The check reads no SDK header.
+- A macro that the same file defines only as one of those, or as nothing. A
+  log macro that one branch of an `#if` defines as code stays.
+- A macro whose name ends with one of those after `_`, as a project wraps the
+  SDK's macro under its own prefix: `AF_API_AVAILABLE`.
+
+`NS_ENUM(NSInteger, Kind)` and its kin become `enum Kind`, with the name in its
+own place. ADR 0046 also adds to the list a macro that another header of the
+checkout defines as an SDK macro. That is not built, because the facts of a
+file depend on its bytes alone. The rule for the prefix covers the two wrappers
+that AFNetworking defines in `AFCompatibilityMacros.h`.
+
+Measured on 2026-10-06 with Bun 1.4.2, on shallow clones of AFNetworking
+(`d9f589c`, 80 `.m` and `.h` files, 15,549 lines) and SDWebImage (`c3ad5e1`,
+263 files, 41,444 lines). "In error nodes" counts each line inside an error
+node, as TASK-367.01 counted them. "Not parsed" counts the lines that the
+adapter skips: the pieces of an error node that are not a whole declaration.
+
+| Checkout     | In error nodes, before | after | Not parsed, before | after | Definitions, before | after | Cold   | Warm  |
+| ------------ | ---------------------- | ----- | ------------------ | ----- | ------------------- | ----- | ------ | ----- |
+| AFNetworking | 2,562                  | 3     | 416                | 6     | 1,266               | 1,462 | 307 ms | 7 ms  |
+| SDWebImage   | 1,871                  | 622   | 486                | 29    | 3,553               | 4,145 | 546 ms | 49 ms |
+
+`AFURLSessionManager.m` went from 1,170 lines in error nodes to 1. These
+causes remain:
+
+- A method whose header is written twice, under `#if` and `#else`, with one
+  body. In SDWebImage `SDAnimatedImageView.m`, one error node spans 619 lines,
+  but its methods parse whole, so the adapter skips only 20 lines.
+- An `else if` that only one branch of an `#if` holds.
+- `__has_warning(...)` in a condition.
+
+A temporary vault had two boards. The first has 10 parts bound to AFNetworking
+files and 6 relationships. The second has 7 parts bound to SDWebImage files and
+5 relationships. The real check ran both boards in 471 to 532 ms cold and 148 to
+173 ms warm. Each finding was read against the code:
+
+- The planted errors: `BINDING_SYMBOL_MISSING` for
+  `AFURLSessionManager.noSuchThing:`, and `ANCHOR_SYMBOL_MISSING` for an anchor
+  whose send is not in the file.
+- `RELATIONSHIP_BACKWARDS` where a relationship was drawn the wrong way: the
+  session manager uses `AFSecurityPolicy`, and the SDWebImage manager uses
+  `SDImageCache`.
+- Undrawn uses, each resolved through an `#import`: the HTTP session manager
+  subclasses `AFURLSessionManager` and makes an `AFJSONResponseSerializer`;
+  the session manager uses `AFNetworkReachabilityManager`; the HTTP session
+  manager reads `AFSSLPinningModeNone`, which `NS_ENUM` declares and which
+  only the rewrite of `NS_ENUM` brings in; `UIView+WebCache.m` uses
+  `SDImageCache`.
+- The anchors that cite real sends, such as
+  `dataTaskWithRequest:uploadProgress:downloadProgress:completionHandler:` and
+  `loadImageWithURL:options:context:progress:completed:`, hold.
+
+One limit is inheritance. `UIImageView+WebCache.m` sends
+`sd_internalSetImageWithURL:...` to `self`, a `UIImageView`, and the category
+of `UIView` defines that method. A send is qualified by the class that the
+syntax shows. That class does not define the method, so the relationship from
+the image view to the view category is `RELATIONSHIP_UNSUPPORTED`, which is
+information. A send to a subclass, to `super`, or to a value whose class the
+syntax does not show needs clangd (TASK-367.15).
 
 #### Reading Terraform with the HCL grammar
 
