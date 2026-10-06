@@ -1,7 +1,7 @@
 ---
 id: TASK-369.06
 title: archboard-dev sets a task's footprint against its proposal at close
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:19'
@@ -28,8 +28,8 @@ When a task closes, archboard-dev inspects each proposal against the code as bui
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The archboard-dev closing steps read the footprint of the task's commits against each proposal before adoption
-- [ ] #2 A changed part that no proposal names is either added to a proposal or explained in the task notes
+- [x] #1 The archboard-dev closing steps read the footprint of the task's commits against each proposal before adoption
+- [x] #2 A changed part that no proposal names is either added to a proposal or explained in the task notes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -89,4 +89,12 @@ Second trial, no proposal: Renderer layout from the base of TASK-368.08 by the s
 ## Gate
 
 bun run lint pass; bun run test:repository 20 pass, 0 fail; bun run fmt:check: skills/archboard-dev/SKILL.md is clean; the only file it lists is src/runtime/history-lens/lib/coupling.ts of TASK-369.04, in progress by another agent.
+
+Parent verified on 2026-10-06: the step's base command gives a375e9e77 for TASK-369.05 and 155bdef83 for TASK-368.08, as the trial reported.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard-dev's closing steps now set the task's commits against each proposal before adoption (new step 3): the base is the parent of the first commit with the task's Refs trailer outside backlog/ and .archboard/, the footprint is read per proposal, other tasks' commits in the range are left out by their trailers, a changed part that no proposal names is added to the proposal when it changed what the board draws and explained in the notes otherwise, and a restated proposal is named 'TASK-n after TASK-m'. Verified by a trial on a vault copy for TASK-369.05 and TASK-368.08, recorded in the notes, and by running the base rule on both tasks.
+<!-- SECTION:FINAL_SUMMARY:END -->
