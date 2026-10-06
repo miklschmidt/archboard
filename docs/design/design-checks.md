@@ -91,6 +91,122 @@ The user must approve these dependencies. Archboard has no build step (ADR
 0014). Every grammar must load under Bun from a published WebAssembly file. If a
 grammar has no such file, the cost to build one must be known.
 
+#### Grammars measured under Bun
+
+TASK-367.01 measured every grammar on 2026-10-06 with Bun 1.4.2 and
+`web-tree-sitter` 0.27.0 (MIT). That runtime loads grammars of ABI 13 to 15.
+Each grammar loaded from its `.wasm` file in `node_modules` in 12 ms or less,
+with no build step. The parse time is the median of four parses after a first
+one. Error lines are the lines inside an `ERROR` node. Tree-sitter recovers
+from such a node and parses the rest of the file.
+
+| Grammar     | Package                                 | Version | Licence    | `.wasm` published | ABI | `.wasm` size | Real file parsed                                         | Lines   | Parse time | Error lines |
+| ----------- | --------------------------------------- | ------- | ---------- | ----------------- | --- | ------------ | -------------------------------------------------------- | ------- | ---------- | ----------- |
+| TypeScript  | `tree-sitter-typescript`                | 0.23.2  | MIT        | yes               | 14  | 1381 KiB     | this repository, every tracked `src/**/*.ts`, 1781 files | 368,793 | 948 ms     | 1           |
+| TSX         | `tree-sitter-typescript`                | 0.23.2  | MIT        | yes               | 14  | 1412 KiB     | this repository, every tracked `src/**/*.tsx`, 187 files | 32,682  | 80 ms      | 0           |
+| Python      | `tree-sitter-python`                    | 0.25.0  | MIT        | yes               | 15  | 447 KiB      | CPython `Lib/_pydecimal.py`                              | 6,432   | 16 ms      | 0           |
+| C#          | `tree-sitter-c-sharp`                   | 0.23.5  | MIT        | yes               | 15  | 5225 KiB     | Roslyn `Binder_Expressions.cs`                           | 12,560  | 62 ms      | 0           |
+| Swift       | `@lumis-sh/wasm-swift` (grammar 0.7.3)  | 0.26.3  | MIT        | not by upstream   | 15  | 3737 KiB     | swift-syntax `Sources/SwiftParser/Expressions.swift`     | 2,927   | 16 ms      | 5           |
+| Objective-C | `tree-sitter-objc`                      | 3.0.2   | MIT        | yes               | 14  | 5193 KiB     | AFNetworking `AFURLSessionManager.m`                     | 1,274   | 8 ms       | 1,170       |
+| C           | `tree-sitter-c`                         | 0.24.1  | MIT        | yes               | 15  | 611 KiB      | SQLite `src/btree.c`                                     | 11,658  | 28 ms      | 41          |
+| C++         | `tree-sitter-cpp`                       | 0.23.4  | MIT        | yes               | 14  | 3354 KiB     | LLVM `SelectionDAG/DAGCombiner.cpp`                      | 32,562  | 100 ms     | 17          |
+| HCL         | `@tree-sitter-grammars/tree-sitter-hcl` | 1.2.0   | Apache-2.0 | yes               | 14  | 90 KiB       | terraform-aws-modules `terraform-aws-vpc/main.tf`        | 1,543   | 7 ms       | 0           |
+| Nix         | `@lumis-sh/wasm-nix` (grammar 0.3.0)    | 0.26.3  | MIT        | not by upstream   | 15  | 82 KiB       | nixpkgs `pkgs/top-level/all-packages.nix`                | 10,767  | 20 ms      | 0           |
+
+The HCL package has two grammars, `hcl` and `terraform`. Both gave the same
+result on the Terraform file. The foreign files come from these commits:
+cpython `85c03d47a2`, roslyn `1441e946e7`, swift-syntax `624d85ee1b`,
+AFNetworking `d9f589cc2c`, sqlite `466e0851d9`, llvm-project `197fb4b24a`,
+terraform-aws-vpc `b3abd6df2e` and nixpkgs `9dfea86cda`. This repository was at
+`a78c14bfd`.
+
+What causes the error lines:
+
+- TypeScript: one regular expression with raw control characters, in
+  `src/transformers/semantic-renderer/lib/svg/primitives.ts`.
+- C and C++: macros that the grammar cannot expand, for example
+  `SQLITE_NOINLINE` and `LLVM_DEBUG(...; ...)`.
+- Swift: newer syntax, for example module selectors and `#if` around an
+  attribute. swift-nio `ByteBuffer-core.swift` has 8 error lines of 1,575.
+- Objective-C: one unknown macro after a declaration, `AF_API_AVAILABLE(...)`,
+  puts 92% of the file inside `ERROR` nodes. With its 6 uses removed, 1 line is
+  in error. SDWebImage `SDWebImageManager.m` (816 lines) has no error lines.
+  The Objective-C adapter (TASK-367.10) needs a way around this, for example
+  to remove known attribute macros before it parses.
+- Objective-C++ (`.mm`) has no grammar. `RLMObjectSchema.mm` from
+  `realm/realm-swift` has 355 error lines of 399 under the Objective-C grammar.
+
+#### Swift and Nix have no upstream WebAssembly file on npm
+
+Swift: the npm package `tree-sitter-swift` stops at 0.7.1 and has no `.wasm`.
+The GitHub release 0.7.3 of `alex-pinkus/tree-sitter-swift` has one.
+`@lumis-sh/wasm-swift` 0.26.3 is built from the 0.7.3 tag, and it gives the same
+tree as the release file on both Swift files. A build from the npm 0.7.1 source
+with `tree-sitter build --wasm` took 36 s. That build is ABI 14 and parses 7 to
+23 times slower. It also puts 56 lines of `ByteBuffer-core.swift` in error,
+against 8 for 0.7.3. `@repomix/tree-sitter-wasms` 0.1.17 (Unlicense) has the
+same slow build. The other alternative is the release file itself. To use it,
+Archboard downloads it on install, which is a build step, or commits it, which
+puts a derived binary in Git.
+
+Nix: `nix-community/tree-sitter-nix` publishes no `.wasm` and no release. The
+npm package `tree-sitter-nix` stops at 0.0.2 from 2023. A build from the v0.3.0
+tag with `nix shell nixpkgs#tree-sitter -c tree-sitter build --wasm` took
+0.4 s. Before the first build, tree-sitter 0.26.11 downloads wasi-sdk 29
+(114 MB, 390 MB unpacked into `~/.cache/tree-sitter`) in 5 s. The build is ABI
+13, because the tag holds an old generated parser. It gives the same tree as
+`@lumis-sh/wasm-nix` 0.26.3, which is built from the same tag. A cheaper
+alternative exists for part of the work: `flake.lock` is JSON and needs no
+grammar. Only `flake.nix` outputs and derivation inputs need the Nix grammar
+(TASK-367.21 and TASK-367.22).
+
+#### Sources that were rejected
+
+- `tree-sitter-wasms` 0.1.13 was built with tree-sitter 0.20. Its files carry
+  the old `dylink` section, and `web-tree-sitter` 0.27 refuses to load them.
+- `@vscode/tree-sitter-wasm` 0.3.1 loads, but it has no Swift, Objective-C, HCL
+  or Nix grammar.
+- The whole `@lumis-sh/wasm-*` set covers all ten grammars in 27 MB, with no
+  dependencies and no install scripts. But it builds some grammars from a
+  branch and not from the release tag. `@lumis-sh/wasm-python` 0.26.5 names
+  grammar 0.25.0, but it is two commits later, where `expression_statement`
+  became a hidden supertype. Its tree for `_pydecimal.py` differs from the
+  0.25.0 release. The query `(expression_statement (call) @c)` finds 54 calls
+  with the release, and the `@lumis-sh` build refuses to compile it.
+  `@lumis-sh/wasm-hcl` 0.26.4 holds HCL 1.1.0, older than npm 1.2.0.
+- The npm name `tree-sitter-hcl` is a security placeholder (`0.0.1-security`).
+
+#### Recommended packages
+
+The user must approve this list before TASK-367.02 records the engine. Every
+grammar is the upstream release, so a query is written against a tagged
+grammar. Swift and Nix come from `@lumis-sh`, because no upstream publishes
+them on npm. Both are built from the exact upstream tag.
+
+| Package                                 | Version | Licence    | Gives                  |
+| --------------------------------------- | ------- | ---------- | ---------------------- |
+| `web-tree-sitter`                       | 0.27.0  | MIT        | the runtime            |
+| `tree-sitter-typescript`                | 0.23.2  | MIT        | TypeScript and TSX     |
+| `tree-sitter-python`                    | 0.25.0  | MIT        | Python                 |
+| `tree-sitter-c-sharp`                   | 0.23.5  | MIT        | C#                     |
+| `tree-sitter-objc`                      | 3.0.2   | MIT        | Objective-C            |
+| `tree-sitter-c`                         | 0.24.1  | MIT        | C                      |
+| `tree-sitter-cpp`                       | 0.23.4  | MIT        | C++                    |
+| `@tree-sitter-grammars/tree-sitter-hcl` | 1.2.0   | Apache-2.0 | Terraform and OpenTofu |
+| `@lumis-sh/wasm-swift`                  | 0.26.3  | MIT        | Swift                  |
+| `@lumis-sh/wasm-nix`                    | 0.26.3  | MIT        | Nix                    |
+
+They also install `tree-sitter-javascript` 0.23.1, two nested
+`tree-sitter-c` 0.23.6, `node-addon-api` 8.9.2 and `node-gyp-build` 4.8.4, all
+MIT. The upstream grammar packages also ship native Node bindings, prebuilt
+binaries and their C sources. So the set puts 248 MB into `node_modules`, of
+which 23 MB is `.wasm`. The repository's `node_modules` is 1.4 GB today. Bun
+blocks the 9 `node-gyp` install scripts, because the repository does not trust
+these packages, and the code check needs none of them.
+
+The spike script is not in the repository. The notes of TASK-367.01 hold the
+commands that reproduce these numbers.
+
 ### Languages
 
 | Language    | Dependencies in the source                                | Declared interface                                                | Language server                         |
