@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:18'
-updated_date: '2026-10-06 10:15'
+updated_date: '2026-10-06 10:24'
 labels:
   - interfaces
   - ui
@@ -53,4 +53,6 @@ Decisions the ADR left open:
 - Outgoing relationships are not repeated: Sends to already lists the relationships that leave a container.
 - Owners: src/ui/semantic-board-canvas/tests/semantic-board-interface.test.tsx (rendered stage harness: draft variant on screen, pass-through words, a caller to the container itself, choosing an entry point picks it on the picture; a container nothing reaches) and the existing real-browser session in tests/system/browser/semantic-board-inspection.test.ts (pick a container, read its entry point, hidden count and caller, choose the entry point, the picture's selection follows).
 - Looked at it at 1920x1080 on a copy of the dogfood vault: Codex session (3 entry points, Gate protocol operations passes one call on, 5 hidden, 3 callers, the same as semantic inspect) in the light theme, and Browser client on Browser application (0 entry points, 19 hidden, no caller) in the dark theme.
+
+Gate (one lane at a time): fmt:check pass; lint exit 0; type-check exit 0; build:frontend exit 0; test:modules 3949 pass 0 fail; test:system 192 pass 0 fail; test:repository 20 pass 0 fail; test:serial-browser 19 owners, 24 pass 0 fail. readme:check lists all 13 assets stale, and they were stale before this change: every asset names src/shared among its sources, and f9f78af78 (TASK-368.02) changed it after the manifest was last made. No clip films a container's selection tab (the ask clip picks Timeout guard, a part with no children), so this change alters no asset's picture; none was refreshed.
 <!-- SECTION:NOTES:END -->
