@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 11:52'
+updated_date: '2026-10-06 12:07'
 labels:
   - code-check
   - cli
@@ -47,3 +47,25 @@ This is the tracer bullet of the code check: the whole path from a stored anchor
 6. Consumer skill verification step names check --code (SKILL.md and recipe verification steps), evals + coverage.json, eval:skill check; cli-command-audit.json.
 7. Dogfood: Archboard server@TASK-367.05 adds Code check (src/runtime/code-check), Code check route -> Code check, Code check -> Semantic board store (moves the route's board read); run ./bin/dogfood check --code and explain every finding.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built (495cd7147, 02e77d052): src/runtime/code-check (boards.ts picks the variant per board; claims.ts lists binding and anchor claims; checkouts.ts resolves checkouts and paths through src/runtime/code-target and lists readable files; readable-files.ts runs git ls-files --cached --others --exclude-standard; text-reading.ts is the text adapter; check.ts judges). The route reads boards through it, refuses NO_SUCH_DRAFT (422) and runs checkCode beside behind; behind still reads current variants. CLI: --variant (usage error without --code), NO_SUCH_DRAFT exit 2, finding lines with evidence, one skip line per reason with a count (checkouts named). Shared: subject kind step, diagnosticLine takes severity information, EvidenceKindSchema in semantic-policy, CodeEvidenceSchema and optional evidence on findings, CodeCheckSkipSchema with optional board, variant, subject, repo, ref.
+
+Decisions the ADR left open:
+1. Skipped subjects are only those the pass would have judged: a binding with a symbol, any binding on a named draft, an anchor. An unbound part or a symbol-less binding on the current variant is not listed.
+2. Skip reasons: repository-unregistered, ref-not-checked-out, path-ignored, path-never-read (Terraform state, .tfvars, .terraform), checkout-unavailable (once per repo, no subject; also when git ls-files fails), text-only (once per checkout read, no subject: the tracer bullet judges nothing that needs references). A skip carries board, variant, subject, repo, ref and detail (the code path for path-ignored and path-never-read); skip has no 'path' field, so 'path' keeps meaning the place in the board.
+3. An anchor is skipped as ref-not-checked-out only when a part at one of its ends binds the anchor's repository and is pinned to a ref its checkout does not have out; an end in another repository says nothing about the anchor's files. Other end skips (unbound, unregistered, ignored) do not skip the anchor (ADR: tests every anchor in a checkout it reads, also with an unbound end).
+4. A path that leaves the checkout, lexically or through a symbolic link, or an anchor path that is a directory, is not in the checkout: ANCHOR_PATH_MISSING (and BINDING_PATH_MISSING on a named draft). Each file read is realpath-checked to stay inside its checkout.
+5. On the current variant a bound path the resolver cannot find gets no code-pass finding: the plain check owns BINDING_PATH_MISSING there, and a missing path is the only finding about a binding. Gap found: the plain check's insideCheckout does not resolve symbolic links, so a current-variant binding whose link leaves the checkout gets neither finding.
+6. A directory binding with no file Git lists below it is path-ignored; one whose only listed files are never read is path-never-read.
+7. Last name: split on ::, ., /, #; strip a trailing [index] or (call); a whole word has no letter, digit, _ or $ beside it. Text cannot tell a definition from a reference, so a binding symbol holds wherever its last name stands in the file.
+8. No Git timeout of its own: git ls-files reads the index and working tree, and the request's signal (hang-up or stop) ends it; a timeout constant would live in timing.ts, outside this task's fence.
+9. NO_SUCH_DRAFT is refused inside checkout work (boards are read synchronously first); status 422, exit 2, and the message names every draft that exists on any board.
+10. --variant without --code is a usage error (stage code-check-variant), not an implied --code.
+11. evidence on CodeFindingSchema is optional with min 1, and the CLI prints each piece under its finding as 'kind, resolution, path:line'; no finding of this task carries one.
+12. Evals: one coverage row in part 4, evidence runtime-owner with no scenario: the command is mechanical validation, and each run's anchors are already graded per anchor. A harness outcome 'code-check-clean' (beside check-clean) would need src/runtime/skill-evaluation.
+
+Close of the proposal: Archboard server@TASK-367.05 matched the build (Code check binds src/runtime/code-check; Code check route -> Code check anchored at checkCode in code-check-route.ts; Code check -> Semantic board store anchored at readSemanticBoardAt in lib/boards.ts; the route's own call to the store removed). Given the board's scope as its summary and adopted at v46. ./bin/dogfood check: no diagnostics. Behind: my commits put Command interface (Vault check, Commands: vault.ts) and Skill evaluation (Evaluation inputs: evals) behind; both still right: Vault check still calls the code check route after the plain check (--variant is a query on the same call), and the coverage row adds no part.
+<!-- SECTION:NOTES:END -->
