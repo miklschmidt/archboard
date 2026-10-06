@@ -297,6 +297,69 @@ of the nixpkgs checkout. Each finding was right:
   `lib.nixosSystem` of nixpkgs.
 - Every other part held its output.
 
+#### Reading C and C++ through their adapters
+
+TASK-367.09 measured the C and C++ adapters on 2026-10-06 with Bun 1.4.2, on
+shallow clones of Redis (`7f44037`), SQLite (`6222fff`) and leveldb
+(`7ee830d`). One process read every tracked C and C++ file in one pass:
+
+| Checkout | Files | Lines   | Cold     | Warm  | Definitions | References | Includes | Resolved | Lines not parsed |
+| -------- | ----- | ------- | -------- | ----- | ----------- | ---------- | -------- | -------- | ---------------- |
+| Redis    | 796   | 377,340 | 3,474 ms | 55 ms | 31,385      | 58,130     | 3,236    | 1,550    | 2,845            |
+| SQLite   | 359   | 460,758 | 3,501 ms | 22 ms | 27,098      | 58,884     | 1,505    | 264      | 4,385            |
+| leveldb  | 133   | 28,900  | 377 ms   | 7 ms  | 3,233       | 6,769      | 778      | 498      | 112              |
+
+A `.h` file is read by the C++ grammar. Measured with the error lines of each
+grammar: the 84 headers of Redis `src` give 431 under C and 427 under C++,
+the 24 of SQLite `src` 20 under both, and the 56 headers of leveldb, which are
+C++, 1,434 under C and 163 under C++. The includes that resolve nowhere name
+the system's headers, the C++ library, and headers that the build generates,
+such as SQLite's `sqlite3.h`.
+
+Tree-sitter wraps everything after a preprocessor condition that it cannot
+close in one error node, while the declarations inside it parse whole: in
+SQLite `src/analyze.c`, one error node spans 1,871 of 2,013 lines. The
+adapter reads the whole declarations inside an error node, and only the
+pieces that are not a whole construct are code that did not parse. That took
+SQLite from 68,067 lines not parsed to 4,385, and Redis from 8,104 to 2,845.
+
+The longest single file was SQLite `autosetup/jimsh0.c`, 25,495 lines: about
+100 ms to parse and 145 ms to read its facts, in one turn of the event loop.
+No TypeScript file of this repository comes close, and a later task can split
+or skip such a file if a measurement of the server shows the need.
+
+A board of 12 parts bound to Redis `src` files and 7 relationships ran through
+the real check in 1,223 ms cold and 477 ms warm. A board of 9 parts bound to
+leveldb files and 5 relationships ran in 325 ms cold and 157 ms warm, with the
+same findings whether or not the checkout had a `compile_commands.json`
+(written by hand with CMake's `-I` directories, because the machine had no
+CMake). The findings, each read against the code:
+
+- The planted errors: `BINDING_SYMBOL_MISSING` for `aeNoSuchThing` and
+  `DBImpl::NoSuchThing`, `ANCHOR_SYMBOL_MISSING` for two anchors that name no
+  use.
+- Undrawn uses, every piece resolved through the includes: AOF, the cluster,
+  networking and the server core reach the dict part through `dict.h`
+  (`dictCreate`, `dictFetchValue`) and the SDS part through `sds.h`, which a
+  part binds as the header of `sds.c`; the database reaches the cluster
+  through the macro `CLUSTER_SLOTS` in `cluster.h`; leveldb's version set
+  constructs a `log::Writer`, and the database implementation constructs a
+  `TableBuilder` and calls `NewLRUCache` and `Log`, each declared in a public
+  header under `include/leveldb`, the pair of its source file.
+- A relationship drawn the wrong way, `RELATIONSHIP_BACKWARDS`, where the code
+  calls the other way, in both checkouts.
+- The anchors that cite real uses (`flushAppendOnlyFile`, `log::Writer`) hold
+  and support their relationships.
+
+Two findings show what an include cannot tell. Redis declares nearly every
+function in `server.h`, so a use of `LFUDecrAndReturn`, which `evict.c`
+defines, reaches the part bound to `server.c`, whose pair is `server.h`.
+leveldb declares `WriteBatchInternal::Append` in
+`db/write_batch_internal.h` and defines it in `db/write_batch.cc`, which are
+no pair, so an anchor that cites it reads as a definition outside both ends.
+An include names the file of a declaration, not of the code that runs. clangd
+answers with the definition (TASK-367.15).
+
 #### Resolving candidates with the TypeScript language server
 
 TASK-367.13 measured the language server on 2026-10-06. It used Bun 1.4.2 and
