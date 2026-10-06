@@ -9,8 +9,10 @@
 ; @binding           a name a parameter, a loop, `as`, `global` or a keyword
 ;                    argument writes, so it is not a use.
 ; @reference         a use of a name; a name after `.` is spelled with its chain.
-; @all               a list of names `__all__` is set to or extended with;
-;                    @all.declared says the module sets `__all__` at all.
+; @all               what `__all__` is set to, added with `+=` or `extend()`,
+;                    or the arguments of `append()`: the adapter reads lists
+;                    and tuples of strings, and any other value leaves the
+;                    module's names to the leading underscore.
 ; @environment       the name of an environment value: `os.environ["NAME"]`,
 ;                    `os.environ.get("NAME")`, `"NAME" in os.environ`,
 ;                    `os.getenv("NAME")`.
@@ -51,14 +53,18 @@
 ; ── Uses ────────────────────────────────────────────────────────────────────
 (identifier) @reference
 
-(assignment left: (identifier) @_all right: [(list) (tuple)] @all (#eq? @_all "__all__"))
-(augmented_assignment left: (identifier) @_all right: [(list) (tuple)] @all (#eq? @_all "__all__"))
+(assignment left: (identifier) @_all right: (_) @all (#eq? @_all "__all__"))
+(augmented_assignment left: (identifier) @_all right: (_) @all (#eq? @_all "__all__"))
 (call
   function: (attribute object: (identifier) @_all attribute: (identifier) @_extend)
+  arguments: (argument_list . (_) @all)
+  (#eq? @_all "__all__")
+  (#eq? @_extend "extend"))
+(call
+  function: (attribute object: (identifier) @_all attribute: (identifier) @_append)
   arguments: (argument_list) @all
   (#eq? @_all "__all__")
-  (#match? @_extend "^(extend|append)$"))
-(assignment left: (identifier) @all.declared (#eq? @all.declared "__all__"))
+  (#eq? @_append "append"))
 
 (subscript
   value: (attribute object: (identifier) @_os attribute: (identifier) @_environ)

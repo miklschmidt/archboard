@@ -2,8 +2,8 @@
 // each pass, because it depends on other files: which modules exist, and the
 // project file that says where the packages live.
 //
-// A module is a file, `a/b.py`, or a package, `a/b/__init__.py` (or their
-// `.pyi` stubs). A relative import (`.m`, `..`) resolves against the package
+// A module is a package, `a/b/__init__.py`, or a file, `a/b.py` (or their
+// `.pyi` stubs), the package first, as Python finds them. A relative import (`.m`, `..`) resolves against the package
 // of the importing file. An absolute import resolves against the roots of the
 // importing file, in this order:
 //
@@ -32,8 +32,11 @@ import type {
 } from "@/runtime/code-facts/lib/facts";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 
-/** What a module path can stand for, in the order Python and a type checker try them. */
-const MODULE_FILES = [".py", "/__init__.py", ".pyi", "/__init__.pyi"];
+/**
+ * What a module path can stand for, in the order Python tries them: a package
+ * before a module of the same name, and a stub only where no source exists.
+ */
+const MODULE_FILES = ["/__init__.py", ".py", "/__init__.pyi", ".pyi"];
 
 /** The project files that can name source roots, nearest first in each directory. */
 const PROJECT_FILES = ["pyproject.toml", "setup.cfg"];

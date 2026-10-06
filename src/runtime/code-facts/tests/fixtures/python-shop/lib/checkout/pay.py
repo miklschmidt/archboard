@@ -23,3 +23,7 @@ def pay():
     importlib.import_module("ledger.accounts")
     message = "postInString"
     return message
+
+
+def refund(money):
+    return money

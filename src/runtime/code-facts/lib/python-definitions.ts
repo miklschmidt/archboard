@@ -13,8 +13,8 @@
 // what a package passes on through its `__init__.py` is TASK-368.10's.
 //
 // A declaration inside a function body is local to that body, so a part never
-// stands for it. A name assigned under `if`, `try` or `with` at module level
-// is still a module-level name.
+// stands for it. A name assigned under `if`, `try`, `with`, a loop or `match`
+// at module level is still a module-level name.
 
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "@/runtime/code-facts/lib/facts";
@@ -33,6 +33,10 @@ const HOLDERS = new Set([
 	"except_group_clause",
 	"finally_clause",
 	"with_statement",
+	"for_statement",
+	"while_statement",
+	"match_statement",
+	"case_clause",
 	"expression_statement",
 	"assignment",
 ]);
