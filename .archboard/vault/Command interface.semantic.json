@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 34,
+	"version": 35,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-06T11:39:34.187Z",
+	"updatedAt": "2026-10-06T11:54:17.647Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -7059,21 +7059,21 @@
 						"emphasis": "normal"
 					},
 					{
-						"id": "cZF1lXy6",
-						"order": 46000,
-						"from": "iIVu1bGE",
-						"to": "MrE3v2T6",
-						"kind": "call",
-						"label": "registers semantic footprint",
-						"emphasis": "normal"
-					},
-					{
 						"id": "xVdE7NdL",
 						"order": 47000,
 						"from": "MrE3v2T6",
 						"to": "iIJ5MRhi",
 						"kind": "call",
 						"label": "the footprint, from the server",
+						"emphasis": "normal"
+					},
+					{
+						"id": "LmUmfrVG",
+						"order": 46000,
+						"from": "E2MAq7W7",
+						"to": "MrE3v2T6",
+						"kind": "call",
+						"label": "validated input",
 						"emphasis": "normal"
 					}
 				],
