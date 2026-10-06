@@ -7,6 +7,12 @@
 // is: only a language server can (TASK-367.13). A file read as text holds a
 // symbol wherever its last name stands as a whole word. A symbol a file holds
 // only in code that did not parse is neither found nor absent.
+//
+// A Nix expression a static reading cannot follow leaves the names below its
+// attribute path unknown (`under`): a symbol below it, or one not spelled from
+// a first name the file defines, is neither found nor absent either. A name
+// `*` in a Nix definition stands for every name of a list the reading cannot
+// tell, such as a flake's systems, and matches any one name.
 
 import type { Definition, FileFacts, Reference, Unparsed } from "@/runtime/code-facts/lib/facts";
 import { lastName, textTest } from "@/runtime/code-facts/lib/text-reading";
@@ -46,7 +52,27 @@ function endsWithNames(qualified: string, symbol: string): boolean {
 	if (qualified.includes("::") || symbol.includes("::")) {
 		return endsWithNames(dotted(qualified), dotted(symbol));
 	}
-	return qualified === symbol || qualified.endsWith(`.${symbol}`);
+	return (
+		qualified === symbol || qualified.endsWith(`.${symbol}`) || everyNameEndsWith(qualified, symbol)
+	);
+}
+
+/**
+ * Whether a qualified name with the name `*`, which stands for every name of
+ * a list a static reading cannot tell (`packages.*.default` in Nix), ends with
+ * a symbol, name by name.
+ * @param qualified The qualified name.
+ * @param symbol The symbol.
+ * @returns True when the symbol is its tail, `*` matching any one name; a
+ * tail shorter than the name never ends at a `*`.
+ */
+function everyNameEndsWith(qualified: string, symbol: string): boolean {
+	if (!qualified.includes("*")) return false;
+	const names = qualified.split(".");
+	const tail = symbol.split(".");
+	const start = names.length - tail.length;
+	if (start < 0 || (start > 0 && names.at(-1) === "*")) return false;
+	return tail.every((name, index) => names[start + index] === "*" || names[start + index] === name);
 }
 
 /**
@@ -93,20 +119,47 @@ function findSymbol(facts: FileFacts, symbol: string, accept: Accept): Found {
 	if (definition !== undefined) return { status: "found", line: definition.start, definition };
 	const reference = accept === "definition" ? undefined : referenceNamed(facts.references, symbol);
 	return reference === undefined
-		? notFound(facts.unparsed, symbol)
+		? notFound(facts.unparsed, symbol, facts.definitions)
 		: { status: "found", line: reference.line };
 }
 
 /**
+ * Whether a symbol may name something below a part whose names a static
+ * reading cannot tell (`under`): it is spelled from that part's attribute
+ * path, or from no first name the file defines, so that it may be the tail of
+ * a name below.
+ * @param part The part.
+ * @param symbol The symbol.
+ * @param definitions The file's definitions.
+ * @returns True when the file may define it there.
+ */
+function mayBeBelow(part: Unparsed, symbol: string, definitions: readonly Definition[]): boolean {
+	if (part.under === undefined) return false;
+	const names = symbol.split(".");
+	const under = part.under === "" ? [] : part.under.split(".");
+	return (
+		under.every((name, index) => name === "*" || names[index] === name) ||
+		!definitions.some((definition) => definition.symbol.split(".")[0] === names[0])
+	);
+}
+
+/**
  * Why a file of code facts does not hold a symbol: it holds it only in code
- * that did not parse, or not at all.
+ * that did not parse or that a static reading cannot follow, or not at all.
  * @param unparsed The file's unparsed parts.
  * @param symbol The symbol.
+ * @param definitions The file's definitions.
  * @returns Unparsed or absent.
  */
-function notFound(unparsed: readonly Unparsed[], symbol: string): Found {
+function notFound(
+	unparsed: readonly Unparsed[],
+	symbol: string,
+	definitions: readonly Definition[] = [],
+): Found {
 	const name = lastName(symbol);
-	const part = unparsed.find((each) => each.names.includes(name));
+	const part = unparsed.find(
+		(each) => each.names.includes(name) || mayBeBelow(each, symbol, definitions),
+	);
 	return part === undefined ? { status: "absent" } : { status: "unparsed", unparsed: part };
 }
 
