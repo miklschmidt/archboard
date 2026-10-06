@@ -19,6 +19,9 @@ resource "google_pubsub_subscription" "push" {
   topic = google_pubsub_topic.orders.id
   push_config {
     push_endpoint = google_cloud_run_v2_service.api.uri
+    oidc_token {
+      service_account_email = google_service_account.worker.email
+    }
   }
 }
 
@@ -28,6 +31,20 @@ resource "google_eventarc_trigger" "orders" {
     pubsub {
       topic = google_pubsub_topic.orders.id
     }
+  }
+  destination {
+    cloud_run_service {
+      service = google_cloud_run_v2_service.api.name
+    }
+  }
+}
+
+resource "google_storage_bucket" "uploads" {}
+
+resource "google_eventarc_trigger" "uploads" {
+  matching_criteria {
+    attribute = "bucket"
+    value     = google_storage_bucket.uploads.name
   }
   destination {
     cloud_run_service {

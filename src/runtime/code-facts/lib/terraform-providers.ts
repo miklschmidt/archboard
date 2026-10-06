@@ -19,7 +19,9 @@
 //
 // A joining declaration, such as an event source mapping, joins two others:
 // its rule names the arguments that name the end the join runs from (the part
-// that sends) and the end it runs to (the part whose work it starts). Its
+// that sends) and the end it runs to (the part whose work it starts): the
+// arguments that name the end, never a block around them that also names a
+// credential, such as the account a push subscription authenticates as. Its
 // evidence runs between those ends, never from the joining declaration to
 // each of them (terraform-evidence.ts). An end that its arguments name no
 // declaration for is the joining declaration itself: a Cloud Function's event
@@ -149,7 +151,12 @@ const AWS: ProviderRules = {
 		aws_ecs_service: join("configured-path", ["load_balancer.target_group_arn"], []),
 		aws_autoscaling_group: join("configured-path", ["target_group_arns"], []),
 		aws_apigatewayv2_route: { arguments: { target: "configured-path" } },
-		aws_cloudfront_distribution: { arguments: { origin: "configured-path" } },
+		aws_cloudfront_distribution: {
+			arguments: {
+				"origin.domain_name": "configured-path",
+				"origin.vpc_origin_config": "configured-path",
+			},
+		},
 		aws_route53_record: { arguments: { alias: "configured-path", records: "configured-path" } },
 		aws_security_group: join("configured-path", ["ingress.security_groups"], [], {
 			"egress.security_groups": "configured-path",
@@ -187,7 +194,7 @@ const GOOGLE_CLOUD: ProviderRules = {
 		google_pubsub_subscription: join(
 			"call",
 			["topic"],
-			["push_config", "bigquery_config", "cloud_storage_config"],
+			["push_config.push_endpoint", "bigquery_config.table", "cloud_storage_config.bucket"],
 			{ dead_letter_policy: "configured-path" },
 		),
 		google_cloudfunctions2_function: join(
@@ -196,7 +203,17 @@ const GOOGLE_CLOUD: ProviderRules = {
 			[],
 		),
 		google_cloudfunctions_function: join("call", ["event_trigger.resource"], []),
-		google_eventarc_trigger: join("call", ["transport.pubsub.topic"], ["destination"]),
+		google_eventarc_trigger: join(
+			"call",
+			["transport.pubsub.topic", "matching_criteria", "channel"],
+			[
+				"destination.cloud_run_service",
+				"destination.cloud_function",
+				"destination.gke",
+				"destination.workflow",
+				"destination.http_endpoint",
+			],
+		),
 		google_storage_notification: join("call", ["bucket"], ["topic"]),
 		google_cloud_scheduler_job: {
 			arguments: { "pubsub_target.topic_name": "call", "http_target.uri": "call" },
@@ -239,15 +256,22 @@ const GOOGLE_CLOUD: ProviderRules = {
 	},
 };
 
-/** Where an Event Grid subscription delivers its events. */
+/**
+ * Where an Event Grid subscription delivers its events: azurerm 5 names each
+ * endpoint `*_id`, and azurerm 3 and 4 `*_endpoint_id`.
+ */
 const EVENT_GRID_ENDPOINTS = [
-	"azure_function_endpoint",
+	"azure_function_endpoint.function_id",
+	"eventhub_id",
 	"eventhub_endpoint_id",
+	"hybrid_connection_id",
 	"hybrid_connection_endpoint_id",
+	"service_bus_queue_id",
 	"service_bus_queue_endpoint_id",
+	"service_bus_topic_id",
 	"service_bus_topic_endpoint_id",
 	"storage_queue_endpoint.queue_name",
-	"webhook_endpoint",
+	"webhook_endpoint.url",
 ];
 
 const AZURE: ProviderRules = {
@@ -325,7 +349,9 @@ const KUBERNETES: ProviderRules = {
 		...shared(["kubernetes_config_map", "kubernetes_config_map_v1"], {
 			arguments: { data: "configured-path" },
 		}),
-		helm_release: { arguments: { set: "configured-path", values: "configured-path" } },
+		helm_release: {
+			arguments: { set: "configured-path", set_list: "configured-path", values: "configured-path" },
+		},
 	},
 };
 

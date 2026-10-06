@@ -24,3 +24,10 @@ resource "azurerm_role_assignment" "reader" {
   scope        = azurerm_storage_account.uploads.id
   principal_id = azurerm_linux_function_app.thumbnails.identity[0].principal_id
 }
+
+resource "azurerm_servicebus_queue" "jobs" {}
+
+resource "azurerm_eventgrid_event_subscription" "jobs" {
+  scope                = azurerm_storage_account.uploads.id
+  service_bus_queue_id = azurerm_servicebus_queue.jobs.id
+}
