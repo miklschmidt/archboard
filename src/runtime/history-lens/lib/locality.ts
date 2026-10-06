@@ -1,6 +1,8 @@
-// Hotspots: which parts of a board change most often (ADR 0045).
+// Locality: which parts of a board change most often, and which change
+// together (ADR 0045).
 //
-// A hotspot is a part that many commits of a period changed. The period of a
+// A hotspot is a part that many commits of a period changed. Change coupling
+// pairs the parts that the same commits changed (`coupling.ts`). The period of a
 // repository is the commits on the HEAD of its checkout that were committed
 // from a start up to the commit time of HEAD, the year before it by default.
 // It ends at HEAD and not at the clock, so one HEAD always gives one answer.
@@ -25,6 +27,7 @@ import {
 	walkCommits,
 	type WalkedCommit,
 } from "@/runtime/history-lens/lib/commits";
+import { couplePairs, type CountedPart } from "@/runtime/history-lens/lib/coupling";
 import { gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { partReading, type ReadPart } from "@/runtime/history-lens/lib/parts";
 import type { BehindSkip } from "@/shared/code-check/index";
@@ -159,15 +162,10 @@ interface Ranking {
 /**
  * Rank the parts by the commits that count, and note every large commit that
  * the ranking left out.
- * @param read The parts the lens read.
- * @param walks Each repository's walk.
+ * @param split Each part the lens read, in the variant's order, with its commits split at the size filter.
  * @returns The ranking.
  */
-function rank(read: readonly ReadPart[], walks: ReadonlyMap<string, WalkedPeriod>): Ranking {
-	const split = read.flatMap((part) => {
-		const walk = walks.get(part.repo);
-		return walk === undefined ? [] : [{ part, ...commitsOfPart(part, walk) }];
-	});
+function rank(split: readonly (CountedPart & PartCommits)[]): Ranking {
 	const commits = new Map(
 		split.flatMap(({ part, counted }) =>
 			counted.map((commit): [string, LocalityCommit] => [
@@ -195,8 +193,8 @@ function rank(read: readonly ReadPart[], walks: ReadonlyMap<string, WalkedPeriod
 }
 
 /**
- * Read hotspots: every part the lens reads, ranked by the commits of the
- * period that changed its bound files.
+ * Read locality: every part the lens reads, ranked by the commits of the
+ * period that changed its bound files, and the pairs those commits couple.
  * @param board The board.
  * @param variant The variant to read.
  * @param snapshot The registered checkouts and what each has out.
@@ -221,7 +219,11 @@ async function readLocality(
 			]),
 		),
 	);
-	const ranking = rank(reading.read, walks);
+	const split = reading.read.flatMap((part) => {
+		const walk = walks.get(part.repo);
+		return walk === undefined ? [] : [{ part, ...commitsOfPart(part, walk) }];
+	});
+	const ranking = rank(split);
 	return {
 		board: board.name,
 		version: board.version,
@@ -229,15 +231,16 @@ async function readLocality(
 		periods: [...walks.values()].map((walk) => walk.period),
 		commits: ranking.commits,
 		hotspots: ranking.hotspots,
+		coupling: couplePairs(split, variant.content),
 		leftOut: { largeCommits: ranking.large },
 		skipped: [...reading.skipped, ...skipped],
 	};
 }
 
-/** The reading of hotspots, with the memory of its answers. */
+/** The reading of locality, with the memory of its answers. */
 interface LocalityReading {
 	/**
-	 * The hotspots of one variant of one board.
+	 * The hotspots and change coupling of one variant of one board.
 	 * @param board The board as the store read it.
 	 * @param variant The variant to read: the current one, or a draft.
 	 * @param since The start of the period, or undefined for the year before each HEAD.
@@ -253,7 +256,7 @@ interface LocalityReading {
 }
 
 /**
- * A reading of hotspots that keeps its answers while nothing they derive from
+ * A reading of locality that keeps its answers while nothing they derive from
  * has moved: the board's version, the variant, the start of the period, and
  * each checkout with its HEAD.
  * @returns The reading.
