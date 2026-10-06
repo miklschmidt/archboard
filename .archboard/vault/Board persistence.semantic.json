@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 28,
+	"version": 30,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-06T10:38:06.561Z",
+	"updatedAt": "2026-10-06T11:59:21.628Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -1957,7 +1957,7 @@
 		{
 			"id": "VWJzYzj0",
 			"name": "TASK-368.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "u8eW4BzU",
 			"summary": "Module level: the board store, the entry points its callers reach, and the reads, transitions and durable writes behind them. Follow linked subjects for related levels.",
 			"content": {
@@ -3382,9 +3382,9 @@
 		{
 			"id": "WFUdRHyc",
 			"name": "TASK-367.04 redrawn",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "VWJzYzj0",
-			"summary": "Relationships and flow steps carry an anchor, and a binding can name a symbol",
+			"summary": "Module level: the board store, the entry points its callers reach, and the reads, transitions and durable writes behind them. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -3736,9 +3736,13 @@
 						"id": "a6FGj58i",
 						"order": 22000,
 						"name": "Dropped anchors",
-						"kind": "module",
+						"kind": "function",
 						"responsibility": "Says which relationships and steps a write restated without the anchor they had",
+						"description": "A write that restates a relationship or a flow step under its id without the anchor it had is not refused: the board is valid without it, so the write lands and its answer carries ANCHOR_DROPPED with the anchor spelled out for the next write to put back. A subject the batch did not state keeps its anchor.",
 						"parent": "jar7RnTP",
+						"groups": [
+							"checks"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/dropped-anchors.ts"
@@ -4145,7 +4149,7 @@
 			}
 		}
 	],
-	"current": "VWJzYzj0",
+	"current": "WFUdRHyc",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -4164,6 +4168,12 @@
 			"from": "u8eW4BzU",
 			"at": "2026-10-06T10:32:08.532Z",
 			"reason": "The semantic board store is drawn as a container bound to its directory: the server lands on the entry points its index exports, the store's private parts are hidden, and the engine's lease and atomic write stay outside"
+		},
+		{
+			"variant": "WFUdRHyc",
+			"from": "VWJzYzj0",
+			"at": "2026-10-06T11:59:21.628Z",
+			"reason": "TASK-367.04: a write that restates a relationship or a flow step without the anchor it had lands with ANCHOR_DROPPED, which Dropped anchors computes for Edit semantic content"
 		}
 	],
 	"shelvings": [
