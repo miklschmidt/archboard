@@ -9,7 +9,8 @@ one sentence of answer 2. [ADR 0044](0044-cards-containers-and-groups-are-drawn-
 records the change to the picture's surfaces that came from the same request.
 The second amendment of 2026-10-06 takes the ease away from a pinch, says when
 the camera is at rest, and replaces the sentence of "How the picture is marked"
-about the board inside a card.
+about the board inside a card. The third makes the swap between the near and
+the far view a shared element transition.
 
 A reader who does not know a system learns it by poking at its picture. A still
 drawing leaves the work to the reader. They must find what a part is wired to,
@@ -234,3 +235,71 @@ that opens from a board seen near swaps once, after it has taken over. The
 browser owner `semantic-board-exploring` holds the same in a real page: no card
 fades between its layers while the board flown from is on screen, and the board
 flown to fades once.
+
+## Amendment of 2026-10-06: the near and the far view swap as one shared element
+
+The owner asked for this on 2026-10-06 (TASK-428): "Add a nice shared element
+transition between far and near view content rendering on containers and
+cards." Until now each card drew its chip, name and responsibility twice, once
+in its near layer and once in its far layer, and the two layers cross-faded.
+
+**A card's chip is one element that both views share.** On a card, on a
+container's header and on a card of a sequence, the chip of the part's kind is
+one element outside both layers. It stands at its near place by its own
+`transform` attribute. The picture's stylesheet moves and scales it to its far
+place, the tile down the card's start, while the picture carries `is-far`, and
+back again. The places are properties of the element (`--near` and `--far`).
+
+**The words move and fade between their places.** The words of the two views
+cannot grow into each other, because the far words are set at another size and
+break and cut at other places. So the words of each view stand in a group that
+the stylesheet moves to where the other view's words start, at the other view's
+size, while their own view is hidden (`--away`). When the views swap, the words
+that leave move toward the place of the words that come and fade out in the
+first 60 percent of the swap. The words that come arrive from the place of the
+words that leave and fade in during the last 60 percent. A flow's heading, which
+has no chip, moves its words in the same way. The mark of a board that a part
+opens, the warning badge and the standing pin do not move. The two marks fade
+where they stand.
+
+**What does not change.** A reader that ignores the stylesheet, an export and a
+bitmap of a picture without `is-far` draw the near view, as before, and the far
+layer keeps `display="none"`. A document that stands alone sets no theme colour
+for the places, because they are no tokens of the page. A reader who asked for
+less motion gets the swap at once. A swap still waits for the camera to come to
+rest, and a flight still holds it, as the second amendment says. The flight
+into a card fades the chip with the card's words. A picture of the same board
+that is carried into the next compares a card's content without the places, so
+a card that moved keeps its chip and its words and glides with them. The swap
+takes `FAR_VIEW_SWAP_MS` (280 ms), which replaces the 180 ms of
+`FAR_VIEW_FADE_MS`: the eye has to see the chip travel.
+
+**Cost.** Measured on the board "Archboard server" with the method of the
+second amendment: zoom in across the far line, wait for the swap, zoom out
+again. The frames from each swap to 450 ms after it count. Three runs, two
+swaps each, so six swaps for each setup. The numbers are medians of the runs.
+
+| Swap                     | GPU before | GPU after | Software before | Software after |
+| ------------------------ | ---------- | --------- | --------------- | -------------- |
+| Mean frame               | 17.0 ms    | 17.0 ms   | 23.7 ms         | 25.7 ms        |
+| Slow frames (over 25 ms) | 1 of 55    | 1 of 55   | 13 of 40        | 15 of 37       |
+| Slowest frame            | 33 ms      | 33 ms     | 67 ms           | 50 ms          |
+| Paint time, two swaps    | 62 ms      | 117 ms    | 76 ms           | 92 ms          |
+
+On the GPU the moving frames of the swap stay within 16.7 ms. The one slow
+frame is the frame of the swap itself, which existed before: the browser styles
+every near and far layer again for the new class, and the camera's layer goes
+in the same frame (a task of about 28 ms in the trace). It came in two of six
+swaps before and in three of six after. The paint work of a swap about doubles,
+because the chips and the words move in every frame of it. In software that
+makes a swap a little slower, and the software numbers compare only with each
+other. Limiting the swap to the cards on screen was not needed by these
+numbers, so it was not done.
+
+Owners: the module owner `far-view-swap` holds that a card, a container's
+header and a sequence's card draw one chip with both places, near by default,
+that the words of each view go to where the other view's words start, and that
+the stylesheet moves them only while the picture is far and not for a reader
+who asked for less motion. The theme owner holds that the places are no tokens
+of the page. The picture-transition owner holds that a card that moved keeps
+its shared chip.
