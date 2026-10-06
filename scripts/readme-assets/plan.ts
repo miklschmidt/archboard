@@ -8,6 +8,7 @@ import {
 	fit,
 	foldSidebars,
 	moment,
+	attachmentFile,
 	readmeFile,
 	withTake,
 	type Producer,
@@ -18,19 +19,20 @@ const BOARD = "Recommendations";
 const START = "Starting point";
 const LEFT = "Nightly batch";
 const RIGHT = "Live events";
-const CLIP = readmeFile("plan.webp");
+const CLIP = attachmentFile("plan.webp");
 const THUMBNAIL = readmeFile("idx-plan.webp");
 
 const plan: Producer = {
 	kind: "clip",
 	codex: false,
-	files: [CLIP, THUMBNAIL],
+	files: [THUMBNAIL],
+	attachments: [CLIP],
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		`Start an Archboard server over a copy of examples/web-shop, and open the shell on ${BOARD} in a private headless Chromium at 1920x1080, in the light theme.`,
 		`Split the page into two panes with archboard browser open, show ${START} in both, fold the sidebars and fit.`,
 		`Film archboard browser show putting ${LEFT} in the left pane and ${RIGHT} in the right one.`,
-		`Encode the take as a 1440 px WebP at 30 frames a second, and cut ${THUMBNAIL} from the right pane once its proposal is drawn.`,
+		`Encode the take as a 1440 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, and cut ${THUMBNAIL} from the right pane once its proposal is drawn.`,
 	],
 	/**
 	 * Film the take and encode it.

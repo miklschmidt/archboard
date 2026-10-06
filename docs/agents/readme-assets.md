@@ -3,7 +3,10 @@
 Every file in `docs/readme` comes from one command, `bun run readme:assets`.
 The manifest `docs/readme/assets.json` lists each asset: its files, the command
 that makes it, whether it needs a Codex sign-in, the sources it shows, and a
-hash of those sources. The kit that makes them is `scripts/readme-assets`.
+hash of those sources. The kit that makes them is `scripts/readme-assets`. The
+animated clips, the loops and the narrated videos are too large for the
+repository. The kit writes them to the scratch directory, and you attach them
+to the README (see Attached assets below).
 
 ## Check and refresh
 
@@ -29,20 +32,34 @@ Refresh an asset when `readme:check` lists it after your change. Then:
    new hash.
 2. Read the README text around it. Change an alt text or a caption that no
    longer says what the picture shows.
-3. Commit the files with `docs/readme/assets.json`, which now holds their hash.
+3. Attach every file that the kit says to attach, and put the new address in
+   `README.md` in place of the old one.
+4. Commit the files in `docs/readme` with `docs/readme/assets.json`, which now
+   holds their hash.
 
 ## The assets
 
-| Asset                                                | What makes it                                                                               | Codex |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----- |
-| `architecture`, `sequence`, `web-shop`               | `semantic render` in light and dark, faces cut to the characters drawn; two add a thumbnail | no    |
-| `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to WebP            | no    |
-| `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation         | yes   |
-| `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the loop and thumbnail are cut from it      | yes   |
-| `banner`                                             | `semantic render` of a web-shop proposal, laid as vector beside the lockup in Chromium      | no    |
+| Asset                                                | What makes it                                                                                | Codex |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----- |
+| `architecture`, `sequence`, `web-shop`               | `semantic render` in light and dark, faces cut to the characters drawn; two add a thumbnail  | no    |
+| `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach | no    |
+| `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation          | yes   |
+| `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the MP4 and the loop are attached            | yes   |
+| `banner`                                             | `semantic render` of a web-shop proposal, laid as vector beside the lockup in Chromium       | no    |
 
-Most assets also write an index thumbnail (`idx-*.webp`). The manifest lists
-the files of each asset. `explainer` writes nothing in the repository.
+Most assets also write an index thumbnail (`idx-*.webp`), which stays in the
+repository. The manifest lists the files of each asset in the repository. The
+clips, the loops and the MP4s are not in it. `explainer` and `hero` write nothing
+in the repository.
+
+The filmed clips and the loops cut from the narrated videos are lossless
+animated WebP at 30 frames a second. They are attached, so their size is no
+matter. An animated WebP stores each frame as the rectangle that changed, and a
+lossy encoder counts a pixel that moved by a few levels as unchanged. A fading shadow or the glow of a pulse then leaves a ghost, in
+blocks, for the rest of the clip (the sidebar of `drill-down` did). ffmpeg
+offers no keyframe interval for it, so a lossy clip cannot be repaired. Check a
+new clip by brightening an empty part of the canvas in a frame (`magick
+clip.webp -coalesce -delete 0-99 -delete 1--1 frame.png`): it must be flat.
 
 The banner's lockup, the mark beside the name, comes from
 `scripts/readme-assets/lockup.ts`. A test in the repository lane holds that mark
@@ -70,10 +87,18 @@ the account's Codex usage.
   `semantic replay`, cuts the loop and the thumbnail from it, and spends no
   Codex usage. It stops when no recording kept a talk. Record again only when
   the walkthrough or the voice should change.
-- The narrated MP4s stay in the scratch directory. GitHub plays a video with
-  sound only from an attachment, so run `gh attach <file>.mp4` (the
-  `joseustra/gh-attach` extension, which uploads to the current repository) and
-  put the address it prints in `README.md`.
+- GitHub plays a video with sound only from an attachment, so the narrated
+  MP4s are attached like the clips (see below).
+
+## Attached assets
+
+After it makes an asset, the kit prints one line for each file to attach: the
+clips, the loops and the narrated MP4s. They are in `attachments` and
+`narrated` in the scratch directory. Run `gh attach <file>` (the
+`joseustra/gh-attach` extension, which uploads to the current repository) on
+each, and put the address it prints in `README.md`: as the `src` of the clip's
+`<img>`, or as the address of the video. An attachment is public once it is
+uploaded, so look at the file first.
 
 ## What the kit needs
 

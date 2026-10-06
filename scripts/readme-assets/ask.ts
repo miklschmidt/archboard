@@ -7,6 +7,7 @@ import {
 	filmTogether,
 	moment,
 	now,
+	attachmentFile,
 	readmeFile,
 	withTake,
 	type Page,
@@ -17,7 +18,7 @@ import {
 const BOARD = "Web shop";
 const PART = "Timeout guard";
 const QUESTION = "Why does this part exist, and what would break without it?";
-const CLIP = readmeFile("ask.webp");
+const CLIP = attachmentFile("ask.webp");
 const THUMBNAIL = readmeFile("idx-ask.webp");
 const STATUS = "document.querySelector(\"[data-slot='agent-status']\")?.textContent.trim() ?? ''";
 
@@ -99,12 +100,13 @@ async function requireSignedIn(
 const ask: Producer = {
 	kind: "clip",
 	codex: true,
-	files: [CLIP, THUMBNAIL],
+	files: [THUMBNAIL],
+	attachments: [CLIP],
 	needs: ["chromium", "ffmpeg", "codex"],
 	plan: [
 		`Start an Archboard server over a copy of examples/web-shop that uses this machine's Archboard Codex sign-in, and open the shell on ${BOARD} at 1920x1080, light, with the conversation open; refuse when Codex is not signed in.`,
 		`Film the pointer picking ${PART} out and typing "${QUESTION}" into the agent dock, and the Codex agent's answer; this spends Codex usage.`,
-		`Encode the take as a 1440 px WebP at 30 frames a second, with the wait for the answer played in about ${FAST_WAIT_SECONDS} seconds, and cut ${THUMBNAIL} from the answer.`,
+		`Encode the take as a 1440 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, with the wait for the answer played in about ${FAST_WAIT_SECONDS} seconds, and cut ${THUMBNAIL} from the answer.`,
 	],
 	/**
 	 * Film the take and encode it.

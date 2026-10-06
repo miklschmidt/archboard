@@ -39,7 +39,6 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 		board: "Web shop",
 		variant: "Queued fulfilment",
 		walkthrough: "Why checkout stops waiting",
-		loop: { file: "docs/readme/pr-walkthrough.webp", from: 0, to: 2, width: 900 },
 		thumbnail: { file: "docs/readme/idx-voice.webp", step: 1 },
 	}),
 	sequence: diagramProducer({
@@ -54,7 +53,7 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 		vault: "examples/web-shop",
 		board: "Inventory service",
 		walkthrough: "How stock is reserved",
-		loop: { file: "docs/readme/newcomer.webp", from: 1, to: 3, width: 1200 },
+		loop: { file: "newcomer.webp", from: 1, to: 3, width: 900 },
 		thumbnail: { file: "docs/readme/idx-newcomer.webp", step: 4 },
 	}),
 	"drill-down": drillDown,

@@ -21,8 +21,14 @@ export {
 } from "./film.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 export { holding } from "./holding.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-export { inRepository, readmeFile, type MakeContext, type Producer } from "./producer.ts";
+export {
+	attachmentFile,
+	inRepository,
+	readmeFile,
+	type MakeContext,
+	type Producer,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./producer.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 export { readBoard, startServer, type TakeServer, type TrackedVault } from "./server.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/

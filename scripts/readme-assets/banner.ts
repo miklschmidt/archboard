@@ -221,6 +221,7 @@ const banner: Producer = {
 	kind: "art",
 	codex: false,
 	files: [FILES.dark, FILES.light, FILES.social],
+	attachments: [],
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		"Start an Archboard server over a copy of examples/web-shop.",

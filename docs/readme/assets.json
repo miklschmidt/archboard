@@ -29,14 +29,14 @@
 				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts"
 			],
-			"hash": "e7cc0d7f0b453f80e49e58fb5fd65807de9d60a334437b8f53ab2b75c63227aa"
+			"hash": "45c0a65437bd6b6a0a5f641d3803d1c2745ea74421092b88b7ef5fe7439a3d34"
 		},
 		{
 			"name": "hero",
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets hero",
-			"files": ["docs/readme/hero.webp"],
+			"files": [],
 			"sources": [
 				"examples/web-shop",
 				"frontend",
@@ -52,7 +52,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "9f3c3be4715b8a8f786c442385c3ac651aec86c85a456d89e67166d1b690db20"
+			"hash": "03571051f67a42b90878e61e22023dff907ac132e10fffbd6bab810d703a8bb2"
 		},
 		{
 			"name": "explainer",
@@ -72,14 +72,14 @@
 				"src/server/archboard/lib/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts"
 			],
-			"hash": "d8fd2b1593523d1c3aadc6190ab38f94cd38f342aed88c8e18e57767926a0bfa"
+			"hash": "52e9e08593d7121a9f11a7dff701267b6554e7881c09053a9b6e92bbf8b25c31"
 		},
 		{
 			"name": "plan",
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets plan",
-			"files": ["docs/readme/plan.webp", "docs/readme/idx-plan.webp"],
+			"files": ["docs/readme/idx-plan.webp"],
 			"sources": [
 				"examples/web-shop",
 				"frontend",
@@ -91,14 +91,14 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "19cdf1bd4b929d063c7508e6af42de50939e75fcfdec398e20707501df0cf7bc"
+			"hash": "671b15dbf044424687067cb0d54610454678ae6e24eca23fddf1dbcb41211795"
 		},
 		{
 			"name": "history",
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets history",
-			"files": ["docs/readme/history.webp", "docs/readme/idx-history.webp"],
+			"files": ["docs/readme/idx-history.webp"],
 			"sources": [
 				".archboard/vault/Renderer layout.semantic.json",
 				".archboard/vault/.archboard/config.yaml",
@@ -112,14 +112,14 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "c59cf9c7e729c8d291678a103cc19a0ed4f2293843f605e82204dbe71c9b5648"
+			"hash": "aa3a4545aef1bb15dc74b97b57b24682b0bd5849c77503cbd1e5646f56c473f2"
 		},
 		{
 			"name": "pr-walkthrough",
 			"kind": "narrated",
 			"codex": true,
 			"command": "bun run readme:assets pr-walkthrough",
-			"files": ["docs/readme/pr-walkthrough.webp", "docs/readme/idx-voice.webp"],
+			"files": ["docs/readme/idx-voice.webp"],
 			"sources": [
 				"examples/web-shop",
 				"frontend",
@@ -132,7 +132,7 @@
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "dc4f8841a372f1c52560b2de8cdd56a9c300aea44f0c0a6d696a32d411ac37d7"
+			"hash": "3abd1fb2e454d86864aef733a233f31bdf0ad679f2c9a783eee5c33181d1197b"
 		},
 		{
 			"name": "sequence",
@@ -161,14 +161,14 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "a203483f7c00d60f9acaa686404be6904b368b065ade1f6ab662641012d54b92"
+			"hash": "64366ce2dca38926ad53c82e20fd12211791fd09a4a85bc6ce79795029d2687f"
 		},
 		{
 			"name": "newcomer",
 			"kind": "narrated",
 			"codex": true,
 			"command": "bun run readme:assets newcomer",
-			"files": ["docs/readme/newcomer.webp", "docs/readme/idx-newcomer.webp"],
+			"files": ["docs/readme/idx-newcomer.webp"],
 			"sources": [
 				"examples/web-shop",
 				"frontend",
@@ -181,14 +181,14 @@
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "dc4f8841a372f1c52560b2de8cdd56a9c300aea44f0c0a6d696a32d411ac37d7"
+			"hash": "3abd1fb2e454d86864aef733a233f31bdf0ad679f2c9a783eee5c33181d1197b"
 		},
 		{
 			"name": "drill-down",
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets drill-down",
-			"files": ["docs/readme/drill-down.webp", "docs/readme/idx-drill.webp"],
+			"files": ["docs/readme/idx-drill.webp"],
 			"sources": [
 				"examples/web-shop",
 				"frontend",
@@ -200,14 +200,14 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "d6a513c60a4f35fc849cb3a664ce81849c2535bbac752a3f853d45ba20ef0a27"
+			"hash": "a7261b371728b68b54eb61037566e2fb396ed7d54f1692086c1f98f13eb56b47"
 		},
 		{
 			"name": "ask",
 			"kind": "clip",
 			"codex": true,
 			"command": "bun run readme:assets ask",
-			"files": ["docs/readme/ask.webp", "docs/readme/idx-ask.webp"],
+			"files": ["docs/readme/idx-ask.webp"],
 			"sources": [
 				"examples/web-shop",
 				"frontend",
@@ -226,7 +226,7 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets take-back",
-			"files": ["docs/readme/take-back.webp", "docs/readme/idx-safety.webp"],
+			"files": ["docs/readme/idx-safety.webp"],
 			"sources": [
 				"examples/web-shop",
 				"frontend",
@@ -241,7 +241,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "afb32681e91ecb1ea9091b9758703e1e6296c8c05fb09bfb94ed7a7ab23a056f"
+			"hash": "c9513bbea0576dfe5a6755cb630aae2155e517467f62b943076d7e7a04ca45aa"
 		},
 		{
 			"name": "web-shop",
@@ -270,7 +270,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "a203483f7c00d60f9acaa686404be6904b368b065ade1f6ab662641012d54b92"
+			"hash": "64366ce2dca38926ad53c82e20fd12211791fd09a4a85bc6ce79795029d2687f"
 		},
 		{
 			"name": "architecture",
@@ -293,7 +293,7 @@
 				"src/ui/shell/assets/fonts",
 				"scripts/readme-assets/svg.ts"
 			],
-			"hash": "d9cae7a86b00785369f7fdcce22a5140a56231810974799e5305970d72403185"
+			"hash": "f42890db7cacf7775d9a8c966d1f33a6c370daf203efbd10b61257f84ddae79e"
 		}
 	]
 }

@@ -19,7 +19,7 @@ import {
 	filmTogether,
 	present,
 	readBoard,
-	readmeFile,
+	attachmentFile,
 	scratch,
 	withTake,
 	type Producer,
@@ -31,7 +31,7 @@ const BOARD = "Web shop";
 const PROPOSAL = "Off the request path";
 const REQUEST =
 	"Checkout waits on stock, the card and the receipt email. Propose taking fulfilment off the request path, and show me.";
-const CLIP = readmeFile("hero.webp");
+const CLIP = attachmentFile("hero.webp");
 const PANE = { width: 1320, height: 1080 } as const;
 const PLACEHOLDER = /^@[NEFS]:/;
 
@@ -129,12 +129,13 @@ function comparedLines(said: string): readonly string[] {
 const hero: Producer = {
 	kind: "clip",
 	codex: false,
-	files: [CLIP],
+	files: [],
+	attachments: [CLIP],
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		`Start an Archboard server over a copy of examples/web-shop; open the agent's terminal page and the shell on ${BOARD}, presented, side by side in a private headless Chromium, dark.`,
 		`Film the agent's commands: archboard claim, semantic branch "${PROPOSAL}", semantic edit with scripts/readme-assets/hero-change.json (its ids read from semantic show), semantic compare, browser show and release, while the pane redraws on each write.`,
-		"Encode the two windows side by side as a 1600 px WebP at 30 frames a second, opening on its last frame.",
+		"Encode the two windows side by side as a 1280 px lossless WebP at 30 frames a second, opening on its last frame, in the scratch directory to attach by hand.",
 	],
 	/**
 	 * Film the take and encode it.
@@ -229,7 +230,7 @@ const hero: Producer = {
 				await Bun.sleep(2600);
 				return null;
 			});
-			await encodeTake(take, { clip: CLIP, width: 1600, leadWithEnd: 2.2, hold: 1.2 });
+			await encodeTake(take, { clip: CLIP, width: 1280, leadWithEnd: 2.2, hold: 1.2 });
 		}),
 };
 

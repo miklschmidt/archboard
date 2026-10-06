@@ -181,6 +181,15 @@ function sizes(asset: ReadmeAsset): string {
 }
 
 /**
+ * Tell the reader to attach a file that was written in the scratch directory.
+ * @param file The file.
+ * @returns The line.
+ */
+function attachLine(file: string): string {
+	return `attach ${file} (${Math.round(statSync(file).size / 1024)} KB): run gh attach on it, and put the address it prints in README.md`;
+}
+
+/**
  * Say what a producer is doing, under its asset's line.
  * @param line The sentence.
  */
@@ -224,6 +233,7 @@ async function makeAll(
 		writeManifest(ROOT, made);
 		await run([join(ROOT, "node_modules/.bin/oxfmt"), MANIFEST_PATH]);
 		console.log(`  made ${sizes(asset)}`);
+		for (const file of producerOf(asset).attachments) say(attachLine(file));
 	});
 }
 
