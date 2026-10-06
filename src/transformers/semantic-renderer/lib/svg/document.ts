@@ -27,15 +27,20 @@ import { escapeXml, lines, tag, wrap } from "@/transformers/semantic-renderer/li
 import { portDefinitions } from "@/transformers/semantic-renderer/lib/svg/ports";
 import { slabDefinitions } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
+	AWAY_PLACE,
+	CHIP_CLASS,
 	FAR_CLASS,
+	FAR_PLACE,
 	FAR_VIEW_CLASS,
 	NEAR_CLASS,
+	NEAR_PLACE,
+	WORDS_CLASS,
 } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import {
 	MEMBERS_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
-import { FAR_VIEW_FADE_MS } from "@/shared/timing/timing";
+import { FAR_VIEW_SWAP_MS } from "@/shared/timing/timing";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import { HEAD_SHADE_CLASS } from "@/transformers/semantic-renderer/lib/sequence-design";
 import {
@@ -181,22 +186,44 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 	);
 }
 
+/** How every part of a swap between the near and the far view moves: quick to leave, gentle to land. */
+const SWAP_EASE = "cubic-bezier(.4,0,.2,1)";
+
 /**
- * How a picture swaps its cards' near and far layers: a cross-fade, each layer
- * hidden once it has faded out so it is not painted at all. A reader asking
- * for less motion gets the swap at once.
+ * The share of a swap the leaving view takes to fade out, and the share the
+ * coming view takes to fade in, at its end. The two overlap little, so the words
+ * of the two views are not read through each other while they move.
+ */
+const SWAP_FADE = 0.6;
+
+/**
+ * How a picture swaps its cards' near and far views (TASK-428). A card's chip
+ * is one element that moves and grows between its near and its far place. The
+ * words of each view move to where the other view's words start while they
+ * fade: the leaving view fades out in the first part of the swap, the coming
+ * view fades in at its end, and each is hidden once it has faded out so it is
+ * not painted at all. The mark of a board a part opens fades where it stands. A
+ * reader asking for less motion gets the swap at once.
  * @returns The rules.
  */
 function farViewRules(): string[] {
-	const fade = `opacity ${FAR_VIEW_FADE_MS}ms ease`;
-	const shown = `opacity:1;visibility:visible;transition:${fade},visibility 0s`;
-	const hidden = `opacity:0;visibility:hidden;transition:${fade},visibility 0s linear ${FAR_VIEW_FADE_MS}ms`;
+	const fade = Math.round(FAR_VIEW_SWAP_MS * SWAP_FADE);
+	const wait = FAR_VIEW_SWAP_MS - fade;
+	const shown = `opacity:1;visibility:visible;transition:opacity ${fade}ms ${SWAP_EASE} ${wait}ms,visibility 0s`;
+	const hidden = `opacity:0;visibility:hidden;transition:opacity ${fade}ms ${SWAP_EASE},visibility 0s linear ${fade}ms`;
+	const move = `transition:transform ${FAR_VIEW_SWAP_MS}ms ${SWAP_EASE}`;
+	const far = `.${FAR_VIEW_CLASS}`;
 	return [
 		`.${FAR_CLASS}{display:inline;${hidden}}`,
 		`.${NEAR_CLASS}{${shown}}`,
-		`.${FAR_VIEW_CLASS} .${FAR_CLASS}{${shown}}`,
-		`.${FAR_VIEW_CLASS} .${NEAR_CLASS}{${hidden}}`,
-		`@media(prefers-reduced-motion:reduce){.${FAR_CLASS},.${NEAR_CLASS},.${FAR_VIEW_CLASS} .${FAR_CLASS},.${FAR_VIEW_CLASS} .${NEAR_CLASS}{transition:none}}`,
+		`${far} .${FAR_CLASS}{${shown}}`,
+		`${far} .${NEAR_CLASS}{${hidden}}`,
+		`.${CHIP_CLASS}{transform:var(${NEAR_PLACE});${move}}`,
+		`${far} .${CHIP_CLASS}{transform:var(${FAR_PLACE})}`,
+		`.${WORDS_CLASS}{${move}}`,
+		`.${FAR_CLASS}>.${WORDS_CLASS},${far} .${NEAR_CLASS}>.${WORDS_CLASS}{transform:var(${AWAY_PLACE})}`,
+		`${far} .${FAR_CLASS}>.${WORDS_CLASS}{transform:none}`,
+		`@media(prefers-reduced-motion:reduce){.${FAR_CLASS},.${NEAR_CLASS},${far} .${FAR_CLASS},${far} .${NEAR_CLASS},.${CHIP_CLASS},.${WORDS_CLASS}{transition:none}}`,
 	];
 }
 
@@ -225,8 +252,14 @@ interface DocumentInput {
 	readonly theme?: DiagramTheme | undefined;
 }
 
-/** A reference to one of the page's tokens. */
+/** A reference to one of the page's tokens, or to a property the document sets itself. */
 const TOKEN_REFERENCE = /var\((--[\w-]+)\)/gu;
+
+/**
+ * A property the document sets on one of its own elements, such as the places
+ * of a card's chip in its two views (`far-view.ts`). It is no token of the page.
+ */
+const OWN_PROPERTY = /[";](--[\w-]+):/gu;
 
 /**
  * What a document that stands alone declares on its root: the colour scheme
@@ -241,7 +274,12 @@ const TOKEN_REFERENCE = /var\((--[\w-]+)\)/gu;
  * @returns The root's `style`.
  */
 function standingAlone(theme: DiagramTheme, document: string): string {
-	const names = new Set([...document.matchAll(TOKEN_REFERENCE)].map((found) => found[1]!));
+	const own = new Set([...document.matchAll(OWN_PROPERTY)].map((found) => found[1]!));
+	const names = new Set(
+		[...document.matchAll(TOKEN_REFERENCE)]
+			.map((found) => found[1]!)
+			.filter((name) => !own.has(name)),
+	);
 	return [
 		`color-scheme:${theme}`,
 		...[...names].toSorted().map((name) => `${name}:${themeColor(theme, name)}`),

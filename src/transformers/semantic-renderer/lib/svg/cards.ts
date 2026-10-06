@@ -45,8 +45,8 @@ import {
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
-import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
-import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
+import { paintCardViews } from "@/transformers/semantic-renderer/lib/svg/far-card";
+import type { Anchor } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
@@ -157,32 +157,28 @@ function paintCard(
 			slabShadow(box, SLAB_RADIUS, "card", palette, standing),
 			halo(box, SLAB_RADIUS, styles, standing),
 			slab(box, cardLook(appearance, palette), palette, standing),
-			nearLayer(
-				lines([
-					typeChip(
-						box.x + CARD_PADDING_X,
-						box.y + (box.height - ICON_CHIP_SIZE) / 2,
-						appearance,
-						palette,
-						standing,
-					),
-					title,
-					note,
-					appearance.drill === null
-						? ""
-						: cornerDrillMark(
-								box,
-								CARD_PADDING_X,
-								titleY - titleSize * OPTICAL_CENTRE - box.y,
-								appearance.drill,
-								palette.glyph,
-							),
-				]),
-			),
-			paintFarCard(
+			paintCardViews(
 				node,
 				box,
 				{ appearance, palette: standingPalette(palette, standing) },
+				{
+					chip: {
+						markup: typeChip(0, 0, appearance, palette, standing),
+						x: box.x + CARD_PADDING_X,
+						y: box.y + (box.height - ICON_CHIP_SIZE) / 2,
+					},
+					words: { markup: lines([title, note]), anchor: { x: textX, y: titleY, size: titleSize } },
+					mark:
+						appearance.drill === null
+							? ""
+							: cornerDrillMark(
+									box,
+									CARD_PADDING_X,
+									titleY - titleSize * OPTICAL_CENTRE - box.y,
+									appearance.drill,
+									palette.glyph,
+								),
+				},
 				unsettled,
 			),
 			standingPin(box, standing, palette),
@@ -210,7 +206,7 @@ function paintHeader(
 	responsibility: string | undefined,
 	styles: SvgStyles,
 ): string {
-	const nameBaseline = header.y + PART_TITLE.size;
+	const nameBaseline = headerAnchor(header).y;
 	const noteBaseline = header.y + PART_TITLE.line + ARCHITECTURE_NOTE_GAP + PART_NOTE.size;
 	return lines([
 		textNode(
@@ -226,4 +222,14 @@ function paintHeader(
 	]);
 }
 
-export { halo, paintCard, paintHeader };
+/**
+ * Where a flow's title block starts: the left end of its name's baseline, which
+ * its far words move from and back to.
+ * @param header Where the block goes.
+ * @returns The anchor, with the name's size.
+ */
+function headerAnchor(header: Box): Anchor {
+	return { x: header.x, y: header.y + PART_TITLE.size, size: PART_TITLE.size };
+}
+
+export { halo, headerAnchor, paintCard, paintHeader };
