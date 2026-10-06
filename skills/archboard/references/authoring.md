@@ -506,27 +506,44 @@ the language server of the file names the definition. It is a `candidate`
 where the check matched it by name only. A finding that rests only on
 candidates is information. A call through a value, such as `ledger.post()`,
 is no evidence by itself. Anchor the relationship at that call: the language
-server then names the code that the call reaches. TypeScript needs no setup.
-Python uses pyright or basedpyright where the machine has one, with the
-checkout's own `.venv`. The file `language-servers.json` sets another server,
-or none, for the machine (INSTALL.md). Without a server, the answer says `language-server-missing`
-once and keeps the candidates. A server that did not answer is
-`language-server-failed`. Swift runs sourcekit-lsp only from an entry that the
-user writes there. The server reads the index that `swift build` writes, and
-the check never builds. So the answer says `language-server-unready` once for
-a Swift package with no index, and keeps its candidates. Unless the user asks,
-do not build a package to clear it. C# runs csharp-ls only from an entry that
-the user writes, and says `language-server-unready` once for a checkout with no
-`.sln`, `.slnx` or `.csproj` file. Python says it once for a checkout whose
-`.venv` holds an interpreter that Git tracks, because the check never runs it.
-C, C++ and Objective-C use clangd where the machine has one. clangd reads the
-checkout's `compile_commands.json`, so the answer says
-`language-server-unready` once for a checkout with none, and keeps the
-candidates. With it, clangd names the definition of a function that a header
-only declares, such as one that Redis declares in `server.h` and defines in
-`evict.c`. Unless the user asks, do not generate the file to clear it: for
-CMake that is `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`, which builds
-nothing, and other build tools need `bear -- make`, which builds.
+server then names the code that the call reaches. TypeScript needs no setup:
+the check runs the native `tsc --lsp` of the `typescript` package in the
+checkout's own `node_modules` when that is version 7 or later (an older one is
+no language server), and the one that archboard installs otherwise.
+
+Every other server is configured for one checkout, by the agent that works in
+that repository, and not before: a language server reads a project the way an
+editor does, which runs code of the repository (pyright runs the interpreter of
+its `.venv`, clangd the compilers and plugins that `compile_commands.json`
+names, csharp-ls and sourcekit-lsp the build files). The check then runs the
+server exactly as the editor would, with the command, arguments and environment
+you give it and nothing added. So configure one only for a repository you work
+in, never for one you only read, and say so to the user when you do:
+
+1. Install the server (for Python `pyright-langserver`, for C, C++ and
+   Objective-C `clangd`, for C# `csharp-ls`, for Swift `sourcekit-lsp`).
+2. For C, C++ and Objective-C, the server needs a `compile_commands.json`.
+   For CMake that is `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`,
+   which builds nothing, and other build tools need `bear -- make`, which
+   builds. For Swift, `swift build` writes the index the server reads.
+3. Register the checkout if it is not (`archboard repo add <dir>`), then run
+   `archboard repo language-server <python|csharp|swift|c> <command>`, and
+   `--arg=<argument>` for each argument, such as `--arg=--stdio` for
+   pyright. `--remove` removes it, `--repo <identity>` names another
+   registered checkout, and `archboard repo list` shows what is configured.
+   The configuration stays on this machine and goes with `repo forget`.
+
+With no server for a language the answer says `language-server-missing` once
+for the checkout and the language, names that command, and keeps the
+candidates. A server that did not answer is `language-server-failed`. A
+project the server cannot answer about yet is `language-server-unready` once,
+and the candidates stay: a Swift package with no index (the check never
+builds; unless the user asks, do not build to clear it), a C# checkout with no
+`.sln`, `.slnx` or `.csproj` file, or a C, C++ or Objective-C file with no
+`compile_commands.json` (generate it only for a repository you work in). With
+a server, clangd names the definition of a function that a header only
+declares, such as one that Redis declares in `server.h` and defines in
+`evict.c`.
 
 A relationship across a network hop shows no evidence in code alone. An
 example is an `http` call to another service. So `check --code` joins two
