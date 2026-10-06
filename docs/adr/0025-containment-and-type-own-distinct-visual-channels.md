@@ -10,6 +10,11 @@ with. A container no longer establishes a color scope for its contents. Type
 independence, the icon chip, and the relationship, comparison and selection
 channels stand.
 
+[ADR 0044](0044-cards-containers-and-groups-are-drawn-as-slabs.md) supersedes
+two more sentences. A comparison status no longer overrides the border of a
+node, and arrowheads are no longer proportionate to stroke width. The amendment
+of 2026-10-06 at the end says what is true now.
+
 TASK-339 amended this decision on 2026-09-24. A colored line gets its color from
 its relationship type or its comparison status. The renderer draws that line at
 three quarters of its color over the page, and its arrowhead gets the same
@@ -103,3 +108,25 @@ Separating these channels makes a hosting migration readable without losing
 type, change or selection information. If a view changes a node from a leaf card
 to an expanded container, the separation intentionally permits its body
 appearance to change. Semantic identity and type remain unchanged.
+
+## Amendment of 2026-10-06: a standing is on the face, and a head has a set length
+
+ADR 0044 draws every part as a slab, with a top face and a front edge. Two
+sentences of "Relationship, comparison and selection" no longer hold.
+
+"Arrowheads remain proportionate to stroke width." An arrowhead now takes its
+length from one table, `HEAD_LENGTH` in
+`src/transformers/semantic-renderer/lib/svg/styles.ts`. A head is 11 units long
+on an emphasized line, 11 on a default line and 6 on a muted line. The owner
+asked for this on 2026-10-06 (TASK-403). A smaller default head left the reader
+to guess which way most lines run. Emphasis still sets the width of a line, and
+a muted line still ends in a smaller head.
+
+"Added, changed and deleted comparison status overrides the semantic border on
+nodes and the semantic line color on edges." The part about edges holds. On a
+node, a standing now washes the face: green for added, and orange with a hatch
+for changed. A card keeps the color of its group on its front edge. A
+container's nameplate keeps the color of its kind on its front edge. A removed
+node has lost its thickness: a flat, see-through face inside a dashed red
+footprint. The type chip still says the kind, and selection still adds a ring
+outside the part.
