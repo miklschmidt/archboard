@@ -155,6 +155,32 @@ What causes the error lines:
 - Objective-C++ (`.mm`) has no grammar. `RLMObjectSchema.mm` from
   `realm/realm-swift` has 355 error lines of 399 under the Objective-C grammar.
 
+#### Reading the dogfood vault's bound files
+
+TASK-367.06 measured `src/runtime/code-facts` on 2026-10-06 with Bun 1.4.2, at
+commit `773433125`. The current variants of the 15 boards in
+`.archboard/vault` hold 310 bindings to this repository. They name 1,154 files
+that Git does not ignore, every file below a bound directory included, and
+1,046 of them are TypeScript or TSX. One pass read each file once, in three
+runs of one process:
+
+| Pass                                        | Time              | Parsed | From the cache | Longest wait of the event loop |
+| ------------------------------------------- | ----------------- | ------ | -------------- | ------------------------------ |
+| Load both grammars and parse the first file | 91 to 99 ms       | 1      | 0              | the load itself                |
+| Cold, every file parsed                     | 1,681 to 1,767 ms | 1,046  | 0              | 7 to 8 ms                      |
+| Warm, no file changed                       | 48 to 57 ms       | 0      | 1,046          | 1 ms                           |
+
+A warm pass still reads and hashes every file, so it sees every edit. The pass
+yields to the event loop after each parse. So a poll or a socket of the server
+waits for one file at most. The longest single parse in this repository took
+14 ms. The grammars load once per process. Over all 2,032 tracked TypeScript
+and TSX files of `src`, parsing took 1,220 ms and reading the facts from the
+trees 1,612 ms.
+
+The real `./bin/dogfood check --code` also runs the plain check and behind. It
+took 1,582 ms on its first run after a server restart, and 1,141 ms on the
+second run.
+
 #### Swift and Nix have no upstream WebAssembly file on npm
 
 Swift: the npm package `tree-sitter-swift` stops at 0.7.1 and has no `.wasm`.
