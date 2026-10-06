@@ -1,32 +1,59 @@
-// Where a name is defined that a file reaches through its includes (ADR 0046,
-// TASK-367.09). A C or C++ `#include` puts every name of the header in scope,
-// and every name of each header it includes, so a use names no import of its
-// own. The search reads the included headers in the order the file includes
-// them, each header's own includes after it, and stops at the first that
-// defines the name. Every include on the way names its file, so a site found
-// this way is resolved, not a candidate. A header that only includes another
-// passes no code of its own on, so a site names no file between: Redis's
-// `server.h` includes `zmalloc.h`, and a use of `zmalloc_size` reaches
-// `zmalloc.h` alone.
+// Where the uses of a C or C++ file lead through its includes (ADR 0046,
+// TASK-367.09). An `#include` puts every name of the header in scope, and
+// every name of each header it includes, so a use names no import of its
+// own: the include resolver gives each use its target, as the resolvers of
+// C# and Swift give the uses of names their module sees (`inModule`).
+//
+// The search reads the included headers in the order the file includes them,
+// each header's own includes after it, and stops at the first that defines
+// the name. A header that only includes another passes no code of its own on,
+// so a target names no file between: Redis's `server.h` includes `zmalloc.h`,
+// and a use of `zmalloc_size` leads to `zmalloc.h` alone. A use of a name the
+// file defines itself, also by a prototype, leads to no other file.
 //
 // A bare name finds a definition at file or namespace scope only: `count`
 // never finds the field `count` of a struct, which code reaches through a
 // value. A name qualified with `::` finds what its qualifiers name. A use
 // through a value, spelled with `.`, finds nothing here: a language server
 // resolves it (TASK-367.15).
+//
+// The include names the header, which often only declares the name. Where the
+// code that runs is, the header's pair or another file, is the definition
+// site's to say (definition-site.ts).
 
-import type { DefinitionSite } from "@/runtime/code-facts/lib/definition-site";
-import type { Definition, FileFacts, SyntaxFacts } from "@/runtime/code-facts/lib/facts";
+import type {
+	Definition,
+	Import,
+	ParsedFacts,
+	ReadParsed,
+	ResolvedImport,
+	Target,
+} from "@/runtime/code-facts/lib/facts";
 import { endsWithNames } from "@/runtime/code-facts/lib/lookup";
 import { lastName } from "@/runtime/code-facts/lib/text-reading";
-import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
-import type { FactsPass } from "@/runtime/code-facts/lib/reader";
 
 /** How many headers one file's includes may reach before the search stops reading. */
 const HEADER_LIMIT = 256;
 
 /** The visibility words of a member of a class. */
 const MEMBER = new Set(["public", "protected", "private"]);
+
+/**
+ * What the search needs: where an include leads, the facts of a header, and
+ * the files each header's includes name, kept for the pass, because every
+ * file that includes a header reads its includes again.
+ */
+interface IncludeSearch {
+	readonly resolve: (from: string, found: Import) => ResolvedImport;
+	readonly parsed: ReadParsed;
+	readonly included: Map<string, readonly string[]>;
+}
+
+/** One header the search read: its path and its facts. */
+interface Header {
+	readonly path: string;
+	readonly facts: ParsedFacts;
+}
 
 /**
  * Whether a definition is the one a use's spelling names.
@@ -41,124 +68,122 @@ function names(definition: Definition, symbol: string): boolean {
 	return symbol.includes("::") || !MEMBER.has(definition.visibility);
 }
 
+/** Each file's definitions by their last name, made once for the facts the cache holds. */
+const BY_LAST_NAME = new WeakMap<ParsedFacts, Map<string, Definition[]>>();
+
 /**
- * The files a file's includes name, in order.
+ * The definitions of a file whose last name is a name's.
  * @param facts The file's facts.
- * @returns The resolved files of its includes.
- */
-function includedBy(facts: SyntaxFacts): string[] {
-	return facts.imports.flatMap((found) =>
-		found.inScope === true && found.resolved !== undefined ? [found.resolved] : [],
-	);
-}
-
-/** Each header's definitions by their last name, made once for the facts a pass read. */
-const BY_LAST_NAME = new WeakMap<SyntaxFacts, Map<string, Definition[]>>();
-
-/**
- * The definitions of a header whose last name is a name's.
- * @param header The header's facts.
  * @param name The last name.
- * @returns The definitions, in the header's order.
+ * @returns The definitions, in the file's order.
  */
-function definitionsEnding(header: SyntaxFacts, name: string): readonly Definition[] {
-	let index = BY_LAST_NAME.get(header);
+function definitionsEnding(facts: ParsedFacts, name: string): readonly Definition[] {
+	let index = BY_LAST_NAME.get(facts);
 	if (index === undefined) {
 		index = new Map();
-		for (const definition of header.definitions) {
+		for (const definition of facts.definitions) {
 			const last = lastName(definition.symbol);
 			index.set(last, [...(index.get(last) ?? []), definition]);
 		}
-		BY_LAST_NAME.set(header, index);
+		BY_LAST_NAME.set(facts, index);
 	}
 	return index.get(name) ?? [];
 }
 
 /**
- * The site of a name in one header, if the header defines it: the same name
+ * The definition of a name in one file, if the file defines it: the same name
  * first, else a name that ends with it.
- * @param header The header's facts.
+ * @param facts The file's facts.
  * @param symbol The name as the asking file spells it.
- * @returns The site, or undefined.
+ * @returns The definition, or undefined.
  */
-function siteIn(header: FileFacts | undefined, symbol: string): DefinitionSite | undefined {
-	if (header === undefined || header.adapter === "text") return undefined;
-	const candidates = definitionsEnding(header, lastName(symbol));
-	const definition =
+function definitionIn(facts: ParsedFacts, symbol: string): Definition | undefined {
+	const candidates = definitionsEnding(facts, lastName(symbol));
+	return (
 		candidates.find((each) => each.symbol === symbol) ??
-		candidates.find((each) => names(each, symbol));
-	return definition === undefined ? undefined : { path: header.path, definition, via: [] };
+		candidates.find((each) => names(each, symbol))
+	);
 }
 
 /**
- * The headers one header includes that the search has not queued yet, which
- * this marks as queued.
- * @param header The header's facts.
- * @param seen The files queued so far.
- * @returns The headers to read after the ones queued.
+ * The files a file's includes name, in order, resolved once in the search.
+ * @param search The search.
+ * @param from The file.
+ * @param facts Its facts.
+ * @returns The headers its includes resolve to.
  */
-function unseen(header: FileFacts | undefined, seen: Set<string>): string[] {
-	if (header === undefined || header.adapter === "text") return [];
-	const next = includedBy(header).filter((file) => !seen.has(file));
-	for (const file of next) seen.add(file);
-	return next;
+function includedBy(search: IncludeSearch, from: string, facts: ParsedFacts): readonly string[] {
+	let included = search.included.get(from);
+	if (included === undefined) {
+		included = facts.imports.flatMap((found) => search.resolve(from, found).resolved ?? []);
+		search.included.set(from, included);
+	}
+	return included;
 }
-
-/** The headers each file of a pass reaches through its includes, read once. */
-const REACHED = new WeakMap<SyntaxFacts, Promise<FileFacts[]>>();
 
 /**
  * Every header a file reaches through its includes, in the order a search
  * reads them: each include in order, and each header's own includes after it.
- * @param pass The pass.
- * @param checkout The checkout and the files the pass may read.
- * @param facts The file's facts.
- * @returns The headers' facts.
+ * @param search The search.
+ * @param from The file.
+ * @param facts Its facts.
+ * @returns The headers.
  */
-async function readHeaders(
-	pass: FactsPass,
-	checkout: CheckoutFiles,
-	facts: SyntaxFacts,
-): Promise<FileFacts[]> {
-	const seen = new Set([facts.path]);
-	const queue = unseen(facts, seen);
-	const headers: FileFacts[] = [];
+async function headersOf(
+	search: IncludeSearch,
+	from: string,
+	facts: ParsedFacts,
+): Promise<Header[]> {
+	const seen = new Set([from]);
+	const queue: string[] = [];
+	/**
+	 * Queue the headers not queued yet.
+	 * @param paths The headers.
+	 */
+	const enqueue = (paths: readonly string[]) => {
+		for (const path of paths.filter((each) => !seen.has(each))) {
+			queue.push(path);
+			seen.add(path);
+		}
+	};
+	enqueue(includedBy(search, from, facts));
+	const headers: Header[] = [];
 	for (let read = 0; read < Math.min(queue.length, HEADER_LIMIT); read += 1) {
+		const path = queue[read] ?? "";
 		// oxlint-disable-next-line no-await-in-loop -- each header names the next ones to read
-		const header = await pass.read(checkout, queue[read] ?? "");
-		if (header !== undefined) headers.push(header);
-		queue.push(...unseen(header, seen));
+		const header = await search.parsed(path);
+		if (header === undefined) continue;
+		headers.push({ path, facts: header });
+		enqueue(includedBy(search, path, header));
 	}
 	return headers;
 }
 
 /**
- * Where a name a file reaches through its includes is defined.
- * @param pass The pass.
- * @param checkout The checkout and the files the pass may read.
- * @param facts The asking file's facts.
- * @param symbol The name as the file spells it.
- * @returns The site in the first header that defines it, or undefined.
+ * Where each use of a file leads through its includes: the first header that
+ * defines its name, with the name as the header spells it.
+ * @param search The search.
+ * @param from The file.
+ * @param facts Its facts.
+ * @returns The target of each use, by index; none for a use through a value,
+ * one of a name the file defines, or one no header defines.
  */
-async function includedSite(
-	pass: FactsPass,
-	checkout: CheckoutFiles,
-	facts: SyntaxFacts,
-	symbol: string,
-): Promise<DefinitionSite | undefined> {
-	if (symbol.includes(".") || !facts.imports.some((found) => found.inScope === true)) {
+async function includedTargets(
+	search: IncludeSearch,
+	from: string,
+	facts: ParsedFacts,
+): Promise<(Target | undefined)[]> {
+	if (facts.imports.length === 0) return [];
+	const headers = await headersOf(search, from, facts);
+	return facts.references.map((use) => {
+		if (use.via !== "code" || use.symbol.includes(".")) return undefined;
+		if (definitionIn(facts, use.symbol) !== undefined) return undefined;
+		for (const header of headers) {
+			const definition = definitionIn(header.facts, use.symbol);
+			if (definition !== undefined) return { path: header.path, symbol: definition.symbol };
+		}
 		return undefined;
-	}
-	let headers = REACHED.get(facts);
-	if (headers === undefined) {
-		headers = readHeaders(pass, checkout, facts);
-		REACHED.set(facts, headers);
-	}
-	for (const header of await headers) {
-		const site = siteIn(header, symbol);
-		if (site !== undefined) return site;
-	}
-	return undefined;
+	});
 }
 
-export { includedSite };
+export { type IncludeSearch, includedTargets };

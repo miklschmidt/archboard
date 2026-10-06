@@ -11,6 +11,8 @@ int hidden(int item) {
 
 Store::Store(int size) : size_(size) {}
 
+Store::~Store() {}
+
 void Store::save(int item) {
 	size_ += hidden(item);
 }

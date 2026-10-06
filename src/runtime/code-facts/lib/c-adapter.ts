@@ -4,8 +4,8 @@
 // A name is a use unless the file declares it there: a declarator, a
 // parameter, a macro's name or parameters, an enumerator, a type with a body,
 // a template parameter. A forward declaration, a designated initializer
-// (`.x = 1`), a `using` declaration, an attribute and the condition of `#if`
-// or `#ifdef` hold no use. A use of a name that the enclosing function
+// (`.x = 1`), a `using` declaration, a destructor's name (`~Ledger`), an
+// attribute and the condition of `#if` or `#ifdef` hold no use. A use of a name that the enclosing function
 // declares, a parameter or a local, is not kept, because a local never joins
 // two parts and C finds every other name through the file's includes.
 //
@@ -24,12 +24,12 @@
 // name. Code in a part that did not parse holds no facts (c-unparsed.ts).
 //
 // An `#include` brings every name of the header into the file, and every
-// header that header includes: an import of `*` in scope (`inScope`), with
-// no name of its own. Where a use leads is found through the includes in
-// order (include-scope.ts).
+// header that header includes: an import of `*`, with no name of its own.
+// Where a use leads is found through the includes in order, by the resolver
+// (include-scope.ts).
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
-import { cDefinitionsOf, spell } from "@/runtime/code-facts/lib/c-definitions";
+import { cDefinitionsOf, misreadNamespace, spell } from "@/runtime/code-facts/lib/c-definitions";
 import type { Import, ParsedFacts, Reference } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { cUnparsedOf } from "@/runtime/code-facts/lib/c-unparsed";
@@ -86,6 +86,7 @@ const NO_USE = new Set([
 	"namespace_alias_definition",
 	"field_initializer",
 	"preproc_defined",
+	"destructor_name",
 ]);
 
 /** The specifiers of a type that can have a body. */
@@ -451,7 +452,6 @@ function includeOf(node: Node): Import | undefined {
 		names: [{ imported: "*", local: "*", typeOnly: false }],
 		typeOnly: false,
 		reexport: false,
-		inScope: true,
 	};
 }
 
@@ -481,7 +481,9 @@ function cFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	const broken = cUnparsedOf(captured.unparsed);
 	const unparsed = spansOf(broken);
 	const outside = spansOf([...broken, ...captured.skip]);
-	const named = namedOf(captured.name, outside, functionSpans(captured.function));
+	// A namespace a macro hides from the grammar is no function whose names are its own.
+	const functions = captured.function.filter((node) => misreadNamespace(node) === undefined);
+	const named = namedOf(captured.name, outside, functionSpans(functions));
 	const locals = localsOf(named);
 	const inCode = named.flatMap((each) => useOf(each, locals) ?? []);
 	const inStrings = captured.environment

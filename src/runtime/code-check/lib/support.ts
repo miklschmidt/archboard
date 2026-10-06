@@ -4,7 +4,10 @@
 // checkout, and that definition is in the bound code of neither end, nor of a
 // part inside an end: `ANCHOR_MISMATCH`. Code facts find the definition in
 // the anchored file, or where an import of it leads through every re-export,
-// so the import path names the file and the finding is a warning. A symbol
+// so the import path names the file and the finding is a warning. A C or C++
+// include leads to a header; where it only declares the name and the
+// header's pair defines nothing of it, the code is in a file the include does
+// not name, so the finding is information (definition-site.ts). A symbol
 // the code reaches only through a value, such as `ledger.post()`, has no such
 // definition. The language server of the anchored file then names it
 // (TASK-367.13): a definition in a file of the checkout is judged the same
@@ -66,10 +69,11 @@ interface SupportContext {
 
 /**
  * Where a symbol is defined: a definition code facts found, or the one line a
- * language server named.
+ * language server named. A C or C++ declaration whose code is in no file the
+ * check can name matches by name only, a candidate.
  */
 type Site = Pick<DefinitionSite, "path" | "via"> & {
-	readonly definition: Pick<Definition, "start" | "end">;
+	readonly definition: Pick<Definition, "start" | "end" | "declaration">;
 };
 
 /**
@@ -207,17 +211,20 @@ function anchorMismatch(
 	use: CodeEvidence | undefined,
 ): CodeFinding {
 	const ends = claim.ends.map((end) => JSON.stringify(end.name)).join(" nor ");
+	const candidate = site.definition.declaration === true;
 	return {
 		...claim.site,
-		severity: "warning",
+		severity: candidate ? "information" : "warning",
 		code: "ANCHOR_MISMATCH",
 		message:
 			`The anchor of ${describeSubject(claim.site.subject)} names ${JSON.stringify(claim.anchor.symbol)}, ` +
-			`which ${site.path}:${site.definition.start} defines, and that definition is in the bound ` +
-			`code of neither ${ends}, nor of a part inside one. Cite the symbol in the code of an end ` +
-			"that proves the relationship, bind the part whose code it is, or change the relationship " +
-			"to what the code does.",
-		...(use === undefined ? {} : { evidence: [use] }),
+			`which ${site.path}:${site.definition.start} ${candidate ? "declares" : "defines"}, and that ` +
+			`${candidate ? "declaration" : "definition"} is in the bound code of neither ${ends}, nor of ` +
+			"a part inside one. Cite the symbol in the code of an end that proves the relationship, " +
+			"bind the part whose code it is, or change the relationship to what the code does.",
+		...(use === undefined
+			? {}
+			: { evidence: [{ ...use, resolution: candidate ? "candidate" : use.resolution }] }),
 	};
 }
 

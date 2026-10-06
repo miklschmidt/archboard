@@ -34,6 +34,13 @@ interface Definition {
 	 */
 	readonly exposed: boolean;
 	/**
+	 * Declared here, with its code in another file or later in this one: a C or
+	 * C++ prototype, a method declared without its body, an `extern` variable.
+	 * A use that reaches a declaration reaches the code its file's pair defines
+	 * (definition-site.ts), and without that it is a candidate.
+	 */
+	readonly declaration?: true;
+	/**
 	 * The directory whose code an infrastructure declaration runs, as its file
 	 * writes it, relative to the file's own directory: the build context of a
 	 * compose service, or, where that context is the compose file's own
@@ -105,12 +112,6 @@ interface Import {
 	readonly typeOnly: boolean;
 	/** An `export ... from`: it passes names on rather than using them. */
 	readonly reexport: boolean;
-	/**
-	 * Every name its file defines, and every name that file has in scope, is in
-	 * scope here too, as a C or C++ `#include` puts it: a use names no import,
-	 * and is found through these imports in order (include-scope.ts).
-	 */
-	readonly inScope?: true;
 }
 
 /** A part of the file that did not parse: its lines, and the names written there. */

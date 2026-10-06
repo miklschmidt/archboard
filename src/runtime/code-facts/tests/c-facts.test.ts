@@ -10,7 +10,6 @@
 // `compile_commands.json`, written by the test because its paths are absolute.
 
 import { afterAll, expect, test } from "bun:test";
-import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	createCodeFacts,
@@ -19,19 +18,9 @@ import {
 	pairOf,
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
-import { fixtureCheckout } from "@/runtime/code-facts/tests/checkout";
+import { fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
 
-const FIXTURE = join(import.meta.dir, "fixtures", "c-shop");
-const checkout = fixtureCheckout(
-	Object.fromEntries(
-		readdirSync(FIXTURE, { recursive: true, withFileTypes: true })
-			.filter((entry) => entry.isFile())
-			.map((entry) => {
-				const file = join(entry.parentPath, entry.name);
-				return [file.slice(FIXTURE.length + 1), readFileSync(file, "utf8")];
-			}),
-	),
-);
+const checkout = fixtureDirectory("c-shop");
 checkout.write(
 	"built/compile_commands.json",
 	JSON.stringify([
@@ -90,8 +79,8 @@ function resolved(found: SyntaxFacts): Record<string, string | undefined> {
 }
 
 test("a C file defines its functions, variables, types and macros with their linkage, and static names are internal", async () => {
+	// The include guard names how the header guards itself, not what it declares.
 	expect(await visibility("include/shop/ledger.h")).toEqual({
-		SHOP_LEDGER_H: ["macro", true],
 		LEDGER_MAX: ["macro", true],
 		LedgerStats: ["no linkage", true],
 		"LedgerStats::total": ["public", true],
@@ -105,15 +94,24 @@ test("a C file defines its functions, variables, types and macros with their lin
 	});
 	const ledger = await read("src/ledger.c");
 	expect(ledger.definitions.find((each) => each.symbol === "ledger_post")).toMatchObject({
-		start: 14,
-		end: 17,
+		start: 12,
+		end: 15,
 	});
+	// A prototype and an extern variable are declarations, whose code is elsewhere.
+	const header = await read("include/shop/ledger.h");
+	expect(header.definitions.filter((each) => each.declaration).map((each) => each.symbol)).toEqual([
+		"ledger_post",
+		"ledger_open_count",
+	]);
+	// A bound symbol is the function's body, not the prototype above it.
+	expect(findSymbol(ledger, "audit", "definition")).toMatchObject({ line: 17 });
 });
 
 test("a C++ file qualifies names by namespace and class, gives members their access, and an anonymous namespace is internal", async () => {
 	expect(await visibility("cpp/store.hpp")).toEqual({
 		"shop::Store": ["no linkage", true],
 		"shop::Store::Store": ["public", true],
+		"shop::Store::~Store": ["public", true],
 		"shop::Store::save": ["public", true],
 		"shop::Store::open": ["public", true],
 		"shop::Store::size_": ["private", false],
@@ -127,17 +125,21 @@ test("a C++ file qualifies names by namespace and class, gives members their acc
 	expect(await visibility("cpp/store.cpp")).toEqual({
 		"shop::hidden": ["anonymous namespace", false],
 		"shop::Store::Store": ["extern", true],
+		"shop::Store::~Store": ["extern", true],
 		"shop::Store::save": ["extern", true],
 		"shop::Store::open": ["extern", true],
 	});
 	// A binding spells a C++ name with `::` or `.`, whole or by its last names.
 	const header = await read("cpp/store.hpp");
 	for (const symbol of ["shop::Store::save", "Store::save", "Store.save", "save"]) {
-		expect(findSymbol(header, symbol, "definition")).toMatchObject({ status: "found", line: 8 });
+		expect(findSymbol(header, symbol, "definition")).toMatchObject({ status: "found", line: 9 });
 	}
+	// A macro before a namespace hides it from the grammar, which reads a function named `namespace::detail`.
+	const hidden = await read("cpp/export.hpp");
+	expect(hidden.definitions.map((each) => each.symbol)).toEqual(["shop::detail::rank"]);
 });
 
-test("a call, a construction and a base class are call evidence, a type name is import evidence, and locals, comments and strings are no use", async () => {
+test("a call, a construction and a base class are call evidence, a type name is import evidence, and locals, comments, strings and a destructor's name are no use", async () => {
 	const checkoutFile = await read("src/checkout.c");
 	const use = (symbol: string) => checkoutFile.references.find((each) => each.symbol === symbol);
 	expect(use("ledger_post")).toMatchObject({ kind: "call", typeOnly: false, line: 12 });
@@ -165,8 +167,8 @@ test("a call, a construction and a base class are call evidence, a type name is 
 	const store = await read("cpp/store.cpp");
 	const stores = store.references.filter((each) => each.symbol === "Store");
 	expect(stores.map((each) => [each.line, each.kind])).toEqual([
-		[18, "import"],
-		[19, "call"],
+		[20, "import"],
+		[21, "call"],
 	]);
 });
 
@@ -193,22 +195,27 @@ test("with compile_commands.json an include resolves through its -iquote, -I and
 	});
 });
 
-test("a use reaches the definition an included header declares, through the headers it includes", async () => {
+test("a use reaches the code of what an included header declares, in the header's pair, and else the declaration", async () => {
 	const pass = facts.pass(new AbortController().signal);
 	expect(await definitionSite(pass, checkout, "src/checkout.c", "ledger_post")).toMatchObject({
-		path: "include/shop/ledger.h",
-		definition: { symbol: "ledger_post" },
+		path: "src/ledger.c",
+		definition: { symbol: "ledger_post", start: 12 },
+		via: ["include/shop/ledger.h"],
 	});
-	expect(await definitionSite(pass, checkout, "src/checkout.c", "money_round")).toMatchObject({
+	// A type the header defines is its own code.
+	expect(await definitionSite(pass, checkout, "src/checkout.c", "money_t")).toMatchObject({
 		path: "src/money.h",
+		via: [],
 	});
 	// A bare name never reaches a field of a struct.
 	expect(await definitionSite(pass, checkout, "src/checkout.c", "total")).toBeUndefined();
 	expect(await definitionSite(pass, checkout, "cpp/app.cpp", "shop::Store::open")).toMatchObject({
-		path: "cpp/store.hpp",
+		path: "cpp/store.cpp",
 	});
+	// No source file defines it: the site is the declaration, a candidate.
 	expect(await definitionSite(pass, checkout, "built/main.c", "api_call")).toMatchObject({
 		path: "built/headers/api.h",
+		definition: { declaration: true },
 	});
 });
 

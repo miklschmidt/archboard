@@ -5,6 +5,7 @@ namespace shop {
 class Store {
 public:
 	explicit Store(int size);
+	~Store();
 	void save(int item);
 	static Store *open();
 

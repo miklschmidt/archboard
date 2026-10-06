@@ -17,9 +17,20 @@
 // named `include`, shallowest first. An include that resolves nowhere, such as
 // `<stdio.h>`, reaches no file of the checkout. Nothing names include
 // directories in a configuration of archboard.
+//
+// ADR 0046 matches an include that resolves nowhere by its file name, as a
+// candidate. That is not built: on Redis, 393 of the 1,686 includes that
+// resolve nowhere would match one file by name, and 191 of those are system
+// headers in angle brackets (`<stdint.h>`, `<assert.h>`, `<math.h>`) that
+// would match jemalloc's own copies. A checkout that needs exact includes
+// lists them in `compile_commands.json`.
+//
+// The uses of a file lead where its includes put their names
+// (include-scope.ts).
 
 import path from "node:path";
-import type { ImportResolver, ReadText } from "@/runtime/code-facts/lib/facts";
+import type { ImportResolver, ReadParsed, ReadText } from "@/runtime/code-facts/lib/facts";
+import { type IncludeSearch, includedTargets } from "@/runtime/code-facts/lib/include-scope";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 
 /** The include directories one compile command searches, relative to the checkout. */
@@ -245,9 +256,14 @@ function directoriesAbove(file: string): string[] {
  * The resolver of one checkout's includes for one pass.
  * @param checkout The checkout's files.
  * @param read Reads a file of the checkout as text.
+ * @param parsed Reads the facts of a header.
  * @returns The resolver.
  */
-function createCResolver(checkout: CheckoutFiles, read: ReadText): ImportResolver {
+function createCResolver(
+	checkout: CheckoutFiles,
+	read: ReadText,
+	parsed: ReadParsed,
+): ImportResolver {
 	const databases = new Map<string, CompileDatabase | undefined>();
 	let includeDirectories: string[] | undefined;
 	/**
@@ -290,22 +306,33 @@ function createCResolver(checkout: CheckoutFiles, read: ReadText): ImportResolve
 			? [...flags.include, ...flags.system]
 			: [own, ...flags.quote, ...flags.include, ...flags.system];
 	};
+	/**
+	 * Where one include leads.
+	 * @param from The including file.
+	 * @param found The include.
+	 * @returns The include, with the file it names where the checkout holds it.
+	 */
+	const resolve: ImportResolver["resolve"] = (from, found) => {
+		const angle = /^<.*>$/u.test(found.specifier);
+		const name = angle ? found.specifier.slice(1, -1) : found.specifier;
+		const resolved = searched(from, angle)
+			.map((directory) => path.posix.normalize(path.posix.join(directory, name)))
+			.find((candidate) => checkout.files.has(candidate));
+		return resolved === undefined ? found : { ...found, resolved };
+	};
+	const search: IncludeSearch = { resolve, parsed, included: new Map() };
 	return {
+		resolve,
 		/**
-		 * Where one include leads.
-		 * @param from The including file.
-		 * @param found The include.
-		 * @returns The include, with the file it names where the checkout holds it.
+		 * Where the uses of one file lead through its includes.
+		 * @param from The file.
+		 * @param facts Its facts.
+		 * @returns Its definitions, and the target of each use.
 		 */
-		resolve(from, found) {
-			if (found.inScope !== true) return found;
-			const angle = /^<.*>$/u.test(found.specifier);
-			const name = angle ? found.specifier.slice(1, -1) : found.specifier;
-			const resolved = searched(from, angle)
-				.map((directory) => path.posix.normalize(path.posix.join(directory, name)))
-				.find((candidate) => checkout.files.has(candidate));
-			return resolved === undefined ? found : { ...found, resolved };
-		},
+		inModule: async (from, facts) => ({
+			definitions: facts.definitions,
+			targets: await includedTargets(search, from, facts),
+		}),
 	};
 }
 
