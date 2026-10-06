@@ -97,7 +97,7 @@ function ContainerInterface(props: ContainerInterfaceProps): JSX.Element | null 
 								slot="semantic-inspector-caller"
 								look={look}
 								onPick={onPick}
-								note={reachedBy(caller, inspection)}
+								note={whatItReaches(caller, inspection)}
 							/>
 						))}
 					</SidebarChoices>
@@ -199,7 +199,7 @@ function passesThrough(inspection: Derived, id: string): boolean {
  * @param inspection The interface it calls.
  * @returns The line.
  */
-function reachedBy(caller: Caller, inspection: Derived): string {
+function whatItReaches(caller: Caller, inspection: Derived): string {
 	const reached = inspection.entryPoints
 		.filter(({ node }) => caller.reaches.includes(node.id))
 		.map(({ node }) => node.name);
