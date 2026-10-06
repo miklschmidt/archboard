@@ -96,10 +96,11 @@ function githubPlace(
  * branch, else HEAD. It exists so a binding can still be opened when no local
  * checkout resolves, or when opening it fails. It names the file or directory,
  * and a file at a line when the caller found one, as `blob/<ref>/<path>#L<n>`.
- * The caller gives a line only when it read the file at that ref: a binding's
- * `symbol` is looked up in a checkout (TASK-367.25), never on GitHub.
+ * A binding's `symbol` is looked up in a checkout's working tree (TASK-367.25),
+ * never on GitHub, so the caller gives a line only where the checkout is not on
+ * another ref than the binding pins.
  * @param binding - The binding to present.
- * @param line - The line to link to, found in a checkout that has the bound ref out.
+ * @param line - The line to link to, found in a checkout's working tree.
  * @returns A validated GitHub URL, or undefined when the binding has none.
  */
 function githubUrlForBinding(binding: CodeBinding, line?: number): GitHubHttpsUrl | undefined {

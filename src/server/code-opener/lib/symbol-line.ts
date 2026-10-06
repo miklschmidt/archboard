@@ -22,7 +22,7 @@ const codeFacts = createCodeFacts();
  * @param target Where the binding resolved on this machine.
  * @param signal Ends the reading when the request is abandoned.
  * @returns The facts, or undefined for a file that went away or cannot be read since it resolved.
- * @throws {DOMException} When the signal ends the reading.
+ * @throws {unknown} The signal's reason, when it ends the reading.
  */
 async function factsOfFile(
 	target: LocalCodeTarget,
@@ -46,7 +46,7 @@ async function factsOfFile(
  * @param signal Ends the reading when the request is abandoned.
  * @returns The first line of the definition, or undefined when the binding has no
  * symbol, names a directory, or code facts do not find the symbol defined there.
- * @throws {DOMException} When the signal ends the reading.
+ * @throws {unknown} The signal's reason, when it ends the reading.
  */
 async function symbolLine(
 	binding: CodeBinding,
