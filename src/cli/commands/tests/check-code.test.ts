@@ -6,7 +6,11 @@
 // stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
+import {
+	CodeCheckAnswerSchema,
+	type CodeCheckAnswer,
+	type CodeFinding,
+} from "@/shared/code-check/index";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	VaultCheckSchema,
@@ -69,6 +73,7 @@ const codeCheck: CodeCheckAnswer = {
 
 let service = "";
 let plain = clean;
+let answered = codeCheck;
 const asked: string[] = [];
 const server = Bun.serve({
 	hostname: "127.0.0.1",
@@ -78,7 +83,7 @@ const server = Bun.serve({
 		if (pathname === "/health") return Response.json({ service, status: "ok" });
 		asked.push(pathname);
 		if (pathname === "/api/vault/check") return Response.json({ success: true, ...plain });
-		if (pathname === "/api/vault/code-check") return Response.json({ success: true, ...codeCheck });
+		if (pathname === "/api/vault/code-check") return Response.json({ success: true, ...answered });
 		return Response.json({ success: false, error: `unexpected ${pathname}` }, { status: 404 });
 	},
 });
@@ -163,6 +168,24 @@ test("check --code fails when the plain check has a diagnostic", async () => {
 	plain = warned;
 	const { exited } = await run(["check", "--code"]);
 	expect(exited).toBe(1);
+});
+
+test("check --code fails on a code check warning and never on information", async () => {
+	plain = clean;
+	const finding: CodeFinding = {
+		severity: "warning",
+		code: "ANCHOR_PATH_MISSING",
+		file: "/vault/Orders.semantic.json",
+		message: "Gone.",
+	};
+	try {
+		answered = { ...codeCheck, findings: [finding] };
+		expect((await run(["check", "--code"])).exited).toBe(1);
+		answered = { ...codeCheck, findings: [{ ...finding, severity: "information" }] };
+		expect((await run(["check", "--code"])).exited).toBe(0);
+	} finally {
+		answered = codeCheck;
+	}
 });
 
 test("check without --code never asks the code check", async () => {
