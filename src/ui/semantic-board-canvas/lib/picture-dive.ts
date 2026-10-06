@@ -171,7 +171,8 @@ function wordsFadeOf(stops: readonly (readonly [number, number])[], way: DiveWay
 }
 
 /**
- * What a card on the picture says: its words near, and its name from far.
+ * What a card on the picture says: its words near, its name from far, and the
+ * chip of its kind that both views share.
  * @param picture The picture's root.
  * @param card The card's id.
  * @returns The groups that hold them, or none when the card is not drawn.
@@ -182,7 +183,7 @@ function wordsOf(picture: Element, card: string): Element[] {
 	);
 	return group === undefined
 		? []
-		: [...group.querySelectorAll(":scope > .ab-near, :scope > .ab-far")];
+		: [...group.querySelectorAll(":scope > .ab-near, :scope > .ab-far, :scope > .ab-chip")];
 }
 
 /** A cancelled animation promised nothing anyone is waiting for. */

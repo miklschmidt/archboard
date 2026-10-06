@@ -300,6 +300,29 @@ function splitCard(group: Element, box: SemanticBox): { frame: Element[]; conten
 const PLACEMENT = ["x", "y", "cx", "cy", "transform", "id"];
 
 /**
+ * A property an element's own style sets, such as where a card's chip stands
+ * near and far, or where a view's words go while the view is hidden (TASK-428).
+ * The picture sets a property on an element only to say where it is drawn.
+ */
+const PLACED_PROPERTY = /--[\w-]+:[^;]*;?/gu;
+
+/**
+ * Take where an element is drawn out of it: its placing attributes, and the
+ * properties its own style sets.
+ * @param positioned The element, changed in place.
+ */
+function unplace(positioned: Element): void {
+	for (const name of PLACEMENT) {
+		positioned.removeAttribute(name);
+	}
+	const style = positioned.getAttribute("style");
+	if (style === null) return;
+	const painted = style.replaceAll(PLACED_PROPERTY, "").trim();
+	if (painted === "") positioned.removeAttribute("style");
+	else positioned.setAttribute("style", painted);
+}
+
+/**
  * A copy of an element with where it is drawn taken out.
  * @param element The element.
  * @returns Its copy, unplaced.
@@ -307,9 +330,7 @@ const PLACEMENT = ["x", "y", "cx", "cy", "transform", "id"];
 function unplaced(element: Element): Element {
 	const copy = cloneElement(element);
 	for (const positioned of [copy, ...copy.querySelectorAll("*")]) {
-		for (const name of PLACEMENT) {
-			positioned.removeAttribute(name);
-		}
+		unplace(positioned);
 	}
 	if (copy.tagName === "path" || copy.tagName === "polygon") {
 		copy.removeAttribute("d");
