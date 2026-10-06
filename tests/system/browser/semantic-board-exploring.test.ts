@@ -27,7 +27,10 @@ import { serverPath } from "./support/navigator-support.ts";
 
 // Exploring a board in a real browser: a card opens by flying into it, the
 // part a person pokes lights what it is wired to along the whole of each route,
-// and the picture keeps its relationships' words, lit or not, near or far.
+// and the picture keeps its relationships' words, lit or not, near or far. A
+// flight from far swaps no card's words for its name in the air, and the board
+// it opens takes its own far view once, with the picture's fade, after it has
+// taken over.
 //
 // What the stage's module owners cannot see is the page around them: the style
 // sheet that makes the rest recede, the layout that gives the flight its
@@ -52,6 +55,12 @@ interface Flight {
 	readonly insetsAfter: number;
 	/** Whether the picture the pane landed on was still coming in. */
 	readonly entering: boolean;
+	/** For each change of the surface's far view, whether the board flown from was still on screen. */
+	readonly swaps: readonly ("before" | "after")[];
+	/** How many cards began to fade between their words and their name while the board flown from was on screen. */
+	readonly fadesBefore: number;
+	/** How many began once the board flown to was on screen. */
+	readonly fadesAfter: number;
 }
 
 /**
@@ -109,12 +118,25 @@ function recordFlight(
 			`   const part = inset.querySelector("[data-semantic-id]");` +
 			`   if (part) filters.add(getComputedStyle(part).filter); });` +
 			` watch.observe(surface, { attributes: true, attributeFilter: ["style"] });` +
+			// What the surface's far view was before each change of its class, and whether the board flown from was shown then.
+			` const classes = []; const far = (value) => (value || "").split(/\\s+/).includes("is-far");` +
+			` const note = (records) => { for (const r of records) classes.push([stage.dataset.board === before ? "before" : "after", far(r.oldValue)]); };` +
+			` const classWatch = new MutationObserver(note);` +
+			` classWatch.observe(surface, { attributes: true, attributeOldValue: true, attributeFilter: ["class"] });` +
+			` let fadesBefore = 0; let fadesAfter = 0;` +
+			` const fade = (e) => { const layer = e.target.classList;` +
+			`   if (e.propertyName !== "opacity" || !layer || !(layer.contains("ab-near") || layer.contains("ab-far"))) return;` +
+			`   if (stage.dataset.board === before) fadesBefore += 1; else fadesAfter += 1; };` +
+			` stage.addEventListener("transitionrun", fade, true);` +
 			` ${start};` +
 			` const until = Date.now() + 8000;` +
 			` while (stage.dataset.board === before && Date.now() < until) await new Promise((r) => setTimeout(r, 20));` +
 			` const entering = surface.hasAttribute("data-picture-motion");` +
 			` await new Promise((r) => setTimeout(r, 150));` +
-			` watch.disconnect();` +
+			` watch.disconnect(); note(classWatch.takeRecords()); classWatch.disconnect();` +
+			` stage.removeEventListener("transitionrun", fade, true);` +
+			` const states = [...classes.map(([, was]) => was), surface.classList.contains("is-far")];` +
+			` const swaps = classes.flatMap(([when], index) => states[index] === states[index + 1] ? [] : [when]);` +
 			` const landed = surface.querySelector(":scope > svg").getBoundingClientRect();` +
 			// The card's own box, its first rect: the shadow it casts reaches further down and right.
 			` const found = ${JSON.stringify(card)} === null ? null` +
@@ -122,7 +144,8 @@ function recordFlight(
 			` return { before, after: stage.dataset.board, frames, filters: [...filters], last,` +
 			`   landed: [landed.x, landed.y, landed.width, landed.height],` +
 			`   card: found === null ? null : [found.x, found.y, found.width, found.height],` +
-			`   insetsAfter: surface.querySelectorAll("[data-dive-inset]").length, entering }; })()`,
+			`   insetsAfter: surface.querySelectorAll("[data-dive-inset]").length, entering,` +
+			`   swaps, fadesBefore, fadesAfter }; })()`,
 	);
 }
 
@@ -423,6 +446,24 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 	const far = await labelLooks(browser);
 	expect(far).toHaveLength(3);
 	for (const look of far) expect(look).toMatchObject({ drawn: true, opacity: 1, filtered: 1 });
+
+	// Seen from far, the card opens its board by flight too. No card swaps its words
+	// for its name in the air or as the board takes over. The board, which its own
+	// fit sees near, then swaps once, with the picture's fade.
+	await pick(browser, writer ?? "");
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector("${DRILL_OPEN}") !== null`),
+		(offered) => offered,
+		"the picked card to offer the board it opens",
+		WAIT,
+	);
+	await atRest(browser);
+	const fromFar = await recordFlight(browser, `document.querySelector("${DRILL_OPEN}").click()`);
+	expect(fromFar.after).toBe("engine");
+	expectLandedWhereItWas(fromFar);
+	expect(fromFar.fadesBefore).toBe(0);
+	expect(fromFar.swaps).toEqual(["after"]);
+	expect(fromFar.fadesAfter).toBeGreaterThan(0);
 
 	// A relationship is lit along the whole of its route, though the picture has
 	// another line of its trunk draw the first stretch of it.
