@@ -104,7 +104,7 @@ function Finding(props: { readonly finding: CodeFinding }): JSX.Element {
  */
 function whenChecked(checkedAt: string): string {
 	const at = new Date(checkedAt);
-	const time = at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+	const time = at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 	return at.toDateString() === new Date().toDateString()
 		? time
 		: `${at.toLocaleDateString([], { day: "numeric", month: "short" })} ${time}`;
