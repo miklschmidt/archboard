@@ -200,7 +200,6 @@ export {
 	SemanticPolicySchema,
 	type SemanticPolicy,
 	DEFAULT_SEMANTIC_POLICY,
-	DiagnosticSubjectSchema,
 	type DiagnosticSubject,
 	describeSubject,
 	diagnosticLine,

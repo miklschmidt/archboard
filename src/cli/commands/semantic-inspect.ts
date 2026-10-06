@@ -168,7 +168,7 @@ function described(result: GroupInspectionResult): string[] {
 	];
 	if (!result.group.configured) {
 		lines.push(
-			`Warning: "${result.group.id}" is not defined under groups in .archboard/config.yaml; ` +
+			`warning: "${result.group.id}" is not defined under groups in .archboard/config.yaml; ` +
 				"define it to name it, or move its members to a configured group.",
 		);
 	}
