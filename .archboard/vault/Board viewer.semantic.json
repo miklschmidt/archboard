@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 57,
+	"version": 59,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-06T13:12:00.850Z",
+	"updatedAt": "2026-10-06T13:13:53.025Z",
 	"views": [],
 	"variants": [
 		{
@@ -11471,7 +11471,7 @@
 		{
 			"id": "RdNXbwWR",
 			"name": "TASK-367.24 anchors",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Mzjv2Edw",
 			"summary": "Module level: how a pane reads one board and draws it, and what it owns on top: the reads and the picture, the camera, the pick and its light, walkthroughs, drilling into cards, and the marks the viewer puts on the picture.",
 			"content": {
@@ -12757,9 +12757,9 @@
 		{
 			"id": "1M2t7U11",
 			"name": "TASK-369.07",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "RdNXbwWR",
-			"summary": "The pane inspector shows a part's recent changes and the parts it changes with",
+			"summary": "Module level: how a pane reads one board and draws it, and what it owns on top: the reads and the picture, the camera, the pick and its light, walkthroughs, drilling into cards, and the marks the viewer puts on the picture.",
 			"content": {
 				"nodes": [
 					{
@@ -14046,7 +14046,7 @@
 			}
 		}
 	],
-	"current": "RdNXbwWR",
+	"current": "1M2t7U11",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
@@ -14119,6 +14119,12 @@
 			"from": "Mzjv2Edw",
 			"at": "2026-10-06T12:54:10.546Z",
 			"reason": "The render answer's code findings are anchored in the query that reads them, an end of the relationship"
+		},
+		{
+			"variant": "1M2t7U11",
+			"from": "RdNXbwWR",
+			"at": "2026-10-06T13:13:53.025Z",
+			"reason": "The pane inspector reads a picked part's locality through Semantic queries, Board reads and Fetch semantic reads (TASK-369.07)"
 		}
 	]
 }
