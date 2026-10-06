@@ -511,7 +511,8 @@ the check never builds. So the answer says `language-server-unready` once for
 a Swift package with no index, and keeps its candidates. Unless the user asks,
 do not build a package to clear it. C# runs csharp-ls only from an entry that
 the user writes, and says `language-server-unready` once for a checkout with no
-`.sln`, `.slnx` or `.csproj` file.
+`.sln`, `.slnx` or `.csproj` file. Python says it once for a checkout whose
+`.venv` holds an interpreter that Git tracks, because the check never runs it.
 
 A relationship across a network hop shows no evidence in code alone. An
 example is an `http` call to another service. So `check --code` joins two
