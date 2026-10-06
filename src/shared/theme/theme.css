@@ -51,18 +51,19 @@
    The picture builds its parts as blocks lit from the upper left: each part
    has a top face, a front edge along its foot that shows how thick it is, and
    a soft shadow it casts down and to the right. A card is a slab (--slab-face
-   on --slab-edge), a container a deeper plinth (--plinth-face on
-   --plinth-edge) with a nameplate across its top (--plinth-head, tinted by its
-   kind), and a group's region a thin mat (--mat-face, --mat-edge), each tinted
-   by its own colour. A container nested in another stands a step nearer the
-   light, its face and nameplate rising toward --plinth-rise. --slab-deep is
+   on --slab-edge), and a group's region a thin mat (--mat-face, --mat-edge).
+   A container is a tray cut into what holds it: a floor (--tray-floor) inside
+   walls in shade at its top and left and a lit lip (--tray-lip) at its bottom
+   and right, with a nameplate (--tray-plate) seated against its top wall. Each
+   is tinted by its own colour. A container nested in another is cut a step
+   deeper, its floor sinking toward --tray-sink. --slab-deep is
    what a colour is shaded into for a front edge, and for a tint on the dark
    ground. --slab-glint is what the fine highlight on a face's top edge mixes
    toward, --slab-sheen the light that falls off down a face, and --slab-shadow
    one layer of the stacked shadow.
 
    --diagram-edge is the ink of a neutral line, its arrowhead and a lifeline.
-   It keeps 3:1 or more against the ground and a plinth face in both themes,
+   It keeps 3:1 or more against the ground and a tray's floor in both themes,
    and it stays well under the contrast of text. --diagram-glow is the light
    that a traffic pulse mixes into the colour of its line, white in both
    themes, so a pulse reads as light that travels along the line. */
@@ -148,10 +149,10 @@
 	--slab-glint: oklch(1 0 0);
 	--slab-sheen: oklch(1 0 0 / 0.8);
 	--slab-shadow: oklch(0.3 0.025 65 / 0.15);
-	--plinth-face: oklch(0.956 0.004 85);
-	--plinth-rise: oklch(0.972 0.003 85);
-	--plinth-head: oklch(0.938 0.005 85);
-	--plinth-edge: oklch(0.87 0.005 80);
+	--tray-floor: oklch(0.955 0.004 85);
+	--tray-sink: oklch(0.925 0.005 85);
+	--tray-plate: oklch(0.975 0.003 85);
+	--tray-lip: oklch(1 0 0);
 	--mat-face: oklch(0.985 0.003 85);
 	--mat-edge: oklch(0.86 0.008 80);
 }
@@ -236,10 +237,10 @@
 	--slab-glint: oklch(1 0.003 85);
 	--slab-sheen: oklch(1 0.003 85 / 0.05);
 	--slab-shadow: oklch(0.08 0.004 75 / 0.55);
-	--plinth-face: oklch(0.225 0.002 75);
-	--plinth-rise: oklch(0.33 0.002 75);
-	--plinth-head: oklch(0.27 0.002 75);
-	--plinth-edge: oklch(0.175 0.002 75);
+	--tray-floor: oklch(0.17 0.002 75);
+	--tray-sink: oklch(0.13 0.002 75);
+	--tray-plate: oklch(0.265 0.002 75);
+	--tray-lip: oklch(0.3 0.002 75);
 	--mat-face: oklch(0.235 0.006 75);
 	--mat-edge: oklch(0.22 0.006 75);
 }

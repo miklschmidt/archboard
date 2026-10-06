@@ -18,14 +18,14 @@ interface Palette {
 	readonly slabSheen: string;
 	/** One layer of the stacked shadow a part casts. */
 	readonly slabShadow: string;
-	/** A container's top face at the top level. */
-	readonly plinthFace: string;
-	/** What a nested container's face rises toward, a step for each level. */
-	readonly plinthRise: string;
-	/** The nameplate across the top of a container's face, before its kind tints it. */
-	readonly plinthHead: string;
-	/** A container's front edge. */
-	readonly plinthEdge: string;
+	/** A container's floor at the top level, before its kind tints it (`lib/svg/tray.ts`). */
+	readonly trayFloor: string;
+	/** What a nested container's floor sinks toward, a step for each level. */
+	readonly traySink: string;
+	/** The nameplate seated against a container's top wall, before its kind tints it. */
+	readonly trayPlate: string;
+	/** The lit lip along a container's bottom and right walls. */
+	readonly trayLip: string;
 	/** What a group's region mixes its colour into for its face. */
 	readonly matFace: string;
 	/** What a group's region mixes its colour into for its front edge. */
@@ -96,10 +96,10 @@ const PALETTE: Palette = {
 	slabGlint: token("--slab-glint"),
 	slabSheen: token("--slab-sheen"),
 	slabShadow: token("--slab-shadow"),
-	plinthFace: token("--plinth-face"),
-	plinthRise: token("--plinth-rise"),
-	plinthHead: token("--plinth-head"),
-	plinthEdge: token("--plinth-edge"),
+	trayFloor: token("--tray-floor"),
+	traySink: token("--tray-sink"),
+	trayPlate: token("--tray-plate"),
+	trayLip: token("--tray-lip"),
 	matFace: token("--mat-face"),
 	matEdge: token("--mat-edge"),
 	foreground: token("--card-foreground"),

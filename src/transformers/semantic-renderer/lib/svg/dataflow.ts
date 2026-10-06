@@ -33,7 +33,6 @@ import {
 	BAND_RADIUS,
 	DIAGRAM_MARGIN,
 	FLOW_PLATE_FOOT,
-	PLATE_THICKNESS,
 } from "@/transformers/semantic-renderer/lib/design";
 import { paintFarHeading } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
@@ -70,7 +69,7 @@ import {
 	type PlacedStep,
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 import { endsFor, selfStart, travelOf } from "@/transformers/semantic-renderer/lib/layout/messages";
-import { plinthLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
+import { trayLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { halo, paintCard, paintHeader } from "@/transformers/semantic-renderer/lib/svg/cards";
 import { paintColumn } from "@/transformers/semantic-renderer/lib/svg/flow-columns";
 import {
@@ -86,12 +85,8 @@ import {
 	wrap,
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import {
-	ghostFace,
-	slab,
-	slabSeat,
-	slabShadow,
-} from "@/transformers/semantic-renderer/lib/svg/slab";
+import { ghostFace, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
+import { floorOf, plateFace, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
 import {
 	HEAD_ATTRIBUTE,
 	MEMBERS_ATTRIBUTE,
@@ -304,8 +299,9 @@ function paintStep(
  * a reader clicks to mean "this exchange", and it is what keeps several flows on
  * one page from reading as one very long sequence.
  *
- * It is built as an architecture's container is: a plinth the exchange stands
- * on, with a nameplate across its top that the flow's name is printed on.
+ * It is built as an architecture's container is: a tray the exchange stands
+ * in, with a nameplate seated against its top wall that the flow's name is
+ * printed on.
  *
  * Its standing is the pin on its corner, and its face stays the frame's own:
  * the frame is the page of its flow, and a page washed in a standing's ink said
@@ -327,17 +323,18 @@ function paintFrame(
 	const styles = stylesFor(palette);
 	const ghosted = standing === "removed" ? standing : undefined;
 	const plateHeight = header.y + header.height + FLOW_PLATE_FOOT - frame.y;
-	const look = plinthLook(undefined, palette, 0, plateHeight);
-	// The nameplate's face, which the heading's far words stand on.
-	const plate = { ...header, y: frame.y, height: plateHeight - PLATE_THICKNESS };
+	const look = trayLook(undefined, palette, 0, plateHeight);
+	// The nameplate's face across the heading, which its far words stand on.
+	const face = plateFace(frame, plateHeight);
+	const plate = { ...header, y: face.y, height: face.height };
 	return wrap(
 		"g",
 		subjectGroup("flow", layout.flow.id, standing),
 		lines([
 			slabSeat(frame, BAND_RADIUS),
-			slabShadow(frame, BAND_RADIUS, "plinth", palette, ghosted),
+			slabShadow(frame, BAND_RADIUS, "tray", palette, ghosted),
 			halo(frame, BAND_RADIUS, styles, ghosted),
-			slab(frame, look, palette, ghosted),
+			tray(frame, look, palette, ghosted),
 			nearLayer(paintHeader(header, layout.flow.name, layout.flow.summary, styles)),
 			paintFarHeading(layout.flow.name, layout.flow.summary, plate, palette),
 			standingPin(frame, standing, palette),
@@ -372,14 +369,16 @@ function headShade(
 	if (card === undefined) {
 		return "";
 	}
+	// Across the frame's floor, between its walls, which stay beside the head.
+	const floor = floorOf(layout.frame);
 	const shape = {
-		x: coord(layout.frame.x),
+		x: coord(floor.x),
 		y: coord(card.y - HEAD_REACH),
-		width: coord(layout.frame.width),
+		width: coord(floor.width),
 		height: coord(card.height + HEAD_REACH),
 	};
-	// A top-level plinth's face, which is the frame's (`paintFrame`).
-	const face = standing === "removed" ? ghostFace(palette) : { fill: palette.plinthFace };
+	// A top-level tray's floor, which is the frame's (`paintFrame`).
+	const face = standing === "removed" ? ghostFace(palette) : { fill: palette.trayFloor };
 	return wrap(
 		"g",
 		{ class: HEAD_SHADE_CLASS, visibility: "hidden" },

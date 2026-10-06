@@ -6,7 +6,6 @@ import {
 import {
 	BAND_RADIUS,
 	ICON_CHIP_SIZE,
-	PLATE_THICKNESS,
 	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
 import type { DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
@@ -15,8 +14,8 @@ import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semant
 import {
 	appearanceAttributes,
 	cardLook,
-	plinthLook,
 	semanticInk,
+	trayLook,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
@@ -27,6 +26,7 @@ import { lines, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives
 import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
+import { plateFace, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
 import {
 	PART_ATTRIBUTE,
 	standingPalette,
@@ -52,8 +52,7 @@ function paintFarHeader(
 	look: { appearance: NodeAppearance; palette: Palette },
 	unsettled: boolean,
 ): string {
-	// The nameplate's face: the header above the plate's own front edge.
-	const plate = { ...placed.box, height: placed.measured.headerHeight - PLATE_THICKNESS };
+	const plate = plateFace(placed.box, placed.measured.headerHeight);
 	return paintFarCard(placed.measured.node, plate, look, unsettled);
 }
 
@@ -125,10 +124,11 @@ function paintMeasuredCard(
 }
 
 /**
- * Paint a containing frame below its children and all connections: a plinth
- * its children stand on, with a nameplate across its top that its heading is
- * printed on. What the frame itself relates to leaves from the foot of the
- * nameplate's front edge, so such a line has a visible origin inside the frame.
+ * Paint a containing frame below its children and all connections: a tray
+ * its children stand in, with a nameplate seated against its top wall that its
+ * heading is printed on. What the frame itself relates to leaves from the foot
+ * of the nameplate's front edge, so such a line has a visible origin inside
+ * the frame.
  * @param placed Final frame geometry.
  * @param palette The selected theme.
  * @param standing Its architectural change.
@@ -144,7 +144,7 @@ function paintMeasuredFrame(
 	const { measured, box, depth } = placed;
 	const styles = stylesFor(palette);
 	const ink = semanticInk(appearance.bodyColor);
-	const look = plinthLook(ink, palette, depth, measured.headerHeight);
+	const look = trayLook(ink, palette, depth, measured.headerHeight);
 	return wrap(
 		"g",
 		{
@@ -153,9 +153,9 @@ function paintMeasuredFrame(
 		},
 		lines([
 			slabSeat(box, BAND_RADIUS),
-			slabShadow(box, BAND_RADIUS, "plinth", palette, standing),
+			slabShadow(box, BAND_RADIUS, "tray", palette, standing),
 			halo(box, BAND_RADIUS, styles, standing),
-			slab(box, look, palette, standing),
+			tray(box, look, palette, standing),
 			standingPin(box, standing, palette),
 		]),
 	);

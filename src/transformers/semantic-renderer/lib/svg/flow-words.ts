@@ -68,7 +68,7 @@ function paintLabel(
 	const styles = stylesFor(standingPalette(palette, standing));
 	return (
 		(standing === "removed"
-			? plainPlate(box, palette.plinthFace) +
+			? plainPlate(box, palette.trayFloor) +
 				tag("rect", { ...rectOf(box), ...ghostFace(palette) }) +
 				rowTint(box, mark, palette)
 			: slabSeat(box, PILL_RADIUS) +
@@ -127,7 +127,7 @@ function plainPlate(box: Box, fill: string): string {
 }
 
 /**
- * The plate a note lies on: the frame's own face, a top-level plinth's
+ * The plate a note lies on: the frame's own floor, a top-level tray's
  * (`dataflow.ts`), with its row's tint over it.
  * @param box Where it goes.
  * @param mark The standing its row is marked for.
@@ -135,7 +135,7 @@ function plainPlate(box: Box, fill: string): string {
  * @returns The plate.
  */
 function notePlate(box: Box, mark: SubjectStanding | undefined, palette: Palette): string {
-	return plainPlate(box, palette.plinthFace) + rowTint(box, mark, palette);
+	return plainPlate(box, palette.trayFloor) + rowTint(box, mark, palette);
 }
 
 /**

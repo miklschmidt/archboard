@@ -2,9 +2,9 @@
 // left, as a keycap or a foam-core model is: a flat top face with a fine
 // highlight along its top edge and light that falls off down it, a front edge
 // along its foot that shows how thick the block is, and a soft shadow it casts
-// down and to the right on whatever it stands on. A container's block carries a
-// nameplate: a plate lying across the top of its face, flush with its sides,
-// with a front edge of its own and a short shadow on the face below it.
+// down and to the right on whatever it stands on. A container is the opposite
+// of a block, a tray cut into what holds it (`tray.ts`), built of the same
+// shapes.
 //
 // The layout box is the block's silhouette. Its thickness is drawn inside the
 // box, along its foot, so a line that ends on the foot of a box meets the edge a
@@ -13,12 +13,11 @@
 // depth is flat shapes, one shared gradient and stacked translucent copies of
 // the silhouette.
 //
-// A proposal's standing is said on the face, which the block's own colour
-// leaves free: the group's or the kind's colour is its front edge's and its
-// nameplate's. An added block's face is washed in the standing's green, a
-// changed one's in its orange and hatched; a removed block has lost its
-// thickness. Its ghost is a flat, see-through face inside a dashed footprint
-// where the block stood, with no front edge and no shadow.
+// A proposal's standing is said on the face, in place of the group's colour,
+// which the front edge still carries. An added block's face is washed in the
+// standing's green, a changed one's in its orange and hatched; a removed block
+// has lost its thickness. Its ghost is a flat, see-through face inside a dashed
+// footprint where the block stood, with no front edge and no shadow.
 //
 // Each shape a block is built of is a rect at an offset from the part's box, or
 // a line across it, so a viewer that carries a card from one picture to the
@@ -27,7 +26,6 @@
 // seat, its box unpainted, which is the one shape of it that takes the pointer
 // and the first shape a reader of the markup finds.
 
-import { PLATE_THICKNESS } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { lightDark, mixed, translucent } from "@/transformers/semantic-renderer/lib/svg/colour";
@@ -100,10 +98,10 @@ interface SlabLook {
 	/** Its top face. */
 	readonly face: string;
 	/**
-	 * Its top face before a card's group or a container's kind tinted it. A
-	 * standing washes this rather than the tinted face, one tint to a face, so a
-	 * green or an orange wash reads as itself and not as a muddy mix with the
-	 * other colour, which the front edge or the nameplate still carries.
+	 * Its top face before a card's group tinted it. A standing washes this
+	 * rather than the tinted face, one tint to a face, so a green or an orange
+	 * wash reads as itself and not as a muddy mix with the group's colour, which
+	 * the front edge still carries.
 	 */
 	readonly ground?: string;
 	/** Its front edge, the side of the block that faces the reader. */
@@ -114,19 +112,10 @@ interface SlabLook {
 	/** Whether light falls off down its face: a card's and a chip's, not a container's broad top. */
 	readonly sheen: boolean;
 	/**
-	 * Whether a changed part's face is hatched: a card's and a container's. A
-	 * label's is not, since the swipe under its line carries that texture.
+	 * Whether a changed part's face is hatched: a card's. A label's is not,
+	 * since the swipe under its line carries that texture.
 	 */
 	readonly hatch?: boolean;
-	/**
-	 * A container's nameplate: how far down the face it reaches, from the top of
-	 * the box to the foot of its own front edge, and its face and edge, both in
-	 * the container's kind. What the container itself relates to leaves from
-	 * that foot, so the plate's front edge is that line's visible origin. The
-	 * plate keeps its kind under a standing: the face below it, which carries no
-	 * colour of its own, is what a standing washes.
-	 */
-	readonly plate?: { readonly height: number; readonly face: string; readonly edge: string };
 }
 
 /** How wide the highlight along the top edge of a face is. */
@@ -169,21 +158,13 @@ const HATCH_STROKE = 1.25;
  * the orange wash from the green.
  */
 const HATCH: Share = { light: 0.2, dark: 0.12 };
-/**
- * How much of the hatch's strength a nameplate takes: enough to texture it,
- * little enough that its kind's tint still reads and the words on it, and a
- * line that crosses it, keep their contrast.
- */
-const PLATE_HATCH = 0.5;
 
 /**
  * How much of its standing's ink an added or changed face is washed with: a
  * clear tint at a glance that still leaves the face the ground its words were
- * chosen for. A container's broad face below its nameplate takes less, so the
- * cards standing on it still read over it.
+ * chosen for.
  */
 const WASH: Share = { light: 0.15, dark: 0.2 };
-const PLINTH_WASH: Share = { light: 0.08, dark: 0.14 };
 
 /** One translucent copy of a silhouette: how far it is moved, how much larger, and how dark. */
 interface ShadowLayer {
@@ -198,11 +179,11 @@ interface ShadowLayer {
  * shadow under the front edge and softer, larger copies further down and to
  * the right, fading to nothing; a card's first layer reaches a unit round it,
  * so a near-white card keeps its top edge on the near-white page. None
- * reaches more than twelve units past the box. A group's region is a mat
- * lying flat on what holds it and casts none; the tab its caption is printed
- * on casts a short one on the mat, and none past the mat's own edge. A chip,
- * a relationship's label and an activation bar, many and small, cast only a
- * contact shadow.
+ * reaches more than twelve units past the box. A container's tray is cut into
+ * what holds it and casts none. A group's region is a mat lying flat on what
+ * holds it and casts none; the tab its caption is printed on casts a short one
+ * on the mat, and none past the mat's own edge. A chip, a relationship's label
+ * and an activation bar, many and small, cast only a contact shadow.
  */
 const SHADOWS = {
 	card: [
@@ -212,12 +193,7 @@ const SHADOWS = {
 		{ dx: 1.5, dy: 4.5, grow: 3, share: 0.2 },
 		{ dx: 2, dy: 6, grow: 5, share: 0.1 },
 	],
-	plinth: [
-		{ dx: 0.5, dy: 2, grow: 0.5, share: 0.8 },
-		{ dx: 1, dy: 3.5, grow: 2, share: 0.35 },
-		{ dx: 2, dy: 5.5, grow: 4, share: 0.18 },
-		{ dx: 2.5, dy: 7, grow: 5, share: 0.1 },
-	],
+	tray: [],
 	tab: [
 		{ dx: 0.5, dy: 1.5, grow: 0.5, share: 0.6 },
 		{ dx: 1, dy: 2.5, grow: 1, share: 0.3 },
@@ -227,14 +203,6 @@ const SHADOWS = {
 
 /** Which block casts a shadow. */
 type Lift = keyof typeof SHADOWS;
-
-/**
- * The short shadow a nameplate casts on the face below it: bands across the
- * whole face, each a unit and a half deep and fainter than the one above.
- * Lines rather than one gradient, so each stretches with the face it lies on.
- */
-const LEDGE = [1, 0.6, 0.3, 0.12] as const;
-const LEDGE_BAND = 1.5;
 
 /** How much of a face a removed block's see-through ghost keeps. */
 const GHOST_FACE = 0.5;
@@ -383,90 +351,48 @@ function castShadow(
 }
 
 /**
- * The face from one height down to its foot, in one tone. It is drawn as the
- * rounded face from that height and a stroke as wide as the corners are round
- * along its top, which squares those corners off, so the step from the tone
- * above is one straight line across the face.
- * @param face The top face.
- * @param top Where the tone starts.
- * @param fill The tone.
- * @param radius The face's corners.
- * @returns The face below that height, or nothing when too little is left of it.
+ * The hatch that says a part changed, over one face.
+ * @param box The face.
+ * @param radius Its corners.
+ * @param strength How much of the hatch's strength it takes.
+ * @returns The hatch.
  */
-function faceFrom(face: Box, top: number, fill: string, radius: number): string {
-	const rest = { ...face, y: top, height: face.y + face.height - top };
-	if (rest.height <= 2 * radius) return "";
-	return lines([
-		plate(rest, radius, { fill }),
-		across(face, top + radius / 2, { stroke: fill, "stroke-width": coord(radius) }),
-	]);
-}
-
-/**
- * A container's nameplate, over the top of its face: the plate's own front
- * edge, then the face below it, then the plate's short shadow on that face.
- * The plate's face is the block's top face, drawn already.
- * @param face The block's top face.
- * @param look The block's look; nothing is drawn for a block with no plate.
- * @param below The face below the plate, as the block's standing washes it.
- * @param palette The theme's colours.
- * @returns The plate's foot and the face below it.
- */
-function nameplate(face: Box, look: SlabLook, below: string, palette: Palette): string {
-	if (look.plate === undefined) return "";
-	const foot = face.y + look.plate.height;
-	return lines([
-		faceFrom(face, foot - PLATE_THICKNESS, look.plate.edge, look.radius),
-		faceFrom(face, foot, below, look.radius),
-		...LEDGE.map((share, index) =>
-			across(face, foot + (index + 0.5) * LEDGE_BAND, {
-				stroke: palette.slabShadow,
-				"stroke-opacity": share,
-				"stroke-width": LEDGE_BAND,
-			}),
-		),
-	]);
+function hatched(box: Box, radius: number, strength = 1): string {
+	return plate(box, radius, {
+		fill: `url(#${HATCH_ID})`,
+		"fill-opacity": strength < 1 ? strength : undefined,
+	});
 }
 
 /**
  * What a standing does to a block's face: an added one washed in its ink, a
- * changed one washed and, where the block takes one, hatched. A container's
- * nameplate keeps its kind's tint; the broad face below it takes a lighter
- * wash, and the plate a fainter hatch. A removed block draws no face
- * ({@link ghost}).
+ * changed one washed and, where the block takes one, hatched, in place of the
+ * tint of its group, which its front edge still carries. A removed block draws
+ * no face ({@link ghost}).
  * @param look How the block looks.
  * @param standing How the part stands, or undefined when this is not a proposal.
  * @param palette The theme's colours.
- * @returns The top face's colour, the colour of a container's face below its
- * nameplate, and how strong the hatch over the top face is, 0 for none.
+ * @returns The top face's colour, and whether it is hatched.
  */
 function standingFace(
 	look: SlabLook,
 	standing: SubjectStanding | undefined,
 	palette: Palette,
-): { readonly top: string; readonly below: string; readonly hatch: number } {
+): { readonly top: string; readonly hatch: boolean } {
 	const ink = standing === undefined ? undefined : standingInk(standing, palette);
-	const hatch = Number(standing === "changed" && look.hatch === true);
-	/**
-	 * The face a standing washes: in place of the tint of its group or its
-	 * kind, one tint to a face, which its edge or its nameplate still carries.
-	 * @param share How much of the standing's ink.
-	 * @returns The face's colour.
-	 */
-	const wash = (share: Share): string =>
-		ink === undefined ? look.face : washed(look.ground ?? look.face, ink, share, palette);
-	return look.plate === undefined
-		? { top: wash(WASH), below: look.face, hatch }
-		: { top: look.plate.face, below: wash(PLINTH_WASH), hatch: hatch * PLATE_HATCH };
+	return {
+		top: ink === undefined ? look.face : washed(look.ground ?? look.face, ink, WASH, palette),
+		hatch: standing === "changed" && look.hatch === true,
+	};
 }
 
 /**
- * One block, standing in its box: its body in the tone of its front edge, its
- * face over that with the highlight along its top edge and the light falling
- * off down it, and a container's nameplate over the top of its face. The face
- * says how a proposal treats the part ({@link standingFace}). A removed part
- * has lost its block: what is left of it is drawn under the selection ring
- * ({@link slabShadow}), and this draws nothing.
+ * One block, standing in its box: its body in the tone of its front edge, and
+ * its face over that with the highlight along its top edge and the light
+ * falling off down it. The face says how a proposal treats the part
+ * ({@link standingFace}). A removed part has lost its block: what is left of
+ * it is drawn under the selection ring ({@link slabShadow}), and this draws
+ * nothing.
  * @param box The part's box.
  * @param look How the block looks.
  * @param palette The theme's colours.
@@ -475,7 +401,7 @@ function standingFace(
  */
 function slab(box: Box, look: SlabLook, palette: Palette, standing?: SubjectStanding): string {
 	if (standing === "removed") return "";
-	const { top, below, hatch } = standingFace(look, standing, palette);
+	const { top, hatch } = standingFace(look, standing, palette);
 	// The top face is the box without its front edge.
 	const face = { ...box, height: box.height - look.thickness };
 	const lit = { ...face, y: face.y + GLINT_WIDTH, height: face.height - GLINT_WIDTH };
@@ -484,13 +410,7 @@ function slab(box: Box, look: SlabLook, palette: Palette, standing?: SubjectStan
 		plate(face, look.radius, { fill: glintOf(top, palette) }),
 		plate(lit, look.radius, { fill: top }),
 		look.sheen ? plate(lit, look.radius, { fill: `url(#${sheenOf(look, standing)})` }) : "",
-		hatch === 0
-			? ""
-			: plate(lit, look.radius, {
-					fill: `url(#${HATCH_ID})`,
-					"fill-opacity": hatch < 1 ? hatch : undefined,
-				}),
-		nameplate(face, look, below, palette),
+		hatch ? hatched(lit, look.radius) : "",
 	]);
 }
 
@@ -560,9 +480,12 @@ export {
 	type SlabLook,
 	FOOTPRINT_WIDTH,
 	GLINT_WIDTH,
+	across,
 	castShadow,
 	ghostFace,
 	glintOf,
+	hatched,
+	plate,
 	slab,
 	slabDefinitions,
 	slabSeat,
