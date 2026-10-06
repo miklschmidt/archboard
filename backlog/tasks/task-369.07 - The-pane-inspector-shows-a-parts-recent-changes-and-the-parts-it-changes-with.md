@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:19'
-updated_date: '2026-10-06 13:14'
+updated_date: '2026-10-06 13:22'
 labels:
   - history
   - ui
@@ -80,4 +80,6 @@ The history lens reaches an agent through the CLI. A user reading a board sees i
 Board viewer@TASK-369.07 (Semantic queries, Board reads and Fetch semantic reads say they read a board's locality; Semantic queries -> Render stage states and -> Board reads carry it, the latter anchored at localityQuery) adopted at version 59 with the board's scope as summary. Footprint against base 4fd680879: named and changed Fetch semantic reads, Semantic queries, Board reads; changed but not named Semantic viewer (index.ts gained the localityQuery export, a binding detail the board does not draw); named but not changed Render stage states (named only by a relationship). ./bin/dogfood check: no diagnostics. check --code: 860b5e16a puts no other board behind.
 
 README assets: readme:check lists all 13 stale, as before this change. The ask clip picks a part of the web-shop example, whose parts carry no binding, so its selection tab now ends with the line that the part is bound to no code; it needs a Codex sign-in to refresh. No other clip films a part's selection tab.
+
+Gate (2026-10-06, one lane at a time): type-check exit 0; build:frontend 0; test:modules 4095 pass 0 fail; test:system 197 pass 0 fail; test:repository 20 pass 0 fail; test:serial-browser exit 0 (19 owners, 24 pass). lint and fmt:check fail only on other agents' uncommitted work: src/runtime/code-check/** and src/runtime/code-facts/** (TASK-367.06/367.07: complexity, jsdoc, no-compatibility-identifiers, formatting of part-code.ts and resolution-and-cache.test.ts) and src/ui/semantic-board-canvas/lib/code-marks.ts (wordsAnchor complexity 9, the TASK-367.24 review's work in progress). Every file of this task passes lint:policy and oxfmt --check.
 <!-- SECTION:NOTES:END -->
