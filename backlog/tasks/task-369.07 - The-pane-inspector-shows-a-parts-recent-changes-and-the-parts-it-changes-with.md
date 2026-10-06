@@ -1,11 +1,11 @@
 ---
 id: TASK-369.07
 title: The pane inspector shows a part's recent changes and the parts it changes with
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:19'
-updated_date: '2026-10-06 13:22'
+updated_date: '2026-10-06 14:31'
 labels:
   - history
   - ui
@@ -28,9 +28,9 @@ The history lens reaches an agent through the CLI. A user reading a board sees i
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Selecting a part shows its recent commits and the parts it changes together with, each with a count
-- [ ] #2 Selecting a coupled part from that list selects it on the canvas
-- [ ] #3 Nothing is stored, and the canvas picture does not change
+- [x] #1 Selecting a part shows its recent commits and the parts it changes together with, each with a count
+- [x] #2 Selecting a coupled part from that list selects it on the canvas
+- [x] #3 Nothing is stored, and the canvas picture does not change
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -82,4 +82,12 @@ Board viewer@TASK-369.07 (Semantic queries, Board reads and Fetch semantic reads
 README assets: readme:check lists all 13 stale, as before this change. The ask clip picks a part of the web-shop example, whose parts carry no binding, so its selection tab now ends with the line that the part is bound to no code; it needs a Codex sign-in to refresh. No other clip films a part's selection tab.
 
 Gate (2026-10-06, one lane at a time): type-check exit 0; build:frontend 0; test:modules 4095 pass 0 fail; test:system 197 pass 0 fail; test:repository 20 pass 0 fail; test:serial-browser exit 0 (19 owners, 24 pass). lint and fmt:check fail only on other agents' uncommitted work: src/runtime/code-check/** and src/runtime/code-facts/** (TASK-367.06/367.07: complexity, jsdoc, no-compatibility-identifiers, formatting of part-code.ts and resolution-and-cache.test.ts) and src/ui/semantic-board-canvas/lib/code-marks.ts (wordsAnchor complexity 9, the TASK-367.24 review's work in progress). Every file of this task passes lint:policy and oxfmt --check.
+
+Independent review (2026-10-06): quick picks cancelled the running read and started a new Git walk each, against ADR 0045's rule that a request during a walk waits; the read no longer takes a cancel signal (2d46c39c6). A board write made the region flash to Reading; it now keeps the last answer on screen while it reads the new version. A part with no binding no longer gets a region or a request (2b0a7737b). State sentences now say they are about the history of the part's code, and Read it again keeps its place (2dbfc89fd).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Selecting a bound part in a pane now shows its recent commits and the parts it changes together with, each with a count and degree, with unjoined pairs said plainly, the large commits left out, and words for every other state. Choosing a coupled part selects it on the canvas. The region reads the locality route once per pick, never on a timer or the check poll, stores nothing, and leaves the picture unchanged. Verified by semantic-board-history.test.tsx and locality-on-selection.test.tsx (pass with --isolate), and by the reviewer in a real browser at 1920x1080 in light and dark.
+<!-- SECTION:FINAL_SUMMARY:END -->
