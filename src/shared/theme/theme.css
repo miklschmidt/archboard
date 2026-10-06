@@ -76,7 +76,7 @@
 	--semantic-red: oklch(63.7% 0.237 25.331);
 	--semantic-orange: oklch(70.5% 0.213 47.604);
 	--semantic-amber: oklch(76.9% 0.188 70.08);
-	--semantic-yellow: oklch(79.5% 0.184 86.047);
+	--semantic-yellow: oklch(0.72 0.15 77);
 	--semantic-lime: oklch(64.8% 0.2 131.684);
 	--semantic-green: oklch(62.7% 0.194 149.214);
 	--semantic-emerald: oklch(59.6% 0.145 163.225);
@@ -164,7 +164,7 @@
 	--semantic-red: oklch(0.71062735 0.16614792 22.216224);
 	--semantic-orange: oklch(0.7576398 0.15903746 55.934415);
 	--semantic-amber: oklch(0.83686057 0.16442159 84.428628);
-	--semantic-yellow: oklch(0.86055946 0.17311488 91.935651);
+	--semantic-yellow: oklch(0.86 0.125 86);
 	--semantic-lime: oklch(0.84931542 0.20733982 128.849744);
 	--semantic-green: oklch(0.80034877 0.18206039 151.711031);
 	--semantic-emerald: oklch(0.77294438 0.15349041 163.223075);

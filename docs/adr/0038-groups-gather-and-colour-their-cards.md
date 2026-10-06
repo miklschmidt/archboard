@@ -11,8 +11,9 @@ group clause of
 Tracked as TASK-347. The user decided it on 2026-09-25.
 
 [ADR 0044](0044-cards-containers-and-groups-are-drawn-as-slabs.md) supersedes
-how this decision draws its colors. A region is now a hairline and a foot in
-its group's color, with a caption tab and no fill. A card carries its group's
+how this decision draws its colors. A region is now a thin faded frame in its
+group's color, with thick corner brackets and a caption tab in the full color,
+and no fill. A card carries its group's
 color on its front edge and its face, not on a border. A container is a tray
 that carries its kind's color on its floor and its nameplate. Which group
 places a card, and which cards a region gathers, stand. The amendment of
@@ -150,9 +151,9 @@ its cards to stay (TASK-415). Three passages of this record no longer hold.
 "The layout draws each such region as an outline in the color of the group. The
 outline is twice as wide as the border of a card and has no fill." A region
 still has no fill, so it looks the same on the page and on the floor of a tray.
-A 1-unit hairline of the group's color runs round it, and a 3-unit foot of the
-color runs along its bottom. The caption is printed on a raised tab in a top
-corner of the region. It is the corner where the words start, unless a route
+A 3-unit frame in a faded tone of the group's color runs round it, and 6-unit
+corner brackets in the full color mark its four corners (TASK-419). The
+caption is printed on a tab of the full color in a top corner of the region. It is the corner where the words start, unless a route
 runs down through it and none through the other top corner. Lines still cross
 a region.
 
@@ -169,6 +170,8 @@ carries a calm tint of its kind, and its walls are neutral. Its nameplate
 carries a tone a step stronger on its face and on its front edge. A kind without
 a color draws a neutral tray.
 
-Where this record speaks of the outline of a region, read the hairline, the foot
-and the caption tab. A reader finds every member of a group by the color of the
-region's foot and tab, and by the face and the front edge of each card.
+Where this record speaks of the outline of a region, read the frame, the corner
+brackets and the caption tab. A reader finds every member of a group by the
+color of the region's corners and tab, and by the face and the front edge of
+each card. The palette's yellow is the gold of the product (DESIGN.md, the One
+Gold Rule).

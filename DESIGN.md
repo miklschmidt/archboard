@@ -144,7 +144,7 @@ gold.
 
 - The picture is the ground. The shell sits around it and over it.
 - Planes stack under a light from above. Each plane has a tone step, a highlight on its top edge and a warm shadow with an offset.
-- One gold has three uses: what is chosen, the one primary action, and the voice and the brand mark.
+- One gold has three uses: what is chosen, the one primary action, and the voice and the brand mark. On the picture, the palette's yellow is that gold, on purpose.
 - Tall condensed capitals set a name as a title. Plain sans sets every other word. Mono sets technical tokens only.
 - The shell is for the desktop only, near full screen at 1920×1080.
 
@@ -180,7 +180,7 @@ every role and changes the values. The file theme.css holds both themes.
 
 ### Named Rules
 
-**The One Gold Rule.** Gold marks what is chosen, the one primary action of a region, and the voice and the brand mark. Nothing else is gold.
+**The One Gold Rule.** Gold marks what is chosen, the one primary action of a region, and the voice and the brand mark. Nothing else in the shell is gold. On the picture there is one shared use, on purpose: the color named yellow in a vault's palette is the gold (`--semantic-yellow` is the gold mark, oklch(0.72 0.15 77) on chalk and oklch(0.86 0.125 86) on graphite), so a group, a kind or a relationship colored yellow is drawn in the gold. The selection on the picture stays the only gold ring.
 
 **The Ink On Chalk Rule.** Text on chalk is never gold. A gold dark enough to clear 4.5:1 on chalk reads as brown. Text stays in the ink, and a gold mark beside or under it carries the accent. On graphite, accent text is the gold itself (oklch(0.86 0.125 86)).
 
@@ -269,12 +269,12 @@ its foot and a soft shadow below it. A container is a tray cut into the page,
 with its top wall in shade, two quieter side walls alike, a lit lip along its
 bottom, and a raised nameplate against its top wall. Its walls are neutral
 shades of its floor; the floor and the nameplate carry the container's kind.
-The region of a group has no fill: a hairline and a foot in the group's color,
-and a caption tab. Each shadow is a stack of translucent shapes, with no filter
-or blur. The colors come from the `--slab-*` and `--tray-*` tokens in
-theme.css, in both themes. A group region's hairline, foot and tab and a
-grouped card's face are tones of the group's own color, set in OKLCH at one
-lightness for every color. A comparison marks a part by its outline: a
+The region of a group has no fill: a thin frame in a faded tone of the
+group's color, thick corner brackets and a caption tab in its full color. Each
+shadow is a stack of translucent shapes, with no filter or blur. The colors
+come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A
+group region's frame, corners and tab and a grouped card's face are tones of
+the group's own color, set in OKLCH at one lightness for every color. A comparison marks a part by its outline: a
 1.8-unit border in the comparison's green or Changed Orange along the inside edge of its
 top face, solid for added and dashed for changed, and a removed part's dashed
 red border round its footprint. The face and the front edge keep their colors.

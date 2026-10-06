@@ -130,13 +130,13 @@ test.each(["track", "blocks"] as const)(
 			for (const id of members) expect(inside(id), `${id} inside ${group}`).toBeTrue();
 			for (const id of ["cli", "feed"]) expect(inside(id), `${id} outside ${group}`).toBeFalse();
 			expect(drawn.svg).toContain(`>${name}</text>`);
-			// A boundary of the group's colour round what it holds, with nothing filling it.
-			const hairline = new RegExp(
-				`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>\\s*<rect[^>]*>`,
+			// A frame of the group's colour round what it holds, with nothing filling it.
+			const frame = new RegExp(
+				`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>\\s*<rect[^>]*>\\s*(<rect[^>]*>)`,
 				"u",
-			).exec(drawn.svg)![0];
-			expect(hairline).toMatch(/fill(:|=")none/u);
-			expect(hairline).toContain("var(--semantic-");
+			).exec(drawn.svg)![1]!;
+			expect(frame).toMatch(/fill(:|=")none/u);
+			expect(frame).toContain("var(--semantic-");
 			// From far away its caption grows with the cards' names.
 			const sizes = [
 				...new RegExp(
@@ -340,9 +340,9 @@ test("a line into a container grouped with its members is drawn", async () => {
 });
 
 // The owner's requests of 2026-10-06: a group's region has no background
-// colour (TASK-415), so its boundary is the same on the page and on a tinted
-// tray floor, and its caption reads on its tab in the lightest colours too
-// (TASK-413).
+// colour (TASK-415), but a faded frame with full-colour corners (TASK-419), the
+// same on the page and on a tray floor, and its caption reads on its tab in the
+// lightest colours too (TASK-413).
 test.each(["light", "dark"] as const)(
 	"a region has no face, its boundary is the same on the page and on a tray's floor, and its caption reads on its tab (%s)",
 	async (theme) => {
@@ -392,12 +392,15 @@ test.each(["light", "dark"] as const)(
 				),
 			];
 			expect(regions, group).toHaveLength(2);
-			// The boundary as a reader sees it: nothing filled but its foot.
+			// The frame and its four corners as a reader sees them, nothing filled.
 			const [onPage, onFloor] = regions.map(([, region]) => {
-				expect(region, `${group} paints no face`).not.toMatch(/<rect [^>]*fill="#/u);
-				return [...region!.matchAll(/(?:stroke|fill)="(#[0-9a-f]{6})"/gu)].map(([, ink]) => ink!);
+				expect(region, `${group} paints no face`).not.toMatch(/fill="#/u);
+				return [...region!.matchAll(/stroke="(#[0-9a-f]{6})"/gu)].map(([, ink]) => ink!);
 			});
-			expect(onPage, group).toHaveLength(2);
+			const [frame, ...corners] = onPage!;
+			expect(corners, group).toHaveLength(4);
+			expect(new Set(corners).size, group).toBe(1);
+			expect(frame, `${group}'s frame is quieter than its corners`).not.toBe(corners[0]);
 			expect(onFloor, group).toEqual(onPage);
 			for (const [, , tab] of regions) {
 				const face = [...tab!.matchAll(/<path [^>]*fill="(#[0-9a-f]{6})"/gu)].at(-1)![1]!;

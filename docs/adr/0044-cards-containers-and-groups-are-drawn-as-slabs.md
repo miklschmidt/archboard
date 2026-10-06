@@ -87,17 +87,22 @@ in `lib/design.ts`.
    kind's color. The walls carry none of it. The nameplate carries a tone a
    step stronger, and its front edge more again. A container of a kind with no
    color is neutral.
-6. **The region of a group has no face.** The page or the floor of a tray
-   shows through it, so it looks the same wherever it lies (TASK-415). A
-   1-unit hairline of the group's color runs round it, and a 3-unit foot of the
-   color runs along its bottom, both at a middle lightness. It casts no shadow.
-   Its caption is printed on a raised tab in the top corner where the words
-   start. When a route runs down through that corner and no route runs through
-   the other top corner, the tab moves to the other corner. Lines cross the
-   region and the tab. The tab is a clear tone of the group's color. The
-   caption is in the group's color, dark on the light ground and light on the
-   dark ground. It keeps at least 5:1 against its tab for every color, light
-   yellow, amber and lime included (TASK-413).
+6. **The region of a group has no face, and a frame with strong corners.**
+   The page or the floor of a tray shows through it, so it looks the same
+   wherever it lies (TASK-415). A 3-unit frame in a faded tone of the group's
+   color runs round it, about a third as strong as the full color. Four 6-unit
+   L-shaped brackets in the full color lie over the frame at the corners, each
+   arm 28 units long, following the rounded corners. The caption is printed on
+   a tab of the full color in the top corner where the words start, grown out
+   of the bracket of that corner, so the tab and the frame read as one shape.
+   When a route runs down through that corner and no route runs through the
+   other top corner, the tab moves to the other corner. Lines cross the region
+   and the tab. It casts no shadow. The full color keeps at least 3.2:1
+   against the page and the floors of trays, and the words on the tab, a deep
+   shade of the group's color, keep at least 4.6:1 on the light ground and
+   8:1 on the dark ground. The faded frame is quieter by design: about 2:1
+   on the light ground and 2.6:1 on the dark ground. The owner chose this look
+   among four drawn side by side (TASK-416, TASK-419).
 7. **A card carries its group on its front edge and its face.** The front edge
    of a card is a tone of the group's color, quieter on the light ground. Its
    face is a quiet tone of the group's hue on both grounds. The secondary
@@ -157,8 +162,8 @@ in `lib/design.ts`.
     translucent, and its head and its pulses take the same ink (TASK-409).
 14. **The colors are tokens.** The faces, edges, walls, floors, highlights and
     shadows come from the `--slab-*` and `--tray-*` tokens in
-    `src/shared/theme/theme.css`, in both themes. A group region's hairline
-    and foot, its tab, its caption and a grouped card's face are tones of the
+    `src/shared/theme/theme.css`, in both themes. A group region's frame, its
+    corners, its tab, its caption and a grouped card's face are tones of the
     group's own color token (`--semantic-*`). Each is a relative OKLCH color
     (`toned` in `lib/svg/colour.ts`): the token's hue, a lightness of its own
     and a share of the token's chroma. Mixing the color into a grey or a
