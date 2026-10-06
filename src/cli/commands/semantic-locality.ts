@@ -1,9 +1,11 @@
-// Asking a board which of its parts change most often (ADR 0045).
+// Asking a board which of its parts change most often, and which change
+// together (ADR 0045).
 //
 // The Archboard server reads Git through the files each part binds and answers
-// the hotspots of one variant: every part it read, ranked by the commits of a
-// period that changed those files. The command prints that answer, and on
-// standard error a ranked summary for a person. It reads, and it writes
+// the locality of one variant: every part it read, ranked by the commits of a
+// period that changed those files, and the pairs of parts those commits
+// changed together. The command prints that answer, and on standard error a
+// summary for a person. It reads, and it writes
 // nothing: not to the board, not to any file (ADR 0015).
 
 import { z } from "zod";
@@ -55,10 +57,28 @@ function plural(count: number, noun: string): string {
 }
 
 /**
+ * What to say about the coupled pairs, for a person.
+ * @param answer The answer.
+ * @returns One line per pair, highest degree first, or one line that says there is none.
+ */
+function coupling(answer: LocalityAnswer): string[] {
+	if (answer.coupling.length === 0) {
+		return ["coupling: no pair of parts changed together in 5 commits and at 30% or more"];
+	}
+	return answer.coupling.map(
+		(pair) =>
+			`coupling: ${String(pair.degree).padStart(3)}% ${plural(pair.shared, "commit")} ` +
+			`${pair.subjects[0].name} and ${pair.subjects[1].name}` +
+			(pair.unjoined ? ": nothing on the board joins them" : ""),
+	);
+}
+
+/**
  * What to say about the answer on standard error, for a person.
  * @param answer The answer.
  * @returns The lines: the period of each repository, the parts that changed in
- * it, most commits first, and what the lens left out or did not read.
+ * it, most commits first, the coupled pairs, and what the lens left out or did
+ * not read.
  */
 function locality(answer: LocalityAnswer): string[] {
 	const changed = answer.hotspots.filter((hotspot) => hotspot.count > 0);
@@ -66,10 +86,10 @@ function locality(answer: LocalityAnswer): string[] {
 	const reasons = new Map<string, number>();
 	for (const skip of answer.skipped) reasons.set(skip.reason, (reasons.get(skip.reason) ?? 0) + 1);
 	return [
-		`hotspots: "${answer.board}" at "${answer.variant.name}"`,
+		`locality: "${answer.board}" at "${answer.variant.name}"`,
 		...answer.periods.map(
 			(period) =>
-				`hotspots: ${period.repo}: commits from ${period.since.slice(0, 10)} to ${period.until.slice(0, 10)}`,
+				`locality: ${period.repo}: commits from ${period.since.slice(0, 10)} to ${period.until.slice(0, 10)}`,
 		),
 		...changed.map(
 			(hotspot) =>
@@ -78,9 +98,10 @@ function locality(answer: LocalityAnswer): string[] {
 		...(unchanged === 0
 			? []
 			: [`hotspots: ${plural(unchanged, "part")} with no commit in the period`]),
-		`hotspots: left out ${plural(answer.leftOut.largeCommits, "large commit")} of more than 30 files`,
+		...coupling(answer),
+		`locality: left out ${plural(answer.leftOut.largeCommits, "large commit")} of more than 30 files`,
 		...[...reasons].map(
-			([reason, count]) => `hotspots: skipped ${plural(count, "part")}: ${reason}`,
+			([reason, count]) => `locality: skipped ${plural(count, "part")}: ${reason}`,
 		),
 	];
 }
@@ -88,7 +109,8 @@ function locality(answer: LocalityAnswer): string[] {
 const semanticLocalityContract = defineCommand({
 	path: ["semantic", "locality"],
 	shared: ["url"],
-	summary: "Rank the parts of a board by how often their bound files changed",
+	summary:
+		"Rank the parts of a board by how often their bound files changed, and pair the parts that change together",
 	description:
 		"Reads Git through the files that each part of one variant binds, and ranks every part " +
 		"by the number of commits that changed those files in a period. A hotspot is a part " +
@@ -149,7 +171,7 @@ const semanticLocalityContract = defineCommand({
 			},
 		],
 		/**
-		 * One answer: the ranked parts.
+		 * One answer: the ranked parts and the coupled pairs.
 		 * @returns The output case's id.
 		 */
 		select: () => "json",
@@ -166,7 +188,7 @@ const semanticLocalityContract = defineCommand({
 		},
 	],
 	/**
-	 * Rank the parts of the board.
+	 * Rank the parts of the board and pair those that change together.
 	 * @param input What the command was given.
 	 * @param context The command context.
 	 * @returns The answer.

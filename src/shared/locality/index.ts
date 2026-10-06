@@ -3,10 +3,10 @@
 //
 // Locality is where change concentrates in a board's code. The answer reads
 // one variant of one board over a period, through the files its parts bind.
-// This task fills `hotspots`: every part the lens read, ranked by the commits
-// of the period that changed its bound files. Change coupling (TASK-369.04)
-// joins the same answer as a list beside `hotspots`, and reads the same
-// `commits` and `leftOut`.
+// `hotspots` ranks every part the lens read by the commits of the period that
+// changed its bound files. `coupling` lists the pairs of those parts that
+// change together, and marks the pairs that nothing on the board joins. Both
+// read the same walk, the same `commits` and the same `leftOut`.
 //
 // Both readings leave out large commits and say how many (`leftOut`), and both
 // say which parts they did not read and why (`skipped`), so a part that was not
@@ -53,6 +53,39 @@ const HotspotSchema = BehindPartSchema.extend({
 	count: z.int().nonnegative(),
 });
 
+/**
+ * Two parts that changed together in enough commits of the period to pass
+ * code-maat's filters, which are fixed: at least 5 shared commits, and a
+ * degree of at least 30% (ADR 0045). Only parts bound into one repository can
+ * pair, and a pair whose bound paths overlap is left out, because each of its
+ * shared commits is one change counted twice.
+ */
+const CoupledPairSchema = z
+	.object({
+		/** The two parts, in the variant's order. */
+		subjects: z.tuple([BehindPartSchema.shape.subject, BehindPartSchema.shape.subject]),
+		repo: z.string(),
+		/** The commits of `commits` that changed both parts, newest first. */
+		commits: z.array(z.string()),
+		/** How many commits the two share: the length of `commits`. */
+		shared: z.int().positive(),
+		/**
+		 * The shared commits over the mean of the two parts' own counts, in
+		 * whole percent, cut as code-maat prints it. Each part's count is its
+		 * hotspot's `count`.
+		 */
+		degree: z.int().min(0).max(100),
+		/**
+		 * No relationship or flow step of the variant joins the two parts, in
+		 * either direction, and neither part is inside the other. A part inside
+		 * an end of a relationship counts as at that end. An unjoined pair asks
+		 * whether the board misses a dependency, or whether two parts carry one
+		 * decision.
+		 */
+		unjoined: z.boolean(),
+	})
+	.strict();
+
 /** What the answer says it left out of every reading. */
 const LeftOutSchema = z
 	.object({
@@ -83,6 +116,11 @@ const LocalityAnswerSchema = z
 		 * in the period is here with a count of 0.
 		 */
 		hotspots: z.array(HotspotSchema),
+		/**
+		 * The coupled pairs among the parts in `hotspots`, highest degree first,
+		 * then most shared commits, then in the variant's order.
+		 */
+		coupling: z.array(CoupledPairSchema),
 		leftOut: LeftOutSchema,
 		/** Every part the lens did not read, with the reason. It is in no count. */
 		skipped: z.array(BehindSkipSchema),
@@ -100,8 +138,11 @@ type LocalityReply = z.infer<typeof LocalityReplySchema>;
 type LocalityCommit = z.infer<typeof LocalityCommitSchema>;
 type LocalityPeriod = z.infer<typeof LocalityPeriodSchema>;
 type Hotspot = z.infer<typeof HotspotSchema>;
+type CoupledPair = z.infer<typeof CoupledPairSchema>;
 
 export {
+	CoupledPairSchema,
+	type CoupledPair,
 	HotspotSchema,
 	type Hotspot,
 	LeftOutSchema,

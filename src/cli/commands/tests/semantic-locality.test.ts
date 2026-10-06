@@ -43,6 +43,19 @@ const answer: LocalityAnswer = {
 			count: 0,
 		},
 	],
+	coupling: [
+		{
+			subjects: [
+				{ kind: "node", id: "pL", name: "Ledger" },
+				{ kind: "node", id: "pC", name: "Checkout" },
+			],
+			repo: "github.com/test/orders",
+			commits: ["1", "2", "3", "4", "5"].map((digit) => digit.repeat(40)),
+			shared: 5,
+			degree: 41,
+			unjoined: true,
+		},
+	],
 	leftOut: { largeCommits: 2 },
 	skipped: [{ subject: { kind: "node", id: "pU", name: "Customer" }, reason: "unbound" }],
 };
@@ -149,9 +162,9 @@ test("it asks the locality route for the board, the draft and the start it was g
 		since: "2026-01-31",
 	});
 	expect(LocalityReplySchema.parse(JSON.parse(stdout))).toEqual({ success: true, ...answer });
-	expect(stderr.split("\n").some((line) => line.includes("Ledger") && line.includes("1"))).toBe(
-		true,
-	);
+	const lines = stderr.split("\n");
+	expect(lines.some((line) => line.includes("Ledger") && line.includes("1"))).toBe(true);
+	expect(lines.some((line) => /Ledger.*Checkout/u.test(line) && line.includes("41"))).toBe(true);
 });
 
 test("a board with no variant or start named asks for neither", async () => {
