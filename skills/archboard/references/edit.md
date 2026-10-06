@@ -78,7 +78,8 @@ calls it.
 4. Check the answer against your checks: the ids you meant to keep are
    unchanged, removed subjects are gone, restated subjects still carry the
    fields you kept, `version` moved by one, and nothing landed on a variant
-   you did not name. Draw and look when the picture matters.
+   you did not name. Draw and look when the picture matters. After a changed
+   anchor or binding symbol, run `archboard check --code`.
 
 ## Renaming a board or a variant
 

@@ -99,7 +99,9 @@ In infrastructure it is the address of the declaration:
 `Deployment/checkout` in a Kubernetes manifest, `services.checkout` in a
 compose file. With a symbol, two parts can bind one file and stay told apart;
 without one, the part owns the whole file or directory. A changed symbol is a
-changed binding in a comparison. `archboard check` tests the path only, and
+changed binding in a comparison. `archboard check` tests the path only;
+`archboard check --code` warns with `BINDING_SYMBOL_MISSING` when the bound
+file or directory does not hold the symbol.
 "View in code" opens the file; the inspector shows the symbol under the path.
 
 A binding names the implementation owner: the file whose body does what the
@@ -164,9 +166,10 @@ is the vault configuration, so defining the kind again clears it wherever it
 sits.
 
 A check diagnostic about one node or one relationship carries a `subject`,
-`{ "kind": "node" | "edge", "id", "name" }`, next to its `board` and `variant`.
-`archboard check` prints the subject's name before the message. A
-relationship's name is its ends, `From -> To`. A diagnostic about the board or
+`{ "kind": "node" | "edge" | "step", "id", "name" }`, next to its `board` and
+`variant`. `archboard check` prints the subject's name before the message. A
+relationship's name is its ends, `From -> To`; a step's is its flow, its ends
+and its label, `Flow: From -> To: label`, and only `check --code` names one. A diagnostic about the board or
 the configuration has none, and nor has a `RELATIONSHIP_*` write warning: that
 one names its relationship in its `path`.
 
@@ -264,8 +267,10 @@ calls ([the worked example](create-architecture.md) anchors every relationship).
 an end can be unbound or external, and the proof can live in another
 repository. The anchor stores no line, because a line moves with every edit
 above it. It is bookkeeping: a comparison never reads a new or better anchor
-as a change, and a proposal merges it like `emphasis`. That record decides
-what a valid payload cannot:
+as a change, and a proposal merges it like `emphasis`. `archboard check --code`
+warns with `ANCHOR_PATH_MISSING` when its file is not in the checkout and with
+`ANCHOR_SYMBOL_MISSING` when the file does not hold the symbol.
+That record decides what a valid payload cannot:
 
 - **Siblings are not a chain** (rule 3).
 - **The receiver is the part, not its container**

@@ -981,12 +981,12 @@
 			"handlerOwner": "src/cli/commands/vault.ts",
 			"stdout": "JSON policy and diagnostics; with --code also codeCheck",
 			"result": "shared whole-vault check result, and with --code the code check answer (boards, findings, skipped, behind)",
-			"diagnostics": "actionable file locations and messages on stderr; with --code also skip counts and behind per board and part",
+			"diagnostics": "actionable file locations and messages on stderr; with --code also each finding with its subject and evidence, one line per skip reason with a count (checkouts named), and behind per board and part",
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
 			"relationships": ["GET /api/vault/check", "GET /api/vault/code-check"],
-			"semantics": "checks YAML configuration and every semantic board family; invalid configuration activates defaults and warnings; unreadable families are errors; --code then runs the code check, whose behind reading is information (ADR 0045, ADR 0046)",
-			"ordering": "read current policy, inspect every board, then with --code the code check; report all diagnostics; exit 1 if a diagnostic or a code check warning remains",
+			"semantics": "checks YAML configuration and every semantic board family; invalid configuration activates defaults and warnings; unreadable families are errors; --code then runs the code check (ADR 0046) on its own route, never the polled check: it reads every board at its current variant, or at the draft --variant names where a board has one, never a historical or shelved variant, and only files Git does not ignore in registered checkouts, as text; it warns ANCHOR_PATH_MISSING, ANCHOR_SYMBOL_MISSING, BINDING_SYMBOL_MISSING and on a named draft BINDING_PATH_MISSING, lists what it skipped with the reason, and its behind reading is information (ADR 0045); --variant without --code is a usage error",
+			"ordering": "validate --variant against --code, read current policy, inspect every board, then with --code the code check; report all diagnostics; exit 1 if a diagnostic or a code check warning remains",
 			"nextFields": ["configurationFile", "policy", "diagnostics", "fingerprint", "codeCheck"],
 			"workflow": "necessary composition",
 			"effects": ["read"],
@@ -994,6 +994,10 @@
 				{
 					"code": "SERVER_UNREACHABLE",
 					"exit": 3
+				},
+				{
+					"code": "NO_SUCH_DRAFT",
+					"exit": 2
 				}
 			],
 			"introducedBy": "TASK-203",

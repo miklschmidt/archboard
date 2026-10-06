@@ -94,7 +94,9 @@ recipe names.
     the draft it came from. The current variant, and the first draft of a board
     nobody has built, have nothing to compare against: say so instead.
 16. **Run `archboard check`** after a vocabulary edit or an answer that
-    carried `warnings` ([Vocabulary](#essentials)).
+    carried `warnings` ([Vocabulary](#essentials)), and
+    `archboard check --code` after a write that adds or changes an anchor or a
+    binding's `symbol` ([Verification](#essentials)).
 17. **Repeat steps 4 to 16** for each further write the board still needs — a
     flow over parts already drawn, a view a later reading wants, the correction
     the picture showed you.
@@ -156,6 +158,13 @@ recipe names.
   viewer. Reading the SVG's text is not looking at a diagram. A picture the
   request names goes where it says; one you draw only to look at goes in a
   temporary directory, never into the checkout you are describing.
+  `archboard check --code` holds every anchor and bound `symbol` of each
+  board's current variant to the files on disk: a file that is not there or
+  does not hold the symbol is a warning that names its part, relationship or
+  step, and exits 1. Repair the anchor or binding it names. For a draft whose
+  code is written, add `--variant <draft>`. What it could not read (a
+  repository this machine has not registered, a file Git ignores) is listed
+  as skipped, never as a finding.
 - **Open questions.** A question about the product (a field, a selector, what
   a refusal means, what a command accepts) is answered by the references
   below, the generated JSON Schemas under `references/generated/`, and
