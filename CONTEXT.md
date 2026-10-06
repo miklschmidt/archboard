@@ -63,8 +63,9 @@ reading. It is a presentation of a node, not a node kind.
 _Avoid_: node, leaf kind
 
 **Container**:
-The expanded depiction of a node enclosing its visible children. It represents
-structural containment without changing the node's kind or identity.
+A node that has children on a variant. A view that shows its children draws it
+expanded, enclosing them, and a view that shows it alone draws it as a card.
+Either way it keeps its kind, its identity and its interface.
 _Avoid_: container kind, group, platform tag
 
 **Icon chip**:
@@ -198,6 +199,46 @@ is independent of containment and of kind. Renaming a group changes no board. In
 reads its members, the relationships between them, the relationships crossing its
 boundary and their direction, and the immediate neighbours those reach.
 _Avoid_: tag, category, layer, swimlane, label
+
+**Interface**:
+A container's entry points on one variant, derived from the relationships of
+the variant and never authored. It belongs to the container, not to a drawing
+of it. It says which parts callers reach, not everything a caller must know,
+and not what the code exposes (ADR 0044).
+_Avoid_: API, surface, contract, public parts, declared interface (that is what
+the code exposes), drawn interface
+
+**Entry point**:
+A child of a container that a relationship from outside the container reaches,
+on the child or on a part inside it. Outside is every part that is neither the
+container nor below it. An entry point is always a child, so a nested container
+answers for its own children.
+_Avoid_: endpoint (either end of a relationship), port (where the renderer
+attaches a line), export, public part
+
+**Hidden part**:
+A child of a container that no relationship from outside the container reaches.
+Entry points and hidden parts divide a container's children between them.
+_Avoid_: private part, internal part, implementation detail
+
+**Caller**:
+A part outside a container where a relationship into the container starts,
+whatever the relationship's kind. A relationship that ends on the container
+itself makes a caller and no entry point.
+_Avoid_: client, consumer, dependent, user (that is whoever reads the canvas)
+
+**Pass-through entry point**:
+An entry point with no children that sends exactly one relationship, of the
+same kind as every relationship it receives. The board shows its shape and not
+what its body does, so it is a question for the reader, never a fault.
+_Avoid_: wrapper, proxy, facade, shallow part
+
+**Interface measures**:
+Five counts of one container on one variant: its entry points, hidden parts,
+callers, outgoing relationships and pass-through entry points. They say what the
+board claims about the container. They are the same for every drawing of the
+variant and are never combined into one score.
+_Avoid_: scorecard (that is how a drawing reads), depth, depth score, metrics
 
 **Visual policy**:
 The vault-wide interpretation of semantic vocabulary as appearance, shared by
@@ -452,6 +493,47 @@ itself takes over from the picture inside the card, in the same place. The dive
 is presentation: it happens when the board's picture is to hand in a moment,
 and it gives way to the plain opening of the board when it cannot happen.
 _Avoid_: zoom transition, page transition, animation
+
+### Commits
+
+**Behind**:
+A board is behind its code by the commits that changed a part's bound files
+after its last change. Its last change is the last commit that adopted a
+variant, or changed a part, relationship, flow or step of the current variant.
+Being behind says where to look, not what is wrong. It is derived from Git on
+request, never stored, and never a warning (ADR 0045).
+_Avoid_: staleness and stale (a server that runs older source), drift (live
+infrastructure against its code), lag, freshness, out of date
+
+**Hotspot**:
+A part that many commits in a period changed, a year by default. A board's
+hotspots are its parts ranked by that count. The count is of commits only, not
+of the size or the complexity of the code, and it leaves large commits out
+(ADR 0045).
+_Avoid_: churn (that counts changed lines), heat, activity, hot path, window
+(that is a browser window)
+
+**Change coupling**:
+Two parts of one board whose bound files change in the same commits often
+enough to pass code-maat's filters. Its degree is their shared commits over the
+mean of their own. A pair that no relationship joins asks whether the board
+misses a dependency, or whether two parts carry one decision (ADR 0045).
+_Avoid_: temporal coupling (it means three different things in three books),
+logical coupling, evolutionary coupling, co-change
+
+**Footprint**:
+The parts whose bound files a range of commits changed, usually a branch since
+its merge base, set against the parts that its proposal names: named and
+changed, changed but not named, and named but not changed (ADR 0045).
+_Avoid_: impact, change set, touched parts, diff (that is a comparison)
+
+**Large commit**:
+A commit that changes more than 30 files, code-maat's default limit. Hotspots
+and change coupling leave large commits out, because they make unrelated parts
+look coupled. Behind and a footprint keep them and say which ones are large
+(ADR 0045).
+_Avoid_: sweep (the archboard-dev pass after a removal or a rename), bulk
+commit, big commit
 
 ### Working
 
