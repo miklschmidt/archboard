@@ -1,5 +1,5 @@
-// Depth by thickness. Every part of the picture is a block lit from the upper
-// left, as a keycap or a foam-core model is: a flat top face with a fine
+// Depth by thickness. Every part of the picture is a block lit from above, as
+// a keycap or a foam-core model under a lamp is: a flat top face with a fine
 // highlight along its top edge and light that falls off down it, a front edge
 // along its foot that shows how thick the block is, and a soft shadow it casts
 // down and to the right on whatever it stands on. A container is the opposite

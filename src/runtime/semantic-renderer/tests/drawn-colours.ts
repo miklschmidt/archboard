@@ -263,6 +263,15 @@ function hueOf(hex: string): number {
 }
 
 /**
+ * How much colour a hex colour carries: its OKLCH chroma, near 0 for a grey.
+ * @param hex The colour.
+ * @returns Its chroma.
+ */
+function chromaOf(hex: string): number {
+	return oklchOf(literalColour(hex)).c;
+}
+
+/**
  * How far apart two hex colours are, channel by channel.
  * @param a One colour.
  * @param b The other.
@@ -310,4 +319,4 @@ function seenIn<Drawn extends { readonly svg: string }>(
 	return { ...drawn, svg: paintedIn(drawn.svg, theme) };
 }
 
-export { colourDistance, colourIn, contrast, hueOf, luminance, paintedIn, seenIn };
+export { chromaOf, colourDistance, colourIn, contrast, hueOf, luminance, paintedIn, seenIn };

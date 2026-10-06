@@ -48,15 +48,16 @@
    amber, which sits on the gold's hue, so no comparison mark reads as a
    choice.
 
-   The picture builds its parts as blocks lit from the upper left: each part
-   has a top face, a front edge along its foot that shows how thick it is, and
-   a soft shadow it casts down and to the right. A card is a slab (--slab-face
-   on --slab-edge). A container is a tray cut into what holds it: a floor
-   (--tray-floor) inside walls in shade at its top and left and a lit lip
-   (--tray-lip) at its bottom and right, with a nameplate (--tray-plate)
-   seated against its top wall. Each is tinted by its own colour. A container
-   nested in another is cut a step deeper, its floor sinking toward
-   --tray-sink. A group's region is a thin mat with no token of its own: its
+   The picture builds its parts as blocks lit from above: each part has a
+   top face, a front edge along its foot that shows how thick it is, and a soft
+   shadow it casts down and a little to the right. A card is a slab
+   (--slab-face on --slab-edge). A container is a tray cut into what holds it:
+   a floor (--tray-floor) inside a top wall in shade, two quieter side walls
+   and a lit lip (--tray-lip) at its bottom, with a nameplate (--tray-plate)
+   seated against its top wall. The walls are shades of the floor with no
+   colour of their own; the floor and the nameplate are tinted by the
+   container's kind. A container nested in another is cut a step deeper, its
+   floor sinking toward --tray-sink. A group's region is a thin mat with no token of its own: its
    faces are tones of the group's colour (--semantic-*) at a set lightness, in
    OKLCH, and so is a grouped card's face. --slab-deep is
    what a colour is shaded into for a front edge, and for a tint on the dark

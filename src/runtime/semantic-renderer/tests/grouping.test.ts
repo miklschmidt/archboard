@@ -4,7 +4,7 @@ import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { themeColor } from "@/shared/theme/server";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
-import { hueOf, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import { chromaOf, hueOf, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 
 /**
  * A card's or a container's block as painted: the front edge is its body, the
@@ -14,11 +14,19 @@ import { hueOf, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colour
  * @returns The two colours.
  */
 function blockOf(markup: string): { edge: string; face: string } {
-	const afterHalo = markup.slice(markup.indexOf('class="ab-halo"'));
-	const [edge, , face] = [...afterHalo.matchAll(/<rect[^>]* fill="(#[0-9a-f]{6})"\/>/gu)].map(
-		(found) => found[1]!,
-	);
+	const [edge, , face] = opaqueRects(markup);
 	return { edge: edge!, face: face! };
+}
+
+/**
+ * The opaque rects a subject paints after its selection ring, in order: for a
+ * container's tray, its lip, its top wall, its side walls and its nameplate.
+ * @param markup The subject's group, painted in literals.
+ * @returns Their colours.
+ */
+function opaqueRects(markup: string): string[] {
+	const afterHalo = markup.slice(markup.indexOf('class="ab-halo"'));
+	return [...afterHalo.matchAll(/<rect[^>]* fill="(#[0-9a-f]{6})"\/>/gu)].map((found) => found[1]!);
 }
 
 /**
@@ -102,9 +110,10 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 			expect(groupOf(drawn, "node", "side")!.markup).toContain('data-body-color="neutral"');
 			const frame = groupOf(drawn, "region", "cloud")!.markup;
 			expect(frame).toContain('data-body-color="blue"');
-			expect(
-				sameHue(hueOf(blockOf(frame).face), hueOf(themeColor(theme, "--semantic-blue"))),
-			).toBeTrue();
+			const [, top, side, nameplate] = opaqueRects(frame);
+			expect(sameHue(hueOf(nameplate!), hueOf(themeColor(theme, "--semantic-blue")))).toBeTrue();
+			// Its walls are shades of its floor with no colour of its kind (TASK-414).
+			for (const wall of [top!, side!]) expect(chromaOf(wall), wall).toBeLessThan(0.012);
 			// A group's only member at its level still takes the group's colour (ADR 0038).
 			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-body-color="green"');
 			// The chip keeps its type's colour.

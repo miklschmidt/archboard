@@ -63,12 +63,15 @@ const SLAB_RADIUS = 8;
 /** How thick a card's slab is: its front edge, inside its box along its foot. */
 const CARD_THICKNESS = 4;
 /**
- * A container's tray (`lib/svg/tray.ts`), cut into what holds it: how thick
- * its top and left walls show, a step thicker than a card's front edge; how
- * wide the lit lip along its bottom and right walls is; and the crease outside
- * that lip, where the tray meets what it is cut into.
+ * A container's tray (`lib/svg/tray.ts`), cut into what holds it and lit from
+ * straight above: how thick its top wall shows, a step thicker than a card's
+ * front edge; how thick each side wall shows, both alike; how wide the lit lip
+ * along its bottom is; and the crease below that lip, where the tray meets
+ * what it is cut into. A side wall is as wide as the lip and the crease
+ * together, so the floor lies as far in from each side as from the bottom.
  */
 const TRAY_WALL = 7;
+const TRAY_SIDE = 3;
 const TRAY_LIP = 2;
 const TRAY_CREASE = 1;
 /** How thick the nameplate seated against a tray's top wall shows at its foot. */
@@ -125,6 +128,7 @@ export {
 	SLAB_RADIUS,
 	CARD_THICKNESS,
 	TRAY_WALL,
+	TRAY_SIDE,
 	TRAY_LIP,
 	TRAY_CREASE,
 	PLATE_THICKNESS,
