@@ -13,7 +13,10 @@
 // effects loads the whole file at run time, so it is a call to the file.
 //
 // Each piece goes from the part whose code makes the use to the part whose
-// code holds what it reaches, each the narrowest binding (part-code.ts).
+// code holds what it reaches, each the narrowest binding (part-code.ts). Code
+// facts keep only the first line of each spelling in a file, so where two
+// parts bind two symbols of one file and both use one name, only the part
+// whose definition holds that first line is credited with the use.
 // Evidence never joins a part to a part inside it, and never two parts that
 // bind the same code: the board already says that the one holds the other,
 // and the check cannot tell the code of the two apart. A file read as text
