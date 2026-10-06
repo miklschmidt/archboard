@@ -1,11 +1,11 @@
 ---
 id: TASK-369.03
 title: An agent can list the hotspots of a board
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:19'
-updated_date: '2026-10-06 11:40'
+updated_date: '2026-10-06 12:07'
 labels:
   - history
   - cli
@@ -28,9 +28,9 @@ A hotspot is a part that changes often. The improve-codebase-architecture skill 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 For a board, the answer ranks its parts by the number of commits that changed their bound files in a window, with a default and an option
-- [ ] #2 Commits over the size filter are left out, and the answer says how many
-- [ ] #3 The read recipe of the consumer skill says when to use it
+- [x] #1 For a board, the answer ranks its parts by the number of commits that changed their bound files in a window, with a default and an option
+- [x] #2 Commits over the size filter are left out, and the answer says how many
+- [x] #3 The read recipe of the consumer skill says when to use it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -81,4 +81,12 @@ A hotspot is a part that changes often. The improve-codebase-architecture skill 
 - Gate: type-check 0, lint 0 (lint:tests, lint:policy), fmt:check clean, test:modules 4036 pass, test:system 192 pass, test:repository 20 pass, test:serial-browser exit 0.
 - Real command on the dogfood vault (2026-10-06): `./bin/dogfood semantic locality "Board viewer"`: 35 parts read, 3 skipped as drill-down, 21 large commits left out; Viewer entry point 20 commits, Select semantic subjects 15, Semantic queries 9. `./bin/dogfood check` and `check --code` exit 0; Archboard server and Command interface read 0 commits behind after adoption.
 - Dogfood: Archboard server and Command interface proposals TASK-369.03 adopted (versions 36 and 30). Their vault files were committed inside 0c606eead (the TASK-369.05 commit), because that commit took the shared Git index while my blobs were staged; the content is only TASK-369.03.
+
+Independent review (2026-10-06) superseded three decisions above: refusals NO_CURRENT_VARIANT, UNKNOWN_VARIANT and NOT_A_DRAFT now answer 422 and exit 2 like the footprint's (e932123c4); the memory key holds only the checkouts the variant's parts bind into (0dc45ab8f); both history-lens durations live in src/shared/timing/lib/history-lens.ts, re-exported by timing.ts (21ee9fc6a). It also fixed --since before 1973 counting nothing by passing --max-age (1cf9208e1), and made the last request to leave await the walk it stopped (0ae0f7e04).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard semantic locality <board> [--variant] [--since <date>] ranks a board's parts by the commits that changed their bound files in a period that ends at HEAD's commit time and starts a year before it by default. Large commits are left out of every count, and the answer says how many. GET /api/semantic-boards/locality runs as checkout work with an in-memory answer keyed on the board version, the period and the bound checkouts' HEADs. read.md step 5 says when to use it. Verified by locality.test.ts and answer-memory.test.ts on temporary Git repositories, the route and CLI tests (pass with --isolate), S18 with eval:skill check, and a real run on the dogfood vault.
+<!-- SECTION:FINAL_SUMMARY:END -->
