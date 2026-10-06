@@ -159,23 +159,26 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      keep the whole width. For a relationship, the parts at its two ends. For an
      exchange, who takes part. For a message, where it comes in its exchange.
   5. **How has it changed in code?** Only for a part, read from Git through
-     its binding (ADR 0045). Recent commits has its count, the day the period
-     starts at the end of its line, and the newest five commits, each with its
-     subject, its short hash and its day. A control under them shows the rest.
-     Changes with has its count and one row for each part whose code changes in
-     the same commits, with how many commits the two share and what share of
-     their changes that is. If nothing on the board joins the two, the row says
-     so in the ink and not in the quiet tone, because that is the question the
-     reading asks. Choosing a row picks the part out, and pointing at it lights
-     the part. A part that Git does not read for the board says why in words:
-     it has no binding, it opens a board of its own, or its repository, checkout
-     or ref is not on this machine. A part that no commit changed says so. For a
-     part Git reads, the last line says how many large commits the board left
-     out of every count, when it left any out.
-     The pane asks the server when somebody picks a part out, and never on a
-     timer. On a historical or shelved variant it asks nothing and says that
-     the history is read only for the current variant and drafts. The picture
-     draws nothing for any of it.
+     its binding (ADR 0045). Recent commits has its count. The day the period
+     starts is at the end of its line. Under it are the newest five commits,
+     each with its subject, its short hash and its day. A control under them
+     shows the rest. Changes with has its count and one row for each part
+     whose code changes in the same commits. A row says how many commits the
+     two share and what share of their changes that is. If nothing on the
+     board joins the two, the row says so in the ink, not in the quiet tone.
+     That is the question the reading asks. Choosing a row picks the part out,
+     and pointing at it lights the part. A part with no binding has no such
+     region, as it has no row for its code at the foot. If Git does not read a
+     bound part, the region says why in words: the part opens a board of its
+     own, or its repository, checkout or ref is not on this machine. A part
+     that no commit changed says so. If the board left large commits out of
+     every count, the last line says how many.
+     When somebody picks a part out, the pane asks the server. It never asks
+     on a timer. A pick made while the server reads waits for that read. When
+     the board changes, the region reads the part again. Its last answer stays
+     on screen meanwhile. On a historical or shelved variant, the region asks
+     nothing and says that the history is read only for the current variant
+     and drafts. The picture draws nothing for any of it.
 
   A part that leads somewhere has a foot on a tray, pinned under the panel's
   scroll, with no heading. Open the board it drills into is the gold primary

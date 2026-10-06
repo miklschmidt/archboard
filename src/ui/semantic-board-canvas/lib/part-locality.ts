@@ -38,7 +38,10 @@ type PartLocality =
 			/** The parts it changes together with, highest degree first. */
 			readonly partners: readonly Partner[];
 	  }
-	/** The answer does not name it: it was read before the part was on the board. */
+	/**
+	 * The answer does not name it. The server reads the board as it is when
+	 * asked, so the answer is of a later version that no longer holds the part.
+	 */
 	| { readonly kind: "absent" };
 
 /**
