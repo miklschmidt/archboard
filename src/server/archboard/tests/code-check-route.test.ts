@@ -1,0 +1,177 @@
+// The code check runs on a route of its own, never inside the check that
+// every open canvas polls every 5 seconds (ADR 0045, ADR 0046), and the caller
+// that hangs up cancels it, because it runs as checkout work.
+//
+// The production application answers both routes over a vault this owner
+// makes in a Git repository of its own; a stand-in check proves the
+// cancellation without depending on how long a real reading takes.
+
+import { afterAll, beforeAll, expect, test } from "bun:test";
+import type { Server } from "node:http";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import express from "express";
+import type * as ServerModule from "@/server/archboard/index";
+import type * as RouteModule from "@/server/archboard/code-check";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
+import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
+
+const caller = {
+	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
+	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
+};
+const scratch = mkdtempSync(join(tmpdir(), "archboard-code-check-route-"));
+const checkout = join(scratch, "checkout");
+const vault = join(checkout, "vault");
+process.env["ARCHBOARD_VAULT"] = vault;
+process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
+let server: typeof ServerModule;
+let route: typeof RouteModule;
+const listening: Server[] = [];
+
+/**
+ * Run Git in the owner's repository.
+ * @param args Git's arguments.
+ */
+function git(...args: string[]): void {
+	const run = Bun.spawnSync(["git", ...args], {
+		cwd: checkout,
+		env: {
+			...process.env,
+			GIT_CONFIG_GLOBAL: join(scratch, "gitconfig"),
+			GIT_CONFIG_NOSYSTEM: "1",
+			GIT_AUTHOR_NAME: "Owner",
+			GIT_AUTHOR_EMAIL: "owner@example.com",
+			GIT_COMMITTER_NAME: "Owner",
+			GIT_COMMITTER_EMAIL: "owner@example.com",
+		},
+	});
+	if (run.exitCode !== 0) throw new Error(`git ${args.join(" ")}: ${run.stderr.toString()}`);
+}
+
+/**
+ * Listen on a free port.
+ * @param app The application.
+ * @returns Its base URL.
+ */
+async function listen(app: express.Express): Promise<string> {
+	const http = await new Promise<Server>((resolve) => {
+		const started = app.listen(0, "127.0.0.1", () => resolve(started));
+	});
+	listening.push(http);
+	const address = http.address();
+	if (address === null || typeof address === "string") throw new Error("no port");
+	return `http://127.0.0.1:${address.port}`;
+}
+
+beforeAll(async () => {
+	mkdirSync(join(checkout, "src"), { recursive: true });
+	writeFileSync(join(scratch, "gitconfig"), "");
+	writeFileSync(
+		process.env["ARCHBOARD_REPOS"] ?? "",
+		JSON.stringify([
+			{
+				repo: "github.com/test/route",
+				root: checkout,
+				source: "declared",
+				addedAt: "2026-10-06T00:00:00.000Z",
+			},
+		]),
+	);
+	git("init", "-q", "-b", "main");
+	git("remote", "add", "origin", "https://github.com/test/route.git");
+	mkdirSync(vault, { recursive: true });
+	writeFileSync(join(checkout, "src", "a.ts"), "1\n");
+	writeFileSync(
+		join(vault, "Shop.semantic.json"),
+		JSON.stringify({
+			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			kind: "semantic-board",
+			id: "bd",
+			name: "Shop",
+			level: "system",
+			version: 1,
+			createdAt: "2026-10-06T00:00:00.000Z",
+			updatedAt: "2026-10-06T00:00:00.000Z",
+			current: "v1",
+			variants: [
+				{
+					id: "v1",
+					name: "Built",
+					lifecycle: "current",
+					content: {
+						nodes: [
+							{
+								id: "pA",
+								name: "Checkout",
+								kind: "module",
+								order: 1000,
+								binding: { repo: "github.com/test/route", path: "src/a.ts" },
+							},
+						],
+					},
+				},
+			],
+		}),
+	);
+	git("add", "-A");
+	git("commit", "-q", "--no-gpg-sign", "-m", "the board and its code");
+	writeFileSync(join(checkout, "src", "a.ts"), "2\n");
+	git("commit", "-q", "--no-gpg-sign", "-am", "change a.ts");
+	[server, route] = await Promise.all([
+		import("@/server/archboard/index"),
+		import("@/server/archboard/code-check"),
+	]);
+});
+
+afterAll(() => {
+	for (const http of listening) http.close();
+	for (const [key, value] of Object.entries(caller)) {
+		if (value === undefined) delete process.env[key];
+		else process.env[key] = value;
+	}
+	rmSync(scratch, { recursive: true, force: true });
+});
+
+test("the polled check never says how far a board is behind, and the code check route does", async () => {
+	const base = await listen(server.app);
+	const polled: unknown = await (await fetch(`${base}/api/vault/check`)).json();
+	expect(polled).toMatchObject({ success: true });
+	expect(Object.keys(polled ?? {})).not.toContain("behind");
+	const answer = CodeCheckAnswerSchema.parse(
+		await (await fetch(`${base}/api/vault/code-check`)).json(),
+	);
+	expect(answer.boards.map((one) => one.board)).toEqual(["Shop"]);
+	const [shop] = answer.behind;
+	expect(shop !== undefined && "parts" in shop ? shop.parts[0]?.commits.length : undefined).toBe(1);
+});
+
+test("a caller that hangs up cancels the code check", async () => {
+	const app = express();
+	let started!: () => void;
+	const running = new Promise<void>((resolve) => {
+		started = resolve;
+	});
+	const cancelled = new Promise<unknown>((resolve) => {
+		route.mountCodeCheckRoute(app, {
+			check: async (signal): Promise<CodeCheckAnswer> => {
+				started();
+				await new Promise<void>((settle) => {
+					signal.addEventListener("abort", () => settle(), { once: true });
+				});
+				resolve(signal.reason);
+				throw signal.reason;
+			},
+		});
+	});
+	const base = await listen(app);
+	const hangUp = new AbortController();
+	const request = fetch(`${base}/api/vault/code-check`, { signal: hangUp.signal }).catch(
+		(error: unknown) => error,
+	);
+	await running;
+	hangUp.abort();
+	await request;
+	expect(await cancelled).toBeInstanceOf(Error);
+});
