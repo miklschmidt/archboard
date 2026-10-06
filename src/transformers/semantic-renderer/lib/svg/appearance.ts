@@ -64,11 +64,13 @@ const PLINTH_RISE: Share = { light: 0.3, dark: 1 / 3 };
 const PLINTH_RISE_MAX: Share = { light: 0.6, dark: 2 / 3 };
 
 /**
- * How much of its kind's colour a container's nameplate carries on its face
- * and on its front edge. The plinth under it stays neutral, so the cards
- * standing on it, tinted by their own groups, read over a quiet ground.
+ * How much of its kind's colour a container carries: on its body a calm tint,
+ * so the cards standing on it, tinted by their own groups, read over it, and
+ * on its nameplate a related tone a step stronger, so the header belongs to
+ * the body rather than standing out of it; and on the nameplate's front edge.
  */
-const PLATE_FACE: Share = { light: 0.11, dark: 0.18 };
+const PLINTH_BODY: Share = { light: 0.045, dark: 0.12 };
+const PLATE_FACE: Share = { light: 0.08, dark: 0.15 };
 const PLATE_EDGE: Share = { light: 0.3, dark: 0.3 };
 
 /** How far a label's front edge is shaded from its face toward `--slab-deep`. */
@@ -144,11 +146,12 @@ function labelLook(palette: Palette, standing?: SubjectStanding): SlabLook {
 }
 
 /**
- * A container's plinth: a low, wide, neutral block with a nameplate across
- * the top of its face, the plate tinted by the colour of the container's own
- * kind with a front edge of that colour. Each plinth nested in another stands
- * on it a step thinner, down to a card's thickness, and a step nearer the
- * light, its nameplate with it.
+ * A container's plinth: a low, wide block quietly tinted by the colour of the
+ * container's own kind, with a nameplate across the top of its face a step
+ * stronger in that colour and a front edge of it. A container of no kind's
+ * colour is neutral. Each plinth nested in another stands on it a step
+ * thinner, down to a card's thickness, and a step nearer the light, its
+ * nameplate with it.
  * @param ink The colour of its kind, or none.
  * @param palette Selected theme.
  * @param depth How many containers it stands in.
@@ -165,8 +168,10 @@ function plinthLook(
 		light: Math.min(PLINTH_RISE_MAX.light, depth * PLINTH_RISE.light),
 		dark: Math.min(PLINTH_RISE_MAX.dark, depth * PLINTH_RISE.dark),
 	};
+	const ground = tinted(palette.plinthFace, palette.plinthRise, rise);
 	return {
-		face: tinted(palette.plinthFace, palette.plinthRise, rise),
+		face: washed(ground, ink, PLINTH_BODY, palette),
+		ground,
 		edge: palette.plinthEdge,
 		thickness: Math.max(CARD_THICKNESS, PLINTH_THICKNESS - depth * PLINTH_STEP),
 		radius: BAND_RADIUS,
