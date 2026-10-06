@@ -84,7 +84,7 @@ function boundFiles(
 	if (binding.repo !== checkout.repo) return "elsewhere";
 	const target = resolveLocalCodeTarget(binding, context.snapshot);
 	if (!target.ok || otherRefOf(binding, context.snapshot) !== undefined) return "unknown";
-	const readable = readableOf(target, checkout.files);
+	const readable = readableOf(target, checkout.files, true);
 	return readable.status === "files" ? readable.files : "unknown";
 }
 

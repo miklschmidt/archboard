@@ -18,7 +18,7 @@ import {
 	type OtherRef,
 } from "@/runtime/code-target/index";
 import { listReadableFiles } from "@/runtime/code-check/lib/readable-files";
-import { neverRead } from "@/runtime/code-facts/index";
+import { neverRead, pairOf } from "@/runtime/code-facts/index";
 import type { CodeBinding } from "@/shared/code-target/index";
 import { errorMessage } from "@/shared/thrown-error/index";
 
@@ -104,7 +104,7 @@ function normalized(relative: string): string {
  * @param files The files Git does not ignore in its checkout.
  * @returns The files to read, or why there are none.
  */
-function readableOf(target: LocalCodeTarget, files: ReadonlySet<string>): Readable {
+function pathReadable(target: LocalCodeTarget, files: ReadonlySet<string>): Readable {
 	const lexical = normalized(target.path);
 	const real = normalized(path.relative(target.root, target.target));
 	if (neverRead(lexical) || neverRead(real)) return { status: "never-read" };
@@ -117,6 +117,24 @@ function readableOf(target: LocalCodeTarget, files: ReadonlySet<string>): Readab
 	if (listed.length === 0) return { status: "ignored" };
 	const readable = listed.filter((file) => !neverRead(file));
 	return readable.length === 0 ? { status: "never-read" } : { status: "files", files: readable };
+}
+
+/**
+ * What the pass may read of a resolved path. The bound code of a part takes in
+ * the pair of a C or C++ file too, the header of a source file or the source
+ * file of a header (TASK-367.09); an anchor names one file and reads only that.
+ * @param target The resolved path.
+ * @param files The files Git does not ignore in its checkout.
+ * @param bound Whether the path is the binding of a part.
+ * @returns The files to read, or why there are none.
+ */
+function readableOf(target: LocalCodeTarget, files: ReadonlySet<string>, bound = false): Readable {
+	const readable = pathReadable(target, files);
+	if (!bound || readable.status !== "files" || target.kind !== "file") return readable;
+	const pair = readable.files
+		.flatMap((file) => pairOf(file, files))
+		.filter((file) => !neverRead(file));
+	return { status: "files", files: [...new Set([...readable.files, ...pair])] };
 }
 
 export { type Checkout, type ReadCheckout, type Readable, otherRefOf, readCheckouts, readableOf };

@@ -339,7 +339,7 @@ async function judgeBoundSymbol(
 ): Promise<void> {
 	const { symbol } = claim.binding;
 	if (symbol === undefined) return;
-	const readable = readableOf(target, checkout.files);
+	const readable = readableOf(target, checkout.files, true);
 	const held = await findSymbolOf(claim, readable, checkout, symbol, pass);
 	if (held?.status === "absent") {
 		pass.outcome.findings.push(bindingSymbolMissing(claim, symbol, target.kind, held));
