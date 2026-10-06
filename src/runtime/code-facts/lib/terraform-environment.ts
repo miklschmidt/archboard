@@ -15,6 +15,10 @@
 //
 // A name another expression computes, and a value inside an encoded string
 // such as an ECS `container_definitions = jsonencode(...)`, are not read.
+//
+// The same shapes say which references in a resource are environment values,
+// which the rules of every provider make configured paths
+// (terraform-providers.ts).
 
 import type { Node } from "web-tree-sitter";
 import type { Reference } from "@/runtime/code-facts/lib/facts";
@@ -25,6 +29,30 @@ const ENVIRONMENT_MAPS = new Set([
 	"runtime_environment_variables",
 	"app_settings",
 ]);
+
+/** The block whose `variables` map is the environment. */
+const ENVIRONMENT_BLOCK = { block: "environment", map: "variables" } as const;
+
+/** The block that sets one environment value: its literal name and its value. */
+const ENV_BLOCK = { block: "env", name: "name", value: "value" } as const;
+
+/**
+ * Whether an argument of a resource is one of its environment values, in the
+ * shapes this file reads.
+ * @param argument The argument's path, outermost name first, such as
+ * `environment.variables` or `template.containers.env.value`.
+ * @returns True when it is.
+ */
+function isEnvironmentArgument(argument: readonly string[]): boolean {
+	return argument.some(
+		(name, index) =>
+			ENVIRONMENT_MAPS.has(name) ||
+			(name === ENVIRONMENT_BLOCK.block && argument[index + 1] === ENVIRONMENT_BLOCK.map) ||
+			(name === ENV_BLOCK.block &&
+				argument[index + 1] === ENV_BLOCK.value &&
+				index + 2 === argument.length),
+	);
+}
 
 /** A string with no interpolation and no directive. */
 const LITERAL = /^"((?:[^"\\$%]|\\.)*)"$/u;
@@ -109,9 +137,9 @@ function literalOf(value: Node | undefined): string | undefined {
  */
 function envBlockName(body: Node | undefined): Reference[] {
 	const values = new Map(membersOf(body).attributes.map((each) => [each.name, each.value]));
-	const name = values.get("name");
+	const name = values.get(ENV_BLOCK.name);
 	const literal = literalOf(name);
-	const at = values.get("value") ?? name;
+	const at = values.get(ENV_BLOCK.value) ?? name;
 	return literal === undefined || at === undefined ? [] : [named(literal, at)];
 }
 
@@ -125,13 +153,14 @@ function namesIn(body: Node | undefined, holder: string): Reference[] {
 	const { attributes, blocks } = membersOf(body);
 	const maps = attributes.filter(
 		(each) =>
-			ENVIRONMENT_MAPS.has(each.name) || (holder === "environment" && each.name === "variables"),
+			ENVIRONMENT_MAPS.has(each.name) ||
+			(holder === ENVIRONMENT_BLOCK.block && each.name === ENVIRONMENT_BLOCK.map),
 	);
 	return [
 		...maps.flatMap((each) => mapNames(each.value)),
 		...blocks.flatMap((block) => {
 			const { kind, body: inner } = blockParts(block);
-			return kind === "env" ? envBlockName(inner) : namesIn(inner, kind);
+			return kind === ENV_BLOCK.block ? envBlockName(inner) : namesIn(inner, kind);
 		}),
 	];
 }
@@ -146,4 +175,4 @@ function environmentOf(block: Node): Reference[] {
 	return kind === "resource" ? namesIn(body, kind) : [];
 }
 
-export { environmentOf };
+export { environmentOf, isEnvironmentArgument };
