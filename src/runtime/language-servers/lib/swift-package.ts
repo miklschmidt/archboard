@@ -12,10 +12,15 @@
 // overrides what the client sends, so a package whose file turns background
 // indexing on is not asked either. A Swift file that no `Package.swift` holds
 // has no index the check can find.
+//
+// The session asks once in a pass for the package of each directory, and this
+// module looks at each package's configuration and index once, however many
+// of its directories the pass asks about, so every directory of a package
+// gets the same answer.
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { Project } from "@/runtime/language-servers/lib/languages";
+import type { Once, Project } from "@/runtime/language-servers/lib/languages";
 
 /**
  * Whether a file exists.
@@ -88,13 +93,25 @@ async function indexed(directory: string): Promise<boolean> {
  * answer there, if it cannot.
  * @param root The checkout, absolute.
  * @param file The file, relative to the checkout.
+ * @param once A look the pass does once for each package.
  * @returns The package; the checkout when no package holds the file.
  */
-async function swiftPackageOf(root: string, file: string): Promise<Project> {
+async function swiftPackageOf(root: string, file: string, once: Once): Promise<Project> {
 	const directory = await packageOf(root, file);
 	if (directory === undefined) {
 		return { root, unready: `no Package.swift holds ${path.dirname(file)}, so it has no index` };
 	}
+	return once(`swift-package\0${directory}`, () => packageAt(root, directory));
+}
+
+/**
+ * A package sourcekit-lsp starts in, and why it cannot answer there, if it
+ * cannot.
+ * @param root The checkout, absolute.
+ * @param directory The package.
+ * @returns The package.
+ */
+async function packageAt(root: string, directory: string): Promise<Project> {
 	const name = path.relative(root, directory) || ".";
 	if (await buildsInBackground(directory)) {
 		return {

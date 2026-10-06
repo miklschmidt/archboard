@@ -1,8 +1,9 @@
 // sourcekit-lsp for Swift (TASK-367.16), against a stand-in server that, as
 // sourcekit-lsp does, answers only about an open file: the server starts in
 // the package that holds the file, with background indexing off and after it
-// has loaded its index; and a package it cannot answer about without a build
-// is said once and starts nothing.
+// has loaded its index; a package it cannot answer about without a build is
+// said once and starts nothing; and a server that failed in one package starts
+// in no other package of the checkout.
 
 import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
@@ -92,12 +93,12 @@ test("sourcekit-lsp is asked in the package that holds the file, with background
 	]);
 });
 
-test("a package that no build has indexed is said once, keeps its questions unasked, and starts no server, while an indexed one is asked", async () => {
+test("a package that no build has indexed is said once for all its directories, keeps its questions unasked, and starts no server, while an indexed one is asked", async () => {
 	current = workspace(
 		{
 			"bare/Package.swift": MANIFEST,
 			"bare/Sources/Core/Ledger.swift": LEDGER,
-			"bare/Sources/Core/Other.swift": LEDGER,
+			"bare/Sources/App/Other.swift": LEDGER,
 			"built/Package.swift": MANIFEST,
 			"built/Sources/Core/Ledger.swift": LEDGER,
 			[`built/${UNIT}`]: "",
@@ -105,7 +106,7 @@ test("a package that no build has indexed is said once, keeps its questions unas
 		{ "Sources/Core/Ledger.swift:4:normalize": { path: "Sources/Core/Ledger.swift", line: 8 } },
 	);
 	const session = swiftSession(current);
-	const other = { ...normalizeIn(current, "bare"), file: "bare/Sources/Core/Other.swift" };
+	const other = { ...normalizeIn(current, "bare"), file: "bare/Sources/App/Other.swift" };
 	const [bare, again, built] = await Promise.all([
 		session.definition(normalizeIn(current, "bare")),
 		session.definition(other),
@@ -134,6 +135,29 @@ test("a package whose own configuration turns background indexing on, and a file
 	await session.close();
 	expect(session.unavailable().map((entry) => entry.reason)).toEqual(["unready", "unready"]);
 	expect(current.pids()).toEqual([]);
+});
+
+test("a server that failed in one package is not started in another package of that checkout", async () => {
+	current = workspace({
+		"one/Package.swift": MANIFEST,
+		"one/Sources/Core/Ledger.swift": LEDGER,
+		[`one/${UNIT}`]: "",
+		"two/Package.swift": MANIFEST,
+		"two/Sources/Core/Ledger.swift": LEDGER,
+		[`two/${UNIT}`]: "",
+	});
+	const session = openLanguageServers({
+		servers: current.table("exit-on-definition", "swift"),
+		signal: new AbortController().signal,
+		timeouts: SHORT,
+	});
+	expect(await session.definition(normalizeIn(current, "one"))).toEqual({ status: "unasked" });
+	expect(await session.definition(normalizeIn(current, "two"))).toEqual({ status: "unasked" });
+	await session.close();
+	expect(session.unavailable().map((entry) => [entry.reason, entry.root])).toEqual([
+		["failed", current.root],
+	]);
+	expect(current.starts().map((start) => start.cwd)).toEqual([join(current.root, "one")]);
 });
 
 test("Swift has no server until language-servers.json names one", () => {
