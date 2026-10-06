@@ -272,4 +272,25 @@ function paintFarCard(
 	);
 }
 
-export { paintFarCard };
+/**
+ * A heading from far away that has no kind of its own to show, a flow's on its
+ * nameplate: its name and the start of its summary, set as a far card's are,
+ * from the box's start. It is hidden until a viewer says the picture is far.
+ * @param name The heading's name.
+ * @param summary What it says under its name, when it says.
+ * @param box The face its words stand on.
+ * @param palette The selected theme.
+ * @returns The far layer.
+ */
+function paintFarHeading(
+	name: string,
+	summary: string | undefined,
+	box: Box,
+	palette: Palette,
+): string {
+	const gist = summary?.trim() === "" ? undefined : summary;
+	const stack = settle(name, gist, box.width, box.height - PAD_Y * 2);
+	return farLayer(paintTextRuns(runsOf(stack, 0, (box.height - stack.height) / 2), box, palette));
+}
+
+export { paintFarCard, paintFarHeading };

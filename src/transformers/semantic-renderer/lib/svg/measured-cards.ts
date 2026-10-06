@@ -6,9 +6,9 @@ import {
 import {
 	BAND_RADIUS,
 	ICON_CHIP_SIZE,
+	PLATE_THICKNESS,
 	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
-import { farSizeOf } from "@/transformers/semantic-renderer/lib/measurement";
 import type { DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
@@ -22,7 +22,7 @@ import {
 import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
 import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
-import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
+import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
@@ -37,10 +37,10 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/standing";
 
 /**
- * A frame's name and chip as they are drawn from far away: at its header's
- * start, as large as the picture's cards' names, or as its header holds.
- * @param placed The frame's geometry and name.
- * @param farSize The size of the picture's cards' names from far away.
+ * A frame's header as it is drawn from far away: as a card is, on the face of
+ * its nameplate, with its kind's tile grown to the plate, its name and the
+ * start of what it is responsible for, clear of its far mark.
+ * @param placed The frame's geometry, name and responsibility.
  * @param look Its type chip's colour and glyph, and the selected theme.
  * @param look.appearance Its type chip's colour and glyph.
  * @param look.palette The selected theme.
@@ -49,19 +49,12 @@ import {
  */
 function paintFarHeader(
 	placed: DrawingNode,
-	farSize: number,
 	look: { appearance: NodeAppearance; palette: Palette },
 	unsettled: boolean,
 ): string {
-	const { name } = placed.measured.node;
-	// The name is sized and broken clear of the frame's far mark, as its near name is.
-	const header = {
-		...placed.box,
-		height: placed.measured.headerHeight,
-		mark: look.appearance.drill !== null,
-	};
-	const size = Math.min(farSize, farSizeOf(name, header));
-	return paintFarTitle(name, header, { size, align: "start" }, look, unsettled);
+	// The nameplate's face: the header above the plate's own front edge.
+	const plate = { ...placed.box, height: placed.measured.headerHeight - PLATE_THICKNESS };
+	return paintFarCard(placed.measured.node, plate, look, unsettled);
 }
 
 /**
@@ -175,7 +168,6 @@ function paintMeasuredFrame(
  * @param standing Its architectural change.
  * @param unsettled Whether its architecture needs reconciliation.
  * @param appearance Resolved containment and type channels.
- * @param farSize The size of the picture's cards' names from far away.
  * @returns The header group.
  */
 function paintMeasuredHeader(
@@ -184,7 +176,6 @@ function paintMeasuredHeader(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
-	farSize: number,
 ): string {
 	const words = standingPalette(palette, standing);
 	return wrap(
@@ -206,7 +197,7 @@ function paintMeasuredHeader(
 					paintTextRuns(placed.measured.runs, placed.box, words) +
 					drillCorner(placed.box, ARCHITECTURE_HEADER_PADDING, appearance, palette),
 			),
-			paintFarHeader(placed, farSize, { appearance, palette: words }, unsettled),
+			paintFarHeader(placed, { appearance, palette: words }, unsettled),
 			warningBadge(placed.box, unsettled, palette),
 		]),
 	);

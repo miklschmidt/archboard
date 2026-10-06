@@ -1,11 +1,11 @@
 // What a part draws from far away is a layer of its own: every card, container
 // header and group caption carries a far layer, hidden until a viewer puts the
 // far class on the picture, when the picture's stylesheet swaps it for the near
-// one. A card's is drawn by far-card.ts. A container's header and a group's
-// caption draw their name grown, which is what this file paints.
+// one. A card's, and a container's header, which reads like a card from far
+// away, are drawn by far-card.ts; a group's caption by regions.ts. This file
+// holds the layers and the parts they share: the grown chip and the grown mark.
 import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { measureFarTitle, type FarBox } from "@/transformers/semantic-renderer/lib/measurement";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { typeChip } from "@/transformers/semantic-renderer/lib/svg/appearance";
@@ -16,7 +16,6 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { BADGE_DEPTH } from "@/transformers/semantic-renderer/lib/svg/standing";
-import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 
 /** The part of a card drawn when the picture is seen near: its chip, name and responsibility. */
 const NEAR_CLASS = "ab-near";
@@ -100,45 +99,4 @@ function farMark(
 	return drillMark(box.x + box.width - inset, box.y + down, appearance.drill, palette.glyph, scale);
 }
 
-/**
- * A container's name and chip as they are drawn from far away, hidden until a
- * viewer says the picture is far: the name grown, the chip grown to match,
- * the responsibility left out.
- * @param name The card's name.
- * @param box The card's box, or a container's header, and whether its corner holds a mark.
- * @param place The name's size, and whether it stands centred or at the start.
- * @param place.size The name's size.
- * @param place.align Centred in the box, or at its start.
- * @param look Its type chip's colour and glyph, and the selected theme.
- * @param look.appearance Its type chip's colour and glyph.
- * @param look.palette The selected theme.
- * @param unsettled Whether the container wears the warning badge.
- * @returns The far layer.
- */
-function paintFarTitle(
-	name: string,
-	box: Box & FarBox,
-	place: { size: number; align: "centre" | "start" },
-	{ appearance, palette }: { appearance: NodeAppearance; palette: Palette },
-	unsettled: boolean,
-): string {
-	const far = measureFarTitle(name, box, place);
-	const look = { appearance, palette };
-	// The mark of a part that opens another board grows with the chip.
-	return farLayer(
-		farChip(box, far.chip, look) +
-			paintTextRuns(far.runs, box, palette) +
-			farMark(box, far.chip.size / ICON_CHIP_SIZE, look, unsettled),
-	);
-}
-
-export {
-	FAR_CLASS,
-	FAR_VIEW_CLASS,
-	NEAR_CLASS,
-	farChip,
-	farLayer,
-	farMark,
-	nearLayer,
-	paintFarTitle,
-};
+export { FAR_CLASS, FAR_VIEW_CLASS, NEAR_CLASS, farChip, farLayer, farMark, nearLayer };
