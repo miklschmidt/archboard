@@ -119,8 +119,10 @@ length from one table, `HEAD_LENGTH` in
 `src/transformers/semantic-renderer/lib/svg/styles.ts`. A head is 11 units long
 on an emphasized line, 11 on a default line and 6 on a muted line. The owner
 asked for this on 2026-10-06 (TASK-403). A smaller default head left the reader
-to guess which way most lines run. Emphasis still sets the width of a line, and
-a muted line still ends in a smaller head.
+to guess which way most lines run. TASK-404 then gave a muted line a head of
+the same length, so every head is 11 units long. A colored line is now drawn
+in its full color on the light ground and at three quarters on the dark
+ground (ADR 0044, rule 12).
 
 "Added, changed and deleted comparison status overrides the semantic border on
 nodes and the semantic line color on edges." The part about edges holds. On a

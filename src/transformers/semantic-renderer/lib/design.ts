@@ -42,10 +42,12 @@ const TEXT_LINE_HEIGHT = 1.35;
 
 /**
  * How strong a coloured line is drawn, as its share of its colour over the
- * page: three quarters, so the pulses riding it stand out at full strength.
- * The neutral line keeps its own colour; its pulses are shaded instead.
+ * page, on each ground. On the light ground it is the colour itself, which
+ * gives the most contrast a colour has there. On the dark ground it is three
+ * quarters, which is 3.9:1 or more for every colour. The neutral line keeps
+ * its own ink, `--diagram-edge`. A pulse is lighter than either line.
  */
-const LINE_STRENGTH = 0.75;
+const LINE_STRENGTH = { light: 1, dark: 0.75 } as const;
 
 /**
  * How round a card's corner is to the layout, which keeps a line's port clear

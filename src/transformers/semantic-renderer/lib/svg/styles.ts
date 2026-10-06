@@ -21,7 +21,7 @@ import type { EdgeEmphasis, SemanticEdge } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import { relationshipAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { lightDark, mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
+import { tinted } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
 	LINE_STRENGTH,
 	NOTE_SIZE,
@@ -56,12 +56,10 @@ const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4,
  * How long an arrowhead of each weight is, from its base to its tip, in the
  * page's units. Every board and every sequence draws its heads from this.
  *
- * A default head is as long as a hero's (TASK-403). A smaller one left the
- * reader to guess which way most lines run. The hero line still speaks louder
- * by its width. A muted head keeps the size it had, so the quietest line is
- * still told apart from a default one at a glance.
+ * Every head is the same length (TASK-404). A smaller head left the reader to
+ * guess which way a line runs. Emphasis changes the line, never its head.
  */
-const HEAD_LENGTH: Readonly<Record<Weight, number>> = { hero: 11, normal: 11, muted: 6 };
+const HEAD_LENGTH: Readonly<Record<Weight, number>> = { hero: 11, normal: 11, muted: 11 };
 
 /**
  * How big an arrowhead of a weight is drawn, in widths of its line: a marker
@@ -147,24 +145,22 @@ const REMOVED_STRENGTH = { light: 0.85, dark: 1 } as const;
 
 /**
  * The colour a line is drawn in, from the colour it stands for: a coloured line
- * at three quarters of its colour over the page, so the pulses riding it stand
- * out at full strength; the neutral line as it is. Mixed rather than made
- * translucent, so two lines sharing a lane draw no darker where they overlap.
- * A removed line carries no pulses and its group is ghosted already
- * (`ghostOpacity`), so its ink is weakened less ({@link REMOVED_STRENGTH}).
+ * at its line strength over the page ({@link LINE_STRENGTH}), the neutral line
+ * as it is. Mixed rather than made translucent, so two lines sharing a lane
+ * draw no darker where they overlap. A removed line carries no pulses and its
+ * group is ghosted already (`ghostOpacity`), so its ink has a strength of its
+ * own ({@link REMOVED_STRENGTH}).
  * @param ink The colour at full strength.
  * @param palette The theme's colours.
  * @returns The line's colour.
  */
 function drawnInk(ink: string, palette: Palette): string {
 	if (ink === palette.edge) return ink;
-	if (ink === palette.standingRemoved) {
-		return lightDark(
-			mixed(palette.background, ink, REMOVED_STRENGTH.light),
-			mixed(palette.background, ink, REMOVED_STRENGTH.dark),
-		);
-	}
-	return mixed(palette.background, ink, LINE_STRENGTH);
+	return tinted(
+		palette.background,
+		ink,
+		ink === palette.standingRemoved ? REMOVED_STRENGTH : LINE_STRENGTH,
+	);
 }
 
 /**

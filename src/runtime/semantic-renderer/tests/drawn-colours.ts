@@ -193,6 +193,30 @@ function colourDistance(a: string, b: string): number {
 }
 
 /**
+ * How light a hex colour is, as the contrast formula of WCAG measures it.
+ * @param hex The colour.
+ * @returns Its relative luminance.
+ */
+function luminance(hex: string): number {
+	const [r, g, b] = rgbOf(hex).map((channel) => {
+		const part = channel / 255;
+		return part <= 0.039_28 ? part / 12.92 : ((part + 0.055) / 1.055) ** 2.4;
+	}) as [number, number, number];
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * The contrast between two hex colours, as WCAG measures it.
+ * @param one A colour.
+ * @param other Another.
+ * @returns The ratio, at least 1.
+ */
+function contrast(one: string, other: string): number {
+	const [lighter, darker] = [luminance(one), luminance(other)].toSorted((a, b) => b - a);
+	return (lighter! + 0.05) / (darker! + 0.05);
+}
+
+/**
  * A drawing as a reader sees it in one theme: every paint resolved to a literal.
  * @param drawn The drawing.
  * @param theme The theme it is shown in.
@@ -205,4 +229,4 @@ function seenIn<Drawn extends { readonly svg: string }>(
 	return { ...drawn, svg: paintedIn(drawn.svg, theme) };
 }
 
-export { colourDistance, colourIn, hueOf, paintedIn, seenIn };
+export { colourDistance, colourIn, contrast, hueOf, luminance, paintedIn, seenIn };
