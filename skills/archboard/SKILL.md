@@ -397,7 +397,8 @@ Each recipe, and the request it is for:
 - [propose and compare a change](references/propose-compare.md): propose a
   change as a variant, compare it, settle its disagreements, or adopt it.
 - [answer from a saved board](references/read.md): answer a question from a
-  saved board and change nothing.
+  saved board, including which of its parts change most often in Git, and
+  change nothing.
 
 A new board is the architecture recipe first, whatever the request calls its
 subject: a board that describes how a request travels is parts, containment
