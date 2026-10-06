@@ -9,7 +9,7 @@ parts, the relationships the messages travel and the flow in the same write. Add
 a `data-flow` view over the flow in that write too. If the reader needs
 narration, add a walkthrough to that write as well. On a board with no
 relationships, the architecture picture draws each message as a dashed step
-line, so an exchange is never a row of unjoined cards. On a board with
+line. So an exchange is never a row of unjoined cards. On a board with
 relationships, a message shows only in the flow's data-flow view. A step line
 is a reading, not a relationship.
 
