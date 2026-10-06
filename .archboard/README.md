@@ -101,6 +101,16 @@ Read with `./bin/dogfood semantic show <board>` and edit with the reported versi
 and `--doing`. The historical migration example in `docs/design/semantic-pipeline`
 is separate from this living vault.
 
+To find the boards that the code has moved away from, run
+`./bin/dogfood check --code` and read `behind`. For each board, it lists the
+commits that changed a part's bound files after the board's current variant
+last changed, and it lists those commits for each part
+([ADR 0045](../docs/adr/0045-git-history-is-read-through-bindings-on-request.md)).
+A part that drills into another board is skipped, because that board carries
+its history. A count says where to look, not what is wrong, and it never fails
+the check. Read the parts that the commits changed against the code. If the
+board is wrong, correct it. If it is still right, leave it.
+
 For an export, write outside the canonical vault, for example:
 
 ```bash
