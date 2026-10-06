@@ -1,8 +1,9 @@
 // What the board says about one picked part, set out for reading in the order a
 // reader asks: what it is (its title, the line it is responsible for and the
 // longer account), where it stands against the variant it is read against (only
-// in a comparison), and what it is wired to. At the foot are the ways to go
-// deeper (`GoDeeper`).
+// in a comparison), for a part that holds parts what it offers the parts outside
+// it (`ContainerInterface`), and what it is wired to. At the foot are the ways
+// to go deeper (`GoDeeper`).
 //
 // It is the selection tab of the pane's sidebar, so it has the sidebar's one
 // width and its regions, sections and rows (`SemanticSidebarParts`): a rule
@@ -13,6 +14,7 @@ import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 import type { CodeBinding } from "@/shared/code-target";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import { KindIcon, RelationshipChip } from "@/ui/semantic-board-canvas/components/BoardPageParts";
+import { ContainerInterface } from "@/ui/semantic-board-canvas/components/ContainerInterface";
 import { GoDeeper } from "@/ui/semantic-board-canvas/components/GoDeeper";
 import {
 	Account,
@@ -302,6 +304,12 @@ function DetailsPanel(props: DetailsPanelProps): JSX.Element {
 					<Account lead={node.responsibility} detail={node.description} />
 				</SidebarRegion>
 				{props.children}
+				<ContainerInterface
+					content={props.content}
+					node={node}
+					look={props.look}
+					onPick={props.onPick}
+				/>
 				<SidebarRegion slot="semantic-inspector-wiring">
 					<Relationships
 						content={props.content}

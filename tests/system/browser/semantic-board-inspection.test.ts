@@ -12,6 +12,7 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import { SURFACE, pick, press, shownBoard, stageState, textOf } from "./support/drilling.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { partSearchState, pictureAtRest, sidebarTab } from "./support/semantic-page.ts";
 
@@ -50,15 +51,6 @@ function sameVisibleFit(actual: string, expected: string): boolean {
 /** How long any one thing here is waited for. */
 const WAIT = { timeoutMs: 8_000 } as const;
 
-/** The stage one semantic pane draws into. */
-const STAGE = "[data-slot='semantic-board-stage']";
-
-/** The element the camera moves. */
-const SURFACE = "[data-slot='semantic-board-surface']";
-
-/** The stage's tab stop: what hears the keys. */
-const VIEWPORT = "[data-slot='semantic-board-viewport']";
-
 /** The panel beside the diagram. */
 const INSPECTOR = "[data-slot='semantic-inspector']";
 
@@ -83,66 +75,18 @@ const lifecycleOnOffer = (browser: AgentBrowserSession): Promise<string> =>
 	);
 
 /**
- * Which of the pane's states is on screen.
+ * The parts one list of a picked container's interface names.
  * @param browser The page.
- * @returns The `data-state`, or null before the pane is there.
+ * @param row Which list: its entry points or its callers.
+ * @returns The parts' ids, in the order the list names them.
  */
-const stageState = (browser: AgentBrowserSession): Promise<string | null> =>
-	browser.eval<string | null>(
-		`document.querySelector("${STAGE}")?.getAttribute("data-state") ?? null`,
+const partsListed = (
+	browser: AgentBrowserSession,
+	row: "entry-point" | "caller",
+): Promise<string[]> =>
+	browser.eval<string[]>(
+		`[...document.querySelectorAll("[data-slot='semantic-inspector-${row}']")].map((one) => one.dataset.part)`,
 	);
-
-/**
- * Which board the pane is showing.
- * @param browser The page.
- * @returns The board name, or null before the pane is there.
- */
-const shownBoard = (browser: AgentBrowserSession): Promise<string | null> =>
-	browser.eval<string | null>(
-		`document.querySelector("${STAGE}")?.getAttribute("data-board") ?? null`,
-	);
-
-/**
- * What one element of the pane is saying.
- * @param browser The page.
- * @param selector Which element.
- * @returns Its text, or an empty string when it is not there.
- */
-const textOf = (browser: AgentBrowserSession, selector: string): Promise<string> =>
-	browser.eval<string>(`document.querySelector(${JSON.stringify(selector)})?.textContent ?? ""`);
-
-/**
- * Pick a subject out of the diagram the way a person does.
- *
- * The whole pointer sequence: press on the card, release and click on the
- * viewport. A browser retargets a click to whichever element holds the pointer,
- * so a bare synthetic click on the card would pass while every real click
- * picked nothing.
- * @param browser The page.
- * @param id The semantic id to pick.
- * @returns Settles once the click has been delivered.
- */
-const pick = (browser: AgentBrowserSession, id: string): Promise<unknown> =>
-	browser.eval(
-		`(() => {` +
-			` const card = document.querySelector("${SURFACE} [data-semantic-id='" + ${JSON.stringify(id)} + "']");` +
-			` const view = document.querySelector("${VIEWPORT}");` +
-			` const at = card.getBoundingClientRect();` +
-			` const where = { pointerId: 1, isPrimary: true, button: 0, bubbles: true,` +
-			`   clientX: Math.round(at.x + at.width / 2), clientY: Math.round(at.y + at.height / 2) };` +
-			` card.dispatchEvent(new PointerEvent("pointerdown", where));` +
-			` view.dispatchEvent(new PointerEvent("pointerup", where));` +
-			` view.dispatchEvent(new MouseEvent("click", where)); })()`,
-	);
-
-/**
- * Press a button of the pane.
- * @param browser The page.
- * @param selector Which button.
- * @returns Settles once the click has been delivered.
- */
-const press = (browser: AgentBrowserSession, selector: string): Promise<unknown> =>
-	browser.eval(`document.querySelector(${JSON.stringify(selector)}).click()`);
 
 /**
  * Whether one drawn box sits wholly inside another, as the page lays them out.
@@ -198,7 +142,7 @@ async function tipOver(browser: AgentBrowserSession, id: string): Promise<Measur
 	return seen!;
 }
 
-test("a person reads containment, code and the level below it, and writes nothing", async () => {
+test("a person reads containment, a container's interface, code and the level below it, and writes nothing", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "semantic-inspection-vault");
@@ -345,6 +289,33 @@ test("a person reads containment, code and the level below it, and writes nothin
 		WAIT,
 	);
 	expect(await codeTitle(browser)).toBe("");
+
+	// A container's interface: the one child a caller outside reaches, the one
+	// it hides, and that caller. Choosing the entry point in the list picks it
+	// out on the picture.
+	await pick(browser, ids["service"] ?? "");
+	await pollUntil(
+		() => partsListed(browser, "entry-point"),
+		(parts) => parts.join() === ids["module"],
+		"the inspector to list the container's entry point",
+		WAIT,
+	);
+	expect((await partsListed(browser, "caller")).join()).toBe(ids["other"] ?? "");
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector("[data-slot='semantic-inspector-hidden-parts']")?.dataset.count ?? null`,
+		),
+	).toBe("1");
+	await press(browser, "[data-slot='semantic-inspector-entry-point']");
+	await pollUntil(
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll("${SURFACE} .is-selected")].map((group) => group.dataset.semanticId)`,
+			),
+		(selected) => selected.join() === ids["module"],
+		"the picture to pick out the entry point chosen in the list",
+		WAIT,
+	);
 
 	// The level below: where it stands is disclosed before anything opens, and
 	// opening it really shows the other board.
