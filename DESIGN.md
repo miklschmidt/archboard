@@ -287,8 +287,10 @@ keeps its hue. A comparison marks a part by its outline: a
 top face, solid for added and dashed for changed, and a removed part's dashed
 red border round its footprint. The face and the front edge keep their colors.
 A line that meets the foot of a card runs into a port, a small slot cut
-through the card's front edge, dark inside, with a lit lower lip, and the
-line fades into its depth. Ports are drawn near only.
+through the card's front edge, dark inside, with a lit lower lip. The line comes
+out of it at its own width, over the lip, fades into its depth, and its pulses
+travel into and out of it. Ports are drawn near only. No shadow falls on a line:
+the shadows of cards and labels lie under the lines.
 The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the construction.

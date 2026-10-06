@@ -19,11 +19,17 @@ import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
 import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { paintCardViews, wordsOf } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { lines, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
+import {
+	SHADOW_CLASS,
+	slab,
+	slabSeat,
+	slabShadow,
+} from "@/transformers/semantic-renderer/lib/svg/slab";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { headerOf, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
-import { portFront, type Port } from "@/transformers/semantic-renderer/lib/svg/ports";
+import { portClosed, type Port } from "@/transformers/semantic-renderer/lib/svg/ports";
 import {
+	MEMBERS_ATTRIBUTE,
 	PART_ATTRIBUTE,
 	standingPalette,
 	standingPin,
@@ -89,7 +95,8 @@ function paintMeasuredCard(
 		},
 		lines([
 			slabSeat(box, SLAB_RADIUS),
-			slabShadow(box, SLAB_RADIUS, "card", palette, standing, ports?.id),
+			// A removed card's ghost; a card's shadow lies under the lines (`paintCardShadow`).
+			standing === "removed" ? slabShadow(box, SLAB_RADIUS, "card", palette, standing) : "",
 			halo(box, SLAB_RADIUS, styles, standing),
 			slab(box, look, palette, standing, ports?.id),
 			paintCardViews(
@@ -103,11 +110,40 @@ function paintMeasuredCard(
 				},
 				unsettled,
 			),
-			portFront(ports?.slots, look.edge),
+			portClosed(ports?.slots, look.edge),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
 		]),
 	);
+}
+
+/**
+ * The shadow a card casts, in a layer of its own under every line, so no line
+ * is shadowed by a card it passes. It lists its card, so a viewer veils and
+ * lights it with the card, and holds it back while the picture is in flight; it
+ * is no subject of its own and takes no pointer. A removed card casts none: its
+ * ghost is drawn with it.
+ * @param placed The card's geometry.
+ * @param palette The selected theme.
+ * @param standing How it stands against the variant it is read against.
+ * @returns The shadow's group, or nothing for a removed card.
+ */
+function paintCardShadow(
+	placed: DrawingNode,
+	palette: Palette,
+	standing: SubjectStanding | undefined,
+): string {
+	return standing === "removed"
+		? ""
+		: wrap(
+				"g",
+				{
+					class: SHADOW_CLASS,
+					[MEMBERS_ATTRIBUTE]: placed.measured.node.id,
+					"pointer-events": "none",
+				},
+				slabShadow(placed.box, SLAB_RADIUS, "card", palette),
+			);
 }
 
 /**
@@ -200,4 +236,4 @@ function paintMeasuredHeader(
 	);
 }
 
-export { paintMeasuredCard, paintMeasuredFrame, paintMeasuredHeader };
+export { paintCardShadow, paintMeasuredCard, paintMeasuredFrame, paintMeasuredHeader };

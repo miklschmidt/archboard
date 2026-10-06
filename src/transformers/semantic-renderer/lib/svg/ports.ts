@@ -1,27 +1,30 @@
 // Ports: where a line meets the foot of a card, it goes into a slot cut through
 // the card's front edge (TASK-424).
 //
-// The slot is a hole, not a mark drawn on the edge. The card's body and its
-// shadow are clipped round it (`portCut`), so what lies under the card shows
-// through: the line's own group draws, under the card, the inside of the port
-// and the end of the line running into it (`portInside`). So the end of the line
-// takes whatever a viewer does to the line, its veil and its light, as the
-// rest of it does. Lit from above, the floor of the slot by its sill catches the
-// light and its inside darkens from the rim into its depth. The card draws the
-// depth the line fades into over the slot (`portFront`), over the traffic too,
-// so a pulse that reaches the card goes into the dark with its line.
+// The slot is a hole, not a mark drawn on the edge. The card's body is
+// clipped round it (`portCut`), and round a notch through the sill below it as
+// wide as the line, so what lies under the card shows through: the line's own
+// group draws, under the card, the inside of the port and the end of the line
+// running up into it (`portInside`). So the line comes out of the hole over its
+// sill, at its own width, and takes whatever a viewer does to the line, its
+// veil and its light, as the rest of it does. Lit from above, the floor of the
+// slot catches the light and its inside darkens from the rim into its depth;
+// the line runs over the floor and fades into the depth. A pulse rides on into
+// the hole (`rideInto`), over all of it, and goes under the lid with its line.
 //
-// A port is drawn near only: from far away a card is its name, and the slot is
-// closed in the card's front edge. Its shapes are rects and a line, so a viewer
-// that carries a line from one picture to the next leaves them out of the
-// line's paths. The atlas, the routes and the layout know nothing of it.
+// A port is drawn near only: from far away a card is its name, and the hole is
+// closed in the card's front edge (`portClosed`). Its shapes are paths and a
+// line, so a viewer that carries a line from one picture to the next leaves
+// them out of the line's paths. The atlas, the routes and the layout know
+// nothing of it.
 
 import { CARD_THICKNESS, SLAB_RADIUS } from "@/transformers/semantic-renderer/lib/design";
+import type { Curve, Segment } from "@/transformers/semantic-renderer/lib/layout/curves";
 import type { DrawingEdge, DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
-import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
+import { coord, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { contentId } from "@/transformers/semantic-renderer/lib/svg/crossings";
-import { NEAR_CLASS, farLayer, nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
+import { NEAR_CLASS, farLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import {
 	lines,
 	tag,
@@ -52,6 +55,14 @@ const FLOOR = 0.5;
  */
 const CORNER_ROOM = SLAB_RADIUS - 2.75;
 
+/**
+ * How far past the foot a pulse rides into a port: to the lid, and the air a
+ * pulse keeps from the end of what it rides, so it goes under the lid and
+ * nothing of it reaches past the lid onto the card, whether the card is seen
+ * through or the line is drawn over it.
+ */
+const RIDE_IN = CARD_THICKNESS - LID + 1;
+
 /** The gradients a port's inside is drawn in: its well, and the depth its line fades into. */
 const WELL_ID = "ab-port-well";
 const FADE_ID = "ab-port-fade";
@@ -64,6 +75,8 @@ interface Port {
 	readonly foot: number;
 	/** Half the slot's length. */
 	readonly half: number;
+	/** How thick its line is, and the notch it comes out of the hole through. */
+	readonly line: number;
 }
 
 /** The ports of a drawing: each card's slots, and each line's. */
@@ -132,11 +145,12 @@ function halfAt(
 }
 
 /**
- * Every port of a drawing: where a line meets the foot of a card that is drawn
- * whole. Two lines meeting a foot at one place share one slot.
+ * Every port of a drawing: where a line drawn whole meets the foot of a card
+ * drawn whole. Two lines meeting a foot at one place share one slot.
  * @param cards The cards.
  * @param edges The lines.
- * @param drawnWhole Whether a card is drawn whole: a removed card is a ghost, and has no edge to cut.
+ * @param drawnWhole Whether a part is drawn whole: a removed card is a ghost with no edge
+ * to cut, and a removed line is drawn for context and runs into no port.
  * @returns The ports, by card and by line.
  */
 function portsOf(
@@ -149,7 +163,9 @@ function portsOf(
 			.filter(({ measured }) => drawnWhole(measured.node.id))
 			.map(({ measured, box }) => [measured.node.id, box]),
 	);
-	const meetings = edges.flatMap((routed) => meetingsOf(routed, boxes));
+	const meetings = edges
+		.filter(({ edge }) => drawnWhole(edge.id))
+		.flatMap((routed) => meetingsOf(routed, boxes));
 	const byCard = new Map<string, Port[]>();
 	const byEdge = new Map<string, Port[]>();
 	for (const [card, box] of boxes) {
@@ -187,7 +203,7 @@ function footPorts(
 		);
 		return half === undefined
 			? []
-			: [{ port: { x, foot: box.y + box.height, half }, edges: at.map(({ edge }) => edge) }];
+			: [{ port: { x, foot: box.y + box.height, half, line }, edges: at.map(({ edge }) => edge) }];
 	});
 }
 
@@ -229,6 +245,26 @@ function outlined(slot: Box, fill: string): string {
 }
 
 /**
+ * The whole hole a port cuts in a card: its slot, and the notch through the
+ * sill under it, as wide as the line, that the line comes out of the hole
+ * through. The notch runs on past the foot, where there is no card to cut.
+ * @param port The port.
+ * @returns The outline.
+ */
+function holeOf(port: Port): string {
+	const { x, y, width, height } = slotOf(port);
+	const round = height / 2;
+	const arc = `A${coord(round)},${coord(round)} 0 0 1`;
+	const [left, right] = [port.x - port.line / 2, port.x + port.line / 2];
+	return (
+		`M${coord(x + round)},${coord(y)}H${coord(x + width - round)}` +
+		`${arc} ${coord(x + width - round)},${coord(y + height)}` +
+		`H${coord(right)}V${coord(port.foot + 1)}H${coord(left)}V${coord(y + height)}` +
+		`H${coord(x + round)}${arc} ${coord(x + round)},${coord(y)}Z`
+	);
+}
+
+/**
  * The lit floor of a slot, seen past its sill: a crescent along the slot's
  * rounded bottom, as deep as the floor shows at the middle and nothing at the
  * ends, where the slot's sides turn up.
@@ -250,22 +286,30 @@ function floorOf(slot: Box): string {
 
 /**
  * The inside of a port, drawn in its line's group under the card: the well,
- * from its rim into its depth; its floor by the sill, lit; and the end of the
- * line, running up from the card's foot into it. Drawn near only.
+ * from its rim into its depth, and its floor by the sill, lit, which the first
+ * of the lines that share the port draws; the end of the line, at its own
+ * width, running up from the card's foot over the floor into it; and the depth
+ * it fades into, over it and no wider, so a line drawn after it into the same
+ * port covers none of it. Drawn near only.
  * @param port The slot.
+ * @param well Whether this line draws the well, the first of the lines that share the port.
  * @param stroke How the line is stroked.
  * @param palette The theme's colours.
  * @returns Its markup.
  */
-function portInside(port: Port, stroke: Attributes, palette: Palette): string {
+function portInside(port: Port, well: boolean, stroke: Attributes, palette: Palette): string {
 	const slot = slotOf(port);
+	const width = Number(stroke["stroke-width"]);
+	const [left, bottom] = [port.x - width / 2, slot.y + slot.height];
 	// Near only, as a card's own near layer is.
 	return wrap(
 		"g",
 		{ class: `${NEAR_CLASS} ${PORT_CLASS}` },
 		lines([
-			outlined(slot, `url(#${WELL_ID})`),
-			tag("path", { d: floorOf(slot), fill: palette.trayLip, "pointer-events": "none" }),
+			well ? outlined(slot, `url(#${WELL_ID})`) : "",
+			well
+				? tag("path", { d: floorOf(slot), fill: palette.trayLip, "pointer-events": "none" })
+				: "",
 			tag("line", {
 				x1: coord(port.x),
 				y1: coord(port.foot),
@@ -273,15 +317,22 @@ function portInside(port: Port, stroke: Attributes, palette: Palette): string {
 				y2: coord(slot.y),
 				"pointer-events": "none",
 				...stroke,
+				// Square, so it stops at the lid and nothing of it reaches onto the card.
+				"stroke-linecap": "butt",
+			}),
+			tag("path", {
+				d: `M${coord(left)},${coord(slot.y)}H${coord(left + width)}V${coord(bottom)}H${coord(left)}Z`,
+				fill: `url(#${FADE_ID})`,
+				"pointer-events": "none",
 			}),
 		]),
 	);
 }
 
 /**
- * Where a card is cut for its ports: everything but its slots, as a clip its
- * body and its shadow are drawn through. Its id is its outline's, so two panes
- * drawn inline in one document share a clip only when they cut alike.
+ * Where a card is cut for its ports: everything but its holes, as a clip its
+ * body is drawn through. Its id is its outline's, so two panes drawn inline in
+ * one document share a clip only when they cut alike.
  * @param ports The card's slots.
  * @returns The clip's id and its definition, or nothing for a card with no port.
  */
@@ -289,10 +340,7 @@ function portCut(ports: readonly Port[] | undefined): { id: string; markup: stri
 	if (ports === undefined || ports.length === 0) return undefined;
 	const far = 100_000;
 	const outline = tag("path", {
-		d: [
-			`M${-far},${-far}H${far}V${far}H${-far}Z`,
-			...ports.map((port) => outlineOf(slotOf(port))),
-		].join(""),
+		d: [`M${-far},${-far}H${far}V${far}H${-far}Z`, ...ports.map(holeOf)].join(""),
 		"clip-rule": "evenodd",
 	});
 	const id = `ab-port-${contentId(outline)}`;
@@ -300,20 +348,101 @@ function portCut(ports: readonly Port[] | undefined): { id: string; markup: stri
 }
 
 /**
- * What a card draws over its slots: near, the depth each line fades into, from
- * the top of the slot down to nothing above its floor; far, where the picture
- * shows no port, each slot closed in the card's front edge.
- * @param ports The card's slots.
+ * A card's holes closed from far away, where the picture shows no port: each
+ * filled in the card's front edge.
+ * @param ports The card's ports.
  * @param edge The card's front edge.
- * @returns Its near and far layers, or nothing for a card with no port.
+ * @returns The far layer, or nothing for a card with no port.
  */
-function portFront(ports: readonly Port[] | undefined, edge: string): string {
-	if (ports === undefined || ports.length === 0) return "";
-	const slots = ports.map(slotOf);
-	return (
-		nearLayer(lines(slots.map((slot) => outlined(slot, `url(#${FADE_ID})`)))) +
-		farLayer(lines(slots.map((slot) => outlined(slot, edge))))
+function portClosed(ports: readonly Port[] | undefined, edge: string): string {
+	return ports === undefined || ports.length === 0
+		? ""
+		: farLayer(
+				lines(
+					ports.map((port) =>
+						tag("path", { d: holeOf(port), fill: edge, "pointer-events": "none" }),
+					),
+				),
+			);
+}
+
+/**
+ * How a drawing's ports are drawn: which line draws each port's well, the first
+ * painted into it, and how each card with a port is cut.
+ * @param ports The ports.
+ * @param edges The lines, in the order they are painted.
+ * @returns The line that draws each well, and each cut card's slots and clip.
+ */
+function portPlan(
+	ports: Ports,
+	edges: readonly DrawingEdge[],
+): {
+	readonly wells: ReadonlyMap<Port, string>;
+	readonly cuts: ReadonlyMap<
+		string,
+		{ readonly slots: readonly Port[]; readonly id: string; readonly markup: string }
+	>;
+} {
+	const wells = new Map<Port, string>();
+	for (const { edge } of edges)
+		for (const port of ports.byEdge.get(edge.id) ?? [])
+			if (!wells.has(port)) wells.set(port, edge.id);
+	const cuts = new Map(
+		[...ports.byCard].flatMap(([id, slots]) => {
+			const cut = portCut(slots);
+			return cut === undefined ? [] : [[id, { slots, ...cut }] as const];
+		}),
 	);
+	return { wells, cuts };
+}
+
+/**
+ * Where a route's end runs on to inside a card, when it runs into a port there.
+ * @param point Where the route meets the foot.
+ * @param ports The ports its ends run into.
+ * @returns The point under the lid it runs on to, or undefined where no port is.
+ */
+function insidePort(point: Point, ports: readonly Port[]): Point | undefined {
+	return ports.some((port) => port.x === point.x && Math.abs(port.foot - point.y) < 0.5)
+		? { x: point.x, y: point.y - RIDE_IN }
+		: undefined;
+}
+
+/**
+ * The route a line's pulses ride: on from each end that runs into a port, up
+ * through the hole and under the lid, so a pulse is seen to come out of the
+ * hole and to go into it. An end that arrives in an arrowhead keeps the pulse
+ * short of the head.
+ * @param curve The line's route.
+ * @param ports The ports its ends run into.
+ * @param headed Whether it ends in an arrowhead.
+ * @returns The route its pulses ride.
+ */
+function rideInto(curve: Curve, ports: readonly Port[], headed: boolean): Curve {
+	const start = insidePort(curve.from, ports);
+	const end = headed ? undefined : insidePort(segmentEnd(curve), ports);
+	return {
+		from: start ?? curve.from,
+		segments: [...lineTo(start && curve.from), ...curve.segments, ...lineTo(end)],
+	};
+}
+
+/**
+ * Where a route ends.
+ * @param curve The route.
+ * @returns Its last point.
+ */
+function segmentEnd(curve: Curve): Point {
+	return curve.segments.at(-1)?.to ?? curve.from;
+}
+
+/**
+ * A straight piece of route to a point, if there is one to go to.
+ * @param to The point, or undefined for none.
+ * @returns The piece, or none.
+ */
+function lineTo(to: Point | undefined): Segment[] {
+	return to === undefined ? [] : [{ kind: "line", to }];
 }
 
 /**
@@ -348,8 +477,10 @@ export {
 	type Ports,
 	PORT_CLASS,
 	portCut,
+	portClosed,
 	portDefinitions,
-	portFront,
+	portPlan,
 	portInside,
 	portsOf,
+	rideInto,
 };

@@ -67,7 +67,11 @@ in `lib/design.ts`.
    shadow is a stack of translucent copies of the block's silhouette, each a
    little larger and fainter. No shadow reaches more than 12 units past its box.
    The picture uses no SVG filter, blur or mask for depth. It uses shared
-   gradients for the light on a face.
+   gradients for the light on a face. The shadows of cards and of the labels
+   of relationships lie under every line, in groups of their own that list
+   what cast them (`data-members`), so a line is never shadowed (TASK-425). A
+   viewer veils and lights a shadow with its card or its line, and holds it
+   back while a picture is in flight.
 3. **A container is a tray, lit from above as the blocks are.** Its top wall
    faces the reader and turns away from the light. It shows as a 7-unit band in
    shade, and it throws a short, soft shadow straight down, 3 units deep, on
@@ -228,19 +232,24 @@ in `lib/design.ts`.
 16. **A line that meets the foot of a card runs into a port** (TASK-424). The
     port is a slot cut through the card's front edge where the line meets the
     foot: 2.7 units tall, under a 0.6-unit lid and over a 0.7-unit sill, as
-    long as the line and 2.1 units either side. The card's body and its
-    shadow are clipped round it, so the hole shows what lies under the card.
-    The line's own group draws the inside of the port there: a well that
-    darkens from its rim into its depth (`--port-wall` to `--port-deep`), a
-    lit crescent of floor by the sill (`--tray-lip`), and the end of the line
-    running up into it. So the end of the line takes the line's veil and
-    light. Over the slot the card draws the depth the line fades into, over
-    the traffic too, so a pulse goes into the dark with its line. Each line
-    has its own slot; two lines that meet the foot at one place share it. A
+    long as the line and 2.1 units either side. The card's body is clipped
+    round it, and round a notch through the sill below it as wide as the
+    line, so the hole shows what lies under the card. The line's own group
+    draws the inside of the port there: a well that darkens from its rim into
+    its depth (`--port-wall` to `--port-deep`), a lit crescent of floor by the
+    sill (`--tray-lip`), and the end of the line, at the line's own width,
+    running up over the floor and the sill into it and fading into the depth.
+    Nothing of the card lies over the line below the lid (TASK-425). So the
+    end of the line takes the line's veil and light. Its pulses ride on up
+    into the hole to the lid, over the well, so a pulse is seen to come out of
+    the hole and to go into it; a pulse that arrives in an arrowhead stops
+    short of the head. Each line has its own slot; two lines that meet the
+    foot at one place share it, and the first of them draws its well. A
     slot narrows as it nears a rounded corner, keeps at least 1.5 units of
     edge between it and the next, and is left out where that leaves too
-    little room round the line. Ports are drawn near only: from far away the
-    slot is closed in the card's front edge. They are on a card's foot only:
+    little room round the line. A removed line, drawn for context, runs into
+    no port. Ports are drawn near only: from far away the hole is closed in
+    the card's front edge. They are on a card's foot only:
     a sequence's lifelines start a gap under their cards and meet no edge. A
     port is a clip, the one clip the picture uses for depth, not a filter,
     blur or mask. It adds six elements for each port (five shapes and a
