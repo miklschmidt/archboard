@@ -25,7 +25,9 @@
 //
 // A node that has children on one variant only is a container whose whole
 // interface appears or vanishes: the other side holds no parts, so every entry
-// point and caller is added or removed with it.
+// point and caller is added or removed with it. Its interface changed even when
+// nothing outside reaches it, because a node with no children has no interface
+// and a container with no entry points has an empty one: two different facts.
 
 import type { SemanticNode, VariantContent } from "@/shared/semantic-board/lib/content";
 import { inspectContainer } from "@/shared/semantic-board/lib/container-interface";
@@ -147,17 +149,21 @@ function interfaceChange(
 /**
  * Whether anything about the interface moved.
  * @param change One container's change.
- * @returns True when at least one list is not empty.
+ * @returns True when the node holds parts on one variant only, or at least one
+ *   list is not empty.
  */
 function moves(change: InterfaceChange): boolean {
-	return [
-		change.entryPointsAdded,
-		change.entryPointsRemoved,
-		change.becameEntryPoints,
-		change.becameHidden,
-		change.callersGained,
-		change.callersLost,
-	].some((list) => list.length > 0);
+	return (
+		change.holdsParts.before !== change.holdsParts.after ||
+		[
+			change.entryPointsAdded,
+			change.entryPointsRemoved,
+			change.becameEntryPoints,
+			change.becameHidden,
+			change.callersGained,
+			change.callersLost,
+		].some((list) => list.length > 0)
+	);
 }
 
 /**
