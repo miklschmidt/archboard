@@ -571,7 +571,9 @@ declare. In Terraform and OpenTofu, the module is a directory of `.tf` or
 `.tofu` files, and a module in a directory below it is another module. It
 exposes its variables and outputs. A call of the module uses the variables that
 its arguments set and the outputs that its own module reads, such as
-`module.queue.url`. Configuration outside a Terraform module reaches it only
+`module.queue.url`. A reference to the whole call, such as
+`value = module.queue`, reads every output, except in `depends_on`.
+Configuration outside a Terraform module reaches it only
 through its outputs, so the check gives no `ENTRY_POINT_UNEXPOSED` for one. The
 check gives these findings:
 
@@ -591,8 +593,9 @@ check gives these findings:
   decide.
 - `MODULE_SHALLOW`, information on such a container: the module manages
   exactly one resource, calls no module, and passes every variable through,
-  except a variable that only sets the `count` or `for_each` of that resource.
-  Its interface is the interface of the resource. This finding names each
+  except a variable that only sets the `count` of that resource. The resource
+  reads nothing else, such as a local or a data source. Its interface is the
+  interface of the resource. This finding names each
   variable that the module passes through, so the module gets no
   `VARIABLE_PASSED_THROUGH`.
 

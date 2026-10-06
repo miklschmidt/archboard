@@ -927,8 +927,10 @@ TASK-368.11 gives Terraform and OpenTofu a rule of the interface check
 directory, and it exposes its variables and outputs. A module in a directory
 below it, such as an example, is a module of its own that can call it. A call
 of the module uses the variables that its arguments set and the outputs that
-the calling module reads, such as `module.queue.url`. Configuration outside a
-module reaches it only through its outputs. So the check never reports an
+the calling module reads, such as `module.queue.url`. A reference to the
+whole call, such as `value = module.queue`, reads every output, except in
+`depends_on`, which only orders. Configuration outside a module reaches it
+only through its outputs. So the check never reports an
 entry point of a Terraform module as unexposed: a drawn caller cannot reach
 past the outputs.
 
@@ -939,10 +941,14 @@ argument of a resource that it manages, such as `bucket = var.bucket`. A
 meta-argument, such as `count`, is no argument of the resource, and a use in
 the variable's own validation is no use. `VARIABLE_PASSED_THROUGH` names these
 variables. A module is shallow when it manages exactly one resource, calls no
-module and passes every variable through. A variable that only sets the
-`count` or `for_each` of that resource, such as `create`, is allowed, because
-a caller can say that on the call itself. `MODULE_SHALLOW` says so and names
-each variable that the module passes through, so a shallow module gets no
+module, passes every variable through, and the resource reads nothing else,
+such as a local or a data source. A variable that only sets the `count` of that
+resource, such as `create`, is allowed, because a caller can say that on the
+call itself. A variable in its `for_each` is not: `each.value` carries the
+variable's data into the arguments, and no reference shows that. A literal
+argument shows no reference either, so a module that fixes an argument to a
+constant still reads as shallow. `MODULE_SHALLOW` says so and names each
+variable that the module passes through, so a shallow module gets no
 `VARIABLE_PASSED_THROUGH`.
 
 On 2026-10-06, with Bun 1.4.2, the real check read terraform-aws-modules
@@ -962,13 +968,37 @@ judged:
   two object lock variables with `upper`, and `override_default_tags` decides
   whether a block is made.
 - The root module of `terraform-aws-s3-bucket` passes 15 of its 72 variables
-  through. Its examples and `wrappers/` call it, and they set every variable,
-  so `EXPOSED_UNUSED` names only 3 outputs that nothing reads.
+  through. Its examples and `wrappers/` call it, and they set every variable.
+  `wrappers/outputs.tf` passes every output on with `value = module.wrapper`,
+  so nothing that the root module exposes is unused. Before the review, a
+  whole call read no output, and `EXPOSED_UNUSED` named 3 outputs.
   `modules/notification` passes 1 of 11 through, and nothing reads 1 output.
 - The root module of `terraform-aws-key-pair` passes 5 of its 10 variables
   through to its two resources.
 
 No entry point was reported unexposed, and no caller undrawn.
+
+The independent review read three more repositories the same way:
+terraform-aws-modules `terraform-aws-cloudwatch` (`82e5143`, version 5.7.3),
+`terraform-aws-iam` (`da8e6a8`) and `terraform-aws-security-group`
+(`b3c1b2e`), with a container for each of 13 modules and an example drawn as
+its caller. The pass over all five repositories took 947 ms.
+
+- 5 more modules are shallow: `log-group`, `log-stream`, `query-definition`
+  and `log-metric-filter` of `terraform-aws-cloudwatch`, and `iam-policy` of
+  `terraform-aws-iam`. Each manages one resource with
+  `count = var.create ? 1 : 0` and passes every other variable through.
+- `metric-alarms-by-multiple-dimensions` is not. Its
+  `for_each = { for k, v in var.dimensions : k => v if var.create_metric_alarm }`
+  sets `dimensions = each.value`, so `var.dimensions` gives an argument its
+  value. Under the rule that let a variable in `for_each` toggle the resource,
+  such a module that passed every other variable through would read as
+  shallow. The root module of `terraform-aws-security-group` sets every
+  argument of its ingress rules from `each.value` the same way.
+- 7 more modules pass some variables through and are not shallow, such as
+  `metric-alarm` (21 of 23), whose `metric_query` blocks look up their values
+  with defaults, and `log-subscription-filter` (5 of 7), whose `name` an
+  output also reads.
 
 #### Reading build dependencies between Nix packages
 
