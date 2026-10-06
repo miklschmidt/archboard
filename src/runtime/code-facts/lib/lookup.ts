@@ -27,12 +27,25 @@ type Found =
 type Accept = "definition" | "definition-or-reference";
 
 /**
- * Whether a qualified name ends with a symbol, name by name.
- * @param qualified The qualified name, such as `Ledger.post`.
+ * A name with `::` written as `.`, so a C++ name and a binding that spells it
+ * either way compare alike.
+ * @param name The name.
+ * @returns It with `.` between its names.
+ */
+function dotted(name: string): string {
+	return name.replaceAll("::", ".");
+}
+
+/**
+ * Whether a qualified name ends with a symbol, name by name; `::` counts as `.`.
+ * @param qualified The qualified name, such as `Ledger.post` or `shop::Ledger::post`.
  * @param symbol The symbol, such as `post` or `Ledger.post`.
  * @returns True when the symbol is its whole tail.
  */
 function endsWithNames(qualified: string, symbol: string): boolean {
+	if (qualified.includes("::") || symbol.includes("::")) {
+		return endsWithNames(dotted(qualified), dotted(symbol));
+	}
 	return qualified === symbol || qualified.endsWith(`.${symbol}`);
 }
 
@@ -44,8 +57,9 @@ function endsWithNames(qualified: string, symbol: string): boolean {
  */
 function definitionsNamed(definitions: readonly Definition[], symbol: string): Definition[] {
 	const named = definitions.filter((definition) => endsWithNames(definition.symbol, symbol));
+	const exact = dotted(symbol);
 	return named.toSorted(
-		(left, right) => Number(right.symbol === symbol) - Number(left.symbol === symbol),
+		(left, right) => Number(dotted(right.symbol) === exact) - Number(dotted(left.symbol) === exact),
 	);
 }
 

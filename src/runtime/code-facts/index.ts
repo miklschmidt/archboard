@@ -22,6 +22,7 @@ export {
 	type Unparsed,
 } from "@/runtime/code-facts/lib/facts";
 export { mergedDefinitions } from "@/runtime/code-facts/lib/compose-merged";
+export { pairOf } from "@/runtime/code-facts/lib/c-pairs";
 export { type DefinitionSite, definitionSite } from "@/runtime/code-facts/lib/definition-site";
 export { type Accept, type Found, findSymbol } from "@/runtime/code-facts/lib/lookup";
 export {

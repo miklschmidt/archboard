@@ -4,9 +4,11 @@
 // a definition found this way is resolved, not a candidate. A name the code
 // reaches only through a value, such as `ledger.post()`, has no import that
 // names its file, so it has no site here: a language server resolves it
-// (TASK-367.13).
+// (TASK-367.13). A name a C or C++ file reaches through its includes is found
+// in the headers they name (include-scope.ts).
 
 import type { Definition, SyntaxFacts, Target } from "@/runtime/code-facts/lib/facts";
+import { includedSite } from "@/runtime/code-facts/lib/include-scope";
 import { definitionsNamed, endsWithNames } from "@/runtime/code-facts/lib/lookup";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 import type { FactsPass } from "@/runtime/code-facts/lib/reader";
@@ -60,7 +62,7 @@ function usedTargets(facts: SyntaxFacts, symbol: string): Target[] {
 		);
 	});
 	const byTail = facts.references.flatMap((reference) =>
-		endsWithNames(reference.symbol, symbol) && reference.target !== undefined
+		reference.target !== undefined && endsWithNames(reference.symbol, symbol)
 			? [reference.target]
 			: [],
 	);
@@ -192,7 +194,10 @@ async function definitionSite(
 	const own = definitionsNamed(facts.definitions, symbol)[0];
 	if (own !== undefined) return { path: facts.path, definition: own, via: [] };
 	const search: Search = { pass, checkout, seen: new Set() };
-	return firstSite(usedTargets(facts, symbol), (target) => follow(search, target, CHAIN_DEPTH));
+	const site = await firstSite(usedTargets(facts, symbol), (target) =>
+		follow(search, target, CHAIN_DEPTH),
+	);
+	return site ?? includedSite(pass, checkout, facts, symbol);
 }
 
 export { type DefinitionSite, definitionSite };
