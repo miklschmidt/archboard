@@ -503,6 +503,129 @@ and the private NAT route, which names the NAT gateway. The relationship from
 the endpoints module call to the VPC holds through the call's argument
 `vpc_id = module.vpc.vpc_id` and the output of the `vpc` module, and the one
 drawn from the public subnets to the private NAT route has no reference.
+TASK-367.18 then made every one of those references provisioning, as the next
+section says.
+
+#### Classifying Terraform evidence by provider
+
+On 2026-10-06 the user named the providers to cover first: AWS, Google Cloud,
+Azure, and Kubernetes through the `kubernetes` and `helm` providers.
+TASK-367.18 gives each one a table in
+`src/runtime/code-facts/lib/terraform-providers.ts`. The table maps a
+resource or data source type to the kind of evidence that each of its
+arguments gives. An argument is a path of attribute and nested block names,
+such as `default_action.target_group_arn`. The rule of ADR 0046 decides each
+entry. A trigger, a subscription and an event mapping are calls. A listener,
+a target group and a network rule are configured paths. A grant is a
+permission. Every other reference of a named provider is provisioning. Three
+rules hold in every provider:
+
+- An environment value that a resource sets for the code it runs is a
+  configured path. These are the shapes that the providers share:
+  `environment { variables }`, `environment_variables`,
+  `runtime_environment_variables`, `app_settings`, and the `value` of an `env`
+  block. They are the same shapes that TASK-367.23 joins with the code that
+  reads them.
+- Terraform's meta-arguments are provisioning: `depends_on`, `count`,
+  `for_each`, `lifecycle`, `provisioner`, `connection`, and the `for_each` of
+  a `dynamic` block.
+- A reference in a module call, a variable, an output or a local value has no
+  provider, so it stays a configured path. Such a reference only passes a
+  value on. The kind of a way through it is the kind of the reference that
+  starts the way, in a resource.
+
+A joining declaration joins two other declarations. Its table entry names the
+arguments that name the end the join runs from and the arguments that name
+the end it runs to. Its evidence runs from the parts that own the one end to
+the parts that own the other, and the piece cites the joining declaration. It
+never runs from the joining declaration to each end. An end that its
+arguments name no declaration for is the joining declaration itself. So a
+Cloud Function's `event_trigger` runs from its topic to the function, and a
+pull subscription runs from its topic to the subscription. An anchor can name
+a joining declaration, and the check does not require it to be in the code of
+either end. Any other Terraform declaration that an anchor names is judged as
+code is: it must be in the code of an end.
+
+The tables cover the common connections of each provider. A type that is
+not listed falls back to provisioning.
+
+- AWS calls: the joins of an event source mapping, an EventBridge pipe, an
+  SNS subscription, an EventBridge target, an S3 bucket notification, a
+  Lambda event invoke config and the API Gateway integrations. Also the
+  target of an EventBridge Scheduler schedule and the definition of a Step
+  Functions state machine.
+- AWS configured paths: the joins of a load balancer listener, a listener
+  rule, a target group attachment and the VPC security group ingress and
+  egress rules. An ECS service and an Auto Scaling group join their target
+  groups to themselves, and a security group joins its ingress groups to
+  itself. Also an SQS redrive policy, a Lambda dead-letter target, an API
+  Gateway route target, CloudFront origins, Route 53 aliases and records, and
+  `aws_security_group_rule`.
+- AWS permissions: the joins of a Lambda permission, a role policy
+  attachment, an inline role policy, and the SQS, SNS and S3 bucket policies.
+  Also an IAM policy's document and a policy document's statements.
+- Google Cloud calls: the joins of a Pub/Sub subscription, the event triggers
+  of Cloud Functions, an Eventarc trigger and a Cloud Storage notification.
+  Also the Pub/Sub and HTTP targets of a Cloud Scheduler job.
+- Google Cloud configured paths: the join of a firewall, from its source to
+  its target service accounts and tags. Also a subscription's dead-letter
+  topic, backend services, URL maps, target proxies, forwarding rules and
+  serverless network endpoint groups.
+- Google Cloud permissions: the IAM members and bindings of topics,
+  subscriptions, Cloud Run services, Cloud Functions, buckets, secrets,
+  BigQuery datasets, service accounts and projects. Each one joins its member
+  to the resource of the grant.
+- Azure calls: the joins of an Event Grid event subscription, a system topic
+  event subscription, a system topic and a Service Bus subscription.
+- Azure configured paths: the joins of a load balancer rule, a network
+  interface's backend pool association, a network security rule and a
+  virtual network peering. Also Service Bus queue forwarding, app connection
+  strings, Application Gateway backend pools and private endpoint
+  connections.
+- Azure permissions: the join of a role assignment, from its principal to its
+  scope.
+- Kubernetes: an Ingress backend is a call. A Service selector, config map
+  data and the `set` and `values` of a `helm_release` are configured paths.
+  A NetworkPolicy spec is a permission.
+
+Some declarations fall back on purpose. ECS container definitions are one
+encoded string that holds environment values, an image and a log group
+together, so they stay provisioning. An `aws_security_group_rule` reads its
+direction from its `type`, so its references are configured paths from the
+rule and not a join. A Kubernetes Secret's data is a credential that a
+workload is set up with, so it is provisioning. `kubernetes_manifest` can hold
+any object, so it is provisioning. A plan JSON's references are classified by
+the keys of their expressions. These keys are the arguments of the `.tf`
+files.
+
+The check read real configurations through temporary vaults. They were
+cloned on 2026-10-06:
+
+- terraform-aws-modules `terraform-aws-lambda` (`3a1405b`): the examples
+  `event-source-mapping` and `triggers`.
+- terraform-aws-modules `terraform-aws-vpc` (`b3abd6d`): the example
+  `complete`.
+- terraform-google-modules `terraform-docs-samples` (`f96259b`):
+  `functions/pubsub` and `eventarc/basic_pubsub`.
+- `terraform-provider-azurerm`: `examples/eventgrid/event-subscription` and
+  `examples/servicebus/forwarding`.
+- `terraform-provider-kubernetes`: `_examples/ingress` and
+  `_examples/wordpress-mysql-gce-pv`.
+
+Nine boards had 42 parts and 16 relationships. Before the rules, the check
+gave 23 findings. 14 of them were undrawn warnings. Each one rested on a
+provisioning reference: a role, a log group, a namespace or a VPC, for
+example. Five drawn calls had no
+support or ran backwards. Each one was an event that a joining declaration or
+a trigger carries, such as a Pub/Sub topic to the function that it triggers.
+After the rules, the check gave 8 findings, and none of them was a warning.
+Each of the five calls now holds through its joining declaration. Four
+`dependency` relationships of the VPC board now have only provisioning
+evidence, because a placement in a VPC is provisioning. The finding lists that
+evidence. Three event source mappings of `terraform-aws-lambda` still have no
+evidence. That module takes its sources through
+`for_each = var.event_source_mapping` and `each.value`, and these name no
+address.
 
 #### Reading .NET projects through the C# adapter
 
@@ -776,12 +899,12 @@ file defines.
 
 ### Infrastructure and Nix
 
-| Source                 | What the check reads                                                                                                        | Evidence                                                                                                |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Terraform and OpenTofu | `.tf` and `.tofu` files, statically: resources, data sources, modules, variables, outputs and the references in expressions | configured path, until provider rules make it a call, a permission or provisioning                      |
-| Kubernetes             | manifest YAML, and Helm or Kustomize output given as files                                                                  | service selectors, Ingress and Gateway routes, network policies, environment values that name a service |
-| docker-compose         | compose files and their override files                                                                                      | `depends_on`, links, networks, environment values that name a service, shared volumes                   |
-| Nix                    | `flake.lock` (JSON), `flake.nix` outputs, derivation inputs                                                                 | build dependency                                                                                        |
+| Source                 | What the check reads                                                                                                        | Evidence                                                                                                                                              |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Terraform and OpenTofu | `.tf` and `.tofu` files, statically: resources, data sources, modules, variables, outputs and the references in expressions | a call, configured path, permission or provisioning by the rules of AWS, Google Cloud, Azure and Kubernetes; a configured path for any other provider |
+| Kubernetes             | manifest YAML, and Helm or Kustomize output given as files                                                                  | service selectors, Ingress and Gateway routes, network policies, environment values that name a service                                               |
+| docker-compose         | compose files and their override files                                                                                      | `depends_on`, links, networks, environment values that name a service, shared volumes                                                                 |
+| Nix                    | `flake.lock` (JSON), `flake.nix` outputs, derivation inputs                                                                 | build dependency                                                                                                                                      |
 
 A part binds to a resource address as it binds to a code symbol. Examples are
 `module.checkout.aws_lambda_function.api`, `Deployment/checkout` and
