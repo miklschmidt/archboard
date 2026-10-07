@@ -93,7 +93,8 @@ const repoListContract = defineCommand({
 	path: ["repo", "list"],
 	shared: [],
 	summary: "List registered repository checkouts",
-	description: "Reads the machine-local repository registry.",
+	description:
+		"Reads the machine-local repository registry, with the language servers configured for each checkout.",
 	examples: ["archboard repo list"],
 	parameters: [
 		{
@@ -161,8 +162,7 @@ const repoListContract = defineCommand({
 			result: repos
 				.map((entry) => {
 					const servers = Object.entries(entry.servers ?? {}).map(
-						([language, server]) =>
-							`\n  ${language}: ${[server.command, ...server.args].join(" ")}`,
+						([language, server]) => `\n  ${language}: ${commandLine(server)}`,
 					);
 					return `${entry.repo}\n  ${entry.root}${entry.exists ? "" : "  (gone)"}  [${entry.source}]${servers.join("")}`;
 				})
@@ -186,7 +186,8 @@ const repoAddContract = defineCommand({
 	path: ["repo", "add"],
 	shared: [],
 	summary: "Register a repository checkout",
-	description: "Derives a checkout identity from git and records its local root.",
+	description:
+		"Derives a checkout identity from git and records its local root. Registering the same root again keeps its language servers.",
 	examples: ["archboard repo add ."],
 	parameters: [
 		{
@@ -273,7 +274,8 @@ const repoForgetContract = defineCommand({
 	path: ["repo", "forget"],
 	shared: [],
 	summary: "Forget a local repository checkout",
-	description: "Removes one identity from the machine-local registry.",
+	description:
+		"Removes one identity, and the language servers configured for it, from the machine-local registry.",
 	examples: ["archboard repo forget github.com/acme/payments"],
 	parameters: [
 		{
@@ -336,7 +338,7 @@ const repoForgetContract = defineCommand({
 
 const RepoLanguageServerInputSchema = z.object({
 	language: z.enum(CONFIGURABLE_LANGUAGES, {
-		error: `repo language-server needs a language: ${CONFIGURABLE_LANGUAGES.join(", ")}`,
+		error: `repo language-server needs a language: ${CONFIGURABLE_LANGUAGES.join(", ")}. Use c for C, C++ and Objective-C.`,
 	}),
 	command: z.string().min(1).optional(),
 	arg: z.array(z.string()).default([]),
@@ -460,12 +462,21 @@ const repoLanguageServerContract = defineCommand({
 			},
 			diagnostics: [
 				server === undefined
-					? `Removed the ${input.language} server of "${repo}". check --code starts none there.`
-					: `check --code runs ${[server.command, ...server.args].join(" ")} for ${input.language} in "${repo}", with your environment, as your editor would. It runs code of that checkout.`,
+					? `"${repo}" has no ${input.language} server now. check --code starts none there.`
+					: `check --code runs ${commandLine(server)} for ${input.language} in "${repo}", with your environment, as your editor would. It runs code of that checkout.`,
 			],
 		};
 	},
 });
+
+/**
+ * A configured server as a person reads it: its command, then its arguments.
+ * @param server The server.
+ * @returns The line.
+ */
+function commandLine(server: ConfiguredServer): string {
+	return [server.command, ...server.args].join(" ");
+}
 
 /**
  * The server a `repo language-server` call asks for.
