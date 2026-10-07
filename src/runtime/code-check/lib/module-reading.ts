@@ -69,6 +69,16 @@ interface TestImport {
 type ModuleReadings = Map<string, Promise<ModuleReading | undefined>>;
 
 /**
+ * Whether a reference runs the definition it reaches, including a passed function.
+ * @param reference The reference.
+ * @param site The definition it reaches.
+ * @returns True for a run-time use that can run the definition's code.
+ */
+function runsCode(reference: Reference, site: DefinitionSite): boolean {
+	return reference.kind === "call" && runsDefinition(reference, site.definition);
+}
+
+/**
  * The uses of a module's code in one file outside it.
  * @param facts The pass.
  * @param checkout The checkout.
@@ -96,8 +106,7 @@ async function usesIn(
 		// oxlint-disable-next-line no-await-in-loop -- one site at a time; each search reads files the cache holds
 		const site = await definitionSite(facts, checkout, file, symbol);
 		if (site !== undefined && within(directory, site.path)) {
-			const runs = reference.kind === "call" && runsDefinition(reference, site.definition);
-			uses.push({ file, line, symbol, runs, site });
+			uses.push({ file, line, symbol, runs: runsCode(reference, site), site });
 		}
 	}
 	return uses;
