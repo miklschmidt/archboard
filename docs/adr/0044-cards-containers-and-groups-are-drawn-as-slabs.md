@@ -63,33 +63,28 @@ in `lib/design.ts`.
    of the face, and light that falls off down the face. Its front edge is 4
    units thick and lies inside its layout box, along its foot. So a line that
    ends on the foot of a card meets the edge that a reader sees.
-2. **Depth is flat shapes.** A block casts its shadow down and to the right. The
-   shadow is a stack of translucent copies of the block's silhouette, each a
-   little larger and fainter. No shadow reaches more than 12 units past its box.
-   The picture uses no SVG filter, blur or mask for depth. It uses shared
-   gradients for the light on a face. The shadows of cards and of the labels
-   of relationships lie under every line, in groups of their own that list
-   what cast them (`data-members`), so a line is never shadowed (TASK-425).
-   Every card's shadow also lies under every card, a sequence's participants
-   included. So no shadow is drawn on the face or the front edge of a card,
-   its own or one beside it. A sequence lays its participants' shadows in its
-   head, under its cards, so they move with the head (TASK-435). A viewer
-   veils and lights a shadow with its card or its line, and holds it back
-   while a picture is in flight.
+2. **Depth is flat shapes.** A block casts its shadow down and to the right.
+   Eight adjoining rectangles carry shared linear and radial gradients (TASK-438).
+   The gradients agree at their seams and fade continuously to zero at the outside edge.
+   No shadow reaches more than 12 units past its box.
+   The picture uses no SVG filter, blur or mask for depth.
+   Shared gradients also light the top face.
 
-   On the light ground a card's shadow is not the dark ground's (TASK-435).
-   The owner found that the light shadow bled into the card. Its contact
-   shadow had the lightness of the front edge and a bluer hue, so the edge
-   seemed to run on in a bluish strip under the foot. The copies that grew
-   past the card's left side stood up beside the face as a band. Now the
-   contact shadow on the light ground is lighter than the front edge, so the
-   edge ends where the box ends. The softer copies are moved right as far as
-   they grow, so they fall only down and to the right. A ring a unit wide
-   still runs round the card, so a near-white card keeps its top edge on the
-   near-white page. The dark ground's shadow did not change. Each layer has a
-   share for each ground. A layer that one ground does not use is transparent
-   there, so a card's shadow is eight shapes in place of five. That is 1.3%
-   more SVG on the Web shop board and 2% more on the Archboard server board.
+   Card and relationship label shadows lie under every line and every card.
+   Their groups name what casts them through `data-members` (TASK-425).
+   No shadow falls on a face or front edge.
+   A viewer veils each shadow with its subject and hides it during a flight.
+
+   A sequence keeps participant shadows inside its sticky head so that they move with the cards.
+   Its lifelines start 13 units below the cards, past the twelve-unit shadow reach (TASK-439).
+   Their dash offset preserves the original phase.
+   The shade of a moved head covers its shadows and the columns behind them.
+   Activation and label shadows lie below every lifeline and message.
+   Each flow gains seven units of height.
+
+   On the light ground the shadow uses 65 percent of `--slab-shadow`.
+   The dark ground uses the token itself.
+   Both shadows fade smoothly and stay distinct from the front edge (TASK-435).
 
 3. **A container is a tray, lit from above as the blocks are.** Its top wall
    faces the reader and turns away from the light. It shows as a 6-unit band in

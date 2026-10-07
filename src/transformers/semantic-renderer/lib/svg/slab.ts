@@ -10,8 +10,7 @@
 // box, along its foot, so a line that ends on the foot of a box meets the edge a
 // reader sees; only the shadow reaches past the box. Nothing here is a filter, a
 // blur or a mask, because a picture of a hundred cards is dragged and zoomed:
-// depth is flat shapes, one shared gradient and stacked translucent copies of
-// the silhouette.
+// depth is flat shapes with shared gradients for the face and the shadow.
 //
 // A proposal's standing takes over the outline of the block's top face: a
 // border in the standing's ink along the face's edge, inside it, solid for an
@@ -28,6 +27,11 @@
 // seat, its box unpainted, which is the one shape of it that takes the pointer
 // and the first shape a reader of the markup finds.
 
+import {
+	shadowDefinitions,
+	smoothShadow,
+	SHADOW_REACH,
+} from "@/transformers/semantic-renderer/lib/svg/shadow";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { lightDark, mixed, translucent } from "@/transformers/semantic-renderer/lib/svg/colour";
@@ -39,6 +43,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
 	MEMBERS_ATTRIBUTE,
+	PART_ATTRIBUTE,
 	OUTLINE_DASH,
 	OUTLINE_WIDTH,
 	standingInk,
@@ -115,54 +120,8 @@ const SHEEN_ID = "ab-slab-sheen";
 const SOFT_SHEEN_ID = "ab-slab-sheen-soft";
 const SOFT_SHEEN = 0.2;
 
-/**
- * One translucent copy of a silhouette: how far it is moved, how much larger,
- * and how dark on each ground. A layer with a share of 0 on one ground is
- * transparent there, so it shows on the other ground only.
- */
-interface ShadowLayer {
-	readonly dx: number;
-	readonly dy: number;
-	readonly grow: number;
-	readonly share: Share;
-}
-
-/**
- * The shadows a block casts, by what it is. None reaches more than twelve
- * units past the box. A card's shadow lies under every card ({@link shadowUnder}).
- *
- * A card's first layer reaches a unit round it, so a near-white card keeps its
- * top edge on the near-white page. Its second layer is the contact shadow under
- * its front edge. Then come softer, larger copies that fade to nothing. On the
- * dark ground they spread round the block, most of all down and to the right.
- * On the light ground a shadow that dark and that wide read as part of the
- * card (TASK-435). The contact shadow had the lightness of the front edge, so
- * the edge seemed to run on in a bluish strip under the foot. The copies that
- * grew past the card's left side stood up beside the face as a band. So on
- * the light ground the contact shadow is lighter than the front edge, and the
- * edge ends where the box ends. The softer copies are moved right as far as
- * they grow, so they fall only down and to the right.
- *
- * A container's tray is cut into what holds it and casts none. A chip, a
- * relationship's label and an activation bar, many and small, cast only a
- * contact shadow.
- */
-const SHADOWS = {
-	card: [
-		{ dx: 0, dy: 0.5, grow: 1, share: { light: 0.3, dark: 0.4 } },
-		{ dx: 0.5, dy: 1.5, grow: 0.5, share: { light: 0.3, dark: 0.9 } },
-		// The dark ground's softer copies.
-		{ dx: 1, dy: 3, grow: 1.5, share: { light: 0, dark: 0.35 } },
-		{ dx: 1.5, dy: 4.5, grow: 3, share: { light: 0, dark: 0.2 } },
-		{ dx: 2, dy: 6, grow: 5, share: { light: 0, dark: 0.1 } },
-		// The light ground's softer copies, each moved right as far as it grows.
-		{ dx: 1.5, dy: 3, grow: 1, share: { light: 0.35, dark: 0 } },
-		{ dx: 3, dy: 5.5, grow: 2.5, share: { light: 0.2, dark: 0 } },
-		{ dx: 4, dy: 8, grow: 4, share: { light: 0.1, dark: 0 } },
-	],
-	tray: [],
-	chip: [{ dx: 0, dy: 1, grow: 0.5, share: { light: 0.45, dark: 0.45 } }],
-} as const satisfies Readonly<Record<string, readonly ShadowLayer[]>>;
+/** The shadow reach of a card, a small chip, or a sunken tray. */
+const SHADOWS = { card: SHADOW_REACH, tray: 0, chip: 2 } as const;
 
 /**
  * The class of the group a card's or a label's shadow is drawn in, under the
@@ -303,38 +262,7 @@ function slabShadow(
 	standing?: SubjectStanding,
 ): string {
 	if (standing === "removed") return ghost(box, radius, palette);
-	return lines(
-		SHADOWS[lift].map(({ dx, dy, grow, share }) =>
-			plate(
-				{
-					x: box.x + dx - grow,
-					y: box.y + dy - grow,
-					width: box.width + 2 * grow,
-					height: box.height + 2 * grow,
-				},
-				radius + grow,
-				shadowPaint(share, palette),
-			),
-		),
-	);
-}
-
-/**
- * How one layer of a shadow is painted: the shadow's colour at the layer's
- * share, which may differ from ground to ground.
- * @param share How much of the shadow's colour, on each ground.
- * @param palette The theme's colours.
- * @returns Its paint.
- */
-function shadowPaint(share: Share, palette: Palette): Attributes {
-	return share.light === share.dark
-		? { fill: palette.slabShadow, "fill-opacity": share.light }
-		: {
-				fill: lightDark(
-					translucent(palette.slabShadow, share.light),
-					translucent(palette.slabShadow, share.dark),
-				),
-			};
+	return lift === "tray" ? "" : smoothShadow(box, radius, SHADOWS[lift]);
 }
 
 /**
@@ -350,6 +278,7 @@ function shadowPaint(share: Share, palette: Palette): Attributes {
  * @param lift Which sort of block it is.
  * @param palette The theme's colours.
  * @param standing How it stands, when this is a proposal.
+ * @param part The part of the subject that casts the shadow, when it is not its card.
  * @returns The shadow's group, or nothing for a removed block.
  */
 function shadowUnder(
@@ -359,12 +288,18 @@ function shadowUnder(
 	lift: Lift,
 	palette: Palette,
 	standing: SubjectStanding | undefined,
+	part?: string,
 ): string {
 	return standing === "removed"
 		? ""
 		: wrap(
 				"g",
-				{ class: SHADOW_CLASS, [MEMBERS_ATTRIBUTE]: member, "pointer-events": "none" },
+				{
+					class: SHADOW_CLASS,
+					[MEMBERS_ATTRIBUTE]: member,
+					[PART_ATTRIBUTE]: part,
+					"pointer-events": "none",
+				},
 				slabShadow(box, radius, lift, palette),
 			);
 }
@@ -446,6 +381,7 @@ function sheenOf(look: SlabLook): string {
  */
 function slabDefinitions(palette: Palette): string {
 	return (
+		shadowDefinitions(palette) +
 		sheenGradient(SHEEN_ID, palette.slabSheen) +
 		sheenGradient(
 			SOFT_SHEEN_ID,

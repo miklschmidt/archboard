@@ -276,7 +276,7 @@ color of the group that places the container, as a card does, and the
 container's kind shows on its icon chip alone.
 The region of a group has no fill: a thin frame in a faded tone of the
 group's color, thick corner brackets and a caption tab in its full color. Each
-shadow is a stack of translucent shapes, with no filter or blur. The colors
+shadow uses eight adjoining rectangles with shared gradients, with no filter, blur or mask. The colors
 come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A
 group region's frame, corners and tab and a grouped card's face are tones of
 the group's own color, set in OKLCH at one lightness for every color. On chalk
@@ -294,8 +294,9 @@ edge round it but short of white. The line comes out of it at its own width,
 over the lip, fades into its depth, and its pulses
 travel into and out of it, over an arrowhead too. Ports are drawn near and far
 alike. No shadow falls on a line: the shadows of cards, labels and activation
-bars lie under the lines. No shadow falls on a card either: every card's
-shadow lies under every card.
+bars lie under the lines. Every card shadow lies under every card.
+A sequence lifeline starts 13 units below its card to clear the shadow.
+The sticky head carries its shadows and hides the columns behind their full reach.
 The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the construction.

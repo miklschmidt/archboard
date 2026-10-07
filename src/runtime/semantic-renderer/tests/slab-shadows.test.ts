@@ -93,7 +93,10 @@ function layers(
 		)
 		.map(({ at }) => at);
 	const shadows = tags
-		.filter(({ attributes }) => attributes["class"] === "ab-shadow")
+		.filter(
+			({ attributes }) =>
+				attributes["class"] === "ab-shadow" && attributes["data-semantic-part"] === undefined,
+		)
 		.map(({ at, attributes }) => ({ at, members: (attributes["data-members"] ?? "").split(" ") }));
 	return { cardsAt, shadows };
 }
@@ -157,6 +160,33 @@ function paintOf(tag: string): Paint {
 	const channel = (at: number): number => Number.parseInt(hex.slice(at, at + 2), 16);
 	const alpha = hex.length === 9 ? channel(7) / 255 : 1;
 	return { r: channel(1), g: channel(3), b: channel(5), a: alpha * opacity };
+}
+
+/**
+ * The fill of a shadow patch at a point, including the shared bottom gradient.
+ * @param tag The shadow patch.
+ * @param point Where the ink is measured.
+ * @param svg The resolved drawing.
+ * @returns The ink at the point.
+ */
+function shadowPaintAt(tag: string, point: { x: number; y: number }, svg: string): Paint {
+	const gradient = /fill="url\(#([^)]*)\)"/u.exec(tag)?.[1];
+	if (gradient === undefined) return paintOf(tag);
+	const definition = new RegExp(
+		`<linearGradient id="${gradient}"[^>]*>([\\s\\S]*?)</linearGradient>`,
+		"u",
+	).exec(svg)![1]!;
+	const stops = [...definition.matchAll(/<stop [^>]*>/gu)].map(([stop]) => ({
+		offset: Number(/offset="([\d.]+)"/u.exec(stop)![1]),
+		paint: paintOf(stop.replace("stop-color=", "fill=").replace("stop-opacity=", "fill-opacity=")),
+	}));
+	const box = boxOf(tag);
+	const t = (point.y - box.y) / box.height;
+	const after = stops.findIndex(({ offset }) => offset >= t);
+	const low = stops[Math.max(0, after - 1)]!;
+	const high = stops[after]!;
+	const fraction = high.offset === low.offset ? 0 : (t - low.offset) / (high.offset - low.offset);
+	return { ...low.paint, a: low.paint.a + fraction * (high.paint.a - low.paint.a) };
 }
 
 /**
@@ -236,8 +266,46 @@ test.each(["light", "dark"] as const)(
 					point.y <= layer.y + layer.height
 				);
 			})
-			.reduce((ground, tag) => over(paintOf(tag), ground), page);
+			.reduce((ground, tag) => over(shadowPaintAt(tag, point, svg), ground), page);
 		const step = Math.abs(lightnessOf(hexOf(paintOf(edge))) - lightnessOf(hexOf(under)));
 		expect(step).toBeGreaterThan(SEEN_STEP);
+	},
+);
+
+// At ten times magnification each sample is one screen pixel. A hard
+// silhouette layer would introduce an alpha jump instead of a continuous fade.
+test.each(["light", "dark"] as const)(
+	"a shadow fades continuously to zero at 10x (%s)",
+	async (theme: DiagramTheme) => {
+		const drawing = await renderArchitecture({
+			content: orderedFixture({
+				nodes: [{ id: "card", name: "Orders DB", kind: "database" }],
+				edges: [],
+			}),
+			theme,
+		});
+		const svg = paintedIn(drawing.svg, theme);
+		const box = drawing.atlas.nodes["card"]!;
+		const shadow = /<g class="ab-shadow" data-members="card"[^>]*>([\s\S]*?)<\/g>/u.exec(svg)![1]!;
+		const patches = [...shadow.matchAll(/<rect [^>]*>/gu)].map(([tag]) => tag);
+		const samples = Array.from({ length: 121 }, (_, index) => {
+			const point = { x: box.x + box.width / 2, y: box.y + box.height + index / 10 };
+			const patch = patches.find((tag) => {
+				const bounds = boxOf(tag);
+				return (
+					point.x >= bounds.x &&
+					point.x <= bounds.x + bounds.width &&
+					point.y >= bounds.y &&
+					point.y <= bounds.y + bounds.height
+				);
+			});
+			return patch === undefined ? 0 : shadowPaintAt(patch, point, svg).a;
+		});
+		const jumps = samples.slice(1).map((alpha, index) => alpha - samples[index]!);
+		expect(Math.max(...jumps)).toBeLessThanOrEqual(0);
+		expect(Math.max(...jumps.map(Math.abs))).toBeLessThan(0.008);
+		expect(samples[0]).toBeGreaterThan(0);
+		expect(samples.at(-1)).toBe(0);
+		expect(svg).not.toMatch(/<(?:filter|mask)\b|filter="/u);
 	},
 );
