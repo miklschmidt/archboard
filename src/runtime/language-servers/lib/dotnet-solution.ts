@@ -36,10 +36,11 @@ function nearest(solutions: readonly string[]): string | undefined {
  * The project csharp-ls answers about: the checkout, with the solution it
  * loads, or why it has nothing to load.
  * @param root The checkout, absolute.
+ * @param signal Cancels the project listing.
  * @returns The project.
  */
-async function solutionOf(root: string): Promise<Project> {
-	const files = await listedFiles(root, ["*.sln", "*.slnx", "*.csproj"]);
+async function solutionOf(root: string, signal: AbortSignal): Promise<Project> {
+	const files = await listedFiles(root, ["*.sln", "*.slnx", "*.csproj"], signal);
 	if (files === undefined) return { root, unready: "Git cannot list the checkout's files" };
 	const solution = nearest(files.filter((file) => /\.slnx?$/u.test(file)));
 	if (solution !== undefined) {
@@ -55,10 +56,16 @@ async function solutionOf(root: string): Promise<Project> {
  * @param root The checkout, absolute.
  * @param _file The file; every file of a checkout has one project.
  * @param once A look the pass does once for each checkout.
+ * @param signal Cancels the project listing.
  * @returns The project.
  */
-function dotnetProjectOf(root: string, _file: string, once: Once): Promise<Project> {
-	return once(`dotnet-solution\0${root}`, () => solutionOf(root));
+function dotnetProjectOf(
+	root: string,
+	_file: string,
+	once: Once,
+	signal: AbortSignal,
+): Promise<Project> {
+	return once(`dotnet-solution\0${root}`, () => solutionOf(root, signal));
 }
 
 export { dotnetProjectOf };

@@ -42,7 +42,9 @@ export interface CheckoutSnapshot {
 	path(candidate: string): Readonly<PathInspection> | undefined;
 }
 
-type SnapshotOptions = { signal?: AbortSignal; bindings?: readonly CodeBinding[] };
+type SnapshotOptions = NonNullable<Parameters<typeof repoRootOf>[1]> & {
+	bindings?: readonly CodeBinding[];
+};
 type InspectedCheckout = readonly [string, CheckoutInspection];
 type RememberPath = (candidate: string, realpath: string, kind: PathInspection["kind"]) => void;
 

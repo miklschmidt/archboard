@@ -51,7 +51,7 @@ import {
 	type ServerOf,
 	type UnavailableServer,
 } from "@/runtime/language-servers/index";
-import type { CodeCheckSkip } from "@/shared/code-check/index";
+import type { CheckTiming, CodeCheckSkip } from "@/shared/code-check/index";
 import { configureCommand, type LanguageServers } from "@/shared/language-servers/index";
 
 /** Where a server says a use is defined, as the pass reads the checkout. */
@@ -172,6 +172,7 @@ interface PassResolution {
 	readonly resolve: Resolve;
 	/** Stop every server; then the skips of what could not be asked, by checkout. */
 	readonly close: () => Promise<CodeCheckSkip[]>;
+	readonly timings: () => CheckTiming[];
 }
 
 /**
@@ -233,6 +234,18 @@ function openResolution(
 	});
 	return {
 		resolve: resolverOf(session, facts),
+		/**
+		 * Timings of the servers, with repository identities instead of machine roots.
+		 * @returns Timings in server start order.
+		 */
+		timings: () =>
+			session.timings().map(({ root, ...timing }) => ({
+				check: "language-server",
+				...timing,
+				repo: [...checkouts].find(
+					([, checkout]) => checkout.status === "read" && checkout.root === root,
+				)?.[0],
+			})),
 		/**
 		 * Stop every server the pass started.
 		 * @returns What could not be asked, and why.

@@ -354,6 +354,7 @@ function createBehindReading(): BehindReading {
 				snapshotCheckoutAccess({
 					...(signal === undefined ? {} : { signal }),
 					bindings: bindingsOf(boards),
+					timeoutMs: null,
 				}),
 			]);
 			const key = await memoryKey(boards, vaultRoot, snapshot, options);

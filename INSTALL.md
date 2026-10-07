@@ -267,7 +267,9 @@ The Archboard server reads `repos.json` again each time that the check runs. So 
 
 If a checkout has no configured server for a language, the check says `language-server-missing` once for the checkout and the language. If the Archboard server cannot find the configured command, the check says the same. The answer names the command that configures one, and the uses stay candidates.
 
-If a server does not start, does not answer within 30 seconds or stops, the check says `language-server-failed` once for that checkout. Then the check starts no other server of that language in that checkout. This includes the other Swift packages and the other C compilation databases of the checkout.
+The output starts with the elapsed time for each check: the board check, code facts, each language server and the history lens. JSON carries the same times in `timings`, in milliseconds. Code facts time measures file reading and parsing. Each language server time includes its startup, index, questions and cleanup, but excludes idle time between questions. The code and history checks run together, so their times overlap.
+
+If a server does not start or stops, the check says `language-server-failed` once for that checkout. Then the check starts no other server of that language in that checkout. This includes the other Swift packages and the other C compilation databases of the checkout.
 
 If a server cannot answer about a project yet, the check says `language-server-unready` once for the project. The sections below name each case.
 
@@ -297,11 +299,11 @@ The check passes no flag to clangd, so clangd behaves as it does in your editor.
 
 On a system where only the compiler knows where the standard headers are, such as NixOS, your editor gives clangd the compilers with `--query-driver=<glob>`. Give it the same way: `--arg=--query-driver=<glob>`. Then clangd runs each compiler that matches the glob.
 
-clangd keeps its background index in `.cache/clangd/index`. The `.cache` directory is next to `compile_commands.json`. If that file is in a `build` directory, the `.cache` directory is next to `build`. Both are inside the checkout, so add `.cache/` to the `.gitignore` of the checkout. The check waits until clangd indexed every file that the database lists. Then the answer for a definition in another file does not depend on which files the check opened first. Do not pass `--background-index=false`: the check then waits 30 seconds and says `language-server-failed`.
+clangd keeps its background index in `.cache/clangd/index`. The `.cache` directory is next to `compile_commands.json`. If that file is in a `build` directory, the `.cache` directory is next to `build`. Both are inside the checkout, so add `.cache/` to the `.gitignore` of the checkout. The check waits until clangd indexed every file that the database lists. Then the answer for a definition in another file does not depend on which files the check opened first. Do not pass `--background-index=false`: the check waits for the index to finish.
 
 On Redis (303 files in `compile_commands.json`, 24 cores, clangd 21.1.8), the first check took 4.7 seconds. Each later check took 1.9 seconds, against 0.15 seconds without clangd.
 
-The check waits at most 30 seconds for the index. If the first index takes longer, the check says `language-server-failed` once and keeps the candidates. LLVM was such a case in an earlier measurement: 54 seconds for 2,283 commands.
+The check has no time limit. It waits for the index and the answers until they finish. Cancel the command to stop waiting. A server that exits stops its questions. LLVM took 54 seconds to index 2,283 commands in an earlier measurement.
 
 #### C#
 

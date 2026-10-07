@@ -158,6 +158,8 @@ recipe names.
   viewer. Reading the SVG's text is not looking at a diagram. A picture the
   request names goes where it says; one you draw only to look at goes in a
   temporary directory, never into the checkout you are describing.
+  The check has no time limit. Cancel the command to stop waiting. Its output
+  starts with the time for each check, and JSON carries those times in `timings`.
   `archboard check --code` holds every anchor and bound `symbol` of each
   board's current variant to the files on disk: a file that is not there or
   does not hold the symbol is a warning that names its part, relationship or

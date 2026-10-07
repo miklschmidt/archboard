@@ -358,10 +358,13 @@ export {
 
 /**
  * Run the exact checker the browser uses.
+ * @param signal Cancels the caller's request.
  * @returns The interpreted policy and vault diagnostics.
  */
-async function checkSemanticVaultOnServer(): Promise<VaultCheck> {
-	return VaultCheckSchema.parse(await requestJson<unknown>("/api/vault/check"));
+async function checkSemanticVaultOnServer(signal?: AbortSignal): Promise<VaultCheck> {
+	return VaultCheckSchema.parse(
+		await requestJson<unknown>("/api/vault/check", signal === undefined ? undefined : { signal }),
+	);
 }
 /**
  * Read one board with current vocabulary warnings.

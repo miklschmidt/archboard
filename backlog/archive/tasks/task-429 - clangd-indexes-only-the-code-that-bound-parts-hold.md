@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-06 21:48'
-updated_date: '2026-10-07 00:21'
+updated_date: '2026-10-07 00:54'
 labels:
   - code-check
 dependencies: []
@@ -26,3 +26,9 @@ TASK-367.15 made clangd build its background index again on every run of the cod
 - [ ] #2 If the second run does not finish, a run over such a checkout resolves the candidates of its bound parts
 - [ ] #3 A later run on Redis takes no longer than 2.0 s
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+TASK-436.02 removes the first-run 30-second language-server/index deadline. A requested check now waits until the full index finishes or its caller cancels/server exits, so this workaround is no longer needed. Archived by the explicit TASK-436.02 acceptance criterion.
+<!-- SECTION:NOTES:END -->

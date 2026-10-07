@@ -18,6 +18,7 @@
 // pass kills it at once. Either way the stop returns only once the process
 // has ended.
 
+import { createElapsedClock } from "@/shared/timing/timing";
 import fs from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { z } from "zod";
@@ -31,10 +32,6 @@ import {
 } from "@/runtime/language-servers/lib/connection";
 import { LANGUAGES, languageOf, type Language } from "@/runtime/language-servers/lib/languages";
 import { outlineOf, type OutlineSymbol } from "@/runtime/language-servers/lib/outline";
-import type { LANGUAGE_SERVER_TIMEOUTS } from "@/shared/timing/timing";
-
-/** How long a server is waited for. */
-type ServerTimeouts = Readonly<Record<keyof typeof LANGUAGE_SERVER_TIMEOUTS, number>>;
 
 /** A place in a file, as the protocol counts: from 0, in UTF-16 code units. */
 interface Position {
@@ -57,6 +54,8 @@ interface Server {
 	readonly outline: (file: string) => Promise<OutlineSymbol[]>;
 	/** Stop it, and return once its process has ended. */
 	readonly stop: (graceful: boolean) => Promise<void>;
+	/** Wall time spent starting, answering and stopping, excluding idle time. */
+	readonly elapsedMs: () => number;
 }
 
 /** What one server needs to start. */
@@ -68,7 +67,7 @@ interface ServerStart {
 	/** What it is told when it asks for its configuration, by section. */
 	readonly settings?: Readonly<Record<string, unknown>> | undefined;
 	readonly signal: AbortSignal;
-	readonly timeouts: ServerTimeouts;
+	readonly stopMs: number;
 }
 
 /** The start of a range, which is all of it the check reads. */
@@ -149,13 +148,12 @@ function initializeParams(root: string, language: Language): object {
  * @param connection Its connection.
  * @param language Its language.
  * @param bounds How long to wait, and the pass's signal.
- * @param bounds.timeoutMs How long to wait.
  * @param bounds.signal The pass's signal.
  */
 async function settle(
 	connection: Connection,
 	language: Language,
-	bounds: { readonly timeoutMs: number; readonly signal: AbortSignal },
+	bounds: RequestBounds,
 ): Promise<void> {
 	const request = LANGUAGES[language].settle;
 	if (request === undefined) return;
@@ -233,10 +231,10 @@ async function endedWithin(exited: Promise<unknown>, ms: number): Promise<boolea
 /**
  * Ask a server to shut down and exit.
  * @param connection Its connection.
- * @param timeouts How long to wait for the answer.
+ * @param stopMs How long to wait for the answer.
  */
-async function askToExit(connection: Connection, timeouts: ServerTimeouts): Promise<void> {
-	const bounds = { timeoutMs: timeouts.stopMs, signal: new AbortController().signal };
+async function askToExit(connection: Connection, stopMs: number): Promise<void> {
+	const bounds = { signal: AbortSignal.timeout(stopMs) };
 	await connection.request("shutdown", undefined, bounds).catch(() => undefined);
 	connection.notify("exit");
 }
@@ -248,16 +246,16 @@ async function askToExit(connection: Connection, timeouts: ServerTimeouts): Prom
  * @param child The process.
  * @param connection Its connection.
  * @param graceful Ask it to exit first.
- * @param timeouts How long to wait.
+ * @param stopMs How long to wait.
  */
 async function stopProcess(
 	child: ServerProcess,
 	connection: Connection,
 	graceful: boolean,
-	timeouts: ServerTimeouts,
+	stopMs: number,
 ): Promise<void> {
-	const deadline = performance.now() + (graceful ? timeouts.stopMs : 0);
-	if (graceful && child.exitCode === null) await askToExit(connection, timeouts);
+	const deadline = performance.now() + (graceful ? stopMs : 0);
+	if (graceful && child.exitCode === null) await askToExit(connection, stopMs);
 	try {
 		await child.stdin.end();
 	} catch {
@@ -274,6 +272,7 @@ async function stopProcess(
  * @returns The server, or a rejection that says why it did not start.
  */
 async function startServer(start: ServerStart): Promise<Server> {
+	const clock = createElapsedClock();
 	const child = Bun.spawn([...start.argv], {
 		cwd: start.root,
 		env: process.env,
@@ -291,15 +290,16 @@ async function startServer(start: ServerStart): Promise<Server> {
 	 * @returns Once it has ended.
 	 */
 	const stop = (graceful: boolean): Promise<void> => {
-		stopping ??= stopProcess(child, connection, graceful, start.timeouts);
+		stopping ??= clock.measure(() => stopProcess(child, connection, graceful, start.stopMs));
 		return stopping;
 	};
-	const bounds = { timeoutMs: start.timeouts.requestMs, signal: start.signal };
+	const bounds = { signal: start.signal };
 	try {
-		const starting = { timeoutMs: start.timeouts.startMs, signal: start.signal };
-		await connection.request("initialize", initializeParams(start.root, start.language), starting);
-		connection.notify("initialized", {});
-		await settle(connection, start.language, bounds);
+		await clock.measure(async () => {
+			await connection.request("initialize", initializeParams(start.root, start.language), bounds);
+			connection.notify("initialized", {});
+			await settle(connection, start.language, bounds);
+		});
 	} catch (error) {
 		await stop(false);
 		throw error;
@@ -312,23 +312,26 @@ async function startServer(start: ServerStart): Promise<Server> {
 		 * @param position The position.
 		 * @returns Each location in a file.
 		 */
-		definition: async (file, position) => {
-			await open(file);
-			const params = { textDocument: { uri: pathToFileURL(file).href }, position };
-			return locationsOf(await connection.request("textDocument/definition", params, bounds));
-		},
+		definition: (file, position) =>
+			clock.measure(async () => {
+				await open(file);
+				const params = { textDocument: { uri: pathToFileURL(file).href }, position };
+				return locationsOf(await connection.request("textDocument/definition", params, bounds));
+			}),
 		/**
 		 * The outline of a file.
 		 * @param file The file, absolute.
 		 * @returns Its symbols.
 		 */
-		outline: async (file) => {
-			await open(file);
-			const params = { textDocument: { uri: pathToFileURL(file).href } };
-			return outlineOf(await connection.request("textDocument/documentSymbol", params, bounds));
-		},
+		outline: (file) =>
+			clock.measure(async () => {
+				await open(file);
+				const params = { textDocument: { uri: pathToFileURL(file).href } };
+				return outlineOf(await connection.request("textDocument/documentSymbol", params, bounds));
+			}),
 		stop,
+		elapsedMs: clock.elapsedMs,
 	};
 }
 
-export { type DefinitionLocation, type Position, type Server, type ServerTimeouts, startServer };
+export { type DefinitionLocation, type Position, type Server, startServer };

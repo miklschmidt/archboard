@@ -20,13 +20,12 @@
 //   configured for the checkout, or the configured command is not installed.
 // - for each project where the server cannot answer yet (`unready`), such as a
 //   Swift file with no package or a C file with no compilation database.
-// - for each checkout where a server did not start, did not answer in time or
-//   ended (`failed`).
+// - for each checkout where a server did not start or ended (`failed`).
 //
 // No server starts for a project that is not ready. A server that failed is
 // stopped at once, and no server of its language is asked in that checkout
-// again in the pass, however many projects it holds, so a pass waits for a
-// hung server at most once there.
+// again in the pass, however many projects it holds. A caller can cancel a
+// server that does not answer.
 //
 // `close` stops every server the session started, and returns only once each
 // process has ended. It asks each to exit, unless the pass was cancelled:
@@ -54,9 +53,8 @@ import {
 	type DefinitionLocation,
 	type Position,
 	type Server,
-	type ServerTimeouts,
 } from "@/runtime/language-servers/lib/server";
-import { LANGUAGE_SERVER_TIMEOUTS } from "@/shared/timing/timing";
+import { LANGUAGE_SERVER_STOP_MS } from "@/shared/timing/timing";
 
 /** Where a file uses a name: its checkout, the file in it, the line and the spelling. */
 interface DefinitionQuestion {
@@ -106,6 +104,16 @@ interface LanguageServerSession {
 	readonly unavailable: () => readonly UnavailableServer[];
 	/** Stop every server the session started, and return once each has ended. */
 	readonly close: () => Promise<void>;
+	/** Elapsed active work of each started server, in start order. */
+	readonly timings: () => readonly ServerTiming[];
+}
+
+/** Active server work, with the checkout and project it served. */
+interface ServerTiming {
+	readonly language: Language;
+	readonly root: string;
+	readonly project: string;
+	readonly elapsedMs: number;
 }
 
 /** The server of a language in a checkout, by its root. */
@@ -116,7 +124,7 @@ interface SessionOptions {
 	readonly servers: ServerOf;
 	/** The pass's signal: a cancelled pass asks nothing more and kills every server. */
 	readonly signal: AbortSignal;
-	readonly timeouts?: ServerTimeouts;
+	readonly stopMs?: number;
 }
 
 /** A started server: its language, its checkout, and the key it is kept under. */
@@ -141,11 +149,15 @@ const UNASKED: DefinitionAnswer = { status: "unasked" };
 /** The servers, texts and answers of one pass. */
 class Session {
 	readonly #options: SessionOptions;
-	readonly #timeouts: ServerTimeouts;
+	readonly #stopMs: number;
 	readonly #projects = new Map<string, Promise<Project>>();
 	readonly #starts = new Map<string, Promise<Server | undefined>>();
 	readonly #commands = new Map<string, LanguageServer>();
 	readonly #started = new Set<Server>();
+	readonly #timings = new Map<
+		string,
+		Omit<ServerTiming, "elapsedMs"> & { elapsedMs: () => number }
+	>();
 	readonly #texts = new Map<string, Promise<string | undefined>>();
 	readonly #outlines = new Map<string, Promise<readonly OutlineSymbol[] | undefined>>();
 	readonly #answers = new Map<string, Promise<DefinitionAnswer>>();
@@ -174,7 +186,7 @@ class Session {
 	 */
 	constructor(options: SessionOptions) {
 		this.#options = options;
-		this.#timeouts = options.timeouts ?? LANGUAGE_SERVER_TIMEOUTS;
+		this.#stopMs = options.stopMs ?? LANGUAGE_SERVER_STOP_MS;
 	}
 
 	/**
@@ -215,6 +227,17 @@ class Session {
 	 */
 	unavailable(): readonly UnavailableServer[] {
 		return [...this.#unavailable.values()];
+	}
+
+	/**
+	 * Active work of each started server, in start order.
+	 * @returns Elapsed wall time, excluding idle time between questions.
+	 */
+	timings(): readonly ServerTiming[] {
+		return [...this.#timings.values()].map((timing) => ({
+			...timing,
+			elapsedMs: timing.elapsedMs(),
+		}));
 	}
 
 	/**
@@ -358,6 +381,7 @@ class Session {
 		file: string,
 	): Promise<Project | undefined> {
 		const project = await this.#projectOf(language, root, file);
+		if (!this.#open()) return undefined;
 		if (project.unready === undefined) return project;
 		this.#note({ language, reason: "unready", root, detail: project.unready }, project.root);
 		return undefined;
@@ -395,7 +419,7 @@ class Session {
 		const { project } = LANGUAGES[language];
 		if (project === undefined) return Promise.resolve({ root });
 		const key = `${language}\0${root}\0${path.dirname(file)}`;
-		return this.#once(key, () => project(root, file, this.#once));
+		return this.#once(key, () => project(root, file, this.#once, this.#options.signal));
 	}
 
 	/**
@@ -413,13 +437,28 @@ class Session {
 		argv: readonly [string, ...string[]],
 	): Promise<Server | undefined> {
 		const { signal } = this.#options;
+		const began = performance.now();
+		let elapsedMs = 0;
+		const timing = {
+			language,
+			root,
+			project: path.relative(root, project.root) || ".",
+			/**
+			 * Startup time when no server became ready.
+			 * @returns Elapsed milliseconds.
+			 */
+			elapsedMs: () => elapsedMs,
+		};
+		this.#timings.set(`${language}\0${project.root}`, timing);
 		try {
 			const { root: at, settings } = project;
-			const start = { language, argv, root: at, settings, signal, timeouts: this.#timeouts };
+			const start = { language, argv, root: at, settings, signal, stopMs: this.#stopMs };
 			const server = await startServer(start);
 			this.#started.add(server);
+			timing.elapsedMs = server.elapsedMs;
 			return server;
 		} catch (error) {
+			elapsedMs = performance.now() - began;
 			if (!signal.aborted)
 				this.#note({ language, reason: "failed", root, detail: failure(argv, error) });
 			return undefined;
@@ -490,6 +529,7 @@ export {
 	type LanguageServerSession,
 	type ServerOf,
 	type SessionOptions,
+	type ServerTiming,
 	type UnavailableServer,
 	openLanguageServers,
 };

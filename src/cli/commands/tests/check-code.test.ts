@@ -11,6 +11,7 @@ import {
 	CodeCheckAnswerSchema,
 	type CodeCheckAnswer,
 	type CodeFinding,
+	CheckTimingSchema,
 } from "@/shared/code-check/index";
 import {
 	DEFAULT_SEMANTIC_POLICY,
@@ -37,6 +38,17 @@ const warned: VaultCheck = {
 	],
 };
 const codeCheck: CodeCheckAnswer = {
+	timings: [
+		{ check: "code-facts", elapsedMs: 12.5 },
+		{
+			check: "language-server",
+			language: "typescript",
+			project: ".",
+			repo: "github.com/test/orders",
+			elapsedMs: 42.5,
+		},
+		{ check: "history", elapsedMs: 8.5 },
+	],
 	boards: [{ board: "Orders", variant: "v1", version: 4 }],
 	findings: [],
 	skipped: [{ reason: "no-current-variant", board: "Refunds" }],
@@ -160,11 +172,22 @@ test("check --code asks the plain check, then the code check, and a board behind
 	const { stdout, stderr, exited } = await run(["check", "--code"]);
 	expect(exited).toBe(0);
 	expect(asked).toEqual(["/api/vault/check", "/api/vault/code-check"]);
-	const result = VaultCheckSchema.extend({ codeCheck: CodeCheckAnswerSchema }).parse(
-		JSON.parse(stdout),
-	);
+	const result = VaultCheckSchema.extend({
+		timings: CheckTimingSchema.array(),
+		codeCheck: CodeCheckAnswerSchema,
+	}).parse(JSON.parse(stdout));
 	expect(result.diagnostics).toEqual([]);
 	expect(result.codeCheck).toEqual(codeCheck);
+	expect(result.timings.map((timing) => timing.check)).toEqual([
+		"board",
+		"code-facts",
+		"language-server",
+		"history",
+	]);
+	const timed = stderr.split("\n").slice(0, result.timings.length);
+	expect(timed.map((line) => Number(/: ([\d.]+) ms$/u.exec(line)?.[1]))).toEqual(
+		result.timings.map((timing) => Number(timing.elapsedMs.toFixed(1))),
+	);
 	const lines = stderr.split("\n");
 	expect(lines.some((line) => line.includes("Orders") && line.includes("1"))).toBe(true);
 	expect(lines.some((line) => line.includes("Ledger") && line.includes("src/ledger.ts"))).toBe(
@@ -253,10 +276,17 @@ test("--plan names each plan JSON by its absolute path, and means nothing withou
 test("check without --code never asks the code check", async () => {
 	plain = clean;
 	asked.length = 0;
-	const { stdout, exited } = await run(["check"]);
+	const { stdout, stderr, exited } = await run(["check"]);
 	expect(exited).toBe(0);
 	expect(asked).toEqual(["/api/vault/check"]);
+	const result = VaultCheckSchema.extend({ timings: CheckTimingSchema.array() }).parse(
+		JSON.parse(stdout),
+	);
 	expect(JSON.parse(stdout)).not.toHaveProperty("codeCheck");
+	expect(result.timings).toEqual([{ check: "board", elapsedMs: expect.any(Number) }]);
+	expect(stderr.split("\n")[0]?.endsWith(`${result.timings[0]?.elapsedMs.toFixed(1)} ms`)).toBe(
+		true,
+	);
 });
 
 test("a skip that holds for a whole language says once which language and why, a checkout with no server says what configures one for each language, and one said for each project of a checkout names the checkout once", async () => {

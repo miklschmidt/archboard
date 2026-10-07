@@ -588,13 +588,9 @@ export const SKILL_EVAL_CODEX_TERM_GRACE_MS = 10_000;
 
 // ── History lens (ADR 0045) ─────────────────────────────────────────────
 
-export {
-	HISTORY_LENS_GIT_TIMEOUT_MS,
-	LOCALITY_DEFAULT_PERIOD_MS,
-} from "@/shared/timing/lib/history-lens";
+export { LOCALITY_DEFAULT_PERIOD_MS } from "@/shared/timing/lib/history-lens";
 
 // ── Code check (ADR 0046) ────────────────────────────────────────────────
-export {
-	CODE_CHECK_GIT_TIMEOUT_MS,
-	LANGUAGE_SERVER_TIMEOUTS,
-} from "@/shared/timing/lib/code-check";
+export { LANGUAGE_SERVER_STOP_MS } from "@/shared/timing/lib/code-check";
+
+export { createElapsedClock } from "@/shared/timing/lib/elapsed-clock";

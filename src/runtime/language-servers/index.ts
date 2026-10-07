@@ -30,6 +30,7 @@ export {
 	type LanguageServerSession,
 	type ServerOf,
 	type SessionOptions,
+	type ServerTiming,
 	type UnavailableServer,
 	openLanguageServers,
 } from "@/runtime/language-servers/lib/session";

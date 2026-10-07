@@ -9,7 +9,7 @@ import { openLanguageServers } from "@/runtime/language-servers/index";
 import { running, workspace, type Workspace } from "@/runtime/language-servers/tests/fixture";
 
 /** Short bounds, so a hung stand-in costs the suite little. */
-const SHORT = { startMs: 2000, requestMs: 300, stopMs: 300 } as const;
+const STOP_MS = 300;
 
 /** A file that uses a name through a value and one it defines itself. */
 const FILE = [
@@ -45,7 +45,7 @@ describe("a pass's language servers", () => {
 		const session = openLanguageServers({
 			servers: at.table(),
 			signal: new AbortController().signal,
-			timeouts: SHORT,
+			stopMs: STOP_MS,
 		});
 		const question = { root: at.root, file: "src/load.ts", line: 3 };
 		const [read, helper, again] = await Promise.all([
@@ -106,15 +106,13 @@ describe("a pass's language servers", () => {
 		expect(at.pids()).toEqual([]);
 	});
 
-	test.each([
-		["ends", "exit-on-definition"],
-		["does not answer in time", "hang-definition"],
-	])("say once that a server that %s failed, stop it, and ask it nothing more", async (_, mode) => {
+	test("say once that a server that ends failed, stop it, and ask it nothing more", async () => {
+		const mode = "exit-on-definition";
 		const at = withFile();
 		const session = openLanguageServers({
 			servers: at.table(mode),
 			signal: new AbortController().signal,
-			timeouts: SHORT,
+			stopMs: STOP_MS,
 		});
 		const question = { root: at.root, file: "src/load.ts", line: 3 };
 		expect(await session.definition({ ...question, symbol: "store.read" })).toEqual({
@@ -132,27 +130,63 @@ describe("a pass's language servers", () => {
 		expect(at.methods().filter((method) => method === "textDocument/definition")).toHaveLength(1);
 	});
 
-	test("say once that a server that does not start failed, and leave no process", async () => {
-		const at = withFile();
-		const session = openLanguageServers({
-			servers: at.table("hang-initialize"),
-			signal: new AbortController().signal,
-			timeouts: { ...SHORT, startMs: SHORT.requestMs },
-		});
-		expect(
-			await session.definition({ root: at.root, file: "src/load.ts", line: 3, symbol: "helper" }),
-		).toEqual({ status: "unasked" });
-		await session.close();
-		expect(session.unavailable().map((entry) => entry.reason)).toEqual(["failed"]);
-		expect(running(at.pids()[0] ?? 0)).toBe(false);
-	});
+	test.each(["hang-initialize", "hang-definition"])(
+		"a caller cancels a server waiting in %s and leaves no process or failure",
+		async (mode) => {
+			const at = withFile();
+			const controller = new AbortController();
+			const session = openLanguageServers({
+				servers: at.table(mode),
+				signal: controller.signal,
+				stopMs: STOP_MS,
+			});
+			const asked = session.definition({
+				root: at.root,
+				file: "src/load.ts",
+				line: 3,
+				symbol: "helper",
+			});
+			const method = mode === "hang-initialize" ? "initialize" : "textDocument/definition";
+			while (!at.methods().includes(method)) await Bun.sleep(5);
+			controller.abort();
+			expect(await asked).toEqual({ status: "unasked" });
+			await session.close();
+			expect(session.unavailable()).toEqual([]);
+			expect(running(at.pids()[0] ?? 0)).toBe(false);
+		},
+	);
+
+	test.each(["delayed-initialize", "delayed-definition"])(
+		"analysis waits through %s beyond the cleanup deadline and records server time",
+		async (mode) => {
+			const at = withFile();
+			const session = openLanguageServers({
+				servers: at.table(mode),
+				signal: new AbortController().signal,
+				stopMs: 20,
+			});
+			const answer = await session.definition({
+				root: at.root,
+				file: "src/load.ts",
+				line: 3,
+				symbol: "store.read",
+			});
+			expect(answer.status === "answered" && answer.locations.length).toBe(1);
+			await session.close();
+			expect(session.unavailable()).toEqual([]);
+			expect(session.timings()).toEqual([
+				{ language: "typescript", root: at.root, project: ".", elapsedMs: expect.any(Number) },
+			]);
+			expect(session.timings()[0]?.elapsedMs).toBeGreaterThan(100);
+		},
+	);
 
 	test("keep asking a server that refused one question", async () => {
 		const at = withFile();
 		const session = openLanguageServers({
 			servers: at.table("refuse-definition"),
 			signal: new AbortController().signal,
-			timeouts: SHORT,
+			stopMs: STOP_MS,
 		});
 		const question = { root: at.root, file: "src/load.ts", line: 3 };
 		expect(await session.definition({ ...question, symbol: "store.read" })).toEqual({
@@ -171,7 +205,7 @@ describe("a pass's language servers", () => {
 		const session = openLanguageServers({
 			servers: at.table("deaf"),
 			signal: new AbortController().signal,
-			timeouts: SHORT,
+			stopMs: STOP_MS,
 		});
 		await session.definition({ root: at.root, file: "src/load.ts", line: 3, symbol: "helper" });
 		expect(running(at.pids()[0] ?? 0)).toBe(true);
@@ -182,9 +216,9 @@ describe("a pass's language servers", () => {
 	test("on a cancelled pass, stop waiting, say nothing failed, and kill every server at once", async () => {
 		const at = withFile();
 		const controller = new AbortController();
-		const timeouts = { startMs: 2000, requestMs: 10_000, stopMs: 10_000 };
+		const stopMs = 10_000;
 		const servers = at.table("hang-definition,deaf");
-		const session = openLanguageServers({ servers, signal: controller.signal, timeouts });
+		const session = openLanguageServers({ servers, signal: controller.signal, stopMs });
 		const asked = session.definition({
 			root: at.root,
 			file: "src/load.ts",
@@ -196,7 +230,7 @@ describe("a pass's language servers", () => {
 		controller.abort();
 		expect(await asked).toEqual({ status: "unasked" });
 		await session.close();
-		expect(performance.now() - started).toBeLessThan(timeouts.stopMs);
+		expect(performance.now() - started).toBeLessThan(stopMs);
 		expect(session.unavailable()).toEqual([]);
 		expect(running(at.pids()[0] ?? 0)).toBe(false);
 	});
@@ -207,7 +241,7 @@ describe("a pass's language servers", () => {
 		const session = openLanguageServers({
 			servers: current.table("normal", "python"),
 			signal: new AbortController().signal,
-			timeouts: SHORT,
+			stopMs: STOP_MS,
 		});
 		const asked = session.definition({
 			root: current.root,

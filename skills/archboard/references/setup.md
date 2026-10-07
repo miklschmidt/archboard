@@ -94,8 +94,7 @@ archboard repo language-server swift sourcekit-lsp
 
 For basedpyright, use `basedpyright-langserver` in place of
 `pyright-langserver`. Do not pass `--background-index=false` to clangd. The check
-waits for the index of clangd, so it then says `language-server-failed` after 30
-seconds.
+waits for the index of clangd until it finishes.
 
 `--remove` removes the server of a language. `--repo <identity>` names another
 registered checkout. Without it, the command uses the registered checkout that
@@ -118,8 +117,10 @@ If the answer says `language-server-unready`, the project lacks what the server
 reads. For C, C++ and Objective-C, that is a `compile_commands.json`. For Swift, it is a `Package.swift` that holds the file. For C#, it is a solution or project file. The detail
 names the project.
 
-If the answer says `language-server-failed`, the server did not start, did not
-answer within 30 seconds, or stopped. The check keeps no output of the server. Run
+The check has no time limit. Cancel the command to stop waiting. The output
+starts with the time for each check, and JSON carries those times in `timings`.
+
+If the answer says `language-server-failed`, the server did not start or stopped. The check keeps no output of the server. Run
 the command in the repository to read its output.
 
 In every case, the uses stay candidates. The installation guide has the details

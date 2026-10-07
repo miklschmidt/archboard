@@ -92,15 +92,19 @@ async function runCodeCheck(
 	if (!read.ok) return read;
 	const plans = await readPlans(request.plans, request.signal);
 	if (!plans.ok) return plans;
-	const [code, behind] = await Promise.all([
+	const historyStarted = performance.now();
+	const [code, history] = await Promise.all([
 		checkCode(read.boards, request.signal, plans.plans),
-		behindReading.read(
-			vault,
-			read.boards.map(({ board, file }) => ({ board, file })),
-			request.signal,
-		),
+		behindReading
+			.read(
+				vault,
+				read.boards.map(({ board, file }) => ({ board, file })),
+				request.signal,
+			)
+			.then((behind) => ({ behind, elapsedMs: performance.now() - historyStarted })),
 	]);
 	return CodeCheckAnswerSchema.parse({
+		timings: [...code.timings, { check: "history", elapsedMs: history.elapsedMs }],
 		boards: read.boards.map(({ board, variant }) => ({
 			board: board.name,
 			variant: variant.id,
@@ -108,7 +112,7 @@ async function runCodeCheck(
 		})),
 		findings: code.findings,
 		skipped: [...read.skipped, ...code.skipped],
-		behind,
+		behind: history.behind,
 	});
 }
 

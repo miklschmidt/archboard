@@ -10,17 +10,14 @@
 // answers any request from this machine.
 //
 // The command reads the index and the working tree and starts no other
-// program. The caller's signal ends it, a request that hangs up or a stop, and
-// a timeout from `timing.ts` ends a Git that hangs.
-
-import { CODE_CHECK_GIT_TIMEOUT_MS } from "@/shared/timing/timing";
+// program. The caller's signal ends it when a request hangs up or a server stops.
 
 /**
  * The files of one checkout that Git does not ignore, relative to its root.
  * @param root The checkout's root.
  * @param signal Cancels the listing.
  * @returns Each path, with `/` between names.
- * @throws {Error} When Git cannot list the checkout or runs past its timeout.
+ * @throws {Error} When Git cannot list the checkout or ends on a signal.
  */
 async function listReadableFiles(root: string, signal: AbortSignal): Promise<Set<string>> {
 	signal.throwIfAborted();
@@ -32,7 +29,6 @@ async function listReadableFiles(root: string, signal: AbortSignal): Promise<Set
 		// A reading must not take the index lock that a refresh takes, or it
 		// would make somebody's commit in that checkout fail.
 		env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
-		timeout: CODE_CHECK_GIT_TIMEOUT_MS,
 		signal,
 	});
 	const [listed, stderr, exitCode] = await Promise.all([
@@ -42,9 +38,7 @@ async function listReadableFiles(root: string, signal: AbortSignal): Promise<Set
 	]);
 	signal.throwIfAborted();
 	if (child.signalCode !== null) {
-		throw new Error(
-			`git ls-files in ${root} did not finish within ${CODE_CHECK_GIT_TIMEOUT_MS} ms.`,
-		);
+		throw new Error(`git ls-files in ${root} ended by ${child.signalCode}.`);
 	}
 	if (exitCode !== 0) throw new Error(`git ls-files in ${root} failed: ${stderr.trim()}`);
 	return new Set(listed.split("\0").filter((path) => path !== ""));

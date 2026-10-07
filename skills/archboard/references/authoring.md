@@ -510,11 +510,12 @@ server then names the code that the call reaches.
 
 If a checkout has no configured server for a language, the answer says
 `language-server-missing` once for the checkout and the language, and the
-candidates stay. A server that did not start, did not answer or stopped is
+candidates stay. A server that did not start or stopped is
 `language-server-failed`. A project that the server cannot answer about yet is
 `language-server-unready` once, and the candidates stay. These are the cases:
 
-- A Swift package with no index. The check never builds.
+- A Swift file with no `Package.swift` that holds it. SourceKit-LSP builds a
+  package itself on the first run and owns its background index.
 - A C# checkout with no `.sln`, `.slnx` or `.csproj` file.
 - A C, C++ or Objective-C file with no `compile_commands.json`. The check never
   generates it.
