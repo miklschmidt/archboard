@@ -29,7 +29,7 @@
 				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts"
 			],
-			"hash": "4ed445122300730cf9fd72313d14a090c90c55b654703e1948c07a05190e5337"
+			"hash": "261d5bd4670712e40c9e07fdf97d1a4bed39cdd6a2cba897819fedf2b63c8c4f"
 		},
 		{
 			"name": "hero",
@@ -165,7 +165,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "688e8097ab4f157a3eaa593eba29528599d760a1c37becf91ce01a59b85c55c8"
+			"hash": "61784cf4c728f4511bc9de9a033c150f0aa0a98dce71fa5d7ec0a048cd76b261"
 		},
 		{
 			"name": "newcomer",
@@ -276,7 +276,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "688e8097ab4f157a3eaa593eba29528599d760a1c37becf91ce01a59b85c55c8"
+			"hash": "61784cf4c728f4511bc9de9a033c150f0aa0a98dce71fa5d7ec0a048cd76b261"
 		},
 		{
 			"name": "architecture",
@@ -299,7 +299,7 @@
 				"src/ui/shell/assets/fonts",
 				"scripts/readme-assets/svg.ts"
 			],
-			"hash": "b4bdd14ac255735385c1b368cf78b581fcb66f6bbe7d5ac78d1aadb9187504bb"
+			"hash": "13ea816343ea6e3d03ca1b5ef2301249b58efe078d03faef5565bf37f3c5e704"
 		}
 	]
 }
