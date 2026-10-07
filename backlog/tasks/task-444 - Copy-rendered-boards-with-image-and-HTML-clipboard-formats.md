@@ -1,11 +1,11 @@
 ---
 id: TASK-444
 title: Copy rendered boards with image and HTML clipboard formats
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 18:22'
-updated_date: '2026-10-07 19:16'
+updated_date: '2026-10-07 19:19'
 labels: []
 dependencies: []
 references:
@@ -21,11 +21,11 @@ Chrome Copy image offers a PNG and HTML with an image source and description tog
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A clipboard destination on semantic rasterize copies PNG and HTML together on Linux and macOS without requiring a clipboard manager. It honors the selected board, variant, view, theme, scale and region.
-- [ ] #2 The HTML carries a self-contained image source and an escaped, useful description. It does not depend on a temporary file or the Archboard server remaining available.
-- [ ] #3 The CLI reports success only after the native clipboard accepts both formats. The image remains available after the CLI exits. Unavailable desktops and failed writes produce useful errors without a success receipt.
-- [ ] #4 Clipboard output refuses combination with an explicit output file. Existing raw stdout and explicit file output keep their behavior.
-- [ ] #5 Focused tests cover the clipboard transport and command contract. Help and consumer guidance describe native Linux and macOS support and the image-plus-description command.
+- [x] #1 A clipboard destination on semantic rasterize copies PNG and HTML together on Linux and macOS without requiring a clipboard manager. It honors the selected board, variant, view, theme, scale and region.
+- [x] #2 The HTML carries a self-contained image source and an escaped, useful description. It does not depend on a temporary file or the Archboard server remaining available.
+- [x] #3 The CLI reports success only after the native clipboard accepts both formats. The image remains available after the CLI exits. Unavailable desktops and failed writes produce useful errors without a success receipt.
+- [x] #4 Clipboard output refuses combination with an explicit output file. Existing raw stdout and explicit file output keep their behavior.
+- [x] #5 Focused tests cover the clipboard transport and command contract. Help and consumer guidance describe native Linux and macOS support and the image-plus-description command.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,4 +55,12 @@ Proposal code checks introduce no findings against the current-board baseline. F
 After adoption, the vault check passes with no diagnostics. The code check keeps only baseline findings. The behind report for 650a983e2 names Board rasterizer (Receipt and its container) and Skill evaluation (Evaluation inputs). Receipt changed only explanatory comments for comparison-off output; its schema and module relationships are unchanged. Evaluation inputs changed only coverage rows for the new CLI behaviors; the evaluator and its dependencies are unchanged. Both boards remain accurate.
 
 The user identified the old wl-copy example in semantic render help as misleading. Both render and rasterize help now show the native rasterize --clipboard command as the clipboard example. Raw pipe behavior remains available and documented for explicit single-format workflows.
+
+Final gate: bun run check passed all normal lanes. The final help-only correction then passed the CLI artifact and introspection owners (6 tests, 53 assertions). Architecture proposals are adopted and claims released. Regenerated and visually inspected the README architecture diagram in light and dark themes; updated its alt text. Other README assets were already stale at e9a766843 and their pictured behavior did not change. Consumer skill source and generated installation guidance are current; existing installed copies in other repositories refresh on their next install-skill run.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added semantic rasterize --clipboard with native PNG and self-contained HTML output on Linux and macOS. Linux helpers keep the copy alive after command exit and retire on replacement. No clipboard manager is required. Full gate, process-contract tests and real Wayland QA passed with CopyQ stopped. Both export help pages point to native clipboard copying. Adopted the architecture proposals and refreshed the README system diagram.
+<!-- SECTION:FINAL_SUMMARY:END -->

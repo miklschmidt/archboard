@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 36,
+	"version": 37,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-07T19:10:14.907Z",
+	"updatedAt": "2026-10-07T19:14:05.099Z",
 	"views": [],
 	"variants": [
 		{
@@ -1869,7 +1869,7 @@
 		{
 			"id": "hr3x97Xp",
 			"name": "TASK-433",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "38dBY7nS",
 			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
@@ -2341,7 +2341,7 @@
 		{
 			"id": "hSjwvPjz",
 			"name": "TASK-444",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "hr3x97Xp",
 			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
@@ -2837,7 +2837,7 @@
 			}
 		}
 	],
-	"current": "hr3x97Xp",
+	"current": "hSjwvPjz",
 	"adoptions": [
 		{
 			"variant": "RSCDIXvS",
@@ -2868,6 +2868,12 @@
 			"from": "38dBY7nS",
 			"at": "2026-10-06T23:43:21.264Z",
 			"reason": "The registration of a checkout also holds its configured language servers"
+		},
+		{
+			"variant": "hSjwvPjz",
+			"from": "hr3x97Xp",
+			"at": "2026-10-07T19:14:05.099Z",
+			"reason": "PNG and HTML clipboard output uses a native local helper on Linux and macOS"
 		}
 	]
 }
