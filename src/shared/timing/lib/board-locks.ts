@@ -7,11 +7,14 @@
 
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
 //
-// `src/runtime/engine/board-lock.ts` is the only thing that reads these. It was built
+// `src/runtime/engine/board-lock.ts` reads these. It was built
 // against them rather than around them, and the two it added since — the
 // poll and the steal guard — are here for the reason the first three were: a
 // number that governs the lock and lives next to the lock is a number the next
-// person tunes without seeing what it pulls against.
+// person tunes without seeing what it pulls against. The lock of the checkout
+// registry (`repo-registry.ts`) reads two of them, the lease and the poll,
+// because it is a lock file of the same kind: a crash costs the registry one
+// lease, as it costs a board.
 
 /**
  * How long a lock is held without renewal before it lapses.

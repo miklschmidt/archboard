@@ -13,6 +13,12 @@
 //   declared   somebody ran `repo add <dir>` and said "this is that repo"
 //   observed   archboard resolved a binding through this checkout and kept it
 //
+// An entry also holds the language servers that an agent configured for that
+// checkout (`repo language-server`, ADR 0046). They belong to the checkout, so
+// they stay while the same root registers again, go when the identity registers
+// at another root, and go with `repo forget`. Every change reads the file and
+// writes it whole, so `repo` commands that run together take turns on a lock.
+//
 // Nothing is discovered by scanning the filesystem. A registry that guesses is
 // the ambient working directory again with extra steps: the whole point is that
 // every entry traces back to something a person named or something archboard
@@ -24,6 +30,7 @@ import { writeFileAtomic } from "@/runtime/engine/atomic-write";
 import { inspectCheckout } from "@/runtime/engine/git";
 import { stateDir } from "@/runtime/engine/state-dir";
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
+import { LOCK_LEASE_MS, LOCK_POLL_MS } from "@/shared/timing/timing";
 import {
 	LanguageServersSchema,
 	type ConfigurableLanguage,
@@ -215,18 +222,89 @@ function write(entries: RegisteredRepo[]): boolean {
 }
 
 /**
+ * Whether a lock directory has stood for longer than its lease.
+ * @param lock The lock directory.
+ * @returns True when its holder is gone; false while it stands, or when it is already gone.
+ */
+function isAbandoned(lock: string): boolean {
+	try {
+		return Date.now() - fs.statSync(lock).mtimeMs > LOCK_LEASE_MS;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Make the lock directory.
+ * @param lock The lock directory.
+ * @returns True when this process made it, false when another process holds it.
+ * @throws {unknown} Whatever else stopped the directory from being made.
+ */
+function makeLock(lock: string): boolean {
+	try {
+		fs.mkdirSync(lock);
+		return true;
+	} catch (error) {
+		if (isRecord(error) && stringAt(error, "code") === "EEXIST") return false;
+		throw error;
+	}
+}
+
+/**
+ * Take the lock, waiting while another process holds it. The lock is a lease
+ * like a board lock: it lapses after `LOCK_LEASE_MS`, so a process that died
+ * while it held the lock costs the next change one lease. A waiter asks again
+ * every `LOCK_POLL_MS`.
+ * @param lock The lock directory.
+ * @returns True when this process holds the lock. False when the directory
+ * cannot be made at all, so the write goes without a lock, as quietly as it
+ * fails.
+ */
+function takeLock(lock: string): boolean {
+	try {
+		fs.mkdirSync(path.dirname(lock), { recursive: true });
+		while (!makeLock(lock)) {
+			if (isAbandoned(lock)) fs.rmSync(lock, { recursive: true, force: true });
+			else Bun.sleepSync(LOCK_POLL_MS);
+		}
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Run a change of the registry alone. A change reads the file and writes it
+ * whole, so two that run together lose one of them: `repo language-server`
+ * for two languages, called at the same time, would keep one.
+ * @param change Reads the registry and writes it.
+ * @returns What the change returned.
+ */
+function locked<T>(change: () => T): T {
+	const lock = `${registryPath()}.lock`;
+	const held = takeLock(lock);
+	try {
+		return change();
+	} finally {
+		if (held) fs.rmSync(lock, { recursive: true, force: true });
+	}
+}
+
+/**
  * Record one entry, replacing whatever the registry held for that identity.
  * The servers an agent configured stay while the checkout stays: a checkout
  * at another root is another place, where nobody configured a server.
  * @param entry The entry to record.
  */
-function upsert(entry: RegisteredRepo): void {
-	const before = readRegistry();
-	const previous = before.find((existing) => existing.repo === entry.repo);
-	const servers = entry.servers ?? (previous?.root === entry.root ? previous.servers : undefined);
-	const entries = before.filter((existing) => existing.repo !== entry.repo);
-	entries.push(servers === undefined ? entry : { ...entry, servers });
-	write(entries.toSorted(byRepo));
+function upsert(entry: Omit<RegisteredRepo, "servers">): void {
+	locked(() => {
+		const before = readRegistry();
+		const previous = before.find((existing) => existing.repo === entry.repo);
+		const kept = previous?.root === entry.root ? previous.servers : undefined;
+		const entries = before.filter((existing) => existing.repo !== entry.repo);
+		entries.push(kept === undefined ? entry : { ...entry, servers: kept });
+		write(entries.toSorted(byRepo));
+	});
 }
 
 /**
@@ -310,12 +388,14 @@ function rememberRepo(repo: string, root: string): void {
  * @returns False when there was nothing to drop, or the write failed.
  */
 function forgetRepo(repo: string): boolean {
-	const entries = readRegistry();
-	const kept = entries.filter((entry) => entry.repo !== repo);
-	if (kept.length === entries.length) {
-		return false;
-	}
-	return write(kept);
+	return locked(() => {
+		const entries = readRegistry();
+		const kept = entries.filter((entry) => entry.repo !== repo);
+		if (kept.length === entries.length) {
+			return false;
+		}
+		return write(kept);
+	});
 }
 
 /**
@@ -324,22 +404,30 @@ function forgetRepo(repo: string): boolean {
  * @param language The language.
  * @param server Its command and arguments, or undefined to remove it.
  * @returns The entry as it now stands, or undefined when the identity is not registered.
+ * @throws {RepoRegistryError} When the registry cannot be written: the caller
+ * asked for the change, so it hears that nothing changed.
  */
 function setLanguageServer(
 	repo: string,
 	language: ConfigurableLanguage,
 	server: ConfiguredServer | undefined,
 ): RegisteredRepo | undefined {
-	const entries = readRegistry();
-	const entry = entries.find((candidate) => candidate.repo === repo);
-	if (entry === undefined) return undefined;
-	const { [language]: _replaced, ...others } = entry.servers ?? {};
-	const servers: LanguageServers =
-		server === undefined ? others : { ...others, [language]: server };
-	const { servers: _before, ...bare } = entry;
-	const updated = Object.keys(servers).length === 0 ? bare : { ...bare, servers };
-	write(entries.map((candidate) => (candidate.repo === repo ? updated : candidate)));
-	return updated;
+	return locked(() => {
+		const entries = readRegistry();
+		const entry = entries.find((candidate) => candidate.repo === repo);
+		if (entry === undefined) return undefined;
+		const { [language]: _replaced, ...others } = entry.servers ?? {};
+		const servers: LanguageServers =
+			server === undefined ? others : { ...others, [language]: server };
+		const { servers: _before, ...bare } = entry;
+		const updated = Object.keys(servers).length === 0 ? bare : { ...bare, servers };
+		if (!write(entries.map((candidate) => (candidate.repo === repo ? updated : candidate)))) {
+			throw new RepoRegistryError(
+				`Could not write ${registryPath()}, so nothing changed. Check that you can write to it.`,
+			);
+		}
+		return updated;
+	});
 }
 
 /**
