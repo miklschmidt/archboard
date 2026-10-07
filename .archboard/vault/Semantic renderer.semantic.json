@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 32,
+	"version": 33,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-07T02:12:37.377Z",
+	"updatedAt": "2026-10-07T02:15:08.127Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -2690,7 +2690,7 @@
 		{
 			"id": "bdnsrljK",
 			"name": "TASK-367.27",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "NEGuU5bN",
 			"summary": "Module level: the renderer core, the entry points its two hosts reach, and how meaning becomes SVG and interaction geometry behind them. Follow linked subjects for related levels.",
 			"content": {
@@ -5173,7 +5173,7 @@
 		{
 			"id": "f6FXZokj",
 			"name": "Merge surface-depth/slabs",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "bdnsrljK",
 			"summary": "The renderer core, host interface and architecture and sequence slab drawing",
 			"content": {
@@ -6380,7 +6380,7 @@
 			}
 		}
 	],
-	"current": "bdnsrljK",
+	"current": "f6FXZokj",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
@@ -6411,6 +6411,12 @@
 			"from": "mKcge41F",
 			"at": "2026-10-07T01:40:37.042Z",
 			"reason": "TASK-423 and TASK-428, with TASK-424/430/431/435 refinements: neutral wells, separate slabs and ports, shared near/far content and shadows under lines and cards."
+		},
+		{
+			"variant": "f6FXZokj",
+			"from": "bdnsrljK",
+			"at": "2026-10-07T02:15:08.127Z",
+			"reason": "Combines the preserved main renderer core and host ownership with the merged slab, tray, port and near/far drawing helpers and direct call evidence"
 		}
 	],
 	"shelvings": [

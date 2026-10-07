@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 88,
+	"version": 89,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-07T02:13:24.902Z",
+	"updatedAt": "2026-10-07T02:15:07.926Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -23608,7 +23608,7 @@
 		{
 			"id": "PfpUUQCa",
 			"name": "TASK-436.10 after TASK-436.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Ix6kJFoQ",
 			"summary": "The viewer, its host entry points and presentation controls",
 			"content": {
@@ -28223,7 +28223,7 @@
 		{
 			"id": "KCF7QFb0",
 			"name": "Merge surface-depth/slabs",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "PfpUUQCa",
 			"summary": "The viewer, camera presentation store, host entry points and warning navigation",
 			"content": {
@@ -30431,7 +30431,7 @@
 			}
 		}
 	],
-	"current": "PfpUUQCa",
+	"current": "KCF7QFb0",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
@@ -30552,6 +30552,12 @@
 			"from": "QXq6KV6o",
 			"at": "2026-10-07T01:40:36.829Z",
 			"reason": "TASK-405, TASK-406 and TASK-428: pinches apply immediately, the controller owns an external store, and the far reading waits for camera rest and flight takeover."
+		},
+		{
+			"variant": "KCF7QFb0",
+			"from": "PfpUUQCa",
+			"at": "2026-10-07T02:15:07.926Z",
+			"reason": "Combines the preserved main viewer ownership and code-warning navigation with the merged external camera store, immediate gestures and held near/far flight reading"
 		}
 	],
 	"shelvings": [
