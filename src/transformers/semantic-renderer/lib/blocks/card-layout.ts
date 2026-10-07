@@ -8,6 +8,7 @@ import type { Graphviz } from "@/transformers/semantic-renderer/lib/blocks/graph
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	emptyGraph,
+	heldEdges,
 	holdSources,
 	placedLabel,
 	type VendorNode,
@@ -182,15 +183,22 @@ class CardLayout {
 				...header.flatMap((tail) =>
 					tops.map((head) => ({ tail, head, attributes: { style: "invis" } })),
 				),
-				...this.heldEdges("top"),
+				...heldEdges(this.tree, block, "top"),
 			],
 		};
 		const last: Subgraph = {
 			graphAttributes: { rank: "sink" },
 			nodes: bottoms.map((name) => this.nodeOf(name)),
-			edges: this.heldEdges("bottom"),
+			edges: heldEdges(this.tree, block, "bottom"),
 		};
 		graph.subgraphs.push(...[first, last].filter(({ nodes }) => nodes!.length > 0));
+		// Ranked across clusters, an outermost title held by nothing shared the
+		// header's rank, and a region's caption stood over its containers' titles.
+		for (const { id, parent } of block.clusters.values())
+			if (parent === undefined)
+				graph.edges.push(
+					...header.map((tail) => ({ tail, head: titleOf(id), attributes: { style: "invis" } })),
+				);
 		const entering = [...block.lines.values()].filter(
 			(line) => entersBy(this.block, line) !== undefined,
 		);
@@ -198,21 +206,6 @@ class CardLayout {
 		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
 		for (const line of this.boardOrder()) this.connect(line);
 		this.arrange();
-	}
-
-	/**
-	 * The invisible edges that hold the ports on one face in the order its
-	 * parent settles them in (`orders.ts`).
-	 * @param face The face.
-	 * @returns The edges, each port to the next.
-	 */
-	heldEdges(face: "top" | "bottom"): Edge[] {
-		const held = (this.tree.orders.get(`${this.block.id}|${face}`) ?? []).filter(
-			(port) => this.block.ports.get(port) === face,
-		);
-		return held
-			.slice(1)
-			.map((head, index) => ({ tail: held[index]!, head, attributes: { style: "invis" } }));
 	}
 
 	/**

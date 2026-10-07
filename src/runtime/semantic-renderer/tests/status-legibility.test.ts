@@ -22,7 +22,13 @@ import {
 	distanceToRoute,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { colourDistance, hueOf, seenIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import {
+	APCA,
+	hueOf,
+	lightnessContrast,
+	luminance,
+	seenIn,
+} from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { arrangementOf } from "@/runtime/semantic-renderer/tests/drawn-atlas";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
@@ -194,39 +200,6 @@ function pulseInks(svg: string, id: string): string[] {
 	);
 }
 
-/**
- * One channel of a colour, as the contrast formula wants it.
- * @param channel The channel, 0 to 255.
- * @returns Its linear value.
- */
-function linear(channel: number): number {
-	const part = channel / 255;
-	return part <= 0.039_28 ? part / 12.92 : ((part + 0.055) / 1.055) ** 2.4;
-}
-
-/**
- * How light one drawn colour is.
- * @param colour A six-digit hex colour.
- * @returns Its relative luminance.
- */
-function luminance(colour: string): number {
-	const channels = [1, 3, 5].map((at) => Number.parseInt(colour.slice(at, at + 2), 16));
-	return (
-		0.2126 * linear(channels[0]!) + 0.7152 * linear(channels[1]!) + 0.0722 * linear(channels[2]!)
-	);
-}
-
-/**
- * The contrast between two drawn colours, as everybody measures it.
- * @param one A six-digit hex colour.
- * @param other Another.
- * @returns The ratio, at least 1.
- */
-function contrast(one: string, other: string): number {
-	const [lighter, darker] = [luminance(one), luminance(other)].toSorted((a, b) => b - a);
-	return (lighter! + 0.05) / (darker! + 0.05);
-}
-
 /** How far from a badge's centre a word has to stay, which is its own radius. */
 const BADGE_CLEARANCE = 5.4;
 
@@ -294,24 +267,24 @@ function badges(rendered: RenderedDiagram): Map<string, At> {
 }
 
 describe("a relationship is drawn in one colour from end to end", () => {
-	test("the line and its arrowhead agree, and its pulses carry the same colour at full strength", async () => {
-		const drawn = await architecture();
-		// The light page is near white, so a weaker line sits nearer white.
-		const page = "#ffffff";
-		for (const id of ["moved", "new"]) {
-			const drawnLine = line(subject(drawn, "edge", id));
-			// Every channel of the same relationship, asked separately.
-			expect(headInk(drawn.svg, drawnLine.head)).toBe(drawnLine.ink);
-			const pulses = pulseInks(drawn.svg, id);
-			expect(pulses.length).toBeGreaterThan(0);
-			// The same colour, never a grey over it: every stop of a pulse has the
-			// line's hue, and its head stands farther from the page than the line.
-			for (const pulse of pulses) {
-				expect(Math.abs(hueOf(pulse) - hueOf(drawnLine.ink))).toBeLessThan(6);
+	test("the line and its arrowhead agree, and its pulses are its colour with white mixed in", async () => {
+		for (const theme of ["light", "dark"] as const) {
+			const drawn = await architecture([], theme);
+			for (const id of ["moved", "new"]) {
+				const drawnLine = line(subject(drawn, "edge", id));
+				// Every channel of the same relationship, asked separately.
+				expect(headInk(drawn.svg, drawnLine.head)).toBe(drawnLine.ink);
+				const pulses = pulseInks(drawn.svg, id);
+				expect(pulses.length).toBeGreaterThan(0);
+				// The same colour, never a grey over it: every stop of a pulse has the
+				// line's hue, and it is lighter than the line it rides, on both grounds.
+				for (const pulse of pulses) {
+					expect(Math.abs(hueOf(pulse) - hueOf(drawnLine.ink))).toBeLessThan(6);
+					expect(luminance(pulse)).toBeGreaterThan(luminance(drawnLine.ink));
+				}
 			}
-			const strongest = Math.max(...pulses.map((pulse) => colourDistance(pulse, page)));
-			expect(strongest).toBeGreaterThan(colourDistance(drawnLine.ink, page));
 		}
+		const drawn = await architecture();
 		// A plain board uses another colour, and two standings do not share one;
 		// otherwise three agreeing channels would say nothing.
 		const plain = seenIn(await renderArchitecture({ content: CONTENT }));
@@ -481,14 +454,19 @@ describe("what nobody has decided is said in its own corner", () => {
 			const ink = /<path d="M0,-5.2[^"]*" fill="(#[0-9a-f]{6})"/.exec(card.markup)![1]!;
 			// An eleven-unit badge is a small thing to notice, so it has to carry
 			// against the surface it lands on and its own mark has to carry against
-			// it. The numbers are the ordinary ones: 3:1 for a shape somebody has to
-			// see, 4.5:1 for a mark somebody has to read.
-			const ground = /<rect [^>]*rx="6" fill="(#[0-9a-f]{6})"/.exec(card.markup)![1]!;
+			// it. The levels are APCA's: the floor for a shape somebody has to see,
+			// and the level of a fine detail for the mark somebody has to make out.
+			// The card's top face, after its edge and the highlight along its top.
+			const face = /class="ab-halo"[^>]*>\s*(?:<rect[^>]*>\s*){2}<rect [^>]*fill="(#[0-9a-f]{6})"/u;
+			const ground = face.exec(card.markup)![1]!;
 			const mark = /<path d="M0,-2.4[^"]*"[^>]*stroke="(#[0-9a-f]{6})"/.exec(card.markup)![1]!;
-			expect(contrast(ink, ground), `badge on a card, ${theme}`).toBeGreaterThanOrEqual(3);
-			expect(contrast(ink, mark), `the mark inside the badge, ${theme}`).toBeGreaterThanOrEqual(
-				4.5,
+			expect(lightnessContrast(ink, ground), `badge on a card, ${theme}`).toBeGreaterThanOrEqual(
+				APCA.mark,
 			);
+			expect(
+				lightnessContrast(mark, ink),
+				`the mark inside the badge, ${theme}`,
+			).toBeGreaterThanOrEqual(APCA.detail);
 			// And it is not the ink of any standing, or it would be a fourth way of
 			// saying the same thing as the pin beside it.
 			expect(ink).not.toBe(line(subject(drawn, "edge", "moved")).ink);

@@ -391,21 +391,6 @@ function straightness(runs: readonly Run[], run: Run, coordinate: number): numbe
 }
 
 /**
- * Identify one contact independently of which route carries its bridge.
- * @param a One piece.
- * @param b The other.
- * @returns A stable pair of segment identities.
- */
-function crossingKey(
-	a: Pick<Run, "edgeIndex" | "segmentIndex">,
-	b: Pick<Run, "edgeIndex" | "segmentIndex">,
-): string {
-	return [`${a.edgeIndex}:${a.segmentIndex}`, `${b.edgeIndex}:${b.segmentIndex}`]
-		.toSorted()
-		.join("/");
-}
-
-/**
  * Overlapping stretches along one line, joined.
  * @param stretches Stretches sorted by where they start.
  * @returns The same ground, one stretch per unbroken piece.
@@ -509,19 +494,14 @@ function sharedInk(edges: readonly DrawingEdge[]): ReadonlyMap<number, readonly 
 }
 
 export {
-	across,
 	along,
-	crossingKey,
 	drawnCrossings,
-	extentOf,
-	fixedOf,
 	joinNear,
 	lineRuns,
 	onLine,
 	onRun,
 	overlaps,
 	pieceOf,
-	SHARED_INK,
 	sharedInk,
 	straightness,
 	straightRuns,

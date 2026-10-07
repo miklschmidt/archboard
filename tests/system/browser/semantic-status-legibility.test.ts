@@ -35,7 +35,7 @@ const INSPECTOR = "[data-slot='semantic-inspector']";
  * about. `iconInk` waits for the card instead.
  * @param browser The page.
  * @param name What the card says.
- * @returns The tile's stroke as the browser resolves it, spelt as opaque sRGB, or null.
+ * @returns The tile's front edge as the browser resolves it, spelt as opaque sRGB, or null.
  */
 const drawnIconInk = (browser: AgentBrowserSession, name: string): Promise<string | null> =>
 	browser.eval<string | null>(
@@ -44,8 +44,9 @@ const drawnIconInk = (browser: AgentBrowserSession, name: string): Promise<strin
 			` const card = [...document.querySelectorAll("${SURFACE} [data-semantic-kind='node']")]` +
 			`  .find((group) => group.textContent.includes(${JSON.stringify(name)}));` +
 			` if (card === undefined) { return null; }` +
+			// The tile is a small block: its first rect is its body, in the tone of its edge.
 			` const tile = [...card.querySelectorAll("rect")].find((rect) => rect.getAttribute("rx") === "5");` +
-			` return tile === undefined ? null : opaque(getComputedStyle(tile).stroke); })()`,
+			` return tile === undefined ? null : opaque(getComputedStyle(tile).fill); })()`,
 	);
 
 /**
@@ -359,7 +360,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const added = await edgeInks(browser, SURFACE, ids["added"] ?? "");
 	expect(added.head).toBe(added.line);
 	expect(sameHue(added.line, added.band)).toBe(true);
-	// The pulses carry the relationship's colour, the band's hue; the line is drawn weaker.
+	// The pulses carry the relationship's colour with white mixed in, the band's hue.
 	expect(added.streams.length).toBe(1);
 	for (const stream of added.streams) {
 		for (const part of stream.split("|")) {

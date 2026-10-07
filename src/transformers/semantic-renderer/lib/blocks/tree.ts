@@ -1,7 +1,6 @@
-// The block engine's hierarchy. The board, every container and every group
-// region round more than one node (`lone.ts`) is a block, laid out on its
-// own; a block's items are the cards and the blocks directly inside it, so a
-// block is as compact as what it holds and its parent places it as one box.
+// The board, every container and every group region round more than one node
+// (`lone.ts`) is a block, laid out on its own from its cards and child blocks.
+// Its parent places it as one box, as compact as what it holds.
 // A block of blocks gathers the cards it holds outside every block into a
 // cluster, so each block holds cards alone or blocks alone.
 //
@@ -26,6 +25,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { exitKey } from "@/transformers/semantic-renderer/lib/blocks/sides";
 import type { Card } from "@/transformers/semantic-renderer/lib/blocks/card";
+import { tabOf } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import {
 	captionsOf,
 	cardAs,
@@ -83,7 +83,10 @@ interface Block {
 	parent: Block | undefined;
 	/** The group, for a region. */
 	readonly group: string | undefined;
-	/** The title row a frame, or the caption a region, keeps at its top-left. */
+	/**
+	 * The title row a frame keeps at its top-left, or a region's caption tab:
+	 * the caption and the inset it stands down from the region's top.
+	 */
 	readonly header: Size | undefined;
 	/** Its cards and the blocks directly inside it, in the board's order. */
 	readonly items: string[];
@@ -307,10 +310,7 @@ class BlockTree {
 		const id = `region:${block.id}:${group}`;
 		return (
 			this.blocks.get(id) ??
-			this.block(id, "region", block, {
-				group,
-				header: this.captions.get(group) ?? { width: 1, height: 1 },
-			})
+			this.block(id, "region", block, { group, header: tabOf(this.captions.get(group)) })
 		);
 	}
 

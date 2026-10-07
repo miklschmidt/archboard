@@ -46,9 +46,9 @@ function contentId(body: string): string {
 const BRIDGE_INK_GAP = 1.5;
 
 /**
- * The clear space on each side of a straight line where the line it crosses is
- * cut beneath it rather than hopped: with no arc to say so, only a gap wide
- * enough to see at a glance tells a crossing from a join.
+ * The clear space round a join's mark where a line that crosses beside the join
+ * is cut beneath the joining line, so the line does not read as part of the
+ * join.
  */
 const CUT_GAP = 3;
 
@@ -59,7 +59,8 @@ interface Cutout {
 }
 
 /**
- * Clear lower ink narrowly beneath each line that crosses over it.
+ * Clear lower ink narrowly beneath each hop that crosses over it, and round the
+ * mark of a join that a line crosses beside.
  * @param edges Final bridged routes.
  * @param bridges Local upper ink and the lower connections it crosses.
  * @returns One cutout per crossed route.
@@ -70,16 +71,12 @@ function crossingCutouts(
 ): Cutout[] {
 	const byId = new Map(edges.map((route) => [route.edge.id, route]));
 	return bridges.flatMap((bridge) => {
-		// A cut beneath a line is one piece of it, straight or a turn; a hop is a
-		// hump of several pieces, whose arc already says it crosses. A cut beside
-		// a join clears the join's mark as well as the line.
-		const gap = bridge.curve.segments.length === 1 ? CUT_GAP : BRIDGE_INK_GAP;
 		const width = strokeWidthOf(byId.get(bridge.edgeId)!.edge);
 		const markup = tag("path", {
 			d: pathOf(bridge.curve),
 			fill: "none",
 			stroke: "black",
-			"stroke-width": bridge.join ? (markRadius(width) + CUT_GAP) * 2 : width + gap * 2,
+			"stroke-width": bridge.join ? (markRadius(width) + CUT_GAP) * 2 : width + BRIDGE_INK_GAP * 2,
 			"stroke-linecap": "round",
 			"stroke-linejoin": "round",
 		});
@@ -219,4 +216,4 @@ function crossingMasks(
 	};
 }
 
-export { crossingCutouts, crossingMasks, labelCutouts, trunkCutouts };
+export { contentId, crossingCutouts, crossingMasks, labelCutouts, trunkCutouts };

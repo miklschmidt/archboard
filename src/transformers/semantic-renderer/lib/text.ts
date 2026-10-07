@@ -30,19 +30,6 @@ function measure(text: string, font: DiagramFont, fontSize: number): number {
 }
 
 /**
- * Width of tracked text: CSS letter-spacing adds a fixed step after every
- * glyph, the last one included, and no font file knows about it.
- * @param text The line.
- * @param font The face it is set in.
- * @param fontSize The size it is set at.
- * @param tracking The letter-spacing, as a multiple of the font size.
- * @returns Its width including the tracking.
- */
-function trackedWidth(text: string, font: DiagramFont, fontSize: number, tracking: number): number {
-	return measure(text, font, fontSize) + Array.from(text).length * tracking * fontSize;
-}
-
-/**
  * Shortens `text` until it fits `maxWidth`, ellipsis included.
  *
  * Cutting by code point rather than by UTF-16 unit keeps a surrogate pair from
@@ -70,40 +57,6 @@ function truncate(text: string, font: DiagramFont, fontSize: number, maxWidth: n
 			break;
 		}
 		width = next;
-		kept += 1;
-	}
-	if (kept === 0) {
-		return ELLIPSIS;
-	}
-	return `${characters.slice(0, kept).join("").trimEnd()}${ELLIPSIS}`;
-}
-
-/**
- * `truncate`, counting the extra step letter-spacing puts after each glyph.
- * @param text The line.
- * @param font The face it is set in.
- * @param fontSize The size it is set at.
- * @param tracking The letter-spacing, as a multiple of the font size.
- * @param maxWidth The room it has.
- * @returns The line, or as much of it as fits followed by an ellipsis.
- */
-function truncateTracked(
-	text: string,
-	font: DiagramFont,
-	fontSize: number,
-	tracking: number,
-	maxWidth: number,
-): string {
-	if (trackedWidth(text, font, fontSize, tracking) <= maxWidth) {
-		return text;
-	}
-	const characters = Array.from(text);
-	let kept = 0;
-	while (kept < characters.length) {
-		const next = `${characters.slice(0, kept + 1).join("")}${ELLIPSIS}`;
-		if (trackedWidth(next, font, fontSize, tracking) > maxWidth) {
-			break;
-		}
 		kept += 1;
 	}
 	if (kept === 0) {
@@ -141,4 +94,4 @@ function fittedSize(
 	return size;
 }
 
-export { measure, trackedWidth, truncate, truncateTracked, fittedSize };
+export { measure, truncate, fittedSize };

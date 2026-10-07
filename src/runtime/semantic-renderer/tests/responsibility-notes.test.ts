@@ -166,8 +166,21 @@ for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[])
 			}
 		}
 		if (grammar === "data-flow") return;
-		// A container's name stays in its header, above what it holds.
+		// A container's header reads as a card does, its name and the start of what
+		// it is responsible for, and stays in its header, above what it holds.
 		const header = far.filter((run) => run.subject.id === "system");
-		expect(header.map((run) => run.text).join(" ")).toBe("Board service");
+		const system = content.nodes.find((candidate) => candidate.id === "system")!;
+		expect(
+			header
+				.filter((run) => run.weight !== 400)
+				.map((run) => run.text)
+				.join(" "),
+		).toBe("Board service");
+		const said = header
+			.filter((run) => run.weight === 400)
+			.map((run) => run.text)
+			.join(" ")
+			.replace(/…$/u, "");
+		expect((system.responsibility ?? "").replace(/\s+/gu, " ")).toStartWith(said);
 		expect(header.at(-1)!.y).toBeLessThan(rendered.atlas.nodes["api"]!.y);
 	});

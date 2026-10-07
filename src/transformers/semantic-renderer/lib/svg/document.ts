@@ -1,8 +1,7 @@
 // The file the painted body is wrapped in.
 //
-// Forked from PR Lens's `svg/document.ts`. The dot-grid ground went: the
-// operator shell is flat, and a texture behind a diagram of one-pixel rules
-// fights it. What is new is the small stylesheet — upstream had none, because
+// Forked from PR Lens's `svg/document.ts`. The dot-grid ground went: a
+// texture behind the picture fights the parts that stand on it. What is new is the small stylesheet — upstream had none, because
 // GitHub's image proxy can ignore CSS, and Archboard shows these in its own
 // pane. It carries the `@font-face` rules that make the picture draw in the
 // faces it was measured in, plus the pointer cursor and the selection ring a
@@ -25,21 +24,28 @@ import { faceRules, SANS_STACK } from "@/transformers/semantic-renderer/lib/font
 import { themeColor } from "@/transformers/semantic-renderer/lib/host";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { escapeXml, lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { portDefinitions } from "@/transformers/semantic-renderer/lib/svg/ports";
+import { slabDefinitions } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
+	AWAY_PLACE,
+	CHIP_CLASS,
 	FAR_CLASS,
+	FAR_PLACE,
 	FAR_VIEW_CLASS,
 	NEAR_CLASS,
+	NEAR_PLACE,
+	WORDS_CLASS,
 } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import {
 	MEMBERS_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
-import { FAR_VIEW_FADE_MS } from "@/shared/timing/timing";
+import { FAR_VIEW_SWAP_MS } from "@/shared/timing/timing";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import { HEAD_SHADE_CLASS } from "@/transformers/semantic-renderer/lib/sequence-design";
 import {
 	HEAD_REF_X,
-	HEAD_SIZE,
+	headWidths,
 	LIT_HEAD,
 	WEIGHTS,
 	lineColour,
@@ -74,7 +80,7 @@ function marker(
 	weight: Weight,
 	{ colour, suffix }: { readonly colour: string; readonly suffix: string },
 ): string {
-	const size = HEAD_SIZE[weight];
+	const size = coord(headWidths(weight));
 	const shape =
 		head === "filled"
 			? tag("path", { d: "M0,0 L10,5 L0,10 z", fill: colour })
@@ -180,22 +186,40 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 	);
 }
 
+/** How every part of a swap between the near and the far view moves: quick to leave, gentle to land, never past its end. */
+const SWAP_EASE = "cubic-bezier(.4,0,.2,1)";
+
 /**
- * How a picture swaps its cards' near and far layers: a cross-fade, each layer
- * hidden once it has faded out so it is not painted at all. A reader asking
- * for less motion gets the swap at once.
+ * How a picture swaps its cards' near and far views (TASK-428). A card's chip
+ * is one element that moves and grows between its near and its far place. The
+ * words of each view move to where the other view's words start, so the first
+ * lines of the two views stand on one baseline at one size all the way, and
+ * read as one block that changes. The two views fade over the same span with
+ * the same easing, so at every moment the coming view is as opaque as the
+ * leaving view is clear, and the words never fade out together. A view that
+ * comes is drawn at once, still clear, and a view that leaves is hidden only
+ * once it has faded out, so it is not painted after. The mark of a board a part
+ * opens fades where it stands. A reader asking for less motion gets the swap at
+ * once.
  * @returns The rules.
  */
 function farViewRules(): string[] {
-	const fade = `opacity ${FAR_VIEW_FADE_MS}ms ease`;
+	const fade = `opacity ${FAR_VIEW_SWAP_MS}ms ${SWAP_EASE}`;
 	const shown = `opacity:1;visibility:visible;transition:${fade},visibility 0s`;
-	const hidden = `opacity:0;visibility:hidden;transition:${fade},visibility 0s linear ${FAR_VIEW_FADE_MS}ms`;
+	const hidden = `opacity:0;visibility:hidden;transition:${fade},visibility 0s linear ${FAR_VIEW_SWAP_MS}ms`;
+	const move = `transition:transform ${FAR_VIEW_SWAP_MS}ms ${SWAP_EASE}`;
+	const far = `.${FAR_VIEW_CLASS}`;
 	return [
 		`.${FAR_CLASS}{display:inline;${hidden}}`,
 		`.${NEAR_CLASS}{${shown}}`,
-		`.${FAR_VIEW_CLASS} .${FAR_CLASS}{${shown}}`,
-		`.${FAR_VIEW_CLASS} .${NEAR_CLASS}{${hidden}}`,
-		`@media(prefers-reduced-motion:reduce){.${FAR_CLASS},.${NEAR_CLASS},.${FAR_VIEW_CLASS} .${FAR_CLASS},.${FAR_VIEW_CLASS} .${NEAR_CLASS}{transition:none}}`,
+		`${far} .${FAR_CLASS}{${shown}}`,
+		`${far} .${NEAR_CLASS}{${hidden}}`,
+		`.${CHIP_CLASS}{transform:var(${NEAR_PLACE});${move}}`,
+		`${far} .${CHIP_CLASS}{transform:var(${FAR_PLACE})}`,
+		`.${WORDS_CLASS}{${move}}`,
+		`.${FAR_CLASS}>.${WORDS_CLASS},${far} .${NEAR_CLASS}>.${WORDS_CLASS}{transform:var(${AWAY_PLACE})}`,
+		`${far} .${FAR_CLASS}>.${WORDS_CLASS}{transform:none}`,
+		`@media(prefers-reduced-motion:reduce){.${FAR_CLASS},.${NEAR_CLASS},${far} .${FAR_CLASS},${far} .${NEAR_CLASS},.${CHIP_CLASS},.${WORDS_CLASS}{transition:none}}`,
 	];
 }
 
@@ -224,8 +248,14 @@ interface DocumentInput {
 	readonly theme?: DiagramTheme | undefined;
 }
 
-/** A reference to one of the page's tokens. */
+/** A reference to one of the page's tokens, or to a property the document sets itself. */
 const TOKEN_REFERENCE = /var\((--[\w-]+)\)/gu;
+
+/**
+ * A property the document sets on one of its own elements, such as the places
+ * of a card's chip in its two views (`far-view.ts`). It is no token of the page.
+ */
+const OWN_PROPERTY = /[";](--[\w-]+):/gu;
 
 /**
  * What a document that stands alone declares on its root: the colour scheme
@@ -240,7 +270,12 @@ const TOKEN_REFERENCE = /var\((--[\w-]+)\)/gu;
  * @returns The root's `style`.
  */
 function standingAlone(theme: DiagramTheme, document: string): string {
-	const names = new Set([...document.matchAll(TOKEN_REFERENCE)].map((found) => found[1]!));
+	const own = new Set([...document.matchAll(OWN_PROPERTY)].map((found) => found[1]!));
+	const names = new Set(
+		[...document.matchAll(TOKEN_REFERENCE)]
+			.map((found) => found[1]!)
+			.filter((name) => !own.has(name)),
+	);
 	return [
 		`color-scheme:${theme}`,
 		...[...names].toSorted().map((name) => `${name}:${themeColor(theme, name)}`),
@@ -256,7 +291,7 @@ function svgDocument(input: DocumentInput): string {
 	const { width, height, palette, title, description, fonts, body, reading, theme } = input;
 	const painted = lines([
 		stylesheet(palette, fonts),
-		wrap("defs", {}, markers(palette)),
+		wrap("defs", {}, markers(palette) + slabDefinitions(palette) + portDefinitions(palette)),
 		tag("rect", {
 			x: 0,
 			y: 0,

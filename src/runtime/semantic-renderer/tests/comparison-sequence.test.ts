@@ -108,16 +108,17 @@ test("a participant the draft keeps as a node but drops from a flow has no colum
 });
 
 /**
- * The activation bars one participant's column draws.
+ * The activation bars one participant's column draws, each read from its
+ * selection trace: one per bar, over the bar's own box.
  * @param svg The rendered document.
  * @param id The participant.
- * @returns Each bar's markup, in order.
+ * @returns Each bar's trace, in order.
  */
 function barsOf(svg: string, id: string): string[] {
 	const column = new RegExp(
 		`<g(?=[^>]*data-semantic-id="${id}")(?=[^>]*data-semantic-part="lifeline")[^>]*>([\\s\\S]*?)</g>`,
 	).exec(svg);
-	return [...(column?.[1] ?? "").matchAll(/<rect (?!class)[^>]*>/g)].map(([rect]) => rect);
+	return [...(column?.[1] ?? "").matchAll(/<rect class="ab-halo"[^>]*>/g)].map(([rect]) => rect);
 }
 
 test("a column draws no bar only messages the draft drops open or hold", async () => {

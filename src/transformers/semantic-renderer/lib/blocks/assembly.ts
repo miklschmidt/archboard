@@ -324,13 +324,19 @@ class Assembly {
 	 * A region's caption box: in the band's top-left corner, as a frame's
 	 * title is, whatever slot Graphviz kept for it on the first rank. Graphviz
 	 * keeps the slot left of every port on that rank, so the corner is free.
+	 * The slot is the caption's tab, the caption and the inset above it.
 	 * @param block The region.
 	 * @returns The caption's box.
 	 */
 	caption(block: Block): Box {
 		const slot = this.inside(block, headerOf(block));
 		const band = this.boxOf(block);
-		return { ...slot, x: band.x + CAPTION_INSET, y: band.y + CAPTION_INSET };
+		return {
+			...slot,
+			x: band.x + CAPTION_INSET,
+			y: band.y + CAPTION_INSET,
+			height: slot.height - CAPTION_INSET,
+		};
 	}
 
 	/**

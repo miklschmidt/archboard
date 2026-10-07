@@ -53,11 +53,12 @@ part in and the part does not list is a membership the board lacks.
 Groups carry the color of the cards. Every configured group has a required
 `color` from the curated palette. A card is placed with its first group, in
 `config.yaml` order; the cards placed with one group in one container (or at the
-board level) are gathered into a region outlined in that group's color, one
+board level) are gathered into a region drawn in that group's color, one
 region per container even round a single card, but none inside a container
-the same group places, and each takes its body color from it. A card placed with no group is neutral. A container's kind colors only
-the container, never the cards inside it, and each node's icon chip says its own
-kind (`nodeKinds.<kind>.color`). Color is configuration, never on a board or a
+the same group places, and each takes its body color from it. A card placed with no group is neutral. A container takes the
+color of the group that places it on its header, as a card does, and is
+neutral when no group places it; it colors nothing inside it. Each node's icon
+chip says its own kind in the kind's color (`nodeKinds.<kind>.color`). Color is configuration, never on a board or a
 node: a board drawn neutral is the vault owner's configuration question, not a
 reason to touch `config.yaml` while authoring a board.
 
@@ -395,7 +396,7 @@ one names its relationship in its `path`.
 - `label`: What crosses, in a few words.
 - `description`: Longer prose.
 - `emphasis`: `normal` (default), `hero` for the board's spine, `muted` for
-  context. Line weight only.
+  context. A hero line is drawn heavier, and a muted line paler.
 - `traffic`: `{}` for moving marks at the defaults (speed 80, volume 1);
   `{ "speed", "volume" }` positive finite numbers; omit for none.
 - `anchor`: The code that proves it: `{ "repo", "path", "symbol" }`, all three

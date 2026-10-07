@@ -137,7 +137,8 @@ test("structural parents reserve the whole wrapped header and keep descriptions 
 	const parent = measured.nodes.get("parent")!;
 	expect(parent.headerHeight).toBe(parent.height);
 	expect(parent.headerHeight).toBeGreaterThan(72);
-	expect(parent.runs.every((run) => run.x === 56 && run.y < parent.headerHeight - 20)).toBeTrue();
+	// Its words stand on its header slab as a card's stand on its own.
+	expect(parent.runs.every((run) => run.x === 60 && run.y < parent.headerHeight - 16)).toBeTrue();
 	expect(parent.runs.some((run) => description.includes(run.text))).toBeFalse();
 	expect(measured.nodes.get("child")!.headerHeight).toBe(0);
 	expect(

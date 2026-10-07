@@ -66,18 +66,18 @@ function stageIn(area: HTMLElement | null): Stage | null {
 }
 
 /**
- * Put the board's picture inside the card, on the surface.
+ * Put the board's picture inside the card, on the surface. It has no far view
+ * of its own: it is drawn as the picture around it is, from far or near, so the
+ * board that takes over from it at the end of the flight looks the same.
  * @param surface The surface, in the parent's picture units.
  * @param picture The board's picture, and how big it is.
  * @param inset Where it sits in the parent's picture.
- * @param far Whether the board is seen from far where the flight meets it, which draws each card's name alone.
  * @returns The element that holds it.
  */
 function placeInset(
 	surface: HTMLElement,
 	picture: Pick<SemanticDrawing, "svg" | "width" | "height">,
 	inset: Rect,
-	far: boolean,
 ): HTMLElement {
 	const holder = surface.ownerDocument.createElement("div");
 	holder.innerHTML = picture.svg;
@@ -90,7 +90,6 @@ function placeInset(
 	const frame = surface.ownerDocument.createElement("div");
 	frame.setAttribute(INSET_ATTRIBUTE, "");
 	frame.setAttribute("aria-hidden", "true");
-	if (far) frame.classList.add("is-far");
 	frame.style.cssText =
 		`position:absolute;left:${inset.x}px;top:${inset.y}px;width:${inset.width}px;` +
 		`height:${inset.height}px;overflow:hidden;pointer-events:none`;
@@ -172,7 +171,8 @@ function wordsFadeOf(stops: readonly (readonly [number, number])[], way: DiveWay
 }
 
 /**
- * What a card on the picture says: its words near, and its name from far.
+ * What a card on the picture says: its words near, its name from far, and the
+ * chip of its kind that both views share.
  * @param picture The picture's root.
  * @param card The card's id.
  * @returns The groups that hold them, or none when the card is not drawn.
@@ -183,7 +183,7 @@ function wordsOf(picture: Element, card: string): Element[] {
 	);
 	return group === undefined
 		? []
-		: [...group.querySelectorAll(":scope > .ab-near, :scope > .ab-far")];
+		: [...group.querySelectorAll(":scope > .ab-near, :scope > .ab-far, :scope > .ab-chip")];
 }
 
 /** A cancelled animation promised nothing anyone is waiting for. */
@@ -196,7 +196,6 @@ function ignoreCancel(): void {}
  * @param picture The board's picture, and how big it is.
  * @param inset Where the board sits in the parent's picture.
  * @param way Into the card, or back out of it.
- * @param far Whether the board is seen from far where the flight meets it.
  * @param card The id of the card the board is inside, whose words go first.
  * @returns How to take it away again, or null when the surface holds no picture.
  */
@@ -205,14 +204,13 @@ function startDive(
 	picture: Pick<SemanticDrawing, "svg" | "width" | "height">,
 	inset: Rect,
 	way: DiveWay,
-	far: boolean,
 	card: string,
 ): Dive | null {
 	const parent = surface.querySelector(":scope > svg");
 	if (parent === null) {
 		return null;
 	}
-	const frame = placeInset(surface, picture, inset, far);
+	const frame = placeInset(surface, picture, inset);
 	const options = { duration: EXPLORING_MS.dive, fill: "both" as const };
 	const fades = [
 		parent.animate(fadeOf(IN.parent, way), options),

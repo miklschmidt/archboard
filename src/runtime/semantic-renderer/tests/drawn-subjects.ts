@@ -83,7 +83,12 @@ function rowMarkOf(svg: string, id: string): DrawnGroup | undefined {
 			continue;
 		}
 		const started = open.pop();
-		if (started !== undefined && attributesOf(started.tag)["data-members"] === id) {
+		const attributes = started === undefined ? {} : attributesOf(started.tag);
+		if (
+			started !== undefined &&
+			attributes["data-members"] === id &&
+			attributes["class"] !== "ab-shadow"
+		) {
 			return {
 				kind: "row",
 				id,

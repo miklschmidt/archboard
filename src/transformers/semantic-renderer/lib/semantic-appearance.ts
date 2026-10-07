@@ -13,9 +13,9 @@ import {
 /** The independent visual channels of a node in this reading. */
 interface NodeAppearance {
 	readonly container: boolean;
-	/** Its body's colour: a card's placing group's, a container's own kind's (ADR 0038). */
+	/** Its body's colour: its placing group's, a card's and a container's header alike (ADR 0038). */
 	readonly bodyColor?: PaletteColor | undefined;
-	/** The group whose colour a card takes, if any. */
+	/** The group whose colour it takes, if any. */
 	readonly group?: string | undefined;
 	readonly typeColor?: PaletteColor | undefined;
 	readonly icon: string;
@@ -39,10 +39,10 @@ function ownDefinition<Definition>(
 }
 
 /**
- * Resolve each drawn subject's channels: a card's body takes the colour of
- * the group it is placed with, a container's frame the colour of its own
- * kind, and every chip the colour of its type. A container colours nothing
- * inside it; that is a group's role (TASK-347, ADR 0038).
+ * Resolve each drawn subject's channels: a card's body and a container's
+ * header take the colour of the group they are placed with, and every chip the
+ * colour of its type. A container colours nothing inside it; that is a group's
+ * role (TASK-347, ADR 0038, TASK-423).
  * A part that opens another board says which way it lies (`drill`), read from
  * its kind against the board's own level (ADR 0029).
  * @param nodes Subjects present in the drawing.
@@ -63,21 +63,20 @@ function nodeAppearances(
 			...typeAppearance(node.kind, policy),
 			drill: node.drillDown === undefined ? null : drillDirection(node.kind, level, policy.levels),
 		};
-		resolved.set(
-			node.id,
-			parents.has(node.id)
-				? { container: true, bodyColor: type.typeColor, ...type }
-				: { container: false, ...groupColour(placing.get(node.id), policy), ...type },
-		);
+		resolved.set(node.id, {
+			container: parents.has(node.id),
+			...groupColour(placing.get(node.id), policy),
+			...type,
+		});
 	}
 	return resolved;
 }
 
 /**
- * A card's body colour: its placing group's.
+ * A body's colour, a card's or a container's header's: its placing group's.
  * @param group The group that places it, if any.
  * @param policy The current vault policy.
- * @returns The group and its colour, or nothing for a card no group places.
+ * @returns The group and its colour, or nothing for a part no group places.
  */
 function groupColour(
 	group: string | undefined,

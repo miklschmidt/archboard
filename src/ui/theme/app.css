@@ -305,32 +305,14 @@
 	}
 }
 
-/* Seen from far away, a picture shows its structure and not its words: each
-   card draws its name alone (the picture's own stylesheet), and a relationship's
-   label, which is under 6 px there and covers the line it names, goes with it.
-   It stays for a relationship that is lit or picked, and returns as the camera
-   comes close. A message of a sequence is the sequence itself and stays. */
-[data-slot="semantic-board-surface"] [data-semantic-kind="edge"][data-semantic-part="label"] {
-	transition:
-		filter var(--lighting-ms, 0ms) ease-out,
-		opacity var(--far-view-ms, 0ms) ease,
-		visibility 0s;
-}
-[data-slot="semantic-board-surface"].is-far
-	[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit, .is-selected) {
-	opacity: 0;
-	visibility: hidden;
-	transition:
-		filter var(--lighting-ms, 0ms) ease-out,
-		opacity var(--far-view-ms, 0ms) ease,
-		visibility 0s linear var(--far-view-ms, 0ms);
-}
-@media (prefers-reduced-motion: reduce) {
-	[data-slot="semantic-board-surface"] [data-semantic-kind="edge"][data-semantic-part="label"],
-	[data-slot="semantic-board-surface"].is-far
-		[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit, .is-selected) {
-		transition: none;
-	}
+/* A relationship's label is never hidden (TASK-403). It is drawn at every zoom,
+   seen from far as well as near. Where the rest of the picture recedes, under a
+   poke or under a presented step's veil, a label that is not lit recedes to half
+   at most, so its words can still be read. The board a flight carries inside a
+   card keeps no filter, as above. */
+[data-slot="semantic-board-surface"]:is(.is-probing, .is-presenting.is-veiled)
+	[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit, [data-dive-inset] *) {
+	filter: opacity(0.5);
 }
 
 /* A picture's traffic changes on every frame. On a compositing layer of its own

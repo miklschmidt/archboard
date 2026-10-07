@@ -112,6 +112,31 @@ test("a trace onward lights what a part reaches beyond its connections, the near
 	expect(lit()).toEqual(["e2", "e3", "h", "orders", "q", "shipping", "w"]);
 });
 
+/**
+ * The classes the viewer put on a card's shadow.
+ * @param card The card.
+ * @returns Its lit and reach classes.
+ */
+function shadowMarks(card: string): string[] {
+	return [...surface().querySelector(`.ab-shadow[data-members='${card}']`)!.classList].filter(
+		(name) => name.startsWith("is-"),
+	);
+}
+
+test("a card's shadow is lit and graded with its card, so it fades as far as the card does", async () => {
+	await served({ shadows: true });
+	await pickWithDetails("q");
+	act(() => {
+		fireEvent.click(trace("onward"));
+	});
+	expect(shadowMarks("l")).toEqual(["is-lit", "is-reach-2"]);
+	expect(shadowMarks("w")).toEqual(["is-lit"]);
+	act(() => {
+		fireEvent.click(trace("onward"));
+	});
+	expect(shadowMarks("l")).toEqual([]);
+});
+
 test("a trace back goes against the relationships, and belongs to the part it was asked of", async () => {
 	await served();
 	await pickWithDetails("q");

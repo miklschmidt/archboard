@@ -2,10 +2,14 @@
 // first rank with, and the small geometry its layout reads back: a label's box
 // where Graphviz put it, and a line run onto the block's wall.
 import type { ElkLabel } from "@archboard/elk-rs";
-import type { Graph } from "@viz-js/viz";
+import type { Edge, Graph } from "@viz-js/viz";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
-import { headerOf, type Block } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import {
+	headerOf,
+	type Block,
+	type BlockTree,
+} from "@/transformers/semantic-renderer/lib/blocks/tree";
 
 /** Horizontal room Graphviz keeps between neighbours in a rank. */
 const NODE_GAP = 40;
@@ -124,4 +128,21 @@ function holdSources(block: Block, graph: VendorGraph, nodeOf: (name: string) =>
 	);
 }
 
-export { NODE_GAP, emptyGraph, holdSources, placedLabel, walledPoints, type VendorNode };
+/**
+ * The invisible edges that hold the ports on one face of a block in the
+ * order its parent settles them in (`orders.ts`).
+ * @param tree The blocks.
+ * @param block The block.
+ * @param face The face.
+ * @returns The edges, each port to the next.
+ */
+function heldEdges(tree: BlockTree, block: Block, face: "top" | "bottom"): Edge[] {
+	const held = (tree.orders.get(`${block.id}|${face}`) ?? []).filter(
+		(port) => block.ports.get(port) === face,
+	);
+	return held
+		.slice(1)
+		.map((head, index) => ({ tail: held[index]!, head, attributes: { style: "invis" } }));
+}
+
+export { NODE_GAP, emptyGraph, heldEdges, holdSources, placedLabel, walledPoints, type VendorNode };

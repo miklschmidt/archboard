@@ -3,41 +3,36 @@
 // Forked from PR Lens's `svg/architecture.ts`, minus its badge strip and its
 // strike-through for a removed node. Two things were added: the selection halo
 // every subject carries, and the `data-semantic-*` attributes that let a pane
-// map a click back onto the board. What a proposal's standing does to either
-// shape — the outline it takes over and the pin on its corner — is decided in
+// map a click back onto the board. A card is drawn as a slab (`lib/svg/slab.ts`).
+// What a proposal's standing does to it — the wash or the ghost on its face and
+// the pin on its corner — is decided in `lib/svg/slab.ts` and
 // `lib/svg/standing.ts` and applied here without moving anything.
 //
-// Hierarchy here is built from weight, size, colour, case, tracking and space,
-// in that order. A card's name is the medium face and its responsibility the
-// regular one, which is a step a reader takes in before reading either; a
-// container's title is the medium face too, but small, tracked, uppercase and
-// grey, so it reads as the label on a frame rather than as a name. The same
-// title treatment is used at every depth: what says how deeply a box is nested
-// is where it sits and how far it is set in, not a different kind of lettering.
+// Hierarchy here is built from weight, size, colour and space, in that order. A
+// card's name is the medium face and its responsibility the regular one, which
+// is a step a reader takes in before reading either. A flow's frame is a
+// container's family: its name and summary are set on its header slab in the
+// medium and regular faces and at the sizes a container's header uses, so a
+// sequence's frame and an architecture's container read alike. What sets the
+// frame's name apart from the cards under it is the slab it lies on.
 //
 // Both weights are real files (`lib/fonts.ts`). Nothing above 500 exists, and
 // nothing here may ask for one: a browser would invent it, wider than what was
 // measured, and a fitted title would overflow the card it was fitted to.
 
+import { ARCHITECTURE_NOTE_GAP } from "@/transformers/semantic-renderer/config";
 import {
-	BASELINE_RATIO,
 	CARD_PADDING_X,
-	CARD_RADIUS,
-	HEADER_NAME_SIZE,
-	HEADER_NAME_TRACKING,
-	HEADER_NOTE_SIZE,
 	ICON_CHIP_GAP,
 	ICON_CHIP_SIZE,
 	NOTE_SIZE,
-	TEXT_LINE_HEIGHT,
+	PART_NOTE,
+	PART_TITLE,
+	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { truncate, truncateTracked } from "@/transformers/semantic-renderer/lib/text";
-import {
-	CARD_TITLE_FONT,
-	HEADER_NAME_FONT,
-	HEADER_NOTE_FONT,
-} from "@/transformers/semantic-renderer/lib/fonts";
+import { truncate } from "@/transformers/semantic-renderer/lib/text";
+import { CARD_NOTE_FONT, CARD_TITLE_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import {
 	titleRoom,
@@ -45,16 +40,17 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/sequence-card";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import {
-	bodyAttributes,
 	appearanceAttributes,
+	cardLook,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
-import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
-import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
+import { paintCardViews } from "@/transformers/semantic-renderer/lib/svg/far-card";
+import type { Anchor } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
-	standingOutline,
+	OUTLINE_WIDTH,
+	standingPalette,
 	standingPin,
 	subjectGroup,
 	warningBadge,
@@ -76,19 +72,25 @@ const OPTICAL_CENTRE = 0.34;
  * The ring a viewer turns on to show what is selected. It is always in the
  * document and always invisible until a class says otherwise, which is what
  * keeps selection out of the geometry: turning it on moves nothing.
+ *
+ * Round a removed part it is drawn over the dashed footprint the part left
+ * (`slab.ts`), so a selected ghost wears one ring, not the selection's ring
+ * round the standing's.
  * @param box What is being ringed.
  * @param radius The corner radius of the thing inside it.
  * @param styles The palette's attribute bundles.
+ * @param standing How the part stands, when this is a proposal.
  * @returns The halo element.
  */
-function halo(box: Box, radius: number, styles: SvgStyles): string {
+function halo(box: Box, radius: number, styles: SvgStyles, standing?: SubjectStanding): string {
+	const inset = standing === "removed" ? -OUTLINE_WIDTH / 2 : HALO_INSET;
 	return tag("rect", {
 		class: "ab-halo",
-		x: coord(box.x - HALO_INSET),
-		y: coord(box.y - HALO_INSET),
-		width: coord(box.width + HALO_INSET * 2),
-		height: coord(box.height + HALO_INSET * 2),
-		rx: coord(radius + HALO_INSET),
+		x: coord(box.x - inset),
+		y: coord(box.y - inset),
+		width: coord(box.width + inset * 2),
+		height: coord(box.height + inset * 2),
+		rx: coord(radius + inset),
 		"stroke-width": HALO_WIDTH,
 		...styles.halo,
 	});
@@ -112,7 +114,7 @@ function paintCard(
 	unsettled: boolean,
 	appearance: NodeAppearance,
 ): string {
-	const styles = stylesFor(palette);
+	const styles = stylesFor(standingPalette(palette, standing));
 	const { node, box, titleSize, notes } = placed;
 	const textX = box.x + CARD_PADDING_X + ICON_CHIP_SIZE + ICON_CHIP_GAP;
 	// A card that opens another board keeps its name clear of the mark.
@@ -150,39 +152,24 @@ function paintCard(
 		"g",
 		{ ...subjectGroup("node", node.id, standing), ...appearanceAttributes(appearance) },
 		lines([
-			halo(box, CARD_RADIUS, styles),
-			tag("rect", {
-				x: coord(box.x),
-				y: coord(box.y),
-				width: coord(box.width),
-				height: coord(box.height),
-				rx: CARD_RADIUS,
-				...styles.card,
-				...bodyAttributes(appearance),
-				...standingOutline(standing, palette),
-			}),
-			nearLayer(
-				lines([
-					typeChip(
-						box.x + CARD_PADDING_X,
-						box.y + (box.height - ICON_CHIP_SIZE) / 2,
-						appearance,
-						palette,
-					),
-					title,
-					note,
-					appearance.drill === null
-						? ""
-						: cornerDrillMark(
-								box,
-								CARD_PADDING_X,
-								titleY - titleSize * OPTICAL_CENTRE - box.y,
-								appearance.drill,
-								palette.glyph,
-							),
-				]),
+			slabSeat(box, SLAB_RADIUS),
+			// A removed card's ghost; a card's shadow lies under every card of its head (`shadowUnder`).
+			standing === "removed" ? slabShadow(box, SLAB_RADIUS, "card", palette, standing) : "",
+			halo(box, SLAB_RADIUS, styles, standing),
+			slab(box, cardLook(appearance, palette), palette, standing),
+			paintCardViews(
+				node,
+				box,
+				{ appearance, palette: standingPalette(palette, standing) },
+				{
+					chip: {
+						markup: typeChip(0, 0, appearance, palette, standing),
+						x: box.x + CARD_PADDING_X,
+						y: box.y + (box.height - ICON_CHIP_SIZE) / 2,
+					},
+					words: { markup: lines([title, note]), anchor: { x: textX, y: titleY, size: titleSize } },
+				},
 			),
-			paintFarCard(node, box, { appearance, palette }, unsettled),
 			standingPin(box, standing, palette),
 			// The opposite corner from the pin, inside the padding the words already
 			// stop short of, so a card can say both at once and neither mark lands on
@@ -193,16 +180,12 @@ function paintCard(
 }
 
 /**
- * A container's title block: its name in small tracked capitals, and its
- * responsibility under it in a quieter grey.
- *
- * Capitals and tracking are what a header uses instead of weight. They read as
- * a label rather than as a name, which is exactly the relationship a container
- * has to the things inside it — at any depth, because a box nested inside
- * another is still a frame around its contents and not a bigger card.
+ * A flow's title block, printed on its frame's header slab: its name as a
+ * container's is, and its summary under it in the secondary ink, each line
+ * set where a container's measured lines are, a line's size below its top.
  * @param header Where the block goes.
- * @param name The container's name.
- * @param responsibility Its responsibility, when it has one.
+ * @param name The flow's name.
+ * @param responsibility Its summary, when it has one.
  * @param styles The palette's attribute bundles.
  * @returns The header's text.
  */
@@ -212,35 +195,30 @@ function paintHeader(
 	responsibility: string | undefined,
 	styles: SvgStyles,
 ): string {
-	const nameBaseline = header.y + HEADER_NAME_SIZE * BASELINE_RATIO;
-	const noteBaseline = nameBaseline + HEADER_NOTE_SIZE * TEXT_LINE_HEIGHT;
+	const nameBaseline = headerAnchor(header).y;
+	const noteBaseline = header.y + PART_TITLE.line + ARCHITECTURE_NOTE_GAP + PART_NOTE.size;
 	return lines([
-		// One hairline, the shell's own way of separating two things without a
-		// rule of weight or a change of ground.
-		tag("line", {
-			x1: coord(header.x),
-			y1: coord(header.y + header.height),
-			x2: coord(header.x + header.width),
-			y2: coord(header.y + header.height),
-			...styles.headerRule,
-		}),
 		textNode(
 			{ x: coord(header.x), y: coord(nameBaseline), ...styles.headerName },
-			truncateTracked(
-				name.toUpperCase(),
-				HEADER_NAME_FONT,
-				HEADER_NAME_SIZE,
-				HEADER_NAME_TRACKING,
-				header.width,
-			),
+			truncate(name, CARD_TITLE_FONT, PART_TITLE.size, header.width),
 		),
 		responsibility === undefined
 			? ""
 			: textNode(
 					{ x: coord(header.x), y: coord(noteBaseline), ...styles.headerNote },
-					truncate(responsibility, HEADER_NOTE_FONT, HEADER_NOTE_SIZE, header.width),
+					truncate(responsibility, CARD_NOTE_FONT, PART_NOTE.size, header.width),
 				),
 	]);
 }
 
-export { halo, paintCard, paintHeader };
+/**
+ * Where a flow's title block starts: the left end of its name's baseline, which
+ * its far words move from and back to.
+ * @param header Where the block goes.
+ * @returns The anchor, with the name's size.
+ */
+function headerAnchor(header: Box): Anchor {
+	return { x: header.x, y: header.y + PART_TITLE.size, size: PART_TITLE.size };
+}
+
+export { halo, headerAnchor, paintCard, paintHeader };

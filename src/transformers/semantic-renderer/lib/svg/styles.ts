@@ -21,21 +21,18 @@ import type { EdgeEmphasis, SemanticEdge } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import { relationshipAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
+import { tinted } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
-	HEADER_NAME_SIZE,
-	HEADER_NAME_TRACKING,
-	HEADER_NOTE_SIZE,
 	LINE_STRENGTH,
 	NOTE_SIZE,
+	PART_NOTE,
+	PART_TITLE,
 	PILL_TEXT_SIZE,
 } from "@/transformers/semantic-renderer/lib/design";
 import {
 	fontAttributes,
 	CARD_NOTE_FONT,
 	CARD_TITLE_FONT,
-	HEADER_NAME_FONT,
-	HEADER_NOTE_FONT,
 	PILL_FONT,
 } from "@/transformers/semantic-renderer/lib/fonts";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
@@ -53,13 +50,30 @@ type Head = "filled" | "open";
 
 const WEIGHTS: readonly Weight[] = ["hero", "normal", "muted"];
 
-const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4, muted: 1.2 };
+/**
+ * How thick a line of each weight is drawn. A muted line is as thick as a
+ * default one and is quieter by its ink alone ({@link MUTED_STRENGTH}).
+ */
+const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4, muted: 1.4 };
 
 /**
- * How big an arrowhead of each weight is, in widths of its line. A hero's head
- * is part of its weight.
+ * How long an arrowhead of each weight is, from its base to its tip, in the
+ * page's units. Every board and every sequence draws its heads from this.
+ *
+ * Every head is the same length (TASK-404). A smaller head left the reader to
+ * guess which way a line runs. Emphasis changes the line, never its head.
  */
-const HEAD_SIZE: Readonly<Record<Weight, number>> = { hero: 7.5, normal: 6, muted: 5.5 };
+const HEAD_LENGTH: Readonly<Record<Weight, number>> = { hero: 11, normal: 11, muted: 11 };
+
+/**
+ * How big an arrowhead of a weight is drawn, in widths of its line: a marker
+ * is drawn in the units of the line that ends in it.
+ * @param weight How loudly the line speaks.
+ * @returns The marker's side, in line widths.
+ */
+function headWidths(weight: Weight): number {
+	return HEAD_LENGTH[weight] / STROKE_WIDTH[weight];
+}
 
 /**
  * Where on its ten-unit drawing each head sits on the end of its line. The open
@@ -76,7 +90,7 @@ const HEAD_REF_X: Readonly<Record<Head, number>> = { filled: 8, open: 10 };
  * @returns The distance, in the page's units.
  */
 function headReach(head: Head, weight: Weight): number {
-	return ((10 - HEAD_REF_X[head]) / 10) * HEAD_SIZE[weight] * STROKE_WIDTH[weight];
+	return ((10 - HEAD_REF_X[head]) / 10) * HEAD_LENGTH[weight];
 }
 
 /**
@@ -87,7 +101,7 @@ function headReach(head: Head, weight: Weight): number {
  * @returns The distance, in the page's units.
  */
 function headBase(head: Head, weight: Weight): number {
-	return (HEAD_REF_X[head] / 10) * HEAD_SIZE[weight] * STROKE_WIDTH[weight];
+	return (HEAD_REF_X[head] / 10) * HEAD_LENGTH[weight];
 }
 
 /**
@@ -127,16 +141,54 @@ function fullLineColour(palette: Palette, standing: SubjectStanding | undefined)
 }
 
 /**
+ * How strong a removed line's ink is over the page, on each ground: with its
+ * group's ghosting, APCA Lc 30 or more, the floor for a mark, on every ground
+ * it crosses, as a mark that says something must be, and fainter than the reds
+ * of the pin and the footprint.
+ */
+const REMOVED_STRENGTH = { light: 0.85, dark: 1 } as const;
+
+/**
+ * How strong a muted line is, as its share of its default ink over the page,
+ * on each ground. A muted neutral line is about APCA Lc 46 against the page
+ * on the light ground and Lc 16 on the dark, where a default one is Lc 65 and
+ * Lc 34 (TASK-409).
+ */
+const MUTED_STRENGTH = { light: 0.7, dark: 0.6 } as const;
+
+/**
+ * A colour as a line of one weight carries it: a muted line's with some of the
+ * page mixed in, every other line's as it is. The line, its head and its pulses
+ * all start from it, so a muted line is quieter by its colour alone and never
+ * by opacity, and two lines sharing a lane draw no darker where they overlap.
+ * @param ink The colour.
+ * @param palette The theme's colours.
+ * @param weight How loudly the line speaks.
+ * @returns The colour the line carries.
+ */
+function quietened(ink: string, palette: Palette, weight: Weight): string {
+	return weight === "muted" ? tinted(palette.background, ink, MUTED_STRENGTH) : ink;
+}
+
+/**
  * The colour a line is drawn in, from the colour it stands for: a coloured line
- * at three quarters of its colour over the page, so the pulses riding it stand
- * out at full strength; the neutral line as it is. Mixed rather than made
- * translucent, so two lines sharing a lane draw no darker where they overlap.
+ * at its line strength over the page ({@link LINE_STRENGTH}), the neutral line
+ * as it is, and a muted line quieter still ({@link quietened}). Mixed rather
+ * than made translucent, so two lines sharing a lane draw no darker where they
+ * overlap. A removed line carries no pulses and its group is ghosted already
+ * (`ghostOpacity`), so its ink has a strength of its own, whatever its weight
+ * ({@link REMOVED_STRENGTH}).
  * @param ink The colour at full strength.
  * @param palette The theme's colours.
+ * @param weight How loudly the line speaks.
  * @returns The line's colour.
  */
-function drawnInk(ink: string, palette: Palette): string {
-	return ink === palette.edge ? ink : mixed(palette.background, ink, LINE_STRENGTH);
+function drawnInk(ink: string, palette: Palette, weight: Weight = "normal"): string {
+	if (ink === palette.standingRemoved) {
+		return tinted(palette.background, ink, REMOVED_STRENGTH);
+	}
+	const line = ink === palette.edge ? ink : tinted(palette.background, ink, LINE_STRENGTH);
+	return quietened(line, palette, weight);
 }
 
 /**
@@ -227,7 +279,7 @@ function edgeAttributes(
 	const weight = weightOf(edge);
 	return {
 		fill: "none",
-		stroke: drawnInk(relationshipInk(edge, palette, standing, policy, appearance), palette),
+		stroke: drawnInk(relationshipInk(edge, palette, standing, policy, appearance), palette, weight),
 		"stroke-width": STROKE_WIDTH[weight],
 		"stroke-linecap": "round",
 		"stroke-linejoin": "round",
@@ -242,31 +294,19 @@ function edgeAttributes(
  */
 function stylesFor(palette: Palette) {
 	return {
-		band: { fill: palette.band, stroke: palette.bandBorder, "stroke-width": 1 },
-		// A container inside a container, drawn on the page's own ground. That
-		// puts the surfaces in order in both themes — column darkest, then the
-		// box inside it, then the card — without inventing a fourth colour that
-		// would have to be tuned twice.
-		nest: { fill: palette.background, stroke: palette.bandBorder, "stroke-width": 1 },
-		card: { fill: palette.card, stroke: palette.cardBorder, "stroke-width": 1 },
+		// A flow's heading, set as a container's header is.
 		headerName: {
-			"font-size": HEADER_NAME_SIZE,
-			"letter-spacing": `${HEADER_NAME_TRACKING}em`,
-			fill: palette.muted,
-			...fontAttributes(HEADER_NAME_FONT),
+			"font-size": PART_TITLE.size,
+			fill: palette.foreground,
+			...fontAttributes(CARD_TITLE_FONT),
 		},
 		headerNote: {
-			"font-size": HEADER_NOTE_SIZE,
-			fill: palette.faint,
-			...fontAttributes(HEADER_NOTE_FONT),
+			"font-size": PART_NOTE.size,
+			fill: palette.muted,
+			...fontAttributes(CARD_NOTE_FONT),
 		},
-		headerRule: { stroke: palette.bandBorder, "stroke-width": 1 },
 		title: { fill: palette.foreground, ...fontAttributes(CARD_TITLE_FONT) },
 		note: { "font-size": NOTE_SIZE, fill: palette.muted, ...fontAttributes(CARD_NOTE_FONT) },
-		chip: { fill: palette.chip },
-		glyph: { fill: palette.glyph },
-		glyphStroke: { stroke: palette.glyph, "stroke-width": 1.3, fill: "none" },
-		pill: { fill: palette.pill, stroke: palette.pillBorder, "stroke-width": 1 },
 		pillText: {
 			"font-size": PILL_TEXT_SIZE,
 			fill: palette.pillText,
@@ -287,6 +327,7 @@ export {
 	lineColour,
 	drawnInk,
 	fullLineColour,
+	quietened,
 	relationshipInk,
 	weightOf,
 	markerFor,
@@ -297,7 +338,8 @@ export {
 	stylesFor,
 	headReach,
 	headBase,
+	headWidths,
 	HEAD_REF_X,
-	HEAD_SIZE,
+	HEAD_LENGTH,
 	STROKE_WIDTH,
 };

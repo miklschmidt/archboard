@@ -62,7 +62,8 @@ test("a line rises over one crossing of a cluster whose crest cannot stand", () 
 	);
 	const hop = result.bridges.find(hops);
 	expect(hop).toMatchObject({ edgeId: "0", under: ["1"] });
-	expect(result.bridges.filter((bridge) => !hops(bridge))).toHaveLength(1);
+	// The crossing nothing rises over is crossed plainly, with no gap cut in either line.
+	expect(result.bridges.filter((bridge) => !hops(bridge))).toHaveLength(0);
 });
 
 // Code review: a crest over two lines spanned a line ending between them,
@@ -104,17 +105,15 @@ test("a line is above or beneath along all of one cluster, never both", () => {
 });
 
 // Agent workbench (blocks): a solid line rose over two dashed lines sixteen
-// apart under one long brace, where cutting reads cleaner. The cut is the solid
-// line's: a dashed line's gap is lost among its own (the user, 2026-09-27).
-test("dashed lines close together across a solid line are not hopped under one crest; the solid line is cut", () => {
+// apart under one long brace, where no hop reads cleaner (the user,
+// 2026-09-27). Archboard server: the solid line was then cut at each dashed
+// line with no arc over the gap, and read as broken (TASK-408).
+test("dashed lines close together across a solid line are not hopped under one crest, and the lines cross plainly", () => {
 	const result = bridged(
 		drawing([down(50, 0, 150), across(50), across(66)], [{}, { kind: "event" }, { kind: "event" }]),
 	);
-	expect(result.bridges).toHaveLength(2);
-	for (const bridge of result.bridges) {
-		expect(hops(bridge)).toBe(false);
-		expect(bridge.under).toEqual(["0"]);
-	}
+	// No crest stands and no line is cut: every hop and every cut is a bridge.
+	expect(result.bridges).toEqual([]);
 });
 
 // Agent workbench (blocks): a line hopped one line sixteen past where a

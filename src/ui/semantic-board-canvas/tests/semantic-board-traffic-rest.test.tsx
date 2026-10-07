@@ -1,10 +1,9 @@
 // The traffic of a picture while its camera is moved by a hand.
 //
-// What this catches: traffic that keeps running under a drag; traffic that waits
-// for a thrown picture to stop before it comes back, or is stood still again by
-// the picture coasting on; traffic that jumps to its full speed rather than
-// gathering it; a wheel or a key that leaves traffic running; and a camera the
-// stage moves itself, which never needs the traffic stood still.
+// What this catches: traffic that keeps running under a drag; traffic that does
+// not come back as the drag is let go; traffic that jumps to its full speed rather
+// than gathering it; a wheel or a key that leaves traffic running; and a camera
+// the stage moves itself, which never needs the traffic stood still.
 
 import { act, fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test } from "bun:test";
@@ -84,7 +83,7 @@ async function mountWithTraffic(options?: MountOptions): Promise<FakeTraffic> {
 
 /** Drag the picture fast, and keep the pointer down. */
 function dragPicture(): void {
-	// 200 pixels in 80 milliseconds, let go at once: 2.5 pixels a millisecond.
+	// 200 pixels in 80 milliseconds: 2.5 pixels a millisecond.
 	pointerAt("pointerdown", { x: 100, t: 1000 });
 	for (let step = 1; step <= 5; step += 1) {
 		pointerAt("pointermove", { x: 100 + step * 40, t: 1000 + step * 16 });
@@ -99,11 +98,9 @@ test("traffic stands still under a drag and comes back gently the moment the dra
 		expect(traffic.playState).toBe("paused");
 
 		pointerAt("pointerup", { x: 300, t: 1082 });
-		const letGo = cameraNow().x;
 		frames.run(100);
 
-		// The picture was thrown and is coasting, and the traffic is already creeping back.
-		expect(cameraNow().x).toBeGreaterThan(letGo + 50);
+		// The traffic is already creeping back.
 		expect(traffic.playState).toBe("running");
 		expect(traffic.playbackRate).toBeGreaterThan(0);
 		expect(traffic.playbackRate).toBeLessThan(0.05);
@@ -123,7 +120,7 @@ test("a drag that rests with the pointer held down keeps the traffic still", asy
 	const frames = takeFrames();
 	try {
 		dragPicture();
-		frames.run(EXPLORING_MS.trafficRest * 4);
+		frames.run(EXPLORING_MS.cameraRest * 4);
 
 		expect(traffic.playState).toBe("paused");
 	} finally {

@@ -145,6 +145,38 @@ function zoomCameraAbout(camera: Camera, factor: number, anchorX: number, anchor
 	};
 }
 
+/** A point of the viewport, in pixels. */
+interface Point {
+	readonly x: number;
+	readonly y: number;
+}
+
+/** Two fingers on the viewport. */
+type Fingers = readonly [Point, Point];
+
+/**
+ * Follow two fingers that pinch. The picture grows or shrinks by as much as the
+ * distance between the fingers did, and the part of the diagram that was midway
+ * between them stays midway between them, wherever they moved. So a pinch zooms
+ * and pans in one move, and nothing is left for later frames to do.
+ * @param camera Where the pane is looking.
+ * @param before Where the fingers were.
+ * @param after Where the fingers are now.
+ * @returns The camera that follows them.
+ */
+function pinchCamera(camera: Camera, before: Fingers, after: Fingers): Camera {
+	const was = Math.hypot(before[1].x - before[0].x, before[1].y - before[0].y);
+	const now = Math.hypot(after[1].x - after[0].x, after[1].y - after[0].y);
+	const scale = was > 0 && now > 0 ? clampScale(camera.scale * (now / was)) : camera.scale;
+	const from = { x: (before[0].x + before[1].x) / 2, y: (before[0].y + before[1].y) / 2 };
+	const to = { x: (after[0].x + after[1].x) / 2, y: (after[0].y + after[1].y) / 2 };
+	return {
+		scale,
+		x: to.x - ((from.x - camera.x) / camera.scale) * scale,
+		y: to.y - ((from.y - camera.y) / camera.scale) * scale,
+	};
+}
+
 /**
  * The camera that shows one rectangle of the diagram, centred, with a margin.
  *
@@ -284,10 +316,13 @@ export {
 	clampScale,
 	fitCamera,
 	panCamera,
+	pinchCamera,
 	unionRect,
 	zoomCameraAbout,
 	type Camera,
+	type Fingers,
 	type FitTarget,
+	type Point,
 	type Rect,
 	type Size,
 };

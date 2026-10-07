@@ -6,7 +6,8 @@
 // through its label, or by running a new stretch into a card or past it
 // nearer than the router keeps lines, a title band, a wall it did not cross,
 // along a wall, onto another line's axis, beside it, across it where it did
-// not cross or where that line turns, or into a jog too short for its bends;
+// not cross or where that line turns, or into a jog too short for its bends,
+// or that leaves the last run too short for its bend and its arrowhead;
 // and a step left in place because a line that slides away later stood in
 // its way.
 import { expect, test } from "bun:test";
@@ -72,6 +73,14 @@ test("a step stays where either slide crosses a line it did not", () => {
 test("a step stays where either slide leaves a run too short for its two bends", () => {
 	const shallow = line([0, 50], [100, 50], [100, 150], [200, 150], [200, 60], [300, 60]);
 	expect(unstepped([{ points: shallow }], NOTHING)[0]).toEqual(shallow);
+});
+
+test("a step stays where the slide leaves the last run too short for its bend and its arrowhead", () => {
+	// Reduced from Board viewer's TASK-365 comparison under blocks (TASK-403):
+	// the slide left 16 units, a bend of 8 and 8 of straight, under a head
+	// whose ink reaches 8.8 back.
+	const rising = line([0, 0], [100, 0], [100, 26], [200, 26], [200, -16]);
+	expect(unstepped([{ points: rising }], NOTHING)[0]).toEqual(rising);
 });
 
 test("a step stays where it is the line's run through its label", () => {

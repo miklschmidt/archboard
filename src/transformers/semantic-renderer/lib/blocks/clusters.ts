@@ -8,10 +8,8 @@
 // every region on the block's root.
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Edge, Graph, Subgraph } from "@viz-js/viz";
-import {
-	ARCHITECTURE_HEADER_PADDING,
-	CONTAINER_INSET,
-} from "@/transformers/semantic-renderer/config";
+import { CONTAINER_INSET, REGION_INSET } from "@/transformers/semantic-renderer/config";
+import { ARCHITECTURE_HEADER_PADDING } from "@/transformers/semantic-renderer/lib/design";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Block, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import {
@@ -27,12 +25,9 @@ import {
 	type Join,
 	type Output,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
-import { LONE_INSET, titleRow, titleWidth } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { titleRow, titleWidth } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import type { Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { Below } from "@/transformers/semantic-renderer/lib/blocks/below";
-
-/** Room a group region keeps around its members. */
-const REGION_INSET = 14;
 
 /**
  * The room a cluster keeps round what it holds, as Graphviz draws it and as
@@ -44,7 +39,7 @@ const REGION_INSET = 14;
 function insetOf(cluster: Cluster): number {
 	return (
 		(cluster.kind === "frame" ? CONTAINER_INSET : REGION_INSET) +
-		(cluster.lone === undefined ? 0 : LONE_INSET)
+		(cluster.lone === undefined ? 0 : REGION_INSET)
 	);
 }
 /** The room a card moved into line keeps from its neighbours: half what Graphviz keeps. */

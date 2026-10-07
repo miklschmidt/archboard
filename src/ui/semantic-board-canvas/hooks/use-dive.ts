@@ -26,7 +26,7 @@ import type {
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { CAMERA_MOTION_ATTRIBUTE } from "@/ui/semantic-board-canvas/hooks/use-camera-glide";
 import { PICTURE_MOTION_ATTRIBUTE } from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
-import { FAR_SCALE, type Camera, type Size } from "@/ui/semantic-board-canvas/lib/camera";
+import type { Camera, Size } from "@/ui/semantic-board-canvas/lib/camera";
 import { legInto, legOut, reached, type Leg } from "@/ui/semantic-board-canvas/lib/dive";
 import {
 	endOnInput,
@@ -156,19 +156,29 @@ function whenLanded(surface: HTMLElement, then: () => void): () => void {
  * The camera counts as the reader's while it flies, so the pane does not fit it
  * again when its size changes on the way. If something moves it off its course
  * anyway, the flight is given up and the board opens the plain way.
+ *
+ * The flight holds the camera's rest from takeoff (TASK-406). The far view of
+ * the surface stays as it was, so no card swaps its words for its name, or
+ * back, in the air. The board inside the card is drawn the same way, and so is
+ * the board that takes over from it. The hold ends once the pane has taken over,
+ * and the far view then follows the board's own fit, once.
  * @param takeoff The flight, and what it flies over.
- * @param land Hand the pane over, once the camera has arrived.
+ * @param land Hand the pane over, once the camera has arrived, with the hold to let go once the pane has taken over.
  * @param giveUp End the flight the plain way, when the camera did not arrive.
  * @returns How to give the surface back before that, or null when it could not take off.
  */
-function fly(takeoff: Takeoff, land: () => void, giveUp: () => void): (() => void) | null {
+function fly(
+	takeoff: Takeoff,
+	land: (letGo: () => void) => void,
+	giveUp: () => void,
+): (() => void) | null {
 	const { stage, camera, leg } = takeoff;
+	const letGo = camera.hold();
 	if (takeoff.standing !== null) stagePicture(stage.surface, takeoff.standing);
 	if (leg.from !== null) camera.glide(leg.from, 0, false);
-	// The board looks as it will when the flight meets it: from far, it draws each card's name alone.
-	const far = leg.through.scale < FAR_SCALE;
-	const dive = startDive(stage.surface, takeoff.child, leg.inset, takeoff.way, far, takeoff.card);
+	const dive = startDive(stage.surface, takeoff.child, leg.inset, takeoff.way, takeoff.card);
 	if (dive === null) {
+		letGo();
 		return null;
 	}
 	const stops: (() => void)[] = [];
@@ -182,7 +192,7 @@ function fly(takeoff: Takeoff, land: () => void, giveUp: () => void): (() => voi
 		if (landed) return;
 		landed = true;
 		release();
-		if (reached(camera.view().camera, leg.to)) land();
+		if (reached(camera.view().camera, leg.to)) land(letGo);
 		else giveUp();
 	};
 	stage.surface.style.pointerEvents = "none";
@@ -197,6 +207,7 @@ function fly(takeoff: Takeoff, land: () => void, giveUp: () => void): (() => voi
 	if (!camera.glide(leg.to, EXPLORING_MS.dive, true)) {
 		release();
 		dive.cancel();
+		letGo();
 		return null;
 	}
 	stops.push(whenLanded(stage.surface, arrive));
@@ -204,6 +215,7 @@ function fly(takeoff: Takeoff, land: () => void, giveUp: () => void): (() => voi
 		landed = true;
 		release();
 		dive.cancel();
+		letGo();
 	};
 }
 
@@ -296,8 +308,17 @@ function createFlights(
 ): Flights {
 	let pane = first;
 	let run: Run | null = null;
+	// A flight that has arrived holds the camera's rest until the pane has taken
+	// over from the picture it flew over: what lets the hold go, and that picture.
+	let landing: { readonly letGo: () => void; readonly from: SemanticDrawing | null } | null = null;
 	// Which card of a board opened which board, so that going back knows what to fly out of.
 	const cards = new Map<string, string>();
+
+	/** Let go of the hold of a flight that has arrived, if one is still held. */
+	function letGoOfLanding(): void {
+		landing?.letGo();
+		landing = null;
+	}
 
 	/**
 	 * End a request the plain way, at once: take what it put on the surface away and do what it was for.
@@ -314,11 +335,17 @@ function createFlights(
 	/**
 	 * The pane takes over from a flight that has arrived.
 	 * @param one The request.
+	 * @param letGo Let go of the flight's hold on the camera's rest, once the pane has taken over.
 	 */
-	function handOver(one: Run): void {
-		if (one.over) return;
+	function handOver(one: Run, letGo: () => void): void {
+		if (one.over) {
+			letGo();
+			return;
+		}
 		one.over = true;
 		if (run === one) run = null;
+		letGoOfLanding();
+		landing = { letGo, from: pane.drawn };
 		handed(pane.drawn);
 		one.proceed();
 	}
@@ -328,6 +355,7 @@ function createFlights(
 	 * @returns Whether there was.
 	 */
 	function endRun(): boolean {
+		letGoOfLanding();
 		const under = run;
 		if (under !== null) settle(under);
 		return under !== null;
@@ -374,8 +402,8 @@ function createFlights(
 			? null
 			: fly(
 					takeoff,
-					() => {
-						handOver(mine);
+					(letGo) => {
+						handOver(mine, letGo);
 					},
 					() => {
 						settle(mine);
@@ -469,16 +497,20 @@ function createFlights(
 	}
 
 	/**
-	 * Take the pane as it is after a render.
+	 * Take the pane as it is after a render. A flight over a picture that is gone
+	 * ends where it is, and a flight that has arrived lets go of the camera's rest
+	 * once the pane shows another picture: the board it flew to, fitted.
 	 * @param inputs The latest inputs.
 	 */
 	function update(inputs: DiveInputs): void {
 		pane = inputs;
 		if (run !== null && run.at !== inputs.drawn) settle(run);
+		if (landing !== null && landing.from !== inputs.drawn) letGoOfLanding();
 	}
 
-	/** Let go of a flight in the air, and of the surface it holds. */
+	/** Let go of a flight in the air, of the surface it holds, and of any hold on the camera. */
 	function dispose(): void {
+		letGoOfLanding();
 		if (run === null) return;
 		run.over = true;
 		run.stop();

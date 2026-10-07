@@ -26,6 +26,15 @@ import {
 } from "@/runtime/semantic-renderer/tests/sequence-fixture";
 
 /**
+ * The ink a start tag is filled with, as an attribute or in its style.
+ * @param tag The start tag.
+ * @returns Its fill, or undefined when it names none.
+ */
+function fill(tag: string): string | undefined {
+	return /[\s;"]fill[:=]"?([^;"]+)/.exec(tag)?.[1];
+}
+
+/**
  * Where one line or box of a drawing lies, as one comparable string.
  * @param tag The element's start tag.
  * @returns Its geometry.
@@ -149,9 +158,20 @@ describe("a stated standing on a sequence", () => {
 		expect(both).toHaveLength(2);
 		for (const group of both) {
 			expect(group.standing).toBe("removed");
-			expect(group.opacity).toBeGreaterThan(0);
-			expect(group.opacity).toBeLessThan(1);
 		}
+		// The column of time is ghosted whole, and the card has lost its block:
+		// what is left of it is a flat face inside a dashed footprint.
+		const lifeline = 'data-semantic-part="lifeline"';
+		const column = both.find((group) => group.markup.includes(lifeline))!;
+		expect(column.opacity).toBeGreaterThan(0);
+		expect(column.opacity).toBeLessThan(1);
+		const card = both.find((group) => !group.markup.includes(lifeline))!;
+		const kept = subjectGroups(drawnSequence({ legacy: "unchanged" }).svg).find(
+			(group) => group.id === "legacy" && group.kind === "node" && !group.markup.includes(lifeline),
+		)!;
+		expect(card.markup).toContain("stroke-dasharray");
+		expect(kept.markup).not.toContain("stroke-dasharray");
+		expect(withoutColour(card)).not.toBe(withoutColour(kept));
 
 		// And the column reads differently from a participant that stayed, with the
 		// colour spent.
@@ -160,51 +180,40 @@ describe("a stated standing on a sequence", () => {
 		);
 	});
 
-	test("keeps a removed step's words on solid plates, so a lifeline behind them stays hidden", () => {
+	test("keeps a removed step's words readable on opaque plates, so a lifeline behind them stays hidden", () => {
 		// The removed message's label sits across a lifeline, and a note under it
-		// does too. Its words are ghosted like the rest of it, but a plate drawn at
-		// the same strength lets the lifeline cut through the words.
+		// does too. Its words are faded to the secondary ink rather than made
+		// see-through, which would drop them under 4.5:1, and each lies on an
+		// opaque plate that hides the lifeline behind it.
 		const flow = SEQUENCE.flows[0]!;
 		const [s1, s2, s3, s4] = flow.steps;
 		const noted: VariantContent = {
 			...SEQUENCE,
 			flows: [{ ...flow, steps: [s1!, s2!, { ...s3!, note: "until the bridge is gone" }, s4!] }],
 		};
-		const words = subjectGroups(renderDataFlow({ content: noted, standing: SEQUENCE_STANDING }).svg)
-			.filter((group) => group.kind === "step" && group.id === "s3")
-			.find((group) => group.markup.includes("<text"))!;
-		// Every element of the group, with the opacity it is finally drawn at.
-		const drawnAt: { tag: string; opacity: number }[] = [];
-		const strengths = [1];
-		for (const [token] of words.markup.matchAll(/<g\b[^>]*>|<\/g>|<(?:rect|text)\b[^>]*>/g)) {
-			const own = Number(/\sopacity="([\d.]+)"/.exec(token)?.[1] ?? 1);
-			if (token === "</g>") {
-				strengths.pop();
-			} else if (token.startsWith("<g")) {
-				strengths.push(strengths.at(-1)! * own);
-			} else {
-				drawnAt.push({ tag: token, opacity: strengths.at(-1)! * own });
-			}
-		}
-		const ghosted = drawnAt.filter((one) => one.opacity < 1);
-		// The words are ghosted, label and note alike.
-		expect(ghosted.filter((one) => one.tag.startsWith("<text")).length).toBeGreaterThanOrEqual(2);
-		// The plates, not the selection's rule on one or the row's tint over one.
-		const plates = ghosted.filter(
-			(one) => one.tag.startsWith("<rect") && !/ab-halo|fill-opacity/.test(one.tag),
-		);
-		expect(plates).toHaveLength(2);
-		for (const plate of plates) {
-			const under = drawnAt.slice(0, drawnAt.indexOf(plate));
-			expect(
-				under.some(
-					(one) =>
-						one.opacity === 1 &&
-						one.tag.startsWith("<rect") &&
-						geometry(one.tag) === geometry(plate.tag),
-				),
-			).toBe(true);
-		}
+		/**
+		 * The words group of one message.
+		 * @param standing How the sequence's subjects stand.
+		 * @returns The group.
+		 */
+		const wordsOf = (standing: StatedStandings) =>
+			subjectGroups(renderDataFlow({ content: noted, standing }).svg)
+				.filter((group) => group.kind === "step" && group.id === "s3")
+				.find((group) => group.markup.includes("<text"))!;
+		const words = wordsOf(SEQUENCE_STANDING);
+		// Nothing in it is drawn see-through but the row's tint and the ghost of its chip.
+		expect(words.markup).not.toMatch(/<g\b[^>]*\sopacity=/u);
+		const tags = [...words.markup.matchAll(/<(?:rect|text)\b[^>]*>/g)].map(([tag]) => tag);
+		const plates = tags.filter((tag) => tag.startsWith("<rect") && !/ab-halo|opacity/.test(tag));
+		const texts = tags.filter((tag) => tag.startsWith("<text"));
+		// A plate under the label's words and one under the note's, each laid first.
+		expect(plates.length).toBeGreaterThanOrEqual(2);
+		expect(tags.indexOf(plates[0]!)).toBeLessThan(tags.indexOf(texts[0]!));
+		expect(tags.indexOf(plates[1]!)).toBeLessThan(tags.indexOf(texts.at(-1)!));
+		// The label's words are in another ink than a kept message's.
+		const kept = [...wordsOf({ s3: "unchanged" }).markup.matchAll(/<text\b[^>]*>/g)][0]![0];
+		expect(fill(kept)).toBeDefined();
+		expect(fill(texts[0]!)).not.toBe(fill(kept));
 	});
 
 	test("tells its four standings apart without relying on colour", () => {
@@ -227,13 +236,19 @@ test("a selected participant or message is traced in the selection's ink over wh
 	const groups = subjectGroups(rendered.svg);
 	const selection = /\.is-selected \.ab-halo\{[^}]*stroke:([^;}]+)/.exec(rendered.svg)![1];
 	// A participant's column: each halo retraces its lifeline or one of its
-	// bars, and nothing rings the column as a whole.
+	// bars, and nothing rings the column as a whole. A bar is a slab, its box
+	// the body its face and edge are drawn on, with a shadow round it.
 	const column = groups.find(
 		(group) => group.id === "gw" && group.markup.includes('data-semantic-part="lifeline"'),
 	)!;
 	const drawn = column.markup.match(/<(?:line|rect)\s(?![^>]*ab-halo)[^>]*>/g)!.map(geometry);
 	const lit = column.markup.match(/<(?:line|rect) class="ab-halo"[^>]*>/g)!.map(geometry);
-	expect(lit.toSorted()).toEqual(drawn.toSorted());
+	expect(lit.length).toBeGreaterThan(1);
+	for (const trace of lit) {
+		expect(drawn).toContain(trace);
+	}
+	expect(new Set(lit).size).toBe(lit.length);
+	expect(column.markup.match(/<line class="ab-halo"/g)).toHaveLength(1);
 
 	// A message: a trace over its own line, ending in a head of the selection's
 	// ink, and a rule round its plate.

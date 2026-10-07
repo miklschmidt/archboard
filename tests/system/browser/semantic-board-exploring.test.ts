@@ -27,7 +27,10 @@ import { serverPath } from "./support/navigator-support.ts";
 
 // Exploring a board in a real browser: a card opens by flying into it, the
 // part a person pokes lights what it is wired to along the whole of each route,
-// and the picture gives its words up when it is seen from far.
+// and the picture keeps its relationships' words, lit or not, near or far. A
+// flight from far swaps no card's words for its name in the air, and the board
+// it opens takes its own far view once, with the picture's fade, after it has
+// taken over.
 //
 // What the stage's module owners cannot see is the page around them: the style
 // sheet that makes the rest recede, the layout that gives the flight its
@@ -52,6 +55,12 @@ interface Flight {
 	readonly insetsAfter: number;
 	/** Whether the picture the pane landed on was still coming in. */
 	readonly entering: boolean;
+	/** For each change of the surface's far view, whether the board flown from was still on screen. */
+	readonly swaps: readonly ("before" | "after")[];
+	/** How many cards began to fade between their words and their name while the board flown from was on screen. */
+	readonly fadesBefore: number;
+	/** How many began once the board flown to was on screen. */
+	readonly fadesAfter: number;
 }
 
 /**
@@ -109,19 +118,34 @@ function recordFlight(
 			`   const part = inset.querySelector("[data-semantic-id]");` +
 			`   if (part) filters.add(getComputedStyle(part).filter); });` +
 			` watch.observe(surface, { attributes: true, attributeFilter: ["style"] });` +
+			// What the surface's far view was before each change of its class, and whether the board flown from was shown then.
+			` const classes = []; const far = (value) => (value || "").split(/\\s+/).includes("is-far");` +
+			` const note = (records) => { for (const r of records) classes.push([stage.dataset.board === before ? "before" : "after", far(r.oldValue)]); };` +
+			` const classWatch = new MutationObserver(note);` +
+			` classWatch.observe(surface, { attributes: true, attributeOldValue: true, attributeFilter: ["class"] });` +
+			` let fadesBefore = 0; let fadesAfter = 0;` +
+			` const fade = (e) => { const layer = e.target.classList;` +
+			`   if (e.propertyName !== "opacity" || !layer || !(layer.contains("ab-near") || layer.contains("ab-far"))) return;` +
+			`   if (stage.dataset.board === before) fadesBefore += 1; else fadesAfter += 1; };` +
+			` stage.addEventListener("transitionrun", fade, true);` +
 			` ${start};` +
 			` const until = Date.now() + 8000;` +
 			` while (stage.dataset.board === before && Date.now() < until) await new Promise((r) => setTimeout(r, 20));` +
 			` const entering = surface.hasAttribute("data-picture-motion");` +
 			` await new Promise((r) => setTimeout(r, 150));` +
-			` watch.disconnect();` +
+			` watch.disconnect(); note(classWatch.takeRecords()); classWatch.disconnect();` +
+			` stage.removeEventListener("transitionrun", fade, true);` +
+			` const states = [...classes.map(([, was]) => was), surface.classList.contains("is-far")];` +
+			` const swaps = classes.flatMap(([when], index) => states[index] === states[index + 1] ? [] : [when]);` +
 			` const landed = surface.querySelector(":scope > svg").getBoundingClientRect();` +
+			// The card's own box, its first rect: the shadow it casts reaches further down and right.
 			` const found = ${JSON.stringify(card)} === null ? null` +
-			`   : surface.querySelector("[data-semantic-id='" + ${JSON.stringify(card)} + "']")?.getBoundingClientRect() ?? null;` +
+			`   : surface.querySelector("[data-semantic-id='" + ${JSON.stringify(card)} + "'] > rect:not(.ab-halo)")?.getBoundingClientRect() ?? null;` +
 			` return { before, after: stage.dataset.board, frames, filters: [...filters], last,` +
 			`   landed: [landed.x, landed.y, landed.width, landed.height],` +
 			`   card: found === null ? null : [found.x, found.y, found.width, found.height],` +
-			`   insetsAfter: surface.querySelectorAll("[data-dive-inset]").length, entering }; })()`,
+			`   insetsAfter: surface.querySelectorAll("[data-dive-inset]").length, entering,` +
+			`   swaps, fadesBefore, fadesAfter }; })()`,
 	);
 }
 
@@ -174,6 +198,34 @@ function filtersByName(browser: AgentBrowserSession): Promise<Record<string, str
 	);
 }
 
+/** How the page draws one relationship's label. */
+interface LabelLook {
+	/** The words on it. */
+	readonly words: string;
+	/** Whether it is drawn at all: not `display: none` and not `visibility: hidden`. */
+	readonly drawn: boolean;
+	/** Its own computed opacity. */
+	readonly opacity: number;
+	/** The opacity its filter leaves it at, 1 for no filter. */
+	readonly filtered: number;
+}
+
+/**
+ * How the page draws every relationship's label.
+ * @param browser The page.
+ * @returns Each label, in the order of the picture.
+ */
+function labelLooks(browser: AgentBrowserSession): Promise<LabelLook[]> {
+	return browser.eval<LabelLook[]>(
+		`[...document.querySelectorAll("${SURFACE} [data-semantic-kind='edge'][data-semantic-part='label']")]` +
+			`.map((label) => { const look = getComputedStyle(label);` +
+			` const filter = /opacity\\(([\\d.]+)\\)/.exec(look.filter);` +
+			` return { words: label.textContent.trim(),` +
+			`   drawn: look.display !== "none" && look.visibility !== "hidden",` +
+			`   opacity: Number(look.opacity), filtered: filter === null ? 1 : Number(filter[1]) }; })`,
+	);
+}
+
 /** What the page paints of the lit relationships' lines. */
 interface LitInk {
 	/** How many lit lines the picture cuts a stretch out of because another line of a trunk draws it. */
@@ -220,7 +272,7 @@ function pressKey(browser: AgentBrowserSession, key: string, times = 1): Promise
 	);
 }
 
-test("a board opens by flying into its card, a poke lights what it is wired to, and far away the words go", async () => {
+test("a board opens by flying into its card, a poke lights what it is wired to, and every label stays", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "exploring", "vault");
@@ -358,9 +410,24 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 	expect(receded["Viewer"]).toBe("none");
 	expect(receded["Board"]).toBe("none");
 	expect(receded["Archive"]).toContain("opacity");
+	// The label of a relationship the poke does not light recedes to half at most,
+	// so its words can still be read, and the lit ones stay as drawn.
+	// Polled until it has receded as far as it goes: a label that recedes too far
+	// passes half on its way down and fails below.
+	const poked = await pollUntil(
+		() => labelLooks(browser),
+		(looks) => looks.some(({ words, filtered }) => words === "replays" && filtered <= 0.5),
+		"the label the poke does not light to recede",
+		WAIT,
+	);
+	expect(poked.map(({ words }) => words).toSorted()).toEqual(["draws", "replays", "shows"]);
+	for (const look of poked) {
+		expect(look.drawn).toBe(true);
+		expect(look.opacity).toBe(1);
+		expect(look.filtered).toBe(look.words === "replays" ? 0.5 : 1);
+	}
 
-	// Let go and zoom out: seen from far, a relationship's label goes with the
-	// words on the cards, and comes back as the camera does.
+	// Let go and zoom out: seen from far, every relationship's label is drawn as it is near.
 	await pressKey(browser, "Escape");
 	await pollUntil(
 		() => filtersByName(browser),
@@ -368,26 +435,35 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 		"the picture to come back once the poke is let go",
 		WAIT,
 	);
-	const labelsShown = (): Promise<number> =>
-		browser.eval<number>(
-			`[...document.querySelectorAll("${SURFACE} [data-semantic-kind='edge'][data-semantic-part='label']")]` +
-				`.filter((label) => getComputedStyle(label).visibility !== "hidden").length`,
-		);
-	expect(await labelsShown()).toBeGreaterThan(0);
 	await pressKey(browser, "-", 30);
 	await pollUntil(
-		() => labelsShown(),
-		(shown) => shown === 0,
-		"the relationship labels to go once the picture is seen from far",
+		() =>
+			browser.eval<boolean>(`document.querySelector("${SURFACE}").classList.contains("is-far")`),
+		(far) => far,
+		"the picture to be seen from far",
 		WAIT,
 	);
-	await pressKey(browser, "0");
+	const far = await labelLooks(browser);
+	expect(far).toHaveLength(3);
+	for (const look of far) expect(look).toMatchObject({ drawn: true, opacity: 1, filtered: 1 });
+
+	// Seen from far, the card opens its board by flight too. No card swaps its words
+	// for its name in the air or as the board takes over. The board, which its own
+	// fit sees near, then swaps once, with the picture's fade.
+	await pick(browser, writer ?? "");
 	await pollUntil(
-		() => labelsShown(),
-		(shown) => shown > 0,
-		"the relationship labels to return once the whole board is fitted again",
+		() => browser.eval<boolean>(`document.querySelector("${DRILL_OPEN}") !== null`),
+		(offered) => offered,
+		"the picked card to offer the board it opens",
 		WAIT,
 	);
+	await atRest(browser);
+	const fromFar = await recordFlight(browser, `document.querySelector("${DRILL_OPEN}").click()`);
+	expect(fromFar.after).toBe("engine");
+	expectLandedWhereItWas(fromFar);
+	expect(fromFar.fadesBefore).toBe(0);
+	expect(fromFar.swaps).toEqual(["after"]);
+	expect(fromFar.fadesAfter).toBeGreaterThan(0);
 
 	// A relationship is lit along the whole of its route, though the picture has
 	// another line of its trunk draw the first stretch of it.

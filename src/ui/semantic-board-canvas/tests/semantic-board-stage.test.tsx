@@ -172,6 +172,44 @@ test("a wheel over the diagram zooms about the pointer, by how far it turned", a
 	}
 });
 
+test("a pinch, on a trackpad or with two fingers, moves the camera at once and asks for no frame", async () => {
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage();
+	await settle();
+	const frames = takeFrames();
+	try {
+		// A trackpad pinches with a wheel that holds Control, ten times finer than a notch.
+		const pointer = [200, 150] as const;
+		const before = cameraNow();
+		act(() => {
+			viewport().dispatchEvent(wheelAt(-10, pointer, true));
+		});
+		const pinched = cameraNow();
+		expect(pinched.scale).toBeCloseTo(before.scale * 1.1, 6);
+		const [wasX, wasY] = diagramPointUnder(before, pointer);
+		const [isX, isY] = diagramPointUnder(pinched, pointer);
+		expect(isX).toBeCloseTo(wasX, 6);
+		expect(isY).toBeCloseTo(wasY, 6);
+
+		// Two fingers spread to twice as far apart: the picture is twice the size at once.
+		const touch = { pointerType: "touch", button: 0, buttons: 1, clientY: 200 };
+		act(() => {
+			fireEvent.pointerDown(viewport(), { ...touch, pointerId: 11, clientX: 300 });
+			fireEvent.pointerDown(viewport(), { ...touch, pointerId: 12, clientX: 400 });
+			fireEvent.pointerMove(viewport(), { ...touch, pointerId: 12, clientX: 500 });
+		});
+		expect(cameraNow().scale).toBeCloseTo(pinched.scale * 2, 6);
+		act(() => {
+			fireEvent.pointerUp(viewport(), { ...touch, pointerId: 12, clientX: 500 });
+			fireEvent.pointerUp(viewport(), { ...touch, pointerId: 11, clientX: 300 });
+		});
+		// Nothing was left for a frame to do.
+		expect(frames.asked()).toBe(0);
+	} finally {
+		frames.restore();
+	}
+});
+
 test("a camera at rest asks for no more frames", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
@@ -219,61 +257,46 @@ test("a reader who asked for reduced motion has the camera land at once", async 
 	}
 });
 
-test("a drag let go while it is moving is thrown, and a press stops it where it is", async () => {
+test("a drag let go while it is moving fast stops where it is drawn", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
 	const frames = takeFrames();
 	try {
+		const before = cameraNow().x;
 		// 200 pixels in 80 milliseconds, let go at once: 2.5 pixels a millisecond.
 		pointerAt("pointerdown", { x: 100, t: 1000 });
 		for (let step = 1; step <= 5; step += 1) {
 			pointerAt("pointermove", { x: 100 + step * 40, t: 1000 + step * 16 });
 		}
+		const asked = frames.asked();
 		pointerAt("pointerup", { x: 300, t: 1082 });
 		const letGo = cameraNow().x;
-		frames.run(100);
-		const drifting = cameraNow().x;
-		expect(drifting).toBeGreaterThan(letGo + 50);
-		frames.run(EXPLORING_MS.cameraFling * 5);
-		const stopped = cameraNow().x;
-		expect(stopped).toBeGreaterThan(drifting);
-		// Slowed to rest: nothing moves it now.
-		frames.run(500);
-		expect(cameraNow().x).toBe(stopped);
-
-		// The same throw, stopped by a press.
-		pointerAt("pointerdown", { x: 100, t: 5000 });
-		for (let step = 1; step <= 5; step += 1) {
-			pointerAt("pointermove", { x: 100 + step * 40, t: 5000 + step * 16 });
-		}
-		pointerAt("pointerup", { x: 300, t: 5082 });
-		frames.run(100);
-		pointerAt("pointerdown", { x: 300, t: 5200 });
-		pointerAt("pointerup", { x: 300, t: 5210 });
-		const held = cameraNow().x;
-		frames.run(500);
-		expect(cameraNow().x).toBe(held);
+		expect(letGo - before).toBeCloseTo(200, 6);
+		frames.run(1000);
+		expect(cameraNow().x).toBe(letGo);
+		// Nothing carries the camera on: the release asks for no frame.
+		expect(frames.asked()).toBe(asked);
 	} finally {
 		frames.restore();
 	}
 });
 
-test("a drag let go after resting, or a slow one, is not thrown", async () => {
+test("a press stops a wheel's zoom where it is drawn", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
 	const frames = takeFrames();
 	try {
-		pointerAt("pointerdown", { x: 100, t: 1000 });
-		for (let step = 1; step <= 5; step += 1) {
-			pointerAt("pointermove", { x: 100 + step * 40, t: 1000 + step * 16 });
-		}
-		// The pointer rested for a good while before it was let go.
-		pointerAt("pointerup", { x: 300, t: 1400 });
-		const letGo = cameraNow().x;
-		frames.run(800);
-		expect(cameraNow().x).toBe(letGo);
+		act(() => {
+			viewport().dispatchEvent(wheelAt(-100, [200, 150]));
+		});
+		frames.run(32);
+		pointerAt("pointerdown", { x: 300, t: 5000 });
+		pointerAt("pointerup", { x: 300, t: 5010 });
+		const held = cameraNow();
+		frames.run(500);
+		expect(cameraNow()).toEqual(held);
 	} finally {
 		frames.restore();
 	}
@@ -395,16 +418,24 @@ test("a picture seen from far away is told so through a pan, and told again when
 		fireEvent.pointerUp(viewport(), { pointerId: 1, clientX: 90, clientY: 40 });
 	});
 	expect(surface().classList.contains("is-far")).toBe(true);
-	// Twenty presses ask for a zoom, and the far view ends as the camera comes close enough to read.
+	// Twenty presses ask for a zoom. While the hand moves the camera the surface
+	// is a layer of its own, and the far view holds, so nothing is swapped in the
+	// middle of the zoom.
 	const frames = takeFrames();
 	try {
 		for (let press = 0; press < 20; press += 1)
 			act(() => {
 				fireEvent.keyDown(viewport(), { key: "+" });
 			});
+		frames.run(EXPLORING_MS.cameraEase * 3);
+		expect(cameraNow().scale).toBeGreaterThan(0.75);
+		expect(surface().classList.contains("is-far")).toBe(true);
+		expect(surface().classList.contains("will-change-transform")).toBe(true);
 		frames.run(EXPLORING_MS.cameraEase * 20);
 	} finally {
 		frames.restore();
 	}
+	// At rest, close enough to read: the far view ends, and the picture is drawn again at its size.
 	expect(surface().classList.contains("is-far")).toBe(false);
+	expect(surface().classList.contains("will-change-transform")).toBe(false);
 });
