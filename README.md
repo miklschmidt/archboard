@@ -14,7 +14,7 @@
   <a href="LICENSE"><img alt="Licence: BUSL-1.1" src="https://img.shields.io/badge/licence-BUSL--1.1-8ce99a?style=flat-square"></a>
 </p>
 
-**[Quick start](#quick-start)** · **[Use cases](#what-you-can-do-with-it)** · **[How it works](#how-it-works)** · **[Compared](#archboard-next-to-the-usual-diagram-tools)** · **[Prompts to try](#prompts-to-try)**
+**[Quick start](#quick-start)** · **[Use cases](#what-you-can-do-with-it)** · **[Code and history](#plan-with-evidence-from-your-code)** · **[How it works](#how-it-works)** · **[Compared](#archboard-next-to-the-usual-diagram-tools)** · **[Prompts to try](#prompts-to-try)**
 
 </div>
 
@@ -51,6 +51,30 @@ https://github.com/user-attachments/assets/7ae7ab41-2755-48cd-9887-c71eac90bfce
 </table>
 
 ---
+
+## Plan with evidence from your code
+
+A proposal starts with a map of what exists. Archboard brings code, module boundaries, and Git history into that map. See where to look before you change the system.
+
+### Find where the map and the code disagree
+
+Give each part a link to its file or a named function, class, or value. A relationship can cite the source that supports it. With `archboard check --code`, your agent finds broken source links, relationships drawn backwards, and dependencies between mapped parts that the board leaves out.
+
+Warnings mark the affected parts and relationships in the canvas. Select a warning to read its evidence and open the source. Each finding says whether a tool resolved its evidence or the evidence still needs investigation.
+
+Archboard reads TypeScript, Python, C#, Swift, C, C++, and Objective-C. It also reads Terraform and OpenTofu, Kubernetes manifests, Docker Compose, and Nix flakes. Where application code and infrastructure declare both ends of a connection, it can follow the evidence across a network hop. The report names analysis that it skips. A language server resolves names for an editor. [Configure one](INSTALL.md#language-servers-for-the-code-check) for stronger evidence in Python, Swift, C#, C, C++, or Objective-C.
+
+### See what a module exposes before you change it
+
+A module's interface is what its outside callers reach. Archboard shows those entry points, the hidden parts behind them, and the callers that depend on them. It also identifies entry points that appear to pass a call straight through, so you can decide whether that extra layer earns its place.
+
+Compare competing proposals side by side. The comparison lists interface changes before internal changes, so you can see which design asks more of its callers. Archboard also reports callers that reach parts the module does not expose. It identifies exposed names that nobody outside the module uses.
+
+### Read the change through the architecture
+
+Git records changes to files. Archboard maps their commits onto the parts of your system. See which parts change most often and which repeatedly change together, including pairs that the board does not connect. Pick a part to read its recent commits and the parts that change with it.
+
+Set a branch's commits against its proposal. See which parts the commits changed, which parts the plan named, and where the two differ. Your agent can spot changes to mapped parts outside the plan before it adopts the proposal. Archboard also reports commits to bound files since the board last described them, so you can choose what to inspect next.
 
 ## Plan the next architecture with your agent
 
@@ -134,7 +158,7 @@ I'm new here. Walk me through what happens to stock when a shopper presses Pay.
 
 ## Zoom from the system into a service
 
-One map, from the whole system down to the file. Boards link to boards: hover a part that has its own board and a tip offers to open it. Double-click and the view dives in, with a breadcrumb back. Parts are bound to their code, so **Open code** takes you to the file in VS Code, Cursor, Zed or on GitHub. A system spread over several repositories can share one vault, with each part bound to its own repository.
+One map, from the whole system down to the file. Boards link to boards: hover a part that has its own board and a tip offers to open it. Double-click and the view dives in, with a breadcrumb back. Parts are bound to their code. **Open code** takes you to a file or a named function or class in VS Code, Cursor, Zed or on GitHub. A system spread over several repositories can share one vault, with each part bound to its own repository.
 
 <img src="https://github.com/user-attachments/assets/bfedb527-77f6-4c5c-93f4-60c37df2c514" width="100%" alt="The Web shop board: the pointer rests on Inventory service, and a tip says double-click to open it. The view dives into the Inventory service board with the breadcrumb Web shop › Inventory service.">
 
@@ -265,6 +289,10 @@ See [INSTALL.md](INSTALL.md) for shared vaults, code bindings and the configurat
 | _"Add a sequence diagram of the sign-up flow."_                              | a sequence diagram over the same parts as the architecture |
 | _"Propose splitting billing out of the monolith and compare it with today."_ | a proposal drawn against the current variant               |
 | _"Give me two options for search, side by side."_                            | two competing drafts from one starting point               |
+| _"Show me where this board disagrees with the code."_                        | findings with source evidence and warnings on the map      |
+| _"Compare the module interfaces of these two proposals."_                    | entry points, callers, and changed boundaries side by side |
+| _"Which parts keep changing together?"_                                      | Git history mapped to parts, including unconnected pairs   |
+| _"What did this branch change beyond its architecture proposal?"_            | committed changes set against the parts the plan names     |
 | _"We shipped the queue. Adopt the proposal."_                                | the old architecture becomes history, with the reason      |
 | _"Record a walkthrough of PR 128 for the reviewers and attach it."_          | a narrated MP4 on the pull request                         |
 | _"Explain the checkout to a new hire, one step at a time."_                  | a newcomer's walkthrough you can narrate                   |
@@ -298,7 +326,7 @@ In a vault: a directory of `.semantic.json` files, one per board, holding every 
 <details><summary><b>Does the diagram stay in sync with the code?</b></summary>
 <br>
 
-Your agent keeps it in sync. Parts carry code bindings, and `archboard check` reports a binding whose file is gone, but nothing rewrites a board behind your back.
+Your agent keeps it in sync. `archboard check --code` reports broken source evidence, missing dependencies between mapped parts, and disagreements between drawn module boundaries and code. It also shows which parts have commits to their bound files since the board last described them. Your agent reads the findings and updates the map. Archboard never rewrites a board on its own.
 </details>
 
 <details><summary><b>Is the traffic animation real traffic?</b></summary>
