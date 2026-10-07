@@ -1,11 +1,11 @@
 ---
 id: TASK-436.01
 title: sourcekit-lsp runs with its own background indexing
-status: In Progress
+status: Done
 assignee:
   - '@codex-language'
 created_date: '2026-10-07 00:36'
-updated_date: '2026-10-07 00:50'
+updated_date: '2026-10-07 01:37'
 labels:
   - code-check
 dependencies: []
@@ -21,10 +21,10 @@ The code check turns off the background indexing of sourcekit-lsp (`backgroundIn
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The code check passes no `backgroundIndexing` option to sourcekit-lsp, and a package that turns background indexing on is not unready
-- [ ] #2 A run of the code check waits until sourcekit-lsp finished its index, and then asks it
-- [ ] #3 INSTALL.md, the setup reference of the archboard skill and an amendment of ADR 0046 say that sourcekit-lsp builds a package itself on the first run
-- [ ] #4 Where a Swift toolchain is available, the first run and a later run on one package are measured, and the notes give the numbers
+- [x] #1 The code check passes no `backgroundIndexing` option to sourcekit-lsp, and a package that turns background indexing on is not unready
+- [x] #2 A run of the code check waits until sourcekit-lsp finished its index, and then asks it
+- [x] #3 INSTALL.md, the setup reference of the archboard skill and an amendment of ADR 0046 say that sourcekit-lsp builds a package itself on the first run
+- [x] #4 Where a Swift toolchain is available, the first run and a later run on one package are measured, and the notes give the numbers
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -40,4 +40,14 @@ The code check turns off the background indexing of sourcekit-lsp (`backgroundIn
 
 <!-- SECTION:NOTES:BEGIN -->
 Removed the unused initialization-options mechanism and the Swift index/config preflight guards. workspace/synchronize with index=true remains the readiness barrier; focused Swift language-server and code-check owners passed (6 tests). Generated ignored skill artifacts. Swift and sourcekit-lsp are absent from PATH, so the conditional live first/later package measurement cannot run on this machine. Primary SourceKit 6.2.4 Workspace.swift confirms synchronize waits for the build graph and up-to-date index.
+
+Closing footprint: base 19b1b5317b56920628b7da9dae78764ca27ac161. The restated proposal parent is TASK-436.09, ZbBkF1bH. Language servers is named and changed. Swift readiness inside Code check is an internal change. Other unnamed changes belong to concurrent analysis tasks. No named part lacks its source change. The conditional Swift measurement does not apply because this machine has no Swift toolchain.
+
+Final gate: bun run check exits 0 in 436 seconds with 4,597 passing tests, including the complete serial browser lane. Lint, formatting, root and frontend types, and builds pass. The refreshed server runs sixteen boards. The delivery code pass exits 0 with zero diagnostics and zero warnings. Complete gate log: /tmp/archboard-task436-final-check-2.log. Delivery evidence: /tmp/archboard-task436-delivery-code.json.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+SourceKit keeps its own background indexing and the analysis waits for index synchronization. Focused protocol tests and the full gate pass. Documentation states the first-run build behavior. Live Swift timing remains unavailable because this machine lacks the toolchain.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,11 +1,11 @@
 ---
 id: TASK-436.13
 title: The history lens reads a .csproj binding as the directory of its project
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:37'
-updated_date: '2026-10-07 00:52'
+updated_date: '2026-10-07 01:36'
 labels:
   - history
 dependencies: []
@@ -21,8 +21,8 @@ The code check reads a part bound to a `.csproj` file as the whole directory of 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 For a part bound to a `.csproj` file, the history lens counts commits to every file in the directory of the project
-- [ ] #2 The code check and the history lens get the files of a binding from one function
+- [x] #1 For a part bound to a `.csproj` file, the history lens counts commits to every file in the directory of the project
+- [x] #2 The code check and the history lens get the files of a binding from one function
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -39,4 +39,12 @@ The code check reads a part bound to a `.csproj` file as the whole directory of 
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented bindingPathOf and filesOfBinding in shared/code-target. Code check and history now use one exact-or-descendant selection rule; history normalizes project scope before overlap/coupling. A focused Git owner verifies nested C# and project-settings-only changes through Behind, locality/coupling and footprint. Existing C# and C-family code-check owners pass. Validation: history-lens plus C#/C owners 46 tests passed; final focused project/C#/C run 9 passed; touched production/test lint and root tsc --noEmit passed. ensure:codex-contract cannot run in the dependency-symlink worktree because its checkout-local guard rejects the main node_modules path, so copied main ignored generated contract for focused type checks; integration gate remains on main. Simplified file selection and retained rename aliases as exact paths, so former .csproj names cannot expand unrelated history.
+
+Final gate: bun run check exits 0 in 436 seconds. Modules: 4,353 passed. System: 196 passed. Repository policy: 24 passed. Serial browser: 24 passed across all nineteen lane commands. Lint, formatting, root and frontend types, and builds pass. Final runtime refresh succeeds, and dogfood check --code exits 0 with zero diagnostics and zero warnings. Simplification and focused regression evidence remain in the task notes. Complete log: /tmp/archboard-task436-final-check-2.log.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Code analysis and history share binding file selection. A csproj binding covers its entire project directory, including shared files. Focused project history tests and the complete gate pass.
+<!-- SECTION:FINAL_SUMMARY:END -->
