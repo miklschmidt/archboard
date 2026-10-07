@@ -182,6 +182,13 @@ failed pass on LLVM.
   each checkout and language. The skip has the `repo` of the checkout, and its
   `detail` names the command that configures a server. A configured command
   that is not installed gets the same skip.
+- A pass reads `repos.json` once, when it starts, and takes the root and the
+  servers of every checkout from that one reading. A change that is written
+  during the pass applies to the next pass. `check --code` runs in the Archboard
+  server, which reads the file again for each pass, so a server that already
+  runs needs no restart for a new configuration. It looks up a command that is a
+  name on the `PATH` that it started with, which can differ from the `PATH` of
+  the agent's shell. The skip says so, and an absolute path avoids it.
 - TypeScript needs no configuration. The check runs the native
   `tsc --lsp --stdio` of the `typescript` package that the checkout installs.
   The check looks only at `node_modules/typescript` at the root of the
