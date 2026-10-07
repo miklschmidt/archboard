@@ -333,3 +333,4 @@ export {
 	parseInternalCodeTargetUrl,
 };
 export { isAbsoluteOrBareOpenerExecutable } from "@/shared/code-target/executable";
+export { bindingPathOf, filesOfBinding } from "@/shared/code-target/binding-files";

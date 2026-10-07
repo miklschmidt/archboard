@@ -18,7 +18,7 @@ import {
 } from "@/runtime/code-target/index";
 import { normalizeBoundPath } from "@/runtime/history-lens/lib/commits";
 import type { BehindSkip } from "@/shared/code-check/index";
-import type { CodeBinding } from "@/shared/code-target/index";
+import { bindingPathOf, type CodeBinding } from "@/shared/code-target/index";
 import type { SemanticNode, VariantContent } from "@/shared/semantic-board/index";
 
 /** A part the lens reads: where its checkout is, and the path it binds there. */
@@ -77,7 +77,7 @@ function readOrSkip(
 	if (resolved.otherRef !== undefined) {
 		return { subject, reason: "ref-not-checked-out", repo, ref: resolved.otherRef };
 	}
-	return { node, repo, root: resolved.root, path };
+	return { node, repo, root: resolved.root, path: bindingPathOf(path) };
 }
 
 /**
