@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 217,
+	"version": 218,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-07T20:18:06.543Z",
+	"updatedAt": "2026-10-07T20:19:13.757Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -94117,11 +94117,7 @@
 						"order": 26000,
 						"name": "History lens",
 						"kind": "module",
-						"responsibility": "Maps each checkout's commits onto the parts whose bound files they changed; says how far a board is behind, which parts change most or together, and what a branch changed against its proposal",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/history-lens"
-						}
+						"responsibility": "Maps checkout commits onto bound paths for behind and onto bound declarations for locality and footprint; labels path-wide fallback when a symbol cannot be resolved"
 					},
 					{
 						"id": "uLRdM5Uy",
@@ -95504,6 +95500,21 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/semantic-board-discard.ts",
 							"symbol": "settledChangeFields"
+						}
+					},
+					{
+						"id": "kXzRYl25",
+						"order": 113000,
+						"from": "adthSPYy",
+						"to": "aqjsNyJ9",
+						"kind": "call",
+						"label": "reads declarations from historical source bytes",
+						"description": "TASK-448 reuses code facts and Terraform module resolution to attribute Git changes to symbol bindings.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/history-lens/lib/symbol-attribution.ts",
+							"symbol": "terraformConfiguration"
 						}
 					}
 				],
