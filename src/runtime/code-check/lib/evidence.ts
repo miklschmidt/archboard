@@ -17,13 +17,10 @@
 // `import()`, a `require()` or an import for its side effects loads the whole
 // file at run time, so it is a call to the file.
 //
-// A use at run time that runs none of the name's code, such as a constant
-// read, a name passed on or an `instanceof` test (runs.ts in code facts), is
-// call evidence all the same, so it supports a relationship. The check is
-// sure of a dependency the board must draw only where code runs code, so such
-// a piece never makes a relationship undrawn on its own: the evidence keeps it
-// apart as one of its values. A known function passed as an argument can run
-// later, so it counts as running evidence (TASK-436.15).
+// A constant read, a name passed on or an `instanceof` test supports call
+// evidence but does not make a relationship undrawn: the evidence keeps it
+// apart as a value. A known function passed as an argument can run later,
+// so it counts as running evidence (TASK-436.15).
 //
 // Each piece goes from the part whose code makes the use to the part whose
 // code holds what it reaches, each the narrowest binding (ownership.ts). Code
