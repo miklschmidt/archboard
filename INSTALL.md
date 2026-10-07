@@ -299,7 +299,7 @@ On a system where only the compiler knows where the standard headers are, such a
 
 clangd keeps its background index in `.cache/clangd/index`. The `.cache` directory is next to `compile_commands.json`. If that file is in a `build` directory, the `.cache` directory is next to `build`. Both are inside the checkout, so add `.cache/` to the `.gitignore` of the checkout. The check waits until clangd indexed every file that the database lists. Then the answer for a definition in another file does not depend on which files the check opened first. Do not pass `--background-index=false`: the check then waits 30 seconds and says `language-server-failed`.
 
-On Redis (303 commands, 24 cores, clangd 21.1.8), the first check took 4.7 seconds. Each later check took 1.9 seconds, against 0.15 seconds without clangd.
+On Redis (303 files in `compile_commands.json`, 24 cores, clangd 21.1.8), the first check took 4.7 seconds. Each later check took 1.9 seconds, against 0.15 seconds without clangd.
 
 The check waits at most 30 seconds for the index. If the first index takes longer, the check says `language-server-failed` once and keeps the candidates. LLVM was such a case in an earlier measurement: 54 seconds for 2,283 commands.
 
