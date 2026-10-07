@@ -24,6 +24,7 @@
 
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "@/runtime/code-facts/lib/facts";
+import { sourceRange } from "@/runtime/code-facts/lib/spans";
 
 /** The kind of a type, which decides the default accessibility of its members. */
 type TypeKind = "class" | "struct" | "interface" | "enum" | "delegate";
@@ -146,6 +147,7 @@ function definitionAt(
 		kind: kind ?? kindOf(node),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
+		source: sourceRange(node),
 		visibility,
 		exposed: visibility === "public" && (scope.holder?.exposed ?? true),
 	};

@@ -34,6 +34,7 @@
 import type { Node } from "web-tree-sitter";
 import { declaratorKind, namesFunction } from "@/runtime/code-facts/lib/c-definition-kind";
 import type { Definition } from "@/runtime/code-facts/lib/facts";
+import { sourceRange } from "@/runtime/code-facts/lib/spans";
 
 /** Where a declaration stands: the names that qualify it, and whether an anonymous namespace holds it. */
 interface Scope {
@@ -189,6 +190,7 @@ function define(
 		kind,
 		start: extent.startPosition.row + 1,
 		end: extent.endPosition.row + 1,
+		source: sourceRange(extent),
 		visibility: word,
 		exposed,
 		...(declares ? { declaration: true as const } : {}),

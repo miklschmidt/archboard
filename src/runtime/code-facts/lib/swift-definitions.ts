@@ -17,6 +17,7 @@
 
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "@/runtime/code-facts/lib/facts";
+import { sourceRange } from "@/runtime/code-facts/lib/spans";
 
 /** The access levels another module can use. */
 const EXPOSED = new Set(["open", "public", "package"]);
@@ -103,6 +104,7 @@ function defined(node: Node, name: string, holder: Holder): Definition {
 		kind: kindOf(node),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
+		source: sourceRange(node),
 		visibility: level,
 		exposed: EXPOSED.has(level) && holder.exposed,
 	};

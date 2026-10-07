@@ -36,7 +36,7 @@
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import type { Definition, Import, ParsedFacts, Reference } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
-import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
+import { sourceRange, spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { addressOf } from "@/runtime/code-facts/lib/terraform-address";
 import { environmentOf } from "@/runtime/code-facts/lib/terraform-environment";
 import { classifyReference } from "@/runtime/code-facts/lib/terraform-providers";
@@ -153,6 +153,7 @@ function declared(symbol: string, node: Node, visibility: string): Definition {
 		kind: "value",
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
+		source: sourceRange(node),
 		visibility,
 		exposed: INTERFACE.has(visibility),
 	};
