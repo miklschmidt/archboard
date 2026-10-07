@@ -221,21 +221,27 @@ GitHub. It uses the commit, then the branch, then the default branch.
 
 `archboard check --code` reads the registered checkouts and matches the names that the code uses. A match by name only is a _candidate_. A language server (a program that knows where code defines a name) resolves a candidate that joins two parts to its definition. It also resolves the use that an anchor names, such as `ledger.post()` through a value. Evidence that a server resolved can make a warning. A candidate never does.
 
-A language server reads a checkout the way your editor does. For most languages, that means it runs code of the checkout. pyright runs the Python interpreter of the checkout's `.venv`. clangd runs the compilers and plugins that `compile_commands.json` names. csharp-ls and sourcekit-lsp evaluate MSBuild files and `Package.swift`.
+A language server reads a checkout the way your editor does. For most languages, that runs code of the checkout:
 
-So archboard starts such a server only for a checkout where you, or the agent that works in that repository, configured it. Then archboard runs the server as your editor does. It uses the command and arguments of the configured server and your environment. It adds no flag, no variable and no rewritten file.
+- pyright runs the Python interpreter of the checkout's `.venv`, and the startup hooks of the packages in it.
+- clangd runs a helper program that a compile command names for a `native` GPU. The section on C, C++ and Objective-C says more.
+- csharp-ls evaluates the MSBuild files of the solution.
+- sourcekit-lsp evaluates `Package.swift`.
+
+So archboard starts such a server only for a checkout where you, or the agent that works in that repository, configured it. Then the Archboard server runs the server as your editor does. It uses the command and arguments of the configured server and the environment of the Archboard server. That is the environment of the command that started it (see [section 5](#5-start-the-archboard-server-and-sign-in-to-codex)). It adds no flag, no variable and no rewritten file.
 
 A configured server runs the code of that repository. Configure one only for a repository that you work in.
 
 ### TypeScript
 
-TypeScript needs no configuration. The check runs `tsc --lsp --stdio` from the `typescript` package that the checkout installs when all of these are true:
+TypeScript needs no configuration. If all of these are true, the check runs `tsc --lsp --stdio` from the `typescript` package that the checkout installs:
 
 - The package is in `node_modules/typescript` at the root of the checkout.
 - The package is version 7 or later. TypeScript 7 is the first version that has a language server.
-- The package has the native program for your machine, `@typescript/typescript-<platform>-<arch>`.
+- The package has the native program for your machine, `@typescript/typescript-<platform>-<arch>`, beside it or inside it.
+- The package and the program are inside the checkout once their links resolve.
 
-Otherwise the check runs the `tsc` of the `typescript` package that archboard installs. This happens for a checkout with an older TypeScript, with no TypeScript, or with no native program for your machine. The check never runs a `tsc` outside the checkout, such as one that a parent directory installs.
+Otherwise the check runs the `tsc` of the `typescript` package that archboard installs. This is so for an older TypeScript, for no TypeScript, for no native program, and for a link that leads out of the checkout. The check does not look in the parent directories of the checkout. If the `typescript` package of archboard has no native program for your machine either, the check says `language-server-missing` for TypeScript.
 
 In a monorepo, the check reads the root only. A package that installs another version than the root uses the version at the root. `tsc --lsp` loads no plugin that `tsconfig.json` names. This was measured with TypeScript 7.0.2.
 
@@ -244,22 +250,22 @@ In a monorepo, the check reads the root only. A package that installs another ve
 Python, C, C++, Objective-C, C# and Swift have no default server. To configure one, follow these steps:
 
 1. Install the server.
-2. Register the checkout with `archboard repo add`, if you did not do it yet (see [Code bindings](#code-bindings)).
+2. If you did not register the checkout yet, run `archboard repo add` (see [Code bindings](#code-bindings)).
 3. Run this command in the repository:
 
 ```bash
 archboard repo language-server <language> <command> [--arg=<argument>]...
 ```
 
-The language is `python`, `csharp`, `swift` or `c`. The language `c` covers C, C++ and Objective-C. The command is a program on your `PATH` or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
+The language is `python`, `csharp`, `swift` or `c`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
 
 `--repo <identity>` names another registered repository. `--remove` removes the server of the language. `archboard repo list` shows the configured servers of each checkout. `archboard repo forget` removes them with the checkout.
 
-The configuration stays on your machine. It is in `repos.json` with the checkout. If you register the same directory again, the configuration stays.
+The configuration stays on your machine. It is in `repos.json` with the checkout. If you register the same directory again, the configuration stays. If you register the repository at another directory, the configuration goes.
 
-The check reads `repos.json` again each time that it runs. A server that is already running uses a configuration that you wrote after it started, so you do not restart it. The check looks up a command that is a name on the `PATH` of the server, which is the `PATH` of the shell that started it. If that shell did not have the command, give the absolute path of the command, or restart the server.
+The Archboard server reads `repos.json` again each time that the check runs. So a running Archboard server uses a configuration that you wrote after it started. The Archboard server looks up a command that is a name on its own `PATH`. That `PATH` is the `PATH` of the command that started it. If that `PATH` lacks the command, give the absolute path of the command. Or run `archboard stop` and run a command again.
 
-If a checkout has no configured server for a language, the check says `language-server-missing` once for the checkout and the language. The answer names the command that configures one, and the uses stay candidates. The check says the same when the command that you configured is not installed.
+If a checkout has no configured server for a language, the check says `language-server-missing` once for the checkout and the language. If the Archboard server cannot find the configured command, the check says the same. The answer names the command that configures one, and the uses stay candidates.
 
 If a server does not start, does not answer within 30 seconds or stops, the check says `language-server-failed` once for that checkout. Then the check starts no other server of that language in that checkout. This includes the other Swift packages and the other C compilation databases of the checkout.
 
@@ -267,11 +273,11 @@ If a server cannot answer about a project yet, the check says `language-server-u
 
 #### Python
 
-Install pyright or basedpyright, for example with `npm install -g pyright` or `pipx install basedpyright`. Then run `archboard repo language-server python pyright-langserver --arg=--stdio`.
+Install pyright or basedpyright, for example with `npm install -g pyright` or `pipx install basedpyright`. Then run `archboard repo language-server python pyright-langserver --arg=--stdio`. For basedpyright, run `archboard repo language-server python basedpyright-langserver --arg=--stdio`.
 
 pyright reads `pyrightconfig.json`, or `[tool.pyright]` in the `pyproject.toml`, at the root of the checkout. The check tells pyright the interpreter of a virtual environment in `.venv` or `venv` at the root, as the Python extension of an editor does. Then imports of installed packages resolve. That interpreter runs, and so do the startup hooks of the packages that are installed in it.
 
-A virtual environment outside the checkout, such as one that Poetry or Hatch keeps elsewhere, needs a `venvPath` and a `venv` in the pyright configuration. Without them, pyright uses the `python3` on your `PATH`.
+A virtual environment outside the checkout, such as one that Poetry or Hatch keeps elsewhere, needs a `venvPath` and a `venv` in the pyright configuration. Without them, pyright uses the `python3` on the `PATH` of the Archboard server.
 
 #### C, C++ and Objective-C
 
@@ -283,13 +289,15 @@ clangd needs the `compile_commands.json` of the checkout. That file gives the fl
 - Make and other build tools: `bear -- make`. This builds the project once.
 - Meson: it writes `compile_commands.json` into the build directory.
 
-The check uses the `compile_commands.json` that clangd finds. clangd looks in the directory of the file, then in each directory above it up to the root of the checkout, then in a `build` directory there. Git can ignore the file, and the check still uses it.
+The check uses the `compile_commands.json` that clangd finds. clangd looks in the directory of the file and in its `build` directory. Then it does the same for each directory above, up to the root of the checkout. Git can ignore the file, and the check still uses it.
 
-A file gets no server when no such file exists, when it is not a list of commands, or when it lists no command. The check says `language-server-unready` once for it. Generate the file again after you add source files.
+If no such file exists, if it is not a list of commands, or if it lists no command, the file gets no server. The check says `language-server-unready` once for it. Generate the file again after you add source files.
 
-The check passes no flag to clangd, so clangd behaves as it does in your editor. It reads `.clangd` and your own clangd configuration. It runs the compilers and plugins that the database names. On a system where only the compiler knows where the standard headers are, such as NixOS, give clangd the compilers as your editor does: `--arg=--query-driver=<glob>`.
+The check passes no flag to clangd, so clangd behaves as it does in your editor. It reads the `.clangd` file of the checkout and your own clangd configuration. It runs no compiler and loads no plugin that a command names (`-fplugin=`, `-fpass-plugin=` or `-Xclang -load`). It runs one kind of program of the checkout: when a CUDA, HIP or OpenMP command asks for the `native` GPU, clang runs a helper program to find it. A `-B` directory of the command can hold that program. This was measured with clangd 21.1.8.
 
-clangd keeps its background index in `.cache/clangd/index`, in the directory that holds the database. That directory is inside the checkout, so add `.cache/` to the `.gitignore` of the checkout. The check waits until clangd indexed every file that the database lists. Then the answer for a definition in another file does not depend on which files the check opened first.
+On a system where only the compiler knows where the standard headers are, such as NixOS, your editor gives clangd the compilers with `--query-driver=<glob>`. Give it the same way: `--arg=--query-driver=<glob>`. Then clangd runs each compiler that matches the glob.
+
+clangd keeps its background index in `.cache/clangd/index`. The `.cache` directory is next to `compile_commands.json`. If that file is in a `build` directory, the `.cache` directory is next to `build`. Both are inside the checkout, so add `.cache/` to the `.gitignore` of the checkout. The check waits until clangd indexed every file that the database lists. Then the answer for a definition in another file does not depend on which files the check opened first. Do not pass `--background-index=false`: the check then waits 30 seconds and says `language-server-failed`.
 
 On Redis (303 commands, 24 cores, clangd 21.1.8), the first check took 4.7 seconds. Each later check took 1.9 seconds, against 0.15 seconds without clangd.
 
@@ -297,7 +305,7 @@ The check waits at most 30 seconds for the index. If the first index takes longe
 
 #### C#
 
-Install csharp-ls with `dotnet tool install --global csharp-ls`. Then run `archboard repo language-server csharp csharp-ls`. csharp-ls needs the .NET SDK that it was built for on your `PATH`. csharp-ls 0.28 needs .NET 10.
+Install csharp-ls with `dotnet tool install --global csharp-ls`. Then run `archboard repo language-server csharp csharp-ls`. csharp-ls needs the .NET SDK that it was built for on the `PATH` of the Archboard server. csharp-ls 0.28 needs .NET 10.
 
 The check tells csharp-ls to load the `.sln` or `.slnx` file that is nearest the root of the checkout. With no solution, csharp-ls loads every `.csproj` file. The check never asks it to build or to restore packages.
 
