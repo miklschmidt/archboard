@@ -235,6 +235,18 @@ The decision has these parts:
   says `language-server-failed` once. Nobody measured whether the index shards
   that clangd writes before the check kills it let a later pass finish.
 
+Amended by TASK-436.01 (2026-10-07): SourceKit-LSP owns its background indexing,
+including building a Swift package on its first run. The check sends no
+`backgroundIndexing` initialization option and requires no prebuilt index. A
+package that enables background indexing is ready. A Swift file without a
+`Package.swift` remains unready. Before questions, `workspace/synchronize` with
+`index: true` waits for the build graph and background index to finish. This
+replaces the SourceKit guards retained by TASK-433. Swift 6.1 and later enable
+background indexing by default. The Swift 6.2.4 implementation of
+[`Workspace.synchronize`](https://github.com/swiftlang/sourcekit-lsp/blob/swift-6.2.4-RELEASE/Sources/SourceKitLSP/Workspace.swift#L474-L483)
+waits for both. No Swift toolchain was available on this implementation machine,
+so no first-run or later-run duration was measured here.
+
 ## Context
 
 A board makes claims about code. Evidence rule 3 of the consumer skill makes an

@@ -319,17 +319,11 @@ The Roslyn language server is not supported. It loads nothing until the client o
 
 Run `archboard repo language-server swift sourcekit-lsp`. sourcekit-lsp evaluates `Package.swift`, which runs code of the checkout.
 
-sourcekit-lsp finds a definition in another file through an index that a build writes. Build each Swift package once with `swift build`. Swift 6.2 writes the index on Linux by default. Swift 5.10 on Linux writes it only with `--enable-index-store`. The index holds only what the last build saw, so build again after you add code.
+sourcekit-lsp builds a package itself on the first run to prepare its background index. Background indexing is on by default in Swift 6.1 and later. The check passes no option that changes it, and a package can set its own options in `.sourcekit-lsp/config.json`.
 
-The check never builds. It starts sourcekit-lsp in the package that holds the file, with background indexing off. The check sends that as an initialization option. Then the server reads the index under `.build/debug/index/store`, and it never runs `swift build` itself. It keeps its index database and a module cache under `.build`, as it does in your editor.
+The check starts sourcekit-lsp in the package that holds the file. It waits for `workspace/synchronize` with `index: true` to finish the build graph and index before it asks for definitions. The server keeps its index database and a module cache under `.build`, as it does in your editor. A first check can take longer than a later check because the server prepares the package.
 
-The check says `language-server-unready` once for each package that it cannot ask. These are the cases:
-
-- The package has no index.
-- The `.sourcekit-lsp/config.json` of the package turns background indexing on.
-- No `Package.swift` holds the Swift file.
-
-The uses in such a package stay candidates. This was measured with sourcekit-lsp 6.2.4.
+If no `Package.swift` holds the file, the check says `language-server-unready` once. Its uses stay candidates.
 
 ## Rendering to a bitmap
 

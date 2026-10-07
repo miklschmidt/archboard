@@ -66,8 +66,9 @@ of your shell.
    `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`. This builds nothing. For
    other build tools, run `bear -- make`. This builds the project once. Without
    the file, clangd guesses its flags, and the check says `language-server-unready`.
-3. For Swift, run `swift build` in each package. sourcekit-lsp reads the index
-   that a build writes, and the check never builds.
+3. For Swift, use Swift 6.1 or later. sourcekit-lsp builds a package itself on
+   the first run to prepare its background index. The check waits until the
+   index is ready before it asks for definitions.
 4. If the repository is not registered, run `archboard repo add <dir>`. If it is
    registered at another directory, the command in step 5 refuses to run here.
    Registering this directory moves the registration and drops the servers of the
@@ -114,8 +115,7 @@ the Archboard server, run `command -v <program>`. Give that absolute path as the
 command.
 
 If the answer says `language-server-unready`, the project lacks what the server
-reads. For C, C++ and Objective-C, that is a `compile_commands.json`. For a Swift
-package, it is an index. For C#, it is a solution or project file. The detail
+reads. For C, C++ and Objective-C, that is a `compile_commands.json`. For Swift, it is a `Package.swift` that holds the file. For C#, it is a solution or project file. The detail
 names the project.
 
 If the answer says `language-server-failed`, the server did not start, did not

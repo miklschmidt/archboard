@@ -9,9 +9,8 @@
 // a `Money`. Parts bind the target directories, the extension's member and
 // `Money.swift`. One relationship is anchored at `ledger.balance`, a use
 // through a value that only sourcekit-lsp resolves. The pass names
-// sourcekit-lsp, and no build ever indexed the package, so the server is never
-// started, the check says so once for the package (TASK-367.16), and the
-// findings are the adapter's.
+// sourcekit-lsp. Its configured server exits when started, so the check says
+// so once and keeps the adapter's evidence.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -124,7 +123,7 @@ beforeAll(async () => {
 	});
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
-	// A server that fails if a pass starts it, as it must not for a package with no index.
+	// A configured server that fails after starting.
 	const fails = { command: process.execPath, args: ["-e", "process.exit(7)"] };
 	register(scratch, { [SHOP]: shop }, { swift: fails });
 	board(vault, "Shop", [
@@ -216,8 +215,8 @@ test("a call reaches an extension's member in another file of the imported modul
 	]);
 });
 
-test("a package no build has indexed is said once with its checkout, and its questions stay unasked", () => {
+test("a configured Swift server that exits is said once with its checkout, and its questions stay unasked", () => {
 	expect(outcome.skipped.filter((each) => each.reason.startsWith("language-server-"))).toEqual([
-		{ reason: "language-server-unready", repo: SHOP, detail: expect.any(String) },
+		{ reason: "language-server-failed", repo: SHOP, detail: expect.any(String) },
 	]);
 });

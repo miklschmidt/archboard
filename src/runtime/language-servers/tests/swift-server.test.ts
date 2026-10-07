@@ -1,9 +1,5 @@
-// sourcekit-lsp for Swift (TASK-367.16), against a stand-in server that, as
-// sourcekit-lsp does, answers only about an open file: the server starts in
-// the package that holds the file, with background indexing off and after it
-// has loaded its index; a package it cannot answer about without a build is
-// said once and starts nothing; and a server that failed in one package starts
-// in no other package of the checkout.
+// SourceKit-LSP starts in each package, owns its index, and is asked only
+// after synchronization. A file with no package stays unasked.
 
 import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
@@ -29,9 +25,6 @@ const LEDGER = [
 /** A manifest; the check never reads it here. */
 const MANIFEST = "// swift-tools-version:5.9\n";
 
-/** A unit in the index store that a build writes. */
-const UNIT = ".build/debug/index/store/v5/units/Ledger.swift.o-1";
-
 let current: Workspace | undefined;
 
 afterEach(() => {
@@ -46,7 +39,7 @@ afterEach(() => {
  */
 function swiftSession(at: Workspace) {
 	return openLanguageServers({
-		servers: at.table("needs-open", "swift"),
+		servers: at.table("needs-open,synchronizes", "swift"),
 		signal: new AbortController().signal,
 		timeouts: SHORT,
 	});
@@ -62,12 +55,11 @@ function normalizeIn(at: Workspace, base: string) {
 	return { root: at.root, file: `${base}/Sources/Core/Ledger.swift`, line: 4, symbol: "normalize" };
 }
 
-test("sourcekit-lsp is asked in the package that holds the file, with background indexing off, after it loaded its index, about the file it opened", async () => {
+test("sourcekit-lsp owns the index of an unbuilt package and is asked after synchronization about the file it opened", async () => {
 	current = workspace(
 		{
 			"apps/shop/Package.swift": MANIFEST,
 			"apps/shop/Sources/Core/Ledger.swift": LEDGER,
-			[`apps/shop/${UNIT}`]: "",
 		},
 		{ "Sources/Core/Ledger.swift:4:normalize": { path: "Sources/Core/Ledger.swift", line: 8 } },
 	);
@@ -80,9 +72,7 @@ test("sourcekit-lsp is asked in the package that holds the file, with background
 	});
 	await session.close();
 	expect(session.unavailable()).toEqual([]);
-	expect(current.starts()).toEqual([
-		{ cwd: join(current.root, "apps/shop"), options: { backgroundIndexing: false } },
-	]);
+	expect(current.starts()).toEqual([{ cwd: join(current.root, "apps/shop"), options: null }]);
 	const asked = current.methods().filter((method) => method !== "answer");
 	expect(asked.slice(0, 5)).toEqual([
 		"initialize",
@@ -93,58 +83,30 @@ test("sourcekit-lsp is asked in the package that holds the file, with background
 	]);
 });
 
-test("a package that no build has indexed is said once for all its directories, keeps its questions unasked, and starts no server, while an indexed one is asked", async () => {
+test("a package enabling background indexing is asked, while a file no package holds starts no server", async () => {
 	current = workspace(
 		{
-			"bare/Package.swift": MANIFEST,
-			"bare/Sources/Core/Ledger.swift": LEDGER,
-			"bare/Sources/App/Other.swift": LEDGER,
-			"built/Package.swift": MANIFEST,
-			"built/Sources/Core/Ledger.swift": LEDGER,
-			[`built/${UNIT}`]: "",
+			"shop/Package.swift": MANIFEST,
+			"shop/.sourcekit-lsp/config.json": JSON.stringify({ backgroundIndexing: true }),
+			"shop/Sources/Core/Ledger.swift": LEDGER,
+			"Scripts/Sources/Core/Ledger.swift": LEDGER,
 		},
 		{ "Sources/Core/Ledger.swift:4:normalize": { path: "Sources/Core/Ledger.swift", line: 8 } },
 	);
 	const session = swiftSession(current);
-	const other = { ...normalizeIn(current, "bare"), file: "bare/Sources/App/Other.swift" };
-	const [bare, again, built] = await Promise.all([
-		session.definition(normalizeIn(current, "bare")),
-		session.definition(other),
-		session.definition(normalizeIn(current, "built")),
-	]);
-	expect([bare, again]).toEqual([{ status: "unasked" }, { status: "unasked" }]);
-	expect(built.status).toBe("answered");
-	await session.close();
-	expect(session.unavailable()).toEqual([
-		{ language: "swift", reason: "unready", root: current.root, detail: expect.any(String) },
-	]);
-	expect(current.starts().map((start) => start.cwd)).toEqual([join(current.root, "built")]);
-});
-
-test("a package whose own configuration turns background indexing on, and a file no package holds, are each said once and start no server", async () => {
-	current = workspace({
-		"shop/Package.swift": MANIFEST,
-		"shop/.sourcekit-lsp/config.json": JSON.stringify({ backgroundIndexing: true }),
-		"shop/Sources/Core/Ledger.swift": LEDGER,
-		[`shop/${UNIT}`]: "",
-		"Scripts/Sources/Core/Ledger.swift": LEDGER,
-	});
-	const session = swiftSession(current);
-	expect(await session.definition(normalizeIn(current, "shop"))).toEqual({ status: "unasked" });
+	expect((await session.definition(normalizeIn(current, "shop"))).status).toBe("answered");
 	expect(await session.definition(normalizeIn(current, "Scripts"))).toEqual({ status: "unasked" });
 	await session.close();
-	expect(session.unavailable().map((entry) => entry.reason)).toEqual(["unready", "unready"]);
-	expect(current.pids()).toEqual([]);
+	expect(session.unavailable().map((entry) => entry.reason)).toEqual(["unready"]);
+	expect(current.starts()).toEqual([{ cwd: join(current.root, "shop"), options: null }]);
 });
 
 test("a server that failed in one package is not started in another package of that checkout", async () => {
 	current = workspace({
 		"one/Package.swift": MANIFEST,
 		"one/Sources/Core/Ledger.swift": LEDGER,
-		[`one/${UNIT}`]: "",
 		"two/Package.swift": MANIFEST,
 		"two/Sources/Core/Ledger.swift": LEDGER,
-		[`two/${UNIT}`]: "",
 	});
 	const session = openLanguageServers({
 		servers: current.table("exit-on-definition", "swift"),

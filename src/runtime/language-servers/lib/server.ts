@@ -120,15 +120,14 @@ function exitReason(code: number, signal: string | null): string {
 
 /**
  * The `initialize` request: the project as the one workspace, a client that
- * asks for definitions and outlines and nothing else, and the options the
- * language's row names.
+ * asks for definitions and outlines and nothing else.
  * @param root The project.
  * @param language Its language.
  * @returns Its params.
  */
 function initializeParams(root: string, language: Language): object {
 	const uri = pathToFileURL(root).href;
-	const { initializationOptions, indexProgress } = LANGUAGES[language];
+	const { indexProgress } = LANGUAGES[language];
 	return {
 		processId: process.pid,
 		clientInfo: { name: "archboard" },
@@ -140,7 +139,6 @@ function initializeParams(root: string, language: Language): object {
 			textDocument: { documentSymbol: { hierarchicalDocumentSymbolSupport: true } },
 			...(indexProgress === undefined ? {} : { window: { workDoneProgress: true } }),
 		},
-		...(initializationOptions === undefined ? {} : { initializationOptions }),
 	};
 }
 
