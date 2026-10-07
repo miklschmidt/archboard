@@ -1,11 +1,11 @@
 ---
 id: TASK-440
 title: 'The README demonstrates code evidence, module interfaces, and Git history'
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 10:05'
-updated_date: '2026-10-07 10:51'
+updated_date: '2026-10-07 10:57'
 labels:
   - readme
   - recordings
@@ -54,4 +54,12 @@ The full bun run check gate passed: 4,647 tests, zero failures. Modules 4,403, s
 Pre-push review fixed one fixture isolation defect in ec5c29e68. Inherited Git controls could direct the generated commits into another repository. A disposable before/after reproduction wrote nine commits outside the fixture before the fix and zero afterward. The fixture still has the same deterministic HEAD. Registration and schema boundary review found no defects. The three demo recordings will regenerate after the fix.
 
 Regenerated all three demonstrations after the fixture isolation fix. Final WebP sizes are 1,587,912 bytes for code evidence, 1,422,224 for module interfaces, and 1,698,870 for Git history. Parent inspected their encoded playback and replaced all three attachment links with fresh uploads. README review narrowed the claims about missing evidence, unused exports, and mapped module interfaces in 424f3e854. The final manifest reports all sixteen assets current.
+
+Final bun run check passed after review fixes and regeneration: 4,647 tests, zero failures. All three review scopes and the final link review are complete. Both dogfood checks exited zero. The code check reports sixteen existing unused-export information findings and no warnings. No README task commit appears in the behind report, so no canonical board needs a change. Simplification keeps the shared fixture and existing recording pipeline.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added three reproducible demonstrations for code evidence, module interfaces, and Git history. Real CLI results drive each scene. Inspected encoded playback, uploaded the media, and updated README links. All sixteen assets are current. The full gate passes 4,647 tests. Pre-push review fixed fixture Git isolation and clarified README claims.
+<!-- SECTION:FINAL_SUMMARY:END -->
