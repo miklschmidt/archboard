@@ -129,7 +129,9 @@ const semanticRenderContract = defineCommand({
 	input: { ingress: RenderInputSchema },
 	result: z.union([
 		SemanticRenderResultSchema,
-		z.instanceof(Uint8Array).meta({ description: "The standalone SVG as UTF-8 bytes." }),
+		z.instanceof(Uint8Array<ArrayBufferLike>).meta({
+			description: "The standalone SVG as UTF-8 bytes.",
+		}),
 	]),
 	output: {
 		cases: [
