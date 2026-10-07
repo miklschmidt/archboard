@@ -181,6 +181,11 @@ function objectiveCReadings(
 				 */
 				unpairedHeader: (text) =>
 					isObjectiveC(text) ? HEADER(blankedMacros(text, wrappers)) : otherwise(text),
+				/**
+				 * Read a header whose source says it is Objective-C.
+				 * @param text The header.
+				 * @returns Its facts.
+				 */
 				header: (text) => HEADER(blankedMacros(text, wrappers)),
 			};
 			made.set(key, readings);

@@ -256,6 +256,48 @@ function selectedReading(checkout: CheckoutFiles, file: string): AdapterReading 
 }
 
 /**
+ * The supported source beside a header, including its content fingerprint.
+ * @param file The header.
+ * @param checkout The checkout's files.
+ * @param read Reads a listed file's text.
+ * @returns The source's reading, or nothing without a readable pair.
+ */
+function headerSource(
+	file: string,
+	checkout: CheckoutFiles,
+	read: ReadText,
+): AdapterReading | undefined {
+	const extension = path.posix.extname(file);
+	if (!HEADERS.includes(extension)) return undefined;
+	const stem = file.slice(0, -extension.length);
+	const paired = SOURCES.map((suffix) => `${stem}${suffix}`).find((source) =>
+		checkout.files.has(source),
+	);
+	if (paired === undefined) return undefined;
+	const source = adapterOf(paired);
+	const text = read(paired);
+	return source === undefined || text === undefined
+		? undefined
+		: { ...source, dependencyHash: Bun.hash(`${paired}\0${text}`) };
+}
+
+/**
+ * The Objective-C parse for a source, a paired header or an unpaired header.
+ * @param reading The selected reading.
+ * @param paired Whether a source selected the header's language.
+ * @param objectiveC The checkout's Objective-C readings.
+ * @returns The parse for that role.
+ */
+function objectiveCParse(
+	reading: AdapterReading,
+	paired: boolean,
+	objectiveC: ObjectiveCReadings,
+): ParseFacts {
+	if (paired) return objectiveC.header;
+	return reading.parse === HEADER ? objectiveC.unpairedHeader : objectiveC.source;
+}
+
+/**
  * How the files of one checkout are read, made once in a pass: as
  * `adapterOf` says, but a header uses its same-directory source's language,
  * and an Objective-C file blanks the SDK macros the checkout's headers wrap.
@@ -269,28 +311,14 @@ function readingsIn(
 ): (file: string) => AdapterReading | undefined {
 	let objectiveC: ObjectiveCReadings | undefined;
 	return (file) => {
-		const reading = selectedReading(checkout, file);
+		const source = headerSource(file, checkout, read);
+		const reading = source ?? selectedReading(checkout, file);
 		if (reading === undefined) return undefined;
-		const extension = path.posix.extname(file);
-		if (HEADERS.includes(extension)) {
-			const stem = file.slice(0, -extension.length);
-			const paired = SOURCES.map((extension) => `${stem}${extension}`).find((source) =>
-				checkout.files.has(source),
-			);
-			const source = paired === undefined ? undefined : adapterOf(paired);
-			const sourceText = paired === undefined ? undefined : read(paired);
-			if (paired !== undefined && source !== undefined && sourceText !== undefined) {
-				const dependencyHash = Bun.hash(`${paired}\0${sourceText}`);
-				if (source.adapter.name !== "objc") return { ...source, dependencyHash };
-				objectiveC ??= OBJECTIVE_C(wrappersIn(checkout, read));
-				return { ...source, parse: objectiveC.header, dependencyHash };
-			}
-		}
 		if (reading.parse !== HEADER && reading.parse !== OBJECTIVE_C_SOURCE) return reading;
 		objectiveC ??= OBJECTIVE_C(wrappersIn(checkout, read));
 		return {
 			...reading,
-			parse: reading.parse === HEADER ? objectiveC.unpairedHeader : objectiveC.source,
+			parse: objectiveCParse(reading, source !== undefined, objectiveC),
 		};
 	};
 }
