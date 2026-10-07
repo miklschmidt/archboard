@@ -99,7 +99,7 @@ const bindings = [
 	["inlineA", "src/inline.ts", "first"],
 	["inlineB", "src/inline.ts", "second"],
 	["reused", "src/destination.ts", "first"],
-	["mixed", "mixed/main.tf", "aws_s3_bucket.later"],
+	["mixed", "mixed", "aws_s3_bucket.later"],
 	["ext", "src/renamed.ts", "first"],
 	["ambig", "src/duplicates.py", "repeated"],
 	...adapters.flatMap(
@@ -214,6 +214,7 @@ beforeAll(async () => {
 	write("notes.txt", "first\n");
 	write("src/duplicates.py", "def repeated():\n    return 0\n\ndef repeated():\n    return 0\n");
 	write("mixed/main.tf", 'output "unrelated" {\n  value = 0\n}\n');
+	write("mixed/README.md", "Configuration notes for a later change\n");
 	write("mixed-lang/main.tf", 'output "unrelated" {\n  value = 0\n}\n');
 	write(
 		"mixed-lang/shared.ts",
