@@ -64,6 +64,11 @@ directory. `archboard repo list` shows the configured servers of each checkout.
 The configuration stays on this machine, and `archboard repo forget` removes it
 with the checkout.
 
+The check reads the configuration each time it runs, so you do not restart the
+server. The server looks up a command name on the `PATH` that it started with. If
+the check says that the command is not on that `PATH`, give the absolute path of
+the command.
+
 clangd keeps its index in `.cache/clangd/index` in the directory that holds
 `compile_commands.json`. Add `.cache/` to the `.gitignore` of the repository.
 

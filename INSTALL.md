@@ -257,6 +257,8 @@ The language is `python`, `csharp`, `swift` or `c`. The language `c` covers C, C
 
 The configuration stays on your machine. It is in `repos.json` with the checkout. If you register the same directory again, the configuration stays.
 
+The check reads `repos.json` again each time that it runs. A server that is already running uses a configuration that you wrote after it started, so you do not restart it. The check looks up a command that is a name on the `PATH` of the server, which is the `PATH` of the shell that started it. If that shell did not have the command, give the absolute path of the command, or restart the server.
+
 If a checkout has no configured server for a language, the check says `language-server-missing` once for the checkout and the language. The answer names the command that configures one, and the uses stay candidates. The check says the same when the command that you configured is not installed.
 
 If a server does not start, does not answer within 30 seconds or stops, the check says `language-server-failed` once for that checkout. Then the check starts no other server of that language in that checkout. This includes the other Swift packages and the other C compilation databases of the checkout.
