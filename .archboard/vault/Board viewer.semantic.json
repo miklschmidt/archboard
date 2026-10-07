@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 72,
+	"version": 74,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-06T22:37:55.643Z",
+	"updatedAt": "2026-10-07T00:51:26.441Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -17698,6 +17698,1957 @@
 						"kind": "function",
 						"responsibility": "Present every reachable state",
 						"description": "The pane's components. stageBody in SemanticStageView.tsx presents the waiting, problem, empty and drawn states, and says when the picture on screen is old, from the entry point's query and reading state. SemanticDiagram draws the picture and mounts its transition, gestures, lighting and marks. SemanticStageView lays the header with its way back, the variant's standing, the page of the open tab and the sidebar around them. SemanticBoardStage.tsx and Peek.tsx in the same directory are parts of their own.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components"
+						}
+					},
+					{
+						"id": "ijZRg0FU",
+						"order": 6000,
+						"name": "Control camera",
+						"kind": "function",
+						"responsibility": "Fit, pan, and zoom locally",
+						"description": "useBoardCamera holds the pane's camera across pictures. It fits, glides, pans, zooms and throws, with the clamped transforms of camera.ts, and never persists or invents board geometry.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-board-camera.ts"
+						}
+					},
+					{
+						"id": "UDkL7Tn6",
+						"order": 7000,
+						"name": "Select semantic subjects",
+						"kind": "function",
+						"responsibility": "Map gestures through the atlas",
+						"description": "Accepts only semantic IDs present in the server atlas and toggles the shared attention mark on rendered groups.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/subjects.ts"
+						}
+					},
+					{
+						"id": "yUjSLnkw",
+						"order": 8000,
+						"name": "Follow drill-downs",
+						"kind": "function",
+						"responsibility": "Navigate linked board levels",
+						"description": "Resolves a link's exact current or named target variant against the target board's document and says its lifecycle before it is opened; a named variant that is gone is reported, never swapped for the current one. The trail back is the entry point's drill navigation (use-drill-down.ts).",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/drill-target.ts"
+						}
+					},
+					{
+						"id": "z0dvHsUt",
+						"order": 9000,
+						"name": "Drive walkthrough focus",
+						"kind": "function",
+						"responsibility": "Focus each narrative beat",
+						"description": "Maps beat subjects through the atlas to a focus rectangle and reports named subjects missing from the current view.",
+						"parent": "pZRxBz2h",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/narrative.ts"
+						}
+					},
+					{
+						"id": "VC7yvPZB",
+						"order": 10000,
+						"name": "Refresh changed boards",
+						"kind": "function",
+						"responsibility": "Invalidate live cached drawings",
+						"description": "Hears a board's new version from the pane socket and, for the board on screen (or a name it had before a rename), cancels its reads in flight and invalidates its pictures and its document, keeping the last usable picture on screen.",
+						"parent": "pZRxBz2h",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-semantic-board-changes.ts"
+						}
+					},
+					{
+						"id": "aYC7if1N",
+						"order": 11000,
+						"name": "Viewer entry point",
+						"kind": "function",
+						"responsibility": "Mount queries and reading state",
+						"description": "SemanticBoardStage, mounted by ApplicationPane. It asks the query cache for the picture of the reading on screen, owns the reading hooks (drill trail, level, variant, walkthrough, fit, report) and hands the answer to renderedView.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
+						}
+					},
+					{
+						"id": "38hwLCO1",
+						"order": 12000,
+						"name": "Picture source",
+						"kind": "function",
+						"responsibility": "Where a pane's pictures come from: the renderer this page installed at start, or the server's render route",
+						"parent": "pZRxBz2h",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-source.ts"
+						}
+					},
+					{
+						"id": "AaCxSfhT",
+						"order": 13000,
+						"name": "Picture cache",
+						"kind": "function",
+						"responsibility": "Holds a drawing only as a read-only cache, stamped with the version, policy and renderer build it was made for",
+						"description": "ADR 0023: the browser owns presentation and nothing else. A stamp that no longer matches is not shown.",
+						"parent": "pZRxBz2h",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-cache.ts"
+						}
+					},
+					{
+						"id": "F90402mH",
+						"order": 14000,
+						"name": "Draw here",
+						"kind": "module",
+						"responsibility": "Draws the board in this tab, with the tab's own canvas and worker pool",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer/index.ts"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "TK7SUGoc",
+						"order": 15000,
+						"name": "Semantic queries",
+						"kind": "function",
+						"responsibility": "The cache keys and freshness of the listing, a board's document, a picture and a board's locality",
+						"description": "No timer: a picture and a document stay fresh until their board announces a new version, and are read again on a reconnect. The last picture of the same board stays as the placeholder while another reading of it is drawn. A board's locality is asked once for each pick of a part, and never on a timer, a return to the tab or a reconnect.",
+						"parent": "pZRxBz2h",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/queries.ts"
+						}
+					},
+					{
+						"id": "IJkVbMK2",
+						"order": 16000,
+						"name": "Local pictures",
+						"kind": "function",
+						"responsibility": "Draws a picture in this page from the board and policy the cache holds, and keeps it",
+						"description": "Shows a kept picture only when its stamp matches the board's version, the policy and the renderer build; forgets pictures of boards that moved when the server lists them; draws a changed board's readings again ahead of time.",
+						"parent": "pZRxBz2h",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts"
+						}
+					},
+					{
+						"id": "VcgeYlnZ",
+						"order": 17000,
+						"name": "Keep fitted",
+						"kind": "function",
+						"responsibility": "Fits the whole reading, or the walkthrough step, until somebody pans or zooms; lands at once on the board a flight arrived at",
+						"description": "A new board, variant or view fits the entire selected reading; each walkthrough step takes the camera back and fits its subjects; a new picture glides from the last reading, and leaving a presentation glides back. The board a flight arrived at is fitted at once, because the flight has already put the camera there.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-auto-fit.ts"
+						}
+					},
+					{
+						"id": "LayJIvbq",
+						"order": 18000,
+						"name": "Walkthrough position",
+						"kind": "function",
+						"responsibility": "Which walkthrough is open and at which step: chosen by hand, or driven by narration or a recording",
+						"parent": "pZRxBz2h",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-walkthrough.ts"
+						}
+					},
+					{
+						"id": "gT3UJ3yd",
+						"order": 19000,
+						"name": "Report the reading",
+						"kind": "function",
+						"responsibility": "Tells the pane what is on screen, only when it changes",
+						"description": "Board, resolved variant, view, selection, the drawn version and where a presented walkthrough has got to: what the pane session reports to the server, what an agent and voice read, and what a recording paces itself by.",
+						"parent": "pZRxBz2h",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-reported-reading.ts"
+						}
+					},
+					{
+						"id": "J6P3Mhjb",
+						"order": 20000,
+						"name": "Archboard server",
+						"kind": "service",
+						"responsibility": "Answers the semantic read routes",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts"
+						},
+						"drillDown": {
+							"board": "Archboard server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "GnoK0EuT",
+						"order": 21000,
+						"name": "Camera glide",
+						"kind": "function",
+						"responsibility": "Glides the camera to its next place over a set time, writing the surface's transform a frame at a time",
+						"description": "The camera is committed to state once, at the end, and the surface carries data-camera-motion while it flies. A gesture stops it where it is. It reads the time and its frames from the frame clock, so a replay steps it to each frame's time.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-camera-glide.ts"
+						}
+					},
+					{
+						"id": "3iSHwOiM",
+						"order": 22000,
+						"name": "Picture transition",
+						"kind": "function",
+						"responsibility": "Carries one picture into the next: kept parts fly to their new places, departed ones fade, and the traffic's clock carries over; a picture a flight arrived at is put up as it is",
+						"description": "It writes the picture into the surface itself, once per picture, and runs the traffic of each picture, ghost and borrowed group as it puts them up. Flights read the time and their frames from the frame clock, and the picture clock its traffic runs on is read and set through it, so a replay seeks every one of them to the frame's time. The picture of a board that a flight into a card arrived at is put up as it is, with no entrance.",
+						"parent": "pZRxBz2h",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-picture-transition.ts"
+						}
+					},
+					{
+						"id": "qV7dcNI5",
+						"order": 23000,
+						"name": "Board reads",
+						"kind": "function",
+						"responsibility": "Where a board's document, the vault check, the code findings and a board's locality are read from: the server's routes, or a replay's talk",
+						"description": "Swapped once with readBoardsFrom, before anything is read, as the picture source is. On a replay page every read answers the talk's snapshot, so a refetch returns the same board, and a read of any other board is a violation. A replay reads no findings and no locality.",
+						"parent": "pZRxBz2h",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/board-reads.ts"
+						}
+					},
+					{
+						"id": "XXTC3G6Y",
+						"order": 24000,
+						"name": "Frame clock",
+						"kind": "module",
+						"responsibility": "The clock that motion reads: the browser's own on a live page, a stepped one on a replay",
+						"description": "A replay swaps it once, before it mounts anything (driveFramesFrom). Its stepped clock also takes over the browser's own requestAnimationFrame, so a library's frames run on it too. It stands every animation at the frame's time: a picture's traffic, which carries the picture clock's id, at where that picture's clock stands, carried from the picture it replaced. An animation on a timeline it cannot stand is a violation. A lint rule keeps the viewer on it rather than on the browser's timers.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/frame-clock/index.ts"
+						}
+					},
+					{
+						"id": "G6arm4oI",
+						"order": 25000,
+						"name": "Walkthrough replay",
+						"kind": "module",
+						"responsibility": "Mounts one viewer on a recorded talk and steps it frame by frame",
+						"description": "The page a recording's picture is rendered in (drawn on Browser application and Board rasterizer). Loading a talk points the board reads at it, installs the stepped clock and mounts the viewer on the talk's board, its step driven by the talk.",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay"
+						}
+					},
+					{
+						"id": "n5No6FUy",
+						"order": 26000,
+						"name": "Picture traffic",
+						"kind": "function",
+						"responsibility": "Runs a picture's traffic as Web Animations, so no SMIL runs in the page",
+						"description": "The renderer draws traffic as SMIL so an exported file moves on its own. Before markup reaches the page, each SMIL element is taken out and kept as markup in an attribute of the element it animated, and its motion runs from there as a Web Animation that carries the picture clock's id. A copy of the picture keeps the attribute, so a ghost or a borrowed group runs its traffic again. A form it does not read stays SMIL.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-traffic.ts"
+						}
+					},
+					{
+						"id": "ZTOokYub",
+						"order": 27000,
+						"name": "Camera motion",
+						"kind": "function",
+						"responsibility": "Eases the camera to where a wheel, a pinch or a key sent it, and carries a thrown drag on, a frame at a time",
+						"description": "Each input changes where the camera is going and the camera runs toward it, so a hard flick of the wheel is one ease. A zoom keeps one part of the diagram under the pointer all the way. A person who asked for reduced motion gets none of it, and an idle page carries no timer. It reads the time and its frames from the frame clock.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-camera-motion.ts"
+						}
+					},
+					{
+						"id": "FyxVdk20",
+						"order": 28000,
+						"name": "Diagram gestures",
+						"kind": "function",
+						"responsibility": "Turns a press, a drag, a throw and a click into a pan, a pick or an open",
+						"description": "A press that travels no further than a small tolerance picks what it landed on. One that travels further pans the diagram, and one let go while it was still moving is thrown at the speed it had.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-diagram-gestures.ts"
+						}
+					},
+					{
+						"id": "uPniwNFZ",
+						"order": 29000,
+						"name": "Light connections",
+						"kind": "function",
+						"responsibility": "Lights what a poked part is wired to and lets the rest of the picture recede",
+						"description": "The part is the one the pointer has rested on for a moment, else the one picked out. The part, what it holds, every relationship with an end in any of it, the parts at their other ends and the containers that hold them stay as drawn; the surface says how strongly (pick or pointer). It stands down while a presented step or a group says what the picture is about, while the picture leaves, and for a part with nothing drawn to light.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-lighting.ts"
+						}
+					},
+					{
+						"id": "UqVsXH0L",
+						"order": 30000,
+						"name": "Draw on lit relationships",
+						"kind": "function",
+						"responsibility": "Draws each relationship that lights on from its source to its target, once",
+						"description": "A sweep is a copy of the line laid over the picture for as long as it takes, animated on the document timeline, then settled into the line under it and taken away. The picture is not changed. A person who asked for reduced motion gets no sweep.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-sweep.ts"
+						}
+					},
+					{
+						"id": "bofpU6mt",
+						"order": 31000,
+						"name": "Ask the picture to show",
+						"kind": "function",
+						"responsibility": "Carries what the sidebar asks of the picture: the relationship a row is pointed at, and a trace of what a part reaches",
+						"description": "The stage provides it over the picture and the sidebar, which are siblings. Both asks belong to the part that is picked out and go when the pick does.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/Peek.tsx"
+						}
+					},
+					{
+						"id": "t49irDl0",
+						"order": 32000,
+						"name": "Trace what a part reaches",
+						"kind": "function",
+						"responsibility": "Walks the relationships from a part, and what it holds, in one direction, and says how many hops away each subject is",
+						"description": "Onward follows what the part sends to, back follows what sends to it. A subject reached by more than one route is as near as its nearest. The count of parts reached labels the control that asks for the trace.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/reach.ts"
+						}
+					},
+					{
+						"id": "CDWaLOJ7",
+						"order": 33000,
+						"name": "Reveal a pick",
+						"kind": "function",
+						"responsibility": "Glides the camera, once, just far enough to bring a part picked from elsewhere than the picture into view",
+						"description": "A row of the list, the part search or an agent can pick a part that is out of the pane. The part the reader was on comes along when the two are wired together and fit. A part already in view moves nothing, and a presented walkthrough or a panel over the picture keeps the camera.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-reveal.ts"
+						}
+					},
+					{
+						"id": "hc77pwzB",
+						"order": 34000,
+						"name": "Fly into a card",
+						"kind": "function",
+						"responsibility": "Opens a card's board by flying the camera into the card, and goes back out the same way; a request it cannot fly opens the plain way",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-dive.ts"
+						}
+					},
+					{
+						"id": "IH0j4qQo",
+						"order": 35000,
+						"name": "Work out the flight",
+						"kind": "function",
+						"responsibility": "Where a board sits inside its card, and the cameras at the two ends of the flight, so the end stands where the opened board stands",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/dive.ts"
+						}
+					},
+					{
+						"id": "UCjVcfWj",
+						"order": 36000,
+						"name": "Place a board in its card",
+						"kind": "function",
+						"responsibility": "Puts the board's picture inside its card on the surface, fades the two pictures across the flight, and lets a press end it",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-dive.ts"
+						}
+					},
+					{
+						"id": "gIakrnWa",
+						"order": 37000,
+						"name": "Open or leave a board",
+						"kind": "function",
+						"responsibility": "Follows a card's drill-down and goes back a level, handing each to the flight with the plain move to end it with",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-drill-moves.ts"
+						}
+					},
+					{
+						"id": "WT3s42AE",
+						"order": 38000,
+						"name": "Light the whole route",
+						"kind": "function",
+						"responsibility": "Gives a lit relationship its own ink on a stretch of a shared lane that the picture has another relationship draw, so the line is lit from its source to its target",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/lit-ink.ts"
+						}
+					},
+					{
+						"id": "ZUQ9Usdh",
+						"order": 39000,
+						"name": "Mark code warnings",
+						"kind": "module",
+						"responsibility": "Draws the picture's warning triangle on each subject the last code pass warns about",
+						"description": "Reads the findings of the board, variant and version on screen and puts the renderer's own warning mark in the subject's group, where the picture puts it on an undecided subject. The picture's markup stays the renderer's; information draws nothing.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-code-marks.ts",
+							"symbol": "useCodeMarks"
+						}
+					},
+					{
+						"id": "LMJVhlqw",
+						"order": 500,
+						"name": "Page start",
+						"kind": "function",
+						"responsibility": "Starts this page's renderer and hands the viewer its picture source and cache once, or replays a recorded talk",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "frontend/main.tsx"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "SBeG5Ns0",
+						"order": 1000,
+						"from": "xJIh6Jdp",
+						"to": "aYC7if1N",
+						"kind": "render",
+						"label": "mount in pane, with any driven step",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/components/ApplicationPane.tsx",
+							"symbol": "SemanticBoardStage"
+						}
+					},
+					{
+						"id": "ACKA5I1k",
+						"order": 2000,
+						"from": "aYC7if1N",
+						"to": "TK7SUGoc",
+						"kind": "call",
+						"label": "the picture of this reading",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+							"symbol": "semanticRenderQuery"
+						}
+					},
+					{
+						"id": "55rosWUN",
+						"order": 3000,
+						"from": "TK7SUGoc",
+						"to": "ntOE7caV",
+						"kind": "data",
+						"label": "the board document",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/board-document.ts",
+							"symbol": "readVariant"
+						}
+					},
+					{
+						"id": "IJQe6RQy",
+						"order": 4000,
+						"from": "TK7SUGoc",
+						"to": "3KqRuOEN",
+						"kind": "data",
+						"label": "the render answer, code findings, a board's locality",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/queries.ts",
+							"symbol": "codeFindingsQuery"
+						}
+					},
+					{
+						"id": "axWdg78p",
+						"order": 5000,
+						"from": "ntOE7caV",
+						"to": "3KqRuOEN",
+						"kind": "data",
+						"label": "inspection and standing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticInspector.tsx",
+							"symbol": "subjectOf"
+						}
+					},
+					{
+						"id": "cdwXdyXo",
+						"order": 6000,
+						"from": "3KqRuOEN",
+						"to": "ijZRg0FU",
+						"kind": "call",
+						"label": "pan and zoom by hand",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticDiagram.tsx",
+							"symbol": "useCameraWith"
+						}
+					},
+					{
+						"id": "I1b9UiOY",
+						"order": 7000,
+						"from": "3KqRuOEN",
+						"to": "UDkL7Tn6",
+						"kind": "call",
+						"label": "pick attention",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticDiagram.tsx",
+							"symbol": "surfaceMarks"
+						}
+					},
+					{
+						"id": "EIAfMMlW",
+						"order": 8000,
+						"from": "yUjSLnkw",
+						"to": "ntOE7caV",
+						"kind": "call",
+						"label": "read the target board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/drill-target.ts",
+							"symbol": "readBoard"
+						}
+					},
+					{
+						"id": "8HTCy24H",
+						"order": 10000,
+						"from": "3KqRuOEN",
+						"to": "LayJIvbq",
+						"kind": "call",
+						"label": "choose and step",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticStagePresentation.tsx",
+							"symbol": "goTo"
+						}
+					},
+					{
+						"id": "ttcJkRoJ",
+						"order": 11000,
+						"from": "z0dvHsUt",
+						"to": "VcgeYlnZ",
+						"kind": "data",
+						"label": "the step's focus",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-auto-fit.ts",
+							"symbol": "useAutoFit"
+						}
+					},
+					{
+						"id": "xpOUXS7t",
+						"order": 12000,
+						"from": "VC7yvPZB",
+						"to": "TK7SUGoc",
+						"kind": "call",
+						"label": "cancel, then read the board again",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-semantic-board-changes.ts",
+							"symbol": "semanticBoardKeys"
+						}
+					},
+					{
+						"id": "rlrH32yx",
+						"order": 13000,
+						"from": "IJkVbMK2",
+						"to": "TK7SUGoc",
+						"kind": "data",
+						"label": "the board and policy it draws from",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+							"symbol": "semanticBoardDocumentQuery"
+						}
+					},
+					{
+						"id": "R4zJCAXX",
+						"order": 14000,
+						"from": "IJkVbMK2",
+						"to": "AaCxSfhT",
+						"kind": "call",
+						"label": "a drawing stamped for this version",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+							"symbol": "readCachedPicture"
+						}
+					},
+					{
+						"id": "9yW8SET1",
+						"order": 15000,
+						"from": "IJkVbMK2",
+						"to": "F90402mH",
+						"kind": "call",
+						"label": "draw it here",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+							"symbol": "DrawBoard"
+						}
+					},
+					{
+						"id": "HPCTlv5B",
+						"order": 16000,
+						"from": "TK7SUGoc",
+						"to": "38hwLCO1",
+						"kind": "call",
+						"label": "draw this reading",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/queries.ts",
+							"symbol": "pictureSource"
+						}
+					},
+					{
+						"id": "1BAA71RA",
+						"order": 17000,
+						"from": "38hwLCO1",
+						"to": "IJkVbMK2",
+						"kind": "call",
+						"label": "the page's own renderer",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-source.ts",
+							"symbol": "takePicturesFrom"
+						}
+					},
+					{
+						"id": "YjZLgBKG",
+						"order": 18000,
+						"from": "38hwLCO1",
+						"to": "tmwUm8BL",
+						"kind": "call",
+						"label": "the render route, otherwise",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-source.ts",
+							"symbol": "fetchSemanticRender"
+						}
+					},
+					{
+						"id": "pS1HsY9g",
+						"order": 19000,
+						"from": "TK7SUGoc",
+						"to": "tmwUm8BL",
+						"kind": "call",
+						"label": "the listing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/queries.ts",
+							"symbol": "fetchSemanticBoards"
+						}
+					},
+					{
+						"id": "V9ngTrE9",
+						"order": 20000,
+						"from": "tmwUm8BL",
+						"to": "J6P3Mhjb",
+						"kind": "http",
+						"label": "semantic read routes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+							"symbol": "fetch"
+						}
+					},
+					{
+						"id": "UubWA3xG",
+						"order": 21000,
+						"from": "aYC7if1N",
+						"to": "VcgeYlnZ",
+						"kind": "call",
+						"label": "fit until the camera is moved",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+							"symbol": "useAutoFit"
+						}
+					},
+					{
+						"id": "yMDD4Gv0",
+						"order": 22000,
+						"from": "VcgeYlnZ",
+						"to": "ijZRg0FU",
+						"kind": "call",
+						"label": "fit and glide",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-auto-fit.ts",
+							"symbol": "glide"
+						}
+					},
+					{
+						"id": "aZWI05I3",
+						"order": 23000,
+						"from": "aYC7if1N",
+						"to": "LayJIvbq",
+						"kind": "call",
+						"label": "open step, and any driven one",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+							"symbol": "useWalkthrough"
+						}
+					},
+					{
+						"id": "ReedyDWe",
+						"order": 24000,
+						"from": "aYC7if1N",
+						"to": "z0dvHsUt",
+						"kind": "call",
+						"label": "the step's focus, once its picture is up",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-settled-focus.ts",
+							"symbol": "beatFocus"
+						}
+					},
+					{
+						"id": "pjGLTugH",
+						"order": 25000,
+						"from": "z0dvHsUt",
+						"to": "UDkL7Tn6",
+						"kind": "call",
+						"label": "subject boxes in the atlas",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/narrative.ts",
+							"symbol": "subjectBox"
+						}
+					},
+					{
+						"id": "TQiSprch",
+						"order": 26000,
+						"from": "3KqRuOEN",
+						"to": "yUjSLnkw",
+						"kind": "call",
+						"label": "resolve a link before following it",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/GoDeeper.tsx",
+							"symbol": "resolveDrillDown"
+						}
+					},
+					{
+						"id": "zhpc5qbc",
+						"order": 27000,
+						"from": "aYC7if1N",
+						"to": "gT3UJ3yd",
+						"kind": "call",
+						"label": "what is on screen",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+							"symbol": "useReported"
+						}
+					},
+					{
+						"id": "Pz4KA2iT",
+						"order": 28000,
+						"from": "gT3UJ3yd",
+						"to": "xJIh6Jdp",
+						"kind": "call",
+						"label": "board, variant, view, selection, step",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-reported-reading.ts",
+							"symbol": "report"
+						}
+					},
+					{
+						"id": "Kx7K0XLU",
+						"order": 29000,
+						"from": "aYC7if1N",
+						"to": "VC7yvPZB",
+						"kind": "call",
+						"label": "hear the board on screen change",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+							"symbol": "useSemanticBoardChanges"
+						}
+					},
+					{
+						"id": "5oNIinxP",
+						"order": 30000,
+						"from": "z0dvHsUt",
+						"to": "ntOE7caV",
+						"kind": "call",
+						"label": "ends of named lines and steps, lines between named cards",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/narrative.ts",
+							"symbol": "subjectOf"
+						}
+					},
+					{
+						"id": "nvPI9Op2",
+						"order": 31000,
+						"from": "TK7SUGoc",
+						"to": "qV7dcNI5",
+						"kind": "call",
+						"label": "document, vault check, code findings, locality",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/queries.ts",
+							"symbol": "localityQuery"
+						}
+					},
+					{
+						"id": "888B84Js",
+						"order": 32000,
+						"from": "qV7dcNI5",
+						"to": "tmwUm8BL",
+						"kind": "call",
+						"label": "the read routes, on a live page",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/board-reads.ts",
+							"symbol": "fetchSemanticBoardDocument"
+						}
+					},
+					{
+						"id": "Ntxc6nJp",
+						"order": 33000,
+						"from": "G6arm4oI",
+						"to": "aYC7if1N",
+						"kind": "render",
+						"label": "mount on the talk's board, its step driven",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"symbol": "SemanticBoardStage"
+						}
+					},
+					{
+						"id": "r0RVKR0o",
+						"order": 34000,
+						"from": "G6arm4oI",
+						"to": "qV7dcNI5",
+						"kind": "call",
+						"label": "read boards from the talk",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"symbol": "readBoardsFrom"
+						}
+					},
+					{
+						"id": "qu6pVEXF",
+						"order": 35000,
+						"from": "G6arm4oI",
+						"to": "XXTC3G6Y",
+						"kind": "call",
+						"label": "install the stepped clock; step it each frame",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"symbol": "driveFramesFrom"
+						}
+					},
+					{
+						"id": "Iwat3bQG",
+						"order": 36000,
+						"from": "ijZRg0FU",
+						"to": "GnoK0EuT",
+						"kind": "call",
+						"label": "glide there, a frame at a time",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-board-camera.ts",
+							"symbol": "useCameraGlide"
+						}
+					},
+					{
+						"id": "6xbUaU8d",
+						"order": 37000,
+						"from": "3KqRuOEN",
+						"to": "3iSHwOiM",
+						"kind": "call",
+						"label": "carry the drawn picture in from the last",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticDiagram.tsx",
+							"symbol": "usePictureTransition"
+						}
+					},
+					{
+						"id": "l3AXCLw5",
+						"order": 38000,
+						"from": "GnoK0EuT",
+						"to": "XXTC3G6Y",
+						"kind": "call",
+						"label": "the time, and a callback each frame",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-camera-glide.ts",
+							"symbol": "frameClock"
+						}
+					},
+					{
+						"id": "xi1UCkyt",
+						"order": 39000,
+						"from": "3iSHwOiM",
+						"to": "XXTC3G6Y",
+						"kind": "call",
+						"label": "the time, frames, and the picture's clock",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-picture-transition.ts",
+							"symbol": "frameClock"
+						}
+					},
+					{
+						"id": "iVizf8Iu",
+						"order": 40000,
+						"from": "3iSHwOiM",
+						"to": "n5No6FUy",
+						"kind": "call",
+						"label": "run the traffic of what it puts up",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-picture-transition.ts",
+							"symbol": "stopTraffic"
+						}
+					},
+					{
+						"id": "nmkLjKkz",
+						"order": 41000,
+						"from": "n5No6FUy",
+						"to": "XXTC3G6Y",
+						"kind": "call",
+						"label": "the picture clock's id",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-traffic.ts",
+							"symbol": "PICTURE_CLOCK"
+						}
+					},
+					{
+						"id": "bZN2wZZn",
+						"order": 42000,
+						"from": "3KqRuOEN",
+						"to": "FyxVdk20",
+						"kind": "call",
+						"label": "the pointer on the picture",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticDiagram.tsx",
+							"symbol": "useDiagramGestures"
+						}
+					},
+					{
+						"id": "DtoJyBxi",
+						"order": 43000,
+						"from": "FyxVdk20",
+						"to": "UDkL7Tn6",
+						"kind": "call",
+						"label": "what a press landed on",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-diagram-gestures.ts",
+							"symbol": "subjectAt"
+						}
+					},
+					{
+						"id": "RSxtiSv5",
+						"order": 44000,
+						"from": "FyxVdk20",
+						"to": "ijZRg0FU",
+						"kind": "call",
+						"label": "pan by the drag, and throw it when it is let go",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-diagram-gestures.ts",
+							"symbol": "panBy"
+						}
+					},
+					{
+						"id": "OgfM5Zfx",
+						"order": 46000,
+						"from": "ijZRg0FU",
+						"to": "ZTOokYub",
+						"kind": "call",
+						"label": "ease a zoom or a move",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-board-camera.ts",
+							"symbol": "useCameraMotion"
+						}
+					},
+					{
+						"id": "JtOygu0b",
+						"order": 47000,
+						"from": "ZTOokYub",
+						"to": "XXTC3G6Y",
+						"kind": "call",
+						"label": "the time, and a frame at a time",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-camera-motion.ts",
+							"symbol": "frameClock"
+						}
+					},
+					{
+						"id": "dH2wBxla",
+						"order": 48000,
+						"from": "3KqRuOEN",
+						"to": "uPniwNFZ",
+						"kind": "call",
+						"label": "the pick, and the part the pointer rests on",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticDiagram.tsx",
+							"symbol": "useLighting"
+						}
+					},
+					{
+						"id": "55kjuelE",
+						"order": 49000,
+						"from": "ntOE7caV",
+						"to": "uPniwNFZ",
+						"kind": "data",
+						"label": "the variant's parts and relationships",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-lighting.ts",
+							"symbol": "LightingInputs"
+						}
+					},
+					{
+						"id": "aTUikCKr",
+						"order": 50000,
+						"from": "uPniwNFZ",
+						"to": "UqVsXH0L",
+						"kind": "data",
+						"label": "the relationships that light",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-sweep.ts",
+							"symbol": "sweepLines"
+						}
+					},
+					{
+						"id": "30W5BmLd",
+						"order": 51000,
+						"from": "uPniwNFZ",
+						"to": "XXTC3G6Y",
+						"kind": "call",
+						"label": "the pointer's rest and its grace",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-resting-part.ts",
+							"symbol": "frameClock"
+						}
+					},
+					{
+						"id": "r1SrbjWJ",
+						"order": 52000,
+						"from": "3KqRuOEN",
+						"to": "bofpU6mt",
+						"kind": "call",
+						"label": "over the picture and the sidebar",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticStageView.tsx",
+							"symbol": "PeekProvider"
+						}
+					},
+					{
+						"id": "Nkoad0P5",
+						"order": 53000,
+						"from": "bofpU6mt",
+						"to": "uPniwNFZ",
+						"kind": "data",
+						"label": "the row pointed at, and the trace",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-lighting.ts",
+							"symbol": "LightingInputs"
+						}
+					},
+					{
+						"id": "8CcPSJbf",
+						"order": 54000,
+						"from": "uPniwNFZ",
+						"to": "t49irDl0",
+						"kind": "call",
+						"label": "how far each subject is",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-lighting.ts",
+							"symbol": "reachOf"
+						}
+					},
+					{
+						"id": "cKc7k19t",
+						"order": 55000,
+						"from": "aYC7if1N",
+						"to": "CDWaLOJ7",
+						"kind": "call",
+						"label": "the pick, and the picture's atlas",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+							"symbol": "useReveal"
+						}
+					},
+					{
+						"id": "sQKwKrth",
+						"order": 56000,
+						"from": "CDWaLOJ7",
+						"to": "ijZRg0FU",
+						"kind": "call",
+						"label": "glide to show the part",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-reveal.ts",
+							"symbol": "glide"
+						}
+					},
+					{
+						"id": "iIrpYDWg",
+						"order": 57000,
+						"from": "CDWaLOJ7",
+						"to": "UDkL7Tn6",
+						"kind": "call",
+						"label": "where the part is",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-reveal.ts",
+							"symbol": "subjectBox"
+						}
+					},
+					{
+						"id": "rywgYYWx",
+						"order": 58000,
+						"from": "aYC7if1N",
+						"to": "gIakrnWa",
+						"kind": "call",
+						"label": "the card opened, and the board above",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+							"symbol": "useDrillMoves"
+						}
+					},
+					{
+						"id": "WLWCyeOY",
+						"order": 59000,
+						"from": "gIakrnWa",
+						"to": "hc77pwzB",
+						"kind": "call",
+						"label": "the plain move, to end the flight with",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-drill-moves.ts",
+							"symbol": "into"
+						}
+					},
+					{
+						"id": "h0Y3tFJb",
+						"order": 60000,
+						"from": "hc77pwzB",
+						"to": "IH0j4qQo",
+						"kind": "call",
+						"label": "where the board sits and where the camera goes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-dive.ts",
+							"symbol": "legInto"
+						}
+					},
+					{
+						"id": "1PbM9cTg",
+						"order": 61000,
+						"from": "hc77pwzB",
+						"to": "UCjVcfWj",
+						"kind": "call",
+						"label": "the board inside its card, and the fades",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-dive.ts",
+							"symbol": "startDive"
+						}
+					},
+					{
+						"id": "gR2omDZs",
+						"order": 62000,
+						"from": "hc77pwzB",
+						"to": "ijZRg0FU",
+						"kind": "call",
+						"label": "glide to the card, and back",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-dive.ts",
+							"symbol": "glide"
+						}
+					},
+					{
+						"id": "9T6sHrUv",
+						"order": 63000,
+						"from": "hc77pwzB",
+						"to": "TK7SUGoc",
+						"kind": "data",
+						"label": "the picture of the board, asked for ahead",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-dive.ts",
+							"symbol": "semanticRenderQuery"
+						}
+					},
+					{
+						"id": "glLEAt7s",
+						"order": 64000,
+						"from": "hc77pwzB",
+						"to": "VcgeYlnZ",
+						"kind": "data",
+						"label": "the picture a flight arrived at",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-auto-fit.ts",
+							"symbol": "FitRequest"
+						}
+					},
+					{
+						"id": "RORIgWix",
+						"order": 65000,
+						"from": "hc77pwzB",
+						"to": "3iSHwOiM",
+						"kind": "call",
+						"label": "the board above, put up to fly out of its card",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-dive.ts",
+							"symbol": "PICTURE_MOTION_ATTRIBUTE"
+						}
+					},
+					{
+						"id": "115rtbFD",
+						"order": 66000,
+						"from": "hc77pwzB",
+						"to": "XXTC3G6Y",
+						"kind": "call",
+						"label": "the wait for a picture that is not to hand",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-dive.ts",
+							"symbol": "frameClock"
+						}
+					},
+					{
+						"id": "AEEOu1vG",
+						"order": 67000,
+						"from": "UCjVcfWj",
+						"to": "n5No6FUy",
+						"kind": "call",
+						"label": "the traffic of the board inside its card",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-dive.ts",
+							"symbol": "runTraffic"
+						}
+					},
+					{
+						"id": "SEYMj3ln",
+						"order": 69000,
+						"from": "IH0j4qQo",
+						"to": "UDkL7Tn6",
+						"kind": "call",
+						"label": "the card's box in the picture",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/dive.ts",
+							"symbol": "subjectBox"
+						}
+					},
+					{
+						"id": "eKc3FaJx",
+						"order": 70000,
+						"from": "3KqRuOEN",
+						"to": "WT3s42AE",
+						"kind": "call",
+						"label": "the relationships that are lit",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-viewer-marks.ts",
+							"symbol": "lightInk"
+						}
+					},
+					{
+						"id": "UAnbIRqG",
+						"order": 71000,
+						"from": "WT3s42AE",
+						"to": "UDkL7Tn6",
+						"kind": "data",
+						"label": "which subjects are lit and which are picked",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/lit-ink.ts",
+							"symbol": "LIT_CLASS"
+						}
+					},
+					{
+						"id": "YMCk1Omy",
+						"order": 72000,
+						"from": "3KqRuOEN",
+						"to": "ZUQ9Usdh",
+						"kind": "call",
+						"label": "the code check's warnings on the picture",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticDiagram.tsx",
+							"symbol": "useCodeMarks"
+						}
+					},
+					{
+						"id": "8VT4p2DT",
+						"order": 73000,
+						"from": "ZUQ9Usdh",
+						"to": "TK7SUGoc",
+						"kind": "call",
+						"label": "what the last pass found on the version drawn",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-code-findings.ts",
+							"symbol": "codeFindingsQuery"
+						}
+					},
+					{
+						"id": "MFYABYzc",
+						"order": 1500,
+						"from": "aYC7if1N",
+						"to": "3KqRuOEN",
+						"kind": "render",
+						"label": "the answer, the reading and its moves",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+							"symbol": "SemanticStageView"
+						}
+					},
+					{
+						"id": "IPiFENAY",
+						"order": 22500,
+						"from": "aYC7if1N",
+						"to": "ijZRg0FU",
+						"kind": "call",
+						"label": "the pane's camera, kept across pictures",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+							"symbol": "useBoardCamera"
+						}
+					},
+					{
+						"id": "teXwe1ys",
+						"order": 58500,
+						"from": "aYC7if1N",
+						"to": "hc77pwzB",
+						"kind": "call",
+						"label": "mount the flight on the pane's camera",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+							"symbol": "useDive"
+						}
+					},
+					{
+						"id": "WZuU72Ny",
+						"order": 75000,
+						"from": "G6arm4oI",
+						"to": "pZRxBz2h",
+						"kind": "call",
+						"description": "A replay places its overlay where the viewer says the picture sits.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"symbol": "useOverlayPlace"
+						}
+					},
+					{
+						"id": "2euPzA3Q",
+						"order": 76000,
+						"from": "IJkVbMK2",
+						"to": "tmwUm8BL",
+						"kind": "call",
+						"description": "A board the page cannot read is refused as the reads' own error, so the stage shows one kind of failure.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+							"symbol": "SemanticBoardError"
+						}
+					},
+					{
+						"id": "ieYgCFQc",
+						"order": 77000,
+						"from": "3KqRuOEN",
+						"to": "VC7yvPZB",
+						"kind": "call",
+						"description": "A card that opens another board hears that board change, so its picture is read again.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/GoDeeper.tsx",
+							"symbol": "useSemanticBoardChanges"
+						}
+					},
+					{
+						"id": "X13jgTMa",
+						"order": 78000,
+						"from": "ijZRg0FU",
+						"to": "XXTC3G6Y",
+						"kind": "call",
+						"description": "The camera cancels a settle it scheduled on the frame clock.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-board-camera.ts",
+							"symbol": "frameClock"
+						}
+					},
+					{
+						"id": "UXs6A8o7",
+						"order": 79000,
+						"from": "3KqRuOEN",
+						"to": "t49irDl0",
+						"kind": "call",
+						"description": "The details panel lists what the picked part reaches.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/DetailsPanel.tsx",
+							"symbol": "reachOf"
+						}
+					},
+					{
+						"id": "lY46AzzM",
+						"order": 80000,
+						"from": "LMJVhlqw",
+						"to": "38hwLCO1",
+						"kind": "call",
+						"description": "At page start, the viewer takes its pictures from this page's own source, once.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "frontend/main.tsx",
+							"symbol": "takePicturesFrom"
+						}
+					},
+					{
+						"id": "eK0DABEt",
+						"order": 81000,
+						"from": "LMJVhlqw",
+						"to": "F90402mH",
+						"kind": "call",
+						"description": "At page start, this page's renderer is fetched and started.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "frontend/main.tsx",
+							"symbol": "startBrowserRenderer"
+						}
+					},
+					{
+						"id": "pszRWvFQ",
+						"order": 82000,
+						"from": "LMJVhlqw",
+						"to": "G6arm4oI",
+						"kind": "call",
+						"description": "A page opened to replay a recorded talk starts the replay instead of the application.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "frontend/main.tsx",
+							"symbol": "startWalkthroughReplay"
+						}
+					},
+					{
+						"id": "hxPvFxCk",
+						"order": 83000,
+						"from": "3KqRuOEN",
+						"to": "TK7SUGoc",
+						"kind": "call",
+						"description": "The stage's panels read the board document, the vault check and a part's history through the viewer's queries.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticInspector.tsx",
+							"symbol": "semanticBoardDocumentQuery"
+						}
+					},
+					{
+						"id": "c46lXXPe",
+						"order": 84000,
+						"from": "LMJVhlqw",
+						"to": "IJkVbMK2",
+						"kind": "call",
+						"description": "At page start, the source that draws pictures in this page is made from its renderer and storage.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "frontend/main.tsx",
+							"symbol": "createLocalPictureSource"
+						}
+					},
+					{
+						"id": "g8fulpEe",
+						"order": 85000,
+						"from": "LMJVhlqw",
+						"to": "AaCxSfhT",
+						"kind": "call",
+						"description": "At page start, this browser's store for kept pictures is opened.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "frontend/main.tsx",
+							"symbol": "browserPictureStorage"
+						}
+					}
+				],
+				"flows": [
+					{
+						"id": "ZTAqSaOi",
+						"name": "A pane opens a board",
+						"participants": [
+							"xJIh6Jdp",
+							"pZRxBz2h",
+							"aYC7if1N",
+							"TK7SUGoc",
+							"38hwLCO1",
+							"IJkVbMK2",
+							"AaCxSfhT",
+							"F90402mH",
+							"3KqRuOEN",
+							"gT3UJ3yd"
+						],
+						"steps": [
+							{
+								"id": "RPO0E0Mf",
+								"from": "xJIh6Jdp",
+								"to": "pZRxBz2h",
+								"label": "the board and variant its key names",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "src/ui/application/components/ApplicationPane.tsx",
+									"symbol": "boardAddressOf"
+								}
+							},
+							{
+								"id": "qo2Blvif",
+								"from": "xJIh6Jdp",
+								"to": "aYC7if1N",
+								"label": "mount the stage on that board",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "src/ui/application/components/ApplicationPane.tsx",
+									"symbol": "SemanticBoardStage"
+								}
+							},
+							{
+								"id": "aWCS0N6w",
+								"from": "aYC7if1N",
+								"to": "TK7SUGoc",
+								"label": "the picture of this reading",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+									"symbol": "semanticRenderQuery"
+								}
+							},
+							{
+								"id": "PE8Xasv1",
+								"from": "TK7SUGoc",
+								"to": "38hwLCO1",
+								"label": "draw this reading",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "src/ui/semantic-board-canvas/lib/queries.ts",
+									"symbol": "pictureSource"
+								}
+							},
+							{
+								"id": "kPLYXFbJ",
+								"from": "38hwLCO1",
+								"to": "IJkVbMK2",
+								"label": "the page's own renderer",
+								"kind": "sync",
+								"note": "otherwise the render route",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "src/ui/semantic-board-canvas/lib/picture-source.ts",
+									"symbol": "takePicturesFrom"
+								}
+							},
+							{
+								"id": "UOONl3rd",
+								"from": "IJkVbMK2",
+								"to": "AaCxSfhT",
+								"label": "a drawing kept for this version",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+									"symbol": "readCachedPicture"
+								}
+							},
+							{
+								"id": "fjAKaiBP",
+								"from": "IJkVbMK2",
+								"to": "F90402mH",
+								"label": "draw it here",
+								"kind": "sync",
+								"note": "when none is kept",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+									"symbol": "DrawBoard"
+								}
+							},
+							{
+								"id": "mN3YJbJ7",
+								"from": "aYC7if1N",
+								"to": "3KqRuOEN",
+								"label": "the answer, the reading and its moves",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+									"symbol": "SemanticStageView"
+								}
+							},
+							{
+								"id": "cOi9I7fn",
+								"from": "aYC7if1N",
+								"to": "gT3UJ3yd",
+								"label": "what is on screen",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx",
+									"symbol": "useReported"
+								}
+							},
+							{
+								"id": "ighJPfc0",
+								"from": "gT3UJ3yd",
+								"to": "xJIh6Jdp",
+								"label": "board, variant, view, selection, step",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "src/ui/semantic-board-canvas/hooks/use-reported-reading.ts",
+									"symbol": "report"
+								}
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "ihcTPfel",
+						"name": "Read one semantic board",
+						"beats": [
+							{
+								"id": "8C2uAWTl",
+								"heading": "Obtain authoritative meaning",
+								"body": "ApplicationPane mounts SemanticBoardStage. The entry point asks the query cache for the picture of its reading; the page draws it here from the board document and policy the server sent, keeps it stamped with that version, and only a page with no renderer asks the server's render route.",
+								"subjects": [
+									"xJIh6Jdp",
+									"aYC7if1N",
+									"TK7SUGoc",
+									"38hwLCO1",
+									"IJkVbMK2",
+									"AaCxSfhT",
+									"F90402mH",
+									"tmwUm8BL"
+								]
+							},
+							{
+								"id": "24TKcwIn",
+								"heading": "Own only the reading",
+								"body": "The stage presents explicit states. A new board, variant or view fits the whole reading until somebody pans or zooms, and picking a subject marks it through the atlas; none of it changes board content or geometry.",
+								"subjects": [
+									"3KqRuOEN",
+									"VcgeYlnZ",
+									"ijZRg0FU",
+									"UDkL7Tn6",
+									"ntOE7caV"
+								]
+							},
+							{
+								"id": "PfoDtrad",
+								"heading": "Explain across levels",
+								"body": "A walkthrough step is chosen by hand or driven by narration or a recording, and the camera fits its subjects. A drill-down opens exactly the variant it names, and a board's new version reads its picture and document again.",
+								"subjects": [
+									"LayJIvbq",
+									"z0dvHsUt",
+									"VcgeYlnZ",
+									"yUjSLnkw",
+									"VC7yvPZB"
+								]
+							},
+							{
+								"id": "bSDKR6kZ",
+								"heading": "Say what is on screen",
+								"body": "The pane is told what is on screen whenever it changes: board, resolved variant, view, selection and walkthrough step. The pane session reports it to the server, where agents and voice read it, and a recording page paces itself by it.",
+								"subjects": [
+									"gT3UJ3yd",
+									"xJIh6Jdp"
+								]
+							},
+							{
+								"id": "mmzQH5te",
+								"heading": "A replay steps the viewer on its own clock",
+								"body": "The replay page mounts the same viewer on a recorded talk. Board reads answer the talk's snapshot instead of the server, so every refetch returns the same board. The camera glide and the picture transition read the frame clock, which the replay steps 1/30 s at a time, so every frame is drawn at its exact time.",
+								"subjects": [
+									"G6arm4oI",
+									"qV7dcNI5",
+									"XXTC3G6Y",
+									"GnoK0EuT",
+									"3iSHwOiM"
+								]
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "taB7h2Fd",
+			"name": "TASK-436.10",
+			"lifecycle": "draft",
+			"parent": "hGmp80Kl",
+			"summary": "Warning count leads the reader to every finding in the board",
+			"content": {
+				"nodes": [
+					{
+						"id": "xJIh6Jdp",
+						"order": 1000,
+						"name": "Browser client",
+						"kind": "service",
+						"responsibility": "Mounts one viewer in each pane",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/components/ApplicationPane.tsx"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "pZRxBz2h",
+						"order": 2000,
+						"name": "Semantic viewer",
+						"kind": "module",
+						"responsibility": "Explores one rendered architecture",
+						"description": "The read-only semantic-board-canvas module. The board the server holds defines content; the picture is drawn in this page from it, or by the server's render route; local state defines only how a user reads it (ADR 0023).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/index.ts"
+						}
+					},
+					{
+						"id": "tmwUm8BL",
+						"order": 3000,
+						"name": "Fetch semantic reads",
+						"kind": "function",
+						"responsibility": "Decode the listing, a board, a render, the vault check, the code findings and a board's locality",
+						"description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts"
+						}
+					},
+					{
+						"id": "ntOE7caV",
+						"order": 4000,
+						"name": "Resolve board meaning",
+						"kind": "function",
+						"responsibility": "Inspect subjects and variants",
+						"description": "Parses the board document, resolves the shown variant, describes nodes, edges, flows, steps, bindings, containment, and proposal standing.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/board-document.ts"
+						}
+					},
+					{
+						"id": "3KqRuOEN",
+						"order": 5000,
+						"name": "Render stage states",
+						"kind": "function",
+						"responsibility": "Present every reachable state",
+						"description": "The pane's components. stageBody in SemanticStageView.tsx presents the waiting, problem, empty and drawn states, and says when the picture on screen is old, from the entry point's query and reading state. SemanticDiagram draws the picture and mounts its transition, gestures, lighting and marks. SemanticStageView lays the header with its way back, the variant's standing, the page of the open tab and the sidebar around them. SemanticBoardStage.tsx and Peek.tsx in the same directory are parts of their own. The header shows the board warning count and steps through each finding, selecting its semantic subject and focusing the camera; a finding outside the active view opens the whole board so its subject can be read.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/components"
