@@ -6,6 +6,7 @@ import {
 	terraformConfiguration,
 	terraformRootOf,
 	type Definition,
+	type FileFacts,
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import type { SourceRevision } from "@/runtime/history-lens/lib/source-history";
@@ -146,19 +147,50 @@ function definitionsOf(facts: SyntaxFacts, symbol: string): readonly Definition[
 }
 
 /**
+ * Unsupported files in a directory matter only when they mention its symbol.
+ * @param facts The file's available facts.
+ * @param symbol The bound symbol.
+ * @param direct Whether the binding names this exact file.
+ * @returns Explicit fallback for a target source, or absence in an unrelated file.
+ */
+function unsupportedReading(
+	facts: FileFacts | undefined,
+	symbol: string,
+	direct: boolean,
+): SymbolReading {
+	if (direct) return { kind: "unsupported" };
+	if (facts === undefined) return { kind: "absent" };
+	return { kind: mentionsSymbol(facts, symbol) ? "unsupported" : "absent" };
+}
+
+/**
+ * Directory scans must not confuse an unrelated name with a qualified symbol.
+ * @param facts The available file facts.
+ * @param symbol The requested declaration name.
+ * @returns Whether this unsupported source may hold the requested symbol.
+ */
+function mentionsSymbol(facts: FileFacts, symbol: string): boolean {
+	if (facts.adapter === "text" && symbol.includes(".")) return facts.text.includes(symbol);
+	return findSymbol(facts, symbol, "definition").status !== "absent";
+}
+
+/**
  * Resolve one file without guessing among declarations of the same name.
  * @param revision The source revision.
  * @param file The file to read.
  * @param symbol The bound symbol.
+ * @param direct Whether the binding names this exact file.
  * @returns Every declaration reading, or why no declaration was found.
  */
 async function fileReadings(
 	revision: SourceRevision,
 	file: string,
 	symbol: string,
+	direct: boolean,
 ): Promise<SymbolReading[]> {
 	const facts = await revision.pass.read(revision.checkout, file);
-	if (facts === undefined || facts.adapter === "text") return [{ kind: "unsupported" }];
+	if (facts === undefined || facts.adapter === "text")
+		return [unsupportedReading(facts, symbol, direct)];
 	const definitions = definitionsOf(facts, symbol);
 	if (definitions.length > 0) {
 		if (definitions.some((definition) => sharedBoundary(definition, facts)))
@@ -194,7 +226,7 @@ async function atPath(
 	const readings = await Promise.all(
 		files
 			.filter((file) => root === undefined || !isTerraformFile(file))
-			.map((file) => fileReadings(revision, file, symbol)),
+			.map((file) => fileReadings(revision, file, symbol, file === path)),
 	);
 	return [
 		...(root === undefined ? [] : [await terraformReading(revision, root, symbol)]),
