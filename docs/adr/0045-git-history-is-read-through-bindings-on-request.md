@@ -36,6 +36,11 @@ parser and works in every language, infrastructure and Nix included. A symbol
 that a binding names (TASK-367.04) narrows nothing here, because only a parser
 can tell which commits changed a symbol.
 
+A `.csproj` binding names every file below its project directory, as the code
+check reads it. Both readings use the same binding file selection. A change
+to project source or settings counts even when the project file stays unchanged
+(TASK-436.13).
+
 The mapping follows renames. A commit that renames a bound file changes the
 part, and the commits before the rename count under the former path. Git's own
 rename detection decides what a rename is.
@@ -112,6 +117,11 @@ anything new about whether the parts match the code. A walkthrough explains the
 architecture and changes none of it, and a change to its words alone badges no
 part (ADR 0023). If a walkthrough edit counts, a walkthrough that an agent
 writes for a pull request recording hides the commits of that pull request.
+
+Historical board bytes pass through the board store's pure decoder, which
+applies its registered schema migrations in memory and validates the result.
+It reads no vault file and persists nothing. A schema-only migration commit
+therefore compares equal to the old document's meaning (TASK-436.14).
 
 The last change carries into each bound repository in one of two ways:
 

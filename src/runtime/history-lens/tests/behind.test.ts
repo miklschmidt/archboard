@@ -8,10 +8,11 @@
 // two is the one each test states.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "@/runtime/history-lens/index";
+import { decodeSemanticBoardDocument } from "@/runtime/semantic-board-store/index";
 import { BoardBehindSchema, type BoardBehind } from "@/shared/code-check/index";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
@@ -364,4 +365,35 @@ test("a board file Git does not track is a change no commit holds, and one Git i
 	const looseAnswer = await behind(board(1), undefined, loose, join(outside, "vault"));
 	expect(looseAnswer.lastChange).toEqual({ kind: "unknown", reason: "vault-outside-git" });
 	expect("commits" in looseAnswer).toBe(false);
+});
+
+test("Behind migrates historical bytes without writing and a schema-only migration commit is no semantic last change", async () => {
+	const legacy = JSON.parse(JSON.stringify(board(1)));
+	legacy.schemaVersion = "2.2.0";
+	for (const variant of legacy.variants) {
+		for (const node of variant.content.nodes) delete node.order;
+	}
+	writeFileSync(boardFile, JSON.stringify(legacy));
+	const created = commit(shop, "create a board in an old schema");
+	write(shop, { "src/a.ts": "a source change after the old board\n" });
+	commit(shop, "change code before the migration");
+	const bytes = readFileSync(boardFile, "utf8");
+	const modified = statSync(boardFile).mtimeMs;
+	const decoded = decodeSemanticBoardDocument(bytes);
+	if (!decoded.ok) throw new Error(decoded.problem);
+	const inMemory = await behind(decoded.board);
+	expect(inMemory.lastChange).toMatchObject({ kind: "commit", commit: created });
+	expect(partSubjects(inMemory, "pA")).toEqual(["change code before the migration"]);
+	expect(readFileSync(boardFile, "utf8")).toBe(bytes);
+	expect(statSync(boardFile).mtimeMs).toBe(modified);
+	const migrated = {
+		...decoded.board,
+		version: decoded.board.version + 1,
+		updatedAt: "2026-10-07T00:00:00.000Z",
+	};
+	writeBoard(migrated);
+	commit(shop, "migrate the board schema only");
+	const answer = await behind(migrated);
+	expect(answer.lastChange).toMatchObject({ kind: "commit", commit: created });
+	expect(partSubjects(answer, "pA")).toEqual(["change code before the migration"]);
 });

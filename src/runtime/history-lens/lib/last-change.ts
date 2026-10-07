@@ -18,10 +18,10 @@
 import path from "node:path";
 import { gitBytes, gitSays, gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { parseLog } from "@/runtime/history-lens/lib/commits";
+import { decodeSemanticBoardDocument } from "@/runtime/semantic-board-store/index";
 import {
 	compareVariants,
 	currentVariant,
-	parseSemanticBoard,
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
@@ -45,18 +45,14 @@ const FOUND_HEADER = /^[0-9a-f]{40,64} [a-z]+ (\d+)$/u;
 
 /**
  * A board file as a commit holds it, or undefined when it is not a board this
- * build reads. A version from before a schema migration may not be.
+ * build reads. Registered migrations are applied in memory and write nothing.
  * @param bytes The file's bytes at that commit.
  * @returns The board, or undefined.
  */
 function boardOf(bytes: Uint8Array | undefined): SemanticBoard | undefined {
 	if (bytes === undefined) return undefined;
-	try {
-		const parsed = parseSemanticBoard(JSON.parse(new TextDecoder().decode(bytes)));
-		return parsed.ok ? parsed.board : undefined;
-	} catch {
-		return undefined;
-	}
+	const parsed = decodeSemanticBoardDocument(new TextDecoder().decode(bytes));
+	return parsed.ok ? parsed.board : undefined;
 }
 
 /**

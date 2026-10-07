@@ -1,7 +1,7 @@
 // Upgrade persisted board documents before the current contract validates them.
 // Each step names the exact version it understands and the version it produces.
-// A step only changes a decoded value; the read boundary validates and persists
-// the completed document before returning it to a caller.
+// A step only changes a decoded value. The pure decoder validates the completed
+// document; the disk read boundary persists a migration under the board lease.
 
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 
