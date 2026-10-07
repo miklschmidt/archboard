@@ -45,6 +45,7 @@ let extensionRename = "";
 let renamedEdit = "";
 let firstAdapters = "";
 let secondAdapters = "";
+let ambiguousEdit = "";
 const together: string[] = [];
 const definitions: string[] = [];
 
@@ -96,6 +97,7 @@ const bindings = [
 	["tsSecond", "src/shared.ts", "second"],
 	["mixed", "mixed/main.tf", "aws_s3_bucket.later"],
 	["ext", "src/renamed.ts", "first"],
+	["ambig", "src/duplicates.py", "repeated"],
 	...adapters.flatMap(
 		(adapter) =>
 			[
@@ -206,6 +208,7 @@ beforeAll(async () => {
 		"export function first() { return 0; }\nexport function second() { return 0; }\n",
 	);
 	write("notes.txt", "first\n");
+	write("src/duplicates.py", "def repeated():\n    return 0\n\ndef repeated():\n    return 0\n");
 	write("mixed/main.tf", 'output "unrelated" {\n  value = 0\n}\n');
 	write(
 		"src/renamed.txt",
@@ -277,6 +280,8 @@ beforeAll(async () => {
 	firstAdapters = commit("change first declarations in general language adapters");
 	for (const adapter of adapters) write(adapter.path, adapter.source(1, 2));
 	secondAdapters = commit("change their unrelated neighboring declarations");
+	write("src/duplicates.py", "def repeated():\n    return 0\n\ndef repeated():\n    return 1\n");
+	ambiguousEdit = commit("change one of two declarations sharing the same symbol");
 	write("infra/resources.tf", resources(undefined, 7));
 	for (let at = 0; at < 31; at += 1) write(`bulk/${at}.txt`, "bulk\n");
 	large = commit("change second resource in a large commit");
@@ -388,6 +393,18 @@ test("unsupported symbols label their path-wide fallback in both readings", () =
 test("TypeScript functions isolate edits within their shared file", () => {
 	histories("tsFirst", [firstTS]);
 	histories("tsSecond", [secondTS]);
+});
+
+test("distinct declarations with the same symbol in one file explicitly fall back to path history", () => {
+	histories("ambig", [ambiguousEdit]);
+	for (const parts of [locality.hotspots, footprint]) {
+		const part = parts.find((one) => one.subject.id === "ambig");
+		expect(part?.attribution).toMatchObject({
+			mode: "path",
+			symbol: "repeated",
+			fallback: [{ reason: "unsupported" }],
+		});
+	}
 });
 
 test("earlier absence of a later resolved declaration excludes unrelated history", () => {
