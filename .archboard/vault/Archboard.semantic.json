@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 33,
+	"version": 34,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-07T18:26:50.647Z",
+	"updatedAt": "2026-10-07T18:58:09.551Z",
 	"views": [],
 	"variants": [
 		{
@@ -2352,7 +2352,7 @@
 						"name": "Agent CLI",
 						"kind": "service",
 						"responsibility": "Authors named boards: one short-lived process per command, writing no board itself",
-						"description": "Every board operation reaches the Archboard server over HTTP. Three commands draw for themselves in a headless browser here: rasterize photographs the SVG the server made; record keeps a narrated talk from the server's own page, then draws it frame by frame and has ffmpeg encode the video; replay draws a kept talk again. repo add and repo language-server write this machine's list of checkouts itself. With --clipboard, rasterize sends the PNG and self-contained HTML with its description to the running CopyQ clipboard manager.",
+						"description": "Every board operation reaches the Archboard server over HTTP. Three commands draw for themselves in a headless browser here: rasterize photographs the SVG the server made; record keeps a narrated talk from the server's own page, then draws it frame by frame and has ffmpeg encode the video; replay draws a kept talk again. repo add and repo language-server write this machine's list of checkouts itself. With --clipboard, rasterize publishes PNG and self-contained HTML to the local desktop through a native clipboard helper.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/bin.ts"
@@ -2492,12 +2492,16 @@
 						}
 					},
 					{
-						"id": "1zA5C1Vz",
+						"id": "yEgsaWnA",
 						"order": 12000,
-						"name": "CopyQ",
-						"kind": "external",
-						"responsibility": "Offers the copied PNG and HTML together on the desktop clipboard after the CLI exits",
-						"description": "An optional installed and running clipboard manager. The CLI passes one image and its HTML in one copy operation."
+						"name": "Clipboard owner",
+						"kind": "service",
+						"responsibility": "Publishes PNG and HTML to the native desktop clipboard; retains Linux ownership until another copy replaces it",
+						"description": "Uses @teddyzhu/clipboard on Linux and macOS. A detached Bun process owns Linux clipboard data after the command exits. macOS retains the data itself.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/image-clipboard/lib/owner.ts"
+						}
 					}
 				],
 				"edges": [
@@ -2752,13 +2756,12 @@
 						}
 					},
 					{
-						"id": "ZWcs34Bs",
+						"id": "sp1HWQNm",
 						"order": 18000,
 						"from": "TBnOCNx2",
-						"to": "1zA5C1Vz",
+						"to": "yEgsaWnA",
 						"kind": "call",
 						"label": "copy PNG and HTML together",
-						"description": "TASK-444 asks for the same image and description formats as Chrome Copy image. The CLI calls CopyQ with one combined payload.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",

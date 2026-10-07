@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 48,
+	"version": 49,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-07T18:26:49.962Z",
+	"updatedAt": "2026-10-07T18:58:09.207Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -11054,7 +11054,7 @@
 						"name": "Rasterize",
 						"kind": "module",
 						"responsibility": "rasterize: one board as a PNG, headlessly, at native scale",
-						"description": "Asks the Archboard server for the SVG, as render does, then takes that SVG into a headless browser here and photographs it. With --clipboard, rasterize sends the PNG and self-contained HTML with its description to the running CopyQ clipboard manager.",
+						"description": "Asks the Archboard server for the SVG, as render does, then takes that SVG into a headless browser here and photographs it. With --clipboard, rasterize publishes PNG and self-contained HTML to the local desktop through a native clipboard helper.",
 						"parent": "bLpk2XKU",
 						"groups": [
 							"drawing"
@@ -11368,12 +11368,16 @@
 						}
 					},
 					{
-						"id": "DKuaak64",
+						"id": "RC1mDWQR",
 						"order": 34000,
-						"name": "CopyQ",
-						"kind": "external",
-						"responsibility": "Offers the copied PNG and HTML together on the desktop clipboard after the CLI exits",
-						"description": "An optional installed and running clipboard manager. The CLI passes one image and its HTML in one copy operation."
+						"name": "Image clipboard",
+						"kind": "module",
+						"responsibility": "Publishes PNG and HTML to the native desktop clipboard; retains Linux ownership until another copy replaces it",
+						"description": "Uses @teddyzhu/clipboard on Linux and macOS. A detached Bun process owns Linux clipboard data after the command exits. macOS retains the data itself.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/image-clipboard/index.ts"
+						}
 					}
 				],
 				"edges": [
@@ -12254,13 +12258,12 @@
 						}
 					},
 					{
-						"id": "7usZuRYG",
+						"id": "XaWtUC7O",
 						"order": 61000,
 						"from": "69392DWF",
-						"to": "DKuaak64",
+						"to": "RC1mDWQR",
 						"kind": "call",
 						"label": "copy PNG and HTML together",
-						"description": "TASK-444 asks for the same image and description formats as Chrome Copy image. The CLI calls CopyQ with one combined payload.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
