@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 196,
+	"version": 197,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-07T00:50:31.106Z",
+	"updatedAt": "2026-10-07T00:50:41.526Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -78721,6 +78721,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/code-opener/lib/routes.ts",
 							"symbol": "createBrowserOriginGuard"
+						}
+					},
+					{
+						"id": "9yGuDXdP",
+						"order": 99000,
+						"from": "M9w3f93y",
+						"to": "cZ1UH0xU",
+						"kind": "call",
+						"label": "checks browser origin before socket upgrade",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/websocket-connection.ts",
+							"symbol": "checkBrowserCsrf"
 						}
 					}
 				],
