@@ -150,3 +150,29 @@ function reach(points: readonly Point[]): number {
 			0,
 		);
 }
+
+test("a small offset between joined runs never stretches into a diagonal", () => {
+	// Reduced from Board persistence: a quarter-point offset at a block port
+	// looked upright when projected onto an axis. Sliding its lower run made
+	// the run above diagonal, which that projection hid from clearance tests.
+	const points = [
+		{ x: 1648, y: 650 },
+		{ x: 1648, y: 682 },
+		{ x: 1882, y: 682 },
+		{ x: 1881.75, y: 1583 },
+		{ x: 1881.75, y: 1647 },
+		{ x: 2038, y: 1647 },
+		{ x: 2038, y: 2833 },
+		{ x: 1813, y: 2833 },
+		{ x: 1813, y: 2877 },
+	];
+	const label = { x: 1808, y: 726, width: 148, height: 31 };
+	const walls = [{ x: 201, y: 197, width: 2012, height: 1386 }];
+	const [drawn] = unstepped([{ points, label }], { ...NOTHING, walls });
+	expect(
+		drawn!.slice(1).every((to, index) => {
+			const from = drawn![index]!;
+			return Math.abs(to.x - from.x) < 0.5 || Math.abs(to.y - from.y) < 0.5;
+		}),
+	).toBe(true);
+});

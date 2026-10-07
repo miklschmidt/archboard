@@ -370,6 +370,17 @@ function costOf(line: readonly Point[], others: readonly Span[]): number {
 }
 
 /**
+ * Whether every run stays on one axis within the join tolerance.
+ * @param points The line after a slide.
+ * @returns True when no slide stretches a small port offset into a diagonal.
+ */
+function onAxes(points: readonly Point[]): boolean {
+	return runsOf(points).every(
+		({ from, to }) => Math.abs(from.x - to.x) < SAME || Math.abs(from.y - to.y) < SAME,
+	);
+}
+
+/**
  * Whether every line a slide moves keeps its shape and stays clear of the lines it does not move.
  * @param moved Each moved line's points, by index.
  * @param routes Every line's points before the slide.
@@ -381,6 +392,7 @@ function fits(moved: Moved, routes: readonly (readonly Point[])[], weigh: Weighe
 	return [...moved].every(([line, next]) => {
 		const old = routes[line]!;
 		return (
+			onAxes(next) &&
 			reach(next) <= reach(old) + CARRIED &&
 			keepsEnds(next, old) &&
 			roomy(next, old) &&
