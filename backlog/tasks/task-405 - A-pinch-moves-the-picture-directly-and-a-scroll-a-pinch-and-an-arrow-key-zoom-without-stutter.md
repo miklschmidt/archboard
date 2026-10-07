@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-06 09:53'
-updated_date: '2026-10-07 01:37'
+updated_date: '2026-10-07 01:41'
 labels:
   - frontend
 dependencies: []
@@ -58,4 +58,6 @@ Not changed: React still renders CameraSurface once per frame of an ease (a few 
 Tests: camera-motion (pinch arithmetic), semantic-board-stage (a trackpad pinch and a two-finger pinch move the camera at once and ask for no frame; a keyed zoom keeps the far view and the layer until rest, then drops both), semantic-board-traffic-rest (renamed duration). Checks: type-check, lint, fmt:check, bun test --isolate src/runtime/semantic-renderer src/transformers src/shared src/ui (1882 pass).
 
 Whole serial browser lane after the commits (bun run build:frontend, then bun tests/system/browser/run-browser-lane.ts ...): 24 pass, 0 fail. Commits: b2a6c1b0d (feature), e4241f29f (ADR 0042 amendment).
+
+Architecture completion (2026-10-07): Board viewer@TASK-405 adopted at version 51. Added the bound Camera controller (use-board-camera.ts) and Camera store (camera-store.ts); existing camera geometry, gesture, motion, dive and transition ids remain. Six existing relationships retain their ids and now land on, or originate at, the actual controller. Evidence: use-board-camera.ts:272 creates the store, :310 creates useCameraMotion, :376 applies pan, :387 applies pinch immediately, :497 applies ctrl-wheel immediately, :321 schedules rest, and :241 separates layer removal from the near/far swap by a frame. camera-store.ts:88 holds rest while moving or held; CameraSurface.tsx:29 keeps the transform layer while moving; SemanticDiagram.tsx:300 reads rest.scale. Three new relationships describe controller arithmetic, store access and frame-clock rest. The proposal comparison preserved every existing subject id, and the predecessor stayed byte-for-byte unchanged before adoption. Rasterized the proposal and inspected it. ARCHBOARD_URL=http://127.0.0.1:3447 ./bin/dogfood check passed with diagnostics: []. The 3447 server was isolated because another checkout owns the shared 3000 server. No acceptance criteria or status changed by this documentation work.
 <!-- SECTION:NOTES:END -->
