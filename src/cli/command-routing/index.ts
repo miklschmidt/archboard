@@ -13,7 +13,7 @@ export {
 	child,
 } from "@/cli/command-routing/lib/route";
 
-export { cliSurfaceOf, registryOf } from "@/cli/command-routing/lib/registry";
+export { registryOf } from "@/cli/command-routing/lib/registry";
 
 export { commanderTree, helpText, usageLine } from "@/cli/command-routing/lib/help";
 

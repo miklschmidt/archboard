@@ -1,5 +1,5 @@
-// Projects the command table into the contract registry, the CLI surface, and per-command
-// help, and asserts the board/browser architecture rule over every registered command.
+// Projects the command table into the contract registry, and asserts the
+// board/browser architecture rule over every registered command.
 import type { AnyCommandContract } from "@/cli/command-contract/contract";
 import type {
 	CliRegistryEntry,
@@ -19,19 +19,6 @@ const sessionRelationships = [
 	"/api/browser/",
 	"/api/boards/open",
 ];
-
-/**
- * Every way the CLI can be invoked, as `{ name, subcommands }`: the command table read as data
- * for contract and documentation checks.
- * @param routes - The command table.
- * @returns One entry per top-level command with its subcommand names.
- */
-function cliSurfaceOf(routes: CommandRoutes): { name: string; subcommands: readonly string[] }[] {
-	return Object.entries(routes).map(([name, route]) => ({
-		name,
-		subcommands: Object.keys(route.children ?? {}),
-	}));
-}
 
 /**
  * Classifies a command by what it touches: the browser namespace, a persisted board, or neither.
@@ -185,4 +172,4 @@ function childOf(root: CommandRoute, name: string): CommandRoute | undefined {
 	return root.children ? root.children[name] : undefined;
 }
 
-export { cliSurfaceOf, registryOf, childOf };
+export { registryOf, childOf };
