@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:37'
-updated_date: '2026-10-07 01:02'
+updated_date: '2026-10-07 01:04'
 labels:
   - code-check
 dependencies: []
@@ -39,4 +39,6 @@ A definition in code facts records its name, its lines and its visibility, but n
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented mandatory Definition.kind from declaration syntax for TypeScript/TSX, Python, C/C++, Objective-C, C# and Swift, plus value kinds for infrastructure/Swift target declarations. Runtime argument syntax records passed separately from other value reads; deduplication preserves both, so an earlier function read cannot hide a later registration. Public runsDefinition joins the argument mark with known function kind; relationship evidence applies it after definition resolution. Shared realistic kind/argument regressions and imported/local callback-vs-constant relationship coverage pass. Focused code-facts and code-check owners: 197 pass, 0 fail. Touched-scope tests/product lint pass; direct tsc passes with Nix owners identical kind-only additions applied locally and excluded from this commit. Parent integrates de271100f for Nix and the module-interface helper owner, then counts/draws or explains new dogfood warnings and runs the complete gate. Simplification: syntax tables feed the existing definitions and argument rules reuse the existing chain-position mechanism. No new public module, board part or wiring. ADR 0046 records the rule and paired-header cache freshness.
+
+Measured the integrated runtime before proposal adoption against the earlier runtime capture. Both passes report the same two warnings: the removed helpText anchor on Command dispatch and the new History lens decoder call on Archboard server. TASK-436.12 and TASK-436.14 proposals correct them. TASK-436.05 introduces zero TEST_IMPORT_UNEXPOSED warnings in this repository. TASK-436.15 introduces zero additional RELATIONSHIP_UNDRAWN warnings on current dogfood boards. Captures: /tmp/archboard-task436-before.json and /tmp/task436-integrated-before-code.json. Draft board audits can still expose newly drawn scopes and are handled before adoption.
 <!-- SECTION:NOTES:END -->

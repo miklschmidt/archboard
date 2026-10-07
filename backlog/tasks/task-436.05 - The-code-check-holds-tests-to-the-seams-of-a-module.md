@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:36'
-updated_date: '2026-10-07 00:51'
+updated_date: '2026-10-07 01:04'
 labels:
   - code-check
 dependencies: []
@@ -41,4 +41,6 @@ The owner wants the code check to make sure that code and tests have a correct s
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented separate resolved private-test import scan; TEST_IMPORT_UNEXPOSED warns on every bound container even with no drawn callers. Internal tests and public entry imports are allowed. Tests remain excluded from exposed uses. Existing interface fixture covers first-import deduplication, direct deep imports of re-exported names, allowed internal/root imports, warning severity and exact evidence. Focused interface tests: 7 pass; touched implementation/test lint clean. Skill-evaluation owners: 233 pass. eval:skill check currently fails on existing candidate/baseline repo add and removeNodes leakage; parent integration will resolve metadata/prerequisites. ADR 0044 amendment and portable authoring rule recorded. Simplified scan by sharing SyntaxFacts import types and cached per-module reading. Parent will add warning count/correction evidence before acceptance; task remains In Progress.
+
+Measured the integrated runtime before proposal adoption against the earlier runtime capture. Both passes report the same two warnings: the removed helpText anchor on Command dispatch and the new History lens decoder call on Archboard server. TASK-436.12 and TASK-436.14 proposals correct them. TASK-436.05 introduces zero TEST_IMPORT_UNEXPOSED warnings in this repository. TASK-436.15 introduces zero additional RELATIONSHIP_UNDRAWN warnings on current dogfood boards. Captures: /tmp/archboard-task436-before.json and /tmp/task436-integrated-before-code.json. Draft board audits can still expose newly drawn scopes and are handled before adoption.
 <!-- SECTION:NOTES:END -->
