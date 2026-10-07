@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 49,
+	"version": 51,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-07T18:58:09.207Z",
+	"updatedAt": "2026-10-07T19:10:14.715Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -10910,7 +10910,7 @@
 			"name": "TASK-444",
 			"lifecycle": "draft",
 			"parent": "GrAmjCmG",
-			"summary": "Copy board images with HTML descriptions through CopyQ",
+			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -11377,6 +11377,18 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/image-clipboard/index.ts"
+						}
+					},
+					{
+						"id": "X4OD7oEH",
+						"order": 35000,
+						"name": "Clipboard image",
+						"kind": "module",
+						"responsibility": "Builds escaped image HTML and its accessible description from the captured board",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/lib/image-clipboard.ts"
 						}
 					}
 				],
@@ -12261,14 +12273,28 @@
 						"id": "XaWtUC7O",
 						"order": 61000,
 						"from": "69392DWF",
-						"to": "RC1mDWQR",
+						"to": "X4OD7oEH",
 						"kind": "call",
-						"label": "copy PNG and HTML together",
+						"label": "copy the captured board",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/lib/image-clipboard.ts",
 							"symbol": "copyImageToClipboard"
+						}
+					},
+					{
+						"id": "vxMXavpj",
+						"order": 62000,
+						"from": "X4OD7oEH",
+						"to": "RC1mDWQR",
+						"kind": "call",
+						"label": "publish PNG and HTML",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/image-clipboard/index.ts",
+							"symbol": "copyPngAndHtml"
 						}
 					}
 				],

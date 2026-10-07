@@ -11,6 +11,7 @@ import {
 // file that defines them.
 
 import { z } from "zod";
+import type { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, type CommandContext } from "@/cli/command-contract/contract";
 import { currentExpectedVersion } from "@/runtime/engine/server-client";
 import {
@@ -40,8 +41,8 @@ const UNNAMED_VARIANT =
  * variant is in it, and that the receipt names that one.
  */
 const DRAWN_AGAINST =
-	"Every variant but the current one is drawn as the comparison with the current one, or on a " +
-	"board with none with the variant it came from, and the receipt names it";
+	"By default, every variant but the current one is drawn as the comparison with the current one, or on a " +
+	"board with none with the variant it came from. Use --no-comparison to hide its marks and removed subjects";
 
 /**
  * The variant a command named, or the one the board's name opens.
@@ -67,10 +68,36 @@ function askedVariant(board: SemanticBoard, asked: string | undefined): Semantic
  * cannot drift apart.
  * @param drawn What the render answered.
  * @param drawn.changes How it differs from the variant it is read against, or null.
+ * @param noComparison Whether the caller hid comparison treatment.
  * @returns That variant, or null when there is nothing to read it against.
  */
-function drawnAgainst(drawn: { readonly changes: RenderedChanges | null }): RenderedVariant | null {
-	return drawn.changes === null ? null : drawn.changes.against;
+function drawnAgainst(
+	drawn: { readonly changes: RenderedChanges | null },
+	noComparison = false,
+): RenderedVariant | null {
+	return noComparison || drawn.changes === null ? null : drawn.changes.against;
+}
+
+type RenderOptions = NonNullable<Parameters<typeof renderSemanticBoardOnServer>[1]>;
+
+/**
+ * Select the same self-contained picture for SVG, PNG and clipboard output.
+ * @param input The requested variant, view, theme, layout and comparison treatment.
+ * @returns The request with embedded fonts, so the picture outlives its server.
+ */
+function exportRenderRequest(
+	input: {
+		[Key in keyof Omit<RenderOptions, "fonts" | "comparison">]?: RenderOptions[Key] | undefined;
+	} & { noComparison: boolean },
+): RenderOptions {
+	return {
+		...(input.variant === undefined ? {} : { variant: input.variant }),
+		...(input.view === undefined ? {} : { view: input.view }),
+		...(input.theme === undefined ? {} : { theme: input.theme }),
+		...(input.layout === undefined ? {} : { layout: input.layout }),
+		...(input.noComparison ? { comparison: "off" } : {}),
+		fonts: "embedded",
+	};
 }
 
 /**
@@ -408,6 +435,7 @@ export {
 	askedVariant,
 	SemanticBoardReadSchema,
 	drawnAgainst,
+	exportRenderRequest,
 	DRAWN_AGAINST,
 	SemanticBoardResultSchema,
 	describedWrite,

@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 34,
+	"version": 36,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-07T18:58:09.551Z",
+	"updatedAt": "2026-10-07T19:10:14.907Z",
 	"views": [],
 	"variants": [
 		{
@@ -2343,7 +2343,7 @@
 			"name": "TASK-444",
 			"lifecycle": "draft",
 			"parent": "hr3x97Xp",
-			"summary": "Copy board images with HTML descriptions through CopyQ",
+			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
 				"nodes": [
 					{
@@ -2500,7 +2500,7 @@
 						"description": "Uses @teddyzhu/clipboard on Linux and macOS. A detached Bun process owns Linux clipboard data after the command exits. macOS retains the data itself.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/image-clipboard/lib/owner.ts"
+							"path": "src/runtime/image-clipboard"
 						}
 					}
 				],
@@ -2765,8 +2765,8 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/lib/image-clipboard.ts",
-							"symbol": "copyImageToClipboard"
+							"path": "src/runtime/image-clipboard/index.ts",
+							"symbol": "fork"
 						}
 					}
 				],

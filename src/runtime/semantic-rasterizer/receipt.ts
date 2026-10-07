@@ -29,10 +29,10 @@ const SemanticRasterReceiptSchema = z.object({
 	/** What was drawn; ids select it exactly and names are what a person types. */
 	variant: RenderedVariantSchema,
 	/**
-	 * The variant this picture is drawn against, or null when there is nothing
+	 * The variant this picture is drawn against, or null when comparison is disabled or there is nothing
 	 * to read it against — it is the current variant, or a first draft on a
 	 * board with none — and it is therefore drawn plain. Every other variant is
-	 * always drawn as the comparison with the board's current one (on a board
+	 * drawn by default as the comparison with the board's current one (on a board
 	 * with none, with the one it came from), so the receipt names the other
 	 * side; the bitmap cannot.
 	 */

@@ -16,6 +16,7 @@ import {
 	SelectorSchema,
 	UNNAMED_VARIANT,
 	drawnAgainst,
+	exportRenderRequest,
 } from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
 
@@ -27,6 +28,7 @@ const RenderInputSchema = z.object({
 	view: SelectorSchema.optional(),
 	theme: z.enum(THEMES).default("light"),
 	layout: LayoutEngineSchema.optional(),
+	noComparison: z.boolean().default(false),
 	out: z.string().optional(),
 });
 
@@ -42,11 +44,11 @@ const SemanticRenderResultSchema = z.object({
 	 */
 	variant: RenderedVariantSchema,
 	/**
-	 * The variant this picture is drawn against, or null when there is nothing
+	 * The variant this picture is drawn against, or null when comparison is disabled or there is nothing
 	 * to read it against — it is the current variant, or a first draft on a
 	 * board with none — and it is therefore drawn plain.
 	 *
-	 * Every other variant is always drawn as the comparison with the board's
+	 * By default, every other variant is drawn as the comparison with the board's
 	 * current one (on a board with none, with the one it came from) —
 	 * added, removed and changed subjects marked, removed ones still on the page
 	 * — and that is the picture a reader gets. The receipt says so, because
@@ -68,9 +70,11 @@ const semanticRenderContract = defineCommand({
 	description:
 		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +
 		"routing belong to the renderer. Without --out, stdout carries the SVG, including its accessibility metadata. " +
-		"Use semantic rasterize for PNG clipboard output.",
+		"Use --no-comparison to hide comparison marks and removed subjects. " +
+		"Use semantic rasterize --clipboard for PNG and HTML clipboard output.",
 	examples: [
 		"archboard semantic render pipeline --out pipeline.svg --theme dark",
+		'archboard semantic render pipeline --variant "Queued ingest" --no-comparison --out proposal.svg',
 		"archboard semantic render pipeline | wl-copy --type image/svg+xml",
 	],
 	parameters: [
@@ -105,6 +109,14 @@ const semanticRenderContract = defineCommand({
 			value: "required",
 			placeholder: "view",
 			description: "Which shared board view to draw, by id or name; the whole variant when absent",
+		},
+		{
+			kind: "option",
+			key: "noComparison",
+			spellings: ["--no-comparison"],
+			value: "none",
+			description:
+				"Hide comparison marks and removed subjects; draw the selected variant without standing decoration",
 		},
 		{
 			kind: "option",
@@ -176,15 +188,7 @@ const semanticRenderContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic render");
-		const drawn = await renderSemanticBoardOnServer(input.name, {
-			...(input.variant === undefined ? {} : { variant: input.variant }),
-			...(input.view === undefined ? {} : { view: input.view }),
-			theme: input.theme,
-			...(input.layout === undefined ? {} : { layout: input.layout }),
-			// The file outlives the server that drew it, so it carries its faces
-			// rather than pointing at a server that may not be running.
-			fonts: "embedded",
-		});
+		const drawn = await renderSemanticBoardOnServer(input.name, exportRenderRequest(input));
 		if ("empty" in drawn) {
 			throw new CliUsageError(
 				`Semantic board "${drawn.board}" has nothing on it yet, so there is nothing to draw.`,
@@ -198,7 +202,7 @@ const semanticRenderContract = defineCommand({
 				board: drawn.board,
 				version: drawn.version,
 				variant: drawn.variant,
-				comparedWith: drawnAgainst(drawn),
+				comparedWith: drawnAgainst(drawn, input.noComparison),
 				view: drawn.view,
 				file,
 				width: drawn.width,

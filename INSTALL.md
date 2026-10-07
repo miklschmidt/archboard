@@ -332,7 +332,8 @@ If no `Package.swift` holds the file, the check says `language-server-unready` o
 `archboard semantic render <board> --out <file.svg>` writes an SVG with its
 fonts in it, and needs no browser. `archboard semantic rasterize <board> --out
 <file.png>` draws the same picture to a PNG in a private headless Chromium.
-Both take `--variant`, `--view` and `--theme`.
+Both take `--variant`, `--view` and `--theme`. Add `--no-comparison` to hide
+comparison marks and removed subjects when exporting a variant.
 
 The CLI starts the browser itself, with a private temporary profile, and stops
 it and removes the profile before the command ends. It uses the first of
@@ -353,6 +354,29 @@ The PNG has these properties:
   marks show their first frame.
 - The receipt gives the file, the size, the scale, the board, its version, the
   variant and view that it drew, and the SHA-256 of the SVG that it drew.
+
+To copy the PNG and its description together on Linux or macOS, run:
+
+```bash
+archboard semantic rasterize "Skill evaluation" --clipboard
+```
+
+Archboard uses the native clipboard on the machine that runs the command.
+The clipboard package installs with Archboard. No clipboard manager is required.
+Archboard offers PNG and HTML together. The HTML embeds the PNG and includes
+the image description as alt text. The receiving app chooses which format to paste.
+On Linux, a background helper keeps the copy available after the command exits.
+It exits when another copy replaces the image or the desktop disconnects.
+On macOS, the system keeps the copy.
+The command prints a JSON receipt after the native clipboard accepts both formats.
+Use either `--clipboard` or `--out` for one command.
+
+Without either destination, `semantic rasterize` writes PNG bytes to stdout.
+For an image-only clipboard entry on Wayland, run:
+
+```bash
+archboard semantic rasterize "Skill evaluation" | wl-copy --type image/png
+```
 
 ## Recording a walkthrough
 

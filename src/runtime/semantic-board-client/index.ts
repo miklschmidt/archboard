@@ -188,6 +188,7 @@ async function readSemanticBoardOnServer(board: string): Promise<SemanticBoard> 
  * @param options.theme Which colour scheme to draw for.
  * @param options.fonts Where the drawn faces come from; embedded makes the file self-contained.
  * @param options.layout Which layout engine lays it out; the default one when absent.
+ * @param options.comparison Whether the picture carries comparison marks and removed context.
  * @returns The picture, or the fact that there is nothing on the board yet.
  */
 async function renderSemanticBoardOnServer(
@@ -198,6 +199,7 @@ async function renderSemanticBoardOnServer(
 		theme?: "light" | "dark";
 		fonts?: FontSource;
 		layout?: LayoutEngineName;
+		comparison?: "on" | "off";
 	} = {},
 ): Promise<SemanticRenderReply> {
 	const query = new URLSearchParams({ board });

@@ -2,7 +2,9 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { createHash } from "node:crypto";
+import { Window } from "happy-dom";
+import { startOwnedServer, waitForProcessExit, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 
@@ -21,8 +23,10 @@ let server: OwnedServer;
  * @param input What to put on standard input.
  * @returns What the command printed and how it exited.
  */
-const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: server.base, args, input });
+const cli = (args: readonly string[], input?: string, env?: Readonly<Record<string, string>>) =>
+	runServerCli({ repoRoot, vault, base: server.base, args, input, env });
+
+const VIEW_NAME = 'Transfer "quoted" & <exchange>';
 
 /** A small system with one exchange and a view that reads it as a sequence. */
 const architecture = {
@@ -51,7 +55,7 @@ const architecture = {
 	],
 	views: [
 		{
-			name: "Transfer exchange",
+			name: VIEW_NAME,
 			grammar: "data-flow",
 			scope: { kind: "selection", flows: ["One transfer"] },
 		},
@@ -154,7 +158,7 @@ describe("semantic rasterize", () => {
 				"rasterize",
 				"transfers",
 				"--view",
-				"Transfer exchange",
+				VIEW_NAME,
 				"--scale",
 				"2",
 				"--theme",
@@ -164,14 +168,14 @@ describe("semantic rasterize", () => {
 			]);
 			expect(viewed.status, viewed.stderr).toBe(0);
 			const receipt = JSON.parse(viewed.stdout);
-			expect(receipt.view).toMatchObject({ name: "Transfer exchange", grammar: "data-flow" });
+			expect(receipt.view).toMatchObject({ name: VIEW_NAME, grammar: "data-flow" });
 			expect(receipt.theme).toBe("dark");
 			expect(receipt.scale).toBe(2);
 			expect(pngSize(fs.readFileSync(sequence))).toEqual({
 				width: receipt.diagram.width * 2,
 				height: receipt.diagram.height * 2,
 			});
-			const sequenceSvg = cli(["semantic", "render", "transfers", "--view", "Transfer exchange"]);
+			const sequenceSvg = cli(["semantic", "render", "transfers", "--view", VIEW_NAME]);
 			expect(sequenceSvg.status, sequenceSvg.stderr).toBe(0);
 			expect(sequenceSvg.stdout).toMatch(/<desc>[^<]+<\/desc>/u);
 			expect(boardFile()).toEqual(before);
@@ -231,11 +235,147 @@ describe("semantic rasterize", () => {
 			]);
 			expect(drawnSvg.status, drawnSvg.stderr).toBe(0);
 			expect(JSON.parse(drawnSvg.stdout).comparedWith).toEqual(comparedReceipt.comparedWith);
+
+			// The plain SVG must omit the removed subject and every standing marker.
+			const decorated = fs.readFileSync(path.join(vault, "proposal.svg"), "utf8");
+			const plainPath = path.join(vault, "plain.svg");
+			const plainSvg = cli([
+				"semantic",
+				"render",
+				"transfers",
+				"--variant",
+				"No auditor",
+				"--no-comparison",
+				"--out",
+				plainPath,
+			]);
+			expect(plainSvg.status, plainSvg.stderr).toBe(0);
+			expect(JSON.parse(plainSvg.stdout).comparedWith).toBeNull();
+			const plain = fs.readFileSync(plainPath, "utf8");
+			expect(decorated).toContain("Auditor");
+			expect(plain).not.toContain("Auditor");
+			expect(plain).not.toContain('data-standing="removed"');
+			const rawPlain = cli([
+				"semantic",
+				"render",
+				"transfers",
+				"--variant",
+				"No auditor",
+				"--no-comparison",
+			]);
+			expect(rawPlain.stdout).toBe(plain);
+			const plainPng = cli([
+				"semantic",
+				"rasterize",
+				"transfers",
+				"--variant",
+				"No auditor",
+				"--no-comparison",
+				"--out",
+				path.join(vault, "plain.png"),
+			]);
+			expect(plainPng.status, plainPng.stderr).toBe(0);
+			const plainReceipt = JSON.parse(plainPng.stdout);
+			expect(plainReceipt.comparedWith).toBeNull();
+			// The bitmap command must consume the same undecorated SVG bytes.
+			expect(plainReceipt.source.svgSha256).toBe(createHash("sha256").update(plain).digest("hex"));
 			expect(comparedReceipt.version).toBe(3);
 			expect(pngSize(fs.readFileSync(proposal))).toEqual({
 				width: comparedReceipt.width,
 				height: comparedReceipt.height,
 			});
+		},
+		TEST_WALL_CLOCK_BUDGET_MS,
+	);
+
+	test(
+		"copies the captured PNG and self-contained HTML together, with clean failure output",
+		async () => {
+			const fixture = path.join(import.meta.dir, "fake-clipboard.ts");
+			const recorded = path.join(vault, "copied.json");
+			const env = { BUN_OPTIONS: `--preload=${fixture}`, ARCHBOARD_TEST_COPIED: recorded };
+			const before = boardFile();
+			const args = [
+				"semantic",
+				"rasterize",
+				"transfers",
+				"--variant",
+				"No auditor",
+				"--view",
+				VIEW_NAME,
+				"--no-comparison",
+				"--theme",
+				"dark",
+				"--scale",
+				"2",
+				"--region",
+				"0,0,120,80",
+				"--clipboard",
+			];
+			const copied = cli(args, undefined, env);
+			expect(copied.status, copied.stderr).toBe(0);
+			const receipt = JSON.parse(copied.stdout);
+			expect(receipt).toMatchObject({
+				board: "transfers",
+				variant: { name: "No auditor" },
+				view: { name: VIEW_NAME },
+				comparedWith: null,
+				theme: "dark",
+				scale: 2,
+				region: { x: 0, y: 0, width: 120, height: 80 },
+				clipboard: { formats: ["image/png", "text/html"] },
+			});
+			expect(receipt.file).toBeUndefined();
+			const sent = JSON.parse(fs.readFileSync(recorded, "utf8"));
+			expect(sent.formats).toEqual(["image/png", "text/html"]);
+			const png = Buffer.from(sent.payload.png, "base64");
+			expect(pngSize(png)).toEqual({ width: 240, height: 160 });
+			const window = new Window();
+			try {
+				const rendered = cli([
+					"semantic",
+					"render",
+					"transfers",
+					"--variant",
+					"No auditor",
+					"--view",
+					VIEW_NAME,
+					"--no-comparison",
+					"--theme",
+					"dark",
+				]);
+				expect(rendered.status, rendered.stderr).toBe(0);
+				window.document.body.innerHTML = rendered.stdout;
+				const accessibleName = window.document.querySelector("svg")?.getAttribute("aria-label");
+				expect(accessibleName).toBeTruthy();
+				window.document.body.innerHTML = sent.payload.html;
+				const image = window.document.querySelector("img");
+				expect(window.document.querySelectorAll("*")).toHaveLength(4);
+				expect(image?.getAttribute("src")).toBe(`data:image/png;base64,${sent.payload.png}`);
+				expect(image?.getAttribute("alt")).toBe(receipt.clipboard.description);
+				expect(image?.getAttribute("alt")).toContain(accessibleName!);
+				expect(image?.getAttribute("alt")).toContain(VIEW_NAME);
+				expect(image?.getAttribute("alt")).toContain("One transfer");
+			} finally {
+				await window.happyDOM.close();
+			}
+			expect(boardFile()).toEqual(before);
+			// An identical export gets a fresh identity and retires the first Linux owner.
+			const repeated = cli(args, undefined, env);
+			expect(repeated.status, repeated.stderr).toBe(0);
+			const replacement = JSON.parse(fs.readFileSync(recorded, "utf8"));
+			expect(replacement.payload.html).not.toBe(sent.payload.html);
+			await waitForProcessExit(sent.pid);
+			fs.rmSync(recorded);
+			await waitForProcessExit(replacement.pid);
+			const conflict = cli([...args, "--out", path.join(vault, "conflict.png")], undefined, env);
+			expect(conflict.status).toBe(2);
+			expect(conflict.stdoutBytes).toHaveLength(0);
+			expect(fs.existsSync(recorded)).toBe(false);
+			const refused = cli(args, undefined, { ...env, ARCHBOARD_TEST_CLIPBOARD_FAIL: "1" });
+			expect(refused.status).toBe(1);
+			expect(refused.stdoutBytes).toHaveLength(0);
+			expect(fs.existsSync(recorded)).toBe(false);
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);
