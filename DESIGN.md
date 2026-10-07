@@ -289,11 +289,13 @@ Ink on it. A comparison marks a part by its outline: a
 top face, solid for added and dashed for changed, and a removed part's dashed
 red border round its footprint. The face and the front edge keep their colors.
 A line that meets the foot of a card runs into a port, a small slot cut
-through the card's front edge, dark inside, with a lit lower lip. The line comes
-out of it at its own width, over the lip, fades into its depth, and its pulses
+through the card's front edge, dark inside, with a lower lip lighter than the
+edge round it but short of white. The line comes out of it at its own width,
+over the lip, fades into its depth, and its pulses
 travel into and out of it, over an arrowhead too. Ports are drawn near and far
 alike. No shadow falls on a line: the shadows of cards, labels and activation
-bars lie under the lines.
+bars lie under the lines. No shadow falls on a card either: every card's
+shadow lies under every card.
 The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the construction.
@@ -302,8 +304,11 @@ On chalk the picture is crisp and vivid, never pastel or dusty. Its own
 neutrals are cool and clean, near hue 255, not the shell's warm ones: a card
 face a soft off-white, never pure white (oklch(0.96 0.004 255), lit to 0.97 at
 its top), a tray floor a step under the ground (oklch(0.974 0.003 255)) and a
-navy shadow. A label's face is the card's. A front edge is the face in shade,
-never a lighter strip: the neutral face's own neutral at lightness 0.815
+navy shadow. Under a card's foot that shadow is lighter than the front edge,
+so the edge ends where the card ends. It falls only down and to the right,
+with a faint ring round the card. A label's face is the card's. A front edge
+is the face in shade, never a lighter strip: the neutral face's own neutral at
+lightness 0.815
 (oklch(0.815 0.003 255)). A grouped card is a clearly colored card in a clean
 tone of its group's hue, an orange face a peach: at lightness 0.89 to 0.92 with
 nine tenths of the chroma its hue holds there (0.049 to 0.07), and its front
