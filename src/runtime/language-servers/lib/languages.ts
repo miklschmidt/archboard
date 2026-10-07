@@ -158,4 +158,4 @@ function languageOf(file: string): { language: Language; languageId: string } | 
 	return undefined;
 }
 
-export { type Language, type Once, type Project, LANGUAGES, LANGUAGE_KEYS, languageOf };
+export { type Language, type Once, type Project, LANGUAGES, languageOf };
