@@ -38,6 +38,7 @@
 // yet read are unknown.
 
 import type { Node } from "web-tree-sitter";
+import { importedSource } from "@/runtime/code-facts/lib/nix-files";
 import type { Import, ParsedFacts, Unparsed } from "@/runtime/code-facts/lib/facts";
 import {
 	type Budget,
@@ -127,8 +128,12 @@ function linesOf(node: Node): Lines {
 function within(leaf: Leaf, nodes: readonly Node[]): Node {
 	const span = leaf.node;
 	return (
-		nodes.find((node) => span.startIndex <= node.startIndex && node.endIndex <= span.endIndex) ??
-		span
+		nodes.find(
+			(node) =>
+				span.tree === node.tree &&
+				span.startIndex <= node.startIndex &&
+				node.endIndex <= span.endIndex,
+		) ?? span
 	);
 }
 
@@ -209,7 +214,14 @@ interface LeafReading {
  */
 function unknownInputs(at: LeafReading, nodes: readonly Node[]): void {
 	const lines = linesOf(within(at.leaf, nodes));
-	at.reading.unfollowed.set(`${lines.start}:${lines.end}`, { ...lines, names: [] });
+	const first = nodes[0];
+	const source =
+		first === undefined ? undefined : importedSource(at.reading.budget, first, at.leaf.node);
+	at.reading.unfollowed.set(`${lines.start}:${lines.end}`, {
+		...lines,
+		names: [],
+		...(source === undefined ? {} : { source }),
+	});
 }
 
 /**

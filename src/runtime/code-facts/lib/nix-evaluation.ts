@@ -1,6 +1,7 @@
 // A static reading of a Nix expression (ADR 0046, TASK-367.21): the value
 // each expression of a flake gives, as far as its syntax tells it. Nothing is
-// evaluated: no file is imported, nothing is fetched, no builtin runs. The
+// evaluated by Nix: local imports are parsed through the checkout boundary,
+// nothing is fetched, and no other builtin runs. The
 // reading follows what a flake writes to give its outputs:
 //
 // - attribute sets, `rec` sets, nested names (`packages.x86_64-linux.a = ...`),
@@ -16,7 +17,7 @@
 //   `inherit (nixpkgs.lib) genAttrs`, `flake-utils.lib.eachDefaultSystem`), or
 //   by a name `with` brings in.
 //
-// Everything else is unknown at its node: `import`, a builtin, an
+// Everything else is unknown at its node: an outside or unknown import, a builtin, an
 // `if`, a value of an input, a library function the reading does not know.
 // A default, `a.b or c` or a formal's `? c`, stands only where the reading is
 // sure the name is absent: of a set it can tell every name of, or of a value
@@ -42,6 +43,7 @@ import {
 	type NixValue,
 	type Thunk,
 	OTHER,
+	attrs,
 	applied,
 	lazy,
 	ready,
@@ -49,6 +51,7 @@ import {
 	spend,
 	surelyAbsent,
 	unknownAt,
+	unary,
 } from "@/runtime/code-facts/lib/nix-values";
 
 /** How many steps one file's reading spends at most. */
@@ -131,9 +134,35 @@ const CONSTANTS = new Set(["true", "false", "null"]);
  */
 function variable(node: Node, scope: Scope, budget: Budget): NixValue {
 	const name = node.childForFieldName("name")?.text ?? node.text;
-	const value = lookup(scope, name) ?? libraryValue(name, budget);
-	if (value !== undefined) return value;
+	const value =
+		lookup(scope, name) ?? builtinValue(name, node, budget) ?? libraryValue(name, budget);
+	return value ?? constantValue(name, node);
+}
+
+/**
+ * A builtin constant, or an unbound value.
+ * @param name The name.
+ * @param node The expression that names it.
+ * @returns The value.
+ */
+function constantValue(name: string, node: Node): NixValue {
 	return CONSTANTS.has(name) ? OTHER : unknownAt(node);
+}
+
+/**
+ * The import builtin reads a permitted local expression through the shared budget.
+ * @param name The builtin name.
+ * @param node The expression that names it.
+ * @param budget The reading's budget and source loader.
+ * @returns The builtin, or nothing for an unrecognised name.
+ */
+function builtinValue(name: string, node: Node, budget: Budget): NixValue | undefined {
+	if (name !== "import" && name !== "builtins") return undefined;
+	const importFile = unary(
+		(argument, call) => budget.import?.(argument(), call) ?? unknownAt(call),
+	);
+	if (name === "import") return importFile;
+	return attrs(new Map([["import", { node, value: ready(importFile) }]]), node);
 }
 
 /** The scope of a set's values, and the scope a plain `inherit` reads names from. */
@@ -194,10 +223,10 @@ function inheritInto(binding: Node, building: Building, scopes: Scopes, budget: 
 	const from = binding.childForFieldName("expression");
 	const source = from === null ? undefined : thunk(from, scopes.values, budget);
 	const inherited = binding.childForFieldName("attrs");
-	const attrs = inherited?.childrenForFieldName("attr") ?? [];
+	const attributes = inherited?.childrenForFieldName("attr") ?? [];
 	for (const [index, name] of attrNames(inherited, scopes.values, budget).entries()) {
 		const value = inheritedValue(name, source, scopes, { binding, budget });
-		place(building, [name], value, attrs[index] ?? binding);
+		place(building, [name], value, attributes[index] ?? binding);
 	}
 }
 
@@ -224,7 +253,7 @@ function inheritedValue(
 		() =>
 			source === undefined
 				? (lookup(scopes.inherited, name) ?? unknownAt(at.binding))
-				: orLibrary(selected(source(), name, at.binding), name, at.budget),
+				: orLibrary(selected(source(), name, at.binding), name, at.budget, source),
 		at.binding,
 	);
 }
@@ -326,14 +355,16 @@ function given(
 function selection(node: Node, scope: Scope, budget: Budget): NixValue {
 	const names = attrNames(node.childForFieldName("attrpath"), scope, budget);
 	let value = evaluate(node.childForFieldName("expression"), scope, budget);
+	let receiver = value;
 	for (const name of names) {
 		if (surelyAbsent(value, name)) {
 			const fallback = node.childForFieldName("default");
 			return fallback === null ? unknownAt(node) : evaluate(fallback, scope, budget);
 		}
+		receiver = value;
 		value = selected(value, name, node);
 	}
-	return orLibrary(value, names.at(-1), budget);
+	return orLibrary(value, names.at(-1), budget, ready(receiver));
 }
 
 /** What one binary operator gives for its two values. */
@@ -408,6 +439,33 @@ function field(name: string): Reader {
 	return (node, scope, budget) => evaluate(node.childForFieldName(name), scope, budget);
 }
 
+/**
+ * Read a function and its formal names, spending the budget for each name.
+ * @param node The function expression.
+ * @param scope Its lexical scope.
+ * @param budget The reading's budget.
+ * @returns The function, or unknown after the budget is spent.
+ */
+function functionValue(node: Node, scope: Scope, budget: Budget): NixValue {
+	const formals = node.childForFieldName("formals")?.childrenForFieldName("formal") ?? [];
+	if (!spend(budget, formals.length)) return unknownAt(node);
+	return {
+		kind: "function",
+		formals: formals.map((formal) => formal.childForFieldName("name")?.text ?? formal.text),
+		/**
+		 * The body's value for one argument, in the same reading budget.
+		 * @param argument The argument.
+		 * @returns The value.
+		 */
+		apply: (argument) =>
+			evaluate(
+				node.childForFieldName("body"),
+				parameterScope(node, argument, scope, budget),
+				budget,
+			),
+	};
+}
+
 /** Each kind of expression the reading follows, and how. */
 const READERS: ReadonlyMap<string, Reader> = new Map<string, Reader>([
 	[
@@ -424,23 +482,7 @@ const READERS: ReadonlyMap<string, Reader> = new Map<string, Reader>([
 		(node, scope, budget) =>
 			evaluate(node.childForFieldName("body"), recursive(node, scope, budget).scope, budget),
 	],
-	[
-		"function_expression",
-		(node, scope, budget) => ({
-			kind: "function",
-			/**
-			 * The body's value for one argument.
-			 * @param argument The argument.
-			 * @returns The value.
-			 */
-			apply: (argument) =>
-				evaluate(
-					node.childForFieldName("body"),
-					parameterScope(node, argument, scope, budget),
-					budget,
-				),
-		}),
-	],
+	["function_expression", functionValue],
 	[
 		"apply_expression",
 		(node, scope, budget) =>
@@ -471,10 +513,19 @@ const READERS: ReadonlyMap<string, Reader> = new Map<string, Reader>([
 	["list_expression", list],
 	["string_expression", (node, _scope, budget) => string(node, budget)],
 	["indented_string_expression", () => ({ kind: "string" })],
+	[
+		"path_expression",
+		(node) => ({
+			kind: "path",
+			node,
+			...(node.namedChildren.every((part) => part.type === "path_fragment")
+				? { text: node.text }
+				: {}),
+		}),
+	],
 	...[
 		"integer_expression",
 		"float_expression",
-		"path_expression",
 		"hpath_expression",
 		"spath_expression",
 		"uri_expression",
@@ -488,12 +539,15 @@ const READERS: ReadonlyMap<string, Reader> = new Map<string, Reader>([
  * value of it that is read later spends the same budget, and so does what
  * the caller reads with it.
  * @param root The file's root node.
+ * @param budget The shared budget, or a fresh one for a standalone reading.
  * @returns Its value, and the budget of its reading.
  */
-function readFile(root: Node): { readonly value: NixValue; readonly budget: Budget } {
-	const budget: Budget = { steps: MAX_STEPS, depth: 0 };
+function readFile(
+	root: Node,
+	budget: Budget = { steps: MAX_STEPS, depth: 0 },
+): { readonly value: NixValue; readonly budget: Budget } {
 	const value = evaluate(root.childForFieldName("expression"), { names: new Map() }, budget);
 	return { value, budget };
 }
 
-export { MAX_DEPTH, readFile };
+export { MAX_DEPTH, MAX_STEPS, readFile };

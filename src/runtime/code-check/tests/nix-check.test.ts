@@ -98,6 +98,7 @@ beforeAll(async () => {
 			"        cli = nixpkgs.legacyPackages.${system}.callPackage ./cli.nix { };",
 			"      });",
 			'      checks = import (builtins.fetchTarball "https://example.invalid/checks.tar.gz") { inherit self; };',
+			"      imported = import ./unknown.nix;",
 			"    };",
 			"}",
 			"",
@@ -118,6 +119,7 @@ beforeAll(async () => {
 			undefined,
 			2,
 		),
+		"unknown.nix": 'builtins.fetchTarball "https://example.invalid/source.tar.gz"\n',
 		"cli.nix": '{ stdenv }: stdenv.mkDerivation { pname = "cli"; }\n',
 		"tools/flake.nix": "{ outputs = { self }: { lib.version = 1; }; }\n",
 		"vendor/flake.nix": "{ outputs = { self }: { }; }\n",
@@ -136,6 +138,7 @@ beforeAll(async () => {
 					part("pP", "flake.nix", "packages.x86_64-linux.cli"),
 					part("pG", "flake.nix", "packages.x86_64-linux.gone"),
 					part("pC", "flake.nix", "checks.x86_64-linux.lint"),
+					part("pI", "flake.nix", "imported.tools"),
 					part("pT", "tools"),
 					part("pV", "vendor"),
 					part("pN"),
@@ -192,7 +195,10 @@ test("a part bound to a flake output is held to the outputs the flake gives, and
 		].toSorted(),
 	);
 	const skipped = outcome.skipped.filter((each) => each.reason === "expression-not-followed");
-	expect(skipped.map((each) => [each.subject?.id, each.detail])).toEqual([["pC", "flake.nix:12"]]);
+	expect(skipped.map((each) => [each.subject?.id, each.detail])).toEqual([
+		["pC", "flake.nix:12"],
+		["pI", "unknown.nix:1"],
+	]);
 });
 
 test("an input that is a flake of the checkout joins the part that owns the lock to the part bound to that flake", () => {

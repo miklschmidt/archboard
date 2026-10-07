@@ -29,7 +29,7 @@
 // (nix-derivations.ts, TASK-367.22).
 
 import type { Node } from "web-tree-sitter";
-import { DERIVATIONS } from "@/runtime/code-facts/lib/nix-derivations";
+import { DERIVATIONS, callPackage } from "@/runtime/code-facts/lib/nix-derivations";
 import {
 	type AttrsValue,
 	type Budget,
@@ -395,9 +395,11 @@ const LIBRARY: ReadonlyMap<string, (budget: Budget) => NixValue> = new Map<
  * The library value a name stands for, when the flake does not say what it is.
  * @param name The name, the last of a selection such as `nixpkgs.lib.genAttrs`.
  * @param budget The reading's budget, which the function spends.
+ * @param automatic The caller's package scope for callPackage, if known.
  * @returns The value, or undefined for a name the reading does not know.
  */
-function libraryValue(name: string, budget: Budget): NixValue | undefined {
+function libraryValue(name: string, budget: Budget, automatic?: Thunk): NixValue | undefined {
+	if (name === "callPackage") return callPackage(budget, automatic);
 	return LIBRARY.get(name)?.(budget);
 }
 
@@ -407,11 +409,17 @@ function libraryValue(name: string, budget: Budget): NixValue | undefined {
  * @param value The value the selection gives.
  * @param name Its last name.
  * @param budget The reading's budget.
+ * @param automatic The caller's package scope for callPackage, if known.
  * @returns The value, or the library function.
  */
-function orLibrary(value: NixValue, name: string | undefined, budget: Budget): NixValue {
+function orLibrary(
+	value: NixValue,
+	name: string | undefined,
+	budget: Budget,
+	automatic?: Thunk,
+): NixValue {
 	if (value.kind !== "unknown" || name === undefined) return value;
-	return libraryValue(name, budget) ?? value;
+	return libraryValue(name, budget, automatic) ?? value;
 }
 
 export { libraryValue, orLibrary, updated };

@@ -30,6 +30,7 @@ import type { Node, Tree } from "web-tree-sitter";
 import type { Definition, ParsedFacts, Unparsed } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { buildInputs, type Leaf } from "@/runtime/code-facts/lib/nix-build-inputs";
+import { type NixFiles, importedSource, localFiles } from "@/runtime/code-facts/lib/nix-files";
 import { MAX_DEPTH, readFile } from "@/runtime/code-facts/lib/nix-evaluation";
 import { updated } from "@/runtime/code-facts/lib/nix-library";
 import {
@@ -103,9 +104,21 @@ function linesOf(node: Node): { readonly start: number; readonly end: number } {
  * @param outputs What the reading collects.
  * @param path The attribute path.
  * @param node The expression the reading cannot follow.
+ * @param owner The flake expression whose span owns it.
  */
-function unknownBelow(outputs: Outputs, path: readonly string[], node: Node): void {
-	outputs.unknown.push({ ...linesOf(node), names: [], under: path.join(".") });
+function unknownBelow(
+	outputs: Outputs,
+	path: readonly string[],
+	node: Node,
+	owner: Node = node,
+): void {
+	const source = importedSource(outputs.budget, node, owner);
+	outputs.unknown.push({
+		...linesOf(source === undefined ? node : owner),
+		names: [],
+		under: path.join("."),
+		...(source === undefined ? {} : { source }),
+	});
 }
 
 /**
@@ -129,7 +142,7 @@ function walk(
 		atSchemaDepth(outputs, value, { path, node }, above);
 		return;
 	}
-	if (value.kind === "unknown") unknownBelow(outputs, path, value.node);
+	if (value.kind === "unknown") unknownBelow(outputs, path, value.node, node);
 	if (value.kind !== "attrs") addLeaf(outputs, { path, node }, value);
 	else if (path.length >= MAX_DEPTH) unknownBelow(outputs, path, node);
 	else walkSet(outputs, value, { path, node }, above);
@@ -165,7 +178,8 @@ function atSchemaDepth(
 		: undefined;
 	if (packages === undefined) addLeaf(outputs, place, value);
 	else if (packages.kind === "attrs") walkSet(outputs, packages, place, above);
-	else if (packages.kind === "unknown") unknownBelow(outputs, place.path, packages.node);
+	else if (packages.kind === "unknown")
+		unknownBelow(outputs, place.path, packages.node, place.node);
 }
 
 /**
@@ -225,6 +239,7 @@ function define(outputs: Outputs, path: readonly string[], node: Node, value: Ni
 	if (path.length === 0 || outputs.definitions.has(symbol)) return;
 	outputs.definitions.set(symbol, {
 		symbol,
+		kind: value.kind === "function" ? "function" : "value",
 		...linesOf(node),
 		visibility: "output",
 		exposed: true,
@@ -253,7 +268,10 @@ interface Place {
  */
 function ownSpan(name: Node, set: Node): boolean {
 	const written = name.type === "binding" || name.parent?.type === "inherited_attrs";
-	return written || (set.startIndex <= name.startIndex && name.endIndex <= set.endIndex);
+	return (
+		name.tree === set.tree &&
+		(written || (set.startIndex <= name.startIndex && name.endIndex <= set.endIndex))
+	);
 }
 
 /**
@@ -281,7 +299,7 @@ function walkSet(
 		const node = ownSpan(entry.node, place.node) ? entry.node : place.node;
 		walk(outputs, entry.value(), [...place.path, name], node, within);
 	}
-	if (set.open !== undefined) unknownBelow(outputs, place.path, set.open);
+	if (set.open !== undefined) unknownBelow(outputs, place.path, set.open, place.node);
 }
 
 /**
@@ -317,10 +335,27 @@ function outputsOf(
  * The code facts of one `flake.nix`.
  * @param tree The parsed file.
  * @param grammar The Nix grammar and its query.
+ * @param files The checkout read boundary for local imports, if available.
  * @returns Its outputs as definitions, and the parts whose names are unknown.
  */
-function flakeFacts(tree: Tree, grammar: Grammar): ParsedFacts {
-	const read = readFile(tree.rootNode);
+function flakeFacts(tree: Tree, grammar: Grammar, files?: NixFiles): ParsedFacts {
+	const local = localFiles(tree, grammar, files);
+	try {
+		return readFlakeFacts(tree, grammar, local.budget);
+	} finally {
+		local.close();
+	}
+}
+
+/**
+ * Collect the flake facts while every imported tree is still live.
+ * @param tree The flake tree.
+ * @param grammar Its grammar.
+ * @param budget The shared local-file reading budget.
+ * @returns The facts.
+ */
+function readFlakeFacts(tree: Tree, grammar: Grammar, budget: Budget): ParsedFacts {
+	const read = readFile(tree.rootNode, budget);
 	const outputs: Outputs = {
 		definitions: new Map(),
 		unknown: [],

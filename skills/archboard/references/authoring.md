@@ -262,8 +262,8 @@ the file's own functions such as `forAllSystems`, `genAttrs`, flake-utils'
 `perSystem` and `flake`. Where the systems come from a place it does not read,
 such as `nixpkgs.lib.systems.flakeExposed`, `import systems` or flake-utils'
 default systems, every system holds the outputs that the function gives. An
-output that it cannot follow, such as one that `import` gives or that a
-flake-parts module adds, is skipped as `expression-not-followed` and never
+output that it cannot follow, such as one from an outside import or a
+flake-parts module, is skipped as `expression-not-followed` and never
 reported missing; `BINDING_SYMBOL_MISSING` means the flake gives no such
 output. The inputs are in `flake.lock`: each input of
 the flake is build-dependency evidence, which `dependency` accepts and `call`
@@ -276,13 +276,17 @@ A package of the flake that is built from another is build-dependency evidence
 too. The check reads `buildInputs`, `nativeBuildInputs` and
 `propagatedBuildInputs` of `mkDerivation`, `buildGoModule`,
 `buildPythonPackage`, `buildPythonApplication` and `buildRustPackage`, and the
-arguments that `callPackage` names. An input that is another output of the flake
+local functions that `import` or `callPackage` reads. A literal path inside
+the checkout is followed, including a directory with `default.nix`.
+`callPackage` passes the caller's package scope and its explicit arguments;
+only the function's actual build inputs count. All imported files share the
+flake's limit of 200,000 reading operations. An input that is another output of the flake
 reaches that output, however the flake names it: `self.packages.${system}.lib`,
 a name that a `let` binds, or an overlay's `final.lib`. Bind an overlay's
 package as `overlays.<name>.<package>`. Anchor a build dependency at `flake.nix`
-with the output it is built from as `symbol`. The check does not follow the file
-that `callPackage` builds, a package of nixpkgs or `prev`, `mkShell`, or
-`overrideAttrs`. Where two packages share a line, as `inherit core lib app;`
+with the output it is built from as `symbol`. An outside or unknown path,
+a package of nixpkgs or `prev`, `mkShell`, and `overrideAttrs` remain unknown.
+A skip names the file and lines of the expression, including an imported file. Where two packages share a line, as `inherit core lib app;`
 does, the check cannot tell whose inputs the line names, so they are unknown
 there too. Take a relationship with no anchor that no evidence supports, from
 such an output to another output of the same flake. The check skips it as
