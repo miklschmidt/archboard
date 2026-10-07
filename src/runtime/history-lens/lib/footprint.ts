@@ -10,12 +10,9 @@
 // skipped is in none of them.
 
 import { snapshotCheckoutAccess } from "@/runtime/code-target/index";
+import { attributeCommits, type AttributedCommits } from "@/runtime/history-lens/lib/attribution";
 import { markedCommit } from "@/runtime/history-lens/lib/answer-commit";
-import {
-	commitsByBoundPath,
-	walkCommits,
-	type WalkedCommit,
-} from "@/runtime/history-lens/lib/commits";
+import { walkCommits, type WalkedCommit } from "@/runtime/history-lens/lib/commits";
 import { gitAnswer, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { namedParts, type Named } from "@/runtime/history-lens/lib/named-parts";
 import { partReading, type ReadPart } from "@/runtime/history-lens/lib/parts";
@@ -180,6 +177,7 @@ function unreadRepository(
  * @param named Why the proposal names each part.
  * @param range Where the range runs.
  * @param walked The commits in it, newest first.
+ * @param byPart Shared declaration attribution for each part.
  * @returns The checkout's footprint.
  */
 function mappedRepository(
@@ -188,14 +186,18 @@ function mappedRepository(
 	named: Named,
 	range: Range,
 	walked: readonly WalkedCommit[],
+	byPart: ReadonlyMap<string, AttributedCommits>,
 ): RepositoryFootprint {
-	const byPath = commitsByBoundPath(
-		walked,
-		parts.map((part) => part.path),
-	);
 	const entries = parts.map((part) => {
-		const commits = byPath.get(part.path) ?? [];
-		return { commits, part: listed(part, commits, named.get(part.node.id) ?? []) };
+		const attributed = byPart.get(part.node.id);
+		const commits = attributed?.commits ?? [];
+		return {
+			commits,
+			part: {
+				...listed(part, commits, named.get(part.node.id) ?? []),
+				attribution: attributed?.attribution ?? { mode: "path" as const },
+			},
+		};
 	});
 	const used = new Set(entries.flatMap((entry) => entry.commits));
 	return {
@@ -230,7 +232,14 @@ async function readRepository(
 	const range = await rangeOf(root, base, options);
 	if ("reason" in range) return unreadRepository(repo, parts, named, range);
 	const walked = await walkCommits(root, [`${range.mergeBase}..${range.head}`], options);
-	return mappedRepository(repo, parts, named, range, walked);
+	return mappedRepository(
+		repo,
+		parts,
+		named,
+		range,
+		walked,
+		await attributeCommits(root, range.head, walked, parts, options),
+	);
 }
 
 /**

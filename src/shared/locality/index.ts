@@ -14,6 +14,7 @@
 // is stored in a board.
 
 import { z } from "zod";
+import { HistoryAttributionSchema } from "@/shared/history-attribution/index";
 import { BehindCommitSchema, BehindPartSchema, BehindSkipSchema } from "@/shared/code-check/index";
 import { RenderedVariantSchema } from "@/shared/semantic-board/index";
 
@@ -49,6 +50,7 @@ const LocalityPeriodSchema = z
  * files. Parts that bind the same files list the same commits.
  */
 const HotspotSchema = BehindPartSchema.extend({
+	attribution: HistoryAttributionSchema.optional(),
 	/** How many commits: the length of `commits`. Parts are ranked by it. */
 	count: z.int().nonnegative(),
 });

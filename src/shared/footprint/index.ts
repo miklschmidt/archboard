@@ -13,6 +13,7 @@
 // derived on request and never stored.
 
 import { z } from "zod";
+import { HistoryAttributionSchema } from "@/shared/history-attribution/index";
 import { BehindCommitSchema, BehindPartSchema, BehindSkipSchema } from "@/shared/code-check/index";
 import { SubjectStandingSchema } from "@/shared/semantic-board/index";
 
@@ -58,6 +59,7 @@ const NamedReasonSchema = z.discriminatedUnion("by", [
  * changed it, newest first: none for a part that nothing changed.
  */
 const FootprintPartSchema = BehindPartSchema.extend({
+	attribution: HistoryAttributionSchema.optional(),
 	/** Why the proposal names it; none for a part it does not name. */
 	named: z.array(NamedReasonSchema),
 });

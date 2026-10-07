@@ -20,23 +20,34 @@
 // among the container's callers or outgoing relationships. A part inside the
 // other is joined by that containment.
 
+import type { AttributedCommits } from "@/runtime/history-lens/lib/attribution";
 import type { WalkedCommit } from "@/runtime/history-lens/lib/commits";
 import type { ReadPart } from "@/runtime/history-lens/lib/parts";
 import type { CoupledPair } from "@/shared/locality/index";
 import type { VariantContent } from "@/shared/semantic-board/index";
 
-/** code-maat's `--min-shared-revs`: the fewest commits a coupled pair shares. */
+/**
+ * code-maat's `--min-shared-revs`: the fewest commits a coupled pair shares.
+ */
 const MIN_SHARED_COMMITS = 5;
-/** code-maat's `--min-coupling`: the lowest degree of a coupled pair, in percent. */
+/**
+ * code-maat's `--min-coupling`: the lowest degree of a coupled pair, in percent.
+ */
 const MIN_DEGREE_PERCENT = 30;
 
-/** One part the lens read, with the commits that count for it, newest first. */
+/**
+ * One part the lens read, with the commits that count for it, newest first.
+ */
 interface CountedPart {
+	readonly attribution?: AttributedCommits["attribution"];
+	readonly sites?: AttributedCommits["sites"];
 	readonly part: ReadPart;
 	readonly counted: readonly WalkedCommit[];
 }
 
-/** Two ends that the variant draws joined: a relationship's, or a step's. */
+/**
+ * Two ends that the variant draws joined: a relationship's, or a step's.
+ */
 interface Joint {
 	readonly from: string;
 	readonly to: string;
@@ -60,6 +71,54 @@ function isUnder(inner: string, outer: string): boolean {
  */
 function overlaps(left: string, right: string): boolean {
 	return isUnder(left, right) || isUnder(right, left);
+}
+
+/**
+ * Whether two precise symbols own any of the same declarations.
+ * @param left The first symbol reading.
+ * @param right The second symbol reading.
+ * @returns True for shared or nested declarations.
+ */
+function sharedDeclaration(left: CountedPart, right: CountedPart): boolean {
+	return (left.sites ?? []).some((one) =>
+		(right.sites ?? []).some(
+			(other) => one.path === other.path && relatedSymbols(one.symbol, other.symbol),
+		),
+	);
+}
+
+/**
+ * Whether declaration names express identical or nested ownership.
+ * @param one A declaration name.
+ * @param other Another declaration name.
+ * @returns True for one declaration or a containing declaration.
+ */
+function relatedSymbols(one: string, other: string): boolean {
+	return one === other || one.startsWith(`${other}.`) || other.startsWith(`${one}.`);
+}
+
+/**
+ * Whether a path owns any declaration that a precise symbol reads.
+ * @param symbol The precise reading.
+ * @param path The path-wide reading.
+ * @returns True when the path includes the declaration.
+ */
+function ownsSymbol(symbol: CountedPart, path: CountedPart): boolean {
+	return (symbol.sites ?? []).some((site) => isUnder(site.path, path.part.path));
+}
+
+/**
+ * Exclude shared declaration ownership, rather than every shared directory.
+ * @param left The first reading.
+ * @param right The second reading.
+ * @returns Whether their ownership overlaps.
+ */
+function ownershipOverlaps(left: CountedPart, right: CountedPart): boolean {
+	const a = left.attribution?.mode === "symbol";
+	const b = right.attribution?.mode === "symbol";
+	if (a) return b ? sharedDeclaration(left, right) : ownsSymbol(left, right);
+	if (b) return ownsSymbol(right, left);
+	return overlaps(left.part.path, right.part.path);
 }
 
 /**
@@ -145,7 +204,7 @@ function couplePairs(
 	parts.forEach((left, at) => {
 		const ids = new Set(left.counted.map((commit) => commit.commit));
 		for (const right of parts.slice(at + 1)) {
-			if (left.part.repo !== right.part.repo || overlaps(left.part.path, right.part.path)) continue;
+			if (left.part.repo !== right.part.repo || ownershipOverlaps(left, right)) continue;
 			const shared = right.counted.filter((commit) => ids.has(commit.commit));
 			const total = left.counted.length + right.counted.length;
 			// shared / mean ≥ 30% without a fraction: shared × 2 × 100 ≥ 30 × total.

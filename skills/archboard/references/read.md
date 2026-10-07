@@ -69,7 +69,10 @@ through the CLI, report it in the board's own terms, and change nothing.
    look at first in a refactor, whether the board's busiest parts are the ones
    it draws as central), or which parts change together, run
    `archboard semantic locality <board> [--variant <name>] [--since <date>]`.
-   It reads the Git history of the files that each part's `binding` names.
+   It reads Git through each part's `binding`. A symbol narrows attribution
+   to its declaration through the available language adapter. `attribution`
+   reports `symbol`, `path`, or `mixed`, with fallback reasons and commit ids.
+   Report path-wide fallback when precise attribution is unavailable.
    `hotspots` ranks every part it read by the number of commits that changed
    those files, most commits first. Each part lists its commits, newest
    first, and `commits` holds their subjects and times. It reads the
@@ -86,10 +89,9 @@ through the CLI, report it in the board's own terms, and change nothing.
      binding or no checkout of its repository on this machine. Name it as not
      read, never as a part that no commit changed. A part with `count: 0` was
      read and had no commit in the period.
-   - Parts that bind the same file list the same commits. Do not report them
-     as separate pressure. A part bound to a directory counts every file below
-     it, so a container tops the ranking by construction: compare parts at one
-     level of containment with each other.
+   - Bindings without symbols count the whole path. Compare containers at one
+     level. Distinct symbols in one file count only their own declaration
+     changes. Shared Terraform definitions count for every bound module instance.
    - The ranking describes the code, not the board: it says nothing about
      whether the board is right. Change nothing because of it.
 
@@ -106,9 +108,9 @@ through the CLI, report it in the board's own terms, and change nothing.
      before you say which, and say it as a question, never as a fault.
    - A pair with `unjoined: false` changes together along a dependency the
      board already draws. That is expected, and it is not a finding.
-   - Parts whose bound paths overlap (one file, or one directory above the
-     other) are never paired, and large commits never count, so neither can
-     make a pair. Parts in `skipped` are in no pair.
+   - Duplicate declaration ownership cannot pair. Distinct resolved symbols
+     can pair even within one file. Path-wide readings exclude overlapping
+     paths. Large commits and parts in `skipped` never form a pair.
    - Coupling describes the code, like the ranking. Change nothing because of
      it.
 
