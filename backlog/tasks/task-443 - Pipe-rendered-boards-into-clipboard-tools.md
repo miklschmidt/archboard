@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 14:19'
-updated_date: '2026-10-07 14:20'
+updated_date: '2026-10-07 14:27'
 labels: []
 dependencies: []
 ordinal: 726000
@@ -33,3 +33,11 @@ Copying a rendered board currently requires a file and a JSON receipt. The user 
 3. Extend the existing command owners to prove clean stdout, byte-safe PNG pipelines, file compatibility, and failure behavior. Update command audit and author guidance, then run focused and complete gates.
 No architecture board is affected: commands keep the same render service, rasterizer, and output owner. The existing raw output mode supplies the new destination without new modules or dependencies.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented stdout image output with the existing raw output mode. Explicit --out paths still stage an artifact and return the existing receipt. Both SVG and PNG use Uint8Array results, so the existing publisher writes exact bytes without a text newline. PNG output still waits for successful browser cleanup.
+SVG retains the accessible name and any longer description that the renderer supplies. Flat architecture drawings have an accessible name but no desc element. Sequence drawings have a desc element. PNG keeps visible labels, but not SVG metadata. The wl-clipboard manual confirms that one copy offers one format, so a pipe cannot also provide separate plain text.
+Simplification pass: reuse the existing render, rasterize, and raw-output paths. No clipboard dependency, new output mode, new flags, or renderer changes. All export pipe assertions live in the existing rasterize owner.
+<!-- SECTION:NOTES:END -->

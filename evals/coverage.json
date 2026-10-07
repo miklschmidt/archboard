@@ -53,6 +53,13 @@
 					"scenarios": ["S00", "S02", "S05", "S07", "S09", "S12"],
 					"evidence": "harness-check",
 					"owner": "captures declared per scenario, taken after every run; src/runtime/semantic-rasterizer/tests and tests/system/semantic-boards/rasterize.test.ts own pixels, size and selectors"
+				},
+				{
+					"path": "semantic render and semantic rasterize without --out: raw SVG or PNG stdout for clipboard pipelines",
+					"expectedUse": "pipe the image to a tool such as wl-copy with the matching image type; use --out for an image file and JSON receipt",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/semantic-boards/rasterize.test.ts owns exact SVG output with its description, PNG bytes, file receipts, and empty stdout on failure. Mechanical output behavior needs no model run."
 				}
 			]
 		},

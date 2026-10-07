@@ -71,6 +71,28 @@ removed. Draw a view with
 the first view. When the request asks for a picture of a view, look at that
 view's picture, not the whole board's.
 
+### Copy an image through a pipe
+
+Without `--out`, `semantic render` writes SVG to stdout, and `semantic rasterize`
+writes PNG bytes. An explicit `--out <file>` writes the image file and prints
+a JSON receipt.
+
+On Wayland, pipe PNG into `wl-copy` to paste the picture into apps that accept images:
+
+```bash
+archboard semantic rasterize "Skill evaluation" | wl-copy --type image/png
+```
+
+If the destination accepts SVG, copy the SVG with its embedded fonts and accessibility metadata:
+
+```bash
+archboard semantic render "Skill evaluation" | wl-copy --type image/svg+xml
+```
+
+PNG keeps the visible labels but loses the SVG description. Available SVG
+descriptions stay inside the image document. They do not add a separate text clipboard entry.
+`wl-copy` offers one format per copy.
+
 ## Walkthroughs
 
 A walkthrough explains one variant in ordered `beats`, each with a `heading`,

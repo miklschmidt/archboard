@@ -60,11 +60,10 @@ const architecture = {
 
 /**
  * The size a PNG states in its header.
- * @param file The file.
+ * @param bytes The complete image bytes.
  * @returns Its width and height.
  */
-function pngSize(file: string): { width: number; height: number } {
-	const bytes = fs.readFileSync(file);
+function pngSize(bytes: Buffer): { width: number; height: number } {
 	expect(bytes.subarray(0, 8)).toEqual(
 		Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
 	);
@@ -122,7 +121,10 @@ describe("semantic rasterize", () => {
 			expect(receipt.source.svgSha256).toMatch(/^[0-9a-f]{64}$/u);
 			expect(receipt.source.facesLoaded).toBeGreaterThan(0);
 			// Native scale: the bitmap is the diagram's own page, pixel for pixel.
-			expect(pngSize(out)).toEqual({ width: receipt.width, height: receipt.height });
+			expect(pngSize(fs.readFileSync(out))).toEqual({
+				width: receipt.width,
+				height: receipt.height,
+			});
 			expect(receipt.diagram).toEqual({ width: receipt.width, height: receipt.height });
 			// The same picture `semantic render` draws.
 			const svgOut = path.join(vault, "transfers.svg");
@@ -132,6 +134,11 @@ describe("semantic rasterize", () => {
 				height: receipt.height,
 				comparedWith: null,
 			});
+			// A pipe receives the same standalone SVG, including its accessibility metadata.
+			const streamed = cli(["semantic", "render", "transfers"]);
+			expect(streamed.status, streamed.stderr).toBe(0);
+			expect(streamed.stdoutBytes).toEqual(fs.readFileSync(svgOut));
+			expect(streamed.stdout).toMatch(/aria-label="[^"]+"/u);
 			expect(boardFile()).toEqual(before);
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
@@ -160,10 +167,13 @@ describe("semantic rasterize", () => {
 			expect(receipt.view).toMatchObject({ name: "Transfer exchange", grammar: "data-flow" });
 			expect(receipt.theme).toBe("dark");
 			expect(receipt.scale).toBe(2);
-			expect(pngSize(sequence)).toEqual({
+			expect(pngSize(fs.readFileSync(sequence))).toEqual({
 				width: receipt.diagram.width * 2,
 				height: receipt.diagram.height * 2,
 			});
+			const sequenceSvg = cli(["semantic", "render", "transfers", "--view", "Transfer exchange"]);
+			expect(sequenceSvg.status, sequenceSvg.stderr).toBe(0);
+			expect(sequenceSvg.stdout).toMatch(/<desc>[^<]+<\/desc>/u);
 			expect(boardFile()).toEqual(before);
 
 			const branched = cli([
@@ -222,7 +232,7 @@ describe("semantic rasterize", () => {
 			expect(drawnSvg.status, drawnSvg.stderr).toBe(0);
 			expect(JSON.parse(drawnSvg.stdout).comparedWith).toEqual(comparedReceipt.comparedWith);
 			expect(comparedReceipt.version).toBe(3);
-			expect(pngSize(proposal)).toEqual({
+			expect(pngSize(fs.readFileSync(proposal))).toEqual({
 				width: comparedReceipt.width,
 				height: comparedReceipt.height,
 			});
@@ -231,19 +241,15 @@ describe("semantic rasterize", () => {
 	);
 
 	test(
-		"refuses an unknown view, a bad scale and an empty board without leaving a file",
+		"pipes a PNG region without a file and refuses invalid images without stdout bytes",
 		() => {
 			const out = path.join(vault, "never.png");
-			const unknownView = cli([
-				"semantic",
-				"rasterize",
-				"transfers",
-				"--view",
-				"Nowhere",
-				"--out",
-				out,
-			]);
+			const missing = cli(["semantic", "render", "missing-board"]);
+			expect(missing.status).not.toBe(0);
+			expect(missing.stdoutBytes).toHaveLength(0);
+			const unknownView = cli(["semantic", "rasterize", "transfers", "--view", "Nowhere"]);
 			expect(unknownView.status).not.toBe(0);
+			expect(unknownView.stdoutBytes).toHaveLength(0);
 			expect(fs.existsSync(out)).toBe(false);
 			const badScale = cli(["semantic", "rasterize", "transfers", "--scale", "9", "--out", out]);
 			expect(badScale.status).toBe(2);
@@ -260,26 +266,25 @@ describe("semantic rasterize", () => {
 			]);
 			expect(outside.status).toBe(2);
 			expect(fs.existsSync(out)).toBe(false);
-			const tile = path.join(vault, "tile.png");
-			const region = cli([
-				"semantic",
-				"rasterize",
-				"transfers",
-				"--region",
-				"0,0,120,80",
-				"--out",
-				tile,
-			]);
+			const beforeRegion = boardFile();
+			const filesBeforeRegion = fs.readdirSync(vault).toSorted();
+			const region = cli(["semantic", "rasterize", "transfers", "--region", "0,0,120,80"]);
 			expect(region.status, region.stderr).toBe(0);
-			expect(JSON.parse(region.stdout).region).toEqual({ x: 0, y: 0, width: 120, height: 80 });
-			expect(pngSize(tile)).toEqual({ width: 120, height: 80 });
+			expect(pngSize(region.stdoutBytes)).toEqual({ width: 120, height: 80 });
+			// The pipe ends at PNG's IEND chunk, with no receipt or text appended.
+			expect(region.stdoutBytes.subarray(-12)).toEqual(
+				Buffer.from([0, 0, 0, 0, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]),
+			);
+			expect(fs.readdirSync(vault).toSorted()).toEqual(filesBeforeRegion);
+			expect(boardFile()).toEqual(beforeRegion);
 			const empty = cli(
 				["semantic", "new", "blank", "--doing", "starting an empty board"],
 				JSON.stringify({ level: "system" }),
 			);
 			expect(empty.status, empty.stderr).toBe(0);
-			const nothing = cli(["semantic", "rasterize", "blank", "--out", out]);
+			const nothing = cli(["semantic", "rasterize", "blank"]);
 			expect(nothing.status).toBe(2);
+			expect(nothing.stdoutBytes).toHaveLength(0);
 			expect(fs.existsSync(out)).toBe(false);
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
