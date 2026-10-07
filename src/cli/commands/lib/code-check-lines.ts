@@ -73,7 +73,7 @@ function behindLines(board: BoardBehind): string[] {
  */
 function findingLines(finding: CodeFinding): string[] {
 	return [
-		diagnosticLine(finding),
+		diagnosticLine({ ...finding, file: `${finding.code}: ${finding.file}` }),
 		...(finding.evidence ?? []).map(
 			(evidence) => `  ${evidence.kind}, ${evidence.resolution}, ${evidence.path}:${evidence.line}`,
 		),

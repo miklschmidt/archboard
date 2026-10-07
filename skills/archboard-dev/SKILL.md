@@ -63,14 +63,19 @@ When the task closes, before you mark any acceptance criterion:
      them), and the exit status is 1 for any warning in the vault. So compare
      the run with the same run without `--variant`:
      ```bash
-     findings() { ./bin/dogfood check --code "$@" 2>/dev/null | jq -r '.codeCheck.findings[] | [.severity, .code, .board, (.path | sub("^variants\\.[^.]+\\."; "")), .subject.name, .message] | @tsv' | sort; }
+     findings() {
+       ./bin/dogfood check --code "$@" 2>&1 >/dev/null |
+         sed -n -E '/^(warning|information): [A-Z_]+:/p' |
+         sed -E 's/:variants\.[^.]+\./:/' | sort
+     }
      diff <(findings) <(findings --variant TASK-123)
      ```
      `>` is a finding that your proposals introduce. `<` is one that they clear,
      as they should when they draw what the code does. A finding in both runs
      is not about your proposals: leave it, unless it is about a part that your
-     commits changed (step 7 reads those boards). Only the JSON on stdout holds
-     the finding's `code`.
+     commits changed (step 7 reads those boards). Each finding line carries its
+     code beside its severity. Timings, evidence, skips and history lines are
+     outside this comparison.
    - Act on each `>` line by its code. Correct the proposal to what the code
      does. If the code is wrong, fix the code and run the check again.
      - `ANCHOR_PATH_MISSING`, `ANCHOR_SYMBOL_MISSING`, `BINDING_SYMBOL_MISSING`

@@ -1,9 +1,11 @@
 ---
 id: TASK-436.11
 title: Each text line of check --code shows its finding code
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex-language'
 created_date: '2026-10-07 00:36'
+updated_date: '2026-10-07 01:00'
 labels:
   - cli
 dependencies: []
@@ -22,3 +24,18 @@ Each text line of `check --code` shows the severity, the file, the subject and t
 - [ ] #1 Each text line of `check --code` shows its finding code
 - [ ] #2 The archboard-dev skill compares the findings with and without `--variant` without `jq`
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. No board is affected: this changes CLI finding presentation and the development recipe only.
+2. Include the finding code beside severity on each main finding line; retain evidence and current stream/exit behavior.
+3. Replace the archboard-dev jq comparison with sorted text finding lines, normalizing variant-path prefixes and excluding timings/skips/history.
+4. Verify CLI stream structure and finding codes, run recipe-shell syntax and focused skill checks, simplify and commit.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Each main finding line now begins with severity and finding code, while evidence remains beneath it and stream/exit behavior stays unchanged. The archboard-dev comparison reads stderr finding lines through sed and sort, normalizes variants.<id>. path prefixes, and excludes timings/evidence/skips/history without jq. CLI and skill metadata/link owners passed (11 tests); touched production/test lint and bash -n on the extracted recipe passed. No new architecture parts or relationships; smallest resulting product is one formatter change and one replacement recipe. Parent integrates and finalizes.
+<!-- SECTION:NOTES:END -->

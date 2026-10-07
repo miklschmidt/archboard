@@ -229,9 +229,16 @@ test("check --code prints each finding with its subject and evidence, fails on a
 		const lines = failed.stderr.split("\n");
 		const at = lines.findIndex((line) => line.includes("Pay: Api -> Ledger: post"));
 		expect(at).toBeGreaterThanOrEqual(0);
+		expect(lines[at]?.split(": ").slice(0, 2)).toEqual([finding.severity, finding.code]);
 		expect(lines[at + 1]).toContain("src/api.ts:12");
 		answered = { ...codeCheck, findings: [{ ...finding, severity: "information" }] };
-		expect((await run(["check", "--code"])).exited).toBe(0);
+		const information = await run(["check", "--code"]);
+		expect(information.exited).toBe(0);
+		expect(
+			information.stderr
+				.split("\n")
+				.some((line) => line.startsWith(`information: ${finding.code}: `)),
+		).toBe(true);
 	} finally {
 		answered = codeCheck;
 	}
