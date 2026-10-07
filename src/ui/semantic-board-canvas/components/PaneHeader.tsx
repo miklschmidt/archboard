@@ -73,6 +73,8 @@ interface BoardPlace {
 
 /** Inputs for the header. */
 interface PaneHeaderProps {
+	/** A board-specific control between the breadcrumb and the page tabs. */
+	readonly children?: ReactNode;
 	/** The board on screen. */
 	readonly name: string;
 	/** Its level, when the board states one. */
@@ -384,6 +386,7 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
 				<Breadcrumb {...props} />
 			</HeaderStart>
 			<HeaderEnd>
+				{props.children}
 				<PageTabs tab={props.tab} onTab={props.onTab} counts={props.counts} />
 				<span aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
 				<span className="flex shrink-0 items-center gap-1">

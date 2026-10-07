@@ -206,6 +206,13 @@ that the pass read. A change to the board thus clears them until the next
 pass. Information draws nothing, and the diagnostics bell stays with the plain
 check.
 
+The pane header shows the number of warnings from the last code pass for the
+board, variant and version on screen (TASK-436.10). Each press selects the next
+warning and focuses the camera on its subject. After the last warning, the
+control returns to the first. If a view hides the subject, the pane opens the
+whole board. A pass with no warnings shows zero and disables the control.
+Before a pass reads this version, the header shows no count.
+
 Both tabs share one frame. Text starts 16 px from either edge of the sidebar,
 and so do the tab labels. A section heading is 12 px semibold in the muted
 colour and in sentence case. No section heading is a small uppercase label.
