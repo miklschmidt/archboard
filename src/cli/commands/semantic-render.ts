@@ -1,4 +1,4 @@
-// Drawing a semantic board to a file: one variant, optionally through one of
+// Drawing a semantic board to stdout or a file: one variant, optionally through one of
 // the board's shared views, with its faces embedded so the file outlives the
 // server that drew it (ADR 0023: the renderer owns every coordinate).
 
@@ -27,7 +27,7 @@ const RenderInputSchema = z.object({
 	view: SelectorSchema.optional(),
 	theme: z.enum(THEMES).default("light"),
 	layout: LayoutEngineSchema.optional(),
-	out: z.string(),
+	out: z.string().optional(),
 });
 
 const SemanticRenderResultSchema = z.object({
@@ -64,11 +64,15 @@ const SemanticRenderResultSchema = z.object({
 const semanticRenderContract = defineCommand({
 	path: ["semantic", "render"],
 	shared: ["url"],
-	summary: "Draw a semantic board to an SVG file",
+	summary: "Draw a semantic board as SVG",
 	description:
 		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +
-		"routing belong to the renderer; nothing about the picture is authored on the board.",
-	examples: ["archboard semantic render pipeline --out pipeline.svg --theme dark"],
+		"routing belong to the renderer. Without --out, stdout carries the SVG, including its accessibility metadata. " +
+		"Use semantic rasterize for PNG clipboard output.",
+	examples: [
+		"archboard semantic render pipeline --out pipeline.svg --theme dark",
+		"archboard semantic render pipeline | wl-copy --type image/svg+xml",
+	],
 	parameters: [
 		{
 			kind: "positional",
@@ -83,8 +87,8 @@ const semanticRenderContract = defineCommand({
 			spellings: ["--out"],
 			value: "required",
 			placeholder: "file.svg",
-			required: true,
-			description: "Where to write the SVG, with its faces embedded",
+			description:
+				"Write the SVG to this file and print a JSON receipt. Without this option, print the SVG to stdout.",
 		},
 		{
 			kind: "option",
@@ -123,22 +127,32 @@ const semanticRenderContract = defineCommand({
 		},
 	],
 	input: { ingress: RenderInputSchema },
-	result: SemanticRenderResultSchema,
+	result: z.union([
+		SemanticRenderResultSchema,
+		z.instanceof(Uint8Array).meta({ description: "The standalone SVG as UTF-8 bytes." }),
+	]),
 	output: {
 		cases: [
 			{
+				id: "stdout",
+				when: { key: "out", present: false },
+				mode: "raw",
+				description: "The standalone SVG, with embedded fonts and its accessibility metadata",
+			},
+			{
 				id: "file",
-				when: {},
+				when: { key: "out", present: true },
 				mode: "file-receipt",
 				description: "The SVG that was written",
 				artifact: PendingArtifactSchema,
 			},
 		],
 		/**
-		 * One answer: the file.
+		 * Choose image bytes or a file receipt.
+		 * @param input The requested destination.
 		 * @returns The output case's id.
 		 */
-		select: () => "file",
+		select: (input) => (input.out === undefined ? "stdout" : "file"),
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
@@ -155,7 +169,7 @@ const semanticRenderContract = defineCommand({
 	 * Draw the board.
 	 * @param input What the command was given.
 	 * @param context The command context.
-	 * @returns The file receipt.
+	 * @returns The SVG bytes or the file receipt.
 	 * @throws {CliUsageError} When the board has nothing on it.
 	 */
 	async handler(input, context) {
@@ -174,6 +188,7 @@ const semanticRenderContract = defineCommand({
 				`Semantic board "${drawn.board}" has nothing on it yet, so there is nothing to draw.`,
 			);
 		}
+		if (input.out === undefined) return { result: Buffer.from(drawn.svg, "utf8") };
 		const file = context.resolvePath(input.out);
 		return {
 			result: {

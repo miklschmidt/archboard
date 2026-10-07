@@ -21,13 +21,13 @@ interface ServerCliInput {
 interface ServerCliResult {
 	readonly status: number | null;
 	readonly stdout: string;
+	readonly stdoutBytes: Buffer;
 	readonly stderr: string;
 }
 
 export function runServerCli(options: ServerCliInput): ServerCliResult {
 	const result = spawnSync(join(options.repoRoot, "bin/archboard"), options.args, {
 		cwd: options.repoRoot,
-		encoding: "utf8",
 		input: options.input,
 		timeout: TEST_VAULT_CLI_TIMEOUT_MS,
 		killSignal: "SIGKILL",
@@ -42,7 +42,8 @@ export function runServerCli(options: ServerCliInput): ServerCliResult {
 	if (result.error) throw result.error;
 	return {
 		status: result.status,
-		stdout: result.stdout ?? "",
-		stderr: result.stderr ?? "",
+		stdout: result.stdout?.toString("utf8") ?? "",
+		stdoutBytes: result.stdout ?? Buffer.alloc(0),
+		stderr: result.stderr?.toString("utf8") ?? "",
 	};
 }

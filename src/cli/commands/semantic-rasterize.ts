@@ -1,4 +1,4 @@
-// Drawing a semantic board to a bitmap: the same picture `semantic render`
+// Drawing a semantic board to a bitmap on stdout or in a file: the same picture `semantic render`
 // draws, rasterized headlessly at one bitmap pixel per diagram pixel unless a
 // scale says otherwise (ADR 0023: the renderer owns every coordinate; this
 // command owns none and adds none).
@@ -48,7 +48,7 @@ const RasterizeInputSchema = z.object({
 			return { x, y, width, height };
 		})
 		.optional(),
-	out: z.string(),
+	out: z.string().optional(),
 });
 
 const rasterizerUnavailableRefusal = {
@@ -114,16 +114,19 @@ function drawRequest(
 const semanticRasterizeContract = defineCommand({
 	path: ["semantic", "rasterize"],
 	shared: ["url"],
-	summary: "Draw a semantic board to a PNG file, headlessly, at native scale",
+	summary: "Draw a semantic board as PNG, headlessly, at native scale",
 	description:
 		"Draws the same picture `semantic render` draws and rasterizes it in a private headless Chromium: " +
 		"one bitmap pixel per diagram pixel by default, whatever the display or any open pane is doing. " +
 		"The whole diagram is captured, never fitted or cropped; a bitmap that would exceed what one " +
 		"capture may hold is refused. Traffic animation is paused at its first frame. Needs a Chromium or " +
-		"Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM.",
+		"Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM. " +
+		"Without --out, stdout carries PNG bytes for image clipboard tools. " +
+		"PNG preserves the picture, but not the SVG accessible description.",
 	examples: [
 		"archboard semantic rasterize pipeline --out pipeline.png",
 		'archboard semantic rasterize pipeline --view "Startup exchange" --scale 2 --out startup@2x.png',
+		"archboard semantic rasterize pipeline | wl-copy --type image/png",
 	],
 	parameters: [
 		{
@@ -139,8 +142,8 @@ const semanticRasterizeContract = defineCommand({
 			spellings: ["--out"],
 			value: "required",
 			placeholder: "file.png",
-			required: true,
-			description: "Where to write the PNG",
+			description:
+				"Write the PNG to this file and print a JSON receipt. Without this option, print PNG bytes to stdout.",
 		},
 		{
 			kind: "option",
@@ -197,22 +200,32 @@ const semanticRasterizeContract = defineCommand({
 		},
 	],
 	input: { ingress: RasterizeInputSchema },
-	result: SemanticRasterReceiptSchema,
+	result: z.union([
+		SemanticRasterReceiptSchema,
+		z.instanceof(Uint8Array).meta({ description: "The PNG image as bytes." }),
+	]),
 	output: {
 		cases: [
 			{
+				id: "stdout",
+				when: { key: "out", present: false },
+				mode: "raw",
+				description: "The PNG image as bytes",
+			},
+			{
 				id: "file",
-				when: {},
+				when: { key: "out", present: true },
 				mode: "file-receipt",
 				description: "The PNG that was written",
 				artifact: PendingArtifactSchema,
 			},
 		],
 		/**
-		 * One answer: the file.
+		 * Choose image bytes or a file receipt.
+		 * @param input The requested destination.
 		 * @returns The output case's id.
 		 */
-		select: () => "file",
+		select: (input) => (input.out === undefined ? "stdout" : "file"),
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
@@ -229,7 +242,7 @@ const semanticRasterizeContract = defineCommand({
 	 * Draw the board and rasterize it.
 	 * @param input What the command was given.
 	 * @param context The command context.
-	 * @returns The file receipt.
+	 * @returns The PNG bytes or the file receipt.
 	 * @throws {CliUsageError} When the board has nothing on it.
 	 * @throws {SemanticRasterError} When no browser can draw it or the bitmap is not what was asked for.
 	 */
@@ -264,6 +277,7 @@ const semanticRasterizeContract = defineCommand({
 				`The rasterizer's cleanup was not clean: ${cleanup.errors.join("; ")}`,
 			);
 		}
+		if (input.out === undefined) return { result: capture.png };
 		const file = context.resolvePath(input.out);
 		return {
 			result: {
