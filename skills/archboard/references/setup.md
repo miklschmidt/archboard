@@ -1,55 +1,85 @@
 # Set up a language server for a repository
 
-Read this file when `archboard check --code` says `language-server-missing`
-for a repository that you work in, or when you want the check to resolve the
-uses that only a language server can place. The check matches a name by its
+If `archboard check --code` says `language-server-missing` for a repository that
+you work in, read this file. If you want the check to resolve the uses that only
+a language server can place, read it too. The check matches a name by its
 spelling. A language server (a program that knows where code defines a name)
 resolves the name to its definition.
 
-## What runs without configuration
+## When to configure a server
 
-TypeScript needs no configuration. The check runs the native `tsc --lsp
---stdio` of the `typescript` package in `node_modules/typescript` at the root of
-the checkout, when that package is version 7 or later and has the native program
-for the machine (`@typescript/typescript-<platform>-<arch>`). TypeScript 7 is the
-first version that is a language server. For an older version, for a checkout
-with no TypeScript, or for a package of a monorepo, the check runs the `tsc` that
-archboard installs. In a monorepo, the check reads the root only. A package that
-installs another version than the root uses the version at the root.
+Configure a server only for a repository that you work in. A configured server
+runs code of the repository, as an editor does. So never configure one for a
+repository that you only read. When you configure a server, tell the user.
+
+TypeScript needs no configuration. For every other language, the check starts no
+server until you configure one.
+
+## Which TypeScript runs
+
+If all of these are true, the check runs `tsc --lsp --stdio` from the
+`typescript` package that the checkout installs:
+
+- The package is `node_modules/typescript` at the root of the checkout.
+- The package declares version 7 or later. TypeScript 7 is the first version that
+  has `tsc --lsp`.
+- The native program for the machine is installed, beside the package or inside
+  it: `@typescript/typescript-<platform>-<arch>`.
+- The package and the program are inside the checkout once their links resolve.
+
+Otherwise the check runs the `tsc` of the `typescript` package that archboard
+installs. This happens for an older TypeScript, for a checkout with no
+TypeScript, and for a link that leads out of the checkout. In a monorepo, the
+check reads the root only. A package that installs another version than the root
+uses the version at the root.
 
 ## What a configured server runs
 
 Python, C, C++, Objective-C, C# and Swift have no default server. A language
-server reads a project the way an editor does, and that runs code of the
-repository:
+server reads a project as an editor does, and that runs code of the repository:
 
 - pyright runs the interpreter of the `.venv`, and the startup hooks of the
   packages in it.
-- clangd runs the compilers and plugins that `compile_commands.json` names.
+- If a compile command asks for the `native` GPU and names a helper program,
+  clangd runs that program. If you pass `--query-driver`, clangd also runs the
+  compiler of a command.
 - csharp-ls evaluates the MSBuild files of the solution.
 - sourcekit-lsp evaluates `Package.swift`.
 
-A configured server runs the code of the repository. The check starts it with the
-command, the arguments and the environment that you give it, and adds nothing.
-Configure a server only for a repository that you work in. Never configure one
-for a repository that you only read. Tell the user when you configure one.
+The Archboard server starts the configured server. The check uses the command,
+the arguments and the environment of the Archboard server. It adds no flag, no
+variable and no rewritten file. The Archboard server looks up a command that is a
+name on the `PATH` that it started with. That `PATH` can differ from the `PATH`
+of your shell.
 
 ## Steps
 
-1. Install the server: `pyright-langserver` for Python, `clangd` for C, C++ and
-   Objective-C, `csharp-ls` for C#, or `sourcekit-lsp` for Swift.
-2. For C, C++ and Objective-C, generate a `compile_commands.json`. For CMake, run
-   `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`, which builds nothing.
-   Other build tools need `bear -- make`, which builds. Without the file, clangd
-   guesses its flags, and the check says `language-server-unready`.
-3. For Swift, run `swift build` once, because sourcekit-lsp reads the index that
-   a build writes. The check never builds.
-4. If the checkout is not registered, run `archboard repo add <dir>`.
-5. Run `archboard repo language-server <python|csharp|swift|c> <command>`. Add
-   `--arg=<argument>` for each argument. The language `c` covers C, C++ and
-   Objective-C.
+1. Install the server program. Note its absolute path with `command -v <program>`.
+   - Python: `pyright-langserver` (`npm install -g pyright`), or
+     `basedpyright-langserver` (`pipx install basedpyright`).
+   - C, C++ and Objective-C: `clangd` (`apt install clangd`, `brew install llvm`
+     or `nix profile install nixpkgs#clang-tools`).
+   - C#: `csharp-ls` (`dotnet tool install --global csharp-ls`). It needs the
+     .NET SDK on the `PATH`.
+   - Swift: `sourcekit-lsp`. It ships with the Swift toolchain.
+2. For C, C++ and Objective-C, generate `compile_commands.json`. For CMake, run
+   `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`. This builds nothing. For
+   other build tools, run `bear -- make`. This builds the project once. Without
+   the file, clangd guesses its flags, and the check says `language-server-unready`.
+3. For Swift, run `swift build` in each package. sourcekit-lsp reads the index
+   that a build writes, and the check never builds.
+4. If the repository is not registered, run `archboard repo add <dir>`.
+5. In the repository, run `archboard repo language-server <language> <command>`.
+   Write one `--arg=<argument>` for each argument. The language is `python`,
+   `csharp`, `swift` or `c`. The language `c` covers C, C++ and Objective-C.
+6. Run `archboard check --code`. Read the answer for the language, as the next
+   section says.
+7. If you use clangd and the `.gitignore` of the repository does not list `.cache/`,
+   add it. clangd keeps its index in `.cache/clangd/index`. The `.cache`
+   directory is next to `compile_commands.json`. If that file is in a `build`
+   directory, the `.cache` directory is next to `build`.
 
-Examples:
+Examples for step 5:
 
 ```bash
 archboard repo language-server python pyright-langserver --arg=--stdio
@@ -58,25 +88,36 @@ archboard repo language-server csharp csharp-ls
 archboard repo language-server swift sourcekit-lsp
 ```
 
+For basedpyright, use `basedpyright-langserver` in place of
+`pyright-langserver`. Do not pass `--background-index=false` to clangd. The check
+waits for the index of clangd, so it then says `language-server-failed` after 30
+seconds.
+
 `--remove` removes the server of a language. `--repo <identity>` names another
-registered checkout, and without it the command uses the checkout of the working
-directory. `archboard repo list` shows the configured servers of each checkout.
-The configuration stays on this machine, and `archboard repo forget` removes it
-with the checkout.
+registered checkout. Without it, the command uses the registered checkout that
+holds the working directory. `archboard repo list` shows the configured servers
+of each checkout. The configuration stays on this machine. `archboard repo forget`
+removes it with the checkout. Registering the same directory again keeps it.
 
 The check reads the configuration each time it runs, so you do not restart the
-server. The server looks up a command name on the `PATH` that it started with. If
-the check says that the command is not on that `PATH`, give the absolute path of
-the command.
+Archboard server. If the Archboard server cannot find the command, give the
+absolute path of the command.
 
-clangd keeps its index in `.cache/clangd/index` in the directory that holds
-`compile_commands.json`. Add `.cache/` to the `.gitignore` of the repository.
+## Read the answer
 
-## What the answer says
+If the answer still says `language-server-missing` for the language, the
+configuration or the program is the cause. The detail names the command that
+configures a server. If the detail says that the program is not found, give its
+absolute path.
 
-If a checkout has no configured server for a language, the answer says
-`language-server-missing` once for the checkout and the language, and it names the
-command that configures one. The uses stay candidates. A project that the server
-cannot answer about yet is `language-server-unready`. A server that did not start
-or did not answer is `language-server-failed`. The installation guide has the
-details for each server: [generated/INSTALL.md](generated/INSTALL.md).
+If the answer says `language-server-unready`, the project lacks what the server
+reads. For C, C++ and Objective-C, that is a `compile_commands.json`. For a Swift
+package, it is an index. For C#, it is a solution or project file. The detail
+names the project.
+
+If the answer says `language-server-failed`, the server did not start, did not
+answer within 30 seconds, or stopped. The check keeps no output of the server. Run
+the command in the repository to read its output.
+
+In every case, the uses stay candidates. The installation guide has the details
+for each server: [generated/INSTALL.md](generated/INSTALL.md).
