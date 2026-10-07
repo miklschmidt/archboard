@@ -20,3 +20,5 @@ The user chose this scope after a spoken stop failed to reach the workhorse,
 and a manual stop left its sub-agent running. Stopping one thread leaves
 delegated activity outside the control that the user expects. Restarting the
 shared Codex process also interrupts unrelated tab sessions.
+
+Tracked for implementation in TASK-446.
