@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 30,
+	"version": 31,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-06T23:43:21.264Z",
+	"updatedAt": "2026-10-07T00:12:03.100Z",
 	"views": [],
 	"variants": [
 		{
@@ -1871,7 +1871,7 @@
 			"name": "TASK-433",
 			"lifecycle": "current",
 			"parent": "38dBY7nS",
-			"summary": "The agent in a repository configures its language servers",
+			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
 				"nodes": [
 					{
@@ -1880,7 +1880,7 @@
 						"name": "Agent CLI",
 						"kind": "service",
 						"responsibility": "Authors named boards: one short-lived process per command, writing no board itself",
-						"description": "Every board operation reaches the Archboard server over HTTP. Three commands draw for themselves in a headless browser here: rasterize photographs the SVG the server made; record keeps a narrated talk from the server's own page, then draws it frame by frame and has ffmpeg encode the video; replay draws a kept talk again. repo add writes this machine's list of checkouts itself.",
+						"description": "Every board operation reaches the Archboard server over HTTP. Three commands draw for themselves in a headless browser here: rasterize photographs the SVG the server made; record keeps a narrated talk from the server's own page, then draws it frame by frame and has ffmpeg encode the video; replay draws a kept talk again. repo add and repo language-server write this machine's list of checkouts itself.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/bin.ts"
@@ -1953,7 +1953,7 @@
 						"name": "Repository checkout",
 						"kind": "datastore",
 						"responsibility": "The source a node's binding resolves to on this machine, and the language servers the agent in that repository configured for it",
-						"description": "A binding names a repository identity and a path inside it, which are the same in every clone; a machine-local registry is the only place a directory on one machine is written down. Its entry for a checkout also holds the language servers an agent set with repo language-server (TASK-433): a command and its arguments for Python, C and C++ and Objective-C, C# or Swift, kept with the checkout and removed with it.",
+						"description": "A binding names a repository identity and a path inside it, which are the same in every clone; a machine-local registry is the only place a directory on one machine is written down. Its entry for a checkout also holds the language servers an agent set with repo language-server (TASK-433): a command and its arguments for Python, C (which covers C++ and Objective-C), C# or Swift, kept with the checkout and removed with it.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/repo-registry.ts"
@@ -2109,7 +2109,7 @@
 						"from": "cPOdAA3f",
 						"to": "19855Ply",
 						"kind": "data",
-						"label": "resolve code targets",
+						"label": "resolve code targets and read language servers",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",

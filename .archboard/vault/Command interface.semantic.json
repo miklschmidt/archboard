@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 45,
+	"version": 46,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-06T23:43:21.424Z",
+	"updatedAt": "2026-10-07T00:12:07.837Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -9508,7 +9508,7 @@
 			"name": "TASK-433",
 			"lifecycle": "current",
 			"parent": "xGZrnbeQ",
-			"summary": "The agent in a repository configures its language servers",
+			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
