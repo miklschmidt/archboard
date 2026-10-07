@@ -1,89 +1,34 @@
 // Paint measured cards and frames: the words at supplied baselines, near and far.
+import { ARCHITECTURE_CARD_PADDING } from "@/transformers/semantic-renderer/config";
 import {
-	ARCHITECTURE_CARD_PADDING,
-	ARCHITECTURE_HEADER_PADDING,
-} from "@/transformers/semantic-renderer/config";
-import {
-	CARD_RADIUS,
 	BAND_RADIUS,
-	ICON_CHIP_SIZE,
+	CARD_THICKNESS,
+	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
-import { farSizeOf } from "@/transformers/semantic-renderer/lib/measurement";
 import type { DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
-import { coord } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import {
-	bodyAttributes,
 	appearanceAttributes,
+	cardLook,
+	trayLook,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
-import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
-import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
-import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
-import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { paintCardViews, wordsOf } from "@/transformers/semantic-renderer/lib/svg/far-card";
+import { lines, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
-import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
+import { headerOf, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
+import type { Port } from "@/transformers/semantic-renderer/lib/svg/ports";
 import {
 	PART_ATTRIBUTE,
-	standingOutline,
+	standingPalette,
 	standingPin,
 	subjectGroup,
 	warningBadge,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
-
-/**
- * A frame's name and chip as they are drawn from far away: at its header's
- * start, as large as the picture's cards' names, or as its header holds.
- * @param placed The frame's geometry and name.
- * @param farSize The size of the picture's cards' names from far away.
- * @param look Its type chip's colour and glyph, and the selected theme.
- * @param look.appearance Its type chip's colour and glyph.
- * @param look.palette The selected theme.
- * @param unsettled Whether the frame wears the warning badge.
- * @returns The far layer.
- */
-function paintFarHeader(
-	placed: DrawingNode,
-	farSize: number,
-	look: { appearance: NodeAppearance; palette: Palette },
-	unsettled: boolean,
-): string {
-	const { name } = placed.measured.node;
-	// The name is sized and broken clear of the frame's far mark, as its near name is.
-	const header = {
-		...placed.box,
-		height: placed.measured.headerHeight,
-		mark: look.appearance.drill !== null,
-	};
-	const size = Math.min(farSize, farSizeOf(name, header));
-	return paintFarTitle(name, header, { size, align: "start" }, look, unsettled);
-}
-
-/**
- * The mark of a part that opens another board, in the corner opposite its
- * chip and level with it; nothing for a part that opens none.
- * @param box The part's box, or its header's.
- * @param box.x Its left edge.
- * @param box.y Its top edge.
- * @param box.width Its width.
- * @param padding How far in its chip sits.
- * @param appearance Its channels, which say whether it opens a board and which way.
- * @param palette The selected theme.
- * @returns The mark, or nothing.
- */
-function drillCorner(
-	box: { readonly x: number; readonly y: number; readonly width: number },
-	padding: number,
-	appearance: NodeAppearance,
-	palette: Palette,
-): string {
-	return appearance.drill === null
-		? ""
-		: cornerDrillMark(box, padding, padding + ICON_CHIP_SIZE / 2, appearance.drill, palette.glyph);
-}
 
 /**
  * Paint one measured card with its kind glyph and semantic change treatment.
@@ -92,6 +37,9 @@ function drillCorner(
  * @param standing How it stands against the variant it is read against.
  * @param unsettled Whether its architecture needs reconciliation.
  * @param appearance Resolved containment and type channels.
+ * @param ports Its ports, cut through its front edge, and the clip that cuts them (`ports.ts`).
+ * @param ports.slots Its slots.
+ * @param ports.id The id of the clip.
  * @returns The card group.
  */
 function paintMeasuredCard(
@@ -100,9 +48,12 @@ function paintMeasuredCard(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
+	ports?: { readonly slots: readonly Port[]; readonly id: string },
 ): string {
 	const { measured, box } = placed;
 	const styles = stylesFor(palette);
+	const words = standingPalette(palette, standing);
+	const look = cardLook(appearance, palette);
 	const chipX = box.x + ARCHITECTURE_CARD_PADDING;
 	const chipY = box.y + ARCHITECTURE_CARD_PADDING;
 	return wrap(
@@ -112,23 +63,20 @@ function paintMeasuredCard(
 			...appearanceAttributes(appearance),
 		},
 		lines([
-			halo(box, CARD_RADIUS, styles),
-			tag("rect", {
-				x: coord(box.x),
-				y: coord(box.y),
-				width: coord(box.width),
-				height: coord(box.height),
-				rx: CARD_RADIUS,
-				...styles.card,
-				...bodyAttributes(appearance),
-				...standingOutline(standing, palette),
-			}),
-			nearLayer(
-				typeChip(chipX, chipY, appearance, palette) +
-					paintTextRuns(measured.runs, box, palette) +
-					drillCorner(box, ARCHITECTURE_CARD_PADDING, appearance, palette),
+			slabSeat(box, SLAB_RADIUS),
+			// A removed card's ghost; a card's shadow lies under the lines and the cards (`shadowUnder`).
+			standing === "removed" ? slabShadow(box, SLAB_RADIUS, "card", palette, standing) : "",
+			halo(box, SLAB_RADIUS, styles, standing),
+			slab(box, look, palette, standing, ports?.id),
+			paintCardViews(
+				measured.node,
+				box,
+				{ appearance, palette: words },
+				{
+					chip: { markup: typeChip(0, 0, appearance, palette, standing), x: chipX, y: chipY },
+					words: wordsOf(measured.runs, box, words),
+				},
 			),
-			paintFarCard(measured.node, box, { appearance, palette }, unsettled),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
 		]),
@@ -136,7 +84,11 @@ function paintMeasuredCard(
 }
 
 /**
- * Paint a containing frame below its children and all connections.
+ * Paint a containing frame below its children and all connections: a neutral
+ * well its children stand in, with a header slab standing on its floor that
+ * its heading is printed on, in the colour of the group that places it. What
+ * the frame itself relates to leaves from the foot of the slab's front edge,
+ * so such a line has a visible origin inside the frame.
  * @param placed Final frame geometry.
  * @param palette The selected theme.
  * @param standing Its architectural change.
@@ -149,8 +101,13 @@ function paintMeasuredFrame(
 	standing: SubjectStanding | undefined,
 	appearance: NodeAppearance,
 ): string {
-	const { measured, box } = placed;
+	const { measured, box, depth } = placed;
 	const styles = stylesFor(palette);
+	const look = trayLook(
+		{ box: headerOf(box, measured.headerHeight), look: cardLook(appearance, palette) },
+		palette,
+		depth,
+	);
 	return wrap(
 		"g",
 		{
@@ -158,27 +115,10 @@ function paintMeasuredFrame(
 			...appearanceAttributes(appearance),
 		},
 		lines([
-			halo(box, BAND_RADIUS, styles),
-			tag("rect", {
-				x: coord(box.x),
-				y: coord(box.y),
-				width: coord(box.width),
-				height: coord(box.height),
-				rx: BAND_RADIUS,
-				...styles.band,
-				...bodyAttributes(appearance),
-				...standingOutline(standing, palette),
-			}),
-			// The rule under the title: what the frame itself relates to leaves from
-			// here, so such a line has a visible origin inside the frame.
-			tag("line", {
-				x1: coord(box.x),
-				y1: coord(box.y + measured.headerHeight),
-				x2: coord(box.x + box.width),
-				y2: coord(box.y + measured.headerHeight),
-				stroke: bodyAttributes(appearance)["stroke"] ?? styles.band.stroke,
-				"stroke-width": 1,
-			}),
+			slabSeat(box, BAND_RADIUS),
+			slabShadow(box, BAND_RADIUS, "tray", palette, standing),
+			halo(box, BAND_RADIUS, styles, standing),
+			tray(box, look, palette, standing),
 			standingPin(box, standing, palette),
 		]),
 	);
@@ -191,7 +131,6 @@ function paintMeasuredFrame(
  * @param standing Its architectural change.
  * @param unsettled Whether its architecture needs reconciliation.
  * @param appearance Resolved containment and type channels.
- * @param farSize The size of the picture's cards' names from far away.
  * @returns The header group.
  */
 function paintMeasuredHeader(
@@ -200,8 +139,12 @@ function paintMeasuredHeader(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
-	farSize: number,
 ): string {
+	const words = standingPalette(palette, standing);
+	// The words stand on the header slab as a card's stand on its own. From far
+	// away they stand on the slab's face, above its front edge, as a card's do.
+	const header = headerOf(placed.box, placed.measured.headerHeight);
+	const face = { ...header, height: header.height - CARD_THICKNESS };
 	return wrap(
 		"g",
 		{
@@ -210,18 +153,20 @@ function paintMeasuredHeader(
 			[PART_ATTRIBUTE]: "header",
 		},
 		lines([
-			nearLayer(
-				typeChip(
-					placed.box.x + ARCHITECTURE_HEADER_PADDING,
-					placed.box.y + ARCHITECTURE_HEADER_PADDING,
-					appearance,
-					palette,
-				) +
-					paintTextRuns(placed.measured.runs, placed.box, palette) +
-					drillCorner(placed.box, ARCHITECTURE_HEADER_PADDING, appearance, palette),
+			paintCardViews(
+				placed.measured.node,
+				face,
+				{ appearance, palette: words },
+				{
+					chip: {
+						markup: typeChip(0, 0, appearance, palette, standing),
+						x: header.x + ARCHITECTURE_CARD_PADDING,
+						y: header.y + ARCHITECTURE_CARD_PADDING,
+					},
+					words: wordsOf(placed.measured.runs, placed.box, words),
+				},
 			),
-			paintFarHeader(placed, farSize, { appearance, palette }, unsettled),
-			warningBadge(placed.box, unsettled, palette),
+			warningBadge(header, unsettled, palette),
 		]),
 	);
 }

@@ -19,7 +19,7 @@ colors:
   gold-mark: "oklch(0.72 0.15 77)"
   gold-tint: "oklch(0.968 0.03 88)"
   live-lime: "oklch(0.849 0.207 128.8)"
-  changed-orange: "oklch(0.69 0.19 48)"
+  changed-orange: "oklch(0.631 0.167 48)"
 typography:
   display:
     fontFamily: "Archboard Display, Big Shoulders Display, sans-serif"
@@ -125,7 +125,7 @@ file is stale.
 
 **Creative North Star: "The Lit Drafting Table"**
 
-The picture is a drawing that lies flat on a table. The shell is the furniture
+The picture is a model in low relief that lies on a table. The shell is the furniture
 around it: rails, a header under the lamp, a tray at the foot of each column
 and a few pieces of gold hardware. An agent drew the picture, and the architect
 reads it. Nothing in the shell competes with the picture for attention, and
@@ -144,7 +144,7 @@ gold.
 
 - The picture is the ground. The shell sits around it and over it.
 - Planes stack under a light from above. Each plane has a tone step, a highlight on its top edge and a warm shadow with an offset.
-- One gold has three uses: what is chosen, the one primary action, and the voice and the brand mark.
+- One gold has three uses: what is chosen, the one primary action, and the voice and the brand mark. On the picture, the palette's yellow is that gold, on purpose.
 - Tall condensed capitals set a name as a title. Plain sans sets every other word. Mono sets technical tokens only.
 - The shell is for the desktop only, near full screen at 1920×1080.
 
@@ -159,7 +159,7 @@ every role and changes the values. The file theme.css holds both themes.
 - **Wayfinding Gold** (oklch(0.831 0.134 84.5)): the gold as a flat fill. It fills the voice ring, a status dot, a checked box and, in the dark theme, the selection on the picture.
 - **Gold Top and Gold Bottom** (oklch(0.87 0.135 88) to oklch(0.805 0.142 81)): the subtle gradient from top to bottom of a primary action. The dark theme sets the bottom a step darker, at oklch(0.8 0.142 81).
 - **Gold Rim** (oklch(0.7 0.125 76), dark oklch(0.58 0.11 74)): the edge of a primary action, one pixel wide.
-- **Gold Ink** (oklch(0.2 0.02 70)): text and icons on gold. It has a contrast of at least 8.5:1 on every stop of the gradient.
+- **Gold Ink** (oklch(0.2 0.02 70)): text and icons on gold. It keeps APCA Lc 66 or more on every stop of the gradient.
 - **Gold Mark** (oklch(0.72 0.15 77), dark oklch(0.86 0.125 86)): the gold as a mark: a 2px bar or underline, a ring, an icon or the edge of something chosen. It lights the way to the chosen row, the active tab and the underline of a link.
 - **Gold Tint** (oklch(0.968 0.03 88), dark oklch(0.29 0.045 80)): a quiet wash behind something chosen on a page.
 
@@ -176,13 +176,13 @@ every role and changes the values. The file theme.css holds both themes.
 ### Status
 
 - **Live Lime** (oklch(0.849 0.207 128.8)): live state only. It marks the connection, claims and agent activity.
-- **Changed Orange** (oklch(0.69 0.19 48)): "changed" in a comparison. It moved off the shared amber because the amber has the hue of the gold.
+- **Changed Orange** (oklch(0.631 0.167 48) on chalk, oklch(0.77 0.17 52) on graphite): "changed" in a comparison. It moved off the shared amber because the amber has the hue of the gold.
 
 ### Named Rules
 
-**The One Gold Rule.** Gold marks what is chosen, the one primary action of a region, and the voice and the brand mark. Nothing else is gold.
+**The One Gold Rule.** Gold marks what is chosen, the one primary action of a region, and the voice and the brand mark. Nothing else in the shell is gold. On the picture there is one shared use, on purpose: the color named yellow in a vault's palette is the gold (`--semantic-yellow` is the gold mark, oklch(0.72 0.15 77) on chalk and oklch(0.86 0.125 86) on graphite), so a group, a kind or a relationship colored yellow is drawn in the gold. A yellow group's tab is drawn as a primary action is: the flat gold (`--primary`) with Gold Ink on it. The selection on the picture stays the only gold ring.
 
-**The Ink On Chalk Rule.** Text on chalk is never gold. A gold dark enough to clear 4.5:1 on chalk reads as brown. Text stays in the ink, and a gold mark beside or under it carries the accent. On graphite, accent text is the gold itself (oklch(0.86 0.125 86)).
+**The Ink On Chalk Rule.** Text on chalk is never gold. A gold dark enough to reach APCA Lc 60 on chalk reads as brown. Text stays in the ink, and a gold mark beside or under it carries the accent. On graphite, accent text is the gold itself (oklch(0.86 0.125 86)).
 
 **The Untouched Picture Rule.** The renderer draws the picture. The shell never paints gold, shadow or decoration on a card in it.
 
@@ -260,6 +260,82 @@ The file app.css holds the values for both themes and gives each one a
 - **float** (`--elevation-float`, a highlight on top and three shadows): menus, tips, lists of matches, the floating sidebar, the walkthrough box and the voice box.
 - **dialog** (`--elevation-dialog`, a highlight on top and three shadows): dialogs.
 - **primary and primary-pressed** (`--elevation-primary*`): the gold finish at rest and pressed.
+
+### The Picture's Own Depth
+
+The picture has a depth vocabulary of its own, and the renderer draws it. Its
+light falls from above. A card is a slab: a lit top face, a front edge along
+its foot and a soft shadow below it. A container is a neutral well cut into
+the page, its floor only just darker than the page, with its top wall in
+shade, two quieter side walls as thick as it and a lit lip along its bottom.
+Its header is a card's slab friction fit in the well, a 2-unit gap inside the
+walls and as far from the outer edge on the top as on either side. The first
+row of cards stands as far under it
+as from the sides and the bottom of the well. The header takes the
+color of the group that places the container, as a card does, and the
+container's kind shows on its icon chip alone.
+The region of a group has no fill: a thin frame in a faded tone of the
+group's color, thick corner brackets and a caption tab in its full color. Each
+shadow uses eight adjoining rectangles with shared gradients, with no filter, blur or mask. The colors
+come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A
+group region's frame, corners and tab and a grouped card's face are tones of
+the group's own color, set in OKLCH at one lightness for every color. On chalk
+the corners and the tab are the named color itself at a lightness of its own,
+0.635 to 0.685, the lightest at which the words on the tab, a very light tint of
+the color, reach APCA Lc 60 for every color, and the faded frame is a light tone
+of the color that keeps its hue. A yellow group's tab is the flat gold with Gold
+Ink on it. A comparison marks a part by its outline: a
+1.8-unit border in the comparison's green or Changed Orange along the inside edge of its
+top face, solid for added and dashed for changed, and a removed part's dashed
+red border round its footprint. The face and the front edge keep their colors.
+A line that meets the foot of a card runs into a port, a small slot cut
+through the card's front edge, dark inside, with a lower lip lighter than the
+edge round it but short of white. The line comes out of it at its own width,
+over the lip, fades into its depth, and its pulses
+travel into and out of it, over an arrowhead too. Ports are drawn near and far
+alike. No shadow falls on a line: the shadows of cards, labels and activation
+bars lie under the lines. Every card shadow lies under every card.
+A sequence lifeline starts 13 units below its card to clear the shadow.
+The sticky head carries its shadows and hides the columns behind their full reach.
+The shell touches none of it, and the Untouched Picture Rule still holds.
+[ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
+records the construction.
+
+On chalk the picture is crisp and vivid, never pastel or dusty. Its own
+neutrals are cool and clean, near hue 255, not the shell's warm ones: a card
+face a soft off-white, never pure white (oklch(0.96 0.004 255), lit to 0.97 at
+its top), a tray floor a step under the ground (oklch(0.974 0.003 255)) and a
+navy shadow. Under a card's foot that shadow is lighter than the front edge,
+so the edge ends where the card ends. It falls only down and to the right,
+with a faint ring round the card. A label's face is the card's. A front edge
+is the face in shade, never a lighter strip: the neutral face's own neutral at
+lightness 0.815
+(oklch(0.815 0.003 255)). A grouped card is a clearly colored card in a clean
+tone of its group's hue, an orange face a peach: at lightness 0.89 to 0.92 with
+nine tenths of the chroma its hue holds there (0.049 to 0.07), and its front
+edge is that hue in shade (lightness 0.78, chroma 0.096). On graphite a grouped
+face is a deep jewel tone (lightness 0.31, chroma 0.048), and its edge is a step
+under it at lightness 0.212, as a neutral one is. A chip is a light
+tone of its type's color, with the glyph in the color itself. The words are
+**Diagram Ink** (`--diagram-text`, oklch(0.2 0.02 265)) and **Diagram Slate**
+(`--diagram-text-muted`, oklch(0.45 0.028 262)). On graphite they are the
+shell's bone and a light warm grey (oklch(0.81 0.01 80)). Every named color but
+the gold of yellow keeps APCA Lc 53 or more as a line on chalk and on a tray's
+floor, and every line keeps Lc 30 or more on graphite. Contrast comes from deep
+ink and strong color, never from a washed-out color. On graphite the picture's
+own neutrals are the shell's warm graphite (hue 75, chroma near 0.006), so a
+container's well and a card read as the same material as the ground.
+
+A neutral line, its arrowhead and a lifeline are drawn in **Line Ink**
+(`--diagram-edge`, oklch(60% 0.015 286), dark oklch(0.6 0.012 80)). It keeps
+APCA Lc 58 or more against the ground and a container's floor on chalk and Lc 34
+on graphite, and it stays far under the contrast of text. A colored line is
+drawn in its full color on chalk and at four fifths of its color on graphite. Every arrowhead is 11 units
+long, whatever the emphasis of its line. A muted line is as wide as a default
+one and paler: its ink keeps 70 % of its default ink over chalk and 60 % over
+graphite, never by opacity. A traffic pulse is the color of its
+line with white mixed in (`--diagram-glow`), so it reads as light that travels
+along the line on both grounds.
 
 ### Named Rules
 
@@ -412,7 +488,7 @@ It has 20px of padding and 16px between its rows.
 
 The rail runs along the top of the plate, across its full width. It has one segment for each
 step. Each segment is a button, and a tooltip names its step. The segments are 4px high, in
-Muted Ink at 70%, which is 3:1 against the plate, because they are controls. One piece of
+Muted Ink at 70%, which is APCA Lc 60 against the plate on chalk and Lc 31 on graphite, over the floor of Lc 30 for a mark, because they are controls. One piece of
 Gold Mark marks the step shown. It is 6px high and as wide as a segment, with a paler wake of
 the same gold behind it.
 
@@ -534,7 +610,7 @@ Keyboard focus follows the subtitles control to the surface that takes it over.
 - **Do** draw the one primary action of a region with `primary-finish`, and only that one.
 - **Do** separate regions with tone steps and elevation tokens before you add a rule.
 - **Do** keep shadows warm and offset. Take them from the elevation tokens in app.css.
-- **Do** keep the ink on gold at Gold Ink (at least 8.5:1).
+- **Do** keep the ink on gold at Gold Ink (APCA Lc 66 or more).
 
 ### Don't:
 

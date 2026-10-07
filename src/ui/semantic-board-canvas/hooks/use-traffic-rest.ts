@@ -1,17 +1,16 @@
 // Traffic that stands still while a hand moves the camera, and wakes up gently.
 //
-// A drag, a wheel and a key move the picture, and a hand that moves it has no use
-// for traffic that draws the eye. So the traffic of the picture stops with the first
-// move and stays stopped for as long as the hand moves it. It comes back the moment a
-// drag is let go, even if the picture is thrown and coasts on, and a moment after the
-// last turn of a wheel or press of a key. It never returns at its speed: it starts as
-// a creep and gathers it. What the stage moves itself, a fit or a glide to a step,
-// leaves it alone.
+// A drag, a wheel, a pinch and a key move the picture, and a hand that moves it has
+// no use for traffic that draws the eye. So the traffic of the picture stops with the
+// first move and stays stopped for as long as the hand moves it. It comes back the
+// moment a drag is let go, and when the camera comes to rest after a wheel, a pinch or
+// a key. It never returns at its speed: it starts as a creep and gathers it. What the
+// stage moves itself, a fit or a glide to a step, leaves it alone.
 
 import { useEffect, useMemo } from "react";
 
 import { EXPLORING_MS } from "@/shared/timing/timing";
-import { frameClock, paceTraffic } from "@/ui/frame-clock";
+import { paceTraffic } from "@/ui/frame-clock";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 
 /**
@@ -38,27 +37,13 @@ function useTrafficRest(
 	const { subscribe, view } = camera;
 	useEffect(() => {
 		if (pace === null) return undefined;
-		let waiting: number | null = null;
-		/** Wait for the camera to be still, and then bring the traffic back. */
-		const settle = (): void => {
-			if (waiting !== null) frameClock().cancelAfter(waiting);
-			waiting = frameClock().after(EXPLORING_MS.trafficRest, () => {
-				waiting = null;
-				pace.resume(EXPLORING_MS.trafficStart);
-			});
-		};
 		// A drag holds the traffic even while the pointer rests, and lets it go as it ends.
 		if (dragging) pace.hold();
 		else pace.resume(EXPLORING_MS.trafficStart);
-		const hearing = subscribe(() => {
-			if (view().hand !== true) return;
-			pace.hold();
-			if (!dragging) settle();
+		return subscribe(() => {
+			if (view().moving) pace.hold();
+			else if (!dragging) pace.resume(EXPLORING_MS.trafficStart);
 		});
-		return (): void => {
-			hearing();
-			if (waiting !== null) frameClock().cancelAfter(waiting);
-		};
 	}, [pace, subscribe, view, dragging]);
 }
 

@@ -6,33 +6,44 @@ import { lightDark } from "@/transformers/semantic-renderer/lib/svg/colour";
 interface Palette {
 	/** The page behind everything. */
 	readonly background: string;
-	/** A region band's fill. */
-	readonly band: string;
-	/** A region band's one-pixel rule. */
-	readonly bandBorder: string;
-	/** A card's fill. */
-	readonly card: string;
-	/** A card's one-pixel rule. */
-	readonly cardBorder: string;
+	/** A card's top face, before its group tints it (`lib/svg/slab.ts`). */
+	readonly slabFace: string;
+	/** A card's front edge, the thickness that shows along its foot. */
+	readonly slabEdge: string;
+	/** What a group's colour is shaded into for the front edge of a card or a label. */
+	readonly slabDeep: string;
+	/** What the fine highlight along the top edge of a face mixes toward. */
+	readonly slabGlint: string;
+	/** The light at the top of a face, which falls off down it. */
+	readonly slabSheen: string;
+	/** One layer of the stacked shadow a part casts. */
+	readonly slabShadow: string;
+	/** A container's floor at the top level, before its kind tints it (`lib/svg/tray.ts`). */
+	readonly trayFloor: string;
+	/** What a nested container's floor sinks toward, a step for each level. */
+	readonly traySink: string;
+	/** The lit lip along the bottom of a container. */
+	readonly trayLip: string;
+	/** A port's inside by its rim, its depth, and its lit floor by the sill (`lib/svg/ports.ts`). */
+	readonly portWall: string;
+	readonly portDeep: string;
+	readonly portLip: string;
 	/** Text that carries the meaning: a card's name. */
 	readonly foreground: string;
 	/** Secondary text: a responsibility, a region name. */
 	readonly muted: string;
-	/** The quietest readable text on this ground. */
-	readonly faint: string;
-	/** An ordinary connection. */
+	/** A neutral line, its arrowhead and a lifeline. */
 	readonly edge: string;
-	/** A connection deliberately pushed into the background. */
-	readonly edgeMuted: string;
-	/** The tile a kind glyph sits on. */
-	readonly chip: string;
+	/** The light a traffic pulse mixes into the colour of its line. */
+	readonly glow: string;
 	/** A kind glyph. */
 	readonly glyph: string;
-	/** A label pill's fill, opaque so it can be read wherever it lands. */
+	/**
+	 * A label chip's face, opaque so it can be read wherever it lands: a card's
+	 * face on the light ground, so no tile of the picture is pure white.
+	 */
 	readonly pill: string;
-	/** A label pill's rule. */
-	readonly pillBorder: string;
-	/** A label pill's text. */
+	/** A label chip's text. */
 	readonly pillText: string;
 	/** The ring around whatever the person has selected. */
 	readonly selection: string;
@@ -44,10 +55,10 @@ interface Palette {
 	 * `--warning-foreground` is the one the shell uses for warning text on paper.
 	 * Which ground it is, is the page's `color-scheme`, so the choice is CSS's.
 	 * The badge needs the second on the light ground — at eleven units with the
-	 * page knocked out of it, the panel token reached only 2.5:1 against a white
-	 * card and 2.3:1 against its own mark, which is a badge a reader has to hunt
-	 * for. This one clears 3:1 against every surface it can land on and 4.5:1
-	 * against the mark inside it.
+	 * page knocked out of it, the panel token was too pale against a white
+	 * card and against its own mark, a badge a reader has to hunt for. This one
+	 * keeps APCA Lc 30, the floor for a mark, against every surface it can land
+	 * on, and Lc 45, the level of a fine detail, against the mark inside it.
 	 *
 	 * It is not one of the three standings and must not be read as one. What
 	 * tells them apart is the badge's silhouette and the corner it sits in; the
@@ -80,20 +91,25 @@ function token(name: string): string {
  */
 const PALETTE: Palette = {
 	background: token("--background"),
-	band: token("--sidebar"),
-	bandBorder: token("--sidebar-border"),
-	card: token("--muted"),
-	cardBorder: token("--diagram-edge"),
-	foreground: token("--card-foreground"),
-	muted: token("--muted-foreground"),
-	faint: token("--muted-foreground"),
+	slabFace: token("--slab-face"),
+	slabEdge: token("--slab-edge"),
+	slabDeep: token("--slab-deep"),
+	slabGlint: token("--slab-glint"),
+	slabSheen: token("--slab-sheen"),
+	slabShadow: token("--slab-shadow"),
+	trayFloor: token("--tray-floor"),
+	traySink: token("--tray-sink"),
+	trayLip: token("--tray-lip"),
+	portWall: token("--port-wall"),
+	portDeep: token("--port-deep"),
+	portLip: token("--port-lip"),
+	foreground: token("--diagram-text"),
+	muted: token("--diagram-text-muted"),
 	edge: token("--diagram-edge"),
-	edgeMuted: token("--muted-foreground"),
-	chip: token("--muted"),
-	glyph: token("--muted-foreground"),
-	pill: token("--popover"),
-	pillBorder: token("--diagram-edge"),
-	pillText: token("--popover-foreground"),
+	glow: token("--diagram-glow"),
+	glyph: token("--diagram-text-muted"),
+	pill: lightDark(token("--slab-face"), token("--popover")),
+	pillText: token("--diagram-text"),
 	selection: token("--diagram-selection"),
 	warning: lightDark(token("--warning-foreground"), token("--warning")),
 	standingAdded: token("--standing-added"),

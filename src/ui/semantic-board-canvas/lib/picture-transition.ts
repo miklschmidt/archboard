@@ -321,13 +321,15 @@ function nothingToSeek(): void {
 }
 
 /**
- * Hide where routes join until the lines have landed. Where routes join depends
- * on where they land, so a mark would sit at its new join while the lines are
- * still on their way. Landing stages the untouched picture, marks and all.
+ * Hide where routes join, and the shadows cards and labels cast under the
+ * lines, until the picture has landed. Where routes join and where a card or a
+ * label stands depend on where they land, so a mark would sit at its new place
+ * while the lines, the cards and the labels are still on their way. Landing
+ * stages the untouched picture, marks and all.
  * @param root The new picture.
  */
 function parkJunctions(root: Element): void {
-	for (const marks of root.querySelectorAll<SVGElement>(".ab-junctions")) {
+	for (const marks of root.querySelectorAll<SVGElement>(".ab-junctions, .ab-shadow")) {
 		marks.style.opacity = "0";
 	}
 }

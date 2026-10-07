@@ -6,19 +6,11 @@ import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-
 // 0993b4dec8ae73f5e000370e6a758cdd8aa2bfd0. `NOTICE.md` beside this file holds
 // the licence and says exactly what was taken and what was changed.
 //
-// ADR 0023 draws the line this module sits on: an agent authors meaning, and
-// everything about the picture — where a box goes, what colour it is, which
-// face an arrow leaves by, which way the page reads, whether a name will fit —
-// is decided here, once, for every board. The input carries none of the four
-// things that ADR keeps out of an agent's hands (a coordinate, a font size, a
-// colour, a connector route), and the reading of the picture — its direction,
-// its ranks, its faces — is derived here from the board (ADR 0028).
+// Agents author meaning; this module derives presentation for every board
+// (ADR 0023, ADR 0028). Inputs carry no coordinates, font sizes, colours or routes.
 //
-// A proposal's standing against the variant it came from is on the same side of
-// that line. The caller states, per render, how each subject stands — derived
-// that instant from the two variants' shared identities, never authored and
-// never stored — and how added, removed and changed are then *drawn* is decided
-// here, in `lib/svg/standing.ts`, which sets out the whole vocabulary.
+// Callers derive proposal standings from shared subject identities per render,
+// never authoring or storing them. `lib/svg/standing.ts` owns how they are drawn.
 //
 // Nothing here reads a clock, a random number or a file. Text is measured by the
 // canvas of the host that draws, with the diagram faces loaded, and the host
@@ -28,9 +20,8 @@ import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-
 // in any order, and two browsers may measure a word differently because each
 // paints it differently.
 //
-// The picture paints with the page's own colour tokens (`lib/theme.ts`), so a
-// picture shown in the page is drawn once and takes whichever theme the page is
-// in. Only a document that stands alone is drawn for a theme.
+// Page pictures take the page's colour tokens (`lib/theme.ts`). Only documents
+// that stand alone are drawn for a theme.
 
 import {
 	DEFAULT_LAYOUT_ENGINE,
@@ -53,6 +44,7 @@ import { lineLooks } from "@/transformers/semantic-renderer/lib/semantic-appeara
 import { shownDrawing, unshownOf } from "@/transformers/semantic-renderer/lib/shown";
 import { PALETTE, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { paintArchitecture } from "@/transformers/semantic-renderer/lib/svg/architecture";
+import { pulseLook } from "@/transformers/semantic-renderer/lib/svg/beam-light";
 import { paintDataFlow } from "@/transformers/semantic-renderer/lib/svg/dataflow";
 import { svgDocument } from "@/transformers/semantic-renderer/lib/svg/document";
 import {
@@ -61,6 +53,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import {
 	drawnInk,
+	HEAD_LENGTH,
 	STROKE_WIDTH,
 	type Weight,
 } from "@/transformers/semantic-renderer/lib/svg/styles";
@@ -83,12 +76,9 @@ import {
 type RenderErrorCode = "NOTHING_TO_RENDER";
 
 /**
- * Thrown when content cannot be drawn.
- *
- * The code is the stable half of the failure and the message is for a person.
- * Every one of these describes content the renderer will not draw, never an
- * internal fault: a caller that catches one shows an empty state rather than a
- * degenerate picture.
+ * Refuses content the renderer cannot draw. The code is stable; the message is
+ * for a person. Callers show an empty state for these refusals; internal faults
+ * use other errors.
  */
 class SemanticRenderError extends Error {
 	/** Which refusal this is. */
@@ -542,6 +532,16 @@ function lineInk(ink: string): string {
 }
 
 /**
+ * The colour of the body of a pulse that rides a line of one colour: the one
+ * expression the picture draws it in, for a key beside it to draw the same.
+ * @param ink The line's colour at full strength.
+ * @returns The pulse's colour.
+ */
+function pulseInk(ink: string): string {
+	return pulseLook(ink, STROKE_WIDTH.normal, PALETTE).head;
+}
+
+/**
  * How wide a page draws a line of one emphasis, in diagram units: for a key
  * that has to draw a line the way the picture does (TASK-383).
  * @param emphasis How loudly its author asked the line to speak.
@@ -549,6 +549,17 @@ function lineInk(ink: string): string {
  */
 function lineWidth(emphasis: Weight): number {
 	return STROKE_WIDTH[emphasis];
+}
+
+/**
+ * How long a page draws the arrowhead of a line of one emphasis, from its base
+ * to its tip, in diagram units: for a key that has to draw a head the way the
+ * picture does.
+ * @param emphasis How loudly its author asked the line to speak.
+ * @returns The head's length, which is also its width.
+ */
+function headLength(emphasis: Weight): number {
+	return HEAD_LENGTH[emphasis];
 }
 
 /**
@@ -575,8 +586,10 @@ export {
 	renderSemanticView,
 	drillDirection,
 	type DrillDirection,
+	headLength,
 	lineInk,
 	lineWidth,
+	pulseInk,
 	standingMark,
 	cornerWarning,
 	lineWarning,

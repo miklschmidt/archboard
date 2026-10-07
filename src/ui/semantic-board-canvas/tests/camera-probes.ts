@@ -113,15 +113,18 @@ function cameraNow(): ReadCamera {
  *
  * The coordinates are attached rather than passed in: this DOM's `WheelEvent`
  * drops the mouse half of its initialiser, and where the pointer is, is the
- * whole of what a zoom about it depends on.
+ * whole of what a zoom about it depends on. So is Control, which is how a
+ * trackpad says it is pinching.
  * @param deltaY How far the wheel turned; negative comes closer.
  * @param at Where the pointer is, in the viewport.
+ * @param pinch Whether it is a pinch on a trackpad: a wheel with Control held.
  * @returns The event to dispatch.
  */
-function wheelAt(deltaY: number, at: readonly [number, number]): WheelEvent {
+function wheelAt(deltaY: number, at: readonly [number, number], pinch = false): WheelEvent {
 	const event = new WheelEvent("wheel", { deltaY, bubbles: true, cancelable: true });
 	Object.defineProperty(event, "clientX", { value: at[0] });
 	Object.defineProperty(event, "clientY", { value: at[1] });
+	Object.defineProperty(event, "ctrlKey", { value: pinch });
 	return event;
 }
 

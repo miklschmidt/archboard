@@ -27,7 +27,7 @@
    --primary is the gold as a flat fill. --primary-mark is the gold as a mark:
    a 2px bar or underline, a ring, an icon, the edge of something chosen.
    --primary-text is the accent as text. On graphite it is the gold. On chalk
-   it is the ink: a gold dark enough to clear 4.5:1 there reads as brown, so
+   it is the ink: a gold dark enough to reach APCA Lc 60 there reads as brown, so
    text on chalk stays ink and a gold mark beside or under it (a bar, an
    underline) carries the accent. --primary-subtle is the gold as a quiet tint
    behind something chosen on a page. --diagram-selection is the gold on the
@@ -37,8 +37,8 @@
    (`primary-finish` in app.css): a subtle top-to-bottom gradient
    (--primary-top to --primary-bottom), a fine highlight along its top edge, a
    darker rim (--primary-edge) and a shadow that seats it. The ink on it
-   (--primary-foreground) clears 8.5:1 on every stop of the gradient, pressed
-   included, and 5:1 at 75%. The brand mark and the voice keep a gradient of
+   (--primary-foreground) keeps APCA Lc 66 or more on every stop of the
+   gradient, pressed included, and Lc 56 at 75%. The brand mark and the voice keep a gradient of
    their own (--mark-hi to --mark-lo). A card on the picture that opens another
    board is marked in the card's own ink, never in gold: the picture is the
    renderer's, and the shell does not paint on it.
@@ -46,26 +46,70 @@
    Status keeps its own colours: the acid lime of live state (--status) and the
    comparison's green, orange and red. "Changed" is an orange and not the
    amber, which sits on the gold's hue, so no comparison mark reads as a
-   choice. */
+   choice.
+
+   The picture builds its parts as blocks lit from above: each part has a
+   top face, a front edge along its foot that shows how thick it is, and a soft
+   shadow it casts down and a little to the right. A card is a slab
+   (--slab-face on --slab-edge). A container is a tray cut into what holds it,
+   a neutral well: a floor (--tray-floor) only just darker than the page,
+   inside a top wall in shade, two quieter side walls and a lit lip (--tray-lip)
+   at its bottom. The walls are shades of the floor, and nothing about the well
+   has a colour of its own. Its header is a slab like a card's, standing on the
+   floor, coloured by the group that places the container. A container nested
+   in another is cut a step deeper, its floor sinking toward --tray-sink. A
+   group's region has no face and no token of its own: its frame, its corners,
+   its caption tab and a grouped card's face are tones of the group's colour
+   (--semantic-*) at a set lightness, in OKLCH.
+   --slab-deep is what a colour is shaded into for a front edge, and for a tint
+   on the dark ground. --slab-glint is what the fine highlight on a face's top edge mixes
+   toward, --slab-sheen the light that falls off down a face, and --slab-shadow
+   one layer of the stacked shadow. Where a line meets a card's foot it goes
+   into a port, a slot cut through the front edge: --port-wall is its inside
+   by the rim and --port-deep its depth, which the line fades into; its floor
+   by the sill catches the light (--port-lip). The lip is lighter than the
+   front edge round it, so a lip a unit thick reads at 2x. The owner found a
+   white lip a little too bright, so in each theme the lip now gives about
+   four fifths of the light it gave before (TASK-435).
+
+   On the light ground the picture is crisp and vivid rather than pastel. Its
+   own neutrals are clean and cool (hue near 255): a card face a soft
+   off-white and never pure white, a tray floor a step under the chalk ground,
+   a front edge that is the face in shade, and a navy shadow. A colour on it is
+   a clean tone of its own hue. Every named colour except the gold of
+   yellow keeps APCA Lc 53 or more as a line on the ground and a tray's
+   floor. --diagram-text and --diagram-text-muted are the picture's words: a
+   deep navy ink and a slate on the light ground, the shell's bone and a light
+   warm grey on the dark one. On the dark ground the picture's neutrals are the
+   shell's warm graphite (hue 75, chroma near 0.006), so a container's well and
+   a card are the same material as the ground. The contrast of the picture's
+   words and marks is judged with APCA (PRODUCT.md, Accessibility).
+
+   --diagram-edge is the ink of a neutral line, its arrowhead and a lifeline.
+   It keeps APCA Lc 30 or more, the floor for a mark, against the ground and
+   a tray's floor in both themes (Lc 58 on chalk, 34 on graphite), and it
+   stays well under the contrast of text. --diagram-glow is the light
+   that a traffic pulse mixes into the colour of its line, white in both
+   themes, so a pulse reads as light that travels along the line. */
 /* Light: chalk, warm ink, the gold. */
 :root {
 	/* Named colors used by node types, groups and relationships. */
 	--semantic-red: oklch(63.7% 0.237 25.331);
-	--semantic-orange: oklch(70.5% 0.213 47.604);
-	--semantic-amber: oklch(76.9% 0.188 70.08);
-	--semantic-yellow: oklch(79.5% 0.184 86.047);
-	--semantic-lime: oklch(64.8% 0.2 131.684);
-	--semantic-green: oklch(62.7% 0.194 149.214);
-	--semantic-emerald: oklch(59.6% 0.145 163.225);
-	--semantic-teal: oklch(60% 0.118 184.704);
-	--semantic-cyan: oklch(60.9% 0.126 221.723);
-	--semantic-sky: oklch(68.5% 0.169 237.323);
+	--semantic-orange: oklch(0.634 0.179 44);
+	--semantic-amber: oklch(0.625 0.138 63);
+	--semantic-yellow: oklch(0.72 0.15 77);
+	--semantic-lime: oklch(0.602 0.165 133);
+	--semantic-green: oklch(0.598 0.172 147);
+	--semantic-emerald: oklch(0.6 0.13 161);
+	--semantic-teal: oklch(0.603 0.104 184);
+	--semantic-cyan: oklch(0.607 0.107 220);
+	--semantic-sky: oklch(0.612 0.136 241);
 	--semantic-blue: oklch(62.3% 0.214 259.815);
 	--semantic-indigo: oklch(58.5% 0.233 277.117);
 	--semantic-violet: oklch(60.6% 0.25 292.717);
 	--semantic-purple: oklch(62.7% 0.265 303.9);
-	--semantic-fuchsia: oklch(66.7% 0.295 322.15);
-	--semantic-pink: oklch(65.6% 0.241 354.308);
+	--semantic-fuchsia: oklch(0.657 0.295 322);
+	--semantic-pink: oklch(0.65 0.25 354);
 	--semantic-rose: oklch(58.6% 0.253 17.585);
 
 	--background: oklch(0.99 0.0025 90);
@@ -87,8 +131,8 @@
 	--secondary: oklch(0.955 0.004 85);
 	--secondary-foreground: oklch(0.2 0.006 75);
 	--muted: oklch(0.955 0.004 85);
-	/* Darker than the preset's 0.556: secondary text must clear 4.5:1 on the
-	   chrome (--sidebar), not only on the ground. */
+	/* Darker than the preset's 0.556: secondary text must keep APCA Lc 60 on
+	   the chrome (--sidebar), not only on the ground. */
 	--muted-foreground: oklch(0.48 0.008 75);
 	--accent: oklch(0.955 0.004 85);
 	--accent-foreground: oklch(0.2 0.006 75);
@@ -104,11 +148,14 @@
 	--status: oklch(0.84931542 0.20733982 128.849744);
 	--status-foreground: oklch(0.40178217 0.09855448 133.653014);
 	--status-subtle: oklch(0.95294765 0.08717228 120.463839);
-	--standing-added: oklch(64.8% 0.2 131.684);
-	--standing-changed: oklch(0.69 0.19 48);
+	--standing-added: oklch(0.6 0.18 140);
+	--standing-changed: oklch(0.631 0.167 48);
 	--standing-removed: oklch(50.5% 0.213 27.518);
 	--diagram-selection: oklch(0.66 0.14 80);
-	--diagram-edge: oklch(70.5% 0.015 286.067);
+	--diagram-edge: oklch(60% 0.015 286.067);
+	--diagram-glow: oklch(1 0 0);
+	--diagram-text: oklch(0.2 0.02 265);
+	--diagram-text-muted: oklch(0.45 0.028 262);
 	--warning: oklch(79.5% 0.184 86.047);
 	--warning-foreground: oklch(0.43816934 0.09171983 76.864627);
 	--warning-subtle: oklch(0.95920698 0.03574366 89.442142);
@@ -122,6 +169,18 @@
 	--sidebar-ring: oklch(0.62 0.13 78);
 	--raised: oklch(0.986 0.003 88);
 	--highlight: oklch(1 0 0 / 0.85);
+	--slab-face: oklch(0.96 0.004 255);
+	--slab-edge: oklch(0.815 0.003 255);
+	--slab-deep: oklch(0.86 0.008 256);
+	--slab-glint: oklch(1 0 0);
+	--slab-sheen: oklch(1 0 0 / 0.3);
+	--slab-shadow: oklch(0.3 0.05 264 / 0.16);
+	--tray-floor: oklch(0.974 0.003 255);
+	--tray-sink: oklch(0.95 0.005 255);
+	--tray-lip: oklch(1 0 0);
+	--port-wall: oklch(0.52 0.01 260);
+	--port-lip: oklch(0.93 0.004 255);
+	--port-deep: oklch(0.3 0.012 262);
 }
 
 /* Dark: warm graphite, bone-white text, the same gold. */
@@ -130,7 +189,7 @@
 	--semantic-red: oklch(0.71062735 0.16614792 22.216224);
 	--semantic-orange: oklch(0.7576398 0.15903746 55.934415);
 	--semantic-amber: oklch(0.83686057 0.16442159 84.428628);
-	--semantic-yellow: oklch(0.86055946 0.17311488 91.935651);
+	--semantic-yellow: oklch(0.86 0.125 86);
 	--semantic-lime: oklch(0.84931542 0.20733982 128.849744);
 	--semantic-green: oklch(0.80034877 0.18206039 151.711031);
 	--semantic-emerald: oklch(0.77294438 0.15349041 163.223075);
@@ -181,9 +240,12 @@
 	--status-subtle: oklch(0.31354752 0.05775641 130.475651);
 	--standing-added: oklch(79.2% 0.209 151.711);
 	--standing-changed: oklch(0.77 0.17 52);
-	--standing-removed: oklch(70.4% 0.191 22.216);
+	--standing-removed: oklch(0.76 0.16 22);
 	--diagram-selection: oklch(0.831 0.134 84.5);
-	--diagram-edge: oklch(44.2% 0.017 285.786);
+	--diagram-edge: oklch(0.6 0.012 80);
+	--diagram-glow: oklch(1 0 0);
+	--diagram-text: oklch(0.955 0.006 90);
+	--diagram-text-muted: oklch(0.81 0.01 80);
 	--warning: oklch(0.72131034 0.14180263 80.931184);
 	--warning-foreground: oklch(0.85278573 0.12194932 86.127776);
 	--warning-subtle: oklch(0.30488372 0.04761708 85.022106);
@@ -197,4 +259,16 @@
 	--sidebar-ring: oklch(0.831 0.134 84.5);
 	--raised: oklch(0.205 0.007 75);
 	--highlight: oklch(1 0.01 85 / 0.09);
+	--slab-face: oklch(0.31 0.007 75);
+	--slab-edge: oklch(0.215 0.006 75);
+	--slab-deep: oklch(0.06 0.004 75);
+	--slab-glint: oklch(1 0.003 85);
+	--slab-sheen: oklch(1 0.003 85 / 0.05);
+	--slab-shadow: oklch(0.08 0.006 75 / 0.55);
+	--tray-floor: oklch(0.185 0.006 75);
+	--tray-sink: oklch(0.15 0.005 75);
+	--tray-lip: oklch(0.3 0.007 75);
+	--port-wall: oklch(0.13 0.005 75);
+	--port-lip: oklch(0.61 0.004 75);
+	--port-deep: oklch(0.06 0.004 75);
 }

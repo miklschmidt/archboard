@@ -5,18 +5,35 @@
 //
 // The words are laid out from the card's own box, so a short card and a tall
 // one stay one design: a card too short for both name and gist keeps its name.
+//
+// The card's two views are drawn here together, as one shared element
+// transition (TASK-428): the chip is one element that moves between its near
+// and far places, and each view's words move to where the other view's words
+// start while they fade (far-view.ts).
 import type { TextRun } from "@/transformers/semantic-renderer/lib/drawing";
 import {
 	CARD_NOTE_FONT,
 	CARD_TITLE_FONT,
 	type DiagramFont,
 } from "@/transformers/semantic-renderer/lib/fonts";
+import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { measure, truncate } from "@/transformers/semantic-renderer/lib/text";
-import { DRILL_MARK_ROOM } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
-import { farChip, farLayer, farMark } from "@/transformers/semantic-renderer/lib/svg/far-view";
+import {
+	DRILL_MARK_ROOM,
+	cornerDrillMark,
+} from "@/transformers/semantic-renderer/lib/svg/drill-mark";
+import {
+	farLayer,
+	movingWords,
+	nearLayer,
+	sharedChip,
+	type Anchor,
+	type ChipPlace,
+} from "@/transformers/semantic-renderer/lib/svg/far-view";
+import { lines as fragments } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 
 /** The step between one line of a far name and the next, per unit of its size. */
@@ -239,37 +256,119 @@ function runsOf(stack: Stack, x: number, top: number): TextRun[] {
 	];
 }
 
+/** A block of words as the near view draws them, and where they start. */
+interface Words {
+	readonly markup: string;
+	readonly anchor: Anchor;
+}
+
+/** What a card draws near, which its far view is drawn against. */
+interface NearCard {
+	/** Its kind's chip, drawn at the origin at its near size, and where it stands near. */
+	readonly chip: { readonly markup: string; readonly x: number; readonly y: number };
+	/** Its name and responsibility. */
+	readonly words: Words;
+}
+
 /**
- * What a card draws from far away: its kind's tile, its name and the start of
- * what it is responsible for. It is hidden until a viewer says the picture is
- * far.
+ * Where measured lines start: the left end of the first line's baseline.
+ * @param runs The lines, relative to a box.
+ * @param box The box.
+ * @param fallback Where they would start if there were none.
+ * @returns The anchor.
+ */
+function anchorOf(runs: readonly TextRun[], box: Box, fallback: Anchor): Anchor {
+	const first = runs[0];
+	return first === undefined
+		? fallback
+		: { x: box.x + first.x, y: box.y + first.y, size: first.fontSize };
+}
+
+/**
+ * Measured lines as a block of words, with where they start.
+ * @param runs The lines, relative to a box.
+ * @param box The box.
+ * @param palette The selected theme.
+ * @returns The words.
+ */
+function wordsOf(runs: readonly TextRun[], box: Box, palette: Palette): Words {
+	const fallback = { x: box.x, y: box.y, size: NAME_SIZES.max };
+	return { markup: paintTextRuns(runs, box, palette), anchor: anchorOf(runs, box, fallback) };
+}
+
+/**
+ * A card's near and far views, and the chip they share. Near, the chip, the
+ * name and the responsibility stand where the card measured them. From far
+ * away the chip grows to a tile down the card's start, and beside it stand the
+ * name and the start of the responsibility, at a size that still reads. The
+ * stylesheet moves the chip and the words between the two places when the
+ * picture swaps its views. The mark of a board the card opens stands at one
+ * place in both views, larger from far away, and fades with its view.
  * @param node What the card says.
  * @param node.name The card's name.
  * @param node.responsibility What it is responsible for, when it says.
- * @param box The card's box.
+ * @param box The card's box, or a container header's face.
  * @param look The card's chip and the selected theme.
  * @param look.appearance Its type chip's colour and glyph, and whether it opens a board.
- * @param look.palette The selected theme.
- * @param unsettled Whether the card wears the warning badge.
- * @returns The far layer.
+ * @param look.palette The selected theme for its words.
+ * @param near What the card draws near.
+ * @returns The chip, the near layer and the far layer.
  */
-function paintFarCard(
+function paintCardViews(
 	node: { readonly name: string; readonly responsibility?: string | undefined },
 	box: Box,
 	look: { appearance: NodeAppearance; palette: Palette },
-	unsettled: boolean,
+	near: NearCard,
 ): string {
+	const { drill } = look.appearance;
+	/**
+	 * The mark of a board the card opens, at one size, or nothing.
+	 * @param scale How much larger than near it is drawn.
+	 * @returns The mark.
+	 */
+	const mark = (scale: number): string =>
+		drill === null ? "" : cornerDrillMark(box, drill, look.palette.glyph, scale);
 	const tile = Math.min(TILE, box.height - EDGE * 2);
 	const x = EDGE + tile + EDGE;
-	const room =
-		box.width - x - END - (look.appearance.drill === null ? 0 : DRILL_MARK_ROOM * MARK_SCALE);
+	const room = box.width - x - END - (drill === null ? 0 : DRILL_MARK_ROOM * MARK_SCALE);
 	const gist = node.responsibility?.trim() === "" ? undefined : node.responsibility;
 	const stack = settle(node.name, gist, room, box.height - PAD_Y * 2);
-	return farLayer(
-		farChip(box, { x: EDGE, y: (box.height - tile) / 2, size: tile }, look) +
-			paintTextRuns(runsOf(stack, x, (box.height - stack.height) / 2), box, look.palette) +
-			farMark(box, MARK_SCALE, look, unsettled),
-	);
+	const far = wordsOf(runsOf(stack, x, (box.height - stack.height) / 2), box, look.palette);
+	const nearChip: ChipPlace = { x: near.chip.x, y: near.chip.y, size: ICON_CHIP_SIZE };
+	const farChip: ChipPlace = { x: box.x + EDGE, y: box.y + (box.height - tile) / 2, size: tile };
+	return fragments([
+		sharedChip(near.chip.markup, nearChip, farChip),
+		nearLayer(movingWords(near.words.markup, near.words.anchor, far.anchor) + mark(1)),
+		farLayer(movingWords(far.markup, far.anchor, near.words.anchor) + mark(MARK_SCALE)),
+	]);
 }
 
-export { paintFarCard };
+/**
+ * The near and far views of a heading that has no kind of its own to show, a
+ * flow's on its header slab. From far away its name and the start of its
+ * summary are set as a far card's are, from the start of the face, and the
+ * words move and fade between the two places when the picture swaps its views.
+ * @param heading What the heading says.
+ * @param heading.name Its name.
+ * @param heading.summary What it says under its name, when it says.
+ * @param box The face its far words stand on.
+ * @param palette The selected theme.
+ * @param near Its words as the near view draws them.
+ * @returns The near layer and the far layer.
+ */
+function paintHeadingViews(
+	heading: { readonly name: string; readonly summary?: string | undefined },
+	box: Box,
+	palette: Palette,
+	near: Words,
+): string {
+	const gist = heading.summary?.trim() === "" ? undefined : heading.summary;
+	const stack = settle(heading.name, gist, box.width, box.height - PAD_Y * 2);
+	const far = wordsOf(runsOf(stack, 0, (box.height - stack.height) / 2), box, palette);
+	return fragments([
+		nearLayer(movingWords(near.markup, near.anchor, far.anchor)),
+		farLayer(movingWords(far.markup, far.anchor, near.anchor)),
+	]);
+}
+
+export { paintCardViews, paintHeadingViews, wordsOf };

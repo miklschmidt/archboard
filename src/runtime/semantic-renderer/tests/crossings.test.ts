@@ -43,7 +43,7 @@ function routes(svg: string) {
 					[
 						...group[3]!
 							.replace(/<defs>[\s\S]*?<\/defs>/gu, "")
-							.split('<g class="ab-pulse"')[0]!
+							.split(/<g class="ab-(?:pulse|near|port)[ "]/u)[0]!
 							.matchAll(/<path[^>]* d="([^"]+)"/gu),
 					].map((path) => path[1]!),
 				),
@@ -56,11 +56,12 @@ function routes(svg: string) {
 					),
 				),
 			],
-			// The line's own paths; its traffic is painted apart, over every line.
+			// The line's own paths; its traffic is painted apart, over every line, and
+			// the ports its ends run into are drawn near only, after them.
 			own: [
 				...group[3]!
 					.replace(/<defs>[\s\S]*?<\/defs>/gu, "")
-					.split('<g class="ab-pulse"')[0]!
+					.split(/<g class="ab-(?:pulse|near|port)[ "]/u)[0]!
 					.matchAll(/<path[^>]* d="([^"]+)"/gu),
 			].length,
 		}));
@@ -135,12 +136,12 @@ test("crossing clearances share the drawn curve and narrowly clear the ink benea
 	for (const cutout of [...cutouts.values()].flat()) {
 		const upper = lines.find((route) => follows(cutout.path, route.paths[0]!));
 		expect(upper, "a cutout follows existing upper-route ink").toBeDefined();
-		// Narrow beneath an arc; wide enough to see where a straight line crosses
-		// unhopped; beside a join, wide enough to clear the join's mark as well
-		// (its radius, the line's width and 1.6, and the gap, 3, on each side).
+		// Narrow beneath an arc. A line is cut with no arc over it only beside a
+		// join, wide enough to clear the join's mark as well (its radius, the
+		// line's width and 1.6, and the gap, 3, on each side).
 		const cut = /^M[-\d.,]+ L[-\d.,]+$/u.test(cutout.path);
 		const extra = cutout.width - upper!.width;
-		const allowed = cut ? [6, upper!.width + 2 * (1.6 + 3)] : [3];
+		const allowed = cut ? [upper!.width + 2 * (1.6 + 3)] : [3];
 		expect(
 			allowed.some((width) => Math.abs(extra - width) < 1e-5),
 			`${extra}`,
@@ -299,18 +300,18 @@ test("no line shows through a removed relationship's label", async () => {
 
 // Work vault: a kind the vault draws dashed but the default policy does not
 // know was judged solid, and rose over solid lines with an arc that barely
-// showed. A dashed line is never cut beneath a solid one either, since its gap
-// is lost among its dashes (the user, 2026-09-27).
+// showed.
 test("the crossing pass reads each line's dash from the vault's own policy", async () => {
 	const content = structuredClone(CROSSED);
 	for (const edge of content.edges) if (edge.from === "a") edge.kind = "stream";
 	/**
-	 * The lines cut beneath another where no hop stands, with the stream kind
-	 * drawn one way: a straight, round-capped piece of their mask.
+	 * How many lines a stream line hops, with the stream kind drawn one way: a
+	 * hop is a piece of the mask of the line beneath it, with an arc in it,
+	 * that starts on the line that hops.
 	 * @param dash How the vault draws a stream.
-	 * @returns Their ids.
+	 * @returns The count.
 	 */
-	const cutBeneath = async (dash: "solid" | "dashed"): Promise<string[]> => {
+	const streamHops = async (dash: "solid" | "dashed"): Promise<number> => {
 		const policy = {
 			...DEFAULT_SEMANTIC_POLICY,
 			relationshipKinds: {
@@ -322,21 +323,24 @@ test("the crossing pass reads each line's dash from the vault's own policy", asy
 		const pieces = new Map(
 			[...svg.matchAll(/<mask id="([^"]+)"[^>]*>([\s\S]*?)<\/mask>/gu)].map((match) => [
 				match[1]!,
-				[...match[2]!.matchAll(/<path[^>]*>/gu)].map(([piece]) => piece),
+				[...match[2]!.matchAll(/<path[^>]* d="(M[-\d.]+,[-\d.]+)[^"]*C[^"]*"/gu)].map(([, start]) =>
+					start!.slice(1),
+				),
 			]),
 		);
-		return routes(svg).flatMap(({ id, mask }) =>
-			(pieces.get(mask ?? "") ?? []).some(
-				(piece) => !/ d="[^"]*C/u.test(piece) && piece.includes('stroke-linecap="round"'),
-			)
-				? [id]
-				: [],
-		);
+		const lines = routes(svg);
+		return lines
+			.filter(({ id }) => !id.startsWith("a"))
+			.flatMap(({ mask }) => pieces.get(mask ?? "") ?? [])
+			.filter((start) =>
+				lines.some(({ id, paths }) => id.startsWith("a") && paths[0]!.includes(start)),
+			).length;
 	};
-	// Drawn solid, a stream line is cut beneath a call where no hop stands;
-	// drawn dashed, the call is cut beneath it instead.
-	expect((await cutBeneath("solid")).some((id) => id.startsWith("a"))).toBe(true);
-	expect((await cutBeneath("dashed")).some((id) => id.startsWith("a"))).toBe(false);
+	// Drawn dashed, a stream line rises over a solid call only where nothing else
+	// stands, so it hops fewer of them than drawn solid.
+	const [solid, dashed] = [await streamHops("solid"), await streamHops("dashed")];
+	expect(solid).toBeGreaterThan(0);
+	expect(dashed).toBeLessThan(solid);
 });
 
 // Reported from use: traffic on a line that joins lines without traffic

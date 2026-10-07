@@ -6,13 +6,15 @@
 // near and far alike, and a name drawn whole beside its mark. A participant of
 // a sequence once kept the room for the mark only when it was painted, so a
 // name its card had been widened to hold was cut with an ellipsis. And the mark
-// drawn from far away stays on its card and clear of the warning badge in the
-// same corner: it once stood a radius and a half from the corner whatever the
-// corner held, so the badge of an unsettled part sat inside its ring. A
-// frame's name drawn from far away once kept no room for the frame's far mark,
-// so a long name ran under it.
+// stands at one centre near and far, as far in from the top as from the right,
+// on its card and clear of the warning badge in the same corner. The two views
+// once placed it each by a rule of its own, so the swap between them moved the
+// mark (TASK-434). Before that, the far mark stood a radius and a half from the
+// corner whatever the corner held, so the badge of an unsettled part sat inside
+// its ring. A frame's name drawn from far away once kept no room for the
+// frame's far mark, so a long name ran under it.
 import { expect, test } from "bun:test";
-import type { DiagramBox, DiagramGrammar } from "@/shared/semantic-board/index";
+import type { DiagramBox, DiagramGrammar, LayoutEngineName } from "@/shared/semantic-board/index";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
 import {
 	bodyShift,
@@ -130,12 +132,12 @@ const FRAMED = orderedFixture({
 	],
 });
 
-/** The mark a part draws from far away: its centre, and how far the ink of its ring reaches. */
-interface FarRing extends DrawnPoint {
+/** The mark a part draws in one view: its centre, and how far the ink of its ring reaches. */
+interface Ring extends DrawnPoint {
 	readonly reach: number;
 }
 
-const FAR_RING =
+const RING =
 	/class="ab-drill"[^>]*transform="translate\((-?[\d.]+),(-?[\d.]+)\)(?: scale\(([\d.]+)\))?"><circle r="([\d.]+)"[^>]*stroke-width="([\d.]+)"/u;
 
 /** The warning badge: a translated group whose first shape is its triangle. */
@@ -144,15 +146,19 @@ const BADGE =
 
 /** A card's own box, or a frame's: the first shape that is not its halo. */
 const BOX = /<rect x="(-?[\d.]+)" y="(-?[\d.]+)" width="([\d.]+)" height="([\d.]+)"/u;
+/** A slab's body: its whole box, drawn first at a card's corner radius. */
+const SLAB = /<rect x="(-?[\d.]+)" y="(-?[\d.]+)" width="([\d.]+)" height="([\d.]+)" rx="8"/u;
 
 /**
- * The mark a subject draws from far away, if it draws one.
+ * The mark a subject draws in one view, if it draws one there. The near view
+ * comes before the far view in a subject's markup.
  * @param group The subject group.
+ * @param view Which view.
  * @returns Its ring, or undefined.
  */
-function farRingOf(group: DrawnGroup): FarRing | undefined {
-	const far = group.markup.split('class="ab-far"')[1];
-	const found = far === undefined ? null : FAR_RING.exec(far);
+function ringOf(group: DrawnGroup, view: "near" | "far"): Ring | undefined {
+	const markup = group.markup.split('class="ab-far"')[view === "near" ? 0 : 1];
+	const found = markup === undefined ? null : RING.exec(markup);
 	if (found === null) return undefined;
 	const [x, y, scale, radius, stroke] = found.slice(1).map((value) => Number(value ?? 1));
 	return { x: x!, y: y!, reach: scale! * (radius! + stroke! / 2) };
@@ -173,7 +179,7 @@ function badgeOf(group: DrawnGroup): DrawnPoint[] | undefined {
 
 /**
  * The box a subject's corner marks belong to: a card's own, or a frame's
- * header, which runs from the frame's top to the rule under its name.
+ * header slab, the slab its name stands on.
  * @param groups Every subject group of the drawing.
  * @param group The subject group that draws the marks.
  * @returns The box.
@@ -183,15 +189,19 @@ function boxOf(groups: readonly DrawnGroup[], group: DrawnGroup): DiagramBox {
 	const body = header
 		? groups.find((one) => one.kind === group.kind && one.id === group.id && one !== group)
 		: group;
-	const [x, y, width, height] = BOX.exec(body!.markup)!.slice(1).map(Number);
-	const bottom = header
-		? Number(/<line [^>]*y1="(-?[\d.]+)"/u.exec(body!.markup)![1])
-		: y! + height!;
-	return { x: x!, y: y!, width: width!, height: bottom - y! };
+	const [x, y, width, height] = (header ? SLAB : BOX).exec(body!.markup)!.slice(1).map(Number);
+	return { x: x!, y: y!, width: width!, height: height! };
 }
 
-for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) {
-	test(grammar + " keeps each far mark on its card and clear of the warning badge", async () => {
+/** Each grammar, and for an architecture each engine that lays it out. */
+const DRAWINGS: readonly (readonly [DiagramGrammar, LayoutEngineName | undefined])[] = [
+	["architecture", "track"],
+	["architecture", "blocks"],
+	["data-flow", undefined],
+];
+
+for (const [grammar, layout] of DRAWINGS) {
+	test(`${[grammar, layout].filter(Boolean).join(" ")} keeps each mark at one centre near and far, on its card and clear of the warning badge`, async () => {
 		const parts = SIZED.map(({ id }) => id);
 		const drilled = grammar === "architecture" ? [...parts, "frame"] : parts;
 		const drawings = await Promise.all(
@@ -201,6 +211,7 @@ for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) 
 					grammar,
 					theme: "light",
 					level: "service",
+					layout,
 					unsettled,
 				});
 				return { unsettled, svg };
@@ -209,25 +220,35 @@ for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) 
 		for (const { unsettled, svg } of drawings) {
 			const groups = subjectGroups(svg);
 			const marked = groups.flatMap((group) => {
-				const ring = farRingOf(group);
-				return ring === undefined ? [] : [{ group, ring }];
+				const near = ringOf(group, "near");
+				const far = ringOf(group, "far");
+				return near === undefined && far === undefined ? [] : [{ group, near, far }];
 			});
 			expect(marked.map(({ group }) => group.id).toSorted()).toEqual(drilled.toSorted());
-			for (const { group, ring } of marked) {
+			for (const { group, near, far } of marked) {
 				const box = boxOf(groups, group);
 				const where = `${group.id}, ${unsettled.length === 0 ? "settled" : "unsettled"}`;
-				expect(ring.x - ring.reach, where).toBeGreaterThanOrEqual(box.x);
-				expect(ring.x + ring.reach, where).toBeLessThanOrEqual(box.x + box.width);
-				expect(ring.y - ring.reach, where).toBeGreaterThanOrEqual(box.y);
-				expect(ring.y + ring.reach, where).toBeLessThanOrEqual(box.y + box.height);
+				expect(near, where).toBeDefined();
+				expect(far, where).toBeDefined();
+				// One centre in both views, so the swap between them does not move
+				// the mark, and as far in from the top edge as from the right edge.
+				expect(far!.x, where).toBeCloseTo(near!.x, 2);
+				expect(far!.y, where).toBeCloseTo(near!.y, 2);
+				expect(box.x + box.width - near!.x, where).toBeCloseTo(near!.y - box.y, 2);
 				const badge = badgeOf(group);
 				expect(badge !== undefined, where).toBe(unsettled.length > 0);
-				// Further from the triangle's outline than its ink reaches, the ring
-				// neither crosses the badge nor holds it. It cannot sit inside the
-				// badge, which is smaller than the ring.
-				const centre = { x: ring.x, y: ring.y, width: 0, height: 0 };
-				if (badge !== undefined) {
-					expect(distanceToRoute(centre, badge), where).toBeGreaterThan(ring.reach);
+				for (const ring of [near!, far!]) {
+					expect(ring.x - ring.reach, where).toBeGreaterThanOrEqual(box.x);
+					expect(ring.x + ring.reach, where).toBeLessThanOrEqual(box.x + box.width);
+					expect(ring.y - ring.reach, where).toBeGreaterThanOrEqual(box.y);
+					expect(ring.y + ring.reach, where).toBeLessThanOrEqual(box.y + box.height);
+					// Further from the triangle's outline than its ink reaches, the ring
+					// neither crosses the badge nor holds it. It cannot sit inside the
+					// badge, which is smaller than the ring.
+					const centre = { x: ring.x, y: ring.y, width: 0, height: 0 };
+					if (badge !== undefined) {
+						expect(distanceToRoute(centre, badge), where).toBeGreaterThan(ring.reach);
+					}
 				}
 			}
 		}
@@ -260,7 +281,7 @@ test("an architecture keeps a frame's far name clear of its far mark", async () 
 	});
 	const ring = subjectGroups(svg)
 		.filter(({ id }) => id === "frame")
-		.map(farRingOf)
+		.map((group) => ringOf(group, "far"))
 		.find((found) => found !== undefined)!;
 	const shift = bodyShift(svg);
 	const faces = registeredFaces(svg);

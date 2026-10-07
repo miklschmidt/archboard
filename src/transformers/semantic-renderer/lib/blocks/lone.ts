@@ -7,6 +7,7 @@
 // box and the region drawn round it; a line that stopped on the region's wall
 // is carried on to the card's face.
 import type { ElkNode } from "@archboard/elk-rs";
+import { REGION_INSET } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { z } from "zod";
 import {
@@ -22,8 +23,6 @@ import {
 	TRACK_WIDE,
 } from "@/transformers/semantic-renderer/lib/track/scene";
 
-/** The room a region round one node keeps round it on the sides and below. */
-const LONE_INSET = 14;
 /** How far a line carried to a card's side keeps from the card's corners. */
 const CORNER_ROOM = 8;
 /**
@@ -128,12 +127,14 @@ function aloneIn(node: ElkNode, siblings: readonly ElkNode[]): boolean {
 }
 
 /**
- * The band above the node that holds the region's caption.
+ * The band above the node that holds the region's caption: its tab, which
+ * reaches the caption's foot, and the region's inset under it, as at its
+ * sides and below.
  * @param lone The region.
  * @returns Its height.
  */
 function bandOf(lone: Lone): number {
-	return 2 * CAPTION_INSET + lone.caption.height;
+	return CAPTION_INSET + lone.caption.height + REGION_INSET;
 }
 
 /**
@@ -156,7 +157,7 @@ function captionWidth(lone: Lone): number {
  */
 function widened(lone: Lone, width: number): Lone | undefined {
 	const short = captionWidth(lone) - width;
-	return short > 0 ? { ...lone, room: LONE_INSET + short / 2 } : undefined;
+	return short > 0 ? { ...lone, room: REGION_INSET + short / 2 } : undefined;
 }
 
 /**
@@ -166,7 +167,7 @@ function widened(lone: Lone, width: number): Lone | undefined {
  * @returns The height it adds.
  */
 function grownBy(lone: Lone): number {
-	return bandOf(lone) + LONE_INSET;
+	return bandOf(lone) + REGION_INSET;
 }
 
 /**
@@ -204,8 +205,8 @@ function cardAs(node: ElkNode, lone: Lone | undefined): Card {
 	if (lone === undefined) return card;
 	return {
 		...card,
-		width: Math.max(card.width + 2 * LONE_INSET, captionWidth(lone)),
-		height: card.height + bandOf(lone) + LONE_INSET,
+		width: Math.max(card.width + 2 * REGION_INSET, captionWidth(lone)),
+		height: card.height + bandOf(lone) + REGION_INSET,
 	};
 }
 
@@ -223,7 +224,7 @@ function cardIn(region: Box, lone: Lone): Box {
 		x: region.x + side,
 		y: region.y + bandOf(lone),
 		width: region.width - 2 * side,
-		height: region.height - bandOf(lone) - LONE_INSET,
+		height: region.height - bandOf(lone) - REGION_INSET,
 	};
 }
 
@@ -237,7 +238,7 @@ function cardIn(region: Box, lone: Lone): Box {
  */
 function sideRoom(width: number, lone: Lone): number {
 	if (lone.width === undefined) return roomOf(lone);
-	return Math.max(LONE_INSET, (width - lone.width) / 2);
+	return Math.max(REGION_INSET, (width - lone.width) / 2);
 }
 
 /**
@@ -247,7 +248,7 @@ function sideRoom(width: number, lone: Lone): number {
  * @returns The room.
  */
 function roomOf(lone: Lone): number {
-	return lone.room ?? LONE_INSET;
+	return lone.room ?? REGION_INSET;
 }
 
 /**
@@ -275,7 +276,7 @@ function titleRow(
 		[TRACK_TITLE]: row.join(","),
 		...(lone === undefined
 			? {}
-			: { [TRACK_BELOW]: String(LONE_INSET), [TRACK_WIDE]: String(captionWidth(lone)) }),
+			: { [TRACK_BELOW]: String(REGION_INSET), [TRACK_WIDE]: String(captionWidth(lone)) }),
 	};
 }
 
@@ -315,7 +316,7 @@ function titleWidth(frame: { header: Size; lone?: Lone }, inset: number): number
  */
 function grownInsets(insets: Insets, lone: Lone | undefined): Insets {
 	if (lone === undefined) return insets;
-	return { ...insets, side: insets.side + roomOf(lone), bottom: insets.bottom + LONE_INSET };
+	return { ...insets, side: insets.side + roomOf(lone), bottom: insets.bottom + REGION_INSET };
 }
 
 /**
@@ -451,7 +452,6 @@ function captionIn(region: Box, lone: Lone, lines: readonly (readonly Point[])[]
 }
 
 export {
-	LONE_INSET,
 	bandOf,
 	captionIn,
 	captionsOf,

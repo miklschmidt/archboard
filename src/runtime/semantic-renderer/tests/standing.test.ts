@@ -191,12 +191,16 @@ describe("a stated standing on an architecture", () => {
 		const kept = subject(rendered, "node", "gw");
 
 		// Ghosted, so it reads as context rather than as part of the design, and
-		// only it is: everything the proposal actually holds stays at full strength.
-		expect(gone.opacity).toBeGreaterThan(0);
-		expect(gone.opacity).toBeLessThan(1);
-		expect(kept.opacity).toBeUndefined();
+		// only it is. A removed card has lost its block: a flat face in a dashed
+		// footprint where it stood, its words faded but drawn at full strength so
+		// they still read. A removed line is ghosted whole. Everything the
+		// proposal actually holds stays as it is.
+		expect(gone.opacity).toBeUndefined();
+		expect(gone.markup).toContain("stroke-dasharray");
+		expect(kept.markup).not.toContain("stroke-dasharray");
 		for (const group of subjectGroups(rendered.svg)) {
-			expect(group.opacity === undefined).toBe(group.standing !== "removed");
+			const line = group.kind === "edge" && !group.markup.includes('data-semantic-part="label"');
+			expect(group.opacity === undefined).toBe(!(line && group.standing === "removed"));
 		}
 
 		// And it is distinguishable from an unchanged subject with the colour taken
@@ -268,9 +272,15 @@ describe("a stated standing on an architecture", () => {
 		expect(drawnGroups.filter((group) => group.markup.includes("writes"))).toHaveLength(1);
 		for (const group of drawnGroups) {
 			expect(group.standing).toBe("removed");
-			expect(group.opacity).toBe(0.4);
 		}
+		// The route is ghosted whole; the label is a chip that lost its
+		// thickness, its words faded on a flat face in a dashed footprint.
 		const words = drawnGroups.find((group) => group.markup.includes("writes"))!;
+		const route = drawnGroups.find((group) => group !== words)!;
+		expect(route.opacity).toBeGreaterThan(0);
+		expect(route.opacity).toBeLessThan(1);
+		expect(words.opacity).toBeUndefined();
+		expect(words.markup).toContain("stroke-dasharray");
 		const unmarked = subjectGroups((await drawn({ e4: "unchanged" })).svg).find(
 			(group) => group.kind === "edge" && group.id === "e4" && group.markup.includes("writes"),
 		)!;

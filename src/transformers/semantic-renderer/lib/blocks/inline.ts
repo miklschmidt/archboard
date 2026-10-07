@@ -12,6 +12,7 @@ import type {
 	Projection,
 	Size,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { tabOf } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import {
 	bandOf,
 	cardAs,
@@ -93,10 +94,7 @@ function packedRegion(
 	const id = `region:${around ?? block.id}:${group}`;
 	const existing = tree.blocks.get(id);
 	if (existing !== undefined) return existing;
-	const made = tree.block(id, "region", block, {
-		group,
-		header: tree.captions.get(group) ?? { width: 1, height: 1 },
-	});
+	const made = tree.block(id, "region", block, { group, header: tabOf(tree.captions.get(group)) });
 	if (around !== undefined) block.clusterOf.set(id, around);
 	return made;
 }

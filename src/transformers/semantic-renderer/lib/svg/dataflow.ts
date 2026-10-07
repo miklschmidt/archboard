@@ -4,19 +4,12 @@ import {
 } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // Painting a message sequence: the frame, then the marks on the rows a
-// comparison says moved (`flow-rows.ts`), then the columns of time, then the
-// cards at their heads, then the messages crossing between them, and last the
+// comparison says moved (`flow-rows.ts`), then activation and label shadows,
+// then columns and their head cards, then the messages crossing them, and last the
 // words of every message (`flow-words.ts`).
 //
-// Forked from PR Lens's `svg/dataflow.ts`, the pulses and their shared cycle
-// included: an exchange that does not move reads as a ladder rather than as
-// something happening, which is the whole of what a sequence is for. What did
-// not come with them is the manifest and the delta tones. What arrived on top is
-// the same identity and selection machinery the architecture grammar carries, so
-// a pane can hit-test one picture the way it hit-tests the other.
-//
-// The pulses do not compete with the walkthrough: a beat moves the camera and
-// marks its subjects, and neither is a thing a pulse does.
+// Pulses share one clock and show the exchange happening. The walkthrough owns
+// the camera and subject selection; pulses own neither.
 //
 // The layer order is load-bearing. A row's mark passes behind everything on
 // the row; a lifeline passes behind a card; a message passes over a lifeline;
@@ -29,7 +22,13 @@ import type {
 	SemanticFlow,
 	SemanticNode,
 } from "@/shared/semantic-board/index";
-import { BAND_RADIUS, DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/lib/design";
+import {
+	BAND_RADIUS,
+	CARD_THICKNESS,
+	DIAGRAM_MARGIN,
+	SLAB_RADIUS,
+} from "@/transformers/semantic-renderer/lib/design";
+import { paintHeadingViews } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import {
 	HEAD_REACH,
 	HEAD_SHADE_CLASS,
@@ -63,14 +62,26 @@ import {
 	type PlacedStep,
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 import { endsFor, selfStart, travelOf } from "@/transformers/semantic-renderer/lib/layout/messages";
-import { halo, paintCard, paintHeader } from "@/transformers/semantic-renderer/lib/svg/cards";
-import { paintColumn } from "@/transformers/semantic-renderer/lib/svg/flow-columns";
+import { cardLook, trayLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
+import {
+	halo,
+	headerAnchor,
+	paintCard,
+	paintHeader,
+} from "@/transformers/semantic-renderer/lib/svg/cards";
+import {
+	paintColumn,
+	paintColumnShadows,
+} from "@/transformers/semantic-renderer/lib/svg/flow-columns";
 import {
 	markedWithin,
 	paintRowMarks,
 	type Stands,
 } from "@/transformers/semantic-renderer/lib/svg/flow-rows";
-import { paintStepWords } from "@/transformers/semantic-renderer/lib/svg/flow-words";
+import {
+	paintStepWords,
+	paintStepShadow,
+} from "@/transformers/semantic-renderer/lib/svg/flow-words";
 import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import {
 	lines,
@@ -79,8 +90,17 @@ import {
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
+	ghostFace,
+	shadowUnder,
+	slabSeat,
+	slabShadow,
+} from "@/transformers/semantic-renderer/lib/svg/slab";
+import { SHADOW_REACH } from "@/transformers/semantic-renderer/lib/svg/shadow";
+import { floorOf, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
+import {
 	HEAD_ATTRIBUTE,
 	MEMBERS_ATTRIBUTE,
+	ghostOpacity,
 	markedBox,
 	standingPin,
 	subjectGroup,
@@ -243,7 +263,7 @@ function paintStep(
 	const ride = stepRide(placed, activeAt);
 	return wrap(
 		"g",
-		subjectGroup("step", placed.step.id, standing),
+		{ ...subjectGroup("step", placed.step.id, standing), opacity: ghostOpacity(standing) },
 		lines([
 			tag("path", {
 				class: "ab-halo",
@@ -289,9 +309,14 @@ function paintStep(
  * a reader clicks to mean "this exchange", and it is what keeps several flows on
  * one page from reading as one very long sequence.
  *
- * Its standing is the pin on its corner, and its rule stays the frame's own.
- * The frame is the page of its flow, and a page ruled in a standing's ink said
- * the flow's name or cast changed as loudly as every message inside it.
+ * It is built as an architecture's container is: a neutral well the exchange
+ * stands in, with a header slab standing on its floor that the flow's name is
+ * printed on.
+ *
+ * Its standing is the pin on its corner, and its face stays the frame's own:
+ * the frame is the page of its flow, and a page washed in a standing's ink said
+ * the flow's name or cast changed as loudly as every message inside it. A
+ * removed flow is the one exception, a ghost like every removed block.
  * @param layout The flow.
  * @param palette The theme's colours.
  * @param standing How this flow stands against the variant it came from, when the caller said.
@@ -304,41 +329,44 @@ function paintFrame(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 ): string {
+	const { frame, header, slab } = layout;
 	const styles = stylesFor(palette);
+	const ghosted = standing === "removed" ? standing : undefined;
+	const look = trayLook({ box: slab, look: cardLook({}, palette) }, palette, 0);
+	// The header slab's face across the heading, which its far words stand on.
+	const plate = { ...header, y: slab.y, height: slab.height - CARD_THICKNESS };
 	return wrap(
 		"g",
 		subjectGroup("flow", layout.flow.id, standing),
 		lines([
-			halo(layout.frame, BAND_RADIUS, styles),
-			tag("rect", {
-				x: coord(layout.frame.x),
-				y: coord(layout.frame.y),
-				width: coord(layout.frame.width),
-				height: coord(layout.frame.height),
-				rx: BAND_RADIUS,
-				...styles.band,
+			slabSeat(frame, BAND_RADIUS),
+			slabShadow(frame, BAND_RADIUS, "tray", palette, ghosted),
+			halo(frame, BAND_RADIUS, styles, ghosted),
+			tray(frame, look, palette, ghosted),
+			paintHeadingViews(layout.flow, plate, palette, {
+				markup: paintHeader(header, layout.flow.name, layout.flow.summary, styles),
+				anchor: headerAnchor(header),
 			}),
-			paintHeader(layout.header, layout.flow.name, layout.flow.summary, styles),
-			standingPin(layout.frame, standing, palette),
-			warningBadge(layout.frame, unsettled, palette),
+			standingPin(frame, standing, palette),
+			warningBadge(frame, unsettled, palette),
 		]),
 	);
 }
 
 /**
- * The frame's own ground behind a flow's head of cards, and a strip of it
+ * The frame's own face behind a flow's head of cards, and a strip of it
  * above them, shown only while a viewer has moved the head down to keep it in
  * view over rows further down.
  *
  * A moved head stands over the columns of time and the rows it passes, and a
  * card a presented step veils is seen through: without this, what it stands
  * over would show through it and run on above it. So the page's ground is laid
- * first and the frame's band over it, standing with the frame (it lists the
+ * first and the frame's face over it, standing with the frame (it lists the
  * flow as its member): a frame a step veils is seen through to the page, and so
  * is this. Hidden in the picture (`visibility`), and shown under a head the
  * viewer marks as moved (`is-stuck`).
  * @param layout The flow.
- * @param standing How the flow stands, which ghosts the band as it ghosts the frame.
+ * @param standing How the flow stands: a removed flow's face is its ghost's.
  * @param palette The theme's colours.
  * @returns The shade.
  */
@@ -351,24 +379,23 @@ function headShade(
 	if (card === undefined) {
 		return "";
 	}
-	// Inside the frame's rule, which stays the frame's to draw.
+	// Across the floor, through the card shadow's foot: a moved shadow must not
+	// darken the lifelines it passes over.
+	const floor = floorOf(layout.frame);
 	const shape = {
-		x: coord(layout.frame.x + 1),
+		x: coord(floor.x),
 		y: coord(card.y - HEAD_REACH),
-		width: coord(layout.frame.width - 2),
-		height: coord(card.height + HEAD_REACH),
+		width: coord(floor.width),
+		height: coord(card.height + HEAD_REACH + SHADOW_REACH),
 	};
-	const { opacity } = subjectGroup("flow", layout.flow.id, standing);
+	// A top-level tray's floor, which is the frame's (`paintFrame`).
+	const face = standing === "removed" ? ghostFace(palette) : { fill: palette.trayFloor };
 	return wrap(
 		"g",
 		{ class: HEAD_SHADE_CLASS, visibility: "hidden" },
 		lines([
 			tag("rect", { ...shape, fill: palette.background }),
-			wrap(
-				"g",
-				{ [MEMBERS_ATTRIBUTE]: layout.flow.id, opacity },
-				tag("rect", { ...shape, fill: palette.band }),
-			),
+			wrap("g", { [MEMBERS_ATTRIBUTE]: layout.flow.id }, tag("rect", { ...shape, ...face })),
 		]),
 	);
 }
@@ -402,13 +429,19 @@ function paintFlow(
 	const body = lines([
 		paintFrame(layout, palette, flowStanding, unsettledOf(layout.flow.id)),
 		paintRowMarks(layout, palette, markOf),
-		wrap(
-			"g",
-			{},
-			lines(
-				layout.columns.map((column) =>
-					paintColumn(column, layout, palette, standingOf(column.card.node.id)),
-				),
+		// All activation and label shadows below all lifelines and message runs.
+		...layout.columns.map((column) =>
+			paintColumnShadows(column, palette, standingOf(column.card.node.id)),
+		),
+		...layout.steps.map((placed) =>
+			paintStepShadow(placed, activeAt, palette, standingOf(placed.step.id)),
+		),
+		...layout.columns.map((column) =>
+			paintColumn(
+				column,
+				layout,
+				{ palette, appearance: appearances.get(column.card.node.id)! },
+				standingOf(column.card.node.id),
 			),
 		),
 		wrap(
@@ -416,6 +449,17 @@ function paintFlow(
 			{ [HEAD_ATTRIBUTE]: layout.flow.id },
 			lines([
 				headShade(layout, flowStanding, palette),
+				// Every card's shadow under every card, in the head, so it moves with the head.
+				...layout.columns.map(({ card }) =>
+					shadowUnder(
+						card.node.id,
+						card.box,
+						SLAB_RADIUS,
+						"card",
+						palette,
+						standingOf(card.node.id),
+					),
+				),
 				...layout.columns.map((column) =>
 					paintCard(
 						column.card,

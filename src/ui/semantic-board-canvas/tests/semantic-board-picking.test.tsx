@@ -70,6 +70,25 @@ test("what is picked is drawn over the rest of the picture, and goes back to its
 	expect(traffic.nextElementSibling?.getAttribute("data-semantic-id")).toBe("ghost");
 });
 
+test("a picked line is drawn over the other lines but under the cards, whose faces it never covers", async () => {
+	const body = drawing(1);
+	// A line drawn before another and before a card, as the renderer orders them.
+	body["svg"] = String(body["svg"]).replace(
+		'<g data-semantic-kind="node" data-semantic-id="ghost">',
+		'<g data-semantic-kind="edge" data-semantic-id="e2"><path d="M0 0 L5 5"></path></g>' +
+			'<g data-semantic-kind="node" data-semantic-id="c2" data-depiction="card"><rect></rect></g>' +
+			'<g data-semantic-kind="node" data-semantic-id="ghost">',
+	);
+	server.reply = { status: 200, body };
+	mountStage(null, { live: true });
+	await settle();
+	expect(drawn()).toEqual(["n1", "e1", "e2", "c2", "ghost"]);
+	act(() => {
+		fireEvent.click(inPicture("wire"));
+	});
+	expect(drawn()).toEqual(["n1", "e2", "e1", "c2", "ghost"]);
+});
+
 test("a real press picks what it landed on, whatever the click says afterwards", async () => {
 	// The browser retargets a click to whichever element holds the pointer, and
 	// it fires the click after a pan has already moved the diagram. Both mean a

@@ -2,8 +2,11 @@
 // drawn in its colour with its name (TASK-347). What this catches: a group's
 // members scattered among other cards, a region drawn around a card the
 // group does not place, a caption naming something other than the group, a
-// nested region's caption floating ranks above its members, and a frame
-// keeping the strip Graphviz reserved for a label the router moved.
+// nested region's caption floating ranks above its members, a frame keeping
+// the strip Graphviz reserved for a label the router moved, a region that
+// paints a face of its own or changes colour with the ground it lies on, a
+// caption under APCA Lc 60 on its tab in any colour (TASK-432), and corners
+// under the APCA floor for a mark on the page or a tray's floor.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -15,7 +18,14 @@ import {
 	routeLabels,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	APCA,
+	lightnessContrast,
+	luminance,
+	paintedIn,
+} from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
+import { themeColor } from "@/shared/theme/server";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import codexWorkhorse from "./codex-workhorse.json";
 import nestedRegion from "./nested-region.json";
@@ -127,12 +137,13 @@ test.each(["track", "blocks"] as const)(
 			for (const id of members) expect(inside(id), `${id} inside ${group}`).toBeTrue();
 			for (const id of ["cli", "feed"]) expect(inside(id), `${id} outside ${group}`).toBeFalse();
 			expect(drawn.svg).toContain(`>${name}</text>`);
-			// An outline, never a tinted band: what it holds reads on the page as elsewhere.
-			const outline = new RegExp(
-				`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>\\s*<rect[^>]*>`,
+			// A frame of the group's colour round what it holds, with nothing filling it.
+			const frame = new RegExp(
+				`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>\\s*<rect[^>]*>\\s*(<rect[^>]*>)`,
 				"u",
-			).exec(drawn.svg)![0];
-			expect(outline).toMatch(/fill(:|=")none/u);
+			).exec(drawn.svg)![1]!;
+			expect(frame).toMatch(/fill(:|=")none/u);
+			expect(frame).toContain("var(--semantic-");
 			// From far away its caption grows with the cards' names.
 			const sizes = [
 				...new RegExp(
@@ -334,3 +345,90 @@ test("a line into a container grouped with its members is drawn", async () => {
 	});
 	expect(routePoints(drawn.svg).get("in")?.length).toBeGreaterThan(1);
 });
+
+// The owner's requests of 2026-10-06: a group's region has no background
+// colour (TASK-415), but a faded frame with full-colour corners (TASK-419), the
+// same on the page and on a tray floor, and its caption reads on its tab in the
+// lightest colours too (TASK-413).
+test.each(["light", "dark"] as const)(
+	"a region has no face, its boundary is the same on the page and on a tray's floor, and its caption reads on its tab (%s)",
+	async (theme) => {
+		const light = SemanticPolicySchema.parse({
+			...policy,
+			groups: {
+				pricing: { name: "Pricing", color: "yellow" },
+				jobs: { name: "Jobs", color: "amber" },
+				stock: { name: "Stock", color: "lime" },
+				growth: { name: "Growth", color: "green" },
+			},
+		});
+		const groups = ["pricing", "jobs", "stock", "growth"];
+		const drawn = await renderArchitecture({
+			content: orderedFixture({
+				nodes: [
+					{ id: "shop", name: "Shop service", kind: "service" },
+					...groups.flatMap((group) => [
+						{
+							id: `${group.slice(0, 3)}-p`,
+							name: `${group} on the page`,
+							kind: "module",
+							groups: [group],
+						},
+						{
+							id: `${group.slice(0, 3)}-t`,
+							name: `${group} on the floor`,
+							kind: "module",
+							parent: "shop",
+							groups: [group],
+						},
+					]),
+				],
+				edges: [],
+			}),
+			theme,
+			policy: light,
+			layout: "track",
+		});
+		const svg = paintedIn(drawn.svg, theme);
+		for (const group of groups) {
+			const regions = [
+				...svg.matchAll(
+					new RegExp(
+						`"group-region" data-group="${group}"[^>]*>([\\s\\S]*?)<g class="ab-near">([\\s\\S]*?)</g>`,
+						"gu",
+					),
+				),
+			];
+			expect(regions, group).toHaveLength(2);
+			// The frame and its four corners as a reader sees them, nothing filled.
+			const [onPage, onFloor] = regions.map(([, region]) => {
+				expect(region, `${group} paints no face`).not.toMatch(/fill="#/u);
+				return [...region!.matchAll(/stroke="(#[0-9a-f]{6})"/gu)].map(([, ink]) => ink!);
+			});
+			const [frame, ...corners] = onPage!;
+			expect(corners, group).toHaveLength(4);
+			expect(new Set(corners).size, group).toBe(1);
+			expect(frame, `${group}'s frame is quieter than its corners`).not.toBe(corners[0]);
+			expect(onFloor, group).toEqual(onPage);
+			for (const ground of ["--background", "--tray-floor"]) {
+				const under = themeColor(theme, ground);
+				expect(lightnessContrast(corners[0]!, under), `${group} corners`).toBeGreaterThanOrEqual(
+					APCA.mark,
+				);
+			}
+			for (const [, , tab] of regions) {
+				const face = [...tab!.matchAll(/<path [^>]*fill="(#[0-9a-f]{6})"/gu)].at(-1)![1]!;
+				const words = /<text [^>]*fill="(#[0-9a-f]{6})"/u.exec(tab!)![1]!;
+				// The caption is 15 units at weight 500: large, bold text.
+				expect(lightnessContrast(words, face), `${group} caption`).toBeGreaterThanOrEqual(
+					APCA.content,
+				);
+				// On the light ground the words are a bright tint on the tab (TASK-427),
+				// but for the gold, which wears the dark ink of a primary button.
+				if (theme === "light" && group !== "pricing") {
+					expect(luminance(words), group).toBeGreaterThan(luminance(face));
+				}
+			}
+		}
+	},
+);

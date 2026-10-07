@@ -147,9 +147,10 @@ describe("what one capture is", () => {
 		expect(readPngDimensions(capture.png)).toEqual({ width: drawn.width, height: drawn.height });
 		expect(capture).toMatchObject({ width: drawn.width, height: drawn.height });
 		// The theme's ground and cards are painted, so this is the picture
-		// and not a blank page of the right size.
+		// and not a blank page of the right size. A card's flat front edge is the
+		// one of its tones no light falls across.
 		const colors = pngRgbCounts(capture.png);
-		for (const color of [PALETTE.background, PALETTE.card]) {
+		for (const color of [PALETTE.background, PALETTE.slabEdge]) {
 			expect(colors.get(rgbOf(lightValue(color))) ?? 0).toBeGreaterThan(1000);
 		}
 		// Every one of the renderer's faces was declared and loaded before the shot.
@@ -173,10 +174,10 @@ describe("what one capture is", () => {
 		expect(drawn.height).toBeGreaterThan(1080);
 		const capture = await owned().rasterize({ ...drawn, scale: 1 });
 		expect(readPngDimensions(capture.png)).toEqual({ width: drawn.width, height: drawn.height });
-		// Every card is painted in the card fill, so the capture holds all of
-		// them and not only the ones a display would have shown.
+		// Every card stands on a front edge of the same flat tone, so the capture
+		// holds all of them and not only the ones a display would have shown.
 		const colors = pngRgbCounts(capture.png);
-		expect(colors.get(rgbOf(lightValue(PALETTE.card))) ?? 0).toBeGreaterThan(24 * 500);
+		expect(colors.get(rgbOf(lightValue(PALETTE.slabEdge))) ?? 0).toBeGreaterThan(24 * 500);
 	});
 
 	test("a sequence draws through the data-flow grammar with its animation paused", async () => {

@@ -2,19 +2,16 @@
 //
 // What these catch: a pinch that zooms by hundreds of times per second because
 // every event zooms by a fixed step, a zoom that drifts sideways on its way in,
-// a move that lands somewhere else when the frames are slower, and a drag let
-// go after a pause that flies off with the speed it had a moment before.
+// a move that lands somewhere else when the frames are slower, and two fingers
+// that pinch with the picture sliding out from between them.
 
 import { describe, expect, test } from "bun:test";
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
 import {
 	STILL,
 	easeMotion,
-	flingMotion,
+	pinchCamera,
 	stepMotion,
-	throwOf,
-	trailWith,
 	wheelZoomFactor,
 	zoomMotion,
 	type Motion,
@@ -92,16 +89,6 @@ function turn(
 	extra: Partial<{ deltaMode: number; ctrlKey: boolean }> = {},
 ): number {
 	return wheelZoomFactor({ deltaY, deltaMode: 0, ctrlKey: false, ...extra });
-}
-
-/**
- * Where a pointer was, and when.
- * @param t When, in milliseconds.
- * @param x Across.
- * @returns The sample.
- */
-function pointerAt(t: number, x: number): { t: number; x: number; y: number } {
-	return { t, x, y: 100 };
 }
 
 describe("a turn of the wheel", () => {
@@ -194,47 +181,55 @@ describe("an ease", () => {
 	});
 });
 
-describe("a thrown drag", () => {
-	test("keeps its direction, slows to rest and goes about its speed times the fling time", () => {
-		const { camera, frames } = runToRest(START, flingMotion({ x: 1.5, y: -0.5 }), 4);
-		expect(frames).toBeGreaterThan(10);
-		expect(camera.x - START.x).toBeCloseTo(1.5 * EXPLORING_MS.cameraFling, -1);
-		expect(camera.y - START.y).toBeCloseTo(-0.5 * EXPLORING_MS.cameraFling, -1);
+describe("two fingers that pinch", () => {
+	test("grow the picture by as much as they spread, and keep the part between them between them", () => {
+		const held = under(START, { x: 150, y: 100 });
+		const camera = pinchCamera(
+			START,
+			[
+				{ x: 100, y: 100 },
+				{ x: 200, y: 100 },
+			],
+			[
+				{ x: 50, y: 100 },
+				{ x: 250, y: 100 },
+			],
+		);
+		expect(camera.scale).toBeCloseTo(START.scale * 2, 9);
+		const now = under(camera, { x: 150, y: 100 });
+		expect(now.x).toBeCloseTo(held.x, 9);
+		expect(now.y).toBeCloseTo(held.y, 9);
 	});
 
-	test("is taken over by the next zoom, and stopped by one at a limit of the zoom", () => {
-		const flung = flingMotion({ x: 1, y: 0 });
-		expect(zoomMotion(START, flung, 1.5, { x: 100, y: 100 }).fling).toBeNull();
-		const closest = { ...START, scale: 8 };
-		expect(zoomMotion(closest, flung, 1.5, { x: 100, y: 100 }).fling).toBeNull();
-	});
-});
-
-describe("letting a drag go", () => {
-	test("throws it at the speed it had in its last moments", () => {
-		let trail = trailWith([], pointerAt(0, 0));
-		for (let t = 16; t <= 96; t += 16) trail = trailWith(trail, pointerAt(t, t * 2));
-		const speed = throwOf(trail, 100);
-		expect(speed?.x).toBeCloseTo(2, 6);
-		expect(speed?.y).toBeCloseTo(0, 6);
-	});
-
-	test("does not throw a drag that had come to rest, or one that was slow", () => {
-		let trail = trailWith([], pointerAt(0, 0));
-		for (let t = 16; t <= 96; t += 16) trail = trailWith(trail, pointerAt(t, t * 2));
-		expect(throwOf(trail, 96 + 200)).toBeNull();
-		let slow = trailWith([], pointerAt(0, 0));
-		for (let t = 16; t <= 96; t += 16) slow = trailWith(slow, pointerAt(t, t * 0.1));
-		expect(throwOf(slow, 100)).toBeNull();
-		expect(throwOf([], 100)).toBeNull();
+	test("carry the picture with them when they move together, at the same size", () => {
+		const camera = pinchCamera(
+			START,
+			[
+				{ x: 100, y: 100 },
+				{ x: 200, y: 140 },
+			],
+			[
+				{ x: 130, y: 110 },
+				{ x: 230, y: 150 },
+			],
+		);
+		expect(camera.scale).toBeCloseTo(START.scale, 9);
+		expect(camera.x).toBeCloseTo(START.x + 30, 9);
+		expect(camera.y).toBeCloseTo(START.y + 10, 9);
 	});
 
-	test("forgets where it was too long ago to say how fast it goes, and caps a wild flick", () => {
-		let trail = trailWith([], pointerAt(0, 0));
-		trail = trailWith(trail, pointerAt(500, 10_000));
-		trail = trailWith(trail, pointerAt(540, 10_000 + 40 * 20));
-		const speed = throwOf(trail, 545);
-		expect(speed).not.toBeNull();
-		expect(Math.hypot(speed?.x ?? 0, speed?.y ?? 0)).toBeCloseTo(3, 6);
+	test("go no further than the limits", () => {
+		const camera = pinchCamera(
+			START,
+			[
+				{ x: 100, y: 100 },
+				{ x: 101, y: 100 },
+			],
+			[
+				{ x: 0, y: 100 },
+				{ x: 1000, y: 100 },
+			],
+		);
+		expect(camera.scale).toBe(8);
 	});
 });

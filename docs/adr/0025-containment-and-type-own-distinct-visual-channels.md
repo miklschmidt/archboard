@@ -10,6 +10,11 @@ with. A container no longer establishes a color scope for its contents. Type
 independence, the icon chip, and the relationship, comparison and selection
 channels stand.
 
+[ADR 0044](0044-cards-containers-and-groups-are-drawn-as-slabs.md) supersedes
+two more sentences. A comparison status no longer overrides the border of a
+node, and arrowheads are no longer proportionate to stroke width. The amendment
+of 2026-10-06 at the end says what is true now.
+
 TASK-339 amended this decision on 2026-09-24. A colored line gets its color from
 its relationship type or its comparison status. The renderer draws that line at
 three quarters of its color over the page, and its arrowhead gets the same
@@ -103,3 +108,30 @@ Separating these channels makes a hosting migration readable without losing
 type, change or selection information. If a view changes a node from a leaf card
 to an expanded container, the separation intentionally permits its body
 appearance to change. Semantic identity and type remain unchanged.
+
+## Amendment of 2026-10-06: a standing is on the face, and a head has a set length
+
+ADR 0044 draws a card as a slab, with a top face and a front edge, and a
+container as a tray cut into the page. Two sentences of "Relationship, comparison and selection" no longer hold.
+
+"Arrowheads remain proportionate to stroke width." An arrowhead now takes its
+length from one table, `HEAD_LENGTH` in
+`src/transformers/semantic-renderer/lib/svg/styles.ts`. A head is 11 units long
+on an emphasized line, 11 on a default line and 6 on a muted line. The owner
+asked for this on 2026-10-06 (TASK-403). A smaller default head left the reader
+to guess which way most lines run. TASK-404 then gave a muted line a head of
+the same length, so every head is 11 units long. A colored line is now drawn
+in its full color on the light ground and at three quarters on the dark
+ground (ADR 0044, rule 13). Its traffic is its color with white mixed in
+(ADR 0027, TASK-407).
+
+"Added, changed and deleted comparison status overrides the semantic border on
+nodes and the semantic line color on edges." This holds again (TASK-421). On a
+node, a standing takes over the outline of the top face, with the color, width
+and dash it had before the blocks: 1.8 units, solid green for added, dashed
+orange for changed. The border runs along the edge of the face, inside it. The
+card keeps its group's tint on its face and its group's color on its front
+edge. On a container, the border runs along the face of its header slab, as
+on a card, and the well is not marked (TASK-423). A removed node has lost its depth: a
+flat, see-through face inside a dashed red border round its footprint. The type
+chip still says the kind, and selection still adds a ring outside the part.

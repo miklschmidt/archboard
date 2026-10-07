@@ -1,12 +1,16 @@
 import {
 	ARCHITECTURE_CARD_PADDING,
-	ARCHITECTURE_HEADER_PADDING,
 	ARCHITECTURE_ICON_GAP,
 	ARCHITECTURE_NOTE_GAP,
 	ARCHITECTURE_LABEL_PADDING_X,
 	ARCHITECTURE_LABEL_PADDING_Y,
 } from "@/transformers/semantic-renderer/config";
-import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
+import {
+	HEADER_SLAB_INSET,
+	ICON_CHIP_SIZE,
+	PART_NOTE,
+	PART_TITLE,
+} from "@/transformers/semantic-renderer/lib/design";
 import { DRILL_MARK_ROOM } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 // The words settle before placement. Pretext owns line breaking; the canvas of
 // the place drawing the picture measures the strings the SVG will paint.
@@ -43,14 +47,14 @@ type TextStyle = Pick<TextRun, "font" | "fontSize" | "role"> & {
 
 const TITLE: TextStyle = {
 	font: CARD_TITLE_FONT,
-	fontSize: 14,
-	lineHeight: 20,
+	fontSize: PART_TITLE.size,
+	lineHeight: PART_TITLE.line,
 	role: "title",
 };
 const NOTE: TextStyle = {
 	font: CARD_NOTE_FONT,
-	fontSize: 11,
-	lineHeight: 17,
+	fontSize: PART_NOTE.size,
+	lineHeight: PART_NOTE.line,
 	role: "note",
 };
 const LABEL: TextStyle = { font: PILL_FONT, fontSize: 10, lineHeight: 15, role: "label" };
@@ -129,14 +133,56 @@ function measureNoteLines(
 	return runsFor(prepare(text, style), style, width, 0, 0);
 }
 
+/** The narrowest a card is, and the widest it grows before its words wrap. */
+const CARD_WIDTH = { least: 260, most: 340 } as const;
+
 /**
  * Reserve all title and responsibility lines before a card gains neighbours.
+ * A container's header is a slab measured as a card is, standing in the
+ * container's well (`lib/svg/tray.ts`) a small gap inside its walls; it is as
+ * tall as its words need and no taller. Its width is the box's least width,
+ * between a card's least and most, and its words are placed relative to the
+ * box, on the slab.
  * @param node The semantic subject, including its complete authored words.
  * @param container Whether other subjects name this one as their parent.
  * @returns Its minimum box and all relative text positions.
  */
 function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
-	const padding = container ? ARCHITECTURE_HEADER_PADDING : ARCHITECTURE_CARD_PADDING;
+	if (!container) return measureSlab(node, { ...CARD_WIDTH, height: 72 });
+	const slab = measureSlab(node, {
+		least: CARD_WIDTH.least - 2 * HEADER_SLAB_INSET,
+		most: CARD_WIDTH.most - 2 * HEADER_SLAB_INSET,
+		height: ICON_CHIP_SIZE + 2 * ARCHITECTURE_CARD_PADDING,
+	});
+	const headerHeight = HEADER_SLAB_INSET + slab.height;
+	return {
+		node,
+		width: slab.width + 2 * HEADER_SLAB_INSET,
+		height: headerHeight,
+		headerHeight,
+		runs: slab.runs.map((run) => ({
+			...run,
+			x: run.x + HEADER_SLAB_INSET,
+			y: run.y + HEADER_SLAB_INSET,
+		})),
+	};
+}
+
+/**
+ * A card's slab, or a container's header slab: its words set inside the
+ * card's padding, beside its type chip.
+ * @param node The semantic subject, including its complete authored words.
+ * @param size How wide it may be, and how tall at the least.
+ * @param size.least The least width.
+ * @param size.most The widest it grows before its words wrap.
+ * @param size.height The least height.
+ * @returns Its box and its words, relative to its top left.
+ */
+function measureSlab(
+	node: SemanticNode,
+	size: { readonly least: number; readonly most: number; readonly height: number },
+): MeasuredNode {
+	const padding = ARCHITECTURE_CARD_PADDING;
 	const left = padding + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
 	// A part that opens another board keeps its name clear of the mark in its
 	// top-right corner; the words under the name run beneath the mark.
@@ -144,7 +190,7 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 	const title = prepare(node.name, TITLE);
 	const note = prepare(node.responsibility ?? "", NOTE);
 	const natural = Math.max(measureNaturalWidth(title) + marked, measureNaturalWidth(note));
-	const width = Math.min(340, Math.max(260, natural + left + padding));
+	const width = Math.min(size.most, Math.max(size.least, natural + left + padding));
 	const available = width - left - padding;
 	const titles = runsFor(title, TITLE, available - marked, left, padding);
 	const noteTop = padding + titles.length * TITLE.lineHeight + ARCHITECTURE_NOTE_GAP;
@@ -154,7 +200,7 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 		notes.length > 0
 			? noteTop + notes.length * NOTE.lineHeight
 			: padding + titles.length * TITLE.lineHeight;
-	const height = Math.max(72, bottom + padding);
+	const height = Math.max(size.height, bottom + padding);
 	// Pretext's segment sums can differ from whole-line kerning. The actual
 	// painted width wins, even when a single long identifier needs a little
 	// more space than the preferred maximum; no character is hidden or cut.
@@ -167,7 +213,7 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 		node,
 		width: Math.max(width, left + paintedWidth + padding),
 		height,
-		headerHeight: container ? height : 0,
+		headerHeight: 0,
 		runs,
 	};
 }
@@ -283,14 +329,6 @@ function measureMessageLines(
 		.map((line) => ({ text: line, width: exactWidth(line, style) }));
 }
 
-/** How a card's name is set when the picture is seen from far away. */
-interface FarTitle {
-	/** The type chip's side, and where it stands, relative to the card's corner. */
-	readonly chip: { readonly x: number; readonly y: number; readonly size: number };
-	/** The name's lines, relative to the card's corner. */
-	readonly runs: readonly TextRun[];
-}
-
 /** Room a far name keeps from its card's sides. */
 const FAR_PADDING_X = 16;
 /** Room a far name keeps from its card's top and bottom. */
@@ -317,22 +355,16 @@ const FAR_LINES = 2;
  */
 const FAR_ONE_LINE_SHARE = 0.85;
 
-/**
- * The box a far name stands in: a card, or a container's header. The mark of
- * a part that opens another board stands in its top-right corner, grown with
- * the chip, and the name keeps clear of it as the name drawn near does.
- */
+/** The box a far name stands in: a card. */
 interface FarBox {
 	readonly width: number;
 	readonly height: number;
-	/** Whether the mark of a part that opens another board stands in its corner. */
-	readonly mark?: boolean;
 }
 
 /** A title a picture draws from far away: its text and the box it stands in. */
 interface FarSubject {
 	readonly name: string;
-	readonly box: { readonly width: number; readonly height: number };
+	readonly box: FarBox;
 }
 
 /**
@@ -377,27 +409,6 @@ function farSizeOf(name: string, box: FarBox, lines: number = FAR_LINES): number
 		else low = middle;
 	}
 	return Math.floor(low * 2) / 2;
-}
-
-/**
- * A name set from far away, beside its type chip grown to match, its
- * responsibility left out: from far away the name is what a reader can still
- * take in. A card's name and chip stand centred in the card as one block; a
- * container's stand at its header's start, as a heading does.
- * @param name The name.
- * @param box The box it stands in: a card, or a container's header.
- * @param place Its size, at most {@link farSizeOf} the box, and where the block stands.
- * @param place.size The name's size.
- * @param place.align Centred in the box, or at its start.
- * @returns The chip's place and the name's lines.
- */
-function measureFarTitle(
-	name: string,
-	box: FarBox,
-	place: { size: number; align: "centre" | "start" },
-): FarTitle {
-	const lines = farLines(name, box, place.size, FAR_LINES) ?? farWrap(name, box, place.size);
-	return farTitleAt(box, place, lines);
 }
 
 /**
@@ -450,16 +461,13 @@ function farStyle(size: number): TextStyle {
 }
 
 /**
- * The width a far name has beside its chip at one size, less the room for a
- * mark in the box's corner, which grows with the chip.
+ * The width a far name has beside its chip at one size.
  * @param box The box it stands in.
  * @param size The name's size.
  * @returns The width.
  */
 function farRoom(box: FarBox, size: number): number {
-	const chip = farChip(box, size);
-	const mark = box.mark === true ? (DRILL_MARK_ROOM * chip) / ICON_CHIP_SIZE : 0;
-	return box.width - FAR_PADDING_X * 2 - chip - size * FAR_GAP - mark;
+	return box.width - FAR_PADDING_X * 2 - farChip(box, size) - size * FAR_GAP;
 }
 
 /**
@@ -472,48 +480,6 @@ function farRoom(box: FarBox, size: number): number {
  */
 function farChip(box: { height: number }, size: number): number {
 	return Math.min(size * FAR_CHIP, box.height - FAR_PADDING_Y * 2);
-}
-
-/**
- * Stand a far name's lines and chip in their box: the chip, then the lines
- * beside it, as one block centred top to bottom, and centred across the box
- * or at its start.
- * @param box The box it stands in.
- * @param box.width Its width.
- * @param box.height Its height.
- * @param place The name's size and where the block stands.
- * @param place.size The name's size.
- * @param place.align Centred in the box, or at its start.
- * @param lines The name's lines.
- * @returns The chip's place and the name's runs.
- */
-function farTitleAt(
-	box: { width: number; height: number },
-	place: { size: number; align: "centre" | "start" },
-	lines: readonly string[],
-): FarTitle {
-	const { size } = place;
-	const style = farStyle(size);
-	const chip = farChip(box, size);
-	const widths = lines.map((text) => exactWidth(text, style));
-	const block = chip + size * FAR_GAP + Math.max(0, ...widths);
-	const left =
-		place.align === "centre" ? Math.max(FAR_PADDING_X, (box.width - block) / 2) : FAR_PADDING_X;
-	const x = left + chip + size * FAR_GAP;
-	const top = (box.height - lines.length * style.lineHeight) / 2;
-	return {
-		chip: { x: left, y: (box.height - chip) / 2, size: chip },
-		runs: lines.map((text, index) => ({
-			text,
-			width: widths[index]!,
-			x,
-			// The baseline stands half a cap height below the line's middle.
-			y: top + style.lineHeight / 2 + size * 0.35 + index * style.lineHeight,
-			font: style.font,
-			fontSize: size,
-			role: "title",
-		})),
-	};
 }
 
 /**
@@ -580,13 +546,4 @@ function measureArchitecture(
 	};
 }
 
-export {
-	measureArchitecture,
-	farSizeFor,
-	farSizeOf,
-	measureFarTitle,
-	measureMessageLines,
-	measureNoteLines,
-	type FarBox,
-	type FarTitle,
-};
+export { measureArchitecture, farSizeFor, measureMessageLines, measureNoteLines };

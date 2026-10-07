@@ -10,9 +10,11 @@
 // level places the other board. Where either is not a level the policy lists,
 // the mark says only that the part opens another board.
 //
-// From far away the mark is drawn larger in the same corner, so a fitted
-// picture of a large board still says which cards open another board, and
-// which way.
+// The mark stands at one place on every part, near and far: its centre is
+// {@link DRILL_MARK_INSET} in from the top edge and from the right edge
+// (TASK-434). From far away it is drawn larger about that same centre, so a
+// fitted picture of a large board still says which cards open another board,
+// and which way, and the swap between the views does not move it.
 
 import { coord } from "@/transformers/semantic-renderer/lib/geometry";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
@@ -26,10 +28,23 @@ const DRILL_MARK_RADIUS = 6.5;
 /** The ring's stroke. */
 const RING_STROKE = 1.2;
 
-/** How far the ring's ink reaches from its centre: its radius and half its stroke. */
-const DRILL_MARK_REACH = DRILL_MARK_RADIUS + RING_STROKE / 2;
+/**
+ * How far the mark's centre stands in from a part's top edge and from its
+ * right edge, in the near view and in the far view alike (TASK-434). It was
+ * chosen by eye. It is further in than the far view had it (11.7), where the
+ * larger ring crowded the rounded corner. It is less far in than the near view
+ * had it, a padding and a radius in from the side and level with the chip.
+ * Here the ring stays about 3 units clear of the warning badge in the same
+ * corner, even at its far size, so a part that wears the badge needs no other
+ * place for the mark.
+ */
+const DRILL_MARK_INSET = 16;
 
-/** What a part keeps clear beside its name for the mark: the ring and the gap before it. */
+/**
+ * What a part keeps clear beside its name for the mark: the ring and a gap
+ * before it, counted in from the part's padding. With the mark at
+ * {@link DRILL_MARK_INSET}, the name stops short of the ring on every part.
+ */
 const DRILL_MARK_ROOM = 2 * DRILL_MARK_RADIUS + 8;
 
 /** The arrow inside the ring, drawn about the ring's centre. */
@@ -64,21 +79,26 @@ function drillDirection(
 }
 
 /**
- * The mark, centred on a point, in a part's own ink.
- * @param cx Where its centre goes.
- * @param cy The same.
+ * The mark in a box's top-right corner, in a part's own ink: its centre
+ * {@link DRILL_MARK_INSET} in from the top edge and from the right edge. This
+ * is the one place that decides where the mark stands, near and far.
+ * @param box The part's box.
+ * @param box.x Its left edge.
+ * @param box.y Its top edge.
+ * @param box.width Its width.
  * @param direction Which way the other board lies.
  * @param ink The ink of the part's glyph.
  * @param scale How much larger than near it is drawn: from far away it grows with the chip.
  * @returns The mark.
  */
-function drillMark(
-	cx: number,
-	cy: number,
+function cornerDrillMark(
+	box: { readonly x: number; readonly y: number; readonly width: number },
 	direction: DrillDirection,
 	ink: string,
-	scale = 1,
+	scale: number,
 ): string {
+	const cx = box.x + box.width - DRILL_MARK_INSET;
+	const cy = box.y + DRILL_MARK_INSET;
 	return wrap(
 		"g",
 		{
@@ -104,40 +124,4 @@ function drillMark(
 	);
 }
 
-/**
- * The mark in a box's top-right corner, level with the centre of the kind
- * chip on the other side, so the two marks of a part sit on one line.
- * @param box The part's box.
- * @param box.x Its left edge.
- * @param box.y Its top edge.
- * @param box.width Its width.
- * @param inset How far in from the box's edges its chip sits.
- * @param chipCentre How far down from the box's top the chip's centre is.
- * @param direction Which way the other board lies.
- * @param ink The ink of the part's glyph.
- * @returns The mark.
- */
-function cornerDrillMark(
-	box: { readonly x: number; readonly y: number; readonly width: number },
-	inset: number,
-	chipCentre: number,
-	direction: DrillDirection,
-	ink: string,
-): string {
-	return drillMark(
-		box.x + box.width - inset - DRILL_MARK_RADIUS,
-		box.y + chipCentre,
-		direction,
-		ink,
-	);
-}
-
-export {
-	DRILL_MARK_RADIUS,
-	DRILL_MARK_REACH,
-	DRILL_MARK_ROOM,
-	cornerDrillMark,
-	drillDirection,
-	drillMark,
-	type DrillDirection,
-};
+export { DRILL_MARK_ROOM, cornerDrillMark, drillDirection, type DrillDirection };

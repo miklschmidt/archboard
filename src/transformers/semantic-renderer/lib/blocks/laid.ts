@@ -9,6 +9,21 @@ import type {
 /** How far a region's caption sits in from its band's corner. */
 const CAPTION_INSET = 4;
 
+/** A width and a height. */
+type Size = Pick<Box, "width" | "height">;
+
+/**
+ * A region's header as a block lays it out: its caption's tab, from the
+ * region's top down to the caption's foot, so the room a block keeps under
+ * its header is the room under the tab.
+ * @param caption The caption's size, if measured.
+ * @returns The header's size.
+ */
+function tabOf(caption: Size | undefined): Size {
+	const { width, height } = caption ?? { width: 1, height: 1 };
+	return { width, height: CAPTION_INSET + height };
+}
+
 /** One rank of a laid-out block: where it lies, and the block's items on it. */
 interface Band {
 	readonly top: number;
@@ -124,6 +139,7 @@ export {
 	leftShortOf,
 	moved,
 	shifted,
+	tabOf,
 	type Band,
 	type Insets,
 	type Laid,

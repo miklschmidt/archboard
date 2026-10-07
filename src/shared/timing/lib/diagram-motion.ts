@@ -159,13 +159,22 @@ const PRESENTATION_BOX_IN_MS = 220;
 const PRESENTATION_BOX_STEP_MS = 520;
 
 /**
- * How long a picture takes to cross-fade between its cards drawn near (name
- * and responsibility) and seen from far away (name alone, larger), when the
- * camera crosses the far-view scale. Pulls against the zoom it follows: shorter
- * than about a tenth of a second and the swap still reads as a jump; longer
- * than about a quarter and a wheel's zoom has moved on before the words settle.
+ * How long a picture takes to swap its cards drawn near (chip, name and
+ * responsibility) for the cards seen from far away (a large tile, a larger name
+ * and the start of the responsibility), and back. The chip moves and grows into
+ * the tile and the words move between their places while they fade (TASK-428).
+ * Both views fade over the whole of it, one in as the other goes out, so the
+ * words never fade out together. The swap happens once the camera has come to
+ * rest (TASK-405).
+ *
+ * Pulls against the eye that follows the chip. Shorter than about 200 ms the
+ * chip jumps rather than travels, and the change of the words reads as a cut.
+ * Longer than about 400 ms the reader, who has stopped zooming to read, waits
+ * for the words to settle, and reads two sets of words through each other for
+ * too long. It also pulls against the cost: every card's chip and words move in
+ * the same frames.
  */
-const FAR_VIEW_FADE_MS = 180;
+const FAR_VIEW_SWAP_MS = 280;
 
 /**
  * How long the pointer rests on a card, a container's header or a label before
@@ -177,7 +186,7 @@ const FAR_VIEW_FADE_MS = 180;
 const SUBJECT_TIP_DELAY_MS = 450;
 
 export {
-	FAR_VIEW_FADE_MS,
+	FAR_VIEW_SWAP_MS,
 	FLOW_CYCLE_CAP_MS,
 	PICTURE_ENTRY_MS,
 	PICTURE_ENTRY_PHASES,

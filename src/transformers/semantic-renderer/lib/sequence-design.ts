@@ -1,5 +1,6 @@
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
 import type { MessageKind } from "@/shared/semantic-board/index";
+import { SHADOW_REACH } from "@/transformers/semantic-renderer/lib/svg/shadow";
 import { headReach, type Head, type Weight } from "@/transformers/semantic-renderer/lib/svg/styles";
 
 // Sequence-diagram measurements, used by the data-flow renderer.
@@ -23,8 +24,10 @@ const COLUMN_MAX_WIDTH = 192;
  */
 const COLUMN_GAP = 16;
 
-/** The air between the bottom of a participant's card and the top of its lifeline. */
-const LIFELINE_GAP = 6;
+/** The card's full shadow reach, plus air for the selected lifeline's stroke. */
+const LIFELINE_GAP = SHADOW_REACH + 1;
+/** Preserve the dash phase of the original start, six units below the card. */
+const LIFELINE_DASH_OFFSET = LIFELINE_GAP - 6;
 /** How far the first message sits below the lifeline of the tallest participant card. */
 const FIRST_MESSAGE_DROP = 36;
 /** The vertical step from one message to the next, and from one self-message. */
@@ -52,12 +55,14 @@ const LIFELINE_DASH = "3 5";
 const ACTIVATION_HALF_WIDTH = 6;
 /** The corner radius of an activation bar. */
 const ACTIVATION_RADIUS = 3;
+/** How thick an activation bar's slab is: its front edge, inside its box along its foot. */
+const BAR_THICKNESS = 2.5;
 /**
  * How far an activation bar runs past the call that starts it and the reply
- * that ends it: past its rounded corner and half an arrowhead, so the arrow
- * meets a straight side.
+ * that ends it: past its rounded corner and half an arrowhead (5.5 for a head
+ * 11 long), so the arrow meets a straight side.
  */
-const BAR_OVERHANG = 8;
+const BAR_OVERHANG = 9;
 
 /** How far right a self-message reaches, and how far it drops before turning back. */
 const SELF_LOOP_REACH = 52;
@@ -68,9 +73,11 @@ const SELF_LOOP_EXTENT = SELF_LOOP_DROP + SELF_LOOP_CORNER * 2;
 
 /**
  * Gap between an interaction label and its arrow. Sequence labels sit above
- * horizontal arrows to keep their direction visible.
+ * horizontal arrows to keep their direction visible. A wide label reaches over
+ * the arrowhead, so the gap clears the half of the head that stands above its
+ * line (5.5 for a head 11 long) with a little air.
  */
-const MESSAGE_LABEL_GAP = 5;
+const MESSAGE_LABEL_GAP = 7;
 /** How far a self-message's label stands off the loop it names. */
 const SELF_LABEL_GAP = 8;
 /** The step from one line of a wrapped message label to the next. */
@@ -138,6 +145,7 @@ export {
 	COLUMN_GAP,
 	LIFELINE_GAP,
 	LIFELINE_DASH,
+	LIFELINE_DASH_OFFSET,
 	FIRST_MESSAGE_DROP,
 	MESSAGE_PITCH,
 	SELF_MESSAGE_PITCH,
@@ -147,6 +155,7 @@ export {
 	HEAD_SHADE_CLASS,
 	ACTIVATION_HALF_WIDTH,
 	ACTIVATION_RADIUS,
+	BAR_THICKNESS,
 	BAR_OVERHANG,
 	STEP_HEAD,
 	arrowStandoff,

@@ -184,7 +184,12 @@ of the diagrams. It has the shadcn colors and the comparison colors
 the palette `--semantic-<name>`, whose names the kinds and groups of a vault
 use.
 `--diagram-edge` paints relationships that have no palette color, and the
-borders of cards and labels. It is separate from `--muted-foreground`.
+lifelines of a sequence. It is separate from `--muted-foreground`.
+`--diagram-glow` is the light that a traffic pulse mixes into its line. The
+`--slab-*` colors paint the faces, front edges and shadows of the picture's
+cards and of a container's header slab, and the `--tray-*` colors a
+container's neutral well. A group region has no token of
+its own: it is drawn in tones of its group's `--semantic-<name>` (ADR 0044).
 `src/ui/theme/app.css` imports the file and holds every value that is not a
 color.
 
