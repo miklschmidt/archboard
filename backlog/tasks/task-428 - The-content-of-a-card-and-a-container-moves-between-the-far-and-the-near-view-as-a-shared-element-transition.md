@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-06 19:31'
-updated_date: '2026-10-07 01:37'
+updated_date: '2026-10-07 01:41'
 labels:
   - frontend
   - renderer
@@ -57,4 +57,6 @@ Real frames (screencast) after a fit glide to far: before 0.12-0.41; after 1.00 
 Real frames after a wheel zoom out to far: after, one frame at the start of the swap has 0.72-0.96 of the ink before it: that is the picture drawn sharp after the camera's layer goes (TASK-405); a zoom out that ends with no swap shows a step of the same size, up or down, so it is not the swap. The longest gap between real frames at the swap start went from 80 ms (before) and 66 ms (complementary fade alone) to 44-52 ms with the two-frame rest. The pixel count rises to 1.1-1.4 times in the middle of a swap because faint pixels of both views are counted; the ink stays steady. Before and after frame strips: cam/ink/compare-grid.png.
 
 Flash fix committed as e03e16942 (document.ts swap rules, FAR_VIEW_SWAP_MS note, use-board-camera two-frame rest, far-view-swap test of the complementary fade, ADR 0042 amendment of 2026-10-07). Checks: type-check, lint clean; module tests 1909 pass; the staged snapshot type-checked and passed 865 renderer and canvas tests on its own; picture browser owners pass (semantic-traffic first failed because another agent's half-done drill-mark.ts edit broke the server import, then passed on a rerun). far-view.ts and drill-mark.ts carry another agent's uncommitted edits and were not staged.
+
+Architecture completion (2026-10-07): the adopted Board viewer@TASK-405 and Semantic renderer@TASK-423 carry this implemented transition. The renderer has bound Near and far content (far-card.ts), whose paintCardViews calls sharedChip and movingWords (far-view.ts), and SVG document records the complementary opacity/transform rules (document.ts:201). The viewer retains Picture transition and Place a board in its card ids and documents carrying shared chip/words and fading the chip during a dive. The camera controller records the two-frame zoom rest from e03e16942; it lets the camera layer go before the near/far swap starts. Comparisons, proposal images and dogfood check were inspected; no new performance measurement or external owner visual acceptance is claimed.
 <!-- SECTION:NOTES:END -->

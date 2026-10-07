@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 29,
+	"version": 30,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-07T01:39:12.690Z",
+	"updatedAt": "2026-10-07T01:40:37.042Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -2004,7 +2004,7 @@
 		{
 			"id": "mKcge41F",
 			"name": "TASK-402",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "bYt4adrf",
 			"summary": "Module level: meaning to SVG and interaction geometry. Follow linked subjects for related levels.",
 			"content": {
@@ -2716,7 +2716,7 @@
 		{
 			"id": "aBgtYMuC",
 			"name": "TASK-423",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "mKcge41F",
 			"summary": "Module level: meaning to SVG and interaction geometry. Follow linked subjects for related levels.",
 			"content": {
@@ -3535,7 +3535,7 @@
 			}
 		}
 	],
-	"current": "mKcge41F",
+	"current": "aBgtYMuC",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
@@ -3548,6 +3548,12 @@
 			"from": "bYt4adrf",
 			"at": "2026-10-06T03:44:37.494Z",
 			"reason": "The picture now draws every part as a slab, and the slab module is a part of the renderer."
+		},
+		{
+			"variant": "aBgtYMuC",
+			"from": "mKcge41F",
+			"at": "2026-10-07T01:40:37.042Z",
+			"reason": "TASK-423 and TASK-428, with TASK-424/430/431/435 refinements: neutral wells, separate slabs and ports, shared near/far content and shadows under lines and cards."
 		}
 	],
 	"shelvings": [

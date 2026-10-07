@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 50,
+	"version": 51,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-07T01:39:12.498Z",
+	"updatedAt": "2026-10-07T01:40:36.829Z",
 	"views": [],
 	"variants": [
 		{
@@ -8890,7 +8890,7 @@
 		{
 			"id": "QXq6KV6o",
 			"name": "TASK-403",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Cyf4MMEd",
 			"summary": "Module level: reading, selection, camera, and navigation. Follow linked subjects for related levels.",
 			"content": {
@@ -10129,7 +10129,7 @@
 		{
 			"id": "YT1sheJF",
 			"name": "TASK-405",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "QXq6KV6o",
 			"summary": "Module level: reading, selection, camera, and navigation. Follow linked subjects for related levels.",
 			"content": {
@@ -11428,7 +11428,7 @@
 			}
 		}
 	],
-	"current": "QXq6KV6o",
+	"current": "YT1sheJF",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
@@ -11489,6 +11489,12 @@
 			"from": "Cyf4MMEd",
 			"at": "2026-10-06T03:44:37.665Z",
 			"reason": "The camera now stops where a released drag leaves it, and only the wheel, the pinch and the keys ease."
+		},
+		{
+			"variant": "YT1sheJF",
+			"from": "QXq6KV6o",
+			"at": "2026-10-07T01:40:36.829Z",
+			"reason": "TASK-405, TASK-406 and TASK-428: pinches apply immediately, the controller owns an external store, and the far reading waits for camera rest and flight takeover."
 		}
 	]
 }
