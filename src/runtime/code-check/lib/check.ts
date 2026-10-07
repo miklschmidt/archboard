@@ -180,8 +180,9 @@ function unparsedSkip(
 	if (held.status === "module-unread") {
 		return skipped(claim.site, { reason: "module-not-read", repo, detail: held.module });
 	}
-	const { start, end, under } = held.unparsed;
-	const detail = `${held.file}:${start === end ? start : `${start}-${end}`}`;
+	const { under } = held.unparsed;
+	const { path: file, start, end } = held.unparsed.source ?? { path: held.file, ...held.unparsed };
+	const detail = `${file}:${start === end ? start : `${start}-${end}`}`;
 	const reason = under === undefined ? "symbol-unparsed" : "expression-not-followed";
 	return skipped(claim.site, { reason, repo, detail });
 }

@@ -24,6 +24,10 @@ import type { Node } from "web-tree-sitter";
 interface Budget {
 	steps: number;
 	depth: number;
+	/** Safely read an imported local expression with this same budget. */
+	readonly import?: (value: NixValue, call: Node) => NixValue;
+	/** The checkout file that owns a parsed node. */
+	readonly source?: (node: Node) => string | undefined;
 }
 
 /**
@@ -62,6 +66,8 @@ interface AttrsValue {
 /** A function: what it gives for an argument, at the call that applies it. */
 interface FunctionValue {
 	readonly kind: "function";
+	/** The names accepted by a function with formal arguments, for callPackage. */
+	readonly formals?: readonly string[];
 	readonly apply: (argument: Thunk, call: Node) => NixValue;
 }
 
@@ -83,7 +89,9 @@ type NixValue =
 	| { readonly kind: "list"; readonly items: readonly Entry[] }
 	/** A string; its text where no interpolation makes it. */
 	| { readonly kind: "string"; readonly text?: string }
-	/** A number, a path, a Boolean, null: no attribute set. */
+	/** A literal path, resolved relative to the file that writes it. */
+	| { readonly kind: "path"; readonly text?: string; readonly node: Node }
+	/** A number, a Boolean, null: no attribute set. */
 	| { readonly kind: "other" }
 	/**
 	 * An expression the reading cannot follow. A derivation is one too, as far

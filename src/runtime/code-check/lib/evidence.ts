@@ -61,6 +61,7 @@ import {
 	type FactsPass,
 	type SyntaxFacts,
 	type Target,
+	type Unparsed,
 } from "@/runtime/code-facts/index";
 import type { CodeEvidence } from "@/shared/code-check/index";
 
@@ -472,6 +473,18 @@ async function piecesOfPath(
 }
 
 /**
+ * The pathful site of a static expression the reading cannot follow.
+ * @param origin Its source path and lines.
+ * @param origin.path Its path.
+ * @param origin.start Its first line.
+ * @param origin.end Its last line.
+ * @returns The site as file:lines.
+ */
+function unfollowedSite(origin: NonNullable<Unparsed["source"]>): string {
+	return `${origin.path}:${origin.start === origin.end ? origin.start : `${origin.start}-${origin.end}`}`;
+}
+
+/**
  * Note the parts that own a line of a part of a Nix file that the static
  * reading cannot follow, or that did not parse: what that code is built from
  * is unknown there, and a piece of evidence at any of its lines would be
@@ -481,8 +494,8 @@ async function piecesOfPath(
  */
 function noteUnfollowed(repo: RepoReading, facts: SyntaxFacts): void {
 	if (facts.adapter !== "nix") return;
-	for (const { start, end } of facts.unparsed) {
-		const at = `${facts.path}:${start === end ? start : `${start}-${end}`}`;
+	for (const { start, end, source } of facts.unparsed) {
+		const at = unfollowedSite(source ?? { path: facts.path, start, end });
 		const file = `${repo.checkout.repo}\0${facts.path}`;
 		for (const owner of ownersOfLines(repo.owners, facts.path, start, end)) {
 			const files = repo.unfollowed.get(owner.node.id) ?? new Map<string, string>();

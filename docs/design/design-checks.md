@@ -1083,6 +1083,53 @@ flakes: nixd, helix, deploy-rs, nix-index, microvm.nix and nil. It drew 11
   `lib.composeExtensions` of two overlays, which the reading does not follow,
   so `overlays.default.nil` is skipped, not missing.
 
+TASK-436.06 repeated the same 16 pinned checkouts on 2026-10-07, with Bun
+1.4.2, against `fa6e5be85` and the local-import reading. A local `import` or
+`callPackage` now parses its file through the checkout's read boundary.
+Directory paths read `default.nix`; paths and links outside the checkout stay
+unknown. One 200,000-operation budget covers the flake and every imported
+expression. The callPackage argument rule follows
+[Nixpkgs' function-argument intersection and explicit overrides](https://nixos.org/guides/nix-pills/13-callpackage-design-pattern):
+only the function's actual build inputs count when its function can be read.
+
+| Flake                    | Output definitions before → after | Relationships skipped → supported |
+| ------------------------ | --------------------------------: | --------------------------------: |
+| nixd (`bdb4670`)         |                           14 → 14 |                                 0 |
+| deploy-rs (`cf64c8c`)    |                           25 → 38 |                                 0 |
+| nix-index (`dd6792b`)    |                           44 → 44 |                                 0 |
+| helix (`ba40e54`)        |                           15 → 15 |                                 0 |
+| devenv (`fe20b5c`)       |                           55 → 55 |                                 0 |
+| nixvim (`8fbc7d3`)       |                             0 → 0 |                                 0 |
+| treefmt-nix (`03d8ee1`)  |                           10 → 38 |                                 0 |
+| crane (`47b6b27`)        |                           18 → 18 |                                 0 |
+| rust-overlay (`b962e5d`) |                           12 → 68 |                                 0 |
+| Nix (`bea853d`)          |                          90 → 208 |                                 0 |
+| lanzaboote (`ba33415`)   |                           27 → 27 |                                 0 |
+| Hydra (`6e99f07`)        |                         125 → 142 |                                 0 |
+| nil (`205c8ba`)          |                           11 → 11 |                                 0 |
+| microvm.nix (`52860fa`)  |                           58 → 85 |                                 0 |
+| fenix (`eff70f3`)        |                           13 → 16 |                                 0 |
+| attic (`7a19204`)        |                             0 → 0 |                                 0 |
+
+This measurement compares every resolved sibling-output dependency in the
+facts of each flake. The four logical dependencies already found in nixd
+remain supported; none is removed. Reading local files exposes more output
+names in seven flakes, but adds no supported relationship in this sample.
+The same six-board, 21-part, 11-relationship real check still has one supported
+relationship, two resolved undrawn warnings and ten relationship skips.
+Before: 395 ms cold / 374 ms warm. After: 356 ms cold / 327 ms warm. One
+run of each does not establish a speed change.
+
+The remaining expressions depend on an outside package set, such as
+`import nixpkgs` with an overlay, or builders the reading does not know,
+such as `overrideAttrs` and `mkShell`. Three skips now name the imported
+expression: microvm.nix's `pkgs/build-microvm.nix:9-61`, nixd's
+`nixd/docs/editors/test-shell.nix:38-46`, and `libnixf/default.nix:43`.
+The dependency remains owned by its output in `flake.nix`. The focused
+import owner also proves a new supported local build dependency, nested
+relative imports, explicit and automatic arguments, ignored arguments,
+outside paths and links, cycles, edits across passes, and the shared limit.
+
 Before this task, some packages of flake-parts and flake-utils shared the
 lines of one binding. This occurred where several bindings, such as
 `packages.a` and `packages.b`, or one `inherit` of three names, gave the
@@ -1828,7 +1875,7 @@ library functions that flakes use to give outputs for each system: `genAttrs`,
 systems that it cannot read gives the name `*`, which stands for each system.
 flake-utils' default systems are such a list, because a flake can change them
 through its `systems` input. Everything else is unknown at its lines: an
-`import`, a builtin, an `if`, the value of an input. A default, `a.b or c` or
+outside or unknown import, a builtin, an `if`, the value of an input. A default, `a.b or c` or
 a formal's `? c`, stands only where the reading is sure that the name is
 absent. Each expression, name or item that the reading reads spends one of
 200,000 steps, and it nests at most 400 deep. A name below an unknown
@@ -1837,7 +1884,11 @@ expression, or one that the reading did not reach, is skipped as
 where the flake schema names an output, such as `packages.<system>.<name>` or
 `overlays.<name>`, because what a derivation or a module holds is not an
 output. Only an overlay goes one name deeper: its packages are outputs
-`overlays.<name>.<package>`. Other `.nix` files are read as text.
+`overlays.<name>.<package>`. Literal local paths given to `import` and
+`callPackage` are read through the checkout boundary, including a directory's
+`default.nix`; outside paths and outside symlinks remain unknown. Imported
+expressions share the flake's 200,000-operation budget. Other `.nix` files
+are independently read as text.
 
 The same reading gives the build dependencies between the packages of a flake
 (TASK-367.22). A derivation is a call of `mkDerivation`, `buildGoModule`,
@@ -1845,7 +1896,10 @@ The same reading gives the build dependencies between the packages of a flake
 `callPackage`. The reading knows each by the last name of the selection, where
 the flake does not bind that name itself. The inputs of a
 derivation are the items of its `buildInputs`, `nativeBuildInputs` and
-`propagatedBuildInputs`, and the arguments that `callPackage` names. An input
+`propagatedBuildInputs`. `callPackage` follows its local function with the
+caller's package scope and explicit arguments and reads the function's actual
+build inputs. If the function cannot be read, explicit arguments remain
+candidate inputs and the other inputs remain unknown. An input
 whose value is another output of the flake is build-dependency evidence. It
 goes from the output that is built to the output that it names, at the line
 that names the input. The reading compares values, not spellings. So
@@ -1861,8 +1915,9 @@ same package under another name, or for another system, can share them.
 Where another package shares them, as in `inherit core lib app;` on one line,
 the dependency is unknown at that line. What the reading cannot follow is
 unknown at its lines. That is an input that is a package of nixpkgs or of
-`prev`, or a set merged with such a package. It is also the file that
-`callPackage` builds. If an output is no derivation that the reading knows,
+`prev`, or a set merged with such a package. It is also an outside or unknown
+file that `callPackage` names. A skip quotes the imported expression's own
+file and lines while its ownership remains the flake output. If an output is no derivation that the reading knows,
 such as a shell that `mkShell` makes, it is unknown too. Such an expression
 can hide a build dependency on another output of the same flake. Take a
 relationship with no anchor whose kind accepts build dependencies, and that

@@ -15,13 +15,13 @@
 //   set, a `rec` set, or a function of the derivation's final attributes
 //   (`finalAttrs: { ... }`), whose attributes the reading cannot tell;
 // - `callPackage f args` (`pkgs.callPackage`, an overlay's
-//   `final.callPackage`): each value of `args` is an input. The package
-//   function `f`, a file such as `./pkg.nix` or a function the call writes, is
-//   not followed: what it takes from the package set is unknown.
+//   `final.callPackage`): a local file or inline function is followed with
+//   the caller's package scope and explicit overrides. Its actual input
+//   lists give its dependencies; an unread function keeps explicit inputs.
 //
 // What the reading cannot follow stays unknown: an input list that is no list
 // it can tell, a set that an expression it cannot follow may add an input
-// list to, and the package function of `callPackage`. Each name and item it
+// list to, and an unread package function of `callPackage`. Each name and item it
 // reads spends a step of the reading's budget; once the budget is spent, the
 // inputs are unknown.
 
@@ -34,10 +34,15 @@ import {
 	type NixValue,
 	type Thunk,
 	attrs,
+	applied,
 	curried,
 	ready,
 	spend,
 	unary,
+	unknownAt,
+	surelyAbsent,
+	lazy,
+	selected,
 } from "@/runtime/code-facts/lib/nix-values";
 
 /** The attributes of a derivation that name what it is built from. */
@@ -127,19 +132,76 @@ function built(argument: Thunk, at: At): NixValue {
 }
 
 /**
- * `callPackage f args`: each value of `args` is an input, and what `f` takes
- * from the package set is unknown.
- * @param args The arguments the call names.
- * @param at The call, and the reading's budget.
- * @returns The derivation.
+ * An unread package function keeps its explicit inputs and its unknown source.
+ * @param fn The package function the reading cannot follow.
+ * @param args The explicit arguments.
+ * @param at The call and budget.
+ * @returns The unresolved derivation.
  */
-function calledPackage(args: Thunk, at: At): NixValue {
-	const read = args();
-	const named = read.kind === "attrs" && spend(at.budget, read.entries.size);
+function unfollowedPackage(fn: NixValue, args: NixValue, at: At): NixValue {
+	const named = args.kind === "attrs" && spend(at.budget, args.entries.size);
 	return derivationAt(at.call, {
-		inputs: named ? [...read.entries.values()] : [],
-		unfollowed: at.call,
+		inputs: named ? [...args.entries.values()] : [],
+		unfollowed: unknownNode(fn) ?? at.call,
 	});
+}
+
+/**
+ * callPackage passes formal names from its package scope, then explicit overrides.
+ * A missing name in an unknown package scope remains unknown, not a default.
+ * @param names The function's formal names.
+ * @param args The explicit arguments.
+ * @param automatic The package scope.
+ * @param at The call and budget.
+ * @returns The argument set, or unknown after the shared budget is spent.
+ */
+function packageArguments(
+	names: readonly string[],
+	args: AttrsValue,
+	automatic: NixValue,
+	at: At,
+): NixValue {
+	if (!spend(at.budget, names.length + args.entries.size)) return unknownAt(at.call);
+	const entries = new Map<string, Entry>();
+	for (const name of names) {
+		if (!surelyAbsent(automatic, name)) {
+			entries.set(name, {
+				node: at.call,
+				value: lazy(() => selected(automatic, name, at.call), at.call),
+			});
+		}
+	}
+	for (const [name, entry] of args.entries) entries.set(name, entry);
+	return attrs(entries, args.open);
+}
+
+/**
+ * Read the function a callPackage path or inline expression gives.
+ * @param source The path or inline value.
+ * @param at The call and budget.
+ * @returns Its value, or unknown for a source the reading cannot follow.
+ */
+function packageFunction(source: NixValue, at: At): NixValue {
+	return source.kind === "path"
+		? (at.budget.import?.(source, at.call) ?? unknownAt(at.call))
+		: source;
+}
+
+/**
+ * Follow `callPackage f args`, reading the function's actual build inputs.
+ * @param f The package path or inline function.
+ * @param args The explicit arguments.
+ * @param automatic The caller's package scope, if known.
+ * @param at The call and budget.
+ * @returns The package value, or an unresolved derivation.
+ */
+function calledPackage(f: Thunk, args: Thunk, automatic: Thunk | undefined, at: At): NixValue {
+	const fn = packageFunction(f(), at);
+	const read = args();
+	if (fn.kind !== "function" || read.kind !== "attrs") return unfollowedPackage(fn, read, at);
+	const auto = automatic?.() ?? unknownAt(at.call);
+	const argument = packageArguments(fn.formals ?? [], read, auto, at);
+	return applied(fn, ready(argument), at.call);
 }
 
 /**
@@ -154,10 +216,11 @@ function builder(budget: Budget): NixValue {
 /**
  * `callPackage`.
  * @param budget The reading's budget.
+ * @param automatic The caller's package scope, if known.
  * @returns The function.
  */
-function callPackage(budget: Budget): NixValue {
-	return curried((_f, args, call) => calledPackage(args, { call, budget }));
+function callPackage(budget: Budget, automatic?: Thunk): NixValue {
+	return curried((f, args, call) => calledPackage(f, args, automatic, { call, budget }));
 }
 
 /** The functions that give a derivation, by the name a flake calls them by, each spending the reading's budget. */
@@ -166,4 +229,4 @@ const DERIVATIONS: readonly (readonly [string, (budget: Budget) => NixValue])[] 
 	["callPackage", callPackage],
 ];
 
-export { DERIVATIONS };
+export { DERIVATIONS, callPackage };

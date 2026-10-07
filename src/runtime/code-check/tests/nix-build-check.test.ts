@@ -7,7 +7,7 @@
 // flake is judged.
 //
 // The checkout `mono`: core, lib built from core, app built from lib, and a
-// tool `callPackage` builds from a file the reading does not follow; `ui`,
+// tool `callPackage` builds with unknown automatic arguments; `ui`,
 // TypeScript beside a flake that gives a shell, and `api`, TypeScript.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
@@ -73,12 +73,14 @@ beforeAll(async () => {
 			'        lib = pkgs.stdenv.mkDerivation { pname = "lib"; buildInputs = [ self.packages.x86_64-linux.core ]; };',
 			'        app = pkgs.stdenv.mkDerivation { pname = "app"; buildInputs = [ self.packages.x86_64-linux.lib ]; };',
 			"        tool = pkgs.callPackage ./tool.nix { };",
+			"        built = pkgs.callPackage ./built.nix { inherit (self.packages.x86_64-linux) lib; };",
 			"      };",
 			"    };",
 			"}",
 			"",
 		].join("\n"),
 		"tool.nix": "{ stdenv, lib }: stdenv.mkDerivation { buildInputs = [ lib ]; }\n",
+		"built.nix": "{ stdenv, lib }: stdenv.mkDerivation { buildInputs = [ lib ]; }\n",
 		"ui/flake.nix":
 			"{ outputs = { self, nixpkgs }: { devShells.x86_64-linux.default = nixpkgs.mkShell { }; }; }\n",
 		"ui/main.ts": "export function main(): number {\n\treturn 1;\n}\n",
@@ -98,18 +100,21 @@ beforeAll(async () => {
 					part("pL", "lib"),
 					part("pA", "app"),
 					part("pT", "tool"),
+					part("pB", "built"),
 					part("pU", "ui", "ui"),
 					part("pS", "api", "api/server.ts"),
 				],
 				edges: [
 					// lib is built from core, and the board says so.
 					dependency("e1", "pL", "pC"),
-					// tool's inputs come from a file the reading does not follow.
+					// tool's inputs come from a package scope the reading cannot tell.
 					dependency("e2", "pT", "pL"),
 					// core is built from nothing the reading cannot follow.
 					dependency("e3", "pC", "pA"),
 					// ui's shell is unknown, and api holds no output of its flake.
 					dependency("e4", "pU", "pS"),
+					// The imported package uses the explicitly supplied local package.
+					dependency("e5", "pB", "pL"),
 				],
 			},
 		},
@@ -155,6 +160,6 @@ test("a package built from another that the board does not draw is an undrawn de
 test("a relationship from a package whose build inputs the reading cannot follow to another package of its flake is skipped, never unsupported", () => {
 	const skipped = outcome.skipped.filter((each) => each.reason === "expression-not-followed");
 	expect(skipped.map((each) => [each.subject?.id, each.repo, each.detail])).toEqual([
-		["e2", MONO, "tool: flake.nix:8"],
+		["e2", MONO, "tool: tool.nix:1"],
 	]);
 });

@@ -247,6 +247,7 @@ test("a flake's outputs written out are definitions by attribute path, down to t
 	]);
 	expect(flake.definitions.find((each) => each.symbol === "packages.x86_64-linux.tool")).toEqual({
 		symbol: "packages.x86_64-linux.tool",
+		kind: "value",
 		start: 9,
 		end: 9,
 		visibility: "output",

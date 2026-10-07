@@ -117,7 +117,7 @@ const TERRAFORM = treeSitter(
 	"terraform.scm",
 	terraformFacts,
 );
-/** Only `flake.nix` is read: its outputs. Every other `.nix` file is read as text (TASK-367.21). */
+/** A flake reading follows local Nix imports; independent `.nix` files remain text (TASK-436.06). */
 const FLAKE = treeSitter("@lumis-sh/wasm-nix/tree-sitter-nix.wasm", "nix.scm", flakeFacts);
 const C = treeSitter("tree-sitter-c/tree-sitter-c.wasm", "c.scm", cFacts);
 /** An unpaired C-family header defaults to C++ (TASK-367.09). */
@@ -298,6 +298,40 @@ function objectiveCParse(
 }
 
 /**
+ * A checkout-scoped flake reading, cached only within one facts pass. Each
+ * next pass reads imported sources again, including uncommitted edits.
+ * @param flakes This pass's flake readings.
+ * @param file The flake source.
+ * @param checkout Its checkout.
+ * @param read The checkout read boundary.
+ * @returns Its parser and source-aware static reading.
+ */
+function flakeReading(
+	flakes: Map<string, ParseFacts>,
+	file: string,
+	checkout: CheckoutFiles,
+	read: ReadText,
+): ParseFacts {
+	let parse = flakes.get(file);
+	if (parse === undefined) {
+		parse = treeSitter("@lumis-sh/wasm-nix/tree-sitter-nix.wasm", "nix.scm", (tree, grammar) =>
+			flakeFacts(tree, grammar, { root: checkout.root, file, read }),
+		);
+		flakes.set(file, parse);
+	}
+	return parse;
+}
+
+/**
+ * Whether a reading needs the checkout's Objective-C macro context.
+ * @param parse Its parser.
+ * @returns True for either Objective-C source or shared headers.
+ */
+function objectiveCFile(parse: ParseFacts): boolean {
+	return parse === HEADER || parse === OBJECTIVE_C_SOURCE;
+}
+
+/**
  * How the files of one checkout are read, made once in a pass: as
  * `adapterOf` says, but a header uses its same-directory source's language,
  * and an Objective-C file blanks the SDK macros the checkout's headers wrap.
@@ -310,11 +344,14 @@ function readingsIn(
 	read: ReadText,
 ): (file: string) => AdapterReading | undefined {
 	let objectiveC: ObjectiveCReadings | undefined;
+	const flakes = new Map<string, ParseFacts>();
 	return (file) => {
 		const source = headerSource(file, checkout, read);
 		const reading = source ?? selectedReading(checkout, file);
 		if (reading === undefined) return undefined;
-		if (reading.parse !== HEADER && reading.parse !== OBJECTIVE_C_SOURCE) return reading;
+		if (reading.parse === FLAKE)
+			return { ...reading, parse: flakeReading(flakes, file, checkout, read) };
+		if (!objectiveCFile(reading.parse)) return reading;
 		objectiveC ??= OBJECTIVE_C(wrappersIn(checkout, read));
 		return {
 			...reading,
