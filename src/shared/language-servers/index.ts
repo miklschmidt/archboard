@@ -45,6 +45,30 @@ const LanguageServersSchema = z.partialRecord(
 /** The servers configured for a checkout. */
 type LanguageServers = z.infer<typeof LanguageServersSchema>;
 
+/**
+ * A word as a shell reads it: as it stands when it has only characters a shell
+ * leaves alone, and in single quotes otherwise.
+ * @param word The word.
+ * @returns The word, quoted when it needs it.
+ */
+function shellWord(word: string): string {
+	return /^[\w@%+=:,./-]+$/u.test(word) ? word : `'${word.replaceAll("'", "'\\''")}'`;
+}
+
+/**
+ * The command that sets the server of a language for a registered checkout, as
+ * a person types it. `<command>` is the program that the agent chooses. A
+ * repository identity can hold a space when a checkout has no remote and is
+ * named by its directory, so it is quoted for a shell.
+ * @param language The language.
+ * @param repo The repository identity, when the command must name it.
+ * @returns The command.
+ */
+function configureCommand(language: ConfigurableLanguage, repo?: string): string {
+	const checkout = repo === undefined ? "" : ` --repo ${shellWord(repo)}`;
+	return `archboard repo language-server ${language} <command>${checkout}`;
+}
+
 export {
 	type ConfigurableLanguage,
 	type ConfiguredServer,
@@ -52,4 +76,5 @@ export {
 	CONFIGURABLE_LANGUAGES,
 	ConfiguredServerSchema,
 	LanguageServersSchema,
+	configureCommand,
 };
