@@ -1,11 +1,11 @@
 ---
 id: TASK-436
 title: 'Act on the owner review of the TASK-367, 368 and 369 decisions'
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:35'
-updated_date: '2026-10-07 00:50'
+updated_date: '2026-10-07 01:38'
 labels: []
 dependencies: []
 priority: medium
@@ -20,7 +20,7 @@ On 2026-10-07 the owner reviewed the decisions and defects of TASK-367, TASK-368
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every subtask is Done
+- [x] #1 Every subtask is Done
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -32,3 +32,15 @@ On 2026-10-07 the owner reviewed the decisions and defects of TASK-367, TASK-368
 4. Run the complete gate once after integration, read each proposal against code and task footprints, adopt proposals, and finalize every child before the parent.
 Affected boards include Archboard server, Command dispatch, Board viewer and the boards named by .03 and .04. Child task plans name exact proposals.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+All sixteen children are Done with objective evidence for every acceptance criterion. Canonical board proposals are adopted and claims are released. The complete gate passes with 4,597 tests, including the serial browser lane. The refreshed server runs sixteen boards, and the final semantic/code pass reports zero diagnostics and zero warnings. A route simplification regression exposed by the board edits received a reduced regression and a geometry fix. The simplification pass reused existing timing, camera, binding, decoder and definition contracts. Known measured limits remain explicit: no Swift toolchain for live Swift timings, zero newly supported relationships across sixteen Nix flakes, and the server board remains above its one-second layout target. The owner explicitly left stale README assets unchanged. Final log: /tmp/archboard-task436-final-check-2.log. Delivery pass: /tmp/archboard-task436-delivery-code.json.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented and finalized all sixteen owner decisions. Analysis waits for completion, reports ordered timings, and uses shared language, binding and history contracts. Interfaces, private test imports, definitions, local Nix imports, cross-origin refusals and warning navigation now follow the requested behavior. Canonical boards are adopted. The complete gate passes with 4,597 tests, and the refreshed dogfood server reports zero warnings. Swift and layout limits and the measured Nix result remain documented.
+<!-- SECTION:FINAL_SUMMARY:END -->

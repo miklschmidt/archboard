@@ -1,11 +1,11 @@
 ---
 id: TASK-436.11
 title: Each text line of check --code shows its finding code
-status: In Progress
+status: Done
 assignee:
   - '@codex-language'
 created_date: '2026-10-07 00:36'
-updated_date: '2026-10-07 01:00'
+updated_date: '2026-10-07 01:35'
 labels:
   - cli
 dependencies: []
@@ -21,8 +21,8 @@ Each text line of `check --code` shows the severity, the file, the subject and t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each text line of `check --code` shows its finding code
-- [ ] #2 The archboard-dev skill compares the findings with and without `--variant` without `jq`
+- [x] #1 Each text line of `check --code` shows its finding code
+- [x] #2 The archboard-dev skill compares the findings with and without `--variant` without `jq`
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -38,4 +38,12 @@ Each text line of `check --code` shows the severity, the file, the subject and t
 
 <!-- SECTION:NOTES:BEGIN -->
 Each main finding line now begins with severity and finding code, while evidence remains beneath it and stream/exit behavior stays unchanged. The archboard-dev comparison reads stderr finding lines through sed and sort, normalizes variants.<id>. path prefixes, and excludes timings/evidence/skips/history without jq. CLI and skill metadata/link owners passed (11 tests); touched production/test lint and bash -n on the extracted recipe passed. No new architecture parts or relationships; smallest resulting product is one formatter change and one replacement recipe. Parent integrates and finalizes.
+
+Final gate: bun run check exits 0 in 436 seconds. Modules: 4,353 passed. System: 196 passed. Repository policy: 24 passed. Serial browser: 24 passed across all nineteen lane commands. Lint, formatting, root and frontend types, and builds pass. Final runtime refresh succeeds, and dogfood check --code exits 0 with zero diagnostics and zero warnings. Simplification and focused regression evidence remain in the task notes. Complete log: /tmp/archboard-task436-final-check-2.log.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Text findings include their machine code. The developer skill compares current and proposed findings with shell tools and no jq. Focused output tests, recipe syntax, and the complete gate pass.
+<!-- SECTION:FINAL_SUMMARY:END -->

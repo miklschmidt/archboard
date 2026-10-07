@@ -1,11 +1,11 @@
 ---
 id: TASK-436.14
 title: A schema migration is no board change for Behind
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:37'
-updated_date: '2026-10-07 01:26'
+updated_date: '2026-10-07 01:37'
 labels:
   - history
 dependencies: []
@@ -21,8 +21,8 @@ Behind finds the last change of a board by comparing its current variant before 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Behind decodes an old version of a board file with the migrations of the board store, and writes nothing
-- [ ] #2 A commit that only migrated a board file is not its last change, with a test
+- [x] #1 Behind decodes an old version of a board file with the migrations of the board store, and writes nothing
+- [x] #2 A commit that only migrated a board file is not its last change, with a test
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -41,4 +41,14 @@ Behind finds the last change of a board by comparing its current variant before 
 Extracted public decodeSemanticBoardDocument(text) from the store read path. It performs JSON decode, legacy-label refusal, all registered migrations and canonical coherence validation in memory, with no vault lookup, lease, file access, version advance or clock. Disk reads retain identity/vocabulary checks and lease-bound atomic persistence, including canonical validation after version advancement. Behind uses that public contract for Git blobs. Regression owners verify an old 2.2 document missing explicit order is decoded without changing bytes, mtime, vault entries, version or timestamps; both an in-memory upgrade and a committed schema-only upgrade retain the old semantic last-change commit and pre-migration code changes. ADR0045 documents this behavior and the TASK-436.13 project-directory scope. Validation: focused Behind/read-migration 14 tests passed; all history-lens and semantic-board-store owners 234 tests passed; root tsc --noEmit and touched production/test lint passed; touched formatting and git diff --check passed. Simplified by sharing decoding once, retaining raw migrated JSON for persistence, and keeping canonical validation at the persistence boundary. Board proposals remain integration-owned at 3201c025d; terminal acceptance and full gate remain for main integration.
 
 The complete gate exposed a Board persistence route defect after the decoder description changed. The existing wide-board test reproduced it in about one second. A reduced test at the public unstepped seam failed with one line and one wall: an axis projection hid a long diagonal after a slide moved a quarter-point join offset. The renderer now refuses a slide whose result leaves an axis. The reduced regression, all 19 joined-step tests, the original Board persistence case, and touched lint pass. No board meaning changes: this preserves the existing requirement that each label sits on its route. The simplification pass kept one geometry predicate in the existing slide acceptance function and removed all probes.
+
+Closing footprints: base c0412c4f75397cb31021810c412ba31c183840af. The server proposal parent is TASK-436.01 after TASK-436.09, YWL2of1F. History lens is named and changed. Other unnamed changes belong to concurrent internal analysis work. The persistence proposal parent is TASK-367.27, NbjfMdrd. Read and validate, History lens and Decode board bytes match commit 8530d9fab. The containing Board store directory is covered by these children. No named part lacks its source change. The server caller added afterward preserves these paths. Commit bdf97c7c7 changes the internal route simplification of Semantic renderer. Its responsibilities and relationships remain accurate.
+
+Final gate: bun run check exits 0 in 436 seconds with 4,597 passing tests, including the complete serial browser lane. Lint, formatting, root and frontend types, and builds pass. The refreshed server runs sixteen boards. The delivery code pass exits 0 with zero diagnostics and zero warnings. Complete gate log: /tmp/archboard-task436-final-check-2.log. Delivery evidence: /tmp/archboard-task436-delivery-code.json.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+History reads old board bytes through a pure store decoder without writes. Migration-only commits do not become the last semantic change. Regression tests and the full gate pass. The adopted boards match the decoder interface, and a newly exposed route defect is fixed.
+<!-- SECTION:FINAL_SUMMARY:END -->

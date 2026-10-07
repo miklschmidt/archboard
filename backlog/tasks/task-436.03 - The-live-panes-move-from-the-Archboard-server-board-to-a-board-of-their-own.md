@@ -1,11 +1,11 @@
 ---
 id: TASK-436.03
 title: The live panes move from the Archboard server board to a board of their own
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:36'
-updated_date: '2026-10-07 01:16'
+updated_date: '2026-10-07 01:37'
 labels:
   - dogfood
 dependencies: []
@@ -21,10 +21,10 @@ The Archboard server board is too large to read, and its first layout takes abou
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The parts of the live panes (Pane routes, Pane socket, Pane registry, Board announcements, Change feed, Tab session presence and Disk change watcher) are on a board of their own, and the Archboard server board shows them as one or more cards that drill down to it
-- [ ] #2 Each dependency that TASK-367.28 drew only as a flow step is a relationship with an anchor on the board that contains both of its ends
-- [ ] #3 The notes give the first layout time of both boards on Track and on Blocks
-- [ ] #4 `./bin/dogfood check` reports no diagnostics, and `./bin/dogfood check --code` reports no new warning
+- [x] #1 The parts of the live panes (Pane routes, Pane socket, Pane registry, Board announcements, Change feed, Tab session presence and Disk change watcher) are on a board of their own, and the Archboard server board shows them as one or more cards that drill down to it
+- [x] #2 Each dependency that TASK-367.28 drew only as a flow step is a relationship with an anchor on the board that contains both of its ends
+- [x] #3 The notes give the first layout time of both boards on Track and on Blocks
+- [x] #4 `./bin/dogfood check` reports no diagnostics, and `./bin/dogfood check --code` reports no new warning
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,4 +50,14 @@ All 16 original flow-only pairs were compared against the original TASK-433 cont
 Final first native layout, vault policy, one unrelated one-part warm-up, one measured render per board/engine: Archboard server (29 nodes, 89 relationships) Track 2226.037 ms, Blocks 5611.649 ms; Live panes (18 nodes, 39 relationships) Track 310.588 ms, Blocks 253.993 ms. The main board remains above the 1 s target. The Track result stays below the existing 3 s loaded gate bound, which was not changed. All touched drawings on both engines have no routes through cards and no labels off their own runs. The main, detail, viewer and rasterizer Track drawings were inspected at 1920x1080 without manual positioning or clipping repair.
 
 On the final runtime from integrated source HEAD b830345f6, ./bin/dogfood check and ./bin/dogfood check --code both exit 0: zero semantic diagnostics and zero warnings, down from the integrated two-warning baseline. Captures are /tmp/task436-final-check.json and /tmp/task436-final-current-code.json. The named restated .03 proposal check also has zero diagnostics/warnings. No active board claim remains. EXPOSED_UNUSED information grows from 13 to 16 solely because wider existing module bindings are now drawn: Live panes repeats the server root's pre-existing 112 unused names, while .04 adds the two rasterizer/recorder module readings. These board changes add no source exports; the information is not a new unused API from this task.
+
+Closing precision: this task changes boards only and has no eligible source commit. The recorded ff3834f198a92303db89f4eed5d603df7359ea5f footprint is an integration audit of concurrent task changes, not a source base attributed to this task. Existing source implementations intentionally remain unchanged.
+
+Final gate: bun run check exits 0 in 436 seconds with 4,597 passing tests, including the complete serial browser lane. Lint, formatting, root and frontend types, and builds pass. The refreshed server runs sixteen boards. The delivery code pass exits 0 with zero diagnostics and zero warnings. Complete gate log: /tmp/archboard-task436-final-check-2.log. Delivery evidence: /tmp/archboard-task436-delivery-code.json.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Adopted Live panes and its server drill-down. All sixteen former flow-only dependencies carry anchored relationships. Native layout measurements and diagram inspections are recorded. Semantic and code passes report no warnings, and the full gate passes. Server Track remains above the one-second target.
+<!-- SECTION:FINAL_SUMMARY:END -->

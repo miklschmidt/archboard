@@ -1,11 +1,11 @@
 ---
 id: TASK-436.06
 title: The code check follows imported .nix files inside the checkout
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:36'
-updated_date: '2026-10-07 01:00'
+updated_date: '2026-10-07 01:35'
 labels:
   - code-check
 dependencies: []
@@ -21,9 +21,9 @@ The code check reads only `flake.nix` and `flake.lock`, so it cannot follow `cal
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The code check follows a `callPackage` or an `import` of a `.nix` file inside the checkout, within the limit of 200,000 evaluation operations
-- [ ] #2 A file outside the checkout, or an evaluation past the limit, still gives the skip with the file and the lines
-- [ ] #3 The notes say, for the 16 flakes of TASK-367.22, how many relationships go from skipped to supported
+- [x] #1 The code check follows a `callPackage` or an `import` of a `.nix` file inside the checkout, within the limit of 200,000 evaluation operations
+- [x] #2 A file outside the checkout, or an evaluation past the limit, still gives the skip with the file and the lines
+- [x] #3 The notes say, for the 16 flakes of TASK-367.22, how many relationships go from skipped to supported
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -44,4 +44,12 @@ Validation: 253 focused Nix/code-check and skill-evaluation tests passed across 
 Exact-pin measurement across all TASK-367.22 flakes: nixd bdb4670 0; deploy-rs cf64c8c 0; nix-index dd6792b 0; helix ba40e54 0; devenv fe20b5c 0; nixvim 8fbc7d3 0; treefmt-nix 03d8ee1 0; crane 47b6b27 0; rust-overlay b962e5d 0; Nix bea853d 0; lanzaboote ba33415 0; Hydra 6e99f07 0; nil 205c8ba 0; microvm.nix 52860fa 0; fenix eff70f3 0; attic 7a19204 0 relationships changed from skipped to supported. No supported relationships were lost; nixd retains four logical sibling-output dependencies. Seven flakes expose additional output definitions. Every real source was available.
 The original six-board/21-part/11-relationship real check retains one supported relationship, two resolved undrawn warnings and ten relationship skips; three skip sites now point into imported files. Baseline 395/374 ms cold/warm; final candidate 356/327 ms. Single runs establish no speed improvement. Remaining dependencies require outside nixpkgs scopes or unsupported builders such as mkShell/overrideAttrs. Per-flake definitions and limits are recorded in docs/design/design-checks.md. Consumer authoring reference and runtime evidence-owner coverage updated.
 Simplification: reused the existing checkout read boundary and Nix grammar; local source ownership and lifetime have one owner, nix-files.ts. No new public scanner interface or code-check mode. No board changes: the existing Code facts role and directory binding still describe this mechanism. Left In Progress for parent review and complete gate.
+
+Final gate: bun run check exits 0 in 436 seconds. Modules: 4,353 passed. System: 196 passed. Repository policy: 24 passed. Serial browser: 24 passed across all nineteen lane commands. Lint, formatting, root and frontend types, and builds pass. Final runtime refresh succeeds, and dogfood check --code exits 0 with zero diagnostics and zero warnings. Simplification and focused regression evidence remain in the task notes. Complete log: /tmp/archboard-task436-final-check-2.log.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Static Nix evaluation follows imports and callPackage inside the checkout with one 200,000-operation budget. Focused import tests and the complete gate pass. All sixteen pinned flakes retain prior dependencies and gain zero supported relationships. Seven expose more definitions.
+<!-- SECTION:FINAL_SUMMARY:END -->

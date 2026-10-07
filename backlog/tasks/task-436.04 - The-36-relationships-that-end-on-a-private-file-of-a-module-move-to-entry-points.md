@@ -3,11 +3,11 @@ id: TASK-436.04
 title: >-
   The 36 relationships that end on a private file of a module move to entry
   points
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:36'
-updated_date: '2026-10-07 01:16'
+updated_date: '2026-10-07 01:37'
 labels:
   - dogfood
 dependencies: []
@@ -23,8 +23,8 @@ TASK-368.05 moved relationships from outside a module that end on a part bound t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each of the 36 relationships ends on an entry point of its module, or the notes say why the code really uses the private file
-- [ ] #2 `./bin/dogfood check` reports no diagnostics
+- [x] #1 Each of the 36 relationships ends on an entry point of its module, or the notes say why the code really uses the private file
+- [x] #2 `./bin/dogfood check` reports no diagnostics
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -90,4 +90,14 @@ The new ownership exposed actual omitted dependencies during checking. Semantic 
 Final first native layout, vault policy, one measured render per engine: Board rasterizer Track 563.232 ms / Blocks 363.634 ms; Agent workbench 766.013 / 2995.269 ms; Voice coordinator 180.881 / 294.853 ms; Board viewer 1523.998 / 15090.113 ms; Codex session 115.090 / 74.688 ms. Every touched drawing on both engines has zero card intrusions and zero labels off their own runs. Two rasterizer route labels were moved into descriptions after the layout owner found them off their routes. The default Track bound and the Blocks wall-clock test budget remain unchanged. Viewer Blocks is costly, with the additional real callers explicitly drawn.
 
 Final current ./bin/dogfood check and ./bin/dogfood check --code both exit 0, with zero diagnostics and zero warnings. EXPOSED_UNUSED has 16 information findings against 13 in the integrated baseline. The three additions are pre-existing exports revealed by broader module bindings: Walkthrough recorder (10 of 19 names), Semantic rasterizer (14 of 23), and the repeated Archboard server context on Live panes (112 of 114). TASK-436.04 adds no exports; the two local module readings report existing interface, not an API added by this task. Parent accepted that scope explanation; unrelated API removal was not invented. No active claims remain. Final status and acceptance criteria await the parent full gate.
+
+Closing audit: this task changes boards only. No source commit carries Refs: TASK-436.04, so no source base or source footprint category applies. Five pre-adoption semantic comparisons match the actual parents: Rasterizer Po5nqvPy, Workbench pVuh6kOj, Coordinator HQ2dUcmc, Viewer hGmp80Kl, and Session nMbRpuPH. Added ownership and entry points intentionally describe unchanged source. The source evidence and final code pass support all thirty-six cases.
+
+Final gate: bun run check exits 0 in 436 seconds with 4,597 passing tests, including the complete serial browser lane. Lint, formatting, root and frontend types, and builds pass. The refreshed server runs sixteen boards. The delivery code pass exits 0 with zero diagnostics and zero warnings. Complete gate log: /tmp/archboard-task436-final-check-2.log. Delivery evidence: /tmp/archboard-task436-delivery-code.json.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Audited all thirty-six private-owner crossings and adopted the five corrected boards. Relationships use actual public exports, object methods, handled routes or injected callbacks. Additional real callers are drawn. Semantic and code passes report no warnings, and the full gate passes.
+<!-- SECTION:FINAL_SUMMARY:END -->
