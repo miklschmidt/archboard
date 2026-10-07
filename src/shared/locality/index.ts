@@ -47,7 +47,7 @@ const LocalityPeriodSchema = z
 
 /**
  * One part the lens read, and the commits of the period that changed its bound
- * files. Parts that bind the same files list the same commits.
+ * declarations or paths. Attribution says which precision the reading used.
  */
 const HotspotSchema = BehindPartSchema.extend({
 	attribution: HistoryAttributionSchema.optional(),
@@ -59,8 +59,8 @@ const HotspotSchema = BehindPartSchema.extend({
  * Two parts that changed together in enough commits of the period to pass
  * code-maat's filters, which are fixed: at least 5 shared commits, and a
  * degree of at least 30% (ADR 0045). Only parts bound into one repository can
- * pair, and a pair whose bound paths overlap is left out, because each of its
- * shared commits is one change counted twice.
+ * pair. Shared declaration ownership is excluded; path-wide readings exclude
+ * overlapping paths.
  */
 const CoupledPairSchema = z
 	.object({

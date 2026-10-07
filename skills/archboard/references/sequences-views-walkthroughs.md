@@ -213,7 +213,7 @@ updated through their usual recipe, never through this one.
 2. **Choose the parts the change touches.** If the vault has a board whose
    parts bind this repository's files, run
    `archboard semantic footprint <board> --base origin/main`. Its `changed`
-   lists the parts whose bound files the pull request's commits changed, each
+   lists the parts whose bound declarations or paths the pull request changed, each
    with its `path` and its `commits`. Read the subject of a commit marked
    `large` (more than 30 files, often a rename or a format pass) before you
    make a beat of it. `skipped` lists the parts it could not read, and a

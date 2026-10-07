@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 218,
+	"version": 220,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-07T20:19:13.757Z",
+	"updatedAt": "2026-10-07T20:35:10.855Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -93833,7 +93833,7 @@
 			"name": "TASK-448",
 			"lifecycle": "draft",
 			"parent": "Hi4MsVKK",
-			"summary": "Attribute locality and footprint to bound declarations",
+			"summary": "The server reads and writes semantic boards, serves the viewer, checks code evidence, and attributes history through bound declarations or paths.",
 			"content": {
 				"nodes": [
 					{
@@ -94117,7 +94117,11 @@
 						"order": 26000,
 						"name": "History lens",
 						"kind": "module",
-						"responsibility": "Maps checkout commits onto bound paths for behind and onto bound declarations for locality and footprint; labels path-wide fallback when a symbol cannot be resolved"
+						"responsibility": "Maps checkout commits onto bound paths for behind and onto bound declarations for locality and footprint; labels path-wide fallback when a symbol cannot be resolved",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/history-lens"
+						}
 					},
 					{
 						"id": "uLRdM5Uy",
