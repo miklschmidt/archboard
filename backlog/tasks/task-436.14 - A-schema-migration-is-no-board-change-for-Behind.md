@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:37'
-updated_date: '2026-10-07 00:56'
+updated_date: '2026-10-07 01:26'
 labels:
   - history
 dependencies: []
@@ -39,4 +39,6 @@ Behind finds the last change of a board by comparing its current variant before 
 
 <!-- SECTION:NOTES:BEGIN -->
 Extracted public decodeSemanticBoardDocument(text) from the store read path. It performs JSON decode, legacy-label refusal, all registered migrations and canonical coherence validation in memory, with no vault lookup, lease, file access, version advance or clock. Disk reads retain identity/vocabulary checks and lease-bound atomic persistence, including canonical validation after version advancement. Behind uses that public contract for Git blobs. Regression owners verify an old 2.2 document missing explicit order is decoded without changing bytes, mtime, vault entries, version or timestamps; both an in-memory upgrade and a committed schema-only upgrade retain the old semantic last-change commit and pre-migration code changes. ADR0045 documents this behavior and the TASK-436.13 project-directory scope. Validation: focused Behind/read-migration 14 tests passed; all history-lens and semantic-board-store owners 234 tests passed; root tsc --noEmit and touched production/test lint passed; touched formatting and git diff --check passed. Simplified by sharing decoding once, retaining raw migrated JSON for persistence, and keeping canonical validation at the persistence boundary. Board proposals remain integration-owned at 3201c025d; terminal acceptance and full gate remain for main integration.
+
+The complete gate exposed a Board persistence route defect after the decoder description changed. The existing wide-board test reproduced it in about one second. A reduced test at the public unstepped seam failed with one line and one wall: an axis projection hid a long diagonal after a slide moved a quarter-point join offset. The renderer now refuses a slide whose result leaves an axis. The reduced regression, all 19 joined-step tests, the original Board persistence case, and touched lint pass. No board meaning changes: this preserves the existing requirement that each label sits on its route. The simplification pass kept one geometry predicate in the existing slide acceptance function and removed all probes.
 <!-- SECTION:NOTES:END -->
