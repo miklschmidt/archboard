@@ -1,5 +1,5 @@
 // Immutable Git sources for declaration attribution. No checkout files are read.
-import { createSourceFacts, isTerraformFile, neverRead } from "@/runtime/code-facts/index";
+import { createSourceFacts, isTerraformFile, neverRead, pairOf } from "@/runtime/code-facts/index";
 import { gitBytes, gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { filesOfBinding } from "@/shared/code-target/index";
 
@@ -74,8 +74,20 @@ function sourceEntry(line: string): SourceEntry[] {
  */
 function neededEntries(entries: readonly SourceEntry[], paths: readonly string[]): SourceEntry[] {
 	const files = entries.map(({ file }) => file);
+	const listed = new Set(files);
 	const selected = new Set(paths.flatMap((path) => filesOfBinding(path, files)));
-	return entries.filter(({ file }) => selected.has(file) || isTerraformFile(file));
+	// A header's companion selects its grammar. Objective-C also reads SDK
+	// macro wrappers from every header, including ones outside the bound path.
+	for (const file of selected) for (const paired of pairOf(file, listed)) selected.add(paired);
+	const objectiveC = [...selected].some((file) => /\.(?:h|m)$/u.test(file));
+	const flake = [...selected].some((file) => /(?:^|\/)flake[.]nix$/u.test(file));
+	return entries.filter(
+		({ file }) =>
+			selected.has(file) ||
+			isTerraformFile(file) ||
+			(objectiveC && /\.(?:h|pch)$/u.test(file)) ||
+			(flake && file.endsWith(".nix")),
+	);
 }
 
 /**
