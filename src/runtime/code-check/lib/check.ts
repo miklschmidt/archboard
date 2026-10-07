@@ -16,6 +16,7 @@
 // resolves, and every one has stopped when the pass returns (resolution.ts).
 // What the pass cannot read is listed with the reason, never as a finding.
 
+import { createElapsedClock } from "@/shared/timing/timing";
 import path from "node:path";
 import {
 	checkoutSkips,
@@ -61,11 +62,12 @@ import {
 	type LocalCodeTarget,
 } from "@/runtime/code-target/index";
 import type { ServerOf } from "@/runtime/language-servers/index";
-import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
+import type { CheckTiming, CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target/index";
 
 /** What one pass found and what it did not read. */
 interface CodeCheckOutcome {
+	readonly timings: CheckTiming[];
 	readonly findings: CodeFinding[];
 	readonly skipped: CodeCheckSkip[];
 }
@@ -444,6 +446,32 @@ function partBindings(boards: readonly BoardToCheck[]): CodeBinding[] {
 }
 
 /**
+ * Measure code-facts reads, counting overlapping reads once.
+ * @param facts The pass that owns its cache and file reading.
+ * @returns Its timed interface and elapsed time.
+ */
+function timedFacts(facts: FactsPass) {
+	const clock = createElapsedClock();
+	return {
+		facts: {
+			...facts,
+			/**
+			 * Read facts, retaining the pass's cache and cancellation.
+			 * @param checkout The checkout and its listed files.
+			 * @param relative The relative file path.
+			 * @returns The facts of the file.
+			 */
+			read: (checkout, relative) => clock.measure(() => facts.read(checkout, relative)),
+		} satisfies FactsPass,
+		/**
+		 * Time spent reading facts, excluding server requests and judging.
+		 * @returns Elapsed wall milliseconds.
+		 */
+		elapsedMs: clock.elapsedMs,
+	};
+}
+
+/**
  * Hold every board's anchors and bound symbols to the code facts of the files
  * on disk, then its relationships to the evidence between its bound parts.
  * @param boards The boards, each at the variant the check reads.
@@ -463,10 +491,11 @@ async function checkCode(
 	const claims = boards.flatMap(claimsOf);
 	const bound = partBindings(boards);
 	const bindings = [...claims.flatMap(pathsOf), ...bound];
-	const snapshot = await snapshotCheckoutAccess({ signal, bindings });
+	const snapshot = await snapshotCheckoutAccess({ signal, bindings, timeoutMs: null });
 	const repos = [...claims.map(repoOf), ...bound.map((binding) => binding.repo)];
 	const checkouts = await readCheckouts(repos, snapshot, signal);
-	const facts = codeFacts.pass(signal, plans);
+	const reading = timedFacts(codeFacts.pass(signal, plans));
+	const facts = reading.facts;
 	const servers = new Map(
 		snapshot.entries.flatMap((entry) =>
 			entry.servers === undefined ? [] : [[entry.repo, entry.servers] as const],
@@ -480,7 +509,7 @@ async function checkCode(
 		resolve: resolution.resolve,
 		readAsText: new Map(),
 		modules: new Map(),
-		outcome: { findings: [], skipped: [] },
+		outcome: { timings: [], findings: [], skipped: [] },
 	};
 	try {
 		await judgeAll(claims, pass);
@@ -492,6 +521,11 @@ async function checkCode(
 		pass.outcome.skipped.push(...(await resolution.close()));
 	}
 	pass.outcome.skipped.push(...checkoutSkips(checkouts, pass.readAsText));
+	const serverTimings = resolution.timings();
+	pass.outcome.timings.push(
+		{ check: "code-facts", elapsedMs: reading.elapsedMs() },
+		...serverTimings,
+	);
 	return pass.outcome;
 }
 

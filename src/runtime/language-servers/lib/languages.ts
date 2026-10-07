@@ -66,7 +66,12 @@ interface LanguageRow {
 	 * at a project through `once`, so the directories of one project share
 	 * one look in a pass.
 	 */
-	readonly project?: (root: string, file: string, once: Once) => Promise<Project>;
+	readonly project?: (
+		root: string,
+		file: string,
+		once: Once,
+		signal: AbortSignal,
+	) => Promise<Project>;
 }
 
 /**

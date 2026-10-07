@@ -5,7 +5,7 @@
 // exactly the arguments and the environment it is given, and is asked only
 // once its index ended; a file with no database, or a database with no
 // command, is said once and starts nothing; an index that never ends fails the
-// server once.
+// waits until its caller cancels the pass.
 
 import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -14,7 +14,7 @@ import { openLanguageServers } from "@/runtime/language-servers/index";
 import { running, workspace, type Workspace } from "@/runtime/language-servers/tests/fixture";
 
 /** Short bounds, so a stand-in that fails costs the suite little. */
-const SHORT = { startMs: 2000, requestMs: 1000, stopMs: 300 } as const;
+const STOP_MS = 300;
 
 /** A header that declares what two source files define. */
 const HEADER = "int ledger_post(int amount);\nint audit_check(int amount);\n";
@@ -45,7 +45,7 @@ function clangdSession(at: Workspace, mode = "needs-open,indexes") {
 	return openLanguageServers({
 		servers: at.table(mode, "c"),
 		signal: new AbortController().signal,
-		timeouts: SHORT,
+		stopMs: STOP_MS,
 	});
 }
 
@@ -141,22 +141,27 @@ test("a file with no database in its checkout, and a database that lists no comm
 	expect(at.pids()).toEqual([]);
 });
 
-test("a server whose index never ends is said once as failed, and is stopped with the server it runs as its child", async () => {
+test("a caller cancels an index that never ends and stops the server and its child", async () => {
 	current = workspace({
 		"compile_commands.json": DATABASE,
 		"src/ledger.c": LEDGER,
 		"src/audit.c": LEDGER,
 	});
 	const at = current;
-	const session = clangdSession(at, "wrapped,needs-open,indexes-never");
+	const controller = new AbortController();
+	const session = openLanguageServers({
+		servers: at.table("wrapped,needs-open,indexes-never", "c"),
+		signal: controller.signal,
+		stopMs: STOP_MS,
+	});
 	const ask = (file: string) =>
 		session.definition({ root: at.root, file, line: 3, symbol: "audit_check" });
-	expect(await Promise.all([ask("src/ledger.c"), ask("src/audit.c")])).toEqual([
-		{ status: "unasked" },
-		{ status: "unasked" },
-	]);
+	const asked = Promise.all([ask("src/ledger.c"), ask("src/audit.c")]);
+	while (!at.methods().includes("textDocument/didOpen")) await Bun.sleep(5);
+	controller.abort();
+	expect(await asked).toEqual([{ status: "unasked" }, { status: "unasked" }]);
 	await session.close();
-	expect(session.unavailable().map((entry) => entry.reason)).toEqual(["failed"]);
+	expect(session.unavailable()).toEqual([]);
 	await Bun.sleep(100);
 	expect(at.pids()).toHaveLength(2);
 	expect(at.pids().filter(running)).toEqual([]);

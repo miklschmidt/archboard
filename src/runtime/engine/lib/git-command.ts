@@ -481,7 +481,7 @@ function commandOutput(
 
 interface GitOptions {
 	signal?: AbortSignal;
-	timeoutMs?: number;
+	timeoutMs?: number | null;
 	executable?: string;
 }
 
@@ -542,10 +542,10 @@ async function startCommand(
  */
 async function settleWithLimits(command: RunningCommand, options: GitOptions): Promise<Settled> {
 	const { run } = command;
-	const timeout = setTimeout(
-		() => run.terminate("timeout"),
-		options.timeoutMs ?? GIT_COMMAND_TIMEOUT_MS,
-	);
+	const timeout =
+		options.timeoutMs === null
+			? undefined
+			: setTimeout(() => run.terminate("timeout"), options.timeoutMs ?? GIT_COMMAND_TIMEOUT_MS);
 	/** End the command because the caller gave up on it. */
 	const abort = (): void => {
 		run.terminate("aborted");

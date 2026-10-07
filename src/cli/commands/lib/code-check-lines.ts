@@ -139,7 +139,8 @@ function skippedLines(skipped: readonly CodeCheckSkip[]): string[] {
  * @param answer The code check's answer.
  * @returns The lines.
  */
-function codeCheckLines(answer: CodeCheckAnswer): string[] {
+function codeCheckLines(answer: CodeCheckAnswer | undefined): string[] {
+	if (answer === undefined) return [];
 	return [
 		...answer.findings.flatMap(findingLines),
 		...skippedLines(answer.skipped),

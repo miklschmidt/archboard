@@ -6,14 +6,12 @@
 import fs from "fs";
 import path from "path";
 
-import { git } from "@/runtime/engine/lib/git-command";
+import { git, type GitOptions } from "@/runtime/engine/lib/git-command";
 import { GitCommandError } from "@/runtime/engine/lib/git-failure";
 import type { GitFailure } from "@/runtime/engine/lib/git-failure";
 
 /** How a caller cancels a Git inspection. */
-interface InspectOptions {
-	signal?: AbortSignal;
-}
+type InspectOptions = Pick<GitOptions, "signal" | "timeoutMs">;
 
 /**
  * Turn a git remote URL into a stable identity: host/owner/name, with the

@@ -10,7 +10,7 @@ import { openLanguageServers } from "@/runtime/language-servers/index";
 import { workspace, type Workspace } from "@/runtime/language-servers/tests/fixture";
 
 /** Short bounds, so a stand-in that fails costs the suite little. */
-const SHORT = { startMs: 2000, requestMs: 1000, stopMs: 300 } as const;
+const STOP_MS = 300;
 
 /** A virtual environment as `python -m venv` makes it; the stand-in never runs its interpreter. */
 const VENV = { ".venv/pyvenv.cfg": "home = /usr/bin\n", ".venv/bin/python": "" };
@@ -108,7 +108,7 @@ async function ask(
 	const session = openLanguageServers({
 		servers: at.table(language === "python" ? "needs-open" : "normal", language),
 		signal: new AbortController().signal,
-		timeouts: SHORT,
+		stopMs: STOP_MS,
 	});
 	const answer = await session.definition({ root: at.root, ...question });
 	await session.close();
@@ -148,7 +148,7 @@ describe("pyright", () => {
 		const session = openLanguageServers({
 			servers: at.table("needs-open", "python"),
 			signal: new AbortController().signal,
-			timeouts: SHORT,
+			stopMs: STOP_MS,
 		});
 		const answer = await session.definition({ root: at.root, ...use });
 		const [location] = answer.status === "answered" ? answer.locations : [];
@@ -196,7 +196,7 @@ describe("csharp-ls", () => {
 		const session = openLanguageServers({
 			servers: at.table("normal", "csharp"),
 			signal: new AbortController().signal,
-			timeouts: SHORT,
+			stopMs: STOP_MS,
 		});
 		const unasked = { status: "unasked" } as const;
 		expect(await session.definition({ root: at.root, ...use })).toEqual(unasked);

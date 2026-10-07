@@ -7,19 +7,18 @@
 // project gives its section, or `null`, which tells a server to use its own
 // default. Of the notifications it notes only the end of a work-done
 // progress, which a client can wait for, and ignores every other, such as a
-// log line or diagnostics. Each request and each wait is bounded, and rejects
-// when its time runs out, when the pass is cancelled, or when the process
-// ends.
+// log line or diagnostics. Each request and wait rejects when the caller
+// cancels it or when the process ends.
 
 import { z } from "zod";
 
 /**
- * Why a request got no answer: the server answered with an error, or did not
- * answer in time, or its process ended, or the pass was cancelled. Only an
+ * Why a request got no answer: the server answered with an error, its
+ * process ended, or the pass was cancelled. Only an
  * error answer leaves the server fit to ask again.
  */
 class RequestFailure extends Error {
-	readonly kind: "answered" | "timeout" | "ended" | "cancelled";
+	readonly kind: "answered" | "ended" | "cancelled";
 
 	/**
 	 * Name why a request got no answer.
@@ -59,7 +58,6 @@ interface Pending {
 
 /** How one request is bounded. */
 interface RequestBounds {
-	readonly timeoutMs: number;
 	readonly signal: AbortSignal;
 }
 
@@ -171,16 +169,14 @@ class PendingRequests {
 
 	/**
 	 * Wait for the answer to a new request.
-	 * @param method The method, for the reason a wait ran out.
 	 * @param bounds How long to wait, and the signal that ends the wait.
 	 * @returns Its id, and the answer once it comes.
 	 */
-	open(method: string, bounds: RequestBounds): { id: number; answer: Promise<unknown> } {
+	open(bounds: RequestBounds): { id: number; answer: Promise<unknown> } {
 		const id = (this.#next += 1);
 		const answer = new Promise<unknown>((resolve, reject) => {
 			/** Stop waiting. */
 			const done = (): void => {
-				clearTimeout(timer);
 				bounds.signal.removeEventListener("abort", cancel);
 				this.#waiting.delete(id);
 			};
@@ -189,11 +185,6 @@ class PendingRequests {
 				done();
 				reject(new RequestFailure("cancelled", "was cancelled with the pass"));
 			};
-			const late = `did not answer ${method} within ${bounds.timeoutMs} ms`;
-			const timer = setTimeout(() => {
-				done();
-				reject(new RequestFailure("timeout", late));
-			}, bounds.timeoutMs);
 			this.#waiting.set(id, {
 				/**
 				 * Take the answer.
@@ -333,6 +324,12 @@ function connect(
 		}
 	};
 
+	void closed.then((reason) => {
+		ended ??= reason;
+		pending.end(ended);
+		return undefined;
+	});
+
 	void (async () => {
 		await readAll(child, (message) => {
 			if (message.method === undefined) pending.settle(message);
@@ -353,7 +350,7 @@ function connect(
 		 */
 		request: (method, params, bounds) => {
 			if (ended !== undefined) return Promise.reject(new RequestFailure("ended", ended));
-			const { id, answer } = pending.open(method, bounds);
+			const { id, answer } = pending.open(bounds);
 			write(params === undefined ? { id, method } : { id, method, params });
 			return answer;
 		},
@@ -374,7 +371,7 @@ function connect(
 		progressEnd: async (token, bounds) => {
 			if (progressEnded.has(token)) return;
 			if (ended !== undefined) throw new RequestFailure("ended", ended);
-			const { id, answer } = pending.open(`$/progress ${token}`, bounds);
+			const { id, answer } = pending.open(bounds);
 			progressWaits.set(token, [...(progressWaits.get(token) ?? []), id]);
 			await answer;
 		},

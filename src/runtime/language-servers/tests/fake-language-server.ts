@@ -23,6 +23,7 @@
 //   as sourcekit-lsp does.
 // - `hang-initialize`: never answers `initialize`.
 // - `hang-definition`: never answers a definition.
+// - `delayed-initialize`, `delayed-definition`: answers after 120 ms.
 // - `exit-on-definition`: exits with code 3 on the first definition.
 // - `deaf`: ignores `shutdown` and `exit`, so only a kill ends it.
 // - `refuse-definition`: answers every definition with an error.
@@ -157,8 +158,11 @@ function answerDefinition(message: Message): void {
 	const closed = modes.has("needs-open") && !opened.has(message.params?.textDocument?.uri ?? "");
 	if (modes.has("refuse-definition") || closed)
 		send({ id: message.id, error: { code: -32_603, message: "no" } });
-	else if (!modes.has("hang-definition"))
-		send({ id: message.id, result: indexed ? definition(message) : [] });
+	else if (!modes.has("hang-definition")) {
+		const answer = () => send({ id: message.id, result: indexed ? definition(message) : [] });
+		if (modes.has("delayed-definition")) setTimeout(answer, 120);
+		else answer();
+	}
 }
 
 /**
@@ -172,7 +176,10 @@ function receive(message: Message): void {
 		reportsProgress = message.params?.capabilities?.window?.workDoneProgress === true;
 		fs.appendFileSync(path.join(stateDir, "starts"), `${JSON.stringify(start)}\n`);
 		if (modes.has("hang-initialize")) return;
-		send({ id: message.id, result: { capabilities: { definitionProvider: true } } });
+		const answer = () =>
+			send({ id: message.id, result: { capabilities: { definitionProvider: true } } });
+		if (modes.has("delayed-initialize")) setTimeout(answer, 120);
+		else answer();
 		const items = [{ section: "python" }, { section: "csharp" }];
 		send({ id: "ask-1", method: "workspace/configuration", params: { items } });
 	} else if (message.id === "ask-1" && message.method === undefined) {

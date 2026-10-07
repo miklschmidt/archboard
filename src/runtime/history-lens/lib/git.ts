@@ -3,13 +3,11 @@
 // The engine's own `git` keeps at most 64 KB of output, which is right for a
 // probe and far too little for a walk of a year of commits or a batch of board
 // file versions. So the lens runs its commands here, with the whole output, a
-// timeout from `timing.ts`, and the caller's signal: a request that hangs up,
+// caller's signal: a request that hangs up,
 // or a server that stops, ends the command. The lens runs only `git log`,
 // `git rev-list`, `git rev-parse`, `git merge-base`, `git cat-file` and
 // `git check-ignore`. None of them starts another program, so killing the one
 // process ends the work.
-
-import { HISTORY_LENS_GIT_TIMEOUT_MS } from "@/shared/timing/timing";
 
 /** How a caller cancels a command, and what it writes to the command's input. */
 interface GitRunOptions {
@@ -42,7 +40,6 @@ function spawnGit(root: string, args: readonly string[], options: GitRunOptions)
 		// A reading must not take the index lock that `git status` refreshes,
 		// or it would make somebody's commit in that checkout fail.
 		env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
-		timeout: HISTORY_LENS_GIT_TIMEOUT_MS,
 		...(options.signal === undefined ? {} : { signal: options.signal }),
 	});
 }
@@ -54,7 +51,7 @@ function spawnGit(root: string, args: readonly string[], options: GitRunOptions)
  * @param options The caller's signal, and the input to write.
  * @returns Its exit code and its whole output.
  * @throws {unknown} The signal's reason when the caller cancelled it, or an
- * error when Git could not start or ran past its timeout.
+ * error when Git could not start or ended on a signal.
  */
 async function runGit(
 	root: string,
@@ -70,9 +67,7 @@ async function runGit(
 	]);
 	options.signal?.throwIfAborted();
 	if (child.signalCode !== null) {
-		throw new Error(
-			`git ${args.join(" ")} in ${root} did not finish within ${HISTORY_LENS_GIT_TIMEOUT_MS} ms.`,
-		);
+		throw new Error(`git ${args.join(" ")} in ${root} ended by ${child.signalCode}.`);
 	}
 	return { exitCode, stdout, stderr };
 }

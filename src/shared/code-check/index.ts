@@ -1,7 +1,8 @@
 // The answer of the code check, `archboard check --code` and
 // `GET /api/vault/code-check` (ADR 0046).
 //
-// It has four parts. `boards` says which board was read at which variant and
+// `timings` records elapsed work for code facts, each language server and
+// history (TASK-436.02). `boards` says which board was read at which variant and
 // version. `findings` says what the code pass found. `skipped` says what the
 // check did not read, with the reason, so a subject that was not read never
 // looks like one with nothing to report. `behind` is the reading of ADR 0045:
@@ -41,6 +42,7 @@
 // TASK-436.08 applies the interface findings to a Nix flake's outputs and a
 // Helm chart's values. Compose files and plain manifests stay exposure-unknown.
 
+import { CONFIGURABLE_LANGUAGES } from "@/shared/language-servers/index";
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@/shared/semantic-policy/index";
 
@@ -278,11 +280,32 @@ const BoardBehindSchema = z.union([
 		.strict(),
 ]);
 
+/** Elapsed wall time for each part of a requested check (TASK-436.02). */
+const CheckTimingSchema = z.discriminatedUnion("check", [
+	z
+		.object({
+			check: z.enum(["board", "code-facts", "history"]),
+			elapsedMs: z.number().nonnegative(),
+		})
+		.strict(),
+	z
+		.object({
+			check: z.literal("language-server"),
+			elapsedMs: z.number().nonnegative(),
+			language: z.enum(["typescript", ...CONFIGURABLE_LANGUAGES]),
+			repo: z.string().optional(),
+			project: z.string(),
+		})
+		.strict(),
+]);
+type CheckTiming = z.infer<typeof CheckTimingSchema>;
+
 /**
  * The whole answer of one code check. The route answers it beside
  * `success: true`, as every route does, and a parse keeps only the answer.
  */
 const CodeCheckAnswerSchema = z.object({
+	timings: z.array(CheckTimingSchema),
 	boards: z.array(CodeCheckBoardSchema),
 	findings: z.array(CodeFindingSchema),
 	skipped: z.array(CodeCheckSkipSchema),
@@ -322,6 +345,8 @@ type BehindPart = z.infer<typeof BehindPartSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
 
 export {
+	CheckTimingSchema,
+	type CheckTiming,
 	BehindCommitSchema,
 	type BehindCommit,
 	BehindPartSchema,

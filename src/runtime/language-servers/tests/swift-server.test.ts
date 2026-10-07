@@ -7,7 +7,7 @@ import { openLanguageServers } from "@/runtime/language-servers/index";
 import { workspace, type Workspace } from "@/runtime/language-servers/tests/fixture";
 
 /** Short bounds, so a stand-in that fails costs the suite little. */
-const SHORT = { startMs: 2000, requestMs: 1000, stopMs: 300 } as const;
+const STOP_MS = 300;
 
 /** A Swift file whose `post` calls `normalize`, which the file defines on line 8. */
 const LEDGER = [
@@ -41,7 +41,7 @@ function swiftSession(at: Workspace) {
 	return openLanguageServers({
 		servers: at.table("needs-open,synchronizes", "swift"),
 		signal: new AbortController().signal,
-		timeouts: SHORT,
+		stopMs: STOP_MS,
 	});
 }
 
@@ -111,7 +111,7 @@ test("a server that failed in one package is not started in another package of t
 	const session = openLanguageServers({
 		servers: current.table("exit-on-definition", "swift"),
 		signal: new AbortController().signal,
-		timeouts: SHORT,
+		stopMs: STOP_MS,
 	});
 	expect(await session.definition(normalizeIn(current, "one"))).toEqual({ status: "unasked" });
 	expect(await session.definition(normalizeIn(current, "two"))).toEqual({ status: "unasked" });

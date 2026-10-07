@@ -5,7 +5,12 @@ import { serverRefusal } from "@/cli/command-contract/common";
 import { codeCheckLines } from "@/cli/commands/lib/code-check-lines";
 import { requestJson } from "@/runtime/engine/server-client";
 import { checkSemanticVaultOnServer } from "@/runtime/semantic-board-client/index";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
+import {
+	CheckTimingSchema,
+	CodeCheckAnswerSchema,
+	type CodeCheckAnswer,
+	type CheckTiming,
+} from "@/shared/code-check/index";
 import { diagnosticLine, VaultCheckSchema, type VaultCheck } from "@/shared/semantic-policy/index";
 import { SemanticBoardConfigurationSchema } from "@/runtime/semantic-board-store/index";
 
@@ -89,8 +94,28 @@ function failsCheck(plain: VaultCheck, code: CodeCheckAnswer | undefined): boole
 	);
 }
 
+/**
+ * One elapsed time, before the findings and the JSON answer.
+ * @param timing The check and its elapsed wall time.
+ * @returns Its text line.
+ */
+function timingLine(timing: CheckTiming): string {
+	const name =
+		timing.check === "language-server"
+			? `language server ${timing.language}${timing.repo === undefined ? "" : ` (${timing.repo}, ${timing.project})`}`
+			: timing.check === "code-facts"
+				? "code facts"
+				: timing.check === "history"
+					? "history lens"
+					: "board check";
+	return `time: ${name}: ${timing.elapsedMs.toFixed(1)} ms`;
+}
+
 /** The plain check's answer, and with `--code` the code check's beside it. */
-const CheckResultSchema = VaultCheckSchema.extend({ codeCheck: CodeCheckAnswerSchema.optional() });
+const CheckResultSchema = VaultCheckSchema.extend({
+	timings: z.array(CheckTimingSchema),
+	codeCheck: CodeCheckAnswerSchema.optional(),
+});
 const checkContract = defineCommand({
 	path: ["check"],
 	shared: ["url"],
@@ -153,6 +178,7 @@ const checkContract = defineCommand({
 				when: { key: "code", present: false },
 				mode: "json",
 				description: "The current interpreted vault policy and diagnostics",
+				presentation: ["diagnostics", "result"],
 			},
 			{
 				id: "code",
@@ -205,17 +231,24 @@ const checkContract = defineCommand({
 	async handler(input, context) {
 		const request = context.parse(CheckRequestSchema, input);
 		await context.require("server", "check");
-		const result = await checkSemanticVaultOnServer();
+		const boardStarted = performance.now();
+		const result = await checkSemanticVaultOnServer(context.signal);
+		const boardTiming: CheckTiming = {
+			check: "board",
+			elapsedMs: performance.now() - boardStarted,
+		};
 		const codeCheck =
 			request.code === true
 				? await codeCheckOnServer(request.variant, request.plan ?? [], context.signal)
 				: undefined;
+		const timings = [boardTiming, ...(codeCheck?.timings ?? [])];
 		return {
-			result: codeCheck === undefined ? result : { ...result, codeCheck },
+			result: { ...result, timings, codeCheck },
 			...(failsCheck(result, codeCheck) ? { outcome: "issues" } : {}),
 			diagnostics: [
+				...timings.map(timingLine),
 				...result.diagnostics.map(diagnosticLine),
-				...(codeCheck === undefined ? [] : codeCheckLines(codeCheck)),
+				...codeCheckLines(codeCheck),
 			],
 		};
 	},

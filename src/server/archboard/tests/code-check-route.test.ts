@@ -147,6 +147,8 @@ test("the polled check never reads code or says how far a board is behind, and t
 	const answer = CodeCheckAnswerSchema.parse(
 		await (await fetch(`${base}/api/vault/code-check`)).json(),
 	);
+	expect(answer.timings.map((timing) => timing.check)).toEqual(["code-facts", "history"]);
+	expect(answer.timings.every((timing) => timing.elapsedMs > 0)).toBe(true);
 	expect(answer.boards.map((one) => one.board)).toEqual(["Shop"]);
 	expect(answer.findings.map((one) => [one.code, one.subject?.id])).toEqual([
 		["BINDING_SYMBOL_MISSING", "pA"],

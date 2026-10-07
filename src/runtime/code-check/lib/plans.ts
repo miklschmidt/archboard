@@ -116,7 +116,7 @@ async function readPlan(
  */
 async function readPlans(named: readonly string[], signal: AbortSignal): Promise<ReadPlans> {
 	if (named.length === 0) return { ok: true, plans: [] };
-	const snapshot = await snapshotCheckoutAccess({ signal });
+	const snapshot = await snapshotCheckoutAccess({ signal, timeoutMs: null });
 	const plans: TerraformPlan[] = [];
 	for (const plan of named) {
 		// oxlint-disable-next-line no-await-in-loop -- the first plan refused refuses the check, so later plans are never read

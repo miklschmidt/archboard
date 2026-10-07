@@ -58,6 +58,7 @@ async function listen(app: express.Express): Promise<string> {
  */
 function answerOver(boards: readonly string[], warned: readonly string[]): CodeCheckAnswer {
 	return {
+		timings: [],
 		boards: boards.map((board) => ({ board, variant: "v1", version: 3 })),
 		findings: warned.map((board) => ({
 			code: "ANCHOR_SYMBOL_MISSING",

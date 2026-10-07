@@ -247,6 +247,18 @@ background indexing by default. The Swift 6.2.4 implementation of
 waits for both. No Swift toolchain was available on this implementation machine,
 so no first-run or later-run duration was measured here.
 
+Amended by TASK-436.02 (2026-10-07): a requested code check has no time
+limit. Language-server initialization, indexing and questions, and the Git
+commands for its code and history reading, wait until they finish. Caller
+cancellation or a process exit ends the wait. Shutdown after the answers still
+has a short cleanup deadline, then kills the process group. This replaces the
+30-second request and index bound and the Git analysis bounds. Each requested
+check reports its elapsed wall time first in text and in JSON `timings`: board,
+code facts, each language server, and history. Language-server times
+include startup, indexing, questions and cleanup, but exclude idle time between
+questions. Code and history run together, so their times overlap. TASK-429 is
+archived because a first index longer than 30 seconds no longer fails the pass.
+
 ## Context
 
 A board makes claims about code. Evidence rule 3 of the consumer skill makes an
