@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 18:22'
-updated_date: '2026-10-07 19:12'
+updated_date: '2026-10-07 19:16'
 labels: []
 dependencies: []
 references:
@@ -49,4 +49,10 @@ The user rejected the CopyQ runtime prerequisite and confirmed Linux and macOS a
 The user approved @teddyzhu/clipboard. Version 0.0.10 is installed and its native library loads under Bun. The package listener lacks a reliable subscription acknowledgement and can combine an older event with newer contents, so it cannot safely own helper cleanup. Use periodic HTML identity reads instead; every interval remains in shared/timing.
 
 Native Wayland desktop QA passed with CopyQ stopped: the real command offered image/png and text/html after CLI exit, the HTML embedded the identical 3899x2517 PNG, and its alt text matched the receipt. The helper remained available across several poll intervals and exited after the original clipboard was restored. CopyQ was restarted in its approved Wayland mode. macOS behavior is backed by the package pasteboard implementation but cannot be exercised on this Linux machine. Focused process tests passed (4 tests, 83 assertions), including identical successive copies retiring the previous owner. Simplification replaced explicit child event listeners with node:events.once and shared the render option mapping between SVG and PNG exports. No CopyQ reference remains in active code or consumer guidance.
+
+Proposal code checks introduce no findings against the current-board baseline. Footprints read against 36c557983 identify Rasterize, Clipboard image and Image clipboard as named and changed on Command interface, and Clipboard owner on Archboard. Agent CLI is a drill-down and is represented by the Command interface proposal. Render, Board client and the Commands container changed internally in 650a983e2 for TASK-445 and the shared render mapping; their responsibilities and existing relationships remain accurate. No named part lacks an implementation change. README baseline e9a766843 already had all 16 assets stale. Only the architecture diagram depicts the newly added process, so regenerate that asset after adoption.
+
+After adoption, the vault check passes with no diagnostics. The code check keeps only baseline findings. The behind report for 650a983e2 names Board rasterizer (Receipt and its container) and Skill evaluation (Evaluation inputs). Receipt changed only explanatory comments for comparison-off output; its schema and module relationships are unchanged. Evaluation inputs changed only coverage rows for the new CLI behaviors; the evaluator and its dependencies are unchanged. Both boards remain accurate.
+
+The user identified the old wl-copy example in semantic render help as misleading. Both render and rasterize help now show the native rasterize --clipboard command as the clipboard example. Raw pipe behavior remains available and documented for explicit single-format workflows.
 <!-- SECTION:NOTES:END -->
