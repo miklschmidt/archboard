@@ -34,7 +34,7 @@ interface Workspace {
 	/** The arguments each stand-in started with after its mode. */
 	readonly argvs: () => string[][];
 	/** The environment each stand-in started with. */
-	readonly environments: () => Record<string, string>[];
+	readonly environments: () => NodeJS.ProcessEnv[];
 	readonly remove: () => void;
 }
 
@@ -81,8 +81,7 @@ function workspace(
 		methods: () => lines("methods"),
 		configurations: () => lines("configuration").map((line): unknown => JSON.parse(line)),
 		argvs: () => lines("argvs").map((line) => JSON.parse(line) as string[]),
-		environments: () =>
-			lines("environments").map((line) => JSON.parse(line) as Record<string, string>),
+		environments: () => lines("environments").map((line) => JSON.parse(line) as NodeJS.ProcessEnv),
 		remove: () => {
 			rmSync(base, { recursive: true, force: true });
 		},
