@@ -193,9 +193,9 @@ function serverSkips(
 		const repo = repoAt.get(entry.root ?? "");
 		const reason = `language-server-${entry.reason}` as const;
 		const configure =
-			entry.reason === "missing" && entry.language !== "typescript"
-				? `. Configure one with \`${configureCommand(entry.language, repo)}\``
-				: "";
+			entry.language === "typescript" || entry.reason === "unready"
+				? ""
+				: `. Configure ${entry.reason === "missing" ? "one" : "another command"} with \`${configureCommand(entry.language, repo)}\``;
 		return {
 			reason,
 			...(repo === undefined ? {} : { repo }),
