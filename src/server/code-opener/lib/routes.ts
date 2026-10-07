@@ -2,7 +2,6 @@ import {
 	Router,
 	json,
 	type ErrorRequestHandler,
-	type NextFunction,
 	type Request,
 	type RequestHandler,
 	type Response,
@@ -32,7 +31,7 @@ import {
 import { githubUrlForBinding } from "@/runtime/code-target/presentation";
 import { addressedVariant } from "@/shared/semantic-board/index";
 import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
-import { checkBrowserCsrf, type BrowserCsrfKind } from "@/server/code-opener/lib/browser-csrf";
+import { createBrowserOriginGuard } from "@/server/browser-origin";
 import {
 	readOpenerSelection,
 	resetOpenerSelection,
@@ -208,32 +207,6 @@ const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 };
 
 /**
- * Builds the middleware that refuses cross-origin browser requests before any body is read.
- * @param kind Whether the guarded route reads settings or mutates state.
- * @returns The Express guard middleware.
- */
-function guard(kind: BrowserCsrfKind) {
-	return (request: Request, response: Response, next: NextFunction): void => {
-		response.removeHeader("Access-Control-Allow-Origin");
-		const host = request.get("host");
-		const origin = request.get("origin");
-		const referer = request.get("referer");
-		const secFetchSite = request.get("sec-fetch-site");
-		const result = checkBrowserCsrf(kind, {
-			...(host ? { host } : {}),
-			...(origin ? { origin } : {}),
-			...(referer ? { referer } : {}),
-			...(secFetchSite ? { secFetchSite } : {}),
-		});
-		if (!result.ok) {
-			response.status(403).json({ success: false, code: result.code, error: result.error });
-			return;
-		}
-		next();
-	};
-}
-
-/**
  * Adapts an async handler so a rejection reaches Express's error pipeline instead of hanging.
  * @param handler The async route handler.
  * @returns A request handler Express can mount.
@@ -388,11 +361,11 @@ export function isCodeOpenerBodyRoute(method: string, pathname: string): boolean
 export function createCodeOpenerPreguard(): Router {
 	const router = Router();
 	const body = json({ limit: "32kb" });
-	router.get("/api/settings/opener", guard("settings-read"), pass);
-	router.put("/api/settings/opener", guard("mutation"), body, pass);
-	router.delete("/api/settings/opener", guard("mutation"), pass);
-	router.post("/api/settings/opener/test", guard("mutation"), body, pass);
-	router.post("/api/code-targets/open", guard("mutation"), body, pass);
+	router.get("/api/settings/opener", createBrowserOriginGuard("settings-read"), pass);
+	router.put("/api/settings/opener", createBrowserOriginGuard("mutation"), body, pass);
+	router.delete("/api/settings/opener", createBrowserOriginGuard("mutation"), pass);
+	router.post("/api/settings/opener/test", createBrowserOriginGuard("mutation"), body, pass);
+	router.post("/api/code-targets/open", createBrowserOriginGuard("mutation"), body, pass);
 	router.use(bodyFailure());
 	return router;
 }

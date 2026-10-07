@@ -1,5 +1,5 @@
-import cors from "cors";
 import express from "express";
+import { createBrowserOriginGuard } from "../../../../src/server/browser-origin/index.ts";
 import {
 	closeSync,
 	existsSync,
@@ -189,7 +189,7 @@ async function createOpenerFixture(options: OpenerFixtureOptions = {}): Promise<
 
 	const start = async (): Promise<void> => {
 		const app = express();
-		app.use(cors());
+		app.use(createBrowserOriginGuard());
 		app.use(createCodeOpenerPreguard());
 		const bindingForElement: CodeOpenerRouteDependencies["bindingForElement"] = (
 			board,
