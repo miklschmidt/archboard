@@ -145,6 +145,28 @@ function commitsOfPart(part: ReadPart, walk: WalkedPeriod): PartCommits {
 	return { counted, large };
 }
 
+/**
+ * Keep precision about the commits locality actually counts. A large commit's
+ * fallback must not make precise ordinary commits look path-wide to coupling.
+ * @param attribution The unfiltered history attribution.
+ * @param counted The commits left after the size filter.
+ * @returns Attribution for the counted commits.
+ */
+function countedAttribution(
+	attribution: AttributedCommits["attribution"],
+	counted: readonly WalkedCommit[],
+): AttributedCommits["attribution"] {
+	if (attribution.fallback === undefined) return attribution;
+	const ids = new Set(counted.map((commit) => commit.commit));
+	const fallback = attribution.fallback.map((entry) => ({
+		...entry,
+		commits: entry.commits.filter((id) => ids.has(id)),
+	}));
+	if (attribution.mode === "mixed" && fallback.every((entry) => entry.commits.length === 0))
+		return { mode: "symbol", symbol: attribution.symbol };
+	return { ...attribution, fallback };
+}
+
 /** Every part the lens read, ranked, with the commits the ranking lists. */
 interface Ranking {
 	readonly hotspots: Hotspot[];
@@ -175,22 +197,7 @@ function rank(split: readonly (CountedPart & PartCommits)[]): Ranking {
 				path: part.node.binding?.path ?? part.path,
 				commits: counted.map((commit) => commit.commit),
 				count: counted.length,
-				attribution:
-					attribution === undefined
-						? undefined
-						: {
-								...attribution,
-								...(attribution.fallback === undefined
-									? {}
-									: {
-											fallback: attribution.fallback.map((fallback) => ({
-												...fallback,
-												commits: fallback.commits.filter((id) =>
-													counted.some((commit) => commit.commit === id),
-												),
-											})),
-										}),
-							},
+				attribution,
 			}))
 			.toSorted((left, right) => right.count - left.count),
 		commits: [...commits.values()].toSorted((left, right) =>
@@ -230,16 +237,20 @@ async function readLocality(
 	);
 	const split = reading.read.flatMap((part) => {
 		const walk = walks.get(part.repo);
-		return walk === undefined
-			? []
-			: [
-					{
-						part,
-						...commitsOfPart(part, walk),
-						attribution: walk.byPart.get(part.node.id)?.attribution ?? { mode: "path" as const },
-						sites: walk.byPart.get(part.node.id)?.sites ?? [],
-					},
-				];
+		if (walk === undefined) return [];
+		const commits = commitsOfPart(part, walk);
+		const attributed = walk.byPart.get(part.node.id);
+		return [
+			{
+				part,
+				...commits,
+				attribution: countedAttribution(
+					attributed?.attribution ?? { mode: "path" },
+					commits.counted,
+				),
+				sites: attributed?.sites ?? [],
+			},
+		];
 	});
 	const ranking = rank(split);
 	return {
