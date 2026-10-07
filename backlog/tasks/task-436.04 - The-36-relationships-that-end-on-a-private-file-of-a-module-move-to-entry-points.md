@@ -3,9 +3,11 @@ id: TASK-436.04
 title: >-
   The 36 relationships that end on a private file of a module move to entry
   points
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-10-07 00:36'
+updated_date: '2026-10-07 01:01'
 labels:
   - dogfood
 dependencies: []
@@ -24,3 +26,60 @@ TASK-368.05 moved relationships from outside a module that end on a part bound t
 - [ ] #1 Each of the 36 relationships ends on an entry point of its module, or the notes say why the code really uses the private file
 - [ ] #2 `./bin/dogfood check` reports no diagnostics
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Proposals: Board rasterizer@TASK-436.04, Agent workbench@TASK-436.04, Voice coordinator@TASK-436.04, Board viewer@TASK-436.04 and Codex session@TASK-436.04. Read all 36 crossings against the public roots and the actual callback registrations.
+2. Draw real module ownership: headless Chromium, semantic rasterizer and walkthrough recorder entry points on Board rasterizer; viewer container bound to the full semantic-board-canvas module; Thread unload drawn whole through its module root. Preserve all continuing relationship ids.
+3. Move the Record command to the public recording entry point and internal recording calls to their actual owner. Annotate each other crossing with its root re-export, public instance method, handled route or injected/subscribed callback. Explain actual private server composition in notes rather than invent a public wrapper.
+4. Run semantic diagnostics and named-proposal code checks against the current vault. Keep proposals pending parent integration and gate; adopt only once their source evidence is current.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Read all 36 private-owner crossings. Current distribution is Board rasterizer 12, Agent workbench 8, Voice coordinator 8, Board viewer 5 and Codex session 3; the task recorded 7 coordinator/6 viewer before later changes. The total stays 36. A lib implementation does not make a call private when a public root re-exports that definition or a public object supplies its method. Each mechanism is recorded on its continuing relationship as well as here.
+
+Ownership corrections: Headless browser now binds its module directory; Semantic rasterizer contains its public Rasterizer and implementation parts; Walkthrough recorder contains its recording entry, tools and public read/render parts, with the Record command routed to Recording entry. The public PNG dimension caller from Skill evaluation is drawn. Thread unload is drawn whole at its module root on two boards. Semantic viewer now binds its module directory, so its root-exported setup parts are entry points; real additional calls revealed by that binding are drawn. All continuing subject and relationship ids are kept.
+
+The 36 evidence records:
+- Board rasterizer: Raster session -> Chromium launch: The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/. Anchor src/runtime/semantic-rasterizer/lib/session.ts:launchHeadlessChromium
+- Board rasterizer: Raster session -> DevTools connection: The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/. Anchor src/runtime/semantic-rasterizer/lib/session.ts:DevTools.evaluate
+- Board rasterizer: Rasterizer -> Chromium executable: The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/. Anchor src/runtime/semantic-rasterizer/index.ts:discoveredChromiumPath
+- Board rasterizer: Walkthrough recorder -> Chromium executable: The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/. Anchor src/runtime/walkthrough-recorder/lib/tools.ts:discoveredChromiumPath
+- Board rasterizer: Walkthrough recorder -> Chromium launch: The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/. Anchor src/runtime/walkthrough-recorder/lib/tools.ts:launchHeadlessChromium
+- Board rasterizer: Walkthrough recorder -> DevTools connection: The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/. Anchor src/runtime/walkthrough-recorder/index.ts:DevTools.readBlobTo
+- Board rasterizer: Replay command -> Talk files: The caller imports the walkthrough-recorder root, which re-exports readTalk, requireFreshPlace and renderTalk from these implementing children. Anchor src/cli/commands/semantic-replay.ts:readTalk
+- Board rasterizer: Replay command -> Frame renderer: The caller imports the walkthrough-recorder root, which re-exports readTalk, requireFreshPlace and renderTalk from these implementing children. Anchor src/cli/commands/semantic-replay.ts:renderTalk
+- Board rasterizer: Frame renderer -> Chromium launch: The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/. Anchor src/runtime/walkthrough-recorder/lib/render.ts:HeadlessChromium.openWindow
+- Board rasterizer: Frame renderer -> DevTools connection: The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/. Anchor src/runtime/walkthrough-recorder/lib/render.ts:DevTools.call
+- Board rasterizer: Record command -> Talk files: The caller imports the walkthrough-recorder root, which re-exports readTalk, requireFreshPlace and renderTalk from these implementing children. Anchor src/cli/commands/semantic-record.ts:requireFreshPlace
+- Board rasterizer: Rasterize command -> Bounds and limits: The CLI reads RASTER_MIN_SCALE from the semantic-rasterizer root; the exported constant is implemented by Bounds and limits. Anchor src/cli/commands/semantic-rasterize.ts:RASTER_MIN_SCALE
+- Agent workbench: Codex transport -> Tab sessions: The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts. Anchor src/server/archboard/lib/codex-workbench-sessions.ts:onNotification
+- Agent workbench: Browser gateway -> Tab sessions: The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts. Anchor src/server/archboard/lib/codex-workbench-browser-gateway.ts:require
+- Agent workbench: Thread tool calls -> Tab sessions: The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts. Anchor src/runtime/codex-dynamic-tools/lib/authority-classification.ts:resolveExactLogicalCaller
+- Agent workbench: Browser pane -> Tab session presence: The browser reaches the handled WebSocket route. websocket-connection.ts calls noteTabSession inside the Archboard server; no browser imports the private tab-sessions file. Anchor src/server/archboard/lib/tab-sessions.ts:noteTabSession
+- Agent workbench: Tab sessions -> Thread unload: The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole. Anchor src/server/archboard/lib/codex-workbench-sessions.ts:unload
+- Agent workbench: Voice coordinator -> Thread unload: The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole. Anchor src/runtime/codex-coordinator/lib/coordinator.ts:unload
+- Agent workbench: Approvals -> Tab sessions: The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts. Anchor src/server/archboard/lib/codex-workbench-bindings.ts:forThread
+- Agent workbench: Browser gateway -> Conversation start: The server passes a BrowserThreadLinkActions port to Browser gateway. command-dispatch invokes its create method; the implementation remains inside the Archboard server private thread-link composition. Anchor src/server/codex-workbench/lib/command-dispatch.ts:create
+- Voice coordinator: Workhorse operations -> Callback queue: The callback queue subscribes to the operations and semantic ports passed to the public createCodexCoordinatorCallbacks factory. The incoming event reaches its subscribed callback, not a private import by the publisher. Anchor src/runtime/codex-coordinator-callbacks/lib/callbacks.ts:subscribe
+- Voice coordinator: Tab sessions -> Callback queue: The callback queue subscribes to the operations and semantic ports passed to the public createCodexCoordinatorCallbacks factory. The incoming event reaches its subscribed callback, not a private import by the publisher. Anchor src/server/archboard/lib/codex-workbench-sessions.ts:routeCallback
+- Voice coordinator: Callback delivery -> Outcome report: The server composition imports createOutcomeReportPort from its own lib/ implementation and passes the returned report port to callback delivery. The callback module invokes that injected port; it never imports the private server file. Anchor src/server/archboard/lib/codex-workbench-session-bindings.ts:createOutcomeReportPort
+- Voice coordinator: Semantic context -> Callback queue: The callback queue subscribes to the operations and semantic ports passed to the public createCodexCoordinatorCallbacks factory. The incoming event reaches its subscribed callback, not a private import by the publisher. Anchor src/runtime/codex-coordinator-callbacks/lib/callbacks.ts:subscribeSettledChange
+- Voice coordinator: Codex transport -> Tab sessions: The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts. Anchor src/server/archboard/lib/codex-workbench-routing.ts:routeCoordinatorTool
+- Voice coordinator: Coordinator thread -> Thread unload: The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole. Anchor src/runtime/codex-coordinator/lib/coordinator.ts:unload
+- Voice coordinator: Tab sessions -> Thread unload: The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole. Anchor src/server/archboard/lib/codex-workbench-sessions.ts:unload
+- Voice coordinator: Tab sessions -> Tell coordinator: The server imports answerUnownedTellCoordinator from the callbacks root, which re-exports the implementation in tell-coordinator.ts. Anchor src/server/archboard/lib/codex-workbench-sessions.ts:answerUnownedTellCoordinator
+- Board viewer: Fetch semantic reads -> Archboard server: The browser sends HTTP semantic reads to the handled server routes. This is a network entry point, not an import of semantic-board-routes.ts. Anchor src/ui/semantic-board-canvas/api/semantic-boards.ts:fetch
+- Board viewer: Walkthrough replay -> Board reads: The page or replay imports the semantic-board-canvas root. It re-exports readBoardsFrom from the implementing child, so the relationship ends on that public entry point. Anchor src/ui/walkthrough-replay/lib/replay-page.ts:readBoardsFrom
+- Board viewer: Page start -> Picture source: The page or replay imports the semantic-board-canvas root. It re-exports takePicturesFrom from the implementing child, so the relationship ends on that public entry point. Anchor frontend/main.tsx:takePicturesFrom
+- Board viewer: Page start -> Local pictures: The page or replay imports the semantic-board-canvas root. It re-exports createLocalPictureSource from the implementing child, so the relationship ends on that public entry point. Anchor frontend/main.tsx:createLocalPictureSource
+- Board viewer: Page start -> Picture cache: The page or replay imports the semantic-board-canvas root. It re-exports browserPictureStorage from the implementing child, so the relationship ends on that public entry point. Anchor frontend/main.tsx:browserPictureStorage
+- Codex session: Generation hooks -> Handshake and request path: The caller invokes initialize on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file. Anchor src/server/archboard/lib/codex-workbench-hooks.ts:initialize
+- Codex session: Workhorse start -> Gate protocol operations: The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file. Anchor src/runtime/codex-workhorse-start/lib/start.ts:threadStart
+- Codex session: Codex transport -> Answer reverse requests: createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file. Anchor src/runtime/codex-session/lib/session.ts:onServerRequest
+
+Focused named-proposal code check after fixes reports no warning on any of the five .04 boards. The only current-vault warnings are the already-drawn .12 catalogue cleanup and .14 History lens/store dependency pending adoption. Semantic diagnostics are empty. The corrected module bindings revealed real omitted PNG grading and viewer helper calls, which are drawn rather than suppressed.
+<!-- SECTION:NOTES:END -->
