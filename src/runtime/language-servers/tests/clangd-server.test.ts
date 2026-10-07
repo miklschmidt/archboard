@@ -73,6 +73,7 @@ test("clangd starts in the directory of the file's database with the arguments a
 	writeFileSync(join(at.root, "build/compile_commands.json"), DATABASE);
 	const flags = process.env["CLANGD_FLAGS"];
 	process.env["CLANGD_FLAGS"] = "--query-driver=**";
+	const environment = { ...process.env };
 	const session = clangdSession(at);
 	const question = { root: at.root, file: "src/ledger.c", line: 3, symbol: "audit_check" };
 	try {
@@ -88,7 +89,7 @@ test("clangd starts in the directory of the file's database with the arguments a
 	expect(session.unavailable()).toEqual([]);
 	expect(at.starts().map((start) => start.cwd)).toEqual([join(at.root, "build")]);
 	expect(at.argvs()).toEqual([[]]);
-	expect(at.environments()).toEqual([{ CLANGD_FLAGS: "--query-driver=**" }]);
+	expect(at.environments()).toEqual([environment]);
 	const asked = at.methods().filter((method) => method !== "answer");
 	expect(asked.indexOf("textDocument/didOpen")).toBeLessThan(
 		asked.indexOf("textDocument/definition"),

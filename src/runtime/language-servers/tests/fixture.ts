@@ -33,8 +33,8 @@ interface Workspace {
 	readonly configurations: () => unknown[];
 	/** The arguments each stand-in started with after its mode. */
 	readonly argvs: () => string[][];
-	/** The variable `CLANGD_FLAGS` each stand-in started with, or null. */
-	readonly environments: () => Record<string, string | null>[];
+	/** The environment each stand-in started with. */
+	readonly environments: () => Record<string, string>[];
 	readonly remove: () => void;
 }
 
@@ -82,7 +82,7 @@ function workspace(
 		configurations: () => lines("configuration").map((line): unknown => JSON.parse(line)),
 		argvs: () => lines("argvs").map((line) => JSON.parse(line) as string[]),
 		environments: () =>
-			lines("environments").map((line) => JSON.parse(line) as Record<string, string | null>),
+			lines("environments").map((line) => JSON.parse(line) as Record<string, string>),
 		remove: () => {
 			rmSync(base, { recursive: true, force: true });
 		},
