@@ -71,6 +71,25 @@ removed. Draw a view with
 the first view. When the request asks for a picture of a view, look at that
 view's picture, not the whole board's.
 
+Both export commands accept `--no-comparison`. Use it to hide comparison marks
+and removed subjects when exporting a variant. The file or clipboard receipt
+then reports `comparedWith: null`. Without the flag, comparisons stay visible.
+
+### Copy an image with its description
+
+On Linux or macOS, copy PNG and HTML together:
+
+```bash
+archboard semantic rasterize "Skill evaluation" --clipboard --no-comparison
+```
+
+The HTML embeds the same PNG and carries the board, variant, view and SVG
+description as image alt text. The receiving app chooses its supported format.
+The copied image does not depend on a server URL or a temporary file.
+The command prints a JSON receipt after the native clipboard accepts both formats.
+No clipboard manager is required.
+Choose either `--clipboard` or `--out` for one command.
+
 ### Copy an image through a pipe
 
 Without `--out`, `semantic render` writes SVG to stdout, and `semantic rasterize`
@@ -89,7 +108,7 @@ If the destination accepts SVG, copy the SVG with its embedded fonts and accessi
 archboard semantic render "Skill evaluation" | wl-copy --type image/svg+xml
 ```
 
-PNG keeps the visible labels but loses the SVG description. Available SVG
+The PNG pipe keeps the visible labels but loses the SVG description. Available SVG
 descriptions stay inside the image document. They do not add a separate text clipboard entry.
 `wl-copy` offers one format per copy.
 

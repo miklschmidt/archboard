@@ -60,6 +60,20 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "tests/system/semantic-boards/rasterize.test.ts owns exact SVG output with its description, PNG bytes, file receipts, and empty stdout on failure. Mechanical output behavior needs no model run."
+				},
+				{
+					"path": "semantic rasterize --clipboard",
+					"expectedUse": "copy PNG and self-contained HTML with accessible description through the native Linux or macOS clipboard; refuse --out at the same time",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/semantic-boards/rasterize.test.ts"
+				},
+				{
+					"path": "semantic render/rasterize --no-comparison",
+					"expectedUse": "hide comparison marks and removed subjects on explicit request; preserve comparisons by default; receipts report comparedWith as null when hidden",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/semantic-boards/rasterize.test.ts"
 				}
 			]
 		},

@@ -1816,7 +1816,7 @@
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
 			"relationships": ["GET /api/semantic-boards/render"],
-			"semantics": "the renderer owns every coordinate; the board states no geometry and the picture is derived",
+			"semantics": "the renderer owns every coordinate; the board states no geometry and the picture is derived; --no-comparison hides comparison marks and removed subjects, and reports comparedWith as null",
 			"ordering": "render on the server, then publish SVG bytes or stage the file as an artifact",
 			"nextFields": ["file", "width", "height", "version"],
 			"workflow": "necessary composition",
@@ -1834,14 +1834,14 @@
 			"introducedBy": "TASK-215",
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/semantic-rasterize.ts",
-			"stdout": "raw PNG without --out; file receipt with --out",
-			"result": "the PNG bytes, or the written file receipt with bitmap size, scale, diagram page, variant, view, and source digest",
+			"stdout": "raw PNG without a destination; file receipt with --out; clipboard receipt with --clipboard",
+			"result": "the PNG bytes, or a file or clipboard receipt with bitmap size, scale, diagram page, variant, view, source digest, and clipboard formats and description when copied",
 			"diagnostics": "errors and server progress on stderr",
 			"exits": [0, 1, 2, 3, 4],
 			"prerequisites": ["server"],
 			"relationships": ["GET /api/semantic-boards/render"],
-			"semantics": "the same picture semantic render draws, rasterized in a private headless Chromium at one bitmap pixel per diagram pixel by default; the whole diagram, never fitted, cropped or a substituted view; traffic animation paused at its first frame",
-			"ordering": "render on the server, rasterize locally, make sure that the bitmap size is correct and cleanup succeeds, then publish PNG bytes or stage the file as an artifact",
+			"semantics": "the same picture semantic render draws, rasterized in a private headless Chromium at one bitmap pixel per diagram pixel by default; the whole diagram, never fitted, cropped or a substituted view; traffic animation paused at its first frame; --no-comparison hides comparison marks and removed subjects; --clipboard offers PNG and self-contained HTML together through the native Linux or macOS clipboard",
+			"ordering": "refuse --out with --clipboard before server access; render on the server, rasterize locally, make sure that the bitmap size is correct and cleanup succeeds, then publish PNG bytes, stage the file, or publish both native clipboard formats and await acknowledgement",
 			"nextFields": ["file", "width", "height", "scale", "version", "source.svgSha256"],
 			"workflow": "necessary composition",
 			"effects": ["read", "local-write"],
@@ -1860,6 +1860,14 @@
 				},
 				{
 					"code": "RASTER_FAILED",
+					"exit": 1
+				},
+				{
+					"code": "CLIPBOARD_UNAVAILABLE",
+					"exit": 4
+				},
+				{
+					"code": "CLIPBOARD_FAILED",
 					"exit": 1
 				}
 			],

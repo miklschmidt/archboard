@@ -5,7 +5,11 @@
 
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { DiagramThemeSchema, LayoutEngineSchema } from "@/shared/semantic-board/index";
+import {
+	DiagramThemeSchema,
+	LayoutEngineSchema,
+	type DrawnBoard,
+} from "@/shared/semantic-board/index";
 import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import {
 	RASTER_MAX_SCALE,
@@ -13,6 +17,7 @@ import {
 	SemanticRasterError,
 	createSemanticRasterizer,
 	type PageRegion,
+	type Capture,
 } from "@/runtime/semantic-rasterizer/index";
 import {
 	SemanticRasterReceiptSchema,
@@ -25,30 +30,46 @@ import {
 	SelectorSchema,
 	UNNAMED_VARIANT,
 	drawnAgainst,
+	exportRenderRequest,
 } from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
+import { copyImageToClipboard } from "@/cli/commands/lib/image-clipboard";
 
 const THEMES = DiagramThemeSchema.options;
 
-const RasterizeInputSchema = z.object({
-	name: z.string(),
-	variant: SelectorSchema.optional(),
-	view: SelectorSchema.optional(),
-	theme: DiagramThemeSchema.default("light"),
-	layout: LayoutEngineSchema.optional(),
-	scale: z.coerce.number().min(RASTER_MIN_SCALE).max(RASTER_MAX_SCALE).default(1),
-	region: z
-		.string()
-		.regex(
-			/^\d+,\d+,[1-9]\d*,[1-9]\d*$/u,
-			"--region takes x,y,width,height in whole diagram pixels",
-		)
-		.transform((text) => {
-			const [x = 0, y = 0, width = 1, height = 1] = text.split(",").map(Number);
-			return { x, y, width, height };
-		})
-		.optional(),
-	out: z.string().optional(),
+const RasterizeInputSchema = z
+	.object({
+		name: z.string(),
+		variant: SelectorSchema.optional(),
+		view: SelectorSchema.optional(),
+		theme: DiagramThemeSchema.default("light"),
+		layout: LayoutEngineSchema.optional(),
+		noComparison: z.boolean().default(false),
+		scale: z.coerce.number().min(RASTER_MIN_SCALE).max(RASTER_MAX_SCALE).default(1),
+		region: z
+			.string()
+			.regex(
+				/^\d+,\d+,[1-9]\d*,[1-9]\d*$/u,
+				"--region takes x,y,width,height in whole diagram pixels",
+			)
+			.transform((text) => {
+				const [x = 0, y = 0, width = 1, height = 1] = text.split(",").map(Number);
+				return { x, y, width, height };
+			})
+			.optional(),
+		out: z.string().optional(),
+		clipboard: z.boolean().default(false),
+	})
+	.refine((input) => !input.clipboard || input.out === undefined, {
+		message: "Use either --clipboard or --out, not both.",
+		path: ["clipboard"],
+	});
+
+const ClipboardResultSchema = SemanticRasterReceiptSchema.omit({ file: true }).extend({
+	clipboard: z.object({
+		formats: z.tuple([z.literal("image/png"), z.literal("text/html")]),
+		description: z.string(),
+	}),
 });
 
 const rasterizerUnavailableRefusal = {
@@ -93,22 +114,53 @@ function regionWithin(
 }
 
 /**
- * What the Archboard server is asked to draw for a raster: the selected
- * variant, view, ground and engine, with the faces embedded, since the page
- * loads nothing but the document.
- * @param input What the command was given.
- * @returns The render request.
+ * Identify the picture whose accessibility metadata is copied with it.
+ * @param drawn The selected board picture.
+ * @param input The export choices.
+ * @returns The board, variant and view identity, including any crop or comparison.
  */
-function drawRequest(
+function clipboardIdentity(drawn: DrawnBoard, input: z.infer<typeof RasterizeInputSchema>): string {
+	const against = drawnAgainst(drawn, input.noComparison);
+	return `${input.region === undefined ? "" : "Region of "}${drawn.board}, variant ${drawn.variant.name}${drawn.view === null ? "" : `, view ${drawn.view.name}`}${against === null ? "" : `. Compared with ${against.name}`}`;
+}
+
+/**
+ * Capture one board and finish browser cleanup before any destination changes.
+ * @param drawn The self-contained SVG and its page size.
+ * @param input The bitmap scale and optional region.
+ * @param signal The caller's cancellation signal.
+ * @returns The complete PNG after clean browser teardown.
+ * @throws {SemanticRasterError} When capture or cleanup fails.
+ */
+async function captureBoard(
+	drawn: DrawnBoard,
 	input: z.infer<typeof RasterizeInputSchema>,
-): Parameters<typeof renderSemanticBoardOnServer>[1] {
-	return {
-		...(input.variant === undefined ? {} : { variant: input.variant }),
-		...(input.view === undefined ? {} : { view: input.view }),
-		theme: input.theme,
-		...(input.layout === undefined ? {} : { layout: input.layout }),
-		fonts: "embedded",
-	};
+	signal: AbortSignal,
+): Promise<Capture> {
+	const rasterizer = createSemanticRasterizer();
+	let capture;
+	let cleanup;
+	try {
+		capture = await rasterizer.rasterize(
+			{
+				svg: drawn.svg,
+				width: drawn.width,
+				height: drawn.height,
+				scale: input.scale,
+				region: regionWithin(input.region, drawn),
+			},
+			signal,
+		);
+	} finally {
+		cleanup = await rasterizer.stop();
+	}
+	if (!cleanup.clean) {
+		throw new SemanticRasterError(
+			"RASTER_FAILED",
+			`The rasterizer's cleanup was not clean: ${cleanup.errors.join("; ")}`,
+		);
+	}
+	return capture;
 }
 
 const semanticRasterizeContract = defineCommand({
@@ -121,12 +173,14 @@ const semanticRasterizeContract = defineCommand({
 		"The whole diagram is captured, never fitted or cropped; a bitmap that would exceed what one " +
 		"capture may hold is refused. Traffic animation is paused at its first frame. Needs a Chromium or " +
 		"Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM. " +
-		"Without --out, stdout carries PNG bytes for image clipboard tools. " +
-		"PNG preserves the picture, but not the SVG accessible description.",
+		"Without --out or --clipboard, stdout carries PNG bytes for image clipboard tools. " +
+		"Use --clipboard to copy PNG and HTML with the accessible description on Linux and macOS. " +
+		"Use --no-comparison to hide comparison marks and removed subjects.",
 	examples: [
 		"archboard semantic rasterize pipeline --out pipeline.png",
 		'archboard semantic rasterize pipeline --view "Startup exchange" --scale 2 --out startup@2x.png',
 		"archboard semantic rasterize pipeline | wl-copy --type image/png",
+		'archboard semantic rasterize pipeline --view "Startup exchange" --clipboard --no-comparison',
 	],
 	parameters: [
 		{
@@ -143,7 +197,15 @@ const semanticRasterizeContract = defineCommand({
 			value: "required",
 			placeholder: "file.png",
 			description:
-				"Write the PNG to this file and print a JSON receipt. Without this option, print PNG bytes to stdout.",
+				"Write the PNG to this file and print a JSON receipt. Without --out or --clipboard, print PNG bytes to stdout.",
+		},
+		{
+			kind: "option",
+			key: "clipboard",
+			spellings: ["--clipboard"],
+			value: "none",
+			description:
+				"Copy PNG and self-contained HTML with its description, then print a JSON receipt. Uses the local Linux or macOS clipboard. Cannot be combined with --out.",
 		},
 		{
 			kind: "option",
@@ -160,6 +222,14 @@ const semanticRasterizeContract = defineCommand({
 			value: "required",
 			placeholder: "view",
 			description: "Which shared board view to draw, by id or name; the whole variant when absent",
+		},
+		{
+			kind: "option",
+			key: "noComparison",
+			spellings: ["--no-comparison"],
+			value: "none",
+			description:
+				"Hide comparison marks and removed subjects; draw the selected variant without standing decoration",
 		},
 		{
 			kind: "option",
@@ -202,15 +272,16 @@ const semanticRasterizeContract = defineCommand({
 	input: { ingress: RasterizeInputSchema },
 	result: z.union([
 		SemanticRasterReceiptSchema,
+		ClipboardResultSchema,
 		z.instanceof(Uint8Array<ArrayBufferLike>).meta({ description: "The PNG image as bytes." }),
 	]),
 	output: {
 		cases: [
 			{
-				id: "stdout",
-				when: { key: "out", present: false },
-				mode: "raw",
-				description: "The PNG image as bytes",
+				id: "clipboard",
+				when: { key: "clipboard", present: true },
+				mode: "json",
+				description: "The copied image, its formats and its HTML description",
 			},
 			{
 				id: "file",
@@ -219,17 +290,41 @@ const semanticRasterizeContract = defineCommand({
 				description: "The PNG that was written",
 				artifact: PendingArtifactSchema,
 			},
+			{
+				id: "stdout",
+				when: {},
+				mode: "raw",
+				description: "The PNG image as bytes when no destination is specified",
+			},
 		],
 		/**
-		 * Choose image bytes or a file receipt.
+		 * Choose image bytes, a file receipt or a clipboard receipt.
 		 * @param input The requested destination.
 		 * @returns The output case's id.
 		 */
-		select: (input) => (input.out === undefined ? "stdout" : "file"),
+		select: (input) =>
+			input.clipboard ? "clipboard" : input.out === undefined ? "stdout" : "file",
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal, rasterizerUnavailableRefusal, rasterBoundsRefusal, rasterFailedRefusal],
+	refusals: [
+		serverRefusal,
+		rasterizerUnavailableRefusal,
+		rasterBoundsRefusal,
+		rasterFailedRefusal,
+		{
+			code: "CLIPBOARD_UNAVAILABLE",
+			exit: 4,
+			stream: "stderr",
+			description: "The native clipboard is unavailable on this desktop.",
+		},
+		{
+			code: "CLIPBOARD_FAILED",
+			exit: 1,
+			stream: "stderr",
+			description: "The native clipboard did not accept both image formats.",
+		},
+	],
 	relationships: [
 		{
 			method: "GET",
@@ -242,68 +337,63 @@ const semanticRasterizeContract = defineCommand({
 	 * Draw the board and rasterize it.
 	 * @param input What the command was given.
 	 * @param context The command context.
-	 * @returns The PNG bytes or the file receipt.
+	 * @returns The PNG bytes or the file or clipboard receipt.
 	 * @throws {CliUsageError} When the board has nothing on it.
 	 * @throws {SemanticRasterError} When no browser can draw it or the bitmap is not what was asked for.
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic rasterize");
-		const drawn = await renderSemanticBoardOnServer(input.name, drawRequest(input));
+		const drawn = await renderSemanticBoardOnServer(input.name, exportRenderRequest(input));
 		if ("empty" in drawn) {
 			throw new CliUsageError(
 				`Semantic board "${drawn.board}" has nothing on it yet, so there is nothing to draw.`,
 			);
 		}
-		const rasterizer = createSemanticRasterizer();
-		let capture;
-		let cleanup;
-		try {
-			capture = await rasterizer.rasterize(
-				{
-					svg: drawn.svg,
-					width: drawn.width,
-					height: drawn.height,
-					scale: input.scale,
-					region: regionWithin(input.region, drawn),
-				},
-				context.signal,
-			);
-		} finally {
-			cleanup = await rasterizer.stop();
+		const capture = await captureBoard(drawn, input, context.signal);
+		if (!input.clipboard && input.out === undefined) return { result: capture.png };
+		const receipt = {
+			success: true as const,
+			board: drawn.board,
+			version: drawn.version,
+			variant: drawn.variant,
+			comparedWith: drawnAgainst(drawn, input.noComparison),
+			view: drawn.view,
+			theme: input.theme,
+			width: capture.width,
+			height: capture.height,
+			scale: input.scale,
+			diagram: { width: drawn.width, height: drawn.height },
+			region: input.region ?? null,
+			source: {
+				renderer: "semantic-renderer" as const,
+				fonts: "embedded" as const,
+				svgSha256: createHash("sha256").update(drawn.svg).digest("hex"),
+				facesLoaded: capture.fonts,
+				motion: "paused-at-start" as const,
+			},
+		};
+		if (input.out !== undefined) {
+			const file = context.resolvePath(input.out);
+			return {
+				result: { ...receipt, file },
+				pendingArtifact: { path: file, content: capture.png, encoding: "binary" as const },
+			};
 		}
-		if (!cleanup.clean) {
-			throw new SemanticRasterError(
-				"RASTER_FAILED",
-				`The rasterizer's cleanup was not clean: ${cleanup.errors.join("; ")}`,
-			);
-		}
-		if (input.out === undefined) return { result: capture.png };
-		const file = context.resolvePath(input.out);
-		return {
-			result: {
-				success: true as const,
-				board: drawn.board,
-				version: drawn.version,
-				variant: drawn.variant,
-				comparedWith: drawnAgainst(drawn),
-				view: drawn.view,
-				theme: input.theme,
-				file,
+		const description = await copyImageToClipboard(
+			{
+				png: capture.png,
 				width: capture.width,
 				height: capture.height,
-				scale: input.scale,
-				diagram: { width: drawn.width, height: drawn.height },
-				region: input.region ?? null,
-				source: {
-					renderer: "semantic-renderer" as const,
-					fonts: "embedded" as const,
-					svgSha256: createHash("sha256").update(drawn.svg).digest("hex"),
-					facesLoaded: capture.fonts,
-					motion: "paused-at-start" as const,
-				},
+				svg: drawn.svg,
+				description: clipboardIdentity(drawn, input),
 			},
-			pendingArtifact: { path: file, content: capture.png, encoding: "binary" as const },
+			context.signal,
+		);
+		const clipboard: z.infer<typeof ClipboardResultSchema>["clipboard"] = {
+			formats: ["image/png", "text/html"],
+			description,
 		};
+		return { result: { ...receipt, clipboard } };
 	},
 });
 

@@ -270,6 +270,10 @@ const SEMANTIC_RASTER_CLEANUP_MS = 1000;
  */
 const HEADLESS_CHROMIUM_CALL_MS = SEMANTIC_RASTER_JOB_TIMEOUT_MS;
 
+/** Bounds native clipboard startup after rasterizer teardown; local copies take milliseconds, but a large image gets five seconds. */
+export const IMAGE_CLIPBOARD_TIMEOUT_MS = 5000;
+/** Retire a Linux clipboard owner within one second of replacement, without polling on every event-loop turn. */
+export const IMAGE_CLIPBOARD_POLL_MS = 1000;
 // ── When a board is considered still ──────────────────────────────────────
 
 /**

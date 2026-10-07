@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 18:22'
-updated_date: '2026-10-07 18:58'
+updated_date: '2026-10-07 19:12'
 labels: []
 dependencies: []
 references:
@@ -47,4 +47,6 @@ CopyQ 16.0.0 is installed and already running on the current Hyprland desktop. I
 The user rejected the CopyQ runtime prerequisite and confirmed Linux and macOS as product targets. Replace the transport with a native Bun/Node package. Research identifies @teddyzhu/clipboard as supporting one PNG-plus-HTML write on native Wayland, X11 and macOS. Its Linux clipboard owner must remain alive after the CLI exits. Dependency approval and owner lifecycle investigation are pending.
 
 The user approved @teddyzhu/clipboard. Version 0.0.10 is installed and its native library loads under Bun. The package listener lacks a reliable subscription acknowledgement and can combine an older event with newer contents, so it cannot safely own helper cleanup. Use periodic HTML identity reads instead; every interval remains in shared/timing.
+
+Native Wayland desktop QA passed with CopyQ stopped: the real command offered image/png and text/html after CLI exit, the HTML embedded the identical 3899x2517 PNG, and its alt text matched the receipt. The helper remained available across several poll intervals and exited after the original clipboard was restored. CopyQ was restarted in its approved Wayland mode. macOS behavior is backed by the package pasteboard implementation but cannot be exercised on this Linux machine. Focused process tests passed (4 tests, 83 assertions), including identical successive copies retiring the previous owner. Simplification replaced explicit child event listeners with node:events.once and shared the render option mapping between SVG and PNG exports. No CopyQ reference remains in active code or consumer guidance.
 <!-- SECTION:NOTES:END -->
