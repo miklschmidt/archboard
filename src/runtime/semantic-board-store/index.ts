@@ -6,6 +6,13 @@
 // advance and atomic fsync write. `discardSemanticBoard` removes a whole board
 // under the same lease and admission. A read of an older contract runs a registered
 // schema migration under the same board lease and persists it before answering.
+// Historical bytes use `decodeSemanticBoardDocument`: the same checks and
+// migrations in memory, without vault access or a migration write.
+
+export {
+	type DecodedSemanticBoard,
+	decodeSemanticBoardDocument,
+} from "@/runtime/semantic-board-store/lib/decode";
 
 export {
 	SEMANTIC_BOARD_FILE_SUFFIX,

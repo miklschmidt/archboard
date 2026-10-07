@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
@@ -117,6 +117,30 @@ test("read migrates every variant and persists one new board version", async () 
 	const migratedBytes = readFileSync(file, "utf8");
 	expect((await store.readSemanticBoard(name)).ok).toBe(true);
 	expect(readFileSync(file, "utf8")).toBe(migratedBytes);
+});
+
+test("decoding old board bytes migrates every variant in memory without changing the vault, version or timestamps", () => {
+	const original = legacyBoard("decoded-legacy");
+	const file = put(original.name, original);
+	const bytes = readFileSync(file, "utf8");
+	const files = readdirSync(vault, { recursive: true });
+	const modified = statSync(file).mtimeMs;
+	const decoded = store.decodeSemanticBoardDocument(bytes);
+	expect(decoded.ok).toBe(true);
+	if (!decoded.ok) return;
+	expect(decoded.changed).toBe(true);
+	expect(decoded.board).toMatchObject({
+		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+		version: original.version,
+		createdAt: original.createdAt,
+		updatedAt: original.updatedAt,
+	});
+	expect(
+		decoded.board.variants.map((variant) => variant.content.nodes.map((node) => node.order)),
+	).toEqual([[1000, 4000, 3000], [1000]]);
+	expect(readFileSync(file, "utf8")).toBe(bytes);
+	expect(statSync(file).mtimeMs).toBe(modified);
+	expect(readdirSync(vault, { recursive: true })).toEqual(files);
 });
 
 test("invalid legacy content is refused without persisting an upgrade", async () => {
