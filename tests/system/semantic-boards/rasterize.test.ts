@@ -312,70 +312,82 @@ describe("semantic rasterize", () => {
 				"0,0,120,80",
 				"--clipboard",
 			];
-			const copied = cli(args, undefined, env);
-			expect(copied.status, copied.stderr).toBe(0);
-			const receipt = JSON.parse(copied.stdout);
-			expect(receipt).toMatchObject({
-				board: "transfers",
-				variant: { name: "No auditor" },
-				view: { name: VIEW_NAME },
-				comparedWith: null,
-				theme: "dark",
-				scale: 2,
-				region: { x: 0, y: 0, width: 120, height: 80 },
-				clipboard: { formats: ["image/png", "text/html"] },
-			});
-			expect(receipt.file).toBeUndefined();
-			const sent = JSON.parse(fs.readFileSync(recorded, "utf8"));
-			expect(sent.formats).toEqual(["image/png", "text/html"]);
-			const png = Buffer.from(sent.payload.png, "base64");
-			expect(pngSize(png)).toEqual({ width: 240, height: 160 });
-			const window = new Window();
+			const owners = new Set<number>();
 			try {
-				const rendered = cli([
-					"semantic",
-					"render",
-					"transfers",
-					"--variant",
-					"No auditor",
-					"--view",
-					VIEW_NAME,
-					"--no-comparison",
-					"--theme",
-					"dark",
-				]);
-				expect(rendered.status, rendered.stderr).toBe(0);
-				window.document.body.innerHTML = rendered.stdout;
-				const accessibleName = window.document.querySelector("svg")?.getAttribute("aria-label");
-				expect(accessibleName).toBeTruthy();
-				window.document.body.innerHTML = sent.payload.html;
-				const image = window.document.querySelector("img");
-				expect(window.document.querySelectorAll("*")).toHaveLength(4);
-				expect(image?.getAttribute("src")).toBe(`data:image/png;base64,${sent.payload.png}`);
-				expect(image?.getAttribute("alt")).toBe(receipt.clipboard.description);
-				expect(image?.getAttribute("alt")).toContain(accessibleName!);
-				expect(image?.getAttribute("alt")).toContain(VIEW_NAME);
-				expect(image?.getAttribute("alt")).toContain("One transfer");
+				const copied = cli(args, undefined, env);
+				expect(copied.status, copied.stderr).toBe(0);
+				const receipt = JSON.parse(copied.stdout);
+				expect(receipt).toMatchObject({
+					board: "transfers",
+					variant: { name: "No auditor" },
+					view: { name: VIEW_NAME },
+					comparedWith: null,
+					theme: "dark",
+					scale: 2,
+					region: { x: 0, y: 0, width: 120, height: 80 },
+					clipboard: { formats: ["image/png", "text/html"] },
+				});
+				expect(receipt.file).toBeUndefined();
+				const sent = JSON.parse(fs.readFileSync(recorded, "utf8"));
+				owners.add(sent.pid);
+				expect(sent.formats).toEqual(["image/png", "text/html"]);
+				const png = Buffer.from(sent.payload.png, "base64");
+				expect(pngSize(png)).toEqual({ width: 240, height: 160 });
+				const window = new Window();
+				try {
+					const rendered = cli([
+						"semantic",
+						"render",
+						"transfers",
+						"--variant",
+						"No auditor",
+						"--view",
+						VIEW_NAME,
+						"--no-comparison",
+						"--theme",
+						"dark",
+					]);
+					expect(rendered.status, rendered.stderr).toBe(0);
+					window.document.body.innerHTML = rendered.stdout;
+					const accessibleName = window.document.querySelector("svg")?.getAttribute("aria-label");
+					expect(accessibleName).toBeTruthy();
+					window.document.body.innerHTML = sent.payload.html;
+					const image = window.document.querySelector("img");
+					expect(window.document.querySelectorAll("*")).toHaveLength(4);
+					expect(image?.getAttribute("src")).toBe(`data:image/png;base64,${sent.payload.png}`);
+					expect(image?.getAttribute("alt")).toBe(receipt.clipboard.description);
+					expect(image?.getAttribute("alt")).toContain(accessibleName!);
+					expect(image?.getAttribute("alt")).toContain(VIEW_NAME);
+					expect(image?.getAttribute("alt")).toContain("One transfer");
+				} finally {
+					await window.happyDOM.close();
+				}
+				expect(boardFile()).toEqual(before);
+				// An identical export gets a fresh identity and retires the first Linux owner.
+				const repeated = cli(args, undefined, env);
+				expect(repeated.status, repeated.stderr).toBe(0);
+				const replacement = JSON.parse(fs.readFileSync(recorded, "utf8"));
+				owners.add(replacement.pid);
+				expect(replacement.payload.html).not.toBe(sent.payload.html);
+				await waitForProcessExit(sent.pid);
+				fs.rmSync(recorded);
+				await waitForProcessExit(replacement.pid);
+				const conflict = cli([...args, "--out", path.join(vault, "conflict.png")], undefined, env);
+				expect(conflict.status).toBe(2);
+				expect(conflict.stdoutBytes).toHaveLength(0);
+				expect(fs.existsSync(recorded)).toBe(false);
+				const refused = cli(args, undefined, { ...env, ARCHBOARD_TEST_CLIPBOARD_FAIL: "1" });
+				expect(refused.status).toBe(1);
+				expect(refused.stdoutBytes).toHaveLength(0);
+				expect(fs.existsSync(recorded)).toBe(false);
 			} finally {
-				await window.happyDOM.close();
+				// Even a failed assertion must retire the latest published helper.
+				if (fs.existsSync(recorded)) {
+					owners.add(JSON.parse(fs.readFileSync(recorded, "utf8")).pid);
+				}
+				fs.rmSync(recorded, { force: true });
+				await Promise.all([...owners].map((pid) => waitForProcessExit(pid)));
 			}
-			expect(boardFile()).toEqual(before);
-			// An identical export gets a fresh identity and retires the first Linux owner.
-			const repeated = cli(args, undefined, env);
-			expect(repeated.status, repeated.stderr).toBe(0);
-			const replacement = JSON.parse(fs.readFileSync(recorded, "utf8"));
-			expect(replacement.payload.html).not.toBe(sent.payload.html);
-			await waitForProcessExit(sent.pid);
-			fs.rmSync(recorded);
-			await waitForProcessExit(replacement.pid);
-			const conflict = cli([...args, "--out", path.join(vault, "conflict.png")], undefined, env);
-			expect(conflict.status).toBe(2);
-			expect(conflict.stdoutBytes).toHaveLength(0);
-			expect(fs.existsSync(recorded)).toBe(false);
-			const refused = cli(args, undefined, { ...env, ARCHBOARD_TEST_CLIPBOARD_FAIL: "1" });
-			expect(refused.status).toBe(1);
-			expect(refused.stdoutBytes).toHaveLength(0);
-			expect(fs.existsSync(recorded)).toBe(false);
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);
