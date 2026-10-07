@@ -18,7 +18,7 @@
 
 </div>
 
-<img alt="On the left: the commands that a coding agent runs for this request. It claims the Web shop board, branches a proposal, edits it and compares it with today. On the right: the browser pane shows the claim and then redraws the board as the proposal. It shows new parts in green and a moved call in orange. The removed timeout guard is a red ghost." src="https://github.com/user-attachments/assets/c4dd12cc-2911-4568-a7a4-f729e873f372" width="100%">
+<img alt="On the left: the commands that a coding agent runs for this request. It claims the Web shop board, branches a proposal, edits it and compares it with today. On the right: the browser pane shows the claim and then redraws the board as the proposal. It shows new parts in green and a moved call in orange. The removed timeout guard is a red ghost." src="https://github.com/user-attachments/assets/2380c2e3-cb45-4a3f-9efd-e246c848c5df" width="100%">
 
 <p align="center"><sub>Filmed live against a real Archboard server. The terminal on the left replays the commands an agent runs for this request, and each one ran against the server as shown. The pane on the right is the real browser, redrawing on every write. Nothing here was dragged into place.</sub></p>
 
@@ -28,7 +28,7 @@ Plan the next step before anyone writes code. Ask for a change and see it drawn 
 
 **Hear Archboard explain itself**. Its own system board, narrated by the Codex voice in under two minutes. Turn the sound on.
 
-https://github.com/user-attachments/assets/7ae7ab41-2755-48cd-9887-c71eac90bfce
+https://github.com/user-attachments/assets/a4b2dcf6-957d-4e20-8414-2f6a678a35f5
 
 ## What you can do with it
 
@@ -40,7 +40,7 @@ https://github.com/user-attachments/assets/7ae7ab41-2755-48cd-9887-c71eac90bfce
 </tr>
 <tr>
 <td width="33%" align="center"><a href="#plan-the-next-architecture-with-your-agent"><img src="docs/readme/idx-plan.webp" alt="Plan: two competing proposals side by side"></a><br><b><a href="#plan-the-next-architecture-with-your-agent">Plan with your agent</a></b></td>
-<td width="33%" align="center"><a href="#keep-a-record-that-remembers-why"><img src="docs/readme/idx-history.webp" alt="History: three generations of one board on a timeline"></a><br><b><a href="#keep-a-record-that-remembers-why">Keep a record that remembers why</a></b></td>
+<td width="33%" align="center"><a href="#keep-a-record-that-remembers-why"><img src="docs/readme/idx-history.webp" alt="History: saved generations of one board on a timeline"></a><br><b><a href="#keep-a-record-that-remembers-why">Keep a record that remembers why</a></b></td>
 <td width="33%" align="center"><a href="#narrated-walkthroughs-explainers-and-pull-request-videos"><img src="docs/readme/idx-voice.webp" alt="Voice: a narrated walkthrough with its caption and subtitles"></a><br><b><a href="#narrated-walkthroughs-explainers-and-pull-request-videos">Narrated walkthroughs</a></b></td>
 </tr>
 <tr>
@@ -67,7 +67,7 @@ Give each part a link to its file or a named function, class, or value. A relati
 
 Warnings mark the affected parts and relationships in the canvas. Select a warning to read the finding and open its source when available. Each piece of source evidence says whether analysis resolved it or matched it only by name.
 
-<img src="https://github.com/user-attachments/assets/6b8b9b52-3b35-4084-bb44-149715808b76" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example board leaves out. Selecting its warning opens the source evidence in the inspector. The terminal shows the actual call in the source file.">
+<img src="https://github.com/user-attachments/assets/04b20cce-5866-46d1-8557-3200f16b7800" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example board leaves out. Selecting its warning opens the source evidence in the inspector. The terminal shows the actual call in the source file.">
 
 <p align="center"><sub>A small example checkout with real analysis results. The terminal replays the command and summarizes its answer. The live browser selects the warning, and the source excerpt shows the missing call.</sub></p>
 
@@ -79,7 +79,7 @@ A module's interface on the map is what its outside callers reach. Archboard sho
 
 Compare competing proposals side by side. The comparison lists interface changes before internal changes, so you can see which design asks more of its callers. The code check reports callers that reach parts the module does not expose. It identifies exposed names with no outside use in the checked code.
 
-<img src="https://github.com/user-attachments/assets/1e6b9197-369f-418f-aa3c-58503221c867" width="100%" alt="Two proposals for the same checkout example. Selecting Orders in each opens its interface inspector. Entry per job exposes three parts. One entry point exposes Place order and keeps two parts hidden.">
+<img src="https://github.com/user-attachments/assets/5a1d15cc-66e4-4927-95f2-b966026436ba" width="100%" alt="Two proposals for the same checkout example. Selecting Orders in each opens its interface inspector. Entry per job exposes three parts. One entry point exposes Place order and keeps two parts hidden.">
 
 <p align="center"><sub>The same six parts, with different boundaries. Orders exposes three entry points on the left. On the right, one entry point keeps two internal parts hidden. Both inspectors come from the live browser.</sub></p>
 
@@ -89,7 +89,7 @@ Git records changes to files. Archboard maps their commits onto the parts of you
 
 Set a branch's commits against its proposal. See which parts the commits changed, which parts the plan named, and where the two differ. Your agent can spot changes to mapped parts outside the plan before it adopts the proposal. Archboard also reports commits to bound files since the board last described them, so you can choose what to inspect next.
 
-<img src="https://github.com/user-attachments/assets/709d87ba-fbd7-41d4-a8d4-66fee7c013b6" width="100%" alt="The inspector shows recent commits and a pair of parts that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
+<img src="https://github.com/user-attachments/assets/742ed45c-a62b-436d-b883-9ab6a7e09afd" width="100%" alt="The inspector shows recent commits and a pair of parts that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
 
 <p align="center"><sub>Fixed example commits make this demonstration repeatable. Validate order and Save order change together in seven commits. The branch also changes Validate order outside the proposal. The terminal summarizes real Git analysis beside the live board.</sub></p>
 
@@ -97,7 +97,7 @@ Set a branch's commits against its proposal. See which parts the commits changed
 
 See a change before anyone builds it. Ask your agent for one and you get a **proposal**: the same board, redrawn as its difference from what exists. New parts arrive green, changed ones orange, and removed ones stay on the page as red ghosts. A call that moves is shown as one change, not as a deletion beside an addition.
 
-<img src="https://github.com/user-attachments/assets/b70e0c4c-8998-4192-8eff-b1b80ba23cf1" width="100%" alt="A board that nobody has built yet, marked not built, opened in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
+<img src="https://github.com/user-attachments/assets/8de02233-e1de-4266-933c-046095c2aa05" width="100%" alt="A board that nobody has built yet, marked not built, opened in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
 
 <p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. The header names the proposal in the focused pane and says <code>not built</code>: nothing here pretends to exist before somebody adopts it.</sub></p>
 
@@ -114,9 +114,9 @@ off the request path, compare it with today, and show me both side by side.
 
 Most diagrams show what changed. This one also remembers why. When a proposal ships, your agent **adopts** it: it becomes the current architecture, the one it replaces is frozen as history, and the date and reason are recorded. A proposal you decide against is **shelved** with its reason instead of deleted, so the next person who suggests it finds the answer.
 
-<img src="https://github.com/user-attachments/assets/88b46b20-bb4d-467d-b0dd-12d752d89af3" width="100%" alt="Archboard's own Renderer layout board walked through its three states: Initial with five parts, Readable layout with fourteen, and the current ADR 0040 with fifteen. A timeline added for this clip names each state, its adoption date and its recorded reason.">
+<img src="https://github.com/user-attachments/assets/ffea891f-c8da-467c-b68b-57c02c6266ed" width="100%" alt="Archboard's own Renderer layout board moves through its saved history. A timeline added for this clip names each state, its adoption date and its recorded reason.">
 
-<p align="center"><sub>Real history from Archboard's own vault: its renderer board through three generations. The timeline strip is added for this README. Each state, date and quoted reason comes from the board file, as <code>archboard semantic show "Renderer layout"</code> prints it.</sub></p>
+<p align="center"><sub>Real history from Archboard's own vault: its renderer board through six generations. The timeline strip is added for this README. Each state, date and quoted reason comes from the board file, as <code>archboard semantic show "Renderer layout"</code> prints it.</sub></p>
 
 - **History cannot drift**. A historical variant refuses edits: _what was true then does not change._
 - **Read any state against any other**. `archboard semantic compare "Web shop" --variant "Synchronous checkout" --against Monolith` says, part by part, what changed since the monolith.
@@ -136,7 +136,7 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 **A pull request, explained to its reviewers**: why the change exists, what it changed, and where to look closely. Turn the sound on.
 
-https://github.com/user-attachments/assets/3e5a432d-937d-4afd-ab63-3f97b1ede2b1
+https://github.com/user-attachments/assets/025e7d76-2ad5-43b5-82d9-8a587994243f
 
 <p align="center"><sub>Each video is what <code>archboard semantic record</code> wrote.</sub></p>
 
@@ -165,7 +165,7 @@ Add a sequence diagram of what happens when a shopper places an order, from the 
 
 Give the tour once, and every new hire can play it back. A newcomer's walkthrough starts with two parts and adds one piece at a time until the whole path is on screen. It stops at the place where things go wrong and ends on the one sentence worth remembering.
 
-https://github.com/user-attachments/assets/7a655d99-ec62-4cc1-a04c-883bb626b67e
+https://github.com/user-attachments/assets/11dfdf87-a243-45a2-a024-38deffba1212
 
 <p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. Turn the sound on.</sub></p>
 
@@ -177,13 +177,13 @@ I'm new here. Walk me through what happens to stock when a shopper presses Pay.
 
 One map, from the whole system down to the file. Boards link to boards: hover a part that has its own board and a tip offers to open it. Double-click and the view dives in, with a breadcrumb back. Parts are bound to their code. **Open code** takes you to a file or a named function or class in VS Code, Cursor, Zed or on GitHub. A system spread over several repositories can share one vault, with each part bound to its own repository.
 
-<img src="https://github.com/user-attachments/assets/bfedb527-77f6-4c5c-93f4-60c37df2c514" width="100%" alt="The Web shop board: the pointer rests on Inventory service, and a tip says double-click to open it. The view dives into the Inventory service board with the breadcrumb Web shop › Inventory service.">
+<img src="https://github.com/user-attachments/assets/c1c1ea48-4136-455b-9b27-bb0773d4bd62" width="100%" alt="The Web shop board: the pointer rests on Inventory service, and a tip says double-click to open it. The view dives into the Inventory service board with the breadcrumb Web shop › Inventory service.">
 
 ## Ask your architecture
 
 Select a part and ask. The Codex agent in the conversation reads the board and your selection, and answers from the architecture, not from the pixels. Press **Talk** to ask out loud instead: the voice hands your question to a Codex agent that reads the boards, then says the answer back.
 
-<img src="https://github.com/user-attachments/assets/23cd59b4-966f-4ee3-b7db-f6535ba5d650" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the composer of the conversation, which opens beside the navigator. The conversation fills with an answer drawn from the board.">
+<img src="https://github.com/user-attachments/assets/ad57bbb2-0ed1-4b9d-8e37-27de8c5d764b" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the composer of the conversation, which opens beside the navigator. The conversation fills with an answer drawn from the board.">
 
 <p align="center"><sub>A real answer from a Codex agent, typed in the conversation. The wait for the answer is sped up.</sub></p>
 
@@ -191,7 +191,7 @@ Select a part and ask. The Codex agent in the conversation reads the board and y
 
 Let agents work on the map without wondering what they touched. When an agent **claims** a board, every pane that has it open shows who, why, and since when. The pane also has one button to take the board back. Every write says in one line what it is doing, and every change to an existing board names the version it read. If the board moved since then, the write is refused, so two agents never overwrite each other.
 
-<img src="https://github.com/user-attachments/assets/bb941a0a-b26f-4370-93a5-32f3dc52f9ea" width="100%" alt="An agent claims the Web shop board and the pane shows the claim. The pointer presses Take back control, and the banner goes. The agent's next write is refused with exit code 5.">
+<img src="https://github.com/user-attachments/assets/381c3a25-0bc8-4b07-a419-2e82541c04ea" width="100%" alt="An agent claims the Web shop board and the pane shows the claim. The pointer presses Take back control, and the banner goes. The agent's next write is refused with exit code 5.">
 
 <p align="center"><sub>You take the board back, and the agent's next write is refused. Nothing is half written. Every accepted write is on disk before the agent hears back.
 </sub></p>
