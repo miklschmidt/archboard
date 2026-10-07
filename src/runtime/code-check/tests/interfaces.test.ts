@@ -68,6 +68,7 @@ beforeAll(async () => {
 			'export { readShelf } from "./lib/read";',
 			'export { writeShelf } from "./lib/write";',
 			'export { auditShelf } from "./lib/audit";',
+			'export { onShelf } from "./lib/callback";',
 			'export { unusedHelper, SHELF_LIMIT, type ShelfType } from "./lib/util";',
 			"",
 		].join("\n"),
@@ -76,6 +77,7 @@ beforeAll(async () => {
 		"src/store/lib/cache.ts": 'export function cached(): string { return "x"; }\n',
 		"src/store/lib/write.ts": "export function writeShelf(): void {}\n",
 		"src/store/lib/audit.ts": "export function auditShelf(): void {}\n",
+		"src/store/lib/callback.ts": "export function onShelf(name: string): void {}\n",
 		"src/store/lib/hook.ts": "export function hook(): void {}\n",
 		"src/store/lib/inner.ts":
 			'import { hook } from "./hook";\nexport function inner(): void { hook(); }\n',
@@ -92,6 +94,12 @@ beforeAll(async () => {
 		"src/report/report.ts": [
 			'import { auditShelf, SHELF_LIMIT, type ShelfType } from "../store";',
 			"export function report(shelf: ShelfType): string { auditShelf(); return shelf.name.slice(SHELF_LIMIT); }",
+			"",
+		].join("\n"),
+		"src/report/listen.ts": [
+			'import { onShelf, SHELF_LIMIT } from "../store";',
+			"function consume(value: unknown): void {}",
+			"export function listen(names: string[]): void { names.forEach(onShelf); consume(SHELF_LIMIT); }",
 			"",
 		].join("\n"),
 		"tests/system/store.test.ts":
@@ -143,6 +151,7 @@ beforeAll(async () => {
 					part("Cache", "src/store/lib/cache.ts", "Store"),
 					part("Write", "src/store/lib/write.ts", "Store"),
 					part("Audit", "src/store/lib/audit.ts", "Store"),
+					part("Callback", "src/store/lib/callback.ts", "Store"),
 					part("Util", "src/store/lib/util.ts", "Store"),
 					part("Hook", "src/store/lib/hook.ts", "Store"),
 					// Code of the store, drawn outside it.
@@ -290,7 +299,10 @@ test("an entry point the module does not expose, which a caller's code reaches f
 
 test("a hidden part whose exposed code a file no part binds uses at run time is a caller the board does not draw", () => {
 	const undrawn = findings("CALLER_UNDRAWN", "Shop");
-	expect(undrawn.map((each) => [each.subject?.id, each.severity])).toEqual([["Audit", "warning"]]);
+	expect(undrawn.map((each) => [each.subject?.id, each.severity])).toEqual([
+		["Audit", "warning"],
+		["Callback", "warning"],
+	]);
 	expect(undrawn[0]?.evidence).toEqual([
 		{
 			kind: "call",
@@ -310,6 +322,26 @@ test("a use by a part on the board is the undrawn relationship's to report, and 
 		"Write",
 	]);
 	// The report names Util's type, and reads its constant, which runs none of Util's code.
+	expect(findings("CALLER_UNDRAWN", "Shop").some((each) => each.subject?.id === "Util")).toBe(
+		false,
+	);
+});
+
+test("an external file passing an exposed function to a callback is an undrawn caller, while a passed value is not", () => {
+	const callback = findings("CALLER_UNDRAWN", "Shop").find(
+		(each) => each.subject?.id === "Callback",
+	);
+	expect(callback?.evidence).toEqual([
+		{
+			kind: "call",
+			resolution: "resolved",
+			to: "Callback",
+			repo: SHOP,
+			path: "src/report/listen.ts",
+			line: 3,
+			symbol: "onShelf",
+		},
+	]);
 	expect(findings("CALLER_UNDRAWN", "Shop").some((each) => each.subject?.id === "Util")).toBe(
 		false,
 	);
