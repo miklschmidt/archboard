@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 29,
+	"version": 31,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-07T00:59:08.519Z",
+	"updatedAt": "2026-10-07T01:10:14.569Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -2672,7 +2672,7 @@
 		{
 			"id": "pVuh6kOj",
 			"name": "TASK-367.27",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "7OTVElk6",
 			"summary": "Service level: Codex integration inside the Archboard server. Follow linked subjects for related levels.",
 			"content": {
@@ -3964,9 +3964,9 @@
 		{
 			"id": "KwhT7rtK",
 			"name": "TASK-436.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "pVuh6kOj",
-			"summary": "Workbench callers reach public ports and the unload module",
+			"summary": "The per-tab workbench, browser gateway and session lifetimes",
 			"content": {
 				"nodes": [
 					{
@@ -5262,7 +5262,7 @@
 			}
 		}
 	],
-	"current": "pVuh6kOj",
+	"current": "KwhT7rtK",
 	"adoptions": [
 		{
 			"variant": "kUF7buv6",
@@ -5281,6 +5281,12 @@
 			"from": "7OTVElk6",
 			"at": "2026-10-06T15:06:07.154Z",
 			"reason": "Every relationship carries its anchor, every module part binds its directory, and the uses the code check found are drawn"
+		},
+		{
+			"variant": "KwhT7rtK",
+			"from": "pVuh6kOj",
+			"at": "2026-10-07T01:08:50.943Z",
+			"reason": "Corrected existing public factories, callback ports and unload module bindings"
 		}
 	]
 }

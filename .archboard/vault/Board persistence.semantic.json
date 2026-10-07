@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 36,
+	"version": 39,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-07T00:50:31.700Z",
+	"updatedAt": "2026-10-07T01:10:16.453Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -4151,7 +4151,7 @@
 		{
 			"id": "NbjfMdrd",
 			"name": "TASK-367.27",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "WFUdRHyc",
 			"summary": "Module level: the board store, the entry points its callers reach, and the reads, transitions and durable writes behind them. Follow linked subjects for related levels.",
 			"content": {
@@ -5291,9 +5291,9 @@
 		{
 			"id": "30kb8Nuk",
 			"name": "TASK-436.14",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "NbjfMdrd",
-			"summary": "One pure decoder migrates live and historical board bytes",
+			"summary": "The semantic board store, decoding, leases and atomic persistence",
 			"content": {
 				"nodes": [
 					{
@@ -6410,6 +6410,20 @@
 							"path": "src/runtime/semantic-board-store/lib/read.ts",
 							"symbol": "decodeSemanticBoardDocument"
 						}
+					},
+					{
+						"id": "WRFuLyNq",
+						"order": 53000,
+						"from": "4P7YZdnj",
+						"to": "ON3C5Z6t",
+						"kind": "call",
+						"description": "Reads how far board content is behind its code",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "createBehindReading"
+						}
 					}
 				],
 				"flows": [],
@@ -6481,7 +6495,7 @@
 			}
 		}
 	],
-	"current": "NbjfMdrd",
+	"current": "30kb8Nuk",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -6512,6 +6526,12 @@
 			"from": "WFUdRHyc",
 			"at": "2026-10-06T14:59:04.385Z",
 			"reason": "Every relationship carries an anchor; the calls the code makes into the address helper, propagation, the vault reads and the lease news are drawn"
+		},
+		{
+			"variant": "30kb8Nuk",
+			"from": "NbjfMdrd",
+			"at": "2026-10-07T01:08:49.898Z",
+			"reason": "Built historical decoding shares the pure store decoder without writing historical bytes"
 		}
 	],
 	"shelvings": [

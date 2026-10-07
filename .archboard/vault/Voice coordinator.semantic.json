@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 30,
+	"version": 32,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-07T00:59:09.041Z",
+	"updatedAt": "2026-10-07T01:10:15.076Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -3823,7 +3823,7 @@
 		{
 			"id": "HQ2dUcmc",
 			"name": "TASK-367.28",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "k093B5gS",
 			"summary": "Module level: how a voice talk reaches the coordinator, the board tools and the workhorse. Follow linked subjects for related levels.",
 			"content": {
@@ -4733,9 +4733,9 @@
 		{
 			"id": "5MRuMNhh",
 			"name": "TASK-436.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "HQ2dUcmc",
-			"summary": "Coordinator entry points follow injected ports and subscriptions",
+			"summary": "The coordinator thread, callbacks and prompt and call routing",
 			"content": {
 				"nodes": [
 					{
@@ -5649,7 +5649,7 @@
 			}
 		}
 	],
-	"current": "HQ2dUcmc",
+	"current": "5MRuMNhh",
 	"adoptions": [
 		{
 			"variant": "H3TW6CJC",
@@ -5686,6 +5686,12 @@
 			"from": "k093B5gS",
 			"at": "2026-10-06T21:59:04.759Z",
 			"reason": "Draws the authored turns that spoken approval, the operations and the outcome report build, and the tool input that spoken approval parses"
+		},
+		{
+			"variant": "5MRuMNhh",
+			"from": "HQ2dUcmc",
+			"at": "2026-10-07T01:08:51.489Z",
+			"reason": "Corrected existing coordinator factory and callback entry point descriptions"
 		}
 	]
 }

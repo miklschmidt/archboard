@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 38,
+	"version": 42,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-07T01:00:35.481Z",
+	"updatedAt": "2026-10-07T01:10:13.819Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -9504,7 +9504,7 @@
 		{
 			"id": "Po5nqvPy",
 			"name": "TASK-367.28",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "8KT5Cpv5",
 			"summary": "Pictures and recordings of a board, through a headless browser",
 			"content": {
@@ -11142,9 +11142,9 @@
 		{
 			"id": "iQ3Y0ErY",
 			"name": "TASK-436.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Po5nqvPy",
-			"summary": "Public rasterizer and recorder entry points match their modules",
+			"summary": "Headless board and walkthrough rendering, recording and encoding",
 			"content": {
 				"nodes": [
 					{
@@ -12124,7 +12124,7 @@
 						"from": "peB5Bs5R",
 						"to": "PhFc1AJ9",
 						"kind": "call",
-						"label": "list its encoders; then frames on stdin, voice.wav beside",
+						"description": "list its encoders; then frames on stdin, voice.wav beside",
 						"emphasis": "normal",
 						"traffic": {
 							"speed": 40,
@@ -12156,8 +12156,13 @@
 						"from": "WSI0A2k3",
 						"to": "PhFc1AJ9",
 						"kind": "call",
-						"label": "fetch it, then run it in its own place",
-						"emphasis": "normal"
+						"description": "fetch it, then run it in its own place",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/video-encoder/lib/ffmpeg.ts",
+							"symbol": "NIX_ARGV"
+						}
 					},
 					{
 						"id": "sXypEOAH",
@@ -12880,7 +12885,7 @@
 			}
 		}
 	],
-	"current": "Po5nqvPy",
+	"current": "iQ3Y0ErY",
 	"adoptions": [
 		{
 			"variant": "PfFN8kCs",
@@ -12923,6 +12928,12 @@
 			"from": "8KT5Cpv5",
 			"at": "2026-10-06T21:59:03.644Z",
 			"reason": "Draws the DevTools JSON guard that the executable and the page readiness use, and the browser's own failure that the raster session throws"
+		},
+		{
+			"variant": "iQ3Y0ErY",
+			"from": "Po5nqvPy",
+			"at": "2026-10-07T01:08:50.379Z",
+			"reason": "Corrected existing rasterizer and recording bindings to their actual public entry points"
 		}
 	],
 	"shelvings": [

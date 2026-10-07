@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 3,
+	"version": 6,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-07T00:56:53.640Z",
+	"updatedAt": "2026-10-07T01:12:39.208Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -68,7 +68,7 @@
 		{
 			"id": "8dYrGdIf",
 			"name": "TASK-436.03",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"summary": "Live pane connections, presentation state and board announcements",
 			"content": {
 				"nodes": [
@@ -332,6 +332,17 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server.ts"
+						}
+					},
+					{
+						"id": "RjaKX25k",
+						"order": 18000,
+						"name": "Browser origin guard",
+						"kind": "module",
+						"responsibility": "Checks browser request origins at HTTP and WebSocket entry points",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/browser-origin"
 						}
 					}
 				],
@@ -853,6 +864,34 @@
 							"path": "src/server.ts",
 							"symbol": "serverStartupFailureMessage"
 						}
+					},
+					{
+						"id": "2ssPZnZc",
+						"order": 38000,
+						"from": "X07YebBP",
+						"to": "RjaKX25k",
+						"kind": "call",
+						"description": "Guards the WebSocket handshake through the shared public request policy",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/websocket-connection.ts",
+							"symbol": "checkBrowserCsrf"
+						}
+					},
+					{
+						"id": "E1Tpzwjx",
+						"order": 39000,
+						"from": "r1aZDJtl",
+						"to": "RjaKX25k",
+						"kind": "call",
+						"description": "Checks every browser request before admission and routing",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "createBrowserOriginGuard"
+						}
 					}
 				],
 				"flows": [
@@ -1096,6 +1135,14 @@
 					}
 				]
 			}
+		}
+	],
+	"current": "8dYrGdIf",
+	"adoptions": [
+		{
+			"variant": "8dYrGdIf",
+			"at": "2026-10-07T01:12:39.208Z",
+			"reason": "The existing seven live-pane implementations and their exchanges now have their own architecture board"
 		}
 	]
 }

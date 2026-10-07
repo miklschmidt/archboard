@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 18,
+	"version": 21,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-07T00:56:53.813Z",
+	"updatedAt": "2026-10-07T01:10:15.992Z",
 	"views": [],
 	"variants": [
 		{
@@ -616,7 +616,7 @@
 		{
 			"id": "55d86UGv",
 			"name": "TASK-367.27",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "eLxlFOKI",
 			"summary": "Module level: how command-routing turns argv and a command table into one bounded invocation, and the three entry points its callers reach: the run, the registry and help.",
 			"content": {
@@ -1012,9 +1012,9 @@
 		{
 			"id": "DCKlehd5",
 			"name": "TASK-436.12",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "55d86UGv",
-			"summary": "The dispatch registry keeps only the lookup its callers use",
+			"summary": "Command matching, registry and handler dispatch",
 			"content": {
 				"nodes": [
 					{
@@ -1034,12 +1034,11 @@
 						"order": 2000,
 						"name": "Registry",
 						"kind": "function",
-						"responsibility": "Builds the child lookup dispatch uses from the command table",
+						"responsibility": "Builds the command registry and resolves a child command",
 						"parent": "EMV2VjBX",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/registry.ts",
-							"symbol": "registryOf"
+							"path": "src/cli/command-routing/lib/registry.ts"
 						}
 					},
 					{
@@ -1393,7 +1392,7 @@
 			}
 		}
 	],
-	"current": "55d86UGv",
+	"current": "DCKlehd5",
 	"adoptions": [
 		{
 			"variant": "eLxlFOKI",
@@ -1406,6 +1405,12 @@
 			"from": "eLxlFOKI",
 			"at": "2026-10-06T14:56:42.497Z",
 			"reason": "Every relationship carries an anchor; the interruptible run binds its own function; the catalogue's help and route-building calls are drawn"
+		},
+		{
+			"variant": "DCKlehd5",
+			"from": "55d86UGv",
+			"at": "2026-10-07T01:08:49.400Z",
+			"reason": "Built command dispatch exposes registryOf and childOf after deleting unused surface wrappers"
 		}
 	]
 }
