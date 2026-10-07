@@ -80,7 +80,7 @@ The three code and history demonstrations add a small checkout example to their
 copied vault. `scripts/readme-assets/evidence-fixture.ts` holds its source and fixed
 Git history. The harness creates the source repository under the take's scratch
 directory. It registers that repository and authors the board through the CLI.
-It does not change the source checkout or the tracked vault.
+It leaves Archboard's source files and tracked vault unchanged.
 
 `code-evidence` runs `archboard check --code` and selects its resolved missing-call
 warning in the browser. Its terminal shows the source lines behind the finding.
