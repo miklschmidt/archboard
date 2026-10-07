@@ -43,13 +43,10 @@ import {
 	type CliRegistryEntry,
 	type CommandRoute,
 	child,
-	cliSurfaceOf,
 	contract,
-	helpText,
 	registryOf,
 	runCliWith,
 } from "@/cli/command-routing/index";
-import { packageVersion } from "@/runtime/engine/package-version";
 
 // The one command table: every top-level command and its subcommands. What each is
 // called and what it accepts is its contract's; dispatch, the registry and help live under lib/.
@@ -125,29 +122,11 @@ const COMMANDS: Record<string, CommandRoute> = {
 };
 
 /**
- * Every way the CLI can be invoked, as `{ name, subcommands }`: the command table read as
- * data for contract and documentation checks.
- * @returns One entry per top-level command with its subcommand names.
- */
-function cliSurface(): { name: string; subcommands: readonly string[] }[] {
-	return cliSurfaceOf(COMMANDS);
-}
-
-/**
  * The contract registry: every command and subcommand, classified and architecture-checked.
  * @returns The registry entries in table order.
  */
 function cliContractRegistry(): CliRegistryEntry[] {
 	return registryOf(COMMANDS);
-}
-
-/**
- * Renders one help topic from the same command table used for dispatch.
- * @param topic - The command words after `help`; none for the root.
- * @returns The help text.
- */
-function commandHelp(topic: readonly string[]): string {
-	return helpText(COMMANDS, packageVersion(), topic);
 }
 
 /**
@@ -158,4 +137,4 @@ function commandHelp(topic: readonly string[]): string {
 async function runCli(argv: string[], bootstrap?: CliBootstrap): Promise<void> {
 	await runCliWith(COMMANDS, argv, bootstrap);
 }
-export { cliSurface, type CliRegistryEntry, cliContractRegistry, commandHelp, runCli };
+export { type CliRegistryEntry, cliContractRegistry, runCli };

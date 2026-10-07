@@ -410,7 +410,7 @@ their exhaustive state and failure matrices.
   adapter and the package binary.
 - The CLI owners in `test:system` resolve `bin.archboard` from `package.json` and drive
   that executable from outside the checkout. It covers no-argument help and
-  every command/subcommand topic exposed by production `cliSurface()` data. A
+  every command/subcommand topic exposed by production `cliContractRegistry()` data. A
   local HTTP double also pins the public write contract: `--document` on add,
   update and delete, global board/`--doing` routing, clean success streams,
   structured refusal and usage exits, and CLI-owned import path resolution.
