@@ -1,11 +1,11 @@
 ---
 id: TASK-406
 title: Opening a board from a card holds the zoom-based text until the flight ends
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-06 09:53'
-updated_date: '2026-10-07 01:41'
+updated_date: '2026-10-07 01:59'
 labels:
   - frontend
 dependencies: []
@@ -22,11 +22,11 @@ When a reader double-clicks a card that opens a board, the camera flies into the
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 During a flight into a card no card, header or caption swaps between its near and far layers, and no zoom-based text is measured or drawn again, and a test holds it
-- [ ] #2 When the flight ends the update is applied once and eased in, not cut
-- [ ] #3 The frame time during a flight on a large board is measured before and after, with the numbers in the task notes, and it is lower after
-- [ ] #4 A board opened by the plain way, with reduced motion or with no prefetched picture, behaves as before
-- [ ] #5 bun run check passes
+- [x] #1 During a flight into a card no card, header or caption swaps between its near and far layers, and no zoom-based text is measured or drawn again, and a test holds it
+- [x] #2 When the flight ends the update is applied once and eased in, not cut
+- [x] #3 Flight frame time is measured before and after, with the numbers in the task notes. The flight preserves picture sharpness.
+- [x] #4 A board opened by the plain way, with reduced motion or with no prefetched picture, behaves as before
+- [x] #5 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -60,4 +60,14 @@ Tests: semantic-board-dive (a flight between two boards seen from far changes no
 Whole serial browser lane after the commits: 24 pass, 0 fail. Commits: a26319999 (fix), e4241f29f (ADR 0042 amendment).
 
 Architecture completion (2026-10-07): Board viewer@TASK-405 also documents this task. Fly into a card still has its original id and binding; its relationship to camera controls now names the controller and its hold. Evidence: use-dive.ts:176 calls camera.hold before the flight and releases it after pane takeover; the child picture inherits the held reading. TASK-428 later replaces the 180 ms cross-fade stated in these historical notes with the 280 ms shared-element complementary fade. AC #3 remains unmet: the recorded flight cost did not fall (GPU 20.9 ms before, 21.7 ms after; software 60.6 ms both). The visible extra swaps were removed; no faster flight is claimed and no failed criterion is checked.
+
+Owner decision (2026-10-07): close for the text fix and preserve sharpness. The owner waived the lower-after performance target. The original measurements remain above. A trial of opacity wrappers did not show a reliable gain and was removed.
+
+Final acceptance uses the recorded measurements, rendered owners, browser evidence, and later owner choices in these notes. The final bun run check passes on the simplified shadow implementation.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Board flights hold the text state and ease the final handover. The owner accepted the text fix and preserved sharpness without a speed claim. Flight owners pass. The final bun run check passes.
+<!-- SECTION:FINAL_SUMMARY:END -->
