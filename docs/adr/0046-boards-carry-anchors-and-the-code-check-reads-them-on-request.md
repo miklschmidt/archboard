@@ -134,43 +134,60 @@ Then it runs as an editor runs it. This replaces the default servers of
 TASK-367.14 and TASK-367.15. It also replaces the guards that made those
 servers safe to run in a checkout that nobody agreed to run.
 
-The old design had three problems. A checkout can be registered by observation,
-so a default server ran code of a repository that no agent chose to run. Every
-guard changed what the server did, so a server did not behave as it does in the
-user's editor, and the list of dangerous compiler flags could not be complete.
-clangd also rebuilt its index on every pass: 3.1 s per pass on Redis, and a
-failed pass on LLVM.
+The old design had three problems:
+
+- A checkout can be registered by observation. So a default server ran code of a
+  repository that no agent chose to run.
+- Every guard changed what the server did. So a server did not behave as it does
+  in the user's editor, and the list of dangerous compiler flags was never
+  certain to be complete.
+- clangd rebuilt its index on every pass. That took 3.1 s per pass on Redis, and
+  the pass failed on LLVM.
+
+The decision has these parts:
 
 - Python, C, C++, Objective-C, C# and Swift have no default server. pyright is
   no safer than the others, because it runs the interpreter of the checkout's
   `.venv`. An agent configures the server of one language with
-  `archboard repo language-server <language> <command>`. The command and its
-  arguments are kept on the registration of the checkout in `repos.json`. So the
-  configuration is machine-local, `repo list` shows it, `repo forget` removes
-  it, and registering the same root again keeps it.
+  `archboard repo language-server <language> <command>`. The registration of the
+  checkout in `repos.json` keeps the command and its arguments. So the
+  configuration is machine-local. `repo list` shows it, `repo forget` removes it,
+  and registering the same root again keeps it. Registering the same identity at
+  another root drops it, because nobody configured a server there.
 - `language-servers.json` and `ARCHBOARD_LANGUAGE_SERVERS` are gone. The `false`
   value is gone too, because nothing needs it now. INSTALL.md and the consumer
-  skill say that a configured server runs the code of the repository, so an
-  agent configures one only for a repository that it works in.
+  skill say that a configured server runs the code of the repository. So an agent
+  configures one only for a repository that it works in.
 - A configured server runs with exactly its command, its arguments and the
-  environment of the user, in the directory of its project. The check no longer
-  gives clangd a rewritten copy of `compile_commands.json`, a directory of its
-  own, its own `TMPDIR` and `XDG_CACHE_HOME`, `--compile-commands-dir`,
-  `--enable-config=false` or `--clang-tidy=false`. It no longer removes
-  `CLANGD_FLAGS`.
+  environment of the Archboard server, in the directory of its project. The check
+  no longer changes what clangd reads or writes:
+  - It gives clangd no rewritten copy of `compile_commands.json` and no directory
+    of its own, and it sets no `TMPDIR` or `XDG_CACHE_HOME`.
+  - It passes no `--compile-commands-dir`, `--enable-config=false` or
+    `--clang-tidy=false`.
+  - It removes no `CLANGD_FLAGS`.
 - The copy also dropped response files, `-B`, `--prefix`, `--config`, flags for
   GPU programs and module caches, and it moved the compiler. All of that is
-  gone, and so is the refusal of a database whose real path is outside the
-  checkout. The refusal of pyright for a checkout whose `.venv` interpreter Git
-  tracks is gone too.
+  gone. So is the refusal of a database whose real path is outside the checkout.
+  The refusal of pyright for a checkout whose `.venv` interpreter Git tracks is
+  gone too.
 - clangd keeps its background index where it keeps it under an editor, in
-  `.cache/clangd/index` in the directory that holds the database.
+  `.cache/clangd/index`. The `.cache` directory is next to the
+  `compile_commands.json` that clangd found. If that file is in a `build`
+  directory, the `.cache` directory is next to `build`. This was measured with
+  clangd 21.1.8.
+- Without the copy, clangd 21.1.8 loads no plugin that a command names
+  (`-fplugin=`, `-fpass-plugin=` or `-Xclang -load`), and it runs no compiler
+  unless it gets `--query-driver`. It runs one program of the checkout. If a
+  CUDA, HIP or OpenMP command asks for the `native` GPU, clang runs a helper
+  program to find it. A script in a `-B` directory of the command ran four times
+  for one command. By configuring clangd, an agent accepts that code.
 - What the protocol needs for an answer stays:
   - opening the files of a server that answers only about an open file.
   - `workspace/synchronize` for sourcekit-lsp.
   - waiting for the end of the index progress of clangd.
-  - finding the database, package or solution that a file belongs to, and
-    saying `language-server-unready` when there is none.
+  - finding the database, package or solution that a file belongs to. If there is
+    none, the check says `language-server-unready`.
   - telling pyright which `.venv` to use.
   - killing the process group of a server that does not stop.
 - sourcekit-lsp keeps the initialization option `backgroundIndexing: false`. A
@@ -180,37 +197,38 @@ failed pass on LLVM.
   answers within the pass timeout with the default, the option goes.
 - A language with no configured server says `language-server-missing` once for
   each checkout and language. The skip has the `repo` of the checkout, and its
-  `detail` names the command that configures a server. A configured command
-  that is not installed gets the same skip.
-- A pass reads `repos.json` once, when it starts, and takes the root and the
-  servers of every checkout from that one reading. A change that is written
-  during the pass applies to the next pass. `check --code` runs in the Archboard
-  server, which reads the file again for each pass, so a server that already
-  runs needs no restart for a new configuration. It looks up a command that is a
-  name on the `PATH` that it started with, which can differ from the `PATH` of
-  the agent's shell. The skip says so, and an absolute path avoids it.
+  `detail` names the command that configures a server. A configured command that
+  the Archboard server cannot find gets the same skip.
+- At its start, a pass reads `repos.json` once. It takes the root and the
+  servers of every checkout from that one reading. A change that another process
+  writes during the pass applies to the next pass. `check --code` runs in the
+  Archboard server. That server reads the file again for each pass, so a running
+  server needs no restart for a new configuration. It looks up a command that is
+  a name on the `PATH` that it started with. That `PATH` can differ from the
+  `PATH` of the agent's shell. The skip says so, and an absolute path avoids the
+  problem.
 - TypeScript needs no configuration. The check runs the native
-  `tsc --lsp --stdio` of the `typescript` package that the checkout installs.
-  The check looks only at `node_modules/typescript` at the root of the
-  checkout, and only inside the checkout after it resolves links. The package
-  must declare version 7 or later and must hold the native program for this
-  platform (`@typescript/typescript-<platform>-<arch>`, beside the package or
-  inside it).
-- A TypeScript before 7 has no `--lsp`. For that, and for a checkout with no
-  TypeScript or no native program, the check runs the `tsc` of the
-  `typescript` package of Archboard. In a monorepo the root decides, because a
-  rule that reads the root only is easy to predict. A package that installs
-  another version than the root uses the version of the root.
-- This replaces the rule that no TypeScript of the checkout runs. The program
-  is code of the checkout. The owner decided that it runs without
-  configuration, because the checkout installed it for its own editor
-  (TASK-433 #8).
+  `tsc --lsp --stdio` of the `typescript` package that the checkout installs. It
+  looks only at `node_modules/typescript` at the root of the checkout. The
+  package and the native program must be inside the checkout once their links
+  resolve. The package must declare version 7 or later. The native program for
+  this platform (`@typescript/typescript-<platform>-<arch>`) must be beside the
+  package or inside it.
+- TypeScript before version 7 has no `--lsp`. In that case, and for a checkout
+  with no TypeScript, no native program or a link that leaves the checkout, the
+  check runs the `tsc` of the `typescript` package of Archboard. In a monorepo
+  the root decides, because a rule that reads the root only is easy to predict. A
+  package that installs another version than the root uses the version of the
+  root.
+- This replaces the rule that no TypeScript of the checkout runs. The program is
+  code of the checkout. The owner decided that it runs without configuration,
+  because the checkout installed it for its own editor (TASK-433 #8).
 - The cost sentence of TASK-367.15 no longer holds. On Redis (303 commands,
   clangd 21.1.8, 24 cores), a cold pass took 4.6 to 4.8 s and each warm pass
-  took 1.9 to 2.0 s, against 3.1 s before. A pass without clangd took 0.15 s.
-  A checkout whose first index takes longer than the 30 s bound still says
-  `language-server-failed` once. Nobody measured whether the index shards that
-  clangd writes before the check kills it let a later pass finish.
+  took 1.9 to 2.0 s, against 3.1 s before. A pass without clangd took 0.15 s. If
+  the first index of a checkout takes longer than the 30 s bound, the pass still
+  says `language-server-failed` once. Nobody measured whether the index shards
+  that clangd writes before the check kills it let a later pass finish.
 
 ## Context
 
