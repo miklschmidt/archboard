@@ -15,9 +15,10 @@ section on hotspots and change coupling gives the reasons.
 TASK-448 amended this ADR on 2026-10-07. Locality and footprint now use bound
 declarations when the code-facts adapters resolve them.
 
-The history lens maps commits through bindings to give four readings. A board is behind its code by the commits that
-changed its parts after the board last changed. A footprint says what a branch
-changed, against what its proposal named. Hotspots say which parts change
+The history lens maps commits through bindings to give four readings.
+A board is behind its code by the commits that changed its parts after the
+board last changed. A footprint says what a branch changed, against what its
+proposal named. Hotspots say which parts change
 often, and change coupling says which parts change together. `CONTEXT.md`
 defines the four terms and large commit. This ADR decides how the lens reads
 Git and where each reading answers.
@@ -34,7 +35,8 @@ coupled.
 A part's bound files are the file that its binding names, or every file below
 the directory that its binding names. If a commit changes one of a part's
 bound files, it changes the part. Git records files, so the mapping needs no
-parser and works in every language, infrastructure and Nix included. Behind keeps this path mapping. Locality and footprint use the declaration
+parser and works in every language, infrastructure and Nix included.
+Behind keeps this path mapping. Locality and footprint use the declaration
 mapping below when a binding names a symbol.
 
 A `.csproj` binding names every file below its project directory, as the code
@@ -84,9 +86,14 @@ counts for nothing. Unrelated declarations in the same file do not count.
 Every language adapter can supply declaration ranges through this same source
 reader. The reader never uses uncommitted checkout files. Unsupported formats,
 unparsed code, and ambiguous definitions use path-wide fallback. A symbol that
-no revision resolves also uses path-wide fallback. Each part reports its
-`attribution`: `symbol`, `path`, or `mixed`, with the symbol and fallback reasons
-and commit ids where applicable. A binding without a symbol keeps path mapping.
+no revision resolves also uses path-wide fallback. Each listed part reports
+`attribution.mode`: `symbol`, `path`, or `mixed`. `symbol` means declaration
+precision throughout the reading. `mixed` means that some revisions resolve
+the declaration and others need fallback. It does not require a changed
+declaration in the range. `path` means path-wide attribution throughout.
+The `symbol` field names the bound symbol. The `fallback` field groups commit
+ids by reason: `unsupported` or `unresolved`. A binding without a symbol keeps
+path mapping.
 
 A Terraform binding keeps its root-module path and complete module address.
 Local module calls resolve against each revision, including nested calls and
@@ -211,8 +218,8 @@ shared commits are large.
 The hotspots of a board are its parts ranked by the number of commits in the
 period that changed them. The answer lists each part's commits, newest first.
 A hotspot counts commits only. Tornhill also weighs a hotspot by the complexity
-of its code, and the lens reads no code. A count of changed lines grows with
-moved and generated files, so the lens counts no lines either.
+of its code, and the lens measures no complexity. A count of changed lines
+grows with moved and generated files, so the lens counts no lines either.
 
 These two rules decide whether two parts of one board have change coupling.
 The values are code-maat's defaults (`--min-shared-revs` and `--min-coupling`),
@@ -226,8 +233,10 @@ code-maat also requires a mean of at least 5 commits (`--min-revs`). The first
 rule makes it always hold, because each part has at least as many commits as
 the two share.
 
-The lens leaves out a pair whose bound paths overlap: one path, or one path
-below the other. Each shared commit of such a pair is one change counted twice.
+For path-wide attribution, the lens leaves out a pair whose bound paths overlap:
+one path, or one path below the other. Each shared commit of such a pair is one
+change counted twice. With precise declaration attribution, distinct symbols
+can pair within the same file. Shared declaration ownership is still excluded.
 Command dispatch binds Interruptible run and runCliWith to one file. Browser
 application binds Tab session to a file below the directory of Pane session.
 
@@ -347,8 +356,8 @@ maintainer does with a footprint is a rule of the archboard-dev skill
 
 Each reading is derived on request, from Git and the board. Nothing writes a
 reading into a board, into the vault or into any file (ADR 0015). A reading
-answers what Git did to the bound files. Only the note answers what is on a
-board.
+answers what Git did to the bound declarations or paths. Only the note answers
+what is on a board.
 
 No reading changes the picture. Traffic is authored illustration and never
 measurement (ADR 0027), so no reading sets traffic. No reading sets emphasis, a

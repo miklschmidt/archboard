@@ -1,9 +1,9 @@
 // Asking a board which of its parts change most often, and which change
 // together (ADR 0045).
 //
-// The Archboard server reads Git through the files each part binds and answers
+// The Archboard server reads Git through the declarations or paths each part binds and answers
 // the locality of one variant: every part it read, ranked by the commits of a
-// period that changed those files, and the pairs of parts those commits
+// period that changed those declarations or paths, and the pairs of parts those commits
 // changed together. The command prints that answer, and on standard error a
 // summary for a person. It reads, and it writes
 // nothing: not to the board, not to any file (ADR 0015).
@@ -114,12 +114,12 @@ const semanticLocalityContract = defineCommand({
 	path: ["semantic", "locality"],
 	shared: ["url"],
 	summary:
-		"Rank the parts of a board by how often their bound files changed, and pair the parts that change together",
+		"Rank the parts of a board by how often their bound declarations or paths changed, and pair the parts that change together",
 	description:
 		"A bound symbol narrows commits to its declaration through the language adapters. " +
 		"The answer labels path-wide fallback when a symbol is unsupported or unresolved. " +
-		"Reads Git through the files that each part of one variant binds, and ranks every part " +
-		"by the number of commits that changed those files in a period. A hotspot is a part " +
+		"Reads Git through the bindings of each part of one variant, and ranks every part " +
+		"by the number of commits that changed its declaration or path in a period. A hotspot is a part " +
 		"that many commits changed. The period of a repository is the commits on the HEAD of " +
 		"its registered checkout from a start up to the commit time of HEAD, the year before " +
 		"it by default, so one HEAD always gives one answer. Each part lists its commits, " +

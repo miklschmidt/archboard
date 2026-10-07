@@ -32,9 +32,10 @@ type HistoryAttribution = z.infer<typeof HistoryAttributionSchema>;
  */
 function historyAttributionLabel(attribution: HistoryAttribution | undefined): string {
 	if (attribution === undefined) return "";
+	const symbol = attribution.symbol ?? "";
 	if (attribution.fallback !== undefined)
-		return ` [path-wide fallback: ${attribution.fallback.map((item) => item.reason).join(", ")}${attribution.mode === "mixed" ? "; other commits use the symbol" : ""}]`;
-	return attribution.mode === "symbol" ? ` [symbol: ${attribution.symbol ?? ""}]` : " [path-wide]";
+		return ` [${attribution.mode === "mixed" ? `mixed: symbol ${symbol}; ` : ""}path-wide fallback: ${attribution.fallback.map((item) => item.reason).join(", ")}]`;
+	return attribution.mode === "symbol" ? ` [symbol: ${symbol}]` : " [path-wide]";
 }
 
 export { HistoryAttributionSchema, type HistoryAttribution, historyAttributionLabel };

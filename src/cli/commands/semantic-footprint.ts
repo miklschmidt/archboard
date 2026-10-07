@@ -1,4 +1,4 @@
-// Asking a board what a branch changed: the parts whose bound files the
+// Asking a board what a branch changed: the parts whose bound declarations or paths the
 // commits from the merge base of a ref and HEAD changed, set against the parts
 // a proposal names (ADR 0045).
 //
@@ -135,7 +135,7 @@ const semanticFootprintContract = defineCommand({
 		"A bound symbol narrows commits to its declaration through the language adapters. " +
 		"The answer labels path-wide fallback when a symbol is unsupported or unresolved. " +
 		"Reports which parts of a board's current variant the commits from the merge base of --base " +
-		"and HEAD up to HEAD changed, through their bound files, in each checkout the machine has " +
+		"and HEAD up to HEAD changed, through their bound declarations or paths, in each checkout the machine has " +
 		"registered. --base is any ref that resolves in the checkout, such as main, origin/main or " +
 		"a commit; nothing is fetched, and a checkout where it does not resolve is named in the " +
 		"answer and not read. Each checkout is read at its HEAD, so a change that is not committed " +
