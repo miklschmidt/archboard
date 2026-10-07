@@ -360,7 +360,7 @@ const repoLanguageServerContract = defineCommand({
 	shared: [],
 	summary: "Set or remove the language server of one language for a registered checkout",
 	description:
-		"A language server resolves what the code check can only match by name. Python, C, C++, Objective-C, C# and Swift have no default server, because a server there runs code of the checkout as your editor's does: configure one only for a repository you work in. The check then runs exactly this command, its arguments and your environment. The language is python, csharp, swift or c (C, C++ and Objective-C). TypeScript needs no configuration. The checkout is the working directory's, unless --repo names another registered one.",
+		"A language server resolves what the code check can only match by name. Python, C, C++, Objective-C, C# and Swift have no default server, because a server there runs code of the checkout as your editor's does: configure one only for a repository you work in. The Archboard server then runs exactly this command and its arguments, with the environment and PATH that the server started with. The language is python, csharp, swift or c (C, C++ and Objective-C). TypeScript needs no configuration. The checkout is the working directory's, unless --repo names another registered one.",
 	examples: [
 		"archboard repo language-server c clangd",
 		"archboard repo language-server python pyright-langserver --arg=--stdio",
@@ -463,7 +463,7 @@ const repoLanguageServerContract = defineCommand({
 			diagnostics: [
 				server === undefined
 					? `"${repo}" has no ${input.language} server now. check --code starts none there.`
-					: `check --code runs ${commandLine(server)} for ${input.language} in "${repo}", with your environment, as your editor would. It runs code of that checkout.`,
+					: `check --code runs ${commandLine(server)} for ${input.language} in "${repo}", with the environment and PATH that the Archboard server started with. It runs code of that checkout.`,
 			],
 		};
 	},
