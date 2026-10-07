@@ -19,6 +19,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { z } from "zod";
 import type { Language } from "@/runtime/language-servers/lib/languages";
 import type { LanguageServers } from "@/shared/language-servers/index";
 
@@ -38,7 +39,7 @@ const FIRST_NATIVE_TYPESCRIPT = 7;
  */
 function isInside(directory: string, file: string): boolean {
 	const relative = path.relative(directory, file);
-	return !relative.startsWith("..") && !path.isAbsolute(relative);
+	return relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
 }
 
 /**
@@ -58,34 +59,39 @@ function nativeTsc(typescript: string): string | undefined {
 		.find((file) => fs.existsSync(file));
 }
 
+/** What a `typescript` package's manifest says about which version it is. */
+const ManifestSchema = z.object({ version: z.string() });
+
 /**
- * The major version a `typescript` package declares.
+ * Whether a `typescript` package declares version 7 or later. A version that
+ * starts with no number, or a manifest that names none, is not one.
  * @param typescript The package's directory.
- * @returns The major version, or 0 when the manifest names none.
+ * @returns True when it does.
  */
-function majorVersionOf(typescript: string): number {
-	const manifest: unknown = JSON.parse(
-		fs.readFileSync(path.join(typescript, "package.json"), "utf8"),
+function declaresNativeTypeScript(typescript: string): boolean {
+	const manifest = ManifestSchema.safeParse(
+		JSON.parse(fs.readFileSync(path.join(typescript, "package.json"), "utf8")),
 	);
-	const version =
-		typeof manifest === "object" && manifest !== null && "version" in manifest
-			? manifest.version
-			: undefined;
-	return typeof version === "string" ? Number.parseInt(version, 10) : 0;
+	return manifest.success && Number.parseInt(manifest.data.version, 10) >= FIRST_NATIVE_TYPESCRIPT;
 }
 
 /**
- * The native `tsc` of the checkout's own `typescript` package.
+ * The native `tsc` of the checkout's own `typescript` package. The package and
+ * the program must be in the checkout once their links are resolved, so a link
+ * that leads out of it never makes the check run a program that the checkout
+ * does not hold.
  * @param root The checkout, absolute.
  * @returns The program, or undefined when the checkout installs no TypeScript
  * of version 7 or later with a native program for this machine.
  */
 function checkoutTsc(root: string): string | undefined {
 	try {
+		const checkout = fs.realpathSync(root);
 		const typescript = fs.realpathSync(path.join(root, "node_modules", "typescript"));
-		if (!isInside(fs.realpathSync(root), typescript)) return undefined;
-		return majorVersionOf(typescript) >= FIRST_NATIVE_TYPESCRIPT
-			? nativeTsc(typescript)
+		if (!isInside(checkout, typescript) || !declaresNativeTypeScript(typescript)) return undefined;
+		const program = nativeTsc(typescript);
+		return program !== undefined && isInside(checkout, fs.realpathSync(program))
+			? program
 			: undefined;
 	} catch {
 		return undefined;
