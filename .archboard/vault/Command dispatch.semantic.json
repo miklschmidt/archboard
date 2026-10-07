@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 17,
+	"version": 18,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-07T00:49:54.601Z",
+	"updatedAt": "2026-10-07T00:56:53.813Z",
 	"views": [],
 	"variants": [
 		{
@@ -1333,20 +1333,6 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/exit-codes.ts",
 							"symbol": "formatBoardRefusal"
-						}
-					},
-					{
-						"id": "xLAQ10o1",
-						"order": 12000,
-						"from": "Swj3xzmd",
-						"to": "ogSW3Rjt",
-						"kind": "call",
-						"label": "help for one topic",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/run.ts",
-							"symbol": "helpText"
 						}
 					},
 					{

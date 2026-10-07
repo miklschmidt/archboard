@@ -58,6 +58,7 @@ by having no upward link, which is why the breadcrumb exists.
 | Service | `Agent workbench`     | Codex integration inside the server                            |
 | Service | `Skill evaluation`    | The harness that measures the consumer skill                   |
 | Module  | `Command dispatch`    | Dispatch and invocation lifetime                               |
+| Module  | `Live panes`          | Pane connections, screen state and board announcements         |
 | Module  | `Board persistence`   | Board reads, transitions, and durable writes                   |
 | Module  | `Semantic renderer`   | Meaning to SVG and interaction geometry                        |
 | Module  | `Renderer layout`     | How one drawing is settled, and by what measure                |
