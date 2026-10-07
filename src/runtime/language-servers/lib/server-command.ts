@@ -140,10 +140,12 @@ function languageServerOf(
 	}
 	const program = Bun.which(server.command);
 	if (program === null) {
-		return {
-			status: "missing",
-			detail: `${server.command} (configured for ${language}) is not installed`,
-		};
+		// A name is looked up on the `PATH` this process started with, which a
+		// server that already runs keeps, whatever the agent's shell has since.
+		const where = path.isAbsolute(server.command)
+			? "is not an executable file"
+			: "is not on the PATH of the Archboard server";
+		return { status: "missing", detail: `${server.command} (configured for ${language}) ${where}` };
 	}
 	return { status: "command", argv: [program, ...server.args] };
 }

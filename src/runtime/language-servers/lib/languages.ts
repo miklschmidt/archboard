@@ -16,6 +16,7 @@ import { compileDatabaseOf } from "@/runtime/language-servers/lib/compile-databa
 import { dotnetProjectOf } from "@/runtime/language-servers/lib/dotnet-solution";
 import { pythonProjectOf } from "@/runtime/language-servers/lib/python-environment";
 import { swiftPackageOf } from "@/runtime/language-servers/lib/swift-package";
+import { CONFIGURABLE_LANGUAGES } from "@/shared/language-servers/index";
 
 /** The project a server answers about for a file. */
 interface Project {
@@ -71,10 +72,10 @@ interface LanguageRow {
 }
 
 /**
- * Every language a server can resolve, by its key.
- * `c` is the whole C family: C, C++ and Objective-C, which one clangd reads.
+ * Every language a server can resolve, by its key: TypeScript, whose server
+ * needs no configuration, and each language an agent configures one for.
  */
-const LANGUAGE_KEYS = ["typescript", "python", "csharp", "swift", "c"] as const;
+const LANGUAGE_KEYS = ["typescript", ...CONFIGURABLE_LANGUAGES] as const;
 
 /** A language a server can resolve. */
 type Language = (typeof LANGUAGE_KEYS)[number];

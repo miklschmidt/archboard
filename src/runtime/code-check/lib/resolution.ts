@@ -53,7 +53,7 @@ import {
 	type UnavailableServer,
 } from "@/runtime/language-servers/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
-import { CONFIGURABLE_LANGUAGES, type LanguageServers } from "@/shared/language-servers/index";
+import { configureCommand, type LanguageServers } from "@/shared/language-servers/index";
 
 /** Where a server says a use is defined, as the pass reads the checkout. */
 type UseResolution =
@@ -197,8 +197,8 @@ function serverSkips(
 		const repo = repoAt.get(entry.root ?? "");
 		const reason = `language-server-${entry.reason}` as const;
 		const configure =
-			entry.reason === "missing" && CONFIGURABLE_LANGUAGES.some((each) => each === entry.language)
-				? `. Configure one with \`archboard repo language-server ${entry.language} <command>${repo === undefined ? "" : ` --repo ${repo}`}\``
+			entry.reason === "missing" && entry.language !== "typescript"
+				? `. Configure one with \`${configureCommand(entry.language, repo)}\``
 				: "";
 		return {
 			reason,
