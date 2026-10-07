@@ -14,6 +14,8 @@ import type { EvidenceKind } from "@/shared/semantic-policy/index";
  */
 interface Definition {
 	readonly symbol: string;
+	/** A callable declaration or literal, a named type with members, or another value. */
+	readonly kind: "function" | "class" | "value";
 	/** The first and last line of the declaration. */
 	readonly start: number;
 	readonly end: number;
@@ -107,9 +109,11 @@ interface Reference {
 	 * a constant, passes the name on, or tests a value against a class, as
 	 * `instanceof` and a catch do. It is call evidence that supports a
 	 * relationship, and the code check never calls a dependency undrawn on it
-	 * alone (ADR 0046, amended by TASK-367.28).
+	 * alone. A passed function is the exception (TASK-436.15).
 	 */
 	readonly asValue?: true;
+	/** The name is passed as an argument; a function definition may run later. */
+	readonly passed?: true;
 }
 
 /** What one import names: `default`, `*` for the whole module, or an exported name. */
@@ -143,6 +147,8 @@ interface Unparsed {
 	 * unknown, never absent. The empty path is every name of the file.
 	 */
 	readonly under?: string;
+	/** An imported expression's original site; start/end still locate its owning flake. */
+	readonly source?: { readonly path: string; readonly start: number; readonly end: number };
 }
 
 /**

@@ -219,6 +219,7 @@ function manifestFacts(tree: Tree, grammar: Grammar): ManifestFacts {
 	const libraries = new Set(declared.libraries);
 	const definitions = declared.targets.map((target): Definition => ({
 		symbol: target.name,
+		kind: "value",
 		start: target.start,
 		end: target.end,
 		visibility: target.kind,

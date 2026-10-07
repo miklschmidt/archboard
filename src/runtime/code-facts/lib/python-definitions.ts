@@ -47,6 +47,18 @@ const PATTERNS = new Set(["pattern_list", "tuple_pattern", "list_pattern", "list
 /** What wraps a name inside its declaration: a pattern of an assignment, the type of an alias. */
 const WRAPPERS = new Set([...PATTERNS, "type"]);
 
+/** Callable declarations and types whose bodies define members. */
+const KINDS: Readonly<Record<string, Definition["kind"]>> = {
+	function_definition: "function",
+	lambda: "function",
+	class_definition: "class",
+};
+/** Syntax that holds the declaration or literal which decides a name's kind. */
+const KIND_VALUES: Readonly<Record<string, string>> = {
+	decorated_definition: "definition",
+	assignment: "right",
+};
+
 /** What reading the definitions needs from the rest of the file. */
 interface DefinitionContext {
 	readonly unparsed: Spans;
@@ -78,6 +90,19 @@ function declarationOf(name: Node): Node {
 	const declaration = at.parent ?? name;
 	const decorated = declaration.parent;
 	return decorated?.type === "decorated_definition" ? decorated : declaration;
+}
+
+/**
+ * The declaration's kind, through decorators and a directly assigned lambda.
+ * @param declaration The declaration.
+ * @returns Its kind.
+ */
+function kindOf(declaration: Node): Definition["kind"] {
+	const kind = KINDS[declaration.type];
+	if (kind !== undefined) return kind;
+	const field = KIND_VALUES[declaration.type];
+	const value = field === undefined ? null : declaration.childForFieldName(field);
+	return value === null ? "value" : kindOf(value);
 }
 
 /**
@@ -182,6 +207,7 @@ function definitionOf(
 	exposure.set(declaration.id, exposure.get(declaration.id) ?? exposed);
 	return {
 		symbol: [...classes, name.text].join("."),
+		kind: kindOf(declaration),
 		start: declaration.startPosition.row + 1,
 		end: declaration.endPosition.row + 1,
 		visibility,

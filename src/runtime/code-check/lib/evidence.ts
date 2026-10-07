@@ -21,8 +21,9 @@
 // read, a name passed on or an `instanceof` test (runs.ts in code facts), is
 // call evidence all the same, so it supports a relationship. The check is
 // sure of a dependency the board must draw only where code runs code, so such
-// a piece never makes a relationship undrawn on its own (ADR 0046, amended by
-// TASK-367.28): the evidence keeps it apart, as one of its values.
+// a piece never makes a relationship undrawn on its own: the evidence keeps it
+// apart as one of its values. A known function passed as an argument can run
+// later, so it counts as running evidence (TASK-436.15).
 //
 // Each piece goes from the part whose code makes the use to the part whose
 // code holds what it reaches, each the narrowest binding (ownership.ts). Code
@@ -41,7 +42,7 @@
 // first one in each flake, so that a relationship it starts to an output of
 // that flake is not judged unsupported.
 
-import { moduleLevelDefinition } from "@/runtime/code-check/lib/module-level";
+import { moduleLevelDefinition, passedDefinition } from "@/runtime/code-check/lib/module-level";
 import {
 	lineagesOf,
 	ownersAtLine,
@@ -54,6 +55,8 @@ import type { PartCode, ReadPart, RepoCheckout } from "@/runtime/code-check/lib/
 import type { Resolve } from "@/runtime/code-check/lib/resolution";
 import {
 	definitionSite,
+	runsDefinition,
+	type Definition,
 	type DefinitionSite,
 	type FactsPass,
 	type SyntaxFacts,
@@ -96,6 +99,7 @@ interface EvidenceReading {
 interface Reached {
 	readonly to: readonly ReadPart[];
 	readonly resolution: CodeEvidence["resolution"];
+	readonly definition?: Pick<Definition, "kind"> | undefined;
 }
 
 /** What reading one repository's evidence needs beside the reading. */
@@ -168,6 +172,7 @@ async function targetReached(
 	const reached: Reached = {
 		to: ownersOfTarget(repo, facts, site, target),
 		resolution: resolutionAt(site),
+		definition: site?.definition,
 	};
 	const made = ownersAtLine(repo.owners, facts.path, reference.line).length > 0;
 	return reached.resolution === "candidate" && made
@@ -284,7 +289,11 @@ async function serverResolved(
 	if (resolved.status === "elsewhere") return undefined;
 	const definition = { start: resolved.line, end: resolved.line };
 	const site = { path: resolved.path, definition, via: [] };
-	return { to: ownersOfSite(repo.owners, site), resolution: "resolved" };
+	return {
+		to: ownersOfSite(repo.owners, site),
+		resolution: "resolved",
+		definition: await passedDefinition(repo.reading.facts, repo.checkout, resolved.path, reference),
+	};
 }
 
 /**
@@ -305,7 +314,7 @@ function candidateReached(
 	const definition = moduleLevelDefinition(facts, reference.symbol, imported);
 	if (definition === undefined) return undefined;
 	const site = { path: facts.path, definition, via: [] };
-	return { to: ownersOfSite(repo.owners, site), resolution: "candidate" };
+	return { to: ownersOfSite(repo.owners, site), resolution: "candidate", definition };
 }
 
 /**
@@ -372,23 +381,30 @@ async function piecesOfUse(
 	const reached = await reachedBy(repo, facts, reference, imported);
 	if (reached === undefined) return [];
 	const evidence = { repo: repo.checkout.repo, path: facts.path, kind, line, symbol };
-	return noted(repo, reference, piecesBetween(from, reached, repo.lineages, evidence));
+	return noteValues(
+		repo,
+		reference,
+		reached,
+		piecesBetween(from, reached, repo.lineages, evidence),
+	);
 }
 
 /**
- * Pieces of one use, noted among the values where the use runs none of the
- * code it reaches.
- * @param repo The repository's reading, whose values this adds to.
+ * Keep evidence that runs no code among the values, after its definition is known.
+ * @param repo The repository's reading.
  * @param reference The use.
+ * @param reached What it reaches.
  * @param pieces Its pieces.
  * @returns The pieces.
  */
-function noted(
+function noteValues(
 	repo: RepoReading,
 	reference: SyntaxFacts["references"][number],
+	reached: Reached,
 	pieces: Piece[],
 ): Piece[] {
-	if (reference.asValue === true) for (const piece of pieces) repo.values.add(piece);
+	if (!runsDefinition(reference, reached.definition))
+		for (const piece of pieces) repo.values.add(piece);
 	return pieces;
 }
 

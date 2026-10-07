@@ -167,7 +167,20 @@ function namesBases(list: Node): boolean {
  */
 const RUN_SYNTAX: RunSyntax = {
 	runners: { call: "function", decorator: ANY, argument_list: namesBases },
-	chains: { attribute: ["object", "attribute"], subscript: ["value"] },
+	chains: {
+		attribute: ["object", "attribute"],
+		subscript: ["value"],
+		keyword_argument: ["value"],
+		parenthesized_expression: [""],
+	},
+	arguments: {
+		/**
+		 * A call's arguments exclude the bases a class lists.
+		 * @param list The arguments.
+		 * @returns Whether a call holds them.
+		 */
+		argument_list: (list) => list.parent?.type === "call",
+	},
 };
 
 /** What deciding whether a captured name is a use needs. */
@@ -468,7 +481,7 @@ function distinct(
 	const seen = new Map<string, ParsedFacts["references"][number]>();
 	for (const use of uses) {
 		const { local, ...reference } = use;
-		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${String(use.asValue)}\0${String(local === true)}`;
+		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${String(use.asValue)}\0${String(use.passed)}\0${String(local === true)}`;
 		if (seen.has(key)) continue;
 		const through = reachesImport(use) ? throughImport(use.symbol, locals) : undefined;
 		seen.set(key, through === undefined ? reference : { ...reference, through });

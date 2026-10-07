@@ -50,6 +50,18 @@ const NAMED_MEMBERS = new Set([
 /** The members of a type that declare one or more variables. */
 const VARIABLE_MEMBERS = new Set(["field_declaration", "event_field_declaration"]);
 
+/**
+ * The kind of one type, named callable member or value member.
+ * @param node The declaration.
+ * @returns Its kind.
+ */
+function kindOf(node: Node): Definition["kind"] {
+	if (TYPE_KINDS[node.type] !== undefined) return "class";
+	return ["method_declaration", "constructor_declaration"].includes(node.type)
+		? "function"
+		: "value";
+}
+
 /** The access modifiers, in the order C# writes a pair of them. */
 const ACCESS = ["private", "protected", "internal", "public", "file"];
 
@@ -119,11 +131,19 @@ function accessibility(node: Node, holder: Holder | undefined): string {
  * @param name The name it declares.
  * @param scope What holds it.
  * @param visibility Its accessibility.
+ * @param kind A callable field's kind, where its initializer proves it.
  * @returns The definition.
  */
-function definitionAt(node: Node, name: string, scope: Scope, visibility: string): Definition {
+function definitionAt(
+	node: Node,
+	name: string,
+	scope: Scope,
+	visibility: string,
+	kind?: Definition["kind"],
+): Definition {
 	return {
 		symbol: [...scope.qualifier, name].join("."),
+		kind: kind ?? kindOf(node),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
 		visibility,
@@ -163,7 +183,18 @@ function memberNames(node: Node): Node[] {
  */
 function memberDefinitions(node: Node, scope: Scope): Definition[] {
 	const visibility = accessibility(node, scope.holder);
-	return memberNames(node).map((name) => definitionAt(node, name.text, scope, visibility));
+	return memberNames(node).map((name) => {
+		const lambda = name.parent?.namedChildren.some((child) =>
+			["lambda_expression", "anonymous_method_expression"].includes(child.type),
+		);
+		return definitionAt(
+			node,
+			name.text,
+			scope,
+			visibility,
+			lambda === true ? "function" : undefined,
+		);
+	});
 }
 
 /**

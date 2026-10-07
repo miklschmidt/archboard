@@ -379,7 +379,29 @@ const RUN_SYNTAX: RunSyntax = {
 		declaration: constructsIn,
 		...Object.fromEntries([...CONSTRUCTING].map((type) => [type, constructsIn])),
 	},
-	chains: { field_expression: ["argument", "field"], subscript_expression: ["argument"] },
+	chains: {
+		field_expression: ["argument", "field"],
+		subscript_expression: ["argument"],
+		pointer_expression: ["argument"],
+		parenthesized_expression: [""],
+	},
+	arguments: {
+		/**
+		 * A C argument list passes names only when a call holds it.
+		 * @param list The list.
+		 * @returns Whether a call holds it.
+		 */
+		argument_list: (list) => list.parent?.type === "call_expression",
+		/**
+		 * A message's arguments exclude its receiver and selector.
+		 * @param message The message.
+		 * @param name The name.
+		 * @returns Whether the name is an argument.
+		 */
+		message_expression: (message, name) =>
+			message.childForFieldName("receiver")?.id !== name.id &&
+			!message.childrenForFieldName("method").some((method) => method.id === name.id),
+	},
 };
 
 /** One name, as the file writes it and where. */
@@ -511,7 +533,7 @@ function includeOf(node: Node): Import | undefined {
 function distinct(references: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asValue)}`;
+		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asValue)}\0${String(reference.passed)}`;
 		if (!seen.has(key)) seen.set(key, reference);
 	}
 	return [...seen.values()];

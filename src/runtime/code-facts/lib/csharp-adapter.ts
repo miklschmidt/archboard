@@ -317,7 +317,10 @@ const RUN_SYNTAX: RunSyntax = {
 		alias_qualified_name: ["alias", "name"],
 		generic_name: [""],
 		element_access_expression: ["expression"],
+		parenthesized_expression: [""],
+		cast_expression: ["value"],
 	},
+	arguments: { argument: ANY },
 };
 
 /** What deciding whether a captured name is a use needs. */
@@ -399,7 +402,7 @@ function usingImport(node: Node): Import | undefined {
 function distinct(references: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asType)}\0${String(reference.asValue)}`;
+		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asType)}\0${String(reference.asValue)}\0${String(reference.passed)}`;
 		if (!seen.has(key)) seen.set(key, reference);
 	}
 	return [...seen.values()];

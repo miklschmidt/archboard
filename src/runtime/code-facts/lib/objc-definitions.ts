@@ -95,6 +95,7 @@ const IVAR_WORDS: Readonly<Record<string, string>> = {
  * @param visibility Its word, and whether it is exposed.
  * @param visibility.word The word.
  * @param visibility.exposed Whether it is exposed.
+ * @param kind Its definition kind.
  * @param declares Whether its code is elsewhere.
  */
 function define(
@@ -102,10 +103,12 @@ function define(
 	symbol: string,
 	extent: Node,
 	visibility: { word: string; exposed: boolean },
+	kind: Definition["kind"],
 	declares = false,
 ): void {
 	walk.definitions.push({
 		symbol,
+		kind,
 		start: extent.startPosition.row + 1,
 		end: extent.endPosition.row + 1,
 		visibility: visibility.word,
@@ -186,7 +189,7 @@ function instanceVariables(walk: Walk, holder: Holder, node: Node, word: string)
 		if (specification !== undefined) current = IVAR_WORDS[specification.text] ?? current;
 		for (const name of declaredNames(variable)) {
 			const exposed = holder.exposed && current === "public";
-			define(walk, `${holder.symbol}::${name}`, variable, { word: current, exposed });
+			define(walk, `${holder.symbol}::${name}`, variable, { word: current, exposed }, "value");
 		}
 	}
 }
@@ -204,7 +207,14 @@ type MemberHandler = (walk: Walk, holder: Holder, node: Node) => void;
  */
 function member(walk: Walk, holder: Holder, name: string, node: Node, declares = false): void {
 	const visibility = { word: holder.word, exposed: holder.exposed };
-	define(walk, `${holder.symbol}::${name}`, node, visibility, declares);
+	define(
+		walk,
+		`${holder.symbol}::${name}`,
+		node,
+		visibility,
+		node.type === "property_declaration" ? "value" : "function",
+		declares,
+	);
 }
 
 /** How each kind of node inside a class, category, protocol or implementation is read. */
@@ -293,7 +303,8 @@ function classInterface(walk: Walk, node: Node): void {
 	const head = headOf(node);
 	if (head === undefined) return;
 	const exposed = walk.role === "header" && !head.extension;
-	if (!head.extension) define(walk, head.symbol, node, { word: "@interface", exposed }, true);
+	if (!head.extension)
+		define(walk, head.symbol, node, { word: "@interface", exposed }, "class", true);
 	const word = head.extension ? "private" : "public";
 	const holder: Holder = { symbol: head.name, word, exposed, declares: true };
 	variablesOf(walk, holder, node, "protected");
@@ -310,7 +321,7 @@ function classImplementation(walk: Walk, node: Node): void {
 	const head = headOf(node);
 	if (head === undefined) return;
 	const exposed = walk.role === "header";
-	define(walk, head.symbol, node, { word: "@implementation", exposed });
+	define(walk, head.symbol, node, { word: "@implementation", exposed }, "class");
 	const holder: Holder = { symbol: head.name, word: "public", exposed, declares: false };
 	variablesOf(walk, holder, node, "private");
 	for (const child of node.namedChildren) {
@@ -328,7 +339,7 @@ function protocol(walk: Walk, node: Node): void {
 	const name = ownName(node);
 	if (name === undefined) return;
 	const exposed = walk.role === "header";
-	define(walk, name, node, { word: "@protocol", exposed });
+	define(walk, name, node, { word: "@protocol", exposed }, "class");
 	members(walk, { symbol: name, word: "public", exposed, declares: false }, node);
 }
 

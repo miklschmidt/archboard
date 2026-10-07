@@ -32,6 +32,7 @@
 // the header of its source file instead (c-pairs.ts).
 
 import type { Node } from "web-tree-sitter";
+import { declaratorKind, namesFunction } from "@/runtime/code-facts/lib/c-definition-kind";
 import type { Definition } from "@/runtime/code-facts/lib/facts";
 
 /** Where a declaration stands: the names that qualify it, and whether an anonymous namespace holds it. */
@@ -169,14 +170,23 @@ function qualified(walk: Walk, name: string): string {
  * @param name Its own name.
  * @param extent The node it spans.
  * @param linkage Its word at namespace scope.
+ * @param kind Its definition kind.
  * @param declares Whether its code is elsewhere: a prototype or an `extern` variable.
  * @returns Its qualified symbol.
  */
-function define(walk: Walk, name: string, extent: Node, linkage: string, declares = false): string {
+function define(
+	walk: Walk,
+	name: string,
+	extent: Node,
+	linkage: string,
+	kind: Definition["kind"],
+	declares = false,
+): string {
 	const symbol = qualified(walk, name);
 	const { word, exposed } = visibilityOf(walk, linkage);
 	walk.definitions.push({
 		symbol,
+		kind,
 		start: extent.startPosition.row + 1,
 		end: extent.endPosition.row + 1,
 		visibility: word,
@@ -184,22 +194,6 @@ function define(walk: Walk, name: string, extent: Node, linkage: string, declare
 		...(declares ? { declaration: true as const } : {}),
 	});
 	return symbol;
-}
-
-/** Declarators that only wrap the one inside them. */
-const WRAPPING = new Set(["parenthesized_declarator", "attributed_declarator"]);
-
-/**
- * Whether a declared name is a function's: the first declarator around it,
- * past parentheses, is a function declarator, so `int *open(void)` declares a
- * function and `int (*open)(void)` a pointer.
- * @param name The declared name.
- * @returns True when it is.
- */
-function namesFunction(name: Node): boolean {
-	let around = name.parent;
-	while (around !== null && WRAPPING.has(around.type)) around = around.parent;
-	return around?.type === "function_declarator";
 }
 
 /**
@@ -340,7 +334,7 @@ function functionDefinition(walk: Walk, node: Node, extent: Node): void {
 	const name = node.childForFieldName("declarator");
 	if (body !== null && namespaceName !== undefined) namespaceBody(walk, namespaceName, body);
 	else if (body !== null && specifier !== undefined && name !== null) {
-		classMembers(walk, specifier, body, define(walk, spell(name), extent, "no linkage"));
+		classMembers(walk, specifier, body, define(walk, spell(name), extent, "no linkage", "class"));
 	} else variables(walk, node, extent);
 }
 
@@ -361,7 +355,8 @@ function variables(walk: Walk, node: Node, extent: Node): void {
 		const name = declaredName(declarator);
 		if (name === undefined) continue;
 		const declares = declaresOnly(node, declarator, name);
-		define(walk, spell(name), extent, isStatic ? "static" : "extern", declares);
+		const kind = declaratorKind(name, declarator);
+		define(walk, spell(name), extent, isStatic ? "static" : "extern", kind, declares);
 	}
 }
 
@@ -381,7 +376,7 @@ function typeSpecifier(walk: Walk, node: Node, extent: Node, alias?: string): vo
 			? alias === undefined
 				? undefined
 				: qualified(walk, alias)
-			: define(walk, spell(named), extent, "no linkage");
+			: define(walk, spell(named), extent, "no linkage", "class");
 	if (symbol === undefined) return;
 	if (node.type === "enum_specifier") enumerators(walk, node, body, symbol);
 	else classMembers(walk, node, body, symbol);
@@ -428,7 +423,7 @@ function enumerators(walk: Walk, node: Node, body: Node, symbol: string): void {
 	const where = scoped ? insideEnum(walk, symbol) : walk;
 	for (const enumerator of body.namedChildren) {
 		const name = enumerator.childForFieldName("name");
-		if (name !== null) define(where, name.text, enumerator, "no linkage");
+		if (name !== null) define(where, name.text, enumerator, "no linkage", "value");
 	}
 }
 
@@ -446,7 +441,14 @@ function typedef(walk: Walk, node: Node, extent: Node): void {
 		.map(spell);
 	const type = node.childForFieldName("type");
 	if (type !== null && TYPE_SPECIFIERS.has(type.type)) typeSpecifier(walk, type, type, names[0]);
-	for (const name of names) define(walk, name, extent, "no linkage");
+	for (const name of names)
+		define(
+			walk,
+			name,
+			extent,
+			"no linkage",
+			type !== null && TYPE_SPECIFIERS.has(type.type) ? "class" : "value",
+		);
 }
 
 /**
@@ -479,7 +481,7 @@ function linkageBlock(walk: Walk, node: Node): void {
  */
 function usingAlias(walk: Walk, node: Node, extent: Node): void {
 	const name = node.childForFieldName("name");
-	if (name !== null) define(walk, name.text, extent, "no linkage");
+	if (name !== null) define(walk, name.text, extent, "no linkage", "value");
 }
 
 /**
@@ -507,7 +509,7 @@ function macro(walk: Walk, node: Node): void {
 	const name = node.childForFieldName("name");
 	if (name === null || isIncludeGuard(node, name)) return;
 	const file: Walk = { definitions: walk.definitions, scope: { names: [], internal: false } };
-	define(file, name.text, node, "macro");
+	define(file, name.text, node, "macro", "value");
 }
 
 /** How each kind of declaration is read. */

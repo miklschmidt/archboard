@@ -76,6 +76,57 @@ const MEMBERS = new Set([
 /** Patterns whose names a module-level destructuring declares. */
 const PATTERNS = new Set(["object_pattern", "pair_pattern", "array_pattern"]);
 
+/** Callable declarations and literals, including object and class methods. */
+const FUNCTIONS = new Set([
+	"function_declaration",
+	"generator_function_declaration",
+	"function_signature",
+	"method_definition",
+	"method_signature",
+	"abstract_method_signature",
+	"arrow_function",
+	"function_expression",
+	"generator_function",
+]);
+/** Declarations and expressions of types with named members. */
+const CLASSES = new Set([
+	"class_declaration",
+	"abstract_class_declaration",
+	"class",
+	"interface_declaration",
+	"enum_declaration",
+]);
+
+/**
+ * The kind syntax proves, including callable and class literals assigned to a name.
+ * @param declaration The declaration or its value.
+ * @returns Its kind.
+ */
+function declaredKind(declaration: Node): Definition["kind"] | undefined {
+	if (
+		declaration.type === "method_definition" &&
+		declaration.children.some((child) => child.type === "get" || child.type === "set")
+	)
+		return "value";
+	if (FUNCTIONS.has(declaration.type)) return "function";
+	return CLASSES.has(declaration.type) ? "class" : undefined;
+}
+
+/**
+ * The kind of a declaration or a literal assigned through an expression wrapper.
+ * @param declaration The declaration or expression.
+ * @returns Its kind.
+ */
+function kindOf(declaration: Node): Definition["kind"] {
+	const kind = declaredKind(declaration);
+	if (kind !== undefined) return kind;
+	const wrapper = ["as_expression", "satisfies_expression", "parenthesized_expression"].includes(
+		declaration.type,
+	);
+	const value = wrapper ? declaration.namedChildren[0] : declaration.childForFieldName("value");
+	return value == null ? "value" : kindOf(value);
+}
+
 /**
  * The declaration a name belongs to: the name itself for an enum member, a
  * shorthand object member or a destructured name, else its parent.
@@ -238,6 +289,7 @@ function definitionOf(
 	exposure.set(declaration.id, exposed);
 	return {
 		symbol: qualifiedSymbol(name, declaration),
+		kind: kindOf(declaration),
 		start: declaration.startPosition.row + 1,
 		end: declaration.endPosition.row + 1,
 		visibility,

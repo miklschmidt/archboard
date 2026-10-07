@@ -85,7 +85,7 @@ beforeAll(async () => {
 		"src/shared/address.ts": [
 			"export interface Shelf { name: string }",
 			"export function normalize(name: string): string { return name.trim(); }",
-			"export function addressOf(name: string): string { return normalize(name); }",
+			'export function addressOf(name: string): string { return [name].map(normalize).join(""); }',
 			"",
 		].join("\n"),
 		"src/store/index.ts":
@@ -131,14 +131,14 @@ beforeAll(async () => {
 		"src/notify/digest.ts":
 			'export async function digest(): Promise<void> { await import("./sender"); }\n',
 		"src/shared/limits.ts": "export const LIMIT = 3;\nexport class ShelfError extends Error {}\n",
-		// Uses the limits, the address and the sender as values only: a constant read, an
-		// instanceof test and names passed on, which run none of their code.
+		// Passed functions may run later; constant reads and class tests do not.
 		"src/notify/checker.ts": [
 			'import { addressOf } from "../shared/address";',
 			'import { LIMIT, ShelfError } from "../shared/limits";',
 			'import { send } from "./sender";',
 			"export function check(error: unknown, names: string[]): boolean {",
 			"\tqueueMicrotask(send);",
+			"\tconsume(LIMIT);",
 			"\treturn error instanceof ShelfError || names.map(addressOf).length > LIMIT;",
 			"}",
 			"",
@@ -275,6 +275,7 @@ test("the parts that use one shared part make one finding on it, one resolved pi
 		piece.resolution,
 	]);
 	expect(pieces?.toSorted()).toEqual([
+		["pC", "pA", "call", "resolved"],
 		["pR", "pA", "call", "resolved"],
 		["pW", "pA", "call", "resolved"],
 	]);
@@ -290,15 +291,15 @@ test("the parts that use one shared part make one finding on it, one resolved pi
 	]);
 });
 
-test("a use as a value, a constant read, an instanceof test or a name passed on, makes nothing undrawn and still supports an anchor, while a construction is undrawn", () => {
-	// The checker reads the limits and passes the address on: only the guard's construction reaches them undrawn.
+test("a passed function makes a relationship undrawn, a passed constant and a class test do not, and each remains call evidence for anchors", () => {
+	// The checker reads and passes a constant: only the guard's construction reaches the limits undrawn.
 	const limits = finding("RELATIONSHIP_UNDRAWN", "pV")?.evidence;
 	expect(limits?.map((piece) => [piece.from, piece.kind, piece.symbol])).toEqual([
 		["pG", "call", "ShelfError"],
 	]);
 	expect(
 		finding("RELATIONSHIP_UNDRAWN", "pA")?.evidence?.some((piece) => piece.from === "pC"),
-	).toBe(false);
+	).toBe(true);
 	expect(outcome.findings.filter((each) => each.subject?.id === "e11")).toEqual([]);
 });
 
