@@ -2,6 +2,20 @@
 // is only types, code where no name is a use, code that did not parse. A name
 // is tested against them by its offset, with no walk up the syntax tree.
 
+import type { Node } from "web-tree-sitter";
+import type { Definition } from "@/runtime/code-facts/lib/facts";
+
+/**
+ * A syntax node's range in the original JavaScript string.
+ * @param node The node, whose tree-sitter indexes count UTF-16 code units.
+ * @returns The range accepted by String.slice.
+ */
+function sourceRange(
+	node: Pick<Node, "startIndex" | "endIndex">,
+): NonNullable<Definition["source"]> {
+	return { start: node.startIndex, end: node.endIndex };
+}
+
 /** A set of spans that answers whether an offset is inside one. */
 interface Spans {
 	/**
@@ -67,4 +81,4 @@ function spansOf(spans: readonly Span[]): Spans {
 	};
 }
 
-export { type Span, type Spans, merged, spansOf };
+export { type Span, type Spans, merged, sourceRange, spansOf };

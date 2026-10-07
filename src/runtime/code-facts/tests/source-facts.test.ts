@@ -7,6 +7,88 @@ import {
 } from "@/runtime/code-facts/index";
 import { fixtureCheckout } from "@/runtime/code-facts/tests/checkout";
 
+test.each([
+	{
+		file: "main.ts",
+		prefix: "/* é🙂 */ ",
+		declaration: "export function first() { return '🙂'; }",
+		tail: " console.log('unrelated'); export function second() {}",
+		symbol: "first",
+	},
+	{
+		file: "main.py",
+		prefix: "# é🙂\n",
+		declaration: "@decorate\ndef first():\n    return '🙂'",
+		tail: "\n\ndef second():\n    return 2\n",
+		symbol: "first",
+	},
+	{
+		file: "constants.ts",
+		prefix: "/* é🙂 */ ",
+		declaration: "export const first = '🙂', second = 2;",
+		tail: " console.log('unrelated');",
+		symbol: "first",
+	},
+	{
+		file: "main.cs",
+		prefix: "#if YES\n// first branch\n#else\n// é🙂\n#endif\n",
+		declaration: 'public class First { public string Run() => "🙂"; }',
+		tail: " public class Second {}",
+		symbol: "First",
+	},
+	{
+		file: "main.c",
+		prefix: "/* é🙂 */ ",
+		declaration: "int first(void) { return 1; }",
+		tail: " int second(void) { return 2; }",
+		symbol: "first",
+	},
+	{
+		file: "main.cpp",
+		prefix: "/* é🙂 */ ",
+		declaration: "int first() { return 1; }",
+		tail: " int second() { return 2; }",
+		symbol: "first",
+	},
+	{
+		file: "main.m",
+		prefix: "/* é🙂 */ ",
+		declaration: "@interface First\n- (void)run;\n@end",
+		tail: "\n@interface Second\n@end",
+		symbol: "First",
+	},
+	{
+		file: "main.swift",
+		prefix: "/* é🙂 */ ",
+		declaration: 'public func first() -> String { return "🙂" }',
+		tail: "\npublic func second() {}",
+		symbol: "first",
+	},
+	{
+		file: "main.tf",
+		prefix: "/* é🙂 */ ",
+		declaration: 'resource "aws_sqs_queue" "first" { name = "🙂" }',
+		tail: '\nresource "aws_sqs_queue" "second" { name = "second" }',
+		symbol: "aws_sqs_queue.first",
+	},
+])(
+	"$file source ranges slice only the declaration and count UTF-16 code units",
+	async ({ file, prefix, declaration, tail, symbol }) => {
+		const text = prefix + declaration + tail;
+		const sources = new Map([[file, text]]);
+		const checkout = { root: `/source-ranges/${file}`, files: new Set(sources.keys()) };
+		const pass = createSourceFacts().pass(checkout, sources);
+		const facts = await pass.read(checkout, file);
+		if (facts === undefined || facts.adapter === "text") throw new Error(`${file} was not parsed`);
+		const found = facts.definitions.find((definition) => definition.symbol === symbol);
+		expect(found?.source).toEqual({
+			start: prefix.length,
+			end: prefix.length + declaration.length,
+		});
+		expect(text.slice(found?.source?.start, found?.source?.end)).toBe(declaration);
+	},
+);
+
 test("historical sources resolve imported definitions and refresh resolution around cached bytes", async () => {
 	const sources = new Map([
 		["src/use.ts", 'import { run } from "@/target";\nexport function start() { run(); }\n'],

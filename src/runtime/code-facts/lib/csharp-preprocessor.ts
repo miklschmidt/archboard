@@ -60,7 +60,7 @@ function follow(word: string, open: Conditional[]): void {
  * @returns The blank line, keeping a carriage return.
  */
 function blank(line: string): string {
-	return line.replace(/[^\r]/gu, " ");
+	return line.replace(/[^\r]/gu, (character) => " ".repeat(character.length));
 }
 
 /**

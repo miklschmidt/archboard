@@ -36,6 +36,7 @@
 import type { Node } from "web-tree-sitter";
 import { cDefinitionsOf } from "@/runtime/code-facts/lib/c-definitions";
 import type { Definition } from "@/runtime/code-facts/lib/facts";
+import { sourceRange } from "@/runtime/code-facts/lib/spans";
 
 /** Whether a file is a header, which other files include, or a source file. */
 type ObjcRole = "header" | "source";
@@ -111,6 +112,7 @@ function define(
 		kind,
 		start: extent.startPosition.row + 1,
 		end: extent.endPosition.row + 1,
+		source: sourceRange(extent),
 		visibility: visibility.word,
 		exposed: visibility.exposed,
 		...(declares ? { declaration: true as const } : {}),

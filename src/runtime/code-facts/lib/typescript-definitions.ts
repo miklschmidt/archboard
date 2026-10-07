@@ -7,7 +7,7 @@
 
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "@/runtime/code-facts/lib/facts";
-import type { Spans } from "@/runtime/code-facts/lib/spans";
+import { sourceRange, type Spans } from "@/runtime/code-facts/lib/spans";
 
 /** The syntax that can hold a declaration and keep it at module level. */
 const HOLDERS = new Set([
@@ -76,6 +76,16 @@ const MEMBERS = new Set([
 /** Patterns whose names a module-level destructuring declares. */
 const PATTERNS = new Set(["object_pattern", "pair_pattern", "array_pattern"]);
 
+/** Statement wrappers whose modifiers and initializer belong to a declaration's source. */
+const SOURCE_WRAPPERS = new Set([
+	...PATTERNS,
+	"variable_declarator",
+	"lexical_declaration",
+	"variable_declaration",
+	"export_statement",
+	"ambient_declaration",
+]);
+
 /** Callable declarations and literals, including object and class methods. */
 const FUNCTIONS = new Set([
 	"function_declaration",
@@ -139,6 +149,17 @@ function declarationOf(name: Node): Node {
 	const itself =
 		parent.type === "enum_body" || parent.type === "object" || PATTERNS.has(parent.type);
 	return itself ? name : parent;
+}
+
+/**
+ * A declaration's source, including its statement keywords and export modifiers.
+ * @param declaration The declaration.
+ * @returns Its source node; a shared variable statement stays one source range.
+ */
+function sourceOf(declaration: Node): Node {
+	let at = declaration;
+	while (at.parent !== null && SOURCE_WRAPPERS.has(at.parent.type)) at = at.parent;
+	return at;
 }
 
 /**
@@ -292,6 +313,7 @@ function definitionOf(
 		kind: kindOf(declaration),
 		start: declaration.startPosition.row + 1,
 		end: declaration.endPosition.row + 1,
+		source: sourceRange(sourceOf(declaration)),
 		visibility,
 		exposed,
 	};

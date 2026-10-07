@@ -1,7 +1,7 @@
 // What one file tells the code check (ADR 0046): what it defines, what it
 // references and what it imports, or, for a file no grammar reads, its text.
 //
-// A line is 1-based. A file's facts quote names and lines, never other text
+// A line is 1-based. A file's facts quote names, lines and source offsets, never other text
 // of the file, so a finding built from them never quotes a secret.
 
 import type { EvidenceKind } from "@/shared/semantic-policy/index";
@@ -19,6 +19,8 @@ interface Definition {
 	/** The first and last line of the declaration. */
 	readonly start: number;
 	readonly end: number;
+	/** The declaration's UTF-16 string offsets: inclusive start, exclusive end. */
+	readonly source?: { readonly start: number; readonly end: number };
 	/**
 	 * The language's own word. TypeScript: `export` or `export default` for a
 	 * module-level declaration and `module` for one that is not exported;

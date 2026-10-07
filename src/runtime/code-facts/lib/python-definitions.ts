@@ -18,7 +18,7 @@
 
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "@/runtime/code-facts/lib/facts";
-import type { Spans } from "@/runtime/code-facts/lib/spans";
+import { sourceRange, type Spans } from "@/runtime/code-facts/lib/spans";
 
 /** The syntax that can hold a declaration and keep it at module level or in a class body. */
 const HOLDERS = new Set([
@@ -210,6 +210,7 @@ function definitionOf(
 		kind: kindOf(declaration),
 		start: declaration.startPosition.row + 1,
 		end: declaration.endPosition.row + 1,
+		source: sourceRange(declaration),
 		visibility,
 		exposed,
 	};
