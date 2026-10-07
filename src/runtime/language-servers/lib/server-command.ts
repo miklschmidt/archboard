@@ -6,8 +6,8 @@
 // language-server` on the checkout's registration, and then as an editor runs
 // it: that command, those arguments, the user's environment. A bare command is
 // looked up on the `PATH`; an absolute path names the program itself. A
-// language with no configured server has no server, and the pass says so once for the
-// checkout.
+// language with no configured server has no server, and the pass says so once
+// for the checkout.
 //
 // TypeScript needs no configuration. Its server is the native `tsc --lsp`
 // that TypeScript 7 ships in its `typescript` package, found in the checkout's
