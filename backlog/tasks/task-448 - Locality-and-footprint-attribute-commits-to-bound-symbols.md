@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 20:16'
-updated_date: '2026-10-07 20:42'
+updated_date: '2026-10-07 21:37'
 labels: []
 dependencies: []
 type: enhancement
@@ -47,6 +47,12 @@ Closing evidence: Archboard server@TASK-448 introduces no code-check findings re
 The complete bun run check gate passed. Consumer skill and install-target tests passed: 242 tests. Eleven focused symbol-history tests passed. Both requested commands passed through a temporary server and again through the restarted server at 127.0.0.1:3100, against board version 20 and the supplied Platform HEAD. The regenerated README git-history demonstration passed its scenario and its footprint screenshot was inspected. Its local attachment is not published. The simplification pass kept one shared mapper and reused existing adapters and module resolution. Board persistence remains accurate: its History lens part describes historical board decoding, which this task does not change.
 
 Command interface closing: no new code-check findings. Footprint against 2578bbf49 names Locality and Footprint as changed; the Commands container is changedNotNamed because those implementation files sit inside it, while its responsibility and interface stay accurate. Both TASK-448 proposals are adopted. Plain dogfood check reports no diagnostics. Existing code-check findings elsewhere remain unchanged.
+
+Pre-push code review found edge cases in declaration line precision, historical parser context, and mixed attribution after large-commit filtering. Reviewers are fixing these within the original acceptance criteria before push.
+
+Pre-push review fixes are committed through 8125a9c94. They add exact declaration ranges, preserve C/Objective-C/Nix parser context, separate mixed-language directory bindings, follow active filenames through renames, and filter locality precision before coupling. Unsupported directory text must contain the complete requested symbol before it can trigger fallback. An isolated checkout pinned to af396472 reproduces counts 3/2/1/1/0/0, all with symbol attribution. The user checkout advanced independently and remains unchanged. Existing architecture relationships remain accurate because these fixes stay inside history attribution and code facts.
+
+Final pre-push validation: the startup-signal owner passes in isolation and the complete bun run check gate passes on rerun. Skill and install-target tests pass: 242 tests. The README history demonstration regenerated successfully. Standards review fixed a duplicated clipboard protocol type and failure cleanup in the pending export test. Spec review fixes cover attribution precision, parser context, rename traversal, mixed-language roots, size filtering, and output wording. No unresolved review findings remain.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
