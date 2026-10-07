@@ -20,8 +20,9 @@
 // Which file is a header decides what it exposes. An `.m` file is a source
 // file. A `.h` file is read as Objective-C when a line outside a comment
 // starts with `@interface`, `@protocol`, `@class`, `@end`, `@import` or
-// `#import`, and as C++ otherwise (TASK-367.09); its text decides, not its
-// pair. An Objective-C++ file (`.mm`) has no grammar and is read as text.
+// `#import`, and as C++ otherwise (TASK-367.09), unless its same-directory
+// source decides its language (TASK-436.07). An Objective-C++ file (`.mm`)
+// has no grammar and is read as text.
 //
 // The facts of a file depend on its bytes and on one fact of its checkout:
 // the SDK attribute macros the checkout's headers wrap under their own names
@@ -143,6 +144,8 @@ interface ObjectiveCReadings {
 	/** An `.m` file. */
 	readonly source: ParseFacts;
 	/** A `.h` file: as an Objective-C header where its text is Objective-C, else as C or C++. */
+	readonly unpairedHeader: ParseFacts;
+	/** A header whose paired source file is Objective-C. */
 	readonly header: ParseFacts;
 }
 
@@ -176,8 +179,9 @@ function objectiveCReadings(
 				 * @param text The file.
 				 * @returns Its facts.
 				 */
-				header: (text) =>
+				unpairedHeader: (text) =>
 					isObjectiveC(text) ? HEADER(blankedMacros(text, wrappers)) : otherwise(text),
+				header: (text) => HEADER(blankedMacros(text, wrappers)),
 			};
 			made.set(key, readings);
 		}

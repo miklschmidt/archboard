@@ -7,7 +7,8 @@
 // takes the facts from the entry, and otherwise it parses and replaces the
 // entry. A reading is the adapter's, except that an Objective-C file is read
 // with the SDK macros its checkout's headers wrap (objc-adapter.ts), and a
-// change to them is a new reading. So a pass always sees an edit, an
+// change to them is a new reading. A header also hashes its paired source,
+// whose language selects its grammar (TASK-436.07). So a pass always sees an edit, an
 // uncommitted one too, and the cache never holds more than one entry for a
 // file. Each pass drops the entries of files that no
 // longer exist, so a deleted or renamed file leaves nothing behind. A file
@@ -48,6 +49,7 @@ import type { TerraformPlan } from "@/runtime/code-facts/lib/terraform-plan";
 interface Entry {
 	readonly hash: bigint | number;
 	readonly parse: ParseFacts;
+	readonly dependencyHash?: bigint | number;
 	/** None where the adapter found the file of another format, which is read as text. */
 	readonly facts: ParsedFacts | undefined;
 }
@@ -273,7 +275,11 @@ async function parsedFacts(
 ): Promise<ParsedFacts | undefined> {
 	const hash = Bun.hash(bytes);
 	const entry = context.cache.get(absolute);
-	if (entry?.hash === hash && entry.parse === reading.parse) {
+	if (
+		entry?.hash === hash &&
+		entry.parse === reading.parse &&
+		entry.dependencyHash === reading.dependencyHash
+	) {
 		stats.cached += 1;
 		return entry.facts;
 	}
@@ -281,7 +287,12 @@ async function parsedFacts(
 		context.signal.throwIfAborted();
 		return Promise.resolve(reading.parse(new TextDecoder().decode(bytes)));
 	});
-	context.cache.set(absolute, { hash, parse: reading.parse, facts });
+	context.cache.set(absolute, {
+		hash,
+		parse: reading.parse,
+		dependencyHash: reading.dependencyHash,
+		facts,
+	});
 	stats.parsed += 1;
 	return facts;
 }
