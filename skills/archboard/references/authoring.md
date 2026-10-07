@@ -600,6 +600,9 @@ check gives these findings:
   the board draws a caller of the container.
 - `EXPOSED_UNUSED`, information on the container: the exposed names that no
   file outside the module uses. A test is not a caller.
+- `TEST_IMPORT_UNEXPOSED`, a warning on the container: a test outside the
+  module imports a private file. Use a public entry file, or put the test
+  inside the module. A test inside a module can exercise any of its files.
 - `VARIABLE_PASSED_THROUGH`, information on a container bound to a Terraform
   module: the variables that the module uses only once, as the whole value of
   one argument of a resource that it manages, such as `bucket = var.bucket`.

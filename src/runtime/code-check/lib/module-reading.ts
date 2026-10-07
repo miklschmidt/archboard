@@ -51,8 +51,16 @@ interface OutsideUse {
 interface ModuleReading {
 	readonly exposure: ModuleExposure;
 	readonly uses: readonly OutsideUse[];
+	/** Imports of private files by tests outside the module, which never count as callers. */
+	readonly testImports: readonly TestImport[];
 	/** A Terraform module's shape; such a module is reached only through its outputs. */
 	readonly terraform?: ModuleShape;
+}
+
+/** A resolved private import in a test outside the module. */
+interface TestImport {
+	readonly file: string;
+	readonly found: SyntaxFacts["imports"][number] & { readonly resolved: string };
 }
 
 /** The modules one pass has read, by repository and directory, so two boards share one reading. */
@@ -241,9 +249,15 @@ async function readModule(
 	checkout: RepoCheckout,
 	exposure: ModuleExposure,
 ): Promise<ModuleReading> {
+	const testImports = await privateTestImports(facts, checkout, exposure);
 	if (exposure.rootFiles.every(isTerraformFile)) {
 		const uses = await terraformUses(facts, checkout, exposure);
-		return { exposure, uses, terraform: await terraformShape(facts, checkout, exposure) };
+		return {
+			exposure,
+			uses,
+			testImports,
+			terraform: await terraformShape(facts, checkout, exposure),
+		};
 	}
 	const uses: OutsideUse[] = [];
 	for (const file of exposure.outside) {
@@ -251,7 +265,50 @@ async function readModule(
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time, so the pass yields between parses
 		uses.push(...(await usesIn(facts, checkout, exposure.directory, file)));
 	}
-	return { exposure, uses };
+	return { exposure, uses, testImports };
+}
+
+/**
+ * Imports by external tests that bypass a module's public entry files.
+ * @param facts The pass.
+ * @param checkout The module's checkout.
+ * @param exposure The module's public entry files and possible callers.
+ * @returns One import per test and private file.
+ */
+async function privateTestImports(
+	facts: FactsPass,
+	checkout: RepoCheckout,
+	exposure: ModuleExposure,
+): Promise<TestImport[]> {
+	const imports: TestImport[] = [];
+	for (const file of exposure.outside.filter(isTestPath)) {
+		// oxlint-disable-next-line no-await-in-loop -- one test at a time yields between parses; the pass caches each file
+		const read = await facts.read(checkout, file);
+		if (read === undefined || read.adapter === "text") continue;
+		imports.push(...privateImportsOf(read, exposure));
+	}
+	return imports;
+}
+
+/**
+ * Private imports in one external test, one per resolved file.
+ * @param read The test's facts.
+ * @param exposure The module's entry files.
+ * @returns The imports.
+ */
+function privateImportsOf(read: SyntaxFacts, exposure: ModuleExposure): TestImport[] {
+	const imports = read.imports.flatMap((found): TestImport[] => {
+		const { resolved } = found;
+		if (resolved === undefined || resolved.endsWith("/")) return [];
+		const privateFile =
+			within(exposure.directory, resolved) && !exposure.rootFiles.includes(resolved);
+		return privateFile ? [{ file: read.path, found: { ...found, resolved } }] : [];
+	});
+	const unique = new Map<string, TestImport>();
+	for (const each of imports) {
+		if (!unique.has(each.found.resolved)) unique.set(each.found.resolved, each);
+	}
+	return [...unique.values()];
 }
 
 /**

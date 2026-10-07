@@ -391,10 +391,40 @@ async function judgeContainer(
 ): Promise<void> {
 	const judged = await containerToJudge(reading, container, outcome.skipped);
 	if (judged === undefined) return;
+	outcome.findings.push(...testImportFindings(judged));
 	const unused = unusedFinding(judged);
 	if (unused !== undefined) outcome.findings.push(unused);
 	outcome.findings.push(...terraformFindings(reading.read, container, judged.module.terraform));
 	await judgeChildren(judged, outcome.findings);
+}
+
+/**
+ * Warnings for external tests that import a private file of this module.
+ * @param judged The container and its module.
+ * @returns One warning per test and imported file.
+ */
+function testImportFindings(judged: Judged): CodeFinding[] {
+	const { container } = judged.inspection;
+	const subject = nodeSubject(container);
+	return judged.module.testImports.map(({ file, found }) => ({
+		...siteOf(judged.reading.read, `nodes.${container.id}`, subject),
+		severity: "warning",
+		code: "TEST_IMPORT_UNEXPOSED",
+		message:
+			`Test ${JSON.stringify(file)} imports ${JSON.stringify(found.resolved)}, a private file of ` +
+			`the module ${JSON.stringify(judged.module.exposure.directory || ".")} bound to ` +
+			`${describeSubject(subject)}. Use a public entry file of the module, or put the test inside it.`,
+		evidence: [
+			{
+				kind: "import",
+				resolution: "resolved",
+				repo: judged.checkout.repo,
+				path: file,
+				line: found.line,
+				symbol: found.names.map((name) => name.local).join(", ") || found.specifier,
+			},
+		],
+	}));
 }
 
 /**
