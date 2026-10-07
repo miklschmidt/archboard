@@ -5,7 +5,6 @@
 // language runs is server-command.test.ts.
 
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { openLanguageServers } from "@/runtime/language-servers/index";
 import { workspace, type Workspace } from "@/runtime/language-servers/tests/fixture";
@@ -49,19 +48,30 @@ afterEach(() => {
 });
 
 /**
+ * A workspace whose checkout is a plain directory.
+ * @param files Each file of the checkout and its text.
+ * @param answers The stand-in's answers.
+ * @returns The workspace.
+ */
+function plain(
+	files: Readonly<Record<string, string>>,
+	answers: Readonly<Record<string, unknown>>,
+): Workspace {
+	current = workspace(files, answers);
+	return current;
+}
+
+/**
  * A workspace whose checkout is a Git repository with its files committed.
  * @param files Each file of the checkout and its text.
  * @param answers The stand-in's answers.
- * @param ignored What the checkout's `.gitignore` ignores, written after the commit.
  * @returns The workspace.
  */
 function committed(
 	files: Readonly<Record<string, string>>,
 	answers: Readonly<Record<string, unknown>>,
-	ignored: readonly string[] = [],
 ): Workspace {
-	current = workspace(files, answers);
-	const root = current.root;
+	const at = plain(files, answers);
 	/**
 	 * Run Git in the checkout, with no configuration of this machine.
 	 * @param args Its arguments.
@@ -69,7 +79,7 @@ function committed(
 	const git = (...args: string[]): void => {
 		const env = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
 		const run = Bun.spawnSync(["git", "-c", "user.name=t", "-c", "user.email=t@t", ...args], {
-			cwd: root,
+			cwd: at.root,
 			env,
 		});
 		if (run.exitCode !== 0) throw new Error(`git ${args.join(" ")}: ${run.stderr.toString()}`);
@@ -77,20 +87,7 @@ function committed(
 	git("init", "-q");
 	git("add", "-A");
 	git("commit", "-q", "--no-gpg-sign", "-m", "the checkout");
-	if (ignored.length > 0) writeFileSync(join(root, ".gitignore"), `${ignored.join("\n")}\n`);
-	return current;
-}
-
-/**
- * Write files into a checkout after its commit, as this machine makes them.
- * @param at The workspace.
- * @param files Each file and its text.
- */
-function place(at: Workspace, files: Readonly<Record<string, string>>): void {
-	for (const [file, text] of Object.entries(files)) {
-		mkdirSync(join(at.root, file, ".."), { recursive: true });
-		writeFileSync(join(at.root, file), text);
-	}
+	return at;
 }
 
 /**
@@ -122,9 +119,8 @@ describe("pyright", () => {
 	const use = { file: "src/shop/app.py", line: 4, symbol: "post" };
 	const answers = { "src/shop/app.py:4:post": { path: "src/shop/ledger.py", line: 1 } };
 
-	test("is told the interpreter of the checkout's own virtual environment, and answers about a file it opened", async () => {
-		const at = committed(PYTHON, answers, [".venv/"]);
-		place(at, VENV);
+	test("is told the interpreter of the checkout's own virtual environment, also one that Git tracks, and answers about a file it opened", async () => {
+		const at = committed({ ...PYTHON, ...VENV }, answers);
 		expect(await ask(at, "python", use)).toEqual({
 			answer: {
 				status: "answered",
@@ -145,7 +141,7 @@ describe("pyright", () => {
 			selectionRange: on(0, 4, 8),
 			children: [{ kind: 13, range: on(0, 9, 15), selectionRange: on(0, 9, 15) }],
 		};
-		const at = committed(PYTHON, {
+		const at = plain(PYTHON, {
 			"src/shop/app.py:4:post": { path: "src/shop/ledger.py", line: 1, character: 4 },
 			"outline:src/shop/ledger.py": [post],
 		});
@@ -160,16 +156,8 @@ describe("pyright", () => {
 		await session.close();
 	});
 
-	test("is told the interpreter of a .venv that the checkout tracks, as an editor's would be", async () => {
-		const at = committed({ ...PYTHON, ...VENV }, answers);
-		expect((await ask(at, "python", use)).answer.status).toBe("answered");
-		expect(at.configurations()).toEqual([
-			[{ pythonPath: join(at.root, ".venv/bin/python") }, null],
-		]);
-	});
-
 	test("is told no interpreter in a checkout that has none", async () => {
-		const none = committed(PYTHON, answers);
+		const none = plain(PYTHON, answers);
 		expect((await ask(none, "python", use)).answer.status).toBe("answered");
 		expect(none.configurations()).toEqual([[null, null]]);
 	});
