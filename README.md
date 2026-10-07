@@ -65,7 +65,7 @@ A proposal starts with a map of what exists. Archboard brings code, module bound
 
 Give each part a link to its file or a named function, class, or value. A relationship can cite the source that supports it. With `archboard check --code`, your agent finds broken source links, relationships drawn backwards, and dependencies between mapped parts that the board leaves out.
 
-Warnings mark the affected parts and relationships in the canvas. Select a warning to read its evidence and open the source. Each finding says whether a tool resolved its evidence or the evidence still needs investigation.
+Warnings mark the affected parts and relationships in the canvas. Select a warning to read the finding and open its source when available. Each piece of source evidence says whether analysis resolved it or matched it only by name.
 
 <img src="https://github.com/user-attachments/assets/6b8b9b52-3b35-4084-bb44-149715808b76" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example board leaves out. Selecting its warning opens the source evidence in the inspector. The terminal shows the actual call in the source file.">
 
@@ -75,9 +75,9 @@ Archboard reads TypeScript, Python, C#, Swift, C, C++, and Objective-C. It also 
 
 ### See what a module exposes before you change it
 
-A module's interface is what its outside callers reach. Archboard shows those entry points, the hidden parts behind them, and the callers that depend on them. It also identifies entry points that appear to pass a call straight through, so you can decide whether that extra layer earns its place.
+A module's interface on the map is what its outside callers reach. Archboard shows those entry points, the hidden parts behind them, and the callers that depend on them. It also identifies entry points that appear to pass a call straight through, so you can decide whether that extra layer earns its place.
 
-Compare competing proposals side by side. The comparison lists interface changes before internal changes, so you can see which design asks more of its callers. Archboard also reports callers that reach parts the module does not expose. It identifies exposed names that nobody outside the module uses.
+Compare competing proposals side by side. The comparison lists interface changes before internal changes, so you can see which design asks more of its callers. The code check reports callers that reach parts the module does not expose. It identifies exposed names with no outside use in the checked code.
 
 <img src="https://github.com/user-attachments/assets/1e6b9197-369f-418f-aa3c-58503221c867" width="100%" alt="Two proposals for the same checkout example. Selecting Orders in each opens its interface inspector. Entry per job exposes three parts. One entry point exposes Place order and keeps two parts hidden.">
 
