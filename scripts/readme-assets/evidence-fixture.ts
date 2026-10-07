@@ -112,15 +112,30 @@ async function prepareSource(root: string): Promise<void> {
 	 * @param day The deterministic commit day, when this command commits.
 	 * @returns The command's output.
 	 */
-	const git = (args: readonly string[], day = 1) =>
-		run(["git", "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgSign=false", ...args], {
-			cwd: root,
-			env: {
-				...GIT_ENV,
-				GIT_AUTHOR_DATE: `2026-09-${String(day).padStart(2, "0")}T12:00:00Z`,
-				GIT_COMMITTER_DATE: `2026-09-${String(day).padStart(2, "0")}T12:00:00Z`,
-			},
-		});
+	const git = (args: readonly string[], day = 1) => {
+		const env = {
+			...GIT_ENV,
+			GIT_AUTHOR_DATE: `2026-09-${String(day).padStart(2, "0")}T12:00:00Z`,
+			GIT_COMMITTER_DATE: `2026-09-${String(day).padStart(2, "0")}T12:00:00Z`,
+		};
+		// Git hooks export repository paths and config. Do not let those redirect fixture writes.
+		const inherited = Object.keys(process.env)
+			.filter((key) => key.startsWith("GIT_") && !Object.hasOwn(env, key))
+			.flatMap((key) => ["-u", key]);
+		return run(
+			[
+				"env",
+				...inherited,
+				"git",
+				"-c",
+				"core.hooksPath=/dev/null",
+				"-c",
+				"commit.gpgSign=false",
+				...args,
+			],
+			{ cwd: root, env },
+		);
+	};
 	await git(["init", "-q", "-b", BASE]);
 	await git(["remote", "add", "origin", `https://${REPO}.git`]);
 	await git(["add", "--all"]);
