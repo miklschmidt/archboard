@@ -1,5 +1,6 @@
 // What this owner's tests share: a checkout and a state directory of their
-// own, a table that runs the stand-in server, and whether a process still runs.
+// own, a server of a language that runs the stand-in, and whether a process
+// still runs.
 
 import {
 	existsSync,
@@ -12,7 +13,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type { Language, LanguageServer } from "@/runtime/language-servers/index";
+import type { Language, ServerOf } from "@/runtime/language-servers/index";
 
 /** The stand-in server. */
 const FAKE_SERVER = join(import.meta.dir, "fake-language-server.ts");
@@ -22,7 +23,7 @@ interface Workspace {
 	readonly root: string;
 	readonly state: string;
 	/** The servers of a session: the stand-in, in a mode, for one language (TypeScript by default). */
-	readonly table: (mode?: string, language?: Language) => (language: Language) => LanguageServer;
+	readonly table: (mode?: string, language?: Language) => ServerOf;
 	/** The pids of every stand-in that started. */
 	readonly pids: () => number[];
 	/** Where each stand-in started, and the options it was given. */
