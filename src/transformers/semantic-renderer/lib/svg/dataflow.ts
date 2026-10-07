@@ -4,19 +4,12 @@ import {
 } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // Painting a message sequence: the frame, then the marks on the rows a
-// comparison says moved (`flow-rows.ts`), then the columns of time, then the
-// cards at their heads, then the messages crossing between them, and last the
+// comparison says moved (`flow-rows.ts`), then activation and label shadows,
+// then columns and their head cards, then the messages crossing them, and last the
 // words of every message (`flow-words.ts`).
 //
-// Forked from PR Lens's `svg/dataflow.ts`, the pulses and their shared cycle
-// included: an exchange that does not move reads as a ladder rather than as
-// something happening, which is the whole of what a sequence is for. What did
-// not come with them is the manifest and the delta tones. What arrived on top is
-// the same identity and selection machinery the architecture grammar carries, so
-// a pane can hit-test one picture the way it hit-tests the other.
-//
-// The pulses do not compete with the walkthrough: a beat moves the camera and
-// marks its subjects, and neither is a thing a pulse does.
+// Pulses share one clock and show the exchange happening. The walkthrough owns
+// the camera and subject selection; pulses own neither.
 //
 // The layer order is load-bearing. A row's mark passes behind everything on
 // the row; a lifeline passes behind a card; a message passes over a lifeline;
@@ -76,13 +69,19 @@ import {
 	paintCard,
 	paintHeader,
 } from "@/transformers/semantic-renderer/lib/svg/cards";
-import { paintColumn } from "@/transformers/semantic-renderer/lib/svg/flow-columns";
+import {
+	paintColumn,
+	paintColumnShadows,
+} from "@/transformers/semantic-renderer/lib/svg/flow-columns";
 import {
 	markedWithin,
 	paintRowMarks,
 	type Stands,
 } from "@/transformers/semantic-renderer/lib/svg/flow-rows";
-import { paintStepWords } from "@/transformers/semantic-renderer/lib/svg/flow-words";
+import {
+	paintStepWords,
+	paintStepShadow,
+} from "@/transformers/semantic-renderer/lib/svg/flow-words";
 import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import {
 	lines,
@@ -96,6 +95,7 @@ import {
 	slabSeat,
 	slabShadow,
 } from "@/transformers/semantic-renderer/lib/svg/slab";
+import { SHADOW_REACH } from "@/transformers/semantic-renderer/lib/svg/shadow";
 import { floorOf, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
 import {
 	HEAD_ATTRIBUTE,
@@ -379,13 +379,14 @@ function headShade(
 	if (card === undefined) {
 		return "";
 	}
-	// Across the frame's floor, between its walls, which stay beside the head.
+	// Across the floor, through the card shadow's foot: a moved shadow must not
+	// darken the lifelines it passes over.
 	const floor = floorOf(layout.frame);
 	const shape = {
 		x: coord(floor.x),
 		y: coord(card.y - HEAD_REACH),
 		width: coord(floor.width),
-		height: coord(card.height + HEAD_REACH),
+		height: coord(card.height + HEAD_REACH + SHADOW_REACH),
 	};
 	// A top-level tray's floor, which is the frame's (`paintFrame`).
 	const face = standing === "removed" ? ghostFace(palette) : { fill: palette.trayFloor };
@@ -428,18 +429,19 @@ function paintFlow(
 	const body = lines([
 		paintFrame(layout, palette, flowStanding, unsettledOf(layout.flow.id)),
 		paintRowMarks(layout, palette, markOf),
-		wrap(
-			"g",
-			{},
-			lines(
-				layout.columns.map((column) =>
-					paintColumn(
-						column,
-						layout,
-						{ palette, appearance: appearances.get(column.card.node.id)! },
-						standingOf(column.card.node.id),
-					),
-				),
+		// All activation and label shadows below all lifelines and message runs.
+		...layout.columns.map((column) =>
+			paintColumnShadows(column, palette, standingOf(column.card.node.id)),
+		),
+		...layout.steps.map((placed) =>
+			paintStepShadow(placed, activeAt, palette, standingOf(placed.step.id)),
+		),
+		...layout.columns.map((column) =>
+			paintColumn(
+				column,
+				layout,
+				{ palette, appearance: appearances.get(column.card.node.id)! },
+				standingOf(column.card.node.id),
 			),
 		),
 		wrap(

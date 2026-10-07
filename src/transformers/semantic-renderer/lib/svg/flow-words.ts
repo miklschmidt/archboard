@@ -29,7 +29,7 @@ import {
 	ghostFace,
 	slab,
 	slabSeat,
-	slabShadow,
+	shadowUnder,
 } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
 	PART_ATTRIBUTE,
@@ -71,9 +71,7 @@ function paintLabel(
 			? plainPlate(box, palette.trayFloor) +
 				tag("rect", { ...rectOf(box), ...ghostFace(palette) }) +
 				rowTint(box, mark, palette)
-			: slabSeat(box, PILL_RADIUS) +
-				slabShadow(box, PILL_RADIUS, "chip", palette) +
-				slab(box, labelLook(palette), palette)) +
+			: slabSeat(box, PILL_RADIUS) + slab(box, labelLook(palette), palette)) +
 		// The chip's rule in the selection's ink, lit when the message is.
 		tag("rect", {
 			class: "ab-halo",
@@ -173,6 +171,31 @@ function paintNote(
 }
 
 /**
+ * A message's label shadow, laid under every column and message.
+ * @param placed The message.
+ * @param activeAt Whether a column is busy at a given height.
+ * @param palette The theme's colours.
+ * @param standing How the message stands against its parent.
+ * @returns The shadow, with the message's membership.
+ */
+function paintStepShadow(
+	placed: PlacedStep,
+	activeAt: ActiveAt,
+	palette: Palette,
+	standing: SubjectStanding | undefined,
+): string {
+	return shadowUnder(
+		placed.step.id,
+		labelBox(placed, activeAt),
+		PILL_RADIUS,
+		"chip",
+		palette,
+		standing,
+		"label",
+	);
+}
+
+/**
  * What one message says, on the layer above every run.
  *
  * The chip and the warning badge, in a group that says it is the message, for
@@ -210,4 +233,4 @@ function paintStepWords(
 	);
 }
 
-export { paintStepWords };
+export { paintStepWords, paintStepShadow };
