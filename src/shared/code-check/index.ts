@@ -140,10 +140,11 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   Python, C, C++, Objective-C, C# and Swift have no default server: an agent
  *   that works in the repository configures one for its checkout (`archboard
  *   repo language-server`), so the check runs no code of a checkout that
- *   nobody agreed to run. Also a configured command that is not installed. Said once for the checkout and the language,
- *   with its `repo` and no subject; its uses stay as code facts read them,
- *   candidates or no evidence (TASK-367.13, TASK-433). Its `detail` names the
- *   language, why, and the command that configures one.
+ *   nobody agreed to run. Also a configured command that is not installed.
+ *   Said once for the checkout and the language, with its `repo` and no
+ *   subject; its uses stay as code facts read them, candidates or no evidence
+ *   (TASK-367.13, TASK-433). Its `detail` names the language, why, and the
+ *   command that configures one.
  * - `language-server-unready`: a project the language server cannot answer
  *   about yet, such as a Swift package that no build has indexed, which the
  *   check never builds (TASK-367.16), a C# checkout with no solution or
