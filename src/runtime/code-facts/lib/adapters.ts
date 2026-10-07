@@ -18,6 +18,7 @@
 // same way.
 
 import path from "node:path";
+import { HEADERS, SOURCES } from "@/runtime/code-facts/lib/c-pairs";
 import type {
 	AdapterName,
 	ImportResolver,
@@ -118,17 +119,15 @@ const TERRAFORM = treeSitter(
 /** Only `flake.nix` is read: its outputs. Every other `.nix` file is read as text (TASK-367.21). */
 const FLAKE = treeSitter("@lumis-sh/wasm-nix/tree-sitter-nix.wasm", "nix.scm", flakeFacts);
 const C = treeSitter("tree-sitter-c/tree-sitter-c.wasm", "c.scm", cFacts);
-/** A `.h` is read as C++, which reads the C headers of Redis and SQLite as the C grammar does (TASK-367.09). */
+/** An unpaired C-family header defaults to C++ (TASK-367.09). */
 const CPP = treeSitter("tree-sitter-cpp/tree-sitter-cpp.wasm", "c.scm", cFacts);
 /**
- * A `.h` that holds Objective-C is read as Objective-C, else as C++, and an
- * `.m` as Objective-C (TASK-367.10). Both share the include resolver, so the
- * entry that lists `.h` only names the adapter of its facts. A checkout's
- * reading of them also depends on the SDK macros its headers wrap
- * (`readingsIn`).
+ * An unpaired `.h` uses its text to choose Objective-C or C++; a paired
+ * header uses its source's language (TASK-436.07). An `.m` is Objective-C.
+ * Their reading also depends on the SDK macros the checkout's headers wrap.
  */
 const OBJECTIVE_C = objectiveCReadings(CPP);
-const { header: HEADER, source: OBJECTIVE_C_SOURCE } = OBJECTIVE_C(new Map());
+const { unpairedHeader: HEADER, source: OBJECTIVE_C_SOURCE } = OBJECTIVE_C(new Map());
 
 /** A `Package.swift` is Swift, and its targets are read beside its code (TASK-367.12). */
 const SWIFT = treeSitter("@lumis-sh/wasm-swift/tree-sitter-swift.wasm", "swift.scm", swiftFacts);
@@ -204,6 +203,8 @@ const ADAPTERS: readonly Adapter[] = [
 interface AdapterReading {
 	readonly adapter: Adapter;
 	readonly parse: ParseFacts;
+	/** The paired source's path and content, which also refresh a header's facts. */
+	readonly dependencyHash?: bigint | number;
 }
 
 /**
@@ -237,9 +238,8 @@ function adapterOf(file: string): AdapterReading | undefined {
 
 /**
  * How the files of one checkout are read, made once in a pass: as
- * `adapterOf` says, but an Objective-C file also blanks the SDK macros the
- * checkout's headers wrap, which the pass reads when it first reads such a
- * file (objc-adapter.ts).
+ * `adapterOf` says, but a header uses its same-directory source's language,
+ * and an Objective-C file blanks the SDK macros the checkout's headers wrap.
  * @param checkout The checkout.
  * @param read Reads a file of the checkout as text.
  * @returns The reading of each file of the checkout.
@@ -252,9 +252,27 @@ function readingsIn(
 	return (file) => {
 		const reading = adapterOf(file);
 		if (reading === undefined) return undefined;
+		const extension = path.posix.extname(file);
+		if (HEADERS.includes(extension)) {
+			const stem = file.slice(0, -extension.length);
+			const paired = SOURCES.map((extension) => `${stem}${extension}`).find((source) =>
+				checkout.files.has(source),
+			);
+			const source = paired === undefined ? undefined : adapterOf(paired);
+			const sourceText = paired === undefined ? undefined : read(paired);
+			if (paired !== undefined && source !== undefined && sourceText !== undefined) {
+				const dependencyHash = Bun.hash(`${paired}\0${sourceText}`);
+				if (source.adapter.name !== "objc") return { ...source, dependencyHash };
+				objectiveC ??= OBJECTIVE_C(wrappersIn(checkout, read));
+				return { ...source, parse: objectiveC.header, dependencyHash };
+			}
+		}
 		if (reading.parse !== HEADER && reading.parse !== OBJECTIVE_C_SOURCE) return reading;
 		objectiveC ??= OBJECTIVE_C(wrappersIn(checkout, read));
-		return { ...reading, parse: reading.parse === HEADER ? objectiveC.header : objectiveC.source };
+		return {
+			...reading,
+			parse: reading.parse === HEADER ? objectiveC.unpairedHeader : objectiveC.source,
+		};
 	};
 }
 

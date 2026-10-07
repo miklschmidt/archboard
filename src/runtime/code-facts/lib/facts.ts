@@ -159,7 +159,8 @@ interface ReferenceThroughImport {
 
 /**
  * The facts an adapter gives one file, before its imports are resolved. These
- * depend on the file's bytes alone, so the cache keeps them.
+ * depend on the file's bytes and the reading that selects its grammar and
+ * blanks SDK macros, so the cache keeps them (reader.ts).
  */
 interface ParsedFacts {
 	readonly definitions: readonly Definition[];
