@@ -1,5 +1,6 @@
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
 import type { MessageKind } from "@/shared/semantic-board/index";
+import { SHADOW_REACH } from "@/transformers/semantic-renderer/lib/svg/shadow";
 import { headReach, type Head, type Weight } from "@/transformers/semantic-renderer/lib/svg/styles";
 
 // Sequence-diagram measurements, used by the data-flow renderer.
@@ -23,8 +24,10 @@ const COLUMN_MAX_WIDTH = 192;
  */
 const COLUMN_GAP = 16;
 
-/** The air between the bottom of a participant's card and the top of its lifeline. */
-const LIFELINE_GAP = 6;
+/** The card's full shadow reach, plus air for the selected lifeline's stroke. */
+const LIFELINE_GAP = SHADOW_REACH + 1;
+/** Preserve the dash phase of the original start, six units below the card. */
+const LIFELINE_DASH_OFFSET = LIFELINE_GAP - 6;
 /** How far the first message sits below the lifeline of the tallest participant card. */
 const FIRST_MESSAGE_DROP = 36;
 /** The vertical step from one message to the next, and from one self-message. */
@@ -142,6 +145,7 @@ export {
 	COLUMN_GAP,
 	LIFELINE_GAP,
 	LIFELINE_DASH,
+	LIFELINE_DASH_OFFSET,
 	FIRST_MESSAGE_DROP,
 	MESSAGE_PITCH,
 	SELF_MESSAGE_PITCH,

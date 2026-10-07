@@ -11,8 +11,9 @@ import {
 	ACTIVATION_RADIUS,
 	BAR_THICKNESS,
 	LIFELINE_DASH,
+	LIFELINE_DASH_OFFSET,
 } from "@/transformers/semantic-renderer/lib/sequence-design";
-import { coord } from "@/transformers/semantic-renderer/lib/geometry";
+import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type {
 	FlowLayout,
 	PlacedColumn,
@@ -24,7 +25,7 @@ import { lightDark, mixed } from "@/transformers/semantic-renderer/lib/svg/colou
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
 	slab,
-	slabShadow,
+	shadowUnder,
 	tinted,
 	type Share,
 	type SlabLook,
@@ -86,6 +87,49 @@ function barLook(appearance: NodeAppearance, palette: Palette): SlabLook {
 }
 
 /**
+ * A column's bars, including the corners beyond their calls and replies.
+ * @param column The participant's column.
+ * @returns The activation silhouettes.
+ */
+function activationBoxes(column: PlacedColumn): readonly Box[] {
+	// A bar reaches its corner radius past the call that starts it and the reply
+	// that ends it, so both meet its straight side, not a rounded corner.
+	return column.activations.map((bar) => ({
+		x: column.centreX - ACTIVATION_HALF_WIDTH,
+		y: bar.top - ACTIVATION_RADIUS,
+		width: ACTIVATION_HALF_WIDTH * 2,
+		height: bar.bottom - bar.top + ACTIVATION_RADIUS * 2,
+	}));
+}
+
+/**
+ * A participant's activation shadows, laid under every column and message.
+ * @param column The participant's column.
+ * @param palette The theme's colours.
+ * @param standing How the participant stands against its parent.
+ * @returns The shadows, with the participant's membership.
+ */
+function paintColumnShadows(
+	column: PlacedColumn,
+	palette: Palette,
+	standing: SubjectStanding | undefined,
+): string {
+	return lines(
+		activationBoxes(column).map((bar) =>
+			shadowUnder(
+				column.card.node.id,
+				bar,
+				ACTIVATION_RADIUS,
+				"chip",
+				palette,
+				standing,
+				"activation",
+			),
+		),
+	);
+}
+
+/**
  * One participant's column of time: the lifeline under its card, and the bars
  * marking where it is busy.
  *
@@ -125,15 +169,9 @@ function paintColumn(
 		stroke: palette.edge,
 		"stroke-width": 1,
 		"stroke-dasharray": LIFELINE_DASH,
+		"stroke-dashoffset": LIFELINE_DASH_OFFSET,
 	};
-	// A bar reaches its corner radius past the call that starts it and the reply
-	// that ends it, so both meet its straight side, not a rounded corner.
-	const bars = column.activations.map((bar) => ({
-		x: column.centreX - ACTIVATION_HALF_WIDTH,
-		y: bar.top - ACTIVATION_RADIUS,
-		width: ACTIVATION_HALF_WIDTH * 2,
-		height: bar.bottom - bar.top + ACTIVATION_RADIUS * 2,
-	}));
+	const bars = activationBoxes(column);
 	const look = barLook(appearance, palette);
 	return wrap(
 		"g",
@@ -143,9 +181,6 @@ function paintColumn(
 			[PART_ATTRIBUTE]: "lifeline",
 		},
 		lines([
-			// The bars' shadows under the lifeline, which no bar shadows; the
-			// messages are drawn after every column.
-			...bars.map((bar) => slabShadow(bar, ACTIVATION_RADIUS, "chip", palette)),
 			tag("line", lifeline),
 			tag("line", { class: "ab-halo", ...lifeline, ...halo, "stroke-width": LIT_LIFELINE_WIDTH }),
 			...bars.map((bar) => slab(bar, look, palette)),
@@ -164,4 +199,4 @@ function paintColumn(
 	);
 }
 
-export { paintColumn };
+export { paintColumn, paintColumnShadows };
