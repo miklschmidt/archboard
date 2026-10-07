@@ -617,9 +617,9 @@ its threads once no turn runs on it, and Codex then unloads the thread.
 _Avoid_: browser session (that names the realtime handle), session alone, canvas
 
 **Workhorse**:
-The primary Codex thread of a tab session, for sustained code, repository and
-multi-step work. It can go on working while the voice coordinator answers and
-investigates separately.
+The primary Codex thread of a tab session, for architectural inspection,
+analysis, and proposals. It can continue its work while the voice coordinator
+answers and investigates separately.
 _Avoid_: main agent, coding thread, backend agent, worker (that is also an agent
 role)
 
@@ -668,6 +668,12 @@ To add input to a turn that is still running, so that the turn takes it into
 account as it continues. Steering never stops the turn. Stopping it is an
 interruption.
 _Avoid_: interrupt, inject, cancel
+
+**Workhorse stop**:
+A request to stop a tab session's workhorse and its sub-agents, and clear its
+pending requests. Speech and the workbench Stop control request this outcome,
+but accepting the request does not prove that its work stopped.
+_Avoid_: steer, pause, end voice
 
 **Workhorse news**:
 What the voice coordinator is told about the workhorse of its tab session while
