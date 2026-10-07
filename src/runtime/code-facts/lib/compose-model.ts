@@ -363,7 +363,13 @@ function definitionsOf(
 			const span = lines.spanOf(document, [kind, name]);
 			const start = span?.start ?? 1;
 			const end = span?.own === true ? span.end : start;
-			const definition = { symbol: `${kind}.${name}`, start, end, ...visibilityOf(kind, body) };
+			const definition: Definition = {
+				symbol: `${kind}.${name}`,
+				kind: "value",
+				start,
+				end,
+				...visibilityOf(kind, body),
+			};
 			return [{ ...definition, ...runsOfDeclaration(kind, body) }];
 		}),
 	);

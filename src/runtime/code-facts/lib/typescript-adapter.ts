@@ -81,7 +81,15 @@ const RUN_SYNTAX: RunSyntax = {
 		decorator: ANY,
 		extends_clause: "value",
 	},
-	chains: { member_expression: ["object", "property"], subscript_expression: ["object"] },
+	chains: {
+		member_expression: ["object", "property"],
+		subscript_expression: ["object"],
+		parenthesized_expression: [""],
+		as_expression: [""],
+		satisfies_expression: [""],
+		non_null_expression: [""],
+	},
+	arguments: { arguments: ANY },
 };
 
 /** The syntax in which each kind of name is part of a qualified spelling. */
@@ -278,7 +286,7 @@ function distinct(
 	);
 	const seen = new Map<string, ParsedFacts["references"][number]>();
 	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asValue)}`;
+		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asValue)}\0${String(reference.passed)}`;
 		if (seen.has(key)) continue;
 		const through = throughImport(reference, imported);
 		seen.set(key, through === undefined ? reference : { ...reference, through });

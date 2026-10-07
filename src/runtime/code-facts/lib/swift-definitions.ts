@@ -38,6 +38,30 @@ interface Holder {
 /** What holds the declarations at file level. */
 const FILE: Holder = { symbol: "", level: "internal", imposed: false, exposed: true };
 
+/** Callable declarations and types with named members. */
+const KINDS: Readonly<Record<string, Definition["kind"]>> = {
+	class_declaration: "class",
+	protocol_declaration: "class",
+	function_declaration: "function",
+	protocol_function_declaration: "function",
+	init_declaration: "function",
+	macro_declaration: "function",
+};
+
+/**
+ * The kind of a declaration or directly assigned closure.
+ * @param node The declaration.
+ * @returns Its kind.
+ */
+function kindOf(node: Node): Definition["kind"] {
+	return (
+		KINDS[node.type] ??
+		(node.childrenForFieldName("value").some((value) => value.type === "lambda_literal")
+			? "function"
+			: "value")
+	);
+}
+
 /**
  * Whether a member takes the level of what holds it, rather than writing its
  * own: each case of an enum, and every requirement of a protocol, its
@@ -76,6 +100,7 @@ function defined(node: Node, name: string, holder: Holder): Definition {
 	const level = holder.imposed ? holder.level : (writtenLevel(node) ?? holder.level);
 	return {
 		symbol: holder.symbol === "" ? name : `${holder.symbol}.${name}`,
+		kind: kindOf(node),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
 		visibility: level,

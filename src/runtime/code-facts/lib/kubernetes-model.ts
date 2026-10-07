@@ -413,7 +413,13 @@ function objectOf(root: Root, span: Span, lines: YamlLines): ManifestObject[] {
 		 */
 		at: (path) => lines.spanOf(root.document, [...root.path, ...path])?.start ?? start,
 	};
-	const definition = { symbol: `${kind}/${name}`, start, end, ...visibilityOf(kind, root.body) };
+	const definition: Definition = {
+		symbol: `${kind}/${name}`,
+		kind: "value",
+		start,
+		end,
+		...visibilityOf(kind, root.body),
+	};
 	const pod = podPathOf(kind, root.body);
 	const selector = kind === "Service" ? serviceSelectorOf(reading) : undefined;
 	return [

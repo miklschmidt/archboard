@@ -191,6 +191,26 @@ function callee(call: Node, name: Node): boolean {
 	return call.namedChildren[0]?.id === name.id && !subscript;
 }
 
+/**
+ * Whether an argument is in a call, rather than a tuple or a subscript.
+ * @param argument The argument.
+ * @returns Whether the suffix calls code.
+ */
+function inCall(argument: Node): boolean {
+	const suffix = argument.parent?.parent;
+	return suffix?.type === "call_suffix" && suffix.firstChild?.firstChild?.type !== "[";
+}
+
+/**
+ * Whether a name stands as the value of a call argument.
+ * @param argument The argument.
+ * @param name The name.
+ * @returns Whether it is passed.
+ */
+function passedArgument(argument: Node, name: Node): boolean {
+	return argument.childForFieldName("value")?.id === name.id && inCall(argument);
+}
+
 /** How Swift runs a name: a call, which is also how it constructs. */
 const RUN_SYNTAX: RunSyntax = {
 	runners: { call_expression: callee, attribute: ANY },
@@ -199,6 +219,7 @@ const RUN_SYNTAX: RunSyntax = {
 		navigation_suffix: ["suffix"],
 		user_type: [""],
 	},
+	arguments: { value_argument: passedArgument },
 };
 
 /**
@@ -290,7 +311,7 @@ function moduleUse(found: Import): Reference {
 function distinct(uses: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const use of uses) {
-		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${use.kind ?? ""}\0${String(use.asValue)}`;
+		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${use.kind ?? ""}\0${String(use.asValue)}\0${String(use.passed)}`;
 		if (!seen.has(key)) seen.set(key, use);
 	}
 	return [...seen.values()];

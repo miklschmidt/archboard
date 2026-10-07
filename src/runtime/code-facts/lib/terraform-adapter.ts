@@ -150,6 +150,7 @@ function attributesOf(body: Node | undefined): { readonly name: string; readonly
 function declared(symbol: string, node: Node, visibility: string): Definition {
 	return {
 		symbol,
+		kind: "value",
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
 		visibility,

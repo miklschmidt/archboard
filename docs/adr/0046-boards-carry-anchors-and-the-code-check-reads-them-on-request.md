@@ -122,6 +122,19 @@ check does not remind an author of a registration that the board leaves out.
 Every such registration on the dogfood boards is drawn. To tell the two apart,
 code facts must say whether a definition is a function, a class or a value.
 
+Amended by TASK-436.15 (2026-10-07): each definition now records its kind.
+A function includes a callable declaration or a directly assigned function literal.
+A class includes another named type with members, such as a struct or a protocol.
+Other definitions are values, including infrastructure declarations.
+Each code adapter also marks a name passed as a call argument.
+If that name reaches a function definition, the check counts it as running evidence.
+The receiver can run that function later, so an undrawn registration now produces
+`RELATIONSHIP_UNDRAWN`. A passed constant stays a value.
+A class test, a plain function read and a name kept in an attribute or a list
+also stay values. The evidence kind remains call for every runtime use, so
+anchors keep their existing contract. A use whose definition kind is unknown
+also keeps its existing value behavior.
+
 The drawn rule counts a flow step as it counts a relationship. The code check
 has done so since TASK-367.07 (`relationships.ts`). On a board that has
 relationships of its own, the architecture picture draws no line for a step
@@ -770,6 +783,12 @@ A new grammar or a new query needs a restart (ADR 0021), and a restart starts
 with an empty cache. Some facts depend on another file, such as an import
 resolved through the `paths` of `tsconfig.json`. Each pass resolves those again
 from the cached facts.
+
+Amended by TASK-436.07 (2026-10-07): a C-family header uses the language
+of its supported source with the same name in the same directory.
+Without that source, the header keeps its existing reading from its own text.
+The cache also compares the source's path and content hash.
+An edit to either file therefore refreshes the header's facts.
 
 The answers of a language server are not cached from one pass to the next. One
 pass starts each server once and asks it every candidate. If a measurement
