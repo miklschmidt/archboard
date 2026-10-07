@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 18:22'
-updated_date: '2026-10-07 18:26'
+updated_date: '2026-10-07 18:58'
 labels: []
 dependencies: []
 references:
@@ -21,25 +21,30 @@ Chrome Copy image offers a PNG and HTML with an image source and description tog
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A clipboard destination on semantic rasterize copies PNG and HTML together through CopyQ, with the selected board, variant, view, theme, scale and region honored.
+- [ ] #1 A clipboard destination on semantic rasterize copies PNG and HTML together on Linux and macOS without requiring a clipboard manager. It honors the selected board, variant, view, theme, scale and region.
 - [ ] #2 The HTML carries a self-contained image source and an escaped, useful description. It does not depend on a temporary file or the Archboard server remaining available.
-- [ ] #3 The CLI reports successful clipboard output only after CopyQ accepts both formats. Missing or unavailable CopyQ fails with a useful error and does not claim success.
+- [ ] #3 The CLI reports success only after the native clipboard accepts both formats. The image remains available after the CLI exits. Unavailable desktops and failed writes produce useful errors without a success receipt.
 - [ ] #4 Clipboard output refuses combination with an explicit output file. Existing raw stdout and explicit file output keep their behavior.
-- [ ] #5 Focused tests cover the clipboard transport and command contract. Help and consumer guidance explain the CopyQ prerequisite and the image-plus-description command.
+- [ ] #5 Focused tests cover the clipboard transport and command contract. Help and consumer guidance describe native Linux and macOS support and the image-plus-description command.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
 1. Add --clipboard to semantic rasterize as a destination that conflicts with --out. Keep raw bytes and file receipts unchanged. Return a JSON receipt for the copied image.
-2. Add a private command adapter that uses the installed, running CopyQ. Send a fixed script and one JSON payload over stdin, then copy PNG and HTML in one operation. Include an embedded PNG source and escaped board/view/variant identity plus SVG accessibility metadata. Use the existing Chromium rasterizer and wait for clean teardown before copying.
-3. Refuse unavailable CopyQ, failed writes, and cancelled commands without a success receipt. Add focused process-contract coverage using an isolated CopyQ stand-in. Inspect both real clipboard formats after the command exits.
-4. Update help, the canonical CLI audit, installation guidance and the consumer skill. Run focused checks and the complete gate.
-Architecture proposals: Command interface@TASK-444 and Archboard@TASK-444 add the optional CopyQ boundary and describe Rasterize clipboard output. No new application process or runtime module is owned by Archboard. Inspect the proposals against the implementation and adopt them at completion.
+2. Build escaped, self-contained HTML from the PNG and the selected board, variant, view and SVG accessibility metadata. Capture and clean up Chromium before publishing.
+3. Use the approved @teddyzhu/clipboard package in a private detached Bun helper owned by src/runtime/image-clipboard. Send one payload through IPC and wait for a native write acknowledgement. On macOS, exit after the system accepts the copy. On Linux, retain ownership until a bounded periodic HTML read observes a different copy or the desktop disconnects. Include an inert unique HTML marker so repeated identical exports retire their previous owners.
+4. Bound startup, terminate failed or cancelled helpers, and detach only after acknowledgement. Test the process contract without touching the desktop. Test native Wayland copying and retirement on the actual desktop, preserving its prior contents.
+5. Update help, the CLI audit, installation guidance and consumer skill. Run focused tests and the complete gate.
+Architecture proposals: Command interface@TASK-444 adds the image clipboard module. Archboard@TASK-444 adds the local clipboard owner process. Both remove the unbuilt CopyQ boundary. The Archboard server never owns the clipboard, so --url can target another machine. Inspect and adopt the proposals at completion.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 CopyQ 16.0.0 is installed and already running on the current Hyprland desktop. Its documented copy command accepts multiple MIME representations atomically and the manager retains ownership after the CLI exits. A fixed eval script reads JSON from stdin, so image data never enters the argument list or a shell. No dependency installation is needed.
+
+The user rejected the CopyQ runtime prerequisite and confirmed Linux and macOS as product targets. Replace the transport with a native Bun/Node package. Research identifies @teddyzhu/clipboard as supporting one PNG-plus-HTML write on native Wayland, X11 and macOS. Its Linux clipboard owner must remain alive after the CLI exits. Dependency approval and owner lifecycle investigation are pending.
+
+The user approved @teddyzhu/clipboard. Version 0.0.10 is installed and its native library loads under Bun. The package listener lacks a reliable subscription acknowledgement and can combine an older event with newer contents, so it cannot safely own helper cleanup. Use periodic HTML identity reads instead; every interval remains in shared/timing.
 <!-- SECTION:NOTES:END -->

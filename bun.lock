@@ -17,6 +17,7 @@
         "@remixicon/react": "4.9.0",
         "@tanstack/react-query": "5.102.8",
         "@tanstack/react-router": "1.170.33",
+        "@teddyzhu/clipboard": "0.0.10",
         "@tree-sitter-grammars/tree-sitter-hcl": "1.2.0",
         "@viz-js/viz": "3.30.0",
         "class-variance-authority": "0.7.1",
@@ -582,6 +583,20 @@
     "@tanstack/router-core": ["@tanstack/router-core@1.171.28", "", { "dependencies": { "@tanstack/history": "1.162.2", "cookie-es": "^3.0.0", "seroval": "^1.6.2", "seroval-plugins": "^1.6.2" } }, "sha512-PvPWSklhw6i9b0rzScVh0btQsK5u/gBYN3mBHyDzhC/U4LrB3WzPXPkUunQUKvQOGXCp16UEb7Htc/ITGm5DkQ=="],
 
     "@tanstack/store": ["@tanstack/store@0.9.3", "", {}, "sha512-8reSzl/qGWGGVKhBoxXPMWzATSbZLZFWhwBAFO9NAyp0TxzfBP0mIrGb8CP8KrQTmvzXlR/vFPPUrHTLBGyFyw=="],
+
+    "@teddyzhu/clipboard": ["@teddyzhu/clipboard@0.0.10", "", { "optionalDependencies": { "@teddyzhu/clipboard-darwin-arm64": "0.0.10", "@teddyzhu/clipboard-darwin-x64": "0.0.10", "@teddyzhu/clipboard-linux-arm64-gnu": "0.0.10", "@teddyzhu/clipboard-linux-x64-gnu": "0.0.10", "@teddyzhu/clipboard-win32-arm64-msvc": "0.0.10", "@teddyzhu/clipboard-win32-x64-msvc": "0.0.10" } }, "sha512-u52kJBrniKndEA0rEsIndHObf6MGzRfilFVVXvYCXI5tz9mOIsP13NsxeVAjdAvOKpRd4bm9tZSwSEQFvKl4tQ=="],
+
+    "@teddyzhu/clipboard-darwin-arm64": ["@teddyzhu/clipboard-darwin-arm64@0.0.10", "", { "os": "darwin", "cpu": "arm64" }, "sha512-UkOv6M7PsHO921XWa0Jh6R1O/RCwzKLjrdEbDOwiQqONH2nC4INfnVlIbMz+7dwdK+h9qQv5pFvTrXL1+6bs4A=="],
+
+    "@teddyzhu/clipboard-darwin-x64": ["@teddyzhu/clipboard-darwin-x64@0.0.10", "", { "os": "darwin", "cpu": "x64" }, "sha512-2WwMMYfI533XJ3mXe4TDUgbC/8FhtqDkEzTqJvcY0/VoGPA4ftF0c2n1j4/a8Ws1UeI1m3b9L2YM3qOnmUlOqA=="],
+
+    "@teddyzhu/clipboard-linux-arm64-gnu": ["@teddyzhu/clipboard-linux-arm64-gnu@0.0.10", "", { "os": "linux", "cpu": "arm64" }, "sha512-S9WQuFId9+tRJwb8KahgZ1CeD+NhM9CFy/5j3RBTYr2lTBtnCPTEDrk1pf5ldk9NCyzjWtf20v0hSzRZY47qcw=="],
+
+    "@teddyzhu/clipboard-linux-x64-gnu": ["@teddyzhu/clipboard-linux-x64-gnu@0.0.10", "", { "os": "linux", "cpu": "x64" }, "sha512-WnQmoHV/zyhLU9Qadrqzb+FXOcnUSvLRdT+VAmo0iGnyZJtOjVEjKVWWzmnfgErcT9ZyLD8d3gSEJuDJcPEmLg=="],
+
+    "@teddyzhu/clipboard-win32-arm64-msvc": ["@teddyzhu/clipboard-win32-arm64-msvc@0.0.10", "", { "os": "win32", "cpu": "arm64" }, "sha512-he+6w4JcrP/5RJydJZr0OuT5zFCliTzp8MaXrfT6ELELEZ76WA57kT+OwNQ6VDKa0K9FnXJfUyDJPHs2ERFd9A=="],
+
+    "@teddyzhu/clipboard-win32-x64-msvc": ["@teddyzhu/clipboard-win32-x64-msvc@0.0.10", "", { "os": "win32", "cpu": "x64" }, "sha512-tcF2rrpos4QVwdhvuQi115Hb60VysaBktJABvTkUxZN4QxPXXqzmwXYo7lNqndxQG73mdIycV0l9MKdxc5FK/w=="],
 
     "@testing-library/dom": ["@testing-library/dom@10.4.1", "", { "dependencies": { "@babel/code-frame": "^7.10.4", "@babel/runtime": "^7.12.5", "@types/aria-query": "^5.0.1", "aria-query": "5.3.0", "dom-accessibility-api": "^0.5.9", "lz-string": "^1.5.0", "picocolors": "1.1.1", "pretty-format": "^27.0.2" } }, "sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg=="],
 
