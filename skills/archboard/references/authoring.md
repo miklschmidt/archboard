@@ -588,8 +588,12 @@ its arguments set and the outputs that its own module reads, such as
 `module.queue.url`. A reference to the whole call, such as
 `value = module.queue`, reads every output, except in `depends_on`.
 Configuration outside a Terraform module reaches it only
-through its outputs, so the check gives no `ENTRY_POINT_UNEXPOSED` for one. The
-check gives these findings:
+through its outputs, so the check gives no `ENTRY_POINT_UNEXPOSED` for one.
+A Nix flake exposes its output attribute paths from `flake.nix`. A Helm
+chart exposes its key paths from `values.yaml`, with dots between nested
+keys; `Chart.yaml` identifies the chart. Its templates remain private.
+The container can bind to the directory or to one of these entry files.
+The check gives these findings:
 
 - `ENTRY_POINT_UNEXPOSED`, a warning: an entry point owns nothing that the
   module exposes, and the code of a caller drawn to it reaches it from outside
@@ -617,7 +621,8 @@ check gives these findings:
   `VARIABLE_PASSED_THROUGH`.
 
 The check skips a container whose module has no root file that it reads, as
-`exposure-unknown`.
+`exposure-unknown`. A compose file and a plain Kubernetes manifest keep this
+skip: neither declares an interface the check can read.
 
 That record decides what a valid payload cannot:
 

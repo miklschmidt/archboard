@@ -38,6 +38,8 @@
 // TASK-436.05 adds `TEST_IMPORT_UNEXPOSED`, a warning on a container for each
 // test outside its module that imports a private file. Tests inside a module
 // can exercise its internals; tests never make exposed names used.
+// TASK-436.08 applies the interface findings to a Nix flake's outputs and a
+// Helm chart's values. Compose files and plain manifests stay exposure-unknown.
 
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@/shared/semantic-policy/index";

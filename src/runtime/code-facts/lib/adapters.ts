@@ -39,6 +39,7 @@ import { projectFacts } from "@/runtime/code-facts/lib/csharp-project";
 import { createCSharpResolver } from "@/runtime/code-facts/lib/csharp-resolution";
 import { createFlakeResolver, flakeLockFacts } from "@/runtime/code-facts/lib/flake-lock";
 import { treeSitter } from "@/runtime/code-facts/lib/grammars";
+import { helmValuesFacts, isHelmValues } from "@/runtime/code-facts/lib/helm-values";
 import {
 	createModuleResolver,
 	type CheckoutFiles,
@@ -197,6 +198,11 @@ const ADAPTERS: readonly Adapter[] = [
 		reads: { "flake.nix": FLAKE, "flake.lock": flakeLockFacts },
 		resolver: createFlakeResolver,
 	},
+	{
+		name: "helm",
+		reads: { "values.yaml": helmValuesFacts },
+		resolver: createKubernetesResolver,
+	},
 ];
 
 /** The adapter that reads a file, and how it reads it. */
@@ -237,6 +243,19 @@ function adapterOf(file: string): AdapterReading | undefined {
 }
 
 /**
+ * Select a format using the files that identify it in this checkout.
+ * @param checkout The checkout's files.
+ * @param file The file to read.
+ * @returns Its adapter; a values.yaml outside a chart keeps the ordinary YAML reading.
+ */
+function selectedReading(checkout: CheckoutFiles, file: string): AdapterReading | undefined {
+	const selected = adapterOf(file);
+	return selected?.adapter.name === "helm" && !isHelmValues(checkout, file)
+		? BY_NAME.get(path.posix.extname(file))
+		: selected;
+}
+
+/**
  * How the files of one checkout are read, made once in a pass: as
  * `adapterOf` says, but a header uses its same-directory source's language,
  * and an Objective-C file blanks the SDK macros the checkout's headers wrap.
@@ -250,7 +269,7 @@ function readingsIn(
 ): (file: string) => AdapterReading | undefined {
 	let objectiveC: ObjectiveCReadings | undefined;
 	return (file) => {
-		const reading = adapterOf(file);
+		const reading = selectedReading(checkout, file);
 		if (reading === undefined) return undefined;
 		const extension = path.posix.extname(file);
 		if (HEADERS.includes(extension)) {
