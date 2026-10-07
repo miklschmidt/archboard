@@ -13,8 +13,10 @@
 // does not list what the mark stands for.
 
 import { expect, test } from "bun:test";
+import { act } from "@testing-library/react";
 
 import { cornerWarning, lineWarning } from "@/transformers/semantic-renderer/index";
+import { cameraNow } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import {
 	drawing,
 	mountStage,
@@ -233,6 +235,71 @@ test("findings about another version of the board draw nothing", async () => {
 	await settled();
 
 	expect(surface().querySelectorAll(MARK).length).toBe(0);
+	expect(document.querySelector("[data-slot='code-warning-count']")).toBeNull();
+});
+
+test("the header counts only warnings and cycles their subjects with a focused camera", async () => {
+	serving(
+		remembered(1, [
+			finding("warning", { id: "n1", kind: "node" }, "Missing file."),
+			finding("information", { id: "e1", kind: "edge" }, "No call."),
+			finding("warning", { id: "e1", kind: "edge" }, "Missing anchor."),
+		]),
+	);
+	server.reply = { status: 200, body: { ...drawing(1), width: 4000, height: 3000 } };
+	const mounted = mountStage(null, { live: true, reducedMotion: true });
+	await settled();
+	const button = document.querySelector<HTMLButtonElement>("[data-slot='code-warning-count']")!;
+	expect(button.tagName).toBe("BUTTON");
+	expect(button.getAttribute("data-count")).toBe("2");
+	expect(button.closest("[data-slot='pane-header']")).not.toBeNull();
+	const fit = cameraNow();
+	act(() => button.click());
+	await settled();
+	const first = cameraNow();
+	expect(first.scale).toBeGreaterThan(fit.scale);
+	act(() => button.click());
+	await settled();
+	expect(cameraNow()).not.toEqual(first);
+	act(() => button.click());
+	await settled();
+	expect(mounted.picks).toEqual(["n1", "e1", "n1"]);
+	expect(cameraNow()).toEqual(first);
+	expect(server.calls.some((url) => url.includes("code-check"))).toBe(false);
+});
+
+test("a warning hidden by a limited view opens the whole board before focusing", async () => {
+	serving(remembered(1, [finding("warning", { id: "e1", kind: "edge" }, "Missing anchor.")]));
+	const limited = drawing(1);
+	server.reply = {
+		status: 200,
+		body: {
+			...limited,
+			view: { id: "parts", name: "Parts", grammar: "architecture" },
+			width: 4000,
+			height: 3000,
+			atlas: { nodes: {}, edges: {}, regions: {} },
+		},
+	};
+	const mounted = mountStage(null, { view: "parts", live: true, reducedMotion: true });
+	await settled();
+	const fit = cameraNow();
+	server.reply = { status: 200, body: drawing(1) };
+	const button = document.querySelector<HTMLButtonElement>("[data-slot='code-warning-count']")!;
+	act(() => button.click());
+	await settled();
+	expect(mounted.picks).toEqual(["e1"]);
+	expect(server.calls.some((url) => url.includes("render") && !url.includes("view="))).toBe(true);
+	expect(cameraNow().scale).toBeGreaterThan(fit.scale);
+});
+
+test("a pass with information alone shows zero warnings and offers no warning navigation", async () => {
+	serving(remembered(1, [finding("information", { id: "e1", kind: "edge" }, "No call.")]));
+	mountStage();
+	await settled();
+	const button = document.querySelector<HTMLButtonElement>("[data-slot='code-warning-count']")!;
+	expect(button.getAttribute("data-count")).toBe("0");
+	expect(button.disabled).toBe(true);
 });
 
 test("the selection tab lists the findings of the subject picked out, warnings first", async () => {
