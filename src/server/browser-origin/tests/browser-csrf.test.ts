@@ -10,6 +10,37 @@ const accepted = (overrides: Record<string, string | undefined> = {}) => ({
 });
 
 describe("browser CSRF guard", () => {
+	test.each([
+		{ host: "127.0.0.1:3000" },
+		accepted(),
+		accepted({ origin: undefined, referer: "http://127.0.0.1:3000/?paneA=payments" }),
+		{ host: "localhost:5173", origin: "http://localhost:5173", secFetchSite: "same-origin" },
+		{ host: "[::1]:3000", origin: "http://[::1]:3000", secFetchSite: "none" },
+	])("accepts local tools and the page's own origin", (headers) => {
+		expect(checkBrowserCsrf("request", headers)).toEqual({ ok: true });
+	});
+
+	test.each([
+		accepted({ origin: "https://example.com" }),
+		accepted({ origin: "http://127.0.0.1:5173" }),
+		accepted({ origin: "https://127.0.0.1:3000" }),
+		accepted({ origin: "http://localhost:3000" }),
+		accepted({ origin: "null" }),
+		accepted({ origin: "" }),
+		accepted({ origin: "http://127.0.0.1:3000/path" }),
+		accepted({ origin: "http://evil@127.0.0.1:3000" }),
+		accepted({ referer: "https://example.com/page" }),
+		accepted({ origin: undefined, referer: "https://example.com/page" }),
+		accepted({ origin: undefined, secFetchSite: "cross-site" }),
+		accepted({ origin: undefined, secFetchSite: "same-site" }),
+		accepted({ host: "evil.test:3000", origin: undefined }),
+	])("refuses unsafe origins and fetch metadata", (headers) => {
+		expect(checkBrowserCsrf("request", headers)).toMatchObject({
+			ok: false,
+			code: "CROSS_ORIGIN_REFUSED",
+		});
+	});
+
 	test("accepts forged loopback headers because this guard is browser CSRF, not authentication", () => {
 		expect(
 			checkBrowserCsrf("mutation", {

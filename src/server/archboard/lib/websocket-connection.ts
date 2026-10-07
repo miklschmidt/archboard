@@ -1,5 +1,6 @@
 import type { IncomingMessage } from "http";
 import { WebSocket, WebSocketServer } from "ws";
+import { checkBrowserCsrf } from "@/server/browser-origin";
 import type { RawData } from "ws";
 import { logger } from "@/runtime/engine/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
@@ -356,7 +357,29 @@ function startWebSocketServer(): void {
 	if (wss !== null) {
 		throw new Error("The WebSocket server is already installed.");
 	}
-	const owner = new WebSocketServer({ server });
+	const owner = new WebSocketServer({
+		server,
+		/**
+		 * Refuse foreign pages before a socket can own a pane or a Codex session.
+		 * @param info The HTTP upgrade request.
+		 * @param done Answers the upgrade with the same origin policy as HTTP routes.
+		 */
+		verifyClient: (info, done) => {
+			const { host, origin, referer } = info.req.headers;
+			const secFetchSite = info.req.headers["sec-fetch-site"];
+			const result = checkBrowserCsrf("request", {
+				host,
+				origin,
+				referer,
+				secFetchSite: Array.isArray(secFetchSite) ? secFetchSite.join(",") : secFetchSite,
+			});
+			if (!result.ok) {
+				done(false, 403, result.code);
+				return;
+			}
+			done(true);
+		},
+	});
 	owner.on("connection", (socket, request) => {
 		acceptedSockets.add(socket);
 		socket.once("close", () => acceptedSockets.delete(socket));

@@ -1,10 +1,11 @@
-type BrowserCsrfKind = "settings-read" | "mutation";
+type BrowserCsrfKind = "request" | "settings-read" | "mutation";
 
 interface BrowserCsrfHeaders {
-	host?: string;
-	origin?: string;
-	referer?: string;
-	secFetchSite?: string;
+	host?: string | undefined;
+	origin?: string | undefined;
+	referer?: string | undefined;
+	secFetchSite?: string | undefined;
+	protocol?: string;
 }
 
 type BrowserCsrfResult = { ok: true } | { ok: false; code: "CROSS_ORIGIN_REFUSED"; error: string };
@@ -128,8 +129,59 @@ function checkSettingsRead(headers: BrowserCsrfHeaders, origin: string | null): 
 }
 
 /**
+ * Matches a valid browser header URL to the server's origin.
+ * @param value The Origin or Referer header.
+ * @param expected The server's origin.
+ * @param allowLocation Whether the header may name a page location.
+ * @returns Whether the header names this origin without user-info.
+ */
+function matchesOrigin(
+	value: string,
+	expected: string | undefined,
+	allowLocation: boolean,
+): boolean {
+	const url = parseHttpUrl(value);
+	if (!url || hasCredentials(url)) return false;
+	if (!allowLocation && !isBareOrigin(url)) return false;
+	return url.origin === expected;
+}
+
+const LOCAL_FETCH_SITES: ReadonlySet<string> = new Set(["same-origin", "none"]);
+
+/**
+ * Reads the origin the HTTP server received, without forwarded proxy headers.
+ * @param headers The actual Host and transport protocol.
+ * @returns The origin, or undefined when it cannot be parsed.
+ */
+function requestOrigin(headers: BrowserCsrfHeaders): string | undefined {
+	return parseHttpUrl(`${headers.protocol ?? "http"}://${headers.host}`)?.origin;
+}
+
+/**
+ * Judges ordinary HTTP traffic, including local tools without browser headers.
+ * @param headers The request headers and server-observed protocol.
+ * @returns The origin verdict; browser metadata can only restrict access.
+ */
+function checkRequest(headers: BrowserCsrfHeaders): BrowserCsrfResult {
+	if (headers.secFetchSite !== undefined && !LOCAL_FETCH_SITES.has(headers.secFetchSite)) {
+		return refused("The page making this request must have the server's origin.");
+	}
+	const expected = requestOrigin(headers);
+	for (const [value, allowLocation] of [
+		[headers.origin, false],
+		[headers.referer, true],
+	] as const) {
+		if (value === undefined) continue;
+		if (!matchesOrigin(value, expected, allowLocation)) {
+			return refused("The Origin or Referer must name this server's origin.");
+		}
+	}
+	return { ok: true };
+}
+
+/**
  * Judges whether a request's headers prove it came from a same-origin loopback page.
- * @param kind Whether the route reads settings or mutates state; mutations demand an Origin.
+ * @param kind Ordinary requests allow local tools; opener routes require browser proof.
  * @param headers The browser-sent headers that matter to the verdict.
  * @returns The CSRF verdict.
  */
@@ -139,6 +191,9 @@ function checkBrowserCsrf(kind: BrowserCsrfKind, headers: BrowserCsrfHeaders): B
 	const host = authorityHostname(headers.host);
 	if (!isLoopback(host)) {
 		return refused("The request Host is not loopback.");
+	}
+	if (kind === "request") {
+		return checkRequest(headers);
 	}
 	if (headers.secFetchSite !== "same-origin") {
 		return refused("Sec-Fetch-Site must be same-origin.");

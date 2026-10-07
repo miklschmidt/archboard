@@ -1,8 +1,8 @@
 import path from "path";
 import express from "express";
 import type { NextFunction, Request, Response } from "express";
-import cors from "cors";
 import dotenv from "dotenv";
+import { createBrowserOriginGuard } from "@/server/browser-origin";
 import {
 	createCodeOpenerPreguard,
 	createCodeOpenerRouter,
@@ -32,7 +32,7 @@ import { mountServiceRoutes } from "@/server/archboard/lib/service-routes";
 
 dotenv.config({ quiet: true });
 
-app.use(cors());
+app.use(createBrowserOriginGuard());
 
 mountMutationAdmission(app);
 

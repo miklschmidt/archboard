@@ -11,12 +11,6 @@ export {
 	type OpenerPlanFailure,
 	type OpenerPlanSuccess,
 } from "@/server/code-opener/lib/planning";
-export {
-	checkBrowserCsrf,
-	type BrowserCsrfHeaders,
-	type BrowserCsrfKind,
-	type BrowserCsrfResult,
-} from "@/server/code-opener/lib/browser-csrf";
 export { launchOpener, type LaunchResult } from "@/server/code-opener/lib/launch";
 export { symbolLine } from "@/server/code-opener/lib/symbol-line";
 export {

@@ -1,9 +1,11 @@
 ---
 id: TASK-436.09
 title: The Archboard server refuses cross-site requests on every route
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-10-07 00:36'
+updated_date: '2026-10-07 00:54'
 labels:
   - server
 dependencies: []
@@ -24,3 +26,22 @@ ordinal: 703000
 - [ ] #2 The pane that the server serves, the CLI and the agent tools still work
 - [ ] #3 A test sends a request with another origin to a read route and to a write route, and each gets the refusal
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Proposal: Archboard server@TASK-436.09 (parent owns vault changes) extracts the existing browser CSRF rule into src/server/browser-origin.
+2. Mount the shared general request guard before admission, parsers, static files and HTTP routes. Refuse foreign Origin/Referer and cross-site metadata without permissive CORS; preserve originless CLI and agent traffic. Keep code opener strict guards on the same policy owner.
+3. Preserve the browser Host in Vite proxies so same-origin development traffic remains valid.
+4. Add cheap policy owners and a production-composition read/write/static/preflight refusal owner with compatibility and unchanged-state evidence. Run focused tests and lint, simplify, and commit. Parent runs final gate and closes the task.
+
+5. Apply the same shared origin policy before WebSocket upgrade acceptance, preserving same-origin pane and originless tool sockets. Parent approved this actual cross-site entry path.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented one server/browser-origin policy owner. Application mounts its general guard before mutation admission, parsers, static files and routes; the opener keeps its stricter browser proof through the same guard; WebSocket upgrades apply the same general verdict before acceptance. Removed permissive CORS middleware and unused direct cors dependencies. Vite proxies preserve the original Host so same-origin development traffic passes.
+Focused evidence: 47 browser-origin/settings cases pass (1.69s), including foreign reads/writes/code checks/static/preflight/missing routes, parser precedence, untouched board bytes and no remembered check run; originless local writes/reads, own-origin reads/static/opener operations and sockets, and a preserved Vite Host. Root TypeScript and touched production/test lint pass after generating checkout-local Codex contract inputs. Existing doing-boundary owner also run to cover real CLI and agent write paths.
+Simplification pass: retained two public seams (Express middleware and pure verdict for upgrades/tests), moved the existing stricter policy rather than copying it, and removed old Code opener re-exports and dead guard implementation. No additional route allowlists. Parent owns proposal/code-check, full gate, review and task closure; task remains In Progress.
+<!-- SECTION:NOTES:END -->

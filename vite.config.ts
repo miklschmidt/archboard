@@ -128,16 +128,16 @@ export default defineConfig({
 		proxy: {
 			"/api": {
 				target: "http://127.0.0.1:3000",
-				changeOrigin: true,
+				changeOrigin: false,
 			},
 			// The faces a picture drawn in the page links and measures with.
 			"/assets/diagram-fonts": {
 				target: "http://127.0.0.1:3000",
-				changeOrigin: true,
+				changeOrigin: false,
 			},
 			"/health": {
 				target: "http://127.0.0.1:3000",
-				changeOrigin: true,
+				changeOrigin: false,
 			},
 		},
 	},
