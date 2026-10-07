@@ -693,3 +693,8 @@ _Avoid_: description, why, message, comment, log, reason (that is the claim's)
 A draft variant that states a change nobody has built yet, branched from the
 variant it would change.
 _Avoid_: plan, design, RFC
+
+**Implementation brief**:
+A concise handoff from Archboard to the user's own coding agent, describing
+the intended change and how to retrieve its architecture context.
+_Avoid_: implementation, proposal, delegation

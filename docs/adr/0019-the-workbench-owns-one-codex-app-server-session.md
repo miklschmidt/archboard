@@ -4,6 +4,10 @@ status: accepted
 
 # The workbench owns one Codex app-server session
 
+Amended by [ADR 0047](0047-built-in-agents-support-architecture-and-hand-off-implementation.md):
+the built-in agents support architecture work and hand off implementation to
+the user's own coding agent.
+
 Amended by TASK-302 (2026-09-23): a canvas has one thread link, not one per
 pane, and nobody makes it by hand. If sign-in is needed, the first message or
 press of Talk signs in, starts Codex, creates the workhorse and links it.
@@ -135,8 +139,9 @@ So two tabs can talk at once, each on its own coordinator.
 
 The coordinator is a normal capable Codex thread with ordinary investigation
 tools, sandbox, and approvals. It can answer quick questions and perform one
-explicit bounded board action. Sustained or multi-step implementation defaults
-to the workhorse. The histories of the coordinator and workhorse stay separate.
+explicit bounded board action. Sustained architectural inspection, analysis,
+and proposal work defaults to the workhorse. The histories of the coordinator
+and workhorse stay separate.
 They cross-link delegation, queue, steering, callbacks, approvals, and results.
 
 Live voice attaches to the coordinator, never directly to the workhorse. The
