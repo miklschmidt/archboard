@@ -69,9 +69,28 @@ in `lib/design.ts`.
    The picture uses no SVG filter, blur or mask for depth. It uses shared
    gradients for the light on a face. The shadows of cards and of the labels
    of relationships lie under every line, in groups of their own that list
-   what cast them (`data-members`), so a line is never shadowed (TASK-425). A
-   viewer veils and lights a shadow with its card or its line, and holds it
-   back while a picture is in flight.
+   what cast them (`data-members`), so a line is never shadowed (TASK-425).
+   Every card's shadow also lies under every card, a sequence's participants
+   included. So no shadow is drawn on the face or the front edge of a card,
+   its own or one beside it. A sequence lays its participants' shadows in its
+   head, under its cards, so they move with the head (TASK-435). A viewer
+   veils and lights a shadow with its card or its line, and holds it back
+   while a picture is in flight.
+
+   On the light ground a card's shadow is not the dark ground's (TASK-435).
+   The owner found that the light shadow bled into the card. Its contact
+   shadow had the lightness of the front edge and a bluer hue, so the edge
+   seemed to run on in a bluish strip under the foot. The copies that grew
+   past the card's left side stood up beside the face as a band. Now the
+   contact shadow on the light ground is lighter than the front edge, so the
+   edge ends where the box ends. The softer copies are moved right as far as
+   they grow, so they fall only down and to the right. A ring a unit wide
+   still runs round the card, so a near-white card keeps its top edge on the
+   near-white page. The dark ground's shadow did not change. Each layer has a
+   share for each ground. A layer that one ground does not use is transparent
+   there, so a card's shadow is eight shapes in place of five. That is 1.3%
+   more SVG on the Web shop board and 2% more on the Archboard server board.
+
 3. **A container is a tray, lit from above as the blocks are.** Its top wall
    faces the reader and turns away from the light. It shows as a 6-unit band in
    shade, and it throws a short, soft shadow straight down, 3 units deep, on
@@ -249,8 +268,8 @@ in `lib/design.ts`.
     line, so the hole shows what lies under the card. The line's own group
     draws the inside of the port there: a well that darkens from its rim into
     its depth (`--port-wall` to `--port-deep`), a lit crescent of floor by the
-    sill (`--port-lip`, a step brighter than a tray's lip on the dark ground,
-    so it reads at 2x), and the end of the line, at the line's own width,
+    sill (`--port-lip`, lighter than the front edge round it, so it reads at
+    2x), and the end of the line, at the line's own width,
     running up over the floor and the sill into it and fading into the depth.
     Nothing of the card lies over the line below the lid (TASK-425). So the
     end of the line takes the line's veil and light. Its pulses ride on up
@@ -276,7 +295,10 @@ in `lib/design.ts`.
     blur or mask. It adds six elements for each port (five shapes and a
     group) and four for each card with a port, 2.2% to 2.4% more SVG on the
     Codex session and the Web shop boards. The layout, the routes and the
-    atlas do not change.
+    atlas do not change. The lip is at OKLCH lightness 0.93 on the light
+    ground and 0.61 on the dark ground. The owner found a white lip, and 0.66
+    on the dark ground, a little too bright, so each now gives about four
+    fifths of that light (TASK-435).
 
 17. **The picture's contrast is judged with APCA** (TASK-432). The owner
     decided on 2026-10-07 that APCA, the Accessible Perceptual Contrast

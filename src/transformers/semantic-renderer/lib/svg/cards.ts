@@ -153,7 +153,8 @@ function paintCard(
 		{ ...subjectGroup("node", node.id, standing), ...appearanceAttributes(appearance) },
 		lines([
 			slabSeat(box, SLAB_RADIUS),
-			slabShadow(box, SLAB_RADIUS, "card", palette, standing),
+			// A removed card's ghost; a card's shadow lies under every card of its head (`shadowUnder`).
+			standing === "removed" ? slabShadow(box, SLAB_RADIUS, "card", palette, standing) : "",
 			halo(box, SLAB_RADIUS, styles, standing),
 			slab(box, cardLook(appearance, palette), palette, standing),
 			paintCardViews(

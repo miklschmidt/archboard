@@ -38,6 +38,7 @@ import {
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
+	MEMBERS_ATTRIBUTE,
 	OUTLINE_DASH,
 	OUTLINE_WIDTH,
 	standingInk,
@@ -114,45 +115,60 @@ const SHEEN_ID = "ab-slab-sheen";
 const SOFT_SHEEN_ID = "ab-slab-sheen-soft";
 const SOFT_SHEEN = 0.2;
 
-/** One translucent copy of a silhouette: how far it is moved, how much larger, and how dark. */
+/**
+ * One translucent copy of a silhouette: how far it is moved, how much larger,
+ * and how dark on each ground. A layer with a share of 0 on one ground is
+ * transparent there, so it shows on the other ground only.
+ */
 interface ShadowLayer {
 	readonly dx: number;
 	readonly dy: number;
 	readonly grow: number;
-	readonly share: number;
+	readonly share: Share;
 }
 
 /**
- * The shadows a block casts, by what it is. Each is a tight, dark contact
- * shadow under the front edge and softer, larger copies further down and to
- * the right, fading to nothing; a card's first layer reaches a unit round it,
- * so a near-white card keeps its top edge on the near-white page. None
- * reaches more than twelve units past the box. A container's tray is cut into
- * what holds it and casts none. A group's region is a boundary with no face
- * and casts none; the tab its caption is printed on casts a short one on what
- * the region lies on. A chip, a relationship's label and an activation bar,
- * many and small, cast only a contact shadow.
+ * The shadows a block casts, by what it is. None reaches more than twelve
+ * units past the box. A card's shadow lies under every card ({@link shadowUnder}).
+ *
+ * A card's first layer reaches a unit round it, so a near-white card keeps its
+ * top edge on the near-white page. Its second layer is the contact shadow under
+ * its front edge. Then come softer, larger copies that fade to nothing. On the
+ * dark ground they spread round the block, most of all down and to the right.
+ * On the light ground a shadow that dark and that wide read as part of the
+ * card (TASK-435). The contact shadow had the lightness of the front edge, so
+ * the edge seemed to run on in a bluish strip under the foot. The copies that
+ * grew past the card's left side stood up beside the face as a band. So on
+ * the light ground the contact shadow is lighter than the front edge, and the
+ * edge ends where the box ends. The softer copies are moved right as far as
+ * they grow, so they fall only down and to the right.
+ *
+ * A container's tray is cut into what holds it and casts none. A chip, a
+ * relationship's label and an activation bar, many and small, cast only a
+ * contact shadow.
  */
 const SHADOWS = {
 	card: [
-		{ dx: 0, dy: 0.5, grow: 1, share: 0.4 },
-		{ dx: 0.5, dy: 1.5, grow: 0.5, share: 0.9 },
-		{ dx: 1, dy: 3, grow: 1.5, share: 0.35 },
-		{ dx: 1.5, dy: 4.5, grow: 3, share: 0.2 },
-		{ dx: 2, dy: 6, grow: 5, share: 0.1 },
+		{ dx: 0, dy: 0.5, grow: 1, share: { light: 0.3, dark: 0.4 } },
+		{ dx: 0.5, dy: 1.5, grow: 0.5, share: { light: 0.3, dark: 0.9 } },
+		// The dark ground's softer copies.
+		{ dx: 1, dy: 3, grow: 1.5, share: { light: 0, dark: 0.35 } },
+		{ dx: 1.5, dy: 4.5, grow: 3, share: { light: 0, dark: 0.2 } },
+		{ dx: 2, dy: 6, grow: 5, share: { light: 0, dark: 0.1 } },
+		// The light ground's softer copies, each moved right as far as it grows.
+		{ dx: 1.5, dy: 3, grow: 1, share: { light: 0.35, dark: 0 } },
+		{ dx: 3, dy: 5.5, grow: 2.5, share: { light: 0.2, dark: 0 } },
+		{ dx: 4, dy: 8, grow: 4, share: { light: 0.1, dark: 0 } },
 	],
 	tray: [],
-	tab: [
-		{ dx: 0.5, dy: 1.5, grow: 0.5, share: 0.6 },
-		{ dx: 1, dy: 2.5, grow: 1, share: 0.3 },
-	],
-	chip: [{ dx: 0, dy: 1, grow: 0.5, share: 0.45 }],
+	chip: [{ dx: 0, dy: 1, grow: 0.5, share: { light: 0.45, dark: 0.45 } }],
 } as const satisfies Readonly<Record<string, readonly ShadowLayer[]>>;
 
 /**
- * The class of a card's or a label's shadow, drawn under the lines, so a
- * viewer that carries the card or the label from one picture to the next can
- * hold it back until the picture lands.
+ * The class of the group a card's or a label's shadow is drawn in, under the
+ * lines and the cards ({@link shadowUnder}), so a viewer that carries the card
+ * or the label from one picture to the next can hold it back until the picture
+ * lands.
  */
 const SHADOW_CLASS = "ab-shadow";
 
@@ -287,7 +303,70 @@ function slabShadow(
 	standing?: SubjectStanding,
 ): string {
 	if (standing === "removed") return ghost(box, radius, palette);
-	return castShadow(box, lift, palette, (layer, grow, paint) => plate(layer, radius + grow, paint));
+	return lines(
+		SHADOWS[lift].map(({ dx, dy, grow, share }) =>
+			plate(
+				{
+					x: box.x + dx - grow,
+					y: box.y + dy - grow,
+					width: box.width + 2 * grow,
+					height: box.height + 2 * grow,
+				},
+				radius + grow,
+				shadowPaint(share, palette),
+			),
+		),
+	);
+}
+
+/**
+ * How one layer of a shadow is painted: the shadow's colour at the layer's
+ * share, which may differ from ground to ground.
+ * @param share How much of the shadow's colour, on each ground.
+ * @param palette The theme's colours.
+ * @returns Its paint.
+ */
+function shadowPaint(share: Share, palette: Palette): Attributes {
+	return share.light === share.dark
+		? { fill: palette.slabShadow, "fill-opacity": share.light }
+		: {
+				fill: lightDark(
+					translucent(palette.slabShadow, share.light),
+					translucent(palette.slabShadow, share.dark),
+				),
+			};
+}
+
+/**
+ * The shadow a block casts, in a group of its own, so a picture can lay every
+ * shadow under every block and every line: no shadow is then drawn over a
+ * block, its own or one beside it, and no line is shadowed. It lists what cast
+ * it, so a viewer veils and lights it with that, and holds it back while the
+ * picture is in flight. It is no subject of its own and takes no pointer. A
+ * removed block casts none: its ghost is drawn with it ({@link slabShadow}).
+ * @param member The id of what cast it.
+ * @param box The block's box.
+ * @param radius Its corners.
+ * @param lift Which sort of block it is.
+ * @param palette The theme's colours.
+ * @param standing How it stands, when this is a proposal.
+ * @returns The shadow's group, or nothing for a removed block.
+ */
+function shadowUnder(
+	member: string,
+	box: Box,
+	radius: number,
+	lift: Lift,
+	palette: Palette,
+	standing: SubjectStanding | undefined,
+): string {
+	return standing === "removed"
+		? ""
+		: wrap(
+				"g",
+				{ class: SHADOW_CLASS, [MEMBERS_ATTRIBUTE]: member, "pointer-events": "none" },
+				slabShadow(box, radius, lift, palette),
+			);
 }
 
 /**
@@ -297,37 +376,6 @@ function slabShadow(
  */
 function clipped(cut: string | undefined): string | undefined {
 	return cut === undefined ? undefined : `url(#${cut})`;
-}
-
-/**
- * The layers of the shadow a block casts, each drawn in the block's own
- * shape, so a block that is not a rounded rect casts a shadow of its shape.
- * @param box The block's box.
- * @param lift Which sort of block it is.
- * @param palette The theme's colours.
- * @param shape Draws the block's shape over a box grown by some amount, painted as asked.
- * @returns The shadow's layers.
- */
-function castShadow(
-	box: Box,
-	lift: Lift,
-	palette: Palette,
-	shape: (layer: Box, grow: number, paint: Attributes) => string,
-): string {
-	return lines(
-		SHADOWS[lift].map(({ dx, dy, grow, share }) =>
-			shape(
-				{
-					x: box.x + dx - grow,
-					y: box.y + dy - grow,
-					width: box.width + 2 * grow,
-					height: box.height + 2 * grow,
-				},
-				grow,
-				{ fill: palette.slabShadow, "fill-opacity": share, "pointer-events": "none" },
-			),
-		),
-	);
 }
 
 /**
@@ -410,12 +458,11 @@ export {
 	type Share,
 	type SlabLook,
 	GLINT_WIDTH,
-	SHADOW_CLASS,
 	across,
-	castShadow,
 	ghostFace,
 	glintOf,
 	plate,
+	shadowUnder,
 	slab,
 	slabDefinitions,
 	slabSeat,

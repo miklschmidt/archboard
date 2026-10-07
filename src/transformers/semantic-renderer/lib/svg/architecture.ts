@@ -7,7 +7,11 @@ import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // Paint a complete drawing. Placement, wrapping and routing are already settled.
 import type { DiagramAtlas } from "@/shared/semantic-board/index";
 import type { DrawingEdge, PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
-import { DIAGRAM_MARGIN, PILL_RADIUS } from "@/transformers/semantic-renderer/lib/design";
+import {
+	DIAGRAM_MARGIN,
+	PILL_RADIUS,
+	SLAB_RADIUS,
+} from "@/transformers/semantic-renderer/lib/design";
 import {
 	canvasFor,
 	coord,
@@ -26,7 +30,6 @@ import {
 	trunkCutouts,
 } from "@/transformers/semantic-renderer/lib/svg/crossings";
 import {
-	paintCardShadow,
 	paintMeasuredCard,
 	paintMeasuredFrame,
 	paintMeasuredHeader,
@@ -38,7 +41,7 @@ import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { junctionMarks } from "@/transformers/semantic-renderer/lib/svg/junctions";
 import {
-	SHADOW_CLASS,
+	shadowUnder,
 	slab,
 	slabSeat,
 	slabShadow,
@@ -53,7 +56,6 @@ import {
 	type Port,
 } from "@/transformers/semantic-renderer/lib/svg/ports";
 import {
-	MEMBERS_ATTRIBUTE,
 	PART_ATTRIBUTE,
 	ghostOpacity,
 	markedBox,
@@ -270,11 +272,9 @@ function paintEdgeWords(
 }
 
 /**
- * The shadow a relationship's label casts, in a layer of its own under every
- * line, so no line is shadowed by a label, its own included. It lists its
- * relationship, so a viewer veils and lights it with the line; a viewer holds
- * it back while the picture is in flight. A removed label casts none: its ghost
- * is drawn with it.
+ * The shadow a relationship's label casts, under every line, so no line is
+ * shadowed by a label, its own included. It lists its relationship, so a
+ * viewer veils and lights it with the line.
  * @param routed The relationship's route and label.
  * @param palette The selected theme.
  * @param standing How it stands against the variant it is read against.
@@ -285,17 +285,9 @@ function labelShadow(
 	palette: Palette,
 	standing: SubjectStanding | undefined,
 ): string {
-	return routed.label === undefined || standing === "removed"
+	return routed.label === undefined
 		? ""
-		: wrap(
-				"g",
-				{
-					class: SHADOW_CLASS,
-					[MEMBERS_ATTRIBUTE]: routed.edge.id,
-					"pointer-events": "none",
-				},
-				slabShadow(routed.label.box, PILL_RADIUS, "chip", palette),
-			);
+		: shadowUnder(routed.edge.id, routed.label.box, PILL_RADIUS, "chip", palette, standing);
 }
 
 /**
@@ -470,9 +462,17 @@ function paintArchitecture(
 			.map((region) =>
 				paintRegion(region, { palette, policy, farSize, routes: edges.map(({ curve }) => curve) }),
 			),
-		// The cards' and the labels' shadows, under every line, so no line is shadowed.
-		...orderedCards.map((card) =>
-			paintCardShadow(card, palette, standingOf(card.measured.node.id)),
+		// The cards' and the labels' shadows, under every line and every card, so
+		// no line is shadowed and no shadow lies on a card (TASK-435).
+		...orderedCards.map(({ measured, box }) =>
+			shadowUnder(
+				measured.node.id,
+				box,
+				SLAB_RADIUS,
+				"card",
+				palette,
+				standingOf(measured.node.id),
+			),
 		),
 		...edges.map((edge) => labelShadow(edge, palette, standingOf(edge.edge.id))),
 		...edges.map((edge) =>

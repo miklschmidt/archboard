@@ -33,6 +33,7 @@ import {
 	BAND_RADIUS,
 	CARD_THICKNESS,
 	DIAGRAM_MARGIN,
+	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
 import { paintHeadingViews } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import {
@@ -89,7 +90,12 @@ import {
 	wrap,
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import { ghostFace, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
+import {
+	ghostFace,
+	shadowUnder,
+	slabSeat,
+	slabShadow,
+} from "@/transformers/semantic-renderer/lib/svg/slab";
 import { floorOf, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
 import {
 	HEAD_ATTRIBUTE,
@@ -441,6 +447,17 @@ function paintFlow(
 			{ [HEAD_ATTRIBUTE]: layout.flow.id },
 			lines([
 				headShade(layout, flowStanding, palette),
+				// Every card's shadow under every card, in the head, so it moves with the head.
+				...layout.columns.map(({ card }) =>
+					shadowUnder(
+						card.node.id,
+						card.box,
+						SLAB_RADIUS,
+						"card",
+						palette,
+						standingOf(card.node.id),
+					),
+				),
 				...layout.columns.map((column) =>
 					paintCard(
 						column.card,
