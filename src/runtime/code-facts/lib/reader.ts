@@ -49,7 +49,7 @@ import type { TerraformPlan } from "@/runtime/code-facts/lib/terraform-plan";
 interface Entry {
 	readonly hash: bigint | number;
 	readonly parse: ParseFacts;
-	readonly dependencyHash?: bigint | number;
+	readonly dependencyHash: bigint | number | undefined;
 	/** None where the adapter found the file of another format, which is read as text. */
 	readonly facts: ParsedFacts | undefined;
 }
