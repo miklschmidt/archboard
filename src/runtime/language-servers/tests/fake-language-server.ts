@@ -12,8 +12,8 @@
 // and the `initializationOptions` it was given to `<state-dir>/starts`, one
 // JSON line each, so a test can see what was asked, where, and whether the
 // process still runs. It appends the arguments after its mode to
-// `<state-dir>/argvs`, and the variable `CLANGD_FLAGS` of its environment, or
-// null, to `<state-dir>/environments`, one JSON line each. Once initialized it
+// `<state-dir>/argvs`, and its environment to `<state-dir>/environments`, one
+// JSON line each. Once initialized it
 // asks for its configuration of the sections `python` and `csharp`, and
 // appends the client's answer to `<state-dir>/configuration` as one JSON line.
 // It refuses a request it does not know, as a server does. A mode, or several
@@ -53,8 +53,7 @@ if (modes.has("wrapped")) {
 }
 const extra = process.argv.slice(4);
 fs.appendFileSync(path.join(stateDir, "argvs"), `${JSON.stringify(extra)}\n`);
-const environment = { CLANGD_FLAGS: process.env["CLANGD_FLAGS"] ?? null };
-fs.appendFileSync(path.join(stateDir, "environments"), `${JSON.stringify(environment)}\n`);
+fs.appendFileSync(path.join(stateDir, "environments"), `${JSON.stringify(process.env)}\n`);
 
 /** One message the client sent. */
 interface Message {
