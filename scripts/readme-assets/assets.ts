@@ -7,6 +7,8 @@ import { banner } from "./banner.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { drillDown } from "./drill-down.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { codeEvidence, moduleInterfaces, gitHistory } from "./evidence.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { hero } from "./hero.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { history } from "./history.ts";
@@ -32,6 +34,9 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 		walkthrough: "Read this board",
 	}),
 	plan,
+	"code-evidence": codeEvidence,
+	"module-interfaces": moduleInterfaces,
+	"git-history": gitHistory,
 	history,
 	"pr-walkthrough": narratedProducer({
 		name: "pr-walkthrough",

@@ -15,6 +15,7 @@ bun run readme:check                      # list the stale assets; exit 1 when a
 bun run readme:assets --dry-run           # print what a run would do; start nothing
 bun run readme:assets                     # make every asset that needs no Codex sign-in
 bun run readme:assets hero plan           # make the named assets, Codex ones included
+bun run readme:assets code-evidence module-interfaces git-history # make the code and history demonstrations
 bun run readme:assets --codex             # make every asset
 bun run readme:assets --replay            # render the narrated videos again from their kept talks
 ```
@@ -39,13 +40,14 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 
 ## The assets
 
-| Asset                                                | What makes it                                                                                | Codex |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----- |
-| `architecture`, `sequence`, `web-shop`               | `semantic render` in light and dark, faces cut to the characters drawn; two add a thumbnail  | no    |
-| `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach | no    |
-| `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation          | yes   |
-| `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the MP4 is attached                          | yes   |
-| `banner`                                             | `semantic render` of a web-shop proposal, laid as vector beside the lockup in Chromium       | no    |
+| Asset                                                | What makes it                                                                                   | Codex |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----- |
+| `architecture`, `sequence`, `web-shop`               | `semantic render` in light and dark, faces cut to the characters drawn; two add a thumbnail     | no    |
+| `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach    | no    |
+| `code-evidence`, `module-interfaces`, `git-history`  | the real shell and CLI results from a generated checkout, encoded to a WebP with an index still | no    |
+| `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation             | yes   |
+| `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the MP4 is attached                             | yes   |
+| `banner`                                             | `semantic render` of a web-shop proposal, laid as vector beside the lockup in Chromium          | no    |
 
 Most assets also write an index thumbnail (`idx-*.webp`), which stays in the
 repository. The manifest lists the files of each asset in the repository. The
@@ -54,8 +56,7 @@ in the repository.
 
 The filmed clips are lossless animated WebP at 30 frames a second. GitHub
 refuses an attached image over 10 MB (HTTP 422), so a clip must stay under it:
-the hero, at 7 MB, is the largest, and a clip that grows needs a narrower width
-or a shorter cut. A README section that has a narrated video does not also keep
+a clip that grows needs a narrower width or a shorter cut. A README section that has a narrated video does not also keep
 a loop of it. An animated WebP stores each frame as the rectangle that changed, and a
 lossy encoder counts a pixel that moved by a few levels as unchanged. A fading shadow or the glow of a pulse then leaves a ghost, in
 blocks, for the rest of the clip (the sidebar of `drill-down` did). ffmpeg
@@ -74,6 +75,24 @@ The clips are filmed over fresh copies of the tracked files of
 `examples/web-shop` or `.archboard/vault`, never over a vault from elsewhere.
 The hero's change is `scripts/readme-assets/hero-change.json`, written as an
 agent writes one.
+
+The three code and history demonstrations add a small checkout example to their
+copied vault. `scripts/readme-assets/evidence-fixture.ts` holds its source and fixed
+Git history. The harness creates the source repository under the take's scratch
+directory. It registers that repository and authors the board through the CLI.
+It does not change the source checkout or the tracked vault.
+
+`code-evidence` runs `archboard check --code` and selects its resolved missing-call
+warning in the browser. Its terminal shows the source lines behind the finding.
+`module-interfaces` opens two proposals and selects Orders in each. Their
+inspectors show three entry points versus one entry point and two hidden parts.
+`git-history` shows recent commits and two parts that change together. It then
+compares the branch with a proposal through `semantic footprint`.
+
+Each take uses real command answers and the live browser. The terminal summarizes
+those answers. The sample code and commits are synthetic. Each scene stops if
+the feature no longer produces the result that it demonstrates. Screenshots of
+the key moments stay under `takes/<asset>` in the scratch directory for inspection.
 
 ## What needs Codex, and what it spends
 

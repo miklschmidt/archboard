@@ -34,6 +34,11 @@ https://github.com/user-attachments/assets/7ae7ab41-2755-48cd-9887-c71eac90bfce
 
 <table>
 <tr>
+<td width="33%" align="center"><a href="#find-where-the-map-and-the-code-disagree"><img src="docs/readme/idx-code-evidence.webp" alt="Code evidence: a resolved call that the board leaves out"></a><br><b><a href="#find-where-the-map-and-the-code-disagree">Find gaps in the map</a></b></td>
+<td width="33%" align="center"><a href="#see-what-a-module-exposes-before-you-change-it"><img src="docs/readme/idx-module-interfaces.webp" alt="Module interfaces: two proposals with different entry points"></a><br><b><a href="#see-what-a-module-exposes-before-you-change-it">Compare module interfaces</a></b></td>
+<td width="33%" align="center"><a href="#read-the-change-through-the-architecture"><img src="docs/readme/idx-git-history.webp" alt="Git history: recent commits and parts that change together"></a><br><b><a href="#read-the-change-through-the-architecture">Read changes through the map</a></b></td>
+</tr>
+<tr>
 <td width="33%" align="center"><a href="#plan-the-next-architecture-with-your-agent"><img src="docs/readme/idx-plan.webp" alt="Plan: two competing proposals side by side"></a><br><b><a href="#plan-the-next-architecture-with-your-agent">Plan with your agent</a></b></td>
 <td width="33%" align="center"><a href="#keep-a-record-that-remembers-why"><img src="docs/readme/idx-history.webp" alt="History: three generations of one board on a timeline"></a><br><b><a href="#keep-a-record-that-remembers-why">Keep a record that remembers why</a></b></td>
 <td width="33%" align="center"><a href="#narrated-walkthroughs-explainers-and-pull-request-videos"><img src="docs/readme/idx-voice.webp" alt="Voice: a narrated walkthrough with its caption and subtitles"></a><br><b><a href="#narrated-walkthroughs-explainers-and-pull-request-videos">Narrated walkthroughs</a></b></td>
@@ -62,6 +67,10 @@ Give each part a link to its file or a named function, class, or value. A relati
 
 Warnings mark the affected parts and relationships in the canvas. Select a warning to read its evidence and open the source. Each finding says whether a tool resolved its evidence or the evidence still needs investigation.
 
+<img src="https://github.com/user-attachments/assets/6b8b9b52-3b35-4084-bb44-149715808b76" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example board leaves out. Selecting its warning opens the source evidence in the inspector. The terminal shows the actual call in the source file.">
+
+<p align="center"><sub>A small example checkout with real analysis results. The terminal replays the command and summarizes its answer. The live browser selects the warning, and the source excerpt shows the missing call.</sub></p>
+
 Archboard reads TypeScript, Python, C#, Swift, C, C++, and Objective-C. It also reads Terraform and OpenTofu, Kubernetes manifests, Docker Compose, and Nix flakes. Where application code and infrastructure declare both ends of a connection, it can follow the evidence across a network hop. The report names analysis that it skips. A language server resolves names for an editor. [Configure one](INSTALL.md#language-servers-for-the-code-check) for stronger evidence in Python, Swift, C#, C, C++, or Objective-C.
 
 ### See what a module exposes before you change it
@@ -70,11 +79,19 @@ A module's interface is what its outside callers reach. Archboard shows those en
 
 Compare competing proposals side by side. The comparison lists interface changes before internal changes, so you can see which design asks more of its callers. Archboard also reports callers that reach parts the module does not expose. It identifies exposed names that nobody outside the module uses.
 
+<img src="https://github.com/user-attachments/assets/1e6b9197-369f-418f-aa3c-58503221c867" width="100%" alt="Two proposals for the same checkout example. Selecting Orders in each opens its interface inspector. Entry per job exposes three parts. One entry point exposes Place order and keeps two parts hidden.">
+
+<p align="center"><sub>The same six parts, with different boundaries. Orders exposes three entry points on the left. On the right, one entry point keeps two internal parts hidden. Both inspectors come from the live browser.</sub></p>
+
 ### Read the change through the architecture
 
 Git records changes to files. Archboard maps their commits onto the parts of your system. See which parts change most often and which repeatedly change together, including pairs that the board does not connect. Pick a part to read its recent commits and the parts that change with it.
 
 Set a branch's commits against its proposal. See which parts the commits changed, which parts the plan named, and where the two differ. Your agent can spot changes to mapped parts outside the plan before it adopts the proposal. Archboard also reports commits to bound files since the board last described them, so you can choose what to inspect next.
+
+<img src="https://github.com/user-attachments/assets/709d87ba-fbd7-41d4-a8d4-66fee7c013b6" width="100%" alt="The inspector shows recent commits and a pair of parts that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
+
+<p align="center"><sub>Fixed example commits make this demonstration repeatable. Validate order and Save order change together in seven commits. The branch also changes Validate order outside the proposal. The terminal summarizes real Git analysis beside the live board.</sub></p>
 
 ## Plan the next architecture with your agent
 
