@@ -3,11 +3,11 @@ id: TASK-428
 title: >-
   The content of a card and a container moves between the far and the near view
   as a shared element transition
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-06 19:31'
-updated_date: '2026-10-07 01:41'
+updated_date: '2026-10-07 01:59'
 labels:
   - frontend
   - renderer
@@ -26,10 +26,10 @@ When the picture is zoomed past the point where cards swap their near words for 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 On a card and on a container header the icon chip is one element that moves and scales between its far and its near place, and the title and the responsibility move and fade between their places, in both directions, in the light and the dark theme
-- [ ] #2 A swap on a large board stays smooth: the frame time during a swap on the Archboard server board is measured before and after with the method of TASK-405, and the numbers are in the notes
-- [ ] #3 Reduced motion cuts, a swap during a flight or a drag behaves as TASK-406 says, every duration lives in the timing file, and a test holds the structure
-- [ ] #4 ADR 0042 records the transition, and bun run check passes
+- [x] #1 On a card and on a container header the icon chip is one element that moves and scales between its far and its near place, and the title and the responsibility move and fade between their places, in both directions, in the light and the dark theme
+- [x] #2 A swap on a large board stays smooth: the frame time during a swap on the Archboard server board is measured before and after with the method of TASK-405, and the numbers are in the notes
+- [x] #3 Reduced motion cuts, a swap during a flight or a drag behaves as TASK-406 says, every duration lives in the timing file, and a test holds the structure
+- [x] #4 ADR 0042 records the transition, and bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -59,4 +59,12 @@ Real frames after a wheel zoom out to far: after, one frame at the start of the 
 Flash fix committed as e03e16942 (document.ts swap rules, FAR_VIEW_SWAP_MS note, use-board-camera two-frame rest, far-view-swap test of the complementary fade, ADR 0042 amendment of 2026-10-07). Checks: type-check, lint clean; module tests 1909 pass; the staged snapshot type-checked and passed 865 renderer and canvas tests on its own; picture browser owners pass (semantic-traffic first failed because another agent's half-done drill-mark.ts edit broke the server import, then passed on a rerun). far-view.ts and drill-mark.ts carry another agent's uncommitted edits and were not staged.
 
 Architecture completion (2026-10-07): the adopted Board viewer@TASK-405 and Semantic renderer@TASK-423 carry this implemented transition. The renderer has bound Near and far content (far-card.ts), whose paintCardViews calls sharedChip and movingWords (far-view.ts), and SVG document records the complementary opacity/transform rules (document.ts:206). The viewer retains Picture transition and Place a board in its card ids and documents carrying shared chip/words and fading the chip during a dive. The camera controller records the two-frame zoom rest from e03e16942; it lets the camera layer go before the near/far swap starts. Comparisons, proposal images and dogfood check were inspected; no new performance measurement or external owner visual acceptance is claimed.
+
+Final acceptance uses the recorded measurements, rendered owners, browser evidence, and later owner choices in these notes. The final bun run check passes on the simplified shadow implementation.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Cards and headers share one icon chip and moving text across the near and far views. Browser measurements and transition owners pass. The final bun run check passes.
+<!-- SECTION:FINAL_SUMMARY:END -->

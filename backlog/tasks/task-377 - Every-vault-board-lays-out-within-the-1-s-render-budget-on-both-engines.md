@@ -5,7 +5,7 @@ status: To Do
 assignee:
   - '@claude'
 created_date: '2026-09-29 18:33'
-updated_date: '2026-09-29 23:18'
+updated_date: '2026-10-07 01:56'
 labels:
   - renderer
 dependencies: []
@@ -73,4 +73,6 @@ Timings: the first render in one warm process, after both engines were warmed on
 - Every other board: under 450 ms on both engines, before and after
 
 User decision 2026-09-30: accept Blocks over the budget for now. Track, the default engine, lays out every tracked board within 1 s after 5779892f and 14afc56f (Agent workbench 0.74 s, re-measured on a quiet machine after the merge). Blocks stays over: Agent workbench about 4.9 s, Browser application about 1.7 s, Archboard server about 1.0 s, almost all inside libavoid's routing. The task stays open for Blocks; switching off libavoid's unifying nudging step was measured and rejected because it makes some drawings worse.
+
+TASK-420 closure decision on 2026-10-07 keeps its existing Blocks speed issue here. The eighteen-board audit records Board viewer at 2109.20 ms on Blocks and 650.60 ms on Track. Board viewer is the only current drawing over one second in that audit. The owner accepted the spacing fix and kept this task open for the Blocks budget. Audit log: /tmp/surface-render-budget.log.
 <!-- SECTION:NOTES:END -->

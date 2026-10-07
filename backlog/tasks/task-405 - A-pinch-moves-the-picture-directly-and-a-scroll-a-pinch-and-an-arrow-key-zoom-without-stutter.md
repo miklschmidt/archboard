@@ -3,11 +3,11 @@ id: TASK-405
 title: >-
   A pinch moves the picture directly, and a scroll, a pinch and an arrow key
   zoom without stutter
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-06 09:53'
-updated_date: '2026-10-07 01:41'
+updated_date: '2026-10-07 01:59'
 labels:
   - frontend
 dependencies: []
@@ -24,10 +24,10 @@ The owner reports that zooming with the scroll wheel, the arrow keys and a pinch
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A pinch, from a touch screen and from a trackpad, applies each step to the camera at once with no easing, and a test holds it
-- [ ] #2 The frame time during a scroll zoom, an arrow-key zoom and a pinch on a large board is measured before and after the change, with the numbers and the method in the task notes, and it is lower after the change
-- [ ] #3 The scroll and arrow-key zoom keep their easing unless the measurement shows that the easing is the cost, and the notes say which it was
-- [ ] #4 bun run check passes
+- [x] #1 A pinch, from a touch screen and from a trackpad, applies each step to the camera at once with no easing, and a test holds it
+- [x] #2 The frame time during a scroll zoom, an arrow-key zoom and a pinch on a large board is measured before and after the change, with the numbers and the method in the task notes, and it is lower after the change
+- [x] #3 The scroll and arrow-key zoom keep their easing unless the measurement shows that the easing is the cost, and the notes say which it was
+- [x] #4 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -60,4 +60,12 @@ Tests: camera-motion (pinch arithmetic), semantic-board-stage (a trackpad pinch 
 Whole serial browser lane after the commits (bun run build:frontend, then bun tests/system/browser/run-browser-lane.ts ...): 24 pass, 0 fail. Commits: b2a6c1b0d (feature), e4241f29f (ADR 0042 amendment).
 
 Architecture completion (2026-10-07): Board viewer@TASK-405 adopted at version 51. Added the bound Camera controller (use-board-camera.ts) and Camera store (camera-store.ts); existing camera geometry, gesture, motion, dive and transition ids remain. Six existing relationships retain their ids and now land on, or originate at, the actual controller. Evidence: use-board-camera.ts:272 creates the store, :310 creates useCameraMotion, :376 applies pan, :387 applies pinch immediately, :497 applies ctrl-wheel immediately, :321 schedules rest, and :241 separates layer removal from the near/far swap by a frame. camera-store.ts:88 holds rest while moving or held; CameraSurface.tsx:29 keeps the transform layer while moving; SemanticDiagram.tsx:300 reads rest.scale. Three new relationships describe controller arithmetic, store access and frame-clock rest. The proposal comparison preserved every existing subject id, and the predecessor stayed byte-for-byte unchanged before adoption. Rasterized the proposal and inspected it. ARCHBOARD_URL=http://127.0.0.1:3447 ./bin/dogfood check passed with diagnostics: []. The 3447 server was isolated because another checkout owns the shared 3000 server. No acceptance criteria or status changed by this documentation work.
+
+Final acceptance uses the recorded measurements, rendered owners, browser evidence, and later owner choices in these notes. The final bun run check passes on the simplified shadow implementation.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Pinch updates the camera directly. Wheel and key zoom keep their easing. Browser measurements record lower frame costs, and the camera owners pass. The final bun run check passes.
+<!-- SECTION:FINAL_SUMMARY:END -->
