@@ -144,6 +144,11 @@ The old design had three problems:
 - clangd rebuilt its index on every pass. That took 3.1 s per pass on Redis, and
   the pass failed on LLVM.
 
+The observation-registration premise above is historical. TASK-436.16
+(2026-10-07) removes its uncalled path: checkouts are registered explicitly with
+`repo add`. Previously stored `observed` registrations still read. The
+requirement to configure language servers per checkout remains.
+
 The decision has these parts:
 
 - Python, C, C++, Objective-C, C# and Swift have no default server. pyright is

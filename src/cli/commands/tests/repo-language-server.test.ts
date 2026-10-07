@@ -87,7 +87,9 @@ async function listed(): Promise<unknown> {
 }
 
 test("repo language-server sets the server of a language for the working directory's registered checkout, repo list shows it, and registering the checkout again keeps it", async () => {
-	await run(checkout, ["repo", "add", "."]);
+	const added = await run(checkout, ["repo", "add", "."]);
+	expect(added.exited).toBe(0);
+	expect(JSON.parse(added.stdout)).toMatchObject({ repo: IDENTITY, source: "declared" });
 	const set = await run(checkout, [
 		"repo",
 		"language-server",
@@ -146,6 +148,11 @@ test.each([
 test("a registration from before servers existed, and one that was observed, takes a server and stays what it was", async () => {
 	const stored = { repo: IDENTITY, root: checkout, source: "observed", addedAt: "2026-10-01" };
 	writeFileSync(registry, JSON.stringify({ repos: [stored] }));
+	const before = readFileSync(registry, "utf8");
+	const listedLegacy = await run(scratch, ["repo", "list"]);
+	expect(listedLegacy.exited).toBe(0);
+	expect(JSON.parse(listedLegacy.stdout)).toMatchObject({ repos: [{ ...stored, exists: true }] });
+	expect(readFileSync(registry, "utf8")).toBe(before);
 	expect((await run(checkout, ["repo", "language-server", "c", "clangd"])).exited).toBe(0);
 	expect(await listed()).toEqual({ c: { command: "clangd", args: [] } });
 	const [kept] = JSON.parse(readFileSync(registry, "utf8")) as { source: string }[];

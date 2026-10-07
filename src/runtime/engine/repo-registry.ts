@@ -10,8 +10,8 @@
 //
 // It holds one entry per repository identity, and it is deliberately small:
 //
-//   declared   somebody ran `repo add <dir>` and said "this is that repo"
-//   observed   archboard resolved a binding through this checkout and kept it
+// `repo add <dir>` records each checkout explicitly. Older registry files may
+// hold an `observed` source; those entries remain readable.
 //
 // An entry also holds the language servers that an agent configured for that
 // checkout (`repo language-server`, ADR 0046). They belong to the checkout, so
@@ -21,8 +21,7 @@
 //
 // Nothing is discovered by scanning the filesystem. A registry that guesses is
 // the ambient working directory again with extra steps: the whole point is that
-// every entry traces back to something a person named or something archboard
-// actually saw.
+// each new entry traces back to the checkout somebody registered.
 
 import fs from "fs";
 import path from "path";
@@ -38,6 +37,7 @@ import {
 	type LanguageServers,
 } from "@/shared/language-servers/index";
 
+/** New entries are declared; observed is retained for existing registry files. */
 type RepoSource = "declared" | "observed";
 
 interface RegisteredRepo {
@@ -79,7 +79,7 @@ function registryPath(): string {
  * One stored entry, when it names both a repository and a checkout.
  *
  * An entry without both says nothing, so it is dropped rather than repaired:
- * the registry is rebuilt by ordinary work.
+ * the caller can register the checkout again with `repo add`.
  * @param entry The stored entry.
  * @returns The entry, or null when it is not one.
  */
@@ -197,9 +197,8 @@ function listRepos(): RegisteredRepoStatus[] {
 	);
 }
 
-// Atomic, so a reader never sees half a file, and quiet, so a registry on a
-// read-only filesystem degrades to "archboard learns nothing" rather than
-// failing a promotion that was otherwise fine.
+// Atomic, so a reader never sees half a file. The result reports whether the
+// filesystem accepted the write.
 //
 // The temp-file-and-rename used to be written out here. It is `writeFileAtomic`
 // now, shared with the board note and the library, because a repository with
@@ -329,7 +328,7 @@ interface DeclareOptions {
 }
 
 /**
- * "This directory is that repository." The deliberate half of the registry.
+ * "This directory is that repository." Register a checkout explicitly.
  *
  * The identity comes from git rather than from the caller: two people naming
  * the same clone differently is the one thing that would make the address
@@ -340,7 +339,10 @@ interface DeclareOptions {
  * @throws {RepoRegistryError} When the directory is missing, or is not inside
  * a git repository and so has no identity to register under.
  */
-async function declareRepo(dir: string, options: DeclareOptions = {}): Promise<RegisteredRepo> {
+async function declareRepo(
+	dir: string,
+	options: DeclareOptions = {},
+): Promise<RegisteredRepo & { source: "declared" }> {
 	const target = path.resolve(dir);
 	if (!isCheckout(target)) {
 		throw new RepoRegistryError(`${target} is not a directory on this machine.`);
@@ -352,34 +354,14 @@ async function declareRepo(dir: string, options: DeclareOptions = {}): Promise<R
 				"A binding names a repo plus a path inside it; a bare directory cannot be either.",
 		);
 	}
-	const entry: RegisteredRepo = {
+	const entry = {
 		repo: checkout.identity,
 		root: checkout.root,
-		source: "declared",
+		source: "declared" as const,
 		addedAt: new Date().toISOString(),
 	};
 	upsert(entry);
 	return entry;
-}
-
-/**
- * What archboard learned by resolving a real path: this identity lives here.
- *
- * The registry fills itself from ordinary work, so the second promotion into a
- * repo can name it instead of pointing at it. A declared entry is never
- * overwritten, because a person's answer outranks an observation, and neither
- * is an observed entry whose checkout is still on disk, because two clones of
- * one repo should not have the registry flapping between them.
- * @param repo The repository identity.
- * @param root Where it was found on this machine.
- */
-function rememberRepo(repo: string, root: string): void {
-	const resolved = path.resolve(root);
-	const existing = readRegistry().find((entry) => entry.repo === repo);
-	if (existing && (existing.source === "declared" || isCheckout(existing.root))) {
-		return;
-	}
-	upsert({ repo, root: resolved, source: "observed", addedAt: new Date().toISOString() });
 }
 
 /**
@@ -451,7 +433,6 @@ export {
 	checkoutFor,
 	RepoRegistryError,
 	declareRepo,
-	rememberRepo,
 	forgetRepo,
 	setLanguageServer,
 	knownRepoNames,

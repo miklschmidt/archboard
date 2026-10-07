@@ -73,6 +73,7 @@ const repoContract = defineCommand({
 const RegisteredRepoResultSchema = z.object({
 	repo: z.string(),
 	root: z.string(),
+	// Existing registry files can still contain an observed registration.
 	source: z.enum(["declared", "observed"]),
 	addedAt: z.string(),
 	exists: z.boolean().optional(),
@@ -155,7 +156,7 @@ const repoListContract = defineCommand({
 		if (repos.length === 0) {
 			return {
 				result:
-					"No repository is registered on this machine yet.\nRun `repo add` inside a checkout, or bind with absolute paths and archboard will learn as it goes.",
+					"No repository is registered on this machine yet.\nRun `repo add` inside a checkout to register it.",
 			};
 		}
 		return {
@@ -177,7 +178,7 @@ const RepoAddResultSchema = z.object({
 	success: z.literal(true),
 	repo: z.string(),
 	root: z.string(),
-	source: z.enum(["declared", "observed"]),
+	source: z.literal("declared"),
 	addedAt: z.string(),
 	registry: z.string(),
 });

@@ -122,3 +122,9 @@ The decision has these consequences:
 - The persisted schema is independent of the presentation target. Today the
   derived target can be a local file URL. Later it can be GitHub or another
   affordance, without any rewrite of board notes.
+
+Amended by TASK-436.16 (2026-10-07): checkout registration is explicit through
+`repo add`. The observation path described in the original decision has no
+caller and is removed. Resolving a binding does not register its checkout.
+Existing `repos.json` entries whose source is `observed` remain readable;
+`repo list` preserves that stored source. New registrations are `declared`.
