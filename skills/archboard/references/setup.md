@@ -54,7 +54,7 @@ of your shell.
 
 ## Steps
 
-1. Install the server program. Note its absolute path with `command -v <program>`.
+1. Install the server program.
    - Python: `pyright-langserver` (`npm install -g pyright`), or
      `basedpyright-langserver` (`pipx install basedpyright`).
    - C, C++ and Objective-C: `clangd` (`apt install clangd`, `brew install llvm`
@@ -68,7 +68,10 @@ of your shell.
    the file, clangd guesses its flags, and the check says `language-server-unready`.
 3. For Swift, run `swift build` in each package. sourcekit-lsp reads the index
    that a build writes, and the check never builds.
-4. If the repository is not registered, run `archboard repo add <dir>`.
+4. If the repository is not registered, run `archboard repo add <dir>`. If it is
+   registered at another directory, the command in step 5 refuses to run here.
+   Registering this directory moves the registration and drops the servers of the
+   other one. Tell the user before you do this.
 5. In the repository, run `archboard repo language-server <language> <command>`.
    Write one `--arg=<argument>` for each argument. The language is `python`,
    `csharp`, `swift` or `c`. The language `c` covers C, C++ and Objective-C.
@@ -100,15 +103,15 @@ of each checkout. The configuration stays on this machine. `archboard repo forge
 removes it with the checkout. Registering the same directory again keeps it.
 
 The check reads the configuration each time it runs, so you do not restart the
-Archboard server. If the Archboard server cannot find the command, give the
-absolute path of the command.
+Archboard server.
 
 ## Read the answer
 
 If the answer still says `language-server-missing` for the language, the
 configuration or the program is the cause. The detail names the command that
-configures a server. If the detail says that the program is not found, give its
-absolute path.
+configures a server. If the detail says that the program is not on the `PATH` of
+the Archboard server, run `command -v <program>`. Give that absolute path as the
+command.
 
 If the answer says `language-server-unready`, the project lacks what the server
 reads. For C, C++ and Objective-C, that is a `compile_commands.json`. For a Swift
