@@ -49,7 +49,7 @@ import { lineagesOf } from "@/runtime/code-check/lib/ownership";
 import { kubernetesEvidenceOf } from "@/runtime/code-check/lib/kubernetes-evidence";
 import { partCodesOf } from "@/runtime/code-check/lib/part-code";
 import { judgeRelationships } from "@/runtime/code-check/lib/relationships";
-import { openResolution, type Resolve, type ServerOf } from "@/runtime/code-check/lib/resolution";
+import { openResolution, type Resolve } from "@/runtime/code-check/lib/resolution";
 import { judgeSupport } from "@/runtime/code-check/lib/support";
 import { heldInFiles, terraformRootOfTarget, type Held } from "@/runtime/code-check/lib/symbols";
 import { terraformEvidenceOf } from "@/runtime/code-check/lib/terraform-evidence";
@@ -60,6 +60,7 @@ import {
 	type CheckoutSnapshot,
 	type LocalCodeTarget,
 } from "@/runtime/code-target/index";
+import type { ServerOf } from "@/runtime/language-servers/index";
 import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target/index";
 

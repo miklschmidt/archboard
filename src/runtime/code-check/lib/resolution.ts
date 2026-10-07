@@ -45,11 +45,10 @@ import {
 	type Reference,
 } from "@/runtime/code-facts/index";
 import {
-	type Language,
-	type LanguageServer,
 	languageServerOf,
 	openLanguageServers,
 	type LanguageServerSession,
+	type ServerOf,
 	type UnavailableServer,
 } from "@/runtime/language-servers/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
@@ -168,9 +167,6 @@ async function siteAt(
 	return code === undefined ? UNKNOWN : { status: "site", ...code };
 }
 
-/** The server of a language in a checkout, by its root. */
-type ServerOf = (language: Language, root: string) => LanguageServer;
-
 /** The resolution of one pass. */
 interface PassResolution {
 	readonly resolve: Resolve;
@@ -248,4 +244,4 @@ function openResolution(
 	};
 }
 
-export { type Resolve, type ServerOf, type UseResolution, openResolution };
+export { type Resolve, type UseResolution, openResolution };

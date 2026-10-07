@@ -108,10 +108,12 @@ interface LanguageServerSession {
 	readonly close: () => Promise<void>;
 }
 
+/** The server of a language in a checkout, by its root. */
+type ServerOf = (language: Language, root: string) => LanguageServer;
+
 /** What opening a session needs. */
 interface SessionOptions {
-	/** The server of a language in a checkout, by its root. */
-	readonly servers: (language: Language, root: string) => LanguageServer;
+	readonly servers: ServerOf;
 	/** The pass's signal: a cancelled pass asks nothing more and kills every server. */
 	readonly signal: AbortSignal;
 	readonly timeouts?: ServerTimeouts;
@@ -486,6 +488,7 @@ export {
 	type DefinitionAnswer,
 	type DefinitionQuestion,
 	type LanguageServerSession,
+	type ServerOf,
 	type SessionOptions,
 	type UnavailableServer,
 	openLanguageServers,

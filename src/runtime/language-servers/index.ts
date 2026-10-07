@@ -28,6 +28,7 @@ export {
 	type DefinitionAnswer,
 	type DefinitionQuestion,
 	type LanguageServerSession,
+	type ServerOf,
 	type SessionOptions,
 	type UnavailableServer,
 	openLanguageServers,
