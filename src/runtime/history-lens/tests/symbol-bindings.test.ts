@@ -95,6 +95,10 @@ const bindings = [
 	["notes", "notes.txt", "entry"],
 	["tsFirst", "src/shared.ts", "first"],
 	["tsSecond", "src/shared.ts", "second"],
+	["mixedTS", "mixed-lang", "first"],
+	["inlineA", "src/inline.ts", "first"],
+	["inlineB", "src/inline.ts", "second"],
+	["reused", "src/destination.ts", "first"],
 	["mixed", "mixed/main.tf", "aws_s3_bucket.later"],
 	["ext", "src/renamed.ts", "first"],
 	["ambig", "src/duplicates.py", "repeated"],
@@ -210,12 +214,25 @@ beforeAll(async () => {
 	write("notes.txt", "first\n");
 	write("src/duplicates.py", "def repeated():\n    return 0\n\ndef repeated():\n    return 0\n");
 	write("mixed/main.tf", 'output "unrelated" {\n  value = 0\n}\n');
+	write("mixed-lang/main.tf", 'output "unrelated" {\n  value = 0\n}\n');
+	write(
+		"mixed-lang/shared.ts",
+		"export function first() { return 0; }\nexport function second() { return 0; }\n",
+	);
+	write(
+		"src/inline.ts",
+		'const greeting = "😀"; export function first() { return 0; } export function second() { return 0; }\n',
+	);
 	write(
 		"src/renamed.txt",
 		"export function first() { return 0; }\nexport function second() { return 0; }\n",
 	);
 	for (const adapter of adapters) write(adapter.path, adapter.source(0, 0));
+	write("src/origin.ts", "export function first() { return 0; }\n");
+	write("src/destination.ts", "export function first() { return 777; }\n");
 	base = commit("create declarations");
+	rmSync(join(root, "src/destination.ts"));
+	commit("retire an unrelated earlier file at the future rename destination");
 	write("infra/main.tf", resources(1, 0));
 	firstOnly = commit("change first resource");
 	write("infra/main.tf", resources(1, 1));
@@ -241,10 +258,27 @@ beforeAll(async () => {
 		"src/shared.ts",
 		"export function first() { return 1; }\nexport function second() { return 0; }\n",
 	);
+	write(
+		"mixed-lang/shared.ts",
+		"export function first() { return 1; }\nexport function second() { return 0; }\n",
+	);
+	write(
+		"src/inline.ts",
+		'const greeting = "😀"; export function first() { return 1; } export function second() { return 0; }\n',
+	);
+	write("src/origin.ts", "export function first() { return 1; }\n");
 	firstTS = commit("change first TypeScript function");
 	write(
 		"src/shared.ts",
 		"export function first() { return 1; }\nexport function second() { return 2; }\n",
+	);
+	write(
+		"mixed-lang/shared.ts",
+		"export function first() { return 1; }\nexport function second() { return 2; }\n",
+	);
+	write(
+		"src/inline.ts",
+		'const greeting = "😀"; export function first() { return 1; } export function second() { return 2; }\n',
 	);
 	secondTS = commit("change second TypeScript function");
 	write("notes.txt", "second\n");
@@ -265,6 +299,7 @@ beforeAll(async () => {
 	);
 	mixedEdit = commit("change the newly resolved declaration");
 	renameSync(join(root, "src/renamed.txt"), join(root, "src/renamed.ts"));
+	renameSync(join(root, "src/origin.ts"), join(root, "src/destination.ts"));
 	extensionRename = commit("give a previously unsupported file its language extension");
 	write(
 		"src/renamed.ts",
@@ -393,6 +428,10 @@ test("unsupported symbols label their path-wide fallback in both readings", () =
 test("TypeScript functions isolate edits within their shared file", () => {
 	histories("tsFirst", [firstTS]);
 	histories("tsSecond", [secondTS]);
+	histories("mixedTS", [firstTS]);
+	histories("reused", [extensionRename, firstTS]);
+	histories("inlineA", [firstTS]);
+	histories("inlineB", [secondTS]);
 });
 
 test("distinct declarations with the same symbol in one file explicitly fall back to path history", () => {

@@ -2,6 +2,7 @@
 // bindings keep their root module and full address, including module instances.
 import {
 	findSymbol,
+	isTerraformFile,
 	terraformConfiguration,
 	terraformRootOf,
 	type Definition,
@@ -35,16 +36,76 @@ function declarationSource(
 	path: string,
 	definition: Definition,
 ): DeclarationSource {
+	const text = revision.sources.get(path) ?? "";
 	return {
 		path,
 		symbol: definition.symbol,
 		start: definition.start,
 		end: definition.end,
-		text: (revision.sources.get(path) ?? "")
-			.split("\n")
-			.slice(definition.start - 1, definition.end)
-			.join("\n"),
+		text:
+			definition.source === undefined
+				? text
+						.split("\n")
+						.slice(definition.start - 1, definition.end)
+						.join("\n")
+				: text.slice(definition.source.start, definition.source.end),
 	};
+}
+
+/**
+ * Adapters cannot isolate declarations sharing one source span or boundary line.
+ * @param definition The declaration whose text would be counted.
+ * @param facts All declarations in that file.
+ * @returns Whether its range can include a neighboring declaration's text.
+ */
+function sharedBoundary(definition: Definition, facts: SyntaxFacts): boolean {
+	return facts.definitions.some((other) => {
+		if (other === definition) return false;
+		if (other.symbol !== definition.symbol && relatedSymbols(other.symbol, definition.symbol))
+			return false;
+		return sameBoundary(definition, other);
+	});
+}
+
+/**
+ * Whether declaration names express identical or nested ownership.
+ * @param one A declaration name.
+ * @param other Another declaration name.
+ * @returns True for one declaration or a containing declaration.
+ */
+function relatedSymbols(one: string, other: string): boolean {
+	return one === other || one.startsWith(`${other}.`) || other.startsWith(`${one}.`);
+}
+
+/**
+ * Whether two declarations share a range that the adapter cannot separate.
+ * @param one The declaration being read.
+ * @param other A neighboring declaration.
+ * @returns Whether they share source offsets or a line boundary.
+ */
+function sameBoundary(one: Definition, other: Definition): boolean {
+	if (one.source !== undefined)
+		return other.source?.start === one.source.start && other.source.end === one.source.end;
+	const lines = new Set([one.start, one.end]);
+	return lines.has(other.start) || lines.has(other.end);
+}
+
+/**
+ * Read a declaration only when its source span excludes unrelated owners.
+ * @param revision The immutable source revision.
+ * @param path Its source file.
+ * @param definition The resolved declaration.
+ * @returns Its source or explicit unsupported attribution.
+ */
+async function readDeclaration(
+	revision: SourceRevision,
+	path: string,
+	definition: Definition,
+): Promise<SymbolReading> {
+	const facts = await revision.pass.read(revision.checkout, path);
+	if (facts === undefined || facts.adapter === "text" || sharedBoundary(definition, facts))
+		return { kind: "unsupported" };
+	return { kind: "found", site: declarationSource(revision, path, definition) };
 }
 
 /**
@@ -66,10 +127,7 @@ async function terraformReading(
 		found.declaration.path !== undefined &&
 		found.declaration.definition !== undefined
 	) {
-		return {
-			kind: "found",
-			site: declarationSource(revision, found.declaration.path, found.declaration.definition),
-		};
+		return await readDeclaration(revision, found.declaration.path, found.declaration.definition);
 	}
 	return { kind: found.status === "absent" ? "absent" : "unsupported" };
 }
@@ -103,6 +161,8 @@ async function fileReadings(
 	if (facts === undefined || facts.adapter === "text") return [{ kind: "unsupported" }];
 	const definitions = definitionsOf(facts, symbol);
 	if (definitions.length > 0) {
+		if (definitions.some((definition) => sharedBoundary(definition, facts)))
+			return [{ kind: "unsupported" }];
 		return definitions.map((definition) => ({
 			kind: "found",
 			site: declarationSource(revision, file, definition),
@@ -130,9 +190,16 @@ async function atPath(
 		checkout.files.has(path) ? "file" : "directory",
 		checkout.files,
 	);
-	if (root !== undefined) return [await terraformReading(revision, root, symbol)];
 	const files = filesOfBinding(path, [...checkout.files]);
-	return (await Promise.all(files.map((file) => fileReadings(revision, file, symbol)))).flat();
+	const readings = await Promise.all(
+		files
+			.filter((file) => root === undefined || !isTerraformFile(file))
+			.map((file) => fileReadings(revision, file, symbol)),
+	);
+	return [
+		...(root === undefined ? [] : [await terraformReading(revision, root, symbol)]),
+		...readings.flat(),
+	];
 }
 
 /**
@@ -172,4 +239,4 @@ async function readSymbol(
 	};
 }
 
-export { readSymbol, type DeclarationSource, type SymbolReading };
+export { readSymbol, relatedSymbols, type DeclarationSource, type SymbolReading };

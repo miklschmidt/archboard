@@ -23,6 +23,7 @@
 import type { AttributedCommits } from "@/runtime/history-lens/lib/attribution";
 import type { WalkedCommit } from "@/runtime/history-lens/lib/commits";
 import type { ReadPart } from "@/runtime/history-lens/lib/parts";
+import { relatedSymbols } from "@/runtime/history-lens/lib/symbol-attribution";
 import type { CoupledPair } from "@/shared/locality/index";
 import type { VariantContent } from "@/shared/semantic-board/index";
 
@@ -85,16 +86,6 @@ function sharedDeclaration(left: CountedPart, right: CountedPart): boolean {
 			(other) => one.path === other.path && relatedSymbols(one.symbol, other.symbol),
 		),
 	);
-}
-
-/**
- * Whether declaration names express identical or nested ownership.
- * @param one A declaration name.
- * @param other Another declaration name.
- * @returns True for one declaration or a containing declaration.
- */
-function relatedSymbols(one: string, other: string): boolean {
-	return one === other || one.startsWith(`${other}.`) || other.startsWith(`${one}.`);
 }
 
 /**

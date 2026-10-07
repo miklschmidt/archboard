@@ -11,6 +11,7 @@ import {
 	type SymbolReading,
 } from "@/runtime/history-lens/lib/symbol-attribution";
 import type { HistoryAttribution } from "@/shared/history-attribution/index";
+import { filesOfBinding } from "@/shared/code-target/index";
 
 interface AttributedCommits {
 	readonly commits: readonly string[];
@@ -32,11 +33,26 @@ function formerPaths(paths: readonly string[], commit: WalkedCommit): string[] {
 	for (const change of commit.changes) {
 		if (change.from === undefined) continue;
 		for (const path of paths) {
-			if (path === change.path) former.add(change.from);
-			else if (path === posix.dirname(change.path)) former.add(posix.dirname(change.from));
+			if (path === change.path) {
+				former.delete(path);
+				former.add(change.from);
+			} else if (path === posix.dirname(change.path)) former.add(posix.dirname(change.from));
 		}
 	}
 	return [...former];
+}
+
+/**
+ * Whether a commit changes a binding's names at this point in its history.
+ * @param paths The binding's current historical names.
+ * @param commit The commit's changes.
+ * @returns Whether any named file changed or moved.
+ */
+function changesBoundPath(paths: readonly string[], commit: WalkedCommit): boolean {
+	const files = commit.changes.flatMap((change) =>
+		change.from === undefined ? [change.path] : [change.path, change.from],
+	);
+	return paths.some((path) => filesOfBinding(path, files).length > 0);
 }
 
 /**
@@ -127,7 +143,7 @@ async function readChange(
 	remember(state, previous);
 	remember(state, next);
 	if (previous.kind === "unsupported" || next.kind === "unsupported") {
-		if (state.pathCommits.has(commit.commit)) state.unsupported.add(commit.commit);
+		if (changesBoundPath(state.paths, commit)) state.unsupported.add(commit.commit);
 	} else if (declarationChanged(previous, next)) state.commits.add(commit.commit);
 }
 
@@ -161,7 +177,7 @@ async function readChanges(
 		await previous;
 		options.signal?.throwIfAborted();
 		const terraform = terraformChanged(commit);
-		const candidates = states.filter((state) => state.pathCommits.has(commit.commit) || terraform);
+		const candidates = states.filter((state) => changesBoundPath(state.paths, commit) || terraform);
 		if (candidates.length > 0) {
 			const after = await history.read(commit.commit);
 			const before = await history.read(parents.get(commit.commit));
@@ -263,7 +279,12 @@ async function attributeCommits(
 	);
 	const states = parts.flatMap((part) => symbolState(part, byPath));
 	if (states.length === 0) return answers;
-	const allPaths = states.flatMap((state) => walked.reduce(formerPaths, state.paths));
+	const allPaths = states.flatMap((state) =>
+		walked.reduce(
+			(paths, commit) => [...new Set([...paths, ...formerPaths(paths, commit)])],
+			state.paths,
+		),
+	);
 	const history = sourceHistory(root, allPaths, options);
 	const headRevision = await history.read(head);
 	await Promise.all(
