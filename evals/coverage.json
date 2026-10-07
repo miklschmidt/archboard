@@ -414,10 +414,17 @@
 				},
 				{
 					"path": "beat.view stated versus omitted",
-					"expectedUse": "a beat told through a named view; others through the current presentation",
+					"expectedUse": "every beat names its view explicitly, including consecutive beats that use the same view",
 					"scenarios": ["S05"],
 					"evidence": "author-run",
 					"owner": "grader walkthrough.beat-subjects; src/ui/semantic-board-canvas/tests narrative (omitted view keeps the presentation)"
+				},
+				{
+					"path": "WALKTHROUGH_VIEW_MISSING on authored beats without view; view schema descriptions announce that the property will become required soon",
+					"expectedUse": "repair each warned beat with an explicit view; writes still succeed while view remains optional",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests/walkthroughs.test.ts (creation, omission after an explicit view, repeated explicit views, repair, and untouched walkthroughs). Mechanical author feedback uses a runtime owner. Schema descriptions come from the shared guidance in src/shared/semantic-board/lib/walkthrough.ts."
 				},
 				{
 					"path": "stable beat identity across reword/reorder/add/remove",

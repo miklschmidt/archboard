@@ -39,10 +39,15 @@ import type {
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import { idFor, named, namedOne, place } from "@/runtime/semantic-board-store/lib/references";
 import { handled, mintInto, type Batch } from "@/runtime/semantic-board-store/lib/batch";
+import type { WriteNotice } from "@/runtime/semantic-board-store/lib/replaced-relationships";
 
 /** The walkthroughs a batch leaves behind, or why it leaves none. */
 type WalkthroughEdit =
-	| { readonly ok: true; readonly walkthroughs: SemanticWalkthrough[] }
+	| {
+			readonly ok: true;
+			readonly walkthroughs: SemanticWalkthrough[];
+			readonly notices: readonly WriteNotice[];
+	  }
 	| SemanticRefusal;
 
 /** What the batch leaves on the board, which is what a beat may be about. */
@@ -278,9 +283,14 @@ function plannedRemovals(
  * nothing.
  * @param walkthroughs The walkthroughs the batch leaves.
  * @param holds What the batch leaves on the board.
+ * @param stated The walkthroughs this batch authored.
  * @returns The walkthroughs, or the refusal.
  */
-function settled(walkthroughs: readonly SemanticWalkthrough[], holds: Holdings): WalkthroughEdit {
+function settled(
+	walkthroughs: readonly SemanticWalkthrough[],
+	holds: Holdings,
+	stated: ReadonlySet<string>,
+): WalkthroughEdit {
 	const ids = aboutable(holds);
 	const views = new Set(holds.views.map((view) => view.id));
 	for (const walkthrough of walkthroughs) {
@@ -291,7 +301,29 @@ function settled(walkthroughs: readonly SemanticWalkthrough[], holds: Holdings):
 			}
 		}
 	}
-	return { ok: true, walkthroughs: [...walkthroughs] };
+	return {
+		ok: true,
+		walkthroughs: [...walkthroughs],
+		notices: walkthroughs.filter((one) => stated.has(one.id)).flatMap(missingBeatViews),
+	};
+}
+
+/**
+ * Warn for each authored step that leaves its view implicit.
+ * @param walkthrough The resolved walkthrough after the batch.
+ * @returns One notice per step without its own view.
+ */
+function missingBeatViews(walkthrough: SemanticWalkthrough): WriteNotice[] {
+	return walkthrough.beats
+		.filter((beat) => beat.view === undefined)
+		.map((beat) => ({
+			code: "WALKTHROUGH_VIEW_MISSING",
+			path: `walkthroughs.${walkthrough.id}.beats.${beat.id}.view`,
+			message:
+				`Step "${beat.heading}" in walkthrough "${walkthrough.name}" has no explicit view. ` +
+				"Set view on this step, even when it matches the previous step. " +
+				"The view property will become required soon.",
+		}));
 }
 
 /**
@@ -350,14 +382,16 @@ function editWalkthroughs(
 		return removed;
 	}
 	let walkthroughs = before.walkthroughs.filter((one) => !removed.gone.has(one.id));
+	const statedIds = new Set<string>();
 	for (const stated of edit.walkthroughs) {
 		const built = buildWalkthrough(walkthroughs, stated, holds, batch);
 		if (!built.ok) {
 			return built;
 		}
 		walkthroughs = place(walkthroughs, built.walkthrough);
+		statedIds.add(built.walkthrough.id);
 	}
-	return settled(walkthroughs, holds);
+	return settled(walkthroughs, holds, statedIds);
 }
 
 export { type WalkthroughEdit, editWalkthroughs };

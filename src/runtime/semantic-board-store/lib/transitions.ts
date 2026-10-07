@@ -138,7 +138,11 @@ function createBoardTransition(input: BoardCreateInput): SemanticTransition {
 			if (!content.ok) {
 				return content;
 			}
-			return { ok: true, board: newBoard(input, content.content, content.views, at) };
+			return {
+				ok: true,
+				board: newBoard(input, content.content, content.views, at),
+				notices: content.notices,
+			};
 		},
 	};
 }

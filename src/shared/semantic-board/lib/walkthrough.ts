@@ -34,6 +34,11 @@ import {
 	SemanticIdSchema,
 } from "@/shared/semantic-board/lib/primitives";
 
+/** Guidance shared by the authored and persisted walkthrough schemas. */
+const WALKTHROUGH_VIEW_DESCRIPTION =
+	"The view for this step. Set it explicitly, even when it matches the previous step. " +
+	"Optional for now. This property will become required soon.";
+
 /**
  * One moment of an explanation: what it says, and what it is about.
  *
@@ -60,7 +65,7 @@ const WalkthroughBeatSchema = z
 		heading: DisplayNameSchema,
 		body: DescriptionSchema,
 		subjects: z.array(SemanticIdSchema).default([]),
-		view: SemanticIdSchema.optional(),
+		view: SemanticIdSchema.optional().meta({ description: WALKTHROUGH_VIEW_DESCRIPTION }),
 	})
 	.strict();
 type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
@@ -90,6 +95,7 @@ const SemanticWalkthroughSchema = z
 type SemanticWalkthrough = z.infer<typeof SemanticWalkthroughSchema>;
 
 export {
+	WALKTHROUGH_VIEW_DESCRIPTION,
 	WalkthroughBeatSchema,
 	type WalkthroughBeat,
 	SemanticWalkthroughSchema,
