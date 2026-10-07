@@ -218,7 +218,7 @@ archboard semantic rasterize "Web shop" --scale 2 --out web-shop.png
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/architecture-dark.svg">
-  <img alt="Archboard's own system board: the agent CLI and headless Chromium talk to the Archboard server. The server keeps the board vault and serves the browser. It also resolves code bindings and runs a private Codex app-server." src="docs/readme/architecture-light.svg" width="100%">
+  <img alt="Archboard's own system board: the agent CLI and headless Chromium talk to the Archboard server. The server keeps the board vault and serves the browser. It also resolves code bindings and runs a private Codex app-server. The CLI copies PNG and HTML through a native clipboard helper." src="docs/readme/architecture-light.svg" width="100%">
 </picture>
 
 <p align="center"><sub>Archboard's own system board from <a href=".archboard/vault"><code>.archboard/vault</code></a>. The command <code>archboard semantic render Archboard --out archboard.svg</code> drew it.</sub></p>
