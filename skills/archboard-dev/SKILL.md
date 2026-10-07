@@ -1,11 +1,12 @@
 ---
 name: archboard-dev
-description: Working on archboard's own source. It holds the board proposal of a
-task from planning to closing, and the sweep after a removal or rename. It also
-holds where the tracked skills live, how to maintain the consumer skill, and
-facts that the code does not show. Use it to plan or close a task, or to change
-this repo or its skills. Also use it to remove or rename what a reader sees, or
-to test a server change.
+description: >-
+  Working on archboard's own source. It holds the board proposal of a
+  task from planning to closing, and the sweep after a removal or rename. It also
+  holds where the tracked skills live, how to maintain the consumer skill, and
+  facts that the code does not show. Use it to plan or close a task, or to change
+  this repo or its skills. Also use it to remove or rename what a reader sees, or
+  to test a server change.
 ---
 
 # Working on archboard

@@ -13,6 +13,8 @@ native lanes in this order:
 - `test:repository`: the source-boundary lint fixtures, the owner that resolves
   every link of the consumer skill
   (`tests/system/repository-policy/skill-links.test.ts`),
+  the owner that parses YAML discovery metadata for every tracked skill
+  (`tests/system/repository-policy/skill-frontmatter.test.ts`),
   the README asset manifest and staleness owner
   (`tests/system/repository-policy/readme-assets.test.ts`), which starts no browser,
   and the owner that holds the README banner's mark to the shell's
