@@ -202,7 +202,7 @@ const semanticRasterizeContract = defineCommand({
 	input: { ingress: RasterizeInputSchema },
 	result: z.union([
 		SemanticRasterReceiptSchema,
-		z.instanceof(Uint8Array).meta({ description: "The PNG image as bytes." }),
+		z.instanceof(Uint8Array<ArrayBufferLike>).meta({ description: "The PNG image as bytes." }),
 	]),
 	output: {
 		cases: [
