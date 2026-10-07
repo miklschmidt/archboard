@@ -132,6 +132,58 @@ test("an explanation lands in one batch and reads back resolved", () => {
 	expect(new Set(ids).size).toBe(ids.length);
 }, 20_000);
 
+test("each authored step without its own view warns and still lands", async () => {
+	if (seeded.outcome !== "applied") throw new Error("The seed must be written");
+	const initial = held().walkthroughs[0]!;
+	expect(seeded.warnings).toMatchObject([
+		{
+			severity: "warning",
+			code: "WALKTHROUGH_VIEW_MISSING",
+			board,
+			path: `walkthroughs.${initial.id}.beats.${initial.beats[0]!.id}.view`,
+		},
+	]);
+
+	const written = await edit({
+		walkthroughs: [
+			{
+				name: "The request",
+				beats: [
+					{ heading: "Start", body: "The caller starts the request." },
+					{ heading: "Call", body: "The caller reaches the server.", view: "The parts" },
+					{ heading: "Save", body: "The server writes to the vault." },
+					{ heading: "End", body: "The server answers the caller.", view: "The parts" },
+				],
+			},
+		],
+	});
+	if (written.outcome !== "applied") throw new Error("The walkthrough must be written");
+	const walkthrough = held().walkthroughs.find((one) => one.name === "The request")!;
+	expect(written.warnings.map(({ code, path }) => ({ code, path }))).toEqual(
+		[walkthrough.beats[0]!, walkthrough.beats[2]!].map((beat) => ({
+			code: "WALKTHROUGH_VIEW_MISSING",
+			path: `walkthroughs.${walkthrough.id}.beats.${beat.id}.view`,
+		})),
+	);
+	// Omission after an explicit view stays omission on disk, with its own warning.
+	expect(walkthrough.beats[2]!.view).toBeUndefined();
+
+	const repaired = await edit({
+		walkthroughs: [
+			{
+				...walkthrough,
+				beats: walkthrough.beats.map((beat) => ({ ...beat, view: "The parts" })),
+			},
+		],
+	});
+	if (repaired.outcome !== "applied") throw new Error("The repair must be written");
+	// Repeated explicit views are valid. The untouched initial walkthrough does not warn.
+	expect(repaired.warnings).toEqual([]);
+	for (const beat of held().walkthroughs.find((one) => one.id === walkthrough.id)!.beats) {
+		expect(beat.view).toBe(walkthrough.beats[1]!.view);
+	}
+});
+
 test("a beat keeps its id when the explanation is rewritten, and a stated id must name one", async () => {
 	const before = held().walkthroughs[0]!;
 	const kept = before.beats[1]!.id;

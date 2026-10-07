@@ -28,6 +28,7 @@ import {
 	StatedIdSchema,
 } from "@/shared/semantic-board/lib/primitives";
 import { StepLabelSchema } from "@/shared/semantic-board/lib/views";
+import { WALKTHROUGH_VIEW_DESCRIPTION } from "@/shared/semantic-board/lib/walkthrough";
 import {
 	DiagramGrammarSchema,
 	EdgeEmphasisSchema,
@@ -184,7 +185,7 @@ const WalkthroughBeatInputSchema = z
 		heading: DisplayNameSchema,
 		body: DescriptionSchema,
 		subjects: z.array(NodeReferenceSchema).default([]),
-		view: NodeReferenceSchema.optional(),
+		view: NodeReferenceSchema.optional().meta({ description: WALKTHROUGH_VIEW_DESCRIPTION }),
 	})
 	.strict();
 type WalkthroughBeatInput = z.infer<typeof WalkthroughBeatInputSchema>;

@@ -10,7 +10,11 @@ import { effectiveTraffic, type SemanticEdge } from "@/shared/semantic-board/ind
 
 /** A notice a write answers with, before the write boundary names the file. */
 interface WriteNotice {
-	readonly code: "RELATIONSHIP_REPLACED" | "RELATIONSHIP_DUPLICATED" | "ANCHOR_DROPPED";
+	readonly code:
+		| "RELATIONSHIP_REPLACED"
+		| "RELATIONSHIP_DUPLICATED"
+		| "ANCHOR_DROPPED"
+		| "WALKTHROUGH_VIEW_MISSING";
 	readonly path: string;
 	readonly message: string;
 }

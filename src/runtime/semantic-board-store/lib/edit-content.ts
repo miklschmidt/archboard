@@ -382,6 +382,7 @@ function editContent(
 		? {
 				...placed,
 				notices: [
+					...placed.notices,
 					...replacedRelationships(
 						before.edges,
 						planned.removals.edges,
@@ -476,7 +477,7 @@ function withViews(
 	return {
 		ok: true,
 		views: rest.views,
-		notices: [],
+		notices: explained.notices,
 		content: {
 			nodes: [...nodes],
 			edges: [...edges],

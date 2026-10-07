@@ -74,7 +74,7 @@ view's picture, not the whole board's.
 ## Walkthroughs
 
 A walkthrough explains one variant in ordered `beats`, each with a `heading`,
-a `body`, optional `subjects` and an optional `view`.
+a `body`, optional `subjects` and a `view`.
 
 - `subjects` are nodes, relationships, flows or steps. Name a node or flow by
   its name or id. Name a relationship or step by id, because it has no name. A
@@ -87,8 +87,10 @@ a `body`, optional `subjects` and an optional `view`.
   explains an ordering names both of its sides: the step that must come first
   and what relies on it having happened.
 - An opening beat can have no subjects: it is about the whole picture.
-- `view` switches what the reader looks at for this beat ("now follow one
-  request"). A beat without one is told through what is already shown.
+- Set `view` on every beat, even when consecutive beats use the same view.
+  Choose the view that shows the problem this beat explains.
+  A write warns with `WALKTHROUGH_VIEW_MISSING` for each authored beat that
+  omits `view`. The write still succeeds, but `view` will become required soon.
 - A beat keeps its `id` through rewording and reordering. Restate the
   walkthrough with the ids you read. A beat without an id is a new beat, and a
   beat id from another walkthrough is refused. When a subject a beat names is
