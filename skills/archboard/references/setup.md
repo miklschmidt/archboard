@@ -28,9 +28,9 @@ If all of these are true, the check runs `tsc --lsp --stdio` from the
 - The package and the program are inside the checkout once their links resolve.
 
 Otherwise the check runs the `tsc` of the `typescript` package that archboard
-installs. This happens for an older TypeScript, for a checkout with no
-TypeScript, and for a link that leads out of the checkout. In a monorepo, the
-check reads the root only. A package that installs another version than the root
+installs. This happens for an older TypeScript, for no TypeScript, for no native
+program, and for a link that leads out of the checkout. In a monorepo, the check
+reads the root only. A package that installs another version than the root
 uses the version at the root.
 
 ## What a configured server runs
