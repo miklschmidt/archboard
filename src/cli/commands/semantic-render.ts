@@ -75,7 +75,7 @@ const semanticRenderContract = defineCommand({
 	examples: [
 		"archboard semantic render pipeline --out pipeline.svg --theme dark",
 		'archboard semantic render pipeline --variant "Queued ingest" --no-comparison --out proposal.svg',
-		"archboard semantic render pipeline | wl-copy --type image/svg+xml",
+		"archboard semantic rasterize pipeline --clipboard",
 	],
 	parameters: [
 		{

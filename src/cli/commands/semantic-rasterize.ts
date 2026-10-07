@@ -173,13 +173,13 @@ const semanticRasterizeContract = defineCommand({
 		"The whole diagram is captured, never fitted or cropped; a bitmap that would exceed what one " +
 		"capture may hold is refused. Traffic animation is paused at its first frame. Needs a Chromium or " +
 		"Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM. " +
-		"Without --out or --clipboard, stdout carries PNG bytes for image clipboard tools. " +
+		"Without --out or --clipboard, stdout carries PNG bytes. " +
 		"Use --clipboard to copy PNG and HTML with the accessible description on Linux and macOS. " +
 		"Use --no-comparison to hide comparison marks and removed subjects.",
 	examples: [
 		"archboard semantic rasterize pipeline --out pipeline.png",
 		'archboard semantic rasterize pipeline --view "Startup exchange" --scale 2 --out startup@2x.png',
-		"archboard semantic rasterize pipeline | wl-copy --type image/png",
+		"archboard semantic rasterize pipeline --clipboard",
 		'archboard semantic rasterize pipeline --view "Startup exchange" --clipboard --no-comparison',
 	],
 	parameters: [
