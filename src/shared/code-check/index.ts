@@ -35,6 +35,9 @@
 // names the variables it passes through itself. TASK-367.23 joins an environment value the
 // code reads with infrastructure that sets it to another part's address, and
 // says which side of an unsupported relationship has evidence (`missing`).
+// TASK-436.05 adds `TEST_IMPORT_UNEXPOSED`, a warning on a container for each
+// test outside its module that imports a private file. Tests inside a module
+// can exercise its internals; tests never make exposed names used.
 
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@/shared/semantic-policy/index";

@@ -96,6 +96,14 @@ beforeAll(async () => {
 		].join("\n"),
 		"tests/system/store.test.ts":
 			'import { unusedHelper } from "../../src/store";\nunusedHelper();\n',
+		"tests/system/private.test.ts": [
+			'import { cached } from "../../src/store/lib/cache";',
+			'import { readShelf } from "../../src/store/lib/read";',
+			'import { cached as again } from "../../src/store/lib/cache";',
+			"cached(); readShelf(); again();",
+			"",
+		].join("\n"),
+		"src/store/tests/private.test.ts": 'import { cached } from "../lib/cache";\ncached();\n',
 		"docs/guide.md": "# Guide\n",
 	});
 	git(scratch, shop, "add", "-A");
@@ -255,4 +263,36 @@ test("a container whose module exposes nothing the check can read is listed as n
 	const skip = outcome.skipped.find((each) => each.board === "Docs");
 	expect(skip).toMatchObject({ reason: "exposure-unknown", subject: { id: "Manual" }, repo: SHOP });
 	expect(outcome.findings.some((each) => each.board === "Docs")).toBe(false);
+});
+
+test("external tests use public entry files, while tests inside the module can exercise private files", () => {
+	for (const boardName of ["Shop", "Store alone"]) {
+		const privateImports = findings("TEST_IMPORT_UNEXPOSED", boardName);
+		expect(privateImports.map((each) => [each.subject?.id, each.severity])).toEqual([
+			["Store", "warning"],
+			["Store", "warning"],
+		]);
+		expect(privateImports.map((each) => each.evidence)).toEqual([
+			[
+				{
+					kind: "import",
+					resolution: "resolved",
+					repo: SHOP,
+					path: "tests/system/private.test.ts",
+					line: 1,
+					symbol: "cached",
+				},
+			],
+			[
+				{
+					kind: "import",
+					resolution: "resolved",
+					repo: SHOP,
+					path: "tests/system/private.test.ts",
+					line: 2,
+					symbol: "readShelf",
+				},
+			],
+		]);
+	}
 });

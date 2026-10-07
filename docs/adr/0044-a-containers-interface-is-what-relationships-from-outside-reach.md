@@ -459,3 +459,18 @@ the module decides that argument for its callers.
 One case reads as shallow without being shallow. A literal argument such as
 `block_public_acls = true` makes no reference. So a wrapper that fixes a
 setting to a constant still reads as shallow.
+
+## Amendment of 2026-10-07: tests respect a module's public entry files
+
+TASK-436.05 applies the module boundary to tests as well as callers. A test
+inside the directory of a module can import any file of that module. A test
+outside it uses the module's public entry files, as callers do. An external
+test that imports a private file gets `TEST_IMPORT_UNEXPOSED`, a warning on
+the container that names the test, the private file and the import's line.
+It applies even when the board draws no caller of the container.
+
+Tests exercise code; they are not callers of the product. A use by a test
+never makes an exposed name used, and a name only tests use still gets
+`EXPOSED_UNUSED`. A public entry file can re-export a definition from a
+private file. That exposes the name through the entry file and leaves the
+private file private.
