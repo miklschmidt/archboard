@@ -9,6 +9,7 @@
 // the former path.
 
 import { gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
+import { filesOfBinding } from "@/shared/code-target/index";
 
 /**
  * The size above which a commit is large: code-maat's default for the largest
@@ -145,16 +146,6 @@ function normalizeBoundPath(bound: string): string | undefined {
 }
 
 /**
- * Whether a file is a bound path or below it.
- * @param file A repository-relative file.
- * @param bound A normalized bound path.
- * @returns True when the file is one of the bound files.
- */
-function isBelow(file: string, bound: string): boolean {
-	return bound === "" || file === bound || file.startsWith(`${bound}/`);
-}
-
-/**
  * Whether one commit changed a bound path, as the path was named when the
  * commit was made. A rename into the path adds the file's former name, under
  * which the older commits count.
@@ -164,10 +155,14 @@ function isBelow(file: string, bound: string): boolean {
  */
 function changedUnder(commit: WalkedCommit, names: string[]): boolean {
 	const formerNames: string[] = [];
+	const files = commit.changes.flatMap((change) =>
+		change.from === undefined ? [change.path] : [change.path, change.from],
+	);
+	const bound = new Set(names.flatMap((name) => filesOfBinding(name, files)));
 	const changed = commit.changes.filter((change) => {
-		const after = names.some((name) => isBelow(change.path, name));
+		const after = bound.has(change.path);
 		const from = change.from;
-		const before = from !== undefined && names.some((name) => isBelow(from, name));
+		const before = from !== undefined && bound.has(from);
 		if (after && from !== undefined && !before) formerNames.push(from);
 		return after || before;
 	});

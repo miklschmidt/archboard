@@ -38,14 +38,14 @@ import {
 	type ReadCheckout,
 } from "@/runtime/code-check/lib/checkouts";
 import { heldInFiles, terraformRootOfTarget, type Search } from "@/runtime/code-check/lib/symbols";
-import { mergedDefinitions, projectDirectoryOf, type Definition } from "@/runtime/code-facts/index";
+import { mergedDefinitions, type Definition } from "@/runtime/code-facts/index";
 import {
 	resolveLocalCodeTarget,
 	type CheckoutSnapshot,
 	type LocalCodeTarget,
 } from "@/runtime/code-target/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
-import type { CodeBinding } from "@/shared/code-target/index";
+import { bindingPathOf, type CodeBinding } from "@/shared/code-target/index";
 import type { SemanticNode } from "@/shared/semantic-board/index";
 
 /**
@@ -195,10 +195,8 @@ function boundAt(
 	target: LocalCodeTarget,
 ): Pick<Extract<Located, { status: "located" }>, "where" | "kind"> {
 	const real = relativeTo(target.root, target.target);
-	const project = target.kind === "file" ? projectDirectoryOf(real) : undefined;
-	return project === undefined
-		? { where: real, kind: target.kind }
-		: { where: project, kind: "directory" };
+	const where = target.kind === "file" ? bindingPathOf(real) : real;
+	return { where, kind: where === real ? target.kind : "directory" };
 }
 
 /**

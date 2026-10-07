@@ -18,9 +18,9 @@ import {
 	type OtherRef,
 } from "@/runtime/code-target/index";
 import { listReadableFiles } from "@/runtime/code-check/lib/readable-files";
-import { neverRead, pairOf, projectDirectoryOf } from "@/runtime/code-facts/index";
+import { neverRead, pairOf } from "@/runtime/code-facts/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
-import type { CodeBinding } from "@/shared/code-target/index";
+import { bindingPathOf, filesOfBinding, type CodeBinding } from "@/shared/code-target/index";
 import { errorMessage } from "@/shared/thrown-error/index";
 
 /** A registered checkout the pass reads: its canonical root, and the files Git does not ignore. */
@@ -97,44 +97,49 @@ function normalized(relative: string): string {
 }
 
 /**
+ * The listed files of a resolved path, before the pass removes files it never
+ * reads. A binding expands a project file; an anchor keeps that exact file.
+ * @param target The resolved path.
+ * @param files The files Git does not ignore.
+ * @param bound Whether the path binds a part rather than citing an anchor.
+ * @returns The matching listed files.
+ */
+function listedFiles(
+	target: LocalCodeTarget,
+	files: ReadonlySet<string>,
+	bound: boolean,
+): string[] {
+	const real = normalized(path.relative(target.root, target.target));
+	if (target.kind === "file" && (!bound || bindingPathOf(real) === real)) {
+		return filesOfBinding(real, [real]).filter((file) => files.has(file));
+	}
+	const scopes =
+		target.kind === "directory" ? [normalized(target.path), real] : [bindingPathOf(real)];
+	return [...new Set(scopes.flatMap((scope) => filesOfBinding(scope, files)))];
+}
+
+/**
  * What the pass may read of a resolved path: the file, or every file below the
  * directory, that Git does not ignore and that is not one the pass never reads.
  * A file is judged where its symbolic links lead, so a tracked link to an
  * ignored file is ignored.
  * @param target The resolved path.
  * @param files The files Git does not ignore in its checkout.
+ * @param bound Whether the path binds a part rather than citing an anchor.
  * @returns The files to read, or why there are none.
  */
-function pathReadable(target: LocalCodeTarget, files: ReadonlySet<string>): Readable {
+function pathReadable(
+	target: LocalCodeTarget,
+	files: ReadonlySet<string>,
+	bound = false,
+): Readable {
 	const lexical = normalized(target.path);
 	const real = normalized(path.relative(target.root, target.target));
 	if (neverRead(lexical) || neverRead(real)) return { status: "never-read" };
-	const listed =
-		target.kind === "file"
-			? [real].filter((file) => files.has(file))
-			: [...files].filter((file) =>
-					[lexical, real].some((dir) => dir === "" || file.startsWith(`${dir}/`)),
-				);
+	const listed = listedFiles(target, files, bound);
 	if (listed.length === 0) return { status: "ignored" };
 	const readable = listed.filter((file) => !neverRead(file));
 	return readable.length === 0 ? { status: "never-read" } : { status: "files", files: readable };
-}
-
-/**
- * The project a bound .NET project file stands for, as a resolved directory.
- * @param target The resolved path.
- * @returns The project's directory, or undefined for a path that is no project file.
- */
-function boundProject(target: LocalCodeTarget): LocalCodeTarget | undefined {
-	if (target.kind !== "file") return undefined;
-	const directory = projectDirectoryOf(normalized(path.relative(target.root, target.target)));
-	if (directory === undefined) return undefined;
-	return {
-		...target,
-		kind: "directory",
-		path: directory,
-		target: path.join(target.root, directory),
-	};
 }
 
 /**
@@ -160,9 +165,7 @@ function readableOf(target: LocalCodeTarget, files: ReadonlySet<string>, bound =
  * @returns The files to read, or why there are none.
  */
 function boundReadable(target: LocalCodeTarget, files: ReadonlySet<string>): Readable {
-	const project = boundProject(target);
-	if (project !== undefined) return pathReadable(project, files);
-	const readable = pathReadable(target, files);
+	const readable = pathReadable(target, files, true);
 	if (readable.status !== "files" || target.kind !== "file") return readable;
 	const pair = readable.files
 		.flatMap((file) => pairOf(file, files))
