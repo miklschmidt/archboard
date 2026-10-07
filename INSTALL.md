@@ -228,7 +228,7 @@ A language server reads a checkout the way your editor does. For most languages,
 - csharp-ls evaluates the MSBuild files of the solution.
 - sourcekit-lsp evaluates `Package.swift`.
 
-So archboard starts such a server only for a checkout where you, or the agent that works in that repository, configured it. Then the Archboard server runs the server as your editor does. It uses the command and arguments of the configured server and the environment of the Archboard server. That is the environment of the command that started it (see [section 5](#5-start-the-archboard-server-and-sign-in-to-codex)). It adds no flag, no variable and no rewritten file.
+So archboard starts such a language server only for a checkout where you, or the agent that works in that repository, configured it. Then the Archboard server runs the language server as your editor does. It uses the command and arguments that you configured. It uses the environment of the Archboard server, which is the environment of the command that started it (see [section 5](#5-start-the-archboard-server-and-sign-in-to-codex)). The check adds no flag, no variable and no rewritten file.
 
 A configured server runs the code of that repository. Configure one only for a repository that you work in.
 
