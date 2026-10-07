@@ -105,6 +105,27 @@ beforeAll(async () => {
 		].join("\n"),
 		"src/store/tests/private.test.ts": 'import { cached } from "../lib/cache";\ncached();\n',
 		"docs/guide.md": "# Guide\n",
+		"infra/flake/flake.nix": '{ outputs = { self }: { lib.version = "1"; }; }\n',
+		"infra/chart/Chart.yaml": "apiVersion: v2\nname: cart\nversion: 1.0.0\n",
+		"infra/chart/values.yaml": "replicas: 2\nimage:\n  tag: stable\n",
+		"infra/chart/templates/service.yaml":
+			"apiVersion: v1\nkind: Service\nmetadata:\n  name: cart\nspec:\n  ports:\n    - port: 80\n",
+		"infra/routes.yaml": [
+			"apiVersion: networking.k8s.io/v1",
+			"kind: Ingress",
+			"metadata:",
+			"  name: shop",
+			"spec:",
+			"  defaultBackend:",
+			"    service:",
+			"      name: cart",
+			"      port:",
+			"        number: 80",
+			"",
+		].join("\n"),
+		"infra/compose/compose.yaml": "services:\n  cart:\n    image: cart\n",
+		"infra/plain/config.yaml":
+			"apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: settings\ndata:\n  MODE: demo\n",
 	});
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
@@ -170,6 +191,58 @@ beforeAll(async () => {
 			},
 		},
 	]);
+	board(vault, "Flake", [
+		{
+			id: "v1",
+			name: "Built",
+			lifecycle: "current",
+			content: {
+				nodes: [
+					part("pFlake", "infra/flake/flake.nix"),
+					{
+						...part("Version", "infra/flake/flake.nix", "pFlake"),
+						binding: { repo: SHOP, path: "infra/flake/flake.nix", symbol: "lib.version" },
+					},
+				],
+				edges: [],
+				flows: [],
+			},
+		},
+	]);
+	board(vault, "Chart", [
+		{
+			id: "v1",
+			name: "Built",
+			lifecycle: "current",
+			content: {
+				nodes: [
+					part("Routes", "infra/routes.yaml"),
+					part("pChart", "infra/chart/Chart.yaml"),
+					part("Values", "infra/chart/values.yaml", "pChart"),
+					part("Service", "infra/chart/templates/service.yaml", "pChart"),
+				],
+				edges: [call("e1", "Routes", "Service"), call("e2", "Routes", "Values")],
+				flows: [],
+			},
+		},
+	]);
+	for (const [name, file] of [
+		["Compose", "infra/compose/compose.yaml"],
+		["Manifest", "infra/plain/config.yaml"],
+	] as const) {
+		board(vault, name, [
+			{
+				id: "v1",
+				name: "Built",
+				lifecycle: "current",
+				content: {
+					nodes: [part("Module", file), part("Content", file, "Module")],
+					edges: [],
+					flows: [],
+				},
+			},
+		]);
+	}
 	const check: typeof CheckModule = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
@@ -294,5 +367,47 @@ test("external tests use public entry files, while tests inside the module can e
 				},
 			],
 		]);
+	}
+});
+
+test("flake outputs and chart values receive interface findings, and chart templates remain private", () => {
+	for (const [boardName, id] of [
+		["Flake", "pFlake"],
+		["Chart", "pChart"],
+	] as const) {
+		expect(
+			findings("EXPOSED_UNUSED", boardName).map((each) => [each.subject?.id, each.severity]),
+		).toEqual([[id, "information"]]);
+		expect(
+			outcome.skipped.some(
+				(each) => each.board === boardName && each.reason === "exposure-unknown",
+			),
+		).toBe(false);
+	}
+	expect(
+		findings("ENTRY_POINT_UNEXPOSED", "Chart").map((each) => [each.subject?.id, each.severity]),
+	).toEqual([["Service", "warning"]]);
+	expect(findings("ENTRY_POINT_UNEXPOSED", "Chart")[0]?.evidence).toEqual([
+		{
+			kind: "call",
+			resolution: "resolved",
+			from: "Routes",
+			to: "Service",
+			repo: SHOP,
+			path: "infra/routes.yaml",
+			line: 6,
+			symbol: "Service/cart",
+		},
+	]);
+});
+
+test("containers bound to compose files and plain manifests still have unknown exposure", () => {
+	for (const boardName of ["Compose", "Manifest"]) {
+		expect(
+			outcome.skipped
+				.filter((each) => each.board === boardName && each.reason === "exposure-unknown")
+				.map((each) => each.subject?.id),
+		).toEqual(["Module"]);
+		expect(findings("EXPOSED_UNUSED", boardName)).toEqual([]);
 	}
 });

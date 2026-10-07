@@ -474,3 +474,21 @@ never makes an exposed name used, and a name only tests use still gets
 `EXPOSED_UNUSED`. A public entry file can re-export a definition from a
 private file. That exposes the name through the entry file and leaves the
 private file private.
+
+## Amendment of 2026-10-07: flake outputs and chart values are exposed names
+
+TASK-436.08 adds two rules to the code's side of the interface check. A Nix
+flake exposes the output attribute paths that `flake.nix` defines. A Helm
+chart exposes the key paths that `values.yaml` defines, with dots between
+nested keys. The chart's `Chart.yaml` identifies it. A directory, `flake.nix`,
+`Chart.yaml` or `values.yaml` can bind a container to these modules.
+
+The existing interface findings apply to these names and the parts that
+own their definitions. A chart's templates and the manifests they define
+remain private; they are not its values. An expression the facts reader
+cannot follow stays skipped, as ADR 0046 requires. Neither reading stores
+a default value in a fact or quotes one in a finding.
+
+A compose file and a plain Kubernetes manifest declare no interface that
+this rule can read. A container bound to one, or to its directory, still
+gets `exposure-unknown`. This is a skip, not a claim that it exposes no names.

@@ -188,6 +188,7 @@ interface Target {
 
 /** The adapters that read files, one for each entry of the table in adapters.ts. */
 type AdapterName =
+	| "helm"
 	| "typescript"
 	| "python"
 	| "compose"

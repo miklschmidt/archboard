@@ -12,7 +12,9 @@
 // is a source file that pairs with its header, and a class extension in it
 // exposes nothing. A Terraform or OpenTofu module is
 // the configuration files directly in its directory, and exposes its
-// variables and outputs (TASK-368.11). A language with no rule here
+// variables and outputs (TASK-368.11). A Nix flake exposes its output
+// attribute paths. A Helm chart exposes its values.yaml key paths
+// (TASK-436.08). A language with no rule here
 // exposes nothing the check can read, and the check says so.
 //
 // What a root file exposes reads the same in every language, from its code
@@ -31,6 +33,7 @@ import { projectFilesIn } from "@/runtime/code-facts/lib/csharp-resolution";
 import { codeSiteOf } from "@/runtime/code-facts/lib/definition-site";
 import type { Definition, ImportedName, SyntaxFacts } from "@/runtime/code-facts/lib/facts";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
+import { isHelmValues } from "@/runtime/code-facts/lib/helm-values";
 import type { FactsPass } from "@/runtime/code-facts/lib/reader";
 import { SWIFT_FILE, swiftRootFiles } from "@/runtime/code-facts/lib/swift-exposure";
 import { isTerraformFile } from "@/runtime/code-facts/lib/terraform-address";
@@ -256,8 +259,74 @@ const TERRAFORM: ExposureRule = {
 	member: () => false,
 };
 
-/** The rule of each adapter that reads a language. */
-const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON, SWIFT, C, CSHARP, TERRAFORM];
+/** A Nix flake exposes its output attribute paths. */
+const NIX: ExposureRule = {
+	/**
+	 * Whether a file declares a flake or its inputs.
+	 * @param file The file.
+	 * @returns True for a flake file.
+	 */
+	writes: (file) => /(?:^|\/)flake\.(?:nix|lock)$/u.test(file),
+	/**
+	 * Whether a file stands for a flake.
+	 * @param name Its basename.
+	 * @returns True for flake.nix.
+	 */
+	entry: (name) => name === "flake.nix",
+	/**
+	 * The file that declares the flake's outputs.
+	 * @param _pass The pass.
+	 * @param checkout The checkout's files.
+	 * @param directory The flake's directory.
+	 * @returns The entry file, if present.
+	 */
+	rootFiles: (_pass, checkout, directory) => {
+		const flake = directory === "" ? "flake.nix" : `${directory}/flake.nix`;
+		return Promise.resolve(checkout.files.has(flake) ? [flake] : []);
+	},
+	/**
+	 * Each output attribute path is an exposed name in its own right.
+	 * @returns False.
+	 */
+	member: () => false,
+};
+
+/** A chart exposes its values, while its templates remain implementation. */
+const HELM: ExposureRule = {
+	/**
+	 * Whether a file can hold chart values or a manifest.
+	 * @param file The file.
+	 * @returns True for YAML.
+	 */
+	writes: (file) => /\.ya?ml$/u.test(file),
+	/**
+	 * Whether a file identifies a chart or declares its values.
+	 * @param name Its basename.
+	 * @returns True for either entry file.
+	 */
+	entry: (name) => name === "Chart.yaml" || name === "values.yaml",
+	/**
+	 * The values file of a directory identified as a chart.
+	 * @param _pass The pass.
+	 * @param checkout The checkout's files.
+	 * @param directory The chart's directory.
+	 * @returns Its values file, if present.
+	 */
+	rootFiles: (_pass, checkout, directory) => {
+		const values = directory === "" ? "values.yaml" : `${directory}/values.yaml`;
+		return Promise.resolve(
+			checkout.files.has(values) && isHelmValues(checkout, values) ? [values] : [],
+		);
+	},
+	/**
+	 * Each value path can be supplied independently.
+	 * @returns False.
+	 */
+	member: () => false,
+};
+
+/** The rule of each adapter that reads a language or an infrastructure interface. */
+const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON, SWIFT, C, CSHARP, TERRAFORM, NIX, HELM];
 
 /** One name a module exposes, and the definition it reaches. */
 interface ExposedName {
@@ -425,7 +494,8 @@ function moduleOf(bound: string, kind: "file" | "directory"): string | undefined
 	if (kind === "directory") return bound;
 	const slash = bound.lastIndexOf("/");
 	const name = bound.slice(slash + 1);
-	return RULES.some((rule) => rule.entry(name)) ? bound.slice(0, Math.max(slash, 0)) : undefined;
+	const entry = RULES.some((rule) => rule.entry(name)) || /\.ya?ml$/u.test(name);
+	return entry ? bound.slice(0, Math.max(slash, 0)) : undefined;
 }
 
 /**
