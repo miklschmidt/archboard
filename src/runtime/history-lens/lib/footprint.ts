@@ -4,7 +4,7 @@
 // merge base of the named ref and HEAD up to HEAD, never fetching: a ref
 // resolves only from what the checkout already has, and a checkout where it
 // does not resolve is not read, and says so. The commits map onto the parts
-// whose bound files they changed, the way behind maps them. Large commits are
+// whose bound declarations or paths they changed. Large commits are
 // kept and marked. With a proposal, the footprint sets the changed parts
 // against the parts the proposal names, in three lists, and a part the lens
 // skipped is in none of them.

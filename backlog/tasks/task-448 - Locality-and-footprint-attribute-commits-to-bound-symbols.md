@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 20:16'
-updated_date: '2026-10-07 20:31'
+updated_date: '2026-10-07 20:35'
 labels: []
 dependencies: []
 type: enhancement
@@ -39,4 +39,6 @@ Platform Test Cluster version 20 binds six Terraform resources under infra/iac/a
 
 <!-- SECTION:NOTES:BEGIN -->
 The supplied Platform checkout resolves all six Terraform bindings precisely. Locality counts: Application Gateway 3, Platform DNS 2, MSP DNS 1, Portalv2 DNS 1, and both load-balancer rules 0. The shared code-facts source reader also passes declaration-isolation tests for TypeScript, Python, C#, C, and Swift. Git source comparisons preserve deletions, file renames, shared nested modules, and large-commit policies.
+
+Closing evidence: Archboard server@TASK-448 introduces no code-check findings relative to current. Footprint against 2578bbf49 lists History lens and Code facts as namedAndChanged, with no changedNotNamed or namedNotChanged parts. Declaration identity follows Git file renames, not inferred symbol renames. README source checks report existing stale assets; the affected git-history clip is queued for refresh.
 <!-- SECTION:NOTES:END -->

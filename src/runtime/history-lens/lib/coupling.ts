@@ -8,8 +8,8 @@
 // compare and the design note's measurement reproduces.
 //
 // Only two parts bound into one repository can share a commit. A pair whose
-// bound paths overlap (one path, or one below the other) is left out: each of
-// its shared commits is one change counted twice.
+// declarations overlap is left out: each shared commit is one change counted
+// twice. Path-wide readings keep the path overlap exclusion.
 //
 // A pair is unjoined when nothing the variant draws joins it. A relationship
 // or a flow step joins the parts at its two ends, in either direction. A part
