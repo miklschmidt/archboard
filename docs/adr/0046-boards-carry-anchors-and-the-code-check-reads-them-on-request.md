@@ -223,8 +223,8 @@ The decision has these parts:
 - This replaces the rule that no TypeScript of the checkout runs. The program is
   code of the checkout. The owner decided that it runs without configuration,
   because the checkout installed it for its own editor (TASK-433 #8).
-- The cost sentence of TASK-367.15 no longer holds. On Redis (303 commands,
-  clangd 21.1.8, 24 cores), a cold pass took 4.6 to 4.8 s and each warm pass
+- The cost sentence of TASK-367.15 no longer holds. On Redis (303 files in
+  `compile_commands.json`, clangd 21.1.8, 24 cores), a cold pass took 4.6 to 4.8 s and each warm pass
   took 1.9 to 2.0 s, against 3.1 s before. A pass without clangd took 0.15 s. If
   the first index of a checkout takes longer than the 30 s bound, the pass still
   says `language-server-failed` once. Nobody measured whether the index shards
