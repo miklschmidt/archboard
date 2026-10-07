@@ -60,7 +60,7 @@ of your shell.
    - C, C++ and Objective-C: `clangd` (`apt install clangd`, `brew install llvm`
      or `nix profile install nixpkgs#clang-tools`).
    - C#: `csharp-ls` (`dotnet tool install --global csharp-ls`). It needs the
-     .NET SDK on the `PATH`.
+     .NET SDK on the `PATH` of the Archboard server.
    - Swift: `sourcekit-lsp`. It ships with the Swift toolchain.
 2. For C, C++ and Objective-C, generate `compile_commands.json`. For CMake, run
    `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`. This builds nothing. For
