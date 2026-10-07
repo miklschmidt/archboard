@@ -200,6 +200,40 @@ interface CodeFacts {
 	pass(signal: AbortSignal, plans?: readonly TerraformPlan[]): FactsPass;
 }
 
+/** Facts read from immutable source texts, with a parser cache shared across passes. */
+interface SourceFacts {
+	/**
+	 * Read a revision's sources without consulting checkout files on disk.
+	 * @param checkout The revision's complete file list and checkout identity.
+	 * @param sources The available file texts, keyed by their checkout-relative paths.
+	 * @param signal Cancels the pass between files.
+	 * @returns A pass that resolves names using only the supplied sources.
+	 */
+	pass(
+		checkout: CheckoutFiles,
+		sources: ReadonlyMap<string, string>,
+		signal?: AbortSignal,
+	): FactsPass;
+}
+
+/** The source boundary shared by disk and historical-text passes. */
+interface FileSource {
+	readonly target: typeof listedTarget;
+	readonly text: typeof readListed;
+	readonly bytes: (target: NonNullable<ReturnType<typeof listedTarget>>) => Promise<Uint8Array>;
+}
+
+const DISK: FileSource = {
+	target: listedTarget,
+	text: readListed,
+	/**
+	 * Read a permitted disk file's bytes.
+	 * @param target The resolved file.
+	 * @returns Its bytes.
+	 */
+	bytes: (target) => Bun.file(target.absolute).bytes(),
+};
+
 /** Runs parses one at a time, each followed by a turn of the event loop. */
 type Serial = <T>(work: () => Promise<T>) => Promise<T>;
 
@@ -242,7 +276,60 @@ function createCodeFacts(): CodeFacts {
 		 */
 		pass(signal, plans = []) {
 			dropGone(cache);
-			return createPass({ cache, serial, signal, plans });
+			return createPass({ cache, serial, signal, plans, source: DISK });
+		},
+	};
+}
+
+/**
+ * Read historical source texts through the same adapters and resolvers as a checkout.
+ * Missing texts stay unread; a listed file never falls back to the filesystem.
+ * @returns A source reader whose cache keeps the latest parsed bytes of each file.
+ */
+function createSourceFacts(): SourceFacts {
+	const cache = new Map<string, Entry>();
+	const serial = serialQueue();
+	return {
+		/**
+		 * Start a pass over the supplied revision.
+		 * @param checkout The revision's files.
+		 * @param sources The texts available to this pass.
+		 * @param signal Cancels the pass.
+		 * @returns The pass.
+		 */
+		pass(checkout, sources, signal = new AbortController().signal) {
+			/**
+			 * Locate a listed file whose text this revision supplies.
+			 * @param asked The requested checkout.
+			 * @param relative Its file.
+			 * @returns The source's location, without consulting the filesystem.
+			 */
+			const target: FileSource["target"] = (asked, relative) =>
+				asked.root === checkout.root &&
+				checkout.files.has(relative) &&
+				sources.has(relative) &&
+				!neverRead(relative)
+					? { relative, absolute: path.join(checkout.root, relative) }
+					: undefined;
+			const source: FileSource = {
+				target,
+				/**
+				 * Read a permitted source text.
+				 * @param asked The requested checkout.
+				 * @param relative Its file.
+				 * @returns The supplied text, or undefined.
+				 */
+				text: (asked, relative) =>
+					target(asked, relative) === undefined ? undefined : sources.get(relative),
+				/**
+				 * Encode a permitted source for the parser cache.
+				 * @param location The source's location.
+				 * @returns Its UTF-8 bytes.
+				 */
+				bytes: (location) =>
+					Promise.resolve(new TextEncoder().encode(sources.get(location.relative))),
+			};
+			return createPass({ cache, serial, signal, plans: [], source });
 		},
 	};
 }
@@ -253,6 +340,7 @@ interface PassContext {
 	readonly serial: Serial;
 	readonly signal: AbortSignal;
 	readonly plans: readonly TerraformPlan[];
+	readonly source: FileSource;
 }
 
 /**
@@ -303,7 +391,7 @@ async function parsedFacts(
  * @returns The pass.
  */
 function createPass(context: PassContext): FactsPass {
-	const { signal } = context;
+	const { signal, source } = context;
 	const stats: PassStats = { read: 0, parsed: 0, cached: 0 };
 	const reads = new Map<string, Promise<FileFacts | undefined>>();
 	const resolvers = new Map<string, ImportResolver>();
@@ -318,7 +406,7 @@ function createPass(context: PassContext): FactsPass {
 	const readingOf = (checkout: CheckoutFiles, relative: string): AdapterReading | undefined => {
 		let of = readings.get(checkout.root);
 		if (of === undefined) {
-			of = readingsIn(checkout, (file) => readListed(checkout, file));
+			of = readingsIn(checkout, (file) => source.text(checkout, file));
 			readings.set(checkout.root, of);
 		}
 		return of(relative);
@@ -328,17 +416,18 @@ function createPass(context: PassContext): FactsPass {
 	 * pass, whether the pass reads the file or a resolver reads it first.
 	 * @param target The real file.
 	 * @param target.absolute Its absolute path.
+	 * @param target.relative Its checkout-relative path.
 	 * @param reading The adapter and how it reads the file.
 	 * @returns The facts, or undefined for a file of a format the adapter does not read.
 	 */
 	const parsedOnce = (
-		target: { readonly absolute: string },
+		target: NonNullable<ReturnType<typeof listedTarget>>,
 		reading: AdapterReading,
 	): Promise<ParsedFacts | undefined> => {
 		let parsing = parses.get(target.absolute);
 		if (parsing === undefined) {
-			parsing = Bun.file(target.absolute)
-				.bytes()
+			parsing = source
+				.bytes(target)
 				.then((bytes) => parsedFacts(context, target.absolute, bytes, reading, stats));
 			parses.set(target.absolute, parsing);
 		}
@@ -356,7 +445,7 @@ function createPass(context: PassContext): FactsPass {
 		relative: string,
 	): Promise<ParsedFacts | undefined> => {
 		signal.throwIfAborted();
-		const target = listedTarget(checkout, relative);
+		const target = source.target(checkout, relative);
 		const reading = target === undefined ? undefined : readingOf(checkout, target.relative);
 		return target === undefined || reading === undefined ? undefined : parsedOnce(target, reading);
 	};
@@ -372,7 +461,7 @@ function createPass(context: PassContext): FactsPass {
 		if (resolver === undefined) {
 			resolver = reading.adapter.resolver(
 				checkout,
-				(relative) => readListed(checkout, relative),
+				(relative) => source.text(checkout, relative),
 				(relative) => parsedOf(checkout, relative),
 			);
 			resolvers.set(key, resolver);
@@ -390,13 +479,13 @@ function createPass(context: PassContext): FactsPass {
 		relative: string,
 	): Promise<FileFacts | undefined> => {
 		signal.throwIfAborted();
-		const target = listedTarget(checkout, relative);
+		const target = source.target(checkout, relative);
 		if (target === undefined) return undefined;
 		stats.read += 1;
 		const reading = readingOf(checkout, target.relative);
 		const parsed = reading === undefined ? undefined : await parsedOnce(target, reading);
 		if (reading === undefined || parsed === undefined) {
-			const bytes = await Bun.file(target.absolute).bytes();
+			const bytes = await source.bytes(target);
 			return { adapter: "text", path: target.relative, text: new TextDecoder().decode(bytes) };
 		}
 		const resolver = resolverOf(checkout, reading);
@@ -423,4 +512,12 @@ function createPass(context: PassContext): FactsPass {
 	};
 }
 
-export { type CodeFacts, type FactsPass, type PassStats, createCodeFacts, readListed };
+export {
+	type CodeFacts,
+	type FactsPass,
+	type PassStats,
+	type SourceFacts,
+	createCodeFacts,
+	createSourceFacts,
+	readListed,
+};

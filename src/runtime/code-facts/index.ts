@@ -52,7 +52,9 @@ export {
 	type CodeFacts,
 	type FactsPass,
 	type PassStats,
+	type SourceFacts,
 	createCodeFacts,
+	createSourceFacts,
 } from "@/runtime/code-facts/lib/reader";
 export { declarationAddress, isTerraformFile } from "@/runtime/code-facts/lib/terraform-address";
 export {
