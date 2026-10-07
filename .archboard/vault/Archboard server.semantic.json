@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 220,
+	"version": 221,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-07T20:35:10.855Z",
+	"updatedAt": "2026-10-07T20:40:58.636Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -91588,7 +91588,7 @@
 		{
 			"id": "Hi4MsVKK",
 			"name": "TASK-436.03 after TASK-436.14",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "hQa0Uv41",
 			"summary": "The server application, request and write boundaries, and live pane subsystem",
 			"content": {
@@ -93831,7 +93831,7 @@
 		{
 			"id": "4ulnFRtb",
 			"name": "TASK-448",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Hi4MsVKK",
 			"summary": "The server reads and writes semantic boards, serves the viewer, checks code evidence, and attributes history through bound declarations or paths.",
 			"content": {
@@ -96087,7 +96087,7 @@
 			}
 		}
 	],
-	"current": "Hi4MsVKK",
+	"current": "4ulnFRtb",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -96328,6 +96328,12 @@
 			"from": "hQa0Uv41",
 			"at": "2026-10-07T01:12:39.628Z",
 			"reason": "Live-pane implementation detail moves to the dedicated board, while explicit anchored subsystem dependencies remain on the server board"
+		},
+		{
+			"variant": "4ulnFRtb",
+			"from": "Hi4MsVKK",
+			"at": "2026-10-07T20:40:58.636Z",
+			"reason": "Locality and footprint use language adapters to attribute commits to bound declarations and label path-wide fallback"
 		}
 	],
 	"shelvings": [
