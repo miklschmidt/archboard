@@ -46,6 +46,7 @@ function keysOf(
 				: [
 						{
 							symbol: key.join("."),
+							kind: "value",
 							start: span.start,
 							end: span.end,
 							visibility: "value",

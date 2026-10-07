@@ -22,6 +22,7 @@ import {
 	definitionSite,
 	isTerraformFile,
 	moduleExposure,
+	runsDefinition,
 	within,
 	type DefinitionSite,
 	type ExposedName,
@@ -41,7 +42,8 @@ interface OutsideUse {
 	readonly symbol: string;
 	/**
 	 * Whether the use runs the code it reaches: a use only as a type does not,
-	 * and nor does a use as a value (ADR 0046, amended by TASK-367.28).
+	 * nor does a use as a value, except a known function passed as an argument
+	 * (ADR 0046, amended by TASK-367.28 and TASK-436.15).
 	 */
 	readonly runs: boolean;
 	readonly site: DefinitionSite;
@@ -65,15 +67,6 @@ interface TestImport {
 
 /** The modules one pass has read, by repository and directory, so two boards share one reading. */
 type ModuleReadings = Map<string, Promise<ModuleReading | undefined>>;
-
-/**
- * Whether a use runs the code it reaches: a call that is no use as a value.
- * @param reference The use.
- * @returns True when it does.
- */
-function runsCode(reference: Reference): boolean {
-	return reference.kind === "call" && reference.asValue !== true;
-}
 
 /**
  * The uses of a module's code in one file outside it.
@@ -103,7 +96,8 @@ async function usesIn(
 		// oxlint-disable-next-line no-await-in-loop -- one site at a time; each search reads files the cache holds
 		const site = await definitionSite(facts, checkout, file, symbol);
 		if (site !== undefined && within(directory, site.path)) {
-			uses.push({ file, line, symbol, runs: runsCode(reference), site });
+			const runs = reference.kind === "call" && runsDefinition(reference, site.definition);
+			uses.push({ file, line, symbol, runs, site });
 		}
 	}
 	return uses;
