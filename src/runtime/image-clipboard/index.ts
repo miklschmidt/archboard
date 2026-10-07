@@ -16,7 +16,7 @@ class ImageClipboardError extends Error {
 	 * @param message The actionable diagnostic.
 	 */
 	constructor(
-		readonly code: "CLIPBOARD_UNAVAILABLE" | "CLIPBOARD_FAILED",
+		readonly code: Extract<z.infer<typeof ImageClipboardReplySchema>, { status: "failed" }>["code"],
 		message: string,
 	) {
 		super(message);

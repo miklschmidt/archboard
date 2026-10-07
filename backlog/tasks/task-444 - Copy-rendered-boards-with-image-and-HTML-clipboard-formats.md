@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 18:22'
-updated_date: '2026-10-07 19:19'
+updated_date: '2026-10-07 20:49'
 labels: []
 dependencies: []
 references:
@@ -57,6 +57,8 @@ After adoption, the vault check passes with no diagnostics. The code check keeps
 The user identified the old wl-copy example in semantic render help as misleading. Both render and rasterize help now show the native rasterize --clipboard command as the clipboard example. Raw pipe behavior remains available and documented for explicit single-format workflows.
 
 Final gate: bun run check passed all normal lanes. The final help-only correction then passed the CLI artifact and introspection owners (6 tests, 53 assertions). Architecture proposals are adopted and claims released. Regenerated and visually inspected the README architecture diagram in light and dark themes; updated its alt text. Other README assets were already stale at e9a766843 and their pictured behavior did not change. Consumer skill source and generated installation guidance are current; existing installed copies in other repositories refresh on their next install-skill run.
+
+Pre-push clipboard runtime review: derive ImageClipboardError refusal codes from the IPC reply schema instead of maintaining a second union. Installed @teddyzhu/clipboard 0.0.10 declarations and its tagged Rust source confirm that setContents publishes the PNG and HTML in one native operation. Scoped type-aware lint and formatting pass. A disposable process-boundary fault probe blocked the helper inside synchronous setContents, cancelled the caller after helper startup, and proved rejection preserved the caller reason and the helper was killed and reaped in 34 ms. No architectural board changes are required: the error representation and owner lifecycle remain the same.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
