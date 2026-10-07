@@ -3,7 +3,7 @@
 //
 // A footprint reads the commits from the merge base of a named ref and HEAD up
 // to HEAD, in each checkout, and says which parts of a board's current variant
-// those commits changed through their bound files. With a proposal it sets
+// those commits changed through their bound declarations or paths. With a proposal it sets
 // that against the parts the proposal names, in three lists: named and
 // changed, changed but not named, and named but not changed. A part the lens
 // skipped is in none of the three lists, and it is listed with the reason, so

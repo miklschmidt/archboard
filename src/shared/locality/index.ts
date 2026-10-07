@@ -2,9 +2,9 @@
 // `GET /api/semantic-boards/locality` (ADR 0045).
 //
 // Locality is where change concentrates in a board's code. The answer reads
-// one variant of one board over a period, through the files its parts bind.
+// one variant of one board over a period, through its parts' bindings.
 // `hotspots` ranks every part the lens read by the commits of the period that
-// changed its bound files. `coupling` lists the pairs of those parts that
+// changed its bound declarations or paths. `coupling` lists the pairs of those parts that
 // change together, and marks the pairs that nothing on the board joins. Both
 // read the same walk, the same `commits` and the same `leftOut`.
 //

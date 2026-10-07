@@ -70,13 +70,14 @@ through the CLI, report it in the board's own terms, and change nothing.
    it draws as central), or which parts change together, run
    `archboard semantic locality <board> [--variant <name>] [--since <date>]`.
    It reads Git through each part's `binding`. A symbol narrows attribution
-   to its declaration through the available language adapter. `attribution`
-   reports `symbol`, `path`, or `mixed`, with fallback reasons and commit ids.
+   to its declaration through the available language adapter. `attribution.mode`
+   reports `symbol`, `path`, or `mixed`. `attribution.fallback` lists reasons
+   and commit ids when precise attribution is unavailable.
    Report path-wide fallback when precise attribution is unavailable.
    `hotspots` ranks every part it read by the number of commits that changed
-   those files, most commits first. Each part lists its commits, newest
-   first, and `commits` holds their subjects and times. It reads the
-   current variant, or the draft that `--variant` names. The period is the
+   its bound declaration or path, most commits first. Each part lists its
+   commits, newest first, and `commits` holds their subjects and times. It reads
+   the current variant, or the draft that `--variant` names. The period is the
    year before the commit time of each checkout's HEAD, so one HEAD gives one
    answer. `--since` names another start, and `periods` says what was read.
    Report it with these cautions:
