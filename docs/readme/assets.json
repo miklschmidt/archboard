@@ -300,6 +300,93 @@
 				"scripts/readme-assets/svg.ts"
 			],
 			"hash": "13ea816343ea6e3d03ca1b5ef2301249b58efe078d03faef5565bf37f3c5e704"
+		},
+		{
+			"name": "code-evidence",
+			"kind": "clip",
+			"codex": false,
+			"command": "bun run readme:assets code-evidence",
+			"files": ["docs/readme/idx-code-evidence.webp"],
+			"sources": [
+				"examples/web-shop",
+				"frontend",
+				"src/ui",
+				"src/cli",
+				"src/server",
+				"src/runtime/code-check",
+				"src/runtime/code-facts",
+				"src/runtime/history-lens",
+				"src/runtime/semantic-renderer",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"scripts/readme-assets/evidence-fixture.ts",
+				"scripts/readme-assets/evidence.ts",
+				"scripts/readme-assets/stage/terminal.html",
+				"scripts/readme-assets/film.ts",
+				"scripts/readme-assets/browser.ts",
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/tools.ts"
+			],
+			"hash": "e48e1fce146e851dfd1007358fddc0137467c8716558e50fd343b3aa910c026e"
+		},
+		{
+			"name": "module-interfaces",
+			"kind": "clip",
+			"codex": false,
+			"command": "bun run readme:assets module-interfaces",
+			"files": ["docs/readme/idx-module-interfaces.webp"],
+			"sources": [
+				"examples/web-shop",
+				"frontend",
+				"src/ui",
+				"src/cli",
+				"src/server",
+				"src/runtime/code-check",
+				"src/runtime/code-facts",
+				"src/runtime/history-lens",
+				"src/runtime/semantic-renderer",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"scripts/readme-assets/evidence-fixture.ts",
+				"scripts/readme-assets/evidence.ts",
+				"scripts/readme-assets/stage/terminal.html",
+				"scripts/readme-assets/film.ts",
+				"scripts/readme-assets/browser.ts",
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/tools.ts"
+			],
+			"hash": "e48e1fce146e851dfd1007358fddc0137467c8716558e50fd343b3aa910c026e"
+		},
+		{
+			"name": "git-history",
+			"kind": "clip",
+			"codex": false,
+			"command": "bun run readme:assets git-history",
+			"files": ["docs/readme/idx-git-history.webp"],
+			"sources": [
+				"examples/web-shop",
+				"frontend",
+				"src/ui",
+				"src/cli",
+				"src/server",
+				"src/runtime/code-check",
+				"src/runtime/code-facts",
+				"src/runtime/history-lens",
+				"src/runtime/semantic-renderer",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"scripts/readme-assets/evidence-fixture.ts",
+				"scripts/readme-assets/evidence.ts",
+				"scripts/readme-assets/stage/terminal.html",
+				"scripts/readme-assets/film.ts",
+				"scripts/readme-assets/browser.ts",
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/tools.ts"
+			],
+			"hash": "e48e1fce146e851dfd1007358fddc0137467c8716558e50fd343b3aa910c026e"
 		}
 	]
 }
