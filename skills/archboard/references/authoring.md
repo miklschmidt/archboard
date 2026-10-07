@@ -510,23 +510,22 @@ server then names the code that the call reaches.
 
 If a checkout has no configured server for a language, the answer says
 `language-server-missing` once for the checkout and the language, and the
-candidates stay. A server that did not answer is `language-server-failed`. A
-project that the server cannot answer about yet is `language-server-unready`
-once, and the candidates stay. These are the cases:
+candidates stay. A server that did not start, did not answer or stopped is
+`language-server-failed`. A project that the server cannot answer about yet is
+`language-server-unready` once, and the candidates stay. These are the cases:
 
-- A Swift package with no index. The check never builds. Do not build to clear
-  it, unless the user asks.
+- A Swift package with no index. The check never builds.
 - A C# checkout with no `.sln`, `.slnx` or `.csproj` file.
-- A C, C++ or Objective-C file with no `compile_commands.json`.
+- A C, C++ or Objective-C file with no `compile_commands.json`. The check never
+  generates it.
 
 With a server, clangd names the definition of a function that a header only
 declares. Redis declares such a function in `server.h` and defines it in
 `evict.c`.
 
-TypeScript needs no setup. To configure a server for another language, read
-[setup](setup.md). Read it when the check says `language-server-missing` for a
-repository that you work in. A configured server runs the code of that
-repository.
+TypeScript needs no setup. If the check says `language-server-missing` for a
+repository that you work in, read [setup](setup.md). It says what to install and
+run. A configured server runs the code of that repository.
 
 A relationship across a network hop shows no evidence in code alone. An
 example is an `http` call to another service. So `check --code` joins two
