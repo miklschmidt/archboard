@@ -41,8 +41,47 @@ let secondTS = "";
 let notes = "";
 let introduced = "";
 let mixedEdit = "";
+let extensionRename = "";
+let renamedEdit = "";
+let firstAdapters = "";
+let secondAdapters = "";
 const together: string[] = [];
 const definitions: string[] = [];
+
+const adapters = [
+	{
+		id: "py",
+		path: "src/shared.py",
+		first: "first",
+		second: "second",
+		source: (first: number, second: number) =>
+			`def first():\n    return ${first}\n\ndef second():\n    return ${second}\n`,
+	},
+	{
+		id: "cs",
+		path: "src/Shared.cs",
+		first: "Ledger.First",
+		second: "Ledger.Second",
+		source: (first: number, second: number) =>
+			`public class Ledger {\n  public int First() { return ${first}; }\n  public int Second() { return ${second}; }\n}\n`,
+	},
+	{
+		id: "c",
+		path: "src/shared.c",
+		first: "first",
+		second: "second",
+		source: (first: number, second: number) =>
+			`int first(void) { return ${first}; }\nint second(void) { return ${second}; }\n`,
+	},
+	{
+		id: "sw",
+		path: "src/Shared.swift",
+		first: "first",
+		second: "second",
+		source: (first: number, second: number) =>
+			`public func first() -> Int { return ${first} }\npublic func second() -> Int { return ${second} }\n`,
+	},
+];
 
 const bindings = [
 	["first", "infra", "aws_s3_bucket.first"],
@@ -56,6 +95,14 @@ const bindings = [
 	["tsFirst", "src/shared.ts", "first"],
 	["tsSecond", "src/shared.ts", "second"],
 	["mixed", "mixed/main.tf", "aws_s3_bucket.later"],
+	["ext", "src/renamed.ts", "first"],
+	...adapters.flatMap(
+		(adapter) =>
+			[
+				[`${adapter.id}First`, adapter.path, adapter.first],
+				[`${adapter.id}Second`, adapter.path, adapter.second],
+			] as const,
+	),
 ] as const;
 
 const board = SemanticBoardSchema.parse({
@@ -160,6 +207,11 @@ beforeAll(async () => {
 	);
 	write("notes.txt", "first\n");
 	write("mixed/main.tf", 'output "unrelated" {\n  value = 0\n}\n');
+	write(
+		"src/renamed.txt",
+		"export function first() { return 0; }\nexport function second() { return 0; }\n",
+	);
+	for (const adapter of adapters) write(adapter.path, adapter.source(0, 0));
 	base = commit("create declarations");
 	write("infra/main.tf", resources(1, 0));
 	firstOnly = commit("change first resource");
@@ -209,6 +261,22 @@ beforeAll(async () => {
 		'output "unrelated" {\n  value = 1\n}\nresource "aws_s3_bucket" "later" {\n  bucket = "later-1"\n}\n',
 	);
 	mixedEdit = commit("change the newly resolved declaration");
+	renameSync(join(root, "src/renamed.txt"), join(root, "src/renamed.ts"));
+	extensionRename = commit("give a previously unsupported file its language extension");
+	write(
+		"src/renamed.ts",
+		"export function first() { return 1; }\nexport function second() { return 0; }\n",
+	);
+	renamedEdit = commit("change a declaration after language recognition");
+	write(
+		"src/renamed.ts",
+		"export function first() { return 1; }\nexport function second() { return 2; }\n",
+	);
+	commit("change its neighbor after language recognition");
+	for (const adapter of adapters) write(adapter.path, adapter.source(1, 0));
+	firstAdapters = commit("change first declarations in general language adapters");
+	for (const adapter of adapters) write(adapter.path, adapter.source(1, 2));
+	secondAdapters = commit("change their unrelated neighboring declarations");
 	write("infra/resources.tf", resources(undefined, 7));
 	for (let at = 0; at < 31; at += 1) write(`bulk/${at}.txt`, "bulk\n");
 	large = commit("change second resource in a large commit");
@@ -322,18 +390,48 @@ test("TypeScript functions isolate edits within their shared file", () => {
 	histories("tsSecond", [secondTS]);
 });
 
-test("a reading labels mixed attribution when only earlier commits need path fallback", () => {
-	histories("mixed", [mixedEdit, introduced]);
-	expect(locality.hotspots.find((part) => part.subject.id === "mixed")).toMatchObject({
-		attribution: {
-			mode: "mixed",
+test("earlier absence of a later resolved declaration excludes unrelated history", () => {
+	expect(locality.hotspots.find((part) => part.subject.id === "mixed")?.commits).toEqual([
+		mixedEdit,
+		introduced,
+	]);
+	expect(footprint.find((part) => part.subject.id === "mixed")?.commits).toEqual([
+		mixedEdit,
+		introduced,
+	]);
+	for (const parts of [locality.hotspots, footprint]) {
+		expect(parts.find((part) => part.subject.id === "mixed")?.attribution).toEqual({
+			mode: "symbol",
 			symbol: "aws_s3_bucket.later",
-			fallback: [{ reason: "unresolved", commits: [base] }],
-		},
+		});
+	}
+});
+
+test("a recognized declaration keeps explicit mixed attribution for its unsupported former file", () => {
+	histories("ext", [renamedEdit, extensionRename]);
+	expect(locality.hotspots.find((part) => part.subject.id === "ext")?.attribution).toEqual({
+		mode: "mixed",
+		symbol: "first",
+		fallback: [{ reason: "unsupported", commits: [extensionRename, base] }],
 	});
-	expect(footprint.find((part) => part.subject.id === "mixed")).toMatchObject({
-		attribution: { mode: "symbol", symbol: "aws_s3_bucket.later" },
+	expect(footprint.find((part) => part.subject.id === "ext")?.attribution).toEqual({
+		mode: "mixed",
+		symbol: "first",
+		fallback: [{ reason: "unsupported", commits: [extensionRename] }],
 	});
+});
+
+test("Python, C#, C and Swift adapters isolate declarations from neighboring edits", () => {
+	for (const adapter of adapters) {
+		histories(`${adapter.id}First`, [firstAdapters]);
+		histories(`${adapter.id}Second`, [secondAdapters]);
+		for (const parts of [locality.hotspots, footprint]) {
+			expect(parts.find((part) => part.subject.id === `${adapter.id}First`)?.attribution).toEqual({
+				mode: "symbol",
+				symbol: adapter.first,
+			});
+		}
+	}
 });
 
 test("locality leaves large declaration changes out while footprint keeps and marks them", () => {
