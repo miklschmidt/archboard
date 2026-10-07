@@ -3,7 +3,7 @@
 // evidence; an anchor reached through a value is judged where the server names
 // its definition, unless that is a member of an interface, which no code runs;
 // and no server is left running when the pass returns. Where this platform has
-// no native tsc, the owner of the default command fails, and these skip.
+// no native tsc, these skip.
 //
 // The checkout `shop` holds an address helper whose two functions are bound
 // as two parts, a ledger, an order that calls the ledger through a parameter

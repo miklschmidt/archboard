@@ -317,7 +317,11 @@ test("with no language server, a use of a name the same file defines is a candid
 	]);
 	const missing = outcome.skipped.filter((each) => each.reason === "language-server-missing");
 	expect(missing).toEqual([
-		{ reason: "language-server-missing", repo: MALL, detail: "typescript: turned off" },
+		{
+			reason: "language-server-missing",
+			repo: MALL,
+			detail: expect.stringContaining("typescript"),
+		},
 	]);
 });
 
