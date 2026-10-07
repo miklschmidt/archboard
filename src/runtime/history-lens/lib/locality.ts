@@ -19,14 +19,10 @@
 // that work. Nothing is written anywhere.
 
 import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@/runtime/code-target/index";
+import { attributeCommits, type AttributedCommits } from "@/runtime/history-lens/lib/attribution";
 import { answerCommit, isoTime } from "@/runtime/history-lens/lib/answer-commit";
 import { createAnswerMemory } from "@/runtime/history-lens/lib/answer-memory";
-import {
-	commitsByBoundPath,
-	isLargeCommit,
-	walkCommits,
-	type WalkedCommit,
-} from "@/runtime/history-lens/lib/commits";
+import { isLargeCommit, walkCommits, type WalkedCommit } from "@/runtime/history-lens/lib/commits";
 import { couplePairs, type CountedPart } from "@/runtime/history-lens/lib/coupling";
 import { gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { partReading, type ReadPart } from "@/runtime/history-lens/lib/parts";
@@ -54,7 +50,7 @@ interface RepositoryToRead {
 interface WalkedPeriod {
 	readonly period: LocalityPeriod;
 	readonly commits: ReadonlyMap<string, WalkedCommit>;
-	readonly byPath: ReadonlyMap<string, readonly string[]>;
+	readonly byPart: ReadonlyMap<string, AttributedCommits>;
 }
 
 /**
@@ -119,10 +115,7 @@ async function walkPeriod(
 	return {
 		period: { repo, head, since: isoTime(sinceSeconds), until: isoTime(untilSeconds) },
 		commits: new Map(walked.map((commit) => [commit.commit, commit])),
-		byPath: commitsByBoundPath(
-			walked,
-			parts.map((part) => part.path),
-		),
+		byPart: await attributeCommits(root, head, walked, parts, options),
 	};
 }
 
@@ -143,7 +136,7 @@ interface PartCommits {
 function commitsOfPart(part: ReadPart, walk: WalkedPeriod): PartCommits {
 	const counted: WalkedCommit[] = [];
 	const large: string[] = [];
-	for (const id of walk.byPath.get(part.path) ?? []) {
+	for (const id of walk.byPart.get(part.node.id)?.commits ?? []) {
 		const commit = walk.commits.get(id);
 		if (commit === undefined) continue;
 		if (isLargeCommit(commit)) large.push(id);
@@ -176,12 +169,28 @@ function rank(split: readonly (CountedPart & PartCommits)[]): Ranking {
 	);
 	return {
 		hotspots: split
-			.map(({ part, counted }) => ({
+			.map(({ part, counted, attribution }) => ({
 				subject: { kind: "node" as const, id: part.node.id, name: part.node.name },
 				repo: part.repo,
 				path: part.node.binding?.path ?? part.path,
 				commits: counted.map((commit) => commit.commit),
 				count: counted.length,
+				attribution:
+					attribution === undefined
+						? undefined
+						: {
+								...attribution,
+								...(attribution.fallback === undefined
+									? {}
+									: {
+											fallback: attribution.fallback.map((fallback) => ({
+												...fallback,
+												commits: fallback.commits.filter((id) =>
+													counted.some((commit) => commit.commit === id),
+												),
+											})),
+										}),
+							},
 			}))
 			.toSorted((left, right) => right.count - left.count),
 		commits: [...commits.values()].toSorted((left, right) =>
@@ -221,7 +230,16 @@ async function readLocality(
 	);
 	const split = reading.read.flatMap((part) => {
 		const walk = walks.get(part.repo);
-		return walk === undefined ? [] : [{ part, ...commitsOfPart(part, walk) }];
+		return walk === undefined
+			? []
+			: [
+					{
+						part,
+						...commitsOfPart(part, walk),
+						attribution: walk.byPart.get(part.node.id)?.attribution ?? { mode: "path" as const },
+						sites: walk.byPart.get(part.node.id)?.sites ?? [],
+					},
+				];
 	});
 	const ranking = rank(split);
 	return {

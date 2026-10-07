@@ -7,6 +7,7 @@
 // changes no exit status. A part the lens skipped is in none of the lists and
 // is listed with the reason, so it never reads as a part nothing changed.
 
+import { historyAttributionLabel } from "@/shared/history-attribution/index";
 import { z } from "zod";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
@@ -77,7 +78,7 @@ function partLine(part: FootprintPart): string {
 			: `${reason.status} ${reason.by === "step" ? "step" : "relationship"} ${reason.from.name} -> ${reason.to.name}`,
 	);
 	return (
-		`  ${part.subject.name} (${part.path}): ${plural(part.commits.length, "commit")}` +
+		`  ${part.subject.name} (${part.path}): ${plural(part.commits.length, "commit")}${historyAttributionLabel(part.attribution)}` +
 		(why.length === 0 ? "" : `; named: ${why.join("; ")}`)
 	);
 }
@@ -131,6 +132,8 @@ const semanticFootprintContract = defineCommand({
 	shared: ["url"],
 	summary: "Map a branch onto a board and set it against a proposal",
 	description:
+		"A bound symbol narrows commits to its declaration through the language adapters. " +
+		"The answer labels path-wide fallback when a symbol is unsupported or unresolved. " +
 		"Reports which parts of a board's current variant the commits from the merge base of --base " +
 		"and HEAD up to HEAD changed, through their bound files, in each checkout the machine has " +
 		"registered. --base is any ref that resolves in the checkout, such as main, origin/main or " +

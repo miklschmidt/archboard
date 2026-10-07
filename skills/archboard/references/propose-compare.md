@@ -171,3 +171,11 @@ Read [variants](variants.md) for what the comparison counts and
 what it is read against, for a proposal that holds disagreements after its
 predecessor moved
 (`semantic resolve`), and for adoption rules.
+
+## Commit attribution
+
+`semantic footprint <board> --base <ref> --variant <proposal>` uses the same
+bound declarations as locality. Read each part's `attribution` before interpreting
+its commits. Report path-wide fallback for unsupported or unresolved symbols.
+Terraform bindings keep the root-module path and qualified module address.
+Footprint includes large commits and marks them with `large`.

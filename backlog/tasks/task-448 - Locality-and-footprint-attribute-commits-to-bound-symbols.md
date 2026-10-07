@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 20:16'
-updated_date: '2026-10-07 20:18'
+updated_date: '2026-10-07 20:31'
 labels: []
 dependencies: []
 type: enhancement
@@ -34,3 +34,9 @@ Platform Test Cluster version 20 binds six Terraform resources under infra/iac/a
 3. Share attribution between locality and footprint, label fallback, and use declaration overlap for coupling. Preserve existing large-commit filtering.
 4. Add focused behavior tests and exercise the supplied Platform checkout. Update ADR 0045 and consumer guidance. Run the complete gate, simplify, commit code, and close the board proposal.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The supplied Platform checkout resolves all six Terraform bindings precisely. Locality counts: Application Gateway 3, Platform DNS 2, MSP DNS 1, Portalv2 DNS 1, and both load-balancer rules 0. The shared code-facts source reader also passes declaration-isolation tests for TypeScript, Python, C#, C, and Swift. Git source comparisons preserve deletions, file renames, shared nested modules, and large-commit policies.
+<!-- SECTION:NOTES:END -->

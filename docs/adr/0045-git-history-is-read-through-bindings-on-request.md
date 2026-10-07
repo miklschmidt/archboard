@@ -12,8 +12,10 @@ TASK-369.04 amended this ADR on 2026-10-06. A flow step joins two coupled
 parts, and a container counts as at an end inside it. The amendment after the
 section on hotspots and change coupling gives the reasons.
 
-The history lens maps each commit onto the parts whose bound files it changed.
-One mapping gives four readings. A board is behind its code by the commits that
+TASK-448 amended this ADR on 2026-10-07. Locality and footprint now use bound
+declarations when the code-facts adapters resolve them.
+
+The history lens maps commits through bindings to give four readings. A board is behind its code by the commits that
 changed its parts after the board last changed. A footprint says what a branch
 changed, against what its proposal named. Hotspots say which parts change
 often, and change coupling says which parts change together. `CONTEXT.md`
@@ -32,9 +34,8 @@ coupled.
 A part's bound files are the file that its binding names, or every file below
 the directory that its binding names. If a commit changes one of a part's
 bound files, it changes the part. Git records files, so the mapping needs no
-parser and works in every language, infrastructure and Nix included. A symbol
-that a binding names (TASK-367.04) narrows nothing here, because only a parser
-can tell which commits changed a symbol.
+parser and works in every language, infrastructure and Nix included. Behind keeps this path mapping. Locality and footprint use the declaration
+mapping below when a binding names a symbol.
 
 A `.csproj` binding names every file below its project directory, as the code
 check reads it. Both readings use the same binding file selection. A change
@@ -71,6 +72,33 @@ A skipped part is in no count and in no list of a reading. The answers of
 `semantic locality` and `semantic footprint` list the parts that they skipped,
 with the reason. A part that the lens did not read must never look like a part
 that no commit changed.
+
+## Symbols narrow locality and footprint
+
+Locality and footprint share one declaration mapping (TASK-448). The existing
+code-facts adapters read immutable Git sources before and after each commit.
+A commit counts when the bound declaration changes its source text or file path.
+An addition or deletion counts too. An absent declaration before its creation
+counts for nothing. Unrelated declarations in the same file do not count.
+
+Every language adapter can supply declaration ranges through this same source
+reader. The reader never uses uncommitted checkout files. Unsupported formats,
+unparsed code, and ambiguous definitions use path-wide fallback. A symbol that
+no revision resolves also uses path-wide fallback. Each part reports its
+`attribution`: `symbol`, `path`, or `mixed`, with the symbol and fallback reasons
+and commit ids where applicable. A binding without a symbol keeps path mapping.
+
+A Terraform binding keeps its root-module path and complete module address.
+Local module calls resolve against each revision, including nested calls and
+shared definitions outside the root directory. A shared definition change
+counts for every bound instance that reads it. Remote modules remain unsupported.
+The reader follows Git file renames and reads deleted declarations from parents.
+It does not infer identity between renamed symbols.
+
+Coupling excludes duplicate declaration ownership. Distinct resolved symbols
+can pair even when their bound paths overlap. Aliases of a shared definition
+cannot pair. Path-wide attribution keeps the existing overlap exclusion.
+Locality still excludes large commits. Footprint still keeps and marks them.
 
 ## Each repository is read at the HEAD of its checkout
 
@@ -447,8 +475,9 @@ then counts against the variant that says what is built.
 code that the checkout does not show. "Open the code" sends a part of a GitHub
 repository to GitHub at that ref.
 
-**Map symbols instead of files.** It needs a parser for every language. Git
-records files, so file mapping works in every language from the first day.
+**Require a parser for every binding.** File mapping remains available for
+all languages. TASK-448 adds declaration mapping through the existing adapters
+and labels path-wide fallback when they cannot resolve a symbol.
 
 **Leave out the size filter.** Claims and Panes then look coupled through 10
 large commits.

@@ -8,6 +8,7 @@
 // summary for a person. It reads, and it writes
 // nothing: not to the board, not to any file (ADR 0015).
 
+import { historyAttributionLabel } from "@/shared/history-attribution/index";
 import { z } from "zod";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
@@ -93,11 +94,14 @@ function locality(answer: LocalityAnswer): string[] {
 		),
 		...changed.map(
 			(hotspot) =>
-				`hotspots: ${String(hotspot.count).padStart(4)} ${hotspot.subject.name} (${hotspot.path})`,
+				`hotspots: ${String(hotspot.count).padStart(4)} ${hotspot.subject.name} (${hotspot.path})${historyAttributionLabel(hotspot.attribution)}`,
 		),
 		...(unchanged === 0
 			? []
 			: [`hotspots: ${plural(unchanged, "part")} with no commit in the period`]),
+		...answer.hotspots
+			.filter((part) => part.count === 0 && part.attribution?.fallback !== undefined)
+			.map((part) => `hotspots: ${part.subject.name}${historyAttributionLabel(part.attribution)}`),
 		...coupling(answer),
 		`locality: left out ${plural(answer.leftOut.largeCommits, "large commit")} of more than 30 files`,
 		...[...reasons].map(
@@ -112,6 +116,8 @@ const semanticLocalityContract = defineCommand({
 	summary:
 		"Rank the parts of a board by how often their bound files changed, and pair the parts that change together",
 	description:
+		"A bound symbol narrows commits to its declaration through the language adapters. " +
+		"The answer labels path-wide fallback when a symbol is unsupported or unresolved. " +
 		"Reads Git through the files that each part of one variant binds, and ranks every part " +
 		"by the number of commits that changed those files in a period. A hotspot is a part " +
 		"that many commits changed. The period of a repository is the commits on the HEAD of " +
