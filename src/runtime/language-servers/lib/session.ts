@@ -9,20 +9,24 @@
 //
 // A server starts in the project of the file: the checkout, or for a language
 // whose row names projects, such as a Swift package or the directory of a
-// `compile_commands.json`, the one that holds the file. One server runs for each language and project. The project of a
-// directory is looked up once in the pass, and what a row looks at for a
-// project, such as a package's index, once for that project.
+// `compile_commands.json`, the one that holds the file. One server runs for
+// each language and project. The project of a directory is looked up once in
+// the pass, and what a row looks at for a project, such as a package's index,
+// once for that project.
 //
 // A question the session cannot put gets no answer, and the use stays as code
-// facts read it. The reason is said once: once for each checkout and language
-// that has no server (`missing`: none configured for the checkout, or not
-// installed), once for
-// each project where the server cannot answer yet, such as a package with no
-// index or a C file with no compilation database (`unready`), and once for each checkout where a server did not start,
-// did not answer in time or ended (`failed`). No server starts for a project
-// that is not ready. A server that failed is stopped at once, and no server of
-// its language is asked in that checkout again in the pass, however many
-// projects it holds, so a pass waits for a hung server at most once there.
+// facts read it. The reason is said once:
+// - for each checkout and language that has no server (`missing`): none is
+//   configured for the checkout, or the configured command is not installed.
+// - for each project where the server cannot answer yet (`unready`), such as a
+//   package with no index or a C file with no compilation database.
+// - for each checkout where a server did not start, did not answer in time or
+//   ended (`failed`).
+//
+// No server starts for a project that is not ready. A server that failed is
+// stopped at once, and no server of its language is asked in that checkout
+// again in the pass, however many projects it holds, so a pass waits for a
+// hung server at most once there.
 //
 // `close` stops every server the session started, and returns only once each
 // process has ended. It asks each to exit, unless the pass was cancelled:
@@ -78,8 +82,9 @@ type DefinitionAnswer =
 interface UnavailableServer {
 	readonly language: Language;
 	/**
-	 * `missing`: no server for the language in the checkout; `unready`: a project the server
-	 * cannot answer about yet; `failed`: a server that did not answer.
+	 * `missing`: no server for the language in the checkout; `unready`: a
+	 * project the server cannot answer about yet; `failed`: a server that did
+	 * not answer.
 	 */
 	readonly reason: "missing" | "unready" | "failed";
 	/** The checkout that has no server, where a project is not ready or a server failed. */
@@ -358,8 +363,8 @@ class Session {
 
 	/**
 	 * The command of a language's server in a checkout, noting once that the
-	 * checkout has none for the language. Once a server of the language failed in the checkout,
-	 * there is none there for the rest of the pass.
+	 * checkout has none for the language. Once a server of the language failed
+	 * in the checkout, there is none there for the rest of the pass.
 	 * @param language The language.
 	 * @param root The checkout.
 	 * @returns The command, or undefined when the language has no server there.
