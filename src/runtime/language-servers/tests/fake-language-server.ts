@@ -31,6 +31,7 @@
 //   `window.workDoneProgress`, and ends it 200 ms later; until then it knows
 //   no definition.
 // - `indexes-never`: reports that progress and never ends it.
+// - `synchronizes`: builds its index during workspace/synchronize before answering.
 // - `wrapped`: only runs the stand-in as its child, in the other modes, and
 //   waits for it, as nixpkgs' `clangd` script runs `clangd-unwrapped`.
 
@@ -64,6 +65,7 @@ interface Message {
 		readonly textDocument?: { readonly uri: string };
 		readonly position?: { readonly line: number; readonly character: number };
 		readonly initializationOptions?: unknown;
+		readonly index?: boolean;
 		readonly capabilities?: { readonly window?: { readonly workDoneProgress?: boolean } };
 	};
 }
@@ -73,7 +75,7 @@ const INDEX = "backgroundIndexProgress";
 /** Whether the client asked for work-done progress. */
 let reportsProgress = false;
 /** Whether the index is complete; a server that builds none knows every definition at once. */
-let indexed = !modes.has("indexes") && !modes.has("indexes-never");
+let indexed = !modes.has("indexes") && !modes.has("indexes-never") && !modes.has("synchronizes");
 /** Whether the index has started. */
 let indexing = false;
 
@@ -184,6 +186,13 @@ function receive(message: Message): void {
 		send({ id: message.id, result: outline });
 	} else if (message.method === "textDocument/definition") {
 		answerDefinition(message);
+	} else if (message.method === "workspace/synchronize" && modes.has("synchronizes")) {
+		if (message.params?.index === true) {
+			setTimeout(() => {
+				indexed = true;
+				send({ id: message.id, result: null });
+			}, 100);
+		} else send({ id: message.id, result: null });
 	} else if (message.method === "shutdown") {
 		if (!modes.has("deaf")) send({ id: message.id, result: null });
 	} else if (message.method === "exit") {

@@ -48,8 +48,6 @@ type Once = (key: string, look: () => Promise<Project>) => Promise<Project>;
 interface LanguageRow {
 	/** The `languageId` of each extension the language's files have. */
 	readonly languageIds: Readonly<Record<string, string>>;
-	/** Options sent in `initialize`, whatever command runs the server. */
-	readonly initializationOptions?: object;
 	/**
 	 * The token of the work-done progress by which the server reports the index
 	 * it builds once it has opened its first file. The client waits for that
@@ -105,16 +103,11 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 		languageIds: { ".cs": "csharp" },
 		project: dotnetProjectOf,
 	},
-	// Measured with Swift 6.2.4: sourcekit-lsp answers only about an open
-	// file; with background indexing on, its default from 6.1, it runs
-	// `swift build` to prepare targets, which the check never asks for; with
-	// it off, it reads the index a build wrote under `.build`, which
-	// `workspace/synchronize` waits for it to load. No Swift toolchain was on
-	// the machine that dropped the other guards (TASK-433), so the option
-	// stays.
+	// SourceKit-LSP owns its background index and package preparation.
+	// workspace/synchronize with index=true waits for its up-to-date build
+	// graph and index (Swift 6.2.4 Workspace.swift, TASK-436.01).
 	swift: {
 		languageIds: { ".swift": "swift" },
-		initializationOptions: { backgroundIndexing: false },
 		opensFiles: true,
 		settle: { method: "workspace/synchronize", params: { index: true } },
 		project: swiftPackageOf,

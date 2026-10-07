@@ -11,7 +11,7 @@
 // whose row names projects, such as a Swift package or the directory of a
 // `compile_commands.json`, the one that holds the file. One server runs for
 // each language and project. The project of a directory is looked up once in
-// the pass, and what a row looks at for a project, such as a package's index,
+// the pass, and what a row looks at for a project, such as a solution,
 // once for that project.
 //
 // A question the session cannot put gets no answer, and the use stays as code
@@ -19,7 +19,7 @@
 // - for each checkout and language that has no server (`missing`): none is
 //   configured for the checkout, or the configured command is not installed.
 // - for each project where the server cannot answer yet (`unready`), such as a
-//   package with no index or a C file with no compilation database.
+//   Swift file with no package or a C file with no compilation database.
 // - for each checkout where a server did not start, did not answer in time or
 //   ended (`failed`).
 //

@@ -32,8 +32,8 @@
 // and closing it stops every one, killing them at once when the pass was
 // cancelled, and only then answers. It says once for each checkout and language
 // with no server, naming the command that configures one, once for each
-// project its server cannot answer about yet, such as a Swift package with no
-// index or a C file with no `compile_commands.json`, and once for each
+// project its server cannot answer about yet, such as a Swift file with no
+// package or a C file with no `compile_commands.json`, and once for each
 // checkout where a server failed.
 
 import path from "node:path";
