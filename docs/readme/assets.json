@@ -52,7 +52,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "0fe86d85759eb1c2b605fb44a5353a72cad325b496b5caa77db8bdec90c63cc8"
+			"hash": "826016ab528d12fe8752fa44445b5878e7ef68d3b4e9c90efea768843b110a8b"
 		},
 		{
 			"name": "explainer",
@@ -74,7 +74,7 @@
 				"src/server/archboard/lib/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts"
 			],
-			"hash": "4dc5f26580b6e746b2abc9512d488c8dc80c44c08b1e17eb83a9f3788b46e325"
+			"hash": "4414a45cca43106c803596062013b14a871af13f92175ce63b2a70e6d3a4e33f"
 		},
 		{
 			"name": "plan",
@@ -93,7 +93,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "d4453f6cee5e34bce3fd9fa179439ced4e19584bf98c6314663e15572878832a"
+			"hash": "c3131e15476a7c8824c6cff2d918cc4e755327dc5d70e23c9a9f099ab32ba21c"
 		},
 		{
 			"name": "history",
@@ -114,7 +114,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "d694d61aa65392f99cd465af263525140e8c05fd5d851f67f98961c21475496c"
+			"hash": "177d0dd05376ff8d5776f81b1bf2c73b393c97da7c7c091fbb7453cd828adc68"
 		},
 		{
 			"name": "pr-walkthrough",
@@ -136,7 +136,7 @@
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "122e6d1968220e84792b62f3e8c2e0aed03f624b106f8bf68f9149b2ec1e5903"
+			"hash": "927c165d03fee606c56d1fd1f30b3c0a5d622ac2d40a6810f9bdb126b543db52"
 		},
 		{
 			"name": "sequence",
@@ -187,7 +187,7 @@
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "122e6d1968220e84792b62f3e8c2e0aed03f624b106f8bf68f9149b2ec1e5903"
+			"hash": "927c165d03fee606c56d1fd1f30b3c0a5d622ac2d40a6810f9bdb126b543db52"
 		},
 		{
 			"name": "drill-down",
@@ -206,7 +206,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "fc4c4d6dfa3a5bcadc9613be12f853050e7c8c4fb4d1b8f718752c694c0c5dae"
+			"hash": "f3552de4a2a8fc76ef578a5650fb44765abb0a634ae5643541743e6e5ed78e00"
 		},
 		{
 			"name": "ask",
@@ -225,7 +225,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "1327d10e95115f793a524e130e63348b6c1857518bd4be7cfe3f0bfe05216478"
+			"hash": "fe55cef1637a404b3820e1bc8bc48ba3b699d35e77bb0a605020d17f0cf8b184"
 		},
 		{
 			"name": "take-back",
@@ -247,7 +247,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "cd8cd1516b2dff353a19080e351a565325b439fe54e682e61399c73eed2144f8"
+			"hash": "b8356075fd518f345aa1b2851e1977000520f083a7833620b7410af38deeec1c"
 		},
 		{
 			"name": "web-shop",
@@ -328,7 +328,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "e48e1fce146e851dfd1007358fddc0137467c8716558e50fd343b3aa910c026e"
+			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
 		},
 		{
 			"name": "module-interfaces",
@@ -357,7 +357,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "e48e1fce146e851dfd1007358fddc0137467c8716558e50fd343b3aa910c026e"
+			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
 		},
 		{
 			"name": "git-history",
@@ -386,7 +386,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "e48e1fce146e851dfd1007358fddc0137467c8716558e50fd343b3aa910c026e"
+			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
 		}
 	]
 }

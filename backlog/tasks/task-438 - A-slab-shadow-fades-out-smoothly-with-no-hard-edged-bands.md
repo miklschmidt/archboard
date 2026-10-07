@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:49'
-updated_date: '2026-10-07 01:59'
+updated_date: '2026-10-07 10:51'
 labels: []
 dependencies: []
 ordinal: 721000
@@ -47,6 +47,8 @@ Draw diagnostic: six interleaved runs of twelve 680 ms sharp zoom flights over A
 README completion: architecture, sequence, Web shop and banner assets were regenerated and inspected. Stale assets listed for a person: hero, plan, history, drill-down, take-back, ask, explainer, pr-walkthrough and newcomer. The last four need Codex access. No assets were uploaded.
 
 Final acceptance uses the recorded measurements, rendered owners, browser evidence, and later owner choices in these notes. The final bun run check passes on the simplified shadow implementation.
+
+TASK-441 resolves the nine README recording follow-ups. All nine clips and videos regenerated from current source, including fresh Codex narration and a fresh agent answer. Parent inspected the outputs, uploaded the media, and replaced the README links. The asset manifest reports 16 of 16 current, zero stale.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
