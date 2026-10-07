@@ -4,9 +4,9 @@
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 17,
+	"version": 19,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-10-07T00:59:10.078Z",
+	"updatedAt": "2026-10-07T01:10:15.544Z",
 	"views": [],
 	"variants": [
 		{
@@ -869,7 +869,7 @@
 		{
 			"id": "nMbRpuPH",
 			"name": "TASK-367.28",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "QfFFXHyU",
 			"summary": "Module level: reviewed app-server protocol operations. Follow linked subjects for related levels.",
 			"content": {
@@ -1377,9 +1377,9 @@
 		{
 			"id": "DTYLMGcv",
 			"name": "TASK-436.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "nMbRpuPH",
-			"summary": "The session interface is its returned methods and registered reverse-request callback",
+			"summary": "The package-local Codex session and its stdio request paths",
 			"content": {
 				"nodes": [
 					{
@@ -1886,7 +1886,7 @@
 			}
 		}
 	],
-	"current": "nMbRpuPH",
+	"current": "DTYLMGcv",
 	"adoptions": [
 		{
 			"variant": "QfFFXHyU",
@@ -1899,6 +1899,12 @@
 			"from": "QfFFXHyU",
 			"at": "2026-10-06T21:59:04.013Z",
 			"reason": "Draws the params check that serializing request identities calls"
+		},
+		{
+			"variant": "DTYLMGcv",
+			"from": "nMbRpuPH",
+			"at": "2026-10-07T01:08:52.031Z",
+			"reason": "Recorded the public session methods and reverse-request subscription behind their implementation files"
 		}
 	]
 }

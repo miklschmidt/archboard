@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 00:36'
-updated_date: '2026-10-07 01:01'
+updated_date: '2026-10-07 01:16'
 labels:
   - dogfood
 dependencies: []
@@ -81,5 +81,13 @@ The 36 evidence records:
 - Codex session: Workhorse start -> Gate protocol operations: The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file. Anchor src/runtime/codex-workhorse-start/lib/start.ts:threadStart
 - Codex session: Codex transport -> Answer reverse requests: createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file. Anchor src/runtime/codex-session/lib/session.ts:onServerRequest
 
-Focused named-proposal code check after fixes reports no warning on any of the five .04 boards. The only current-vault warnings are the already-drawn .12 catalogue cleanup and .14 History lens/store dependency pending adoption. Semantic diagnostics are empty. The corrected module bindings revealed real omitted PNG grading and viewer helper calls, which are drawn rather than suppressed.
+Initial focused proposal checking resolved the endpoint findings; subsequent ownership refinements and their exact corrections are recorded below.
+
+All five TASK-436.04 proposals are adopted. This task corrects the board description of existing code; it makes no source API change. Board viewer@TASK-436.10 was then restated after TASK-436.04 and adopted, preserving the corrected ownership and the implemented warning-navigation description. Continuing relationship identities are retained, including Record command's moved endpoint. The code's public re-exports, object methods and injected callback ports are the real entry points; no wrapper was invented solely to silence a diagram finding.
+
+The new ownership exposed actual omitted dependencies during checking. Semantic rasterizer's PNG reader has a Skill evaluation grading-images caller, now drawn. The viewer now contains Render stage states and Picture traffic, which are physically owned by semantic-board-canvas. Existing variantTimeline, NoBoardHeader, frameClock and runTraffic calls are drawn. Semantic queries has two real outside callers, board-catalog/use-board-catalog and vault-diagnostics/use-vault-check; both are drawn through semanticBoardListQuery/vaultCheckQuery anchors. Catalogue queries also subscribes to the public onSemanticBoardChange API; that separate call is drawn. These fixes resolve CALLER_UNDRAWN and RELATIONSHIP_UNDRAWN findings without changing checker policy. The ffmpeg Nix command's existing unlabelled relationship gains its actual NIX_ARGV source anchor.
+
+Final first native layout, vault policy, one measured render per engine: Board rasterizer Track 563.232 ms / Blocks 363.634 ms; Agent workbench 766.013 / 2995.269 ms; Voice coordinator 180.881 / 294.853 ms; Board viewer 1523.998 / 15090.113 ms; Codex session 115.090 / 74.688 ms. Every touched drawing on both engines has zero card intrusions and zero labels off their own runs. Two rasterizer route labels were moved into descriptions after the layout owner found them off their routes. The default Track bound and the Blocks wall-clock test budget remain unchanged. Viewer Blocks is costly, with the additional real callers explicitly drawn.
+
+Final current ./bin/dogfood check and ./bin/dogfood check --code both exit 0, with zero diagnostics and zero warnings. EXPOSED_UNUSED has 16 information findings against 13 in the integrated baseline. The three additions are pre-existing exports revealed by broader module bindings: Walkthrough recorder (10 of 19 names), Semantic rasterizer (14 of 23), and the repeated Archboard server context on Live panes (112 of 114). TASK-436.04 adds no exports; the two local module readings report existing interface, not an API added by this task. Parent accepted that scope explanation; unrelated API removal was not invented. No active claims remain. Final status and acceptance criteria await the parent full gate.
 <!-- SECTION:NOTES:END -->
