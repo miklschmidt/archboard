@@ -31,7 +31,6 @@ export {
 	kubernetesLinks,
 } from "@/runtime/code-facts/lib/kubernetes-links";
 export { pairOf } from "@/runtime/code-facts/lib/c-pairs";
-export { splitCommand } from "@/runtime/code-facts/lib/c-resolution";
 export { projectDirectoryOf } from "@/runtime/code-facts/lib/csharp-project";
 export {
 	type DefinitionSite,
