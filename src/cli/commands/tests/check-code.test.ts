@@ -259,18 +259,19 @@ test("check without --code never asks the code check", async () => {
 	expect(JSON.parse(stdout)).not.toHaveProperty("codeCheck");
 });
 
-test("a skip that holds for a whole language says once which language and why, a checkout with no server says what configures one, and one said for each project of a checkout names the checkout once", async () => {
+test("a skip that holds for a whole language says once which language and why, a checkout with no server says what configures one for each language, and one said for each project of a checkout names the checkout once", async () => {
 	plain = clean;
 	const detail = "typescript: tsc is not installed";
 	const repo = "github.com/test/shop";
-	const configure =
-		"c: no server is configured. Configure one with `archboard repo language-server c <command>`";
+	const configure = (language: string) =>
+		`${language}: no server is configured. Configure one with \`archboard repo language-server ${language} <command> --repo ${repo}\``;
 	try {
 		answered = {
 			...codeCheck,
 			skipped: [
 				{ reason: "language-server-missing", detail },
-				{ reason: "language-server-missing", repo, detail: configure },
+				{ reason: "language-server-missing", repo, detail: configure("c") },
+				{ reason: "language-server-missing", repo, detail: configure("python") },
 				{ reason: "language-server-unready", repo, detail: "swift: the package a has no index" },
 				{ reason: "language-server-unready", repo, detail: "swift: the package b has no index" },
 			],
@@ -278,9 +279,12 @@ test("a skip that holds for a whole language says once which language and why, a
 		const { stderr, exited } = await run(["check", "--code"]);
 		expect(exited).toBe(0);
 		const lines = (reason: string) => stderr.split("\n").filter((line) => line.includes(reason));
-		expect(lines("language-server-missing")).toHaveLength(2);
-		expect(lines("language-server-missing").join("\n")).toContain(detail);
-		expect(lines("language-server-missing").join("\n")).toContain(configure);
+		const missing = lines("language-server-missing");
+		expect(missing).toHaveLength(2);
+		expect(missing.join("\n")).toContain(detail);
+		expect(missing.join("\n")).toContain(configure("c"));
+		expect(missing.join("\n")).toContain(configure("python"));
+		expect(missing.filter((line) => line.includes("skipped 1 checkout"))).toHaveLength(1);
 		expect(lines("language-server-unready")).toHaveLength(1);
 		expect(lines("language-server-unready")[0]?.split(repo)).toHaveLength(2);
 	} finally {

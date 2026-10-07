@@ -128,7 +128,7 @@ function skippedLines(skipped: readonly CodeCheckSkip[]): string[] {
 		const [first] = same;
 		const noun = first === undefined ? "" : skippedNoun(first);
 		const named = namesOf(same, noun);
-		const count = named.length > 0 ? named.length : same.length;
+		const count = noun === "checkout" ? new Set(same.map((skip) => skip.repo)).size : same.length;
 		const list = named.length > 0 ? ` (${named.join("; ")})` : "";
 		return `code check: skipped ${plural(count, noun)}: ${first?.reason}${list}`;
 	});
