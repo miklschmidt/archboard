@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-08 11:44'
-updated_date: '2026-10-08 11:52'
+updated_date: '2026-10-08 12:26'
 labels: []
 dependencies: []
 references:
@@ -53,10 +53,12 @@ The first checkpoint is unsigned because the configured SSH signing key has no p
 Final validation: the full gate passed lint, formatting, both TypeScript projects, and the frontend build. Its module lane reports 4418 passed and 13 failed outside changed scope: filename casing, a bound code reference, and fixtures with no vault. The same two casing failures reproduce with module isolation in the focused unchanged owners. The remaining lanes were run explicitly. Repository policy passed 24 tests. The system lane completed with an unchanged Codex shutdown contract failure. The browser lane reached its first owner after using the actual installed agent-browser executable, then stopped on an unchanged shell-layout assertion. No rules or assertions were weakened.
 Installed the refreshed consumer skill with install-skill --target agents --no-doc --yes. Existing repository setup documents were not rewritten.
 Committed source in 8574a419 and regression refinements in bde4e07d. The startup guard changes no public code, cleanup, artifact, or rendering shape.
+
+TASK-450 fixes every failure that the initial gate exposed. The final complete bun run check exits 0 with 4677 passing tests and zero failures. Pre-push Chromium and environment boundary reviews report no Standards or Spec findings. Native sandbox refusal, real approved rasterization, and every normal browser owner pass.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Detect the native macOS sandbox before Chromium starts. Agents receive an approved elevation instruction, and the human receives no Chromium crash dialog from this launch. The real sandbox regression and approved Chromium startup pass. The exact rasterization command refuses inside the sandbox and produces a PNG outside it. Consumer skill and installation tests pass, and the installed agent skill is refreshed. The full gate reports unrelated existing failures in unchanged tests.
+Detect the native macOS sandbox before Chromium starts. Agents receive an approved elevation instruction, and the launch avoids a Chromium crash dialog. Native sandbox regression and approved Chromium startup pass. Rasterization refuses inside the sandbox and produces a PNG outside it. The installed consumer skill is refreshed. TASK-450 repairs the exposed test failures, and the complete validation gate now passes all 4677 tests.
 <!-- SECTION:FINAL_SUMMARY:END -->

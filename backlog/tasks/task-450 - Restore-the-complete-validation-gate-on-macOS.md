@@ -1,11 +1,11 @@
 ---
 id: TASK-450
 title: Restore the complete validation gate on macOS
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-08 11:54'
-updated_date: '2026-10-08 12:16'
+updated_date: '2026-10-08 12:26'
 labels: []
 dependencies: []
 references:
@@ -23,10 +23,10 @@ The Chromium sandbox task exposed failures in the normal module, system, and bro
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every normal module test passes with isolated fixture state and no dependence on the user Git signing configuration or vault.
-- [ ] #2 The shutdown process contract proves pending responses settle before child teardown for SIGINT and SIGTERM.
-- [ ] #3 Every normal browser owner passes through the serial adapter, including the shell geometry matrix.
-- [ ] #4 The complete bun run check gate passes without weaker assertions, ignored files, disabled rules, or reduced coverage.
+- [x] #1 Every normal module test passes with isolated fixture state and no dependence on the user Git signing configuration or vault.
+- [x] #2 The shutdown process contract proves pending responses settle before child teardown for SIGINT and SIGTERM.
+- [x] #3 Every normal browser owner passes through the serial adapter, including the shell geometry matrix.
+- [x] #4 The complete bun run check gate passes without weaker assertions, ignored files, disabled rules, or reduced coverage.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,4 +49,12 @@ Checkpoint 62c9fe2c passes focused failures, lint, and both TypeScript projects.
 The first complete run passed 4432 module tests, 197 system tests, and 24 repository tests. Its browser lane uncovered an uncontrolled initial theme in status legibility and drawn-picture owners: Chrome inherited macOS dark mode. Both owners now choose light mode through the existing shell control before measuring the dark transition. The drawn-picture owner also waits for the entrance animation to finish before retaining SVG identity. Original color, cache, and SVG identity assertions remain intact. Focused owners now pass, and the full browser inventory is running.
 
 The full browser run also found a nonexistent agent-browser a11y command. The opener owner now injects pinned axe-core 4.14.0 and runs every default rule on the same dialog. It requires a real violations array rather than treating a missing result as success. The native role and label finders cannot resolve the button-backed custom radio, although Chromium exposes it correctly. The owner now clicks its live accessibility-tree reference. The repaired opener passes all 148 assertions, and the text workbench passes all 38 assertions. No audit rule or behavioral assertion was disabled.
+
+Final gate on committed code: bun run check exited 0. Lint, formatting, both TypeScript projects, and the frontend build passed. Tests: 4432 module, 197 system, 24 repository, and 24 browser cases across all 19 normal browser owners. Total: 4677 passed, zero failed. Evidence: /private/tmp/archboard-task-450-final-check.log. No rules, assertions, discovery paths, or normal owners were weakened or excluded. Pre-push review pinned c660a3f7...8752e909: Chromium, fixture/lifecycle, browser/audit, Chromium/environment boundary, and fixture/browser boundary reviewers each report zero open Standards findings and zero open Spec findings. Reviewers needed no repair commits. Reviewed native sandbox ABI and caller error routing, filesystem and Git isolation, mock restoration, shutdown ordering, browser inventory, theme/animation observations, and all default accessibility audit rules. Origin remains at c660a3f7 after fetch.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Repair the failing macOS fixtures, signal ordering, and browser observations. The complete bun run check gate passes all 4677 tests with zero failures. Every normal browser owner runs, and the dialog uses a real pinned accessibility audit. Standards and specification reviews pass with no open findings. Code commits: 62c9fe2c and 8752e909.
+<!-- SECTION:FINAL_SUMMARY:END -->
