@@ -469,6 +469,17 @@ can ask to become the default browser, even with a temporary profile. If it
 does, install Chrome for Testing and set `ARCHBOARD_RENDERER_CHROMIUM` to its
 executable.
 
+Before starting Chromium on macOS, Archboard detects whether its own process
+is inside a sandbox. If it is, Archboard refuses startup before creating a
+browser process or profile. This prevents the Chromium crash dialog that a
+restricted agent command can cause. The error tells the agent to request
+approved execution outside the sandbox. In Codex, retry the same command with
+`sandbox_permissions="require_escalated"` through the tool approval flow.
+Wait for approval before retrying. This does not require `sudo`.
+
+The guard covers rasterization, recording, and replay. SVG rendering starts
+no Chromium process and needs no elevation for this restriction.
+
 `bin/archboard` uses `realpath`, which older macOS versions do not have. If you see
 `realpath: command not found`, run `brew install coreutils`, or run
 `bun ~/Projects/archboard/src/bin.ts` directly.

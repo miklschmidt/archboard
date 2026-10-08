@@ -20,6 +20,7 @@ import {
 	pollUntil,
 	processGroups,
 	removeTempRoot,
+	requireChromiumHost,
 	spawnChromium,
 	stopProcessGroup,
 	tempParent,
@@ -162,6 +163,7 @@ function spawnInto(owned: Owned, options: HeadlessChromiumOptions): Spawned {
 			"no Chromium or Google Chrome executable was found; install one, or name it with ARCHBOARD_RENDERER_CHROMIUM.",
 		);
 	}
+	requireChromiumHost();
 	const tempRoot = mkdtempSync(join(tempParent(), options.tempRootPrefix ?? "archboard-chromium-"));
 	owned.tempRoot = tempRoot;
 	const child = spawnChromium(options.chromiumPath, tempRoot, options.extraArgs ?? []);
