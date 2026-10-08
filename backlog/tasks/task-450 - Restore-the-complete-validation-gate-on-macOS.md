@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-08 11:54'
-updated_date: '2026-10-08 12:00'
+updated_date: '2026-10-08 12:16'
 labels: []
 dependencies: []
 references:
@@ -43,4 +43,10 @@ No board is affected by the initial fixture repairs. They change test setup and 
 
 <!-- SECTION:NOTES:BEGIN -->
 Focused repairs pass: board identity collisions use distinct filenames on case-insensitive disks, and case-only rename assertions inspect directory spelling. Git fixtures exclude user signing configuration and reject failed commands. Production fixtures supply an owned vault before module imports and a temporary account home at the operating-system boundary because Bun captures the native home at startup. Graceful signal tests target the server first so it can settle pending Codex responses. The shell matrix waits for transient activity to expire and retains every geometry assertion. No product architecture changed.
+
+Checkpoint 62c9fe2c passes focused failures, lint, and both TypeScript projects. The vault check reports zero diagnostics. The code check retains its existing rasterizer anchor warning and interface information. The Archboard server, Board persistence, and Command interface boards remain accurate: this commit changes only tests within their bound directories, not their responsibilities or relationships. No proposal or README asset refresh is required.
+
+The first complete run passed 4432 module tests, 197 system tests, and 24 repository tests. Its browser lane uncovered an uncontrolled initial theme in status legibility and drawn-picture owners: Chrome inherited macOS dark mode. Both owners now choose light mode through the existing shell control before measuring the dark transition. The drawn-picture owner also waits for the entrance animation to finish before retaining SVG identity. Original color, cache, and SVG identity assertions remain intact. Focused owners now pass, and the full browser inventory is running.
+
+The full browser run also found a nonexistent agent-browser a11y command. The opener owner now injects pinned axe-core 4.14.0 and runs every default rule on the same dialog. It requires a real violations array rather than treating a missing result as success. The native role and label finders cannot resolve the button-backed custom radio, although Chromium exposes it correctly. The owner now clicks its live accessibility-tree reference. The repaired opener passes all 148 assertions, and the text workbench passes all 38 assertions. No audit rule or behavioral assertion was disabled.
 <!-- SECTION:NOTES:END -->

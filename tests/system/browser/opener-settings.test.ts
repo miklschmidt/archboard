@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { source as axeSource, type AxeResults } from "axe-core";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
@@ -222,14 +223,9 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 	]) {
 		expect(accessibilityTree).toContain(contract);
 	}
-	const auditText = await browser.run(["a11y", "--selector", '[role="dialog"]', "--json"], {
-		timeoutMs: 10_000,
-	});
-	const audit = JSON.parse(auditText) as {
-		violations?: unknown[];
-		data?: { violations?: unknown[] };
-	};
-	expect(audit.violations ?? audit.data?.violations ?? []).toEqual([]);
+	await browser.eval(`${axeSource}\ntrue`);
+	const audit = await browser.eval<AxeResults>(`axe.run('[role="dialog"]')`);
+	expect(audit.violations).toEqual([]);
 	await verifyVisualModes(browser, "light");
 
 	// A relative executable is refused on the way out, before any request.
@@ -417,7 +413,13 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 		{ method: "GET", path: "/api/settings/opener", body: null },
 	]);
 
-	await roleAction(browser, "radio", "Custom command");
+	const resetTree = await browser.run(["snapshot", "--interactive", "--compact"]);
+	// Native role and label finders miss this button-backed radio's associated label.
+	const customReference = resetTree.match(/radio "Custom command"[^\n]*\bref=(e\d+)\b/)?.[1];
+	if (customReference === undefined) {
+		throw new Error("The custom opener radio is absent from the accessibility tree.");
+	}
+	await browser.run(["click", `@${customReference}`]);
 	await fillLabel(browser, "Executable", draftSelection.executable);
 	await fillArguments(browser, draftSelection.argv);
 	await setProbeHold(browser, "PUT:/api/settings/opener");

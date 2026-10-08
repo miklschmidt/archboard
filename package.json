@@ -115,6 +115,7 @@
 		"@vitejs/plugin-react": "6.1.0",
 		"ajv": "^8",
 		"apca-w3": "0.1.9",
+		"axe-core": "4.14.0",
 		"backlog.md": "1.50.1",
 		"concurrently": "10.0.5",
 		"eslint-plugin-jsdoc": "64.3.5",
