@@ -279,7 +279,7 @@ const { policy, boards } = vaultBoards();
 /**
  * Local first layouts keep three times the 1 s render budget (TASK-377).
  * Hosted CI recorded 45.3 s layouts, so both rendering limits allow 60 s
- * there (TASK-451). CI measures completion on a shared runner; the local
+ * there (TASK-451). CI measures completion on a shared runner. The local
  * bound still catches a layout grown several times slower.
  */
 const HOSTED_RENDER_TIMEOUT_MS = 60_000;
@@ -299,26 +299,30 @@ const cases: {
 ];
 for (const board of cases) {
 	for (const layout of LayoutEngineSchema.options) {
-		test(`${board.name} (${layout}): complete architecture, clear cards, labels on their own routes`, async () => {
-			const content = orderedFixture(board.content);
-			// Each case draws content nothing drew before, so this is a first layout.
-			const began = performance.now();
-			const drawing = await renderArchitecture({
-				content,
-				theme: "light",
-				layout,
-				...(board.policy === undefined ? {} : { policy: board.policy }),
-			});
-			const took = performance.now() - began;
-			if (layout === DEFAULT_LAYOUT_ENGINE)
-				expect(took, "first layout, ms").toBeLessThan(LOADED_LAYOUT_BOUND_MS);
-			expectIntact(drawing, content);
-			expect(slants(drawing), "routes on a slant").toEqual([]);
-			expect(labelsAcrossWalls(drawing), "labels across a container's edge").toEqual([]);
-			if (layout === "track") {
-				expect(nearLanes(drawing), "lines closer than a lane").toEqual([]);
-				expect(wallHugs(drawing), "lines along a container's wall").toEqual([]);
-			}
-		}, RENDER_CASE_TIMEOUT_MS);
+		test(
+			`${board.name} (${layout}): complete architecture, clear cards, labels on their own routes`,
+			async () => {
+				const content = orderedFixture(board.content);
+				// Each case draws content nothing drew before, so this is a first layout.
+				const began = performance.now();
+				const drawing = await renderArchitecture({
+					content,
+					theme: "light",
+					layout,
+					...(board.policy === undefined ? {} : { policy: board.policy }),
+				});
+				const took = performance.now() - began;
+				if (layout === DEFAULT_LAYOUT_ENGINE)
+					expect(took, "first layout, ms").toBeLessThan(LOADED_LAYOUT_BOUND_MS);
+				expectIntact(drawing, content);
+				expect(slants(drawing), "routes on a slant").toEqual([]);
+				expect(labelsAcrossWalls(drawing), "labels across a container's edge").toEqual([]);
+				if (layout === "track") {
+					expect(nearLanes(drawing), "lines closer than a lane").toEqual([]);
+					expect(wallHugs(drawing), "lines along a container's wall").toEqual([]);
+				}
+			},
+			RENDER_CASE_TIMEOUT_MS,
+		);
 	}
 }
