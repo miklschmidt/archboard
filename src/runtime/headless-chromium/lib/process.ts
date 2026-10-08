@@ -5,6 +5,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir, userInfo } from "node:os";
 import { join } from "node:path";
+import { dlopen } from "bun:ffi";
 
 import {
 	createCodexProcessGroupOperations,
@@ -18,6 +19,33 @@ import { isJsonRecord } from "@/runtime/headless-chromium/lib/devtools";
 type ChromiumProcess = Bun.Subprocess<"ignore", "pipe", "pipe">;
 
 const processGroups = createCodexProcessGroupOperations();
+
+/**
+ * Refuse a macOS host sandbox before Chromium can abort during application
+ * registration. This is the native query Chromium itself uses, rather than
+ * an agent-specific environment marker:
+ * https://chromium.googlesource.com/chromium/src/+/main/sandbox/mac/seatbelt.cc
+ * @throws {Error} When the host is sandboxed or its sandbox state cannot be read.
+ */
+function requireChromiumHost(): void {
+	if (process.platform !== "darwin") return;
+	const library = dlopen("/usr/lib/libsandbox.dylib", {
+		sandbox_check: { args: ["i32", "ptr", "i32"], returns: "i32" },
+	});
+	let sandboxed: number;
+	try {
+		sandboxed = library.symbols.sandbox_check(process.pid, null, 0);
+	} finally {
+		library.close();
+	}
+	if (sandboxed === 0) return;
+	if (sandboxed !== 1) throw new Error("The macOS sandbox state could not be read.");
+	throw new Error(
+		"This command is inside a macOS sandbox. Chromium was not started, to prevent a macOS crash dialog. " +
+			"Retry the same command through your agent tool's approval flow for execution outside the sandbox. " +
+			'In Codex, use sandbox_permissions="require_escalated". Wait for approval before retrying. This does not require sudo.',
+	);
+}
 
 /**
  * The Chromium-family executable to start: the one `ARCHBOARD_RENDERER_CHROMIUM`
@@ -285,6 +313,7 @@ export {
 	browserSocketUrl,
 	devToolsPortIn,
 	discoveredChromiumPath,
+	requireChromiumHost,
 	pollUntil,
 	removeTempRoot,
 	spawnChromium,

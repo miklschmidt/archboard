@@ -158,6 +158,11 @@ recipe names.
   viewer. Reading the SVG's text is not looking at a diagram. A picture the
   request names goes where it says; one you draw only to look at goes in a
   temporary directory, never into the checkout you are describing.
+  On macOS, Chromium commands detect the host sandbox before starting a browser.
+  If startup reports a macOS sandbox, request approved execution outside it for
+  the same command. In Codex, use `sandbox_permissions="require_escalated"`.
+  Wait for approval before retrying. This applies to rasterization, recording,
+  and replay. SVG rendering needs no Chromium process.
   The check has no time limit. Cancel the command to stop waiting. Its output
   starts with the time for each check, and JSON carries those times in `timings`.
   `archboard check --code` holds every anchor and bound `symbol` of each
