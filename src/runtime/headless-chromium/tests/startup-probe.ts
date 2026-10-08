@@ -14,5 +14,5 @@ try {
 	process.exitCode = 1;
 } catch (error) {
 	if (!(error instanceof HeadlessChromiumError)) throw error;
-	console.log(JSON.stringify({ code: error.code, cleanup: error.cleanup }));
+	process.stdout.write(`${JSON.stringify({ code: error.code, cleanup: error.cleanup })}\n`);
 }
