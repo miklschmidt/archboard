@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { PRODUCTION_VAULT } from "@/server/archboard/tests/support/production-vault";
+import { withProductionState } from "@/server/archboard/tests/support/production-state";
 
 import {
 	createIdentityAuthorities,
@@ -51,9 +53,7 @@ function deferred(): {
 
 function installation(server: Record<string, unknown> = {}) {
 	const root = mkdtempSync(join(tmpdir(), "archboard-production-activation-"));
-	const prior = process.env["XDG_STATE_HOME"];
-	process.env["XDG_STATE_HOME"] = root;
-	try {
+	return withProductionState(root, () => {
 		return {
 			root,
 			value: createServerCodexWorkbenchInstallation({
@@ -61,26 +61,26 @@ function installation(server: Record<string, unknown> = {}) {
 				...server,
 			} as never),
 		};
-	} finally {
-		if (prior === undefined) {
-			delete process.env["XDG_STATE_HOME"];
-		} else {
-			process.env["XDG_STATE_HOME"] = prior;
-		}
-	}
+	});
 }
 
 describe("production Codex storage", () => {
 	test("the servers on a machine share one Codex home, and each port owns its own state", () => {
 		const { root, value } = installation();
 		try {
-			const workbench = join(root, "archboard", "codex-workbench");
+			const workbench =
+				process.platform === "darwin"
+					? join(root, "Library", "Application Support", "archboard", "codex-workbench")
+					: process.platform === "win32"
+						? join(root, "Archboard", "codex-workbench")
+						: join(root, "archboard", "codex-workbench");
 			const owner = join(
 				workbench,
 				"canvases",
 				String(Number.parseInt(process.env["PORT"] || "3000", 10)),
 			);
 			expect(value.process.storage).toEqual({ rootDirectory: workbench, ownerDirectory: owner });
+			expect(value.process.archboardServer?.vault).toBe(PRODUCTION_VAULT);
 			expect(statSync(owner).mode & 0o777).toBe(0o700);
 		} finally {
 			rmSync(root, { recursive: true, force: true });

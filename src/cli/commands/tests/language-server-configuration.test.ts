@@ -11,19 +11,24 @@ import { afterAll, beforeAll, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkCode, readBoardsToCheck } from "@/runtime/code-check/index";
+import type * as CodeCheck from "@/runtime/code-check/index";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 
 /** A repository with no remote is named by its directory, here with a space. */
 const IDENTITY = "my project";
 const NEVER = "/nonexistent/clangd";
 const cwd = process.cwd();
-const caller = { ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"] };
+const caller = {
+	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
+	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
+};
 let scratch = "";
 let checkout = "";
 let registry = "";
 let vault = "";
 let runCli: (argv: string[]) => Promise<void>;
+let checkCode: typeof CodeCheck.checkCode;
+let readBoardsToCheck: typeof CodeCheck.readBoardsToCheck;
 
 /**
  * Run Git with an owner's identity and no configuration of the machine.
@@ -59,6 +64,7 @@ beforeAll(async () => {
 	registry = join(scratch, "repos.json");
 	vault = join(scratch, "vault");
 	process.env["ARCHBOARD_REPOS"] = registry;
+	process.env["ARCHBOARD_VAULT"] = vault;
 	mkdirSync(join(checkout, "src"), { recursive: true });
 	mkdirSync(vault);
 	git(checkout, "init", "-q");
@@ -98,6 +104,7 @@ beforeAll(async () => {
 			variants: [{ id: "v1", name: "Built", lifecycle: "current", content }],
 		}),
 	);
+	({ checkCode, readBoardsToCheck } = await import("@/runtime/code-check/index"));
 	({ runCli } = await import("@/cli/commands/run"));
 });
 
@@ -105,6 +112,8 @@ afterAll(() => {
 	process.chdir(cwd);
 	if (caller.ARCHBOARD_REPOS === undefined) delete process.env["ARCHBOARD_REPOS"];
 	else process.env["ARCHBOARD_REPOS"] = caller.ARCHBOARD_REPOS;
+	if (caller.ARCHBOARD_VAULT === undefined) delete process.env["ARCHBOARD_VAULT"];
+	else process.env["ARCHBOARD_VAULT"] = caller.ARCHBOARD_VAULT;
 	rmSync(scratch, { recursive: true, force: true });
 });
 

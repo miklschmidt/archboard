@@ -164,6 +164,13 @@ test(
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
 		await browser.eval<boolean>("document.fonts.ready.then(() => true)");
+		// The branch write leaves a temporary activity row. Capture the idle
+		// shell only after that row expires, so it cannot disappear mid-matrix.
+		await pollUntil(
+			() => browser.eval<{ entries: number }>(READ_ACTIVITY),
+			(activity) => activity.entries === 0,
+			"the branch activity to settle before the shell matrix",
+		);
 
 		const matrix = await captureShellRenderMatrix(browser, repoRoot);
 		expect(matrix.cells).toHaveLength(12);

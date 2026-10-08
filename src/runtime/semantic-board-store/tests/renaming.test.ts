@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { basename, dirname } from "node:path";
 import type * as LockModule from "@/runtime/engine/board-lock";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
@@ -300,7 +301,9 @@ test("the name it already has is refused, and a change of case alone keeps every
 	expect(cased.board.formerNames).toBeUndefined();
 	expect(store.locateSemanticBoard(board).file).toBe(cased.location.file);
 	expect(cased.location.file.endsWith(`${board.toUpperCase()}.semantic.json`)).toBeTrue();
-	if (cased.location.file !== oldFile) expect(existsSync(oldFile)).toBeFalse();
+	const entries = readdirSync(dirname(cased.location.file));
+	expect(entries).toContain(basename(cased.location.file));
+	if (cased.location.file !== oldFile) expect(entries).not.toContain(basename(oldFile));
 });
 
 test("a board given back a name it had drops it from its former names", async () => {

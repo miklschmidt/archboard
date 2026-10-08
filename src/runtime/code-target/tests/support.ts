@@ -12,7 +12,12 @@ interface ResolverFixture {
 }
 
 function git(cwd: string, ...args: string[]): void {
-	const result = Bun.spawnSync(["git", ...args], { cwd, stdout: "ignore", stderr: "pipe" });
+	const result = Bun.spawnSync(["git", ...args], {
+		cwd,
+		stdout: "ignore",
+		stderr: "pipe",
+		env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
+	});
 	if (result.exitCode !== 0) {
 		throw new Error(result.stderr.toString());
 	}

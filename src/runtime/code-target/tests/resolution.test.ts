@@ -61,8 +61,12 @@ describe("a binding pinned to a branch or commit", () => {
 	function inCheckout(...args: string[]): string {
 		const run = Bun.spawnSync(
 			["git", "-c", "user.name=t", "-c", "user.email=t@example.com", ...args],
-			{ cwd: fixture.checkout },
+			{
+				cwd: fixture.checkout,
+				env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
+			},
 		);
+		if (run.exitCode !== 0) throw new Error(run.stderr.toString());
 		return run.stdout.toString().trim();
 	}
 
