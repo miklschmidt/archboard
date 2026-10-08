@@ -2,6 +2,40 @@ import { expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { HeadlessChromiumError, launchHeadlessChromium } from "@/runtime/headless-chromium/index";
+import {
+	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
+	SEMANTIC_RASTER_CLEANUP_MS,
+} from "@/shared/timing/timing";
+
+test("an executable that exits before listening keeps its failure and cleans its process and profile", async () => {
+	const directory = mkdtempSync(join(tmpdir(), "archboard-startup-test-"));
+	try {
+		const executable = join(directory, "browser");
+		writeFileSync(executable, "#!/bin/sh\nexit 17\n", { mode: 0o700 });
+		let failure: unknown;
+		try {
+			const chromium = await launchHeadlessChromium({
+				chromiumPath: executable,
+				startupTimeoutMs: SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
+				cleanupTimeoutMs: SEMANTIC_RASTER_CLEANUP_MS,
+			});
+			await chromium.stop();
+		} catch (error) {
+			failure = error;
+		}
+		expect(failure).toBeInstanceOf(HeadlessChromiumError);
+		const error = failure as HeadlessChromiumError;
+		expect(error).toMatchObject({
+			code: "unavailable",
+			cleanup: { clean: true, processGone: true, tempRootRemoved: true, errors: [] },
+		});
+		expect(error.cleanup?.pid).toBeGreaterThan(0);
+		expect(error.cause).toBeInstanceOf(Error);
+	} finally {
+		rmSync(directory, { recursive: true, force: true });
+	}
+});
 
 test.skipIf(process.platform !== "darwin")(
 	"a macOS sandbox refuses startup before the executable runs or a profile exists",
