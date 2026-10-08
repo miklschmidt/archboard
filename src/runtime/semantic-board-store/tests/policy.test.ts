@@ -288,7 +288,9 @@ test("the checker reports colliding board identities and still reads each actual
 	await create();
 	const source = read().board;
 	const upper = join(vault, "Payments.semantic.json");
-	const lower = join(vault, "payments.semantic.json");
+	// Padding keeps both files distinct on a case-insensitive filesystem,
+	// while address normalization still gives them the same board identity.
+	const lower = join(vault, " payments .semantic.json");
 	writeFileSync(upper, JSON.stringify({ ...source, name: "Payments" }));
 	writeFileSync(lower, JSON.stringify({ ...source, name: "payments", level: "retired" }));
 	const result = store.checkSemanticVault(vault);

@@ -170,11 +170,9 @@ export async function startServer(options: {
 		},
 		async dispose(signal = "SIGTERM") {
 			if (!exited) {
-				try {
-					process.kill(-child.pid!, signal);
-				} catch {
-					child.kill(signal);
-				}
+				// The server settles pending protocol work before it stops Codex.
+				// Signaling the group also kills Codex before those responses arrive.
+				child.kill(signal);
 				if (!(await Promise.race([exit.then(() => true), sleep(5_000).then(() => false)]))) {
 					try {
 						process.kill(-child.pid!, "SIGKILL");
