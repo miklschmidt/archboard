@@ -75,6 +75,13 @@ speed. The factor multiplies how long a test waits for something that should
 happen. It never multiplies a poll cadence, a window in which nothing may happen,
 or a product duration.
 
+The diagram corpus in `src/runtime/semantic-renderer/tests/wide-boards.test.ts`
+uses a 60-second case deadline when `CI=true`. Its default engine also gets
+60 seconds for a first render. GitHub Actions recorded first renders up to
+45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
+3-second first-render limit. Both engines keep all picture correctness assertions.
+The preload still applies its 60-second wall-clock ceiling.
+
 Keep a real-time exception inside its exact test callback. Its first statement calls
 `declareTestWallClockBudget` with the exact test name, a concrete reason, a `TEST_*`
 outer bound, the task that owns the choice, and recorded duration evidence.
