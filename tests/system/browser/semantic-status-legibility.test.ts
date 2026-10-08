@@ -14,6 +14,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
+import { switchTheme } from "./support/shell-dom.ts";
 import { openSidebarTab, pictureAtRest } from "./support/semantic-page.ts";
 import { OPAQUE_SRGB, edgeInks, sameHue, unresolvedPaints } from "./support/computed-colours.ts";
 
@@ -335,6 +336,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		"the proposal to be drawn in its pane",
 		WAIT,
 	);
+	await switchTheme(browser, "light");
 
 	// The ids the board minted, found the way a viewer finds them.
 	const ids = await browser.eval<Record<string, string>>(
@@ -443,7 +445,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	// And all of it again on the other ground. The inks change, because they are
 	// picked for the ground they are drawn on; what they say does not.
 	const lightIcon = await iconInk(browser, "Gateway");
-	await browser.eval(`document.querySelector("[aria-label='Switch to dark theme']").click()`);
+	await switchTheme(browser, "dark");
 	await pollUntil(
 		() => iconInk(browser, "Gateway"),
 		(ink) => ink !== lightIcon,

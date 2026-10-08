@@ -64,6 +64,7 @@
         "@vitejs/plugin-react": "6.1.0",
         "ajv": "^8",
         "apca-w3": "0.1.9",
+        "axe-core": "4.14.0",
         "backlog.md": "1.50.1",
         "concurrently": "10.0.5",
         "eslint-plugin-jsdoc": "64.3.5",
@@ -759,6 +760,8 @@
     "async": ["async@3.2.6", "", {}, "sha512-htCUDlxyyCLMgaM3xXg0C0LW2xqfuQ6p05pCEIsXuyQ+a1koYKTuBMzRNwmybfLgvJDMd0r1LTn4+E0Ti6C2AA=="],
 
     "atomically": ["atomically@1.7.0", "", {}, "sha512-Xcz9l0z7y9yQ9rdDaxlmaI4uJHf/T8g9hOEzJcsEqX2SjCj4J20uK7+ldkDHMbpJDK76wF7xEIgxc/vSlsfw5w=="],
+
+    "axe-core": ["axe-core@4.14.0", "", {}, "sha512-9WTZxEjsZ7b13TH8JPmbV2z8CHbl80/2hm3XPEG4JgNdQLK81IBRXmSxHfMAOkSqQeRxT/0dwNDz2GOm3zzpcQ=="],
 
     "backlog.md": ["backlog.md@1.50.1", "", { "optionalDependencies": { "backlog.md-darwin-arm64": "1.50.1", "backlog.md-darwin-x64": "1.50.1", "backlog.md-linux-arm64": "1.50.1", "backlog.md-linux-x64": "1.50.1", "backlog.md-windows-arm64": "1.50.1", "backlog.md-windows-x64": "1.50.1" }, "bin": { "backlog": "cli.js" } }, "sha512-FtL3Yu/112ATiZfLYnVQxMhplBhaQLIc10Ao2OVuzx3N+Vv5R3/46kmLADj3O5WXRcJNMZCqpgcVA96QQ5Rz0A=="],
 

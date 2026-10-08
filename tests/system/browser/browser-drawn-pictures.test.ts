@@ -13,7 +13,8 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
-import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
+import { switchTheme } from "./support/shell-dom.ts";
+import { addressShowing, seedSemanticBoard, pictureAtRest } from "./support/semantic-page.ts";
 
 // The canvas draws its pictures in the page (TASK-247): the board it read, laid
 // out by engine workers in this browser, measured by this browser's canvas.
@@ -65,15 +66,15 @@ const keptPictures = (browser: AgentBrowserSession): Promise<Record<string, stri
 	);
 
 /**
- * Wait for the pane to have drawn.
+ * Wait for the picture to finish arriving before inspecting or retaining its SVG.
  * @param browser The page.
  * @param what What is being waited for.
  * @returns Settles once it has.
  */
-const drawn = (browser: AgentBrowserSession, what: string): Promise<string | null> =>
+const drawn = (browser: AgentBrowserSession, what: string): Promise<boolean> =>
 	pollUntil(
-		() => stageState(browser.eval.bind(browser)),
-		(state) => state === "drawn",
+		() => pictureAtRest(browser.eval.bind(browser)),
+		(atRest) => atRest,
 		what,
 		WAIT,
 	);
@@ -93,6 +94,7 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 	await browser.run(["open", addressShowing(server.base, "pipeline")]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await drawn(browser, "the board to be drawn in the page");
+	await switchTheme(browser, "light");
 
 	// Drawn here: the engine worker started, the icons were fetched by name, and
 	// the server's render route was never asked.
@@ -123,7 +125,7 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 	const ground = `getComputedStyle(document.querySelector("${SURFACE} svg > rect")).fill`;
 	const lightGround = await browser.eval<string>(ground);
 	await browser.eval(`window.shownPicture = document.querySelector("${SURFACE} svg")`);
-	await browser.eval(`document.querySelector("[aria-label='Switch to dark theme']").click()`);
+	await switchTheme(browser, "dark");
 	const darkGround = await pollUntil(
 		() => browser.eval<string>(ground),
 		(fill) => fill !== lightGround,
