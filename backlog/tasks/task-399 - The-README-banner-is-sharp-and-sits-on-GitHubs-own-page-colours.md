@@ -14,7 +14,7 @@ references:
   - scripts/readme-assets/banner.ts
   - docs/agents/readme-assets.md
 priority: medium
-ordinal: 688000
+ordinal: 739000
 ---
 
 ## Description

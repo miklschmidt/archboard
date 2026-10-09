@@ -17,7 +17,7 @@ references:
   - docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md
   - PRODUCT.md
   - DESIGN.md
-ordinal: 718000
+ordinal: 788000
 ---
 
 ## Description

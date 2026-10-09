@@ -15,7 +15,7 @@ dependencies: []
 references:
   - docs/adr/0025-containment-and-type-own-distinct-visual-channels.md
   - docs/adr/0038-groups-gather-and-colour-their-cards.md
-ordinal: 689000
+ordinal: 740000
 ---
 
 ## Description

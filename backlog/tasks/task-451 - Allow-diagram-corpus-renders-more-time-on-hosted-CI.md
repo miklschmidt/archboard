@@ -13,7 +13,7 @@ references:
 documentation:
   - docs/agents/test-suite.md
 type: bug
-ordinal: 734000
+ordinal: 802000
 ---
 
 ## Description

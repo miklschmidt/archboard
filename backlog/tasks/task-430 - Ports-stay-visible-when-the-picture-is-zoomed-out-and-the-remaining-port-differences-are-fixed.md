@@ -14,7 +14,7 @@ labels:
 dependencies: []
 references:
   - docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md
-ordinal: 716000
+ordinal: 786000
 ---
 
 ## Description

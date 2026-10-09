@@ -17,7 +17,7 @@ references:
   - docs/adr/0041-a-recording-is-a-talk-rendered-frame-by-frame.md
 priority: high
 type: bug
-ordinal: 689000
+ordinal: 741000
 ---
 
 ## Description
