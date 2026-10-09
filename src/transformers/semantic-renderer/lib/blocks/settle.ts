@@ -34,6 +34,10 @@ import {
 } from "@/transformers/semantic-renderer/lib/blocks/open-edge";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { portReach } from "@/transformers/semantic-renderer/lib/track/channels";
+import {
+	separateFacingPorts,
+	spread,
+} from "@/transformers/semantic-renderer/lib/blocks/port-columns";
 import { cardIn } from "@/transformers/semantic-renderer/lib/blocks/lone";
 
 /** What settling reads and writes: every block laid out, and how each block of blocks is packed. */
@@ -95,22 +99,6 @@ function facing(one: Span, other: Span, now: number): [number, number] {
 		return [x, x];
 	}
 	return [nearest(one, other), nearest(other, one)];
-}
-
-/**
- * Wanted x's spread a lane apart within a span, in their order.
- * @param span The span.
- * @param wanted The x's, in order.
- * @returns The spread x's.
- */
-function spread(span: Span, wanted: readonly number[]): number[] {
-	const gap = wanted.length > 1 ? Math.min(LANE, (span[1] - span[0]) / (wanted.length - 1)) : 0;
-	const xs = wanted.map((x) => Math.min(span[1], Math.max(span[0], x)));
-	for (let index = 1; index < xs.length; index += 1)
-		xs[index] = Math.max(xs[index]!, xs[index - 1]! + gap);
-	for (let index = xs.length - 1; index >= 0; index -= 1)
-		xs[index] = Math.min(xs[index]!, (xs[index + 1] ?? span[1] + gap) - gap);
-	return xs;
 }
 
 /**
@@ -472,6 +460,11 @@ class Settle {
 			if (inner === undefined || !this.movable(inner)) continue;
 			settled.set(item, this.edgesOf(block, inner, wanted));
 		}
+		separateFacingPorts(block, settled, {
+			...this.settling,
+			inline: this.cardsInline(block),
+			spanOf: this.endSpan.bind(this),
+		});
 		return settled;
 	}
 
