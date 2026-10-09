@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-09 10:33'
-updated_date: '2026-10-09 10:33'
+updated_date: '2026-10-09 10:48'
 labels: []
 dependencies: []
 priority: high
@@ -29,5 +29,11 @@ Readers see Blocks join lines with different relationship kinds or traffic direc
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Reproduce incompatible joins through rendered SVG output. Add the smallest failing renderer test. Trace route grouping, port assignment, and trunk routing, then fix the owner that loses connection identity. Keep compatible sharing intact. Run focused renderer tests and bun run check. No board is affected if the fix stays inside existing routing responsibilities and interfaces.
+Use the reported Auditlog Timestamp Integrity board to reproduce the overlap. Keep an anonymized renderer fixture and test both different-kind and same-kind opposing routes. Separate unrelated facing port columns during existing port settlement, within the allowed span, while retaining directly connected and shared ports. Run renderer tests, the complete repository gate, and the live board. No board proposal is needed: Renderer layout and Semantic renderer retain the same parts, calls, and responsibilities; the change stays inside port settlement.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reproduction: EF Core read and GET auditlog endpoints share 10 diagram units on the reported board. The reduced fixture shares 24.25 units, for both http/data and data/data. The native trunk router fixes the end segments. Nudging them also moves their pins, so the fix separates unrelated facing ports before routing. The existing nearestFree span calculation selects a column inside the allowed span. All 544 renderer tests passed before the helper extraction; the 13 focused tests passed after it. Existing kind tests retain compatible shared ports. The renderer promise and authoring contract stay unchanged, so consumer skill and evaluation inputs need no change.
+<!-- SECTION:NOTES:END -->
