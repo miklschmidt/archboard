@@ -13,7 +13,7 @@ references:
   - tests/system/repository-policy
 priority: high
 type: bug
-ordinal: 711000
+ordinal: 780000
 ---
 
 ## Description

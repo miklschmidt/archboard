@@ -15,7 +15,7 @@ dependencies: []
 references:
   - docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md
   - docs/adr/0027-explicit-traffic-controls-distance-based-animation.md
-ordinal: 711000
+ordinal: 781000
 ---
 
 ## Description

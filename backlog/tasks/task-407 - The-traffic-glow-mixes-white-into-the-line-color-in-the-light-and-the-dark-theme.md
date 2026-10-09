@@ -14,7 +14,7 @@ labels:
 dependencies: []
 references:
   - docs/adr/0027-explicit-traffic-controls-distance-based-animation.md
-ordinal: 694000
+ordinal: 765000
 ---
 
 ## Description

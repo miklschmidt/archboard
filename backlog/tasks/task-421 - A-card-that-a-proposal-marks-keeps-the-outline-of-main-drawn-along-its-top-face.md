@@ -14,7 +14,7 @@ labels:
 dependencies: []
 references:
   - docs/adr/0025-containment-and-type-own-distinct-visual-channels.md
-ordinal: 708000
+ordinal: 777000
 ---
 
 ## Description

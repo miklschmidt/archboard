@@ -13,7 +13,7 @@ dependencies: []
 references:
   - docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md
   - docs/adr/0038-groups-gather-and-colour-their-cards.md
-ordinal: 700000
+ordinal: 771000
 ---
 
 ## Description

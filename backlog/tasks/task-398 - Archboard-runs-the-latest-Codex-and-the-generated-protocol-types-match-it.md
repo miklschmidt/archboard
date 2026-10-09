@@ -15,7 +15,7 @@ references:
   - .claude/rules/agent-work.md
 priority: medium
 type: chore
-ordinal: 687000
+ordinal: 738000
 ---
 
 ## Description
