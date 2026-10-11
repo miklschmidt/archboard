@@ -7,13 +7,13 @@ import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
 } from "@/runtime/codex-process/process-group";
-import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@/shared/timing/timing";
 
 import { pidFilePath, readPidFile, sweepDeadPidFiles, writePidFile } from "../pidfile.js";
 import { stateDir } from "../state-dir.js";
 
 const HOME_VARIABLES = ["HOME", "USERPROFILE", "LOCALAPPDATA", "XDG_STATE_HOME"] as const;
 const CHILD_BOUND_MS = 5_000;
+const TEST_PROCESS_GROUP_POLL_MS = 10;
 
 const isolatedRoot = process.env["ARCHBOARD_PIDFILE_TEST_ROOT"];
 
@@ -31,7 +31,7 @@ async function reapIsolatedGroup(root: string): Promise<void> {
 	while (groups.inspect(identity) !== "quiescent") {
 		if (Date.now() >= deadline)
 			throw new Error("The isolated pidfile process group did not close.");
-		await Bun.sleep(PROCESS_GROUP_OBSERVATION_POLL_MS);
+		await Bun.sleep(TEST_PROCESS_GROUP_POLL_MS);
 	}
 }
 
