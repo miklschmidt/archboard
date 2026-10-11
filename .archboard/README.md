@@ -49,24 +49,25 @@ added to carry it, and it says the level of what it opens through its kind
 it describes, or through the caller it draws — and a board with neither says so
 by having no upward link, which is why the breadcrumb exists.
 
-| Level   | Board                 | Scope                                                          |
-| ------- | --------------------- | -------------------------------------------------------------- |
-| System  | `Archboard`           | The processes that run, and what they keep                     |
-| Service | `Command interface`   | CLI application modules and its command groups                 |
-| Service | `Archboard server`    | Archboard server modules and the one write boundary            |
-| Service | `Browser application` | Browser application modules                                    |
-| Service | `Agent workbench`     | Codex integration inside the server                            |
-| Service | `Skill evaluation`    | The harness that measures the consumer skill                   |
-| Module  | `Command dispatch`    | Dispatch and invocation lifetime                               |
-| Module  | `Live panes`          | Pane connections, screen state and board announcements         |
-| Module  | `Board persistence`   | Board reads, transitions, and durable writes                   |
-| Module  | `Semantic renderer`   | Meaning to SVG and interaction geometry                        |
-| Module  | `Renderer layout`     | How one drawing is settled, and by what measure                |
-| Module  | `Board rasterizer`    | Pictures and recordings of a board, through a headless browser |
-| Module  | `Board viewer`        | Reading, selection, camera, and navigation                     |
-| Module  | `Codex session`       | Reviewed app-server protocol operations                        |
-| Module  | `Codex workhorse`     | The workhorse thread, its queue, and the coordinator's door    |
-| Module  | `Voice coordinator`   | The separate thread voice attaches to                          |
+| Level   | Board                     | Scope                                                          |
+| ------- | ------------------------- | -------------------------------------------------------------- |
+| System  | `Archboard`               | The processes that run, and what they keep                     |
+| Service | `Command interface`       | CLI application modules and its command groups                 |
+| Service | `Archboard server`        | Archboard server modules and the one write boundary            |
+| Service | `Browser application`     | Browser application modules                                    |
+| Service | `Agent workbench`         | Codex integration inside the server                            |
+| Service | `Skill evaluation`        | The harness that measures the consumer skill                   |
+| Module  | `Command dispatch`        | Dispatch and invocation lifetime                               |
+| Module  | `Archboard server routes` | The route handlers, and what each one reaches                  |
+| Module  | `Live panes`              | Pane connections, screen state and board announcements         |
+| Module  | `Board persistence`       | Board reads, transitions, and durable writes                   |
+| Module  | `Semantic renderer`       | Meaning to SVG and interaction geometry                        |
+| Module  | `Renderer layout`         | How one drawing is settled, and by what measure                |
+| Module  | `Board rasterizer`        | Pictures and recordings of a board, through a headless browser |
+| Module  | `Board viewer`            | Reading, selection, camera, and navigation                     |
+| Module  | `Codex session`           | Reviewed app-server protocol operations                        |
+| Module  | `Codex workhorse`         | The workhorse thread, its queue, and the coordinator's door    |
+| Module  | `Voice coordinator`       | The separate thread voice attaches to                          |
 
 Here, service-level boards explain one application or explicitly named subsystem;
 they do not imply separate deployments. The workbench lives inside the Archboard
