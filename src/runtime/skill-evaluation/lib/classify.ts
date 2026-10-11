@@ -80,16 +80,25 @@ const SCRIPT_OPTION_RE = /^-[A-Za-z]*c[A-Za-z]*$/u;
 /**
  * The script a recorded `bash -lc`, `sh -c` or `zsh -c` command hands its
  * shell, as the shell receives it: the argument after the option holding `c`,
- * with its quoting and escapes undone. A command that is not such a call, or
- * that goes on past the script, is read as recorded, less any outer quotes.
+ * with its quoting and escapes undone, and again for a script that is itself
+ * such a call. A command that is not such a call, or that goes on past the
+ * script, is read as recorded, less any outer quotes.
  * @param command The command as recorded.
  * @returns The inner script.
  */
 function unwrapped(command: string): string {
-	return (
-		shellScript(shellWords(command.trim()).map((word) => word.value)) ??
-		command.trim().replace(/^(['"])(.*)\1$/su, "$2")
-	).trim();
+	const text = command.trim();
+	return (innerScript(text) ?? text.replace(/^(['"])(.*)\1$/su, "$2")).trim();
+}
+
+/**
+ * The script a shell call finally runs, through any shells it starts in turn.
+ * @param command A command.
+ * @returns The innermost script, or undefined when the command is not a shell call.
+ */
+function innerScript(command: string): string | undefined {
+	const script = shellScript(shellWords(command).map((word) => word.value));
+	return script === undefined ? undefined : (innerScript(script.trim()) ?? script);
 }
 
 /**

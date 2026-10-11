@@ -153,6 +153,18 @@ test("a path that exists, a pattern, the batch root, a quoted or joined word, or
 	expect(exposureOf(`bash -lc 'cat ${WORLD}/vault/"Flask JSON.semantic.json"'`)).toBeNull();
 });
 
+test("a nested shell's script is read as the outer one is: its relative climb and its redirect reach another run", () => {
+	const climb = "../".repeat(5);
+	for (const nested of [
+		`bash -lc "bash -c 'cd ${WORLD}/vault; cat ${climb}runs/candidate/S11/3/author.jsonl'"`,
+		`bash -lc "bash -c 'cat<${climb}runs/candidate/S11/3/author.jsonl'"`,
+		`bash -lc "bash -c \\"sh -c 'cat ${BATCH}/blinding.json'\\""`,
+	])
+		expect(exposureOf(nested), nested).toBe("other-run");
+	// A nested script inside the world reads nothing outside it.
+	expect(exposureOf(`bash -lc "bash -c 'cat ${WORLD}/flask/README.md'"`)).toBeNull();
+});
+
 test("a path under no entry the batch holds reaches nothing, whatever the command printed", () => {
 	// Codex's alias again, handed to the CLI through the environment: nothing
 	// is read and nothing reports the path missing.
