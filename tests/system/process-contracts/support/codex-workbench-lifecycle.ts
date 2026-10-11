@@ -18,6 +18,8 @@ export interface FixtureRecord {
 	readonly id?: string;
 	readonly method?: string;
 	readonly pid?: number;
+	/** The child exit code recorded by its process exit listener. */
+	readonly code?: number;
 	readonly scenario?: string;
 	/** The Archboard server the child's environment names, by variable. */
 	readonly archboard?: Readonly<Record<string, string | null>>;
