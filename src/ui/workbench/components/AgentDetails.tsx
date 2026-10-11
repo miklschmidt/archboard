@@ -1,5 +1,5 @@
 // The session's details, on request: who is signed in, which models the
-// agent and the voice agent run, how much of the context window the
+// agent and the voice coordinator run, how much of the context window the
 // conversation has used, and the ids to quote when something needs looking
 // into. The one place this plumbing lives; nothing here is needed to use the
 // agent.
@@ -120,8 +120,9 @@ function AgentDetails(props: AgentDetailsProps): JSX.Element {
 			<Section title="Voice">
 				<Row label="Model" value={modelWords(snapshot, "coordinator")} />
 				<p className="text-body text-muted-foreground">
-					The voice agent is a separate conversation. It decides which spoken requests become work
-					for the agent, and which approvals it may answer from what it heard.
+					The voice coordinator works in a thread of its own. It decides which spoken requests
+					become work for the agent, and which approvals it may answer from what it heard. Its turns
+					show in the conversation under its name.
 				</p>
 				<VoiceContextDetails voiceContext={snapshot?.voiceContext} />
 			</Section>

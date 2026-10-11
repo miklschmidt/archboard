@@ -2,11 +2,17 @@
 // person's prompts, the plan's progress, runs of work opening to their
 // evidence, the agent's prose in markdown, approvals, and how the turn ended —
 // followed by what the conversation does not hold yet (messages still on their
-// way, queued prompts, decisions waiting on the person). It stays pinned to the
-// newest line while the reader is at the bottom and offers a way back down
-// when they have scrolled up.
+// way, queued prompts, decisions waiting on the person). The voice
+// coordinator's turns stand among the agent's, named and ruled at the left. It
+// stays pinned to the newest line while the reader is at the bottom and offers
+// a way back down when they have scrolled up.
 
-import { type DataMessagePartProps, MessagePrimitive, ThreadPrimitive } from "@assistant-ui/react";
+import {
+	type DataMessagePartProps,
+	MessagePrimitive,
+	ThreadPrimitive,
+	useAuiState,
+} from "@assistant-ui/react";
 import { RiArrowDownLine } from "@remixicon/react";
 import type { JSX, ReactNode } from "react";
 
@@ -20,6 +26,7 @@ import {
 	TurnEndLine,
 } from "@/ui/workbench-thread/components/TurnParts";
 import { AnswerText } from "@/ui/workbench-thread/components/AnswerText";
+import { VOICE_TURN, VoiceTurnHead, voiceTurnOf } from "@/ui/workbench-thread/components/VoiceTurn";
 
 /**
  * What a data part carries, as the seam that made it named it.
@@ -111,15 +118,21 @@ const PART_COMPONENTS = {
 } as const satisfies Parameters<typeof MessagePrimitive.Parts>[0]["components"];
 
 /**
- * One turn.
+ * One turn: the workhorse's, or the voice coordinator's, which is named and
+ * ruled at the left, and found by its id from the prompt it delegated.
  * @returns The turn.
  */
 function AgentTurn(): JSX.Element {
+	const voiceTurn = useAuiState((state) => voiceTurnOf(state.message.metadata.custom));
+	const voice = voiceTurn !== null;
 	return (
 		<MessagePrimitive.Root
 			data-slot="turn"
-			className="flex flex-col gap-2.5 text-[13.5px] leading-[21px]"
+			data-owner={voice ? "coordinator" : "workhorse"}
+			data-voice-turn={voiceTurn ?? undefined}
+			className={`flex flex-col gap-2.5 text-[13.5px] leading-[21px] ${voice ? VOICE_TURN : ""}`}
 		>
+			{voice && <VoiceTurnHead />}
 			<MessagePrimitive.Parts components={PART_COMPONENTS} />
 		</MessagePrimitive.Root>
 	);

@@ -1,13 +1,20 @@
 // The conversation as an assistant-ui runtime: the transport's published
-// timeline, projected into turns and adapted into messages at the one seam.
-// The runtime only shows; nothing is sent through it — messages go through the
-// agent setup from the composer in the conversation.
+// timelines, projected into turns and adapted into messages at the one seam.
+// The workhorse's turns are what the dock and the composer read; the runtime
+// shows the voice coordinator's among them. The runtime only shows; nothing is
+// sent through it — messages go through the agent setup from the composer in
+// the conversation.
 
 import { useExternalStoreRuntime, type AssistantRuntime } from "@assistant-ui/react";
 import { useMemo, useSyncExternalStore } from "react";
 
 import { toThreadMessageLike } from "@/ui/workbench-runtime/lib/messages";
-import { projectTimelineTurns, type ConversationTurn } from "@/ui/workbench-timeline";
+import {
+	mergeConversation,
+	projectTimelineTurns,
+	type ConversationOwner,
+	type ConversationTurn,
+} from "@/ui/workbench-timeline";
 import type { BrowserTimeline } from "@/shared/codex-browser-model";
 import type { BrowserWorkbenchState, BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
@@ -15,7 +22,10 @@ import type { BrowserWorkbenchState, BrowserWorkbenchTransport } from "@/ui/work
 interface Conversation {
 	/** The snapshot it was read from, or null before one arrives. */
 	readonly snapshot: BrowserWorkbenchState["snapshot"];
+	/** The workhorse's turns: what the dock's status and the composer's running state read. */
 	readonly turns: readonly ConversationTurn[];
+	/** The voice coordinator's turns, which the conversation shows among the workhorse's. */
+	readonly coordinatorTurns: readonly ConversationTurn[];
 	/** A timeline that could not be projected, in words, or null. */
 	readonly failure: string | null;
 }
@@ -39,23 +49,42 @@ const NO_TRANSPORT: ConversationSource = Object.freeze({
 	state: () => null,
 });
 
-/** The turns of a timeline, or why they could not be read. */
-type Projection = Pick<Conversation, "turns" | "failure">;
+/** One timeline's turns, or why they could not be read. */
+interface Projection {
+	readonly turns: readonly ConversationTurn[];
+	readonly failure: string | null;
+}
 
 const NO_TURNS: Projection = Object.freeze({ turns: [], failure: null });
 
 /**
  * The turns of a timeline, or why they could not be read.
  * @param timeline The timeline, or null before there is one.
+ * @param owner Whose thread it is.
  * @returns The turns and the failure.
  */
-function projectionOf(timeline: BrowserTimeline | null): Projection {
+function projectionOf(timeline: BrowserTimeline | null, owner: ConversationOwner): Projection {
 	if (timeline === null) return NO_TURNS;
 	try {
-		return { turns: projectTimelineTurns(timeline), failure: null };
+		return { turns: projectTimelineTurns(timeline, owner), failure: null };
 	} catch (error) {
 		return { turns: [], failure: error instanceof Error ? error.message : String(error) };
 	}
+}
+
+/**
+ * The two timelines a snapshot publishes.
+ * @param snapshot The snapshot, or null before one arrives.
+ * @returns The workhorse's timeline and the voice coordinator's, each null while there is none.
+ */
+function timelinesOf(snapshot: Conversation["snapshot"]): {
+	readonly timeline: BrowserTimeline | null;
+	readonly coordinatorTimeline: BrowserTimeline | null;
+} {
+	return {
+		timeline: snapshot?.timeline ?? null,
+		coordinatorTimeline: snapshot?.coordinatorTimeline ?? null,
+	};
 }
 
 /**
@@ -67,12 +96,24 @@ function useConversation(transport: BrowserWorkbenchTransport | null): Conversat
 	const source: ConversationSource = transport ?? NO_TRANSPORT;
 	const state = useSyncExternalStore(source.subscribe, source.state, source.state);
 	const snapshot = state?.snapshot ?? null;
-	// Projected again only when the timeline changes: a voice or queue delta
-	// publishes a new snapshot around the same timeline, and must not redraw
-	// every turn.
-	const timeline = snapshot?.timeline ?? null;
-	const projection = useMemo(() => projectionOf(timeline), [timeline]);
-	return useMemo(() => ({ snapshot, ...projection }), [snapshot, projection]);
+	// Each timeline is projected again only when it changes: a voice or queue
+	// delta publishes a new snapshot around the same timelines, and must not
+	// redraw every turn.
+	const { timeline, coordinatorTimeline } = timelinesOf(snapshot);
+	const workhorse = useMemo(() => projectionOf(timeline, "workhorse"), [timeline]);
+	const coordinator = useMemo(
+		() => projectionOf(coordinatorTimeline, "coordinator"),
+		[coordinatorTimeline],
+	);
+	return useMemo(
+		() => ({
+			snapshot,
+			turns: workhorse.turns,
+			coordinatorTurns: coordinator.turns,
+			failure: workhorse.failure ?? coordinator.failure,
+		}),
+		[snapshot, workhorse, coordinator],
+	);
 }
 
 /**
@@ -85,9 +126,13 @@ function useAgentRuntime(transport: BrowserWorkbenchTransport): {
 	readonly conversation: Conversation;
 } {
 	const conversation = useConversation(transport);
-	const running = conversation.turns.some((turn) => turn.outcome === "running");
+	const turns = useMemo(
+		() => mergeConversation(conversation.turns, conversation.coordinatorTurns),
+		[conversation.turns, conversation.coordinatorTurns],
+	);
+	const running = turns.some((turn) => turn.outcome === "running");
 	const runtime = useExternalStoreRuntime<ConversationTurn>({
-		messages: conversation.turns,
+		messages: turns,
 		convertMessage: toThreadMessageLike,
 		isRunning: running,
 		/**

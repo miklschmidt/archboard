@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 21:36'
-updated_date: '2026-10-11 14:34'
+updated_date: '2026-10-11 14:43'
 labels:
   - voice
   - coordinator
@@ -39,4 +39,6 @@ A1 contract done: optional coordinatorTimeline on the browser snapshot (version 
 Chunk C (docs, board proposal): operator-canvas-shell.md 'The agent' revised for TASK-319 (the voice coordinator's turns in the one conversation, marked; the delegated line; session details lose the coordinator); workbench and workbench-thread READMEs; ADR 0019 amendment (2026-10-11) on 'visibly separate'. CONTEXT.md unchanged: Voice coordinator is defined, 'delegation' stays an Avoid note. Board proposals, drawn before A2 and B landed: 'Agent workbench@TASK-319' (new Delegations part bound to src/server/archboard/lib/codex-workbench-delegations.ts, Workhorse operations -> Delegations event, Browser gateway -> Delegations call, Browser gateway responsibility restated) and 'Browser application@TASK-319' (Workbench client responsibility restated). Reconcile at closing: the in-flight A2 hands the delegation map to the projection as BrowserProjectionInput.delegations, so the Browser gateway -> Delegations edge may need its direction/anchor fixed once the code is committed; relationships carry no anchors yet because the code did not exist.
 
 A2 server done: second server timeline owner (owners.coordinatorTimeline, budget 64 KiB / 40 turns) read through the new target-keyed readTarget (read() is a wrapper); BrowserProjectionInput.coordinatorTimeline and .delegations; codex-workbench-delegations.ts records workhorse turn -> coordinator turn from delegate_to_workhorse operation events with a turnId (256, oldest dropped), subscribed once in buildProductionTabSession. delegatedBy is emitted only on a recorded turn. Known limit: recording does not itself republish; the next timeline notification of the turn carries the mark.
+
+B UI done: the workbench shows the voice coordinator's turns among the workhorse's (src/ui/workbench-timeline merge by start time, coordinator first on a tie, a null start keeps its place in its own thread; useConversation keeps turns workhorse-only and adds coordinatorTurns, so the dock status, the composer's running state and steering ignore voice turns; messages carry metadata.custom {owner, turnId}; Conversation marks a coordinator turn with the voice rule, a 'Voice coordinator' head and a data-voice-turn scroll anchor; a delegated workhorse prompt carries 'Delegated by the voice coordinator', a button that scrolls the anchored turn into view while it is shown and plain text when it is not). AgentDetails drops the 'voice agent' wording. Checked by fixture screenshots at 1920x1080 in both themes (real AgentPanel, real transport parse of coordinatorTimeline); the server filling the fields is chunk A2, the shell design doc and ADR 0019 are chunk C. AC #1 and #2 stay open until a real voice session shows them.
 <!-- SECTION:NOTES:END -->
