@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:22'
-updated_date: '2026-10-11 15:41'
+updated_date: '2026-10-11 15:51'
 labels: []
 dependencies: []
 references:
@@ -48,4 +48,6 @@ Implemented pinned agent-browser 0.31.1 native resolution, prerequisite diagnost
 Hosted macOS job 114495510604 passes in run 38148069388 at c80c70d6. It executes the selected startup regression and platform owners. The user approved branch publication and draft PR #1. The Linux complete gate remains running.
 
 The second hosted run 38150616626 passes the wide-board case and macOS job, but its board-flight recorder fails with a missing SVG. The exact local flight owner passes with all 54 assertions, and all ten remaining browser owners pass. Later local runs reproduce a drained-stdin shutdown race and vendor macOS keyboard event storm. TASK-456 and TASK-457 record their separate repairs. Complete final gates remain pending.
+
+Main integration creates duplicate IDs for two independent task records. The supported backlog doctor repair moves the imported cross-process lock task to TASK-458 and git-opener watchdog task to TASK-459. Their original content remains unchanged. The reported TASK-454 proposal reference belongs to the independent TASK-454 wide-layout repair and remains correct. Main branch records remain untouched. The previous final gate stops before completion because integration changes its source snapshot; a fresh integrated gate is required.
 <!-- SECTION:NOTES:END -->
