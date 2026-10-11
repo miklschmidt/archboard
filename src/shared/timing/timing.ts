@@ -593,6 +593,8 @@ export { createElapsedClock } from "@/shared/timing/lib/elapsed-clock";
 
 export {
 	SERVER_HTTP_STOP_GRACE_MS,
+	SERVER_STOP_CONFIRM_MS,
 	SERVER_STOP_PIDFILE_POLL_MS,
 	SERVER_STOP_PIDFILE_WAIT_MS,
+	SERVER_STOP_PROBE_POLL_MS,
 } from "@/shared/timing/lib/server-stop";
