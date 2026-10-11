@@ -13,8 +13,10 @@ import {
 } from "@/shared/shell-geometry/index";
 import { readThemeColors, themeColor } from "@/shared/theme/server";
 
-import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
-import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
+import {
+	TEST_BROWSER_COMMAND_TIMEOUT_MS,
+	TEST_BROWSER_CONDITION_TIMEOUT_MS,
+} from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
@@ -137,13 +139,13 @@ test(
 			() => api<PanesBody>("/api/panes").then((response) => response.body),
 			(state) => (state.paneCount ?? 0) === 1,
 			"the shell pane to register",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await pollUntil(
 			() => browser.eval<string | null>(BOARD_NAME_EXPRESSION),
 			(board) => board === "fixedpoint",
 			"fixedpoint to become the visible board",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		// And on the proposal, not merely on the board: the header names the
 		// variant beside it, and a poll that stopped at the board name would run
@@ -155,13 +157,13 @@ test(
 				),
 			(variant) => variant === proposal.name,
 			"the header to name the proposal being read",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await pollUntil(
 			() => stageState(browser.eval.bind(browser)),
 			(state) => state === "drawn",
 			"the board to be drawn in its pane",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await browser.eval<boolean>("document.fonts.ready.then(() => true)");
 		// The branch write leaves a temporary activity row. Capture the idle
@@ -380,13 +382,13 @@ test(
 			() => api<PanesBody>("/api/panes").then((response) => response.body),
 			(state) => (state.paneCount ?? 0) === 2,
 			"the desktop shell to mount two panes",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		const twoPanes = await pollUntil(
 			readPaneLetters,
 			(letters) => letters.count === 2,
 			"the two pane letters to render",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		expect(twoPanes.active).toBe(1);
 		expect(
@@ -396,7 +398,7 @@ test(
 			() => api<PanesBody>("/api/panes").then((response) => response.body),
 			(state) => (state.paneCount ?? 0) === 1,
 			"the desktop shell to return to one pane",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await pollUntil(readPaneLetters, (letters) => letters.count === 0, "the pane letters to go");
 
@@ -461,7 +463,7 @@ test(
 				})()`),
 			(layout) => layout?.text === PERSISTENT_NOTICE_TEXT,
 			"the canvas-contained recovery notice to render",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		expect(notice).not.toBeNull();
 		if (!notice) {

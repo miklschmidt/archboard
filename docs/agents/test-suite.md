@@ -75,6 +75,24 @@ speed. The factor multiplies how long a test waits for something that should
 happen. It never multiplies a poll cadence, a window in which nothing may happen,
 or a product duration.
 
+No `TEST_*` budget comes from a product duration (TASK-154).
+`tests/system/support/timing.ts` imports nothing from `src/shared/timing`.
+A budget is a ceiling that a passing run never reaches, or a patience. A
+product change must not retune it.
+
+A system owner waits for a product timer only when the test is about that timer
+and the timer has no test override. Two cases remain:
+
+- the one-second lock sweep that tells a pane its board changed under it
+  (`external-board-write`, and the opt-in cross-process lock owner);
+- the wall-clock pace of a recording (`walkthrough-recording`, a declared
+  real-time exception).
+
+Module owners prove lease and claim expiry with fake timers. The CLI fixtures clear `ARCHBOARD_SETTLE_MS` only to keep the
+caller's value out. No CLI case reaches the change-feed settle, so its 1,200 ms
+default costs them nothing. When a test must outwait a product timer, write why
+beside its own literal in `timing.ts`.
+
 The diagram corpus in `src/runtime/semantic-renderer/tests/wide-boards.test.ts`
 uses a 60-second case deadline when `CI=true`. Its default engine also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
