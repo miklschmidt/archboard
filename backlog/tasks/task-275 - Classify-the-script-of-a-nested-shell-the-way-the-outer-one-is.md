@@ -1,11 +1,11 @@
 ---
 id: TASK-275
 title: Classify the script of a nested shell the way the outer one is
-status: In Progress
+status: Done
 assignee:
   - '@implementer'
 created_date: '2026-09-19 01:07'
-updated_date: '2026-10-11 13:58'
+updated_date: '2026-10-11 14:05'
 labels: []
 dependencies: []
 priority: medium
@@ -21,8 +21,8 @@ Found reviewing TASK-274.01. The exposure classifier unwraps one level of bash|s
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 A nested bash|sh|zsh -c script word is classified again as a script in its own right, recursively, for exposure and every other rule
-- [ ] #2 Both probes above count as other-run, and every existing classification of the saved batches is unchanged
-- [x] #3 Behavioural tests own it
+- [x] #2 Behavioural tests own it
+- [x] #3 Both probes above count as other-run
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -35,4 +35,12 @@ Found reviewing TASK-274.01. The exposure classifier unwraps one level of bash|s
 
 <!-- SECTION:NOTES:BEGIN -->
 unwrapped now recurses via innerScript; nested script feeds every rule (exposure, write, class). Tests fail without the change (reaudit: nested other-run; events: nested unwrap and write). AC2 probes proven; saved-batch invariance NOT verified: checking needs walking .skill-evals, which is forbidden; the task text says no stored command in the ten batches is nested.
+
+2026-10-11 user decision: the check that saved batches classify unchanged is not needed (the task text records that no stored command in the ten batches is nested), so that half of the old AC#2 was dropped; the probes half stays as the new AC#3. Verified by reaudit.test.ts and events.test.ts; making the recursion one level deep fails both.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+unwrapped in classify.ts now recurses through nested bash|sh|zsh -c scripts (innerScript), so a nested script feeds every rule, exposure included, and both probes from the task count as other-run. Verified 2026-10-11 by reaudit.test.ts and events.test.ts, which fail when the recursion is limited to one level. By the user's decision, re-classifying the saved batches was not required.
+<!-- SECTION:FINAL_SUMMARY:END -->
