@@ -96,6 +96,6 @@ The first Linux run fails on the unchanged Browser application blocks case at 60
 
 The second Linux run passes the wide-board case but fails the board-flight recorder because its expected SVG is absent. All ten remaining local browser owners pass.
 
-Later local runs reproduce a Codex shutdown race and a macOS keyboard failure. TASK-456 gives drained stdin a bounded grace before process termination. TASK-457 sends trusted keyboard input without the driver's Windows native key code on macOS. A blank-page comparison proves that field causes thousands of unwanted key events. The original inspection case passes after the repair.
+Later local runs reproduce a Codex shutdown race and a macOS keyboard failure. TASK-456 gives drained stdin a bounded grace before process termination. TASK-457 sends trusted keyboard input without `nativeVirtualKeyCode` on macOS. A blank-page comparison proves that field causes thousands of unwanted key events. The original inspection case passes after the repair.
 
 Hosted completion remains pending until the repaired full gate passes. TASK-141 retains its historical cancellation diagnosis criterion. The current Linux opener owner passes, so this run does not reproduce that old failure.
