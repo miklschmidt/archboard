@@ -72,12 +72,15 @@ const NOTHING_TO_DO: AddressPlan = Object.freeze({
 });
 
 /**
- * A board key as the vault reads it (ADR 0010).
+ * A board key as the vault reads it (ADR 0010): the board name is trimmed,
+ * composed and lowercased, and a variant after the first `@` is left as it is.
  * @param key The key.
- * @returns The key, trimmed, composed and lowercased.
+ * @returns The key with its board name normalised.
  */
 function normalisedKey(key: string): string {
-	return key.trim().normalize("NFC").toLowerCase();
+	const mark = key.indexOf("@");
+	const board = mark > 0 ? key.slice(0, mark) : key;
+	return board.trim().normalize("NFC").toLowerCase() + (mark > 0 ? key.slice(mark) : "");
 }
 
 /**
@@ -188,7 +191,7 @@ function planFor(
 		.map((pane) => pane.paneId);
 	const wantedOpen = asked.panes.filter((pane) => hasAddressedPane(displayed, pane.paneId));
 	const opens = wantedOpen.flatMap((pane) =>
-		pane.boardKey !== null && pane.boardKey !== boardIn(displayed, pane.paneId)
+		pane.boardKey !== null && !sameBoardKey(boardIn(displayed, pane.paneId), pane.boardKey)
 			? [{ paneId: pane.paneId, boardKey: pane.boardKey }]
 			: [],
 	);

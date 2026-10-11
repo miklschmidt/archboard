@@ -105,6 +105,20 @@ test("a plan opens the boards that differ, adds and closes panes, and moves the 
 	expect(planIsEmpty(plan)).toBe(false);
 });
 
+test("a board named in another case is the board on screen, so its view is read, not dropped", () => {
+	const wanted = settledAddress({
+		panes: [{ paneId: "A", boardKey: "Web shop", view: "ejQ7ydLw" }],
+		activePaneId: null,
+	});
+	const plan = planFor(address([["A", "web shop"]]), wanted, PANES);
+	expect(plan.opens).toEqual([]);
+	expect(plan.reads).toEqual([{ paneId: "A", view: "ejQ7ydLw" }]);
+	// A variant is not a board name: only the board part is read without case.
+	expect(
+		planFor(address([["A", "web shop@Draft"]]), address([["A", "Web shop@draft"]]), PANES).opens,
+	).toEqual([{ paneId: "A", boardKey: "Web shop@draft" }]);
+});
+
 test("an address that matches what is displayed asks for nothing", () => {
 	const displayed = address([
 		["A", "payments"],
