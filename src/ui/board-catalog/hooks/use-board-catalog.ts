@@ -2,13 +2,14 @@
 // One subscription to each half, one composition, and the named invalidations
 // the application calls when something it heard could have changed a board.
 
-import { useQuery, useQueryClient, type QueryClient, type QueryKey } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 
 import { composeListing, listingError, vaultHalf } from "@/ui/board-catalog/listing";
 import { boardCatalogKeys, paneInventoryQuery } from "@/ui/board-catalog/lib/queries";
 import {
 	onSemanticBoardChange,
+	readAgain,
 	semanticBoardKeys,
 	semanticBoardListQuery,
 } from "@/ui/semantic-board-canvas";
@@ -44,33 +45,12 @@ interface BoardCatalog {
 }
 
 /**
- * Read these queries again, so that an event is answered from after it and
- * never by a request that was already on the wire before it.
- *
- * Cancelling first is what makes that true, and it is the whole mechanism.
- * A read already in flight carries an answer the server decided before the
- * event: a cache with nothing behind that key cannot restart it — asked to
- * refetch, it hands the same request back — and a query no one is reading
- * right now is skipped by a refetch altogether, so in both cases the stale
- * answer would land, clear the invalidation and count as fresh. A cancelled
- * read is reverted rather than failed: data already in hand stays on screen,
- * no error reaches a person, and the invalidation stands.
- * @param client The cache.
- * @param queryKey The queries to read again, by exact key or by prefix.
- * @returns Settles once the fresh read has been asked for.
- */
-async function readAgain(client: QueryClient, queryKey: QueryKey): Promise<void> {
-	await client.cancelQueries({ queryKey });
-	await client.invalidateQueries({ queryKey });
-}
-
-/**
  * Read both halves of the listing again.
  * @param client The cache.
  */
 function invalidateListing(client: QueryClient): void {
-	void readAgain(client, semanticBoardKeys.boards);
-	void readAgain(client, boardCatalogKeys.panes);
+	void readAgain(client, [semanticBoardKeys.boards]);
+	void readAgain(client, [boardCatalogKeys.panes]);
 }
 
 /**
@@ -100,8 +80,7 @@ function catalogCommands(
 	 */
 	function reload(): void {
 		invalidateListing(client);
-		void readAgain(client, semanticBoardKeys.renders);
-		void readAgain(client, semanticBoardKeys.documents);
+		void readAgain(client, [semanticBoardKeys.documents, semanticBoardKeys.renders]);
 	}
 	/**
 	 * These boards have been written, or stopped being worked on. The listing
@@ -112,8 +91,10 @@ function catalogCommands(
 	function boardsChanged(boards: readonly string[]): void {
 		invalidateListing(client);
 		for (const board of boards) {
-			void readAgain(client, semanticBoardKeys.boardRenders(board));
-			void readAgain(client, semanticBoardKeys.document(board));
+			void readAgain(client, [
+				semanticBoardKeys.document(board),
+				semanticBoardKeys.boardRenders(board),
+			]);
 		}
 	}
 	/** A pane's socket came back. */
