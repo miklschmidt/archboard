@@ -18,8 +18,9 @@
 // name the branch command accepts and nothing can open. Splitting at the last
 // would take only the tail of such a name and look up a variant nobody has.
 //
-// `@/ui/board-routing` carries pane board keys as opaque strings, so nothing
-// in the address bar has to learn this spelling. There was a `semantic:` prefix
+// `@/ui/board-routing` carries pane board keys as opaque strings, and reads only
+// the board part (before the first `@`) to tell one board from another (ADR 0010).
+// There was a `semantic:` prefix
 // here while two kinds of board existed, marking the ones the legacy open path
 // had to keep away from; TASK-181 left one kind, so the marker went with it.
 

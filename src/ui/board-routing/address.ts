@@ -233,7 +233,6 @@ export {
 	EMPTY_ADDRESS,
 	boardIn,
 	viewIn,
-	sameBoardKey,
 	hasAddressedPane,
 	planFor,
 	planIsEmpty,
