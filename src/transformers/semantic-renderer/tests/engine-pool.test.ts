@@ -106,6 +106,26 @@ test("a solve waits for the first worker free, and the pool grows one worker at 
 	expect(workers).toHaveLength(2);
 });
 
+test("a solve called off while it waits is never sent, and one a worker holds still answers", async () => {
+	const { solve, workers } = heldPool(1);
+	const calling = new AbortController();
+	const held = solve({ id: "a" }, {}, calling.signal);
+	const waiting = solve({ id: "b" }, {}, calling.signal);
+	const next = solve({ id: "c" }, {});
+	const reason = new Error("not needed");
+	calling.abort(reason);
+	const refusal = await waiting.then(
+		() => undefined,
+		(error: unknown) => error,
+	);
+	expect(refusal).toBe(reason);
+	workers[0]!.answer(0, { data: { id: "a!" } });
+	expect(await held).toEqual({ id: "a!" });
+	expect(sentTo(workers[0]!)).toEqual(["a", "c"]);
+	workers[0]!.answer(1, { data: { id: "c!" } });
+	expect(await next).toEqual({ id: "c!" });
+});
+
 test("an engine refusal rejects the solve with an error that keeps the engine's words", async () => {
 	const { solve, workers } = heldPool(1);
 	const solving = solve({ id: "a" }, {});

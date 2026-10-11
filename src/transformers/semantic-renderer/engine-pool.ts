@@ -20,6 +20,9 @@
 // stopped, is replaced, and the solve it held waits once more for another
 // worker; a solve that fails a second time is refused with the engine's words.
 //
+// A solve asked for ahead can be called off while it waits for a worker: a
+// render that no longer needs it frees the worker for one it does.
+//
 // The workers accept `{ id, graph, layoutOptions }` and answer with
 // `{ id, data }` or `{ id, error, fatal }`.
 
@@ -240,9 +243,25 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		}
 	}
 
-	return (graph, layoutOptions) =>
+	return (graph, layoutOptions, signal) =>
 		new Promise<SolveGraph>((resolve, reject) => {
+			if (signal?.aborted === true) {
+				reject(signal.reason);
+				return;
+			}
 			queued.push({ graph, layoutOptions, resolve, reject, retried: false });
+			// A solve called off while it waits is never sent; one a worker holds
+			// is answered all the same, and nobody hears it.
+			signal?.addEventListener(
+				"abort",
+				() => {
+					const index = queued.findIndex((pending) => pending.resolve === resolve);
+					if (index < 0) return;
+					queued.splice(index, 1);
+					reject(signal.reason);
+				},
+				{ once: true },
+			);
 			dispatch();
 		});
 }
