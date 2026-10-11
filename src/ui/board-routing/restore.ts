@@ -104,6 +104,29 @@ function boardUnreachable(restore: Restore, target: number, boardKey: string): R
 }
 
 /**
+ * Take the server's spelling of a board this target opened. An address may name
+ * a board in another case, by `current`, or by a former name, and the pane
+ * reports it as the server keys it (ADR 0010, ADR 0036). Planned against the
+ * spelling that was asked, the pane would never look as if it had arrived, and
+ * the view the address names would never be read. An answer to a target that
+ * has been replaced is not recorded.
+ * @param restore The restore.
+ * @param target The target that asked.
+ * @param paneId The pane that was pointed at the board.
+ * @param openedKey The board the server says that pane is on.
+ * @returns The restore, wanting that pane on the server's spelling.
+ */
+function boardOpened(restore: Restore, target: number, paneId: string, openedKey: string): Restore {
+	if (target !== restore.target) {
+		return restore;
+	}
+	const panes = restore.wanted.panes.map((pane) =>
+		pane.paneId === paneId ? { ...pane, boardKey: openedKey } : pane,
+	);
+	return { ...restore, wanted: { ...restore.wanted, panes } };
+}
+
+/**
  * The key a step is remembered by, so that a step whose effect did not change
  * the workspace is not applied again.
  * @param step The step.
@@ -272,6 +295,7 @@ function advanceRestore(
 export {
 	abandonRestore,
 	advanceRestore,
+	boardOpened,
 	boardUnreachable,
 	createRestore,
 	nextRestoreStep,
