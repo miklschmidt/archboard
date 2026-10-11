@@ -99,3 +99,15 @@ The second Linux run passes the wide-board case but fails the board-flight recor
 Later local runs reproduce a Codex shutdown race and a macOS keyboard failure. TASK-456 gives drained stdin a bounded grace before process termination. TASK-457 sends trusted keyboard input without `nativeVirtualKeyCode` on macOS. A blank-page comparison proves that field causes thousands of unwanted key events. The original inspection case passes after the repair.
 
 Hosted completion remains pending until the repaired full gate passes. TASK-141 retains its historical cancellation diagnosis criterion. The current Linux opener owner passes, so this run does not reproduce that old failure.
+
+The integrated main branch exposes a resize test that depends on real frame timing. TASK-462 uses the existing controlled frame clock. Both original camera assertions remain. The owner passes even when each synthetic frame includes a real 64-millisecond stall.
+
+The merged Linux rerun again reaches the wide-board timeout. A held-worker regression proves that the pool promotes obsolete work before caller selection can cancel it. The repair gives that selection one message task before dispatch. Fatal and stopped-worker refusals use the same ordering. The first retry remains immediate. Browser message ports explicitly start delivery.
+
+The merged one-worker probe now performs seven solves in 28.38 seconds instead of eight in 30.46 seconds. Its SVG matches the merged baseline byte for byte. Seventeen queue cases pass with 80 assertions. Review covers FIFO order, caller-enqueued work, and worker lifetime.
+
+The user requests Chrome for Testing after desktop Chrome launches produce default-browser prompts. Local commands now select Chrome for Testing through both browser environment variables. The guidance keeps those variables out of `.env` files because Bun reloads them in isolated child processes.
+
+The command-prefixed local gate passes every normal owner and all 19 browser cleanup audits. That run starts before the final queue repair, so final-source validation remains pending.
+
+TASK-461 records a separate startup threshold proposal. The supplied user instructions require exact approval for that contract change. The proposal remains unapplied.
