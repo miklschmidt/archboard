@@ -21,9 +21,8 @@ describe("coordinator callback lifecycle", () => {
 		}
 		const unknown = await h.callbacks.enqueue(operationEvent(h.ids, "outcome_unknown"));
 		expect(unknown).toMatchObject({ outcome: "delivered", path: "coordinator_turn" });
-		for (const source of [h.semantic.change, h.semantic.focus, h.semantic.selection]) {
-			// A change, a focus or a selection nobody's hand made is never put into a speech
-			// model's context.
+		for (const source of [h.semantic.focus, h.semantic.selection]) {
+			// A focus or a selection nobody's hand made is never put into a speech model's context.
 			const result = await h.callbacks.enqueue(source);
 			expect(result.outcome).toBe("not_delivered");
 			expect(result.path).toBe("silent");

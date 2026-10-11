@@ -124,8 +124,55 @@ function ownSessionWrite(
 	event: CoordinatorCallbackSource,
 	options: CoordinatorCallbackOptions,
 ): boolean {
-	const by = "change" in event ? event.change.by : null;
+	const by = authorOf(event);
 	return by === null ? false : sessionThreads(options).includes(by);
+}
+
+/**
+ * Why a callback is told to nobody from the moment it arrives: this session made it itself, or
+ * an outside agent wrote a board no pane of this canvas shows (TASK-293.06). Both are decided as
+ * the event lands: a pane that turns to the board afterwards reads it as it now is.
+ * @param event - The source event.
+ * @param callback - Its normalized callback.
+ * @param options - The callback options, for the live identities and the canvas.
+ * @returns The reason, or null when it goes on to delivery.
+ */
+function arrivalRefusal(
+	event: CoordinatorCallbackSource,
+	callback: CoordinatorCallback,
+	options: CoordinatorCallbackOptions,
+): "own_change" | "not_shown" | null {
+	if (ownSessionWrite(event, options)) {
+		return "own_change";
+	}
+	return unshownWrite(callback, options) ? "not_shown" : null;
+}
+
+/**
+ * Whether a callback is an outside agent's write to a board no pane of this canvas shows.
+ * @param callback - The normalized callback.
+ * @param options - The callback options, for the canvas.
+ * @returns True when nobody is looking at the board it wrote.
+ */
+function unshownWrite(callback: CoordinatorCallback, options: CoordinatorCallbackOptions): boolean {
+	const board = callback.kind === "semantic" ? callback.semantic.news?.board : null;
+	return typeof board === "string" && !options.canvas().boards.includes(board);
+}
+
+/**
+ * The agent session an event says made it: the writer of a settled change, or the agent whose
+ * `browser show` moved a pane (TASK-293.06). Null when nobody said, and for what a pane reports.
+ * @param event - The source event.
+ * @returns The session, or null.
+ */
+function authorOf(event: CoordinatorCallbackSource): string | null {
+	if (!("kind" in event)) {
+		return null;
+	}
+	if (event.kind === "settled_change") {
+		return event.change.by;
+	}
+	return event.kind === "pane_focus" ? (event.agentSwitch?.by ?? null) : null;
 }
 
 /**
@@ -352,13 +399,14 @@ export function createCodexCoordinatorCallbacks(
 		// and asked before delivery rather than after normalization — a normalized
 		// callback keeps what a voice says out loud and drops who wrote it, so there
 		// is nowhere downstream left to ask.
-		if (ownSessionWrite(event, options)) {
+		const refused = arrivalRefusal(event, callback, options);
+		if (refused !== null) {
 			return Promise.resolve(
 				makeDelivery(callback, evidence, {
 					attemptedAtMs: null,
 					path: "none",
 					outcome: "not_delivered",
-					reason: "own_change",
+					reason: refused,
 				}),
 			);
 		}

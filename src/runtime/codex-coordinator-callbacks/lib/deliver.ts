@@ -8,6 +8,7 @@ import {
 } from "@/runtime/codex-coordinator-callbacks/lib/delivery-authority";
 import type {
 	CoordinatorCallback,
+	CoordinatorCallbackCanvas,
 	CoordinatorCallbackCorrelation,
 	CoordinatorCallbackDelivery,
 	CoordinatorCallbackDeliveryOutcome,
@@ -182,6 +183,8 @@ interface VoiceAppend {
 	readonly generation: NonNullable<CoordinatorCallbackCorrelation["realtimeGeneration"]>;
 	readonly channel: CoordinatorCallbackRealtimeRequest["channel"];
 	readonly text: string;
+	/** What the record says of an append that went through: agent for an outside agent's doing. */
+	readonly reason: "agent" | null;
 }
 
 /**
@@ -200,6 +203,20 @@ function voiceRequest(append: VoiceAppend): CoordinatorCallbackRealtimeRequest {
 				channel: "context",
 				params: freeze({ threadId, text, role: "developer" }),
 			});
+}
+
+/**
+ * What the record of an append says when no authority was lost meanwhile: why the session did
+ * not take it, or what the sentence was news of.
+ * @param result - How the append settled.
+ * @param append - The sentence.
+ * @returns The reason, or null.
+ */
+function recordedReason(
+	result: CoordinatorCallbackMutationResult,
+	append: VoiceAppend,
+): CoordinatorCallbackDeliveryReason | null {
+	return result.reason ?? append.reason;
 }
 
 /**
@@ -230,7 +247,7 @@ async function deliverThroughVoice(
 		attemptedAtMs: result.attempted ? attemptedAtMs : null,
 		path: VOICE_PATHS[append.channel],
 		outcome: lostAuthority === null ? result.outcome : "outcome_unknown",
-		reason: lostAuthority ?? result.reason,
+		reason: lostAuthority ?? recordedReason(result, append),
 		text: append.text,
 		realtimeRequest,
 	});
@@ -353,6 +370,9 @@ function recordOnly(
  * Give the live voice session the pane news a semantic callback is, or record the callback when
  * there is none to give: no voice session, or nothing of it that was the user's own doing.
  *
+ * News of what an outside agent did is told to the coordinator as well (TASK-293.06); a write to a
+ * board no pane shows was refused as it arrived.
+ *
  * Pane news is quiet context, except during a narration, where news that stops a talk is speech:
  * the voice model finishes what it is saying (appended speech does not cut into audio in progress,
  * TASK-293.05), asks about what the user picked, then finishes its step and waits (TASK-251).
@@ -378,14 +398,59 @@ function deliverPaneNews(
 		const reason = generation === null ? "voice_inactive" : "agent";
 		return Promise.resolve(recordOnly(callback, evidence, text, reason));
 	}
-	// Read as it is delivered rather than when the pane reported: leaving the walkthrough ends
-	// the narration, and news queued behind it is then quiet.
-	const narrating = options.canvas().narrated !== null;
-	return deliverThroughVoice(callback, options, isDisposed, evidence, {
+	const append: VoiceAppend = {
 		generation,
-		channel: news.stops && narrating ? "speech" : "context",
+		channel: channelOf(news, options.canvas()),
 		text: news.sentence,
-	});
+		reason: news.by === "agent" ? "agent" : null,
+	};
+	return news.by === "agent"
+		? deliverOutsideNews(callback, options, isDisposed, evidence, append)
+		: deliverThroughVoice(callback, options, isDisposed, evidence, append);
+}
+
+/**
+ * Whether pane news is said now or given quietly. Read as it is delivered rather than when the
+ * pane reported: leaving the walkthrough ends the narration, and news queued behind it is then
+ * quiet. A write stops only a narration of the board it wrote.
+ * @param news - The pane news.
+ * @param canvas - What the tab's canvas holds now.
+ * @returns The channel.
+ */
+function channelOf(
+	news: NonNullable<CoordinatorSemanticCallback["semantic"]["news"]>,
+	canvas: CoordinatorCallbackCanvas,
+): CoordinatorCallbackRealtimeRequest["channel"] {
+	if (!news.stops || canvas.narrated === null) {
+		return "context";
+	}
+	return news.board === null || news.board === canvas.narrated ? "speech" : "context";
+}
+
+/**
+ * Tell both halves what an agent outside this session did (TASK-293.06): the coordinator thread
+ * gets the sentence as quiet context, which starts no turn, since it reads the board through its
+ * own tools when asked and has no tool that writes or moves one, so telling it cannot loop; the
+ * voice model gets it quietly, or as speech during a narration it changes. The record is the
+ * voice's: the coordinator's copy is best effort, because the voice is what the user hears.
+ * @param callback - The normalized semantic callback.
+ * @param options - The server authorities and ports.
+ * @param isDisposed - Whether the callback module has been disposed.
+ * @param evidence - The ordering and freshness evidence for the delivery record.
+ * @param append - The sentence, its generation and its channel.
+ * @returns The delivery record.
+ */
+async function deliverOutsideNews(
+	callback: CoordinatorSemanticCallback,
+	options: CoordinatorCallbackOptions,
+	isDisposed: () => boolean,
+	evidence: CallbackDeliveryEvidence,
+	append: VoiceAppend,
+): Promise<CoordinatorCallbackDelivery> {
+	await options.coordinatorContext
+		.inject({ threadId: append.generation.coordinatorThreadId, text: append.text })
+		.catch(() => undefined);
+	return deliverThroughVoice(callback, options, isDisposed, evidence, append);
 }
 
 /**

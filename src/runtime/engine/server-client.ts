@@ -159,15 +159,24 @@ function closePane(spec: string): Promise<PaneLayoutResponse> {
 }
 
 /**
- * Point one pane at one board.
+ * Point one pane at one board, as an agent: the shell's own shows come from the page, so a show
+ * from here says it is an agent's, and which agent session it is when the invocation named one.
+ * The voice and its coordinator are told an agent moved the pane, unless it was their own
+ * session (TASK-293.06).
  * @param board The board key.
  * @param pane The pane spec, when the caller named one.
  * @returns What the pane is showing now.
  */
 function showBoardInPane(board: string, pane?: string): Promise<ShowBoardResponse> {
+	const session = currentWriteSession();
 	return requestJson<ShowBoardResponse>(
 		"/api/panes/show",
-		posting({ board, ...(pane === undefined ? {} : { pane }) }),
+		posting({
+			board,
+			agent: true,
+			...(pane === undefined ? {} : { pane }),
+			...(session === null ? {} : { session }),
+		}),
 	);
 }
 

@@ -6,6 +6,10 @@
 // Names only. An identifier, a pane letter or a line of JSON in a speech model's context is
 // something it will say out loud. Only the parts the pane marked as the user's own are said
 // (ADR 0034), and the board always is, because two panes can be open.
+//
+// What an agent outside this session does is news too (TASK-293.06): a board it wrote, or a pane
+// it pointed somewhere with `browser show`. Neither model asked for it, so the sentence says what
+// changed under them and that an agent did it, never crediting the user.
 
 import type {
 	PaneFocusEvent,
@@ -124,20 +128,75 @@ function stopsNarration(
 }
 
 /**
- * The pane news one event is, or null when nothing of it was the user's own doing.
- * @param event - The semantic event.
- * @returns The sentence for the voice model and whether it stops a narration, or null when
- *   nobody is to be told.
+ * What an agent outside this session writing a board is (TASK-293.06): the board, and what the
+ * writer said it was doing, in its own words. Said by name and never as the user's doing: neither
+ * model asked for it, and what they hold about that board is no longer true.
+ * @param event - The settled change.
+ * @returns The news.
  */
-function paneNews(event: PaneNewsSource): CoordinatorPaneNews | null {
-	if (event.kind === "settled_change" || event.userChanged.length === 0) {
+function outsideWriteNews(event: SettledSemanticChangeEvent): CoordinatorPaneNews {
+	const doing = event.doing === null ? "" : `, which says: ${JSON.stringify(event.doing)}`;
+	return {
+		sentence: `Board "${event.board.name}" was just changed by another agent${doing} (data).`,
+		stops: true,
+		by: "agent",
+		board: event.change.board,
+	};
+}
+
+/**
+ * What an agent pointing a pane at another board is: where the pane was and where it is now,
+ * worded so it never credits the user.
+ * @param event - The focus event the show published.
+ * @param from - The board the pane showed before, by name, or null when it showed none.
+ * @returns The news.
+ */
+function agentSwitchNews(event: PaneFocusEvent, from: string | null): CoordinatorPaneNews {
+	const now = `board "${event.board.name}"`;
+	let sentence = `A pane now shows ${now}; an agent put it there (data).`;
+	if (from === event.board.name) {
+		sentence = `The pane showing ${now} now shows another variant of it; an agent put it there (data).`;
+	} else if (from !== null) {
+		sentence = `The pane that showed board "${from}" now shows ${now}; an agent put it there (data).`;
+	}
+	return { sentence, stops: true, by: "agent", board: null };
+}
+
+/**
+ * The pane news a report is of what the user changed by hand, or null when they changed nothing
+ * of it.
+ * @param event - The focus or selection event.
+ * @returns The news, or null.
+ */
+function userNews(event: PaneFocusEvent | PaneSelectionEvent): CoordinatorPaneNews | null {
+	const changed = event.userChanged;
+	if (event.kind === "pane_focus") {
+		return changed.includes("focus")
+			? { sentence: focusNews(event), stops: false, by: "user", board: null }
+			: null;
+	}
+	if (changed.length === 0) {
 		return null;
 	}
-	const changed = event.userChanged;
-	if (event.kind === "pane_selection") {
-		return { sentence: readingNews(event, changed), stops: stopsNarration(event, changed) };
+	const sentence = readingNews(event, changed);
+	return { sentence, stops: stopsNarration(event, changed), by: "user", board: null };
+}
+
+/**
+ * The pane news one event is, or null when nobody is to be told: nothing of it was the user's
+ * own doing and no agent outside this session did it. Whose own a write or a show is was asked
+ * before this, where the session's threads are known (callbacks.ts).
+ * @param event - The semantic event.
+ * @returns The news, or null.
+ */
+function paneNews(event: PaneNewsSource): CoordinatorPaneNews | null {
+	if (event.kind === "settled_change") {
+		return outsideWriteNews(event);
 	}
-	return changed.includes("focus") ? { sentence: focusNews(event), stops: false } : null;
+	if (event.kind === "pane_focus" && event.agentSwitch !== null) {
+		return agentSwitchNews(event, event.agentSwitch.from);
+	}
+	return userNews(event);
 }
 
 export { paneNews };

@@ -419,9 +419,11 @@ _Avoid_: callback, telemetry, event, selection report
 
 **Outside change**:
 A board change made by an agent that is neither the workhorse nor the voice
-coordinator of this tab session. The workhorse of another tab is such an agent.
-The voice model and the coordinator are both told. Neither asked for the
-change, and what they know of the board is no longer true.
+coordinator of this tab session. The workhorse of another tab is such an agent,
+and so is a write that names no session. The voice model and the coordinator are
+both told, when a pane of the tab shows that board. Neither asked for the
+change, and what they know of the board is no longer true. Such an agent moving
+one of the tab's panes is told the same way, and never as the user's doing.
 _Avoid_: external edit, foreign write, third-party change
 
 **Comparison**:

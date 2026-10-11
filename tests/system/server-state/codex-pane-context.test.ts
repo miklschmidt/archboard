@@ -254,9 +254,11 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 				})
 			).status,
 		).toBe(200);
-		// Which pane the user is in moves only by their own hand, so that is news too. The board
-		// an agent switched the pane to, and the two readings no hand was marked on, are not: an
-		// append used to follow each of them within a few hundred milliseconds.
+		// Which pane the user is in moves only by their own hand, so that is news too. A show that
+		// names no agent (the page's own, which the pane marks itself), a write to a board no pane
+		// showed when it landed, and the two readings no hand was marked on, are not: an append
+		// used to follow each of them within a few hundred milliseconds. An agent's show is
+		// codex-outside-change's.
 		await waitFor(() => appended().length === 2, "the user's move to reach live voice", {
 			timeoutMs: 2000,
 		});
