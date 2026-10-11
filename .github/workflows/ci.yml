@@ -46,14 +46,36 @@ jobs:
         shell: bash
         env:
           CI: "true"
-        run: bun run check 2>&1 | tee "$RUNNER_TEMP/archboard-check.log"
+        run: |
+          # TEMPORARY diagnostic: sample processes while the gate runs.
+          (
+            set +e +o pipefail
+            while sleep 3; do
+              echo "=== $(date -u +%T) load $(cut -d' ' -f1-3 /proc/loadavg) mem $(free -m | awk '/Mem/{print $3"/"$2}')"
+              ps -eo pid,ppid,etimes,pcpu,rss,stat,wchan:24,args --sort=-pcpu | head -12 | cut -c1-260
+              for pid in $(pgrep -f 'install-skill|src/bin.ts semantic show any|codex-realtime' ); do
+                et=$(ps -o etimes= -p "$pid" 2>/dev/null | tr -d ' ')
+                if [ -n "$et" ] && [ "$et" -ge 4 ]; then
+                  echo "--- slow $pid ($et s): $(tr '\0' ' ' < /proc/$pid/cmdline | cut -c1-200)"
+                  echo "wchan $(cat /proc/$pid/wchan 2>/dev/null) syscall $(cat /proc/$pid/syscall 2>/dev/null | cut -c1-80)"
+                  grep -E 'State|Threads|VmRSS' /proc/$pid/status 2>/dev/null | tr '\n' ' '; echo
+                  for t in /proc/$pid/task/*; do echo "  task $(basename $t) $(cat $t/comm) $(cat $t/wchan) $(cut -d' ' -f3 $t/stat)"; done 2>/dev/null | head -40
+                  ls -l /proc/$pid/fd 2>/dev/null | awk '{print "  fd "$9" "$10" "$11}' | head -30
+                  ps -o pid,ppid,etimes,stat,args --ppid "$pid" 2>/dev/null | cut -c1-200
+                fi
+              done
+            done
+          ) > "$RUNNER_TEMP/archboard-processes.log" 2>&1 &
+          bun run check 2>&1 | tee "$RUNNER_TEMP/archboard-check.log"
 
       - name: Retain validation evidence
         if: always() && (steps.validation.outcome == 'success' || steps.validation.outcome == 'failure' || steps.validation.outcome == 'cancelled')
         uses: actions/upload-artifact@v4
         with:
           name: validation-log
-          path: ${{ runner.temp }}/archboard-check.log
+          path: |
+            ${{ runner.temp }}/archboard-check.log
+            ${{ runner.temp }}/archboard-processes.log
           if-no-files-found: error
 
   macos-processes:
