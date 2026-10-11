@@ -287,7 +287,7 @@ async function createAgentBrowser(): Promise<AgentBrowserSession> {
 			}
 			const child = spawn(
 				command[0],
-				[command[1], "--namespace", namespace, "--session", session, ...argv],
+				[...command.slice(1), "--namespace", namespace, "--session", session, ...argv],
 				{
 					cwd: roots.ownerRoot,
 					env,

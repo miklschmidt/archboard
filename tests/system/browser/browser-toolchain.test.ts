@@ -13,12 +13,27 @@ test("the pinned browser CLI runs without HOME and never invokes an ambient wrap
 		writeFileSync(join(root, "agent-browser"), `#!/bin/sh\ntouch '${marker}'\nexit 23\n`, {
 			mode: 0o700,
 		});
-		const output = probeBrowserTool([...agentBrowserCommand(), "--version"], { PATH: root });
+		const command = agentBrowserCommand();
+		// The vendor JS wrapper loses native signal status and owns an unforwarded child.
+		expect(command).toHaveLength(1);
+		const output = probeBrowserTool([...command, "--version"], { PATH: root });
 		expect(output.length).toBeGreaterThan(0);
 		expect(existsSync(marker)).toBe(false);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
+});
+
+test("a prerequisite terminated by signal cannot become success", () => {
+	expect(() =>
+		probeBrowserTool([process.execPath, "-e", 'process.kill(process.pid, "SIGTERM");'], {}),
+	).toThrow(CouldNotRunError);
+});
+
+test("an unavailable prerequisite remains a could-not-run failure", () => {
+	expect(() => probeBrowserTool([join(import.meta.dir, "absent-prerequisite")], {})).toThrow(
+		CouldNotRunError,
+	);
 });
 
 test("prerequisite failure retains subprocess evidence", () => {
