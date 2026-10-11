@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:22'
-updated_date: '2026-10-11 14:40'
+updated_date: '2026-10-11 15:41'
 labels: []
 dependencies: []
 references:
@@ -46,4 +46,6 @@ No board is affected: these changes alter developer test tooling, CI selection, 
 Implemented pinned agent-browser 0.31.1 native resolution, prerequisite diagnostics, macOS owner selection, navigation links, completion guidance, and structured progress. Six scoped Standards/Spec reviews fixed findings in commits b9fe728c, fd7e800a, db5dfa80, 38129d13, bdab5a5f, and 5fe44e5a. Complete local gate: 4678 passing tests, zero failures, all 19 browser owners completed cleanup audits, final exit 0. Final lint, formatting, types, and 7 focused tests pass. Linux opener: 1 pass, 24 assertions. Linux tooling: 5 pass, 15 assertions. Dogfood structural check passes; code check reports the existing unrelated drawRequest anchor warning. No task commits changed bound product parts. Hosted macOS execution remains pending explicit approval to publish the reviewed branch.
 
 Hosted macOS job 114495510604 passes in run 38148069388 at c80c70d6. It executes the selected startup regression and platform owners. The user approved branch publication and draft PR #1. The Linux complete gate remains running.
+
+The second hosted run 38150616626 passes the wide-board case and macOS job, but its board-flight recorder fails with a missing SVG. The exact local flight owner passes with all 54 assertions, and all ten remaining browser owners pass. Later local runs reproduce a drained-stdin shutdown race and vendor macOS keyboard event storm. TASK-456 and TASK-457 record their separate repairs. Complete final gates remain pending.
 <!-- SECTION:NOTES:END -->

@@ -226,6 +226,10 @@ homes remain isolated, and Chromium still owns a private profile and temporary
 directory that teardown must remove. Both renderer and browser-lane launches use
 a mock keychain to prevent dialogs or writes to the person's macOS keychain.
 
+On macOS, the adapter sends `press` commands through Chromium's trusted input protocol.
+It omits the vendor driver's Windows native key code, which produces unwanted repeated events in macOS Chrome.
+The adapter retains the command deadline and closes its input connection during cleanup.
+
 For a managed Chrome installation that enforces the default-browser policy,
 use Chrome for Testing. Set both `AGENT_BROWSER_EXECUTABLE_PATH` and
 `ARCHBOARD_RENDERER_CHROMIUM` to its executable. Run the browser lane serially;
