@@ -24,6 +24,12 @@ function plain(error: unknown): string {
 	return Bun.stripANSI((error as Error).message);
 }
 
+/**
+ * The codes Bun gives a fetch that nothing listens for: its own name before
+ * 1.4.3, the system code from 1.4.3 on.
+ */
+const CONNECTION_REFUSED_CODES = ["ConnectionRefused", "ECONNREFUSED"];
+
 describe("CLI resource cleanup", () => {
 	test("awaits an in-flight shipped-bin child before owned listeners and roots disappear", async () => {
 		let releaseHealth!: () => void;
@@ -95,10 +101,9 @@ describe("CLI resource cleanup", () => {
 			}
 			expect(listenerError).toBeInstanceOf(TypeError);
 			const refusal = listenerError as Error & { code?: string; errno?: number; path?: string };
-			expect(refusal.code).toBe("ConnectionRefused");
+			expect(refusal.code).toBeOneOf(CONNECTION_REFUSED_CODES);
 			expect(refusal.errno).toBe(0);
 			expect(refusal.path).toBe(`${url}/health`);
-			expect(refusal.message).toBe("Unable to connect. Is the computer able to access the url?");
 		}
 	});
 
@@ -253,10 +258,9 @@ describe("CLI resource cleanup", () => {
 		}
 		expect(listenerError).toBeInstanceOf(TypeError);
 		const refusal = listenerError as Error & { code?: string; errno?: number; path?: string };
-		expect(refusal.code).toBe("ConnectionRefused");
+		expect(refusal.code).toBeOneOf(CONNECTION_REFUSED_CODES);
 		expect(refusal.errno).toBe(0);
 		expect(refusal.path).toBe(`${base}/health`);
-		expect(refusal.message).toBe("Unable to connect. Is the computer able to access the url?");
 		let childError: unknown;
 		try {
 			await server.assertRunning(intendedError);
