@@ -3,7 +3,10 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS } from "../support/timing.ts";
+import {
+	TEST_CROSS_PROCESS_CLAIM_RENEWAL_WAIT_MS,
+	TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
+} from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { openTestPane } from "../support/pane-websocket.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -12,7 +15,9 @@ import { sanitizedEnvironment } from "./support/process-http.ts";
 // ADR 0016: the lock is a file, and a file calls nobody. A claim taken through
 // one Archboard server excludes writes through another server on the same vault,
 // and the second server's panes hear about it from the lock sweep within one
-// watch interval rather than at their next refused write.
+// watch interval rather than at their next refused write. A pane taking a
+// claim back through one server ends the claim held through the other, and that
+// agent hears CLAIM_REVOKED (ADR 0022).
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const serverPath = join(repoRoot, "src/server.ts");
@@ -112,4 +117,25 @@ test("a claim taken through another server excludes writes here and reaches the 
 	);
 	const written = await requestFirst("/api/semantic-boards/edit?expectVersion=1", edit);
 	expect(written.status).toBe(200);
+
+	// A pane on this server takes the claim back from the other one. The lease
+	// file goes free, and the claiming server learns of it only when its next
+	// renewal is refused. Until then a call from that agent would simply retake
+	// the free lease, so nothing is asked of it before the renewal has fired.
+	const reclaimed = await requestSecond("/api/semantic-boards/claim?board=payments", {
+		method: "POST",
+		body: { reason: "restructuring the queues again" },
+	});
+	expect(reclaimed.status).toBe(200);
+	const takenBack = await requestFirst<{ released: boolean }>(
+		"/api/semantic-boards/take-back?board=payments",
+		{ method: "POST", body: { clientId: pane.clientId } },
+	);
+	expect(takenBack).toMatchObject({ status: 200, body: { released: true } });
+	await Bun.sleep(TEST_CROSS_PROCESS_CLAIM_RENEWAL_WAIT_MS);
+	const revoked = await requestSecond<{ code: string }>(
+		"/api/semantic-boards/claim?board=payments",
+		{ method: "POST", body: { reason: "carrying on" } },
+	);
+	expect(revoked).toMatchObject({ status: 409, body: { code: "CLAIM_REVOKED" } });
 }, 30_000);

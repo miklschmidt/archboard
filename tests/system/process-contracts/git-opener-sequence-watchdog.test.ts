@@ -157,13 +157,15 @@ async function runOwnedDetached(
 	return result!;
 }
 
-/** Tests that ran per owner file, from the junit report: one top-level suite per file. */
+/** Tests that ran per owner file, from the junit report: one top-level suite per file. Skipped tests are not counted. */
 function testsPerOwner(junit: string): Map<string, number> {
 	const ran = new Map<string, number>();
-	for (const [, file, tests] of junit.matchAll(
-		/<testsuite name="([^"]+)" file="\1"[^>]* tests="(\d+)"/g,
+	for (const [, file, attributes] of junit.matchAll(
+		/<testsuite name="([^"]+)" file="\1"([^>]*)>/g,
 	)) {
-		ran.set(file!, Number(tests));
+		const tests = Number(/ tests="(\d+)"/.exec(attributes!)?.[1]);
+		const skipped = Number(/ skipped="(\d+)"/.exec(attributes!)?.[1] ?? 0);
+		ran.set(file!, tests - skipped);
 	}
 	return ran;
 }
@@ -187,7 +189,7 @@ test(
 				{ env: { ...process.env, ARCHBOARD_REPOS: resolve(ROOT, ".absent-watchdog-repos.json") } },
 			);
 			expect(settled.exitCode, `stdout:\n${settled.out}\nstderr:\n${settled.err}`).toBe(0);
-			// Exit 0 alone would also hold if an owner never ran: each must report a test.
+			// Exit 0 alone would also hold if an owner never ran, or only skipped: each must report a test that ran.
 			const ran = testsPerOwner(readFileSync(report, "utf8"));
 			for (const owner of OWNERS) {
 				expect(ran.get(owner) ?? 0, owner).toBeGreaterThan(0);
