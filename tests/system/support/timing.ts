@@ -143,7 +143,8 @@ const TEST_PANE_MESSAGE_POLL_MS = 20;
  *
  * These panes acknowledge callbacks directly and never render, so a frame
  * that has not arrived in two seconds is missing. It is long enough for a
- * server that waits on a pane's geometry to give up first.
+ * server that waits on a pane's geometry to give up first: it pulls against
+ * `PANE_SETTLE_CAP_MS` (1.5 s), which this value must stay above.
  */
 const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
 
@@ -151,8 +152,9 @@ const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
  * Outer bound for one cross-process lock-watch delivery, from the completed
  * ownership change in one server to the matching board_lock frame on the pane
  * of the other. This owner is about that delivery, so it does wait for the
- * product's one-second lock sweep to fire: a second server learns of a lock
- * file only by looking at it, and the sweep interval has no test override.
+ * product's one-second lock sweep (`LOCK_WATCH_MS`) to fire: a second server
+ * learns of a lock file only by looking at it, and the sweep interval has no
+ * test override.
  * The bound is a test number, three seconds: one sweep, then slack for timer
  * phase, loopback delivery and a stressed host. A change to the sweep interval
  * is meant to show up here as a failure, not to move this bound.
