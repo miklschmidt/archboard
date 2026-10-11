@@ -59,9 +59,11 @@ skills/archboard/references/generated/
 /.agents/skills/*
 !/.agents/skills/archboard
 !/.agents/skills/archboard-dev
+!/.agents/skills/archboard-pr
 /.claude/skills/*
 !/.claude/skills/archboard
 !/.claude/skills/archboard-dev
+!/.claude/skills/archboard-pr
 
 # Agent worktrees, created per subagent run and removed after.
 .claude/worktrees/
