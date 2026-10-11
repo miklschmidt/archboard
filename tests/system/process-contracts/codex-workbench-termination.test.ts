@@ -30,6 +30,20 @@ async function pendingShutdownBatch(resources: AsyncDisposableStack, label: stri
 	mkdirSync(staging, { recursive: true });
 	resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 	const fixture = prepareProductionFixture(resources, extendFixture(staging));
+	// Observe the child's consumption and natural closure, rather than inferring
+	// either from the parent's completed stdin writes or a vanished pid.
+	writeFileSync(
+		fixture.executablePath,
+		String.raw`
+process.stdin.once("end", () => record({ kind: "stdin_eof" }));
+process.once("SIGTERM", () => {
+	record({ kind: "termination_signal" });
+	process.exit(143);
+});
+process.once("exit", (code) => record({ kind: "process_exit", code }));
+`,
+		{ flag: "a" },
+	);
 	const server = await startServer(fixture);
 	resources.defer(() => server.dispose());
 	const clientId = `termination-${label}`;
@@ -115,6 +129,27 @@ describe.serial("composed Codex terminal process lifecycle", () => {
 				for (const id of ["shutdown-ordinary", "shutdown-dynamic", "shutdown-wait"]) {
 					expect(reverseResponses(fixture.logPath, id), `${signal}:${id}`).toHaveLength(1);
 				}
+				const childEvents = records(fixture.logPath);
+				const eofIndex = childEvents.findIndex((entry) => entry.kind === "stdin_eof");
+				expect(eofIndex, signal).toBeGreaterThanOrEqual(0);
+				for (const id of ["shutdown-ordinary", "shutdown-dynamic", "shutdown-wait"]) {
+					const consumedIndex = childEvents.findIndex(
+						(entry) => entry.kind === "reverse_response" && entry.frame?.id === id,
+					);
+					expect(consumedIndex, `${signal}:${id}:before-EOF`).toBeLessThan(eofIndex);
+				}
+				expect(
+					childEvents.filter((entry) => entry.kind === "termination_signal"),
+					signal,
+				).toEqual([]);
+				expect(
+					childEvents.filter((entry) => entry.kind === "process_exit"),
+					signal,
+				).toEqual([{ kind: "process_exit", code: 0 }]);
+				expect(
+					childEvents.filter((entry) => entry.kind === "app_server_spawn"),
+					signal,
+				).toHaveLength(1);
 				expect(reverseResponses(fixture.logPath, "shutdown-ordinary")[0]?.frame).toEqual({
 					id: "shutdown-ordinary",
 					result: { decision: "cancel" },

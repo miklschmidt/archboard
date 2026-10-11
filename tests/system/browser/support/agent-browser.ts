@@ -5,7 +5,9 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS, TEST_BROWSER_POLL_MS } from "../../support/timing.ts";
 import { browserProfileForSession } from "./browser-executable.ts";
+import { agentBrowserCommand } from "./browser-toolchain.ts";
 import { processIdsWithEnvironmentMarkers } from "./process-environment-census.ts";
+import { pressPortableKey } from "./portable-keyboard.ts";
 
 interface BrowserTestRoots {
 	laneRoot: string;
@@ -233,8 +235,19 @@ interface BrowserCommandOptions {
 	readonly timeoutMs?: number;
 }
 
+function commandTimeout(options: BrowserCommandOptions): number {
+	const timeoutMs = options.timeoutMs ?? TEST_BROWSER_COMMAND_TIMEOUT_MS;
+	if (!Number.isFinite(timeoutMs) || !Number.isInteger(timeoutMs) || timeoutMs <= 0) {
+		throw new Error(
+			`Agent-browser command timeout must be a positive finite integer; received ${timeoutMs}.`,
+		);
+	}
+	return timeoutMs;
+}
+
 async function createAgentBrowser(): Promise<AgentBrowserSession> {
 	const roots = browserTestRoots();
+	const command = agentBrowserCommand();
 	const env = browserTestEnvironment();
 	const configuredSession = requiredEnvironment("AGENT_BROWSER_SESSION");
 	const identity = randomUUID().slice(0, 8);
@@ -262,20 +275,18 @@ async function createAgentBrowser(): Promise<AgentBrowserSession> {
 		mkdirSync(directory, { recursive: true });
 	}
 	const children = new Set<ChildProcessWithoutNullStreams>();
+	const portableCommands = new Set<Promise<string>>();
+	const portableLifetime = new AbortController();
 	let closed = false;
 	let used = false;
 	let disposal: Promise<void> | null = null;
 
-	const run = (argv: readonly string[], options: BrowserCommandOptions = {}): Promise<string> => {
-		const timeoutMs = options.timeoutMs ?? TEST_BROWSER_COMMAND_TIMEOUT_MS;
-		if (!Number.isFinite(timeoutMs) || !Number.isInteger(timeoutMs) || timeoutMs <= 0) {
-			return Promise.reject(
-				new Error(
-					`Agent-browser command timeout must be a positive finite integer; received ${timeoutMs}.`,
-				),
-			);
-		}
-		return new Promise((resolveRun, rejectRun) => {
+	const runNative = async (
+		argv: readonly string[],
+		options: BrowserCommandOptions = {},
+	): Promise<string> => {
+		const timeoutMs = commandTimeout(options);
+		return await new Promise((resolveRun, rejectRun) => {
 			if (closed && argv[0] !== "close") {
 				rejectRun(new Error("Cannot run a command after closing the agent-browser session."));
 				return;
@@ -284,8 +295,8 @@ async function createAgentBrowser(): Promise<AgentBrowserSession> {
 				used = true;
 			}
 			const child = spawn(
-				"agent-browser",
-				["--namespace", namespace, "--session", session, ...argv],
+				command[0],
+				[...command.slice(1), "--namespace", namespace, "--session", session, ...argv],
 				{
 					cwd: roots.ownerRoot,
 					env,
@@ -332,12 +343,33 @@ async function createAgentBrowser(): Promise<AgentBrowserSession> {
 		});
 	};
 
+	const run = async (
+		argv: readonly string[],
+		options: BrowserCommandOptions = {},
+	): Promise<string> => {
+		const timeoutMs = commandTimeout(options);
+		if (closed && argv[0] !== "close") {
+			throw new Error("Cannot run a command after closing the agent-browser session.");
+		}
+		if (process.platform === "darwin" && argv[0] === "press" && argv.length === 2) {
+			const pending = pressPortableKey(runNative, argv[1]!, timeoutMs, portableLifetime.signal);
+			portableCommands.add(pending);
+			try {
+				return await pending;
+			} finally {
+				portableCommands.delete(pending);
+			}
+		}
+		return await runNative(argv, options);
+	};
+
 	const cleanup = async (): Promise<void> => {
 		if (disposal) {
 			return disposal;
 		}
 		disposal = (async () => {
 			closed = true;
+			portableLifetime.abort(new Error("The agent-browser session is closing."));
 			let closeFailure: unknown;
 			if (used) {
 				try {
@@ -349,6 +381,7 @@ async function createAgentBrowser(): Promise<AgentBrowserSession> {
 			for (const child of children) {
 				child.kill("SIGTERM");
 			}
+			await Promise.allSettled(portableCommands);
 			await pollUntil(
 				() => ({
 					sockets: namespaceArtifacts(socketDir).filter((entry) => entry.endsWith(".sock")),
@@ -391,11 +424,9 @@ export {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
 	type BrowserTestPath,
-	CI_EXCLUDED_BROWSER_OWNERS_ENV,
 	type BrowserSelection,
 	validateBrowserSelection,
 	browserOwnerCommandArguments,
-	applyCiBrowserOwnerExclusion,
 } from "./browser-selection.ts";
 export {
 	type BrowserTestRoots,

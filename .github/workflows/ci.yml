@@ -14,12 +14,9 @@ permissions:
   contents: read
 
 jobs:
-  # The canonical check command stays one step so package.json owns its order.
-  # Local `check` is the complete sequential contract. The hosted step below
-  # names its two runner-specific lane exceptions; repository policy refuses
-  # any other exclusion. TASK-141 and TASK-142 own restoring hosted coverage.
+  # package.json owns the same complete gate locally and on the hosted runner.
   suite:
-    name: Lint, format, type check, and hosted test subset
+    name: Complete validation gate
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -41,16 +38,23 @@ jobs:
           mkdir -p "$RUNNER_TEMP/archboard-renderer-bin"
           ln -s /opt/google/chrome/chrome "$RUNNER_TEMP/archboard-renderer-bin/chromium"
           echo "$RUNNER_TEMP/archboard-renderer-bin" >> "$GITHUB_PATH"
+          echo "AGENT_BROWSER_EXECUTABLE_PATH=/opt/google/chrome/chrome" >> "$GITHUB_ENV"
+          echo "ARCHBOARD_RENDERER_CHROMIUM=/opt/google/chrome/chrome" >> "$GITHUB_ENV"
 
-      # Lint, formatting, both type checks, every native owner except opener
-      # persistence, and no serial browser owners. All excluded owners remain in
-      # local `check`; TASK-141 and TASK-142 own restoring hosted coverage.
       - name: Run hosted checks
+        id: validation
+        shell: bash
         env:
           CI: "true"
-          ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS: all
-          ARCHBOARD_CI_EXCLUDED_SYSTEM_OWNER: tests/system/code-targets/opener-persistence.test.ts
-        run: bun run check
+        run: bun run check 2>&1 | tee "$RUNNER_TEMP/archboard-check.log"
+
+      - name: Retain validation evidence
+        if: always() && (steps.validation.outcome == 'success' || steps.validation.outcome == 'failure' || steps.validation.outcome == 'cancelled')
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-log
+          path: ${{ runner.temp }}/archboard-check.log
+          if-no-files-found: error
 
   macos-processes:
     name: macOS native process ownership
@@ -67,4 +71,15 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Verify native ownership, storage, and board paths
-        run: bun test --isolate --max-concurrency=1 src/shared/process-observation/tests src/runtime/codex-process/tests src/runtime/engine/tests/git-async.test.ts src/server/board-rendering/tests/renderer-process.test.ts tests/system/boards/board-lifecycle.test.ts tests/system/process-contracts/codex-workbench-storage.test.ts
+        run: >-
+          bun test --isolate --max-concurrency=1
+          src/shared/process-observation/tests src/runtime/codex-process/tests
+          src/runtime/engine/tests/git-async.test.ts
+          src/runtime/engine/tests/pidfile.test.ts
+          src/runtime/headless-chromium/tests/startup.test.ts
+          src/runtime/semantic-board-store/tests/policy.test.ts src/runtime/semantic-board-store/tests/renaming.test.ts
+          src/runtime/code-target/tests/resolution.test.ts
+          src/server/archboard/tests/codex-workbench-production-initialization.test.ts
+          src/server/archboard/tests/codex-workbench-approval-sessions.test.ts
+          src/cli/commands/tests/language-server-configuration.test.ts
+          tests/system/semantic-boards/lifecycle.test.ts tests/system/process-contracts/codex-workbench-storage.test.ts

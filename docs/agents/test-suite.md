@@ -11,7 +11,7 @@ native lanes in this order:
   directories, with `--max-concurrency=1` because they own real processes and
   shared local ports;
 - `test:repository`: the source-boundary lint fixtures, the owner that resolves
-  every link of the consumer skill
+  links in the consumer skill, repository navigation, and development skill
   (`tests/system/repository-policy/skill-links.test.ts`),
   the owner that parses YAML discovery metadata for every tracked skill
   (`tests/system/repository-policy/skill-frontmatter.test.ts`),
@@ -22,16 +22,14 @@ native lanes in this order:
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter.
 
-`bun run check` is the complete normal local gate: lint, formatting, both
-TypeScript projects, and that normal test chain. `.github/workflows/ci.yml` invokes the
-same command with two exact hosted-only exceptions after clean-runner stalls:
-`tests/system/code-targets/opener-persistence.test.ts` and the complete serial
-browser lane. All normal owners remain mandatory locally; TASK-141 and TASK-142
-own restoring the system owner and the normal browser inventory to hosted
-coverage.
+`bun run check` is the complete normal gate locally and on GitHub Actions.
+It runs lint, formatting, both TypeScript projects, and the normal test chain.
+The hosted run includes opener persistence and the entire serial browser inventory.
+The workflow retains its full output as the `validation-log` artifact.
 
 A separate macOS CI job exercises the native process observer, Codex lifecycle,
-Git cleanup, renderer cleanup polling, storage paths, and board filename casing.
+Git cleanup, renderer startup cleanup, storage paths, and board filename casing.
+The job also runs the native sandbox refusal and repaired macOS fixture owners.
 This catches platform-specific failures that the Ubuntu suite cannot exercise;
 it does not replace any local gate.
 
@@ -48,7 +46,8 @@ their cheapest product owner. These commands contain everything outside it:
 | `bun run opt-in:renderer-chromium` / `bun run opt-in:renderer-emulation` | Manual renderer and upstream-emulation probes. They are never package test owners.                                                                                                                                                 |
 
 Every test owner belongs to exactly one lane; opt-in package commands are never
-reached from `check`, and hosted CI invokes only `bun run check`.
+reached from `check`. The Ubuntu CI job invokes the complete `bun run check` gate;
+the macOS job repeats its selected native owners on that platform.
 
 The whole chain's duration is machine-dependent. Browser owners run one at a
 time. Re-measure before making a timing claim.
@@ -77,14 +76,17 @@ or a product duration.
 
 No `TEST_*` budget comes from a product duration (TASK-154).
 `tests/system/support/timing.ts` imports nothing from `src/shared/timing`.
-A wait budget is a ceiling that a passing run never reaches, or a patience; a
-poll cadence is neither. A product change must not retune either.
+A wait deadline is a ceiling that a passing run never reaches.
+A poll cadence and an intentional wait are separate durations.
+A product change must not retune these test values.
 
 A system owner waits for a product timer only when the test is about that timer
-and the timer has no test override. Two cases remain:
+and the timer has no test override. These cases remain:
 
 - the one-second lock sweep that tells a pane its board changed under it
   (`external-board-write`, and the opt-in cross-process lock owner);
+- the one-second lease renewal that records a claim's loss after a pane takes it back
+  (the opt-in cross-process lock owner);
 - the wall-clock pace of a recording (`walkthrough-recording`, a declared
   real-time exception).
 
@@ -236,12 +238,10 @@ normal owners named by `BROWSER_TEST_PATHS` drive a real browser through one
 strict adapter for live-session behavior and rendered fidelity. They are not a gate
 for named-board runtime operations. The lane:
 
-- refuses to claim a pass without `agent-browser` on PATH, or without `strace`
-  when the opt-in human-edit performance owner is selected. It exits 2 before
-  building or starting an owner;
+- resolves the pinned `agent-browser` package in this checkout, then runs its packaged native executable directly.
+  Prerequisite failure exits 2 before building or starting an owner;
 - asserts `navigator.userAgent` says headless, because a window that maps
-  steals focus under Hyprland; local normal runs exercise the normal inventory while hosted
-  runs exclude the lane until TASK-142 restores it;
+  steals focus under Hyprland; local and hosted runs exercise the same normal inventory;
 - runs one literal file child at a time, never concurrently. TASK-097 records that two owners
   sharing the machine is how one of them fails for no reason: contention
   stretches request and frame observations that the checks probe on purpose;
@@ -261,10 +261,32 @@ homes remain isolated, and Chromium still owns a private profile and temporary
 directory that teardown must remove. Both renderer and browser-lane launches use
 a mock keychain to prevent dialogs or writes to the person's macOS keychain.
 
-For a managed Chrome installation that enforces the default-browser policy,
-use Chrome for Testing. Set both `AGENT_BROWSER_EXECUTABLE_PATH` and
-`ARCHBOARD_RENDERER_CHROMIUM` to its executable. Run the browser lane serially;
-each owner must finish cleanup before the next starts.
+On macOS, the adapter sends `press` commands through Chromium's trusted input protocol.
+It omits `nativeVirtualKeyCode`, which the vendor driver sets to a Windows key code.
+That value produces unwanted repeated events in macOS Chrome.
+The adapter retains the command deadline and closes its input connection during cleanup.
+
+On macOS, use Chrome for Testing. Before every local lane or gate, set
+`AGENT_BROWSER_EXECUTABLE_PATH` and `ARCHBOARD_RENDERER_CHROMIUM` to its absolute
+executable path in the command environment. Keep these values out of `.env` files.
+Bun fixture subprocesses load these files and can add variables outside the fixture's allowed environment.
+Desktop Chrome can show system default-browser prompts despite the automation flags.
+Run the browser lane serially. Each owner must finish cleanup before the next starts.
+
+The lane writes `# browser-toolchain` and `# browser-lane` JSON summaries to stderr.
+The summaries identify the toolchain, selected files, owner progress, and final exit status.
+A completed owner also passed its cleanup audit.
+Full test output streams to the caller alongside the summaries. A failed owner or cleanup
+keeps the lane's status nonzero; the summaries do not turn a failure into a pass.
+The Ubuntu CI job retains this output in its `validation-log` artifact.
+For a local gate, retain the full output and print its location before the run:
+
+```bash
+check_log=$(mktemp "${TMPDIR:-/tmp}/archboard-check.XXXXXX")
+printf 'Full gate log: %s\n' "$check_log"
+set -o pipefail
+bun run check 2>&1 | tee "$check_log"
+```
 
 The normal package command is the canonical normal lane. Focused diagnosis accepts:
 

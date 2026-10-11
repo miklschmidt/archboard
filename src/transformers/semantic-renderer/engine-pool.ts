@@ -21,7 +21,11 @@
 // worker; a solve that fails a second time is refused with the engine's words.
 //
 // A solve asked for ahead can be called off while it waits for a worker: a
-// render that no longer needs it frees the worker for one it does.
+// render that no longer needs it frees the worker for one it does. A worker
+// that answers or fails a solve that can be called off, while the next one
+// waiting can be too, takes it one task later, so the caller weighs the
+// answer and calls off what it no longer needs before a worker starts it.
+// The queue keeps its order.
 //
 // The workers accept `{ id, graph, layoutOptions }` and answer with
 // `{ id, data }` or `{ id, error, fatal }`.
@@ -57,6 +61,8 @@ interface EngineWorker {
 interface Pending {
 	readonly graph: SolveGraph;
 	readonly layoutOptions: Parameters<Solve>[1];
+	readonly signal: AbortSignal | undefined;
+	readonly cancel: () => void;
 	readonly resolve: (graph: SolveGraph) => void;
 	readonly reject: (error: Error) => void;
 	/** Whether it was sent once more after its first worker failed. */
@@ -135,6 +141,33 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	/** Solves no worker is free for yet, in the order they were asked. */
 	const queued: Pending[] = [];
 	let nextId = 0;
+	let handoff: MessageChannel | undefined;
+
+	/** Let a cancellable caller finish selecting before queued speculation starts. */
+	function handOff(): void {
+		if (handoff !== undefined) return;
+		const channel = new MessageChannel();
+		handoff = channel;
+		/** Release the task's ports before allowing the next dispatch. */
+		const resume = (): void => {
+			channel.port1.close();
+			channel.port2.close();
+			handoff = undefined;
+			dispatch();
+		};
+		channel.port1.addEventListener("message", resume, { once: true });
+		channel.port1.start();
+		channel.port2.postMessage(undefined);
+	}
+
+	/**
+	 * Resume the queue after an answer, allowing its caller to cancel speculation.
+	 * @param pending The caller just answered, when one was answered.
+	 */
+	function dispatchAfter(pending: Pending | undefined): void {
+		if (pending?.signal !== undefined && queued[0]?.signal !== undefined) handOff();
+		else dispatch();
+	}
 
 	/**
 	 * Evict a failed worker: the solve it held waits once more for another
@@ -149,18 +182,25 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		const held = engine.solving?.pending;
 		engine.solving = undefined;
 		engine.worker.terminate?.();
-		if (held !== undefined) retryOrRefuse(held, failure);
-		dispatch();
+		const refused = held === undefined ? undefined : retryOrRefuse(held, failure);
+		dispatchAfter(refused);
 	}
 
 	/**
 	 * Queue a solve whose worker failed once more, or refuse one already sent twice.
 	 * @param pending The solve.
 	 * @param failure Why its worker failed.
+	 * @returns The caller refused, or nothing when it was queued for a retry.
 	 */
-	function retryOrRefuse(pending: Pending, failure: Error): void {
+	function retryOrRefuse(pending: Pending, failure: Error): Pending | undefined {
 		if (pending.retried) pending.reject(failure);
-		else queued.push({ ...pending, retried: true });
+		else if (pending.signal?.aborted === true) pending.reject(pending.signal.reason);
+		else {
+			queued.push({ ...pending, retried: true });
+			pending.signal?.addEventListener("abort", pending.cancel, { once: true });
+			return undefined;
+		}
+		return pending;
 	}
 
 	/**
@@ -179,7 +219,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		engine.solving = undefined;
 		engine.worker.unref?.();
 		settle(solving.pending, answer);
-		dispatch();
+		dispatchAfter(solving.pending);
 	}
 
 	/**
@@ -215,6 +255,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 
 	/** Send the queued solves, in the order they were asked, to each worker free for one. */
 	function dispatch(): void {
+		if (handoff !== undefined) return;
 		while (queued.length > 0) {
 			const engine = freeEngine();
 			if (engine === undefined) return;
@@ -228,6 +269,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	 * @param pending The solve.
 	 */
 	function send(engine: PooledEngine, pending: Pending): void {
+		pending.signal?.removeEventListener("abort", pending.cancel);
 		const id = nextId;
 		nextId += 1;
 		engine.solving = { id, pending };
@@ -249,19 +291,18 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 				reject(signal.reason);
 				return;
 			}
-			queued.push({ graph, layoutOptions, resolve, reject, retried: false });
-			// A solve called off while it waits is never sent; one a worker holds
-			// is answered all the same, and nobody hears it.
-			signal?.addEventListener(
-				"abort",
-				() => {
-					const index = queued.findIndex((pending) => pending.resolve === resolve);
-					if (index < 0) return;
-					queued.splice(index, 1);
-					reject(signal.reason);
-				},
-				{ once: true },
-			);
+			/**
+			 * Remove this caller's solve only while it still waits for a worker:
+			 * one a worker holds is answered all the same.
+			 */
+			const cancel = (): void => {
+				const index = queued.findIndex((pending) => pending.resolve === resolve);
+				if (index < 0) return;
+				queued.splice(index, 1);
+				reject(signal?.reason);
+			};
+			queued.push({ graph, layoutOptions, signal, cancel, resolve, reject, retried: false });
+			signal?.addEventListener("abort", cancel, { once: true });
 			dispatch();
 		});
 }

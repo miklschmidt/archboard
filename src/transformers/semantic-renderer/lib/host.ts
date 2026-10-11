@@ -38,7 +38,8 @@ interface RendererHost {
 	 * @param graph The complete measured graph.
 	 * @param layoutOptions The options for this solve.
 	 * @param signal Calls the solve off: one still waiting for the engine is
-	 * never solved, and is refused with the signal's reason.
+	 * never solved, and is refused with the signal's reason; one the engine
+	 * holds finishes normally.
 	 * @returns Its solved geometry.
 	 */
 	readonly solve: (

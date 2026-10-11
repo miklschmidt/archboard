@@ -23,8 +23,6 @@ const BROWSER_TEST_PATHS = [
 ] as const;
 
 type BrowserTestPath = (typeof BROWSER_TEST_PATHS)[number];
-const CI_EXCLUDED_BROWSER_OWNERS_ENV = "ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS";
-const CI_EXCLUDED_BROWSER_OWNERS_VALUE = "all";
 interface BrowserSelection {
 	mode: "package" | "focus";
 	files: BrowserTestPath[];
@@ -107,36 +105,11 @@ function browserOwnerCommandArguments(file: BrowserTestPath, testName?: string):
 	];
 }
 
-function applyCiBrowserOwnerExclusion(
-	selection: BrowserSelection,
-	environment: Readonly<Record<string, string | undefined>>,
-): BrowserSelection {
-	const excluded = environment[CI_EXCLUDED_BROWSER_OWNERS_ENV];
-	if (excluded === undefined) {
-		return selection;
-	}
-	if (environment["CI"] !== "true") {
-		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} requires CI=true.`);
-	}
-	if (selection.mode !== "package") {
-		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} is valid only for the package browser lane.`);
-	}
-	if (excluded !== CI_EXCLUDED_BROWSER_OWNERS_VALUE) {
-		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} cannot exclude \`${excluded}\`.`);
-	}
-	return {
-		...selection,
-		files: [],
-	};
-}
-
 export {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
 	type BrowserTestPath,
-	CI_EXCLUDED_BROWSER_OWNERS_ENV,
 	type BrowserSelection,
 	validateBrowserSelection,
 	browserOwnerCommandArguments,
-	applyCiBrowserOwnerExclusion,
 };

@@ -7,7 +7,7 @@ import {
 	rmSync,
 	unlinkSync,
 } from "node:fs";
-import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -16,8 +16,6 @@ import { fileURLToPath } from "node:url";
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS, TEST_BROWSER_POLL_MS } from "../support/timing.ts";
 import {
 	BROWSER_ADAPTER_PATH,
-	CI_EXCLUDED_BROWSER_OWNERS_ENV,
-	applyCiBrowserOwnerExclusion,
 	browserCleanupObservationMs,
 	browserOwnerCommandArguments,
 	pollUntil,
@@ -32,12 +30,11 @@ import {
 } from "./support/browser-executable.ts";
 import { ensureFreshFrontend, type FrontendBuildRequest } from "./support/frontend-build.ts";
 import { processIdsWithEnvironmentMarkers } from "./support/process-environment-census.ts";
+import { agentBrowserCommand, probeBrowserTool } from "./support/browser-toolchain.ts";
 
 export {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
-	CI_EXCLUDED_BROWSER_OWNERS_ENV,
-	applyCiBrowserOwnerExclusion,
 	validateBrowserSelection,
 } from "./support/agent-browser.ts";
 export type { BrowserSelection, BrowserTestPath } from "./support/agent-browser.ts";
@@ -91,27 +88,20 @@ function preflightEnvironment(): Record<string, string> {
 	return { PATH: selectedPath, LANG: "C.UTF-8", LC_ALL: "C.UTF-8", NO_COLOR: "1" };
 }
 
-function probe(command: string, argv: readonly string[], label: string): void {
-	const result = spawnSync(command, argv, {
-		env: preflightEnvironment(),
-		encoding: "utf8",
-		stdio: "pipe",
-		timeout: TEST_BROWSER_COMMAND_TIMEOUT_MS,
-	});
-	if (result.error || result.signal || result.status !== 0) {
-		const exit = result.error
-			? result.error.message
-			: result.signal
-				? `signal ${result.signal}`
-				: `exit ${result.status ?? "unknown"}`;
-		throw new CouldNotRunError(`${label} prerequisite could not run: ${exit}`);
-	}
-}
-
 function verifyPrerequisites(): string | undefined {
-	const browserExecutable = resolveBrowserExecutable();
-	probe("agent-browser", ["--version"], "agent-browser");
-	return browserExecutable;
+	let command: ReturnType<typeof agentBrowserCommand> | null = null;
+	let version: string | null = null;
+	let browser = process.env["AGENT_BROWSER_EXECUTABLE_PATH"] ?? "agent-browser default";
+	try {
+		command = agentBrowserCommand();
+		version = probeBrowserTool([...command, "--version"], preflightEnvironment());
+		probeBrowserTool([...command, "--help"], preflightEnvironment());
+		const browserExecutable = resolveBrowserExecutable();
+		browser = browserExecutable ?? browser;
+		return browserExecutable;
+	} finally {
+		process.stderr.write(`# browser-toolchain ${JSON.stringify({ command, version, browser })}\n`);
+	}
 }
 
 function ownerEnvironment(
@@ -396,6 +386,9 @@ async function runSelection(
 			const ownerRoot = join(laneRoot, name);
 			mkdirSync(join(ownerRoot, "tmp"), { recursive: true });
 			const env = ownerEnvironment(laneRoot, ownerRoot, laneBrowserExecutable);
+			process.stderr.write(
+				`# browser-lane ${JSON.stringify({ event: "started", file, completed: index, total: selection.files.length })}\n`,
+			);
 			current = spawnOwner(file, env, selection.testName);
 			const processGroup = current.pid;
 			try {
@@ -405,6 +398,9 @@ async function runSelection(
 				await auditOwner({ file, root: ownerRoot, processGroup, env });
 			}
 			if (interruptionSignal()) await raiseInterruption();
+			process.stderr.write(
+				`# browser-lane ${JSON.stringify({ event: "completed", file, completed: index + 1, total: selection.files.length })}\n`,
+			);
 		}
 		result = 0;
 	} catch (error) {
@@ -432,14 +428,14 @@ async function main(): Promise<number> {
 	let selection: BrowserSelection;
 	try {
 		selection = validateBrowserSelection(["bun", BROWSER_ADAPTER_PATH, ...process.argv.slice(2)]);
-		selection = applyCiBrowserOwnerExclusion(selection, process.env);
-		const excluded = process.env[CI_EXCLUDED_BROWSER_OWNERS_ENV];
-		if (excluded) process.stderr.write(`# CI-only browser owners excluded: ${excluded}\n`);
 	} catch (error) {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
 		return 1;
 	}
 	if (selection.files.length === 0) return 0;
+	process.stderr.write(
+		`# browser-lane ${JSON.stringify({ event: "selected", files: selection.files })}\n`,
+	);
 	try {
 		const browserExecutable = verifyPrerequisites();
 		return await runSelection(selection, browserExecutable);
@@ -451,4 +447,9 @@ async function main(): Promise<number> {
 	}
 }
 
-if (import.meta.main) process.exitCode = await main();
+if (import.meta.main) {
+	process.exitCode = await main();
+	process.stderr.write(
+		`# browser-lane ${JSON.stringify({ event: "finished", exitCode: process.exitCode })}\n`,
+	);
+}

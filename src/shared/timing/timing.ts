@@ -370,15 +370,13 @@ const CLI_INTERRUPT_CLEANUP_MS = 3 * GIT_PROCESS_GROUP_CLEANUP_MS;
 // Restart delay doubles after each failed child attempt, caps at the maximum,
 // and resets only after one account-ready session. Shutdown is ordered around
 // the child lifecycle: stop realtime first, settle local waiters, close stdin,
-// send TERM, then send KILL at the grace bound. The full sequence stays within
-// the composed shutdown cap.
+// wait for EOF closure, send TERM, then send KILL at the grace bound. The full
+// sequence stays within the composed shutdown cap.
 
 /** Retry-delay classification. Pulls against the first restart attempt. */
 const CODEX_PROCESS_RESTART_BASE_MS = 1000;
-
 /** Retry-delay cap classification. Pulls against request settlement and the backoff ceiling. */
 const CODEX_PROCESS_RESTART_MAX_MS = 30_000;
-
 /** Uncertainty-bound classification. Pulls against a lost non-idempotent response before `outcome_unknown`. */
 const CODEX_REQUEST_SETTLEMENT_MS = 30_000;
 
@@ -407,16 +405,17 @@ const CODEX_REALTIME_START_MS = 15_000;
 
 /** Realtime-stop timeout classification. Pulls against TERM grace so realtime stops first. */
 const CODEX_REALTIME_STOP_MS = 3000;
-
 /** Realtime-recovery window classification. Pulls against semantic freshness while reconnecting. */
 const CODEX_REALTIME_RECOVERY_MS = 45_000;
-
 /** TERM grace classification. Pulls against realtime stop before TERM-to-KILL escalation. */
 const CODEX_TERM_GRACE_MS = 5000;
-
-/** Composed-shutdown cap classification. Pulls against realtime stop plus TERM grace. */
+/**
+ * Stdin EOF grace lets the child consume drained frames before TERM and ends on closure.
+ * Realtime stop, EOF and TERM leave one second of the composed cap for group absence proof.
+ */
+const CODEX_STDIN_EOF_GRACE_MS = 1000;
+/** Composed-shutdown cap classification. Pulls against realtime stop, stdin EOF grace, and TERM grace. */
 const CODEX_COMPOSED_SHUTDOWN_MS = 10_000;
-
 /** Public server readiness classification. Pulls against mandatory Codex startup readiness. */
 const SERVER_STARTUP_READINESS_MS = 8000;
 
@@ -542,6 +541,7 @@ export {
 	CODEX_REALTIME_STOP_MS,
 	CODEX_REALTIME_RECOVERY_MS,
 	CODEX_TERM_GRACE_MS,
+	CODEX_STDIN_EOF_GRACE_MS,
 	CODEX_COMPOSED_SHUTDOWN_MS,
 	SERVER_STARTUP_READINESS_MS,
 	CODEX_WAIT_TARGET_POLL_MS,
