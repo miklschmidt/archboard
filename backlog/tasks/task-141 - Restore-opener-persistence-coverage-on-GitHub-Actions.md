@@ -1,9 +1,11 @@
 ---
 id: TASK-141
 title: Restore opener-persistence coverage on GitHub Actions
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 04:52'
+updated_date: '2026-10-11 14:23'
 labels: []
 dependencies:
   - TASK-138
@@ -28,3 +30,9 @@ GitHub-hosted Actions repeatedly enters tests/system/code-targets/opener-persist
 - [ ] #4 A complete GitHub Actions run finishes green within the retained 30-minute workflow budget with opener-persistence included.
 - [ ] #5 The complete local bun run check remains green.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Retain historical hosted failure evidence, restore the current complete inventory and prerequisites, exercise Linux and local gates, and run scoped standards/specification review. No board is affected: this restores CI selection and test tooling.
+<!-- SECTION:PLAN:END -->

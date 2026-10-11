@@ -5,6 +5,7 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS, TEST_BROWSER_POLL_MS } from "../../support/timing.ts";
 import { browserProfileForSession } from "./browser-executable.ts";
+import { agentBrowserCommand } from "./browser-toolchain.ts";
 import { processIdsWithEnvironmentMarkers } from "./process-environment-census.ts";
 
 interface BrowserTestRoots {
@@ -235,6 +236,7 @@ interface BrowserCommandOptions {
 
 async function createAgentBrowser(): Promise<AgentBrowserSession> {
 	const roots = browserTestRoots();
+	const command = agentBrowserCommand();
 	const env = browserTestEnvironment();
 	const configuredSession = requiredEnvironment("AGENT_BROWSER_SESSION");
 	const identity = randomUUID().slice(0, 8);
@@ -284,8 +286,8 @@ async function createAgentBrowser(): Promise<AgentBrowserSession> {
 				used = true;
 			}
 			const child = spawn(
-				"agent-browser",
-				["--namespace", namespace, "--session", session, ...argv],
+				command[0],
+				[command[1], "--namespace", namespace, "--session", session, ...argv],
 				{
 					cwd: roots.ownerRoot,
 					env,
@@ -391,11 +393,9 @@ export {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
 	type BrowserTestPath,
-	CI_EXCLUDED_BROWSER_OWNERS_ENV,
 	type BrowserSelection,
 	validateBrowserSelection,
 	browserOwnerCommandArguments,
-	applyCiBrowserOwnerExclusion,
 } from "./browser-selection.ts";
 export {
 	type BrowserTestRoots,
