@@ -4,9 +4,9 @@
 	"id": "IbGtfJE2",
 	"name": "Skill evaluation",
 	"level": "service",
-	"version": 15,
+	"version": 16,
 	"createdAt": "2026-09-17T21:09:15.501Z",
-	"updatedAt": "2026-10-06T15:02:50.400Z",
+	"updatedAt": "2026-10-11T14:25:56.224Z",
 	"views": [
 		{
 			"id": "pth4q0ZY",
@@ -1662,7 +1662,7 @@
 						"name": "Suite loader",
 						"kind": "module",
 						"responsibility": "Reads and validates every canonical input, refusing a fixture, a citation or a skill package that would measure the wrong thing",
-						"description": "`eval:skill check` is this alone. It refuses a fixture relationship that lands on a part with children (landings.ts), a cited passage, catalogue row or rubric section the skill does not hold (citations.ts), and a skill package that names what it is graded on (leakage.ts).",
+						"description": "`eval:skill check` loads every input through this. The loader refuses a cited passage, catalogue row or rubric section the skill does not hold (citations.ts) and a skill package that names what it is graded on (leakage.ts). The command then lays each fixture through the store's transitions (laying.ts, called from scripts/evaluate-skill.ts) and refuses one that does not lay or that draws a relationship onto a part with children.",
 						"parent": "CtuYEtaa",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
