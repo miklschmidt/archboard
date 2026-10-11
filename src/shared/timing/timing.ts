@@ -322,13 +322,6 @@ const DEFAULT_SETTLE_MAX_MS = 6000;
  */
 const SERVER_MUTATION_DRAIN_TIMEOUT_MS = 1000;
 
-/**
- * Grace for existing HTTP connections after write admission closes. It stays
- * below the CLI health probe so a stuck keep-alive is forced closed before the
- * next stop observation. WebSocket clients close in their own earlier owner.
- */
-const SERVER_HTTP_STOP_GRACE_MS = 250;
-
 // ── Git checkout inspection ───────────────────────────────────────────────
 
 /**
@@ -532,7 +525,6 @@ export {
 	DEFAULT_SETTLE_MS,
 	DEFAULT_SETTLE_MAX_MS,
 	SERVER_MUTATION_DRAIN_TIMEOUT_MS,
-	SERVER_HTTP_STOP_GRACE_MS,
 	GIT_COMMAND_TIMEOUT_MS,
 	GIT_PROCESS_GROUP_CLEANUP_MS,
 	GIT_PROCESS_GROUP_POLL_MS,
@@ -598,3 +590,9 @@ export { LOCALITY_DEFAULT_PERIOD_MS } from "@/shared/timing/lib/history-lens";
 export { LANGUAGE_SERVER_STOP_MS } from "@/shared/timing/lib/code-check";
 
 export { createElapsedClock } from "@/shared/timing/lib/elapsed-clock";
+
+export {
+	SERVER_HTTP_STOP_GRACE_MS,
+	SERVER_STOP_PIDFILE_POLL_MS,
+	SERVER_STOP_PIDFILE_WAIT_MS,
+} from "@/shared/timing/lib/server-stop";

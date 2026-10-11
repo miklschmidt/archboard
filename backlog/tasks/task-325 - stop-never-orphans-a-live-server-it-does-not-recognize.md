@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@implementer'
 created_date: '2026-09-24 01:07'
-updated_date: '2026-10-11 13:59'
+updated_date: '2026-10-11 14:25'
 labels:
   - cli
 dependencies: []
@@ -22,7 +22,7 @@ After the health service name changed (TASK-324), archboard stop run by the new 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 stop keeps the pidfile of a process that is alive and listening on the server's port, and says what answers there and how to stop it, instead of reporting nothing running
+- [x] #1 stop keeps the pidfile of a process that is alive, and says what answers there and how to stop it, instead of reporting nothing running
 - [x] #2 A pidfile whose process is gone is still removed as stale
 - [x] #3 One owner proves both
 <!-- AC:END -->
@@ -37,6 +37,8 @@ After the health service name changed (TASK-324), archboard stop run by the new 
 
 <!-- SECTION:NOTES:BEGIN -->
 Absent path of stopServer now removes the pidfile only when the recorded owner is gone (pid dead or reused, via recordedOwnerIsGone); a live owner keeps the file and stop throws naming the pid and 'kill <pid>'. Decision: no listening-socket check (live recorded pid that does not answer is enough; also covers a server still starting or stopping). foreignServiceError path unchanged. Owner: src/runtime/engine/tests/pidfile.test.ts (live child + exited child against a silent port).
+
+Review fixes: a server that is shutting down stops answering before it removes its pidfile, so stop waits up to SERVER_STOP_PIDFILE_WAIT_MS (2x SERVER_HTTP_STOP_GRACE_MS) for the owner to exit or the file to go before it reports the process as stuck. A pidfile with no recorded start time words the error as 'may be' and advises ps -p before kill. Timing constants moved to timing/lib/server-stop.ts because timing.ts is at its line limit. AC1 reworded to 'alive': the listening socket is deliberately not checked.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

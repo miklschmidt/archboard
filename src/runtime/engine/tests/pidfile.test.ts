@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterAll, afterEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -66,23 +66,36 @@ test("a sweep removes the pidfiles of gone servers and keeps live ones", () => {
 	expect(existsSync(join(directory, "unrelated.pid"))).toBeTrue();
 });
 
+let originalUrl: string | undefined;
+let silentPort: Promise<{ port: number; stopServer: () => Promise<unknown> }> | undefined;
+
 /**
  * Run `stopServer` with the server URL on a port nothing listens on, so the
- * health probe finds nothing, whatever pidfile the state directory holds.
+ * health probe finds nothing, whatever pidfile the state directory holds. The
+ * module reads its URL once, so every test shares the one port.
  * @returns The port, and the `stopServer` that talks to it.
  */
-async function stopAgainstSilentPort(): Promise<{
-	port: number;
-	stopServer: () => Promise<unknown>;
-}> {
-	const probe = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } });
-	const { port } = probe;
-	probe.stop(true);
-	saved.set("ARCHBOARD_URL", process.env["ARCHBOARD_URL"]);
-	process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${port}`;
-	const { stopServer } = await import("../spawn.js");
-	return { port, stopServer };
+function stopAgainstSilentPort(): Promise<{ port: number; stopServer: () => Promise<unknown> }> {
+	silentPort ??= (async () => {
+		const probe = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } });
+		const { port } = probe;
+		probe.stop(true);
+		originalUrl = process.env["ARCHBOARD_URL"];
+		process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${port}`;
+		const { stopServer } = await import("../spawn.js");
+		return { port, stopServer };
+	})();
+	return silentPort;
 }
+
+afterAll(() => {
+	if (silentPort === undefined) return;
+	if (originalUrl === undefined) {
+		delete process.env["ARCHBOARD_URL"];
+	} else {
+		process.env["ARCHBOARD_URL"] = originalUrl;
+	}
+});
 
 test("stop keeps the pidfile of a live process that does not answer, and removes a dead one's", async () => {
 	isolatedState();
@@ -101,4 +114,31 @@ test("stop keeps the pidfile of a live process that does not answer, and removes
 	// The same pidfile, once its process has exited, is stale.
 	expect(await stopServer()).toMatchObject({ stopped: false, pid: live.pid });
 	expect(existsSync(pidFilePath(port))).toBeFalse();
+});
+
+test("stop keeps a pid-only pidfile of a live process, naming the pid", async () => {
+	isolatedState();
+	const { port, stopServer } = await stopAgainstSilentPort();
+
+	const live = Bun.spawn(["sleep", "30"]);
+	try {
+		writeFileSync(pidFilePath(port), String(live.pid));
+		await expect(stopServer()).rejects.toThrow(String(live.pid));
+		expect(readPidFile(port)).toBe(live.pid);
+	} finally {
+		live.kill();
+		await live.exited;
+	}
+});
+
+test("stop reports not running when the recorded server exits while it shuts down", async () => {
+	isolatedState();
+	const { port, stopServer } = await stopAgainstSilentPort();
+
+	// A server stops answering before its process exits and its pidfile goes.
+	const closing = Bun.spawn(["sleep", "0.15"]);
+	writePidFile(port, closing.pid);
+	expect(await stopServer()).toMatchObject({ stopped: false, pid: closing.pid });
+	expect(existsSync(pidFilePath(port))).toBeFalse();
+	await closing.exited;
 });
