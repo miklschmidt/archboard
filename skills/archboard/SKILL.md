@@ -57,9 +57,11 @@ recipe names.
    it out to the boundaries [evidence rule 1](#evidence-before-a-write) lists.
    For architecture nobody has built, the request and the documents it names
    are that context ([planning](#planning-what-nobody-has-built)).
-5. **Decide the parts**: the level, the subject, which parts are defined
-   inside which as children, which belong to another codebase, whether any of
-   it is built (a part nobody has built is a proposal, drawn on a draft), and
+5. **Decide the parts**: the level, the subject (a level of a dozen or more
+   cards is cut: a set of like parts becomes one card that opens a board of
+   its own, [create an architecture diagram](references/create-architecture.md)),
+   which parts are defined inside which as children, which belong to another
+   codebase, whether any of it is built (a part nobody has built is a proposal, drawn on a draft), and
    each one's `binding` ([evidence rule 2](#evidence-before-a-write)).
 6. **Map the relationships**, one line of evidence per `edge`: the file and
    symbol that prove it, written as its `anchor`, or for an intended mechanism

@@ -4,13 +4,21 @@ The recipe for a board that answers "what are the parts and how are they
 wired": read the source, do the evidence steps in `SKILL.md`, walk its
 catalogue, write one payload, look at the picture.
 
-A board nobody can follow whole (a dozen or more parts, routes crossing the
-page) is written with board `views` from the start, one per reading a user
-will want: one path, one container's internals, the parts one concern
-touches. Scope each to the reading, not to a group you already have, and keep
+One level holds what a reader takes in at once. Before the payload, count the
+cards that this level would hold. At a dozen or more, look for a set of like
+parts: three or more of one kind that the same callers reach and that reach
+the same few collaborators (the route handlers of a server, the commands of a
+CLI, the handlers of one queue, the components of one screen). Cut the set out
+and leave the rest. The set becomes one card with a `drillDown` into a board of
+its own, which draws the parts and the collaborators they reach. The level
+above keeps one relationship from the card to each collaborator and one from
+each caller to the card. Create the detail board first, so the link opens
+something ([drill-down](authoring.md#drill-down) says which kind the card
+takes). A cut answers a level with too many parts. Board `views` answer a level of
+the right size that still holds several readings, one per reading a user will
+want: one path, one container's internals, the parts one concern touches. Scope each to the reading, not to a group you already have, and keep
 what it selects joined: a part whose only relationship points at a part the
-view leaves out stands in it unattached. A view is the answer to a tangle,
-never a smaller or falser board.
+view leaves out stands in it unattached. Neither is a smaller or falser board.
 
 Containment says what belongs inside what, not which row it occupies. The
 renderer may place an outside caller or dependency beside the particular child
