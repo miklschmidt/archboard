@@ -43,6 +43,7 @@ jobs:
 
       - name: Run hosted checks
         id: validation
+        shell: bash
         env:
           CI: "true"
         run: bun run check 2>&1 | tee "$RUNNER_TEMP/archboard-check.log"
@@ -73,11 +74,11 @@ jobs:
         run: >-
           bun test --isolate --max-concurrency=1
           src/shared/process-observation/tests src/runtime/codex-process/tests
-          src/runtime/engine/tests/git-async.test.ts src/server/board-rendering/tests/renderer-process.test.ts
+          src/runtime/engine/tests/git-async.test.ts
           src/runtime/headless-chromium/tests/startup.test.ts
           src/runtime/semantic-board-store/tests/policy.test.ts src/runtime/semantic-board-store/tests/renaming.test.ts
           src/runtime/code-target/tests/resolution.test.ts
           src/server/archboard/tests/codex-workbench-production-initialization.test.ts
           src/server/archboard/tests/codex-workbench-approval-sessions.test.ts
           src/cli/commands/tests/language-server-configuration.test.ts
-          tests/system/boards/board-lifecycle.test.ts tests/system/process-contracts/codex-workbench-storage.test.ts
+          tests/system/semantic-boards/lifecycle.test.ts tests/system/process-contracts/codex-workbench-storage.test.ts
