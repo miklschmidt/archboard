@@ -6,8 +6,9 @@ Claude Code. Every claim below comes from an Anthropic primary source listed und
 Sources. A claim that no primary source supports is marked **unverified**. The
 research itself changed nothing. Applied afterwards: the "Sub-agent delegation"
 section of `~/.claude/CLAUDE.md` (rule (a)) and a new `~/.claude/agents/scout.md`
-(`haiku`, `medium`, read-only). Not applied: the table in (b), the Explore override
-and the `visual-designer` question.
+(`haiku`, `medium`, read-only). Decided by the user: UI and design go to `sonnet`
+at `xhigh`, so `visual-designer` stays as it is. Not applied: the table in (b) and
+the Explore override.
 
 ## Answer
 
