@@ -37,9 +37,15 @@ interface RendererHost {
 	 * changed and may share its parts with other graphs.
 	 * @param graph The complete measured graph.
 	 * @param layoutOptions The options for this solve.
+	 * @param signal Calls the solve off: one still waiting for the engine is
+	 * never solved, and is refused with the signal's reason.
 	 * @returns Its solved geometry.
 	 */
-	readonly solve: (graph: ElkNode, layoutOptions: LayoutOptions) => Promise<ElkNode>;
+	readonly solve: (
+		graph: ElkNode,
+		layoutOptions: LayoutOptions,
+		signal?: AbortSignal,
+	) => Promise<ElkNode>;
 	/** The theme colours, where a document that stands alone can be drawn. */
 	readonly themeColors?: ThemeColors | undefined;
 	/**

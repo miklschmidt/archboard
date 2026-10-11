@@ -48,12 +48,14 @@ type Placed = z.infer<typeof PlacedSchema>;
  * @param graph The measured hierarchy.
  * @param nesting How its containers and group regions are drawn.
  * @param apart The blocks whose joins keep ports of their own, by id.
+ * @param signal Calls the solve off while it waits for the engine.
  * @returns The drawing's geometry.
  */
 async function solved(
 	graph: ElkNode,
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
+	signal?: AbortSignal,
 ): Promise<Placed> {
 	const asked = {
 		...graph,
@@ -63,9 +65,11 @@ async function solved(
 			[BLOCKS_APART]: JSON.stringify([...apart]),
 		},
 	};
-	const answer = await rendererHost().solve(asked, {
-		[SOLVE_STAGE]: nesting === "blocks" ? "blocks" : "track",
-	});
+	const answer = await rendererHost().solve(
+		asked,
+		{ [SOLVE_STAGE]: nesting === "blocks" ? "blocks" : "track" },
+		signal,
+	);
 	return PlacedSchema.parse(JSON.parse(answer.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));
 }
 
@@ -78,7 +82,7 @@ async function solved(
  */
 function joinedOut(graph: ElkNode, nesting: Nesting): Promise<Drawn<Placed>> {
 	const tree = new BlockTree(graph, new Map(), nesting, new Set());
-	return layJoined(tree, (apart) => solved(graph, nesting, apart));
+	return layJoined(tree, (apart, signal) => solved(graph, nesting, apart, signal));
 }
 
 /**

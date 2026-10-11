@@ -28,9 +28,12 @@ const LINE_PER_CROSSING = 1000;
 /** How near two costs are for the page to decide between them, in that weighing: a twentieth. */
 const NEAR = 0.05;
 
+/** What the joins read of the blocks: which blocks joins move labels to, and where each relationship is drawn. */
+type Joined = Pick<BlockTree, "joining" | "projections">;
+
 /** A drawing laid out one way: its blocks, and the drawing as placed. */
 interface Drawn<Placed extends Page> {
-	readonly tree: BlockTree;
+	readonly tree: Joined;
 	readonly placed: Placed;
 }
 
@@ -243,26 +246,34 @@ function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
 
+/** Lay a drawing out with some blocks' joins apart, by block id, unless called off first. */
+type Lay<Placed> = (apart: ReadonlySet<string>, signal?: AbortSignal) => Promise<Placed>;
+
 /**
  * A way to lay a drawing out that lays it with each set of blocks apart
  * once, however often it is asked. A layout asked for ahead and never
  * awaited is dropped, a failure included: laid out one by one, it would
- * never have been asked for.
+ * never have been asked for. One called off is forgotten at once, so a
+ * later ask lays it out afresh.
  * @param lay Lay the drawing out with some blocks' joins apart, by block id.
  * @returns The way to ask for a layout.
  */
-function layingOnce<Placed>(
-	lay: (apart: ReadonlySet<string>) => Promise<Placed>,
-): (apart: ReadonlySet<string>) => Promise<Placed> {
+function layingOnce<Placed>(lay: Lay<Placed>): Lay<Placed> {
 	const asked = new Map<string, Promise<Placed>>();
-	return (apart) => {
+	return (apart, signal) => {
 		const key = JSON.stringify([...apart].toSorted());
-		let laying = asked.get(key);
-		if (laying === undefined) {
-			laying = lay(apart);
-			asked.set(key, laying);
-			laying.catch(() => undefined);
-		}
+		const known = asked.get(key);
+		if (known !== undefined) return known;
+		const laying = lay(apart, signal);
+		asked.set(key, laying);
+		laying.catch(() => undefined);
+		signal?.addEventListener(
+			"abort",
+			() => {
+				if (asked.get(key) === laying) asked.delete(key);
+			},
+			{ once: true },
+		);
 		return laying;
 	};
 }
@@ -273,16 +284,17 @@ function layingOnce<Placed>(
  * of those, each block's joins turned the other way in turn, kept where the
  * drawing reads better. Every layout the turns would weigh were none of them
  * kept is asked for at once, so they are laid out side by side; a turn kept
- * changes the ones after it, which are asked for then. They are weighed in
- * turn all the same, so the drawing is the one laying them out one by one
- * gives.
+ * changes the ones after it, which are asked for then, and the ones asked
+ * for before it that still wait for a worker are called off. They are
+ * weighed in turn all the same, so the drawing is the one laying them out
+ * one by one gives.
  * @param tree The blocks, which name the blocks joins move labels to.
  * @param lay Lay the drawing out with some blocks' joins apart, by block id.
  * @returns The drawing laid out best.
  */
 async function layJoined<Placed extends Page>(
-	tree: BlockTree,
-	lay: (apart: ReadonlySet<string>) => Promise<Placed>,
+	tree: Joined,
+	lay: Lay<Placed>,
 ): Promise<Drawn<Placed>> {
 	const ask = layingOnce(lay);
 	const blocks = [...tree.joining];
@@ -294,13 +306,17 @@ async function layJoined<Placed extends Page>(
 					toggled(apart, block),
 		),
 	];
+	let asking = new AbortController();
 	/**
-	 * Ask for every layout from one turn on, as the turns would weigh it were none of them kept.
+	 * Ask for every layout from one turn on, as the turns would weigh it were
+	 * none of them kept, and call off the ones asked for ahead before.
 	 * @param from The first turn.
 	 * @param apart The blocks apart in the drawing kept so far.
 	 */
 	const ahead = (from: number, apart: ReadonlySet<string>): void => {
-		for (const turn of turns.slice(from)) void ask(turn(apart));
+		asking.abort();
+		asking = new AbortController();
+		for (const turn of turns.slice(from)) void ask(turn(apart), asking.signal);
 	};
 	const first = ask(new Set());
 	ahead(0, new Set());
@@ -317,4 +333,4 @@ async function layJoined<Placed extends Page>(
 	return best;
 }
 
-export { joinWays, layJoined, type Drawn };
+export { joinWays, layJoined, type Drawn, type Joined };
