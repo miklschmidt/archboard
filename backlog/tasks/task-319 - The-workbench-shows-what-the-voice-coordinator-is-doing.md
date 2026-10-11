@@ -1,9 +1,11 @@
 ---
 id: TASK-319
 title: The workbench shows what the voice coordinator is doing
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-23 21:36'
+updated_date: '2026-10-11 14:27'
 labels:
   - voice
   - coordinator
@@ -28,3 +30,9 @@ The workbench shows the workhorse thread only. The coordinator's turns (the hand
 - [ ] #2 Work the coordinator delegated shows where it came from
 - [ ] #3 operator-canvas-shell.md describes where the coordinator's work is shown
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+A1 contract done: optional coordinatorTimeline on the browser snapshot (version stays 1; refused when its threadId differs from coordinator.threadId or the coordinator is unbound), delegatedBy on BrowserTimelineTurnSchema, BROWSER_SNAPSHOT_DELTA_KEYS and DELTA_PARSERS carry coordinatorTimeline, snapshot-bounds.ts diffs over the shared key list (same 16 keys as the removed SNAPSHOT_KEYS) so a missing key is a type error.
+<!-- SECTION:NOTES:END -->
