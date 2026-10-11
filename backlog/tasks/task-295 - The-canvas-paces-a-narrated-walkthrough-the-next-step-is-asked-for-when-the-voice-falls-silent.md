@@ -1,10 +1,10 @@
 ---
 id: TASK-295
 title: The voice model asks for the next step itself when it finishes one
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-22 00:45'
-updated_date: '2026-09-22 23:17'
+updated_date: '2026-10-11 13:50'
 labels:
   - voice
 dependencies: []
@@ -40,4 +40,12 @@ Measured on 2026-09-22 02:38 (and the same shape on 2026-09-20 15:34): the coord
 - Voice-side start bodies: 23:00 prompt 6,956 B + brief 2,670 B + catalogue 945 B + Narrate request; 09-22 00:37 (stalled) 7,256 B + 2,014 B + 1,087 B + Narrate request. Nearly identical.
 - OpenAI's GPT-Live delegation guide describes client delegation.created as id and timing only; Codex's wire carries input_text, so Codex runs a variant of the public protocol. The docs give no way for the application to trigger a delegation or the model's next turn.
 - Outcome agreed with the user: manual stepping (appendSpeech of the step) is the design; self-paced handoffs are no longer pursued. The voice no longer says 'Step N of M' aloud; it keeps the number to recognise the last step.
+
+2026-10-11 audit: premise abandoned. The 2026-09-22 and 2026-09-23 notes record that server-paced narration was rejected and self-paced handoffs are no longer pursued; manual stepping (TASK-251, Done) is the design. present_step no longer appears in src/. AC3 holds in code (presentation-mode.ts: never ask for the next step); AC5 was partly answered in the 09-23 notes. ACs 1, 2, 4, 6 and 7 are superseded and were not built, so they stay unchecked.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Closed as superseded, not delivered. The user rejected canvas-paced narration (2026-09-22), and the agreed outcome (2026-09-23) is manual stepping, delivered by TASK-251; self-paced handoffs are no longer pursued. ACs 1, 2, 4, 6 and 7 describe that abandoned design and stay unchecked. AC3 holds in code and AC5's findings (Codex never reads intent from voice output; only a server delegation.created starts a coordinator turn) are in the 2026-09-23 notes.
+<!-- SECTION:FINAL_SUMMARY:END -->
