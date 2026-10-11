@@ -8,12 +8,12 @@
 // labels before some of a block's joins and not others rank its cards
 // unevenly; each such block takes the way that reads better in the drawing as
 // a whole.
-import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import type { BlockTree, Projection } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { lineLength } from "@/transformers/semantic-renderer/lib/blocks/laying";
 import { weighedPlaced, type Page } from "@/transformers/semantic-renderer/lib/blocks/weighing";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
+import { trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
 import { crossingsOf, takes } from "@/transformers/semantic-renderer/lib/track/score";
 import { fitIn } from "@/shared/shell-geometry/index";
 
@@ -35,17 +35,6 @@ interface Drawn<Placed extends Page> {
 }
 
 /**
- * The kind a line is bundled by: the relationship's kind and comparison standing.
- * @param edge The relationship.
- * @returns The kind.
- */
-function kindOf(edge: ElkExtendedEdge): string {
-	const options = edge.layoutOptions ?? {};
-	const kind = options["archboard.relationship.kind"] ?? "";
-	return `${kind}|${options["archboard.relationship.standing"] ?? "unchanged"}`;
-}
-
-/**
  * What relationships of one kind share when they reach one card through the
  * same ports into its blocks: past the first they would run as one.
  * @param projection Where one is drawn.
@@ -54,7 +43,7 @@ function kindOf(edge: ElkExtendedEdge): string {
  */
 function joinOf(projection: Projection, upward: boolean): string {
 	const { edge, into, from } = projection;
-	return into.length === 0 ? "" : `${from}|${edge.targets[0]}|${kindOf(edge)}|${upward}`;
+	return into.length === 0 ? "" : `${from}|${edge.targets[0]}|${trunkKind(edge)}|${upward}`;
 }
 
 /**
@@ -143,7 +132,7 @@ function sharedLength(one: readonly Point[], other: readonly Point[]): number {
  */
 function partedOf(drawn: Drawn<Page>): number {
 	const towards = new Map(
-		drawn.tree.projections.map(({ edge }) => [edge.id, `${edge.targets[0]}|${kindOf(edge)}`]),
+		drawn.tree.projections.map(({ edge }) => [edge.id, `${edge.targets[0]}|${trunkKind(edge)}`]),
 	);
 	const lines = drawn.placed.edges.filter(({ points }) => points.length > 1);
 	return lines.reduce(
@@ -328,4 +317,4 @@ async function layJoined<Placed extends Page>(
 	return best;
 }
 
-export { joinWays, kindOf, layJoined, type Drawn };
+export { joinWays, layJoined, type Drawn };

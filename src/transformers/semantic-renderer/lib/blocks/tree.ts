@@ -34,7 +34,8 @@ import {
 	type Lone,
 } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import { CycleWalk } from "@/transformers/semantic-renderer/lib/blocks/cycles";
-import { joinWays, kindOf } from "@/transformers/semantic-renderer/lib/blocks/joins";
+import { joinWays } from "@/transformers/semantic-renderer/lib/blocks/joins";
+import { trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
 
 /** A width and a height. */
 interface Size {
@@ -449,7 +450,7 @@ class BlockTree {
 		const pieces: Piece[] = [];
 		let from = this.onEdge(
 			out.length === 0 ? projection.from : edge.sources[0]!,
-			`from|${face}|${projection.to}|${kindOf(edge)}`,
+			`from|${face}|${projection.to}|${trunkKind(edge)}`,
 			face,
 		);
 		for (const block of out) {
@@ -477,7 +478,7 @@ class BlockTree {
 		const pieces: Piece[] = [];
 		let to = this.onEdge(
 			into.length === 0 ? projection.to : edge.targets[0]!,
-			`to|${face}|${projection.from}|${kindOf(edge)}`,
+			`to|${face}|${projection.from}|${trunkKind(edge)}`,
 			face,
 		);
 		for (const block of into) {
@@ -493,13 +494,12 @@ class BlockTree {
 	}
 
 	/**
-	 * What a relationship's ports on a block's edge share with others: its
-	 * kind, and its id when it keeps ports of its own.
+	 * What a relationship's ports on a block's edge share: its kind and look, or its own id.
 	 * @param edge The relationship.
 	 * @returns The key's part.
 	 */
 	kindOf(edge: ElkExtendedEdge): string {
-		return this.apart.has(edge.id) ? `${kindOf(edge)}|${edge.id}` : kindOf(edge);
+		return this.apart.has(edge.id) ? `${trunkKind(edge)}|${edge.id}` : trunkKind(edge);
 	}
 
 	/**
@@ -564,7 +564,7 @@ class BlockTree {
 	 */
 	line(block: Block, edge: ElkExtendedEdge, ends: Ends, labelled: boolean): string {
 		const carries = labelled && (edge.labels?.length ?? 0) > 0;
-		const key = carries ? edge.id : `${ends.from}>${ends.to}|${kindOf(edge)}`;
+		const key = carries ? edge.id : `${ends.from}>${ends.to}|${trunkKind(edge)}`;
 		if (!block.lines.has(key)) block.lines.set(key, { key, edge, ...ends, labelled: carries });
 		return key;
 	}

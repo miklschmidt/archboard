@@ -2429,3 +2429,31 @@ as it was.
 `region-room.test.ts` holds the room under the tab of a region round
 several cards, one card, several containers and one container to the inset
 below it, on both engines.
+
+## 47. Lines share a lane only when kind, standing, emphasis and traffic match (2026-10-11, TASK-333)
+
+Lines of one kind may share a lane on purpose, and a difference in kind or in
+comparison standing already parted them. A difference in emphasis or in
+traffic did not: on Codex workhorse One turn three lines of different
+emphasis came down one lane into Codex session and forked into arrowheads
+that pointed apart. The key a lane is shared under (`trunkKind` in
+`track/route.ts`, read by the block tree's ports, trunks and joins) now also
+holds the emphasis and whether the line carries traffic. `compoundGraph`
+passes both to layout only for Track (`byLook`); Blocks' keys are as they were.
+
+The drawings, 58 of the dogfood vault, rendered against the commit before and
+compared byte for byte: on Track 34 changed and each was looked at: none reads
+clearly worse and lines that merged into one arrowhead now end in their own.
+Total crossings 857 to 836, and the drawings that grew did so by a lane.
+Archboard server routes, Board writes crosses 8 more lines (16) for lines that
+no longer share a trunk, and reads about the same. Every Blocks drawing is
+byte-identical.
+
+**Known gap, Blocks.** The same change on Blocks re-laid 37 of 58 drawings
+and 17 read worse (total crossings 2261 to 2654, Command dispatch's fit 0.84
+to 0.64): Blocks reads the key for its ports, trunks, joins and exit sides, so
+a split key re-orders and re-packs whole boards, and a trunk parted into N
+lines crosses what it crossed N times. Splitting only the router's key on
+Blocks (leaving its block keys) cost less (crossings up in 4 drawings, 2261 to 2388) but still shares lanes between blocks. Blocks therefore still shares a
+lane across lines that differ in emphasis or traffic; `matched-kind-channels.test.ts`
+holds the separation on Track only.
