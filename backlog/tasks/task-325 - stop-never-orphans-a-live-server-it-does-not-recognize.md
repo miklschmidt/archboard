@@ -1,9 +1,11 @@
 ---
 id: TASK-325
 title: stop never orphans a live server it does not recognize
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@implementer'
 created_date: '2026-09-24 01:07'
+updated_date: '2026-10-11 13:58'
 labels:
   - cli
 dependencies: []
@@ -20,7 +22,19 @@ After the health service name changed (TASK-324), archboard stop run by the new 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 stop keeps the pidfile of a process that is alive and listening on the server's port, and says what answers there and how to stop it, instead of reporting nothing running
-- [ ] #2 A pidfile whose process is gone is still removed as stale
-- [ ] #3 One owner proves both
+- [x] #1 stop keeps the pidfile of a process that is alive and listening on the server's port, and says what answers there and how to stop it, instead of reporting nothing running
+- [x] #2 A pidfile whose process is gone is still removed as stale
+- [x] #3 One owner proves both
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. pidfile.ts: add removePidFileIfOwnerGone(port) reusing removeIfOwnerGone (pid + kernel start time). 2. spawn.ts absentServerResult: remove the pidfile only when the owner is gone; otherwise keep it and throw naming the pid, that it holds a pidfile but does not answer as this server, and how to end it (kill pid). foreignServiceError path unchanged. 3. One test in pidfile.test.ts: live child pid keeps the file and throws; exited pid removes it.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Absent path of stopServer now removes the pidfile only when the recorded owner is gone (pid dead or reused, via recordedOwnerIsGone); a live owner keeps the file and stop throws naming the pid and 'kill <pid>'. Decision: no listening-socket check (live recorded pid that does not answer is enough; also covers a server still starting or stopping). foreignServiceError path unchanged. Owner: src/runtime/engine/tests/pidfile.test.ts (live child + exited child against a silent port).
+<!-- SECTION:NOTES:END -->

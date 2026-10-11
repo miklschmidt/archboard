@@ -14,7 +14,7 @@ import {
 	type HealthStatus,
 } from "@/runtime/engine/server-client";
 
-import { readPidFile, removePidFile } from "@/runtime/engine/pidfile";
+import { readPidFile, removePidFile, removePidFileIfOwnerGone } from "@/runtime/engine/pidfile";
 import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
@@ -430,15 +430,24 @@ interface StopResult {
 }
 
 /**
- * What `stop` answers when nothing is listening: a stale pidfile is cleaned
- * up, never signalled.
+ * What `stop` answers when nothing answers `/health`: a pidfile whose process
+ * is gone is cleaned up, never signalled. A pidfile whose process still runs
+ * is kept, because the process may hold the port (an older build, or a server
+ * that is starting or stopping) and deleting the file would orphan it.
  * @param port The server port.
  * @param filePid The pid the pidfile recorded, if any.
  * @returns The stop result for an absent server.
+ * @throws {Error} When the recorded process is alive but does not answer.
  */
 function absentServerResult(port: number, filePid: number | null): StopResult {
 	if (filePid !== null) {
-		removePidFile(port);
+		if (!removePidFileIfOwnerGone(port)) {
+			throw new Error(
+				`Process ${filePid} is alive and recorded as the Archboard server for port ${port}, ` +
+					`but it does not answer at ${ARCHBOARD_URL}. The pidfile is kept. ` +
+					`If it is a stuck or older server, end it with \`kill ${filePid}\`, then run \`archboard stop\` again.`,
+			);
+		}
 		return {
 			stopped: false,
 			pid: filePid,
