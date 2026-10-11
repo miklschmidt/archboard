@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 15:53'
-updated_date: '2026-10-11 15:58'
+updated_date: '2026-10-11 16:00'
 labels: []
 dependencies: []
 type: bug
@@ -37,4 +37,6 @@ Run the repaired pidfile owner in the macOS native CI job, as well as the comple
 
 <!-- SECTION:NOTES:BEGIN -->
 Review fixed two fixture contracts: the parent now requires a machine-readable completion receipt from the selected original body, so a zero-test runner success cannot pass; and the child captures its dedicated process group before spawning descendants, so parent cleanup reaps a sleep left by a timed-out runner. The five-second child execution bound remains. Group cleanup has a separate five-second bound within the unchanged fifteen-second preloaded normal case timeout. Focused owner passes all four registrations, and full type checking and configured test lint pass.
+
+Boundary review keeps the fixture cleanup poll independent of product timing (TASK-154). The module owner uses its own 10 ms test cadence because importing tests/system support would cross the configured test-owner boundary. Both ownership and duration-independence rules remain enabled.
 <!-- SECTION:NOTES:END -->
