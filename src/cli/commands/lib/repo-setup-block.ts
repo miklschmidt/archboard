@@ -1,4 +1,4 @@
-// Installing the skill is only half of setting a repo up. The other half is
+// Installing the skills is only half of setting a repo up. The other half is
 // writing down what the next agent in that repo cannot discover: where the
 // vault is and how to invoke the binary. That
 // lives in the repo's own CLAUDE.md or AGENTS.md, between these markers so a
@@ -91,7 +91,7 @@ function chooseDoc(repo: string, targetSpec: string): { file: string; existed: b
  * @param options.vault - The vault path to export.
  * @param options.command - How the CLI is invoked when it is not on PATH.
  * @param options.onPath - Whether `archboard` resolves on PATH.
- * @param options.skill - Where the installed skill lives.
+ * @param options.skill - Where the installed `archboard` skill lives.
  * @param options.serverUrl - The server URL when it is not the default.
  * @returns The block text, markers included, ending in a newline.
  */
@@ -117,8 +117,9 @@ function renderBlock(options: {
 		"This repo's architecture lives on archboard boards: an agent states what the",
 		"architecture IS — the parts, what contains what, how they are wired — and the",
 		"renderer draws it. Nobody moves a box, and there is deliberately no way to.",
-		`The commands are in the \`archboard\` skill at \`${skill}\`. Below is the part of`,
-		"the setup that only this machine knows.",
+		`The commands are in the \`archboard\` skill at \`${skill}\`, and a pull request's`,
+		"architecture explainer is in the `archboard-pr` skill beside it. Below is the",
+		"part of the setup that only this machine knows.",
 		"",
 		"### Environment",
 		"",
@@ -269,7 +270,7 @@ function reportSetup(options: SetupOptions, result: SetupResult): void {
 /**
  * Write the setup into the repo's own agent doc.
  *
- * Everything an agent needs beyond the skill is machine-specific: the vault
+ * Everything an agent needs beyond the skills is machine-specific: the vault
  * path and whether the binary is on PATH. Left in
  * the installing human's head it is invisible, so it goes in the file the next
  * agent reads before it does anything else.

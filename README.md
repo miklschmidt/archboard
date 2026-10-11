@@ -289,7 +289,7 @@ cd ~/code/your-project
 archboard install-skill --agent claude-code     # omit --agent for Codex
 ```
 
-The installer copies the `archboard` skill to `~/.claude/skills` (`~/.agents/skills` for Codex). It asks where the repository keeps its boards (Enter takes `.archboard/vault` inside it). Then it writes the vault path and the command into the repository's `CLAUDE.md` or `AGENTS.md`. Commit the vault with your code. Then ask your agent:
+The installer copies the `archboard` and `archboard-pr` skills to `~/.claude/skills` (`~/.agents/skills` for Codex). It asks where the repository keeps its boards (Enter takes `.archboard/vault` inside it). Then it writes the vault path and the command into the repository's `CLAUDE.md` or `AGENTS.md`. Commit the vault with your code. Then ask your agent:
 
 ```text
 Map this repository's architecture onto a board named "Overview", bind every part to its code,

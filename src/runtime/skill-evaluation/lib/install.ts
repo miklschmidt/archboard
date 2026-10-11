@@ -109,7 +109,13 @@ async function installSkill(
 		paths.vault,
 		"--yes",
 	]);
-	const skillRoot = path.join(paths.home, ".agents", "skills", "archboard");
+	const skillsRoot = path.join(paths.home, ".agents", "skills");
+	const skillRoot = path.join(skillsRoot, "archboard");
+	// The world holds the arm's package alone: the other skills the installer ships are read
+	// from the checkout at the run's own time and are not under evaluation.
+	for (const other of fs.readdirSync(skillsRoot).filter((name) => name !== "archboard")) {
+		fs.rmSync(path.join(skillsRoot, other), { recursive: true, force: true });
+	}
 	swapInPackage(skillRoot, source, cli.checkout);
 	for (const required of [
 		"SKILL.md",

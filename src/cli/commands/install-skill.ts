@@ -4,7 +4,9 @@ import { z } from "zod";
 import { defineCommand } from "@/cli/command-contract/contract";
 import type { CommandContext } from "@/cli/command-contract/contract";
 import {
-	SKILL_NAME,
+	BOARD_SKILL,
+	BUNDLED_SKILLS,
+	type BundledSkill,
 	type SkillDestination,
 	countFiles,
 	findSkillSource,
@@ -74,20 +76,22 @@ const InstallSkillSetupResultSchema = z.object({
 });
 type InstallSkillSetupResult = z.infer<typeof InstallSkillSetupResultSchema>;
 
+const SkillFilesSchema = z.number().int().nonnegative();
+
 const InstallSkillResultSchema = z.union([
 	z.object({
 		success: z.literal(true),
-		skill: z.literal(SKILL_NAME),
-		source: z.string(),
-		files: z.number().int().nonnegative(),
+		skills: z.array(
+			z.object({ skill: z.enum(BUNDLED_SKILLS), source: z.string(), files: SkillFilesSchema }),
+		),
 	}),
 	z.object({
 		success: z.literal(true),
-		skill: z.literal(SKILL_NAME),
 		mode: z.string(),
 		root: z.string(),
-		target: z.string(),
-		files: z.number().int().nonnegative(),
+		skills: z.array(
+			z.object({ skill: z.enum(BUNDLED_SKILLS), target: z.string(), files: SkillFilesSchema }),
+		),
 		setup: InstallSkillSetupResultSchema.optional(),
 	}),
 ]);
@@ -99,7 +103,7 @@ interface ResolvedDestination extends SkillDestination {
 }
 
 /**
- * Resolves where the skill goes from whichever destination spelling was used: --dir wins,
+ * Resolves where the skills go from whichever destination spelling was used: --dir wins,
  * then --agent, then --target (defaulting to the agents root).
  * @param input - The validated install request.
  * @returns The destination and the target spelling the doc choice reuses.
@@ -119,9 +123,9 @@ function resolveDestination(input: InstallSkillRequest): ResolvedDestination {
 /**
  * The existing install at the target, refusing to manage a symlink somebody else placed.
  * @param target - The skill directory to replace.
- * @returns The lstat result, or undefined when nothing is there yet.
+ * @returns Whether something is there to replace.
  */
-function existingInstall(target: string): fs.Stats | undefined {
+function existingInstall(target: string): boolean {
 	let lstat: fs.Stats | undefined;
 	try {
 		lstat = fs.lstatSync(target);
@@ -133,48 +137,87 @@ function existingInstall(target: string): fs.Stats | undefined {
 			`${target} is a symlink; refusing to replace it. Remove it manually if you want the CLI to manage this install.`,
 		);
 	}
-	return lstat;
+	return lstat !== undefined;
+}
+
+/** One bundled skill on its way into the skills root. */
+interface PlannedSkill {
+	skill: BundledSkill;
+	source: string;
+	target: string;
+	replaces: boolean;
 }
 
 /**
- * Copies the skill into the root by staging into a sibling temp dir and swapping it in.
- * Replace, never overlay: stale files from older skill versions (e.g. the pre-1.1
- * scripts/*.cjs helpers) must not survive an upgrade.
- *
- * The staged copy is prepared — its generated schemas and portable install
- * manual written — before anything is swapped, so a preparation that fails
- * leaves the previous install exactly as it was.
- * @param source - The bundled skill directory.
- * @param destination - The skills root and target directory.
+ * Copies one skill into its staging directory, prepared the way an install carries it: the
+ * board skill also gets its generated schemas and portable install manual.
+ * @param plan - The skill to stage.
+ * @param staging - The empty staging directory beside its target.
+ */
+function stageSkill(plan: PlannedSkill, staging: string): void {
+	fs.cpSync(plan.source, staging, { recursive: true });
+	if (plan.skill === BOARD_SKILL) {
+		prepareSkillArtifacts(staging, { root: packageRoot() });
+	}
+}
+
+/**
+ * Swaps one staged skill in for whatever was installed at its target.
+ * @param plan - The skill being installed.
+ * @param staging - Its prepared staging directory.
  * @param context - The command context that receives the diagnostics.
  */
+function swapIn(plan: PlannedSkill, staging: string, context: CommandContext): void {
+	if (plan.replaces) {
+		fs.rmSync(plan.target, { recursive: true, force: true });
+		context.diagnostic(`Replaced existing install at ${plan.target}`);
+	}
+	fs.renameSync(staging, plan.target);
+}
+
+/**
+ * Copies every bundled skill into the root by staging each into a sibling temp dir and
+ * swapping them in. Replace, never overlay: stale files from older skill versions (e.g. the
+ * pre-1.1 scripts/*.cjs helpers) must not survive an upgrade.
+ *
+ * Every skill is staged and prepared before anything is swapped, so a symlink in the way or
+ * a staging that fails leaves every previous install exactly as it was.
+ * @param root - The skills root.
+ * @param context - The command context that receives the diagnostics.
+ * @returns Each installed skill, its directory and how many files it holds.
+ */
 function installSkillFiles(
-	source: string,
-	destination: SkillDestination,
+	root: string,
 	context: CommandContext,
-): void {
-	const { root, target } = destination;
-	const lstat = existingInstall(target);
+): { skill: BundledSkill; target: string; files: number }[] {
+	const planned = BUNDLED_SKILLS.map((skill): PlannedSkill => {
+		const target = path.join(root, skill);
+		return { skill, source: findSkillSource(skill), target, replaces: existingInstall(target) };
+	});
 	fs.mkdirSync(root, { recursive: true });
-	const staging = fs.mkdtempSync(path.join(root, `.${SKILL_NAME}-staging-`));
+	const staged: { plan: PlannedSkill; staging: string }[] = [];
 	try {
-		fs.cpSync(source, staging, { recursive: true });
-		prepareSkillArtifacts(staging, { root: packageRoot() });
-		if (lstat) {
-			fs.rmSync(target, { recursive: true, force: true });
-			context.diagnostic(`Replaced existing install at ${target}`);
+		for (const plan of planned) {
+			const staging = fs.mkdtempSync(path.join(root, `.${plan.skill}-staging-`));
+			staged.push({ plan, staging });
+			stageSkill(plan, staging);
 		}
-		fs.renameSync(staging, target);
+		for (const { plan, staging } of staged) {
+			swapIn(plan, staging, context);
+		}
 	} catch (error) {
-		fs.rmSync(staging, { recursive: true, force: true });
+		for (const { staging } of staged) {
+			fs.rmSync(staging, { recursive: true, force: true });
+		}
 		throw error;
 	}
+	return planned.map(({ skill, target }) => ({ skill, target, files: countFiles(target) }));
 }
 
 /**
  * Writes the repo setup block unless --no-doc asked for the skill files alone.
  * @param input - The validated install request.
- * @param destination - Where the skill was installed.
+ * @param destination - Where the skills were installed.
  * @param context - The command context.
  * @returns The setup written, or undefined when skipped or refused for this checkout.
  */
@@ -191,7 +234,7 @@ async function writeRequestedSetup(
 		...(input.vault === undefined ? {} : { vaultSpec: input.vault }),
 		...(input.doc === undefined ? {} : { docSpec: input.doc }),
 		targetSpec: destination.docTargetSpec,
-		skill: destination.target,
+		skill: path.join(destination.root, BOARD_SKILL),
 		assumeYes: input.yes,
 		context,
 	});
@@ -208,21 +251,24 @@ async function executeInstallSkill(
 	input: InstallSkillInput,
 	context: CommandContext,
 ): Promise<InstallSkillResult> {
-	const source = findSkillSource();
 	if (input.printSource) {
-		return { success: true, skill: SKILL_NAME, source, files: countFiles(source) };
+		return {
+			success: true,
+			skills: BUNDLED_SKILLS.map((skill) => {
+				const source = findSkillSource(skill);
+				return { skill, source, files: countFiles(source) };
+			}),
+		};
 	}
 	const request = context.parse(InstallSkillRequestSchema, input);
 	const destination = resolveDestination(request);
-	installSkillFiles(source, destination, context);
+	const skills = installSkillFiles(destination.root, context);
 	const setup = await writeRequestedSetup(request, destination, context);
 	return {
 		success: true,
-		skill: SKILL_NAME,
 		mode: destination.mode,
 		root: destination.root,
-		target: destination.target,
-		files: countFiles(destination.target),
+		skills,
 		...(setup ? { setup } : {}),
 	};
 }
@@ -230,9 +276,9 @@ async function executeInstallSkill(
 const installSkillContract = defineCommand({
 	path: ["install-skill"],
 	shared: [],
-	summary: "Install the bundled agent skill and write the setup into this repo",
+	summary: "Install the bundled agent skills and write the setup into this repo",
 	description:
-		"Copies the bundled skill into a skills root (~/.agents/skills by default), then writes the " +
+		"Copies the bundled skills into a skills root (~/.agents/skills by default), then writes the " +
 		"setup an agent cannot know — the vault path and how to invoke this binary — into the " +
 		"repository's CLAUDE.md or AGENTS.md between markers, replacing the block on a re-run. On a " +
 		"terminal the vault is offered and asked for; --yes takes the offer.",
@@ -362,7 +408,7 @@ const installSkillContract = defineCommand({
 	refusals: [],
 	relationships: [],
 	/**
-	 * Installs the skill and, unless told not to, writes the repo setup block.
+	 * Installs the skills and, unless told not to, writes the repo setup block.
 	 * @param input - The parsed install input.
 	 * @param context - The command execution context.
 	 * @returns The install result.
@@ -373,6 +419,7 @@ const installSkillContract = defineCommand({
 });
 
 export {
+	BUNDLED_SKILLS,
 	resolveInvocation,
 	chooseDoc,
 	applyBlock,

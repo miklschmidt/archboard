@@ -41,6 +41,8 @@ test("a candidate run installs the batch's kept copy, not the checkout as it sta
 		expect(install.source).toBe(kept);
 		// Nothing of the checkout survives into the install beside the kept copy.
 		expect(fs.existsSync(path.join(install.skillRoot, "references", "read.md"))).toBe(false);
+		// Nor does any other skill the installer ships.
+		expect(fs.readdirSync(path.dirname(install.skillRoot))).toEqual(["archboard"]);
 	} finally {
 		fs.rmSync(root, { recursive: true, force: true });
 	}
