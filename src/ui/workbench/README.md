@@ -11,7 +11,8 @@ and `-transport`, and `src/ui/voice-session`. This module draws them.
   state, the voice's own line, mute and subtitles. When the layout turns,
   `hooks/use-dock-motion.ts` plays every part from its old place to its new one.
 - `components/AgentPanel.tsx`: the conversation beside the navigator. It opens on request
-  only. It holds the assistant-ui thread (`src/ui/workbench-thread`). Before anybody signs
+  only. It holds the assistant-ui thread (`src/ui/workbench-thread`), which shows the
+  workhorse's turns and, marked as its own, the voice coordinator's. Before anybody signs
   in, it holds the sign-in instead. On request it shows the session's details. At its foot
   are `PendingWork`, which shows what the conversation does not hold yet, and `ApprovalCard`,
   which shows the decisions the agent waits on. `VoiceLines` shows what was said aloud, and

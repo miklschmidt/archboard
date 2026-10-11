@@ -3,7 +3,9 @@
 `components/Conversation.tsx` renders the agent's turns over the
 assistant-ui runtime that `src/ui/workbench-runtime` provides: each prompt,
 the work between prompts as rows that open to their evidence, the plan's
-progress, approvals and how the turn ended. This module and
+progress, approvals and how the turn ended. A turn of the voice coordinator
+stands among the workhorse's turns with its own head and rule, and a workhorse
+turn that the coordinator delegated says so. This module and
 `src/ui/workbench-runtime` are the only owners of `@assistant-ui/react`
 imports (named, from the package root); this module is the only owner of
 `@assistant-ui/react-markdown`. The lint rule `archboard/assistant-ui-imports`

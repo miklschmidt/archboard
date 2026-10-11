@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 21:36'
-updated_date: '2026-10-11 14:27'
+updated_date: '2026-10-11 14:30'
 labels:
   - voice
   - coordinator
@@ -35,4 +35,6 @@ The workbench shows the workhorse thread only. The coordinator's turns (the hand
 
 <!-- SECTION:NOTES:BEGIN -->
 A1 contract done: optional coordinatorTimeline on the browser snapshot (version stays 1; refused when its threadId differs from coordinator.threadId or the coordinator is unbound), delegatedBy on BrowserTimelineTurnSchema, BROWSER_SNAPSHOT_DELTA_KEYS and DELTA_PARSERS carry coordinatorTimeline, snapshot-bounds.ts diffs over the shared key list (same 16 keys as the removed SNAPSHOT_KEYS) so a missing key is a type error.
+
+Chunk C (docs, board proposal): operator-canvas-shell.md 'The agent' revised for TASK-319 (the voice coordinator's turns in the one conversation, marked; the delegated line; session details lose the coordinator); workbench and workbench-thread READMEs; ADR 0019 amendment (2026-10-11) on 'visibly separate'. CONTEXT.md unchanged: Voice coordinator is defined, 'delegation' stays an Avoid note. Board proposals, drawn before A2 and B landed: 'Agent workbench@TASK-319' (new Delegations part bound to src/server/archboard/lib/codex-workbench-delegations.ts, Workhorse operations -> Delegations event, Browser gateway -> Delegations call, Browser gateway responsibility restated) and 'Browser application@TASK-319' (Workbench client responsibility restated). Reconcile at closing: the in-flight A2 hands the delegation map to the projection as BrowserProjectionInput.delegations, so the Browser gateway -> Delegations edge may need its direction/anchor fixed once the code is committed; relationships carry no anchors yet because the code did not exist.
 <!-- SECTION:NOTES:END -->
