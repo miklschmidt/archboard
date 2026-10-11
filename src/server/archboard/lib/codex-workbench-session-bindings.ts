@@ -379,6 +379,17 @@ function deliveryBindings(
 			 * @returns The generation, or null.
 			 */
 			currentRealtimeGeneration: () => currentRealtimeGeneration(created),
+			/**
+			 * What this tab's canvas holds now. A recording is narrated to nobody listening, so it is
+			 * no narration to stop.
+			 * @returns The canvas.
+			 */
+			canvas: () => ({
+				narrated:
+					(created.realtime?.presentation()?.recording ?? null) === null
+						? server.narratedBoardFor(tabSessionId)
+						: null,
+			}),
 			coordinatorTurn: createOutcomeReportPort({
 				session,
 				/**

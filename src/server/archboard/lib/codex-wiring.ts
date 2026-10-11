@@ -31,7 +31,7 @@ import {
 } from "@/server/archboard/lib/codex-semantic-input";
 import { waitForTargetsWith } from "@/server/archboard/lib/codex-target-wait";
 import { checkoutRoot } from "@/server/archboard/lib/module-paths";
-import { subscribeNarrationChanges } from "@/server/archboard/lib/walkthrough-narration";
+import { narratedBoardOf, narrationChangesOf } from "@/server/archboard/lib/walkthrough-narration";
 import {
 	boardForPane,
 	browserLeaseLedger,
@@ -396,18 +396,8 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				);
 			},
 		}),
-		/**
-		 * What a person does by hand to a walkthrough one tab session's voice narrates: only a pane
-		 * of that tab is its news.
-		 * @param tabSessionId The tab session.
-		 * @returns The subscription.
-		 */
-		narrationChangesFor: (tabSessionId) => (listener) =>
-			subscribeNarrationChanges((change, clientId) => {
-				if (tabSessionOf(clientId) === tabSessionId) {
-					listener(change);
-				}
-			}),
+		narrationChangesFor: narrationChangesOf,
+		narratedBoardFor: narratedBoardOf,
 		/**
 		 * The canonical context of a settled event, filed under the pane it presents.
 		 * @param event The settled event.

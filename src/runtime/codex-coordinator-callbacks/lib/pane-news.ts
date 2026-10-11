@@ -14,6 +14,7 @@ import type {
 	SemanticUserChange,
 	SettledSemanticChangeEvent,
 } from "@/runtime/codex-semantic-context";
+import type { CoordinatorPaneNews } from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
 type PaneNewsSource = SettledSemanticChangeEvent | PaneFocusEvent | PaneSelectionEvent;
 
@@ -103,19 +104,40 @@ function readingNews(event: PaneSelectionEvent, changed: readonly SemanticUserCh
 }
 
 /**
+ * Whether a reading the user changed is a reason to stop a narration (TASK-293.05): they picked
+ * something out, or chose a view or a variant, on the board they were on. Clicking empty canvas
+ * should not stop a talk, and a board of their choosing ends the walkthrough, which is told as
+ * leaving it.
+ * @param event - The selection event.
+ * @param changed - What the user changed.
+ * @returns True when it stops a narration.
+ */
+function stopsNarration(
+	event: PaneSelectionEvent,
+	changed: readonly SemanticUserChange[],
+): boolean {
+	if (changed.includes("board")) {
+		return false;
+	}
+	const picked = changed.includes("selection") && event.architecture.selection.count > 0;
+	return picked || changed.includes("view") || changed.includes("variant");
+}
+
+/**
  * The pane news one event is, or null when nothing of it was the user's own doing.
  * @param event - The semantic event.
- * @returns The sentence for the voice model, or null when nobody is to be told.
+ * @returns The sentence for the voice model and whether it stops a narration, or null when
+ *   nobody is to be told.
  */
-function paneNews(event: PaneNewsSource): string | null {
+function paneNews(event: PaneNewsSource): CoordinatorPaneNews | null {
 	if (event.kind === "settled_change" || event.userChanged.length === 0) {
 		return null;
 	}
 	const changed = event.userChanged;
 	if (event.kind === "pane_selection") {
-		return readingNews(event, changed);
+		return { sentence: readingNews(event, changed), stops: stopsNarration(event, changed) };
 	}
-	return changed.includes("focus") ? focusNews(event) : null;
+	return changed.includes("focus") ? { sentence: focusNews(event), stops: false } : null;
 }
 
 export { paneNews };

@@ -308,6 +308,8 @@ interface HarnessState {
 	link: CoordinatorCallbackLinkCorrelation | null;
 	generation: CoordinatorCallbackRealtimeGeneration | null;
 	classification: ThreadLinkClassification;
+	/** The board a narration in the tab is on, or null. */
+	narrated: string | null;
 }
 
 interface Harness {
@@ -374,6 +376,7 @@ function harness(active = true): Harness {
 			currentEpoch: { childId: ids.child, epoch: ids.epoch },
 			proof: proof(ids),
 		},
+		narrated: null,
 	};
 	const semantic = semanticSources(ids, active);
 	const listeners = new Set<(event: WorkhorseOperationEvent) => void>();
@@ -395,24 +398,20 @@ function harness(active = true): Harness {
 			return { attempted: true, outcome: "delivered", reason: null };
 		},
 	};
+	const appended = async (request: CoordinatorCallbackRealtimeRequest) => {
+		realtimeRequests.push(request);
+		mutationHook?.();
+		const method = "thread/realtime/appendText";
+		if (mode === "rejected") throw new CodexSessionMutationError(method, "not_delivered", "x");
+		if (mode === "lost") throw new Error("lost");
+		return {};
+	};
+	const live = activeGeneration ?? generation(ids);
 	const realtime = createCoordinatorCallbackRealtimePort({
 		currentGeneration: () => state.generation,
 		session: {
-			realtimeAppendText: async (params) => {
-				realtimeRequests.push({ generation: activeGeneration ?? generation(ids), params });
-				mutationHook?.();
-				if (mode === "rejected") {
-					throw new CodexSessionMutationError(
-						"thread/realtime/appendText",
-						"not_delivered",
-						"rejected",
-					);
-				}
-				if (mode === "lost") {
-					throw new Error("lost");
-				}
-				return {};
-			},
+			realtimeAppendText: (params) => appended({ generation: live, channel: "context", params }),
+			realtimeAppendSpeech: (params) => appended({ generation: live, channel: "speech", params }),
 		},
 	});
 	let answerWaiter: ((answer: Answer) => void) | null = null;
@@ -443,6 +442,7 @@ function harness(active = true): Harness {
 		currentCoordinator: () => state.coordinator,
 		currentWorkhorseLink: () => state.link,
 		currentRealtimeGeneration: () => state.generation,
+		canvas: () => ({ narrated: state.narrated }),
 	};
 	return {
 		ids,

@@ -731,7 +731,7 @@ outcome, and submission tuple. Every semantic member contains `correlation`,
 `kind`, `schema`, `semantic`, `threadLinkReason`, `threadLinkState`, and `type`.
 The semantic object contains `brief`, `capturedAtMs`, `detail`, `feedId`,
 `focused`, `news`, `origin`, `paneId`, `selection`, `sequence`, and
-`significance`. Every workhorse member contains `correlation`, `detail`, `kind`,
+`significance`; `news` is `null` or an object of `sentence` and `stops`. Every workhorse member contains `correlation`, `detail`, `kind`,
 `schema`, `sequence` and `type`; `sequence` counts the news one observer made,
 so two waits in one turn are two callbacks.
 
@@ -781,13 +781,26 @@ never sent through `thread/realtime/appendText`. The workhorse thread is
 correlation only and is never the callback mutation target.
 
 A semantic callback is the exception: its bytes are the record, never what is
-sent. Its `semantic.news` field holds the pane news it is, one sentence of names
-built from the parts of the pane's report marked as changed by the user's own
-hand (ADR 0034), or `null`. While voice is live a callback with news appends
-that sentence alone through `thread/realtime/appendText` with role `developer`;
-one without is recorded `not_delivered` with reason `agent`. With no voice
-session every semantic callback is recorded with reason `voice_inactive` and
-nothing is injected into the coordinator thread.
+sent. Its `semantic.news` field holds the pane news it is, or `null`:
+`sentence` is one sentence of names built from the parts of the pane's report
+marked as changed by the user's own hand (ADR 0034), and `stops` says whether it
+is a reason to stop a narration: a pick that is not empty, or a view or a
+variant the user chose on the board they were on. While voice is live a
+callback with news appends that sentence alone, as quiet context through
+`thread/realtime/appendText` with role `developer`. During a narration of a pane
+of the same tab (TASK-293.05, read when the callback is delivered, and never
+during a recording), news that stops goes through
+`thread/realtime/appendSpeech` instead, and the narration prompt tells the voice
+model to finish the sentence it is on, ask whether the user has a question about
+what they now have in front of them, then finish its step and wait. Appended
+speech does not cut into audio in progress (measured in the real-voice runs of
+TASK-251), so the pause lands after the current sentence. An emptied selection,
+a move to another pane and a board of the user's choosing stay quiet; leaving
+the walkthrough is spoken by the narration itself. Pending callbacks of one kind
+and scope coalesce, so of several picks queued behind an append only the latest
+is said. A callback without news is recorded `not_delivered` with reason
+`agent`. With no voice session every semantic callback is recorded with reason
+`voice_inactive` and nothing is injected into the coordinator thread.
 
 ## Realtime V3 start policy
 
