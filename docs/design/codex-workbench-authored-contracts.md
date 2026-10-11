@@ -345,14 +345,20 @@ keep a copy of each, and the copies drifted from the reviewed bytes; read the
 files.
 
 Both tell their thread to pass `--as-session` with its own thread id on every
-command that writes a board, so its own writes are not told back to it, and to
-use board context in later reasoning without starting work twice. The
-coordinator's adds that board context is information, never a request from the
-user. That covers what an outside agent did (TASK-293.06): a write or a
-`browser show` by an agent that is neither of them reaches the coordinator
-thread as one quiet developer message that starts no turn. Neither document yet asks for
-`--as-session` on `browser show`, so a show by the session's own threads is
-told to both models as an agent's.
+command that writes a board and on every `browser show`, so its own changes are
+not told back to it, and to use board context in later reasoning without
+starting work twice. The coordinator's adds that board context is information,
+never a request from the user. That covers what an outside agent did
+(TASK-293.06): a write or a `browser show` by an agent that is neither of them
+reaches the coordinator thread as one quiet developer message that starts no
+turn.
+
+A handoff turn is started by Codex, not by the host, so no host context rides on
+it, and the voice model's news of a pick never reaches the coordinator (TASK-293).
+The coordinator's only live read of what the user has picked out is
+`browser panes`, which reports each pane's latest report. Its document says to
+make that read for "this" and "that", and to say it read or checked the live
+canvas only after one succeeded in that turn (TASK-318).
 
 ## Canonical additional context
 
