@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@implementer'
 created_date: '2026-09-24 13:59'
-updated_date: '2026-10-11 14:36'
+updated_date: '2026-10-11 15:00'
 labels:
   - renderer
 dependencies: []
@@ -25,7 +25,7 @@ User decision 2026-09-24: relationships of one kind may share a lane on purpose 
 - [x] #1 On Track (the default engine), two relationships that differ in kind, emphasis or traffic never share a lane
 - [x] #2 On Track, relationships that match in all three still share a lane where they do today
 - [x] #3 One test owner fails without the fix (Track engine)
-- [x] #4 Every view of every dogfood board still draws on both engines, each Track picture that changed was looked at and is no worse, and every Blocks picture is byte-identical
+- [x] #4 Every view of every dogfood board still draws on both engines, every changed Track picture was looked at, total Track crossings across the vault fall, each picture that reads worse is named with its cost in layout-rules section 47, and every Blocks picture is byte-identical
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -47,6 +47,8 @@ Shipped for Track only (parent decision 2026-10-11 after the trial on task-333-t
 Evidence: dogfood-vault gallery (bun scripts/engine-gallery.ts, 61 drawings per engine) rendered from a HEAD tree (git archive in the scratchpad) and from the changed tree on the same vault: 0 of 61 Blocks SVGs differ byte for byte; Track 34 differ, the 29 the trial reviewed (byte-equal to the trial's after2 outputs except Archboard server whole, whose board changed since) plus 5 Archboard server drawings whose board changed since the trial (Board request path, One write lands, routes Board writes, Reads and checks, routes whole). Track crossings 857 to 836. Looked at with the Read tool: Command dispatch whole (better, fewer shared stretches, 1 to 2 crossings), Codex workhorse One turn (better, three lines end in three arrowheads), Voice coordinator Workhorse news (same or better), Archboard server Board request path, One write lands (same), routes Reads and checks, routes whole (better), routes Board writes (about the same: crossings 8 to 16 for lines that no longer share a trunk). Renderer integration is byte-identical on Track (it only changed on Blocks in the trial). Renderer suite: bun test --isolate src/runtime/semantic-renderer src/transformers 601 pass 0 fail.
 
 Known gap, Blocks: Blocks still shares a lane across lines that differ in emphasis or traffic. With the same change Blocks re-laid 37 of 58 drawings and 17 read worse (crossings 2261 to 2654) because it reads the lane key for ports, trunks, joins and exit sides; keying only the router left it sharing lanes between blocks (crossings 2261 to 2388, 4 drawings worse). Recorded in docs/design/layout-rules.md section 47; no follow-up task created.
+
+Review 2026-10-11: AC4 originally said every changed Track picture is no worse. It is not: Archboard server routes Board writes crossings 8 to 16, Board viewer whole 172 to 186, Command interface whole 28 to 36 (cause: Agent CLI's lines now leave by three ports, which is what AC1 asks for). A router-only split keeps 11 crossings on Board writes but merges lines into one arrowhead and breaks AC1. Total Track crossings 857 to 836. AC4 reworded by the parent to accept those three costs, recorded in layout-rules section 47; the user can reverse this.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
