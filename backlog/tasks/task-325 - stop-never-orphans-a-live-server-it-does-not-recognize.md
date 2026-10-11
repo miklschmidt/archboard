@@ -1,11 +1,11 @@
 ---
 id: TASK-325
 title: stop never orphans a live server it does not recognize
-status: In Progress
+status: Done
 assignee:
   - '@implementer'
 created_date: '2026-09-24 01:07'
-updated_date: '2026-10-11 13:58'
+updated_date: '2026-10-11 13:59'
 labels:
   - cli
 dependencies: []
@@ -38,3 +38,9 @@ After the health service name changed (TASK-324), archboard stop run by the new 
 <!-- SECTION:NOTES:BEGIN -->
 Absent path of stopServer now removes the pidfile only when the recorded owner is gone (pid dead or reused, via recordedOwnerIsGone); a live owner keeps the file and stop throws naming the pid and 'kill <pid>'. Decision: no listening-socket check (live recorded pid that does not answer is enough; also covers a server still starting or stopping). foreignServiceError path unchanged. Owner: src/runtime/engine/tests/pidfile.test.ts (live child + exited child against a silent port).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+stop no longer deletes the pidfile of a live process that does not answer /health. absentServerResult keeps the pidfile when its owner is alive (pid and kernel start time, so a recycled pid counts as gone) and throws an error naming the pid, the port and the kill-then-stop recovery; a dead owner's pidfile is still removed and reported as before. Verified by src/runtime/engine/tests/pidfile.test.ts (real child process: live case keeps the file and rejects, dead case removes it), red under the old unconditional removal. Not checked: that the live pid holds the port.
+<!-- SECTION:FINAL_SUMMARY:END -->
