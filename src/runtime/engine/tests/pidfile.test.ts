@@ -3,12 +3,37 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative } from "node:path";
 
+import {
+	createCodexProcessGroupOperations,
+	type CodexProcessGroupIdentity,
+} from "@/runtime/codex-process/process-group";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@/shared/timing/timing";
+
 import { pidFilePath, readPidFile, sweepDeadPidFiles, writePidFile } from "../pidfile.js";
 import { stateDir } from "../state-dir.js";
 
 const HOME_VARIABLES = ["HOME", "USERPROFILE", "LOCALAPPDATA", "XDG_STATE_HOME"] as const;
+const CHILD_BOUND_MS = 5_000;
 
 const isolatedRoot = process.env["ARCHBOARD_PIDFILE_TEST_ROOT"];
+
+/**
+ * Reap the isolated child's group, including a sleep left by a killed test runner.
+ * @param root The isolated child's fixture directory.
+ */
+async function reapIsolatedGroup(root: string): Promise<void> {
+	const receipt = join(root, "process-group.json");
+	if (!existsSync(receipt)) return;
+	const identity = JSON.parse(readFileSync(receipt, "utf8")) as CodexProcessGroupIdentity;
+	const groups = createCodexProcessGroupOperations();
+	groups.signal(identity, "SIGKILL");
+	const deadline = Date.now() + CHILD_BOUND_MS;
+	while (groups.inspect(identity) !== "quiescent") {
+		if (Date.now() >= deadline)
+			throw new Error("The isolated pidfile process group did not close.");
+		await Bun.sleep(PROCESS_GROUP_OBSERVATION_POLL_MS);
+	}
+}
 
 /**
  * Start Bun with an isolated home before its runtime caches that location.
@@ -19,6 +44,7 @@ function pidfileTest(name: string, body: () => void | Promise<void>): void {
 	test(name, async () => {
 		if (isolatedRoot !== undefined) {
 			await body();
+			writeFileSync(join(isolatedRoot, "completed-case.json"), JSON.stringify({ name }));
 			return;
 		}
 		const root = mkdtempSync(join(tmpdir(), "archboard-pidfile-"));
@@ -33,15 +59,22 @@ function pidfileTest(name: string, body: () => void | Promise<void>): void {
 					},
 					stdout: "pipe",
 					stderr: "pipe",
-					timeout: 5_000,
+					detached: true,
+					timeout: CHILD_BOUND_MS,
 				},
 			);
 			if (child.exitCode !== 0) {
 				throw new Error(`${child.stdout.toString()}\n${child.stderr.toString()}`);
 			}
 			expect(child.exitCode).toBe(0);
+			// Exit zero alone also permits a runner that selected no case.
+			expect(JSON.parse(readFileSync(join(root, "completed-case.json"), "utf8"))).toEqual({ name });
 		} finally {
-			rmSync(root, { recursive: true, force: true });
+			try {
+				await reapIsolatedGroup(root);
+			} finally {
+				rmSync(root, { recursive: true, force: true });
+			}
 		}
 	});
 }
@@ -64,6 +97,11 @@ function isolatedState(): string {
 		throw new Error("The pidfile state directory escapes the temporary root.");
 	}
 	mkdirSync(directory, { recursive: true });
+	// Capture before any body can spawn a descendant, while the leader is live.
+	writeFileSync(
+		join(isolatedRoot, "process-group.json"),
+		JSON.stringify(createCodexProcessGroupOperations().capture(process.pid)),
+	);
 	return directory;
 }
 
