@@ -68,6 +68,78 @@ function sentTo(worker: HeldWorker): string[] {
 	return worker.sent.map(({ graph }) => graph.id);
 }
 
+test("a cancellable solve lets its caller reject queued speculation before the next solve starts", async () => {
+	const { solve, workers } = heldPool(1);
+	const first = solve({ id: "first" }, {}, new AbortController().signal);
+	const controller = new AbortController();
+	const obsolete = solve({ id: "obsolete" }, {}, controller.signal);
+	const refused = obsolete.catch((error: unknown) => error);
+	const needed = solve({ id: "needed" }, {});
+	const started = Promise.withResolvers<void>();
+	const worker = workers[0]!;
+	const send = worker.postMessage.bind(worker);
+	/**
+	 * Observe dispatch resuming without a wall clock wait.
+	 * @param message The solve sent to the worker.
+	 */
+	worker.postMessage = (message) => {
+		send(message);
+		if (message.graph.id === "needed") started.resolve();
+	};
+	// Layout decoding and candidate selection both follow the worker's answer.
+	const selected = first.then((answer) => answer).then(() => controller.abort());
+	workers[0]!.answer(0, { data: { id: "first!" } });
+	await selected;
+	expect(sentTo(workers[0]!)).not.toContain("obsolete");
+	expect(await refused).toBe(controller.signal.reason);
+	await started.promise;
+	expect(sentTo(workers[0]!)).toEqual(["first", "needed"]);
+	workers[0]!.answer(1, { data: { id: "needed!" } });
+	expect(await needed).toEqual({ id: "needed!" });
+});
+
+test.each(["fatal", "stopped"] as const)(
+	"a cancellable solve's final %s worker failure lets its caller cancel queued speculation",
+	async (failure) => {
+		const workers: HeldWorker[] = [];
+		const started = Promise.withResolvers<void>();
+		const solve = createEnginePool(() => {
+			const worker = new HeldWorker();
+			const send = worker.postMessage.bind(worker);
+			/**
+			 * Observe replacement dispatch without a wall clock wait.
+			 * @param message The solve sent to the worker.
+			 */
+			worker.postMessage = (message) => {
+				send(message);
+				if (message.graph.id === "needed") started.resolve();
+			};
+			workers.push(worker);
+			return worker;
+		}, 1);
+		const first = solve({ id: "first" }, {}, new AbortController().signal);
+		workers[0]!.answer(0, { error: "WASM failed to load", fatal: true });
+		expect(sentTo(workers[1]!)).toEqual(["first"]);
+		const controller = new AbortController();
+		const obsolete = solve({ id: "obsolete" }, {}, controller.signal);
+		const refused = obsolete.catch((error: unknown) => error);
+		const needed = solve({ id: "needed" }, {});
+		const selected = first.catch((error: unknown) => {
+			controller.abort();
+			return error;
+		});
+		if (failure === "fatal") workers[1]!.answer(0, { error: "WASM failed to load", fatal: true });
+		else workers[1]!.dispatchEvent(new Event("error"));
+		expect(await selected).toBeInstanceOf(Error);
+		expect(workers.flatMap(sentTo)).not.toContain("obsolete");
+		expect(await refused).toBe(controller.signal.reason);
+		await started.promise;
+		expect(workers.flatMap(sentTo)).toEqual(["first", "first", "needed"]);
+		workers[2]!.answer(0, { data: { id: "needed!" } });
+		expect(await needed).toEqual({ id: "needed!" });
+	},
+);
+
 test("an obsolete queued solve never occupies a worker", async () => {
 	const { solve, workers } = heldPool(1);
 	const first = solve({ id: "first" }, {});
