@@ -273,7 +273,7 @@ function layingOnce<Placed>(
 ) {
 	const asked = new Map<
 		string,
-		{ controller: AbortController; promise: Promise<Placed>; settled: boolean }
+		{ controller: AbortController; promise: Promise<Placed>; settled: boolean; needed: boolean }
 	>();
 	/**
 	 * Ask for a candidate once while it remains relevant.
@@ -285,9 +285,25 @@ function layingOnce<Placed>(
 		let entry = asked.get(key);
 		if (entry === undefined) {
 			const controller = new AbortController();
-			entry = { controller, promise: lay(apart, controller.signal), settled: false };
+			entry = {
+				controller,
+				promise: lay(apart, controller.signal),
+				settled: false,
+				needed: true,
+			};
 			asked.set(key, entry);
 			const held = entry;
+			// An active solve ignores cancellation and may be needed by a later
+			// turn. Keep sharing it until it answers; only queued cancellation
+			// discards its promise. If that candidate became needed again while
+			// cancellation travelled through the host, ask for it afresh.
+			held.promise = held.promise.catch((error: unknown) => {
+				if (controller.signal.aborted && error === controller.signal.reason) {
+					if (asked.get(key) === held) asked.delete(key);
+					if (held.needed) return ask(apart);
+				}
+				throw error;
+			});
 			// Speculative failures remain silent unless their candidate is awaited.
 			void held.promise.then(
 				() => {
@@ -300,6 +316,7 @@ function layingOnce<Placed>(
 				},
 			);
 		}
+		entry.needed = true;
 		return entry.promise;
 	};
 	/**
@@ -309,9 +326,9 @@ function layingOnce<Placed>(
 	const keep = (candidates: readonly ReadonlySet<string>[]): void => {
 		const needed = new Set(candidates.map(candidateKey));
 		for (const [key, entry] of asked) {
-			if (entry.settled || needed.has(key)) continue;
+			entry.needed = needed.has(key);
+			if (entry.settled || entry.needed) continue;
 			entry.controller.abort();
-			asked.delete(key);
 		}
 	};
 	return { ask, keep };
