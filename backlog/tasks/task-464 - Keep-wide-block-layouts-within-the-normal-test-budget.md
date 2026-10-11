@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:52'
-updated_date: '2026-10-11 21:29'
+updated_date: '2026-10-11 21:30'
 labels: []
 dependencies: []
 references:
@@ -25,7 +25,7 @@ Hosted run 38148069388 at c80c70d6 times out rendering Browser application with 
 <!-- AC:BEGIN -->
 - [ ] #1 Every wide-board assertion and layout contract remains intact.
 - [ ] #2 The complete local and hosted gates pass without weakening selection, timeouts, assertions, or validation policy.
-- [ ] #3 The exact failing wide-board owner passes within its 120-second budget (the user-approved exception for the two heavy Blocks cases) on hosted Linux.
+- [ ] #3 The exact failing wide-board owner passes within its 120-second budget on hosted Linux. The user approved 120 s for the two heavy Blocks cases because hosted GitHub Actions runners are much slower than local machines.
 <!-- AC:END -->
 
 ## Implementation Plan
