@@ -484,6 +484,17 @@ function recordedOwnerPid(record: string): number | undefined {
 }
 
 /**
+ * The kernel start time a record holds. A record without one (an older build,
+ * or a host that cannot observe processes) cannot tell its process from one
+ * that inherited the pid.
+ * @param record The record's text.
+ * @returns The start time, or undefined when the record holds none.
+ */
+function recordedOwnerStartTime(record: string): string | undefined {
+	return record.trim().split(/\s+/u)[1];
+}
+
+/**
  * Whether the process a record names is provably gone: absent, a zombie, or
  * a process born at another time than the record says. A record naming no pid
  * or a host that cannot observe processes counts as alive, so doubt keeps
@@ -494,7 +505,7 @@ function recordedOwnerPid(record: string): number | undefined {
 function recordedOwnerIsGone(record: string): boolean {
 	const pid = recordedOwnerPid(record);
 	if (pid === undefined) return false;
-	const startTime = record.trim().split(/\s+/u)[1];
+	const startTime = recordedOwnerStartTime(record);
 	try {
 		const observed = readProcessObservation(pid);
 		if (observed === undefined || observed.state === "zombie") return true;
@@ -513,4 +524,5 @@ export {
 	ownerRecord,
 	recordedOwnerIsGone,
 	recordedOwnerPid,
+	recordedOwnerStartTime,
 };

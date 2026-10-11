@@ -3,7 +3,12 @@ import path from "path";
 import { logger } from "@/runtime/engine/logger";
 import { errorMessage } from "@/runtime/engine/lib/thrown-error";
 import { stateDir } from "@/runtime/engine/state-dir";
-import { ownerRecord, recordedOwnerIsGone, recordedOwnerPid } from "@/shared/process-observation";
+import {
+	ownerRecord,
+	recordedOwnerIsGone,
+	recordedOwnerPid,
+	recordedOwnerStartTime,
+} from "@/shared/process-observation";
 
 const PID_FILE_NAME = /^server-\d+\.pid$/u;
 
@@ -112,15 +117,14 @@ function removePidFileIfOwnerGone(port: number): boolean {
 }
 
 /**
- * Whether the pidfile for a port records the start time of its process. One
- * that records only a pid (an older build, or a host that could not observe
- * the process) cannot tell its process from one that inherited the pid.
+ * Whether the pidfile for a port records the start time of its process, and so
+ * can tell that process from one that inherited the pid.
  * @param port The port the server binds.
  * @returns True when the record holds a start time.
  */
 function pidFileRecordsStartTime(port: number): boolean {
 	try {
-		return fs.readFileSync(pidFilePath(port), "utf-8").trim().split(/\s+/u).length > 1;
+		return recordedOwnerStartTime(fs.readFileSync(pidFilePath(port), "utf-8")) !== undefined;
 	} catch {
 		return false;
 	}
