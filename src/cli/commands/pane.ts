@@ -383,7 +383,7 @@ const ShowResultSchema = z.looseObject({
 type ShowResult = z.infer<typeof ShowResultSchema>;
 const browserShowContract = defineCommand({
 	path: ["browser", "show"],
-	shared: ["url"],
+	shared: ["url", "as-session"],
 	summary: "Show a board in one pane",
 	description:
 		"Points one pane at one board. Nothing is written: a board is shown, not created, and a " +

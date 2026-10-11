@@ -535,8 +535,13 @@ function newsDocument(news: CoordinatorPaneNews | null) {
 	if (news === null) {
 		return null;
 	}
-	requireExactKeys(news, ["sentence", "stops"]);
-	return { sentence: requireString(news.sentence), stops: news.stops };
+	requireExactKeys(news, ["sentence", "stops", "by", "board"]);
+	return {
+		sentence: requireString(news.sentence),
+		stops: news.stops,
+		by: news.by,
+		board: requireString(news.board),
+	};
 }
 
 /**

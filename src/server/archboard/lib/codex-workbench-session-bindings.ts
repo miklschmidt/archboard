@@ -2,7 +2,10 @@
 // read at the moment it asks, and the context its operations run under.
 
 import { readBoardCatalogue, watchBoardCatalogue } from "@/runtime/engine/board-catalogue";
-import { createCoordinatorCallbackRealtimePort } from "@/runtime/codex-coordinator-callbacks";
+import {
+	createCoordinatorCallbackContextPort,
+	createCoordinatorCallbackRealtimePort,
+} from "@/runtime/codex-coordinator-callbacks";
 import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";
 import type { CodexWorkbenchSessionBindings } from "@/server/archboard/lib/codex-workbench-contract";
 import {
@@ -380,16 +383,16 @@ function deliveryBindings(
 			 */
 			currentRealtimeGeneration: () => currentRealtimeGeneration(created),
 			/**
-			 * What this tab's canvas holds now. A recording is narrated to nobody listening, so it is
-			 * no narration to stop.
+			 * What this tab's canvas holds now: the boards its panes show, and the one a narration is
+			 * on. A recording is narrated to nobody listening, so it is no narration to stop.
 			 * @returns The canvas.
 			 */
-			canvas: () => ({
-				narrated:
-					(created.realtime?.presentation()?.recording ?? null) === null
-						? server.narratedBoardFor(tabSessionId)
-						: null,
-			}),
+			canvas: () => {
+				const canvas = server.canvasFor(tabSessionId);
+				const recording = (created.realtime?.presentation()?.recording ?? null) !== null;
+				return recording ? { ...canvas, narrated: null } : canvas;
+			},
+			coordinatorContext: createCoordinatorCallbackContextPort(session),
 			coordinatorTurn: createOutcomeReportPort({
 				session,
 				/**

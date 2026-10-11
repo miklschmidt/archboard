@@ -443,9 +443,22 @@ function semanticKey(callback: CoordinatorSemanticCallback): string {
 		return `semantic:change:${scope}:${callback.semantic.sequence ?? "null"}`;
 	}
 	if (callback.type === "focus") {
-		return `semantic:focus:${scope}:${callback.semantic.capturedAtMs}:${callback.semantic.focused ? "1" : "0"}`;
+		return focusKey(callback, scope);
 	}
 	return `semantic:selection:${scope}:${callback.semantic.capturedAtMs}:${JSON.stringify(callback.semantic.selection)}`;
+}
+
+/**
+ * The identity of one focus callback. The sentence tells two agents' shows apart that land in
+ * one millisecond.
+ * @param callback - The focus callback.
+ * @param scope - Its scope.
+ * @returns The key.
+ */
+function focusKey(callback: CoordinatorSemanticCallback, scope: string): string {
+	const { capturedAtMs, focused, news } = callback.semantic;
+	const told = news === null ? "" : news.sentence;
+	return `semantic:focus:${scope}:${capturedAtMs}:${focused ? "1" : "0"}:${told}`;
 }
 
 /**
@@ -460,6 +473,11 @@ function coordinatorCallbackCoalescingKey(callback: CoordinatorCallback): string
 	}
 	if (callback.kind === "workhorse_news") {
 		return workhorseNewsKey(callback);
+	}
+	// What an outside agent did is told once per thing it did: a write is one whole thing
+	// somebody asked for, so nothing of it is folded into the next (TASK-293.06).
+	if (callback.semantic.news?.by === "agent") {
+		return semanticKey(callback);
 	}
 	return `semantic:${callback.type}:${semanticScope(callback)}`;
 }

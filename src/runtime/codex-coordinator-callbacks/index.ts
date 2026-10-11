@@ -22,6 +22,7 @@ export {
 	answerUnownedTellCoordinator,
 } from "@/runtime/codex-coordinator-callbacks/lib/tell-coordinator";
 export {
+	createCoordinatorCallbackContextPort,
 	createCoordinatorCallbackRealtimePort,
 	sameRealtimeGeneration,
 } from "@/runtime/codex-coordinator-callbacks/lib/realtime";
@@ -30,6 +31,7 @@ export type {
 	CallbackBufferOverflowReason,
 	CoordinatorCallback,
 	CoordinatorCallbackCanvas,
+	CoordinatorCallbackContextPort,
 	CoordinatorCallbackCorrelation,
 	CoordinatorCallbackCurrentChild,
 	CoordinatorCallbackDelivery,

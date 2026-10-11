@@ -1,5 +1,6 @@
 import { CodexSessionMutationError, type CodexSession } from "@/runtime/codex-session";
 import type {
+	CoordinatorCallbackContextPort,
 	CoordinatorCallbackMutationResult,
 	CoordinatorCallbackRealtimeGeneration,
 	CoordinatorCallbackRealtimePort,
@@ -126,7 +127,41 @@ function createCoordinatorCallbackRealtimePort(
 	});
 }
 
+/**
+ * Build the port that puts one sentence into the coordinator thread's history without starting a
+ * turn (TASK-293.06): one developer message through `thread/inject_items`, the way the board
+ * catalogue reaches it. A lost answer is not retried: the next change says where things stand.
+ * @param session - The session's inject method.
+ * @returns The frozen port.
+ */
+function createCoordinatorCallbackContextPort(
+	session: Pick<CodexSession, "threadInjectItems">,
+): CoordinatorCallbackContextPort {
+	const port: CoordinatorCallbackContextPort = {
+		/**
+		 * Put one sentence into one thread's history.
+		 * @param request - The thread and the sentence.
+		 * @param request.threadId - The coordinator thread.
+		 * @param request.text - The sentence.
+		 * @returns How the injection settled.
+		 */
+		inject: async ({ threadId, text }) => {
+			try {
+				await session.threadInjectItems({
+					threadId,
+					items: [{ type: "message", role: "developer", content: [{ type: "input_text", text }] }],
+				});
+			} catch (error) {
+				return failed(error);
+			}
+			return { attempted: true, outcome: "delivered", reason: null };
+		},
+	};
+	return Object.freeze(port);
+}
+
 export {
+	createCoordinatorCallbackContextPort,
 	type CoordinatorCallbackRealtimePortOptions,
 	sameRealtimeGeneration,
 	createCoordinatorCallbackRealtimePort,

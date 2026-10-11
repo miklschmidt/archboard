@@ -1,5 +1,6 @@
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type { CodexRealtimeAdapterOptions } from "@/runtime/codex-realtime";
+import type { CoordinatorCallbackCanvas } from "@/runtime/codex-coordinator-callbacks";
 import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/process-group";
 import type {
 	SemanticContextPublisherOptions,
@@ -63,10 +64,10 @@ export interface CodexWorkbenchServer {
 		tabSessionId: TabSessionId,
 	) => NonNullable<CodexRealtimeAdapterOptions["presentationChanges"]>["subscribe"];
 	/**
-	 * The board a walkthrough narration in one of a tab session's panes is on, by aggregate key, or
-	 * null when none of its panes is narrated (TASK-293.05).
+	 * What a tab session's canvas holds now: the boards its panes show and the one a narration in
+	 * them is on (TASK-293).
 	 */
-	readonly narratedBoardFor: (tabSessionId: TabSessionId) => string | null;
+	readonly canvasFor: (tabSessionId: TabSessionId) => CoordinatorCallbackCanvas;
 	readonly waitForTargets: Parameters<
 		typeof createServerDynamicLifecycleOwner
 	>[0]["waitForTargets"];

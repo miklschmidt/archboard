@@ -731,7 +731,7 @@ outcome, and submission tuple. Every semantic member contains `correlation`,
 `kind`, `schema`, `semantic`, `threadLinkReason`, `threadLinkState`, and `type`.
 The semantic object contains `brief`, `capturedAtMs`, `detail`, `feedId`,
 `focused`, `news`, `origin`, `paneId`, `selection`, `sequence`, and
-`significance`; `news` is `null` or an object of `sentence` and `stops`. Every workhorse member contains `correlation`, `detail`, `kind`,
+`significance`; `news` is `null` or an object of `board`, `by`, `sentence` and `stops`. Every workhorse member contains `correlation`, `detail`, `kind`,
 `schema`, `sequence` and `type`; `sequence` counts the news one observer made,
 so two waits in one turn are two callbacks.
 
@@ -801,6 +801,27 @@ and scope coalesce, so of several picks queued behind an append only the latest
 is said. A callback without news is recorded `not_delivered` with reason
 `agent`. With no voice session every semantic callback is recorded with reason
 `voice_inactive` and nothing is injected into the coordinator thread.
+
+An outside change (TASK-293.06, `by` is `agent`) is news of what an agent that
+is neither this tab's linked workhorse nor its coordinator did: a settled board
+write, or a `browser show` that moved one of this tab's panes. Who did it is the
+session the write or the show states (`change.by`, `--as-session`, null when
+nobody said). A stated session equal to the linked workhorse thread or the
+coordinator thread is refused as the event arrives with reason `own_change`;
+their outcome reaches the coordinator through workhorse news. Any other, an
+unattributed one included, is news. A write to a board no pane of this canvas
+shows when it lands is refused with reason `not_shown`; `board` holds the
+written board's aggregate key for that check. The sentence names the board and
+what the writer said it was doing, or where the pane was and where it is now,
+and says an agent did it, never the user. It goes to the coordinator thread as
+one `thread/inject_items` developer message, which starts no turn, and then to
+the voice model quietly, or as speech during a narration (an agent's show
+during any narration, a write only during a narration of the board it wrote).
+The record is the voice append's, with reason `agent` once it went through. One
+write is one thing somebody asked for, so outside news never coalesces: every
+write and every show is a sentence of its own. The coordinator has no tool
+that writes a board or moves a pane, so telling it cannot loop. A show from the
+page names no agent: what the user opens is the pane's to mark (ADR 0034).
 
 ## Realtime V3 start policy
 

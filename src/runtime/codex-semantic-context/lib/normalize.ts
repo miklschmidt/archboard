@@ -9,6 +9,7 @@ import type {
 	SemanticBoard,
 	SemanticCursor,
 	SemanticCursorInput,
+	SemanticAgentSwitch,
 	SemanticPane,
 	SemanticUserChange,
 	SemanticThreadLink,
@@ -256,6 +257,28 @@ function userChanges(
 }
 
 /**
+ * What an agent's `browser show` moved, bounded like any other name and identity it carries.
+ * @param stated - What the caller said, or nothing for a focus no command moved.
+ * @returns The switch, or null.
+ */
+function agentSwitchOf(stated: SemanticAgentSwitch | undefined): SemanticAgentSwitch | null {
+	if (stated === undefined) {
+		return null;
+	}
+	const from = nullableTextValue(
+		stated.from,
+		"pane.agentSwitch.from",
+		SEMANTIC_CONTEXT_LIMITS.boardKeyBytes,
+	);
+	const by = nullableTextValue(
+		stated.by,
+		"pane.agentSwitch.by",
+		SEMANTIC_CONTEXT_LIMITS.identityBytes,
+	);
+	return deepFreeze({ from: from.value, by: by.value });
+}
+
+/**
  * Validates the claim block; an absent claim means nobody holds the board.
  * @param claim - The claim input, if supplied.
  * @returns The frozen claim.
@@ -465,6 +488,7 @@ export {
 	clipUtf8,
 	textValue,
 	userChanges,
+	agentSwitchOf,
 	nullableTextValue,
 	identityValue,
 	numberValue,

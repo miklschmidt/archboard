@@ -6,21 +6,14 @@ import {
 	type CoordinatorCallbackOptions,
 	type CoordinatorCallbackReadyCoordinator,
 	type CoordinatorCallbackRealtimeGeneration,
+	type CoordinatorCallbackContextPort,
 	type CoordinatorCallbackRealtimeRequest,
 	type CoordinatorCallbackTurnPort,
 } from "../index.js";
 import { COORDINATOR_CAPABILITY_POLICY } from "../../codex-coordinator/index.js";
 import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoch/index.js";
 import { CodexSessionMutationError } from "../../codex-session/index.js";
-import {
-	createSemanticContextPublisher,
-	type PaneFocusEvent,
-	type PaneSelectionEvent,
-	type SemanticContextInput,
-	type SemanticContextPublisher,
-	type SettledChangeSourceEvent,
-	type SettledSemanticChangeEvent,
-} from "../../codex-semantic-context/index.js";
+import { semanticInput, semanticSources, type SemanticSources } from "./semantic-sources.js";
 import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
 import type { ReverseResponse } from "../../codex-transport/server-requests.js";
 import type { WorkhorseOperationEvent } from "../../codex-workhorse-operations/index.js";
@@ -204,96 +197,6 @@ function operationEvent(
 	return Object.freeze({ ...base, type, outcome: "delivered" });
 }
 
-function semanticInput(ids: Identities, active: boolean): SemanticContextInput {
-	return {
-		repository: "archboard",
-		child: { id: ids.child, epoch: ids.epoch },
-		threadLink: { state: "executable", reason: null },
-		workhorse: { threadId: ids.workhorse, turnId: ids.turn },
-		coordinator: {
-			threadId: ids.coordinator,
-			realtimeSessionId: active ? ids.wireSessionId : null,
-		},
-		board: {
-			key: "architecture",
-			name: "Architecture",
-			file: "boards/architecture.semantic.json",
-			version: 7,
-		},
-		pane: { paneId: "pane-a", focused: true },
-		architecture: {
-			variant: { id: "v1", name: "Current", lifecycle: "current", against: null },
-			view: null,
-			selection: {
-				count: 2,
-				subjects: [
-					{ kind: "node" as const, id: "element-a", name: "Gateway" },
-					{ kind: "edge" as const, id: "element-b", name: null },
-				],
-			},
-			differences: null,
-			reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
-		},
-		doing: "mapping",
-		cursor: { feedId: "feed-1", sequence: 7 },
-		description: "Architecture board",
-	};
-}
-
-interface SemanticSources {
-	readonly publisher: SemanticContextPublisher;
-	readonly change: SettledSemanticChangeEvent;
-	readonly focus: PaneFocusEvent;
-	readonly selection: PaneSelectionEvent;
-	readonly dispose: () => void;
-}
-
-function semanticSources(ids: Identities, active: boolean): SemanticSources {
-	let change: SettledSemanticChangeEvent | null = null;
-	const listeners = new Set<(event: SettledChangeSourceEvent) => void>();
-	const input = semanticInput(ids, active);
-	const publisher = createSemanticContextPublisher({
-		feed: {
-			onChange(listener) {
-				listeners.add(listener);
-				return () => listeners.delete(listener);
-			},
-		},
-		feedId: "feed-1",
-		fresh: { read: () => input },
-		contextForChange: () => input,
-		now: () => 1_700_000_000_000,
-	});
-	publisher.subscribeSettledChange((event) => {
-		change = event;
-	});
-	const focus = publisher.publishPaneFocus(input);
-	const selection = publisher.publishPaneSelection({
-		...input,
-		architecture: {
-			...input.architecture,
-			selection: {
-				count: 1,
-				subjects: [{ kind: "node" as const, id: "element-c", name: "Ledger" }],
-			},
-		},
-	});
-	for (const listener of listeners) {
-		listener({
-			cursor: 7,
-			board: "architecture",
-			at: "2023-11-14T22:13:20.000Z",
-			origin: "human",
-			significance: "structural",
-			text: "A structural change.",
-		});
-	}
-	if (change === null) {
-		throw new Error("semantic fixture failed");
-	}
-	return { publisher, change, focus, selection, dispose: () => publisher.dispose() };
-}
-
 type MutationMode = "delivered" | "rejected" | "lost";
 
 /** One answer the callbacks module sent to a workhorse tool call. */
@@ -308,6 +211,8 @@ interface HarnessState {
 	link: CoordinatorCallbackLinkCorrelation | null;
 	generation: CoordinatorCallbackRealtimeGeneration | null;
 	classification: ThreadLinkClassification;
+	/** The boards the tab's panes show. */
+	boards: readonly string[];
 	/** The board a narration in the tab is on, or null. */
 	narrated: string | null;
 }
@@ -323,6 +228,8 @@ interface Harness {
 	/** What the coordinator was given, in order: every workhorse outcome that reached it. */
 	readonly reports: Parameters<CoordinatorCallbackTurnPort["report"]>[0][];
 	readonly realtimeRequests: CoordinatorCallbackRealtimeRequest[];
+	/** What the coordinator thread was given without a turn, in order. */
+	readonly injections: Parameters<CoordinatorCallbackContextPort["inject"]>[0][];
 	/** The next answer to a workhorse tool call, once it is sent. */
 	readonly nextAnswer: () => Promise<Answer>;
 	readonly callbacks: ReturnType<typeof createCodexCoordinatorCallbacks>;
@@ -376,12 +283,14 @@ function harness(active = true): Harness {
 			currentEpoch: { childId: ids.child, epoch: ids.epoch },
 			proof: proof(ids),
 		},
+		boards: ["architecture"],
 		narrated: null,
 	};
 	const semantic = semanticSources(ids, active);
 	const listeners = new Set<(event: WorkhorseOperationEvent) => void>();
 	const reports: Parameters<CoordinatorCallbackTurnPort["report"]>[0][] = [];
 	const realtimeRequests: CoordinatorCallbackRealtimeRequest[] = [];
+	const injections: Parameters<CoordinatorCallbackContextPort["inject"]>[0][] = [];
 	let mode: MutationMode = "delivered";
 	let classifyHook: (() => void) | null = null;
 	let mutationHook: (() => void) | null = null;
@@ -442,7 +351,13 @@ function harness(active = true): Harness {
 		currentCoordinator: () => state.coordinator,
 		currentWorkhorseLink: () => state.link,
 		currentRealtimeGeneration: () => state.generation,
-		canvas: () => ({ narrated: state.narrated }),
+		canvas: () => ({ boards: state.boards, narrated: state.narrated }),
+		coordinatorContext: {
+			inject: async (request) => {
+				injections.push(request);
+				return { attempted: true, outcome: "delivered", reason: null };
+			},
+		},
 	};
 	return {
 		ids,
@@ -458,6 +373,7 @@ function harness(active = true): Harness {
 		},
 		reports,
 		realtimeRequests,
+		injections,
 		nextAnswer: () =>
 			new Promise<Answer>((resolve) => {
 				answerWaiter = resolve;

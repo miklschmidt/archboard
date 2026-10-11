@@ -88,6 +88,17 @@ interface SemanticPaneInput {
 	 * a change an agent or the server caused says, and what nobody is told about.
 	 */
 	readonly userChanged?: readonly SemanticUserChange[];
+	/** Set when an agent pointed this pane at the board it now shows (TASK-293.06). */
+	readonly agentSwitch?: SemanticAgentSwitch;
+}
+
+/**
+ * That an agent pointed a pane at another board with `browser show`: the board's name the pane
+ * showed before, and the agent session that asked, when it said which.
+ */
+interface SemanticAgentSwitch {
+	readonly from: string | null;
+	readonly by: string | null;
 }
 
 interface SemanticThreadLinkInput {
@@ -380,6 +391,8 @@ interface PaneFocusEvent extends SemanticBriefFields {
 	 * moved a pane is no part of what an architecture is.
 	 */
 	readonly userChanged: readonly SemanticUserChange[];
+	/** What an agent's `browser show` moved, or null for a focus nobody's command moved. */
+	readonly agentSwitch: SemanticAgentSwitch | null;
 }
 
 interface PaneSelectionEvent extends SemanticBriefFields {
@@ -486,6 +499,7 @@ export {
 	type SemanticContextInput,
 	type SemanticBoard,
 	type SemanticPane,
+	type SemanticAgentSwitch,
 	type SemanticThreadLink,
 	type SemanticWorkhorse,
 	type SemanticCoordinator,

@@ -99,9 +99,8 @@ describe("pane news", () => {
 		const h = harness(true);
 		const selection = await h.callbacks.enqueue(h.semantic.selection);
 		const focus = await h.callbacks.enqueue(h.semantic.focus);
-		const change = await h.callbacks.enqueue(h.semantic.change);
 
-		for (const delivery of [selection, focus, change]) {
+		for (const delivery of [selection, focus]) {
 			expect(delivery.path).toBe("silent");
 			expect(delivery.outcome).toBe("not_delivered");
 			expect(delivery.reason).toBe("agent");
