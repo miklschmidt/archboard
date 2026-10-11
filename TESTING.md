@@ -152,6 +152,11 @@ a narration can be silent. The [README FAQ](README.md#faq) explains why.
 
 `bun run check` is the complete gate. [docs/agents/test-suite.md](docs/agents/test-suite.md)
 describes its lanes, what each lane needs, and which test owns which behavior.
+On macOS, use Chrome for Testing. Before every local lane or gate, set
+`AGENT_BROWSER_EXECUTABLE_PATH` and `ARCHBOARD_RENDERER_CHROMIUM` to its absolute
+executable path in the checkout's ignored `.env` file.
+Desktop Chrome can show system default-browser prompts.
+
 Three facts decide whether the gate can run to its end:
 
 - The checks run one after the other and stop at the first failure. If the gate
