@@ -60,7 +60,7 @@ test("a pane's board is named as the vault lists it, whatever case the key was t
 		status: {
 			...emptyPaneStatus("A"),
 			board: { board: "web shop", variant: "current" },
-			boardKey: "web shop",
+			boardKey: "web shop@v2",
 		},
 		holder: null,
 	});
