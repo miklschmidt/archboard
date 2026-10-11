@@ -10,6 +10,7 @@ import { useEffect } from "react";
 
 import { sameBoardName } from "@/ui/semantic-board-canvas/lib/address";
 import { onSemanticBoardChange } from "@/ui/semantic-board-canvas/lib/board-changes";
+import { readAgain } from "@/ui/semantic-board-canvas/lib/read-again";
 import { semanticBoardKeys } from "@/ui/semantic-board-canvas/lib/queries";
 
 /**
@@ -19,28 +20,17 @@ import { semanticBoardKeys } from "@/ui/semantic-board-canvas/lib/queries";
  * readings of one versioned board, and a new version makes both of them a
  * description of something that is no longer there. Leaving the document behind
  * would be the quietest kind of wrong — the diagram would move and the panel
- * beside it would go on explaining the architecture from before the edit.
- *
- * Cancelling first is what makes "from after" true, for the same reason the
- * board catalog cancels first: a read already on the wire carries an answer the
- * server made before the write, and letting it land would clear the
- * invalidation and count as fresh.
+ * beside it would go on explaining the architecture from before the edit. The
+ * document goes first, because the pictures are drawn from it.
  * @param client The cache.
  * @param board The board that changed.
  * @returns Settles once the fresh reads have been asked for.
  */
-async function readBoardAgain(client: QueryClient, board: string): Promise<void> {
-	const keys = [semanticBoardKeys.boardRenders(board), semanticBoardKeys.document(board)];
-	// Every read in flight is stopped before any of them is asked for again, so
-	// that no answer made before the write can land on a key that has already
-	// been invalidated and count as fresh.
-	await Promise.all(keys.map((queryKey) => client.cancelQueries({ queryKey })));
-	// A read that starts after the cancelling is from after the write, so it is joined and not
-	// cancelled again: the picture reading the document is such a read, and cancelling it would
-	// leave a pane that asks for its variant by name with the old drawing.
-	await Promise.all(
-		keys.map((queryKey) => client.invalidateQueries({ queryKey }, { cancelRefetch: false })),
-	);
+function readBoardAgain(client: QueryClient, board: string): Promise<void> {
+	return readAgain(client, [
+		semanticBoardKeys.document(board),
+		semanticBoardKeys.boardRenders(board),
+	]);
 }
 
 /**
