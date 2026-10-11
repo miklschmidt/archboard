@@ -47,10 +47,15 @@ inside one part (a fix, a refactor, tests, formatting) leaves every board true.
 Done: each part in `changed` is either a change the proposal will draw, or a
 part whose change stays inside it.
 
-If nothing changes, the pull request gets no explainer. Say in your final
-report which parts changed inside. If no board draws the changed code, the
-vault has nothing to compare against: post no explainer and stop. Drawing that
-board is the `archboard` skill's create recipe, a separate request.
+If nothing changes, the pull request gets no explainer, and its ordinary
+description stands. Say in your final report which parts changed inside.
+
+If the architecture changes but no board draws the changed code, the change
+still needs its explanation, so draw the board first. Use the `archboard`
+skill's create recipe on the base branch's code. Draw only the area that the
+change touches and the parts around it that it can reach, and bind every part
+to its code. Create the board as `current`: it states what the base branch
+is. Then run step 1 again, and carry on with section 2.
 
 ## 2. Find or draw the proposal
 
