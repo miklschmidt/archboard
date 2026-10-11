@@ -20,8 +20,11 @@ const SERVER_STOP_PIDFILE_POLL_MS = 50;
 /**
  * How long `archboard stop` waits for a server it signalled to stop answering
  * before it reports that the server did not stop. The server drains write
- * admission for up to SERVER_MUTATION_DRAIN_TIMEOUT_MS (one second) and closes
- * its other owners before it closes its listener, so this is five times that.
+ * admission, then closes its listener before Codex process cleanup finishes.
+ * Observing /health stop answering does not prove that the child and
+ * its group have been reaped. This bounds only the CLI observation, independently
+ * of CODEX_COMPOSED_SHUTDOWN_MS. A timeout report does not interrupt the server's
+ * owned cleanup or remove its pidfile.
  */
 const SERVER_STOP_CONFIRM_MS = 5000;
 

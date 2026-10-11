@@ -55,7 +55,7 @@ async function solved(
 	graph: ElkNode,
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
-	signal?: AbortSignal,
+	signal: AbortSignal,
 ): Promise<Placed> {
 	const asked = {
 		...graph,

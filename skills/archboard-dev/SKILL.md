@@ -11,9 +11,9 @@ description: >-
 
 # Working on archboard
 
-Always-on rules are in `AGENTS.md`. The procedures to run the Archboard server
+Always-on rules are in [AGENTS.md](../../AGENTS.md). The procedures to run the Archboard server
 and make sure
-that it works are in `TESTING.md`. This skill holds only what neither the code nor those
+that it works are in [TESTING.md](../../TESTING.md). This skill holds only what neither the code nor those
 documents will tell you.
 
 ## A task's board proposal
@@ -29,7 +29,7 @@ While you plan, before `backlog task edit --plan`:
 1. Name the affected boards.
    If the task adds, removes, renames or rewires anything that a board draws, the board is
    affected. If the task adds something that the board's question needs, the board is also
-   affected. `.archboard/README.md` gives the scope of each board.
+   affected. [.archboard/README.md](../../.archboard/README.md) gives the scope of each board.
    Done: the plan names every affected board, or it says that no board is
    affected (a test or a wording fix).
 2. Branch one proposal per affected board, named by the task id:
@@ -46,6 +46,16 @@ While you plan, before `backlog task edit --plan`:
    files with the plan.
 
 When the task closes, before you mark any acceptance criterion:
+
+Run the complete normal gate, `bun run check`, before declaring completion.
+If any check fails, run the remaining checks and normal lanes to expose every failure.
+[TESTING.md](../../TESTING.md#7-test-a-change) explains how to continue after an early failure.
+Repair reproducible failures in a separate Backlog task, including failures outside the original change.
+Ground each repair in the observed failure and its cause.
+Keep every normal owner, assertion, lint rule, and timeout contract.
+An unchanged file does not prove that its failure predates this session.
+After the repairs, run `bun run check` to completion and require a pass.
+Record each repair and the passing gate result before closing the original task.
 
 1. Inspect each proposal against the code as built. The code check reads most
    of it ([ADR 0046](../../docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md)),
@@ -361,13 +371,29 @@ only at this point: nothing states a version that nobody re-read.
 
 ## The tracked skills
 
-`skills/` is the single source. `.claude/skills/` and `.agents/skills/` reach
-this repository's skills through tracked symlinks, so an edit is live at once.
-`skills experimental_install` installs the third-party skills beside them from
-`skills-lock.json`, and these skills stay untracked. Other repositories use the copy that
+Only shippable, repository-authored Archboard skills live under `skills/`.
+This directory owns `archboard` and `archboard-dev`.
+`.claude/skills/` and `.agents/skills/` reach them through tracked symlinks, so an edit is live at once.
+For other skills, use the exact path in the skill catalog.
+`skills experimental_install` installs the third-party skills listed in `skills-lock.json`.
+Keep those installed skills untracked outside `skills/`. Other repositories use the copy that
 `archboard install-skill` put in `~/.agents/skills/archboard`. To refresh that copy, run
 that command again. Keep the `archboard` skill free of machine-specific paths, because it
 runs outside this repo.
+
+## Reading and observing work
+
+Read each procedure once per session.
+If a tool clips a result, retrieve only the missing section.
+Bound each independent output when batching reads.
+Discover code paths with `rg --files` before reading guessed filenames.
+Observe long commands through their process session and the browser lane summaries.
+Keep full logs outside the checkout, or in ignored files.
+The `# browser-lane` JSON lines report selected, started, completed, and finished owners.
+The finished line carries the exit status, including prerequisite failures and interrupted runs.
+An owner completes only after its cleanup audit passes.
+
+## Generated skill files
 
 The consumer skill also ships derived files under
 `skills/archboard/references/generated/` (ignored). These are JSON Schemas for the

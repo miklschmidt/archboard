@@ -1,4 +1,4 @@
-import { CODEX_COMPOSED_SHUTDOWN_MS } from "@/shared/timing/timing";
+import { CODEX_COMPOSED_SHUTDOWN_MS, CODEX_STDIN_EOF_GRACE_MS } from "@/shared/timing/timing";
 import { ensureGroupCleanup } from "@/runtime/codex-process/lib/process-child";
 import type {
 	CodexProcessError,
@@ -41,6 +41,24 @@ function closeStdin(
 			`Could not close Codex child stdin: ${safeCauseMessage(state, cause)}. Recovery: retry stop after the child has settled.`,
 		);
 	}
+}
+
+/**
+ * Let the current child consume stdin EOF before signalling its remaining group.
+ * @param state The owner.
+ * @param record The current child, when any.
+ * @param deadlineAtMs The unchanged composed shutdown deadline.
+ */
+async function awaitStdinEof(
+	state: ProcessOwnerState,
+	record: ChildRecord | undefined,
+	deadlineAtMs: number,
+): Promise<void> {
+	if (record === undefined || record.closedHandled) return;
+	await state.processGroupCleanup.waitForClosedOrAt(
+		record.closed,
+		Math.min(deadlineAtMs, state.dependencies.now() + CODEX_STDIN_EOF_GRACE_MS),
+	);
 }
 
 /**
@@ -148,6 +166,7 @@ async function runShutdown(state: ProcessOwnerState): Promise<CodexProcessSnapsh
 		),
 	);
 	const shutdownIssue = closeStdin(state, state.current);
+	if (shutdownIssue === undefined) await awaitStdinEof(state, state.current, deadlineAtMs);
 	const work: Promise<void>[] = [
 		...[...state.groups].map((owned) => settleOwnedChild(state, owned, deadlineAtMs)),
 		...[...state.unprovenChildren].map((unproven) =>

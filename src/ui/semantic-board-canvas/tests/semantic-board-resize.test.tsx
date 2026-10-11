@@ -6,7 +6,7 @@ import { act } from "@testing-library/react";
 import { afterEach, expect, test } from "bun:test";
 
 import { BOARD_RESIZE_SETTLE_MS } from "@/shared/timing/timing";
-import { cameraNow } from "@/ui/semantic-board-canvas/tests/camera-probes";
+import { cameraNow, takeFrames } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import {
 	drawing,
 	mountStage,
@@ -16,20 +16,13 @@ import {
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 
 const realObserver = globalThis.ResizeObserver;
+let restoreFrames: (() => void) | undefined;
 
 afterEach(() => {
 	globalThis.ResizeObserver = realObserver;
+	restoreFrames?.();
+	restoreFrames = undefined;
 });
-
-/**
- * Wait, with the page's timers running.
- * @param ms How long.
- */
-async function wait(ms: number): Promise<void> {
-	await act(async () => {
-		await new Promise((resolve) => setTimeout(resolve, ms));
-	});
-}
 
 /**
  * Replace ResizeObserver with one that reports when the test says, since this DOM does no layout.
@@ -56,6 +49,8 @@ function observersTold(): (() => void)[] {
 }
 
 test("a pane whose room changes on every frame is fitted once, when the room stops changing", async () => {
+	const frames = takeFrames();
+	restoreFrames = frames.restore;
 	const told = observersTold();
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
@@ -65,18 +60,15 @@ test("a pane whose room changes on every frame is fitted once, when the room sto
 	 * One frame of a slide: the room is a little narrower than the frame before.
 	 * @param width The room's width.
 	 */
-	const frame = async (width: number): Promise<void> => {
+	const frame = (width: number): void => {
 		room.width = width;
 		act(() => {
 			for (const tell of told) tell();
 		});
-		await wait(BOARD_RESIZE_SETTLE_MS / 4);
+		frames.run(BOARD_RESIZE_SETTLE_MS / 4);
 	};
-	await [760, 720, 680, 640, 600, 560, 520].reduce(
-		(before, width) => before.then(() => frame(width)),
-		Promise.resolve(),
-	);
+	for (const width of [760, 720, 680, 640, 600, 560, 520]) frame(width);
 	expect(cameraNow()).toEqual(fitted);
-	await wait(BOARD_RESIZE_SETTLE_MS * 3);
+	frames.run(BOARD_RESIZE_SETTLE_MS * 3);
 	expect(cameraNow().scale).toBeCloseTo(Math.min((520 - 48) / 400, (600 - 48) / 300), 6);
 });

@@ -16,6 +16,47 @@ import { SURFACE, pick, press, shownBoard, stageState, textOf } from "./support/
 import { serverPath } from "./support/navigator-support.ts";
 import { partSearchState, pictureAtRest, sidebarTab } from "./support/semantic-page.ts";
 
+test("browser keyboard input keeps trusted keys, modifiers, and native focus", async () => {
+	interface KeySnapshot {
+		count: number;
+		keys: { type: string; key: string; ctrl: boolean; shift: boolean; trusted: boolean }[];
+	}
+	await using browser = await createAgentBrowser();
+	await browser.run(["open", "about:blank"]);
+	await browser.eval(`document.body.innerHTML = '<input id="first"><input id="second">';
+		window.keys = []; window.keyCount = 0;
+		for (const type of ['keydown', 'keyup']) window.addEventListener(type, event => {
+			window.keyCount += 1;
+			if (window.keys.length < 4) window.keys.push({ type, key: event.key, ctrl: event.ctrlKey, shift: event.shiftKey, trusted: event.isTrusted });
+		});
+		document.querySelector('#first').focus(); true`);
+	await browser.run(["press", "Escape"]);
+	expect(
+		await browser.eval<KeySnapshot>("({ count: window.keyCount, keys: window.keys })"),
+	).toEqual({
+		count: 2,
+		keys: [
+			{ type: "keydown", key: "Escape", ctrl: false, shift: false, trusted: true },
+			{ type: "keyup", key: "Escape", ctrl: false, shift: false, trusted: true },
+		],
+	});
+	await browser.eval("window.keys = []; window.keyCount = 0; true");
+	await browser.run(["press", "Control+Shift+K"]);
+	expect(
+		await browser.eval<KeySnapshot>("({ count: window.keyCount, keys: window.keys })"),
+	).toEqual({
+		count: 2,
+		keys: [
+			{ type: "keydown", key: "K", ctrl: true, shift: true, trusted: true },
+			{ type: "keyup", key: "K", ctrl: true, shift: true, trusted: true },
+		],
+	});
+	await browser.run(["press", "Tab"]);
+	expect(await browser.eval<string>("document.activeElement.id")).toBe("second");
+	await browser.run(["keyboard", "type", "board"]);
+	expect(await browser.eval<string>("document.querySelector('#second').value")).toBe("board");
+});
+
 /**
  * How wide the picture's viewport is.
  * @param browser The page.
