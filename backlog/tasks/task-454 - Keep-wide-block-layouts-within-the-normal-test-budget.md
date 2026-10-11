@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:52'
-updated_date: '2026-10-11 15:14'
+updated_date: '2026-10-11 15:55'
 labels: []
 dependencies: []
 references:
@@ -42,4 +42,6 @@ Affected proposals: Renderer layout@TASK-454 and Semantic renderer@TASK-454. Pre
 The exact hosted case failed at 60021 ms. Local profiling measured 12 solves and 40 seconds of native work. Seven needed solves took 27 seconds in sequence, but removing parallel speculation exceeded the normal local 20-second case limit. Repeated routing and eager exception messages did not explain the delay.
 
 The one-worker native probe now runs eight solves in 30.7 seconds instead of 12 solves in 40.2 seconds. Its SVG matches the baseline byte for byte. The unchanged Browser application blocks case passes locally in 13.9 seconds. All 39 wide-board and solve-history cases pass. Footprints use ea936206, immediately before the first repair code commit. Both Renderer core directory bindings include the changed implementation. Their responsibilities and module relationships remain true. Block engine binds its unchanged entrypoint, while the implemented selection change lives in its private blocks/joins.ts and blocks/solves.ts files. The proposal describes that built behavior. Code findings match the baseline, including the existing unrelated Board rasterizer drawRequest warning.
+
+Merged closing evidence uses origin/main at 68e7f0e as the branch base. Both renderer proposals retain their current parents. Code checks introduce zero findings against the 17-finding current baseline. Renderer core directory changes are internal candidate scheduling. Bun host changes are focused tests. Block engine entrypoint remains unchanged because its private joins and solves files implement the described selection change. No module relationship or layout contract changes.
 <!-- SECTION:NOTES:END -->
