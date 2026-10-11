@@ -37,19 +37,29 @@ function keyFields(chord: string): JsonRecord {
 	const key = pieces.pop() ?? "";
 	let modifiers = 0;
 	for (const piece of pieces) {
-		const modifier = MODIFIERS[piece.toLowerCase()];
+		const modifierName = piece.toLowerCase();
+		const modifier = Object.hasOwn(MODIFIERS, modifierName) ? MODIFIERS[modifierName] : undefined;
 		if (modifier === undefined) throw new Error(`Unknown browser key modifier: ${piece}`);
 		modifiers |= modifier;
 	}
-	const named = CONTROL_KEYS[key.toLowerCase()];
+	const keyName = key.toLowerCase();
+	const named = Object.hasOwn(CONTROL_KEYS, keyName) ? CONTROL_KEYS[keyName] : undefined;
 	const letter = /^[a-z]$/i.test(key);
 	const digit = /^\d$/.test(key);
 	if (!named && !letter && !digit) throw new Error(`Unsupported portable browser key: ${key}`);
-	const [name, code, windowsVirtualKeyCode] = named ?? [
+	const [unmodifiedName, code, windowsVirtualKeyCode] = named ?? [
 		key,
 		`${letter ? "Key" : "Digit"}${key.toUpperCase()}`,
 		key.toUpperCase().charCodeAt(0),
 	];
+	const name =
+		modifiers & 8
+			? letter
+				? key.toUpperCase()
+				: digit
+					? ")!@#$%^&*("[Number(key)]!
+					: unmodifiedName
+			: unmodifiedName;
 	const text =
 		name === "Enter" ? "\r" : name === "Tab" ? "\t" : name.length === 1 ? name : undefined;
 	return {
@@ -57,28 +67,39 @@ function keyFields(chord: string): JsonRecord {
 		code,
 		windowsVirtualKeyCode,
 		modifiers,
-		...(text !== undefined && !(modifiers & 6) ? { text, unmodifiedText: text } : {}),
+		...(text !== undefined && !(modifiers & 6)
+			? { text, unmodifiedText: unmodifiedName.length === 1 ? unmodifiedName : text }
+			: {}),
 	};
 }
 
 /** Keep every step inside the original browser command deadline. */
-function remaining(deadline: number): number {
+function remaining(deadline: number, signal?: AbortSignal): number {
+	signal?.throwIfAborted();
 	const time = deadline - Date.now();
 	if (time <= 0) throw new Error("Portable browser key input exceeded its command deadline.");
 	return time;
 }
 
 /** Connect only to the active page of the browser that agent-browser owns. */
-async function activePage(command: NativeCommand, deadline: number): Promise<DevTools> {
+async function activePage(
+	command: NativeCommand,
+	deadline: number,
+	signal?: AbortSignal,
+): Promise<DevTools> {
 	const endpoint = new URL(
-		(await command(["get", "cdp-url"], { timeoutMs: remaining(deadline) })).trim(),
+		(await command(["get", "cdp-url"], { timeoutMs: remaining(deadline, signal) })).trim(),
 	);
 	if (endpoint.protocol !== "ws:" || endpoint.hostname !== "127.0.0.1" || !endpoint.port) {
 		throw new Error("Owned browser DevTools endpoint must be an explicit loopback WebSocket.");
 	}
-	const pageUrl = (await command(["get", "url"], { timeoutMs: remaining(deadline) })).trim();
+	const pageUrl = (
+		await command(["get", "url"], { timeoutMs: remaining(deadline, signal) })
+	).trim();
+	const discoveryDeadline = AbortSignal.timeout(remaining(deadline, signal));
 	const response = await fetch(`http://${endpoint.host}/json/list`, {
-		signal: AbortSignal.timeout(remaining(deadline)),
+		signal: signal ? AbortSignal.any([discoveryDeadline, signal]) : discoveryDeadline,
+		redirect: "error",
 	});
 	if (!response.ok) throw new Error(`Owned browser target discovery failed: ${response.status}`);
 	const targets: unknown = await response.json();
@@ -99,7 +120,7 @@ async function activePage(command: NativeCommand, deadline: number): Promise<Dev
 	if (pageEndpoint.protocol !== "ws:" || pageEndpoint.host !== endpoint.host) {
 		throw new Error("Owned browser page endpoint escapes its browser listener.");
 	}
-	return await DevTools.connect(pageEndpoint.href, remaining(deadline));
+	return await DevTools.connect(pageEndpoint.href, remaining(deadline, signal), signal);
 }
 
 /**
@@ -110,16 +131,28 @@ async function pressPortableKey(
 	command: NativeCommand,
 	chord: string,
 	timeoutMs: number,
+	signal?: AbortSignal,
 ): Promise<string> {
 	const deadline = Date.now() + timeoutMs;
 	const fields = keyFields(chord);
-	const page = await activePage(command, deadline);
+	const page = await activePage(command, deadline, signal);
+	const cancel = (): void => page.close();
+	signal?.addEventListener("abort", cancel, { once: true });
 	try {
-		await page.call("Input.dispatchKeyEvent", { type: "keyDown", ...fields }, remaining(deadline));
+		await page.call(
+			"Input.dispatchKeyEvent",
+			{ type: "keyDown", ...fields },
+			remaining(deadline, signal),
+		);
 		const { text: _text, unmodifiedText: _unmodifiedText, ...release } = fields;
-		await page.call("Input.dispatchKeyEvent", { type: "keyUp", ...release }, remaining(deadline));
+		await page.call(
+			"Input.dispatchKeyEvent",
+			{ type: "keyUp", ...release },
+			remaining(deadline, signal),
+		);
 		return "";
 	} finally {
+		signal?.removeEventListener("abort", cancel);
 		page.close();
 	}
 }
