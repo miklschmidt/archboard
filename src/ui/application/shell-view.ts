@@ -6,7 +6,8 @@ import type { ReactNode } from "react";
 
 import type { PaneList } from "@/ui/application/pane-list";
 import { recordFor, type PaneRecords } from "@/ui/application/pane-records";
-import { boardAddressOf, sameBoardName } from "@/ui/semantic-board-canvas";
+import { listedBoard } from "@/ui/board-catalog";
+import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import type { ShellNotice, ShellPane, ShellPresentation, ShellView, ThemeChoice } from "@/ui/shell";
 import type { AgentActivityEntry, BoardListing } from "@/ui/types";
 
@@ -36,9 +37,7 @@ interface ShellViewInputs {
  */
 function listedName(boards: BoardListing, boardKey: string | null): string | null {
 	const board = boardAddressOf(boardKey)?.board;
-	return board === undefined
-		? null
-		: (boards.boards.find((entry) => sameBoardName(entry.name, board))?.name ?? null);
+	return board === undefined ? null : (listedBoard(boards, board)?.name ?? null);
 }
 
 /**
