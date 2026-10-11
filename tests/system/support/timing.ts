@@ -162,6 +162,19 @@ const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
 const TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS = 3000;
 
 /**
+ * How long the cross-process lock owner waits after a pane takes a claim back
+ * through one server, so that the server holding the claim has refused a
+ * renewal and recorded the loss. This owner is about that discovery, so it does
+ * wait for the product's one-second lease renewal (`LOCK_RENEW_MS`) to fire: the
+ * claiming server learns of the take-back only when that renewal is refused,
+ * and the interval has no test override. It is a test number, 1.5 seconds: one
+ * renewal, then slack for timer phase and a stressed host. A call to that
+ * server earlier than this would retake the free lease and hide the loss, so it
+ * is a wait and not a ceiling.
+ */
+const TEST_CROSS_PROCESS_CLAIM_RENEWAL_WAIT_MS = 1500;
+
+/**
  * Ceiling for one browser command and for a browser-lane child to exit. A
  * Chromium cold start is the slow part (TASK-361). It is never waited out by a
  * passing run, and it is not the product's export timeout.
@@ -204,6 +217,7 @@ export {
 	TEST_SERVER_EARLY_DEATH_DELAY_MS,
 	TEST_PANE_MESSAGE_POLL_MS,
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
+	TEST_CROSS_PROCESS_CLAIM_RENEWAL_WAIT_MS,
 	TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_BROWSER_CONDITION_TIMEOUT_MS,
