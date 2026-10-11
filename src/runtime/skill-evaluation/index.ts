@@ -7,7 +7,7 @@ export { executeRun, statusOf, type RunJob } from "@/runtime/skill-evaluation/li
 export { digestOf, installSkill, type InstallRecord } from "@/runtime/skill-evaluation/lib/install";
 export { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
 export { startServer } from "@/runtime/skill-evaluation/lib/server";
-export { landingProblems } from "@/runtime/skill-evaluation/lib/landings";
+export { layFixture, layingProblems } from "@/runtime/skill-evaluation/lib/laying";
 export { leakageProblems } from "@/runtime/skill-evaluation/lib/leakage";
 export {
 	ownProcess,

@@ -17,6 +17,7 @@ import {
 	GRADER_NAMES,
 	executableVersion,
 	gradeBatch,
+	layingProblems,
 	loadSuite,
 	pinVersions,
 	resumeSelection,
@@ -129,10 +130,17 @@ function cancellation(): AbortController {
 }
 
 /**
- * The validated canonical evaluation inputs.
+ * The validated canonical evaluation inputs, with every fixture laid through
+ * the store: one that does not lay would fail hours into a paid batch.
  * @returns The complete suite.
  */
-const loadedSuite = () => loadSuite(join(checkout, "evals"));
+function loadedSuite(): LoadedSuite {
+	const loaded = loadSuite(join(checkout, "evals"));
+	const problems = layingProblems(loaded.fixtures);
+	if (problems.length > 0)
+		throw new Error(`${loaded.directory} has fixtures that do not lay:\n${problems.join("\n")}`);
+	return loaded;
+}
 /**
  * Prints one progress line to stderr.
  * @param line The line.

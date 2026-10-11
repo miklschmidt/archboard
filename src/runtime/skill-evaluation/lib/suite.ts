@@ -12,7 +12,6 @@ import {
 	HomePathSchema,
 	type Fixture,
 } from "@/runtime/skill-evaluation/lib/fixture";
-import { landingProblems } from "@/runtime/skill-evaluation/lib/landings";
 import { leakageProblems } from "@/runtime/skill-evaluation/lib/leakage";
 import {
 	CITATION_PATTERN,
@@ -375,18 +374,14 @@ function readJson<T>(file: string, schema: z.ZodType<T>): T {
 }
 
 /**
- * Scenarios whose fixture file is missing, and fixtures that teach a call
- * landing on a part with children.
+ * Scenarios whose fixture file is missing.
  * @param loaded The loaded suite.
  * @returns Problems, one line each.
  */
 function fixtureProblems(loaded: LoadedSuite): string[] {
-	return [
-		...loaded.suite.evals
-			.filter((scenario) => !loaded.fixtures.has(scenario.id))
-			.map((scenario) => `${scenario.id}: fixture ${scenario.fixture} is missing`),
-		...landingProblems(loaded.fixtures),
-	];
+	return loaded.suite.evals
+		.filter((scenario) => !loaded.fixtures.has(scenario.id))
+		.map((scenario) => `${scenario.id}: fixture ${scenario.fixture} is missing`);
 }
 
 /**

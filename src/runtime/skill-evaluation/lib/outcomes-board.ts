@@ -120,6 +120,22 @@ const bindingCount: Check = (check, content) => {
 };
 
 /**
+ * The relationships that end on a part some other part names as its parent.
+ * @param content The content.
+ * @param allowedKinds Kinds that may end on one, because they mean the whole module.
+ * @returns The relationships.
+ */
+function edgesOnContainers(
+	content: VariantContent,
+	allowedKinds: ReadonlySet<string> = new Set(),
+): VariantContent["edges"] {
+	const containers = new Set(
+		content.nodes.flatMap((node) => (node.parent === undefined ? [] : [node.parent])),
+	);
+	return content.edges.filter((edge) => containers.has(edge.to) && !allowedKinds.has(edge.kind));
+}
+
+/**
  * Whether no relationship ends on a container that has children: the
  * actual-receiver rule.
  * @param _check Unused.
@@ -127,10 +143,7 @@ const bindingCount: Check = (check, content) => {
  * @returns The finding.
  */
 const noEdgeToContainer: Check = (_check, content) => {
-	const containers = new Set(
-		content.nodes.flatMap((node) => (node.parent === undefined ? [] : [node.parent])),
-	);
-	const offending = content.edges.filter((edge) => containers.has(edge.to));
+	const offending = edgesOnContainers(content);
 	return finding(
 		offending.length === 0,
 		offending.length === 0
@@ -409,4 +422,4 @@ function boardCheck(check: OutcomeCheck, reading: Reading): Finding | undefined 
 	return owner === undefined ? undefined : onContent(check, reading, owner);
 }
 
-export { boardCheck, fieldOf };
+export { boardCheck, edgesOnContainers, fieldOf };
