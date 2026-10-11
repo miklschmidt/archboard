@@ -47,10 +47,10 @@ inside one part (a fix, a refactor, tests, formatting) leaves every board true.
 Done: each part in `changed` is either a change the proposal will draw, or a
 part whose change stays inside it.
 
-If nothing changes, the pull request gets no explainer. Tell the user in one
-line which parts changed inside. If no board draws the changed code, the vault
-has nothing to compare against: tell the user, and stop. Drawing that board is
-the `archboard` skill's create recipe, a separate request.
+If nothing changes, the pull request gets no explainer. Say in your final
+report which parts changed inside. If no board draws the changed code, the
+vault has nothing to compare against: post no explainer and stop. Drawing that
+board is the `archboard` skill's create recipe, a separate request.
 
 ## 2. Find or draw the proposal
 
@@ -73,9 +73,9 @@ Do this for each board that step 1 found changed.
        `archboard semantic footprint <board> --base <base> --variant "<draft>"`
        lists parts under `namedAndChanged`, or the diff adds the code of a
        part that the draft adds.
-   - If exactly one fits, use it. If several fit, or a draft shows only one
-     sign, ask the user one question: which proposal does this pull request
-     build, or none? If none fits, step 4 branches a new one.
+   - If exactly one fits, use it. If several fit, use the one whose footprint
+     lists the most changed parts. A draft that shows only one sign does not
+     fit. If none fits, step 4 branches a new one.
 
    A found proposal keeps its name for life, so never rename it after the head
    branch. Below, `<proposal>` is its name.
@@ -126,8 +126,8 @@ Settle each difference in one of three ways:
 - This pull request builds only part of the proposal: leave the proposal as
   it is, and list the rest as left for later.
 - The difference changes what the proposal is for, such as a part dropped, a
-  boundary moved or a new dependency on another system: ask the user before
-  you edit.
+  boundary moved or a new dependency on another system: edit the proposal to
+  match the code, and put the difference first in "Proposed and built".
 
 Several pull requests, stacked or not, can build one proposal. Each one reuses
 it, and its explainer says how much of the proposal it builds. In a stack,
@@ -290,4 +290,4 @@ the change again.
 
 When the pull request closes without a merge, shelve a proposal that it drew,
 with that reason. A proposal drawn before the code can outlive the pull
-request: ask the user before you shelve it.
+request: leave it a draft, and say so in your final report.

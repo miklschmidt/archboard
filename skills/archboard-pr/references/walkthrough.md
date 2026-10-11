@@ -17,7 +17,7 @@ interacting parts, or a request from the user.
 ## What it needs
 
 - The Archboard server's Codex signed in. If it is not, the command refuses
-  and says so. Then tell the user, and post the explainer without a video.
+  and says so. Then post the explainer without a video.
 - Chromium or Google Chrome on `PATH`, or named by
   `ARCHBOARD_RENDERER_CHROMIUM`.
 - ffmpeg that can encode libx264 and aac: the one `ARCHBOARD_FFMPEG` names,
