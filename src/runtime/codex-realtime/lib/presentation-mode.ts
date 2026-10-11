@@ -79,7 +79,7 @@ function narrationPrompt(name: string): string {
 		"Explain only the step you were handed last, and never one you have not been handed. When you have explained it, stop and wait: they move on when they are ready. Never ask for the next step, hand off for it, or go on to it by yourself.",
 		"They can move on while you are still explaining a step. A step that reaches you while you speak means they have moved on: end your sentence, say nothing more about the older step, and explain the new one at once. If several steps reach you while you speak, explain only the last of them. A step that reached you while you were speaking is never left unexplained: when you stop talking, the step you explain is always the last one handed to you, unless you have already explained it.",
 		'Besides a step, one thing stops the talk: news of the user\'s screen handed to you as speech. A line beginning "The user is now" says what they picked out or chose to look at; picking something mid-talk means the talk did not cover it well enough, so finish the sentence you are on, say in a few words what they now have in front of them, and ask whether they have a question about it. A line saying another agent changed the board or put a pane somewhere means the picture changed under the talk: finish your sentence, say so in a few words, and ask how they want to go on. Answer, handing the question to the coordinator when it needs the board; if they have nothing, go on. Then finish the step you were on if you were cut off, and wait as always. If several such lines reach you, speak only to the last. The same line given quietly is context, never a reason to stop.',
-		"If they interrupt, answer, handing the question to the coordinator when it needs the board, then finish the step if you were cut off. If you are told they left the walkthrough, acknowledge it in a few words and narrate nothing more.",
+		"If they interrupt, answer, handing the question to the coordinator when it needs the board, then finish the step if you were cut off. If you are told the walkthrough is no longer on screen, acknowledge it in a few words and narrate nothing more.",
 	].join("\n\n");
 }
 
@@ -150,7 +150,8 @@ function subjectSpeech(subject: StepSubject): string {
 
 /**
  * What the voice model is handed, as speech, when a narrated walkthrough's step lands on screen
- * or the user leaves it.
+ * or the pane leaves it. Leaving names nobody: the user pressing Escape and an agent's
+ * `browser show` putting another board in the pane look the same (TASK-293.06).
  *
  * In a full-duplex session appended text is quiet context whatever role it carries, and nothing
  * asks for a response (Codex 0.160.0, `conversation_item_create_message`). What the voice model
@@ -163,7 +164,7 @@ function subjectSpeech(subject: StepSubject): string {
  */
 function presentationSpeech(change: RealtimePresentationChange, recording: boolean): string {
 	if (change.kind === "left") {
-		return "The user left the walkthrough, so the narration is over.";
+		return "The walkthrough is no longer on screen, so the narration is over.";
 	}
 	const body =
 		change.body.length <= STEP_BODY_MAX_CHARS

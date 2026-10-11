@@ -197,6 +197,10 @@ test("each step and leaving reach the voice model as speech, the first once the 
 		expect(said[1]).toContain('label was "read"');
 		expect(said[1]).toContain("It highlights");
 		expect(h.session.starts[0]?.prompt).toContain('"It highlights"');
+		// A pane leaves the walkthrough as well when an agent's `browser show` puts another board
+		// in it, and nothing tells the two apart, so leaving never says the user did it
+		// (TASK-293.06).
+		expect(said[2]).not.toMatch(/\buser\b/u);
 		expect(h.session.speeches.every((speech) => speech.threadId === h.coordinatorThreadId)).toBe(
 			true,
 		);
