@@ -227,7 +227,8 @@ directory that teardown must remove. Both renderer and browser-lane launches use
 a mock keychain to prevent dialogs or writes to the person's macOS keychain.
 
 On macOS, the adapter sends `press` commands through Chromium's trusted input protocol.
-It omits the vendor driver's Windows native key code, which produces unwanted repeated events in macOS Chrome.
+It omits `nativeVirtualKeyCode`, which the vendor driver sets to a Windows key code.
+That value produces unwanted repeated events in macOS Chrome.
 The adapter retains the command deadline and closes its input connection during cleanup.
 
 For a managed Chrome installation that enforces the default-browser policy,
