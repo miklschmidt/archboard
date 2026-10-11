@@ -114,12 +114,17 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					'import { moduleValue } from "../../../src/domain/tested/index.js";\nimport { support } from "./support.js";\n\nexport const value = moduleValue + support;\n',
 				"src/cli/command-contract/tests/public-runner-fixture.ts":
 					"export const publicRunnerFixture = true;\n",
+				"tests/system/repository-policy/support/test-wall-clock.ts":
+					"export function declareTestWallClockBudget() {}\n",
+				"src/domain/tested/tests/real-time.test.ts":
+					'import { declareTestWallClockBudget } from "../../../../tests/system/repository-policy/support/test-wall-clock.js";\nexport { declareTestWallClockBudget };\n',
 			},
 			(root) =>
 				expectPass(
 					lint(root, [
 						"src/domain/allowed/index.ts",
 						"src/domain/tested/tests/widget.spec.ts",
+						"src/domain/tested/tests/real-time.test.ts",
 						"tests/system/policy/system.test.ts",
 						"src/cli/command-contract/tests/public-runner-fixture.ts",
 					]),
