@@ -48,7 +48,8 @@ While you plan, before `backlog task edit --plan`:
 When the task closes, before you mark any acceptance criterion:
 
 Run the complete normal gate, `bun run check`, before declaring completion.
-If a normal lane fails, run the remaining lanes to expose every failure.
+If any check fails, run the remaining checks and normal lanes to expose every failure.
+[TESTING.md](../../TESTING.md#7-test-a-change) explains how to continue after an early failure.
 Repair reproducible failures in a separate Backlog task, including failures outside the original change.
 Ground each repair in the observed failure and its cause.
 Keep every normal owner, assertion, lint rule, and timeout contract.

@@ -154,9 +154,11 @@ a narration can be silent. The [README FAQ](README.md#faq) explains why.
 describes its lanes, what each lane needs, and which test owns which behavior.
 Three facts decide whether the gate can run to its end:
 
-- The lanes run one after the other and stop at the first failure. If the gate
-  stops early, run `bun run test:system`, `bun run test:repository` and
-  `bun run test:serial-browser` yourself. Only then call a failure the only one.
+- The checks run one after the other and stop at the first failure. If the gate
+  stops early, run the remaining checks and every unrun normal lane separately,
+  using the commands in `package.json`'s `check` and `test` chains. Include
+  `test:modules` if it has not run, and build the frontend before browser owners.
+  Only then call a failure the only one.
 - `bun install` supplies the pinned `agent-browser` CLI. The browser lane resolves it from this checkout.
   A missing prerequisite ends the lane with code 2.
 - A new worktree needs `bun install` and `bun run build` first.
