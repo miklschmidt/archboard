@@ -1,11 +1,11 @@
 # A narrated walkthrough for the reviewer
 
 A walkthrough video is an overview that a voice explains while the picture
-highlights what it speaks of. Section 3 of the skill decides whether to record
+highlights what it speaks of. Section 4 of the skill decides whether to record
 one. This file says what it needs, how to write it, how to record it, and what
 goes into the pull request with it.
 
-## Why the signs in section 3
+## Why the signs in section 4
 
 Narration beside a picture helps a learner more than text beside it. Narration
 at the same time as the picture it explains helps more still [Mayer and
@@ -16,14 +16,13 @@ interacting parts, or a request from the user.
 
 ## What it needs
 
-- The Archboard server's Codex signed in. If it is not, the command refuses
-  and says so. Then post the explainer without a video.
-- Chromium or Google Chrome on `PATH`, or named by
-  `ARCHBOARD_RENDERER_CHROMIUM`.
-- ffmpeg that can encode libx264 and aac: the one `ARCHBOARD_FFMPEG` names,
-  else the one on `PATH`, else Nix, which fetches `nixpkgs#ffmpeg-headless` on
-  the first recording. With none of them, the command refuses with
-  `ENCODER_UNAVAILABLE` (exit 4) before it starts a browser.
+- Codex signed in, Chromium or Google Chrome, and ffmpeg with libx264 and
+  aac. Section 0 of the skill checks all three before anything else, and asks
+  the user once when one is missing. If the user chose no walkthrough, do not
+  record. A recording that still finds one missing refuses before it records:
+  `Codex is not signed in on this Archboard server` (exit 4, measured with a
+  server that had no sign-in), or `ENCODER_UNAVAILABLE` (exit 4) for ffmpeg.
+  Then post the explainer without a video, and say why in your final report.
 - Time: about twice the length of the talk.
 - Size: GitHub takes a video of up to 10 MB on a free plan and 100 MB on a paid
   plan [GitHub, attaching files]. Three archboard recordings measured 3.2 to
@@ -33,7 +32,8 @@ interacting parts, or a request from the user.
 
 ## Write the beats
 
-Claim the board. Add one walkthrough to the proposal in one edit, with
+On a vault board, claim it first. Add one walkthrough to the proposal, or on an
+ephemeral board to the head branch's draft, in one edit with
 `--variant "<proposal>"`. Name it `Review: <head branch>`. The `archboard`
 skill's walkthroughs section gives the payload rules for beats, subjects and
 views. Write the beats in this order:
@@ -84,22 +84,25 @@ from the beats alone.
 archboard semantic record <board> --variant "<proposal>" --walkthrough "Review: <head branch>" --talk "$tmp/talk" --out "$tmp/walkthrough.mp4"
 ```
 
-- Leave out `--discard`. It deletes the board, and this board belongs to the
-  vault.
+- Leave out `--discard`. It deletes the board: a vault board belongs to the
+  vault, and an ephemeral board goes with its whole vault afterwards. Recording
+  on an ephemeral board's own server works the same way (checked in October
+  2026). Keep the talk in `$tmp`, outside the ephemeral vault.
 - Use `.mp4`. It is H.264 with AAC sound, and GitHub recommends H.264 for
   greatest compatibility [GitHub, attaching files].
 - The video is drawn in the light theme unless you pass `--theme dark`. A video
   cannot follow the reader's theme, so record one video only.
 
-Then remove the walkthrough from the proposal in one edit
-(`removeWalkthroughs: ["Review: <head branch>"]`) and release the claim. Its
-beats speak of the change, and after the merge the proposal becomes the
+On a vault board, remove the walkthrough from the proposal afterwards, in one
+edit (`removeWalkthroughs: ["Review: <head branch>"]`), and release the claim.
+Its beats speak of the change, and after the merge the proposal becomes the
 current architecture. The kept talk in `$tmp/talk` can render the video again
 with `semantic replay`, without the board.
 
 Done: the receipt names the video and its `talk`, its `bytes` is under 10 MB
-(10,000,000), and `semantic compare` no longer lists the walkthrough. If the
-video is too large, cut a beat or shorten the bodies, and record again.
+(10,000,000), and on a vault board `semantic compare` no longer lists the
+walkthrough. If the video is too large, cut a beat or shorten the bodies, and
+record again.
 
 ## Check the video
 
@@ -152,7 +155,7 @@ Put this under the after render, as the explainer's part 3:
 
 The video reference stands alone in its paragraph. gh then replaces it with the
 bare URL of the upload, and GitHub plays a bare URL alone on its line
-[gh source]. Section 4 of the skill attaches the file.
+[gh source]. Section 5 of the skill attaches the file.
 
 ## What the video cannot do yet
 
