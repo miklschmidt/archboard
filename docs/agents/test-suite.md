@@ -28,7 +28,7 @@ The hosted run includes opener persistence and the entire serial browser invento
 The workflow retains its full output as the `validation-log` artifact.
 
 A separate macOS CI job exercises the native process observer, Codex lifecycle,
-Git cleanup, renderer cleanup polling, storage paths, and board filename casing.
+Git cleanup, renderer startup cleanup, storage paths, and board filename casing.
 The job also runs the native sandbox refusal and repaired macOS fixture owners.
 This catches platform-specific failures that the Ubuntu suite cannot exercise;
 it does not replace any local gate.
@@ -46,7 +46,8 @@ their cheapest product owner. These commands contain everything outside it:
 | `bun run opt-in:renderer-chromium` / `bun run opt-in:renderer-emulation` | Manual renderer and upstream-emulation probes. They are never package test owners.                                                             |
 
 Every test owner belongs to exactly one lane; opt-in package commands are never
-reached from `check`, and hosted CI invokes only `bun run check`.
+reached from `check`. The Ubuntu CI job invokes the complete `bun run check` gate;
+the macOS job repeats its selected native owners on that platform.
 
 The whole chain's duration is machine-dependent. Browser owners run one at a
 time. Re-measure before making a timing claim.
@@ -233,7 +234,17 @@ each owner must finish cleanup before the next starts.
 The lane writes `# browser-toolchain` and `# browser-lane` JSON summaries to stderr.
 The summaries identify the toolchain, selected files, owner progress, and final exit status.
 A completed owner also passed its cleanup audit.
-Full test output remains available, and a failing summary retains the real exit status.
+Full test output streams to the caller alongside the summaries. A failed owner or cleanup
+keeps the lane's status nonzero; the summaries do not turn a failure into a pass.
+The Ubuntu CI job retains this output in its `validation-log` artifact.
+For a local gate, retain the full output and print its location before the run:
+
+```bash
+check_log=$(mktemp "${TMPDIR:-/tmp}/archboard-check.XXXXXX")
+printf 'Full gate log: %s\n' "$check_log"
+set -o pipefail
+bun run check 2>&1 | tee "$check_log"
+```
 
 The normal package command is the canonical normal lane. Focused diagnosis accepts:
 
