@@ -27,15 +27,15 @@ card][card] §6.2.3).
 
 ## Facts that bind the choice
 
-| | Haiku 5.5 | Sonnet 5.5 | Opus 5.5 |
-| --- | --- | --- | --- |
-| Input / output, $ per MTok | 0.10 / 0.50 (prompt ≤100k), 0.50 / 2.50 (>100k) | 2 / 10 | 4 / 20 |
-| Cache read, $ per MTok | 0.01 (≤100k), 0.05 (>100k) | 0.10 | 0.20 (5% of input) |
-| Context / max output | 1M / 128k | 1M / 128k | 1M / 128k |
-| Latency (Anthropic's label) | Fastest | Fast | Moderate |
-| Effort levels | low, medium, high, xhigh, max | same | same |
-| Default effort, API | `medium` | `high` | `medium` |
-| Default effort, Claude Code | `medium` | `medium` | `medium` |
+|                             | Haiku 5.5                                       | Sonnet 5.5 | Opus 5.5           |
+| --------------------------- | ----------------------------------------------- | ---------- | ------------------ |
+| Input / output, $ per MTok  | 0.10 / 0.50 (prompt ≤100k), 0.50 / 2.50 (>100k) | 2 / 10     | 4 / 20             |
+| Cache read, $ per MTok      | 0.01 (≤100k), 0.05 (>100k)                      | 0.10       | 0.20 (5% of input) |
+| Context / max output        | 1M / 128k                                       | 1M / 128k  | 1M / 128k          |
+| Latency (Anthropic's label) | Fastest                                         | Fast       | Moderate           |
+| Effort levels               | low, medium, high, xhigh, max                   | same       | same               |
+| Default effort, API         | `medium`                                        | `high`     | `medium`           |
+| Default effort, Claude Code | `medium`                                        | `medium`   | `medium`           |
 
 Sources: [models overview][overview], [Haiku 5.5 overview][h-overview],
 [launch post][launch], [effort][effort], [Claude Code model config][cc-model]. All
@@ -51,19 +51,19 @@ All Haiku 5.5 and Sonnet 5.5 rows use `max` effort unless noted ([card][card] §
 Table 8.1.A). Opus 5.5 values come from the card where it reports them. The values
 marked † come from the [Sonnet 5.5 launch post][sonnet].
 
-| Benchmark (what it measures) | Haiku 5.5 | Sonnet 5.5 | Opus 5.5 |
-| --- | --- | --- | --- |
-| SWE-Bench Pro (multi-file real repo fixes) | 64.8 | 81.3 | not reported |
-| SWE-bench Multilingual | 83.7 | 90.3 | not reported |
-| SWE-bench Multimodal (screenshots, mockups) | 30.7 | 54.3 | not reported |
-| Terminal-Bench 4.0 (agentic CLI work) | 39.2 | 70.6 | 66.4 (xhigh) |
-| Terminal-Bench-Science 0.1 | 20.6 | 59.9 | 58.7 |
-| FrontierCode 1.1 Main (mergeable diffs, scope penalised) | 46.4 | 46.2 (max), 52.1 (xhigh) | 54.4 † |
-| ProgramBench (long-context coding, up to 1M) | 82.0 | 79.7 | 91.2 |
-| OSWorld 2.1 offline, partial score (computer use) | 72.4 | 83.9 | 87.2 |
-| Chartography, no tools (chart reading) | 46.4 | 61.6 | 64.4 † |
-| Humanity's Last Exam, with tools | 57.4 | 64.5 | 67.7 † |
-| OfficeQA (document QA) | 73.5 | 76.9 | not reported |
+| Benchmark (what it measures)                             | Haiku 5.5 | Sonnet 5.5               | Opus 5.5     |
+| -------------------------------------------------------- | --------- | ------------------------ | ------------ |
+| SWE-Bench Pro (multi-file real repo fixes)               | 64.8      | 81.3                     | not reported |
+| SWE-bench Multilingual                                   | 83.7      | 90.3                     | not reported |
+| SWE-bench Multimodal (screenshots, mockups)              | 30.7      | 54.3                     | not reported |
+| Terminal-Bench 4.0 (agentic CLI work)                    | 39.2      | 70.6                     | 66.4 (xhigh) |
+| Terminal-Bench-Science 0.1                               | 20.6      | 59.9                     | 58.7         |
+| FrontierCode 1.1 Main (mergeable diffs, scope penalised) | 46.4      | 46.2 (max), 52.1 (xhigh) | 54.4 †       |
+| ProgramBench (long-context coding, up to 1M)             | 82.0      | 79.7                     | 91.2         |
+| OSWorld 2.1 offline, partial score (computer use)        | 72.4      | 83.9                     | 87.2         |
+| Chartography, no tools (chart reading)                   | 46.4      | 61.6                     | 64.4 †       |
+| Humanity's Last Exam, with tools                         | 57.4      | 64.5                     | 67.7 †       |
+| OfficeQA (document QA)                                   | 73.5      | 76.9                     | not reported |
 
 - **Headline numbers use `max` effort. Claude Code runs Haiku at `medium` by
   default.** At `medium`, GDPval-AA fell from 1620 to 1277 Elo, at a tenth of the
@@ -81,17 +81,17 @@ ProgramBench is the one coding benchmark where Haiku leads Sonnet.
 
 ## Reliability and honesty evidence (system card)
 
-| Finding | Section |
-| --- | --- |
-| Opus 5.5, Sonnet 5.5 and Mythos 5.1 "were all strictly better on input hallucination, important omissions, and false completion claims" | §6.2.3 |
+| Finding                                                                                                                                                             | Section          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| Opus 5.5, Sonnet 5.5 and Mythos 5.1 "were all strictly better on input hallucination, important omissions, and false completion claims"                             | §6.2.3           |
 | It "hallucinated more than other recent models, and about as much as Claude Haiku 4.5". Its AA-Omniscience net score is 0.12, behind every other Claude model shown | §6.1.2, §6.3.3.1 |
-| It used a leaked answer without telling the user 17% of the time (Haiku 4.5: 2%). This is a regression against Opus 5.5 and Sonnet 5.5 | §6.1.2, §6.3.3.3 |
-| Instruction-following failures: "similar to or slightly worse than Claude Sonnet 5.5, and worse than Claude Opus 5.5" | §6.2.2 |
-| It "over-refused more than any other model we tested" in the behavioural audit | §6.2.2 |
-| Its behaviour across reruns is less consistent than that of Sonnet 5.5 and Opus 5.5 | §6.2.6 |
-| Under pressure (MASK), it was at least as honest as every model tested | §6.3.3.2 |
-| It disclosed concealed git changes 95.9% of the time, about tied with Opus 5.5 and Sonnet 5.5 | §6.3.3.4 |
-| It resists prompt injection about as well as frontier models in coding environments | Exec. summary |
+| It used a leaked answer without telling the user 17% of the time (Haiku 4.5: 2%). This is a regression against Opus 5.5 and Sonnet 5.5                              | §6.1.2, §6.3.3.3 |
+| Instruction-following failures: "similar to or slightly worse than Claude Sonnet 5.5, and worse than Claude Opus 5.5"                                               | §6.2.2           |
+| It "over-refused more than any other model we tested" in the behavioural audit                                                                                      | §6.2.2           |
+| Its behaviour across reruns is less consistent than that of Sonnet 5.5 and Opus 5.5                                                                                 | §6.2.6           |
+| Under pressure (MASK), it was at least as honest as every model tested                                                                                              | §6.3.3.2         |
+| It disclosed concealed git changes 95.9% of the time, about tied with Opus 5.5 and Sonnet 5.5                                                                       | §6.3.3.4         |
+| It resists prompt injection about as well as frontier models in coding environments                                                                                 | Exec. summary    |
 
 It also does not escalate on its own. Anthropic gave it an Opus 5.5 advisor tool
 without a prompt that tells it to consult. Haiku 5.5 called the advisor on 0 of 198
@@ -235,15 +235,15 @@ After. This fixes "most go" and the false claim that `sonnet` is cheapest:
 
 ### (b) Custom agent definitions
 
-| Agent | Now | Proposal | Why |
-| --- | --- | --- | --- |
-| `~/.claude/agents/implementer.md` | `sonnet`, `high` | No change | Class 5. SWE-Bench Pro 64.8 against 81.3. Haiku over-claims completion. |
-| `~/.claude/agents/reviewer.md` | `opus`, `high` | No change | Class 6. Opus leads every honesty metric that a review depends on. |
-| `impeccable-asset-producer.md` | `inherit`, `medium` | No change | It compares plates to crops by eye. Haiku trails on every vision benchmark. |
-| `impeccable-documenter.md` | `inherit`, `medium` | No change | It decides what to canonize. Input hallucination can put unevidenced tokens in DESIGN.md. |
-| `impeccable-finish-reviewer.md` | `inherit`, `high` | `model: opus` | Classes 6 and 7. With the settings default (`"model": "sonnet"`), `inherit` gives Sonnet and breaks the rule that review goes to opus. |
+| Agent                               | Now                 | Proposal                             | Why                                                                                                                                                                                                                                                              |
+| ----------------------------------- | ------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `~/.claude/agents/implementer.md`   | `sonnet`, `high`    | No change                            | Class 5. SWE-Bench Pro 64.8 against 81.3. Haiku over-claims completion.                                                                                                                                                                                          |
+| `~/.claude/agents/reviewer.md`      | `opus`, `high`      | No change                            | Class 6. Opus leads every honesty metric that a review depends on.                                                                                                                                                                                               |
+| `impeccable-asset-producer.md`      | `inherit`, `medium` | No change                            | It compares plates to crops by eye. Haiku trails on every vision benchmark.                                                                                                                                                                                      |
+| `impeccable-documenter.md`          | `inherit`, `medium` | No change                            | It decides what to canonize. Input hallucination can put unevidenced tokens in DESIGN.md.                                                                                                                                                                        |
+| `impeccable-finish-reviewer.md`     | `inherit`, `high`   | `model: opus`                        | Classes 6 and 7. With the settings default (`"model": "sonnet"`), `inherit` gives Sonnet and breaks the rule that review goes to opus.                                                                                                                           |
 | `impeccable-manual-edit-applier.md` | `inherit`, `medium` | Trial `model: haiku`, `effort: high` | Its work is latency-bound and bounded, with JSON output that the parent's validation and repair loop checks. Its 22 rules need `high` for strict instruction following. When applied and failed rates match the current model, keep the change (**unverified**). |
-| `.claude/agents/visual-designer.md` | `sonnet`, `xhigh` | `model: opus`, or amend rule (a) | It conflicts with "UI and design go to opus". The sources do not settle Sonnet against Opus for UI. Never Haiku (SWE-bench Multimodal 30.7). |
+| `.claude/agents/visual-designer.md` | `sonnet`, `xhigh`   | `model: opus`, or amend rule (a)     | It conflicts with "UI and design go to opus". The sources do not settle Sonnet against Opus for UI. Never Haiku (SWE-bench Multimodal 30.7).                                                                                                                     |
 
 The two concrete frontmatter edits:
 
