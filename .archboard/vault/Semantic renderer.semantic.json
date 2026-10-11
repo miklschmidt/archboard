@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 35,
+	"version": 37,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-11T15:07:58.081Z",
+	"updatedAt": "2026-10-11T16:03:27.739Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -5173,7 +5173,7 @@
 		{
 			"id": "f6FXZokj",
 			"name": "Merge surface-depth/slabs",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "bdnsrljK",
 			"summary": "The renderer core, host interface and architecture and sequence slab drawing",
 			"content": {
@@ -6382,9 +6382,9 @@
 		{
 			"id": "ZVxtuP5a",
 			"name": "TASK-454",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "f6FXZokj",
-			"summary": "Keep active solves and cancel obsolete queued solves",
+			"summary": "Meaning to SVG and interaction geometry",
 			"content": {
 				"nodes": [
 					{
@@ -7589,7 +7589,7 @@
 			}
 		}
 	],
-	"current": "f6FXZokj",
+	"current": "ZVxtuP5a",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
@@ -7626,6 +7626,12 @@
 			"from": "bdnsrljK",
 			"at": "2026-10-07T02:15:08.127Z",
 			"reason": "Combines the preserved main renderer core and host ownership with the merged slab, tray, port and near/far drawing helpers and direct call evidence"
+		},
+		{
+			"variant": "ZVxtuP5a",
+			"from": "f6FXZokj",
+			"at": "2026-10-11T16:03:27.739Z",
+			"reason": "The host cancellation contract removes queued obsolete solves while active work finishes normally"
 		}
 	],
 	"shelvings": [
