@@ -2,7 +2,7 @@
 
 The explainer leads with one picture: the after render, which marks the change
 in place. This file says how to draw it, how to make it readable, and how to
-label it. Section 4 of the skill says how to post it.
+label it. Section 5 of the skill says how to post it.
 
 ## Choose the view
 
@@ -14,8 +14,10 @@ label it. Section 4 of the skill says how to post it.
    reader does not need the view, draw the whole variant instead. If the whole
    variant fails the size check below, add the view.
 3. Draw one kind of picture per render: an architecture view, or a sequence
-   through its `data-flow` view. Arrows that mix several kinds of relationship
-   are hard to read [Kruchten]. **Judgement** for the choice of view.
+   through its `data-flow` view. An ephemeral sequence board draws through the
+   `data-flow` view that it was created with. Arrows that mix several kinds of
+   relationship are hard to read [Kruchten]. **Judgement** for the choice of
+   view.
 
 Done: the view is named, and it holds every part and relationship that
 `compare` reports as added, changed or removed.
@@ -35,9 +37,12 @@ for t in light dark; do
 done
 ```
 
+Below, `<proposal>` is the proposal, or on an ephemeral board the draft of the
+head branch.
+
 - The after render compares the proposal with the current variant. It marks
   what the proposal added, changed and removed, and keeps removed subjects as
-  ghosts.
+  ghosts. On an ephemeral board, the current variant is the base branch.
 - The before render, with no `--variant`, draws the current variant.
 - On a board with no current variant, draw only the after render.
 - In a stack, the after render also shows the changes of the pull requests
@@ -48,7 +53,9 @@ Done: four SVG files, or two on a board with no current variant.
 ## Look at them
 
 You cannot look at an SVG by reading its text. `semantic rasterize` draws the
-same picture as a PNG, so look at that:
+same picture as a PNG in Chromium, so look at that. If there is no Chromium and
+the user chose to go on without it (section 0 of the skill), post the SVG files
+unseen, and say so in your final report.
 
 ```bash
 archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --layout blocks --out "$tmp/look-after.png"
@@ -74,7 +81,8 @@ them. A key must explain every symbol that a diagram uses
 
 **Title line**, above the render: the board, the view, and what is compared.
 For example: "Board store, view Write path: proposal `lease-table` against the
-current architecture".
+current architecture". For an ephemeral board, name the two branches: "Stop
+with no answer, view Stop exchange: the head branch against `main`".
 
 **Key**, under the render. Write only the rows for marks that the render shows:
 
@@ -107,7 +115,7 @@ move between the two pictures and do not line up.
 - gh rewrites only Markdown references to an attached file, such as
   `![alt](path)`. It does not rewrite HTML, and a path with `#fragment` does
   not match [gh source]. So a `<picture>` element needs the uploaded URLs,
-  which is why section 4 posts in two passes.
+  which is why section 5 posts in two passes.
 - GitHub supports the `<picture>` element in Markdown [GitHub, basic
   formatting]. Its docs show `prefers-color-scheme` sources for a profile
   README [GitHub, quickstart]. Issues and pull requests use the `gfm` mode of

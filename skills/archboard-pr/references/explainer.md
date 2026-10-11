@@ -1,6 +1,6 @@
 # Why the explainer has these parts
 
-Section 3 of the skill names the parts of the explainer and their order. This
+Section 4 of the skill names the parts of the explainer and their order. This
 file gives the evidence for each part, and the detail that the list has no
 room for. A rule with no source is marked **judgement**. The sources are
 listed at the end.
@@ -43,7 +43,7 @@ Small changes are reviewed better:
 - Over 40% of changes at Microsoft hold independent parts that can be split
   apart. Such tangled changes are harder to understand [Barnett et al.].
 
-The 400 lines of section 3 is **judgement**, taken from the vendor figure. So
+The 400 lines of section 4 is **judgement**, taken from the vendor figure. So
 is what to leave out of the count.
 
 Put the riskiest pass first. An experiment had 106 reviewers. A defect in the
@@ -73,7 +73,12 @@ et al.].
 general, then at its main parts [Google, navigating a CL]. A diagram groups the
 facts that are used together, and saves the search that a list of names needs
 [Larkin and Simon]. Every diagram needs a title and a key that explains every
-symbol [Clements et al., C4 notation].
+symbol [Clements et al., C4 notation]. What the overview draws depends on what
+the change moves. The 4+1 model keeps the logical, process, development and
+physical views apart. It illustrates them with scenarios, whose scripts are
+"sequences of interactions between objects, and between processes" [Kruchten]. So a change of structure gets an
+architecture picture, and a change of behaviour, order or process gets the
+sequence of the flow it changes. Which one a change needs is **judgement**.
 
 **The walkthrough.** Its place beside the render, before the lists, is
 **judgement**: it is a second way into the same overview.
@@ -171,6 +176,9 @@ Each of these makes the review slower or less thorough:
   Views and Beyond_, Prologue, rules 3a and 5.
   <https://www.informit.com/articles/article.aspx?p=1641654&seqNum=5>
 - C4 notation: <https://c4model.com/diagrams/notation>
+- Kruchten: P. Kruchten, "The 4+1 View Model of Architecture", IEEE Software
+  1995, "Scenarios".
+  <https://www.cs.ubc.ca/~gregor/teaching/papers/4+1view-architecture.pdf>
 - Larkin and Simon: J. Larkin, H. Simon, "Why a Diagram is (Sometimes) Worth
   Ten Thousand Words", Cognitive Science 1987, §5.
   <https://mechanism.ucsd.edu/bill/teaching/F12/cs200/Readings/larkin.whyadiagramissometimesworth.1987.pdf>
