@@ -414,16 +414,14 @@ const CODEX_REALTIME_START_MS = 15_000;
 
 /** Realtime-stop timeout classification. Pulls against TERM grace so realtime stops first. */
 const CODEX_REALTIME_STOP_MS = 3000;
-
 /** Realtime-recovery window classification. Pulls against semantic freshness while reconnecting. */
 const CODEX_REALTIME_RECOVERY_MS = 45_000;
-
 /** TERM grace classification. Pulls against realtime stop before TERM-to-KILL escalation. */
 const CODEX_TERM_GRACE_MS = 5000;
-
-/** Composed-shutdown cap classification. Pulls against realtime stop plus TERM grace. */
+/** Stdin EOF grace. Lets the child consume drained frames before TERM within the composed cap. */
+const CODEX_STDIN_EOF_GRACE_MS = 1000;
+/** Composed-shutdown cap classification. Pulls against realtime stop, stdin EOF grace, and TERM grace. */
 const CODEX_COMPOSED_SHUTDOWN_MS = 10_000;
-
 /** Public server readiness classification. Pulls against mandatory Codex startup readiness. */
 const SERVER_STARTUP_READINESS_MS = 8000;
 
@@ -550,6 +548,7 @@ export {
 	CODEX_REALTIME_STOP_MS,
 	CODEX_REALTIME_RECOVERY_MS,
 	CODEX_TERM_GRACE_MS,
+	CODEX_STDIN_EOF_GRACE_MS,
 	CODEX_COMPOSED_SHUTDOWN_MS,
 	SERVER_STARTUP_READINESS_MS,
 	CODEX_WAIT_TARGET_POLL_MS,
