@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:22'
-updated_date: '2026-10-11 14:23'
+updated_date: '2026-10-11 14:37'
 labels: []
 dependencies: []
 references:
@@ -22,11 +22,11 @@ The October 8 session relied on an external browser CLI, retried invalid skill p
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The browser lane resolves a pinned repository-owned CLI and reports actionable prerequisite diagnostics without another project or ambient wrapper.
+- [x] #1 The browser lane resolves a pinned repository-owned CLI and reports actionable prerequisite diagnostics without another project or ambient wrapper.
 - [ ] #2 Hosted macOS coverage includes the sandbox startup regression and repaired platform-specific fixtures.
-- [ ] #3 Guidance limits skills/ to shippable repository-authored Archboard skills and records the requirement to repair reproducible normal-gate failures before closing.
-- [ ] #4 Authored repository navigation links resolve, and long test runs expose compact progress without reducing coverage or hiding failures.
-- [ ] #5 The complete local gate and scoped standards/specification reviews pass.
+- [x] #3 Guidance limits skills/ to shippable repository-authored Archboard skills and records the requirement to repair reproducible normal-gate failures before closing.
+- [x] #4 Authored repository navigation links resolve, and long test runs expose compact progress without reducing coverage or hiding failures.
+- [x] #5 The complete local gate and scoped standards/specification reviews pass.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -39,3 +39,9 @@ The October 8 session relied on an external browser CLI, retried invalid skill p
 5. Run focused owners, the complete local gate, and parallel scoped standards/specification reviews.
 No board is affected: these changes alter developer test tooling, CI selection, and agent documentation, not the product modules or relationships that the vault draws.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented pinned agent-browser 0.31.1 native resolution, prerequisite diagnostics, macOS owner selection, navigation links, completion guidance, and structured progress. Six scoped Standards/Spec reviews fixed findings in commits b9fe728c, fd7e800a, db5dfa80, 38129d13, bdab5a5f, and 5fe44e5a. Complete local gate: 4678 passing tests, zero failures, all 19 browser owners completed cleanup audits, final exit 0. Final lint, formatting, types, and 7 focused tests pass. Linux opener: 1 pass, 24 assertions. Linux tooling: 5 pass, 15 assertions. Dogfood structural check passes; code check reports the existing unrelated drawRequest anchor warning. No task commits changed bound product parts. Hosted macOS execution remains pending explicit approval to publish the reviewed branch.
+<!-- SECTION:NOTES:END -->

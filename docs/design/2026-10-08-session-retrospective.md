@@ -2,7 +2,7 @@
 
 The session fixed Chromium startup inside the macOS agent sandbox, then repaired failures across the normal test suite. It ended with 4,677 passing tests and a push at `ffd06354`. The strongest remaining improvements concern automatic test coverage and reproducible browser tooling.
 
-This retrospective proposes environment changes. It does not implement them or create new commitments in Backlog.
+This retrospective describes the repository at `ffd06354`. The October 11 follow-up implements the approved proposals through TASK-453, TASK-141, and TASK-142.
 
 ## Session and evidence
 
@@ -79,3 +79,15 @@ Source: root transcript tool calls and outputs. The final gate log references oc
 The repository already enforces source boundaries, lint, formatting, types, and test behavior. This session does not justify another broad `CODING_STANDARDS.md` rule. The reviewed changes retained assertions, and the reviewers did not report findings that require new judgment guidance.
 
 The logs also do not justify a general rewrite of `AGENTS.md` or deletion of its invariants as no-ops. The supported change is the specific skill pointer correction. Existing crash reports, source access, and captured process logs supplied the information needed for diagnosis.
+
+## October 11 implementation
+
+The browser lane now invokes the pinned package-native CLI. Its prerequisite diagnostics retain both output streams and signal failures. Structured records report selection, completed cleanup audits, and the final exit status.
+
+The workflow restores every normal browser owner and opener persistence. Its macOS job includes the startup regression and repaired platform fixtures. The hosted gate retains logs without masking failure status.
+
+The guidance reserves `skills/` for shippable, repository-authored Archboard skills. Other skills use their catalog paths. Repository link tests cover the navigation documents and development skill.
+
+Six scoped reviews fixed their findings and committed the repairs. The complete local gate passes 4,678 tests, including all 19 browser owners. The final lint, formatting, type, and focused tooling checks pass. Linux opener persistence passes all 24 assertions. Five Linux tooling tests pass.
+
+Hosted execution remains pending. Automatic approval review rejected the isolated branch push because publication requires explicit user approval. TASK-141 also retains its historical cancellation diagnosis criterion. The current Linux owner passes, so this run does not reproduce that old failure.
