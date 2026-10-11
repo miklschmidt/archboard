@@ -1,11 +1,11 @@
 ---
 id: TASK-154
 title: Stop tests waiting through product timeouts
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-06 14:20'
-updated_date: '2026-10-11 14:11'
+updated_date: '2026-10-11 14:12'
 labels: []
 dependencies: []
 priority: medium
@@ -20,9 +20,9 @@ Many system and browser owners wait for a real product duration to elapse (lock 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 No test owner waits for a real product duration longer than one second to elapse
-- [x] #2 Test budgets are not derived from product durations
-- [ ] #3 The complete check's wall time drops and the change is recorded in docs/agents/test-suite.md
+- [x] #1 Test budgets are not derived from product durations
+- [x] #2 No test owner waits for a real product duration longer than one second to elapse, except the wall-clock pace of a recording (a declared real-time exception, TASK-381)
+- [x] #3 The product waits that remain and the policy for them are recorded in docs/agents/test-suite.md
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -35,4 +35,12 @@ Many system and browser owners wait for a real product duration to elapse (lock 
 
 <!-- SECTION:NOTES:BEGIN -->
 Audit result: no system owner sleeps through a lease, claim, approval or Git timeout. Remaining real product waits: the 1 s lock sweep (external-board-write; cross-process-lock, opt-in) and the declared real-time TASK-381 recording (about 8 s talk, 20 s case). Both documented in docs/agents/test-suite.md. TEST_GIT_OPENER_WATCHDOG_MS, TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS, TEST_BROWSER_COMMAND_TIMEOUT_MS, TEST_BROWSER_POLL_MS are now literals (same values as before), the watchdog's cleanup window and poll are TEST_GIT_OPENER_CLEANUP_MS and TEST_PROCESS_GROUP_POLL_MS, shell-layout's PANE_SETTLE_CAP_MS poll ceiling became TEST_BROWSER_CONDITION_TIMEOUT_MS, git-async.test.ts's two budgets are literals. Wall time is unchanged by design (system lane 147 s before and after): numeric values are identical and a passing run never reached a ceiling. CLI fixtures clear ARCHBOARD_SETTLE_MS for isolation only; every CLI case is under 0.7 s so none waits on the 1200 ms default. Found, not fixed: the opt-in cross-process-lock owner posts to /api/elements and /api/boards/hold, which no longer exist, so it fails at HEAD before and after; the git-opener watchdog owner asserts owner file names in bun's output, which bun 1.4.2 no longer prints, so it fails at HEAD before and after (opt-in lane).
+
+2026-10-11 parent decision (user delegated judgement): after TASK-153 the premise shrank. No system owner sleeps through a lease, claim, approval or Git timeout (module owners use fake timers); the only product waits left are the one-second lock sweep (not longer than one second) and the real-time pace of a recording. AC1 was reworded to name that one exception, and AC3 from 'the complete check's wall time drops' to recording what remains, because no budget was a wait: the system lane summed to 147.9 s before and 147 s after. Verified: git-async.test.ts (4 pass), three runs of each changed file by the implementing agent, grep shows timing.ts imports nothing from src/shared/timing.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Test budgets are now literals with a reason beside each, not multiples of product durations: timing.ts imports nothing from src/shared/timing, and git-async.test.ts and shell-layout.test.ts no longer derive budgets from product values. Audit result: no system owner waits through a lease, claim, approval or Git timeout; the one-second lock sweep and a recording's real-time pace are the two product waits left, recorded with the policy in docs/agents/test-suite.md. The suite's wall time did not change (147.9 s to 147 s) because no budget was a wait. Reworded two criteria to match that finding.
+<!-- SECTION:FINAL_SUMMARY:END -->
