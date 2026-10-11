@@ -23,13 +23,14 @@ test("the pinned browser CLI runs without HOME and never invokes an ambient wrap
 
 test("prerequisite failure retains subprocess evidence", () => {
 	const evidence = JSON.stringify({ fixture: "browser-prerequisite", status: 19 });
+	const standardOutput = JSON.stringify({ fixture: "browser-prerequisite-stdout" });
 	let failure: unknown;
 	try {
 		probeBrowserTool(
 			[
 				process.execPath,
 				"-e",
-				`process.stderr.write(${JSON.stringify(evidence)});process.exit(19);`,
+				`process.stdout.write(${JSON.stringify(standardOutput)});process.stderr.write(${JSON.stringify(evidence)});process.exit(19);`,
 			],
 			{},
 		);
@@ -38,15 +39,17 @@ test("prerequisite failure retains subprocess evidence", () => {
 	}
 	expect(failure).toBeInstanceOf(CouldNotRunError);
 	expect((failure as Error).message).toContain(evidence);
+	expect((failure as Error).message).toContain(standardOutput);
 });
 
 test("the runner retains prerequisite exit status in its final progress record", () => {
+	const absentBrowser = join(import.meta.dir, "absent-browser");
 	const result = Bun.spawnSync(
 		[process.execPath, BROWSER_ADAPTER_PATH, "--focus", BROWSER_TEST_PATHS[0]],
 		{
 			env: {
 				PATH: process.env["PATH"],
-				AGENT_BROWSER_EXECUTABLE_PATH: join(import.meta.dir, "absent-browser"),
+				AGENT_BROWSER_EXECUTABLE_PATH: absentBrowser,
 			},
 			stdout: "pipe",
 			stderr: "pipe",
@@ -58,6 +61,15 @@ test("the runner retains prerequisite exit status in its final progress record",
 		.filter((line) => line.startsWith("# browser-lane "))
 		.map((line) => JSON.parse(line.slice("# browser-lane ".length)));
 	expect(result.exitCode).toBe(2);
+	const toolchain = result.stderr
+		.toString()
+		.split("\n")
+		.find((line) => line.startsWith("# browser-toolchain "));
+	expect(toolchain).toBeDefined();
+	const resolved = JSON.parse(toolchain!.slice("# browser-toolchain ".length));
+	expect(resolved.command).toEqual(agentBrowserCommand());
+	expect(resolved.version.length).toBeGreaterThan(0);
+	expect(resolved.browser).toBe(absentBrowser);
 	expect(records.at(-1)).toEqual({ event: "finished", exitCode: 2 });
 	expect(records.some((record) => record.event === "completed")).toBe(false);
 });

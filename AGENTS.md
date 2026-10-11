@@ -17,9 +17,9 @@ Where things are written down:
   [docs/agents/boundaries.md](docs/agents/boundaries.md)
 - Changing frontend code: read [docs/agents/frontend.md](docs/agents/frontend.md) for placement, React ownership,
   and the routing/query migration contract.
-- Decisions: `docs/adr/`. Read the ADR before you touch what it decides.
-- Measured investigations: `docs/design/`. The visual authority of the UI is
-  `docs/design/operator-canvas-shell.md` with its reference image.
+- Decisions: [docs/adr/](docs/adr/). Read the ADR before you touch what it decides.
+- Measured investigations: [docs/design/](docs/design/). The visual authority of the UI is
+  [docs/design/operator-canvas-shell.md](docs/design/operator-canvas-shell.md) with its reference image.
 - Changing tests or CI: [docs/agents/test-suite.md](docs/agents/test-suite.md)
 - Refreshing the README's diagrams, clips, banner and videos:
   [docs/agents/readme-assets.md](docs/agents/readme-assets.md)

@@ -51,7 +51,7 @@ function probeBrowserTool(command: readonly string[], environment: NodeJS.Proces
 			result.error?.message ??
 			(result.signal ? `signal ${result.signal}` : `exit ${result.status ?? "unknown"}`);
 		throw new CouldNotRunError(
-			`Browser prerequisite ${JSON.stringify(command)} ended with ${exit}: ${(result.stderr || result.stdout || "No output.").trim()}`,
+			`Browser prerequisite ${JSON.stringify(command)} ended with ${exit}: ${[result.stdout.trim(), result.stderr.trim()].filter(Boolean).join("\n") || "No output."}`,
 		);
 	}
 	return result.stdout.trim();
