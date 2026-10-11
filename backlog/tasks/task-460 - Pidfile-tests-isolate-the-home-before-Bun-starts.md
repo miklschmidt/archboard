@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 15:53'
+updated_date: '2026-10-11 15:58'
 labels: []
 dependencies: []
 type: bug
@@ -28,4 +29,12 @@ The merged TASK-325 pidfile owner fails four cases on macOS. Its fixture changes
 
 <!-- SECTION:PLAN:BEGIN -->
 No board is affected because this repair changes only the test fixture. Supply the temporary home before starting the process that exercises pidfile behavior. Keep all four original cases and assertions. Refuse any resolved state directory outside that root. Run the focused owner, review the repair, and run the complete gate.
+
+Run the repaired pidfile owner in the macOS native CI job, as well as the complete Linux gate, to retain coverage of startup home isolation.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Review fixed two fixture contracts: the parent now requires a machine-readable completion receipt from the selected original body, so a zero-test runner success cannot pass; and the child captures its dedicated process group before spawning descendants, so parent cleanup reaps a sleep left by a timed-out runner. The five-second child execution bound remains. Group cleanup has a separate five-second bound within the unchanged fifteen-second preloaded normal case timeout. Focused owner passes all four registrations, and full type checking and configured test lint pass.
+<!-- SECTION:NOTES:END -->
