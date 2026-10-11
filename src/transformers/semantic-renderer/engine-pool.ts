@@ -149,6 +149,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 			dispatch();
 		};
 		channel.port1.addEventListener("message", resume, { once: true });
+		channel.port1.start();
 		channel.port2.postMessage(undefined);
 	}
 
