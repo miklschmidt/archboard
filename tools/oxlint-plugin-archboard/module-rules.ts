@@ -55,15 +55,30 @@ interface Importer {
 }
 
 /**
+ * The real-time declaration of the preload that measures every Bun case:
+ * since it governs every test owner, every test owner may declare through it.
+ */
+const WALL_CLOCK_DECLARATION = "tests/system/repository-policy/support/test-wall-clock.ts";
+
+/**
  * The message a test-owned import target earns: product code may not import
- * it at all, and tests may only import their own owner's support.
+ * it at all, and tests may only import their own owner's support and the
+ * preload's real-time declaration.
  * @param importer The importing file.
  * @param importedOwner The imported file's test owner.
+ * @param importedPath The imported file's repository path.
  * @returns The message id, or undefined when the import is allowed.
  */
-function testImportMessage(importer: Importer, importedOwner: TestOwner): string | undefined {
+function testImportMessage(
+	importer: Importer,
+	importedOwner: TestOwner,
+	importedPath: string,
+): string | undefined {
 	if (!importer.owner) {
 		return "noProductTestImport";
+	}
+	if (importedPath === WALL_CLOCK_DECLARATION) {
+		return undefined;
 	}
 	return sameTestOwner(importer.owner, importedOwner) ? undefined : "noCrossOwnerTestImport";
 }
@@ -97,7 +112,7 @@ function entrypointMessage(importer: Importer, source: string): string | undefin
 	}
 	const importedOwner = testOwnerAt(importedPath);
 	if (importedOwner) {
-		return testImportMessage(importer, importedOwner);
+		return testImportMessage(importer, importedOwner, importedPath);
 	}
 	const imported = moduleAt(importedPath);
 	if (!imported || !isModuleInternal(imported)) {
@@ -138,7 +153,7 @@ const moduleEntrypoints = createRule(
 		noProductTestImport:
 			"Product, scripts, and tools must not import test-owned source. Move shared behavior behind a product module root entrypoint.",
 		noCrossOwnerTestImport:
-			"Test-owned source may import helpers only from its own module tests folder or the tests/system owner.",
+			"Test-owned source may import helpers only from its own owner (its module tests folder, or tests/system), and the preload's real-time declaration.",
 		noTestOutsideTestsDirectory:
 			"Bun test files must live under src/<area>/<module>/tests or tests/system.",
 		testsThroughEntrypoints:

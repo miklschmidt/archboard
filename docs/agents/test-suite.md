@@ -98,11 +98,18 @@ uses a 60-second case deadline when `CI=true`. Its default engine also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
 3-second first-render limit. Both engines keep all picture correctness assertions.
-The preload still applies its 60-second wall-clock ceiling.
+The preload still applies its 60-second wall-clock ceiling. Only the Blocks
+cases of Browser application and Board viewer declare a real-time exception,
+with their own `TEST_HEAVY_BLOCKS_CASE_MS` case deadline on CI: their layout
+alone took 47.85 seconds there, and past 60 on a slower runner.
 
 Keep a real-time exception inside its exact test callback. Its first statement calls
 `declareTestWallClockBudget` with the exact test name, a concrete reason, a `TEST_*`
-outer bound, the task that owns the choice, and recorded duration evidence.
+outer bound, the task that owns the choice, and recorded duration evidence. Every
+test owner may import the declaration from
+`tests/system/repository-policy/support/test-wall-clock.ts`, because the preload
+it feeds measures every owner. A module owner keeps its `TEST_*` bound beside the
+case.
 
 The opt-in renderer-tooling owners load `dist/frontend/renderer.html`. Run
 `bun run build:frontend` first in a clean checkout. The normal package test
