@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { accessSync, chmodSync, constants, existsSync, readFileSync, statSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { z } from "zod";
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../../support/timing.ts";
@@ -12,8 +12,30 @@ const manifestSchema = z.object({
 });
 const rootSchema = z.object({ devDependencies: z.object({ "agent-browser": z.string() }) });
 
-/** Resolve the installed package's declared CLI, independent of PATH and working directory. */
-function agentBrowserCommand(): [string, string] {
+/**
+ * agent-browser 0.31.1 ships these native names beside its declared JS entrypoint.
+ * Run the native child directly: the vendor wrapper maps a signal exit to success
+ * and does not forward termination. Recheck this distribution contract on upgrades.
+ */
+function nativeBrowserName(): string {
+	const platform = process.platform;
+	const architecture = process.arch;
+	if (
+		(platform !== "darwin" && platform !== "linux" && platform !== "win32") ||
+		(architecture !== "x64" && architecture !== "arm64")
+	) {
+		throw new CouldNotRunError(`Unsupported browser CLI platform: ${platform}-${architecture}.`);
+	}
+	const musl =
+		platform === "linux" &&
+		(existsSync("/lib/ld-musl-x86_64.so.1") || existsSync("/lib/ld-musl-aarch64.so.1"));
+	const nativePlatform = musl ? "linux-musl" : platform;
+	const nativeArchitecture = platform === "win32" ? "x64" : architecture;
+	return `agent-browser-${nativePlatform}-${nativeArchitecture}${platform === "win32" ? ".exe" : ""}`;
+}
+
+/** Resolve the installed package's native CLI, independent of PATH and working directory. */
+function agentBrowserCommand(): [string] {
 	try {
 		const expected = rootSchema.parse(
 			JSON.parse(readFileSync(resolve(repository, "package.json"), "utf8")),
@@ -27,7 +49,22 @@ function agentBrowserCommand(): [string, string] {
 				"The installed browser CLI differs from the repository pin. Run bun install.",
 			);
 		}
-		return [process.execPath, resolve(directory, installed.bin["agent-browser"])];
+		const executable = resolve(
+			dirname(resolve(directory, installed.bin["agent-browser"])),
+			nativeBrowserName(),
+		);
+		const stat = statSync(executable);
+		if (!stat.isFile()) throw new CouldNotRunError(`Browser CLI is not a file: ${executable}.`);
+		if (process.platform !== "win32") {
+			try {
+				accessSync(executable, constants.X_OK);
+			} catch {
+				// Bun may omit the vendor postinstall that makes the packaged binary executable.
+				chmodSync(executable, stat.mode | 0o111);
+				accessSync(executable, constants.X_OK);
+			}
+		}
+		return [executable];
 	} catch (error) {
 		if (error instanceof CouldNotRunError) throw error;
 		throw new CouldNotRunError("The browser CLI package is unavailable. Run bun install.", {
@@ -51,7 +88,7 @@ function probeBrowserTool(command: readonly string[], environment: NodeJS.Proces
 			result.error?.message ??
 			(result.signal ? `signal ${result.signal}` : `exit ${result.status ?? "unknown"}`);
 		throw new CouldNotRunError(
-			`Browser prerequisite ${JSON.stringify(command)} ended with ${exit}: ${[result.stdout.trim(), result.stderr.trim()].filter(Boolean).join("\n") || "No output."}`,
+			`Browser prerequisite ${JSON.stringify(command)} ended with ${exit}: ${[(result.stdout ?? "").trim(), (result.stderr ?? "").trim()].filter(Boolean).join("\n") || "No output."}`,
 		);
 	}
 	return result.stdout.trim();
