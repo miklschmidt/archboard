@@ -27,18 +27,22 @@ test("browser keyboard input keeps trusted keys, modifiers, and native focus", a
 		});
 		document.querySelector('#first').focus(); true`);
 	await browser.run(["press", "Escape"]);
-	expect(await browser.eval("window.keyCount")).toBe(2);
-	expect(await browser.eval("window.keys")).toEqual([
-		{ type: "keydown", key: "Escape", ctrl: false, shift: false, trusted: true },
-		{ type: "keyup", key: "Escape", ctrl: false, shift: false, trusted: true },
-	]);
+	expect(await browser.eval("({ count: window.keyCount, keys: window.keys })")).toEqual({
+		count: 2,
+		keys: [
+			{ type: "keydown", key: "Escape", ctrl: false, shift: false, trusted: true },
+			{ type: "keyup", key: "Escape", ctrl: false, shift: false, trusted: true },
+		],
+	});
 	await browser.eval("window.keys = []; window.keyCount = 0; true");
 	await browser.run(["press", "Control+Shift+K"]);
-	expect(await browser.eval("window.keyCount")).toBe(2);
-	expect(await browser.eval("window.keys")).toEqual([
-		{ type: "keydown", key: "K", ctrl: true, shift: true, trusted: true },
-		{ type: "keyup", key: "K", ctrl: true, shift: true, trusted: true },
-	]);
+	expect(await browser.eval("({ count: window.keyCount, keys: window.keys })")).toEqual({
+		count: 2,
+		keys: [
+			{ type: "keydown", key: "K", ctrl: true, shift: true, trusted: true },
+			{ type: "keyup", key: "K", ctrl: true, shift: true, trusted: true },
+		],
+	});
 	await browser.run(["press", "Tab"]);
 	expect(await browser.eval("document.activeElement.id")).toBe("second");
 	await browser.run(["keyboard", "type", "board"]);
