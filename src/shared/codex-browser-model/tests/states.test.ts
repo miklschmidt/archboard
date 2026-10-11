@@ -242,9 +242,7 @@ test("the coordinator's turns belong to the coordinator's thread, and to a bound
 			coordinatorTimeline: own,
 		}),
 	).toBeFalse();
-	const delegated = turns.map((turn) => ({
-		...turn,
-		delegatedBy: identity.decoder.adoptTurnId("voice-turn"),
-	}));
+	const voiceTurn = identity.decoder.adoptTurnId("voice-turn");
+	const delegated = turns.map((turn) => Object.assign({}, turn, { delegatedBy: voiceTurn }));
 	expect(parses({ ...snapshot, timeline: { ...timeline, turns: delegated } })).toBeTrue();
 });
