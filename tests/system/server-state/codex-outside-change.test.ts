@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { runServerCli } from "../support/run-cli.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
@@ -10,6 +11,7 @@ import {
 	productionPane as pane,
 } from "./support/codex-production.ts";
 import { createRequester, sleep, waitFor } from "./support/http.ts";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@/shared/semantic-pane-context";
 
 // Long enough for news to be told: a sentence follows its write within a few milliseconds.
 const NEWS_SETTLE_MS = 600;
@@ -17,6 +19,7 @@ const NEWS_SETTLE_MS = 600;
 const COORDINATOR_WIRE_THREAD = "thread-1";
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
+const repoRoot = resolve(import.meta.dir, "../../..");
 
 // An outside change (TASK-293.06): a board write or a pane switch by an agent that is neither this
 // tab's workhorse nor its coordinator. Neither model asked for it, and what they hold about the
@@ -137,26 +140,69 @@ test("live voice and its coordinator are told what another agent did to a board 
 		expect(injected()[0]).toContain(JSON.stringify(sentence).slice(1, -1));
 		expect(frames("turn/start")).toEqual([]);
 
+		// A drill-down is the pane's own: the server still points it at scratch, and only the pane
+		// says it now reads payments. A write to the board on screen is news all the same.
+		const drilled = await request<{
+			board: { version: number; variants: Array<{ id: string; name: string; lifecycle: string }> };
+		}>("/api/semantic-boards/board?board=payments");
+		const [shown] = drilled.body.board.variants;
+		expect(
+			(
+				await request(SEMANTIC_PANE_CONTEXT_ROUTE, {
+					method: "POST",
+					doing: false,
+					body: {
+						paneId: "voice-pane",
+						clientId: "voice-client",
+						board: { name: "payments", key: "payments" },
+						variant: { id: shown?.id, name: shown?.name, lifecycle: shown?.lifecycle },
+						view: null,
+						selection: [],
+						version: drilled.body.board.version,
+						at: new Date().toISOString(),
+						sequence: 0,
+					},
+				})
+			).status,
+		).toBe(200);
+		await edit("Payouts", null, "payments");
+		await waitFor(() => voiced().length === 2, "a write to the drilled-into board to reach voice", {
+			timeoutMs: 2000,
+		});
+		expect(voiced()[1]).toContain("payments");
+
 		// The session's own show tells nobody; another agent's show of the pane is told to both,
-		// worded so it never credits the user.
-		const show = async (board: string, session: string | null) =>
-			request("/api/panes/show", {
-				method: "POST",
-				doing: false,
-				body: { board, pane: "primary", agent: true, ...(session === null ? {} : { session }) },
+		// worded so it never credits the user. Through the command line, which is what says a show
+		// is an agent's and which session made it: the page's own shows name no agent.
+		const show = (board: string, session: string | null) =>
+			runServerCli({
+				repoRoot,
+				vault: fixture.vault,
+				base: server.base,
+				args: [
+					"browser",
+					"show",
+					board,
+					"--pane",
+					"primary",
+					...(session === null ? [] : ["--as-session", session]),
+				],
+				input: undefined,
 			});
-		expect((await show("payments", workhorse)).status).toBe(200);
-		expect((await show("scratch", null)).status).toBe(200);
-		await waitFor(() => voiced().length === 2, "the agent's show to reach live voice", {
+		const own = show("payments", workhorse);
+		expect(own.status, own.stderr).toBe(0);
+		const outside = show("scratch", null);
+		expect(outside.status, outside.stderr).toBe(0);
+		await waitFor(() => voiced().length === 3, "the agent's show to reach live voice", {
 			timeoutMs: 2000,
 		});
 		await sleep(NEWS_SETTLE_MS);
-		expect(voiced()).toHaveLength(2);
-		const switched = voiced()[1] ?? "";
+		expect(voiced()).toHaveLength(3);
+		const switched = voiced()[2] ?? "";
 		expect(switched).toContain("payments");
 		expect(switched).toContain("scratch");
 		expect(switched).not.toMatch(/\buser\b/u);
-		expect(injected()).toHaveLength(2);
+		expect(injected()).toHaveLength(3);
 		expect(frames("turn/start")).toEqual([]);
 	} finally {
 		await resources.disposeAsync();
