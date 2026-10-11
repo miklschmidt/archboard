@@ -169,6 +169,8 @@ class FakeSession implements CoordinatorSessionPort {
 	readonly modelRequests: Array<SessionParams<"model/list"> | undefined> = [];
 	readonly startParams: Array<SessionParams<"thread/start">> = [];
 	readonly updateParams: Array<SessionParams<"thread/settings/update">> = [];
+	/** The models model/list advertises; a test replaces it to change the catalog between attempts. */
+	advertised: CoordinatorModel[];
 	started: CoordinatorStartResponse;
 	threadSettings: CoordinatorThreadSettings;
 	notify: ((event: TransportServerNotification) => void) | undefined;
@@ -178,7 +180,7 @@ class FakeSession implements CoordinatorSessionPort {
 
 	constructor(
 		private readonly authority: IdentityAuthority,
-		private readonly modelValue: CoordinatorModel,
+		modelValue: CoordinatorModel,
 		public startError: CodexSessionMutationError | null,
 		private readonly updateError: CodexSessionMutationError | null,
 		private readonly staleNotificationAuthority: IdentityAuthority | null,
@@ -187,6 +189,7 @@ class FakeSession implements CoordinatorSessionPort {
 		threadRawId: string,
 		settingsOverrides: Partial<CoordinatorThreadSettings>,
 	) {
+		this.advertised = [modelValue];
 		this.serviceTier = modelValue.serviceTiers.some((tier) => tier.id === "priority")
 			? "priority"
 			: null;
@@ -207,7 +210,7 @@ class FakeSession implements CoordinatorSessionPort {
 
 	async modelList(params?: SessionParams<"model/list">): Promise<SessionResponse<"model/list">> {
 		this.modelRequests.push(params);
-		return { data: [this.modelValue], nextCursor: null };
+		return { data: this.advertised, nextCursor: null };
 	}
 
 	async threadStart(
