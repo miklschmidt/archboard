@@ -5,10 +5,11 @@ import { join, resolve } from "node:path";
 import { readProcessObservation } from "@/shared/process-observation";
 
 import {
-	GIT_PROCESS_GROUP_CLEANUP_MS,
-	GIT_PROCESS_GROUP_POLL_MS,
-} from "../../../src/shared/timing/timing.js";
-import { TEST_GIT_OPENER_CASE_TIMEOUT_MS, TEST_GIT_OPENER_WATCHDOG_MS } from "../support/timing.ts";
+	TEST_GIT_OPENER_CASE_TIMEOUT_MS,
+	TEST_GIT_OPENER_CLEANUP_MS,
+	TEST_GIT_OPENER_WATCHDOG_MS,
+	TEST_PROCESS_GROUP_POLL_MS,
+} from "../support/timing.ts";
 
 const ROOT = resolve(import.meta.dir, "../../..");
 const OWNERS = [
@@ -36,7 +37,7 @@ async function waitForGroupAbsence(pgid: number, timeoutMs: number): Promise<voi
 		if (Date.now() >= deadline) {
 			throw new Error(`process group ${pgid} survived`);
 		}
-		await Bun.sleep(GIT_PROCESS_GROUP_POLL_MS);
+		await Bun.sleep(TEST_PROCESS_GROUP_POLL_MS);
 	}
 }
 
@@ -76,14 +77,14 @@ async function cleanupOwnedChild(
 	try {
 		await within(
 			Promise.allSettled([child.exited, ...streams]).then(() => undefined),
-			GIT_PROCESS_GROUP_CLEANUP_MS,
+			TEST_GIT_OPENER_CLEANUP_MS,
 			`process group ${child.pid} pipes or leader did not settle`,
 		);
 	} catch (cause) {
 		failures.push(cause);
 	}
 	try {
-		await waitForGroupAbsence(child.pid, GIT_PROCESS_GROUP_CLEANUP_MS);
+		await waitForGroupAbsence(child.pid, TEST_GIT_OPENER_CLEANUP_MS);
 	} catch (cause) {
 		failures.push(cause);
 	}

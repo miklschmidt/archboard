@@ -1,29 +1,37 @@
 // Test budgets: case bounds, poll cadences and fixture waits for the test
 // owners. They live beside the tests and not in the product timing module,
 // which holds only durations the product pulls against each other
-// (TASK-153). Each still says what it is bounded by.
-
-import {
-	BROWSER_EXPORT_TIMEOUT_MS,
-	GIT_COMMAND_TIMEOUT_MS,
-	GIT_PROCESS_GROUP_CLEANUP_MS,
-	LOCK_POLL_MS,
-	LOCK_WATCH_MS,
-} from "../../../src/shared/timing/timing.ts";
+// (TASK-153). Each says what it is bounded by, and none is computed from a
+// product duration (TASK-154): a product change must never retune a test
+// budget, so a test that must outwait a product timer says so beside its own
+// literal.
 
 /**
- * External bound for the exact Git lifecycle plus opener regression sequence.
- * It is four ordinary Git command bounds: enough for the serial owners while
- * still diagnosing a retained child or pipe well inside the repository lane.
+ * External bound for the exact Git lifecycle plus opener regression sequence:
+ * four owner files that finish together in about five seconds on a development
+ * machine. It is a ceiling that only a retained child or pipe reaches, and it
+ * stays well inside the repository lane. It is a test number: the product's Git
+ * command timeout is not what this sequence is about, and a change to it must
+ * not retune this bound.
  */
-const TEST_GIT_OPENER_WATCHDOG_MS = 4 * GIT_COMMAND_TIMEOUT_MS;
+const TEST_GIT_OPENER_WATCHDOG_MS = 20_000;
 
 /**
- * Bun's case deadline includes the watchdog plus two cleanup grace windows:
- * one to kill and drain the child group, and one for the owner to report it.
+ * How long the watchdog owner gives its own cleanup to kill a child group and
+ * drain its pipes, then to see the group gone. Hosted macOS runners let a
+ * killed member outlive one second (TASK-362), so it is three.
+ */
+const TEST_GIT_OPENER_CLEANUP_MS = 3000;
+
+/** How often the watchdog owner looks for a killed process group to be gone. */
+const TEST_PROCESS_GROUP_POLL_MS = 10;
+
+/**
+ * Bun's case deadline includes the watchdog plus two cleanup windows: one to
+ * kill and drain the child group, and one for the owner to report it.
  */
 const TEST_GIT_OPENER_CASE_TIMEOUT_MS =
-	TEST_GIT_OPENER_WATCHDOG_MS + 2 * GIT_PROCESS_GROUP_CLEANUP_MS;
+	TEST_GIT_OPENER_WATCHDOG_MS + 2 * TEST_GIT_OPENER_CLEANUP_MS;
 
 /**
  * How much slower than a development machine the machine running a test may
@@ -75,9 +83,11 @@ const TEST_SERVER_SHUTDOWN_TIMEOUT_MS = 1000;
 /**
  * Outer threshold for one lifecycle proof subprocess, from spawn through cleanup.
  *
- * It clears startup, owner shutdown, and post-`archboard stop` PID observation
- * beyond the server's 2,000 ms forced-exit fallback. A stuck proof therefore
- * fails with its PID and mode instead of hanging the whole board suite.
+ * It is a ceiling: every proof polls and returns the moment its process is
+ * gone, so a healthy proof never waits it out. It clears startup, owner
+ * shutdown, and post-`archboard stop` PID observation on a slow hosted runner.
+ * A stuck proof therefore fails with its PID and mode instead of hanging the
+ * whole board suite.
  */
 const TEST_SERVER_CHILD_EXIT_TIMEOUT_MS = 20_000;
 
@@ -131,26 +141,40 @@ const TEST_PANE_MESSAGE_POLL_MS = 20;
 /**
  * Outer cap for a synthetic pane waiting on one named socket frame.
  *
- * This is longer than PANE_SETTLE_CAP_MS, so a server waiting for pane
- * geometry gets its full cap before the test declares the expected frame
- * missing. It remains far below BROWSER_EXPORT_TIMEOUT_MS because these
- * panes acknowledge callbacks directly and never render.
+ * These panes acknowledge callbacks directly and never render, so a frame
+ * that has not arrived in two seconds is missing. It is long enough for a
+ * server that waits on a pane's geometry to give up first.
  */
 const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
 
 /**
- * TASK-148.04 measures each real cross-process lock-watch delivery from the
- * completed ownership change to its matching board_lock frame. One sweep
- * should deliver it; three sweeps are the outer bound for timer phase,
- * loopback delivery, and a stressed system-test host.
+ * Outer bound for one cross-process lock-watch delivery, from the completed
+ * ownership change in one server to the matching board_lock frame on the pane
+ * of the other. This owner is about that delivery, so it does wait for the
+ * product's one-second lock sweep to fire: a second server learns of a lock
+ * file only by looking at it, and the sweep interval has no test override.
+ * The bound is a test number, three seconds: one sweep, then slack for timer
+ * phase, loopback delivery and a stressed host. A change to the sweep interval
+ * is meant to show up here as a failure, not to move this bound.
  */
-const TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS = 3 * LOCK_WATCH_MS;
+const TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS = 3000;
 
-/** Ordinary browser commands stay at 30s; the 10k-element initial render gets three windows, finite and not an SLA. */
-const TEST_BROWSER_COMMAND_TIMEOUT_MS = BROWSER_EXPORT_TIMEOUT_MS;
+/**
+ * Ceiling for one browser command and for a browser-lane child to exit. A
+ * Chromium cold start is the slow part (TASK-361). It is never waited out by a
+ * passing run, and it is not the product's export timeout.
+ */
+const TEST_BROWSER_COMMAND_TIMEOUT_MS = 30_000;
 
-/** Matches the existing loopback and lock polling cadence without busy-waiting. */
-const TEST_BROWSER_POLL_MS = LOCK_POLL_MS;
+/** How often the browser lane and its adapter look for a child or a condition; short enough to be prompt, long enough not to spin. */
+const TEST_BROWSER_POLL_MS = 50;
+
+/**
+ * How long a browser owner waits for the shell to register its panes and draw
+ * a board in them: a headless Chromium's load, layout and first report. It is
+ * a patience, so the factor applies.
+ */
+const TEST_BROWSER_CONDITION_TIMEOUT_MS = TEST_PATIENCE_FACTOR * 1500;
 
 /** Polls fake-opener lifecycle evidence within its 2s operation bound. */
 const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2000 } as const;
@@ -163,7 +187,9 @@ export {
 	TEST_RECORDING_CLI_MS,
 	TEST_VAULT_CLI_TIMEOUT_MS,
 	TEST_GIT_OPENER_WATCHDOG_MS,
+	TEST_GIT_OPENER_CLEANUP_MS,
 	TEST_GIT_OPENER_CASE_TIMEOUT_MS,
+	TEST_PROCESS_GROUP_POLL_MS,
 	TEST_CASE_TIMEOUT_MS,
 	TEST_WALL_CLOCK_BUDGET_MS,
 	TEST_SERVER_STARTUP_TIMEOUT_MS,
@@ -178,6 +204,7 @@ export {
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 	TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
+	TEST_BROWSER_CONDITION_TIMEOUT_MS,
 	TEST_BROWSER_POLL_MS,
 	TEST_OPENER_LIFECYCLE,
 	TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS,
