@@ -132,13 +132,14 @@ describe("a picture nobody stated a standing for", () => {
 		// keep the margin; the arrangement is what must hold still. The gateway
 		// also calls the legacy bridge, so it is an entry point of the runtime
 		// beside board-io (ADR 0044), and the lines of both into the vault share
-		// a trunk only while they stand alike.
+		// a trunk only while they stand and look alike, so every line here is
+		// normal: a difference in emphasis would part them as well.
 		const shared = orderedFixture({
 			...PROPOSAL,
 			edges: [
 				...PROPOSAL.edges,
-				{ id: "e6", from: "gw", to: "legacy", kind: "call", emphasis: "normal", order: 6000 },
-			],
+				{ id: "e6", from: "gw", to: "legacy", kind: "call", order: 6000 },
+			].map((edge) => Object.assign({}, edge, { emphasis: "normal" })),
 		});
 		const plain = arrangementOf(await renderArchitecture({ content: shared }));
 		const compared = arrangementOf(
