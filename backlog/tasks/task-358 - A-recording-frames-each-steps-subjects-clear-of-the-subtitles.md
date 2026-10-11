@@ -1,9 +1,10 @@
 ---
 id: TASK-358
 title: A recording frames each step's subjects clear of the subtitles
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-28 14:48'
+updated_date: '2026-10-11 13:50'
 labels:
   - voice
 dependencies: []
@@ -20,6 +21,18 @@ Found 2026-09-28 reviewing README videos. In recordings, the subtitle box covers
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 In a recording, no subject of the step on screen sits under the subtitle box
-- [ ] #2 A step on a data-flow view keeps the lane headers of its messages in view
+- [x] #1 In a recording, no subject of the step on screen sits under the subtitle box
+- [x] #2 A step on a data-flow view keeps the lane headers of its messages in view
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-11 audit: AC1 delivered by TASK-392 (subtitles in the walkthrough box's foot; useCaptionReserve on the presentation frame, use-caption-reserve.ts, capped at 50% of the pane by MOST_RESERVED in use-board-camera.ts). AC2 delivered by TASK-375 (flow-head.ts keeps a flow's participant cards at the top of the room). Verified: semantic-board-narrative.test.tsx (17 pass, incl. 'brings it into view above the caption'), semantic-board-flow-framing.test.tsx (4 flow-head cases) and the browser lane (incl. voice-box-presented, semantic-walkthrough-presentation) pass. Not done: a replay or recording of Web shop steps 1 and 4 and Archboard tour steps 1 and 4 looked at frame by frame.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Delivered by TASK-392 (caption reserve keeps the step's subjects clear of the subtitle box) and TASK-375 (a data-flow step keeps its lane headers in view). Verified 2026-10-11 with the narrative and flow-framing component tests and the full browser lane. Caveat: the named steps of the Web shop and Archboard tour recordings were not looked at frame by frame.
+<!-- SECTION:FINAL_SUMMARY:END -->
