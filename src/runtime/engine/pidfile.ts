@@ -101,4 +101,21 @@ function removeIfOwnerGone(file: string): boolean {
 	}
 }
 
-export { pidFilePath, writePidFile, readPidFile, removePidFile, sweepDeadPidFiles };
+/**
+ * Remove the pidfile for a port only when the server it records is gone: its
+ * pid no longer runs, or the pid now belongs to a newer process.
+ * @param port The port the server binds.
+ * @returns True when the pidfile was removed.
+ */
+function removePidFileIfOwnerGone(port: number): boolean {
+	return removeIfOwnerGone(pidFilePath(port));
+}
+
+export {
+	pidFilePath,
+	writePidFile,
+	readPidFile,
+	removePidFile,
+	removePidFileIfOwnerGone,
+	sweepDeadPidFiles,
+};

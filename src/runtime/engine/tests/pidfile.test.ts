@@ -65,3 +65,40 @@ test("a sweep removes the pidfiles of gone servers and keeps live ones", () => {
 	expect(readPidFile(4104)).toBe(process.pid);
 	expect(existsSync(join(directory, "unrelated.pid"))).toBeTrue();
 });
+
+/**
+ * Run `stopServer` with the server URL on a port nothing listens on, so the
+ * health probe finds nothing, whatever pidfile the state directory holds.
+ * @returns The port, and the `stopServer` that talks to it.
+ */
+async function stopAgainstSilentPort(): Promise<{
+	port: number;
+	stopServer: () => Promise<unknown>;
+}> {
+	const probe = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } });
+	const { port } = probe;
+	probe.stop(true);
+	saved.set("ARCHBOARD_URL", process.env["ARCHBOARD_URL"]);
+	process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${port}`;
+	const { stopServer } = await import("../spawn.js");
+	return { port, stopServer };
+}
+
+test("stop keeps the pidfile of a live process that does not answer, and removes a dead one's", async () => {
+	isolatedState();
+	const { port, stopServer } = await stopAgainstSilentPort();
+
+	const live = Bun.spawn(["sleep", "30"]);
+	try {
+		writePidFile(port, live.pid);
+		await expect(stopServer()).rejects.toThrow(String(live.pid));
+		expect(readPidFile(port)).toBe(live.pid);
+	} finally {
+		live.kill();
+		await live.exited;
+	}
+
+	// The same pidfile, once its process has exited, is stale.
+	expect(await stopServer()).toMatchObject({ stopped: false, pid: live.pid });
+	expect(existsSync(pidFilePath(port))).toBeFalse();
+});
