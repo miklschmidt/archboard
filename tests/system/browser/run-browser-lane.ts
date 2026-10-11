@@ -89,14 +89,19 @@ function preflightEnvironment(): Record<string, string> {
 }
 
 function verifyPrerequisites(): string | undefined {
-	const browserExecutable = resolveBrowserExecutable();
-	const command = agentBrowserCommand();
-	const version = probeBrowserTool([...command, "--version"], preflightEnvironment());
-	probeBrowserTool([...command, "--help"], preflightEnvironment());
-	process.stderr.write(
-		`# browser-toolchain ${JSON.stringify({ command, version, browser: browserExecutable ?? "agent-browser default" })}\n`,
-	);
-	return browserExecutable;
+	let command: ReturnType<typeof agentBrowserCommand> | null = null;
+	let version: string | null = null;
+	let browser = process.env["AGENT_BROWSER_EXECUTABLE_PATH"] ?? "agent-browser default";
+	try {
+		command = agentBrowserCommand();
+		version = probeBrowserTool([...command, "--version"], preflightEnvironment());
+		probeBrowserTool([...command, "--help"], preflightEnvironment());
+		const browserExecutable = resolveBrowserExecutable();
+		browser = browserExecutable ?? browser;
+		return browserExecutable;
+	} finally {
+		process.stderr.write(`# browser-toolchain ${JSON.stringify({ command, version, browser })}\n`);
+	}
 }
 
 function ownerEnvironment(
