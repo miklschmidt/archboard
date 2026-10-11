@@ -800,7 +800,9 @@ coordinator thread is refused as the event arrives with reason `own_change`;
 their outcome reaches the coordinator through workhorse news. Any other, an
 unattributed one included, is news. A write to a board no pane of this canvas
 shows when it lands is refused with reason `not_shown`; `board` holds the
-written board's aggregate key for that check. The sentence names the board and
+written board's aggregate key for that check. A pane shows the board the server
+last pointed it at and the board it last said it reads, which a drill-down
+changes without the server. The sentence names the board and
 what the writer said it was doing, or where the pane was and where it is now,
 and says an agent did it, never the user. It goes to the coordinator thread as
 one `thread/inject_items` developer message, which starts no turn, and then to
@@ -810,7 +812,9 @@ The record is the voice append's, with reason `agent` once it went through. One
 write is one thing somebody asked for, so outside news never coalesces: every
 write and every show is a sentence of its own. The coordinator has no tool
 that writes a board or moves a pane, so telling it cannot loop. A show from the
-page names no agent: what the user opens is the pane's to mark (ADR 0034).
+page names no agent: what the user opens is the pane's to mark (ADR 0034). An
+agent's show into a narrated pane also ends the narration. The pane then reports
+that it left the walkthrough, like Escape does, so the leaving line names nobody.
 
 ## Realtime V3 start policy
 

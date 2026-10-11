@@ -371,8 +371,12 @@ voice box carry that same session. From the keyboard, the bar's key ends it,
 releases the browser's media and keeps its focus. Talk on the same key then
 starts a second session that the voice box carries, and Space ends it.
 Narrating the walkthrough starts a third session on a fresh coordinator. Its
-words are in the voice box at the foot of the presented walkthrough. The dock's
-key ends it and releases its media, and the mounted board pane is unchanged.
+words are in the voice box at the foot of the presented walkthrough. Four
+things reach the voice model as one `appendSpeech` line each: the first step, a
+step taken by hand, a part picked by hand mid-step, and leaving with Escape. No
+coordinator turn starts. The pick names the part and not its id, and the pane
+stays on its step (TASK-293.05). The dock's key ends the session and releases
+its media, and the mounted board pane is unchanged.
 
 The owner checks the keyboard order of the dock's voice controls, the target
 size of the voice keys at desktop and desktop scaled, that a presented pane
