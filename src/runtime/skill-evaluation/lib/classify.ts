@@ -5,7 +5,11 @@
 
 import path from "node:path";
 import type { CommandRecord } from "@/runtime/skill-evaluation/lib/events";
-import { reachesBatchOutsideWorld, shellWords } from "@/runtime/skill-evaluation/lib/other-run";
+import {
+	reachesBatchOutsideWorld,
+	shellCommands,
+	shellWords,
+} from "@/runtime/skill-evaluation/lib/other-run";
 
 type CommandClass =
 	| "discovery"
@@ -92,13 +96,23 @@ function unwrapped(command: string): string {
 }
 
 /**
- * The script a shell call finally runs, through any shells it starts in turn.
+ * The script a shell call finally runs, through any shells it starts in turn,
+ * and a compound script with each of its shell calls replaced by the script
+ * that call runs: `cd x && bash -c 'cat y'` runs `cd x && cat y`.
  * @param command A command.
- * @returns The innermost script, or undefined when the command is not a shell call.
+ * @returns The innermost script, or undefined when the command starts no shell.
  */
 function innerScript(command: string): string | undefined {
 	const script = shellScript(shellWords(command).map((word) => word.value));
-	return script === undefined ? undefined : (innerScript(script.trim()) ?? script);
+	if (script !== undefined) return innerScript(script.trim()) ?? script;
+	const parts = shellCommands(command);
+	if (parts.length === 1) return undefined;
+	const inners = parts.map((part, index) =>
+		index % 2 === 0 ? innerScript(part.trim()) : undefined,
+	);
+	return inners.every((inner) => inner === undefined)
+		? undefined
+		: parts.map((part, index) => inners[index] ?? part.trim()).join(" ");
 }
 
 /**

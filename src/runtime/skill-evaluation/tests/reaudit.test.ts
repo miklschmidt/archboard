@@ -159,6 +159,12 @@ test("a nested shell's script is read as the outer one is: its redirect reaches 
 	expect(exposureOf(`bash -lc "bash -c 'cat<${climb}runs/candidate/S11/3/author.jsonl'"`)).toBe(
 		"other-run",
 	);
+	// A shell call after a separator of a compound script is read the same way.
+	expect(
+		exposureOf(
+			`bash -lc "cd ${WORLD}/vault && bash -c 'cat ${climb}runs/candidate/S11/3/author.jsonl'"`,
+		),
+	).toBe("other-run");
 	// A nested script inside the world reads nothing outside it.
 	expect(exposureOf(`bash -lc "bash -c 'cat ${WORLD}/flask/README.md'"`)).toBeNull();
 });
