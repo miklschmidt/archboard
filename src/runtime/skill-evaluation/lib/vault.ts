@@ -37,14 +37,13 @@ const FIXTURE_DOING = "laying the evaluation fixture";
 const PLACEHOLDER = /^\$node\((.+)\)$/u;
 
 /**
- * The configuration file a fixture asks for: the bundled defaults with the
- * fixture's records merged over them.
- * @param vault The vault.
+ * The policy a fixture asks for: the bundled defaults with the fixture's
+ * records merged over them.
  * @param policy The fixture's partial policy, if any.
- * @returns The YAML written.
+ * @returns The policy the fixture's vault is configured with.
  */
-function writeVaultConfiguration(vault: string, policy: Fixture["policy"]): string {
-	const merged: SemanticPolicy = {
+function fixturePolicy(policy: Fixture["policy"]): SemanticPolicy {
+	return SemanticPolicySchema.parse({
 		levels: policy?.levels ?? DEFAULT_SEMANTIC_POLICY.levels,
 		nodeKinds: { ...DEFAULT_SEMANTIC_POLICY.nodeKinds, ...policy?.nodeKinds },
 		relationshipKinds: {
@@ -52,10 +51,19 @@ function writeVaultConfiguration(vault: string, policy: Fixture["policy"]): stri
 			...policy?.relationshipKinds,
 		},
 		groups: { ...DEFAULT_SEMANTIC_POLICY.groups, ...policy?.groups },
-	};
+	});
+}
+
+/**
+ * The configuration file a fixture asks for.
+ * @param vault The vault.
+ * @param policy The fixture's partial policy, if any.
+ * @returns The YAML written.
+ */
+function writeVaultConfiguration(vault: string, policy: Fixture["policy"]): string {
 	const directory = path.join(vault, ".archboard");
 	fs.mkdirSync(directory, { recursive: true });
-	const text = Bun.YAML.stringify(SemanticPolicySchema.parse(merged));
+	const text = Bun.YAML.stringify(fixturePolicy(policy));
 	fs.writeFileSync(path.join(directory, "config.yaml"), text);
 	return text;
 }
@@ -496,6 +504,7 @@ export {
 	stepCommand,
 	vaultDiagnostics,
 	writeBoards,
+	fixturePolicy,
 	writeVaultConfiguration,
 	type PlaceholderScope,
 };

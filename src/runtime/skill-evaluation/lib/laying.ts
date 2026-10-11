@@ -6,6 +6,7 @@
 // lay is refused here, at `eval:skill check`, rather than hours into a batch.
 
 import {
+	acceptedBoard,
 	adoptVariantTransition,
 	branchVariantTransition,
 	createBoardTransition,
@@ -21,7 +22,7 @@ import {
 	type RawFixtureStep,
 } from "@/runtime/skill-evaluation/lib/fixture";
 import { edgesOnContainers } from "@/runtime/skill-evaluation/lib/outcomes-board";
-import { resolvePlaceholders } from "@/runtime/skill-evaluation/lib/vault";
+import { fixturePolicy, resolvePlaceholders } from "@/runtime/skill-evaluation/lib/vault";
 
 /**
  * The one relationship kind that may end on a part with children.
@@ -156,7 +157,11 @@ function layStep(
 	);
 	const applied = transitionOf(resolved).apply(before, LAID_AT);
 	if (!applied.ok) throw new Error(applied.problem);
-	return applied.board;
+	// The store refuses the same boards on its write, so a fixture it would
+	// refuse in a batch is refused here.
+	const accepted = acceptedBoard(before, applied.board, LAID_AT, fixturePolicy(fixture.policy));
+	if ("problem" in accepted) throw new Error(accepted.problem);
+	return accepted.board;
 }
 
 /** What laying one fixture left: the boards of the vault, and why the steps failed to lay. */
