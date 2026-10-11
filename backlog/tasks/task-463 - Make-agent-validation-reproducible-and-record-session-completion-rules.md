@@ -1,11 +1,11 @@
 ---
-id: TASK-453
+id: TASK-463
 title: Make agent validation reproducible and record session completion rules
 status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:22'
-updated_date: '2026-10-11 16:32'
+updated_date: '2026-10-11 17:39'
 labels: []
 dependencies: []
 references:
@@ -49,7 +49,7 @@ Hosted macOS job 114495510604 passes in run 38148069388 at c80c70d6. It executes
 
 The second hosted run 38150616626 passes the wide-board case and macOS job, but its board-flight recorder fails with a missing SVG. The exact local flight owner passes with all 54 assertions, and all ten remaining browser owners pass. Later local runs reproduce a drained-stdin shutdown race and vendor macOS keyboard event storm. TASK-456 and TASK-457 record their separate repairs. Complete final gates remain pending.
 
-Main integration creates duplicate IDs for two independent task records. The supported backlog doctor repair moves the imported cross-process lock task to TASK-458 and git-opener watchdog task to TASK-459. Their original content remains unchanged. The reported TASK-454 proposal reference belongs to the independent TASK-454 wide-layout repair and remains correct. Main branch records remain untouched. The previous final gate stops before completion because integration changes its source snapshot; a fresh integrated gate is required.
+Main integration creates duplicate IDs for two independent task records. Main's merged commits already name its cross-process lock task TASK-453 and its git-opener watchdog task TASK-454, so both keep those numbers and their content. This task and the wide-layout repair take TASK-463 and TASK-464; branch commits made before that renumbering name them TASK-453 and TASK-454. Main branch records remain untouched. The previous final gate stops before completion because integration changes its source snapshot; a fresh integrated gate is required.
 
 The integrated README assessment reports the same 16 stale assets and zero manifest problems as origin/main at 68e7f0e. An isolated archive comparison proves that none becomes newly stale on this branch. The measured layout scheduling repair preserves drawing bytes in its before/after probe; the task changes no README demonstration.
 

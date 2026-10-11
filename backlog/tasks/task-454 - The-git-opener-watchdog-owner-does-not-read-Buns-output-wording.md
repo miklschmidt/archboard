@@ -1,11 +1,11 @@
 ---
-id: TASK-459
+id: TASK-454
 title: The git opener watchdog owner does not read Bun's output wording
 status: Done
 assignee:
   - '@implementer'
 created_date: '2026-10-11 14:15'
-updated_date: '2026-10-11 15:51'
+updated_date: '2026-10-11 14:17'
 labels:
   - testing
 dependencies: []
@@ -30,8 +30,6 @@ tests/system/process-contracts/git-opener-sequence-watchdog.test.ts asserts that
 
 <!-- SECTION:NOTES:BEGIN -->
 Decision: the watchdog test is its own wrapper (run by test:opt-in:tooling, not test:system). Its owner run now asks Bun for --reporter=junit --reporter-outfile in a temp dir and asserts exit 0 plus at least one test per owner file from the report's top-level suites, instead of owner names in Bun's text.
-
-This record used TASK-454 on main. The supported Backlog doctor repair assigns TASK-459 after its collision with the independent wide-layout repair. Historical main commit references retain the former number. The original task content and completion evidence remain unchanged.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

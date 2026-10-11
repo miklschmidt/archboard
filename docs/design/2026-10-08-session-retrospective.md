@@ -2,7 +2,7 @@
 
 The session fixed Chromium startup inside the macOS agent sandbox, then repaired failures across the normal test suite. It ended with 4,677 passing tests and a push at `ffd06354`. The strongest remaining improvements concern automatic test coverage and reproducible browser tooling.
 
-This retrospective describes the repository at `ffd06354`. The October 11 follow-up implements the approved proposals through TASK-453, TASK-141, and TASK-142.
+This retrospective describes the repository at `ffd06354`. The October 11 follow-up implements the approved proposals through TASK-463, TASK-141, and TASK-142.
 
 ## Session and evidence
 
@@ -92,7 +92,7 @@ Six scoped reviews fixed their findings and committed the repairs. The first com
 
 The user approved publication. Draft PR 1 now runs the restored hosted gate. Its macOS job passes 129 tests.
 
-The first Linux run fails on the unchanged Browser application blocks case at 60 seconds. TASK-454 repairs obsolete queued layout work. A one-worker probe reduces native solves from 12 to eight and preserves the SVG bytes. All 39 local wide-board and solve-history cases pass. Review also repairs active candidate reuse and adds cancellation contract tests.
+The first Linux run fails on the unchanged Browser application blocks case at 60 seconds. TASK-464 repairs obsolete queued layout work. A one-worker probe reduces native solves from 12 to eight and preserves the SVG bytes. All 39 local wide-board and solve-history cases pass. Review also repairs active candidate reuse and adds cancellation contract tests.
 
 The second Linux run passes the wide-board case but fails the board-flight recorder because its expected SVG is absent. All ten remaining local browser owners pass.
 

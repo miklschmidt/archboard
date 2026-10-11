@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 37,
+	"version": 38,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-11T16:03:27.466Z",
+	"updatedAt": "2026-10-11T17:51:22.846Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -3956,7 +3956,10 @@
 		},
 		{
 			"id": "pryHYdix",
-			"name": "TASK-454",
+			"name": "TASK-464",
+			"formerNames": [
+				"TASK-454"
+			],
 			"lifecycle": "current",
 			"parent": "pNMsNSD2",
 			"summary": "How one drawing is settled and measured",

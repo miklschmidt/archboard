@@ -48,7 +48,7 @@ type Placed = z.infer<typeof PlacedSchema>;
  * @param graph The measured hierarchy.
  * @param nesting How its containers and group regions are drawn.
  * @param apart The blocks whose joins keep ports of their own, by id.
- * @param signal Cancels a candidate while its solve still waits.
+ * @param signal Calls the solve off while it waits for the engine.
  * @returns The drawing's geometry.
  */
 async function solved(
@@ -67,9 +67,7 @@ async function solved(
 	};
 	const answer = await rendererHost().solve(
 		asked,
-		{
-			[SOLVE_STAGE]: nesting === "blocks" ? "blocks" : "track",
-		},
+		{ [SOLVE_STAGE]: nesting === "blocks" ? "blocks" : "track" },
 		signal,
 	);
 	return PlacedSchema.parse(JSON.parse(answer.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));

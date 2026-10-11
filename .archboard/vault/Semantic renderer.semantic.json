@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 37,
+	"version": 38,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-11T16:03:27.739Z",
+	"updatedAt": "2026-10-11T17:51:23.030Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -6381,7 +6381,10 @@
 		},
 		{
 			"id": "ZVxtuP5a",
-			"name": "TASK-454",
+			"name": "TASK-464",
+			"formerNames": [
+				"TASK-454"
+			],
 			"lifecycle": "current",
 			"parent": "f6FXZokj",
 			"summary": "Meaning to SVG and interaction geometry",

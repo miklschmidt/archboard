@@ -20,6 +20,13 @@
 // stopped, is replaced, and the solve it held waits once more for another
 // worker; a solve that fails a second time is refused with the engine's words.
 //
+// A solve asked for ahead can be called off while it waits for a worker: a
+// render that no longer needs it frees the worker for one it does. A worker
+// that answers or fails a solve that can be called off, while the next one
+// waiting can be too, takes it one task later, so the caller weighs the
+// answer and calls off what it no longer needs before a worker starts it.
+// The queue keeps its order.
+//
 // The workers accept `{ id, graph, layoutOptions }` and answer with
 // `{ id, data }` or `{ id, error, fatal }`.
 
@@ -284,7 +291,10 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 				reject(signal.reason);
 				return;
 			}
-			/** Remove this caller's solve only while it still waits for a worker. */
+			/**
+			 * Remove this caller's solve only while it still waits for a worker:
+			 * one a worker holds is answered all the same.
+			 */
 			const cancel = (): void => {
 				const index = queued.findIndex((pending) => pending.resolve === resolve);
 				if (index < 0) return;
