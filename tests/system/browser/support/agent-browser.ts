@@ -7,6 +7,7 @@ import { TEST_BROWSER_COMMAND_TIMEOUT_MS, TEST_BROWSER_POLL_MS } from "../../sup
 import { browserProfileForSession } from "./browser-executable.ts";
 import { agentBrowserCommand } from "./browser-toolchain.ts";
 import { processIdsWithEnvironmentMarkers } from "./process-environment-census.ts";
+import { pressPortableKey } from "./portable-keyboard.ts";
 
 interface BrowserTestRoots {
 	laneRoot: string;
@@ -268,7 +269,10 @@ async function createAgentBrowser(): Promise<AgentBrowserSession> {
 	let used = false;
 	let disposal: Promise<void> | null = null;
 
-	const run = (argv: readonly string[], options: BrowserCommandOptions = {}): Promise<string> => {
+	const runNative = (
+		argv: readonly string[],
+		options: BrowserCommandOptions = {},
+	): Promise<string> => {
 		const timeoutMs = options.timeoutMs ?? TEST_BROWSER_COMMAND_TIMEOUT_MS;
 		if (!Number.isFinite(timeoutMs) || !Number.isInteger(timeoutMs) || timeoutMs <= 0) {
 			return Promise.reject(
@@ -332,6 +336,17 @@ async function createAgentBrowser(): Promise<AgentBrowserSession> {
 			});
 			child.stdin.end(options.stdin ?? "");
 		});
+	};
+
+	const run = (argv: readonly string[], options: BrowserCommandOptions = {}): Promise<string> => {
+		if (process.platform === "darwin" && argv[0] === "press" && argv.length === 2) {
+			return pressPortableKey(
+				runNative,
+				argv[1]!,
+				options.timeoutMs ?? TEST_BROWSER_COMMAND_TIMEOUT_MS,
+			);
+		}
+		return runNative(argv, options);
 	};
 
 	const cleanup = async (): Promise<void> => {

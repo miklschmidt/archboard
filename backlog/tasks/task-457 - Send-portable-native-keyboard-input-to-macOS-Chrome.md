@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 15:35'
-updated_date: '2026-10-11 15:35'
+updated_date: '2026-10-11 15:38'
 labels: []
 dependencies: []
 priority: high
@@ -31,3 +31,9 @@ The complete local browser lane repeatedly fails part search after Escape. A bla
 <!-- SECTION:PLAN:BEGIN -->
 No board is affected because this task repairs browser test infrastructure. Keep agent-browser as the browser owner. Send macOS press input through the existing DevTools connection with portable key fields and unchanged command deadlines. Add a real blank-page regression that proves one trusted Escape, preserved modifiers, and ordinary text entry. Keep the original inspection owner unchanged. Run the remaining browser owners, scoped review, and complete local and hosted gates.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The minimal blank-page comparison delivers exactly one Escape with nativeVirtualKeyCode omitted, but the vendor Windows code produces 13,567 extra Unidentified keydown events. The new real-browser regression fails on the original adapter. The portable CDP adapter preserves trusted key events, modifier chords, native Tab focus, and text entry. The original inspection case passes in 4.78 seconds, and both cases pass in 6.00 seconds. No original assertion or timeout changes.
+<!-- SECTION:NOTES:END -->
