@@ -68,6 +68,36 @@ function sentTo(worker: HeldWorker): string[] {
 	return worker.sent.map(({ graph }) => graph.id);
 }
 
+test("an obsolete queued solve never occupies a worker", async () => {
+	const { solve, workers } = heldPool(1);
+	const first = solve({ id: "first" }, {});
+	const controller = new AbortController();
+	const obsolete = solve({ id: "obsolete" }, {}, controller.signal);
+	const refused = obsolete.catch((error: unknown) => error);
+	const needed = solve({ id: "needed" }, {});
+	controller.abort();
+	expect(await refused).toHaveProperty("name", "AbortError");
+	workers[0]!.answer(0, { data: { id: "first!" } });
+	expect(sentTo(workers[0]!)).toEqual(["first", "needed"]);
+	workers[0]!.answer(1, { data: { id: "needed!" } });
+	expect(await Promise.all([first, needed])).toEqual([{ id: "first!" }, { id: "needed!" }]);
+});
+
+test("cancellation refuses unstarted work but leaves an active engine intact", async () => {
+	const { solve, workers } = heldPool(1);
+	const stopped = AbortSignal.abort();
+	expect(
+		await solve({ id: "unstarted" }, {}, stopped).catch((error: unknown) => error),
+	).toHaveProperty("name", "AbortError");
+	expect(workers).toHaveLength(0);
+	const controller = new AbortController();
+	const active = solve({ id: "active" }, {}, controller.signal);
+	controller.abort();
+	workers[0]!.answer(0, { data: { id: "active!" } });
+	expect(await active).toEqual({ id: "active!" });
+	expect(workers[0]!.terminated).toBe(false);
+});
+
 test("a solve waits for the first worker free, and the pool grows one worker at a time up to its ceiling", async () => {
 	const { solve, workers } = heldPool(2);
 	const first = solve({ id: "a" }, {});
