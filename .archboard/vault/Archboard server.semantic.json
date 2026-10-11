@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 232,
+	"version": 233,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-11T14:24:33.394Z",
+	"updatedAt": "2026-10-11T14:25:04.730Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -96125,6 +96125,9 @@
 						"kind": "module",
 						"responsibility": "Admits changes while the server runs and counts each until it settles, so a stop drains every accepted write or refuses with SERVER_BUSY",
 						"parent": "nmbXuHCg",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/mutation-admission.ts"
@@ -96138,6 +96141,9 @@
 						"responsibility": "Answers every request the server takes: board reads, the one write boundary with its claim, rename and discard, the code checks, the page and health",
 						"description": "Board routes, Board write routes, Claim routes, Rename route, Discard route, Service routes, Code check route, Locality route and Footprint route. Their own board draws each one with the parts it reaches.",
 						"parent": "nmbXuHCg",
+						"groups": [
+							"drawing"
+						],
 						"drillDown": {
 							"board": "Archboard server routes",
 							"variant": {
