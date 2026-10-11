@@ -144,42 +144,90 @@ change in the same diff as the code.
 
 ## 3. Write the explainer
 
-Read every statement from the `compare` and `footprint` answers, not from the
-change you meant to draw.
+A reviewer's main problem is to understand the change, and above all why it
+was made. The explainer gives that understanding and a route through the diff,
+so the review takes less time and misses less. It points at the code and never
+stands in for it. Read every statement from the `compare` and `footprint`
+answers and the diff, not from the change you meant to draw.
 
-- **Why**: one sentence that names the need or the problem, not the files.
-- **What changed**: the interface changes first (`interfaceChanges`), each
-  with the callers it gains and loses. Then the parts added and removed, then
-  each relationship that is not `unchanged`, with where it now lands.
-- **What it can reach**: every caller of a changed entry point, and every part
-  with a relationship to a changed part. These are the parts a reviewer checks
-  for breakage.
-- **Where to look**: the seam or invariant the change relies on, and what to
-  check there. Give a place to look, not a verdict on the code.
-- **Proposed and built**, for a proposal drawn before the code: what this pull
-  request builds of it, each difference from it and why, and what is left for
-  later. `compare` and the after render show the whole proposal, so **What
-  changed** names only what this pull request builds.
-- **Open it**: one line for each board,
-  `archboard semantic compare "<board>" --variant "<proposal>"`, with the
-  exact names. A reviewer with the vault runs it, and an update of the pull
-  request reads the names from it.
+Read [the explainer reference](references/explainer.md) before step 1. It
+gives the evidence for each part, more on splitting a large review, and the
+anti-patterns.
 
-Draw two renders through one board view that holds the changed parts and their
-neighbours. Views belong to every variant, so prefer a view the board already
-has. If a later reader also needs a new view, add it. If the board is small,
-draw the whole variant. Write the files to a temporary directory, `$tmp`
-below, and never into the checkout:
+1. **Size the review.** Count the changed lines with
+   `git diff --numstat <base>...HEAD`, without generated, lock and snapshot
+   files. Above about 400 lines, or with more than one independent purpose,
+   split the review into passes. Each pass is one named group of related parts,
+   with one purpose and a rough size. The riskiest pass comes first. Done: the
+   review is one pass, or each pass has a name, a purpose and a size.
+2. **Draw the renders** with [renders](references/renders.md): Blocks, one
+   view, a light and a dark file for each render. Done: the files are in
+   `$tmp`, and you looked at the after render at the size it will show.
+3. **Decide on a walkthrough video.** Record one at the user's request, and
+   for a change with many interacting parts. Any one of these signs is
+   enough:
+   - Three or more relationships change across three or more parts.
+   - An ordering or a protocol matters.
+   - The reviewer must follow a path through several parts.
 
-```bash
-archboard semantic rasterize <board> --view "<view>" --out "$tmp/before.png"
-archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --out "$tmp/after.png"
-```
+   A change of one or two parts gets no video, because the after render
+   already shows it. These thresholds are judgement. To record, follow
+   [walkthrough](references/walkthrough.md). Done: the video, its chapters and
+   its transcript are in `$tmp`, or you can name the sign that is missing.
 
-The second render marks what the proposal added, changed and removed. For a
-proposal drawn before the code, say beside it that the proposal came first,
-and that it also draws what is left. Open both PNGs and look at them before
-you use them.
+4. **Write the parts in this order** into `$tmp/body.md`:
+   1. **Why**: one or two sentences on the need or the problem and how urgent
+      it is, never the files. Then one shortcoming accepted or one alternative
+      rejected, with the reason.
+   2. **The after render**: a title line naming the board, the view and what
+      is compared, the render, and the key for the marks it shows
+      ([renders](references/renders.md#title-key-and-alt-text)). Under it, the
+      before render in a collapsed `<details>`.
+   3. **The walkthrough**: for a recorded video, the block that
+      [walkthrough](references/walkthrough.md#in-the-pull-request) gives.
+   4. **What changed**: the interface changes first (`interfaceChanges`), each
+      with the callers it gains and loses. Then the parts added and removed,
+      then each relationship that is not `unchanged`, with where it now lands.
+      Use the board's names.
+   5. **Changed but not drawn**: each part in `changedNotNamed`, each
+      `RELATIONSHIP_UNDRAWN` warning, and the diff's code that no part binds,
+      each with its reason. If there is none, write "Nothing".
+   6. **What it can reach**: each caller of a changed entry point, and each
+      part with a relationship to a changed part. Give each one concrete
+      question to check.
+   7. **Reading order**: a numbered list of files, each with the part it
+      implements, grouped by pass. Inside a group, a part comes before the
+      parts that call or read it.
+   8. **Where to look closely**: the seam or invariant the change relies on,
+      and what to check there. Give a place to look, not a verdict on the code.
+   9. **Proposed and built**, for a proposal drawn before the code: what this
+      pull request builds of it, each difference from it and why, and what is
+      left for later. `compare` and the after render show the whole proposal,
+      so **What changed** names only what this pull request builds.
+   10. **Open it**: one line for each board,
+       `archboard semantic compare "<board>" --variant "<proposal>"`, with the
+       exact names. A reviewer with the vault runs it, and an update of the
+       pull request reads the names from it.
+
+   Done: each part is written, except a walkthrough you did not record and
+   **Proposed and built** for a proposal drawn with the code.
+
+5. **Check before you post.** Done: every line holds.
+   - [ ] **Why** names the problem, its urgency, and one rejected alternative
+         or accepted shortcoming.
+   - [ ] Every statement under **What changed** comes from `compare` or
+         `footprint`. **Changed but not drawn** lists each part, or says
+         "Nothing".
+   - [ ] The after render comes first. It is drawn with Blocks, through a view
+         of the changed parts, in light and dark. It has a title line, a key
+         and alt text. The before render is collapsed under it.
+   - [ ] Each part under **What it can reach** has one question to check.
+   - [ ] The reading order is grouped, with the riskiest group first. A change
+         above about 400 lines is split into passes.
+   - [ ] A video has three to six beats and is under 10 MB. It has chapters,
+         a transcript and the note on its layout.
+   - [ ] The explainer reads in a few minutes. File lists and API detail stay
+         in the diff.
 
 ## 4. Put it in the pull request
 
@@ -187,21 +235,51 @@ The explainer is one section between `<!-- archboard-pr:begin -->` and
 `<!-- archboard-pr:end -->`. On an update, replace only the text between the
 markers. Text outside them belongs to the author and reviewers.
 
-In the section, reference each render by the path that you give `--attach`,
-as `![<alt text>]($tmp/after.png)`. gh uploads the file and rewrites that
-reference to the uploaded asset. `--attach` needs gh 2.99 or later. Without it,
-leave the renders out of the body and give the user their paths.
+A render follows the reader's GitHub theme only inside a `<picture>` element.
+gh `--attach` uploads a file and rewrites only a Markdown reference to it, so
+the `<picture>` is written in a second pass. `--attach` needs gh 2.99 or
+later. Without it, leave the renders and the video out of the body, and give
+the user their paths.
 
-```bash
-gh pr create --title "<title>" --body-file "$tmp/body.md" --attach "$tmp/before.png" --attach "$tmp/after.png"
-gh pr edit <number> --body-file "$tmp/body.md" --attach "$tmp/before.png" --attach "$tmp/after.png"
-```
+1. **Upload.** In the section, reference each file by the absolute path that
+   you give `--attach`, each on a line of its own. For a render, use the file
+   name as alt text, as in `![after-light](/tmp/pr/after-light.svg)`. Give the
+   video a paragraph of its own: `![](/tmp/pr/walkthrough.mp4)`. Inside a
+   `<details>`, leave a blank line after the `<summary>` line and before
+   `</details>`, so that the lines between are read as Markdown. gh replaces
+   each path with the URL of the upload and keeps the alt text.
 
-Read the body back with `gh pr view <number> --json body`. Done: the markers
-occur once each, and no image reference names a local path.
+   ```bash
+   gh pr create --title "<title>" --body-file "$tmp/body.md" --attach "$tmp/after-light.svg" --attach "$tmp/after-dark.svg" --attach "$tmp/before-light.svg" --attach "$tmp/before-dark.svg"
+   gh pr edit <number> --body-file "$tmp/body.md" --attach "$tmp/after-light.svg" --attach "$tmp/after-dark.svg" --attach "$tmp/before-light.svg" --attach "$tmp/before-dark.svg"
+   ```
 
-If the user asks for a narrated video, follow the `archboard` skill's pull
-request's recording.
+   For a video, add `--attach "$tmp/walkthrough.mp4"`.
+
+2. **Pair.** Read the body back with
+   `gh pr view <number> --json body --jq .body > "$tmp/posted.md"`. Replace
+   each light and dark pair of image lines with one `<picture>`, using the two
+   uploaded URLs. Then write the body back with
+   `gh pr edit <number> --body-file "$tmp/posted.md"`, without `--attach`.
+
+   ```text
+   <a href="<light URL>"><picture>
+   <source media="(prefers-color-scheme: dark)" srcset="<dark URL>">
+   <source media="(prefers-color-scheme: light)" srcset="<light URL>">
+   <img alt="<what the render shows>" src="<light URL>">
+   </picture></a>
+   ```
+
+Read the body back once more. Done:
+
+- The markers occur once each.
+- No reference names a local path.
+- Each `<picture>` has both sources and an `<img>` with alt text.
+- The video's URL stands alone on its line.
+
+Then tell the user in one line to look at the renders in the light and the
+dark theme. [Renders](references/renders.md#what-is-verified-and-what-is-not)
+says why.
 
 ## 5. After the merge
 
