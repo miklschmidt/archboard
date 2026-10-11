@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 39,
+	"version": 40,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-11T15:45:51.162Z",
+	"updatedAt": "2026-10-11T15:46:12.618Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -9296,7 +9296,7 @@
 						"name": "Codex process",
 						"kind": "module",
 						"responsibility": "Owns the child: proves the executable, prepares the Codex home every Archboard server on the machine shares, spawns the child and reaps its group",
-						"description": "One Archboard-only CODEX_HOME and SQLite home under the state directory serve every server on the machine, so one sign-in serves them all; each server keeps its own owner lock and epoch ledger under its port. Its config.toml gets the auto-review defaults it lacks (approvals_reviewer auto_review, workspace-write sandbox with network access) and keeps whatever Codex or a person set; a config naming another SQLite home, or not TOML, is refused. The child's environment is a short allow-list plus the server's own URL and vault, with auto-start off, so a thread's CLI reaches the server that started it and never starts another.",
+						"description": "One Archboard-only CODEX_HOME and SQLite home under the state directory serve every server on the machine, so one sign-in serves them all; each server keeps its own owner lock and epoch ledger under its port. Its config.toml gets the auto-review defaults it lacks (approvals_reviewer auto_review, workspace-write sandbox with network access) and keeps whatever Codex or a person set; a config naming another SQLite home, or not TOML, is refused. The child's environment is a short allow-list plus the server's own URL and vault, with auto-start off, so a thread's CLI reaches the server that started it and never starts another. On shutdown, stdin closes first. The owner waits within a short EOF grace, then reaps every remaining group within the composed deadline.",
 						"parent": "7TAwfrZF",
 						"groups": [
 							"child"
