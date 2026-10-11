@@ -22,7 +22,11 @@ import {
 	type RawFixtureStep,
 } from "@/runtime/skill-evaluation/lib/fixture";
 import { edgesOnContainers } from "@/runtime/skill-evaluation/lib/outcomes-board";
-import { fixturePolicy, resolvePlaceholders } from "@/runtime/skill-evaluation/lib/vault";
+import {
+	fixturePolicy,
+	resolvePlaceholders,
+	targetVariant,
+} from "@/runtime/skill-evaluation/lib/vault";
 
 /**
  * The one relationship kind that may end on a part with children.
@@ -42,19 +46,6 @@ const WHOLE_MODULE_KINDS: ReadonlySet<string> = new Set(["dependency"]);
 const FLASK_REPO = "github.com/pallets/flask";
 /** Any instant: laying a board reads no clock a check depends on. */
 const LAID_AT = "2026-09-17T00:00:00.000Z";
-
-/**
- * The variant a step targets, for resolving its placeholders.
- * @param step The step, before its placeholders resolve.
- * @returns The variant selector, or undefined for the one the board's name opens.
- */
-function variantOf(step: RawFixtureStep): string | undefined {
-	if (step.op === "edit") {
-		const named = step.input["variant"];
-		return typeof named === "string" ? named : undefined;
-	}
-	return step.op === "resolve" ? step.variant : undefined;
-}
 
 /**
  * The store transition for a branch step.
@@ -152,7 +143,7 @@ function layStep(
 		resolvePlaceholders(step, {
 			repo: fixture.registerRepo ? FLASK_REPO : null,
 			board: before,
-			variant: variantOf(step),
+			variant: targetVariant(step),
 		}),
 	);
 	const applied = transitionOf(resolved).apply(before, LAID_AT);
