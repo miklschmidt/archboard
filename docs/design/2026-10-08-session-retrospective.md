@@ -90,4 +90,8 @@ The guidance reserves `skills/` for shippable, repository-authored Archboard ski
 
 Six scoped reviews fixed their findings and committed the repairs. The complete local gate passes 4,678 tests, including all 19 browser owners. The final lint, formatting, type, and focused tooling checks pass. Linux opener persistence passes all 24 assertions. Five Linux tooling tests pass.
 
-Hosted execution remains pending. Automatic approval review rejected the isolated branch push because publication requires explicit user approval. TASK-141 also retains its historical cancellation diagnosis criterion. The current Linux owner passes, so this run does not reproduce that old failure.
+The user approved publication. Draft PR 1 now runs the restored hosted gate. Its macOS job passes 129 tests.
+
+The first Linux run fails on the unchanged Browser application blocks case at 60 seconds. TASK-454 repairs obsolete queued layout work. A one-worker probe reduces native solves from 12 to eight and preserves the SVG bytes. All 39 local wide-board and solve-history cases pass. Review also repairs active candidate reuse and adds cancellation contract tests.
+
+Hosted completion remains pending until the repaired full gate passes. TASK-141 retains its historical cancellation diagnosis criterion. The current Linux opener owner passes, so this run does not reproduce that old failure.
