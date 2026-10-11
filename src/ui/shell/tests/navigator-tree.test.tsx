@@ -499,3 +499,20 @@ test("pane news draws no row again unless it is about that row's board (TASK-385
 	show({ agentActivity: { audit: working } });
 	expect(redrawn(afterClaim, drawnRows())).toEqual(["board:audit"]);
 });
+
+test("a presented pane's bar names the board as the vault lists it, not as its key was typed", () => {
+	const typed = pane("A", "web shop");
+	mountNavigator({
+		panes: [
+			{
+				...typed,
+				status: { ...typed.status, board: { board: "web shop", variant: "current" } },
+				boardName: "Web shop",
+			},
+		],
+		presentation: { kind: "live", paneId: "A" },
+	});
+	expect(document.querySelector('[data-slot="presentation-bar"]')?.textContent).toContain(
+		"Web shop",
+	);
+});
