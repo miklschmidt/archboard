@@ -19,7 +19,7 @@ references:
   - docs/adr/0039-a-drawing-is-measured-by-how-easily-it-reads.md
 priority: medium
 type: bug
-ordinal: 684000
+ordinal: 735000
 ---
 
 ## Description

@@ -391,7 +391,7 @@ filter that finds variants by name (dark).
 
 ## The agent
 
-Revised 2026-09-23 (TASK-302) and 2026-09-29 (TASK-373). The collapsible workbench, its tabs, its session
+Revised 2026-09-23 (TASK-302), 2026-09-29 (TASK-373) and 2026-10-11 (TASK-319). The collapsible workbench, its tabs, its session
 column and the Agent settings dialog are gone. The agent is one dock at the
 foot of the navigator. When the person asks, and only then, it is also one
 conversation beside the panes:
@@ -427,6 +427,19 @@ that they show is now the dock at the foot of the navigator.
   finished run of work folds to one line. What was said aloud stays at the
   foot as voice lines. Decisions that the agent waits on sit last, where the
   person is reading. Sending opens it. Approvals and voice never do.
+- **The voice coordinator's turns stand in the same conversation.** They are among
+  the workhorse's turns, in the order they started, and a turn of the coordinator
+  shows what it was handed, the tools it called, what it answered and how it ended,
+  as a turn of the workhorse does. What it was handed is shown as Codex has it: a
+  handoff from the voice model, workhorse news or a spoken approval. The head of such
+  a turn reads Voice coordinator, with a microphone mark, and a rule runs down
+  its left side in the colour of the voice lines. So a turn of the coordinator is never
+  mistaken for the workhorse's. A workhorse turn that the coordinator delegated starts
+  with the line Delegated by the voice coordinator. When that turn of the coordinator
+  is in the conversation, the line is a key that brings it into view. Otherwise the
+  line is plain text. The dock's line, Stop and the composer speak of the workhorse
+  only, so a turn of the coordinator never makes the agent look busy. A new voice
+  start replaces the coordinator, and the turns of the earlier one leave with it.
 - **The voice is read where its words are.** While the person wants subtitles and a
   voice is live, the voice is not in the agent dock at the navigator's foot. It is
   in a capsule over the picture of the pane it runs for, with the orb in its round
@@ -441,8 +454,9 @@ that they show is now the dock at the foot of the navigator.
   subtitles. A recording draws the same voice box at the foot of its walkthrough box, with an
   orb that the recorded voice moves.
   DESIGN.md describes the dock and the box.
-- Session details (account, model, context used, thread, the voice
-  coordinator) are one menu away, not on screen.
+- Session details (account, model, context used, thread, the voice coordinator's
+  model and what the voice was told) are one menu away, not on screen. The voice
+  coordinator's work is not there: it is in the conversation.
 
 ![The dock while the voice box carries the voice, the voice box with its words,
 and the dock once subtitles are turned off, in the light and the dark

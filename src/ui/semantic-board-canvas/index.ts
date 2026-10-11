@@ -51,6 +51,7 @@ export {
 	type PartSearchProps,
 	type SearchedBoard,
 } from "@/ui/semantic-board-canvas/components/PartSearch";
+export { readAgain } from "@/ui/semantic-board-canvas/lib/read-again";
 export {
 	announceSemanticBoardChange,
 	onSemanticBoardChange,

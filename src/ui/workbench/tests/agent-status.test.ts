@@ -28,6 +28,7 @@ const READY: AgentSetupSnapshot = {
 function turn(id: string, outcome: ConversationTurn["outcome"]): ConversationTurn {
 	return {
 		id,
+		owner: "workhorse",
 		threadId,
 		turnId: decoder.adoptTurnId(id),
 		outcome,
@@ -37,6 +38,7 @@ function turn(id: string, outcome: ConversationTurn["outcome"]): ConversationTur
 		durationMs: null,
 		error: outcome === "failed" ? { message: "Rate limit reached.", details: null } : null,
 		plan: { explanation: null, steps: [{ step: `Plan of ${id}`, status: "inProgress" }] },
+		delegatedBy: null,
 	};
 }
 
@@ -58,7 +60,8 @@ const SILENT = {
  * An agent view.
  * @param parts What differs from a ready, empty agent.
  * @param parts.setup The setup's differences.
- * @param parts.turns The conversation's turns.
+ * @param parts.turns The workhorse's turns.
+ * @param parts.coordinatorTurns The voice coordinator's turns.
  * @param parts.failure Why the conversation cannot be read.
  * @param parts.lastProgressAtMs When the running turn last changed.
  * @returns The view.
@@ -66,13 +69,19 @@ const SILENT = {
 function view(parts: {
 	readonly setup?: Partial<AgentSetupSnapshot>;
 	readonly turns?: readonly ConversationTurn[];
+	readonly coordinatorTurns?: readonly ConversationTurn[];
 	readonly failure?: string | null;
 	readonly lastProgressAtMs?: number | null;
 }): AgentView {
 	return {
 		setup: { ...READY, ...parts.setup },
 		snapshot: null,
-		conversation: { snapshot: null, turns: parts.turns ?? [], failure: parts.failure ?? null },
+		conversation: {
+			snapshot: null,
+			turns: parts.turns ?? [],
+			coordinatorTurns: parts.coordinatorTurns ?? [],
+			failure: parts.failure ?? null,
+		},
 		voice: { stage: "idle", problem: null, busy: false, level: SILENT },
 		context: { board: "payments", state: null },
 		busyApprovals: [],
@@ -149,5 +158,13 @@ test("a failed turn offers to show why", () => {
 		tone: "failed",
 		detail: "Rate limit reached.",
 		endedAtMs: 2_000,
+	});
+});
+
+test("the voice coordinator's turns never make the agent look busy", () => {
+	const coordinator: ConversationTurn = { ...turn("c1", "running"), owner: "coordinator" };
+	expect(agentStatus(view({ coordinatorTurns: [coordinator] }), 5_000)).toMatchObject({
+		tone: "quiet",
+		action: null,
 	});
 });

@@ -141,5 +141,21 @@ test("the address names the view of the board on screen, down a level and back",
 		),
 	).toBe(below);
 
+	// A board name is read without its case (ADR 0010), so a link that spells the
+	// board another way still lands on the same view and keeps naming it.
+	await browser.run(["open", `${server.base}/?paneA=Engine&viewA=${below}`]);
+	await pollUntil(
+		() => addressSearch(browser),
+		(search) => search === `paneA=engine&viewA=${below}`,
+		"the address to keep naming the view when the board was spelled in another case",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector("[data-slot='semantic-view-choice'][aria-pressed='true']")` +
+				`?.getAttribute("data-semantic-view") ?? null`,
+		),
+	).toBe(below);
+
 	await server.assertRunning();
 }, 90_000);

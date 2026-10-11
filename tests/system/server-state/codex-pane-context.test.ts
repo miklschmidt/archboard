@@ -138,6 +138,17 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		expect(appended()[0]).toContain("scratch");
 		expect(appended()[0]).not.toContain(ids[0]!);
 		expect(appended()[0]).not.toContain("{");
+		// A handoff turn is Codex's, so the coordinator is never given this pick. Its one live read
+		// of the selection is `browser panes`, which must already hold what the pane just reported
+		// (TASK-318): the coordinator's instructions send it there for every "this".
+		const live = await request<{
+			panes: Array<{ clientId: string; reading: { selection: Array<{ id: string }> } }>;
+		}>("/api/panes");
+		expect(
+			live.body.panes
+				.find((entry) => entry.clientId === "voice-client")
+				?.reading.selection.map((subject) => subject.id),
+		).toEqual(ids);
 		// A pick by hand in another browser tab is that tab's conversation's news, never this
 		// voice's (TASK-373): every tab has a publisher of its own.
 		const otherTab = await openApplicationSocket(server.base, "other-tab-client", {
@@ -254,9 +265,11 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 				})
 			).status,
 		).toBe(200);
-		// Which pane the user is in moves only by their own hand, so that is news too. The board
-		// an agent switched the pane to, and the two readings no hand was marked on, are not: an
-		// append used to follow each of them within a few hundred milliseconds.
+		// Which pane the user is in moves only by their own hand, so that is news too. A show that
+		// names no agent (the page's own, which the pane marks itself), a write to a board no pane
+		// showed when it landed, and the two readings no hand was marked on, are not: an append
+		// used to follow each of them within a few hundred milliseconds. An agent's show is
+		// codex-outside-change's.
 		await waitFor(() => appended().length === 2, "the user's move to reach live voice", {
 			timeoutMs: 2000,
 		});

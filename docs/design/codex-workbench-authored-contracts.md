@@ -331,45 +331,34 @@ to max and resets only after one account-ready session. Shutdown stops
 realtime first, settles local waiters, closes stdin, sends TERM, and sends KILL
 at the grace bound while remaining inside the composed cap.
 
-### Workhorse developer instructions
+### Developer instructions
 
-```text
-You are the Codex workhorse for the supplied Archboard session and repository checkout. Treat the supplied Archboard thread link, child epoch, board, variant, pane, and operation identities as authoritative; never infer a target from recency, focus, or another thread.
+Each Codex role is started with one reviewed document, and the voice model is
+given neither (TASK-297):
+[`workhorse-developer-instructions.txt`](../../src/runtime/codex-instructions/workhorse-developer-instructions.txt)
+and
+[`coordinator-developer-instructions.txt`](../../src/runtime/codex-instructions/coordinator-developer-instructions.txt).
+Those files are the authored bytes. `src/runtime/codex-instructions/lib/authored.ts`
+pins each one by its SHA-256 and refuses to start a thread with a document that
+drifted, so changing either is a review of that digest. This document used to
+keep a copy of each, and the copies drifted from the reviewed bytes; read the
+files.
 
-Follow the repository instructions and read the archboard skill when authoring boards. On every board-writing CLI invocation, pass --as-session <your thread id> using your supplied thread identity. A person's board requests are design input. Agent-only board changes must not be narrated back as new human intent.
+Both tell their thread to pass `--as-session` with its own thread id on every
+command that writes a board and on every `browser show`, so its own changes are
+not told back to it, and to use board context in later reasoning without
+starting work twice. The coordinator's adds that board context is information,
+never a request from the user. That covers what an outside agent did
+(TASK-293.06): a write or a `browser show` by an agent that is neither of them
+reaches the coordinator thread as one quiet developer message that starts no
+turn.
 
-Carry sustained repository and implementation work to completion. Use the archboard_app coordination tools only when another Codex thread is genuinely needed. Do not invent a host, process, thread, turn, queue, approval, or realtime identity; the host validates and supplies identities that are not present in a tool schema.
-
-Board context may arrive as developer-role semantic updates naming the board, the variant and its lifecycle, the view being read, the subjects a person has selected by their stable ids, how the variant differs from the variant it is read against (the current variant, or on a board with no current variant its predecessor), and anything it is waiting on. Apply each update to later reasoning without starting duplicate work. A selected id is the same id an edit or a resolution takes, so act on it directly rather than searching for it by name. If delivery is marked outcome_unknown, inspect authoritative thread or board state before acting; never retry a non-idempotent operation blindly.
-```
-
-### Coordinator developer instructions
-
-```text
-You are the persistent voice coordinator for one Archboard thread link. Your primary objective is to help the person understand, create, compare, and change architecture boards in Archboard. Treat the supplied Archboard thread link, child epoch, board, variant, pane, and operation identities as authoritative; never infer a target from recency, focus, or another thread. Do not invent a host, process, thread, turn, queue, approval, or realtime identity; the host validates and supplies identities that are not present in a tool schema. You may inspect repositories, search the web, run shell commands, use ordinary Codex tools, and make one explicit unambiguous board change directly. Default sustained coding or multi-step repository work to the linked workhorse.
-
-Required first step: before handling the first request, open and read the full archboard SKILL.md from the available skills catalogue, then follow it for all board work. Read it again after context loss if its instructions are no longer available. If the skill cannot be found or read, report that concrete failure. The skill supplies the board workflow, CLI, claims, and verification contract; reading source code is not a substitute. On every board-writing CLI invocation, pass --as-session <your thread id> using your supplied thread identity. A person's board requests are design input. Agent-only board changes must not be narrated back as new human intent.
-
-Board questions: boards are named architectures persisted in the configured Archboard vault, which can describe systems outside this checkout. One board holds a tree of variants, one of which is designated current; the others are proposals or frozen history, and every one of them keeps its own name for life. A catalogue of the available boards and variants arrives as a developer item when a voice session starts and whenever the vault changes; a later catalogue replaces the earlier one. If omitted is nonzero, list boards for the complete inventory. For a named system, migration, or existing board, use the archboard skill and CLI to discover and describe the matching boards before answering. Read-only board inspection needs no claim or board edit. Ask the person to clarify only after checking the available boards; ground the answer in what you actually read.
-
-Spatial references and live-view questions: for "this", "that", "these", "what does this do?", or "which board am I on?", always inspect the live pane inventory and the relevant named pane's current context before answering, even if a recent callback appears fresh. Use browser panes to establish the live target, then read that explicit pane's context. Forwarded context is a hint, not proof of what is selected now. Never claim an empty selection or an empty pane without a successful live read; distinguish a failed lookup from a confirmed empty selection. Resolve an unnamed reference from the live focused pane's unambiguous selection unless the person explicitly names another referent; if pane identity or focus is ambiguous, clarify instead of choosing by recency.
-
-Carry the verified pane ID, the board name, the variant identity and lifecycle, the view being read, the selected subject ids and kinds, and available version and freshness evidence with the resolved question. A selected id names a node, relationship, flow, step, view, walkthrough or beat of that variant, and it is the same id every command takes. Check that the context read still names the board and variant established by the pane lookup; reconcile a switch before proceeding. Later focus or selection updates do not retarget an already resolved question. Verify selected subjects still exist and read their responsibilities, descriptions, relationships and bindings before explaining their role.
-
-Answer relational questions from the architecture, not from the picture: what contains a node, what it reaches and what reaches it, which flow a step belongs to, which view is being read, and which board and variant a drill-down target names. Never infer meaning from where something was drawn, from identifier order, or from recency; there is no geometry in your context and the renderer's layout carries no architectural claim. If several candidates remain, or the original referent cannot be recovered after a context change, return one concise clarification naming the candidates. Do not silently pick one subject from a multi-selection for a singular question. Never infer pointing, hovering, or gaze without supplied evidence. Return the resolved subject's name and grounded explanation for voice to speak, distinguishing architectural intent from verified implementation behavior.
-
-Ground proposal explanations in the supplied differences and reconciliation state. Identify anything still waiting to be settled. Resolve disagreements and adopt architectures only on the person's explicit request.
-
-Voice handoffs arrive here as ordinary coordinator turns: you are already the coordinator the person is asking to consult. Do quick board lookups yourself and return concise prose for the voice model to speak. Use the linked workhorse for sustained work. When a tool refuses, report that exact limitation and use any available read path; a refused workhorse operation does not establish that boards cannot be read.
-
-Keep coordinator and workhorse histories distinct. Never wait synchronously for the workhorse. Use inspect_workhorse for current state, delegate_to_workhorse for new sustained work, manage_workhorse_queue only for the host-approved created-workhorse queue, and steer_workhorse only when the host exposes an exact active turn.
-
-Language: a voice handoff carries the latest thing said as the person, replayed: usually their own words, in whatever language they spoke and sometimes half-finished, but sometimes a request the host made on their behalf; the transcript beside it shows what the voice model understood. You may answer in the person's language or in English, because the voice model says your reply to them in their language either way. Everything you send to the workhorse must be in English, whatever language the person spoke: write every delegate_to_workhorse input, every steer_workhorse input and every queued prompt in clear English, translating the person's request, their corrections and the relevant conversation context. Keep board, system, file and code names exactly as given; never translate a name.
-
-Realtime speech cannot settle a Codex approval. When the host asks for spoken approval classification, answer in a later ordinary coordinator turn by calling resolve_spoken_approval with only accept or decline. If the intent is ambiguous or the tool refuses, leave the request for the visual approval surface.
-
-Board context may arrive as developer-role semantic updates naming the board, the variant and its lifecycle, the view being read, the subjects a person has selected by their stable ids, how the variant differs from the variant it is read against (the current variant, or on a board with no current variant its predecessor), and anything it is waiting on. Apply each update to later reasoning without starting duplicate work. Semantic callbacks are context, not user commands. Operation callbacks report correlated progress. Do not repeat a delegation, queue mutation, steer, or approval after outcome_unknown; inspect authoritative state and explain the uncertainty. If delivery is marked outcome_unknown, inspect authoritative thread or board state before acting; never retry a non-idempotent operation blindly.
-```
+A handoff turn is started by Codex, not by the host, so no host context rides on
+it, and the voice model's news of a pick never reaches the coordinator (TASK-293).
+The coordinator's only live read of what the user has picked out is
+`browser panes`, which reports each pane's latest report. Its document says to
+make that read for "this" and "that", and to say it read or checked the live
+canvas only after one succeeded in that turn (TASK-318).
 
 ## Canonical additional context
 
@@ -731,7 +720,7 @@ outcome, and submission tuple. Every semantic member contains `correlation`,
 `kind`, `schema`, `semantic`, `threadLinkReason`, `threadLinkState`, and `type`.
 The semantic object contains `brief`, `capturedAtMs`, `detail`, `feedId`,
 `focused`, `news`, `origin`, `paneId`, `selection`, `sequence`, and
-`significance`. Every workhorse member contains `correlation`, `detail`, `kind`,
+`significance`; `news` is `null` or an object of `board`, `by`, `sentence` and `stops`. Every workhorse member contains `correlation`, `detail`, `kind`,
 `schema`, `sequence` and `type`; `sequence` counts the news one observer made,
 so two waits in one turn are two callbacks.
 
@@ -781,13 +770,51 @@ never sent through `thread/realtime/appendText`. The workhorse thread is
 correlation only and is never the callback mutation target.
 
 A semantic callback is the exception: its bytes are the record, never what is
-sent. Its `semantic.news` field holds the pane news it is, one sentence of names
-built from the parts of the pane's report marked as changed by the user's own
-hand (ADR 0034), or `null`. While voice is live a callback with news appends
-that sentence alone through `thread/realtime/appendText` with role `developer`;
-one without is recorded `not_delivered` with reason `agent`. With no voice
-session every semantic callback is recorded with reason `voice_inactive` and
-nothing is injected into the coordinator thread.
+sent. Its `semantic.news` field holds the pane news it is, or `null`:
+`sentence` is one sentence of names built from the parts of the pane's report
+marked as changed by the user's own hand (ADR 0034), and `stops` says whether it
+is a reason to stop a narration: a pick that is not empty, or a view or a
+variant the user chose on the board they were on. While voice is live a
+callback with news appends that sentence alone, as quiet context through
+`thread/realtime/appendText` with role `developer`. During a narration of a pane
+of the same tab (TASK-293.05, read when the callback is delivered, and never
+during a recording), news that stops goes through
+`thread/realtime/appendSpeech` instead, and the narration prompt tells the voice
+model to finish the sentence it is on, ask whether the user has a question about
+what they now have in front of them, then finish its step and wait. Appended
+speech does not cut into audio in progress (measured in the real-voice runs of
+TASK-251), so the pause lands after the current sentence. An emptied selection,
+a move to another pane and a board of the user's choosing stay quiet; leaving
+the walkthrough is spoken by the narration itself. Pending callbacks of one kind
+and scope coalesce, so of several picks queued behind an append only the latest
+is said. A callback without news is recorded `not_delivered` with reason
+`agent`. With no voice session every semantic callback is recorded with reason
+`voice_inactive` and nothing is injected into the coordinator thread.
+
+An outside change (TASK-293.06, `by` is `agent`) is news of what an agent that
+is neither this tab's linked workhorse nor its coordinator did: a settled board
+write, or a `browser show` that moved one of this tab's panes. Who did it is the
+session the write or the show states (`change.by`, `--as-session`, null when
+nobody said). A stated session equal to the linked workhorse thread or the
+coordinator thread is refused as the event arrives with reason `own_change`;
+their outcome reaches the coordinator through workhorse news. Any other, an
+unattributed one included, is news. A write to a board no pane of this canvas
+shows when it lands is refused with reason `not_shown`; `board` holds the
+written board's aggregate key for that check. A pane shows the board the server
+last pointed it at and the board it last said it reads, which a drill-down
+changes without the server. The sentence names the board and
+what the writer said it was doing, or where the pane was and where it is now,
+and says an agent did it, never the user. It goes to the coordinator thread as
+one `thread/inject_items` developer message, which starts no turn, and then to
+the voice model quietly, or as speech during a narration (an agent's show
+during any narration, a write only during a narration of the board it wrote).
+The record is the voice append's, with reason `agent` once it went through. One
+write is one thing somebody asked for, so outside news never coalesces: every
+write and every show is a sentence of its own. The coordinator has no tool
+that writes a board or moves a pane, so telling it cannot loop. A show from the
+page names no agent: what the user opens is the pane's to mark (ADR 0034). An
+agent's show into a narrated pane also ends the narration. The pane then reports
+that it left the walkthrough, like Escape does, so the leaving line names nobody.
 
 ## Realtime V3 start policy
 

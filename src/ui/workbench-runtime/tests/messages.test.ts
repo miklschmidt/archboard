@@ -43,6 +43,7 @@ function turn(
 ): ConversationTurn {
 	return {
 		id: "turn",
+		owner: "workhorse",
 		threadId,
 		turnId: decoder.adoptTurnId("t1"),
 		outcome,
@@ -52,6 +53,7 @@ function turn(
 		durationMs: null,
 		error: null,
 		plan: withPlan ? { explanation: null, steps: [{ step: "Read", status: "inProgress" }] } : null,
+		delegatedBy: null,
 	};
 }
 
@@ -127,4 +129,47 @@ test("only the running turn's latest run is live, and only while its last step s
 	expect(runs(turn([prompt, command("c2", "completed")], "completed"))).toEqual([
 		{ ended: true, live: false },
 	]);
+});
+
+/**
+ * The custom metadata a turn's message carries.
+ * @param value The turn.
+ * @returns The metadata.
+ */
+function custom(value: ConversationTurn): unknown {
+	return toThreadMessageLike(value).metadata?.custom;
+}
+
+test("a turn says whose it is in its metadata, so the voice coordinator's turns can be told apart", () => {
+	expect(custom(turn([prompt, answer], "completed"))).toEqual({
+		owner: "workhorse",
+		turnId: decoder.adoptTurnId("t1"),
+	});
+	expect(custom({ ...turn([prompt, answer], "completed"), owner: "coordinator" })).toMatchObject({
+		owner: "coordinator",
+	});
+});
+
+/**
+ * What each prompt of a turn says about where its turn came from.
+ * @param value The turn.
+ * @returns One entry per prompt: the delegation, or null.
+ */
+function promptDelegations(value: ConversationTurn): unknown[] {
+	const content = toThreadMessageLike(value).content;
+	if (typeof content === "string") return [];
+	return content.flatMap((part) => {
+		const data: unknown = part.type === "data" && part.name === "prompt" ? part.data : null;
+		return typeof data === "object" && data !== null && "delegatedBy" in data
+			? [data.delegatedBy]
+			: [];
+	});
+}
+
+test("only the first prompt of a delegated turn says the voice coordinator delegated it", () => {
+	const delegation = { turnId: decoder.adoptTurnId("voice-1"), shown: true };
+	const steered: Item = { media: "prompt", itemId: decoder.adoptItemId("p2"), text: "Also?" };
+	const delegated = { ...turn([prompt, answer, steered], "completed"), delegatedBy: delegation };
+	expect(promptDelegations(delegated)).toEqual([delegation, null]);
+	expect(promptDelegations(turn([prompt, answer], "completed"))).toEqual([null]);
 });

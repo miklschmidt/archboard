@@ -23,6 +23,46 @@ function said(h: Harness, changes: Partial<SemanticContextInput>): SemanticConte
 }
 
 /**
+ * A reading report that names what the user changed by hand.
+ * @param h - The harness.
+ * @param userChanged - What the pane marks as the user's own.
+ * @param architecture - What differs from the fixture's architecture.
+ * @returns The published event.
+ */
+function reading(
+	h: Harness,
+	userChanged: NonNullable<SemanticContextInput["pane"]["userChanged"]>,
+	architecture: Partial<SemanticContextInput["architecture"]> = {},
+) {
+	const base = semanticInput(h.ids, true);
+	return h.semantic.publisher.publishPaneSelection(
+		said(h, {
+			pane: { ...base.pane, userChanged },
+			architecture: { ...base.architecture, ...architecture },
+		}),
+	);
+}
+
+/**
+ * An architecture with one subject selected.
+ * @param id - Its id.
+ * @param name - Its name.
+ * @returns The part of the architecture that says so.
+ */
+function only(id: string, name: string): Pick<SemanticContextInput["architecture"], "selection"> {
+	return { selection: { count: 1, subjects: [{ kind: "node", id, name }] } };
+}
+
+/**
+ * The channel each append to the live voice session went down so far.
+ * @param h - The harness.
+ * @returns Each channel, in order.
+ */
+function channels(h: Harness): readonly string[] {
+	return h.realtimeRequests.map((request) => request.channel);
+}
+
+/**
  * The texts appended to the live voice session so far.
  * @param h - The harness.
  * @returns Each appended text.
@@ -49,7 +89,8 @@ describe("pane news", () => {
 		expect(text).toContain("Architecture");
 		expect(text).not.toContain("element-");
 		expect(text).not.toContain("{");
-		expect(h.realtimeRequests[0]?.params.role).toBe("developer");
+		const [request] = h.realtimeRequests;
+		expect(request?.channel === "context" ? request.params.role : null).toBe("developer");
 		expect(h.reports).toHaveLength(0);
 		close(h);
 	});
@@ -58,9 +99,8 @@ describe("pane news", () => {
 		const h = harness(true);
 		const selection = await h.callbacks.enqueue(h.semantic.selection);
 		const focus = await h.callbacks.enqueue(h.semantic.focus);
-		const change = await h.callbacks.enqueue(h.semantic.change);
 
-		for (const delivery of [selection, focus, change]) {
+		for (const delivery of [selection, focus]) {
 			expect(delivery.path).toBe("silent");
 			expect(delivery.outcome).toBe("not_delivered");
 			expect(delivery.reason).toBe("agent");
@@ -153,6 +193,69 @@ describe("pane news", () => {
 		expect(delivery.reason).toBe("voice_inactive");
 		expect(h.realtimeRequests).toHaveLength(0);
 		expect(h.reports).toHaveLength(0);
+		close(h);
+	});
+
+	// A narration (TASK-293.05): a user who picks something out mid-talk is saying the talk did not
+	// cover it, so the voice is asked to stop and check in. Appended speech does not cut into audio
+	// in progress (TASK-251, real voice), so the pause lands after the sentence being said.
+	test("during a narration a pick, a view or a variant chosen by hand is speech, and outside one the same news is quiet", async () => {
+		const h = harness(true);
+		h.state.narrated = "architecture";
+		const view = { id: "w1", name: "Data flow", grammar: "data-flow" as const };
+		const variant = { id: "v2", name: "Proposal", lifecycle: "draft" as const, against: null };
+		// The fixture's clock stands still, so each report differs in what is selected to stay a
+		// report of its own rather than a repeat of the one before.
+		const picked = await h.callbacks.enqueue(reading(h, ["selection"]));
+		await h.callbacks.enqueue(reading(h, ["view"], { view, ...only("element-c", "Writer") }));
+		await h.callbacks.enqueue(reading(h, ["variant"], { variant, ...only("element-d", "Queue") }));
+		h.state.narrated = null;
+		const quiet = await h.callbacks.enqueue(reading(h, ["selection"], only("element-e", "Cache")));
+
+		expect(picked.path).toBe("realtime_appendSpeech");
+		expect(picked.outcome).toBe("delivered");
+		expect(channels(h)).toEqual(["speech", "speech", "speech", "context"]);
+		expect(quiet.path).toBe("realtime_appendText");
+		const [pick, chosenView, chosenVariant] = appended(h);
+		// Speech names the state like quiet news does: never an id, never the envelope.
+		expect(pick).toContain("Gateway");
+		expect(pick).not.toContain("element-");
+		expect(pick).not.toContain("{");
+		expect(chosenView).toContain("Data flow");
+		expect(chosenVariant).toContain("Proposal");
+		expect(h.reports).toHaveLength(0);
+		close(h);
+	});
+
+	test("during a narration an emptied selection and a move between panes stay quiet, and a driven step appends nothing", async () => {
+		const h = harness(true);
+		h.state.narrated = "architecture";
+		await h.callbacks.enqueue(reading(h, ["selection"], { selection: { count: 0, subjects: [] } }));
+		const base = semanticInput(h.ids, true);
+		await h.callbacks.enqueue(
+			h.semantic.publisher.publishPaneFocus(
+				said(h, { pane: { ...base.pane, userChanged: ["focus"] } }),
+			),
+		);
+		// What a step lights up is the walkthrough's doing: the pane marks nothing.
+		const driven = await h.callbacks.enqueue(reading(h, []));
+
+		expect(channels(h)).toEqual(["context", "context"]);
+		expect(driven.path).toBe("silent");
+		expect(driven.reason).toBe("agent");
+		close(h);
+	});
+
+	test("of several picks queued before the voice is told, only the latest is said", async () => {
+		const h = harness(true);
+		h.state.narrated = "architecture";
+		const first = h.callbacks.enqueue(reading(h, ["selection"], only("element-c", "Writer")));
+		const latest = h.callbacks.enqueue(reading(h, ["selection"]));
+
+		expect((await first).reason).toBe("coalesced");
+		expect((await latest).path).toBe("realtime_appendSpeech");
+		expect(appended(h)).toHaveLength(1);
+		expect(appended(h)[0]).toContain("Gateway");
 		close(h);
 	});
 });

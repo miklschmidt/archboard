@@ -367,13 +367,13 @@ test.each(
 	expect(endsOffNode(content, await drawn(content, layout))).toEqual([]);
 });
 
-// Reduced from dogfood boards. Board request path: a line whose lane stood a
-// little inside the face of a card alone in its region, nearer its corner
-// than a port is moved to, stepped aside above the region to reach the card.
-// Command interface: its ports settled as the board without its regions
-// round one card settled them, the four 'board operation' lines into Board
-// writes stepped twice more each. Reading a board: a port a margin in from
-// Pane session's own face stepped its line aside under the region.
+// Reduced from dogfood boards. Board request path: a line whose lane stood a little inside the
+// face of a card alone in its region, nearer its corner than a port is moved to, stepped aside
+// above the region to reach the card. Command interface: its ports settled as the board without
+// its regions round one card settled them, the four 'board operation' lines into Board writes
+// stepped twice more each. Reading a board: a port a margin in from Pane session's own face
+// stepped its line aside under the region. Lines alike in emphasis and traffic: unlike ones part
+// lanes.
 const turnsAsWithout = {
 	"Board request path": boardRequestPath,
 	"Command interface": commandInterface,
@@ -383,6 +383,7 @@ test.each(Object.keys(turnsAsWithout))(
 	"%s: the track engine turns no line more than without its regions round one card",
 	async (board) => {
 		const content = orderedFixture(turnsAsWithout[board as keyof typeof turnsAsWithout]);
+		for (const e of content.edges) Object.assign(e, { emphasis: "normal", traffic: undefined });
 		const turns = async (drawnBoard: VariantContent): Promise<Map<string, number>> =>
 			new Map(
 				[...routePoints((await drawn(drawnBoard, "track")).svg)].map(([id, points]) => [

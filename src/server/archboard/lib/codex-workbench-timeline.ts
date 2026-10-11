@@ -27,12 +27,24 @@ import { textEncoder } from "@/server/archboard/lib/codex-timeline-text";
 /** The two session reads one timeline is built from. */
 type TimelineSession = Pick<CodexSession, "threadTurnsListPage" | "timelineListPage">;
 
-/** One pane's timeline: which link it is bound to, and what it has read. */
+/**
+ * The thread one pane's timeline is read from, and the child epoch its notifications arrive on.
+ * The key says everything about that binding that would make a history read under another
+ * binding the wrong history.
+ */
+interface TimelineTarget {
+	readonly key: string;
+	readonly threadId: ThreadId | null;
+	readonly childId: ThreadLinkSnapshot["childId"];
+	readonly epoch: ThreadLinkSnapshot["epoch"];
+}
+
+/** One pane's timeline: which target it is bound to, and what it has read. */
 interface TimelinePaneState {
 	readonly paneId: string;
 	readonly key: string;
 	readonly connection: BrowserConnectionInstance;
-	readonly link: ThreadLinkSnapshot;
+	readonly target: TimelineTarget;
 	ready: boolean;
 	started: boolean;
 	data: TimelineData | null;
@@ -46,6 +58,16 @@ interface ServerTimelineOwner {
 		paneId: string,
 		revision: number,
 		link: ThreadLinkSnapshot,
+		threadCapable: boolean,
+		connection: BrowserConnectionInstance,
+	) => CodexTimelineProjectionInput | null;
+	/**
+	 * The same read for a thread that is not a pane's link, such as the voice coordinator's.
+	 * The caller builds the target's key from whatever would make the history the wrong one.
+	 */
+	readonly readTarget: (
+		paneId: string,
+		target: TimelineTarget,
 		threadCapable: boolean,
 		connection: BrowserConnectionInstance,
 	) => CodexTimelineProjectionInput | null;
@@ -331,12 +353,12 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 	 * @param state The pane's timeline.
 	 */
 	const refresh = (state: TimelinePaneState): void => {
-		if (disposed || !state.ready || state.link.threadId === null || state.refresh !== null) {
+		if (disposed || !state.ready || state.target.threadId === null || state.refresh !== null) {
 			return;
 		}
 		state.started = true;
 		state.dirty = false;
-		const threadId = state.link.threadId;
+		const threadId = state.target.threadId;
 		const load = (async (): Promise<TimelineData> => {
 			const turns = await readTurnPages(options.session, threadId, budget);
 			const timeline = await options.session.timelineListPage({
@@ -378,25 +400,22 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 	};
 
 	/**
-	 * What one pane should be shown now, starting a read the first time it binds
-	 * and answering nothing until that read lands.
+	 * What one pane should be shown of one target's thread now, starting a read the first time it
+	 * binds and answering nothing until that read lands.
 	 * @param paneId The pane.
-	 * @param revision Its link revision.
-	 * @param link Its link.
+	 * @param target The thread, the child epoch it arrives on, and the key of that binding.
 	 * @param threadCapable Whether the workbench can serve threads yet.
 	 * @param connection Its browser connection.
 	 * @returns The projected timeline, or null while there is none.
 	 */
-	const read: ServerTimelineOwner["read"] = (
+	const readTarget: ServerTimelineOwner["readTarget"] = (
 		paneId,
-		revision,
-		link,
+		target,
 		threadCapable,
 		connection,
 	): CodexTimelineProjectionInput | null => {
-		const key = bindingKey(paneId, revision, link, threadCapable);
-		const state = stateFor(paneId, connection, key, link, threadCapable);
-		if (state.ready && state.link.threadId !== null && !state.started) {
+		const state = stateFor(paneId, connection, target, threadCapable);
+		if (state.ready && state.target.threadId !== null && !state.started) {
 			refresh(state);
 		}
 		return state.data === null || !state.ready
@@ -410,20 +429,40 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 	};
 
 	/**
+	 * What one pane should be shown of its own link's thread now.
+	 * @param paneId The pane.
+	 * @param revision Its link revision.
+	 * @param link Its link.
+	 * @param threadCapable Whether the workbench can serve threads yet.
+	 * @param connection Its browser connection.
+	 * @returns The projected timeline, or null while there is none.
+	 */
+	const read: ServerTimelineOwner["read"] = (paneId, revision, link, threadCapable, connection) =>
+		readTarget(
+			paneId,
+			{
+				key: bindingKey(paneId, revision, link, threadCapable),
+				threadId: link.threadId,
+				childId: link.childId,
+				epoch: link.epoch,
+			},
+			threadCapable,
+			connection,
+		);
+
+	/**
 	 * The retained timeline one pane's current binding owns, replaced whenever
-	 * that binding changes: history read under another link is not this one's.
+	 * that binding changes: history read under another binding is not this one's.
 	 * @param paneId The pane.
 	 * @param connection Its browser connection.
-	 * @param key The binding's key.
-	 * @param link Its link.
+	 * @param target Its binding.
 	 * @param threadCapable Whether the workbench can serve threads yet.
 	 * @returns The retained timeline.
 	 */
 	const stateFor = (
 		paneId: string,
 		connection: BrowserConnectionInstance,
-		key: string,
-		link: ThreadLinkSnapshot,
+		target: TimelineTarget,
 		threadCapable: boolean,
 	): TimelinePaneState => {
 		let paneStates = states.get(paneId);
@@ -432,15 +471,15 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 			states.set(paneId, paneStates);
 		}
 		const existing = paneStates.get(connection);
-		if (existing?.key === key) {
+		if (existing?.key === target.key) {
 			existing.ready = threadCapable;
 			return existing;
 		}
 		const state: TimelinePaneState = {
 			paneId,
-			key,
+			key: target.key,
 			connection,
-			link,
+			target,
 			ready: threadCapable,
 			started: false,
 			data: null,
@@ -490,7 +529,7 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 
 	/**
 	 * Whether one notification concerns one pane: its own thread, on the child
-	 * epoch its link names.
+	 * epoch its target names.
 	 * @param state The pane's timeline.
 	 * @param threadId The thread the notification named.
 	 * @param event The notification.
@@ -501,17 +540,18 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 		threadId: string | null,
 		event: TransportServerNotification,
 	): boolean => {
-		if (!state.ready || state.link.threadId === null) {
+		if (!state.ready || state.target.threadId === null) {
 			return false;
 		}
-		if (!eventMatchesThread(threadId, state.link.threadId, options.identity)) {
+		if (!eventMatchesThread(threadId, state.target.threadId, options.identity)) {
 			return false;
 		}
-		if (state.link.childId === null) {
+		if (state.target.childId === null) {
 			return true;
 		}
 		return (
-			event.correlation.child === state.link.childId && event.correlation.epoch === state.link.epoch
+			event.correlation.child === state.target.childId &&
+			event.correlation.epoch === state.target.epoch
 		);
 	};
 
@@ -546,13 +586,14 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 		live.clear();
 	};
 
-	return Object.freeze({ read, onNotification, retire, dispose });
+	return Object.freeze({ read, readTarget, onNotification, retire, dispose });
 }
 
 export {
 	type ServerBrowserProjectionBudget,
 	type ServerTimelineOwner,
 	type ServerTimelineOwnerOptions,
+	type TimelineTarget,
 	createServerBrowserProjectionBudget,
 	createServerTimelineOwner,
 };

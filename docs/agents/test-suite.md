@@ -37,13 +37,13 @@ The supported normal topology is one Archboard server, one package-local bound
 Codex app-server, and one human editor. Short races inside that topology stay in
 their cheapest product owner. These commands contain everything outside it:
 
-| Command                                                                  | Concrete regressions and cheapest interface                                                                                                    |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run test:opt-in:capacity`                                           | Inspection input/comparison ceilings, large-index and sweep work limits, transport capacity, and the frozen app-server capacity authority.     |
-| `bun run test:opt-in:tooling`                                            | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters. |
-| `bun run test:opt-in:topology`                                           | The two-server same-vault lock handoff through its process boundary.                                                                           |
-| `bun run test:opt-in:browser-performance`                                | The 10,000-element human-edit measurement and 42-cycle convergence soak through the serial real-browser adapter.                               |
-| `bun run opt-in:renderer-chromium` / `bun run opt-in:renderer-emulation` | Manual renderer and upstream-emulation probes. They are never package test owners.                                                             |
+| Command                                                                  | Concrete regressions and cheapest interface                                                                                                                                                                                        |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run test:opt-in:capacity`                                           | Inspection input/comparison ceilings, large-index and sweep work limits, transport capacity, and the frozen app-server capacity authority.                                                                                         |
+| `bun run test:opt-in:tooling`                                            | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters.                                                                                     |
+| `bun run test:opt-in:topology`                                           | A claim taken through a second server excludes writes here and reaches this server's pane within the lock sweep. A take-back by a pane here ends that server's claim, and its agent hears `CLAIM_REVOKED` after one lease renewal. |
+| `bun run test:opt-in:browser-performance`                                | The 10,000-element human-edit measurement and 42-cycle convergence soak through the serial real-browser adapter.                                                                                                                   |
+| `bun run opt-in:renderer-chromium` / `bun run opt-in:renderer-emulation` | Manual renderer and upstream-emulation probes. They are never package test owners.                                                                                                                                                 |
 
 Every test owner belongs to exactly one lane; opt-in package commands are never
 reached from `check`. The Ubuntu CI job invokes the complete `bun run check` gate;
@@ -73,6 +73,31 @@ Both are three times their base through `TEST_PATIENCE_FACTOR` in
 speed. The factor multiplies how long a test waits for something that should
 happen. It never multiplies a poll cadence, a window in which nothing may happen,
 or a product duration.
+
+No `TEST_*` budget comes from a product duration (TASK-154).
+`tests/system/support/timing.ts` imports nothing from `src/shared/timing`.
+A wait budget is a ceiling that a passing run never reaches, or a patience; a
+poll cadence is neither. A product change must not retune either.
+
+A system owner waits for a product timer only when the test is about that timer
+and the timer has no test override. Two cases remain:
+
+- the one-second lock sweep that tells a pane its board changed under it
+  (`external-board-write`, and the opt-in cross-process lock owner);
+- the wall-clock pace of a recording (`walkthrough-recording`, a declared
+  real-time exception).
+
+Module owners prove lease and claim expiry with fake timers. The CLI fixtures clear `ARCHBOARD_SETTLE_MS` only to keep the
+caller's value out. No CLI case reaches the change-feed settle, so its 1,200 ms
+default costs them nothing. When a test must outwait a product timer, write why
+beside its own literal in `timing.ts`.
+
+The diagram corpus in `src/runtime/semantic-renderer/tests/wide-boards.test.ts`
+uses a 60-second case deadline when `CI=true`. Its default engine also gets
+60 seconds for a first render. GitHub Actions recorded first renders up to
+45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
+3-second first-render limit. Both engines keep all picture correctness assertions.
+The preload still applies its 60-second wall-clock ceiling.
 
 Keep a real-time exception inside its exact test callback. Its first statement calls
 `declareTestWallClockBudget` with the exact test name, a concrete reason, a `TEST_*`
@@ -363,8 +388,12 @@ voice box carry that same session. From the keyboard, the bar's key ends it,
 releases the browser's media and keeps its focus. Talk on the same key then
 starts a second session that the voice box carries, and Space ends it.
 Narrating the walkthrough starts a third session on a fresh coordinator. Its
-words are in the voice box at the foot of the presented walkthrough. The dock's
-key ends it and releases its media, and the mounted board pane is unchanged.
+words are in the voice box at the foot of the presented walkthrough. Four
+things reach the voice model as one `appendSpeech` line each: the first step, a
+step taken by hand, a part picked by hand mid-step, and leaving with Escape. No
+coordinator turn starts. The pick names the part and not its id, and the pane
+stays on its step (TASK-293.05). The dock's key ends the session and releases
+its media, and the mounted board pane is unchanged.
 
 The owner checks the keyboard order of the dock's voice controls, the target
 size of the voice keys at desktop and desktop scaled, that a presented pane
@@ -438,7 +467,8 @@ their exhaustive state and failure matrices.
   (TASK-068). Single-body routes have no other way to be one write and need no
   proxy (TASK-153).
 - Normal lock owners prove reachable one-server exclusion. The opt-in topology
-  owner proves two Archboard server processes cannot write one vault at once,
-  which is the one thing an in-process mutex could not do (ADR 0016).
+  owner proves a claim in one Archboard server process excludes writes through
+  another on the same vault and reaches its panes, which an in-process mutex
+  could not do (ADR 0016).
 - The repository-session owners in `test:system` use RepositoryFixture-owned HOME, XDG state, log,
   registry, and vault paths, isolated from the caller's user configuration.

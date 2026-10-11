@@ -73,14 +73,20 @@ interface SceneLine {
 
 /**
  * The kind two lines must share to share a trunk, read off a placed
- * relationship: its kind and its standing.
+ * relationship: its kind, its comparison standing, its emphasis and whether
+ * it carries traffic. The last two are absent on Blocks, which keeps lines
+ * of different emphasis or traffic on one lane (layout-rules.md section 47).
  * @param edge The placed relationship.
  * @returns The kind.
  */
 function trunkKind(edge: ElkExtendedEdge): string {
 	const options = edge.layoutOptions ?? {};
-	const kind = options["archboard.relationship.kind"] ?? "";
-	return `${kind}|${options["archboard.relationship.standing"] ?? "unchanged"}`;
+	return [
+		options["archboard.relationship.kind"] ?? "",
+		options["archboard.relationship.standing"] ?? "unchanged",
+		options["archboard.relationship.emphasis"] ?? "normal",
+		options["archboard.relationship.traffic"] ?? "off",
+	].join("|");
 }
 
 /** How far outside the scene a line to a wall aims while its ports and tracks are settled. */

@@ -44,19 +44,18 @@ interface AgentPanelProps {
 }
 
 /**
- * Whether nothing has been said yet: no turn, no message on its way, nothing aloud.
+ * Whether nothing has been said yet: no turn of either thread, no message on its way, nothing aloud.
  * @param view The agent view.
  * @returns True for an empty conversation.
  */
 function nothingSaid(view: AgentView): boolean {
 	const { conversation, setup, snapshot } = view;
-	const spoken = snapshot?.voice.transcript.length ?? 0;
-	return (
-		conversation.turns.length === 0 &&
-		conversation.failure === null &&
-		setup.held.length === 0 &&
-		spoken === 0
-	);
+	const said =
+		conversation.turns.length +
+		conversation.coordinatorTurns.length +
+		setup.held.length +
+		(snapshot?.voice.transcript.length ?? 0);
+	return said === 0 && conversation.failure === null;
 }
 
 /**

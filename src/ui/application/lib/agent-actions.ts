@@ -29,7 +29,7 @@ interface AgentActionTargets {
  */
 function runningIn(timeline: BrowserTimeline): ConversationTurn["turnId"] | null {
 	try {
-		const turns = projectTimelineTurns(timeline);
+		const turns = projectTimelineTurns(timeline, "workhorse");
 		return turns.findLast((turn) => turn.outcome === "running")?.turnId ?? null;
 	} catch {
 		return null;

@@ -17,7 +17,7 @@ references:
   - docs/agents/readme-assets.md
 priority: medium
 type: enhancement
-ordinal: 686000
+ordinal: 737000
 ---
 
 ## Description

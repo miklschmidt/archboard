@@ -3,10 +3,11 @@ id: TASK-293
 title: >-
   Tell the voice model where the user now stands, in a sentence, and only when
   the user or an outside agent moved it
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-20 22:58'
-updated_date: '2026-09-21 02:09'
+updated_date: '2026-10-11 14:44'
 labels:
   - voice
   - coordinator
@@ -33,7 +34,7 @@ Subtasks carry the work; this parent holds the rule and is finished when they ar
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Every subtask is done and the rule in the description holds end to end in a real voice session the user ran
-- [ ] #2 DESIGN.md and the authored contracts document state the rule as built, and no path appends a callback envelope to the voice model
+- [x] #2 docs/design/codex-workbench-authored-contracts.md and CONTEXT.md state the rule as built, and no path appends a callback envelope to the voice model
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -44,4 +45,8 @@ Subtasks carry the work; this parent holds the rule and is finished when they ar
 2026-09-21: tests/system/canvas-state/codex-pane-context.test.ts used to own 'a selection, a board switch and a focus change reach live voice' by reading the JSON callback out of thread/realtime/appendText. With semantic callbacks recorded only it now owns the opposite: those reports are accepted and ordered, and nothing semantic is appended (proven to fail with the old delivery switched back on). When this task lands, give that owner back its person-triggered half: a by-hand pick appends one sentence, a driven step appends nothing.
 
 2026-09-21: planned with the user in a grilling session; the description holds the settled rule, the subtasks 293.01 to 293.06 hold the work in order (01 rename and commit first; 02 cause marks; 03 quiet pane news; 04 operation callbacks, independent; 05 narration speech; 06 outside changes). CONTEXT.md gained User, Pane news and Outside change the same day.
+
+2026-10-11 documentation pass after TASK-293.05 (eeca4d2ca) and TASK-293.06 (1e326b6dd). AC2 named DESIGN.md, which is the visual design document and says nothing about voice; reworded through the CLI to name the authored contracts document and CONTEXT.md, where the rule as built now lives: Coordinator callback bytes (pane news {sentence, stops, by, board}; quiet appendText, speech during a narration, outside changes to both models with the coordinator through thread/inject_items and no turn, own_change and not_shown refusals, nothing coalesced), the Realtime V3 start section (narration), and the glossary entries Pane news and Outside change. The stale copies of the two developer instruction documents in the contracts document were replaced by links to the reviewed files (their digests pin them), with a summary that matches the bytes. No envelope reaches the voice model: src/runtime/codex-coordinator-callbacks/tests/lifecycle.test.ts 'the voice model is only ever given a news sentence, never a callback envelope, quiet or as speech' sends every operation type, an outside write, unmarked focus and selection, a pick and an agent show through a narration and requires every append to be one of the news sentences with no '{'; it fails when the delivery appends the encoded callback instead. Other voice appends are the step/leave speech (presentationSpeech, plain text) and the user's own typed text. The system owners codex-pane-context and codex-outside-change also assert no '{' in what the voice is told.
+
+Real voice session for AC1 (the user): follow docs/design/voice-walkthrough-narration-acceptance.md rows a to l on the dogfood canvas. Beyond the narration rows, check outside a narration: (1) a pick by hand during a narration: the voice finishes its sentence, names what you picked, asks if you have a question, then finishes the step and waits (row i); clicking empty canvas does not stop it (row j); (2) switching the view or the variant by hand mid-step stops it the same way; (3) leaving with Escape: one short acknowledgement, nothing more narrated (row h); (4) an outside agent write: from a terminal, edit a board a pane shows without --as-session, outside a narration (the voice says nothing unasked, but 'what just changed?' is answered from it, and the coordinator knows it without a turn) and mid-narration of that board (row k: the voice says the board changed under the talk and asks how to go on); (5) an agent browser show: from a terminal, browser show another board into the pane, outside and during a narration (row l), never credited to you. Known gap the user should decide on: the reviewed workhorse and coordinator instructions ask for --as-session only on writes, so their own browser show is told as an agent's switch.
 <!-- SECTION:NOTES:END -->

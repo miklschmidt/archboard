@@ -147,10 +147,33 @@ interface CoordinatorSemanticCallbackData {
 	readonly selection: readonly CoordinatorSemanticSubject[];
 	readonly detail: string | null;
 	/**
-	 * The pane news this event is: the one sentence the voice model is given, or null when
-	 * nothing of it was the user's own doing and nobody is told (TASK-293, ADR 0034).
+	 * The pane news this event is, or null when nothing of it was the user's own doing and nobody
+	 * is told (TASK-293, ADR 0034).
 	 */
-	readonly news: string | null;
+	readonly news: CoordinatorPaneNews | null;
+}
+
+/** Pane news as the voice model is given it (TASK-293). */
+interface CoordinatorPaneNews {
+	/** The one sentence of names: where the user's reading now stands, or what changed under it. */
+	readonly sentence: string;
+	/**
+	 * Whether, during a narration, it is a reason to stop the talk: a pick that is not empty, a
+	 * view or variant the user chose, or anything an agent outside this session did. An emptied
+	 * selection or a move to another pane is not.
+	 */
+	readonly stops: boolean;
+	/**
+	 * Who did what it tells: the user by hand, or an agent that is neither this session's workhorse
+	 * nor its coordinator (TASK-293.06). Neither of those asked for an agent's change, so the
+	 * coordinator is told it too.
+	 */
+	readonly by: "user" | "agent";
+	/**
+	 * For a board an outside agent wrote, its aggregate key: the write is told only while a pane of
+	 * this canvas shows that board, and stops only a narration of it. Null for anything else.
+	 */
+	readonly board: string | null;
 }
 
 interface CoordinatorSemanticCallbackBase {
@@ -188,10 +211,22 @@ interface CoordinatorCallbackRealtimeGeneration {
 	readonly browserCorrelationId: RealtimeCorrelationId;
 }
 
-interface CoordinatorCallbackRealtimeRequest {
-	readonly generation: CoordinatorCallbackRealtimeGeneration;
-	readonly params: SessionParams<"thread/realtime/appendText">;
-}
+/**
+ * One append to the live voice session: quiet context the voice model may use, or speech it
+ * answers now. In a full-duplex session appended text is quiet whatever role it carries; only
+ * speakable text is something the voice model says (TASK-251).
+ */
+type CoordinatorCallbackRealtimeRequest =
+	| {
+			readonly generation: CoordinatorCallbackRealtimeGeneration;
+			readonly channel: "context";
+			readonly params: SessionParams<"thread/realtime/appendText">;
+	  }
+	| {
+			readonly generation: CoordinatorCallbackRealtimeGeneration;
+			readonly channel: "speech";
+			readonly params: SessionParams<"thread/realtime/appendSpeech">;
+	  };
 
 type CoordinatorCallbackDeliveryOutcome = "delivered" | "not_delivered" | "outcome_unknown";
 interface CoordinatorCallbackMutationResult {
@@ -201,9 +236,32 @@ interface CoordinatorCallbackMutationResult {
 }
 
 interface CoordinatorCallbackRealtimePort {
-	readonly appendDeveloper: (
+	readonly append: (
 		request: CoordinatorCallbackRealtimeRequest,
 	) => Promise<CoordinatorCallbackMutationResult>;
+}
+
+/**
+ * Puts one sentence into the coordinator thread's history as a developer message, through
+ * `thread/inject_items`, which starts no turn: what an outside agent changed is something the
+ * coordinator should know when it is next asked, not something to act on now.
+ */
+interface CoordinatorCallbackContextPort {
+	readonly inject: (request: {
+		readonly threadId: ThreadId;
+		readonly text: string;
+	}) => Promise<CoordinatorCallbackMutationResult>;
+}
+
+/** What the canvas of this tab session holds now, read when a callback is delivered. */
+interface CoordinatorCallbackCanvas {
+	/** The boards its panes show, by aggregate key. */
+	readonly boards: readonly string[];
+	/**
+	 * The board a live narration in one of its panes is on, by aggregate key, or null when none is
+	 * under way. A recording is no narration: nobody is listening to stop for.
+	 */
+	readonly narrated: string | null;
 }
 
 /** What news the coordinator is given is: work that ended, a wait on the user, or a message. */
@@ -254,6 +312,8 @@ type CoordinatorCallbackDeliveryPath =
 	| "none"
 	| "silent"
 	| "realtime_appendText"
+	/** Speech the voice model answers now: pane news during a narration (TASK-293.05). */
+	| "realtime_appendSpeech"
 	/** The coordinator's running turn or a new one, for a workhorse outcome while voice is live. */
 	| "coordinator_turn";
 type CallbackBufferOverflowReason = "buffer_overflow" | "coalesced";
@@ -271,6 +331,8 @@ type CoordinatorCallbackDeliveryReason =
 	| "stale_session"
 	| "voice_inactive"
 	| "agent"
+	/** An outside agent wrote a board no pane of this canvas shows (TASK-293.06). */
+	| "not_shown"
 	| "recorded_only"
 	| "session_rejected"
 	| "response_lost"
@@ -316,6 +378,8 @@ interface CoordinatorCallbackOptions {
 	readonly realtime: CoordinatorCallbackRealtimePort;
 	/** Absent where nothing can reach the coordinator; workhorse outcomes then stay quiet. */
 	readonly coordinatorTurn?: CoordinatorCallbackTurnPort;
+	/** Gives the coordinator thread one quiet sentence without starting a turn (TASK-293.06). */
+	readonly coordinatorContext: CoordinatorCallbackContextPort;
 	/** Answers the workhorse's tell_coordinator calls. */
 	readonly transport: Pick<CodexTransport, "respond">;
 	readonly threadLink: Pick<CodexThreadLinkClassifier, "classify">;
@@ -323,6 +387,8 @@ interface CoordinatorCallbackOptions {
 	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
 	readonly currentWorkhorseLink: () => CoordinatorCallbackLinkCorrelation | null;
 	readonly currentRealtimeGeneration: () => CoordinatorCallbackRealtimeGeneration | null;
+	/** What the tab's canvas holds now: whether a narration is under way decides speech or quiet. */
+	readonly canvas: () => CoordinatorCallbackCanvas;
 	/** Captures callback receipt and the instant immediately before an outbound attempt. */
 	readonly now?: () => number;
 	/** Publishes one settled immutable record to presentation subscribers. */
@@ -372,6 +438,9 @@ export {
 	type CoordinatorCallbackCorrelation,
 	type CoordinatorOperationCallback,
 	type CoordinatorSemanticCallbackData,
+	type CoordinatorPaneNews,
+	type CoordinatorCallbackCanvas,
+	type CoordinatorCallbackContextPort,
 	type CoordinatorSemanticSubject,
 	type CoordinatorSemanticCallback,
 	type CoordinatorCallback,

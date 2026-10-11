@@ -18,6 +18,15 @@ Amended by TASK-313 (2026-09-23): the canvases on one machine share one Codex
 home, one Codex database and so one sign-in. Codex takes several processes on
 one home, and it reloads the sign-in from disk before it refreshes it.
 
+Amended by TASK-319 (2026-10-11): the person sees what the voice coordinator
+does. Its turns show in the one conversation, among the workhorse's turns. A
+workhorse turn that the coordinator delegated names the coordinator turn that
+did it. So "the state of the workhorse and the state of the coordinator remain
+visibly separate" (Consequences) now means that the two are told apart. A
+coordinator turn has its own head and mark. The dock, Stop and the composer
+speak of the workhorse only. The two threads and their lifetimes stay separate,
+and the decision above stands.
+
 Archboard keeps two things about its own child: the owner lock and the epoch
 ledger. An epoch is one run of the child, and the epoch ledger records which
 epoch owns which thread. The lock and the ledger belong to one canvas, under

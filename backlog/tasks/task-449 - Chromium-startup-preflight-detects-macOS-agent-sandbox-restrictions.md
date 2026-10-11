@@ -12,7 +12,7 @@ references:
   - src/runtime/headless-chromium/lib/launch.ts
   - skills/archboard/SKILL.md
 type: bug
-ordinal: 732000
+ordinal: 800000
 ---
 
 ## Description

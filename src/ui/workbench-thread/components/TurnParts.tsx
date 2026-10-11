@@ -1,5 +1,6 @@
 // The smaller parts of a turn: the person's prompt, the plan's progress, a
 // plan the agent wrote out, where an approval stands, and how the turn ended.
+// A prompt of work the voice coordinator delegated says so.
 
 import {
 	RiCheckboxBlankCircleLine,
@@ -14,20 +15,24 @@ import { AGENT_ELAPSED_TICK_MS } from "@/shared/timing/timing";
 import { clockDuration } from "@/ui/components/age";
 import { useClock } from "@/ui/components/use-clock";
 import type { ConversationDataParts } from "@/ui/workbench-runtime";
+import { DelegatedFrom } from "@/ui/workbench-thread/components/VoiceTurn";
 
 /**
- * What the person said: set apart from the agent's words on a stone band.
+ * What the person said: set apart from the agent's words on a stone band. When
+ * the voice coordinator handed the work over, the band says so first.
  * @param props The prompt.
  * @param props.item The prompt item.
  * @returns The prompt.
  */
 function PromptBlock(props: { readonly item: ConversationDataParts["prompt"] }): JSX.Element {
+	const { delegatedBy, text } = props.item;
 	return (
 		<div
 			data-slot="prompt"
 			className="bg-muted border-border rounded-panel border px-3 py-2 text-[13.5px] leading-[21px] wrap-break-word whitespace-pre-wrap"
 		>
-			{props.item.text}
+			{delegatedBy !== null && <DelegatedFrom delegatedBy={delegatedBy} />}
+			{text}
 		</div>
 	);
 }

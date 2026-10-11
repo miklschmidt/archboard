@@ -12,7 +12,7 @@ documentation:
   - >-
     docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md
 priority: high
-ordinal: 693000
+ordinal: 746000
 ---
 
 ## Description

@@ -19,6 +19,7 @@ import {
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
 import { SEMANTIC_STAGE, seedSemanticBoard } from "./support/semantic-page.ts";
+import { drawnId, pick } from "./support/drilling.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import {
 	AGENT_PANEL,
@@ -376,9 +377,11 @@ test(
 		// walkthrough, with the model's words.
 		const narrationFrom = records().length;
 		const speeches = () =>
-			frames(narrationFrom, "thread/realtime/appendSpeech").map(({ params }) =>
-				String(params?.["text"] ?? ""),
-			);
+			frames(narrationFrom, "thread/realtime/appendSpeech").map(({ params }) => params?.["text"]);
+		const spokenBy = (count: number, what: string) =>
+			pollUntil(speeches, (spoken) => spoken.length === count, what, {
+				timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS,
+			});
 		await browser.run(["click", "[data-slot='semantic-walkthrough-narrate']"]);
 		await pollUntil(
 			() => presentedStep(browser),
@@ -386,12 +389,7 @@ test(
 			"Narrate to open the walkthrough on its first step",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		const [first] = await pollUntil(
-			speeches,
-			(spoken) => spoken.length === 1,
-			"the first step to be handed to the voice model",
-			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
-		);
+		const [first] = await spokenBy(1, "the first step to be handed to the voice model");
 		expect(first).toContain("All of it");
 		const footed = await pollUntil(
 			() => voiceNow(browser),
@@ -412,20 +410,21 @@ test(
 		const context = await api<{ panes: { byUser?: string[] }[] }>("/api/panes/semantic-context");
 		expect(context.body.panes[0]?.byUser).toBeUndefined();
 		await browser.run(["press", "ArrowRight"]);
-		const [, second] = await pollUntil(
-			speeches,
-			(spoken) => spoken.length === 2,
-			"the user's step to be handed to the voice model",
-			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
-		);
+		const [, second] = await spokenBy(2, "the user's step to be handed to the voice model");
 		expect(second).toContain("The warehouse");
-		await browser.run(["press", "Escape"]);
-		await pollUntil(
-			speeches,
-			(spoken) => spoken.length === 3,
-			"leaving to be told to the voice model",
-			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		// A pick by hand mid-talk is speech too, naming what is now selected and never its id: the
+		// voice is asked to stop and check in (TASK-293.05).
+		const ingest = (await drawnId(browser, "Ingest")) ?? "";
+		await pick(browser, ingest);
+		const [, , picked] = await spokenBy(
+			3,
+			"the user's pick during the narration to be handed to the voice model as speech",
 		);
+		expect(picked).toContain("Ingest");
+		expect(picked).not.toContain(ingest);
+		expect((await presentedStep(browser)).index).toBe("1");
+		await browser.run(["press", "Escape"]);
+		await spokenBy(4, "leaving to be told to the voice model");
 		expect((await presentedStep(browser)).index).toBeNull();
 		const [narrationStart] = frames(narrationFrom, "thread/realtime/start");
 		expect(narrationStart?.params?.["initialItems"]).toEqual([]);

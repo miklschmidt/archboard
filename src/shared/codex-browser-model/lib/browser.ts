@@ -37,6 +37,8 @@ interface BrowserSnapshotRelationshipFields {
 	readonly semantic: { readonly threadId: string } | null;
 	readonly voice?: { readonly realtimeSessionId: string | null } | undefined;
 	readonly voiceContext?: { readonly sessionId: string } | null | undefined;
+	readonly coordinator: { readonly threadId: string | null };
+	readonly coordinatorTimeline?: { readonly threadId: string } | null | undefined;
 }
 
 /**
@@ -74,6 +76,19 @@ function voiceContextContradictsVoice(value: BrowserSnapshotRelationshipFields):
 }
 
 /**
+ * Tells whether the coordinator's timeline names a thread other than the coordinator's own,
+ * which includes a timeline beside a coordinator that is bound to no thread.
+ * @param value - The snapshot fields.
+ * @returns True when a coordinator timeline is present and its thread differs from the coordinator's.
+ */
+function coordinatorTimelineContradictsCoordinator(
+	value: BrowserSnapshotRelationshipFields,
+): boolean {
+	const timeline = value.coordinatorTimeline ?? null;
+	return timeline !== null && value.coordinator.threadId !== timeline.threadId;
+}
+
+/**
  * Checks relationships between fields after each field has passed its own schema.
  * @param value - The snapshot fields the relationships are about.
  * @returns The issues found, empty when every relationship holds.
@@ -103,6 +118,12 @@ function browserSnapshotRelationshipIssues(
 		issues.push({
 			path: ["voiceContext", "sessionId"],
 			message: "voice context identity contradicts the active voice session",
+		});
+	}
+	if (coordinatorTimelineContradictsCoordinator(value)) {
+		issues.push({
+			path: ["coordinatorTimeline", "threadId"],
+			message: "coordinator timeline identity contradicts the coordinator's thread",
 		});
 	}
 	return issues;
@@ -146,6 +167,8 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 			voice: voice.BrowserVoiceSchema,
 			spokenApproval: BrowserSpokenApprovalSchema,
 			voiceContext: voice.BrowserVoiceContextSchema.nullable().optional(),
+			/** The voice coordinator's own turns (TASK-319); absent from a server that predates them. */
+			coordinatorTimeline: thread.BrowserTimelineSchema.nullable().optional(),
 			lease: commands.BrowserCommandLeaseSchema.nullable(),
 			operation: commands.BrowserOperationOutcomeSchema.nullable(),
 		})

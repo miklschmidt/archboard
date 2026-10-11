@@ -9,20 +9,13 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
-import { SemanticBoardSchema, type SemanticBoard } from "@/shared/semantic-board/index";
+import { SemanticBoardSchema } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import {
-	adoptVariantTransition,
-	branchVariantTransition,
-	createBoardTransition,
-	editVariantTransition,
-	settleVariantTransition,
-	type SemanticTransition,
-} from "@/runtime/semantic-board-store/index";
-import {
 	FixtureStepSchema,
 	inspectionRequests,
+	layFixture,
 	loadSuite,
 	renderRequests,
 	resolvePlaceholders,
@@ -30,8 +23,6 @@ import {
 	stepCommand,
 	suiteProblems,
 	talkOfFixture,
-	type FixtureStep,
-	type RawFixtureStep,
 } from "@/runtime/skill-evaluation/index";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
@@ -84,47 +75,6 @@ const BOARD = SemanticBoardSchema.parse(
 		],
 	}),
 );
-
-/**
- * The variant a step targets, for resolving its placeholders.
- * @param step The step, before its placeholders resolve.
- * @returns The variant selector, or undefined for the one the board's name opens.
- */
-function variantOf(step: RawFixtureStep): string | undefined {
-	if (step.op === "edit") {
-		const named = step.input["variant"];
-		return typeof named === "string" ? named : undefined;
-	}
-	return step.op === "resolve" ? step.variant : undefined;
-}
-
-/**
- * The store transition one laid fixture step amounts to, exactly as the CLI
- * command the harness sends would build it.
- * @param step The resolved step.
- * @returns The transition.
- */
-function transitionOf(step: FixtureStep): SemanticTransition {
-	switch (step.op) {
-		case "new":
-			return createBoardTransition({ name: step.board, ...step.input });
-		case "edit":
-			return editVariantTransition(step.input);
-		case "branch":
-			return branchVariantTransition({
-				name: step.as,
-				...(step.from === undefined ? {} : { from: step.from }),
-				...(step.summary === undefined ? {} : { summary: step.summary }),
-			});
-		case "resolve":
-			return settleVariantTransition({ variant: step.variant, ...step.input });
-		default:
-			return adoptVariantTransition({
-				variant: step.variant,
-				...(step.reason === undefined ? {} : { reason: step.reason }),
-			});
-	}
-}
 
 describe("the canonical suite", () => {
 	test("lives outside every skill package: neither the consumer skill, the frozen baseline nor a prepared copy carries it", () => {
@@ -268,26 +218,13 @@ describe("fixtures", () => {
 	});
 
 	test("every fixture lays: each step applies to the board the steps before it left", () => {
-		// eval:skill check validates shapes and never lays a fixture, so a parent,
-		// relationship end or view selection naming a node nothing created passes
-		// it and only fails hours into a batch. This lays each fixture through the
-		// store's own transitions, which is where a name becomes an id.
+		// eval:skill check lays every fixture through the store's own transitions,
+		// where a name becomes an id, so a parent, relationship end or view
+		// selection naming a node nothing created is refused there and not hours
+		// into a batch. This is the same laying, then reads what it left.
 		for (const [id, fixture] of loaded.fixtures) {
-			const vault = new Map<string, SemanticBoard>();
-			for (const [index, step] of fixture.steps.entries()) {
-				const before = vault.get(step.board) ?? null;
-				const resolved = FixtureStepSchema.parse(
-					resolvePlaceholders(step, {
-						repo: fixture.registerRepo ? "github.com/pallets/flask" : null,
-						board: before,
-						variant: variantOf(step),
-					}),
-				);
-				const applied = transitionOf(resolved).apply(before, "2026-09-17T00:00:00.000Z");
-				const where = `${id} step ${index} (${step.op} ${step.board})`;
-				expect(applied.ok ? null : applied.problem, where).toBeNull();
-				if (applied.ok) vault.set(step.board, applied.board);
-			}
+			const { boards: vault, problems } = layFixture(id, fixture);
+			expect(problems, id).toEqual([]);
 			// Every board a step named is in the vault the fixture leaves behind.
 			expect(vault.size, id).toBe(new Set(fixture.steps.map((step) => step.board)).size);
 			// A kept talk presents a walkthrough of a board the steps left, and is one the

@@ -5,10 +5,11 @@ import { join, resolve } from "node:path";
 import { readProcessObservation } from "@/shared/process-observation";
 
 import {
-	GIT_PROCESS_GROUP_CLEANUP_MS,
-	GIT_PROCESS_GROUP_POLL_MS,
-} from "../../../src/shared/timing/timing.js";
-import { TEST_GIT_OPENER_CASE_TIMEOUT_MS, TEST_GIT_OPENER_WATCHDOG_MS } from "../support/timing.ts";
+	TEST_GIT_OPENER_CASE_TIMEOUT_MS,
+	TEST_GIT_OPENER_CLEANUP_MS,
+	TEST_GIT_OPENER_WATCHDOG_MS,
+	TEST_PROCESS_GROUP_POLL_MS,
+} from "../support/timing.ts";
 
 const ROOT = resolve(import.meta.dir, "../../..");
 const OWNERS = [
@@ -36,7 +37,7 @@ async function waitForGroupAbsence(pgid: number, timeoutMs: number): Promise<voi
 		if (Date.now() >= deadline) {
 			throw new Error(`process group ${pgid} survived`);
 		}
-		await Bun.sleep(GIT_PROCESS_GROUP_POLL_MS);
+		await Bun.sleep(TEST_PROCESS_GROUP_POLL_MS);
 	}
 }
 
@@ -76,14 +77,14 @@ async function cleanupOwnedChild(
 	try {
 		await within(
 			Promise.allSettled([child.exited, ...streams]).then(() => undefined),
-			GIT_PROCESS_GROUP_CLEANUP_MS,
+			TEST_GIT_OPENER_CLEANUP_MS,
 			`process group ${child.pid} pipes or leader did not settle`,
 		);
 	} catch (cause) {
 		failures.push(cause);
 	}
 	try {
-		await waitForGroupAbsence(child.pid, GIT_PROCESS_GROUP_CLEANUP_MS);
+		await waitForGroupAbsence(child.pid, TEST_GIT_OPENER_CLEANUP_MS);
 	} catch (cause) {
 		failures.push(cause);
 	}
@@ -156,18 +157,45 @@ async function runOwnedDetached(
 	return result!;
 }
 
+/** Tests that ran per owner file, from the junit report: one top-level suite per file. Skipped tests are not counted. */
+function testsPerOwner(junit: string): Map<string, number> {
+	const ran = new Map<string, number>();
+	for (const [, file, attributes] of junit.matchAll(
+		/<testsuite name="([^"]+)" file="\1"([^>]*)>/g,
+	)) {
+		const tests = Number(/ tests="(\d+)"/.exec(attributes!)?.[1]);
+		const skipped = Number(/ skipped="(\d+)"/.exec(attributes!)?.[1] ?? 0);
+		ran.set(file!, tests - skipped);
+	}
+	return ran;
+}
+
 test(
 	"Git lifecycle and the former opener deadlock sequence settle under an external watchdog",
 	async () => {
-		const settled = await runOwnedDetached(
-			[process.execPath, "test", "--isolate", "--max-concurrency=1", ...OWNERS],
-			{ env: { ...process.env, ARCHBOARD_REPOS: resolve(ROOT, ".absent-watchdog-repos.json") } },
-		);
-		const { out, err } = settled;
-		const output = `${out}\n${err}`;
-		expect(settled.exitCode, `stdout:\n${out}\nstderr:\n${err}`).toBe(0);
-		for (const owner of OWNERS) {
-			expect(output).toContain(owner);
+		const root = mkdtempSync(join(tmpdir(), "archboard-watchdog-report-"));
+		const report = join(root, "junit.xml");
+		try {
+			const settled = await runOwnedDetached(
+				[
+					process.execPath,
+					"test",
+					"--isolate",
+					"--max-concurrency=1",
+					"--reporter=junit",
+					`--reporter-outfile=${report}`,
+					...OWNERS,
+				],
+				{ env: { ...process.env, ARCHBOARD_REPOS: resolve(ROOT, ".absent-watchdog-repos.json") } },
+			);
+			expect(settled.exitCode, `stdout:\n${settled.out}\nstderr:\n${settled.err}`).toBe(0);
+			// Exit 0 alone would also hold if an owner never ran, or only skipped: each must report a test that ran.
+			const ran = testsPerOwner(readFileSync(report, "utf8"));
+			for (const owner of OWNERS) {
+				expect(ran.get(owner) ?? 0, owner).toBeGreaterThan(0);
+			}
+		} finally {
+			rmSync(root, { recursive: true, force: true });
 		}
 	},
 	TEST_GIT_OPENER_CASE_TIMEOUT_MS,

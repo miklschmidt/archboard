@@ -23,6 +23,8 @@ interface GenerationOwners {
 	accountListeners: Set<(event: TransportServerNotification) => void>;
 	dynamicProjectionUnsubscribe: (() => void) | null;
 	timeline: ServerTimelineOwner | null;
+	/** The voice coordinators' threads, read the way the workhorse's is (TASK-319). */
+	coordinatorTimeline: ServerTimelineOwner | null;
 	retired: boolean;
 }
 
@@ -199,6 +201,7 @@ function retire(owners: GenerationOwners): void {
 	owners.authority = null;
 	owners.lifecycle = null;
 	owners.timeline = null;
+	owners.coordinatorTimeline = null;
 	owners.dynamicProjectionUnsubscribe = null;
 	owners.projectionListeners.clear();
 	owners.accountListeners.clear();
@@ -219,6 +222,7 @@ function freshOwners(): GenerationOwners {
 		accountListeners: new Set(),
 		dynamicProjectionUnsubscribe: null,
 		timeline: null,
+		coordinatorTimeline: null,
 		retired: false,
 		browserState: {
 			account: { kind: "account", state: "unknown", reason: "Account state has not been read." },

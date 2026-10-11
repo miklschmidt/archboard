@@ -18,7 +18,7 @@ references:
   - src/transformers/semantic-renderer/lib/svg/beam-light.ts
 priority: high
 type: bug
-ordinal: 690000
+ordinal: 743000
 ---
 
 ## Description

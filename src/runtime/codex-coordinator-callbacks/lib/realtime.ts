@@ -1,5 +1,6 @@
 import { CodexSessionMutationError, type CodexSession } from "@/runtime/codex-session";
 import type {
+	CoordinatorCallbackContextPort,
 	CoordinatorCallbackMutationResult,
 	CoordinatorCallbackRealtimeGeneration,
 	CoordinatorCallbackRealtimePort,
@@ -7,7 +8,7 @@ import type {
 } from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
 interface CoordinatorCallbackRealtimePortOptions {
-	readonly session: Pick<CodexSession, "realtimeAppendText">;
+	readonly session: Pick<CodexSession, "realtimeAppendText" | "realtimeAppendSpeech">;
 	readonly currentGeneration: () => CoordinatorCallbackRealtimeGeneration | null;
 }
 
@@ -22,7 +23,7 @@ const REALTIME_GENERATION_FIELDS: readonly (keyof CoordinatorCallbackRealtimeGen
 ];
 
 /**
- * Whether two voice generations are the same one, field by field. A developer message is only appended to the exact generation it was written for; anything else would speak into a session the person has already left.
+ * Whether two voice generations are the same one, field by field. Anything is only appended to the exact generation it was written for; anything else would speak into a session the user has already left.
  * @param left - One generation, or null when voice is off.
  * @param right - The other generation, or null.
  * @returns True when both are absent or every field matches.
@@ -58,10 +59,41 @@ function failed(error: unknown): CoordinatorCallbackMutationResult {
 }
 
 /**
- * Build the port that appends a developer message to the coordinator's live voice session. It
- * checks the generation before the append and again afterwards, so a session that turned over
- * mid-flight leaves the outcome unknown rather than claiming delivery.
- * @param options - The session's append method and the current generation accessor.
+ * Send one append down the channel it names: quiet context as a developer message, or speech
+ * the voice model answers now.
+ * @param session - The session's append methods.
+ * @param request - The append.
+ * @returns Resolves once Codex answered.
+ */
+async function send(
+	session: CoordinatorCallbackRealtimePortOptions["session"],
+	request: CoordinatorCallbackRealtimeRequest,
+): Promise<void> {
+	if (request.channel === "speech") {
+		await session.realtimeAppendSpeech(request.params);
+	} else {
+		await session.realtimeAppendText(request.params);
+	}
+}
+
+/**
+ * Whether an append is addressed the way its generation allows: to that generation's coordinator
+ * thread, and as a developer message when it is quiet context.
+ * @param request - The append.
+ * @returns True when it may be sent.
+ */
+function addressed(request: CoordinatorCallbackRealtimeRequest): boolean {
+	if (request.params.threadId !== request.generation.coordinatorThreadId) {
+		return false;
+	}
+	return request.channel === "speech" || request.params.role === "developer";
+}
+
+/**
+ * Build the port that appends to the coordinator's live voice session. It checks the generation
+ * before the append and again afterwards, so a session that turned over mid-flight leaves the
+ * outcome unknown rather than claiming delivery.
+ * @param options - The session's append methods and the current generation accessor.
  * @returns The frozen realtime port.
  */
 function createCoordinatorCallbackRealtimePort(
@@ -69,24 +101,21 @@ function createCoordinatorCallbackRealtimePort(
 ): CoordinatorCallbackRealtimePort {
 	return Object.freeze({
 		/**
-		 * Append one developer message to the current voice session.
-		 * @param request - The generation the message was written for and its append parameters.
+		 * Append one sentence to the current voice session, quietly or as speech.
+		 * @param request - The generation it was written for, its channel and its parameters.
 		 * @returns How the append settled.
 		 */
-		appendDeveloper: async (
+		append: async (
 			request: CoordinatorCallbackRealtimeRequest,
 		): Promise<CoordinatorCallbackMutationResult> => {
 			if (!sameRealtimeGeneration(request.generation, options.currentGeneration())) {
 				return stale();
 			}
-			if (
-				request.params.threadId !== request.generation.coordinatorThreadId ||
-				request.params.role !== "developer"
-			) {
+			if (!addressed(request)) {
 				return stale();
 			}
 			try {
-				await options.session.realtimeAppendText(request.params);
+				await send(options.session, request);
 			} catch (error) {
 				return failed(error);
 			}
@@ -98,7 +127,41 @@ function createCoordinatorCallbackRealtimePort(
 	});
 }
 
+/**
+ * Build the port that puts one sentence into the coordinator thread's history without starting a
+ * turn (TASK-293.06): one developer message through `thread/inject_items`, the way the board
+ * catalogue reaches it. A lost answer is not retried: the next change says where things stand.
+ * @param session - The session's inject method.
+ * @returns The frozen port.
+ */
+function createCoordinatorCallbackContextPort(
+	session: Pick<CodexSession, "threadInjectItems">,
+): CoordinatorCallbackContextPort {
+	const port: CoordinatorCallbackContextPort = {
+		/**
+		 * Put one sentence into one thread's history.
+		 * @param request - The thread and the sentence.
+		 * @param request.threadId - The coordinator thread.
+		 * @param request.text - The sentence.
+		 * @returns How the injection settled.
+		 */
+		inject: async ({ threadId, text }) => {
+			try {
+				await session.threadInjectItems({
+					threadId,
+					items: [{ type: "message", role: "developer", content: [{ type: "input_text", text }] }],
+				});
+			} catch (error) {
+				return failed(error);
+			}
+			return { attempted: true, outcome: "delivered", reason: null };
+		},
+	};
+	return Object.freeze(port);
+}
+
 export {
+	createCoordinatorCallbackContextPort,
 	type CoordinatorCallbackRealtimePortOptions,
 	sameRealtimeGeneration,
 	createCoordinatorCallbackRealtimePort,

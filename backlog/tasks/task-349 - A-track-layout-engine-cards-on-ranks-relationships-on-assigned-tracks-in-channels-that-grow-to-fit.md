@@ -3,17 +3,17 @@ id: TASK-349
 title: >-
   A track layout engine: cards on ranks, relationships on assigned tracks in
   channels that grow to fit
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-25 00:15'
-updated_date: '2026-09-26 04:19'
+updated_date: '2026-10-09 01:40'
 labels:
   - renderer
 dependencies: []
 priority: high
 type: feature
-ordinal: 590000
+ordinal: 608500
 ---
 
 ## Description

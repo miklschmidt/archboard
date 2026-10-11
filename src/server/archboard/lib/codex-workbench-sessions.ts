@@ -44,6 +44,7 @@ import type {
 	LogicalToolCallCorrelation,
 	OperationId,
 	ThreadId,
+	TurnId,
 } from "@/shared/codex-workbench-identity";
 import {
 	type BrowserRealtimeActions,
@@ -88,6 +89,8 @@ interface CodexWorkbenchTabSessionState {
 	queue: CodexQueueProjectionInput;
 	/** The workhorse thread that listing was read for. */
 	queueThreadId: ThreadId | null;
+	/** Which coordinator turn delegated each workhorse turn, newest last; bounded. */
+	readonly delegations: Map<TurnId, TurnId>;
 	/** The coordinator tool call running now, which every owner that asks sees the same. */
 	currentCoordinatorCall: LogicalToolCallCorrelation | null;
 	/** Every thread this conversation started, current and replaced. */
@@ -187,6 +190,7 @@ function freshState(): CodexWorkbenchTabSessionState {
 	return {
 		queue: { kind: "codex_queue", submissions: null },
 		queueThreadId: null,
+		delegations: new Map(),
 		currentCoordinatorCall: null,
 		threads: new Set(),
 		voiceTrace: sessionVoiceStartTrace(),

@@ -51,6 +51,7 @@ export {
 	settleVariantTransition,
 	shelveVariantTransition,
 } from "@/runtime/semantic-board-store/lib/transitions";
+export { acceptedBoard } from "@/runtime/semantic-board-store/lib/accepted";
 export { renameTransition } from "@/runtime/semantic-board-store/lib/rename";
 export { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";
 export {
