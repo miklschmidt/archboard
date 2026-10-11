@@ -17,7 +17,14 @@ function page(side: number): Page {
 	return { width: side, height: side, edges: [] };
 }
 
-test.each([
+/** One choice of joins: the blocks, the side of each page they lay out, and what they ask for. */
+interface Choice {
+	readonly blocks: string[];
+	readonly sides: Record<string, number>;
+	readonly asked: Asked[];
+}
+
+test.each<Choice>([
 	{
 		// Two blocks: the turns from every join apart weigh the sets the turns
 		// from none apart asked for ahead, so nothing is called off.
@@ -66,7 +73,7 @@ test.each([
 				let waiting = true;
 				const laying = setTimeout(() => {
 					waiting = false;
-					resolve(page((sides as Record<string, number>)[one.apart] ?? 3000));
+					resolve(page(sides[one.apart] ?? 3000));
 				}, 0);
 				signal.addEventListener("abort", () => {
 					if (!waiting) return;
