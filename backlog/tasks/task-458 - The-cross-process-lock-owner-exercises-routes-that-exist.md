@@ -1,11 +1,11 @@
 ---
-id: TASK-453
+id: TASK-458
 title: The cross-process lock owner exercises routes that exist
 status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-11 14:15'
-updated_date: '2026-10-11 14:18'
+updated_date: '2026-10-11 15:51'
 labels:
   - testing
 dependencies: []
@@ -31,6 +31,12 @@ tests/system/process-contracts/cross-process-lock.test.ts (opt-in lane test:opt-
 <!-- SECTION:PLAN:BEGIN -->
 Nothing else proves the cross-process lock sweep (board-lock-announcements tests only passenger failure; board-lock-api is one server). Rewrite against /api/semantic-boards/{create,claim,claim/release,edit}: server B on the same vault claims, server A's pane hears board_lock within the sweep bound, A's write is refused BOARD_HELD, release reaches the pane, A can write again.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+This record used TASK-453 on main. The supported Backlog doctor repair assigns TASK-458 after its collision with the independent retrospective validation task. Historical main commit references retain the former number. The original task content and completion evidence remain unchanged.
+<!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
