@@ -202,7 +202,7 @@ normal owners named by `BROWSER_TEST_PATHS` drive a real browser through one
 strict adapter for live-session behavior and rendered fidelity. They are not a gate
 for named-board runtime operations. The lane:
 
-- resolves the pinned `agent-browser` package in this checkout, then runs its declared CLI through Bun.
+- resolves the pinned `agent-browser` package in this checkout, then runs its packaged native executable directly.
   Prerequisite failure exits 2 before building or starting an owner;
 - asserts `navigator.userAgent` says headless, because a window that maps
   steals focus under Hyprland; local and hosted runs exercise the same normal inventory;
