@@ -5,6 +5,7 @@ import type { ArchboardContext } from "../../../runtime/codex-instructions/index
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
+	type ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import {
 	parseTabSessionId,
@@ -97,6 +98,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 			};
 			return timelineValue;
 		},
+		readTarget: () => null,
 		onNotification: () => undefined,
 		retire: (paneId, receivedConnection) => {
 			received.retire = { paneId, connection: receivedConnection };
@@ -158,6 +160,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		dynamicApprovals,
 		state,
 		timeline,
+		coordinatorTimeline: timeline,
 		budget,
 		leaseLedger: { sessions: new Map() },
 		process: () => runningProcessFacts(),
@@ -198,4 +201,104 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		"browser_disconnected",
 	);
 	expect(received.retire).toEqual({ paneId: "pane-timeline", connection });
+});
+
+function timelineFor(threadId: ThreadId): CodexTimelineProjectionInput {
+	return { kind: "codex_timeline", threadId, turns: [], cursor: null, usage: null };
+}
+
+test("a pane's snapshot carries its own tab's coordinator turns, never another tab's", () => {
+	const authorities = createIdentityAuthorities();
+	const decoder = authorities.identity.decoder;
+	const workhorseLink = executableLink(authorities, decoder.adoptThreadId("workhorse-thread"));
+	const coordinatorThreads = new Map([
+		["tab-one", decoder.adoptThreadId("coordinator-one")],
+		["tab-two", decoder.adoptThreadId("coordinator-two")],
+	]);
+	const read: { paneId: string; threadId: ThreadId | null }[] = [];
+	const coordinatorTimeline: ServerTimelineOwner = {
+		read: () => null,
+		readTarget: (paneId, target) => {
+			read.push({ paneId, threadId: target.threadId });
+			return target.threadId === null ? null : timelineFor(target.threadId);
+		},
+		onNotification: () => undefined,
+		retire: () => undefined,
+		dispose: () => undefined,
+	};
+	const fixture = createCodexWorkbenchGenerationFixture([]);
+	const sessions = createCodexWorkbenchSessions({
+		identity: authorities.identity,
+		transport: fixture.components.transport,
+		session: fixture.components.session,
+		threadLink: fixture.components.threadLink,
+		endApprovals: async () => undefined,
+		build: (scope) => ({
+			components: {
+				...fixture.sessionComponents,
+				coordinator: {
+					...fixture.sessionComponents.coordinator,
+					snapshot: () => ({
+						...fixture.sessionComponents.coordinator.snapshot(),
+						threadId: coordinatorThreads.get(scope.id) ?? null,
+					}),
+				},
+			},
+			actions: fixture.tabSession.actions,
+		}),
+	});
+	const options = createServerBrowserGatewayOptions({
+		components: fixture.components,
+		sessions,
+		dynamicApprovals: createServerDynamicApprovalOwner({
+			identity: authorities,
+			now: () => 1,
+			bindingForCaller: () => {
+				throw new Error("The projection owner issues no dynamic approvals.");
+			},
+		}),
+		state: {
+			account: { kind: "account", state: "unknown", reason: "not read" },
+			login: { kind: "login", state: "idle" },
+		},
+		timeline: { ...coordinatorTimeline, read: () => null },
+		coordinatorTimeline,
+		budget: createServerBrowserProjectionBudget(),
+		leaseLedger: { sessions: new Map() },
+		process: () => runningProcessFacts(),
+		contextForOperation: () => archboardContext,
+		onChange: () => () => undefined,
+		onAccountNotification: () => () => undefined,
+	});
+	const contextFor = (tab: string): BrowserProjectionContext => {
+		const tabSessionId = parseTabSessionId(tab)!;
+		sessions.open(tabSessionId);
+		return {
+			browserId: `browser-${tab}`,
+			paneId: `pane-${tab}`,
+			tabSessionId,
+			binding: {
+				paneId: tab,
+				revision: 1,
+				link: workhorseLink,
+				cas: {
+					revision: 1,
+					paneId: tab,
+					childId: workhorseLink.childId,
+					epoch: workhorseLink.epoch,
+					threadId: workhorseLink.threadId,
+				},
+			},
+			lease: null,
+			mediaReady: false,
+			connection: {},
+		};
+	};
+
+	const one = options.projection.read(contextFor("tab-one")).coordinatorTimeline;
+	const two = options.projection.read(contextFor("tab-two")).coordinatorTimeline;
+
+	expect(one?.threadId).toBe(coordinatorThreads.get("tab-one"));
+	expect(two?.threadId).toBe(coordinatorThreads.get("tab-two"));
+	expect(read.map((entry) => entry.paneId)).toEqual(["pane-tab-one", "pane-tab-two"]);
 });

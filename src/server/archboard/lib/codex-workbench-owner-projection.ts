@@ -10,7 +10,10 @@ import type {
 	CodexWorkbenchTabSessionState,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
-import type { ServerTimelineOwner } from "@/server/archboard/lib/codex-workbench-timeline";
+import type {
+	ServerTimelineOwner,
+	TimelineTarget,
+} from "@/server/archboard/lib/codex-workbench-timeline";
 import { projectServerVoiceContext } from "@/server/archboard/lib/codex-workbench-voice-context";
 import {
 	projectServerBrowserReadiness,
@@ -46,6 +49,8 @@ interface ServerOwnerProjectionInput {
 	readonly dynamicApprovals: ServerDynamicApprovalOwner;
 	readonly state: ServerBrowserBindingState;
 	readonly timeline: ServerTimelineOwner;
+	/** Reads the voice coordinator's thread, which is not any pane's link. */
+	readonly coordinatorTimeline: ServerTimelineOwner;
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
 	readonly process: () => ServerReadinessProcessFacts;
 }
@@ -218,6 +223,28 @@ function presentedQueue(
 }
 
 /**
+ * Where the tab's voice coordinator's turns are read from. The key holds what makes one
+ * coordinator's history another's: its thread, and the child epoch it runs on.
+ * @param coordinator The tab's coordinator.
+ * @param paneId The pane that is shown them.
+ * @param threadCapable Whether the workbench can serve threads yet.
+ * @returns The target, whose thread is null while the coordinator has none.
+ */
+function coordinatorTarget(
+	coordinator: ReturnType<ProjectionComponents["coordinator"]["snapshot"]>,
+	paneId: string,
+	threadCapable: boolean,
+): TimelineTarget {
+	const { threadId, childId, epoch } = coordinator;
+	return {
+		key: JSON.stringify([paneId, threadId, childId, epoch, threadCapable]),
+		threadId,
+		childId,
+		epoch,
+	};
+}
+
+/**
  * One complete snapshot of the workbench as one pane is shown it, read from
  * the live owners rather than from anything the adapter stored.
  * @param input The owners, the cached facts, and the pane-side owners.
@@ -241,6 +268,7 @@ function readBrowserOwnerProjection(
 		account: state.account,
 		login: state.login,
 	});
+	const threadCapable = readiness.state === "thread_capable";
 	return {
 		readiness,
 		account: state.account,
@@ -249,9 +277,16 @@ function readBrowserOwnerProjection(
 			context.paneId,
 			context.binding.revision,
 			context.binding.link,
-			readiness.state === "thread_capable",
+			threadCapable,
 			context.connection,
 		),
+		coordinatorTimeline: input.coordinatorTimeline.readTarget(
+			context.paneId,
+			coordinatorTarget(coordinator, context.paneId, threadCapable),
+			threadCapable,
+			context.connection,
+		),
+		delegations: input.session.state.delegations,
 		queue: presentedQueue(input.session.state, context),
 		settings: [...workhorseSettings(workhorse), ...coordinatorSettings(coordinator)],
 		approvals: visibleApprovalViews(input.approvals, context.tabSessionId),

@@ -155,6 +155,7 @@ async function settleGenerationOwners(
 	cause: "server_shutdown" | "child_disconnected",
 ): Promise<void> {
 	owners.timeline?.dispose();
+	owners.coordinatorTimeline?.dispose();
 	owners.approval?.settleAll(cause);
 	if (owners.lifecycle !== null) {
 		await owners.lifecycle.shutdown();
@@ -191,6 +192,7 @@ function createProductionHooks(context: HookContext): CodexWorkbenchGenerationHo
 		onNotification: (event) => {
 			for (const listener of owners.accountListeners) listener(event);
 			owners.timeline?.onNotification(event);
+			owners.coordinatorTimeline?.onNotification(event);
 			owners.approval?.onNotification(event);
 			owners.lifecycle?.onNotification(event);
 		},

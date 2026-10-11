@@ -54,6 +54,7 @@ interface ServerBrowserGatewayInput {
 	readonly state: ServerBrowserBindingState;
 	readonly leaseLedger: BrowserLeaseLedger;
 	readonly timeline: ServerTimelineOwner;
+	readonly coordinatorTimeline: ServerTimelineOwner;
 	readonly budget: ServerBrowserProjectionBudget;
 	readonly onChange: (listener: () => void) => () => void;
 	readonly onAccountNotification: (
@@ -418,6 +419,7 @@ function createServerBrowserGatewayOptions(
 					dynamicApprovals,
 					state,
 					timeline: input.timeline,
+					coordinatorTimeline: input.coordinatorTimeline,
 					process: input.process,
 				},
 				context,
@@ -438,13 +440,15 @@ function createServerBrowserGatewayOptions(
 			};
 		},
 		/**
-		 * Forget the timeline retained for a pane whose browser has gone.
+		 * Forget the timelines retained for a pane whose browser has gone.
 		 * @param disconnect What disconnected.
 		 * @param disconnect.paneId The pane.
 		 * @param disconnect.connection Its browser connection.
-		 * @returns Nothing the gateway waits on.
 		 */
-		onBrowserDisconnect: ({ paneId, connection }) => input.timeline.retire(paneId, connection),
+		onBrowserDisconnect: ({ paneId, connection }) => {
+			input.timeline.retire(paneId, connection);
+			input.coordinatorTimeline.retire(paneId, connection);
+		},
 	};
 	return {
 		projection,

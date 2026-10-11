@@ -26,6 +26,7 @@ import type {
 	SessionComponentName,
 } from "@/server/archboard/lib/codex-workbench-contract";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
+import { recordDelegations } from "@/server/archboard/lib/codex-workbench-delegations";
 import { appendFailure } from "@/server/archboard/lib/codex-workbench-failures";
 import { createServerRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
 import type {
@@ -327,6 +328,7 @@ function buildProductionTabSession(
 	const components = constructSessionComponents(
 		createSessionFactories(bindingsFor(scope.id, shared, scope.state), shared),
 	);
+	components.operations.subscribe(recordDelegations(scope.state.delegations));
 	return {
 		components,
 		actions: {

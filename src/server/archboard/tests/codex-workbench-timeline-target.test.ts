@@ -1,0 +1,105 @@
+import { expect, test } from "bun:test";
+
+import { decodeServerNotification } from "../../../runtime/codex-protocol/index.js";
+import type {
+	CodexSession,
+	SessionThreadTurnPageResult,
+} from "../../../runtime/codex-session/index.js";
+import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
+import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { createServerTimelineOwner } from "../codex-workbench-adapters.js";
+import { flush, turnFixture } from "./support/codex-workbench-timeline-fixture.js";
+
+function turnCompleted(
+	authorities: ReturnType<typeof createIdentityAuthorities>,
+	threadId: string,
+): TransportServerNotification {
+	return {
+		correlation: {
+			child: authorities.identity.validator.childId,
+			epoch: authorities.identity.validator.epoch,
+			requestId: null,
+		},
+		notification: decodeServerNotification({
+			method: "turn/completed",
+			params: {
+				threadId,
+				turn: {
+					id: "notified-turn",
+					items: [],
+					itemsView: "full",
+					status: "completed",
+					error: null,
+					startedAt: 1,
+					completedAt: 2,
+					durationMs: 1,
+				},
+			},
+		}),
+	};
+}
+
+test("a target's timeline is read from its own thread, re-read on that thread's news, and re-keyed with the target", async () => {
+	const authorities = createIdentityAuthorities();
+	const decoder = authorities.identity.decoder;
+	const first = decoder.adoptThreadId("coordinator-first");
+	const second = decoder.adoptThreadId("coordinator-second");
+	const reads: string[] = [];
+	const session = {
+		threadTurnsListPage: async (
+			params: Parameters<CodexSession["threadTurnsListPage"]>[0],
+		): Promise<SessionThreadTurnPageResult> => {
+			reads.push(params.threadId);
+			return {
+				data: [turnFixture(authorities, `turn-of-${params.threadId}`, [])],
+				nextCursor: null,
+				backwardsCursor: null,
+			};
+		},
+		timelineListPage: async () => ({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: null,
+		}),
+	};
+	let changes = 0;
+	const owner = createServerTimelineOwner({
+		session,
+		identity: decoder,
+		approvals: { inspectViews: () => [] },
+		onChange: () => {
+			changes += 1;
+		},
+	});
+	const { childId, epoch } = authorities.identity.validator;
+	const target = (threadId: typeof first, key: string) => ({ key, threadId, childId, epoch });
+	const connection = {};
+	const read = (threadId: typeof first, key: string) =>
+		owner.readTarget("pane", target(threadId, key), true, connection);
+
+	expect(read(first, "first")).toBeNull();
+	await flush();
+	expect(read(first, "first")?.threadId).toBe(first);
+	expect(reads).toEqual([first]);
+
+	// Another thread's news, such as the workhorse's, leaves it alone; its own re-reads it.
+	owner.onNotification(turnCompleted(authorities, "workhorse-thread"));
+	await flush();
+	expect(reads).toEqual([first]);
+	owner.onNotification(turnCompleted(authorities, decoder.serializeCodexIdentity(first)));
+	await flush();
+	expect(reads).toEqual([first, first]);
+	expect(changes).toBe(2);
+
+	// A new coordinator thread is a new binding: nothing of the first is shown for it.
+	expect(read(second, "second")).toBeNull();
+	await flush();
+	expect(read(second, "second")?.threadId).toBe(second);
+	owner.onNotification(turnCompleted(authorities, decoder.serializeCodexIdentity(first)));
+	await flush();
+	expect(reads).toEqual([first, first, second]);
+	owner.onNotification(turnCompleted(authorities, decoder.serializeCodexIdentity(second)));
+	await flush();
+	expect(reads).toEqual([first, first, second, second]);
+	owner.dispose();
+});

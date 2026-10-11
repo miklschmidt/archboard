@@ -145,6 +145,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 	};
 	const timeline: ServerTimelineOwner = {
 		read: () => null,
+		readTarget: () => null,
 		onNotification: () => undefined,
 		retire: () => undefined,
 		dispose: () => undefined,
@@ -161,6 +162,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		}),
 		state,
 		timeline,
+		coordinatorTimeline: timeline,
 		budget: createServerBrowserProjectionBudget(),
 		leaseLedger: { sessions: new Map() },
 		process: () => facts,

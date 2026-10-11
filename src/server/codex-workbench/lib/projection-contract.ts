@@ -16,6 +16,7 @@ import type {
 	ChildId,
 	OperationId,
 	ThreadId,
+	TurnId,
 } from "@/shared/codex-workbench-identity";
 import type {
 	CodexResponseByMethod,
@@ -318,6 +319,10 @@ interface BrowserProjectionInput {
 	readonly login: BrowserLogin;
 	readonly threadLink: ThreadLinkSnapshot;
 	readonly timeline: CodexTimelineProjectionInput | null;
+	/** The voice coordinator's own turns, read the way the timeline is (TASK-319). */
+	readonly coordinatorTimeline?: CodexTimelineProjectionInput | null;
+	/** Which coordinator turn delegated each workhorse turn the server has been told of. */
+	readonly delegations?: ReadonlyMap<TurnId, TurnId>;
 	readonly queue: CodexQueueProjectionInput;
 	readonly settings: readonly CodexSettingsProjectionInput[];
 	readonly approvals: readonly ApprovalOwnerView[];
