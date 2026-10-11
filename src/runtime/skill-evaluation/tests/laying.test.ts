@@ -1,11 +1,13 @@
 // A fixture that draws a relationship onto a part with children teaches an
-// author the shape the rubric marks a run down for (TASK-264, TASK-269). These
-// own the refusal: which relationships land, on which variant, and when the
-// child arrives in a later step than the relationship.
+// author the shape the rubric marks a run down for (TASK-264, TASK-269), and
+// one that does not lay would fail hours into a paid batch (TASK-272). These
+// own both refusals, laid through the store's own transitions: which
+// relationships land, on which variant, when the child arrives in a later step
+// than the relationship, and a step the store refuses.
 
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
-import { FixtureSchema, landingProblems, type Fixture } from "@/runtime/skill-evaluation/index";
+import { FixtureSchema, layingProblems, type Fixture } from "@/runtime/skill-evaluation/index";
 
 const BOARD = "Flask JSON";
 const app = { name: "Flask app", kind: "app" };
@@ -16,21 +18,48 @@ const call = { from: "Flask app", to: "JSON helpers", kind: "call", label: "json
 const drawn = { op: "new", board: BOARD, input: { nodes: [app, helpers], edges: [call] } };
 
 /**
+ * Whether a value is a plain object.
+ * @param value The value.
+ * @returns True when it is.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+/**
  * A fixture as its file would hold it, parsed by the schema the loader uses.
  * @param steps The steps, before any placeholder resolves.
  * @returns The fixture.
  */
 function fixtureOf(steps: unknown[]): Fixture {
-	return FixtureSchema.parse({ registerRepo: false, steps });
+	// The store needs a board's level, which none of these cases is about.
+	const levelled = steps.map((step) =>
+		isRecord(step) && step["op"] === "new" && isRecord(step["input"])
+			? { ...step, input: { level: "service", ...step["input"] } }
+			: step,
+	);
+	return FixtureSchema.parse({ registerRepo: false, steps: levelled });
 }
 
 /**
- * The problems one fixture has, under a scenario id no real one uses.
+ * Every problem one fixture has, under a scenario id no real one uses.
  * @param steps The fixture's steps.
  * @returns Its problems.
  */
+function refusals(steps: unknown[]): string[] {
+	return layingProblems(new Map([["S99", fixtureOf(steps)]]));
+}
+
+/**
+ * The landings one fixture has. A fixture that does not lay at all fails here
+ * rather than counting as a landing, so a case cannot pass by not laying.
+ * @param steps The fixture's steps.
+ * @returns Its landings.
+ */
 function problems(steps: unknown[]): string[] {
-	return landingProblems(new Map([["S99", fixtureOf(steps)]]));
+	const found = refusals(steps);
+	expect(found.filter((line) => line.includes("does not lay"))).toEqual([]);
+	return found;
 }
 
 /**
@@ -212,12 +241,26 @@ describe("variants", () => {
 		).toHaveLength(1);
 	});
 
-	test("a resolution may restore what the draft removed, so it is assumed to", () => {
+	test("a resolution that takes the predecessor's parent for a part lands the draft's relationship", () => {
+		// Both variants moved the same part, so the draft is in conflict until a
+		// choice settles it; taking the current variant's side puts the part
+		// under the relationship's target.
+		const part = { name: "dumps", kind: "function" };
+		const other = { name: "Other", kind: "module" };
 		expect(
 			problems([
-				{ op: "new", board: BOARD, input: { nodes: [app, helpers, dumps] } },
+				{
+					op: "new",
+					board: BOARD,
+					input: { nodes: [app, helpers, other, { ...part, parent: "Other" }] },
+				},
 				{ op: "branch", board: BOARD, as: "Draft" },
-				edit({ variant: "Draft", removeNodes: ["dumps"], edges: [call] }),
+				edit({
+					variant: "Draft",
+					nodes: [{ ...part, parent: "Flask app" }],
+					edges: [call],
+				}),
+				edit({ nodes: [{ ...part, parent: "JSON helpers" }] }),
 				{
 					op: "resolve",
 					board: BOARD,
@@ -238,5 +281,58 @@ describe("variants", () => {
 				edit({ variant: "Right", nodes: [dumps] }),
 			]),
 		).toEqual([]);
+	});
+});
+
+describe("a name a draft and its predecessor disagree about", () => {
+	/** A board with a part a draft renames and relates to, while the current variant restates it by its old name. */
+	const renamedOnDraft = [
+		{ op: "new", board: BOARD, input: { nodes: [app, helpers] } },
+		{ op: "branch", board: BOARD, as: "Draft" },
+		edit({
+			variant: "Draft",
+			nodes: [{ id: "$node(JSON helpers)", name: "Helpers", kind: "module" }],
+			edges: [{ ...call, to: "Helpers" }],
+		}),
+		edit({ nodes: [{ ...helpers, responsibility: "Serializes" }] }),
+	];
+
+	test("a child the current variant adds under the old name lands the draft's relationship (R2)", () => {
+		expect(problems([...renamedOnDraft, edit({ nodes: [dumps] })])).toHaveLength(1);
+	});
+
+	test("a child the draft adds under its own name lands it too (R3)", () => {
+		const childOfHelpers = { name: "dumps", kind: "function", parent: "Helpers" };
+		expect(
+			problems([
+				...renamedOnDraft,
+				edit({
+					variant: "Draft",
+					nodes: [{ name: "Helpers", kind: "module", responsibility: "Formats" }, childOfHelpers],
+				}),
+			]),
+		).toHaveLength(1);
+	});
+});
+
+describe("a fixture that does not lay", () => {
+	test("is refused, and the refusal names the scenario and step", () => {
+		// The parent names a part nothing created, which only the store can know.
+		const [problem, ...rest] = refusals([
+			{ op: "new", board: BOARD, input: { nodes: [app] } },
+			edit({ nodes: [{ ...dumps, parent: "Nobody" }] }),
+		]);
+		expect(rest).toEqual([]);
+		expect(problem).toContain("S99 step 1");
+	});
+
+	test("stops at the first failing step, so later steps do not pile up refusals", () => {
+		expect(
+			refusals([
+				{ op: "new", board: BOARD, input: { nodes: [app] } },
+				edit({ variant: "Missing", nodes: [helpers] }),
+				edit({ nodes: [{ ...dumps, parent: "Nobody" }] }),
+			]),
+		).toHaveLength(1);
 	});
 });
