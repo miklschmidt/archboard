@@ -17,6 +17,10 @@ import { serverPath } from "./support/navigator-support.ts";
 import { partSearchState, pictureAtRest, sidebarTab } from "./support/semantic-page.ts";
 
 test("browser keyboard input keeps trusted keys, modifiers, and native focus", async () => {
+	interface KeySnapshot {
+		count: number;
+		keys: { type: string; key: string; ctrl: boolean; shift: boolean; trusted: boolean }[];
+	}
 	await using browser = await createAgentBrowser();
 	await browser.run(["open", "about:blank"]);
 	await browser.eval(`document.body.innerHTML = '<input id="first"><input id="second">';
@@ -27,7 +31,9 @@ test("browser keyboard input keeps trusted keys, modifiers, and native focus", a
 		});
 		document.querySelector('#first').focus(); true`);
 	await browser.run(["press", "Escape"]);
-	expect(await browser.eval("({ count: window.keyCount, keys: window.keys })")).toEqual({
+	expect(
+		await browser.eval<KeySnapshot>("({ count: window.keyCount, keys: window.keys })"),
+	).toEqual({
 		count: 2,
 		keys: [
 			{ type: "keydown", key: "Escape", ctrl: false, shift: false, trusted: true },
@@ -36,7 +42,9 @@ test("browser keyboard input keeps trusted keys, modifiers, and native focus", a
 	});
 	await browser.eval("window.keys = []; window.keyCount = 0; true");
 	await browser.run(["press", "Control+Shift+K"]);
-	expect(await browser.eval("({ count: window.keyCount, keys: window.keys })")).toEqual({
+	expect(
+		await browser.eval<KeySnapshot>("({ count: window.keyCount, keys: window.keys })"),
+	).toEqual({
 		count: 2,
 		keys: [
 			{ type: "keydown", key: "K", ctrl: true, shift: true, trusted: true },
@@ -44,9 +52,9 @@ test("browser keyboard input keeps trusted keys, modifiers, and native focus", a
 		],
 	});
 	await browser.run(["press", "Tab"]);
-	expect(await browser.eval("document.activeElement.id")).toBe("second");
+	expect(await browser.eval<string>("document.activeElement.id")).toBe("second");
 	await browser.run(["keyboard", "type", "board"]);
-	expect(await browser.eval("document.querySelector('#second').value")).toBe("board");
+	expect(await browser.eval<string>("document.querySelector('#second').value")).toBe("board");
 });
 
 /**
