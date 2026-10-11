@@ -24,7 +24,14 @@ import {
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
 import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
-import { paneFromRequest, paneResponse, sendToPane } from "@/server/archboard/lib/pane-registry";
+import {
+	boardForPane,
+	paneFromRequest,
+	paneResponse,
+	sendToPane,
+} from "@/server/archboard/lib/pane-registry";
+import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
+import type { SemanticAgentSwitch } from "@/runtime/codex-semantic-context";
 import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
 import { arrivedOnBoard, noBrowserBody } from "@/server/archboard/lib/pane-routes";
 
@@ -61,14 +68,55 @@ function showPaneRoute(req: Request, res: Response): void {
 		return;
 	}
 	const key = paneBoardAddress(identity);
+	const moved = agentSwitch(body, pane, key);
 	sendToPane(pane.clientId, { type: "pane_board", identity }, key);
 	arrivedOnBoard(pane.clientId, key);
 	// A pane on a different board is a different context, and the workbench has
 	// to hear it from here: the pane's own registration will say the same thing a
 	// moment later, and until it does an agent would answer about the old board.
-	publishPaneContext(pane.clientId, "focus");
+	// That registration carries no mark, so it tells nobody; this is the one place
+	// an agent's show is news (TASK-293.06).
+	publishPaneContext(pane.clientId, "focus", [], moved);
 	logger.info(`Pane ${pane.paneId} (${pane.clientId}) shows ${key}`);
 	res.json({ success: true, board: key, identity, paneId: pane.paneId, ...paneResponse(pane) });
+}
+
+/**
+ * What an agent's show moved, when an agent asked and the pane is not already on that address:
+ * the board the pane showed, by the name it last said, and the session the agent stated. The
+ * page's own shows state no agent: what the user opens from the navigator is the pane's to mark
+ * (ADR 0034), never news of an agent.
+ * @param body The request body.
+ * @param pane The pane being pointed.
+ * @param key The address it is pointed at.
+ * @returns The switch, or undefined when no agent moved anything.
+ */
+function agentSwitch(
+	body: Record<string, unknown>,
+	pane: PaneRegistration,
+	key: string,
+): SemanticAgentSwitch | undefined {
+	const before = boardForPane(pane);
+	if (body["agent"] !== true || before === key) {
+		return undefined;
+	}
+	const session = body["session"];
+	return { from: shownName(pane, before), by: typeof session === "string" ? session : null };
+}
+
+/**
+ * What a pane was showing, by the board's name as the pane last said it, else as its address
+ * spells it.
+ * @param pane The pane.
+ * @param address The address it was on, or null when it was on none.
+ * @returns The board's name, or null.
+ */
+function shownName(pane: PaneRegistration, address: string | null): string | null {
+	const said = semanticPaneContextFor(pane.clientId)?.board;
+	if (said != null) {
+		return said.name;
+	}
+	return address === null ? null : parseBoardKey(address).board;
 }
 
 /**

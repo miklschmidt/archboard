@@ -22,7 +22,7 @@ async function startInitialPaneServer(): Promise<{
 	const closed = new Promise<void>((resolve) => (resolveClosed = resolve));
 	sockets.on("connection", (socket) => {
 		socket.once("close", resolveClosed);
-		socket.send(JSON.stringify({ type: "initial_elements", board: "scratch" }));
+		socket.send(JSON.stringify({ type: "pane_board", board: "scratch" }));
 	});
 	await new Promise<void>((resolve, reject) => {
 		server.once("error", reject);

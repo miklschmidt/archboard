@@ -414,14 +414,18 @@ _Avoid_: caption box, voice panel, subtitle bar
 Where a user's reading of a pane stands after they changed it by hand: the board,
 variant or view they are now looking at, what they now have selected, or the pane
 they moved to. It is told to the voice model as one sentence of names, saying
-only what changed. A change an agent or the canvas caused is never pane news.
+only what changed, as quiet context. During a narration, a pick or a view or
+variant the user chose is told as speech, and the narrator stops for it. A
+change an agent or the canvas caused is never pane news.
 _Avoid_: callback, telemetry, event, selection report
 
 **Outside change**:
 A board change made by an agent that is neither the workhorse nor the voice
-coordinator of this tab session. The workhorse of another tab is such an agent.
-The voice model and the coordinator are both told. Neither asked for the
-change, and what they know of the board is no longer true.
+coordinator of this tab session. The workhorse of another tab is such an agent,
+and so is a write that names no session. The voice model and the coordinator are
+both told, when a pane of the tab shows that board. Neither asked for the
+change, and what they know of the board is no longer true. Such an agent moving
+one of the tab's panes is told the same way, and never as the user's doing.
 _Avoid_: external edit, foreign write, third-party change
 
 **Comparison**:

@@ -1,0 +1,167 @@
+{
+	"nodes": [
+		{
+			"id": "PLBgsWQ4",
+			"order": 1000,
+			"name": "Event writers",
+			"kind": "external"
+		},
+		{
+			"id": "zKEoHcVB",
+			"order": 2000,
+			"name": "Event tables",
+			"kind": "datastore"
+		},
+		{
+			"id": "HMc6LDGM",
+			"order": 3000,
+			"name": "Shared library",
+			"kind": "package"
+		},
+		{
+			"id": "rxRvQ7Ix",
+			"order": 4000,
+			"name": "Query pipeline",
+			"kind": "module"
+		},
+		{
+			"id": "Goua91XN",
+			"order": 5000,
+			"name": "Time conversion helper",
+			"kind": "function",
+			"responsibility": "After records load, combines the stored values into one response field. Missing companion values produce an empty response, even when the original stored value exists.",
+			"parent": "HMc6LDGM"
+		},
+		{
+			"id": "25VijH2t",
+			"order": 6000,
+			"name": "Schema transformer",
+			"kind": "function",
+			"parent": "HMc6LDGM"
+		},
+		{
+			"id": "r1pYWPYI",
+			"order": 7000,
+			"name": "Backend API",
+			"kind": "service"
+		},
+		{
+			"id": "c0kxDZ9d",
+			"order": 8000,
+			"name": "Event queries",
+			"kind": "module",
+			"parent": "r1pYWPYI"
+		},
+		{
+			"id": "hXqJln5x",
+			"order": 9000,
+			"name": "Response models",
+			"kind": "module",
+			"parent": "r1pYWPYI"
+		},
+		{
+			"id": "BSIneqS8",
+			"order": 10000,
+			"name": "Client generator",
+			"kind": "package"
+		},
+		{
+			"id": "YwdJ69DM",
+			"order": 11000,
+			"name": "Frontend",
+			"kind": "ui"
+		},
+		{
+			"id": "QMVL4zTM",
+			"order": 12000,
+			"name": "Generated client",
+			"kind": "package",
+			"parent": "YwdJ69DM"
+		},
+		{
+			"id": "xIm3Bz2W",
+			"order": 13000,
+			"name": "Events UI",
+			"kind": "ui",
+			"parent": "YwdJ69DM"
+		}
+	],
+	"edges": [
+		{
+			"id": "yBevilnN",
+			"order": 1000,
+			"from": "PLBgsWQ4",
+			"to": "zKEoHcVB",
+			"kind": "data"
+		},
+		{
+			"id": "lsOwWQvq",
+			"order": 2000,
+			"from": "c0kxDZ9d",
+			"to": "zKEoHcVB",
+			"kind": "data"
+		},
+		{
+			"id": "jicucYEk",
+			"order": 3000,
+			"from": "c0kxDZ9d",
+			"to": "hXqJln5x",
+			"kind": "call",
+			"label": "project records"
+		},
+		{
+			"id": "8evLPAqG",
+			"order": 5000,
+			"from": "c0kxDZ9d",
+			"to": "Goua91XN",
+			"kind": "call",
+			"label": "convert fields"
+		},
+		{
+			"id": "bkg48D2R",
+			"order": 6000,
+			"from": "25VijH2t",
+			"to": "hXqJln5x",
+			"kind": "dependency",
+			"label": "describes response schemas"
+		},
+		{
+			"id": "ce55Tkmn",
+			"order": 7000,
+			"from": "BSIneqS8",
+			"to": "25VijH2t",
+			"kind": "data"
+		},
+		{
+			"id": "JfukpjWp",
+			"order": 8000,
+			"from": "BSIneqS8",
+			"to": "QMVL4zTM",
+			"kind": "data"
+		},
+		{
+			"id": "wksRppzr",
+			"order": 9000,
+			"from": "xIm3Bz2W",
+			"to": "QMVL4zTM",
+			"kind": "call"
+		},
+		{
+			"id": "PRXBb3Zi",
+			"order": 10000,
+			"from": "QMVL4zTM",
+			"to": "c0kxDZ9d",
+			"kind": "http",
+			"label": "GET event endpoints"
+		},
+		{
+			"id": "DmXZJPSU",
+			"order": 11000,
+			"from": "rxRvQ7Ix",
+			"to": "Goua91XN",
+			"kind": "call"
+		}
+	],
+	"flows": [],
+	"walkthroughs": []
+}

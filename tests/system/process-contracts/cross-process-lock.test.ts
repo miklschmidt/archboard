@@ -1,257 +1,141 @@
 import { expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS } from "../support/timing.ts";
-import { createJsonRequester } from "../support/http.ts";
 import {
-	openTestPane,
-	type PaneMessage,
-	type TestPane,
-	waitForPaneMessage,
-	waitForPaneMessageWhere,
-} from "../support/pane-websocket.ts";
+	TEST_CROSS_PROCESS_CLAIM_RENEWAL_WAIT_MS,
+	TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
+} from "../support/timing.ts";
+import { createJsonRequester } from "../support/http.ts";
+import { openTestPane } from "../support/pane-websocket.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
-import { RawLockReadySchema } from "./fixtures/process-resource-owner.ts";
-import { startOwnedPeer } from "./support/owned-peer-process.ts";
 import { sanitizedEnvironment } from "./support/process-http.ts";
 
+// ADR 0016: the lock is a file, and a file calls nobody. A claim taken through
+// one Archboard server excludes writes through another server on the same vault,
+// and the second server's panes hear about it from the lock sweep within one
+// watch interval rather than at their next refused write. A pane taking a
+// claim back through one server ends the claim held through the other, and that
+// agent hears CLAIM_REVOKED (ADR 0022).
+
 const repoRoot = resolve(import.meta.dir, "../../..");
-const fixture = join(import.meta.dir, "fixtures/process-resource-owner.ts");
+const serverPath = join(repoRoot, "src/server.ts");
 
-/**
- * ADR 0016's cross-process broadcast is a real timer and filesystem fact.
- * TASK-148.04 keeps only that elapsed wait, measures it from a completed lock
- * mutation to the matching pane frame, and applies the named TEST_* bound.
- */
-async function observeCrossProcessLock(
-	pane: TestPane,
-	start: number,
-	match: (message: PaneMessage) => boolean,
-): Promise<{ message: PaneMessage | undefined; elapsedMs: number }> {
-	const startedAt = performance.now();
-	const message = await waitForPaneMessageWhere(
-		pane,
-		start,
-		match,
-		TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
-	);
-	return { message, elapsedMs: performance.now() - startedAt };
-}
-
-test("raw lock peer and two servers exclude and recover through one vault", async () => {
+test("a claim taken through another server excludes writes here and reaches the pane within the lock sweep", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-cross-process-lock-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
 	const env = sanitizedEnvironment(root, vault);
-	const raw = await startOwnedPeer({
-		argv: [process.execPath, fixture],
-		env: {
-			...env,
-			ARCHBOARD_TEST_RESOURCE_MODE: "lock",
-			ARCHBOARD_TEST_REPO_ROOT: repoRoot,
-			ARCHBOARD_TEST_LOCK_BOARD: "scratch",
-		},
-		readySchema: RawLockReadySchema,
-	});
-	resources.defer(() => raw.dispose());
-	const first = await startOwnedServer({
-		serverPath: join(repoRoot, "src/server.ts"),
-		vault,
-		env,
-	});
+	const first = await startOwnedServer({ serverPath, vault, env });
 	resources.defer(() => first.dispose());
+	const second = await startOwnedServer({
+		serverPath,
+		vault,
+		env: { ...env, XDG_STATE_HOME: join(root, "second-state") },
+	});
+	resources.defer(() => second.dispose());
 	const requestFirst = createJsonRequester(first);
-	try {
-		expect(existsSync(raw.ready.lockFile)).toBeTrue();
-		const blocked = await requestFirst<{
-			code: string;
-			error: string;
-			holder: { process: string };
-		}>("/api/elements?board=scratch", {
-			method: "POST",
-			body: { id: "blocked", type: "rectangle", x: 0, y: 0, width: 20, height: 20 },
-		});
-		expect(blocked.status).toBe(409);
-		expect(blocked.body.code).toBe("BOARD_HELD");
-		expect(blocked.body.error).toMatch(/on another [\w ]+ \(/);
-		expect(blocked.body.holder.process).toBe(raw.ready.process);
-		await raw.dispose();
-		expect(existsSync(raw.ready.lockFile)).toBeFalse();
-		expect(
-			(
-				await requestFirst("/api/elements?board=scratch", {
-					method: "POST",
-					body: { id: "allowed", type: "rectangle", x: 0, y: 0, width: 20, height: 20 },
-				})
-			).status,
-		).toBe(200);
+	const requestSecond = createJsonRequester(second);
 
-		const second = await startOwnedServer({
-			serverPath: join(repoRoot, "src/server.ts"),
-			vault,
-			env: { ...env, XDG_STATE_HOME: join(root, "second-state") },
-		});
-		resources.defer(() => second.dispose());
-		const requestSecond = createJsonRequester(second);
-		const localPane = await openTestPane(first.base, requestFirst, "first-local-pane", 0);
-		resources.defer(() => localPane.close());
-		const pane = await openTestPane(second.base, requestSecond, "second-pane", 0);
-		resources.defer(() => pane.close());
-		expect(pane.seen.find((message) => message.type === "board_lock")).toMatchObject({
-			board: "scratch",
-			held: false,
-		});
-		await requestFirst("/api/boards/hold?board=scratch", {
-			method: "POST",
-			body: { clientId: "first-pane" },
-		});
-		const firstRenewal = setInterval(() => {
-			void requestFirst("/api/boards/hold?board=scratch", {
-				method: "POST",
-				body: { clientId: "first-pane" },
-			});
-		}, 800);
-		resources.defer(() => clearInterval(firstRenewal));
-		const denied = await requestSecond<{ code: string; holder: { id: string } }>(
-			"/api/elements?board=scratch",
-			{
-				method: "POST",
-				body: { id: "other", type: "rectangle", x: 0, y: 0, width: 20, height: 20 },
-			},
-		);
-		clearInterval(firstRenewal);
-		expect(denied.status).toBe(409);
-		expect(denied.body).toMatchObject({ code: "BOARD_HELD", holder: { id: "first-pane" } });
-		await requestFirst("/api/boards/hold/release?board=scratch", {
-			method: "POST",
-			body: { clientId: "first-pane" },
-		});
-		const beforeRecoveredWrite = pane.since();
-		const recovered = await requestSecond("/api/elements?board=scratch", {
-			method: "POST",
-			body: { id: "other", type: "rectangle", x: 0, y: 0, width: 20, height: 20 },
-		});
-		expect(recovered.status).toBe(200);
-		expect(
-			await waitForPaneMessageWhere(
-				pane,
-				beforeRecoveredWrite,
-				(message) =>
-					message.type === "board_lock" &&
-					message["held"] === true &&
-					(message["holder"] as { kind?: string } | undefined)?.kind === "agent",
-			),
-		).toMatchObject({ held: true, holder: { kind: "agent" } });
-		const recoveredHoldIndex = pane.seen.findIndex(
-			(message, index) =>
-				index >= beforeRecoveredWrite &&
-				message.type === "board_lock" &&
-				message["held"] === true &&
-				(message["holder"] as { kind?: string } | undefined)?.kind === "agent",
-		);
-		expect(recoveredHoldIndex).toBeGreaterThanOrEqual(beforeRecoveredWrite);
-		expect(
-			await waitForPaneMessageWhere(
-				pane,
-				recoveredHoldIndex + 1,
-				(message) => message.type === "board_lock" && message["held"] === false,
-			),
-		).toMatchObject({ board: "scratch", held: false });
+	const created = await requestFirst<{ success: boolean }>("/api/semantic-boards/create", {
+		method: "POST",
+		doing: "starting the payment path",
+		body: {
+			board: "payments",
+			origin: "agent",
+			create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }], edges: [] },
+		},
+	});
+	expect(created.status).toBe(200);
 
-		const localBeforeClaim = localPane.since();
-		const beforeClaim = pane.since();
-		expect(
-			(
-				await requestFirst("/api/boards/claim?board=scratch", {
-					method: "POST",
-					body: { reason: "restructuring the queues" },
-				})
-			).status,
-		).toBe(200);
-		const remoteClaimPromise = observeCrossProcessLock(
-			pane,
-			beforeClaim,
+	const pane = await openTestPane(first.base, requestFirst, "first-server-pane", 0, {
+		board: "payments",
+	});
+	resources.defer(() => pane.close());
+	expect(
+		await pane.waitFor((message) => message.type === "board_lock" && message["held"] === false),
+	).toBeDefined();
+
+	// The claim is taken in the other process; this server's pane learns of it
+	// from the sweep, not from anything it did.
+	const claimStart = pane.since();
+	const claimedAt = performance.now();
+	const claim = await requestSecond<{ version: number }>(
+		"/api/semantic-boards/claim?board=payments",
+		{ method: "POST", body: { reason: "restructuring the queues" } },
+	);
+	expect(claim.status).toBe(200);
+	expect(
+		await pane.waitFor(
 			(message) =>
 				message.type === "board_lock" &&
 				message["held"] === true &&
 				(message["holder"] as { claimed?: boolean } | undefined)?.claimed === true,
-		);
-		expect(
-			await waitForPaneMessage(localPane, localBeforeClaim, "board_lock", 2_000),
-		).toMatchObject({
-			held: true,
-			holder: { claimed: true, reason: "restructuring the queues" },
-		});
-		const remoteClaim = await remoteClaimPromise;
-		expect(remoteClaim.message).toMatchObject({
-			held: true,
-			holder: { claimed: true, reason: "restructuring the queues" },
-		});
-		expect(remoteClaim.elapsedMs).toBeLessThanOrEqual(TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS);
+			claimStart,
+			TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
+		),
+	).toMatchObject({ holder: { claimed: true, reason: "restructuring the queues" } });
+	expect(performance.now() - claimedAt).toBeLessThanOrEqual(
+		TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
+	);
 
-		const localBeforeTakeover = localPane.since();
-		const takeover = await requestSecond<{
-			created: boolean;
-			holder: { id: string; kind: string };
-		}>("/api/boards/hold?board=scratch", {
-			method: "POST",
-			body: { clientId: pane.clientId },
-		});
-		const remoteTakeoverPromise = observeCrossProcessLock(
-			localPane,
-			localBeforeTakeover,
-			(message) =>
-				message.type === "board_lock" &&
-				message["held"] === true &&
-				(message["holder"] as { id?: string } | undefined)?.id === pane.clientId,
-		);
-		expect(takeover).toMatchObject({
-			status: 200,
-			body: { created: true, holder: { id: pane.clientId, kind: "human" } },
-		});
-		const remoteTakeover = await remoteTakeoverPromise;
-		expect(remoteTakeover.message).toMatchObject({
-			held: true,
-			holder: { id: pane.clientId, kind: "human" },
-		});
-		expect(remoteTakeover.elapsedMs).toBeLessThanOrEqual(TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS);
+	// One writer at a time: this server's write is refused while the other holds.
+	const edit = {
+		method: "POST",
+		doing: "adding the ledger",
+		body: {
+			board: "payments",
+			origin: "agent",
+			edit: { nodes: [{ name: "Ledger", kind: "datastore" }] },
+		},
+	};
+	const refused = await requestFirst<{ code: string }>(
+		"/api/semantic-boards/edit?expectVersion=1",
+		edit,
+	);
+	expect(refused).toMatchObject({ status: 409, body: { code: "BOARD_HELD" } });
 
-		const localBeforeRelease = localPane.since();
-		const paneBeforeRelease = pane.since();
-		const release = await requestSecond<{ released: boolean }>(
-			"/api/boards/hold/release?board=scratch",
-			{
-				method: "POST",
-				body: { clientId: pane.clientId },
-			},
-		);
-		const freePromise = Promise.all([
-			observeCrossProcessLock(
-				localPane,
-				localBeforeRelease,
-				(message) => message.type === "board_lock" && message["held"] === false,
-			),
-			waitForPaneMessageWhere(
-				pane,
-				paneBeforeRelease,
-				(message) => message.type === "board_lock" && message["held"] === false,
-			),
-		]);
-		expect(release).toMatchObject({ status: 200, body: { released: true } });
-		const [remoteFree, localFree] = await freePromise;
-		expect(remoteFree.message).toMatchObject({ board: "scratch", held: false });
-		expect(remoteFree.elapsedMs).toBeLessThanOrEqual(TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS);
-		expect(localFree).toMatchObject({ board: "scratch", held: false });
+	// Releasing in the other process reaches the pane, and the board is writable again.
+	const releaseStart = pane.since();
+	const releasedAt = performance.now();
+	const released = await requestSecond<{ released: boolean }>(
+		"/api/semantic-boards/claim/release?board=payments",
+		{ method: "POST" },
+	);
+	expect(released.body.released).toBeTrue();
+	expect(
+		await pane.waitFor(
+			(message) => message.type === "board_lock" && message["held"] === false,
+			releaseStart,
+			TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
+		),
+	).toBeDefined();
+	expect(performance.now() - releasedAt).toBeLessThanOrEqual(
+		TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
+	);
+	const written = await requestFirst("/api/semantic-boards/edit?expectVersion=1", edit);
+	expect(written.status).toBe(200);
 
-		const revoked = await requestFirst<{ code: string }>("/api/elements?board=scratch", {
-			method: "POST",
-			body: { id: "revoked", type: "rectangle", x: 0, y: 0, width: 20, height: 20 },
-		});
-		expect(revoked).toMatchObject({ status: 409, body: { code: "CLAIM_REVOKED" } });
-	} finally {
-		await resources.disposeAsync();
-	}
+	// A pane on this server takes the claim back from the other one. The lease
+	// file goes free, and the claiming server learns of it only when its next
+	// renewal is refused. Until then a call from that agent would simply retake
+	// the free lease, so nothing is asked of it before the renewal has fired.
+	const reclaimed = await requestSecond("/api/semantic-boards/claim?board=payments", {
+		method: "POST",
+		body: { reason: "restructuring the queues again" },
+	});
+	expect(reclaimed.status).toBe(200);
+	const takenBack = await requestFirst<{ released: boolean }>(
+		"/api/semantic-boards/take-back?board=payments",
+		{ method: "POST", body: { clientId: pane.clientId } },
+	);
+	expect(takenBack).toMatchObject({ status: 200, body: { released: true } });
+	await Bun.sleep(TEST_CROSS_PROCESS_CLAIM_RENEWAL_WAIT_MS);
+	const revoked = await requestSecond<{ code: string }>(
+		"/api/semantic-boards/claim?board=payments",
+		{ method: "POST", body: { reason: "carrying on" } },
+	);
+	expect(revoked).toMatchObject({ status: 409, body: { code: "CLAIM_REVOKED" } });
 }, 30_000);

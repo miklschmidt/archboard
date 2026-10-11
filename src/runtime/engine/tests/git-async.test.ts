@@ -13,20 +13,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	GIT_COMMAND_TIMEOUT_MS,
-	GIT_PROCESS_GROUP_CLEANUP_MS,
-} from "../../../shared/timing/timing.ts";
+import { GIT_PROCESS_GROUP_CLEANUP_MS } from "../../../shared/timing/timing.ts";
 import { readProcessObservation } from "../../../shared/process-observation/index.ts";
 import { git } from "../git.js";
 
-/** Bound for the fake Git child to publish its startup marker. */
-const TEST_GIT_FIXTURE_START_MS = GIT_COMMAND_TIMEOUT_MS;
+/** Ceiling for the fake Git child to publish its startup marker; it normally does so at once. */
+const TEST_GIT_FIXTURE_START_MS = 5000;
 /**
- * Bun case bound for the composed lifecycle owner: one command deadline for
- * readiness and one for the cases, three times over for a slow hosted runner.
+ * Bun case bound for the composed lifecycle owner: the fixture's start, then
+ * the cases, three times over for a slow hosted runner. A test number, not the
+ * product's Git command timeout.
  */
-const TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS = 3 * 2 * GIT_COMMAND_TIMEOUT_MS;
+const TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS = 30_000;
 
 const GIT_PROCESS_OWNER = fileURLToPath(new URL("../git-process-owner.ts", import.meta.url));
 

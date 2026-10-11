@@ -8,6 +8,7 @@ import {
 	fail,
 	textValue,
 	userChanges,
+	agentSwitchOf,
 	type BoundedValue,
 } from "@/runtime/codex-semantic-context/lib/normalize";
 import type {
@@ -383,6 +384,7 @@ export function createSemanticContextPublisher(
 		const event = withKind<PaneFocusEvent>(fields, "pane_focus", {
 			focus: { ...fields.pane, capturedAtMs },
 			userChanged: userChanges(input.pane.userChanged),
+			agentSwitch: agentSwitchOf(input.pane.agentSwitch),
 		});
 		emit(focusListeners, event, "pane_focus", "pane_focus");
 		return event;

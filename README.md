@@ -89,7 +89,7 @@ Git records changes to files. Archboard maps their commits onto the parts of you
 
 Set a branch's commits against its proposal. See which parts the commits changed, which parts the plan named, and where the two differ. Your agent can spot changes to mapped parts outside the plan before it adopts the proposal. Archboard also reports commits to bound files since the board last described them, so you can choose what to inspect next.
 
-<img src="https://github.com/user-attachments/assets/742ed45c-a62b-436d-b883-9ab6a7e09afd" width="100%" alt="The inspector shows recent commits and a pair of parts that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
+<img src="https://github.com/user-attachments/assets/dbe1c866-8f30-4693-adb1-11e2cd707df2" width="100%" alt="The inspector shows recent commits and a pair of parts that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
 
 <p align="center"><sub>Fixed example commits make this demonstration repeatable. Validate order and Save order change together in seven commits. The branch also changes Validate order outside the proposal. The terminal summarizes real Git analysis beside the live board.</sub></p>
 

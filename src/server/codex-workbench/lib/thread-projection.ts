@@ -169,9 +169,13 @@ function secondsToMilliseconds(seconds: number | null): number | null {
 /**
  * Project one owner turn, with its timing, failure and latest plan.
  * @param entry The owner's turn.
+ * @param delegatedBy The coordinator turn that delegated it, when the server knows one.
  * @returns The browser turn.
  */
-function projectTimelineTurn(entry: TimelineTurnInput): BrowserTimelineTurn {
+function projectTimelineTurn(
+	entry: TimelineTurnInput,
+	delegatedBy: BrowserTimelineTurn["delegatedBy"],
+): BrowserTimelineTurn {
 	return {
 		turnId: entry.turn.id,
 		status: entry.turn.status,
@@ -191,6 +195,7 @@ function projectTimelineTurn(entry: TimelineTurnInput): BrowserTimelineTurn {
 						explanation: entry.plan.explanation,
 						steps: entry.plan.plan.map(({ step, status }) => ({ step, status })),
 					},
+		...(delegatedBy === undefined ? {} : { delegatedBy }),
 	};
 }
 
@@ -229,14 +234,18 @@ function projectTimelineUsage(usage: TimelineUsageInput): BrowserTimeline["usage
 /**
  * Project the owner's timeline, turn by turn, for the browser.
  * @param input The owner's timeline, if it holds one.
+ * @param delegations Which coordinator turn delegated each workhorse turn, when any did.
  * @returns The browser timeline, or null.
  */
-export function projectTimeline(input: BrowserProjectionInput["timeline"]): BrowserTimeline | null {
+export function projectTimeline(
+	input: BrowserProjectionInput["timeline"],
+	delegations?: BrowserProjectionInput["delegations"],
+): BrowserTimeline | null {
 	if (input === null) return null;
 	return {
 		kind: "timeline",
 		threadId: input.threadId,
-		turns: input.turns.map(projectTimelineTurn),
+		turns: input.turns.map((entry) => projectTimelineTurn(entry, delegations?.get(entry.turn.id))),
 		nextCursor: input.cursor,
 		usage: projectTimelineUsage(input.usage),
 	};

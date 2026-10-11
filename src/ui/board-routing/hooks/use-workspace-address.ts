@@ -44,6 +44,7 @@ import {
 import {
 	abandonRestore,
 	advanceRestore,
+	boardOpened,
 	boardUnreachable,
 	createRestore,
 	retargetRestore,
@@ -172,7 +173,7 @@ function answerOperation(
 function finishOperation(state: Reconciliation, operation: Operation): void {
 	const { operator, intent, answer } = operation;
 	if (operator.kind === "restore") {
-		state.restore = unreachableFrom(state.restore, operator.target, operation);
+		state.restore = restoreAnswered(state.restore, operator.target, operation);
 		return;
 	}
 	if (intent !== null && answer === "opened" && operationMovedPane(operation, state.displayed)) {
@@ -181,16 +182,20 @@ function finishOperation(state: Reconciliation, operation: Operation): void {
 }
 
 /**
- * The restore, with a board this target asked for and could not reach named.
+ * The restore, told how its open ended: a board it could not reach is named,
+ * and a board it reached is wanted as the server spells it.
  * @param restore The restore.
  * @param target The target that asked.
  * @param operation The operation that ended.
  * @returns The restore.
  */
-function unreachableFrom(restore: Restore, target: number, operation: Operation): Restore {
-	return operation.answer === "unreachable" && operation.boardKey !== null
-		? boardUnreachable(restore, target, operation.boardKey)
-		: restore;
+function restoreAnswered(restore: Restore, target: number, operation: Operation): Restore {
+	if (operation.answer === "unreachable" && operation.boardKey !== null) {
+		return boardUnreachable(restore, target, operation.boardKey);
+	}
+	return operation.openedKey === null
+		? restore
+		: boardOpened(restore, target, operation.paneId, operation.openedKey);
 }
 
 /**

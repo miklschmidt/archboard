@@ -173,7 +173,12 @@ async function layoutTracks(
 	standings: Readonly<Record<string, ChangeKind>> | undefined,
 	entries: ReadonlyMap<string, boolean>,
 ): Promise<PaintedDrawing> {
-	return drawnBlocks(content, measured, compoundGraph(content, measured, standings, entries), true);
+	return drawnBlocks(
+		content,
+		measured,
+		compoundGraph(content, measured, standings, entries, true),
+		true,
+	);
 }
 
 export { layoutBlocks, layoutTracks };

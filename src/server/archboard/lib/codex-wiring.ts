@@ -4,6 +4,7 @@ import { semanticChangeFeed } from "@/server/archboard/lib/semantic-change-feed"
 import { panesInOrder } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import type {
+	SemanticAgentSwitch,
 	SemanticUserChange,
 	SettledChangeSourceEvent,
 } from "@/runtime/codex-semantic-context";
@@ -31,7 +32,8 @@ import {
 } from "@/server/archboard/lib/codex-semantic-input";
 import { waitForTargetsWith } from "@/server/archboard/lib/codex-target-wait";
 import { checkoutRoot } from "@/server/archboard/lib/module-paths";
-import { subscribeNarrationChanges } from "@/server/archboard/lib/walkthrough-narration";
+import { narrationChangesOf } from "@/server/archboard/lib/walkthrough-narration";
+import { canvasOf } from "@/server/archboard/lib/tab-canvas";
 import {
 	boardForPane,
 	browserLeaseLedger,
@@ -49,6 +51,7 @@ interface CodexWiring {
 					clientId: string,
 					kind: "focus" | "selection",
 					userChanged: readonly SemanticUserChange[],
+					agentSwitch?: SemanticAgentSwitch,
 			  ) => void)
 			| null;
 		acceptBrowser: ((instance: BrowserConnectionInstance, browserId: string) => void) | null;
@@ -396,18 +399,8 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				);
 			},
 		}),
-		/**
-		 * What a person does by hand to a walkthrough one tab session's voice narrates: only a pane
-		 * of that tab is its news.
-		 * @param tabSessionId The tab session.
-		 * @returns The subscription.
-		 */
-		narrationChangesFor: (tabSessionId) => (listener) =>
-			subscribeNarrationChanges((change, clientId) => {
-				if (tabSessionOf(clientId) === tabSessionId) {
-					listener(change);
-				}
-			}),
+		narrationChangesFor: narrationChangesOf,
+		canvasFor: canvasOf,
 		/**
 		 * The canonical context of a settled event, filed under the pane it presents.
 		 * @param event The settled event.
@@ -483,8 +476,9 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			 * @param clientId The pane reporting a change.
 			 * @param kind The semantic change to publish.
 			 * @param userChanged What of it the user changed by hand; empty when nothing was.
+			 * @param agentSwitch What an agent's `browser show` moved, when one did (TASK-293.06).
 			 */
-			codexWiring.codex.publishPaneContext = (clientId, kind, userChanged) => {
+			codexWiring.codex.publishPaneContext = (clientId, kind, userChanged, agentSwitch) => {
 				const pane = panes.get(clientId);
 				const session = boundSessionOf(components, clientId);
 				if (pane === undefined || session === null) return;
@@ -496,7 +490,8 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 						null,
 						pane,
 					);
-					const input = { ...read, pane: { ...read.pane, userChanged } };
+					const said = { ...read.pane, userChanged, ...(agentSwitch ? { agentSwitch } : {}) };
+					const input = { ...read, pane: said };
 					if (kind === "selection") semanticPublisher.publishPaneSelection(input);
 					else semanticPublisher.publishPaneFocus(input);
 				} catch (error) {
@@ -588,13 +583,15 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
  * @param kind Whether focus or selection changed.
  * @param userChanged What of it the user changed by hand (ADR 0034). Nothing unless the caller
  * knows otherwise, and what nobody marked is told to nobody.
+ * @param agentSwitch What an agent's `browser show` moved, which is news of its own (TASK-293.06).
  */
 function publishPaneContext(
 	clientId: string,
 	kind: "focus" | "selection",
 	userChanged: readonly SemanticUserChange[] = [],
+	agentSwitch?: SemanticAgentSwitch,
 ): void {
-	codexWiring.codex.publishPaneContext?.(clientId, kind, userChanged);
+	codexWiring.codex.publishPaneContext?.(clientId, kind, userChanged, agentSwitch);
 }
 
 export { codexWiring, publishPaneContext, prepareCodexWorkbench, stopCodexWorkbench };

@@ -213,3 +213,36 @@ test("voice-context delivery attempts are a closed wire union with ordered timin
 		}).success,
 	).toBeFalse();
 });
+
+test("the coordinator's turns belong to the coordinator's thread, and to a bound coordinator only", () => {
+	const { model, snapshot, identity } = createFixtureIds();
+	const timeline = snapshot.timeline;
+	if (timeline === null || snapshot.coordinator.threadId === null) {
+		throw new Error("fixture is missing its timeline or its bound coordinator");
+	}
+	const parses = (next: unknown) => model.BrowserSnapshotSchema.safeParse(next).success;
+	const turns = timeline.turns.map((turn) => ({ ...turn, delegatedBy: null }));
+	const own = { ...timeline, threadId: snapshot.coordinator.threadId, turns };
+
+	expect(parses({ ...snapshot, coordinatorTimeline: own })).toBeTrue();
+	expect(parses({ ...snapshot, coordinatorTimeline: null })).toBeTrue();
+	expect(parses(snapshot)).toBeTrue();
+	// The workhorse thread's timeline is not the coordinator's.
+	expect(parses({ ...snapshot, coordinatorTimeline: timeline })).toBeFalse();
+	expect(
+		parses({
+			...snapshot,
+			coordinatorTimeline: { ...own, threadId: identity.decoder.adoptThreadId("another") },
+		}),
+	).toBeFalse();
+	expect(
+		parses({
+			...snapshot,
+			coordinator: { ...snapshot.coordinator, threadId: null, activeTurnId: null },
+			coordinatorTimeline: own,
+		}),
+	).toBeFalse();
+	const voiceTurn = identity.decoder.adoptTurnId("voice-turn");
+	const delegated = turns.map((turn) => Object.assign({}, turn, { delegatedBy: voiceTurn }));
+	expect(parses({ ...snapshot, timeline: { ...timeline, turns: delegated } })).toBeTrue();
+});

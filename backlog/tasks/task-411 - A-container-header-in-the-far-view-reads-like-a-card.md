@@ -12,7 +12,7 @@ labels:
 dependencies: []
 references:
   - docs/adr/0042-the-picture-answers-the-hand-and-a-card-opens-by-flight.md
-ordinal: 698000
+ordinal: 769000
 ---
 
 ## Description

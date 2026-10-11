@@ -14,7 +14,7 @@ labels:
 dependencies: []
 references:
   - docs/adr/0038-groups-gather-and-colour-their-cards.md
-ordinal: 714000
+ordinal: 784000
 ---
 
 ## Description

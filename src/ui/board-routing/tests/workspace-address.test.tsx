@@ -430,3 +430,15 @@ test("a restore whose board resolves to another spelling settles on what the pan
 	await settle();
 	expect(shownSearch()).toBe("paneA=payments");
 });
+
+test("a restore reads the view it names once the server says how it spells the board", async () => {
+	const shell = fakeShell([["A", "payments"]]);
+	// `Engine@current` and `engine` are one board and one variant, and only the
+	// server knows it (ADR 0010, the `current` designation, a former name).
+	mounted = await mount(shell, "?paneA=Engine@current&viewA=v1");
+	await shell.answer({ reached: true, openedKey: "engine" });
+	await shell.adopt("A", "engine");
+	await settle();
+	expect(shell.panes[0]?.view).toBe("v1");
+	expect(new URLSearchParams(shownSearch()).get("viewA")).toBe("v1");
+});

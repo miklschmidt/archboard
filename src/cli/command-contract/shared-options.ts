@@ -54,7 +54,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 		spellings: ["--as-session"],
 		value: "required",
 		placeholder: "thread",
-		description: "The agent session writing, so it can skip the board news it wrote itself",
+		description: "The agent session acting, so it is not told about what it did itself",
 	},
 };
 

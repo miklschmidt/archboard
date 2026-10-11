@@ -54,7 +54,7 @@ function viewWith(stage: AgentVoiceView["stage"], busy = false): AgentView {
 	return {
 		setup: READY,
 		snapshot: null,
-		conversation: { snapshot: null, turns: [], failure: null },
+		conversation: { snapshot: null, turns: [], coordinatorTurns: [], failure: null },
 		voice: voiceIn(stage, busy),
 		context: { board: "payments", state: null },
 		busyApprovals: [],

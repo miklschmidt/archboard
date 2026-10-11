@@ -13,8 +13,10 @@ import {
 } from "@/shared/shell-geometry/index";
 import { readThemeColors, themeColor } from "@/shared/theme/server";
 
-import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
-import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
+import {
+	TEST_BROWSER_COMMAND_TIMEOUT_MS,
+	TEST_BROWSER_CONDITION_TIMEOUT_MS,
+} from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
@@ -129,6 +131,10 @@ test(
 		expect(branched.status).toBe(200);
 		const proposal = branched.body.board.variants.find((one) => one.name === "Queued ingest")!;
 		expect(proposal).toBeDefined();
+		// The agent's activity row outlives its write by a product linger
+		// (ACTIVITY_LINGER_MS). A restart drops it, so the shell matrix captures the
+		// idle navigator without waiting that linger out.
+		await server.restart();
 
 		await browser.run(["open", addressShowing(server.base, `fixedpoint@${proposal.id}`)]);
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
@@ -137,13 +143,13 @@ test(
 			() => api<PanesBody>("/api/panes").then((response) => response.body),
 			(state) => (state.paneCount ?? 0) === 1,
 			"the shell pane to register",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await pollUntil(
 			() => browser.eval<string | null>(BOARD_NAME_EXPRESSION),
 			(board) => board === "fixedpoint",
 			"fixedpoint to become the visible board",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		// And on the proposal, not merely on the board: the header names the
 		// variant beside it, and a poll that stopped at the board name would run
@@ -155,22 +161,15 @@ test(
 				),
 			(variant) => variant === proposal.name,
 			"the header to name the proposal being read",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await pollUntil(
 			() => stageState(browser.eval.bind(browser)),
 			(state) => state === "drawn",
 			"the board to be drawn in its pane",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await browser.eval<boolean>("document.fonts.ready.then(() => true)");
-		// The branch write leaves a temporary activity row. Capture the idle
-		// shell only after that row expires, so it cannot disappear mid-matrix.
-		await pollUntil(
-			() => browser.eval<{ entries: number }>(READ_ACTIVITY),
-			(activity) => activity.entries === 0,
-			"the branch activity to settle before the shell matrix",
-		);
 
 		const matrix = await captureShellRenderMatrix(browser, repoRoot);
 		expect(matrix.cells).toHaveLength(12);
@@ -380,13 +379,13 @@ test(
 			() => api<PanesBody>("/api/panes").then((response) => response.body),
 			(state) => (state.paneCount ?? 0) === 2,
 			"the desktop shell to mount two panes",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		const twoPanes = await pollUntil(
 			readPaneLetters,
 			(letters) => letters.count === 2,
 			"the two pane letters to render",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		expect(twoPanes.active).toBe(1);
 		expect(
@@ -396,7 +395,7 @@ test(
 			() => api<PanesBody>("/api/panes").then((response) => response.body),
 			(state) => (state.paneCount ?? 0) === 1,
 			"the desktop shell to return to one pane",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await pollUntil(readPaneLetters, (letters) => letters.count === 0, "the pane letters to go");
 
@@ -461,7 +460,7 @@ test(
 				})()`),
 			(layout) => layout?.text === PERSISTENT_NOTICE_TEXT,
 			"the canvas-contained recovery notice to render",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		expect(notice).not.toBeNull();
 		if (!notice) {

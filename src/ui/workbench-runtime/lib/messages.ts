@@ -5,6 +5,8 @@
 // person's prompts, the plan's progress, the work the agent did (reasoning,
 // commands, file changes, tool calls and searches, gathered into one run
 // between two things said), plan notes, approvals, and how the turn ended.
+// Whose turn it is travels as message metadata, and a workhorse turn the voice
+// coordinator delegated carries where it came from on its first prompt.
 // Nothing else in the workbench spells a vendor message field.
 
 import type { MessageStatus, ThreadMessageLike } from "@assistant-ui/react";
@@ -36,9 +38,14 @@ interface TurnEnd {
 	readonly error: ConversationTurn["error"];
 }
 
+/** A prompt, and the voice coordinator turn that delegated its turn when it is that turn's first. */
+type PromptPart = Extract<ConversationItem, { readonly media: "prompt" }> & {
+	readonly delegatedBy: ConversationTurn["delegatedBy"];
+};
+
 /** The data parts the conversation renders, by name, with what each carries. */
 interface ConversationDataParts {
-	readonly prompt: Extract<ConversationItem, { readonly media: "prompt" }>;
+	readonly prompt: PromptPart;
 	readonly plan: Extract<ConversationItem, { readonly media: "plan" }>;
 	readonly approval: Extract<ConversationItem, { readonly media: "approval" }>;
 	readonly activity: ActivityRun;
@@ -100,14 +107,18 @@ function isActivity(item: ConversationItem): item is ActivityItem {
 /**
  * The part a non-activity item becomes.
  * @param item The item.
+ * @param delegatedBy Where the turn came from, for the prompt that carries it.
  * @returns The part.
  */
-function wordsPart(item: Exclude<ConversationItem, ActivityItem>): MessagePart {
+function wordsPart(
+	item: Exclude<ConversationItem, ActivityItem>,
+	delegatedBy: ConversationTurn["delegatedBy"],
+): MessagePart {
 	switch (item.media) {
 		case "text":
 			return { type: "text", text: item.text };
 		case "prompt":
-			return dataPart("prompt", item);
+			return dataPart("prompt", { ...item, delegatedBy });
 		case "plan":
 			return dataPart("plan", item);
 		default:
@@ -134,6 +145,8 @@ function stillGoing(item: ActivityItem | undefined): boolean {
 function itemParts(turn: ConversationTurn): MessagePart[] {
 	const parts: MessagePart[] = [];
 	let run: ActivityItem[] = [];
+	// Only the turn's first prompt says where the turn came from.
+	let delegatedBy = turn.delegatedBy;
 	const ended = turn.outcome !== "running";
 	/**
 	 * Close the current run of work, if there is one.
@@ -150,7 +163,8 @@ function itemParts(turn: ConversationTurn): MessagePart[] {
 		if (isActivity(item)) run.push(item);
 		else {
 			flush(false);
-			parts.push(wordsPart(item));
+			parts.push(wordsPart(item, delegatedBy));
+			if (item.media === "prompt") delegatedBy = null;
 		}
 	}
 	flush(!ended);
@@ -188,7 +202,8 @@ function turnParts(turn: ConversationTurn): MessagePart[] {
 }
 
 /**
- * One turn as a vendor message-like value.
+ * One turn as a vendor message-like value. Whose turn it is travels as
+ * metadata, with the turn's id as its owner's thread knows it.
  * @param turn The turn.
  * @returns The message.
  */
@@ -199,6 +214,7 @@ function toThreadMessageLike(turn: ConversationTurn): ThreadMessageLike {
 		createdAt: EPOCH,
 		content: turnParts(turn),
 		status: messageStatus(turn),
+		metadata: { custom: { owner: turn.owner, turnId: turn.turnId } },
 	};
 }
 

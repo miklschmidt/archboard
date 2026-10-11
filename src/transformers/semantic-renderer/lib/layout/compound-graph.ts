@@ -169,6 +169,7 @@ function captionOptions(measured: MeasuredArchitecture): Pick<ElkNode, "layoutOp
  * @param measured Its fixed text and card dimensions.
  * @param standings Comparison standings used to distinguish marked relationship channels.
  * @param entries The children that are entry points of the container around them ({@link entryPointsOf}).
+ * @param byLook Whether relationships that differ in emphasis or traffic stay on separate lanes.
  * @returns The hierarchy and complete semantic relationships.
  */
 function compoundGraph(
@@ -176,6 +177,7 @@ function compoundGraph(
 	measured: MeasuredArchitecture,
 	standings: Readonly<Record<string, ChangeKind>> | undefined,
 	entries: ReadonlyMap<string, boolean>,
+	byLook = false,
 ): ElkNode {
 	const nodes = new Map(
 		[...measured.nodes].map(([id, value]) => [
@@ -203,6 +205,12 @@ function compoundGraph(
 					layoutOptions: {
 						"archboard.order": String(edge.order),
 						"archboard.relationship.kind": edge.kind,
+						...(byLook
+							? {
+									"archboard.relationship.emphasis": edge.emphasis,
+									"archboard.relationship.traffic": edge.traffic === undefined ? "off" : "on",
+								}
+							: {}),
 						...(standing === undefined ? {} : { "archboard.relationship.standing": standing }),
 					},
 					labels: labelsOf(edge, measured),

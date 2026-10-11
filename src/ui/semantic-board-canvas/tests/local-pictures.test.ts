@@ -9,7 +9,7 @@
 // moved on.
 
 import { afterEach, expect, test } from "bun:test";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 
 import type { BoardListing } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
@@ -17,6 +17,7 @@ import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orde
 import {
 	announceSemanticBoardChange,
 	createLocalPictureSource,
+	readAgain,
 	semanticBoardKeys,
 	semanticBoardListQuery,
 	semanticRenderQuery,
@@ -273,6 +274,30 @@ test("an announced change draws the board's states ahead, one at a time, as this
 	expect(client.getQueryData(semanticBoardKeys.render(proposal))).toMatchObject({ version: 2 });
 	await client.fetchQuery(semanticRenderQuery(proposal));
 	expect(draws).toHaveLength(4);
+});
+
+test("reading a board again draws every picture a pane holds from the new document, however it names its variant", async () => {
+	const { client } = page(memoryStorage());
+	const asked = [
+		{ board: "pipeline" },
+		{ board: "pipeline", variant: "v2" },
+		{ board: "pipeline", variant: "Semantic boards" },
+	] as const;
+	// Panes on the current variant, on a variant by id and on one by name.
+	const observers = asked.map((request) => {
+		const observer = new QueryObserver(client, semanticRenderQuery(request));
+		observer.subscribe(() => undefined);
+		return observer;
+	});
+	await until(() => observers.every((one) => one.getCurrentResult().data?.version === 1));
+
+	// The board moves with nobody told, then every drawing and document is read
+	// again: the documents first, because a drawing reads its board the moment
+	// it is asked for again.
+	server.version = 2;
+	await readAgain(client, [semanticBoardKeys.documents, semanticBoardKeys.renders]);
+	await until(() => observers.every((one) => one.getCurrentResult().data?.version === 2));
+	for (const observer of observers) observer.destroy();
 });
 
 test("a page loading against a moved board forgets the kept picture and never shows it", async () => {

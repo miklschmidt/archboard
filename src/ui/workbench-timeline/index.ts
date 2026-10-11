@@ -1,10 +1,17 @@
 // The conversation the workbench shows, projected from the server's
-// authoritative timeline: turns with their items, timing, outcome and plan.
+// authoritative timelines: turns with their items, timing, outcome and plan,
+// the workhorse's and the voice coordinator's in one order.
 
-export { conversationTurnId, projectTimelineTurns } from "@/ui/workbench-timeline/lib/projection";
+export {
+	conversationTurnId,
+	mergeConversation,
+	projectTimelineTurns,
+} from "@/ui/workbench-timeline/lib/projection";
 export type {
+	ConversationDelegation,
 	ConversationItem,
 	ConversationOutcome,
+	ConversationOwner,
 	ConversationPlan,
 	ConversationTurn,
 	ConversationUsage,

@@ -16,7 +16,7 @@ references:
   - src/transformers/semantic-renderer/lib/svg/crossings.ts
 priority: high
 type: bug
-ordinal: 676000
+ordinal: 727000
 ---
 
 ## Description

@@ -271,6 +271,27 @@ function shellWords(script: string): ShellWord[] {
 	}));
 }
 
+/** A shell word, or a separator between simple commands: `&&`, `||`, `;`, `|`, `&` and a newline. */
+const SHELL_COMMAND_PART_RE = new RegExp(`${SHELL_WORD_RE.source}|(&&|\\|\\||[;|&\\n])`, "gsu");
+
+/**
+ * Splits a script into its simple commands at the separators outside quotes,
+ * with the same word rules as `shellWords`.
+ * @param script The unwrapped script.
+ * @returns The commands and the separators between them, alternating and starting with a command; a script of one command is returned whole.
+ */
+function shellCommands(script: string): string[] {
+	const parts: string[] = [];
+	let start = 0;
+	for (const match of script.matchAll(SHELL_COMMAND_PART_RE)) {
+		const separator = match[1];
+		if (separator === undefined) continue;
+		parts.push(script.slice(start, match.index), separator);
+		start = match.index + separator.length;
+	}
+	return [...parts, script.slice(start)];
+}
+
 /**
  * What one quoted run or escape passes. Inside double quotes a backslash
  * escapes only a dollar, a backtick, a double quote, a backslash or a newline;
@@ -306,4 +327,4 @@ function inside(directory: string, target: string): boolean {
 	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
 
-export { reachesBatchOutsideWorld, shellWords };
+export { reachesBatchOutsideWorld, shellCommands, shellWords };

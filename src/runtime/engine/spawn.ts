@@ -14,13 +14,26 @@ import {
 	type HealthStatus,
 } from "@/runtime/engine/server-client";
 
-import { readPidFile, removePidFile } from "@/runtime/engine/pidfile";
+import { existsSync } from "node:fs";
+import {
+	pidFilePath,
+	pidFileRecordsStartTime,
+	readPidFile,
+	removePidFile,
+	removePidFileIfOwnerGone,
+} from "@/runtime/engine/pidfile";
 import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
 } from "@/runtime/codex-process/executable";
 import { createCodexProcessGroupOperations } from "@/runtime/codex-process/process-group";
-import { SERVER_STARTUP_READINESS_MS } from "@/shared/timing/timing";
+import {
+	SERVER_STARTUP_READINESS_MS,
+	SERVER_STOP_CONFIRM_MS,
+	SERVER_STOP_PIDFILE_POLL_MS,
+	SERVER_STOP_PIDFILE_WAIT_MS,
+	SERVER_STOP_PROBE_POLL_MS,
+} from "@/shared/timing/timing";
 import { SERVER_STARTUP_TERMINAL_FD_ENV } from "@/shared/server-startup-terminal";
 import { readProcessObservation } from "@/shared/process-observation";
 import {
@@ -430,22 +443,72 @@ interface StopResult {
 }
 
 /**
- * What `stop` answers when nothing is listening: a stale pidfile is cleaned
- * up, never signalled.
+ * The error for a recorded process that is alive but does not answer. A
+ * pidfile with no start time cannot tell its process from one that inherited
+ * the pid, so the message only says the process may be the server.
+ * @param port The server port.
+ * @param pid The pid the pidfile recorded.
+ * @returns The error to throw.
+ */
+function stuckOwnerError(port: number, pid: number): Error {
+	const certain = pidFileRecordsStartTime(port);
+	const identity = certain
+		? `Process ${pid} is alive and recorded as the Archboard server for port ${port}`
+		: `Process ${pid} may be the Archboard server for port ${port}; its pidfile records no start time, so the pid may belong to an unrelated process`;
+	const advice = certain
+		? `If it is a stuck or older server, end it with \`kill ${pid}\``
+		: `Check \`ps -p ${pid}\` before you end it with \`kill ${pid}\`, or delete ${pidFilePath(port)} if it is not the server`;
+	return new Error(
+		`${identity}, but it does not answer at ${ARCHBOARD_URL}. The pidfile is kept. ${advice}, then run \`archboard stop\` again.`,
+	);
+}
+
+/**
+ * Wait for the pidfile of a server that stopped answering to go away: its
+ * owner exits, or the server removes the file itself.
+ * @param port The server port.
+ * @param pid The pid the pidfile recorded.
+ * @returns The stop result once the pidfile is gone, or undefined when the
+ * recorded process still runs after the wait.
+ */
+async function awaitPidFileGone(port: number, pid: number): Promise<StopResult | undefined> {
+	const deadline = Date.now() + SERVER_STOP_PIDFILE_WAIT_MS;
+	for (;;) {
+		if (removePidFileIfOwnerGone(port)) {
+			return {
+				stopped: false,
+				pid,
+				message: `Archboard server is not running; stale pidfile removed (pid ${pid}).`,
+			};
+		}
+		if (!existsSync(pidFilePath(port))) {
+			return { stopped: false, pid, message: "Archboard server is not running." };
+		}
+		if (Date.now() >= deadline) return undefined;
+		// oxlint-disable-next-line no-await-in-loop -- the poll interval between looks at the pidfile
+		await new Promise((resolve) => setTimeout(resolve, SERVER_STOP_PIDFILE_POLL_MS));
+	}
+}
+
+/**
+ * What `stop` answers when nothing answers `/health`: a pidfile whose process
+ * is gone is cleaned up, never signalled. A pidfile whose process still runs
+ * is kept, because the process may hold the port (an older build, or a server
+ * that is starting or stopping) and deleting the file would orphan it. A server
+ * that is shutting down stops answering before it removes its pidfile, so the
+ * file gets a short wait to go away first.
  * @param port The server port.
  * @param filePid The pid the pidfile recorded, if any.
  * @returns The stop result for an absent server.
+ * @throws {Error} When the recorded process is alive but does not answer.
  */
-function absentServerResult(port: number, filePid: number | null): StopResult {
-	if (filePid !== null) {
-		removePidFile(port);
-		return {
-			stopped: false,
-			pid: filePid,
-			message: `Archboard server is not running; stale pidfile removed (pid ${filePid}).`,
-		};
+async function absentServerResult(port: number, filePid: number | null): Promise<StopResult> {
+	if (filePid === null) {
+		return { stopped: false, message: "Archboard server is not running." };
 	}
-	return { stopped: false, message: "Archboard server is not running." };
+	const gone = await awaitPidFileGone(port, filePid);
+	if (gone === undefined) throw stuckOwnerError(port, filePid);
+	return gone;
 }
 
 /**
@@ -469,7 +532,7 @@ function verifiedServerPid(health: HealthStatus): number | null {
  * @returns The stop result once `/health` stops answering.
  */
 async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
-	const deadline = Date.now() + 5000;
+	const deadline = Date.now() + SERVER_STOP_CONFIRM_MS;
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- one probe after another until the server is gone
 		const postSignalHealth = await healthOrNull();
@@ -478,9 +541,11 @@ async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
 			return { stopped: true, pid, message: `Archboard server (pid ${pid}) stopped.` };
 		}
 		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
-		await new Promise((resolve) => setTimeout(resolve, 200));
+		await new Promise((resolve) => setTimeout(resolve, SERVER_STOP_PROBE_POLL_MS));
 	}
-	throw new Error(`Archboard server (pid ${pid}) did not stop within 5s.`);
+	throw new Error(
+		`Archboard server (pid ${pid}) did not stop within ${SERVER_STOP_CONFIRM_MS / 1000}s.`,
+	);
 }
 
 /**

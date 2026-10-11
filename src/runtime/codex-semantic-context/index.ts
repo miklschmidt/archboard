@@ -43,6 +43,7 @@ export type {
 	SemanticIssueInput,
 	SemanticReconciliation,
 	SemanticReconciliationInput,
+	SemanticAgentSwitch,
 	SemanticPane,
 	SemanticPaneInput,
 	SemanticUserChange,

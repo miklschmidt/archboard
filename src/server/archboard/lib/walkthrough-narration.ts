@@ -29,6 +29,9 @@ import {
 import { narratedSubjects } from "@/server/archboard/narrated-subjects";
 import { paneBoardOf, panes } from "@/server/archboard/lib/pane-registry";
 import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
+import { aggregateKey } from "@/server/archboard/lib/semantic-board-context";
+import { tabSessionOf } from "@/server/archboard/lib/tab-sessions";
+import type { TabSessionId } from "@/server/codex-workbench";
 
 /**
  * What one live pane is showing: what the pane itself last said is on screen,
@@ -195,6 +198,38 @@ async function openNarration(clientId: string): Promise<void> {
 }
 
 /**
+ * What a user does by hand to a walkthrough one browser tab's voice narrates: only a pane of that
+ * tab is its news (TASK-373).
+ * @param tabSessionId The tab.
+ * @returns Subscribes a listener, and returns what stops it.
+ */
+function narrationChangesOf(
+	tabSessionId: TabSessionId,
+): (listener: (change: RealtimePresentationChange) => void) => () => void {
+	return (listener) =>
+		subscribeNarrationChanges((change, clientId) => {
+			if (tabSessionOf(clientId) === tabSessionId) {
+				listener(change);
+			}
+		});
+}
+
+/**
+ * The board a narration in one of a browser tab's panes is on, read from what that pane shows now.
+ * @param tabSessionId The tab.
+ * @returns The board's aggregate key, or null when no pane of that tab is narrated.
+ */
+function narratedBoardOf(tabSessionId: TabSessionId): string | null {
+	for (const clientId of narrated.keys()) {
+		const showing = tabSessionOf(clientId) === tabSessionId ? showingOf(clientId) : null;
+		if (showing !== null) {
+			return aggregateKey(showing.board);
+		}
+	}
+	return null;
+}
+
+/**
  * Hear what the voice model is to be told of a narrated walkthrough, and of which pane.
  * @param listener What to tell.
  * @returns Stops listening.
@@ -206,4 +241,11 @@ function subscribeNarrationChanges(listener: NarrationListener): () => void {
 	};
 }
 
-export { forgetNarration, narrationFor, openNarration, subscribeNarrationChanges };
+export {
+	forgetNarration,
+	narratedBoardOf,
+	narrationChangesOf,
+	narrationFor,
+	openNarration,
+	subscribeNarrationChanges,
+};

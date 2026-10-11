@@ -31,7 +31,9 @@ The current rules are:
   face with room for their head and bend. Protect complete title bands.
 - Route around cards and title bands with libavoid. Relationships with matching
   kind, comparison standing and local direction share ports on each face;
-  different channels use distinct attachment positions and lanes.
+  different channels use distinct attachment positions and lanes. On Track a
+  difference in emphasis or in traffic makes a different channel too; Blocks
+  still shares a lane across such lines (layout-rules.md section 47).
   Cards and external destination frames with overlapping facing spans offer aligned ports
   at the nearest feasible balanced position. On a face with an unobstructed
   aligned channel, omit the redundant center choice that would introduce a

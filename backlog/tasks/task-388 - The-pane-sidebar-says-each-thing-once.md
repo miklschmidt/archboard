@@ -15,7 +15,7 @@ documentation:
   - docs/design/operator-canvas-shell.md
 priority: medium
 type: enhancement
-ordinal: 677000
+ordinal: 728000
 ---
 
 ## Description

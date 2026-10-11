@@ -1,9 +1,10 @@
 ---
 id: TASK-244
 title: Tolerate three-run noise in the quality-regressed verdict
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-16 02:26'
+updated_date: '2026-10-11 14:23'
 labels: []
 dependencies: []
 references:
@@ -20,6 +21,20 @@ The skill evaluation report prints REGRESSED whenever any of four three-run mean
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A mean drop smaller than one grader point spread over the arm (one point on one run of three) does not by itself print REGRESSED; a lost success or a new visual failure still does
-- [ ] #2 The report legend says what REGRESSED means and a fast test holds the rule
+- [x] #1 A mean drop smaller than one grader point spread over the arm (one point on one run of three) does not by itself print REGRESSED; a lost success or a new visual failure still does
+- [x] #2 The report legend says what REGRESSED means and a fast test holds the rule
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-11 audit: delivered by abc9b9752 (report what moved instead of stamping REGRESSED), a604ef5ca and e22a57ef1. Verified: bun test --isolate src/runtime/skill-evaluation/tests/report-change.test.ts passes (12 tests in that file; 26 pass with storage.test.ts).
+
+2026-10-11 review correction: a per-scenario row now prints no verdict word at all (report-markdown.ts:187, 'deltas only (one scenario)'), so on such a row a lost success shows only as 'ok -1'. The word REGRESSED appears on workflow and total rows only, so AC1's 'a lost success or a new visual failure still does' holds for aggregate rows.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Done before this audit by abc9b9752: a per-scenario row draws no REGRESSED word, means are held to a paired noise bar, and a lost success or a new visual failure still regresses. The report legend says what the verdict means (report-markdown.ts). Verified 2026-10-11 with report-change.test.ts, which holds the rule (e.g. 'one grader point on one run is never a move'). Note: a consistent one-point fall across every run still regresses, by design.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -160,6 +160,7 @@ describe("production Codex generation ownership", () => {
 					{
 						queue: { kind: "codex_queue", submissions: null },
 						queueThreadId: null,
+						delegations: new Map(),
 						currentCoordinatorCall: null,
 						threads: new Set(),
 						voiceTrace: { begin: () => undefined, note: () => undefined },
