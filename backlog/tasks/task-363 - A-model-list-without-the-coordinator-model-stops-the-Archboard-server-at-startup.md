@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-09-28 18:26'
-updated_date: '2026-10-11 13:55'
+updated_date: '2026-10-11 14:24'
 labels:
   - codex
 dependencies: []
@@ -32,6 +32,8 @@ Found live on 2026-09-28: with a revoked sign-in (401 token_revoked), Codex 0.15
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-10-11 audit and user decision: 2f871cf52 (TASK-373 S4) removed ensureCoordinator from startup, so a model list without the coordinator model no longer reaches abandonStartup. The coordinator starts with the first message or Talk (coordinatorForConversation), and each attempt reads model/list again. The user accepted the existing unit and adapter owners in place of a fake-Codex system owner, so AC2 now names the next message or Talk as the retry point and AC3 names those owners instead of a fake Codex. Verified: model.test.ts, codex-workbench-adapters.test.ts, codex-workbench-production-initialization.test.ts and codex-workbench-realtime-actions.test.ts pass (27 tests). Not covered: a system test with a fake Codex whose model/list lacks the model.
+
+2026-10-11 follow-up (review finding): AC2's retry is owned by the coordinator lifecycle test 'refuses while model/list lacks the coordinator model, then starts once it is listed' in src/runtime/codex-coordinator/tests/lifecycle.test.ts. It drives one coordinator through a model/list without the model (ensure rejects with code model_unavailable, snapshot state failed, no thread/start) and then a model/list with it (ensure ready, model/list read twice). It fails if selectModel were cached. The four owners named in AC3 do not drive that sequence.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

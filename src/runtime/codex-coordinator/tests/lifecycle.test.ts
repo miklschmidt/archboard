@@ -122,6 +122,25 @@ describe("coordinator lifecycle", () => {
 		expect(Object.hasOwn(fixtureValue.session.updateParams[0] ?? {}, "serviceTier")).toBe(false);
 	});
 
+	test("refuses while model/list lacks the coordinator model, then starts once it is listed", async () => {
+		const fixtureValue = fixture();
+		fixtureValue.session.advertised = [];
+
+		await expectCoordinatorCode(
+			fixtureValue.coordinator.ensure({ operationId: "model-absent" }),
+			"model_unavailable",
+		);
+		expect(fixtureValue.coordinator.snapshot().state).toBe("failed");
+		expect(fixtureValue.session.startParams).toHaveLength(0);
+
+		fixtureValue.session.advertised = [coordinatorModel()];
+		const retry = await fixtureValue.coordinator.ensure({ operationId: "model-listed" });
+
+		expect(retry.state).toBe("ready");
+		expect(fixtureValue.session.modelRequests).toHaveLength(2);
+		expect(fixtureValue.session.startParams).toHaveLength(1);
+	});
+
 	test("rolls back a known not-delivered thread/start without an automatic retry", async () => {
 		const fixtureValue = fixture({
 			startError: new CodexSessionMutationError(
