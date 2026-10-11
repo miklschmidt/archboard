@@ -76,14 +76,17 @@ or a product duration.
 
 No `TEST_*` budget comes from a product duration (TASK-154).
 `tests/system/support/timing.ts` imports nothing from `src/shared/timing`.
-A wait budget is a ceiling that a passing run never reaches, or a patience; a
-poll cadence is neither. A product change must not retune either.
+A wait deadline is a ceiling that a passing run never reaches.
+A poll cadence and an intentional wait are separate durations.
+A product change must not retune these test values.
 
 A system owner waits for a product timer only when the test is about that timer
-and the timer has no test override. Two cases remain:
+and the timer has no test override. These cases remain:
 
 - the one-second lock sweep that tells a pane its board changed under it
   (`external-board-write`, and the opt-in cross-process lock owner);
+- the one-second lease renewal that records a claim's loss after a pane takes it back
+  (the opt-in cross-process lock owner);
 - the wall-clock pace of a recording (`walkthrough-recording`, a declared
   real-time exception).
 
