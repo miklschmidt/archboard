@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:22'
-updated_date: '2026-10-11 16:20'
+updated_date: '2026-10-11 16:27'
 labels: []
 dependencies: []
 references:
@@ -56,4 +56,8 @@ The integrated README assessment reports the same 16 stale assets and zero manif
 The integrated gate passes 4746 tests and all 19 cleanup audits. A later unchanged gate fails because Bun 1.4.2 traps before loading the renaming fixture server, at zero milliseconds and 3.78 MB RSS. The exact renaming owner then passes 2 tests and 24 assertions. Both Bun versions pass repeated startup probes. Remaining repository and browser lanes pass, including all 19 cleanup audits. The full gate is rerunning without code, assertion, or timeout changes.
 
 An earlier macOS checkout setup times out in git remote add. The native test command passes locally with the hosted Bun 1.4.0: 138 tests and 711 assertions. The earlier hosted run's 18 fixture setup failures have no established cause. The fresh hosted macOS job passes all 138 tests. Hosted Linux rerun evidence remains pending.
+
+The user reports repeated desktop Chrome default-browser prompts and directs this session to use Chrome for Testing. Local setup selected the installed Chrome for Testing 150.0.7871.24. The ignored checkout .env names its absolute executable path in both AGENT_BROWSER_EXECUTABLE_PATH and ARCHBOARD_RENDERER_CHROMIUM. Both resolver calls return that testing executable. No test browser remains running.
+
+The macOS guidance requires both selections before every local lane or gate. Machine-specific paths stay in ignored configuration. No test or timing contract changes. The TASK-461 timing proposal remains unapplied.
 <!-- SECTION:NOTES:END -->

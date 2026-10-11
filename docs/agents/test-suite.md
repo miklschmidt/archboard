@@ -259,10 +259,12 @@ It omits `nativeVirtualKeyCode`, which the vendor driver sets to a Windows key c
 That value produces unwanted repeated events in macOS Chrome.
 The adapter retains the command deadline and closes its input connection during cleanup.
 
-For a managed Chrome installation that enforces the default-browser policy,
-use Chrome for Testing. Set both `AGENT_BROWSER_EXECUTABLE_PATH` and
-`ARCHBOARD_RENDERER_CHROMIUM` to its executable. Run the browser lane serially;
-each owner must finish cleanup before the next starts.
+On macOS, use Chrome for Testing. Before every local lane or gate, set
+`AGENT_BROWSER_EXECUTABLE_PATH` and `ARCHBOARD_RENDERER_CHROMIUM` to its absolute
+executable path in the checkout's ignored `.env` file. Bun reads these values
+before starting the test processes.
+Desktop Chrome can show system default-browser prompts despite the automation flags.
+Run the browser lane serially. Each owner must finish cleanup before the next starts.
 
 The lane writes `# browser-toolchain` and `# browser-lane` JSON summaries to stderr.
 The summaries identify the toolchain, selected files, owner progress, and final exit status.
