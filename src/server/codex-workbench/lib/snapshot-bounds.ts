@@ -1,3 +1,4 @@
+import { BROWSER_SNAPSHOT_DELTA_KEYS } from "@/shared/codex-browser-gateway";
 import type { BrowserSnapshot, BrowserTimeline } from "@/shared/codex-browser-model";
 import type { BrowserSnapshotDelta } from "@/server/codex-workbench/lib/contract";
 
@@ -5,26 +6,7 @@ export const BROWSER_SNAPSHOT_MAX_BYTES = 1_048_576;
 export const BROWSER_SNAPSHOT_MIN_BYTES = 32_768;
 export const BROWSER_DELTA_MAX_BYTES = 262_144;
 
-type BrowserSnapshotKey = Exclude<keyof BrowserSnapshot, "kind" | "version">;
 type BrowserTimelineTurn = BrowserTimeline["turns"][number];
-const SNAPSHOT_KEYS: readonly BrowserSnapshotKey[] = [
-	"readiness",
-	"account",
-	"login",
-	"threadLink",
-	"timeline",
-	"queue",
-	"settings",
-	"approvals",
-	"dynamicApprovals",
-	"semantic",
-	"coordinator",
-	"voice",
-	"spokenApproval",
-	"voiceContext",
-	"lease",
-	"operation",
-];
 
 /**
  * Freeze a value and everything reachable from it, so a published snapshot cannot drift.
@@ -276,7 +258,7 @@ export function diffBrowserSnapshots(
 	next: BrowserSnapshot,
 ): BrowserSnapshotDelta | null {
 	const delta: Record<string, unknown> = {};
-	for (const key of SNAPSHOT_KEYS) {
+	for (const key of BROWSER_SNAPSHOT_DELTA_KEYS) {
 		if (!sameWireValue(previous[key], next[key])) delta[key] = next[key];
 	}
 	if (Object.keys(delta).length === 0) return null;
