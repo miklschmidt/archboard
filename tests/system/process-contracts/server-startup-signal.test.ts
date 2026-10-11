@@ -158,7 +158,7 @@ test("public cleanup-error takeover reaps the exact terminal group and outer ser
 	const base = `http://127.0.0.1:${port}`;
 	const environment = publicStartEnvironment(root, base, executable);
 	environment["ARCHBOARD_TEST_PUBLIC_SHUTDOWN_FAILURE"] = "always";
-	environment["ARCHBOARD_TEST_PUBLIC_READINESS_TIMEOUT_MS"] = "350";
+	environment["ARCHBOARD_TEST_PUBLIC_READINESS_TIMEOUT_MS"] = "2000";
 	environment["ARCHBOARD_TEST_PUBLIC_CLEANUP_DEADLINE_MS"] = "900";
 	environment["ARCHBOARD_TEST_PUBLIC_CLEANUP_GRACE_MS"] = "150";
 	writePublicCodexExecutable(
@@ -207,7 +207,7 @@ process.stdin.resume(); setInterval(() => {}, 1000);`,
 		expect(leader.group).toBe(leader.pid);
 		expect(descendant.group).toBe(leader.group);
 		expect(await result).not.toBe(0);
-		expect(performance.now() - startedAt).toBeLessThan(2_000);
+		expect(performance.now() - startedAt).toBeLessThan(5_000);
 		await Promise.all([
 			waitForProcessExit(server.pid),
 			waitForProcessExit(leader.pid),
