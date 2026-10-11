@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 230,
+	"version": 232,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-11T14:08:20.712Z",
+	"updatedAt": "2026-10-11T14:24:33.394Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -96467,7 +96467,7 @@
 					{
 						"id": "4jlBP8Y2",
 						"order": 7000,
-						"from": "nmbXuHCg",
+						"from": "Y70KOm9C",
 						"to": "xP18j2Co",
 						"kind": "render",
 						"label": "render selected view",
@@ -96756,7 +96756,7 @@
 					{
 						"id": "ELnpXxr9",
 						"order": 60000,
-						"from": "nmbXuHCg",
+						"from": "Y70KOm9C",
 						"to": "adthSPYy",
 						"kind": "call",
 						"label": "hotspots, footprints and how far boards are behind",
@@ -96770,7 +96770,7 @@
 					{
 						"id": "D9dCZCLo",
 						"order": 65000,
-						"from": "nmbXuHCg",
+						"from": "Y70KOm9C",
 						"to": "nDQmpHQi",
 						"kind": "call",
 						"label": "the boards to read, then their findings",
@@ -97130,6 +97130,45 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/history-lens/lib/symbol-attribution.ts",
 							"symbol": "terraformConfiguration"
+						}
+					},
+					{
+						"id": "YRTDcmvz",
+						"order": 114000,
+						"from": "nmbXuHCg",
+						"to": "xP18j2Co",
+						"kind": "render",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "renderBoard"
+						}
+					},
+					{
+						"id": "uNUDWcla",
+						"order": 115000,
+						"from": "nmbXuHCg",
+						"to": "adthSPYy",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts",
+							"symbol": "createLocalityReading"
+						}
+					},
+					{
+						"id": "MfztpyEv",
+						"order": 116000,
+						"from": "nmbXuHCg",
+						"to": "nDQmpHQi",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "checkCode"
 						}
 					}
 				],
