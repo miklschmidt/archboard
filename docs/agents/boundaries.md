@@ -65,7 +65,9 @@ There are exactly two test owners:
 - `src/<area>/<module>/tests/` owns contract tests and private test support for one module.
 - `tests/system/` owns cross-module repository, package, process, browser, and full-product tests.
 
-Test-owned source may import support only from the same owner. It imports product behavior through
+Test-owned source may import support only from the same owner, and the preload's
+real-time declaration (`tests/system/repository-policy/support/test-wall-clock.ts`),
+which every owner may use. It imports product behavior through
 module-root entrypoint files, never an implementation subfolder. Product source, scripts, and tools
 never import test-owned source. Bun-discoverable tests outside the two owners are refused.
 

@@ -28,9 +28,12 @@ const LINE_PER_CROSSING = 1000;
 /** How near two costs are for the page to decide between them, in that weighing: a twentieth. */
 const NEAR = 0.05;
 
+/** What the joins read of the blocks: which blocks joins move labels to, and where each relationship is drawn. */
+type Joined = Pick<BlockTree, "joining" | "projections">;
+
 /** A drawing laid out one way: its blocks, and the drawing as placed. */
 interface Drawn<Placed extends Page> {
-	readonly tree: BlockTree;
+	readonly tree: Joined;
 	readonly placed: Placed;
 }
 
@@ -243,81 +246,76 @@ function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
 
+/** Lay a drawing out with some blocks' joins apart, by block id, unless called off first. */
+type Lay<Placed> = (apart: ReadonlySet<string>, signal: AbortSignal) => Promise<Placed>;
+
+/** One layout asked for: its answer, how to call it off, and whether a turn to come weighs it. */
+interface Asked<Placed> {
+	readonly calling: AbortController;
+	promise: Promise<Placed>;
+	needed: boolean;
+}
+
 /**
- * The same key for a candidate regardless of its block order.
+ * The same key for a set of blocks apart, whatever their order.
  * @param apart The blocks whose joins stay apart.
- * @returns The cache key.
+ * @returns The key.
  */
-function candidateKey(apart: ReadonlySet<string>): string {
+function apartKey(apart: ReadonlySet<string>): string {
 	return JSON.stringify([...apart].toSorted());
 }
 
 /**
- * Remember candidates, and cancel unfinished work that the remaining turns no longer need.
- * @param lay Lay the drawing out with some blocks' joins apart.
- * @returns The candidate cache and its cancellation boundary.
+ * A way to lay a drawing out that lays it with each set of blocks apart
+ * once, however often it is asked, and a way to call off the layouts no turn
+ * to come weighs. A layout asked for ahead and never awaited is dropped, a
+ * failure included: laid out one by one, it would never have been asked for.
+ * A layout called off while a worker holds it is answered all the same, and
+ * kept for a later ask. One called off while it waits is forgotten, and laid
+ * out afresh when a turn asks for it again.
+ * @param lay Lay the drawing out with some blocks' joins apart, by block id.
+ * @returns The way to ask for a layout, and the way to keep only the ones still needed.
  */
-function layingOnce<Placed>(
-	lay: (apart: ReadonlySet<string>, signal: AbortSignal) => Promise<Placed>,
-) {
-	const asked = new Map<
-		string,
-		{ controller: AbortController; promise: Promise<Placed>; settled: boolean; needed: boolean }
-	>();
+function layingOnce<Placed>(lay: Lay<Placed>): {
+	readonly ask: (apart: ReadonlySet<string>) => Promise<Placed>;
+	readonly keep: (needed: readonly ReadonlySet<string>[]) => void;
+} {
+	const asked = new Map<string, Asked<Placed>>();
 	/**
-	 * Ask for a candidate once while it remains relevant.
+	 * Ask for a layout, once.
 	 * @param apart The blocks whose joins stay apart.
 	 * @returns Its layout.
 	 */
 	const ask = (apart: ReadonlySet<string>): Promise<Placed> => {
-		const key = candidateKey(apart);
+		const key = apartKey(apart);
 		let entry = asked.get(key);
 		if (entry === undefined) {
-			const controller = new AbortController();
-			entry = {
-				controller,
-				promise: lay(apart, controller.signal),
-				settled: false,
-				needed: true,
-			};
-			asked.set(key, entry);
-			const held = entry;
-			// An active solve ignores cancellation and may be needed by a later
-			// turn. Keep sharing it until it answers; only queued cancellation
-			// discards its promise. If that candidate became needed again while
-			// cancellation travelled through the host, ask for it afresh.
+			const calling = new AbortController();
+			const held: Asked<Placed> = { calling, promise: lay(apart, calling.signal), needed: true };
+			// The host refuses only a solve still waiting with the signal's reason.
+			// A turn may have asked for it again while that refusal travelled.
 			held.promise = held.promise.catch((error: unknown) => {
-				if (controller.signal.aborted && error === controller.signal.reason) {
-					if (asked.get(key) === held) asked.delete(key);
-					if (held.needed) return ask(apart);
-				}
+				if (!calling.signal.aborted || error !== calling.signal.reason) throw error;
+				if (asked.get(key) === held) asked.delete(key);
+				if (held.needed) return ask(apart);
 				throw error;
 			});
-			// Speculative failures remain silent unless their candidate is awaited.
-			void held.promise.then(
-				() => {
-					held.settled = true;
-					return undefined;
-				},
-				() => {
-					held.settled = true;
-					return undefined;
-				},
-			);
+			held.promise.catch(() => undefined);
+			asked.set(key, held);
+			entry = held;
 		}
 		entry.needed = true;
 		return entry.promise;
 	};
 	/**
-	 * Drop obsolete unfinished candidates before asking for their replacements.
-	 * @param candidates The candidates that the remaining turns still need.
+	 * Call off every layout asked for that no turn to come weighs.
+	 * @param needed The layouts the turns to come weigh.
 	 */
-	const keep = (candidates: readonly ReadonlySet<string>[]): void => {
-		const needed = new Set(candidates.map(candidateKey));
+	const keep = (needed: readonly ReadonlySet<string>[]): void => {
+		const keys = new Set(needed.map(apartKey));
 		for (const [key, entry] of asked) {
-			entry.needed = needed.has(key);
-			if (entry.settled || entry.needed) continue;
-			entry.controller.abort();
+			entry.needed = keys.has(key);
+			if (!entry.needed) entry.calling.abort();
 		}
 	};
 	return { ask, keep };
@@ -329,16 +327,18 @@ function layingOnce<Placed>(
  * of those, each block's joins turned the other way in turn, kept where the
  * drawing reads better. Every layout the turns would weigh were none of them
  * kept is asked for at once, so they are laid out side by side; a turn kept
- * changes the ones after it, which are asked for then. They are weighed in
- * turn all the same, so the drawing is the one laying them out one by one
- * gives.
+ * changes the ones after it, which are asked for then, and the ones asked
+ * for before it that no turn to come weighs are called off. They are weighed
+ * in turn all the same, so the drawing is the one laying them out one by one
+ * gives. When the drawing is chosen, or a layout it waits for fails, every
+ * layout still asked for is called off.
  * @param tree The blocks, which name the blocks joins move labels to.
  * @param lay Lay the drawing out with some blocks' joins apart, by block id.
  * @returns The drawing laid out best.
  */
 async function layJoined<Placed extends Page>(
-	tree: BlockTree,
-	lay: (apart: ReadonlySet<string>, signal: AbortSignal) => Promise<Placed>,
+	tree: Joined,
+	lay: Lay<Placed>,
 ): Promise<Drawn<Placed>> {
 	const { ask, keep } = layingOnce(lay);
 	const blocks = [...tree.joining];
@@ -351,14 +351,17 @@ async function layJoined<Placed extends Page>(
 		),
 	];
 	/**
-	 * Ask for every layout from one turn on, as the turns would weigh it were none of them kept.
+	 * Ask for every layout from one turn on, as the turns would weigh it were
+	 * none of them kept, and call off the ones asked for before that none of
+	 * them weighs. The first turns call off nothing: the drawing they start
+	 * from is still to be weighed.
 	 * @param from The first turn.
 	 * @param apart The blocks apart in the drawing kept so far.
 	 */
 	const ahead = (from: number, apart: ReadonlySet<string>): void => {
-		const candidates = turns.slice(from).map((turn) => turn(apart));
-		if (from > 0) keep(candidates);
-		for (const candidate of candidates) void ask(candidate);
+		const needed = turns.slice(from).map((turn) => turn(apart));
+		if (from > 0) keep(needed);
+		for (const one of needed) void ask(one);
 	};
 	try {
 		const first = ask(new Set());
@@ -379,4 +382,4 @@ async function layJoined<Placed extends Page>(
 	}
 }
 
-export { joinWays, layJoined, type Drawn };
+export { joinWays, layJoined, type Drawn, type Joined };

@@ -1,11 +1,11 @@
 ---
-id: TASK-454
+id: TASK-464
 title: Keep wide block layouts within the normal test budget
 status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:52'
-updated_date: '2026-10-11 16:47'
+updated_date: '2026-10-11 17:51'
 labels: []
 dependencies: []
 references:
@@ -33,7 +33,7 @@ Hosted run 38148069388 at c80c70d6 times out rendering Browser application with 
 <!-- SECTION:PLAN:BEGIN -->
 1. Preserve the exact hosted timeout and reproduce the same Browser application blocks owner on Linux. 2. Measure native layout work and worker scheduling, then change one proven cause. 3. Keep the layout output, every visual assertion, and both source and normal timeout contracts. 4. Run remaining lanes, scoped Standards/Spec review, and complete local and hosted gates. No board is affected if the repair only removes redundant internal computation and keeps the renderer architecture and output. Reassess if a module or relationship changes.
 
-Affected proposals: Renderer layout@TASK-454 and Semantic renderer@TASK-454. Preserve parallel solves and selection order. Add an optional AbortSignal to the host solve contract. Cancel only obsolete queued candidates when an accepted join choice changes future candidates. Active solves finish normally. Add focused cancellation and join-selection regression owners. Compare final geometry and retain all wide-board assertions.
+Affected proposals: Renderer layout@TASK-464 and Semantic renderer@TASK-464. Preserve parallel solves and selection order. Add an optional AbortSignal to the host solve contract. Cancel only obsolete queued candidates when an accepted join choice changes future candidates. Active solves finish normally. Add focused cancellation and join-selection regression owners. Compare final geometry and retain all wide-board assertions.
 
 The merged one-worker probe still runs eight solves, including an obsolete singleton promoted synchronously after the all-joins answer. Let a cancellable caller consume an answer before promoting cancellable queued speculation. Preserve FIFO order, active solve completion, worker lifetime, output bytes, and every existing assertion. The adopted renderer boards remain accurate because this changes only the existing private queue handoff, with no new module or relationship.
 <!-- SECTION:PLAN:END -->
@@ -52,4 +52,6 @@ Hosted Linux rerun 38153663557 job 114515280382 at the merged code head again re
 The one-worker merged profile performs eight native solves in 30.46 seconds. Routing query instrumentation finds zero identical native transactions among 217 calls. This probe provides no evidence for a route cache. The isolated two-core Linux exact case passes in 47.28 seconds. A held-worker regression reproduces premature promotion of the obsolete candidate after the answered promise, before caller selection can abort it.
 
 The merged handoff probe runs seven needed solves in 28.38 seconds instead of eight in 30.46 seconds. The SVG bytes match the merged baseline exactly. Review also repairs final fatal and stopped-worker refusal paths so caller cleanup can cancel queued speculation before promotion. The unchanged first retry remains immediate. Focused owners reproduce both failure-path races without the repair. A separate review covers browser MessagePort startup, FIFO order, and process lifetime. The full command-prefixed Chrome for Testing gate finishes all 19 browser owners and cleanup with exit zero. That run starts before this handoff patch. Final-source validation remains pending.
+
+Integration with main 3581b9dd7 and bf0184d53: main had its own cancellation of the joins' ahead solves (one AbortController per batch, every solve asked ahead called off when a turn is kept, a called-off layout forgotten at once). The merge keeps this branch's design, which called off fewer solves and finished sooner: the pool's queued handoff, retries that refuse a solve already called off, and calling off only layouts no turn to come weighs, sharing an active one. It takes main's Joined type, the layJoined export and the joins-ahead unit owner, which now has a two-block and a three-block case. layingOnce drops the settled flag, because calling off a settled layout does nothing. Measured three times each with Bun 1.4.2, one layout worker (taskset -c 0,1) and 23 workers. Browser application blocks: main 8 solves of 12 asked, median 35.64 s; branch 7, 32.14 s; merge 7, 32.11 s. With all workers: main 11 solves, 16.61 s; branch 10, 15.61 s; merge 10, 15.57 s. Board viewer blocks with one worker: main 7 of 9, 20.72 s; branch and merge 6, 18.28 s and 18.47 s. With all workers each solves all 9 in about 10.5 s. Every SVG is the same bytes in every run. Main's 120 s TEST_HEAVY_BLOCKS_CASE_MS hosted deadline for the two heavy Blocks cases stays, with its wall-clock declaration, as the user approved. Its proposal variants were renamed to TASK-464 through semantic rename, which keeps TASK-454 as their former name.
 <!-- SECTION:NOTES:END -->
