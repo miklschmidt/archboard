@@ -29,8 +29,10 @@ import {
 import { createCodexProcessGroupOperations } from "@/runtime/codex-process/process-group";
 import {
 	SERVER_STARTUP_READINESS_MS,
+	SERVER_STOP_CONFIRM_MS,
 	SERVER_STOP_PIDFILE_POLL_MS,
 	SERVER_STOP_PIDFILE_WAIT_MS,
+	SERVER_STOP_PROBE_POLL_MS,
 } from "@/shared/timing/timing";
 import { SERVER_STARTUP_TERMINAL_FD_ENV } from "@/shared/server-startup-terminal";
 import { readProcessObservation } from "@/shared/process-observation";
@@ -530,7 +532,7 @@ function verifiedServerPid(health: HealthStatus): number | null {
  * @returns The stop result once `/health` stops answering.
  */
 async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
-	const deadline = Date.now() + 5000;
+	const deadline = Date.now() + SERVER_STOP_CONFIRM_MS;
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- one probe after another until the server is gone
 		const postSignalHealth = await healthOrNull();
@@ -539,9 +541,11 @@ async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
 			return { stopped: true, pid, message: `Archboard server (pid ${pid}) stopped.` };
 		}
 		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
-		await new Promise((resolve) => setTimeout(resolve, 200));
+		await new Promise((resolve) => setTimeout(resolve, SERVER_STOP_PROBE_POLL_MS));
 	}
-	throw new Error(`Archboard server (pid ${pid}) did not stop within 5s.`);
+	throw new Error(
+		`Archboard server (pid ${pid}) did not stop within ${SERVER_STOP_CONFIRM_MS / 1000}s.`,
+	);
 }
 
 /**
