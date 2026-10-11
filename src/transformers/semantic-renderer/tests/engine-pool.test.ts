@@ -16,6 +16,17 @@ interface Sent {
 class HeldWorker extends EventTarget {
 	readonly sent: Sent[] = [];
 	terminated = false;
+	references = 0;
+
+	/** Keep the process alive while this worker holds work. */
+	ref(): void {
+		this.references += 1;
+	}
+
+	/** Let the process finish when this worker has no work. */
+	unref(): void {
+		this.references -= 1;
+	}
 
 	/** Stop, as the pool stops a worker it replaces. */
 	terminate(): void {
@@ -139,6 +150,48 @@ test.each(["fatal", "stopped"] as const)(
 		expect(await needed).toEqual({ id: "needed!" });
 	},
 );
+
+test("an uncancelled handoff resumes FIFO work, including a solve enqueued by its caller", async () => {
+	const { solve, workers } = heldPool(1);
+	const signal = new AbortController().signal;
+	const first = solve({ id: "first" }, {}, signal);
+	const second = solve({ id: "second" }, {}, signal);
+	const third = solve({ id: "third" }, {});
+	const started = Promise.withResolvers<void>();
+	const worker = workers[0]!;
+	const send = worker.postMessage.bind(worker);
+	/**
+	 * Observe when queued work resumes after the caller's selection.
+	 * @param message The solve sent to the worker.
+	 */
+	worker.postMessage = (message) => {
+		send(message);
+		if (message.graph.id === "second") started.resolve();
+	};
+	let appended: ReturnType<typeof solve> | undefined;
+	const selected = first.then((answer) => {
+		appended = solve({ id: "appended" }, {});
+		return answer;
+	});
+	worker.answer(0, { data: { id: "first!" } });
+	await selected;
+	expect(sentTo(worker)).toEqual(["first"]);
+	expect(worker.references).toBe(0);
+	await started.promise;
+	expect(sentTo(worker)).toEqual(["first", "second"]);
+	expect(worker.references).toBe(1);
+	worker.answer(1, { data: { id: "second!" } });
+	expect(sentTo(worker)).toEqual(["first", "second", "third"]);
+	worker.answer(2, { data: { id: "third!" } });
+	expect(sentTo(worker)).toEqual(["first", "second", "third", "appended"]);
+	worker.answer(3, { data: { id: "appended!" } });
+	expect(await Promise.all([second, third, appended])).toEqual([
+		{ id: "second!" },
+		{ id: "third!" },
+		{ id: "appended!" },
+	]);
+	expect(worker.references).toBe(0);
+});
 
 test("an obsolete queued solve never occupies a worker", async () => {
 	const { solve, workers } = heldPool(1);
