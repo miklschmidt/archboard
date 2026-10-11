@@ -43,7 +43,7 @@ their cheapest product owner. These commands contain everything outside it:
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `bun run test:opt-in:capacity`                                           | Inspection input/comparison ceilings, large-index and sweep work limits, transport capacity, and the frozen app-server capacity authority.     |
 | `bun run test:opt-in:tooling`                                            | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters. |
-| `bun run test:opt-in:topology`                                           | The two-server same-vault lock handoff through its process boundary.                                                                           |
+| `bun run test:opt-in:topology`                                           | A claim taken through a second server excludes writes here and reaches this server's pane within the lock sweep.                               |
 | `bun run test:opt-in:browser-performance`                                | The 10,000-element human-edit measurement and 42-cycle convergence soak through the serial real-browser adapter.                               |
 | `bun run opt-in:renderer-chromium` / `bun run opt-in:renderer-emulation` | Manual renderer and upstream-emulation probes. They are never package test owners.                                                             |
 
@@ -446,7 +446,8 @@ their exhaustive state and failure matrices.
   (TASK-068). Single-body routes have no other way to be one write and need no
   proxy (TASK-153).
 - Normal lock owners prove reachable one-server exclusion. The opt-in topology
-  owner proves two Archboard server processes cannot write one vault at once,
-  which is the one thing an in-process mutex could not do (ADR 0016).
+  owner proves a claim in one Archboard server process excludes writes through
+  another on the same vault and reaches its panes, which an in-process mutex
+  could not do (ADR 0016).
 - The repository-session owners in `test:system` use RepositoryFixture-owned HOME, XDG state, log,
   registry, and vault paths, isolated from the caller's user configuration.
