@@ -8,7 +8,9 @@ research itself changed nothing. Applied afterwards: the "Sub-agent delegation"
 section of `~/.claude/CLAUDE.md` (rule (a)) and a new `~/.claude/agents/scout.md`
 (`haiku`, `medium`, read-only). Decided by the user: UI and design go to `sonnet`
 at `xhigh`, so `visual-designer` stays as it is. The user-level `~/.claude/agents/Explore.md`
-overrides the built-in Explore with `haiku` at `medium`. Not applied: the table in (b).
+overrides the built-in Explore with `haiku`. The user set `scout` and `Explore` to
+`effort: high`. The routing below proposes `medium`. High is better because Haiku
+needs it for strict instruction following. Not applied: the table in (b).
 
 ## Answer
 
