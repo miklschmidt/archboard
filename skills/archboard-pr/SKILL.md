@@ -27,16 +27,19 @@ compare recipe before section 2.
    requests, the base is the branch directly below this one, never the trunk.
    The [gh-stack skill](https://github.com/github/gh-stack/tree/main/skills/gh-stack),
    if it is installed, names that branch. Each pull request of a stack gets its
-   own proposal. Branch it from the proposal of the branch below
-   (`semantic branch --from`), and compare it with that proposal
-   (`semantic compare --against`). A render reads a proposal against the
-   current variant, and so do the parts that a footprint says it names. So
-   they also show the changes below: say so beside the render.
+   own proposal, unless it builds part of an earlier one (section 2). Branch it
+   from the proposal of the branch below (`semantic branch --from`), and
+   compare it with that proposal (`semantic compare --against`). A render
+   reads a proposal against the current variant, and so do the parts that a
+   footprint says it names. So they also show the changes below: say so beside
+   the render.
 2. Read the change from the merge base: `git diff --find-renames <base>...HEAD`.
 3. List the boards with `archboard semantic`. For each board whose parts bind
    this repository, run `archboard semantic footprint <board> --base <base>`.
    Its `changed` lists the parts the commits changed. For the parts in
-   `skipped`, and for each repository that it did not read, use the diff.
+   `skipped`, and for each repository that it did not read, use the diff. A
+   board with no current variant refuses (`NO_CURRENT_VARIANT`): nothing on it
+   was built, and the diff says whether this change builds its draft.
 
 If the pull request adds, removes, renames or rewires something that a board
 draws, or changes what a part is for, the architecture changes. A change
@@ -49,30 +52,91 @@ line which parts changed inside. If no board draws the changed code, the vault
 has nothing to compare against: tell the user, and stop. Drawing that board is
 the `archboard` skill's create recipe, a separate request.
 
-## 2. Draw the change as a proposal
+## 2. Find or draw the proposal
 
 Do this for each board that step 1 found changed.
 
-1. Claim the board: `archboard claim --board <board> --reason "explaining <head branch> for its reviewers"`.
-2. Read it with `archboard semantic show <board>` and note its `version`.
-3. Name the proposal after the head branch, because a new pull request has no
-   number yet. Branch it from the current variant, or in a stack from the
-   proposal below:
+1. Read the board with `archboard semantic show <board>` and note its
+   `version`.
+2. Find the proposal that this pull request builds. Often the user drew it
+   before the code existed.
+   - When the pull request exists, read its body with
+     `gh pr view <number> --json body`. If the body holds the explainer, its
+     `Open it` line (section 3) names the board and the proposal: use them.
+   - Otherwise, the candidates are the variants whose `lifecycle` is `draft`.
+     A draft named after the head branch of another pull request belongs to
+     that pull request. A candidate fits in two cases: the user names it, or
+     it shows both of these signs:
+     - Its name or `summary` describes this change: the head branch, the
+       title, the summary of the pull request.
+     - The change builds what it proposes:
+       `archboard semantic footprint <board> --base <base> --variant "<draft>"`
+       lists parts under `namedAndChanged`, or the diff adds the code of a
+       part that the draft adds.
+   - If exactly one fits, use it. If several fit, or a draft shows only one
+     sign, ask the user one question: which proposal does this pull request
+     build, or none? If none fits, step 4 branches a new one.
+
+   A found proposal keeps its name for life, so never rename it after the head
+   branch. Below, `<proposal>` is its name.
+
+3. Claim the board: `archboard claim --board <board> --reason "explaining <head branch> for its reviewers"`.
+4. If no proposal was found, branch one and name it after the head branch,
+   because a new pull request has no number yet. Branch it from the current
+   variant, or in a stack from the proposal below:
    `archboard semantic branch <board> --as "<head branch>" --summary "<pull request title>" --expect-version <n> --doing "..."`.
-   If a proposal of that name exists, the pull request is being updated: edit
-   that proposal instead.
-4. Edit the proposal with the propose and compare recipe. Each `edit` names it
-   with `--variant "<head branch>"`, so the current variant stays as it was.
-   Anchor every relationship you add or move in the head branch's code.
-5. Check the proposal against the code:
-   - `archboard semantic compare <board> --variant "<head branch>"` reports
-     every change the diff makes to the architecture, and nothing else.
-   - `archboard semantic footprint <board> --base <base> --variant "<head branch>"`:
+5. Edit the proposal with the propose and compare recipe. Each `edit` names it
+   with `--variant "<proposal>"`, so the current variant stays as it was.
+   Anchor every relationship you add or move in the head branch's code. Give
+   the binding of each part whose code is only on the head branch
+   `"branch": "<head branch>"`. Reconcile a found proposal with the code
+   (below) instead of drawing it again.
+6. Check the proposal against the code:
+   - `archboard semantic compare <board> --variant "<proposal>"` reports
+     every change the diff makes to the architecture. It reports nothing else,
+     except what the explainer lists as left for later.
+   - `archboard semantic footprint <board> --base <base> --variant "<proposal>"`:
      each part in `changedNotNamed` and `namedNotChanged` is drawn or has a
      reason.
-   - `archboard check --code --variant "<head branch>"` reports no warning
-     that the same run without `--variant` lacks.
-6. Release the claim: `archboard release --board <board>`.
+   - `archboard check --code --variant "<proposal>"` reports no warning
+     that the same run without `--variant` lacks, except on what the explainer
+     lists as left.
+7. Release the claim: `archboard release --board <board>`.
+
+### Reconcile a proposal drawn before the code
+
+The proposal says what was intended, and the head branch's code says what was
+built. Compare them in both directions:
+
+- **Built as proposed**: for each relationship of the proposal without an
+  `anchor`, find the code in the diff that makes it. Restate the relationship
+  with its `id`, its fields and that anchor. Bind each planned part to the
+  file that now implements it.
+- **Proposed but not built**: a relationship whose code you cannot find, a
+  part in `namedNotChanged`, and a `check --code --variant` warning that the
+  run without `--variant` lacks.
+- **Built but not proposed**: a part in `changedNotNamed`, a
+  `RELATIONSHIP_UNDRAWN` warning, and code the diff adds that no part binds.
+
+Settle each difference in one of three ways:
+
+- The code is the better answer, for example a call that lands on another
+  function than proposed: edit the proposal to match the code, and say why in
+  the explainer.
+- This pull request builds only part of the proposal: leave the proposal as
+  it is, and list the rest as left for later.
+- The difference changes what the proposal is for, such as a part dropped, a
+  boundary moved or a new dependency on another system: ask the user before
+  you edit.
+
+Several pull requests, stacked or not, can build one proposal. Each one reuses
+it, and its explainer says how much of the proposal it builds. In a stack,
+`--base` reads only the commits of this pull request, so a part that a pull
+request below built reads as not changed: say where it was built.
+
+On a board with no current variant, nothing is built yet. `footprint` refuses
+there, and `compare` refuses its first draft. Read the differences from
+`check --code --variant` and the diff, and draw only the after render.
 
 When the vault is inside this repository and Git tracks it, commit the changed
 `.semantic.json` file on the head branch. The reviewer then reads the board
@@ -92,8 +156,14 @@ change you meant to draw.
   for breakage.
 - **Where to look**: the seam or invariant the change relies on, and what to
   check there. Give a place to look, not a verdict on the code.
-- **Open it**: the board and proposal names, so a reviewer with the vault runs
-  `archboard semantic compare <board> --variant "<head branch>"`.
+- **Proposed and built**, for a proposal drawn before the code: what this pull
+  request builds of it, each difference from it and why, and what is left for
+  later. `compare` and the after render show the whole proposal, so **What
+  changed** names only what this pull request builds.
+- **Open it**: one line for each board,
+  `archboard semantic compare "<board>" --variant "<proposal>"`, with the
+  exact names. A reviewer with the vault runs it, and an update of the pull
+  request reads the names from it.
 
 Draw two renders through one board view that holds the changed parts and their
 neighbours. Views belong to every variant, so prefer a view the board already
@@ -103,18 +173,19 @@ below, and never into the checkout:
 
 ```bash
 archboard semantic rasterize <board> --view "<view>" --out "$tmp/before.png"
-archboard semantic rasterize <board> --view "<view>" --variant "<head branch>" --out "$tmp/after.png"
+archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --out "$tmp/after.png"
 ```
 
-The second render marks what the proposal added, changed and removed. Open
-both PNGs and look at them before you use them.
+The second render marks what the proposal added, changed and removed. For a
+proposal drawn before the code, say beside it that the proposal came first,
+and that it also draws what is left. Open both PNGs and look at them before
+you use them.
 
 ## 4. Put it in the pull request
 
 The explainer is one section between `<!-- archboard-pr:begin -->` and
 `<!-- archboard-pr:end -->`. On an update, replace only the text between the
-markers. Text outside them belongs to the author and reviewers. Read the
-current body first with `gh pr view <number> --json body`.
+markers. Text outside them belongs to the author and reviewers.
 
 In the section, reference each render by the path that you give `--attach`,
 as `![<alt text>]($tmp/after.png)`. gh uploads the file and rewrites that
@@ -134,10 +205,15 @@ request's recording.
 
 ## 5. After the merge
 
-When the pull request merges, adopt the proposal:
-`archboard semantic adopt <board> --variant "<head branch>" --reason "<what the pull request changed>" --expect-version <n> --doing "..."`.
-Before that, restate each binding that names the head branch without its
-`branch`, because the code is now on the default branch. When the pull request
-closes without a merge, shelve the proposal with that reason. A refusal as
-`PARENT_SUPERSEDED` means another proposal was adopted first. The `archboard`
-skill's variants reference says how to state the change again.
+When the pull request merges, its code is on the default branch. So restate
+each binding that names the head branch without its `branch`. When all of the
+proposal is on the default branch, adopt it:
+`archboard semantic adopt <board> --variant "<proposal>" --reason "<what the pull request changed>" --expect-version <n> --doing "..."`.
+While another open pull request still builds part of it, the proposal stays a
+draft. A refusal as `PARENT_SUPERSEDED` means another proposal was
+adopted first. The `archboard` skill's variants reference says how to state
+the change again.
+
+When the pull request closes without a merge, shelve a proposal that it drew,
+with that reason. A proposal drawn before the code can outlive the pull
+request: ask the user before you shelve it.
