@@ -1,8 +1,9 @@
 // What makes a candidate board one the store would write: it is stamped as the
-// store stamps every accepted write, it is coherent, and every kind it newly introduces is one the vault configures. The store checks
-// it before every write, and the evaluation harness checks a fixture with the
-// same function, so a fixture that lays is a fixture the store accepts. This
-// only checks; it reads and writes no file.
+// store stamps every accepted write, it is coherent, and every kind it newly
+// introduces is one the vault configures. The store checks it before every
+// write, and the evaluation harness checks a fixture with the same function,
+// so a fixture that lays is a fixture the store accepts. This only checks; it
+// reads and writes no file.
 
 import {
 	nextVersion,
