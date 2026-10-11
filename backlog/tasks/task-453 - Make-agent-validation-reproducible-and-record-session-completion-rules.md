@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:22'
-updated_date: '2026-10-11 16:13'
+updated_date: '2026-10-11 16:20'
 labels: []
 dependencies: []
 references:
@@ -53,5 +53,7 @@ Main integration creates duplicate IDs for two independent task records. The sup
 
 The integrated README assessment reports the same 16 stale assets and zero manifest problems as origin/main at 68e7f0e. An isolated archive comparison proves that none becomes newly stale on this branch. The measured layout scheduling repair preserves drawing bytes in its before/after probe; the task changes no README demonstration.
 
-The integrated gate passes 4746 tests and all 19 cleanup audits. A later unchanged gate fails because Bun 1.4.2 traps before loading the renaming fixture server, at zero milliseconds and 3.78 MB RSS. The exact renaming owner then passes 2 tests and 24 assertions. Both Bun versions pass repeated startup probes. Remaining repository and browser lanes pass, including all 19 cleanup audits. The full gate is rerunning without code, assertion, or timeout changes. Hosted macOS checkout setup times out in git remote add, but its exact command passes locally with the hosted Bun 1.4.0: 138 tests and 711 assertions. Hosted rerun evidence remains pending.
+The integrated gate passes 4746 tests and all 19 cleanup audits. A later unchanged gate fails because Bun 1.4.2 traps before loading the renaming fixture server, at zero milliseconds and 3.78 MB RSS. The exact renaming owner then passes 2 tests and 24 assertions. Both Bun versions pass repeated startup probes. Remaining repository and browser lanes pass, including all 19 cleanup audits. The full gate is rerunning without code, assertion, or timeout changes.
+
+An earlier macOS checkout setup times out in git remote add. The native test command passes locally with the hosted Bun 1.4.0: 138 tests and 711 assertions. The earlier hosted run's 18 fixture setup failures have no established cause. The fresh hosted macOS job passes all 138 tests. Hosted Linux rerun evidence remains pending.
 <!-- SECTION:NOTES:END -->
