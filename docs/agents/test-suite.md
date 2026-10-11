@@ -11,7 +11,7 @@ native lanes in this order:
   directories, with `--max-concurrency=1` because they own real processes and
   shared local ports;
 - `test:repository`: the source-boundary lint fixtures, the owner that resolves
-  links in the consumer skill, repository navigation, and development skill
+  links in the shipped skills, repository navigation, and development skill
   (`tests/system/repository-policy/skill-links.test.ts`),
   the owner that parses YAML discovery metadata for every tracked skill
   (`tests/system/repository-policy/skill-frontmatter.test.ts`),

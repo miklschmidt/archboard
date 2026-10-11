@@ -69,10 +69,12 @@ archboard install-skill --agent claude-code
 Use `--agent claude-code` for Claude Code. Without it, the installer sets up
 Codex. The installer does these things:
 
-1. It copies the archboard skill into a skills directory. The default is
-   `~/.agents/skills/archboard`, which Codex reads. With `--agent claude-code`
-   it is `~/.claude/skills/archboard`. The copy replaces an earlier copy. If
-   the target is a symlink, the installer stops and changes nothing.
+1. It copies two skills into a skills directory: `archboard`, which writes
+   and reads boards, and `archboard-pr`, which gives a pull request an
+   architecture explainer. The default directory is `~/.agents/skills`, which
+   Codex reads. With `--agent claude-code` it is `~/.claude/skills`. Each copy
+   replaces an earlier copy. If a target is a symlink, the installer stops and
+   changes nothing.
 2. It chooses the vault. If `ARCHBOARD_VAULT` is set, it offers that vault.
    If not, it offers `<repo>/.archboard/vault`. If it runs in a terminal, it
    asks you. If an agent runs it, it takes the offer.
@@ -81,7 +83,7 @@ Codex. The installer does these things:
    archboard skill explains that file to the agents that write boards.
 4. If the repository has a `CLAUDE.md` file, it writes a block into it.
    Otherwise, it writes the block into `AGENTS.md`. The block gives the location of the
-   skill and the vault of the repository. It also gives the command that runs
+   skills and the vault of the repository. It also gives the command that runs
    the CLI on this machine, and the Archboard server URL.
 
 The repository is the nearest parent directory that holds `.git`. The block
@@ -98,18 +100,18 @@ vault or ignore it, as you choose.
 
 These options change what the installer does:
 
-| Option                | Effect                                                               |
-| --------------------- | -------------------------------------------------------------------- |
-| `--agent claude-code` | Install for Claude Code, in `~/.claude/skills`.                      |
-| `--agent codex`       | Install for Codex, in `~/.agents/skills`. This is the default.       |
-| `--target claude`     | The same as `--agent claude-code`. `--target agents` is the default. |
-| `--dir <skills-root>` | Install into `<skills-root>/archboard`.                              |
-| `--vault <path>`      | Use this vault. A relative path starts from the current directory.   |
-| `--yes`               | Take the offered vault without a question.                           |
-| `--repo <dir>`        | Set up this repository instead of the current one.                   |
-| `--doc <file>`        | Write the block into this file.                                      |
-| `--no-doc`            | Install the skill only. Write no block and create no vault.          |
-| `--print-source`      | Show the skill directory to install, and install nothing.            |
+| Option                | Effect                                                                   |
+| --------------------- | ------------------------------------------------------------------------ |
+| `--agent claude-code` | Install for Claude Code, in `~/.claude/skills`.                          |
+| `--agent codex`       | Install for Codex, in `~/.agents/skills`. This is the default.           |
+| `--target claude`     | The same as `--agent claude-code`. `--target agents` is the default.     |
+| `--dir <skills-root>` | Install into `<skills-root>/archboard` and `<skills-root>/archboard-pr`. |
+| `--vault <path>`      | Use this vault. A relative path starts from the current directory.       |
+| `--yes`               | Take the offered vault without a question.                               |
+| `--repo <dir>`        | Set up this repository instead of the current one.                       |
+| `--doc <file>`        | Write the block into this file.                                          |
+| `--no-doc`            | Install the skills only. Write no block and create no vault.             |
+| `--print-source`      | Show the skill directories to install, and install nothing.              |
 
 Use one of `--agent`, `--target` and `--dir` at most. Do not use `--doc` and
 `--no-doc` together.
@@ -432,11 +434,12 @@ gh 2.99 or newer.
 To update archboard, run `git pull`, `bun install` and `bun run build` in the
 checkout, then run `archboard stop`. `archboard status` reports a server that
 runs older source. Run `archboard install-skill` again in each repository to
-update its copy of the skill and its block.
+update its copy of the skills and its block.
 
 There is no uninstall command. To remove archboard, delete these things:
 
-- The skill directory, for example `~/.agents/skills/archboard`.
+- The skill directories, for example `~/.agents/skills/archboard` and
+  `~/.agents/skills/archboard-pr`.
 - The block between the markers in each repository.
 - The `archboard` link on your `PATH`.
 - The state directory. It holds the Codex sign-in, `repos.json` (with the

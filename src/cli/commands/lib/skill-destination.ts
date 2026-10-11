@@ -1,16 +1,20 @@
-// Where the bundled skill comes from, where an install puts it, and how the next agent should
-// type "archboard" once it is there.
+// Where the bundled skills come from, where an install puts them, and how the next agent should
+// type "archboard" once they are there.
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { CliUsageError } from "@/cli/command-contract/contract";
 
-const SKILL_NAME = "archboard";
+/** The skill that authors boards; its installed copy also carries the generated schemas and manual. */
+const BOARD_SKILL = "archboard";
+
+/** Every skill an install ships, each into its own directory of the skills root. */
+const BUNDLED_SKILLS = [BOARD_SKILL, "archboard-pr"] as const;
+type BundledSkill = (typeof BUNDLED_SKILLS)[number];
 
 interface SkillDestination {
 	root: string;
-	target: string;
 	mode: string;
 }
 
@@ -25,11 +29,12 @@ function packageRoot(): string {
 }
 
 /**
- * Locates the bundled skill directory, refusing a checkout that lost it.
+ * Locates one bundled skill directory, refusing a checkout that lost it.
+ * @param skill - The bundled skill.
  * @returns The absolute path of the bundled skill.
  */
-function findSkillSource(): string {
-	const source = path.join(packageRoot(), "skills", SKILL_NAME);
+function findSkillSource(skill: BundledSkill): string {
+	const source = path.join(packageRoot(), "skills", skill);
 	if (!fs.existsSync(path.join(source, "SKILL.md"))) {
 		throw new Error(`Bundled skill not found at ${source} (broken install?)`);
 	}
@@ -76,11 +81,10 @@ function resolveSkillsRoot(target: string): string {
 /**
  * The install destination for a --target spelling.
  * @param target - The target spelling.
- * @returns The skills root, the skill directory inside it, and the mode label reported.
+ * @returns The skills root and the mode label reported.
  */
 function resolveTarget(target: string): SkillDestination {
-	const root = resolveSkillsRoot(target);
-	return { root, target: path.join(root, SKILL_NAME), mode: `target:${target}` };
+	return { root: resolveSkillsRoot(target), mode: `target:${target}` };
 }
 
 /**
@@ -103,8 +107,7 @@ function resolveAgent(agent: string): SkillDestination & { targetSpec: string } 
  * @returns The destination with the "dir" mode label.
  */
 function resolveExplicitDir(dir: string): SkillDestination {
-	const root = path.resolve(expandHome(dir));
-	return { root, target: path.join(root, SKILL_NAME), mode: "dir" };
+	return { root: path.resolve(expandHome(dir)), mode: "dir" };
 }
 
 /**
@@ -181,7 +184,9 @@ function resolveInvocation(): { command: string; onPath: boolean } {
 }
 
 export {
-	SKILL_NAME,
+	BOARD_SKILL,
+	BUNDLED_SKILLS,
+	type BundledSkill,
 	type SkillDestination,
 	packageRoot,
 	findSkillSource,

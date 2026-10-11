@@ -11,7 +11,7 @@ import {
 import path from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { z } from "zod";
-import { createInstallFixture, installFailure } from "./support/install-fixture.ts";
+import { createInstallFixture, installFailure, shippedSkills } from "./support/install-fixture.ts";
 
 const begin = "<!-- archboard:begin -->";
 const { join } = path;
@@ -23,18 +23,17 @@ describe("install targets", () => {
 		const result = fixture.install(repo, ["--yes"], { home: true });
 		const diagnostic = installFailure(result.spawn);
 		const root = join(fixture.home, ".agents", "skills");
-		expect(result, diagnostic).toMatchObject({
-			mode: "target:agents",
-			root,
-			target: join(root, "archboard"),
-		});
+		expect(result, diagnostic).toMatchObject({ mode: "target:agents", root });
+		expect(result.skills, diagnostic).toEqual(
+			shippedSkills.map((skill) => expect.objectContaining({ skill, target: join(root, skill) })),
+		);
 		expect(result.setup, diagnostic).toMatchObject({
 			doc: join(repo, "AGENTS.md"),
 			docCreated: true,
 		});
 		expect(existsSync(join(repo, "CLAUDE.md")), diagnostic).toBe(false);
 		expect(() => {
-			fixture.assertSkillBytes(join(root, "archboard"));
+			fixture.assertSkillBytes(root);
 		}, diagnostic).not.toThrow();
 	});
 
@@ -98,13 +97,9 @@ describe("install targets", () => {
 		const custom = join(fixture.root, "custom-root");
 		const result = fixture.install(repo, ["--dir", custom]);
 		const diagnostic = installFailure(result.spawn);
-		expect(result, diagnostic).toMatchObject({
-			mode: "dir",
-			root: custom,
-			target: join(custom, "archboard"),
-		});
+		expect(result, diagnostic).toMatchObject({ mode: "dir", root: custom });
 		expect(() => {
-			fixture.assertSkillBytes(join(custom, "archboard"));
+			fixture.assertSkillBytes(custom);
 		}, diagnostic).not.toThrow();
 		const linkedRepo = fixture.repo("linked");
 		const linkedRoot = join(fixture.root, "linked-root");
@@ -117,6 +112,8 @@ describe("install targets", () => {
 			"is a symlink; refusing to replace it",
 		);
 		expect(lstatSync(linkedTarget).isSymbolicLink(), installFailure(refused)).toBe(true);
+		// The refusal comes before any skill is swapped in, so none of them is half installed.
+		expect(readdirSync(linkedRoot), installFailure(refused)).toEqual(["archboard"]);
 	});
 
 	test("creates a usable repo setup and remains byte-idempotent", () => {
@@ -134,8 +131,6 @@ describe("install targets", () => {
 		if (!first.setup) {
 			throw new Error(firstDiagnostic);
 		}
-		expect(first.skill, firstDiagnostic).toBe("archboard");
-		expect(first.target, firstDiagnostic).toBe(join(fixture.skillRoot, "archboard"));
 		const setupBytes = readFileSync(doc);
 		expect(
 			setupBytes.includes(Buffer.from(`export ARCHBOARD_VAULT=${first.setup.vault}`)),
@@ -154,6 +149,7 @@ describe("install targets", () => {
 		expect(second.setup, secondDiagnostic).toMatchObject({ docCreated: false, blockUpdated: true });
 		expect(readFileSync(doc), secondDiagnostic).toEqual(firstBytes);
 		expect(readFileSync(doc, "utf8").split(begin), secondDiagnostic).toHaveLength(2);
+		expect(() => fixture.assertSkillBytes(fixture.skillRoot), secondDiagnostic).not.toThrow();
 	});
 
 	test("preserves surrounding prose and chooses one existing doc", () => {
@@ -202,15 +198,6 @@ describe("install targets", () => {
 		const fromEnv = fixture.install(envRepo);
 		expect(fromEnv.setup?.vault, installFailure(fromEnv.spawn)).toBe(fixture.vault);
 	});
-
-	test("detects a redirected default install target", () => {
-		using fixture = createInstallFixture();
-		const repo = fixture.repo("mutation");
-		const result = fixture.install(repo, ["--yes"], { home: true });
-		const diagnostic = installFailure(result.spawn);
-		expect(result.target, diagnostic).toBe(join(fixture.home, ".agents", "skills", "archboard"));
-		expect(result.target, diagnostic).not.toBe(join(fixture.home, ".codex", "skills", "archboard"));
-	});
 });
 
 describe("what an install carries beyond the authored skill", () => {
@@ -222,7 +209,7 @@ describe("what an install carries beyond the authored skill", () => {
 		const diagnostic = installFailure(result.spawn);
 		const skill = join(custom, "archboard");
 		const generated = join(skill, "references", "generated");
-		expect(() => fixture.assertSkillBytes(skill), diagnostic).not.toThrow();
+		expect(() => fixture.assertSkillBytes(custom), diagnostic).not.toThrow();
 		// The evaluation inputs are the repository's, never the installed skill's (TASK-212).
 		expect(existsSync(join(skill, "evals")), diagnostic).toBe(false);
 

@@ -65,9 +65,11 @@ grader, untouched.
    real origin recorded so the repository identity is `github.com/pallets/flask`.
 3. An Archboard server of its own on a free port, against the run's vault.
 4. `archboard install-skill --agent codex --repo <flask> --vault <vault> --yes`.
-   For the baseline arm the installed skill is then replaced by the frozen
-   package under `docs/design/skill-evals/baseline/archboard` and prepared with
-   the same generated files. The install is verified independently: the skill
+   The other skills it ships, such as `archboard-pr`, are removed, so the run
+   reads only the skill under evaluation. For the baseline arm the installed
+   skill is then replaced by the frozen package under
+   `docs/design/skill-evals/baseline/archboard` and prepared with the same
+   generated files. The install is verified independently: the skill
    files and generated schemas exist, and the setup block in the checkout's
    `AGENTS.md` names the run's vault.
 5. The fixture laid through the CLI, then a snapshot of every board. A fixture

@@ -1,7 +1,15 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	readdirSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { z } from "zod";
 import { checkoutRoot, packageBin } from "./package-cli.ts";
 
@@ -14,10 +22,9 @@ const setupSchema = z.object({
 	command: z.string(),
 });
 const installResultSchema = z.object({
-	skill: z.literal("archboard"),
 	mode: z.string(),
 	root: z.string(),
-	target: z.string(),
+	skills: z.array(z.object({ skill: z.string(), target: z.string() })),
 	setup: setupSchema.optional(),
 });
 type InstallResult = z.infer<typeof installResultSchema>;
@@ -44,7 +51,7 @@ interface InstallFixture {
 	repo(name: string, files?: Readonly<Record<string, string>>): string;
 	run(repo: string, args?: readonly string[], options?: { home?: boolean }): InstallSpawn;
 	install(repo: string, args?: readonly string[], options?: { home?: boolean }): InstalledResult;
-	assertSkillBytes(target: string): void;
+	assertSkillBytes(skillsRoot: string): void;
 	dispose(): void;
 	[Symbol.dispose](): void;
 }
@@ -60,19 +67,10 @@ function installFailure(result: InstallSpawn): string {
 	].join("\n");
 }
 
-const trackedSkillFiles = [
-	"SKILL.md",
-	"references/create-architecture.md",
-	"references/create-sequence.md",
-	"references/edit.md",
-	"references/propose-compare.md",
-	"references/authoring.md",
-	"references/sequences-views-walkthroughs.md",
-	"references/variants.md",
-	"references/schemas.md",
-] as const;
+/** The skills an install ships, each into its own directory of the skills root. */
+const shippedSkills = ["archboard", "archboard-pr"] as const;
 
-/** The derived files every prepared copy of the skill carries beside the tracked ones. */
+/** The derived files the board skill's prepared copy carries beside the authored ones. */
 const generatedSkillFiles = [
 	"references/generated/semantic-board.schema.json",
 	"references/generated/vault-config.schema.json",
@@ -172,20 +170,29 @@ function createInstallFixture(): InstallFixture {
 			}
 			return { ...parsed.data, spawn: result };
 		},
-		assertSkillBytes(target) {
-			for (const relative of trackedSkillFiles) {
-				const installed = join(target, relative);
-				if (!existsSync(installed)) {
-					throw new Error(`Missing installed skill file ${installed}`);
+		assertSkillBytes(skillsRoot) {
+			for (const skill of shippedSkills) {
+				const source = join(checkoutRoot, "skills", skill);
+				const authored = readdirSync(source, { recursive: true, withFileTypes: true })
+					.filter((entry) => entry.isFile())
+					.map((entry) => relative(source, join(entry.parentPath, entry.name)))
+					.filter((file) => !file.startsWith(join("references", "generated")));
+				if (!authored.includes("SKILL.md")) {
+					throw new Error(`The checkout's ${skill} skill has no SKILL.md`);
 				}
-				const source = join(checkoutRoot, "skills", "archboard", relative);
-				if (!readFileSync(installed).equals(readFileSync(source))) {
-					throw new Error(`Installed skill bytes differ: ${relative}`);
+				for (const file of authored) {
+					const installed = join(skillsRoot, skill, file);
+					if (!existsSync(installed)) {
+						throw new Error(`Missing installed skill file ${installed}`);
+					}
+					if (!readFileSync(installed).equals(readFileSync(join(source, file)))) {
+						throw new Error(`Installed skill bytes differ: ${skill}/${file}`);
+					}
 				}
 			}
-			for (const relative of generatedSkillFiles) {
-				if (!existsSync(join(target, relative))) {
-					throw new Error(`Missing generated skill file ${join(target, relative)}`);
+			for (const file of generatedSkillFiles) {
+				if (!existsSync(join(skillsRoot, "archboard", file))) {
+					throw new Error(`Missing generated skill file ${file}`);
 				}
 			}
 		},
@@ -195,6 +202,7 @@ function createInstallFixture(): InstallFixture {
 }
 
 export {
+	shippedSkills,
 	installResultSchema,
 	type InstallResult,
 	type InstallSpawn,
