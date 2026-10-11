@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:52'
-updated_date: '2026-10-11 17:51'
+updated_date: '2026-10-11 21:29'
 labels: []
 dependencies: []
 references:
@@ -23,9 +23,9 @@ Hosted run 38148069388 at c80c70d6 times out rendering Browser application with 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The exact failing wide-board owner passes within its unchanged 60-second budget on hosted Linux.
-- [ ] #2 Every wide-board assertion and layout contract remains intact.
-- [ ] #3 The complete local and hosted gates pass without weakening selection, timeouts, assertions, or validation policy.
+- [ ] #1 Every wide-board assertion and layout contract remains intact.
+- [ ] #2 The complete local and hosted gates pass without weakening selection, timeouts, assertions, or validation policy.
+- [ ] #3 The exact failing wide-board owner passes within its 120-second budget (the user-approved exception for the two heavy Blocks cases) on hosted Linux.
 <!-- AC:END -->
 
 ## Implementation Plan

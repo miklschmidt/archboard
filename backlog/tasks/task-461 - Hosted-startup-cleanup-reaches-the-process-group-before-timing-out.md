@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 16:16'
-updated_date: '2026-10-11 16:18'
+updated_date: '2026-10-11 21:29'
 labels: []
 dependencies: []
 type: bug
@@ -35,4 +35,6 @@ No board is affected because the investigation concerns a test fixture. Preserve
 
 <!-- SECTION:NOTES:BEGIN -->
 The exact hosted failure occurs before the Codex marker. A scratch checkout adds a controlled 450 ms server-only preload delay. The original test reproduces the failure at 1102 ms. A two-line proposal changes readiness 350 to 2000 ms and complete startup-plus-cleanup ceiling 2000 to 5000 ms. It passes all nine assertions in 2.62 seconds with the same delay. Cleanup deadline 900 ms, grace 150 ms, and case limit 20000 ms remain unchanged. The patch is /private/tmp/archboard-retro-startup-proposal.patch and is NOT applied to the repository. Exact user approval is pending under the supplied AGENTS.md validation rule. Hosted Linux is rerunning unchanged. The fresh macOS job passes all 138 tests.
+
+The user approved the timing change on 2026-10-11 ('Yes i approve, just get it fixed'): readiness 350 to 2000 ms and the startup-plus-cleanup ceiling 2000 to 5000 ms in tests/system/process-contracts/server-startup-signal.test.ts. Cleanup deadline, grace, case limit and every process assertion are unchanged.
 <!-- SECTION:NOTES:END -->
