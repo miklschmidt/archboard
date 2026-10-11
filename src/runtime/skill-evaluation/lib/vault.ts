@@ -502,6 +502,7 @@ export {
 	renderBoard,
 	resolvePlaceholders,
 	stepCommand,
+	targetVariant,
 	vaultDiagnostics,
 	writeBoards,
 	fixturePolicy,
