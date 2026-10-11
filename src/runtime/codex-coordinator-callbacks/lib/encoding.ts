@@ -3,6 +3,7 @@ import type { ThreadLinkEpochProof } from "@/runtime/codex-thread-link";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCorrelation,
+	CoordinatorPaneNews,
 	CoordinatorSemanticSubject,
 } from "@/runtime/codex-coordinator-callbacks/lib/contract";
 import { SemanticSubjectKindSchema } from "@/shared/semantic-pane-context/index";
@@ -520,9 +521,22 @@ function callbackDocument(callback: CoordinatorCallback) {
 			focused: callback.semantic.focused,
 			selection: requireSubjects(callback.semantic.selection),
 			detail: requireString(callback.semantic.detail),
-			news: requireString(callback.semantic.news),
+			news: newsDocument(callback.semantic.news),
 		},
 	};
+}
+
+/**
+ * Encode the pane news a semantic callback carries, under its closed schema.
+ * @param news - The pane news, or null.
+ * @returns The JSON-safe document, or null.
+ */
+function newsDocument(news: CoordinatorPaneNews | null) {
+	if (news === null) {
+		return null;
+	}
+	requireExactKeys(news, ["sentence", "stops"]);
+	return { sentence: requireString(news.sentence), stops: news.stops };
 }
 
 /**

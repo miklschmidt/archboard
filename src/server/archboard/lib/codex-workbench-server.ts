@@ -62,6 +62,11 @@ export interface CodexWorkbenchServer {
 	readonly narrationChangesFor: (
 		tabSessionId: TabSessionId,
 	) => NonNullable<CodexRealtimeAdapterOptions["presentationChanges"]>["subscribe"];
+	/**
+	 * The board a walkthrough narration in one of a tab session's panes is on, by aggregate key, or
+	 * null when none of its panes is narrated (TASK-293.05).
+	 */
+	readonly narratedBoardFor: (tabSessionId: TabSessionId) => string | null;
 	readonly waitForTargets: Parameters<
 		typeof createServerDynamicLifecycleOwner
 	>[0]["waitForTargets"];

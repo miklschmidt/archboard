@@ -39,16 +39,18 @@ in to Codex as needed and starts the conversation of the tab.
 
 Observe, in order:
 
-| #   | Observe                                                                                                                              | Criterion |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------ | --------- |
-| a   | The pane returns to step 1 and voice starts. When the picture is on step 1, the voice explains it without you saying anything.       | AC 1      |
-| b   | It explains in its own words, with names and no ids, and never says the step number or the total.                                    | AC 1      |
-| c   | When it finishes, it waits: the pane stays on step 1 and the voice neither goes on nor asks to.                                      | AC 3      |
-| d   | Press the right arrow. The voice explains the step now on screen, then waits again.                                                  | AC 2, 3   |
-| e   | Press the right arrow twice quickly, mid-explanation. The voice drops what it was saying and explains the step on screen.            | AC 2      |
-| f   | Interrupt mid-step with a question about the board. The voice answers. If the question cut off the step, the voice then finishes it. | AC 3      |
-| g   | Step to the last step. After explaining it the voice says the walkthrough is complete and invites questions.                         | AC 2      |
-| h   | Narrate again, and press Escape mid-step. The voice acknowledges it in a few words and narrates nothing more.                        | AC 4      |
+| #   | Observe                                                                                                                                                                                                                                | Criterion        |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| a   | The pane returns to step 1 and voice starts. When the picture is on step 1, the voice explains it without you saying anything.                                                                                                         | AC 1             |
+| b   | It explains in its own words, with names and no ids, and never says the step number or the total.                                                                                                                                      | AC 1             |
+| c   | When it finishes, it waits: the pane stays on step 1 and the voice neither goes on nor asks to.                                                                                                                                        | AC 3             |
+| d   | Press the right arrow. The voice explains the step now on screen, then waits again.                                                                                                                                                    | AC 2, 3          |
+| e   | Press the right arrow twice quickly, mid-explanation. The voice drops what it was saying and explains the step on screen.                                                                                                              | AC 2             |
+| f   | Interrupt mid-step with a question about the board. The voice answers. If the question cut off the step, the voice then finishes it.                                                                                                   | AC 3             |
+| g   | Step to the last step. After explaining it the voice says the walkthrough is complete and invites questions.                                                                                                                           | AC 2             |
+| h   | Narrate again, and press Escape mid-step. The voice acknowledges it in a few words and narrates nothing more.                                                                                                                          | AC 4             |
+| i   | Narrate again. Mid-step, click a part on the board. Once it finishes its sentence the voice names what you picked and asks whether you have a question about it. Answer or say no: it finishes the step if it was cut off, then waits. | TASK-293.05 AC 5 |
+| j   | Mid-step, click empty canvas. The voice goes on: an emptied selection does not stop the talk.                                                                                                                                          | TASK-293.05 AC 3 |
 
 Every step and leaving reach the voice model as speakable text, the path that a
 coordinator's answer takes. This path is necessary because, in a full-duplex

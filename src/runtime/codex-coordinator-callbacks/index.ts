@@ -29,6 +29,7 @@ export {
 export type {
 	CallbackBufferOverflowReason,
 	CoordinatorCallback,
+	CoordinatorCallbackCanvas,
 	CoordinatorCallbackCorrelation,
 	CoordinatorCallbackCurrentChild,
 	CoordinatorCallbackDelivery,

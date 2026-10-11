@@ -168,15 +168,49 @@ async function clearForDelivery(
 	return { text };
 }
 
+/** The delivery path each channel of the live voice session is recorded as. */
+const VOICE_PATHS = Object.freeze({
+	context: "realtime_appendText",
+	speech: "realtime_appendSpeech",
+} as const satisfies Record<
+	CoordinatorCallbackRealtimeRequest["channel"],
+	CoordinatorCallbackDeliveryPath
+>);
+
+/** One sentence for the live voice session: the generation it is for, its channel, its words. */
+interface VoiceAppend {
+	readonly generation: NonNullable<CoordinatorCallbackCorrelation["realtimeGeneration"]>;
+	readonly channel: CoordinatorCallbackRealtimeRequest["channel"];
+	readonly text: string;
+}
+
 /**
- * Speak one callback into the coordinator's live voice session. Authority is re-checked after the
- * append, because an append that lands as the generation turns over has an unknown outcome.
+ * The append request one sentence is: speech, or a developer message of quiet context, addressed
+ * to the coordinator thread its generation runs on.
+ * @param append - The sentence, its generation and its channel.
+ * @returns The frozen request.
+ */
+function voiceRequest(append: VoiceAppend): CoordinatorCallbackRealtimeRequest {
+	const { generation, text } = append;
+	const threadId = generation.coordinatorThreadId;
+	return append.channel === "speech"
+		? freeze({ generation, channel: "speech", params: freeze({ threadId, text }) })
+		: freeze({
+				generation,
+				channel: "context",
+				params: freeze({ threadId, text, role: "developer" }),
+			});
+}
+
+/**
+ * Append one sentence to the coordinator's live voice session, quietly or as speech. Authority is
+ * re-checked after the append, because an append that lands as the generation turns over has an
+ * unknown outcome.
  * @param callback - The normalized callback.
  * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
  * @param evidence - The ordering and freshness evidence for the delivery record.
- * @param generation - The voice generation the callback was correlated against.
- * @param text - The encoded callback.
+ * @param append - The generation the callback was correlated against, the channel and the sentence.
  * @returns The delivery record.
  */
 async function deliverThroughVoice(
@@ -184,24 +218,20 @@ async function deliverThroughVoice(
 	options: CoordinatorCallbackOptions,
 	isDisposed: () => boolean,
 	evidence: CallbackDeliveryEvidence,
-	generation: NonNullable<CoordinatorCallbackCorrelation["realtimeGeneration"]>,
-	text: string,
+	append: VoiceAppend,
 ): Promise<CoordinatorCallbackDelivery> {
-	const realtimeRequest: CoordinatorCallbackRealtimeRequest = freeze({
-		generation,
-		params: freeze({ threadId: generation.coordinatorThreadId, text, role: "developer" }),
-	});
+	const realtimeRequest = voiceRequest(append);
 	const attemptedAtMs = (options.now ?? Date.now)();
-	const result = await options.realtime.appendDeveloper(realtimeRequest);
+	const result = await options.realtime.append(realtimeRequest);
 	const lostAuthority = result.attempted
 		? afterAttemptReason(callback, options, isDisposed())
 		: null;
 	return makeDelivery(callback, evidence, {
 		attemptedAtMs: result.attempted ? attemptedAtMs : null,
-		path: "realtime_appendText",
+		path: VOICE_PATHS[append.channel],
 		outcome: lostAuthority === null ? result.outcome : "outcome_unknown",
 		reason: lostAuthority ?? result.reason,
-		text,
+		text: append.text,
 		realtimeRequest,
 	});
 }
@@ -322,6 +352,10 @@ function recordOnly(
 /**
  * Give the live voice session the pane news a semantic callback is, or record the callback when
  * there is none to give: no voice session, or nothing of it that was the user's own doing.
+ *
+ * Pane news is quiet context, except during a narration, where news that stops a talk is speech:
+ * the voice model finishes what it is saying (appended speech does not cut into audio in progress,
+ * TASK-293.05), asks about what the user picked, then finishes its step and waits (TASK-251).
  * @param callback - The normalized semantic callback.
  * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
@@ -344,7 +378,14 @@ function deliverPaneNews(
 		const reason = generation === null ? "voice_inactive" : "agent";
 		return Promise.resolve(recordOnly(callback, evidence, text, reason));
 	}
-	return deliverThroughVoice(callback, options, isDisposed, evidence, generation, news);
+	// Read as it is delivered rather than when the pane reported: leaving the walkthrough ends
+	// the narration, and news queued behind it is then quiet.
+	const narrating = options.canvas().narrated !== null;
+	return deliverThroughVoice(callback, options, isDisposed, evidence, {
+		generation,
+		channel: news.stops && narrating ? "speech" : "context",
+		text: news.sentence,
+	});
 }
 
 /**
@@ -385,8 +426,8 @@ function deliverOperationWhileVoiceIsLive(
  *
  * A semantic callback (a change, a focus, a selection) reaches the voice model only as pane news:
  * one sentence of names saying where the user's reading now stands, and only for what the pane
- * marked as the user's own doing (TASK-293, ADR 0034). Everything else is recorded and told to
- * nobody. The callback itself used to be appended: a seven-kilobyte envelope of identities and a
+ * marked as the user's own doing (TASK-293, ADR 0034), quietly or, during a narration, as speech.
+ * Everything else is recorded and told to nobody. The callback itself used to be appended: a seven-kilobyte envelope of identities and a
  * serialized brief on every report, one per walkthrough step the voice model had asked for, which
  * it then answered (33 of them in the sessions of 2026-09-20). The sentence is a hint for what
  * "this" means; the coordinator still reads the live pane through its own tools when asked.
