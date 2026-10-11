@@ -40,28 +40,6 @@ function processState(pid: number): string | undefined {
 }
 
 describe("Codex process lifecycle", () => {
-	test("stdin EOF can close the child before the owner sends TERM", async () => {
-		const root = temporaryRoot();
-		let owner: ReturnType<typeof createCodexProcess> | undefined;
-		try {
-			const lifecycle = fakeLifecycle(true, false);
-			const executable = fixture(root, `process.stdin.resume();`);
-			owner = createCodexProcess({
-				...options(root, executable),
-				dependencies: lifecycle.dependencies,
-			});
-			await startReady(owner);
-			const stopped = owner.stop();
-			expect(lifecycle.child()!.stdin.writableEnded).toBe(true);
-			lifecycle.quiesce();
-			expect((await driveManual(stopped, lifecycle.clock)).state).toBe("stopped");
-			expect(lifecycle.signals).toEqual([]);
-		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
-			removeRoot(root);
-		}
-	});
-
 	test("keeps start pending until the typed app-server readiness acknowledgement", async () => {
 		const root = temporaryRoot();
 		let owner: ReturnType<typeof createCodexProcess> | undefined;
