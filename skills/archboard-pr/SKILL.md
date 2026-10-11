@@ -126,8 +126,11 @@ Settle each difference in one of three ways:
 - This pull request builds only part of the proposal: leave the proposal as
   it is, and list the rest as left for later.
 - The difference changes what the proposal is for, such as a part dropped, a
-  boundary moved or a new dependency on another system: edit the proposal to
-  match the code, and put the difference first in "Proposed and built".
+  boundary moved or a new dependency on another system: tell the user what
+  differs and ask whether to edit the proposal to match the code. The user
+  planned the other design and must know that the code built something else.
+  This is the one case where you ask. Once the user answers, put the
+  difference first in "Proposed and built".
 
 Several pull requests, stacked or not, can build one proposal. Each one reuses
 it, and its explainer says how much of the proposal it builds. In a stack,
