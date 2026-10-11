@@ -47,6 +47,13 @@ While you plan, before `backlog task edit --plan`:
 
 When the task closes, before you mark any acceptance criterion:
 
+Run the complete normal gate, `bun run check`, before declaring completion.
+If a normal lane fails, run the remaining lanes to expose every failure.
+Repair reproducible failures in a separate Backlog task, including failures outside the original change.
+Keep every normal owner, assertion, lint rule, and timeout contract.
+An unchanged file does not prove that its failure predates this session.
+Record each repair and the final gate result before closing the original task.
+
 1. Inspect each proposal against the code as built. The code check reads most
    of it ([ADR 0046](../../docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md)),
    and you read the rest.
@@ -361,13 +368,29 @@ only at this point: nothing states a version that nobody re-read.
 
 ## The tracked skills
 
-`skills/` is the single source. `.claude/skills/` and `.agents/skills/` reach
-this repository's skills through tracked symlinks, so an edit is live at once.
+Only shippable, repository-authored Archboard skills live under `skills/`.
+This directory owns `archboard` and `archboard-dev`.
+`.claude/skills/` and `.agents/skills/` reach them through tracked symlinks, so an edit is live at once.
+For other skills, use the exact path in the skill catalog.
 `skills experimental_install` installs the third-party skills beside them from
 `skills-lock.json`, and these skills stay untracked. Other repositories use the copy that
 `archboard install-skill` put in `~/.agents/skills/archboard`. To refresh that copy, run
 that command again. Keep the `archboard` skill free of machine-specific paths, because it
 runs outside this repo.
+
+## Reading and observing work
+
+Read each procedure once per session.
+If a tool clips a result, retrieve only the missing section.
+Bound each independent output when batching reads.
+Discover code paths with `rg --files` before reading guessed filenames.
+Observe long commands through their process session and the browser lane summaries.
+Keep full logs outside the checkout, or in ignored files.
+The `# browser-lane` JSON lines report selected, started, completed, and finished owners.
+The finished line carries the exit status, including prerequisite failures and interrupted runs.
+An owner completes only after its cleanup audit passes.
+
+## Generated skill files
 
 The consumer skill also ships derived files under
 `skills/archboard/references/generated/` (ignored). These are JSON Schemas for the

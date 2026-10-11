@@ -10,22 +10,22 @@ cannot improve that diagram (ADR 0023).
 Where things are written down:
 
 - Who archboard serves, its main job, and the rules every surface keeps:
-  `PRODUCT.md`
-- Running it end to end and making sure that it works: `TESTING.md`. Installing
-  it elsewhere: `INSTALL.md`
-- Domain language: `CONTEXT.md`. Module layout and import rules:
-  `docs/agents/boundaries.md`
-- Changing frontend code: read `docs/agents/frontend.md` for placement, React ownership,
+  [PRODUCT.md](PRODUCT.md)
+- Running it end to end and making sure that it works: [TESTING.md](TESTING.md). Installing
+  it elsewhere: [INSTALL.md](INSTALL.md)
+- Domain language: [CONTEXT.md](CONTEXT.md). Module layout and import rules:
+  [docs/agents/boundaries.md](docs/agents/boundaries.md)
+- Changing frontend code: read [docs/agents/frontend.md](docs/agents/frontend.md) for placement, React ownership,
   and the routing/query migration contract.
 - Decisions: `docs/adr/`. Read the ADR before you touch what it decides.
 - Measured investigations: `docs/design/`. The visual authority of the UI is
   `docs/design/operator-canvas-shell.md` with its reference image.
-- Changing tests or CI: `docs/agents/test-suite.md`
+- Changing tests or CI: [docs/agents/test-suite.md](docs/agents/test-suite.md)
 - Refreshing the README's diagrams, clips, banner and videos:
-  `docs/agents/readme-assets.md`
+  [docs/agents/readme-assets.md](docs/agents/readme-assets.md)
 - Working on this repo, including planning and closing a task (each carries a board
-  proposal): the `archboard-dev` skill. Using archboard: the `archboard` skill
-- Reading or updating this repo's architecture: `.archboard/README.md`. Start at
+  proposal): the [archboard-dev skill](skills/archboard-dev/SKILL.md). Using archboard: the [archboard skill](skills/archboard/SKILL.md)
+- Reading or updating this repo's architecture: [.archboard/README.md](.archboard/README.md). Start at
   `Archboard` with `./bin/dogfood` and the tracked `.archboard/vault`.
 - Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
 
@@ -37,9 +37,10 @@ Where things are written down:
 - A running server read its source at start. Editing source changes the next
   CLI command, not the running server: `./bin/archboard stop && ./bin/archboard start`.
   Stop never refuses: every accepted write is on disk before it is answered.
-- `bun run check` is the complete gate. `skills/` is the tracked source of the
-  skills, reached from `.claude/skills/` and `.agents/skills/` through tracked
-  symlinks. The third-party skills there come from `skills experimental_install`.
+- `bun run check` is the complete gate. Only shippable, repository-authored
+  Archboard skills live under `skills/`. Tracked symlinks expose them through
+  `.claude/skills/` and `.agents/skills/`. For other skills, use the exact path
+  in the skill catalog. Third-party skills stay installed and untracked.
 
 ## Invariants nothing refuses
 

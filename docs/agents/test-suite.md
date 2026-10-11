@@ -22,16 +22,14 @@ native lanes in this order:
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter.
 
-`bun run check` is the complete normal local gate: lint, formatting, both
-TypeScript projects, and that normal test chain. `.github/workflows/ci.yml` invokes the
-same command with two exact hosted-only exceptions after clean-runner stalls:
-`tests/system/code-targets/opener-persistence.test.ts` and the complete serial
-browser lane. All normal owners remain mandatory locally; TASK-141 and TASK-142
-own restoring the system owner and the normal browser inventory to hosted
-coverage.
+`bun run check` is the complete normal gate locally and on GitHub Actions.
+It runs lint, formatting, both TypeScript projects, and the normal test chain.
+The hosted run includes opener persistence and the entire serial browser inventory.
+The workflow retains its full output as the `validation-log` artifact.
 
 A separate macOS CI job exercises the native process observer, Codex lifecycle,
 Git cleanup, renderer cleanup polling, storage paths, and board filename casing.
+The job also runs the native sandbox refusal and repaired macOS fixture owners.
 This catches platform-specific failures that the Ubuntu suite cannot exercise;
 it does not replace any local gate.
 
@@ -204,12 +202,10 @@ normal owners named by `BROWSER_TEST_PATHS` drive a real browser through one
 strict adapter for live-session behavior and rendered fidelity. They are not a gate
 for named-board runtime operations. The lane:
 
-- refuses to claim a pass without `agent-browser` on PATH, or without `strace`
-  when the opt-in human-edit performance owner is selected. It exits 2 before
-  building or starting an owner;
+- resolves the pinned `agent-browser` package in this checkout, then runs its declared CLI through Bun.
+  Prerequisite failure exits 2 before building or starting an owner;
 - asserts `navigator.userAgent` says headless, because a window that maps
-  steals focus under Hyprland; local normal runs exercise the normal inventory while hosted
-  runs exclude the lane until TASK-142 restores it;
+  steals focus under Hyprland; local and hosted runs exercise the same normal inventory;
 - runs one literal file child at a time, never concurrently. TASK-097 records that two owners
   sharing the machine is how one of them fails for no reason: contention
   stretches request and frame observations that the checks probe on purpose;
@@ -233,6 +229,11 @@ For a managed Chrome installation that enforces the default-browser policy,
 use Chrome for Testing. Set both `AGENT_BROWSER_EXECUTABLE_PATH` and
 `ARCHBOARD_RENDERER_CHROMIUM` to its executable. Run the browser lane serially;
 each owner must finish cleanup before the next starts.
+
+The lane writes `# browser-toolchain` and `# browser-lane` JSON summaries to stderr.
+The summaries identify the toolchain, selected files, owner progress, and final exit status.
+A completed owner also passed its cleanup audit.
+Full test output remains available, and a failing summary retains the real exit status.
 
 The normal package command is the canonical normal lane. Focused diagnosis accepts:
 
