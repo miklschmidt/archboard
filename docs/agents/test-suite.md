@@ -77,8 +77,8 @@ or a product duration.
 
 No `TEST_*` budget comes from a product duration (TASK-154).
 `tests/system/support/timing.ts` imports nothing from `src/shared/timing`.
-A budget is a ceiling that a passing run never reaches, or a patience. A
-product change must not retune it.
+A wait budget is a ceiling that a passing run never reaches, or a patience; a
+poll cadence is neither. A product change must not retune either.
 
 A system owner waits for a product timer only when the test is about that timer
 and the timer has no test override. Two cases remain:
