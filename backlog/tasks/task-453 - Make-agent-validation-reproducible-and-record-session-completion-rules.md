@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:22'
-updated_date: '2026-10-11 15:51'
+updated_date: '2026-10-11 15:57'
 labels: []
 dependencies: []
 references:
@@ -50,4 +50,6 @@ Hosted macOS job 114495510604 passes in run 38148069388 at c80c70d6. It executes
 The second hosted run 38150616626 passes the wide-board case and macOS job, but its board-flight recorder fails with a missing SVG. The exact local flight owner passes with all 54 assertions, and all ten remaining browser owners pass. Later local runs reproduce a drained-stdin shutdown race and vendor macOS keyboard event storm. TASK-456 and TASK-457 record their separate repairs. Complete final gates remain pending.
 
 Main integration creates duplicate IDs for two independent task records. The supported backlog doctor repair moves the imported cross-process lock task to TASK-458 and git-opener watchdog task to TASK-459. Their original content remains unchanged. The reported TASK-454 proposal reference belongs to the independent TASK-454 wide-layout repair and remains correct. Main branch records remain untouched. The previous final gate stops before completion because integration changes its source snapshot; a fresh integrated gate is required.
+
+The integrated README assessment reports the same 16 stale assets and zero manifest problems as origin/main at 68e7f0e. An isolated archive comparison proves that none becomes newly stale on this branch. The measured layout scheduling repair preserves drawing bytes in its before/after probe; the task changes no README demonstration.
 <!-- SECTION:NOTES:END -->
