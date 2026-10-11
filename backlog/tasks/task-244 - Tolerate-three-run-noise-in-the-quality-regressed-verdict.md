@@ -4,7 +4,7 @@ title: Tolerate three-run noise in the quality-regressed verdict
 status: Done
 assignee: []
 created_date: '2026-09-16 02:26'
-updated_date: '2026-10-11 13:50'
+updated_date: '2026-10-11 14:23'
 labels: []
 dependencies: []
 references:
@@ -29,6 +29,8 @@ The skill evaluation report prints REGRESSED whenever any of four three-run mean
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-10-11 audit: delivered by abc9b9752 (report what moved instead of stamping REGRESSED), a604ef5ca and e22a57ef1. Verified: bun test --isolate src/runtime/skill-evaluation/tests/report-change.test.ts passes (12 tests in that file; 26 pass with storage.test.ts).
+
+2026-10-11 review correction: a per-scenario row now prints no verdict word at all (report-markdown.ts:187, 'deltas only (one scenario)'), so on such a row a lost success shows only as 'ok -1'. The word REGRESSED appears on workflow and total rows only, so AC1's 'a lost success or a new visual failure still does' holds for aggregate rows.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
