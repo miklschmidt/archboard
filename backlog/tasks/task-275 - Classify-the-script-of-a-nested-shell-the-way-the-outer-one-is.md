@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@implementer'
 created_date: '2026-09-19 01:07'
-updated_date: '2026-10-11 14:05'
+updated_date: '2026-10-11 14:25'
 labels: []
 dependencies: []
 priority: medium
@@ -37,6 +37,8 @@ Found reviewing TASK-274.01. The exposure classifier unwraps one level of bash|s
 unwrapped now recurses via innerScript; nested script feeds every rule (exposure, write, class). Tests fail without the change (reaudit: nested other-run; events: nested unwrap and write). AC2 probes proven; saved-batch invariance NOT verified: checking needs walking .skill-evals, which is forbidden; the task text says no stored command in the ten batches is nested.
 
 2026-10-11 user decision: the check that saved batches classify unchanged is not needed (the task text records that no stored command in the ten batches is nested), so that half of the old AC#2 was dropped; the probes half stays as the new AC#3. Verified by reaudit.test.ts and events.test.ts; making the recursion one level deep fails both.
+
+Review fix: of the three nested-shell exposure probes in reaudit.test.ts only the redirect one (cat<../) fails when the unwrapping is cut to one level; the climb and blinding.json probes were read from the recorded text anyway, so they were dropped.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
