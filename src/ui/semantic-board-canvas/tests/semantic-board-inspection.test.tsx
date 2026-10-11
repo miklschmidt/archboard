@@ -287,6 +287,8 @@ test("a drill-down whose board the vault has not got names the board rather than
 
 test("following a drill-down shows the target board and offers the way back", async () => {
 	serving();
+	// The way back is named as the board is, not as its key is spelled.
+	server.documents["pipeline"] = boardOf("Pipeline Board", NODES);
 	server.documents["engine"] = boardOf(
 		"engine",
 		[{ id: "m1", name: "atomic-write", kind: "module" }],
@@ -313,7 +315,7 @@ test("following a drill-down shows the target board and offers the way back", as
 	// The pane says where it came from and how to get back, with no navigator to
 	// place the board: the address still names the board the pane was opened on,
 	// so the way back has to be in the pane's own breadcrumb.
-	expect(slot("pane-crumb")?.textContent).toContain("pipeline");
+	expect(slot("pane-crumb")?.textContent).toContain("Pipeline Board");
 
 	await act(async () => {
 		fireEvent.click(slot("pane-crumb")!);
