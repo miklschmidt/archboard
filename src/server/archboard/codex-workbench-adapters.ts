@@ -35,7 +35,12 @@ export type {
 	ServerBrowserProjectionBudget,
 	ServerTimelineOwner,
 	ServerTimelineOwnerOptions,
+	TimelineTarget,
 } from "@/server/archboard/lib/codex-workbench-timeline";
+export {
+	MAX_DELEGATIONS,
+	recordDelegations,
+} from "@/server/archboard/lib/codex-workbench-delegations";
 export { createServerCanonicalTextActions } from "@/server/archboard/lib/codex-workbench-text-actions";
 export { createServerRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
 export { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-pane";

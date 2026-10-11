@@ -12,6 +12,9 @@ import {
 import type { BindingContext } from "@/server/archboard/lib/codex-workbench-bindings";
 import { publishProjection } from "@/server/archboard/lib/codex-workbench-bindings";
 
+/** What the voice coordinator's turns may take in a snapshot, beside the workhorse's own. */
+const COORDINATOR_TIMELINE_BUDGET = { maxBytes: 65_536, maxTurns: 40 } as const;
+
 /**
  * How this generation serves browsers: one gateway over the component graph and its tab sessions,
  * the timeline it publishes, and the owned process as its change source.
@@ -34,7 +37,7 @@ function createGatewayBinding(
 	return (created) => {
 		const dynamic = requireDynamicOwners(dynamicContext, created).approval;
 		const budget = createServerBrowserProjectionBudget();
-		owners.timeline ??= createServerTimelineOwner({
+		const timelineOptions = {
 			session: requireCreated(created, "session"),
 			identity: requireCreated(created, "identity").identity.decoder,
 			approvals: requireCreated(created, "approvals"),
@@ -42,13 +45,18 @@ function createGatewayBinding(
 			onChange: () => {
 				publishProjection(owners);
 			},
-			budget,
+		};
+		owners.timeline ??= createServerTimelineOwner({ ...timelineOptions, budget });
+		owners.coordinatorTimeline ??= createServerTimelineOwner({
+			...timelineOptions,
+			budget: createServerBrowserProjectionBudget(COORDINATOR_TIMELINE_BUDGET),
 		});
 		const options = createServerBrowserGatewayOptions({
 			components: created,
 			sessions: requireCreated(created, "sessions"),
 			dynamicApprovals: dynamic,
 			timeline: owners.timeline,
+			coordinatorTimeline: owners.coordinatorTimeline,
 			budget,
 			state: owners.browserState,
 			leaseLedger: server.browserLeaseLedger,
