@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 37,
+	"version": 38,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-11T14:30:12.771Z",
+	"updatedAt": "2026-10-11T14:50:44.021Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -8285,7 +8285,7 @@
 						"name": "Delegations",
 						"kind": "module",
 						"responsibility": "Which voice coordinator turn delegated each workhorse turn: kept per tab session, so the conversation can say where work came from",
-						"description": "Planned in TASK-319. It records a workhorse turn only when the coordinator's delegate operation started it, because a steer must not mark a turn the user began. It keeps a bounded number of the newest records. The browser gateway reads it when it projects the workhorse timeline, and the turn then carries delegatedBy.",
+						"description": "A listener on the tab session's workhorse operations. It records a workhorse turn only from a delegate operation's event that names that turn, because a steer must not mark a turn the user began. It keeps the 256 newest records in the tab session's state. The browser gateway hands that record to the projection of the workhorse timeline, and a recorded turn then carries delegatedBy.",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -9099,18 +9099,28 @@
 						"to": "xPE7GpvB",
 						"kind": "event",
 						"label": "a delegation started a workhorse turn",
-						"description": "The delegations owner subscribes to the operations' public port and records the coordinator turn named by the event's correlation against the workhorse turn it started (TASK-319 plan).",
-						"emphasis": "normal"
+						"description": "Each tab session's builder subscribes the recorder to its operations' events once; an event of delegate_to_workhorse whose correlation names the workhorse turn is recorded against the coordinator turn it also names.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-workbench-session-factories.ts",
+							"symbol": "recordDelegations"
+						}
 					},
 					{
 						"id": "Nuf1oHX8",
 						"order": 58000,
-						"from": "u2LFaG7R",
-						"to": "xPE7GpvB",
-						"kind": "call",
-						"label": "who delegated this workhorse turn",
-						"description": "Projecting the workhorse timeline asks it, so a delegated turn carries delegatedBy (TASK-319 plan).",
-						"emphasis": "normal"
+						"from": "xPE7GpvB",
+						"to": "u2LFaG7R",
+						"kind": "data",
+						"label": "who delegated each workhorse turn",
+						"description": "Each pane's projection reads the tab session's record and projectTimeline sets delegatedBy on a recorded workhorse turn.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-workbench-owner-projection.ts",
+							"symbol": "delegations"
+						}
 					}
 				],
 				"flows": [],
