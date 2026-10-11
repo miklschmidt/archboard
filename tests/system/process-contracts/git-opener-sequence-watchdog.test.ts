@@ -157,18 +157,43 @@ async function runOwnedDetached(
 	return result!;
 }
 
+/** Tests that ran per owner file, from the junit report: one top-level suite per file. */
+function testsPerOwner(junit: string): Map<string, number> {
+	const ran = new Map<string, number>();
+	for (const [, file, tests] of junit.matchAll(
+		/<testsuite name="([^"]+)" file="\1"[^>]* tests="(\d+)"/g,
+	)) {
+		ran.set(file!, Number(tests));
+	}
+	return ran;
+}
+
 test(
 	"Git lifecycle and the former opener deadlock sequence settle under an external watchdog",
 	async () => {
-		const settled = await runOwnedDetached(
-			[process.execPath, "test", "--isolate", "--max-concurrency=1", ...OWNERS],
-			{ env: { ...process.env, ARCHBOARD_REPOS: resolve(ROOT, ".absent-watchdog-repos.json") } },
-		);
-		const { out, err } = settled;
-		const output = `${out}\n${err}`;
-		expect(settled.exitCode, `stdout:\n${out}\nstderr:\n${err}`).toBe(0);
-		for (const owner of OWNERS) {
-			expect(output).toContain(owner);
+		const root = mkdtempSync(join(tmpdir(), "archboard-watchdog-report-"));
+		const report = join(root, "junit.xml");
+		try {
+			const settled = await runOwnedDetached(
+				[
+					process.execPath,
+					"test",
+					"--isolate",
+					"--max-concurrency=1",
+					"--reporter=junit",
+					`--reporter-outfile=${report}`,
+					...OWNERS,
+				],
+				{ env: { ...process.env, ARCHBOARD_REPOS: resolve(ROOT, ".absent-watchdog-repos.json") } },
+			);
+			expect(settled.exitCode, `stdout:\n${settled.out}\nstderr:\n${settled.err}`).toBe(0);
+			// Exit 0 alone would also hold if an owner never ran: each must report a test.
+			const ran = testsPerOwner(readFileSync(report, "utf8"));
+			for (const owner of OWNERS) {
+				expect(ran.get(owner) ?? 0, owner).toBeGreaterThan(0);
+			}
+		} finally {
+			rmSync(root, { recursive: true, force: true });
 		}
 	},
 	TEST_GIT_OPENER_CASE_TIMEOUT_MS,
