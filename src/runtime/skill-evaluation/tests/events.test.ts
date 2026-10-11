@@ -158,6 +158,22 @@ describe("classifying what an author ran", () => {
 			CONTEXT,
 		);
 		expect(nestedWrite?.write).toBe(true);
+		// A shell call inside a compound script is unwrapped in place; a separator inside quotes is not one.
+		expect(unwrapped(`bash -lc "cd x && sh -c 'ls src' | wc -l; echo 'a && b'"`)).toBe(
+			"cd x && ls src | wc -l ; echo 'a && b'",
+		);
+		const [compoundWrite] = classifyCommands(
+			[
+				{
+					command: `bash -lc "cd x && sh -c 'archboard semantic new x --doing y'"`,
+					exitCode: 0,
+					status: "completed",
+					output: "",
+				},
+			],
+			CONTEXT,
+		);
+		expect(compoundWrite?.write).toBe(true);
 		// Invoked as bash -l -c, or followed by another command, a write is still a write.
 		for (const command of [
 			"bash -l -c 'archboard semantic new x --doing y'",

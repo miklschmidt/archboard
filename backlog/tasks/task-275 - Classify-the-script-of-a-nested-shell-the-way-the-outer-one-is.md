@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@implementer'
 created_date: '2026-09-19 01:07'
-updated_date: '2026-10-11 14:25'
+updated_date: '2026-10-11 14:27'
 labels: []
 dependencies: []
 priority: medium
@@ -39,6 +39,8 @@ unwrapped now recurses via innerScript; nested script feeds every rule (exposure
 2026-10-11 user decision: the check that saved batches classify unchanged is not needed (the task text records that no stored command in the ten batches is nested), so that half of the old AC#2 was dropped; the probes half stays as the new AC#3. Verified by reaudit.test.ts and events.test.ts; making the recursion one level deep fails both.
 
 Review fix: of the three nested-shell exposure probes in reaudit.test.ts only the redirect one (cat<../) fails when the unwrapping is cut to one level; the climb and blinding.json probes were read from the recorded text anyway, so they were dropped.
+
+Review fix: a shell call after a separator of a compound script (&&, ||, ;, |, &, newline outside quotes) is now unwrapped in place by classify.innerScript, splitting with other-run.shellCommands, which shares shellWords' word regex. Tests: events.test.ts (unwrapped compound, write behind cd &&) and reaudit.test.ts (exposure behind cd &&), all failing before.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
