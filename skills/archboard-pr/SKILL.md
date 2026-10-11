@@ -277,10 +277,6 @@ Read the body back once more. Done:
 - Each `<picture>` has both sources and an `<img>` with alt text.
 - The video's URL stands alone on its line.
 
-Then tell the user in one line to look at the renders in the light and the
-dark theme. [Renders](references/renders.md#what-is-verified-and-what-is-not)
-says why.
-
 ## 5. After the merge
 
 When the pull request merges, its code is on the default branch. So restate

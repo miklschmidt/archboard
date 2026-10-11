@@ -95,9 +95,7 @@ Lock files". Without alt text, gh uses the file name.
 own title line. Never side by side: each variant is laid out afresh, so cards
 move between the two pictures and do not line up.
 
-## What is verified, and what is not
-
-Verified:
+## What GitHub supports
 
 - GitHub accepts SVG, PNG, GIF and JPEG images up to 10 MB each
   [GitHub, attaching files]. gh `--attach` uploads `.svg` and `.png`
@@ -116,17 +114,6 @@ Verified:
   GitHub's Markdown API. In that mode, the API keeps a `<picture>` with its
   sources and wraps it for the theme (checked with `gh api /markdown` in
   October 2026).
-
-Not verified until a person looks at a real pull request:
-
-- That the pair switches with the reader's GitHub theme in a pull request
-  description.
-- That GitHub draws an uploaded SVG the same way Chromium does.
-
-Until a person sees both work, tell the user in one line to look at the
-renders in the light and the dark theme. If the upload of an SVG is refused,
-or the user reports that it does not draw, post PNG files instead. Draw them
-with `semantic rasterize` and the same flags, and post them the same way.
 
 ## Sources
 
