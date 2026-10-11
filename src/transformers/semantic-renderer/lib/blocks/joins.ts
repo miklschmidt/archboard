@@ -255,27 +255,66 @@ function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 }
 
 /**
- * A way to lay a drawing out that lays it with each set of blocks apart
- * once, however often it is asked. A layout asked for ahead and never
- * awaited is dropped, a failure included: laid out one by one, it would
- * never have been asked for.
- * @param lay Lay the drawing out with some blocks' joins apart, by block id.
- * @returns The way to ask for a layout.
+ * The same key for a candidate regardless of its block order.
+ * @param apart The blocks whose joins stay apart.
+ * @returns The cache key.
+ */
+function candidateKey(apart: ReadonlySet<string>): string {
+	return JSON.stringify([...apart].toSorted());
+}
+
+/**
+ * Remember candidates, and cancel unfinished work that the remaining turns no longer need.
+ * @param lay Lay the drawing out with some blocks' joins apart.
+ * @returns The candidate cache and its cancellation boundary.
  */
 function layingOnce<Placed>(
-	lay: (apart: ReadonlySet<string>) => Promise<Placed>,
-): (apart: ReadonlySet<string>) => Promise<Placed> {
-	const asked = new Map<string, Promise<Placed>>();
-	return (apart) => {
-		const key = JSON.stringify([...apart].toSorted());
-		let laying = asked.get(key);
-		if (laying === undefined) {
-			laying = lay(apart);
-			asked.set(key, laying);
-			laying.catch(() => undefined);
+	lay: (apart: ReadonlySet<string>, signal: AbortSignal) => Promise<Placed>,
+) {
+	const asked = new Map<
+		string,
+		{ controller: AbortController; promise: Promise<Placed>; settled: boolean }
+	>();
+	/**
+	 * Ask for a candidate once while it remains relevant.
+	 * @param apart The blocks whose joins stay apart.
+	 * @returns Its layout.
+	 */
+	const ask = (apart: ReadonlySet<string>): Promise<Placed> => {
+		const key = candidateKey(apart);
+		let entry = asked.get(key);
+		if (entry === undefined) {
+			const controller = new AbortController();
+			entry = { controller, promise: lay(apart, controller.signal), settled: false };
+			asked.set(key, entry);
+			const held = entry;
+			// Speculative failures remain silent unless their candidate is awaited.
+			void held.promise.then(
+				() => {
+					held.settled = true;
+					return undefined;
+				},
+				() => {
+					held.settled = true;
+					return undefined;
+				},
+			);
 		}
-		return laying;
+		return entry.promise;
 	};
+	/**
+	 * Drop obsolete unfinished candidates before asking for their replacements.
+	 * @param candidates The candidates that the remaining turns still need.
+	 */
+	const keep = (candidates: readonly ReadonlySet<string>[]): void => {
+		const needed = new Set(candidates.map(candidateKey));
+		for (const [key, entry] of asked) {
+			if (entry.settled || needed.has(key)) continue;
+			entry.controller.abort();
+			asked.delete(key);
+		}
+	};
+	return { ask, keep };
 }
 
 /**
@@ -293,9 +332,9 @@ function layingOnce<Placed>(
  */
 async function layJoined<Placed extends Page>(
 	tree: BlockTree,
-	lay: (apart: ReadonlySet<string>) => Promise<Placed>,
+	lay: (apart: ReadonlySet<string>, signal: AbortSignal) => Promise<Placed>,
 ): Promise<Drawn<Placed>> {
-	const ask = layingOnce(lay);
+	const { ask, keep } = layingOnce(lay);
 	const blocks = [...tree.joining];
 	const turns = [
 		...(blocks.length > 1 ? [(): Set<string> => new Set(blocks)] : []),
@@ -311,21 +350,27 @@ async function layJoined<Placed extends Page>(
 	 * @param apart The blocks apart in the drawing kept so far.
 	 */
 	const ahead = (from: number, apart: ReadonlySet<string>): void => {
-		for (const turn of turns.slice(from)) void ask(turn(apart));
+		const candidates = turns.slice(from).map((turn) => turn(apart));
+		if (from > 0) keep(candidates);
+		for (const candidate of candidates) void ask(candidate);
 	};
-	const first = ask(new Set());
-	ahead(0, new Set());
-	let best: Drawn<Placed> = { tree, placed: await first };
-	let apart: ReadonlySet<string> = new Set();
-	for (const [index, turn] of turns.entries()) {
-		const trial = turn(apart);
-		// oxlint-disable-next-line no-await-in-loop -- each turn is weighed against the best before it
-		const tried = { tree, placed: await ask(trial) };
-		if (!drawsBetter(tried, best)) continue;
-		[best, apart] = [tried, trial];
-		ahead(index + 1, apart);
+	try {
+		const first = ask(new Set());
+		ahead(0, new Set());
+		let best: Drawn<Placed> = { tree, placed: await first };
+		let apart: ReadonlySet<string> = new Set();
+		for (const [index, turn] of turns.entries()) {
+			const trial = turn(apart);
+			// oxlint-disable-next-line no-await-in-loop -- each turn is weighed against the best before it
+			const tried = { tree, placed: await ask(trial) };
+			if (!drawsBetter(tried, best)) continue;
+			[best, apart] = [tried, trial];
+			ahead(index + 1, apart);
+		}
+		return best;
+	} finally {
+		keep([]);
 	}
-	return best;
 }
 
 export { joinWays, kindOf, layJoined, type Drawn };

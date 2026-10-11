@@ -54,6 +54,8 @@ interface EngineWorker {
 interface Pending {
 	readonly graph: SolveGraph;
 	readonly layoutOptions: Parameters<Solve>[1];
+	readonly signal: AbortSignal | undefined;
+	readonly cancel: () => void;
 	readonly resolve: (graph: SolveGraph) => void;
 	readonly reject: (error: Error) => void;
 	/** Whether it was sent once more after its first worker failed. */
@@ -157,7 +159,11 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	 */
 	function retryOrRefuse(pending: Pending, failure: Error): void {
 		if (pending.retried) pending.reject(failure);
-		else queued.push({ ...pending, retried: true });
+		else if (pending.signal?.aborted === true) pending.reject(pending.signal.reason);
+		else {
+			queued.push({ ...pending, retried: true });
+			pending.signal?.addEventListener("abort", pending.cancel, { once: true });
+		}
 	}
 
 	/**
@@ -225,6 +231,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	 * @param pending The solve.
 	 */
 	function send(engine: PooledEngine, pending: Pending): void {
+		pending.signal?.removeEventListener("abort", pending.cancel);
 		const id = nextId;
 		nextId += 1;
 		engine.solving = { id, pending };
@@ -240,9 +247,21 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		}
 	}
 
-	return (graph, layoutOptions) =>
+	return (graph, layoutOptions, signal) =>
 		new Promise<SolveGraph>((resolve, reject) => {
-			queued.push({ graph, layoutOptions, resolve, reject, retried: false });
+			if (signal?.aborted === true) {
+				reject(signal.reason);
+				return;
+			}
+			/** Remove this caller's solve only while it still waits for a worker. */
+			const cancel = (): void => {
+				const index = queued.findIndex((pending) => pending.resolve === resolve);
+				if (index < 0) return;
+				queued.splice(index, 1);
+				reject(signal?.reason);
+			};
+			queued.push({ graph, layoutOptions, signal, cancel, resolve, reject, retried: false });
+			signal?.addEventListener("abort", cancel, { once: true });
 			dispatch();
 		});
 }
