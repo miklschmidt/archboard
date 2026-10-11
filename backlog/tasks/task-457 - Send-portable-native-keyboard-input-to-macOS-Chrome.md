@@ -36,4 +36,6 @@ No board is affected because this task repairs browser test infrastructure. Keep
 
 <!-- SECTION:NOTES:BEGIN -->
 The minimal blank-page comparison delivers exactly one Escape with nativeVirtualKeyCode omitted, but the vendor Windows code produces 13,567 extra Unidentified keydown events. The new real-browser regression fails on the original adapter. The portable CDP adapter preserves trusted key events, modifier chords, native Tab focus, and text entry. The original inspection case passes in 4.78 seconds, and both cases pass in 6.00 seconds. No original assertion or timeout changes.
+
+Keyboard owner review: Standards kept the original inspection case and its timeout unchanged, bounded retained events at four, and checked disposal through the adapter. Fixed split event observations by asserting the event count and bounded records in one page snapshot; this preserves every assertion while giving storm failures useful diagnostics. Spec confirms trusted Escape, Control+Shift+K modifier flags, native Tab focus, and printable text coverage. Scoped configured test lint and formatting pass; browser validation remains serialized with the parent run.
 <!-- SECTION:NOTES:END -->
