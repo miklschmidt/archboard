@@ -1,9 +1,11 @@
 ---
 id: TASK-275
 title: Classify the script of a nested shell the way the outer one is
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@implementer'
 created_date: '2026-09-19 01:07'
+updated_date: '2026-10-11 13:58'
 labels: []
 dependencies: []
 priority: medium
@@ -18,7 +20,19 @@ Found reviewing TASK-274.01. The exposure classifier unwraps one level of bash|s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A nested bash|sh|zsh -c script word is classified again as a script in its own right, recursively, for exposure and every other rule
+- [x] #1 A nested bash|sh|zsh -c script word is classified again as a script in its own right, recursively, for exposure and every other rule
 - [ ] #2 Both probes above count as other-run, and every existing classification of the saved batches is unchanged
-- [ ] #3 Behavioural tests own it
+- [x] #3 Behavioural tests own it
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Make unwrapped recurse through nested shell -c calls. 2. Tests in reaudit.test.ts (both probes) and events.test.ts (unwrap, write).
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+unwrapped now recurses via innerScript; nested script feeds every rule (exposure, write, class). Tests fail without the change (reaudit: nested other-run; events: nested unwrap and write). AC2 probes proven; saved-batch invariance NOT verified: checking needs walking .skill-evals, which is forbidden; the task text says no stored command in the ten batches is nested.
+<!-- SECTION:NOTES:END -->

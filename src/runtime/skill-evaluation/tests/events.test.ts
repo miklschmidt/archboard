@@ -144,6 +144,20 @@ describe("classifying what an author ran", () => {
 		expect(unwrapped("bash -lc 'rg '\"'\"'a b'\"'\"' src'")).toBe("rg 'a b' src");
 		expect(unwrapped("zsh -l -c 'ls src'")).toBe("ls src");
 		expect(unwrapped('sh -c "ls \\\nsrc"')).toBe("ls src");
+		// A script that is itself a shell call is unwrapped again, and a write inside is a write.
+		expect(unwrapped(`bash -lc "bash -c 'ls src'"`)).toBe("ls src");
+		const [nestedWrite] = classifyCommands(
+			[
+				{
+					command: `bash -lc "sh -c 'archboard semantic new x --doing y'"`,
+					exitCode: 0,
+					status: "completed",
+					output: "",
+				},
+			],
+			CONTEXT,
+		);
+		expect(nestedWrite?.write).toBe(true);
 		// Invoked as bash -l -c, or followed by another command, a write is still a write.
 		for (const command of [
 			"bash -l -c 'archboard semantic new x --doing y'",
