@@ -131,7 +131,7 @@
 	"engines": {
 		"bun": ">=1.4.0"
 	},
-	"packageManager": "bun@1.4.0",
+	"packageManager": "bun@1.4.3",
 	"patchedDependencies": {
 		"@radix-ui/react-select@2.3.7": "patches/@radix-ui%2Freact-select@2.3.7.patch",
 		"libavoid-js@0.5.0-beta.5": "patches/libavoid-js@0.5.0-beta.5.patch"
