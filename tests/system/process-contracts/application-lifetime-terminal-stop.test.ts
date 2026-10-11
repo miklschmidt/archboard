@@ -18,9 +18,9 @@ test("application timeout force-reaps a real process group before stop resolves"
 		writeFileSync(
 			fixture,
 			`import { spawn } from "node:child_process";\n` +
+				`process.on("SIGTERM", () => {});\n` +
 				`const descendant = spawn(process.execPath, ["-e", "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)"], { stdio: "ignore" });\n` +
 				`process.stdout.write(JSON.stringify({ pid: process.pid, descendant: descendant.pid }) + "\\n");\n` +
-				`process.on("SIGTERM", () => {});\n` +
 				`setInterval(() => {}, 1000);\n`,
 		);
 		chmodSync(fixture, 0o700);
