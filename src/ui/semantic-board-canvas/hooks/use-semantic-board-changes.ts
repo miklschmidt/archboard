@@ -35,7 +35,12 @@ async function readBoardAgain(client: QueryClient, board: string): Promise<void>
 	// that no answer made before the write can land on a key that has already
 	// been invalidated and count as fresh.
 	await Promise.all(keys.map((queryKey) => client.cancelQueries({ queryKey })));
-	await Promise.all(keys.map((queryKey) => client.invalidateQueries({ queryKey })));
+	// A read that starts after the cancelling is from after the write, so it is joined and not
+	// cancelled again: the picture reading the document is such a read, and cancelling it would
+	// leave a pane that asks for its variant by name with the old drawing.
+	await Promise.all(
+		keys.map((queryKey) => client.invalidateQueries({ queryKey }, { cancelRefetch: false })),
+	);
 }
 
 /**
