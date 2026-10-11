@@ -261,8 +261,8 @@ The adapter retains the command deadline and closes its input connection during 
 
 On macOS, use Chrome for Testing. Before every local lane or gate, set
 `AGENT_BROWSER_EXECUTABLE_PATH` and `ARCHBOARD_RENDERER_CHROMIUM` to its absolute
-executable path in the checkout's ignored `.env` file. Bun reads these values
-before starting the test processes.
+executable path in the command environment. Keep these values out of `.env` files.
+Bun fixture subprocesses load these files and can add variables outside the fixture's allowed environment.
 Desktop Chrome can show system default-browser prompts despite the automation flags.
 Run the browser lane serially. Each owner must finish cleanup before the next starts.
 

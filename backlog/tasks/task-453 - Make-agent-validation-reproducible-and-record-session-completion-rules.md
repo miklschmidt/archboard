@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:22'
-updated_date: '2026-10-11 16:27'
+updated_date: '2026-10-11 16:32'
 labels: []
 dependencies: []
 references:
@@ -57,7 +57,9 @@ The integrated gate passes 4746 tests and all 19 cleanup audits. A later unchang
 
 An earlier macOS checkout setup times out in git remote add. The native test command passes locally with the hosted Bun 1.4.0: 138 tests and 711 assertions. The earlier hosted run's 18 fixture setup failures have no established cause. The fresh hosted macOS job passes all 138 tests. Hosted Linux rerun evidence remains pending.
 
-The user reports repeated desktop Chrome default-browser prompts and directs this session to use Chrome for Testing. Local setup selected the installed Chrome for Testing 150.0.7871.24. The ignored checkout .env names its absolute executable path in both AGENT_BROWSER_EXECUTABLE_PATH and ARCHBOARD_RENDERER_CHROMIUM. Both resolver calls return that testing executable. No test browser remains running.
+The user reports repeated desktop Chrome default-browser prompts and directs this session to use Chrome for Testing. Local setup selected the installed Chrome for Testing 150.0.7871.24. The initial ignored checkout .env named its executable in both AGENT_BROWSER_EXECUTABLE_PATH and ARCHBOARD_RENDERER_CHROMIUM. Both resolver calls returned that testing executable. No test browser remained running.
 
-The macOS guidance requires both selections before every local lane or gate. Machine-specific paths stay in ignored configuration. No test or timing contract changes. The TASK-461 timing proposal remains unapplied.
+The subsequent gate failed two module cases. The Codex process fixture expected seven exact environment keys, but Bun loaded .env and added both browser overrides. The failing full gate is retained in /private/tmp/archboard-retro-cft-full-check.log. The local .env is removed. Both Chrome for Testing selections now come from the command environment before every local macOS lane or gate.
+
+The exact Codex process and project-binding owners pass 16 tests and 80 assertions with command variables. Their result is retained in /private/tmp/archboard-retro-cft-environment-repro.log. Machine-specific executable paths remain untracked. No runtime, test, or timing contract changes. The TASK-461 timing proposal remains unapplied.
 <!-- SECTION:NOTES:END -->
