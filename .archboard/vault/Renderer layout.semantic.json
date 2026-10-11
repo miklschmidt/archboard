@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 35,
+	"version": 37,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-11T15:07:57.951Z",
+	"updatedAt": "2026-10-11T16:03:27.466Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -3114,7 +3114,7 @@
 		{
 			"id": "pNMsNSD2",
 			"name": "TASK-367.27",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "b4UJUhws",
 			"summary": "Module level: how the renderer core settles one drawing, and by what measure; the libraries and the canvas it reaches stay outside it. Follow linked subjects for related levels.",
 			"content": {
@@ -3957,9 +3957,9 @@
 		{
 			"id": "pryHYdix",
 			"name": "TASK-454",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "pNMsNSD2",
-			"summary": "Cancel obsolete queued join candidates",
+			"summary": "How one drawing is settled and measured",
 			"content": {
 				"nodes": [
 					{
@@ -4798,7 +4798,7 @@
 			}
 		}
 	],
-	"current": "pNMsNSD2",
+	"current": "pryHYdix",
 	"adoptions": [
 		{
 			"variant": "8JVuwOvJ",
@@ -4829,6 +4829,12 @@
 			"from": "b4UJUhws",
 			"at": "2026-10-06T15:03:06.732Z",
 			"reason": "TASK-367.27: every relationship between bound parts carries its anchor; block placement weighs its routed trunks and the architecture painter sizes far names through measured text, now drawn"
+		},
+		{
+			"variant": "pryHYdix",
+			"from": "pNMsNSD2",
+			"at": "2026-10-11T16:03:27.466Z",
+			"reason": "Obsolete queued candidates stop before consuming a worker; active solves retain their result and selection order"
 		}
 	]
 }

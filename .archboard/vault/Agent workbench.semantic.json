@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 40,
+	"version": 42,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-11T15:46:12.618Z",
+	"updatedAt": "2026-10-11T16:03:28.008Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -3964,7 +3964,7 @@
 		{
 			"id": "KwhT7rtK",
 			"name": "TASK-436.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "pVuh6kOj",
 			"summary": "The per-tab workbench, browser gateway and session lifetimes",
 			"content": {
@@ -9239,9 +9239,9 @@
 		{
 			"id": "qs9ERfoL",
 			"name": "TASK-456",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "KwhT7rtK",
-			"summary": "Let drained stdin finish before process termination",
+			"summary": "Codex integration inside the server",
 			"content": {
 				"nodes": [
 					{
@@ -10537,7 +10537,7 @@
 			}
 		}
 	],
-	"current": "KwhT7rtK",
+	"current": "qs9ERfoL",
 	"adoptions": [
 		{
 			"variant": "kUF7buv6",
@@ -10562,6 +10562,12 @@
 			"from": "pVuh6kOj",
 			"at": "2026-10-07T01:08:50.943Z",
 			"reason": "Corrected existing public factories, callback ports and unload module bindings"
+		},
+		{
+			"variant": "qs9ERfoL",
+			"from": "KwhT7rtK",
+			"at": "2026-10-11T16:03:28.008Z",
+			"reason": "Bounded stdin EOF grace lets drained responses reach the child before mandatory group cleanup"
 		}
 	]
 }
