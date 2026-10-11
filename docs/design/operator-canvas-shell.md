@@ -454,8 +454,9 @@ that they show is now the dock at the foot of the navigator.
   subtitles. A recording draws the same voice box at the foot of its walkthrough box, with an
   orb that the recorded voice moves.
   DESIGN.md describes the dock and the box.
-- Session details (account, model, context used, thread) are one menu away, not on
-  screen. The voice coordinator is not among them: its work is in the conversation.
+- Session details (account, model, context used, thread, the voice coordinator's
+  model and what the voice was told) are one menu away, not on screen. The voice
+  coordinator's work is not there: it is in the conversation.
 
 ![The dock while the voice box carries the voice, the voice box with its words,
 and the dock once subtitles are turned off, in the light and the dark
