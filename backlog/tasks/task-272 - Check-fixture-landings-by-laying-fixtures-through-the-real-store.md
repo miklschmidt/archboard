@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@implementer'
 created_date: '2026-09-18 13:23'
-updated_date: '2026-10-11 14:02'
+updated_date: '2026-10-11 14:24'
 labels: []
 dependencies: []
 references:
@@ -51,6 +51,8 @@ One design point: loadSuite throws on suiteProblems, so either the scripts call 
 Two further misses found in TASK-269 round 5, recorded here because they are this task's to close rather than landings.ts's to chase. Both come from one root the walk does not model: merging a part's NAME between a draft and its predecessor. When a draft renames a part by id and the predecessor later restates it by its old name alone, the walk has to guess whether the carried statement means the draft's part, and either guess can split one part into two, which hides a landing. R2: new board A, X; branch Draft; Draft renames X to X2 by id and adds A->X2; current restates X by name alone; current adds child c under X. The store keeps X2 with c under it and A->X2 lands. R3 is the mirror: the same steps up to current's restatement, then Draft restates X2 by name alone and adds c under X2; A->X2 lands. TASK-269 closes R2 (a regression its own round-5 commit introduced) and records R3 as the one known miss. Laying fixtures through the real store closes both, because the store does the field-by-field name merge itself. Add both as tests of the new check.
 
 vault.ts does not import suite.ts (the task premise was stale); laying.ts lives beside both anyway and is called from the script after loadSuite, as the task offers. Run-check rule shared: outcomes-board.edgesOnContainers(content, allowedKinds). Tests only count a landing when the fixture laid (problems() fails on 'does not lay'), which exposed that the old resolve case named a node the draft removed: unreachable for a fixture, replaced by a real conflict resolved to the predecessor's parent. Real fixtures: 20, not 15. Probe: appending an edit naming a parent nothing created to evals/fixtures/S01.json made 'eval:skill check' fail with 'fixtures that do not lay' (file restored). Stale elsewhere, outside my write scope: .archboard/vault/Skill evaluation.semantic.json (3 descriptions cite landings.ts) and TASK-368.04 line 78.
+
+Review fix: laying stepped only the transition, so a containment cycle, an unconfigured node kind, edge kind or level laid and then failed in a batch. The store's index now exports acceptedBoard(before, produced, at, policy): the stamp, parseSemanticBoard and newVocabularyProblem that write.ts's acceptable() ran. write.ts and laying.ts both call it, and laying passes the fixture's merged policy (fixturePolicy in vault.ts, also used for the vault's config.yaml). laying.test.ts owns an unconfigured kind and a containment cycle (both fail without the call). The check is pure: no second write path.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -336,3 +336,27 @@ describe("a fixture that does not lay", () => {
 		).toHaveLength(1);
 	});
 });
+
+describe("a fixture the store would refuse to write", () => {
+	test("is refused for a kind the vault does not configure", () => {
+		const [problem, ...rest] = refusals([
+			{ op: "new", board: BOARD, input: { nodes: [app, { name: "Oracle", kind: "wizardry" }] } },
+		]);
+		expect(rest).toEqual([]);
+		expect(problem).toContain("S99 step 0");
+	});
+
+	test("is refused for a containment that closes on itself", () => {
+		const [problem, ...rest] = refusals([
+			{ op: "new", board: BOARD, input: { nodes: [app, helpers] } },
+			edit({
+				nodes: [
+					{ ...app, parent: "JSON helpers" },
+					{ ...helpers, parent: "Flask app" },
+				],
+			}),
+		]);
+		expect(rest).toEqual([]);
+		expect(problem).toContain("S99 step 1");
+	});
+});

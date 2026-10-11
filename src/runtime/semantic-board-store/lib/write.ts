@@ -29,12 +29,7 @@ import {
 	type LockRequest,
 } from "@/runtime/engine/board-lock";
 import { mintId } from "@/shared/ids/ids";
-import {
-	nextVersion,
-	parseSemanticBoard,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	type SemanticBoard,
-} from "@/shared/semantic-board/index";
+import { type SemanticBoard } from "@/shared/semantic-board/index";
 import {
 	locateSemanticBoard,
 	semanticBoardAddress,
@@ -59,7 +54,7 @@ import type { DescendantOutcome } from "@/runtime/semantic-board-store/lib/propa
 import type { WriteNotice } from "@/runtime/semantic-board-store/lib/replaced-relationships";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
-import { newVocabularyProblem } from "@/runtime/semantic-board-store/lib/vocabulary";
+import { acceptedBoard } from "@/runtime/semantic-board-store/lib/accepted";
 
 /**
  * Who is writing.
@@ -395,17 +390,7 @@ function applyUnderLease(
 		return rejected(location, before.version, candidate.code, candidate.problem);
 	}
 	const moved = relocation(location, before.board, candidate.board);
-	const checked = acceptable(moved.location, command, before.board, {
-		...candidate.board,
-		// Every accepted write stamps the contract it was written under. A board
-		// created before a field existed and then written to now holds what this
-		// build can say, and saying so is the whole purpose of the field: a reader
-		// that finds an older version knows what it may not expect to find.
-		// Nothing migrates a file nobody wrote to — reading is unchanged.
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
-		version: nextVersion(before.board),
-		updatedAt: at,
-	});
+	const checked = acceptable(moved.location, command, before.board, candidate.board, at);
 	if (!("board" in checked)) {
 		return { ...checked, version: before.version };
 	}
@@ -423,39 +408,33 @@ function applyUnderLease(
  * @param location Where it would be written.
  * @param command The stated command, for a refusal to say what it was doing.
  * @param before The family before this command.
- * @param candidate The board the transition produced, already stamped.
+ * @param produced The board the transition produced.
+ * @param at The timestamp to stamp it with.
  * @returns The board, or why it may not be written.
  */
 function acceptable(
 	location: SemanticBoardLocation,
 	command: SemanticWriteCommand,
 	before: SemanticBoard | null,
-	candidate: SemanticBoard,
+	produced: SemanticBoard,
+	at: string,
 ): { readonly board: SemanticBoard } | Omit<SemanticWriteRejection, "version"> {
-	const parsed = parseSemanticBoard(candidate);
-	if (!parsed.ok) {
-		return {
-			outcome: "rejected",
-			code: "INVALID_CONTENT",
-			problem: `refusing to ${command.transition.summary}: ${parsed.problem}`,
-			location,
-		};
-	}
-	const wrongAddress = misaddressedRefusal(location, parsed.board);
-	if (wrongAddress !== null) return wrongAddress;
 	const configured = readSemanticBoardConfiguration();
-	const configuredLevel = configured.ok
-		? newVocabularyProblem(parsed.board, before, configured.configuration)
-		: null;
-	if (configuredLevel !== null) {
+	const accepted = acceptedBoard(
+		before,
+		produced,
+		at,
+		configured.ok ? configured.configuration : null,
+	);
+	if ("problem" in accepted) {
 		return {
 			outcome: "rejected",
 			code: "INVALID_CONTENT",
-			problem: `refusing to ${command.transition.summary}: ${configuredLevel}`,
+			problem: `refusing to ${command.transition.summary}: ${accepted.problem}`,
 			location,
 		};
 	}
-	return { board: parsed.board };
+	return misaddressedRefusal(location, accepted.board) ?? { board: accepted.board };
 }
 
 /**
