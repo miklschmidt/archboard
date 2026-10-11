@@ -131,6 +131,10 @@ test(
 		expect(branched.status).toBe(200);
 		const proposal = branched.body.board.variants.find((one) => one.name === "Queued ingest")!;
 		expect(proposal).toBeDefined();
+		// The agent's activity row outlives its write by a product linger
+		// (ACTIVITY_LINGER_MS). A restart drops it, so the shell matrix captures the
+		// idle navigator without waiting that linger out.
+		await server.restart();
 
 		await browser.run(["open", addressShowing(server.base, `fixedpoint@${proposal.id}`)]);
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
@@ -166,13 +170,6 @@ test(
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await browser.eval<boolean>("document.fonts.ready.then(() => true)");
-		// The branch write leaves a temporary activity row. Capture the idle
-		// shell only after that row expires, so it cannot disappear mid-matrix.
-		await pollUntil(
-			() => browser.eval<{ entries: number }>(READ_ACTIVITY),
-			(activity) => activity.entries === 0,
-			"the branch activity to settle before the shell matrix",
-		);
 
 		const matrix = await captureShellRenderMatrix(browser, repoRoot);
 		expect(matrix.cells).toHaveLength(12);
