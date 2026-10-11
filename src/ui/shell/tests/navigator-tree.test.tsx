@@ -220,6 +220,7 @@ function pane(paneId: string, boardKey: string | null): ShellPane {
 		stage: null,
 		holder: null,
 		takeBack: { kind: "idle" },
+		boardName: null,
 	};
 }
 

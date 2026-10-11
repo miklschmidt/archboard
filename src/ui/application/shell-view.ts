@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import type { PaneList } from "@/ui/application/pane-list";
 import { recordFor, type PaneRecords } from "@/ui/application/pane-records";
+import { boardAddressOf, sameBoardName } from "@/ui/semantic-board-canvas";
 import type { ShellNotice, ShellPane, ShellPresentation, ShellView, ThemeChoice } from "@/ui/shell";
 import type { AgentActivityEntry, BoardListing } from "@/ui/types";
 
@@ -27,6 +28,20 @@ interface ShellViewInputs {
 }
 
 /**
+ * The name the vault lists a pane's board under, which a key typed into a link
+ * may not spell the same way.
+ * @param boards The listing.
+ * @param boardKey The key the pane is showing, or null.
+ * @returns The listed name, or null when no board is listed under that key.
+ */
+function listedName(boards: BoardListing, boardKey: string | null): string | null {
+	const board = boardAddressOf(boardKey)?.board;
+	return board === undefined
+		? null
+		: (boards.boards.find((entry) => sameBoardName(entry.name, board))?.name ?? null);
+}
+
+/**
  * The shell panes, in reading order.
  * @param inputs The assembly inputs.
  * @returns One shell pane per listed pane.
@@ -39,6 +54,7 @@ function shellPanes(inputs: ShellViewInputs): ShellPane[] {
 			stage: inputs.panes[entry.paneId] ?? null,
 			holder: record.holder,
 			takeBack: record.takeBack,
+			boardName: listedName(inputs.boards, record.status.boardKey),
 		};
 	});
 }

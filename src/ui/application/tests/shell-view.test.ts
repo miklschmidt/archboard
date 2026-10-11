@@ -55,6 +55,42 @@ test("the shell view names the active pane's board and carries its mounted panes
 	expect(view.selectedBoardKey).toBeNull();
 });
 
+test("a pane's board is named as the vault lists it, whatever case the key was typed in", () => {
+	const records = patchRecord({}, "A", {
+		status: {
+			...emptyPaneStatus("A"),
+			board: { board: "web shop", variant: "current" },
+			boardKey: "web shop",
+		},
+		holder: null,
+	});
+	const view = assembleShellView({
+		theme: "dark",
+		list: initialPaneList(),
+		records,
+		panes: {},
+		boards: {
+			...EMPTY_LISTING,
+			boards: [
+				{
+					name: "Web shop",
+					key: "web shop",
+					variants: [],
+					opens: null,
+					links: [],
+					description: null,
+				},
+			],
+		},
+		boardsError: null,
+		boardsLoading: false,
+		presentation: null,
+		notices: [],
+		agentActivity: {},
+	});
+	expect(view.panes[0]?.boardName).toBe("Web shop");
+});
+
 test("the focused pane's board key is the selected navigator entry and held keys deduplicate", () => {
 	const records = twoPaneRecords();
 	const view = assembleShellView({
