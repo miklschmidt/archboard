@@ -2441,13 +2441,20 @@ that pointed apart. The key a lane is shared under (`trunkKind` in
 holds the emphasis and whether the line carries traffic. `compoundGraph`
 passes both to layout only for Track (`byLook`); Blocks' keys are as they were.
 
-The drawings, 58 of the dogfood vault, rendered against the commit before and
-compared byte for byte: on Track 34 changed and each was looked at: none reads
-clearly worse and lines that merged into one arrowhead now end in their own.
-Total crossings 857 to 836, and the drawings that grew did so by a lane.
-Archboard server routes, Board writes crosses 8 more lines (16) for lines that
-no longer share a trunk, and reads about the same. Every Blocks drawing is
-byte-identical.
+The drawings, 61 of the dogfood vault, rendered against the commit before and
+compared byte for byte: on Track 34 changed, and lines that merged into one
+arrowhead now end in their own. Total crossings 857 to 836. Every Blocks
+drawing is byte-identical.
+
+**Cost, Track.** Three drawings cross many more lines: Archboard server routes, Board
+writes (8 to 16, bends per line 2.4 to 2.9, fit 0.66 to 0.62), Board viewer
+(172 to 186) and Command interface (28 to 36). Board writes reads worse.
+Agent CLI's lines into the region now leave by three ports (hero, normal,
+muted). The block tree then puts the region's cards in a new order. Claim
+routes moves under Agent CLI, and Browser's line to it crosses every Agent CLI
+line. The block tree's port keys give this order, not the router. A split of
+only the router's key keeps the old order. But the normal and muted lines into
+Live panes then merge into one arrowhead at the face of its region.
 
 **Known gap, Blocks.** The same change on Blocks re-laid 37 of 58 drawings
 and 17 read worse (total crossings 2261 to 2654, Command dispatch's fit 0.84
