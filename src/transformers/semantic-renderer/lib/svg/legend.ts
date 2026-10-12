@@ -64,7 +64,7 @@ const PULSE_STOPS = [
 ] as const;
 /**
  * How long a pulse's light runs in the sample, centred on it as the page's key
- * centres it, so its bright head lands near the line's end; and how much its
+ * centres it, so its bright head lands at the room's end; and how much its
  * glow adds to the line.
  */
 const PULSE_SPAN = 40;
@@ -227,23 +227,35 @@ function lineMarkSymbol(mark: LineMark, palette: Palette): Entry["symbol"] {
 				tag("stop", { offset, "stop-color": light, "stop-opacity": opacity }),
 			).join(""),
 		);
-		return lines([
-			wrap("defs", {}, gradient),
-			lineAt(x, y, plain),
-			tag("path", {
-				d: run,
-				fill: "none",
-				stroke: "url(#export-legend-pulse)",
-				"stroke-opacity": 0.25,
-				"stroke-width": STROKE_WIDTH.normal + 0.6 + PULSE_GLOW,
-			}),
-			tag("path", {
-				d: run,
-				fill: "none",
-				stroke: "url(#export-legend-pulse)",
-				"stroke-width": STROKE_WIDTH.normal + 0.6,
-			}),
-		]);
+		// Held to the symbol's room, as the page's key holds it, so the light
+		// that runs past the line does not reach the words.
+		return wrap(
+			"svg",
+			{
+				x: coord(x),
+				y: coord(y),
+				width: GLYPH,
+				height: ROW,
+				viewBox: `${coord(x)} ${coord(y)} ${GLYPH} ${ROW}`,
+			},
+			lines([
+				wrap("defs", {}, gradient),
+				lineAt(x, y, plain),
+				tag("path", {
+					d: run,
+					fill: "none",
+					stroke: "url(#export-legend-pulse)",
+					"stroke-opacity": 0.25,
+					"stroke-width": STROKE_WIDTH.normal + 0.6 + PULSE_GLOW,
+				}),
+				tag("path", {
+					d: run,
+					fill: "none",
+					stroke: "url(#export-legend-pulse)",
+					"stroke-width": STROKE_WIDTH.normal + 0.6,
+				}),
+			]),
+		);
 	};
 }
 
