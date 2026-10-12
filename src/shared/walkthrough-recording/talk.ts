@@ -15,7 +15,12 @@
 
 import { z } from "zod";
 
-import { DiagramThemeSchema, parseSemanticBoard } from "@/shared/semantic-board/index";
+import {
+	DEFAULT_LAYOUT_ENGINE,
+	DiagramThemeSchema,
+	LayoutEngineSchema,
+	parseSemanticBoard,
+} from "@/shared/semantic-board/index";
 import { VaultCheckSchema } from "@/shared/semantic-policy/index";
 import { RecordingLanguageSchema } from "@/shared/walkthrough-recording/lib/language";
 
@@ -100,6 +105,11 @@ const TalkSchema = z
 		language: RecordingLanguageSchema,
 		/** The theme the talk is rendered in unless another is asked for. */
 		theme: DiagramThemeSchema,
+		/**
+		 * The layout engine the talk is rendered with unless another is asked for (TASK-469). A talk
+		 * kept before it was stated was drawn with the default engine, and reads as that.
+		 */
+		layout: LayoutEngineSchema.default(DEFAULT_LAYOUT_ENGINE),
 		board: TalkBoardSchema,
 		/** The voice, beside `talk.json`: mono 16-bit PCM at the talk's sample rate. */
 		audio: z
@@ -244,9 +254,16 @@ function voiceLevels(samples: Int16Array): number[] {
 	return Array.from({ length: frames }, (_, frame) => levelAt(samples, frame * SAMPLES_PER_FRAME));
 }
 
-/** How a talk is rendered: in which theme, and how loud its voice is on each frame (`voiceLevels`). */
+/**
+ * How a talk is rendered: in which theme, with which layout engine, and how loud its voice is on
+ * each frame (`voiceLevels`).
+ */
 const ReplayOptionsSchema = z
-	.object({ theme: DiagramThemeSchema, levels: z.array(z.number().min(0).max(1)) })
+	.object({
+		theme: DiagramThemeSchema,
+		layout: LayoutEngineSchema,
+		levels: z.array(z.number().min(0).max(1)),
+	})
 	.strict();
 type ReplayOptions = z.infer<typeof ReplayOptionsSchema>;
 

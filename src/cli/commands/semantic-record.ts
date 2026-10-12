@@ -8,7 +8,9 @@
 import { z } from "zod";
 
 import {
+	DEFAULT_LAYOUT_ENGINE,
 	DiagramThemeSchema,
+	LayoutEngineSchema,
 	type SemanticBoard,
 	type SemanticWalkthrough,
 } from "@/shared/semantic-board/index";
@@ -50,6 +52,7 @@ const RecordInputSchema = z.object({
 	variant: SelectorSchema.optional(),
 	walkthrough: z.string().optional(),
 	theme: DiagramThemeSchema.default("light"),
+	layout: LayoutEngineSchema.default(DEFAULT_LAYOUT_ENGINE),
 	language: RecordingLanguageSchema.default(DEFAULT_RECORDING_LANGUAGE),
 	out: z.string(),
 	talk: z.string().optional(),
@@ -68,6 +71,7 @@ const RecordReceiptSchema = z.object({
 	durationMs: z.int(),
 	frames: z.int(),
 	theme: DiagramThemeSchema,
+	layout: LayoutEngineSchema,
 	talk: z.string(),
 	discarded: z.boolean(),
 });
@@ -231,7 +235,8 @@ const semanticRecordContract = defineCommand({
 		"talk for semantic replay. It runs on the Archboard server the CLI talks to, which must " +
 		"have Codex signed in. A recording is a conversation of its own, so voice live in a browser " +
 		"tab does not stop it. The voice speaks only the --language it is given, whatever language " +
-		"the steps are written in. " +
+		"the steps are written in. Every frame is laid out by the --layout engine, which the talk " +
+		"keeps, so a replay draws the same layout. " +
 		"--discard " +
 		"deletes the board once the recording is written, for a board made only to be recorded; " +
 		"a failed recording keeps it, and so does a board changed while it was " +
@@ -284,6 +289,16 @@ const semanticRecordContract = defineCommand({
 			choices: THEMES,
 			default: "light",
 			description: "Which palette the pane draws in",
+		},
+		{
+			kind: "option",
+			key: "layout",
+			spellings: ["--layout"],
+			value: "required",
+			placeholder: "engine",
+			choices: LayoutEngineSchema.options,
+			default: DEFAULT_LAYOUT_ENGINE,
+			description: "Which layout engine lays the board out in every frame; the talk keeps it",
 		},
 		{
 			kind: "option",
@@ -392,6 +407,7 @@ const semanticRecordContract = defineCommand({
 			language: input.language,
 			container,
 			theme: input.theme,
+			layout: input.layout,
 			out: file,
 			talk,
 			signal: context.signal,
@@ -425,6 +441,7 @@ const semanticRecordContract = defineCommand({
 				durationMs: made.durationMs,
 				frames: made.frames,
 				theme: input.theme,
+				layout: input.layout,
 				talk: made.talk,
 				discarded,
 			},

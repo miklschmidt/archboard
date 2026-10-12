@@ -77,3 +77,4 @@ export {
 	type PictureSource,
 } from "@/ui/semantic-board-canvas/lib/picture-source";
 export { readBoardsFrom, type BoardReads } from "@/ui/semantic-board-canvas/lib/board-reads";
+export { chooseLayoutEngine } from "@/ui/semantic-board-canvas/lib/layout-engine";

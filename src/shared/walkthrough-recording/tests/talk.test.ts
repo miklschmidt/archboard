@@ -5,9 +5,10 @@
 // whose voice and end disagree, which would pad or cut the sound against the
 // picture; and one whose pictures were drawn from another version of the board
 // than the snapshot it carries, which would render a picture the voice never
-// spoke over. Of its voice, they catch an orb that moves a frame early, before
-// the sound that moves it, or that reads the voice on another scale than the
-// shell's meter.
+// spoke over. They catch a talk kept before talks stated their layout engine
+// that can no longer be rendered (TASK-469). Of its voice, they catch an orb
+// that moves a frame early, before the sound that moves it, or that reads the
+// voice on another scale than the shell's meter.
 
 import { describe, expect, test } from "bun:test";
 
@@ -155,6 +156,11 @@ describe("a talk", () => {
 		expect(TalkSchema.safeParse(talk({ document: { kind: "semantic-board" } })).success).toBe(
 			false,
 		);
+	});
+
+	test("keeps the layout engine it was recorded with, and one kept before talks stated it reads as Track", () => {
+		expect(TalkSchema.parse(talk({ layout: "blocks" })).layout).toBe("blocks");
+		expect(TalkSchema.parse(talk()).layout).toBe("track");
 	});
 });
 
