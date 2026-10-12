@@ -181,6 +181,8 @@ here.
   2026-10-04: it shows the whole train at its phase.)
 - Removed comparison edges and reduced-motion readers show no moving dots. SVG
   exports retain animation where supported, without adding an export legend.
+  (As amended by TASK-468: an export draws a legend only when `--legend` asks
+  for one; ADR 0025.)
 - These are animation properties, not measured real-world traffic. Do not expose
   their numeric values in the browser inspector. Do not add a parallel telemetry
   schema. A connection label can communicate meaningful real-world traffic

@@ -98,7 +98,7 @@ records its settled requirements and remaining design questions.
 The browser provides a visible-by-default, hideable legend that explains the
 applied appearance. The legend must have clear hierarchy and ample space, and
 must not sacrifice aesthetics for compactness. Exported diagrams have no legends
-for now.
+for now (amended on 2026-10-12, below).
 
 The user's decision of 2026-09-27 amended this. The inspector no longer has a
 section that explains the selected subject's colors, because a user can see them
