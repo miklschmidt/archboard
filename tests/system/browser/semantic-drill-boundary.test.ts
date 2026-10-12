@@ -215,7 +215,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 
 	// Down a level, the way a person goes: pick the node, press the link.
 	const link = await drawnId(browser, "board-io");
-	await pick(browser, link ?? "");
+	await pick(browser, link);
 	await pollUntil(
 		() => textOf(browser, DRILL_OPEN),
 		(said) => said.includes("as proposed"),
@@ -292,7 +292,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 	// The code a picked node opens is resolved on the board that is on screen.
 	// Resolved against the level above, this id is not a node at all.
 	const node = await drawnId(browser, "atomic-write");
-	await pick(browser, node ?? "");
+	await pick(browser, node);
 	await pollUntil(
 		() => textOf(browser, "[data-slot='semantic-inspector']"),
 		(said) => said.includes("atomic-write"),

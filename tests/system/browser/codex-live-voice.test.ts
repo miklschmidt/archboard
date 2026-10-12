@@ -414,7 +414,7 @@ test(
 		expect(second).toContain("The warehouse");
 		// A pick by hand mid-talk is speech too, naming what is now selected and never its id: the
 		// voice is asked to stop and check in (TASK-293.05).
-		const ingest = (await drawnId(browser, "Ingest")) ?? "";
+		const ingest = await drawnId(browser, "Ingest");
 		await pick(browser, ingest);
 		const [, , picked] = await spokenBy(
 			3,

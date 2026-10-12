@@ -104,7 +104,7 @@ test("the address names the view of the board on screen, down a level and back",
 	// Down a level. The view goes with the board it belonged to: its id is a
 	// subject of the level above's content and names nothing here, so an address
 	// that carried it down would be an address that cannot be reopened.
-	await pick(browser, (await drawnId(browser, "board-io")) ?? "");
+	await pick(browser, await drawnId(browser, "board-io"));
 	await press(browser, DRILL_OPEN);
 	await pollUntil(
 		() => addressSearch(browser),

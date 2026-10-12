@@ -59,22 +59,31 @@ const textOf = (browser: AgentBrowserSession, selector: string): Promise<string>
  * Pick a subject out of the diagram the way a person does: the whole pointer
  * sequence, because a browser retargets a click to whichever element holds the
  * pointer and a bare synthetic click on the card would pass where a real one
- * picked nothing.
+ * picked nothing. A person picks what they see, so this waits for the subject
+ * to be drawn: a picture that is still coming in, or being drawn again, holds
+ * no card to press for a moment.
  * @param browser The page.
  * @param id The semantic id to pick.
  * @returns Settles once the click has been delivered.
  */
-const pick = (browser: AgentBrowserSession, id: string): Promise<unknown> =>
-	browser.eval(
-		`(() => {` +
-			` const card = document.querySelector("${SURFACE} [data-semantic-id='" + ${JSON.stringify(id)} + "']");` +
-			` const view = document.querySelector("${VIEWPORT}");` +
-			` const at = card.getBoundingClientRect();` +
-			` const where = { pointerId: 1, isPrimary: true, button: 0, bubbles: true,` +
-			`   clientX: Math.round(at.x + at.width / 2), clientY: Math.round(at.y + at.height / 2) };` +
-			` card.dispatchEvent(new PointerEvent("pointerdown", where));` +
-			` view.dispatchEvent(new PointerEvent("pointerup", where));` +
-			` view.dispatchEvent(new MouseEvent("click", where)); })()`,
+const pick = (browser: AgentBrowserSession, id: string): Promise<boolean> =>
+	pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`(() => {` +
+					` const card = document.querySelector("${SURFACE} [data-semantic-id='" + ${JSON.stringify(id)} + "']");` +
+					` const view = document.querySelector("${VIEWPORT}");` +
+					` if (card === null || view === null) return false;` +
+					` const at = card.getBoundingClientRect();` +
+					` const where = { pointerId: 1, isPrimary: true, button: 0, bubbles: true,` +
+					`   clientX: Math.round(at.x + at.width / 2), clientY: Math.round(at.y + at.height / 2) };` +
+					` card.dispatchEvent(new PointerEvent("pointerdown", where));` +
+					` view.dispatchEvent(new PointerEvent("pointerup", where));` +
+					` view.dispatchEvent(new MouseEvent("click", where)); return true; })()`,
+			),
+		(delivered) => delivered,
+		`the subject ${id} to be drawn, to pick it`,
+		WAIT,
 	);
 
 /**
@@ -87,17 +96,24 @@ const press = (browser: AgentBrowserSession, selector: string): Promise<unknown>
 	browser.eval(`document.querySelector(${JSON.stringify(selector)}).click()`);
 
 /**
- * The semantic id of the drawn subject whose label ends in this name.
+ * The semantic id of the drawn subject whose label ends in this name, once the
+ * picture draws one.
  * @param browser The page.
  * @param name The node's name.
- * @returns The id, or null when nothing on screen is called that.
+ * @returns The id.
  */
-const drawnId = (browser: AgentBrowserSession, name: string): Promise<string | null> =>
-	browser.eval<string | null>(
-		`(() => {` +
-			` for (const group of document.querySelectorAll("${SURFACE} [data-semantic-id]")) {` +
-			`   if (group.textContent.trim().endsWith(${JSON.stringify(name)})) return group.dataset.semanticId; }` +
-			` return null; })()`,
+const drawnId = (browser: AgentBrowserSession, name: string): Promise<string> =>
+	pollUntil(
+		() =>
+			browser.eval<string>(
+				`(() => {` +
+					` for (const group of document.querySelectorAll("${SURFACE} [data-semantic-id]")) {` +
+					`   if (group.textContent.trim().endsWith(${JSON.stringify(name)})) return group.dataset.semanticId; }` +
+					` return ""; })()`,
+			),
+		(id) => id !== "",
+		`a subject called "${name}" to be drawn`,
+		WAIT,
 	);
 
 /**

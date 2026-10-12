@@ -368,7 +368,7 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 	// A card that opens a board is a window onto it: pick it, follow its link,
 	// and the board grows out of the card into the pane.
 	const writer = await drawnId(browser, "Board writer");
-	await pick(browser, writer ?? "");
+	await pick(browser, writer);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector("${DRILL_OPEN}") !== null`),
 		(offered) => offered,
@@ -399,7 +399,7 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 
 	// Poke a card: what it is wired to stays as drawn and the rest recedes.
 	const renderer = await drawnId(browser, "Renderer");
-	await pick(browser, renderer ?? "");
+	await pick(browser, renderer);
 	const receded = await pollUntil(
 		() => filtersByName(browser),
 		(filters) => (filters["Archive"] ?? "none") !== "none",
@@ -450,7 +450,7 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 	// Seen from far, the card opens its board by flight too. No card swaps its words
 	// for its name in the air or as the board takes over. The board, which its own
 	// fit sees near, then swaps once, with the picture's fade.
-	await pick(browser, writer ?? "");
+	await pick(browser, writer);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector("${DRILL_OPEN}") !== null`),
 		(offered) => offered,
@@ -474,7 +474,7 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 		"the fan-out to be drawn",
 		WAIT,
 	);
-	await pick(browser, (await drawnId(browser, "East")) ?? "");
+	await pick(browser, await drawnId(browser, "East"));
 	const ink = await pollUntil(
 		() => litInk(browser),
 		(found) => found.trunked > 0,
