@@ -27,7 +27,7 @@ Done: the view is named, and it holds every part and relationship that
 Draw every render with Blocks: pass `--layout blocks`, because the default
 layout is Track. Draw SVG for the pull request, because SVG stays sharp at
 every zoom. Pass `--theme auto`: the one file carries the light and the dark
-colours and shows the ground of the colour scheme that the browser reports
+colours and shows the ground of the reader's colour scheme
 (see [What GitHub supports](#what-github-supports)). Pass `--title` and
 `--legend horizontal`, which draw the title line above the picture and its key
 under it (see [Title, key and alt text](#title-key-and-alt-text)). Write all
@@ -109,9 +109,12 @@ afresh, so cards move between the two pictures and do not line up.
   included (checked in October 2026). Its colours use CSS `light-dark()`, which
   browsers support since 2024 [MDN].
 - A `--theme auto` SVG declares `color-scheme: light dark` and paints its
-  ground under the whole picture. Shown as an `<img>`, a CSS background or
-  inline, it paints the ground of the colour scheme that the browser reports
-  (`prefers-color-scheme`) (checked in headless Chromium in October 2026).
+  ground under the whole picture. As an `<img>` or a CSS background, Chromium
+  and Firefox paint the ground of the page's own `color-scheme` and fall back
+  to `prefers-color-scheme` when the page declares none; GitHub's Primer CSS
+  sets it from the reader's GitHub theme. WebKit, and inline placement in every
+  engine, follow `prefers-color-scheme` (checked in Chromium 153, Firefox 148
+  and WebKit 26.4 in October 2026; not checked on a posted pull request).
 - gh rewrites only Markdown references to an attached file, such as
   `![alt](path)`, and keeps their alt text. It does not rewrite HTML, and a
   path with `#fragment` does not match [gh source].

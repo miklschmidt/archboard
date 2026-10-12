@@ -77,7 +77,8 @@ then reports `comparedWith: null`. Without the flag, comparisons stay visible.
 
 For a picture in a document, a README or a pull request, draw one SVG with
 `semantic render <board> --theme auto --out <file.svg>`. It carries both
-grounds and shows the one of the colour scheme that the browser reports, as an
+grounds and shows the one of the reader's colour scheme (the page's own scheme where the
+page declares one, else the browser's), as an
 image, a background or inline. A PNG holds one ground, so `semantic rasterize` takes
 `--theme light` or `--theme dark`.
 
