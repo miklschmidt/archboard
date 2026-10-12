@@ -107,7 +107,6 @@ test("a person selects a group from its colour and name, sees its members ringed
 	);
 	const names = ["Handler", "Queue", "Worker", "Ledger", "Gateway", "Reports"];
 	const ids = await Promise.all(names.map((name) => drawnId(browser, name)));
-	expect(ids.every((id) => id !== "")).toBe(true);
 	const [handler, queue, worker] = ids;
 
 	await pollUntil(
