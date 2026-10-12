@@ -73,6 +73,37 @@ test("a failed stop barrier resumes only exact captured members and refuses grou
 	expect(effects.some((effect) => effect.startsWith("pid:43:"))).toBeFalse();
 });
 
+test("a child whose fork completes after the group reads as stopped is stopped before the kill", async () => {
+	// On macOS a shell can read as stopped while its fork is still completing:
+	// the child joins the group after the census and outside both group signals
+	// (TASK-470: a `sleep 60` outlived the cleanup grace by 20 s on the hosted runner).
+	const effects: string[] = [];
+	let childStopped = false;
+	let census = 0;
+	const operations: GitGroupTerminationOperations = {
+		now: () => 0,
+		wait: async () => undefined,
+		members: () => {
+			census += 1;
+			const leader = observed(41, "darwin:leader", census === 1 ? "live" : "stopped");
+			const shell = observed(42, "darwin:shell", census === 1 ? "live" : "stopped");
+			if (census <= 2) return [leader, shell];
+			return [leader, shell, observed(43, "darwin:forked", childStopped ? "stopped" : "live")];
+		},
+		signalGroup: (_identity, signal) => {
+			const members = census <= 2 ? "41,42" : `41,42,43${childStopped ? "" : " live"}`;
+			effects.push(`${signal} over ${members}`);
+			if (signal === "SIGSTOP" && census > 2) childStopped = true;
+			return true;
+		},
+		readProcess: () => undefined,
+		signalPid: () => undefined,
+	};
+
+	await stopAndKillOwnedGroup(group, { kill: () => undefined }, operations);
+	expect(effects.at(-1)).toBe("SIGKILL over 41,42,43");
+});
+
 test("an already quiescent group completes without requiring a leader", async () => {
 	let signalCalls = 0;
 	const operations: GitGroupTerminationOperations = {
