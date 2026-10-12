@@ -18,6 +18,8 @@ import {
 	UNNAMED_VARIANT,
 	drawnAgainst,
 	exportRenderRequest,
+	TITLE_OPTION,
+	TitleOptionSchema,
 } from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
 
@@ -28,6 +30,7 @@ const RenderInputSchema = z.object({
 	theme: StandaloneThemeSchema.default("light"),
 	layout: LayoutEngineSchema.optional(),
 	noComparison: z.boolean().default(false),
+	title: TitleOptionSchema,
 	out: z.string().optional(),
 });
 
@@ -137,6 +140,7 @@ const semanticRenderContract = defineCommand({
 			choices: LayoutEngineSchema.options,
 			description: "Which layout engine lays the architecture out; the default one when absent",
 		},
+		TITLE_OPTION,
 	],
 	input: { ingress: RenderInputSchema },
 	result: z.union([

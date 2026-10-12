@@ -27,12 +27,14 @@ Done: the view is named, and it holds every part and relationship that
 Draw every render with Blocks: pass `--layout blocks`, because the default
 layout is Track. Draw SVG for the pull request, because SVG stays sharp at
 every zoom. Pass `--theme auto`: the one file carries the light and the dark
-colours and shows the ground of the reader's colour scheme. Write all files
-to a temporary directory, `$tmp`, never into the checkout.
+colours and shows the ground of the reader's colour scheme. Pass `--title`,
+which draws the title line above the picture (see
+[Title, key and alt text](#title-key-and-alt-text)). Write all files to a
+temporary directory, `$tmp`, never into the checkout.
 
 ```bash
-archboard semantic render <board> --view "<view>" --variant "<proposal>" --layout blocks --theme auto --out "$tmp/after.svg"
-archboard semantic render <board> --view "<view>" --layout blocks --theme auto --out "$tmp/before.svg"
+archboard semantic render <board> --view "<view>" --variant "<proposal>" --layout blocks --theme auto --title --out "$tmp/after.svg"
+archboard semantic render <board> --view "<view>" --layout blocks --theme auto --title --out "$tmp/before.svg"
 ```
 
 Below, `<proposal>` is the proposal, or on an ephemeral board the draft of the
@@ -44,7 +46,7 @@ head branch.
 - The before render, with no `--variant`, draws the current variant.
 - On a board with no current variant, draw only the after render.
 - In a stack, the after render also shows the changes of the pull requests
-  below. Say so in its title line.
+  below. Say so in its title line: pass `--title "<text>"`.
 
 Done: two SVG files, or one on a board with no current variant.
 
@@ -56,11 +58,12 @@ the user chose to go on without it (section 0 of the skill), post the SVG files
 unseen, and say so in your final report.
 
 ```bash
-archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --layout blocks --out "$tmp/look-after.png"
-archboard semantic rasterize <board> --view "<view>" --layout blocks --out "$tmp/look-before.png"
+archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --layout blocks --title --out "$tmp/look-after.png"
+archboard semantic rasterize <board> --view "<view>" --layout blocks --title --out "$tmp/look-before.png"
 ```
 
-1. Open both PNGs. Each change the explainer names is visible and marked.
+1. Open both PNGs. Each change the explainer names is visible and marked, and
+   the title can be read.
 2. GitHub shrinks an image to the width of the text column. GitHub does not
    document that width (**unverified**). If the receipt's `width` is over 900,
    rasterize the after render again with `--scale 0.5` and open it. That is
@@ -73,14 +76,13 @@ will show.
 
 ## Title, key and alt text
 
-The renderer draws no legend and no visible title, so the explainer writes
-them. A key must explain every symbol that a diagram uses
+The renderer draws the title into the file, and the explainer writes the key.
+A key must explain every symbol that a diagram uses
 [Clements et al., C4 notation].
 
-**Title line**, above the render: the board, the view, and what is compared.
-For example: "Board store, view Write path: proposal `lease-table` against the
-current architecture". For an ephemeral board, name the two branches: "Stop
-with no answer, view Stop exchange: the head branch against `main`".
+**Title line**: `--title` draws the board, the view, the variant and what it is
+compared with above the picture. `--title "<text>"` draws your own words in
+its place.
 
 **Key**, under the render. Write only the rows for marks that the render shows:
 
@@ -98,8 +100,8 @@ example: "Board store, Write path: the proposal adds Lease table and removes
 Lock files". Without alt text, gh uses the file name.
 
 **Before render**: in a collapsed `<details>` under the after render, with its
-own title line. Never side by side: each variant is laid out afresh, so cards
-move between the two pictures and do not line up.
+own drawn title and its key. Never side by side: each variant is laid out
+afresh, so cards move between the two pictures and do not line up.
 
 ## What GitHub supports
 

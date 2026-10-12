@@ -31,6 +31,8 @@ import {
 	UNNAMED_VARIANT,
 	drawnAgainst,
 	exportRenderRequest,
+	TITLE_OPTION,
+	TitleOptionSchema,
 } from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { copyImageToClipboard } from "@/cli/commands/lib/image-clipboard";
@@ -45,6 +47,7 @@ const RasterizeInputSchema = z
 		theme: DiagramThemeSchema.default("light"),
 		layout: LayoutEngineSchema.optional(),
 		noComparison: z.boolean().default(false),
+		title: TitleOptionSchema,
 		scale: z.coerce.number().min(RASTER_MIN_SCALE).max(RASTER_MAX_SCALE).default(1),
 		region: z
 			.string()
@@ -250,6 +253,7 @@ const semanticRasterizeContract = defineCommand({
 			choices: LayoutEngineSchema.options,
 			description: "Which layout engine lays the architecture out; the default one when absent",
 		},
+		TITLE_OPTION,
 		{
 			kind: "option",
 			key: "scale",
