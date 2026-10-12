@@ -150,13 +150,14 @@ function recoverStoppedGroup(
  * @param group The exact group being frozen.
  * @param captured The member identities retained for error recovery.
  * @param operations The process observation, clock, and wait seam.
+ * @throws {Error} When the group does not freeze within its cleanup grace.
  */
 async function freezeGroup(
 	group: ProcessGroupIdentity,
 	captured: CapturedMembers,
 	operations: GitGroupTerminationOperations,
 ): Promise<void> {
-	await awaitFrozenGroup(
+	const frozen = await awaitFrozenGroup(
 		{
 			/**
 			 * Take one census, retaining its members for recovery.
@@ -177,6 +178,9 @@ async function freezeGroup(
 		},
 		operations.now() + GIT_PROCESS_GROUP_CLEANUP_MS,
 	);
+	if (!frozen) {
+		throw new Error(`Process group ${group.group} did not stop within its cleanup grace.`);
+	}
 }
 
 /**
