@@ -75,6 +75,12 @@ Both export commands accept `--no-comparison`. Use it to hide comparison marks
 and removed subjects when exporting a variant. The file or clipboard receipt
 then reports `comparedWith: null`. Without the flag, comparisons stay visible.
 
+For a picture in a document, a README or a pull request, draw one SVG with
+`semantic render <board> --theme auto --out <file.svg>`. It carries both
+grounds and shows the one of the reader's colour scheme, as an image, a
+background or inline. A PNG holds one ground, so `semantic rasterize` takes
+`--theme light` or `--theme dark`.
+
 ### Copy an image with its description
 
 On Linux or macOS, copy PNG and HTML together:

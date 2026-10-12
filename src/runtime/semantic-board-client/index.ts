@@ -29,6 +29,7 @@ import {
 	type SemanticBoard,
 	type SemanticRenderReply,
 	type LayoutEngineName,
+	type StandaloneTheme,
 } from "@/shared/semantic-board/index";
 
 /** One board in the vault's semantic listing. */
@@ -185,7 +186,7 @@ async function readSemanticBoardOnServer(board: string): Promise<SemanticBoard> 
  * @param options Which variant and which theme.
  * @param options.variant The variant to draw; the current one when absent.
  * @param options.view A view id or name; the whole variant when absent.
- * @param options.theme Which colour scheme to draw for.
+ * @param options.theme Which colour scheme to draw for, or `auto` for both.
  * @param options.fonts Where the drawn faces come from; embedded makes the file self-contained.
  * @param options.layout Which layout engine lays it out; the default one when absent.
  * @param options.comparison Whether the picture carries comparison marks and removed context.
@@ -196,7 +197,7 @@ async function renderSemanticBoardOnServer(
 	options: {
 		variant?: string;
 		view?: string;
-		theme?: "light" | "dark";
+		theme?: StandaloneTheme;
 		fonts?: FontSource;
 		layout?: LayoutEngineName;
 		comparison?: "on" | "off";

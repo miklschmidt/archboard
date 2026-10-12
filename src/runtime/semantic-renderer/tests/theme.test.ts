@@ -59,10 +59,41 @@ test("a document that stands alone carries its theme's value of every token it n
 		const { svg } = await renderArchitecture({ content, theme, standing: { edge: "added" } });
 		const declared = rootDeclarations(svg);
 		expect(declared.get("color-scheme")).toBe(theme);
-		const named = namedTokens(svg);
+		// The root declares the tokens, so they are read from what it holds.
+		const named = namedTokens(body(svg));
+		expect(named.size).toBeGreaterThan(0);
 		for (const name of named) {
 			expect(declared.get(name)).toBe(themeColor(theme, name));
 		}
 		expect(svg).not.toContain("theme.css");
 	}
+});
+
+/**
+ * A document without its root element's opening tag, which is where it declares its tokens.
+ * @param svg The document.
+ * @returns Everything after that tag.
+ */
+function body(svg: string): string {
+	return svg.slice(svg.indexOf(">") + 1);
+}
+
+test("a document drawn auto carries both themes, and the reader's colour scheme chooses", async () => {
+	const { svg } = await renderArchitecture({ content, theme: "auto", standing: { edge: "added" } });
+	const declared = rootDeclarations(svg);
+	expect(declared.get("color-scheme")).toBe("light dark");
+	const named = namedTokens(body(svg));
+	expect(named.size).toBeGreaterThan(0);
+	for (const name of named) {
+		const light = themeColor("light", name);
+		const dark = themeColor("dark", name);
+		expect(declared.get(name)).toBe(light === dark ? light : `light-dark(${light}, ${dark})`);
+	}
+	// The drawing itself is the one the two grounds draw: only the root's declarations differ.
+	const { svg: lightSvg } = await renderArchitecture({
+		content,
+		theme: "light",
+		standing: { edge: "added" },
+	});
+	expect(body(svg)).toBe(body(lightSvg));
 });

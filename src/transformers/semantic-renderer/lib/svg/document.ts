@@ -15,14 +15,16 @@
 // picture takes them, and the page's `color-scheme`, from wherever it is put, so
 // one picture serves both themes and a theme switch repaints nothing. A
 // document that has to stand alone — a file, a bitmap — is drawn for one theme
-// and carries that theme's value of every token it names on its root.
+// and carries that theme's value of every token it names on its root, or drawn
+// `auto` and carries both, for the reader's colour scheme to choose between.
 
 import { coord, type Canvas } from "@/transformers/semantic-renderer/lib/geometry";
-import type { DiagramTheme, FontSource } from "@/shared/semantic-board/index";
+import type { FontSource, StandaloneTheme } from "@/shared/semantic-board/index";
 import type { ReadingDirection } from "@/transformers/semantic-renderer/lib/drawing";
 import { faceRules, SANS_STACK } from "@/transformers/semantic-renderer/lib/fonts";
 import { themeColor } from "@/transformers/semantic-renderer/lib/host";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
+import { lightDark } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { escapeXml, lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { portDefinitions } from "@/transformers/semantic-renderer/lib/svg/ports";
 import { slabDefinitions } from "@/transformers/semantic-renderer/lib/svg/slab";
@@ -245,7 +247,7 @@ interface DocumentInput {
 	 * The theme a document that stands alone is drawn in; absent, it takes the
 	 * theme of the page it is shown in.
 	 */
-	readonly theme?: DiagramTheme | undefined;
+	readonly theme?: StandaloneTheme | undefined;
 }
 
 /** A reference to one of the page's tokens, or to a property the document sets itself. */
@@ -259,8 +261,14 @@ const OWN_PROPERTY = /[";](--[\w-]+):/gu;
 
 /**
  * What a document that stands alone declares on its root: the colour scheme
- * its `light-dark()` choices follow, and one theme's value of every token the
+ * its `light-dark()` choices follow, and the value of every token the
  * document names, in name order.
+ *
+ * Drawn for one theme, a token is that theme's value. Drawn `auto`, the scheme
+ * is `light dark` and a token is `light-dark()` of its two values, the one
+ * mechanism the picture's own choices already use: whoever shows the file, as
+ * an image, a background or inline, picks the ground by the reader's colour
+ * scheme (TASK-466).
  *
  * On the root's own `style` rather than in the stylesheet, so that the values
  * reach this document and nothing else wherever it is put: a stylesheet rule
@@ -269,7 +277,7 @@ const OWN_PROPERTY = /[";](--[\w-]+):/gu;
  * @param document Everything the document paints with.
  * @returns The root's `style`.
  */
-function standingAlone(theme: DiagramTheme, document: string): string {
+function standingAlone(theme: StandaloneTheme, document: string): string {
 	const own = new Set([...document.matchAll(OWN_PROPERTY)].map((found) => found[1]!));
 	const names = new Set(
 		[...document.matchAll(TOKEN_REFERENCE)]
@@ -277,9 +285,22 @@ function standingAlone(theme: DiagramTheme, document: string): string {
 			.filter((name) => !own.has(name)),
 	);
 	return [
-		`color-scheme:${theme}`,
-		...[...names].toSorted().map((name) => `${name}:${themeColor(theme, name)}`),
+		`color-scheme:${theme === "auto" ? "light dark" : theme}`,
+		...[...names].toSorted().map((name) => `${name}:${tokenValue(theme, name)}`),
 	].join(";");
+}
+
+/**
+ * One token's value in a document that stands alone.
+ * @param theme The theme it is drawn in.
+ * @param name The token.
+ * @returns That theme's value, or for `auto` the choice between the two.
+ */
+function tokenValue(theme: StandaloneTheme, name: string): string {
+	if (theme !== "auto") return themeColor(theme, name);
+	const light = themeColor("light", name);
+	const dark = themeColor("dark", name);
+	return light === dark ? light : lightDark(light, dark);
 }
 
 /**

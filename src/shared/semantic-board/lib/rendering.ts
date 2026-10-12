@@ -29,6 +29,15 @@ const DiagramThemeSchema = z.enum(["light", "dark"]);
 type DiagramTheme = z.infer<typeof DiagramThemeSchema>;
 
 /**
+ * The themes a document that stands alone can be drawn in: one of the two
+ * grounds, or `auto`, which carries both and follows the colour scheme of
+ * whoever reads it (TASK-466). A bitmap holds one ground, so only an SVG can be
+ * drawn `auto`.
+ */
+const StandaloneThemeSchema = z.enum([...DiagramThemeSchema.options, "auto"]);
+type StandaloneTheme = z.infer<typeof StandaloneThemeSchema>;
+
+/**
  * Which engine lays an architecture out, behind one seam (TASK-348, ADR 0040).
  * `track` routes every relationship on an assigned track in the channels
  * between ranks (TASK-349); `blocks` packs each container as a block and
@@ -193,6 +202,8 @@ export {
 	type RenderedChanges,
 	DiagramThemeSchema,
 	type DiagramTheme,
+	StandaloneThemeSchema,
+	type StandaloneTheme,
 	DEFAULT_LAYOUT_ENGINE,
 	LayoutEngineSchema,
 	type LayoutEngineName,
