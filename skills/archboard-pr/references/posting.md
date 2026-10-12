@@ -3,9 +3,9 @@
 Section 5 of the skill sends you here. It says where the explainer goes in the
 body; this file says how to attach the renders and the video.
 
-Each render is one `--theme auto` file, which follows the reader's colour
-scheme by itself, so a plain Markdown image shows it. gh `--attach` uploads a
-file and rewrites a Markdown reference to it. `--attach` needs gh 2.99 or
+Each render is one `--theme auto` file, posted as a plain Markdown image
+([why](renders.md#what-github-supports)). gh `--attach` uploads a file and
+rewrites a Markdown reference to it. `--attach` needs gh 2.99 or
 later. Without it, leave the renders and the video out of the body, and give
 the user their paths.
 
