@@ -14,6 +14,7 @@
 
 import type { LegendLayout } from "@/shared/semantic-board/index";
 import { DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/config";
+import { roundCoord } from "@/transformers/semantic-renderer/lib/geometry";
 import { CARD_TITLE_FONT, fontAttributes } from "@/transformers/semantic-renderer/lib/fonts";
 import { markCounts, type MarkCount } from "@/transformers/semantic-renderer/picture-key";
 import { measure } from "@/transformers/semantic-renderer/lib/text";
@@ -66,7 +67,7 @@ function withLegend(page: PaintedPage, legend: Legend, layout: LegendLayout): Pa
 		return {
 			...page,
 			body: lines([page.body, legend.draw(page.width, 0)]),
-			width: page.width + legend.width,
+			width: roundCoord(page.width + legend.width),
 			height: Math.max(page.height, legend.height),
 		};
 	}
@@ -74,7 +75,7 @@ function withLegend(page: PaintedPage, legend: Legend, layout: LegendLayout): Pa
 		...page,
 		body: lines([page.body, legend.draw(0, page.height)]),
 		width: Math.max(page.width, legend.width),
-		height: page.height + legend.height,
+		height: roundCoord(page.height + legend.height),
 	};
 }
 
