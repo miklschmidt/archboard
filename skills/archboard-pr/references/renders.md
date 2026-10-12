@@ -114,18 +114,15 @@ afresh, so cards move between the two pictures and do not line up.
   to `prefers-color-scheme` when the page declares none; GitHub's Primer CSS
   sets it from the reader's GitHub theme. WebKit, and inline placement in every
   engine, follow `prefers-color-scheme` (checked in Chromium 153, Firefox 148
-  and WebKit 26.4 in October 2026; not checked on a posted pull request).
+  and WebKit 26.4 in October 2026).
 - gh rewrites only Markdown references to an attached file, such as
   `![alt](path)`, and keeps their alt text. It does not rewrite HTML, and a
   path with `#fragment` does not match [gh source].
 - GitHub documents an image that changes with the theme only as a `<picture>`
-  with `prefers-color-scheme` sources [GitHub, quickstart]. It does not
-  document whether an uploaded SVG follows the reader's GitHub theme, and that
-  is not checked on a pull request (**unverified**), so never say in the pull
-  request that a render follows the theme. Each render is still one auto SVG
-  as a Markdown image: whichever ground it shows, it is a whole picture on its
-  own ground, and it needs one file and one pass, where a `<picture>` needs two
-  files and a second pass to put the uploaded URLs in its HTML.
+  with `prefers-color-scheme` sources [GitHub, quickstart]. Each render is one
+  auto SVG as a Markdown image: it needs one file and one pass, where a
+  `<picture>` needs two files and a second pass to put the uploaded URLs in its
+  HTML.
 
 ## Sources
 
