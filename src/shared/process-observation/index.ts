@@ -144,29 +144,35 @@ function listDarwinPids(library: DarwinLibrary): readonly number[] {
  */
 function listDarwinGroupPids(library: DarwinLibrary, pgid: number): readonly number[] {
 	const estimate = library.symbols.proc_listpgrppids(pgid, null, 0);
-	if (estimate === 0 && darwinProcessGroupAbsent(pgid)) return Object.freeze([]);
+	if (estimate === 0 && darwinGroupHoldsNoLiveMember(pgid)) return Object.freeze([]);
 	const pids = listDarwinPidBuffer(
 		(buffer, byteLength) => library.symbols.proc_listpgrppids(pgid, buffer, byteLength),
 		`process-group ${pgid}`,
 		estimate,
 	);
-	if (pids.length === 0 && !darwinProcessGroupAbsent(pgid)) {
+	if (pids.length === 0 && !darwinGroupHoldsNoLiveMember(pgid)) {
 		throw new Error(`Could not read the live Darwin process-group ${pgid} census.`);
 	}
 	return pids;
 }
 
 /**
- * Prove an empty libproc group census means the kernel no longer knows the group.
+ * Prove an empty libproc group census means no member of the group can still
+ * run. The kernel answers a null signal with ESRCH once it no longer knows the
+ * group, and with EPERM while it knows the group but the signal reaches no
+ * member: Darwin's kill(2) passes over zombies, so a group whose members have
+ * all exited and wait to be reaped answers EPERM. That answer once escaped a
+ * killed Git group's census as a raw error (TASK-470, run 37776895342).
  * @param pgid The process group to probe without signalling.
- * @returns True only when the kernel reports no such group.
+ * @returns True when the kernel reports no such group, or no member a signal reaches.
  */
-function darwinProcessGroupAbsent(pgid: number): boolean {
+function darwinGroupHoldsNoLiveMember(pgid: number): boolean {
 	try {
 		process.kill(-pgid, 0);
 		return false;
 	} catch (cause) {
-		if (errorCode(cause) === "ESRCH") return true;
+		const code = errorCode(cause);
+		if (code === "ESRCH" || code === "EPERM") return true;
 		throw cause;
 	}
 }
