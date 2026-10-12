@@ -14,7 +14,7 @@ archboard itself, read [TESTING.md](TESTING.md).
 
 You need these things:
 
-- Linux or macOS, Bash, Git, and Bun 1.4 or newer. Bun must be on the `PATH` of
+- Linux or macOS, Bash, Git, and Bun 1.4.3 or newer. Bun must be on the `PATH` of
   every process that runs archboard.
 - A desktop browser, to read the boards. The browser layout is for desktop
   screens only.
