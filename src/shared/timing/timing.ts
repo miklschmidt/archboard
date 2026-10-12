@@ -336,11 +336,11 @@ const GIT_COMMAND_TIMEOUT_MS = 5000;
 
 /**
  * Grace after Git termination for the detached group, leader and both output
- * pipes to disappear. A killed group normally leaves within milliseconds, but
- * on GitHub's macOS runner one outlived a one-second window twice in ten runs
- * and an output or abort failure was reported as a cleanup failure (TASK-362).
- * Three seconds absorbs a slow machine and stays below GIT_COMMAND_TIMEOUT_MS,
- * so failed cleanup is still diagnosed before the command timeout would be.
+ * pipes to disappear. A killed group normally leaves within milliseconds. The
+ * macOS group that outlived one second (TASK-362) was not slow: a child forked
+ * during the stop had escaped both group signals (TASK-470, fixed in the stop
+ * barrier). Three seconds stays below GIT_COMMAND_TIMEOUT_MS, so failed
+ * cleanup is still diagnosed before the command timeout would be.
  */
 const GIT_PROCESS_GROUP_CLEANUP_MS = 3000;
 

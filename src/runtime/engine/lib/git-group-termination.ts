@@ -142,7 +142,29 @@ function recoverStoppedGroup(
 }
 
 /**
+ * The exact identities of a census whose members are all stopped, in a form two
+ * censuses can be compared by.
+ * @param members One complete group census.
+ * @returns Its members' pids and births in order, or undefined while any member runs.
+ */
+function stoppedMembership(members: readonly ProcessObservation[]): string | undefined {
+	if (!members.every((process) => process.state === "stopped")) {
+		return undefined;
+	}
+	return members
+		.map((member) => `${member.pid}:${member.startTime}`)
+		.toSorted()
+		.join(",");
+}
+
+/**
  * Wait until every non-zombie group member is stopped and unable to fork.
+ *
+ * One census in which every member reads as stopped is not enough. On macOS a
+ * process can read as stopped while a fork it began is still completing, and
+ * the child joins the group after that census, outside the SIGSTOP and the
+ * SIGKILL sent to the group (TASK-470). So the group counts as frozen only when
+ * two censuses one poll apart find the same members, all of them stopped.
  * @param group The exact group being frozen.
  * @param captured The member identities retained for error recovery.
  * @param operations The process observation, clock, and wait seam.
@@ -153,16 +175,19 @@ async function awaitStoppedGroup(
 	operations: GitGroupTerminationOperations,
 ): Promise<void> {
 	const deadline = operations.now() + GIT_PROCESS_GROUP_CLEANUP_MS;
+	let frozen: string | undefined;
 	for (;;) {
 		const members = operations.members(group);
 		rememberMembers(captured, members);
-		if (members.every((process) => process.state === "stopped")) {
+		const census = stoppedMembership(members);
+		if (census !== undefined && census === frozen) {
 			return;
 		}
+		frozen = census;
 		if (operations.now() >= deadline) {
 			throw new Error(`Process group ${group.group} did not stop within its cleanup grace.`);
 		}
-		operations.signalGroup(group, "SIGSTOP");
+		if (census === undefined) operations.signalGroup(group, "SIGSTOP");
 		// oxlint-disable-next-line no-await-in-loop -- a process group is sampled until the bounded barrier
 		await operations.wait(GIT_PROCESS_GROUP_POLL_MS);
 	}
