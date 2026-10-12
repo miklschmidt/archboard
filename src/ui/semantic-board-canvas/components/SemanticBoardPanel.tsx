@@ -35,7 +35,7 @@ import {
 import { SemanticViewBar } from "@/ui/semantic-board-canvas/components/SemanticViewBar";
 import { SemanticWalkthroughBar } from "@/ui/semantic-board-canvas/components/SemanticWalkthroughBar";
 import type { WalkthroughReading } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
-import { keyOf, type AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
+import { keyOf, type AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { GroupChoice } from "@/ui/semantic-board-canvas/lib/groups";
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";

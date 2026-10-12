@@ -10,7 +10,8 @@
 
 import { drillWayWords } from "@/ui/semantic-board-canvas/lib/drill-way";
 import type { SemanticEdge, SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
-import { drawnAppearance, type AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
+import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
+import { drawnAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import { PULSE_CLASS } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** The attribute naming the subject a group of the picture draws. */

@@ -21,6 +21,7 @@ import {
 } from "@/runtime/semantic-board-client/index";
 import {
 	addressedVariant,
+	LegendLayoutSchema,
 	SemanticBoardSchema,
 	type RenderedChanges,
 	type RenderedVariant,
@@ -82,17 +83,18 @@ type RenderOptions = NonNullable<Parameters<typeof renderSemanticBoardOnServer>[
 
 /**
  * Select the same self-contained picture for SVG, PNG and clipboard output.
- * @param input The requested variant, view, theme, layout, comparison treatment and title.
+ * @param input The requested variant, view, theme, layout, comparison treatment, title and legend.
  * @returns The request with embedded fonts, so the picture outlives its server.
  */
 function exportRenderRequest(
 	input: {
-		[Key in keyof Omit<RenderOptions, "fonts" | "comparison" | "title" | "titled">]?:
-			| RenderOptions[Key]
-			| undefined;
+		[
+			Key in keyof Omit<RenderOptions, "fonts" | "comparison" | "title" | "titled" | "legendOnly">
+		]?: RenderOptions[Key] | undefined;
 	} & {
 		noComparison: boolean;
 		title?: string | true | undefined;
+		legendOnly?: boolean | undefined;
 	},
 ): RenderOptions {
 	return {
@@ -108,16 +110,67 @@ function exportRenderRequest(
 
 /**
  * What an export asks to carry beside its drawing, as the render route reads it.
- * @param input The requested title.
+ * @param input The requested title and legend.
  * @param input.title Words for the title, or true for the names of what is drawn.
- * @returns The route's title parameters.
+ * @param input.legend How the legend is laid out.
+ * @param input.legendOnly Whether the legend is drawn alone.
+ * @returns The route's title and legend parameters.
  */
 function framingRequest(input: {
 	title?: string | true | undefined;
-}): Pick<RenderOptions, "title" | "titled"> {
-	if (input.title === undefined) return {};
-	return input.title === true ? { titled: "on" } : { title: input.title };
+	legend?: RenderOptions["legend"] | undefined;
+	legendOnly?: boolean | undefined;
+}): Pick<RenderOptions, "title" | "titled" | "legend" | "legendOnly"> {
+	return {
+		...(input.title === true
+			? { titled: "on" }
+			: input.title === undefined
+				? {}
+				: { title: input.title }),
+		...(input.legend === undefined ? {} : { legend: input.legend }),
+		...(input.legendOnly === true ? { legendOnly: "on" } : {}),
+	};
 }
+
+/** The options both drawing commands declare for the legend, and how they are read. */
+const LEGEND_OPTIONS = [
+	{
+		kind: "option",
+		key: "legend",
+		spellings: ["--legend"],
+		value: "required",
+		placeholder: "layout",
+		choices: LegendLayoutSchema.options,
+		description:
+			"Add the key to what the picture draws: a row under it (horizontal) or a column beside it (vertical)",
+	},
+	{
+		kind: "option",
+		key: "legendOnly",
+		spellings: ["--legend-only"],
+		value: "none",
+		description: "Draw the legend by itself, without the picture, in the layout --legend names",
+	},
+] as const;
+const LegendInputSchema = {
+	legend: LegendLayoutSchema.optional(),
+	legendOnly: z.boolean().default(false),
+};
+
+/**
+ * Whether a drawing's input asks for the legend alone without saying how to lay it out.
+ * @param input The parsed input.
+ * @param input.legend How the legend is laid out, when it was asked for.
+ * @param input.legendOnly Whether the legend is drawn alone.
+ * @returns True when it may be drawn.
+ */
+function legendStated(input: { legend?: unknown; legendOnly: boolean }): boolean {
+	return !input.legendOnly || input.legend !== undefined;
+}
+const LEGEND_ONLY_REFUSAL = {
+	message: "--legend-only draws the legend by itself, so it needs --legend horizontal or vertical.",
+	path: ["legendOnly"],
+};
 
 /** What `--title` takes: words of its own, or nothing for the names of what is drawn. */
 const TitleOptionSchema = z.union([z.string().min(1), z.literal(true)]).optional();
@@ -471,6 +524,10 @@ export {
 	exportRenderRequest,
 	TitleOptionSchema,
 	TITLE_OPTION,
+	LEGEND_OPTIONS,
+	LEGEND_ONLY_REFUSAL,
+	LegendInputSchema,
+	legendStated,
 	DRAWN_AGAINST,
 	SemanticBoardResultSchema,
 	describedWrite,

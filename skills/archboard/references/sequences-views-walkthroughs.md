@@ -81,9 +81,15 @@ grounds and shows the one of the reader's colour scheme, as an image, a
 background or inline. A PNG holds one ground, so `semantic rasterize` takes
 `--theme light` or `--theme dark`.
 
-Both export commands take `--title`, which draws the board, the view, the
-variant and what it is compared with above the picture. `--title "<text>"`
-draws your own words.
+Both export commands can draw what a reader needs beside the picture:
+
+- `--title` draws the board, the view, the variant and what it is compared
+  with above the picture. `--title "<text>"` draws your own words.
+- `--legend horizontal` draws the key under the picture, and
+  `--legend vertical` draws it beside the picture. The key lists what the
+  board's legend on the page lists for the same picture.
+- `--legend-only` with `--legend <layout>` draws the key alone, for a page
+  that shows several pictures with one key.
 
 ### Copy an image with its description
 

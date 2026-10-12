@@ -54,6 +54,8 @@ beforeAll(async () => {
 		theme: "auto",
 		fonts: "embedded",
 		grammar: "architecture",
+		// What an export carries beside the drawing follows the scheme with it.
+		frame: { title: "Reads", legend: "horizontal" },
 	});
 	chromium = await launchHeadlessChromium({
 		chromiumPath: discoveredChromiumPath(),

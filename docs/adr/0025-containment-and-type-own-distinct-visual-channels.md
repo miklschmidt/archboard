@@ -135,3 +135,14 @@ edge. On a container, the border runs along the face of its header slab, as
 on a card, and the well is not marked (TASK-423). A removed node has lost its depth: a
 flat, see-through face inside a dashed red border round its footprint. The type
 chip still says the kind, and selection still adds a ring outside the part.
+
+## Amendment of 2026-10-12: an export can carry the legend
+
+"Exported diagrams have no legends for now" no longer holds. `semantic render`
+and `semantic rasterize` take `--legend horizontal` or `--legend vertical`, which
+draw the key under or beside the picture, and `--legend-only`, which draws the
+key alone (TASK-468). The exported key lists what the legend on the page lists
+for the same picture. Both read the picture with one function,
+`pictureAppearances` in `src/transformers/semantic-renderer/picture-key.ts`,
+so the two cannot list different things. Without `--legend`, an export draws no
+key, as before.

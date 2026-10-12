@@ -16,7 +16,7 @@ import {
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/index";
 import { cn } from "@/ui/components/class-names";
-import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
+import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
 import { paletteInk } from "@/ui/semantic-board-canvas/lib/palette";
 
 /** How high every line sample is drawn, and where its line runs. */

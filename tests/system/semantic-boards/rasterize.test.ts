@@ -393,30 +393,51 @@ describe("semantic rasterize", () => {
 	);
 
 	test(
-		"carries a title from either command into the picture, its words given or the names of what is drawn",
+		"carries a title and the legend, or the legend alone, from either command into the picture",
 		() => {
 			const before = boardFile();
 			const plain = JSON.parse(
 				cli(["semantic", "render", "transfers", "--out", path.join(vault, "plain.svg")]).stdout,
 			);
-			const framed = cli(["semantic", "render", "transfers", "--title"]);
+			const framed = cli(["semantic", "render", "transfers", "--title", "--legend", "vertical"]);
 			expect(framed.status, framed.stderr).toBe(0);
 			const words = /data-slot="export-title"><text [^>]*>([^<]*)</u.exec(framed.stdout)?.[1];
 			expect(words).toContain("transfers");
 			expect(words).toContain(plain.variant.name);
+			expect(framed.stdout).toContain('data-slot="export-legend" data-layout="vertical"');
+			const alone = cli([
+				"semantic",
+				"render",
+				"transfers",
+				"--legend",
+				"horizontal",
+				"--legend-only",
+			]);
+			expect(alone.stdout).toContain('data-slot="export-legend" data-layout="horizontal"');
+			expect(alone.stdout).not.toContain('data-semantic-id="');
 			const out = path.join(vault, "framed.png");
-			const png = cli(["semantic", "rasterize", "transfers", "--title", "Transfers", "--out", out]);
+			const png = cli([
+				"semantic",
+				"rasterize",
+				"transfers",
+				"--title",
+				"Transfers",
+				"--legend",
+				"horizontal",
+				"--out",
+				out,
+			]);
 			expect(png.status, png.stderr).toBe(0);
 			const receipt = JSON.parse(png.stdout);
-			// The title takes a band above the drawing, and the bitmap holds both.
+			// The title and the legend take room above and under the drawing, and the bitmap holds them.
 			expect(receipt.diagram.height).toBeGreaterThan(plain.height);
 			expect(pngSize(fs.readFileSync(out))).toEqual({
 				width: receipt.width,
 				height: receipt.height,
 			});
-			// A title with no words is refused.
+			// A title with no words, and a legend alone with no layout, are refused.
 			for (const command of ["render", "rasterize"]) {
-				for (const refused of [["--title", ""]]) {
+				for (const refused of [["--title", ""], ["--legend-only"]]) {
 					const answer = cli(["semantic", command, "transfers", ...refused]);
 					expect(answer.status, refused.join(" ")).toBe(2);
 					expect(answer.stdoutBytes).toHaveLength(0);

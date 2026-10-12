@@ -95,6 +95,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "src/runtime/semantic-renderer/tests/export-title.test.ts owns the band and the moved picture on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
+				},
+				{
+					"path": "semantic render/rasterize --legend and --legend-only",
+					"expectedUse": "draw the key of an exported picture under or beside it, or alone; --legend-only needs --legend",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/export-legend.test.ts owns the content against the page key and the placement on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
 				}
 			]
 		},

@@ -278,7 +278,14 @@ const OWN_PROPERTY = /[";](--[\w-]+):/gu;
  * @returns The root's `style`.
  */
 function standingAlone(theme: StandaloneTheme, document: string): string {
-	const own = new Set([...document.matchAll(OWN_PROPERTY)].map((found) => found[1]!));
+	// The stylesheet reads a card's places whether or not a card is drawn: a
+	// legend exported by itself draws none.
+	const own = new Set([
+		NEAR_PLACE,
+		FAR_PLACE,
+		AWAY_PLACE,
+		...[...document.matchAll(OWN_PROPERTY)].map((found) => found[1]!),
+	]);
 	const names = new Set(
 		[...document.matchAll(TOKEN_REFERENCE)]
 			.map((found) => found[1]!)

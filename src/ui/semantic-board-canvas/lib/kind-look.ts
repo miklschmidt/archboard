@@ -8,7 +8,7 @@
 // icon here and is drawn with a plain mark.
 
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
-import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
+import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
 
 /** How a relationship kind is drawn as a chip: its words, its line colour and its dash. */
 interface RelationshipLook {

@@ -30,6 +30,7 @@ import {
 	type SemanticRenderReply,
 	type LayoutEngineName,
 	type StandaloneTheme,
+	type LegendLayout,
 } from "@/shared/semantic-board/index";
 
 /** One board in the vault's semantic listing. */
@@ -192,6 +193,8 @@ async function readSemanticBoardOnServer(board: string): Promise<SemanticBoard> 
  * @param options.comparison Whether the picture carries comparison marks and removed context.
  * @param options.title Words drawn above the picture.
  * @param options.titled Draws the names of what is drawn above the picture, when no words are given.
+ * @param options.legend How the legend is laid out beside the picture.
+ * @param options.legendOnly Draws the legend without the picture.
  * @returns The picture, or the fact that there is nothing on the board yet.
  */
 async function renderSemanticBoardOnServer(
@@ -205,6 +208,8 @@ async function renderSemanticBoardOnServer(
 		comparison?: "on" | "off";
 		title?: string;
 		titled?: "on";
+		legend?: LegendLayout;
+		legendOnly?: "on";
 	} = {},
 ): Promise<SemanticRenderReply> {
 	const query = new URLSearchParams({ board });

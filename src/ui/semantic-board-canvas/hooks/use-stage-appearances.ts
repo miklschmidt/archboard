@@ -8,7 +8,7 @@ import type { Leaving } from "@/ui/semantic-board-canvas/hooks/use-departure";
 import {
 	pictureAppearances,
 	type AppliedAppearance,
-} from "@/ui/semantic-board-canvas/lib/appearance";
+} from "@/transformers/semantic-renderer/picture-key";
 
 /** The key to a pane with no picture yet: nothing drawn, nothing to explain. */
 const NO_APPEARANCES: ReadonlyMap<string, AppliedAppearance> = new Map();

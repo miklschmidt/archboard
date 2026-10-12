@@ -283,9 +283,16 @@ function edgeAttributes(
 		"stroke-width": STROKE_WIDTH[weight],
 		"stroke-linecap": "round",
 		"stroke-linejoin": "round",
-		"stroke-dasharray": { solid: undefined, dashed: "6 4", dotted: "1.5 3.5" }[appearance.dash],
+		"stroke-dasharray": DASH_ARRAY[appearance.dash],
 	};
 }
+
+/** How a line of each dash is broken, for every line drawn and a key's sample of it. */
+const DASH_ARRAY: Readonly<Record<string, string | undefined>> = {
+	solid: undefined,
+	dashed: "6 4",
+	dotted: "1.5 3.5",
+};
 
 /**
  * Every attribute bundle the painter reaches for, resolved against one palette.
@@ -335,6 +342,7 @@ export {
 	LIT_HEAD,
 	strokeWidthOf,
 	edgeAttributes,
+	DASH_ARRAY,
 	stylesFor,
 	headReach,
 	headBase,
