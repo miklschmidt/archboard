@@ -8,8 +8,8 @@
 // voice's words stamped on it and the voice itself as long as the talk; the voice is started in
 // the language --language named (TASK-380); the picture is rendered from the talk frame by frame
 // and encoded by the ffmpeg ARCHBOARD_FFMPEG names, proven before the talk starts, which is a fake
-// here (TASK-381); the receipt says what was recorded; and --discard removes the board once the
-// file is written. Rendering a kept talk again is walkthrough-replay.test.ts's.
+// here (TASK-381); the talk keeps the --layout engine its picture was rendered with (TASK-469);
+// the receipt says what was recorded; and --discard removes the board once the file is written. Rendering a kept talk again is walkthrough-replay.test.ts's.
 
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
@@ -136,6 +136,8 @@ test(
 				kept,
 				"--language",
 				"da",
+				"--layout",
+				"blocks",
 				"--discard",
 				"--doing",
 				"recording the tour",
@@ -150,12 +152,20 @@ test(
 				frames: number;
 				talk: string;
 			};
-			expect(receipt).toMatchObject({ steps: 2, file: out, discarded: true, talk: kept });
+			expect(receipt).toMatchObject({
+				steps: 2,
+				file: out,
+				discarded: true,
+				talk: kept,
+				layout: "blocks",
+			});
 			expect(receipt.mimeType.startsWith("video/mp4")).toBe(true);
 
 			// The talk went through both steps in order, with the voice's words on it, and ended
 			// last; reading it proves its voice is as long as the talk.
 			const talk = readTalk(kept);
+			// It keeps the engine its picture was laid out with, which a replay draws again.
+			expect(talk.layout).toBe("blocks");
 			const shown = talk.events.flatMap((event) => (event.kind === "step" ? [event.beat] : []));
 			expect(shown).toEqual([0, 1]);
 			expect(

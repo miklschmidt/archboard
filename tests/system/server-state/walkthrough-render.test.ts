@@ -142,6 +142,7 @@ async function render(name: string, pages: number) {
 		directory,
 		container: "mp4",
 		theme: "light",
+		layout: "track",
 		out,
 		signal: new AbortController().signal,
 		say: (line) => lines.push(line),

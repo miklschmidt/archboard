@@ -7,7 +7,8 @@
 // across two, which hand their frames on in order, with the voice's orb in the walkthrough box
 // following a voice that speaks and falls silent; the orb moves on every frame once it is shown;
 // every frame is 1920x1080, one per 1/30 s of the talk; the other theme is another picture from
-// the first frame; and the receipt says what was rendered.
+// the first frame; a talk recorded with Blocks is drawn with Blocks unless --layout names the other
+// engine, which is another picture (TASK-469); and the receipt says what was rendered.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
@@ -17,6 +18,7 @@ import { join, resolve } from "node:path";
 
 import { askedTalkPlace, readTalk, renderTalk, writeTalk } from "@/runtime/walkthrough-recorder";
 import { parseSemanticBoard } from "@/shared/semantic-board/index";
+import type { LayoutEngineName } from "@/shared/semantic-board/index";
 import { TalkSchema, type Talk } from "@/shared/walkthrough-recording/talk";
 
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
@@ -48,6 +50,8 @@ function voiceOf(samples: number): Int16Array {
 let root: string;
 let server: OwnedServer;
 let talkDirectory: string;
+/** The same talk, recorded with Blocks. */
+let blocksTalkDirectory: string;
 let ffmpeg: string;
 /** The variant the talk was recorded on, the board's current one. */
 let recordedVariant: string;
@@ -57,9 +61,10 @@ let recordedVariant: string;
  * second step, which frames only the ledger.
  * @param document The board, as the server served it.
  * @param policy The vault check, as the server served it.
+ * @param layout The layout engine it was recorded with.
  * @returns The talk.
  */
-function talkOf(document: unknown, policy: unknown): Talk {
+function talkOf(document: unknown, policy: unknown, layout: LayoutEngineName): Talk {
 	const parsed = parseSemanticBoard(document);
 	if (!parsed.ok) throw new Error(parsed.problem);
 	const { board } = parsed;
@@ -72,6 +77,7 @@ function talkOf(document: unknown, policy: unknown): Talk {
 		recordedAt: "2026-09-30T10:00:00.000Z",
 		language: "en",
 		theme: "light",
+		layout,
 		board: {
 			name: BOARD,
 			variant: null,
@@ -116,8 +122,10 @@ beforeAll(async () => {
 			create: {
 				level: "system",
 				// No relationship, so no traffic: a picture at rest does not change from frame to frame.
+				// A container, so Track and Blocks lay it out differently: a row, and a column.
 				nodes: [
-					{ name: "Gateway", kind: "service" },
+					{ name: "Edge", kind: "service" },
+					{ name: "Gateway", kind: "service", parent: "Edge" },
 					{ name: "Ledger", kind: "service" },
 				],
 				walkthroughs: [
@@ -135,7 +143,7 @@ beforeAll(async () => {
 	expect(created.status).toBe(200);
 	const served = await request<{ board: unknown }>(`/api/semantic-boards/board?board=${BOARD}`);
 	const policy = await request("/api/vault/check");
-	const talk = talkOf(served.body!.board, policy.body);
+	const talk = talkOf(served.body!.board, policy.body, "track");
 	const discarded = await request("/api/semantic-boards/discard", {
 		method: "POST",
 		doing: "discarding the replayed board",
@@ -147,6 +155,11 @@ beforeAll(async () => {
 		voice: voiceOf(talk.audio.samples),
 		place: askedTalkPlace(join(root, "talk")),
 	});
+	blocksTalkDirectory = writeTalk({
+		talk: talkOf(served.body!.board, policy.body, "blocks"),
+		voice: voiceOf(talk.audio.samples),
+		place: askedTalkPlace(join(root, "blocks-talk")),
+	});
 	ffmpeg = prepareFakeFfmpeg(root).executablePath;
 }, TEST_RECORDING_CASE_MS);
 
@@ -156,19 +169,35 @@ afterAll(async () => {
 });
 
 /**
- * Render the talk.
+ * Render a talk.
  * @param name The file's name, without its extension.
- * @param theme The theme to render it in, or the talk's.
+ * @param options What to render, and how.
+ * @param options.talk The talk's directory; the one recorded with Track when absent.
+ * @param options.theme The theme to render it in, or the talk's.
+ * @param options.layout The layout engine to render it with, or the talk's.
  * @returns The receipt and the hash of each frame, in order.
  */
 function replay(
 	name: string,
-	theme?: "light" | "dark",
+	options: {
+		readonly talk?: string;
+		readonly theme?: "light" | "dark";
+		readonly layout?: LayoutEngineName;
+	} = {},
 ): { receipt: Record<string, unknown>; frames: readonly string[] } {
 	const out = join(root, `${name}.mp4`);
+	const { theme, layout } = options;
 	const replayed = spawnSync(
 		join(repoRoot, "bin/archboard"),
-		["semantic", "replay", talkDirectory, "--out", out, ...(theme ? ["--theme", theme] : [])],
+		[
+			"semantic",
+			"replay",
+			options.talk ?? talkDirectory,
+			"--out",
+			out,
+			...(theme ? ["--theme", theme] : []),
+			...(layout ? ["--layout", layout] : []),
+		],
 		{
 			cwd: repoRoot,
 			encoding: "utf8",
@@ -204,6 +233,7 @@ async function replayOnTwoPages(): Promise<readonly string[]> {
 		directory: talkDirectory,
 		container: "mp4",
 		theme: "light",
+		layout: "track",
 		out,
 		signal: new AbortController().signal,
 		say: () => undefined,
@@ -218,7 +248,7 @@ test(
 	async () => {
 		const first = replay("first");
 		const again = await replayOnTwoPages();
-		const dark = replay("dark", "dark");
+		const dark = replay("dark", { theme: "dark" });
 		expect(first.receipt).toMatchObject({
 			success: true,
 			board: BOARD,
@@ -227,6 +257,7 @@ test(
 			frames: FRAMES,
 			durationMs: 2000,
 			theme: "light",
+			layout: "track",
 		});
 		expect(first.frames).toHaveLength(FRAMES);
 		expect(again).toEqual(first.frames);
@@ -235,6 +266,18 @@ test(
 		expect(new Set(lit).size).toBe(lit.length);
 		expect(dark.receipt).toMatchObject({ theme: "dark", frames: FRAMES });
 		expect(dark.frames[0]).not.toBe(first.frames[0]);
+	},
+	TEST_RECORDING_CASE_MS,
+);
+
+test(
+	"a talk recorded with Blocks is drawn with Blocks, and --layout draws it with the other engine",
+	() => {
+		const blocks = replay("blocks", { talk: blocksTalkDirectory });
+		const track = replay("blocks-as-track", { talk: blocksTalkDirectory, layout: "track" });
+		expect(blocks.receipt).toMatchObject({ layout: "blocks", frames: FRAMES });
+		expect(track.receipt).toMatchObject({ layout: "track", frames: FRAMES });
+		expect(blocks.frames[0]).not.toBe(track.frames[0]);
 	},
 	TEST_RECORDING_CASE_MS,
 );

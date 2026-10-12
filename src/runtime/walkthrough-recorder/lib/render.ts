@@ -22,7 +22,7 @@ import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { DiagramTheme } from "@/shared/semantic-board/index";
+import type { DiagramTheme, LayoutEngineName } from "@/shared/semantic-board/index";
 import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
 import {
 	RECORDING_CALL_MS,
@@ -63,6 +63,8 @@ interface RenderTalkRequest {
 	readonly container: RecordingContainer;
 	/** Which palette the page draws in. */
 	readonly theme: DiagramTheme;
+	/** Which layout engine the page lays the board out with. */
+	readonly layout: LayoutEngineName;
 	/** The file to write, absolute. */
 	readonly out: string;
 	readonly signal: AbortSignal;
@@ -269,7 +271,7 @@ interface PageShare {
 	readonly pages: number;
 	/** How many frames the talk has. */
 	readonly frames: number;
-	/** How every page renders the talk: its theme, and how loud its voice is on each frame. */
+	/** How every page renders the talk: its theme, its layout, and how loud its voice is on each frame. */
 	readonly options: ReplayOptions;
 	/** Where the frames go, in order. */
 	readonly order: FrameOrder;
@@ -419,6 +421,7 @@ async function drawOnPages(
 	const order = new FrameOrder(encoder, AHEAD_ROUNDS * pages * CHUNK_FRAMES);
 	const options: ReplayOptions = {
 		theme: request.theme,
+		layout: request.layout,
 		levels: voiceLevels(voiceSamples(join(request.directory, TALK_VOICE_FILE))),
 	};
 	let said = 0;

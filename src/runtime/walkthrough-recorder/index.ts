@@ -23,7 +23,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { DiagramTheme, SemanticBoard } from "@/shared/semantic-board/index";
+import type { DiagramTheme, LayoutEngineName, SemanticBoard } from "@/shared/semantic-board/index";
 import type { VaultCheck } from "@/shared/semantic-policy/index";
 import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
 import { RECORDING_CALL_MS } from "@/shared/timing/timing";
@@ -84,6 +84,8 @@ interface WalkthroughRecordingRequest {
 	readonly container: RecordingContainer;
 	/** Which palette the picture is rendered in. */
 	readonly theme: DiagramTheme;
+	/** Which layout engine the picture is laid out with, which the talk keeps. */
+	readonly layout: LayoutEngineName;
 	/** The file to write, absolute. */
 	readonly out: string;
 	/** Where the talk is kept, already proven free. */
@@ -325,6 +327,7 @@ function talkOf(request: WalkthroughRecordingRequest, log: TalkLog, steps: numbe
 		recordedAt: new Date().toISOString(),
 		language: request.language,
 		theme: request.theme,
+		layout: request.layout,
 		board: {
 			name: board.name,
 			variant: request.variant,
@@ -408,6 +411,7 @@ async function recordWalkthrough(
 			directory: kept.directory,
 			container: request.container,
 			theme: request.theme,
+			layout: request.layout,
 			out: request.out,
 			signal: request.signal,
 			say: request.say,

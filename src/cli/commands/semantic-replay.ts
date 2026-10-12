@@ -4,7 +4,11 @@
 
 import { z } from "zod";
 
-import { DiagramThemeSchema, parseSemanticBoard } from "@/shared/semantic-board/index";
+import {
+	DiagramThemeSchema,
+	LayoutEngineSchema,
+	parseSemanticBoard,
+} from "@/shared/semantic-board/index";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { TalkFileError, readTalk, renderTalk } from "@/runtime/walkthrough-recorder";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
@@ -23,6 +27,7 @@ const ReplayInputSchema = z.object({
 	talk: z.string(),
 	out: z.string(),
 	theme: DiagramThemeSchema.optional(),
+	layout: LayoutEngineSchema.optional(),
 });
 
 const ReplayReceiptSchema = z.object({
@@ -38,6 +43,7 @@ const ReplayReceiptSchema = z.object({
 	durationMs: z.int(),
 	frames: z.int(),
 	theme: DiagramThemeSchema,
+	layout: LayoutEngineSchema,
 });
 
 /**
@@ -77,7 +83,7 @@ const semanticReplayContract = defineCommand({
 		"headless Chromium, in software at 1920x1080, then encoded at 30 frames a second with the " +
 		"voice into an MP4 or WebM file (by the --out extension). No Codex or voice is used and " +
 		"the board need not exist, so a talk can be rendered again in the other theme with " +
-		"--theme, or after a renderer fix. Needs a Chromium " +
+		"--theme, with the other layout engine with --layout, or after a renderer fix. Needs a Chromium " +
 		"or Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM, and ffmpeg: " +
 		"the one named by ARCHBOARD_FFMPEG, else on PATH, else nixpkgs#ffmpeg-headless run through " +
 		"Nix.",
@@ -111,6 +117,16 @@ const semanticReplayContract = defineCommand({
 			choices: THEMES,
 			description:
 				"Which palette the pane draws in; the palette the talk was recorded in when absent",
+		},
+		{
+			kind: "option",
+			key: "layout",
+			spellings: ["--layout"],
+			value: "required",
+			placeholder: "engine",
+			choices: LayoutEngineSchema.options,
+			description:
+				"Which layout engine lays the board out; the engine the talk was recorded with when absent",
 		},
 	],
 	input: { ingress: ReplayInputSchema },
@@ -155,12 +171,14 @@ const semanticReplayContract = defineCommand({
 		const talk = readTalkOrRefuse(directory);
 		await context.require("server", "semantic replay");
 		const theme = input.theme ?? talk.theme;
+		const layout = input.layout ?? talk.layout;
 		const made = await renderTalk({
 			serverUrl: ARCHBOARD_URL,
 			talk,
 			directory,
 			container,
 			theme,
+			layout,
 			out: file,
 			signal: context.signal,
 			say: context.diagnostic,
@@ -184,6 +202,7 @@ const semanticReplayContract = defineCommand({
 				durationMs: made.durationMs,
 				frames: made.frames,
 				theme,
+				layout,
 			},
 		};
 	},
