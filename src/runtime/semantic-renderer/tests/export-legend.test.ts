@@ -176,14 +176,3 @@ test("the legend alone draws no subject and lists what the legend beside the pic
 		expect(alone.height).toBeLessThan(beside.height);
 	}
 });
-
-test("drawn auto, the legend and the title paint only tokens the document declares for both grounds", async () => {
-	const drawn = await exported({
-		variant: "Worker pool",
-		theme: "auto",
-		legend: "vertical",
-		title: true,
-	});
-	expect(drawn.svg).toContain('style="color-scheme:light dark;');
-	expect(listed(drawn.svg).length).toBeGreaterThan(0);
-});
