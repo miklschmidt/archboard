@@ -241,9 +241,9 @@ anti-patterns.
    1. **Why**: one or two sentences on the need or the problem and how urgent
       it is, never the files. Then one shortcoming accepted or one alternative
       rejected, with the reason.
-   2. **The after render**, with its drawn title, and the key for the marks
-      it shows ([renders](references/renders.md#title-key-and-alt-text)).
-      Under it, the before render in a collapsed `<details>`.
+   2. **The after render**, with its drawn title and key
+      ([renders](references/renders.md#title-key-and-alt-text)). Under it, the
+      before render in a collapsed `<details>`.
    3. **The walkthrough**: for a recorded video, the block that
       [walkthrough](references/walkthrough.md#in-the-pull-request) gives.
    4. **What changed**: the interface changes first (`interfaceChanges`), each
@@ -283,8 +283,9 @@ anti-patterns.
          `footprint`. **Changed but not drawn** lists each part, or says
          "Nothing".
    - [ ] The after render comes first. It is drawn with Blocks, through a view
-         of the changed parts, with `--theme auto` and `--title`. It has a key
-         and alt text. The before render is collapsed under it.
+         of the changed parts, with `--theme auto`, `--title` and
+         `--legend horizontal`. It has alt text. The before render is
+         collapsed under it.
    - [ ] Each part under **What it can reach** has one question to check.
    - [ ] The reading order is grouped, with the riskiest group first. A change
          above about 400 lines is split into passes.

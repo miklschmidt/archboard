@@ -1,5 +1,6 @@
 import type { PaletteColor } from "@/shared/semantic-policy/index";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
+import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { token, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import {
 	CARD_THICKNESS,
@@ -248,6 +249,19 @@ function typeChip(
 			}) + glyph
 		);
 	}
+	// On the tile's face, above its edge.
+	return chipTile(box, ink, palette) + glyph;
+}
+
+/**
+ * A type chip's tile without its glyph: a small slab tinted by its type's
+ * colour, and the shadow it casts.
+ * @param box Where the tile stands.
+ * @param ink The type's colour, or the glyph's neutral ink.
+ * @param palette Selected theme.
+ * @returns The tile.
+ */
+function chipTile(box: Box, ink: string, palette: Palette): string {
 	const look: SlabLook = {
 		face: inkedOver(palette.slabFace, ink, CHIP_FACE),
 		edge: inkedOver(palette.slabEdge, ink, CHIP_EDGE),
@@ -255,8 +269,7 @@ function typeChip(
 		radius: ICON_CHIP_RADIUS,
 		sheen: true,
 	};
-	// On the tile's face, above its edge.
-	return slabShadow(box, ICON_CHIP_RADIUS, "chip", palette) + slab(box, look, palette) + glyph;
+	return slabShadow(box, ICON_CHIP_RADIUS, "chip", palette) + slab(box, look, palette);
 }
 
-export { semanticInk, cardLook, labelLook, trayLook, appearanceAttributes, typeChip };
+export { semanticInk, cardLook, labelLook, trayLook, appearanceAttributes, typeChip, chipTile };

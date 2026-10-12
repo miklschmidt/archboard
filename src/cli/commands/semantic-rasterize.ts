@@ -33,6 +33,10 @@ import {
 	exportRenderRequest,
 	TITLE_OPTION,
 	TitleOptionSchema,
+	LEGEND_OPTIONS,
+	LEGEND_ONLY_REFUSAL,
+	LegendInputSchema,
+	legendStated,
 } from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { copyImageToClipboard } from "@/cli/commands/lib/image-clipboard";
@@ -48,6 +52,7 @@ const RasterizeInputSchema = z
 		layout: LayoutEngineSchema.optional(),
 		noComparison: z.boolean().default(false),
 		title: TitleOptionSchema,
+		...LegendInputSchema,
 		scale: z.coerce.number().min(RASTER_MIN_SCALE).max(RASTER_MAX_SCALE).default(1),
 		region: z
 			.string()
@@ -63,6 +68,7 @@ const RasterizeInputSchema = z
 		out: z.string().optional(),
 		clipboard: z.boolean().default(false),
 	})
+	.refine(legendStated, LEGEND_ONLY_REFUSAL)
 	.refine((input) => !input.clipboard || input.out === undefined, {
 		message: "Use either --clipboard or --out, not both.",
 		path: ["clipboard"],
@@ -254,6 +260,7 @@ const semanticRasterizeContract = defineCommand({
 			description: "Which layout engine lays the architecture out; the default one when absent",
 		},
 		TITLE_OPTION,
+		...LEGEND_OPTIONS,
 		{
 			kind: "option",
 			key: "scale",

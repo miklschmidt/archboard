@@ -33,6 +33,7 @@ import {
 	SidebarSection,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import { StandingSample } from "@/ui/semantic-board-canvas/components/SemanticTypeSamples";
+import { markCounts, type MarkCount } from "@/transformers/semantic-renderer/picture-key";
 
 /** Inputs for the changes. */
 interface SemanticChangesProps {
@@ -56,7 +57,7 @@ interface SemanticChangesProps {
  * @returns The section.
  */
 function SemanticChanges(props: SemanticChangesProps): JSX.Element {
-	const counts = countsOf(props.changes.standing);
+	const counts = markCounts(props.changes.standing);
 	const identical = counts.length === 0 && !props.inView;
 	return (
 		<SidebarSection title={`Compared with ${props.changes.against.name}`} slot="semantic-changes">
@@ -83,7 +84,7 @@ function SemanticChanges(props: SemanticChangesProps): JSX.Element {
  * @returns The key and its control.
  */
 function ChangeKey(props: {
-	readonly counts: readonly Count[];
+	readonly counts: readonly MarkCount[];
 	readonly comparison: boolean;
 	readonly onComparisonChange: (comparison: boolean) => void;
 }): JSX.Element {
@@ -127,28 +128,5 @@ function ChangeKey(props: {
 
 /** How a variant differs, as the render answer carries it. */
 type Changes = NonNullable<SemanticRender["changes"]>;
-
-/** The standings a proposal marks, in the order a reader is told them. */
-const MARKED = [
-	{ standing: "added", word: "Added" },
-	{ standing: "changed", word: "Changed" },
-	{ standing: "removed", word: "Removed" },
-] as const;
-
-/** One marked standing and how many subjects stand so. */
-type Count = (typeof MARKED)[number] & { readonly count: number };
-
-/**
- * How many subjects stand each marked way, leaving out the standings nothing has.
- * @param standing How every subject of the comparison stands.
- * @returns The counts, in the order a reader is told them.
- */
-function countsOf(standing: Changes["standing"]): readonly Count[] {
-	const values = Object.values(standing);
-	return MARKED.map((marked) => ({
-		...marked,
-		count: values.filter((one) => one === marked.standing).length,
-	})).filter((marked) => marked.count > 0);
-}
 
 export { SemanticChanges };

@@ -22,6 +22,8 @@ import {
 	type SemanticBoard,
 	StandaloneThemeSchema,
 	type StandaloneTheme,
+	LegendLayoutSchema,
+	type LegendLayout,
 } from "@/shared/semantic-board/index";
 import {
 	listSemanticBoards,
@@ -67,6 +69,13 @@ const RenderComparisonSchema = z.enum(["on", "off"]).default("on");
  * states its words; `titled=on` asks for the names of what is drawn.
  */
 const RenderTitledSchema = z.enum(["on", "off"]).default("off");
+
+/**
+ * The legend a render carries (TASK-468): `legend` lays it out beside the
+ * picture, and `legendOnly=on` draws it without the picture.
+ */
+const RenderLegendSchema = LegendLayoutSchema.optional();
+const RenderLegendOnlySchema = z.enum(["on", "off"]).default("off");
 
 /**
  * The board name a request is about.
@@ -167,6 +176,8 @@ interface RenderChoices {
 	readonly comparison: boolean;
 	readonly layout?: LayoutEngineName;
 	readonly title?: string | true;
+	readonly legend?: LegendLayout;
+	readonly legendOnly?: boolean;
 }
 
 /** The selectors a render request may state, all of them optional. */
@@ -179,6 +190,8 @@ const RENDER_SELECTORS = [
 	"layout",
 	"title",
 	"titled",
+	"legend",
+	"legendOnly",
 ] as const;
 
 /**
@@ -264,7 +277,7 @@ function chosen(
 	}
 	const layout = statedLayout(stated["layout"]);
 	if (!layout.ok) return layout;
-	const framing = statedTitle(stated);
+	const framing = statedFraming(stated);
 	if (!framing.ok) return framing;
 	return {
 		ok: true,
@@ -291,10 +304,23 @@ function namedIn(stated: Readonly<Record<string, string>>): { variant?: string; 
 	};
 }
 
-/** The title a render request asks an export to carry above its drawing, or why it cannot. */
+/** What a render request asks an export to carry beside its drawing, or why it cannot. */
 type Framing =
-	| { readonly ok: true; readonly choice: Pick<RenderChoices, "title"> }
+	| { readonly ok: true; readonly choice: Pick<RenderChoices, "title" | "legend" | "legendOnly"> }
 	| { readonly ok: false; readonly why: string };
+
+/**
+ * The title and the legend a render request asks for.
+ * @param stated The selectors that were stated, by name.
+ * @returns What it asks for, or why one of them is not a choice.
+ */
+function statedFraming(stated: Readonly<Record<string, string>>): Framing {
+	const title = statedTitle(stated);
+	if (!title.ok) return title;
+	const legend = statedLegend(stated);
+	if (!legend.ok) return legend;
+	return { ok: true, choice: { ...title.choice, ...legend.choice } };
+}
 
 /**
  * The title a render request asks for: its words, or with `titled=on` the names of what is drawn.
@@ -308,6 +334,34 @@ function statedTitle(stated: Readonly<Record<string, string>>): Framing {
 	}
 	const title = stated["title"] ?? (titled.data === "on" ? true : undefined);
 	return { ok: true, choice: title === undefined ? {} : { title } };
+}
+
+/**
+ * The legend a render request asks for, if it asks for one.
+ * @param stated The selectors that were stated, by name.
+ * @returns The legend's layout and whether it stands alone, or why it is not one.
+ */
+function statedLegend(stated: Readonly<Record<string, string>>): Framing {
+	const legend = RenderLegendSchema.safeParse(stated["legend"]);
+	if (!legend.success) {
+		return {
+			ok: false,
+			why: `"legend" says "${stated["legend"]}"; choose ${LegendLayoutSchema.options.join(" or ")}`,
+		};
+	}
+	const only = RenderLegendOnlySchema.safeParse(stated["legendOnly"]);
+	if (!only.success) {
+		return { ok: false, why: `"legendOnly" says "${stated["legendOnly"]}"; choose on or off` };
+	}
+	if (legend.data === undefined) {
+		return only.data === "on"
+			? { ok: false, why: '"legendOnly" draws the legend alone; say how in "legend"' }
+			: { ok: true, choice: {} };
+	}
+	return {
+		ok: true,
+		choice: { legend: legend.data, ...(only.data === "on" ? { legendOnly: true } : {}) },
+	};
 }
 
 /**

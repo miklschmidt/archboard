@@ -178,7 +178,7 @@ interface DiagramRenderRequest {
 	readonly level?: string | undefined;
 	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
 	readonly layout?: LayoutEngineName | undefined;
-	/** What a picture exported to stand alone carries beside its drawing: a title. */
+	/** What a picture exported to stand alone carries beside its drawing: a title, a legend. */
 	readonly frame?: ExportFrame | undefined;
 }
 

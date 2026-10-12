@@ -1,36 +1,82 @@
 // What a picture exported to stand alone carries around its drawing.
 //
 // A reader who meets an exported picture in a pull request or a document has
-// nothing beside it to say what it shows. So an export can carry a title above
-// the drawing (TASK-467). It is drawn into the document, measured with the
-// diagram faces like every other word, and painted with the palette's tokens,
-// so it follows the ground the picture is drawn for: light, dark or both.
+// nothing beside it to say what it shows or what its symbols mean. So an export
+// can carry a title above the drawing (TASK-467) and a legend under it or
+// beside it, or be the legend alone (TASK-468). Both are drawn into the
+// document, measured with the diagram faces like every other word, and painted
+// with the palette's tokens, so they follow the ground the picture is drawn
+// for: light, dark or both.
 //
 // The drawing itself is never laid out again or drawn over: it is moved down
 // whole, under the title, and the page grows to hold everything. Asked for
 // nothing, the page is the page that was painted, byte for byte.
 
+import type { LegendLayout } from "@/shared/semantic-board/index";
 import { DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/config";
 import { CARD_TITLE_FONT, fontAttributes } from "@/transformers/semantic-renderer/lib/fonts";
+import { markCounts, type MarkCount } from "@/transformers/semantic-renderer/picture-key";
 import { measure } from "@/transformers/semantic-renderer/lib/text";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
+import { legendOf, type Legend } from "@/transformers/semantic-renderer/lib/svg/legend";
 import { movedAll, type PaintedPage } from "@/transformers/semantic-renderer/lib/svg/planned-frame";
 import { lines, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import type { SubjectStanding } from "@/transformers/semantic-renderer/lib/svg/standing";
 
 /** What an export asks to carry beside the drawing. */
 interface ExportFrame {
 	/** The words drawn above the picture; none when absent. */
 	readonly title?: string | undefined;
+	/** How the legend is laid out; no legend when absent. */
+	readonly legend?: LegendLayout | undefined;
+	/** Whether the legend is drawn without the picture. */
+	readonly legendOnly?: boolean | undefined;
 }
 
 /** What a render asks for that an export's frame reads. */
 interface Framed {
 	/** What the export carries beside its drawing; nothing when absent. */
 	readonly frame?: ExportFrame | undefined;
+	/** How each subject stands in the comparison, for the marks the legend counts. */
+	readonly standing?: Readonly<Record<string, SubjectStanding>> | undefined;
+	/** Whether the picture draws the comparison's marks. */
+	readonly paintStanding?: boolean | undefined;
 }
 
 /** How large a title is set, in the card titles' face, and the line it takes. */
 const TITLE = { size: 18, line: 24 } as const;
+
+/** A page that draws nothing: what the legend alone stands beside. */
+const NOTHING: PaintedPage = {
+	body: "",
+	width: 0,
+	height: 0,
+	atlas: { nodes: {}, edges: {}, regions: {} },
+};
+
+/**
+ * A page with its legend under it, wrapped at its width, or beside it.
+ * @param page The page.
+ * @param legend The legend, laid out.
+ * @param layout Where it stands.
+ * @returns The page, grown to hold the legend.
+ */
+function withLegend(page: PaintedPage, legend: Legend, layout: LegendLayout): PaintedPage {
+	if (layout === "vertical") {
+		return {
+			...page,
+			body: lines([page.body, legend.draw(page.width, 0)]),
+			width: page.width + legend.width,
+			height: Math.max(page.height, legend.height),
+		};
+	}
+	return {
+		...page,
+		body: lines([page.body, legend.draw(0, page.height)]),
+		width: Math.max(page.width, legend.width),
+		height: page.height + legend.height,
+	};
+}
 
 /**
  * A page under a title band, moved down whole with its atlas.
@@ -72,25 +118,47 @@ function underTitle(page: PaintedPage, title: string, palette: Palette): Painted
 }
 
 /**
- * A page as an export carries it: under its title when it has one.
+ * The marks a picture draws, counted as the page's key counts them.
+ * @param request The comparison the render draws.
+ * @returns How many subjects carry each mark; none when the marks are not drawn.
+ */
+function marksOf(request: Framed): readonly MarkCount[] {
+	return request.paintStanding === false ? [] : markCounts(request.standing ?? {});
+}
+
+/**
+ * A page as an export carries it: with its legend under it or beside it, or
+ * its legend alone, under its title when it has one.
  * @param page The painted page.
- * @param request What the render asks the export to carry.
+ * @param request What the render asks the export to carry, and the comparison it draws.
  * @param palette The theme's colours.
  * @returns The page, its atlas moved with its drawing; the same page when nothing is asked for.
  */
 function framedForExport(page: PaintedPage, request: Framed, palette: Palette): PaintedPage {
-	const title = request.frame?.title;
-	return title === undefined ? page : underTitle(page, title, palette);
+	const frame = request.frame ?? {};
+	const shown = frame.legendOnly === true && frame.legend !== undefined ? NOTHING : page;
+	// The legend alone keeps the width a row of it would wrap at under the picture.
+	const keyed =
+		frame.legend === undefined
+			? shown
+			: withLegend(
+					shown,
+					legendOf(page.body, marksOf(request), frame.legend, page.width, palette),
+					frame.legend,
+				);
+	return frame.title === undefined ? keyed : underTitle(keyed, frame.title, palette);
 }
 
 /**
- * The accessible name as the export draws it: its drawn title first.
+ * The accessible name as the export draws it: its drawn title first, and said
+ * to be the legend when the legend is drawn alone.
  * @param name The picture's own accessible name.
  * @param frame What the export carries beside its drawing.
  * @returns The `aria-label`.
  */
 function exportedName(name: string, frame: ExportFrame | undefined): string {
-	return frame?.title === undefined ? name : `${frame.title}. ${name}`;
+	const titled = frame?.title === undefined ? name : `${frame.title}. ${name}`;
+	return frame?.legendOnly === true && frame.legend !== undefined ? `Legend. ${titled}` : titled;
 }
 
 export { exportedName, framedForExport, type ExportFrame };

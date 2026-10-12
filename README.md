@@ -198,10 +198,10 @@ Let agents work on the map without wondering what they touched. When an agent **
 
 ## Pictures for docs, ADRs and pull requests
 
-Put the same drawing in a design doc, an ADR or the description of a pull request. A board renders to a self-contained SVG or PNG from the command line. With `--theme auto`, one SVG shows the ground of the reader's colour scheme. `--title` draws a title above the picture. The same board always gives the same bytes. A regenerated picture shows up in a diff only after the architecture changes.
+Put the same drawing in a design doc, an ADR or the description of a pull request. A board renders to a self-contained SVG or PNG from the command line. With `--theme auto`, one SVG shows the ground of the reader's colour scheme. `--title` and `--legend` draw a title and the key into the picture. The same board always gives the same bytes. A regenerated picture shows up in a diff only after the architecture changes.
 
 ```bash
-archboard semantic render "Web shop" --theme auto --title --out web-shop.svg
+archboard semantic render "Web shop" --theme auto --title --legend horizontal --out web-shop.svg
 archboard semantic rasterize "Web shop" --scale 2 --out web-shop.png
 ```
 

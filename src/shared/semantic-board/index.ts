@@ -206,6 +206,8 @@ export {
 	type DiagramTheme,
 	StandaloneThemeSchema,
 	type StandaloneTheme,
+	LegendLayoutSchema,
+	type LegendLayout,
 	DEFAULT_LAYOUT_ENGINE,
 	LayoutEngineSchema,
 	type LayoutEngineName,

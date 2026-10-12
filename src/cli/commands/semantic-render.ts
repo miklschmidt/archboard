@@ -20,19 +20,26 @@ import {
 	exportRenderRequest,
 	TITLE_OPTION,
 	TitleOptionSchema,
+	LEGEND_OPTIONS,
+	LEGEND_ONLY_REFUSAL,
+	LegendInputSchema,
+	legendStated,
 } from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
 
-const RenderInputSchema = z.object({
-	name: z.string(),
-	variant: SelectorSchema.optional(),
-	view: SelectorSchema.optional(),
-	theme: StandaloneThemeSchema.default("light"),
-	layout: LayoutEngineSchema.optional(),
-	noComparison: z.boolean().default(false),
-	title: TitleOptionSchema,
-	out: z.string().optional(),
-});
+const RenderInputSchema = z
+	.object({
+		name: z.string(),
+		variant: SelectorSchema.optional(),
+		view: SelectorSchema.optional(),
+		theme: StandaloneThemeSchema.default("light"),
+		layout: LayoutEngineSchema.optional(),
+		noComparison: z.boolean().default(false),
+		title: TitleOptionSchema,
+		...LegendInputSchema,
+		out: z.string().optional(),
+	})
+	.refine(legendStated, LEGEND_ONLY_REFUSAL);
 
 const SemanticRenderResultSchema = z.object({
 	success: z.literal(true),
@@ -141,6 +148,7 @@ const semanticRenderContract = defineCommand({
 			description: "Which layout engine lays the architecture out; the default one when absent",
 		},
 		TITLE_OPTION,
+		...LEGEND_OPTIONS,
 	],
 	input: { ingress: RenderInputSchema },
 	result: z.union([

@@ -38,6 +38,13 @@ const StandaloneThemeSchema = z.enum([...DiagramThemeSchema.options, "auto"]);
 type StandaloneTheme = z.infer<typeof StandaloneThemeSchema>;
 
 /**
+ * How an exported picture's legend is laid out (TASK-468): a row that wraps at
+ * the picture's width, under it, or a column beside it.
+ */
+const LegendLayoutSchema = z.enum(["horizontal", "vertical"]);
+type LegendLayout = z.infer<typeof LegendLayoutSchema>;
+
+/**
  * Which engine lays an architecture out, behind one seam (TASK-348, ADR 0040).
  * `track` routes every relationship on an assigned track in the channels
  * between ranks (TASK-349); `blocks` packs each container as a block and
@@ -204,6 +211,8 @@ export {
 	type DiagramTheme,
 	StandaloneThemeSchema,
 	type StandaloneTheme,
+	LegendLayoutSchema,
+	type LegendLayout,
 	DEFAULT_LAYOUT_ENGINE,
 	LayoutEngineSchema,
 	type LayoutEngineName,

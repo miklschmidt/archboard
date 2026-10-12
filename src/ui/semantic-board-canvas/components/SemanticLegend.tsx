@@ -26,10 +26,12 @@ import {
 	SidebarSection,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import {
+	LINE_MARKS,
 	sampleKey,
 	type AppliedAppearance,
+	type LineMark,
 	type PictureKey,
-} from "@/ui/semantic-board-canvas/lib/appearance";
+} from "@/transformers/semantic-renderer/picture-key";
 
 /** How wide every sample of the legend is, so its labels start on one line. */
 const SAMPLE_WIDTH = 28;
@@ -72,13 +74,26 @@ function Lines(props: { readonly relationships: readonly AppliedAppearance[] }):
 					<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
 				</Entry>
 			))}
-			<Entry label="More emphasis">
-				<EmphasisSample width={SAMPLE_WIDTH} />
-			</Entry>
-			<Entry label="Illustrated traffic">
-				<TrafficSample width={SAMPLE_WIDTH} />
-			</Entry>
+			{LINE_MARKS.map(({ mark, word }) => (
+				<Entry key={mark} label={word}>
+					<LineMarkSample mark={mark} />
+				</Entry>
+			))}
 		</ul>
+	);
+}
+
+/**
+ * The sample of one thing a line says beside its kind.
+ * @param props Which mark.
+ * @param props.mark The mark.
+ * @returns Its sample.
+ */
+function LineMarkSample(props: { readonly mark: LineMark }): JSX.Element {
+	return props.mark === "emphasis" ? (
+		<EmphasisSample width={SAMPLE_WIDTH} />
+	) : (
+		<TrafficSample width={SAMPLE_WIDTH} />
 	);
 }
 

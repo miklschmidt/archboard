@@ -17,6 +17,7 @@ import {
 	type DiagramGrammar,
 	type LayoutEngineName,
 	type FontSource,
+	type LegendLayout,
 	type OfferedView,
 	type SemanticBoard,
 	type SemanticRenderReply,
@@ -47,6 +48,10 @@ interface BoardRenderChoices {
 	 * names of what is drawn. None when absent.
 	 */
 	readonly title?: string | true | undefined;
+	/** How the legend is laid out beside the picture (TASK-468); none when absent. */
+	readonly legend?: LegendLayout | undefined;
+	/** Whether the legend is drawn by itself, without the picture. */
+	readonly legendOnly?: boolean | undefined;
 }
 
 /** The answer, or which of the request's names this board does not have. */
@@ -139,6 +144,8 @@ function titleOf(
  * @param how.comparison Whether to draw comparison treatment.
  * @param how.layout Which engine lays the architecture out.
  * @param how.title The title drawn above the picture: words, or true for the names of what is drawn.
+ * @param how.legend How the legend is laid out beside the picture, if it has one.
+ * @param how.legendOnly Whether the legend is drawn without the picture.
  * @returns The answer.
  */
 async function drawnReply(
@@ -152,6 +159,8 @@ async function drawnReply(
 		comparison: boolean;
 		layout: LayoutEngineName | undefined;
 		title: string | true | undefined;
+		legend: LegendLayout | undefined;
+		legendOnly: boolean | undefined;
 	},
 ): Promise<SemanticRenderReply> {
 	const reading = readingOf(view);
@@ -187,7 +196,11 @@ async function drawnReply(
 			theme: how.theme,
 			fonts: how.fonts,
 			layout: how.layout,
-			frame: { title: titleOf(how.title, identity, how.comparison) },
+			frame: {
+				title: titleOf(how.title, identity, how.comparison),
+				legend: how.legend,
+				legendOnly: how.legendOnly,
+			},
 			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
 			unbuilt: nothingBuilt(board),
 			level: board.level,
@@ -233,6 +246,8 @@ async function renderBoard(
 		comparison: choices.comparison !== false,
 		layout: choices.layout,
 		title: choices.title,
+		legend: choices.legend,
+		legendOnly: choices.legendOnly,
 	});
 	return { ok: true, reply };
 }

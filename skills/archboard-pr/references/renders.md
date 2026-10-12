@@ -27,14 +27,14 @@ Done: the view is named, and it holds every part and relationship that
 Draw every render with Blocks: pass `--layout blocks`, because the default
 layout is Track. Draw SVG for the pull request, because SVG stays sharp at
 every zoom. Pass `--theme auto`: the one file carries the light and the dark
-colours and shows the ground of the reader's colour scheme. Pass `--title`,
-which draws the title line above the picture (see
-[Title, key and alt text](#title-key-and-alt-text)). Write all files to a
-temporary directory, `$tmp`, never into the checkout.
+colours and shows the ground of the reader's colour scheme. Pass `--title` and
+`--legend horizontal`, which draw the title line above the picture and its key
+under it (see [Title, key and alt text](#title-key-and-alt-text)). Write all
+files to a temporary directory, `$tmp`, never into the checkout.
 
 ```bash
-archboard semantic render <board> --view "<view>" --variant "<proposal>" --layout blocks --theme auto --title --out "$tmp/after.svg"
-archboard semantic render <board> --view "<view>" --layout blocks --theme auto --title --out "$tmp/before.svg"
+archboard semantic render <board> --view "<view>" --variant "<proposal>" --layout blocks --theme auto --title --legend horizontal --out "$tmp/after.svg"
+archboard semantic render <board> --view "<view>" --layout blocks --theme auto --title --legend horizontal --out "$tmp/before.svg"
 ```
 
 Below, `<proposal>` is the proposal, or on an ephemeral board the draft of the
@@ -58,12 +58,12 @@ the user chose to go on without it (section 0 of the skill), post the SVG files
 unseen, and say so in your final report.
 
 ```bash
-archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --layout blocks --title --out "$tmp/look-after.png"
-archboard semantic rasterize <board> --view "<view>" --layout blocks --title --out "$tmp/look-before.png"
+archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --layout blocks --title --legend horizontal --out "$tmp/look-after.png"
+archboard semantic rasterize <board> --view "<view>" --layout blocks --title --legend horizontal --out "$tmp/look-before.png"
 ```
 
 1. Open both PNGs. Each change the explainer names is visible and marked, and
-   the title can be read.
+   the title and the key can be read.
 2. GitHub shrinks an image to the width of the text column. GitHub does not
    document that width (**unverified**). If the receipt's `width` is over 900,
    rasterize the after render again with `--scale 0.5` and open it. That is
@@ -76,31 +76,26 @@ will show.
 
 ## Title, key and alt text
 
-The renderer draws the title into the file, and the explainer writes the key.
-A key must explain every symbol that a diagram uses
-[Clements et al., C4 notation].
+A diagram needs a title and a key that explains every symbol it uses
+[Clements et al., C4 notation]. The renderer draws both into the file.
 
 **Title line**: `--title` draws the board, the view, the variant and what it is
 compared with above the picture. `--title "<text>"` draws your own words in
 its place.
 
-**Key**, under the render. Write only the rows for marks that the render shows:
-
-| Mark                                                                             | Meaning                                                     |
-| -------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Green, a pin with a crossed bar on the top-left corner, solid outline            | Added                                                       |
-| Orange, a pin with a wave, dashed outline                                        | Changed                                                     |
-| Red, a pin with one bar, faded and see-through, dashed border round where it was | Removed                                                     |
-| A wide tinted band under a line, in the same three colours                       | A relationship added, changed or removed                    |
-| In a sequence, a faint band behind a message's row, with the pin in the margin   | A message added, changed or removed                         |
-| A triangle on the top-right corner                                               | A disagreement with the current variant that nobody settled |
+**Key**: `--legend horizontal` draws the key under the picture. It lists what
+the board's legend on the page lists for the same picture: the added, changed
+and removed marks with their counts, the kinds of part and relationship, and
+the line marks. If a card carries a triangle on its top-right corner, the key
+does not explain it. Say under the render that it marks a disagreement with
+the current variant that nobody settled.
 
 **Alt text**, in the image line: what the picture shows, not the file name. For
 example: "Board store, Write path: the proposal adds Lease table and removes
 Lock files". Without alt text, gh uses the file name.
 
 **Before render**: in a collapsed `<details>` under the after render, with its
-own drawn title and its key. Never side by side: each variant is laid out
+own drawn title and key. Never side by side: each variant is laid out
 afresh, so cards move between the two pictures and do not line up.
 
 ## What GitHub supports
