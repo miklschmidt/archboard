@@ -405,32 +405,18 @@ describe("semantic rasterize", () => {
 			expect(words).toContain("transfers");
 			expect(words).toContain(plain.variant.name);
 			expect(framed.stdout).toContain('data-slot="export-legend" data-layout="vertical"');
-			const alone = cli([
-				"semantic",
-				"render",
-				"transfers",
-				"--legend",
-				"horizontal",
-				"--legend-only",
-			]);
+			const aloneFlags = ["--title", "Transfers", "--legend", "horizontal", "--legend-only"];
+			const alone = cli(["semantic", "render", "transfers", ...aloneFlags]);
 			expect(alone.stdout).toContain('data-slot="export-legend" data-layout="horizontal"');
 			expect(alone.stdout).not.toContain('data-semantic-id="');
 			const out = path.join(vault, "framed.png");
-			const png = cli([
-				"semantic",
-				"rasterize",
-				"transfers",
-				"--title",
-				"Transfers",
-				"--legend",
-				"horizontal",
-				"--out",
-				out,
-			]);
+			const png = cli(["semantic", "rasterize", "transfers", ...aloneFlags, "--out", out]);
 			expect(png.status, png.stderr).toBe(0);
 			const receipt = JSON.parse(png.stdout);
-			// The title and the legend take room above and under the drawing, and the bitmap holds them.
-			expect(receipt.diagram.height).toBeGreaterThan(plain.height);
+			// The PNG is a bitmap of the legend alone that render draws, and holds all of it.
+			expect(receipt.source.svgSha256).toBe(
+				createHash("sha256").update(alone.stdoutBytes).digest("hex"),
+			);
 			expect(pngSize(fs.readFileSync(out))).toEqual({
 				width: receipt.width,
 				height: receipt.height,
