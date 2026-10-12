@@ -5,7 +5,7 @@ import {
 	type ProcessObservation,
 } from "@/shared/process-observation";
 
-type CodexProcessGroupSignal = "SIGTERM" | "SIGKILL";
+type CodexProcessGroupSignal = "SIGTERM" | "SIGKILL" | "SIGSTOP" | "SIGCONT";
 type CodexProcessGroupInspection = "quiescent" | "owned" | "reused" | "unproven";
 
 interface CodexProcessGroupIdentity {
@@ -17,6 +17,7 @@ interface CodexProcessGroupIdentity {
 interface CodexProcessGroupOperations {
 	readonly capture: (leaderPid: number) => CodexProcessGroupIdentity;
 	readonly inspect: (identity: CodexProcessGroupIdentity) => CodexProcessGroupInspection;
+	readonly members: (identity: CodexProcessGroupIdentity) => readonly ProcessObservation[];
 	readonly signal: (identity: CodexProcessGroupIdentity, signal: CodexProcessGroupSignal) => void;
 }
 
@@ -123,39 +124,21 @@ function isLiveMember(stat: ProcessObservation, pgid: number): boolean {
 }
 
 /**
- * What one scanned process contributes to the member count: one when it is a live member of
- * the owned group, zero when it is not, or the verdict that stops the whole scan.
- * @param identity - The captured identity.
- * @param stat - The process to inspect.
- * @returns The contribution, or a verdict that ends the scan.
- */
-function memberVerdict(
-	identity: CodexProcessGroupIdentity,
-	stat: ProcessObservation,
-): 0 | 1 | "reused" {
-	const pid = stat.pid;
-	if (pid === identity.leaderPid && stat.startTime !== identity.leaderStartTime) return "reused";
-	return isLiveMember(stat, identity.pgid) ? 1 : 0;
-}
-
-/**
- * Count live members of the owned group by scanning every process, refusing
- * as soon as the leader identity is seen to have been reused.
+ * Pick the live members of the owned group out of a scan, refusing as soon as
+ * the leader identity is seen to have been reused.
  * @param identity - The captured identity.
  * @param processes - The processes to scan.
- * @returns The live member count, or a verdict that stops the scan.
+ * @returns The live members, or "reused" when the leader pid names another process.
  */
-function countMembers(
+function liveMembers(
 	identity: CodexProcessGroupIdentity,
 	processes: readonly ProcessObservation[],
-): number | "reused" {
-	let memberCount = 0;
-	for (const process of processes) {
-		const verdict = memberVerdict(identity, process);
-		if (typeof verdict === "string") return verdict;
-		memberCount += verdict;
-	}
-	return memberCount;
+): readonly ProcessObservation[] | "reused" {
+	const reused = processes.some(
+		(stat) => stat.pid === identity.leaderPid && stat.startTime !== identity.leaderStartTime,
+	);
+	if (reused) return "reused";
+	return processes.filter((stat) => isLiveMember(stat, identity.pgid));
 }
 
 /**
@@ -176,9 +159,28 @@ function inspect(identity: CodexProcessGroupIdentity): CodexProcessGroupInspecti
 	}
 	const verdict = leaderVerdict(identity, leader);
 	if (verdict !== undefined) return verdict;
-	const members = countMembers(identity, processes);
-	if (typeof members !== "number") return members;
-	return members === 0 ? "quiescent" : "owned";
+	const live = liveMembers(identity, processes);
+	if (live === "reused") return live;
+	return live.length === 0 ? "quiescent" : "owned";
+}
+
+/**
+ * Take one census of the live members of the owned group, for freezing it.
+ * @param identity - The identity captured at spawn.
+ * @returns Every non-zombie member, stopped or not.
+ */
+function members(identity: CodexProcessGroupIdentity): readonly ProcessObservation[] {
+	if (!isInspectable(identity)) {
+		throw new CodexProcessGroupError("unproven", "The Codex process group is not inspectable.");
+	}
+	const found = liveMembers(identity, listProcessGroupObservations(identity.pgid));
+	if (found === "reused") {
+		throw new CodexProcessGroupError(
+			"reused",
+			"The Codex process group leader identity was reused.",
+		);
+	}
+	return found;
 }
 
 /**
@@ -236,10 +238,10 @@ function signal(identity: CodexProcessGroupIdentity, requested: CodexProcessGrou
 
 /**
  * Bind the supported POSIX process-observation operations for the process owner.
- * @returns The frozen capture, inspect and signal operations.
+ * @returns The frozen capture, inspect, census and signal operations.
  */
 function createCodexProcessGroupOperations(): CodexProcessGroupOperations {
-	return Object.freeze({ capture, inspect, signal });
+	return Object.freeze({ capture, inspect, members, signal });
 }
 
 export {

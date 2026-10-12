@@ -1,3 +1,4 @@
+import { awaitFrozenGroup } from "@/shared/process-observation";
 import { CODEX_TERM_GRACE_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@/shared/timing/timing";
 import type { CodexProcessError } from "@/runtime/codex-process/lib/process-contract";
 import type {
@@ -291,6 +292,59 @@ function createProcessGroupCleanup(
 	};
 
 	/**
+	 * Stop every member of the group so none can fork, waiting for two agreeing censuses
+	 * (TASK-470). A freeze that fails or runs out of time only leaves the group unfrozen:
+	 * the KILL that follows is the cleanup, and it is sent either way.
+	 * @param input - The group, its close promise and the composed deadline.
+	 */
+	const freezeGroup = async (input: ProcessGroupCleanupInput): Promise<void> => {
+		try {
+			await awaitFrozenGroup(
+				{
+					/**
+					 * Take one census of the group.
+					 * @returns The group's live members.
+					 */
+					census: () => operations.members(input.identity),
+					/** Stop the whole group. */
+					stop: () => {
+						operations.signal(input.identity, "SIGSTOP");
+					},
+					now: clock.now,
+					/**
+					 * Pause one poll on the injected clock.
+					 * @param ms - The pause.
+					 * @returns A promise settled after the pause.
+					 */
+					wait: (ms) => waitUntil(clock.now() + ms),
+					pollMs: PROCESS_GROUP_OBSERVATION_POLL_MS,
+				},
+				input.deadlineAtMs,
+			);
+		} catch {
+			// KILL still reaches every member the freeze did not.
+		}
+	};
+
+	/**
+	 * Send KILL to the frozen group. A KILL that cannot be sent leaves the group stopped, so
+	 * it is resumed before the failure is reported.
+	 * @param identity - The owned group.
+	 */
+	const killFrozenGroup = (identity: CodexProcessGroupIdentity): void => {
+		try {
+			sendSignal(identity, "SIGKILL");
+		} catch (error) {
+			try {
+				operations.signal(identity, "SIGCONT");
+			} catch {
+				// The KILL failure is the one to report.
+			}
+			throw error;
+		}
+	};
+
+	/**
 	 * Signal the group with TERM, unless inspecting it first shows it has already gone. This
 	 * is deliberately synchronous: a group that is already quiescent must cost no waiting.
 	 * @param input - The group, its close promise and the composed deadline.
@@ -321,14 +375,15 @@ function createProcessGroupCleanup(
 	};
 
 	/**
-	 * Escalate to KILL: signal the group and re-inspect it at once, so a group that dies on the
+	 * Escalate to KILL: freeze the group, signal it and re-inspect it at once, so a group that dies on the
 	 * signal is finished without waiting at all.
 	 * @param input - The group, its close promise and the composed deadline.
 	 * @returns True when the group is still owned and must be drained.
 	 */
-	const escalateKill = (input: ProcessGroupCleanupInput): boolean => {
+	const escalateKill = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
 		if (!stillOwned(input.identity, "escalate the Codex process group")) return false;
-		sendSignal(input.identity, "SIGKILL");
+		await freezeGroup(input);
+		killFrozenGroup(input.identity);
 		return needsKillDrain(input.identity, "verify KILL cleanup of the Codex process group");
 	};
 
@@ -371,7 +426,7 @@ function createProcessGroupCleanup(
 	const cleanup = async (input: ProcessGroupCleanupInput): Promise<void> => {
 		if (!initiateTerm(input)) return;
 		if (!(await awaitTermGrace(input))) return;
-		if (!escalateKill(input)) return;
+		if (!(await escalateKill(input))) return;
 		if (!(await drainIfTimeRemains(input))) return;
 		const status = inspect(input.identity);
 		if (status !== "quiescent") {
