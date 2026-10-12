@@ -173,6 +173,10 @@ test("a pick that a panel laid over the picture would cover moves the picture cl
 		act(() => {
 			fireEvent.click(inPicture("card"));
 		});
+		// The pick opens the sidebar, whose inspector reads the board. Let that read
+		// land inside this test: answered after it, it renders outside act and
+		// leaves React a passive-effect flush that runs after the DOM is gone.
+		await settle();
 		frames.run(32);
 		expect([traffic.playState, traffic.playbackRate]).toEqual(["running", 1]);
 
