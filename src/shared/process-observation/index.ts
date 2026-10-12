@@ -144,13 +144,13 @@ function listDarwinPids(library: DarwinLibrary): readonly number[] {
  */
 function listDarwinGroupPids(library: DarwinLibrary, pgid: number): readonly number[] {
 	const estimate = library.symbols.proc_listpgrppids(pgid, null, 0);
-	if (estimate === 0 && darwinGroupHoldsNoLiveMember(pgid)) return Object.freeze([]);
+	if (estimate === 0 && darwinGroupHoldsNoLiveMember(library, pgid)) return Object.freeze([]);
 	const pids = listDarwinPidBuffer(
 		(buffer, byteLength) => library.symbols.proc_listpgrppids(pgid, buffer, byteLength),
 		`process-group ${pgid}`,
 		estimate,
 	);
-	if (pids.length === 0 && !darwinGroupHoldsNoLiveMember(pgid)) {
+	if (pids.length === 0 && !darwinGroupHoldsNoLiveMember(library, pgid)) {
 		throw new Error(`Could not read the live Darwin process-group ${pgid} census.`);
 	}
 	return pids;
@@ -158,22 +158,28 @@ function listDarwinGroupPids(library: DarwinLibrary, pgid: number): readonly num
 
 /**
  * Prove an empty libproc group census means no member of the group can still
- * run. The kernel answers a null signal with ESRCH once it no longer knows the
- * group, and with EPERM while it knows the group but the signal reaches no
- * member: Darwin's kill(2) passes over zombies, so a group whose members have
- * all exited and wait to be reaped answers EPERM. That answer once escaped a
- * killed Git group's census as a raw error (TASK-470, run 37776895342).
+ * run. libproc answers zero on failure too, so the kernel is asked. A null
+ * signal answers ESRCH once the kernel no longer knows the group. It answers
+ * EPERM while the kernel knows the group but may signal no member of it:
+ * Darwin's kill(2) passes over zombies, so a group whose members have all
+ * exited and wait to be reaped answers EPERM, and that answer once escaped a
+ * killed Git group's census as a raw error (TASK-470, run 37776895342). A live
+ * member this process may not signal answers EPERM as well, so EPERM counts as
+ * empty only when the full process census holds no live member of the group.
+ * @param library The opened libproc library.
  * @param pgid The process group to probe without signalling.
- * @returns True when the kernel reports no such group, or no member a signal reaches.
+ * @returns True when the kernel reports no such group, or no member that can run.
  */
-function darwinGroupHoldsNoLiveMember(pgid: number): boolean {
+function darwinGroupHoldsNoLiveMember(library: DarwinLibrary, pgid: number): boolean {
 	try {
 		process.kill(-pgid, 0);
 		return false;
 	} catch (cause) {
 		const code = errorCode(cause);
-		if (code === "ESRCH" || code === "EPERM") return true;
-		throw cause;
+		if (code === "ESRCH") return true;
+		if (code !== "EPERM") throw cause;
+		const { records } = readDarwinRecords(library, listDarwinPids(library), pgid);
+		return records.every((record) => record.state === "zombie");
 	}
 }
 
