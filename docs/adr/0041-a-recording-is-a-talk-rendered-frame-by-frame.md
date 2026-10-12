@@ -19,6 +19,15 @@ renders and gives it to the page. The talk's format does not change, so a talk
 that was kept before this amendment renders with the orb too. The sections
 below say so. Everything else stands.
 
+Amended by TASK-469 (2026-10-12): `semantic record` and `semantic replay` take
+`--layout track|blocks`, so a video can draw the layout of the renders beside
+it. Like `--theme`, the layout is pass 2's input, and the talk keeps it.
+`talk.json` gains `layout`. A talk without it was drawn with Track and reads as
+Track, so the format version stays 1. An older archboard refuses a talk that
+states a layout, because the talk's schema is strict. Pass 1 keeps the default
+engine: its picture is never captured, so Blocks there would only delay the
+board.
+
 ## Context
 
 ADR 0035 made a recording in one live pass. The page paced the walkthrough on
@@ -90,8 +99,8 @@ A talk is a directory of `talk.json` and `voice.wav`. `TalkSchema` in
 `src/shared/walkthrough-recording/talk.ts` is its one contract, and both the CLI
 and the replay page read it. `talk.json` holds these things:
 
-- The format, its version, the time of the recording, the language and the
-  theme.
+- The format, its version, the time of the recording, the language, the theme
+  and the layout engine.
 - The board: its name, variant, version, walkthrough and number of steps.
 - The audio: 48 kHz, one channel, and the number of samples.
 - The board's document, and the vault policy that it was drawn under.
@@ -156,8 +165,8 @@ no workbench, no pane session and no socket. The page mounts the recording
 stage and the board stage, as the recording page does. It reads the board and
 the vault policy only from the talk, through the board-reads port
 (`readBoardsFrom`). It publishes `window.archboardReplay` with
-`load(talk, options)` and `frame(n)`. The options are the theme and the level
-of the voice on each frame.
+`load(talk, options)` and `frame(n)`. The options are the theme, the layout
+engine and the level of the voice on each frame.
 
 The page draws the voice as the shell draws a live voice in a presented
 walkthrough: the voice box of `src/ui/workbench` at the foot of the walkthrough
@@ -323,10 +332,12 @@ its index is at the front. A WebM is VP9 (CRF 30) with Opus at 128 kb/s.
 4. If `--discard` is set, it discards the board.
 
 Its receipt gains `frames` and `talk`. It refuses with `ENCODER_UNAVAILABLE` and
-`RENDER_FAILED` as well. `--theme` is pass 2's input, and the talk keeps it.
+`RENDER_FAILED` as well. `--theme` and `--layout` are pass 2's input, and the
+talk keeps them.
 
-`archboard semantic replay <talk> --out <file> [--theme light|dark]` renders a
-kept talk again. It needs the Archboard server only for the page. The board does
+`archboard semantic replay <talk> --out <file> [--theme light|dark]
+[--layout track|blocks]` renders a kept talk again, in the talk's theme and
+layout unless an option names another. It needs the Archboard server only for the page. The board does
 not need to exist, and no Codex or voice runs. A talk that cannot be read, or
 one of another format version, is a usage error (exit 2) before a browser
 starts. Replay is a command of its own. The command contract cannot state

@@ -136,7 +136,8 @@ in which the steps reached the voice, and `--discard`.
 discarded board three times through the real replay page. The frames are the
 same each time, on one page or split across two. The last frames all differ,
 because the voice box in the walkthrough box holds the orb, which never stands
-still. The dark theme is another picture from the first frame.
+still. The dark theme is another picture from the first frame. A talk recorded
+with Blocks is drawn with Blocks, and `--layout track` draws another picture.
 `walkthrough-render.test.ts` owns a render that fails. Against a stand-in page
 it is `RENDER_FAILED`, keeps the talk and writes no file.
 `walkthrough-recording-refusals.test.ts` owns the refusals that start no browser
