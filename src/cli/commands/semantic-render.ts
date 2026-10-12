@@ -7,6 +7,7 @@ import {
 	LayoutEngineSchema,
 	OfferedViewSchema,
 	RenderedVariantSchema,
+	StandaloneThemeSchema,
 } from "@/shared/semantic-board/index";
 import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
@@ -20,13 +21,11 @@ import {
 } from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
 
-const THEMES = ["light", "dark"] as const;
-
 const RenderInputSchema = z.object({
 	name: z.string(),
 	variant: SelectorSchema.optional(),
 	view: SelectorSchema.optional(),
-	theme: z.enum(THEMES).default("light"),
+	theme: StandaloneThemeSchema.default("light"),
 	layout: LayoutEngineSchema.optional(),
 	noComparison: z.boolean().default(false),
 	out: z.string().optional(),
@@ -124,9 +123,10 @@ const semanticRenderContract = defineCommand({
 			spellings: ["--theme"],
 			value: "required",
 			placeholder: "theme",
-			choices: THEMES,
+			choices: StandaloneThemeSchema.options,
 			default: "light",
-			description: "Which ground to draw on",
+			description:
+				"Which ground to draw on; auto carries both and follows the reader's colour scheme, as an image, a background or inline",
 		},
 		{
 			kind: "option",

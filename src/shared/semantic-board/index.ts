@@ -204,6 +204,8 @@ export {
 	type OfferedView,
 	DiagramThemeSchema,
 	type DiagramTheme,
+	StandaloneThemeSchema,
+	type StandaloneTheme,
 	DEFAULT_LAYOUT_ENGINE,
 	LayoutEngineSchema,
 	type LayoutEngineName,

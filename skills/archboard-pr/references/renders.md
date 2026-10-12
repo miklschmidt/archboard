@@ -26,15 +26,13 @@ Done: the view is named, and it holds every part and relationship that
 
 Draw every render with Blocks: pass `--layout blocks`, because the default
 layout is Track. Draw SVG for the pull request, because SVG stays sharp at
-every zoom. An exported SVG fixes one colour scheme and paints its own
-background, so each render needs a light file and a dark file. Write all files to a
-temporary directory, `$tmp`, never into the checkout.
+every zoom. Pass `--theme auto`: the one file carries the light and the dark
+colours and shows the ground of the reader's colour scheme. Write all files
+to a temporary directory, `$tmp`, never into the checkout.
 
 ```bash
-for t in light dark; do
-  archboard semantic render <board> --view "<view>" --variant "<proposal>" --layout blocks --theme $t --out "$tmp/after-$t.svg"
-  archboard semantic render <board> --view "<view>" --layout blocks --theme $t --out "$tmp/before-$t.svg"
-done
+archboard semantic render <board> --view "<view>" --variant "<proposal>" --layout blocks --theme auto --out "$tmp/after.svg"
+archboard semantic render <board> --view "<view>" --layout blocks --theme auto --out "$tmp/before.svg"
 ```
 
 Below, `<proposal>` is the proposal, or on an ephemeral board the draft of the
@@ -48,7 +46,7 @@ head branch.
 - In a stack, the after render also shows the changes of the pull requests
   below. Say so in its title line.
 
-Done: four SVG files, or two on a board with no current variant.
+Done: two SVG files, or one on a board with no current variant.
 
 ## Look at them
 
@@ -95,7 +93,7 @@ with no answer, view Stop exchange: the head branch against `main`".
 | In a sequence, a faint band behind a message's row, with the pin in the margin   | A message added, changed or removed                         |
 | A triangle on the top-right corner                                               | A disagreement with the current variant that nobody settled |
 
-**Alt text**, on the `<img>`: what the picture shows, not the file name. For
+**Alt text**, in the image line: what the picture shows, not the file name. For
 example: "Board store, Write path: the proposal adds Lease table and removes
 Lock files". Without alt text, gh uses the file name.
 
@@ -112,16 +110,15 @@ move between the two pictures and do not line up.
 - An exported SVG draws correctly as an `<img>` in Chromium, fonts and colours
   included (checked in October 2026). Its colours use CSS `light-dark()`, which
   browsers support since 2024 [MDN].
+- A `--theme auto` SVG declares `color-scheme: light dark`. Shown as an
+  `<img>`, a CSS background or inline, it paints the ground of the colour
+  scheme that the browser reports (`prefers-color-scheme`), the same media
+  feature by which a `<picture>` chooses its source (checked in headless
+  Chromium in October 2026).
 - gh rewrites only Markdown references to an attached file, such as
-  `![alt](path)`. It does not rewrite HTML, and a path with `#fragment` does
-  not match [gh source]. So a `<picture>` element needs the uploaded URLs,
-  which is why section 5 posts in two passes.
-- GitHub supports the `<picture>` element in Markdown [GitHub, basic
-  formatting]. Its docs show `prefers-color-scheme` sources for a profile
-  README [GitHub, quickstart]. Issues and pull requests use the `gfm` mode of
-  GitHub's Markdown API. In that mode, the API keeps a `<picture>` with its
-  sources and wraps it for the theme (checked with `gh api /markdown` in
-  October 2026).
+  `![alt](path)`, and keeps their alt text. It does not rewrite HTML, and a
+  path with `#fragment` does not match [gh source]. So each render is a
+  Markdown image line.
 
 ## Sources
 
@@ -132,10 +129,6 @@ move between the two pictures and do not line up.
 - C4 notation: <https://c4model.com/diagrams/notation>
 - GitHub, attaching files:
   <https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/attaching-files>
-- GitHub, basic formatting:
-  <https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax>
-- GitHub, quickstart:
-  <https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/quickstart-for-writing-on-github>
 - gh source: `internal/attachments` in cli/cli, and `gh pr create --help`.
   <https://github.com/cli/cli/tree/f0b5f183c30585971a0d1544b8ac34c0b5af816d/internal/attachments>
 - MDN:

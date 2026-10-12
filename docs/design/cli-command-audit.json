@@ -1816,7 +1816,7 @@
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
 			"relationships": ["GET /api/semantic-boards/render"],
-			"semantics": "the renderer owns every coordinate; the board states no geometry and the picture is derived; --no-comparison hides comparison marks and removed subjects, and reports comparedWith as null",
+			"semantics": "the renderer owns every coordinate; the board states no geometry and the picture is derived; --no-comparison hides comparison marks and removed subjects, and reports comparedWith as null; --theme auto declares both grounds and follows the reader's colour scheme",
 			"ordering": "render on the server, then publish SVG bytes or stage the file as an artifact",
 			"nextFields": ["file", "width", "height", "version"],
 			"workflow": "necessary composition",

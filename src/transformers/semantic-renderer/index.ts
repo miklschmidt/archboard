@@ -27,7 +27,7 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 	type DiagramAtlas,
 	type DiagramGrammar,
-	type DiagramTheme,
+	type StandaloneTheme,
 	type FontSource,
 	type LayoutEngineName,
 	type VariantContent,
@@ -108,7 +108,7 @@ interface DiagramRenderRequest {
 	 * for a page, and takes the page's tokens and colour scheme wherever it is
 	 * put.
 	 */
-	readonly theme?: DiagramTheme | undefined;
+	readonly theme?: StandaloneTheme | undefined;
 	/**
 	 * Where the drawn faces come from. Defaults to `"linked"`, which points at
 	 * the files the Archboard server serves — a few kilobytes, and what a pane wants.

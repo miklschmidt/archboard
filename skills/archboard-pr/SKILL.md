@@ -223,7 +223,7 @@ anti-patterns.
    with one purpose and a rough size. The riskiest pass comes first. Done: the
    review is one pass, or each pass has a name, a purpose and a size.
 2. **Draw the renders** with [renders](references/renders.md): Blocks, one
-   view, a light and a dark file for each render. Done: the files are in
+   view, one `--theme auto` file for each render. Done: the files are in
    `$tmp`, and you looked at the after render at the size it will show.
 3. **Decide on a walkthrough video.** Skip it if the user chose no walkthrough
    in section 0. Otherwise, record one at the user's request, and for a change
@@ -284,8 +284,8 @@ anti-patterns.
          `footprint`. **Changed but not drawn** lists each part, or says
          "Nothing".
    - [ ] The after render comes first. It is drawn with Blocks, through a view
-         of the changed parts, in light and dark. It has a title line, a key
-         and alt text. The before render is collapsed under it.
+         of the changed parts, with `--theme auto`. It has a title line, a
+         key and alt text. The before render is collapsed under it.
    - [ ] Each part under **What it can reach** has one question to check.
    - [ ] The reading order is grouped, with the riskiest group first. A change
          above about 400 lines is split into passes.
@@ -300,15 +300,15 @@ The explainer is one section between `<!-- archboard-pr:begin -->` and
 `<!-- archboard-pr:end -->`. On an update, replace only the text between the
 markers. Text outside them belongs to the author and reviewers.
 
-Post it in two passes with [posting](references/posting.md): upload the files
-with gh `--attach` (gh 2.99 or later), then pair each light and dark render in
-one `<picture>`, which follows the reader's GitHub theme.
+Post it with [posting](references/posting.md): upload the files with gh
+`--attach` (gh 2.99 or later). Each render is one Markdown image, which follows
+the reader's colour scheme by itself.
 
-After the second pass, read the body back. Done:
+Then read the body back. Done:
 
 - The markers occur once each.
 - No reference names a local path.
-- Each `<picture>` has both sources and an `<img>` with alt text.
+- Each render is an uploaded image with alt text.
 - The video's URL stands alone on its line.
 
 ## 6. After the merge

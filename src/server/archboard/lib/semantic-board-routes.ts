@@ -20,6 +20,8 @@ import {
 	type BoardListing,
 	type LayoutEngineName,
 	type SemanticBoard,
+	StandaloneThemeSchema,
+	type StandaloneTheme,
 } from "@/shared/semantic-board/index";
 import {
 	listSemanticBoards,
@@ -44,9 +46,10 @@ import {
  * The theme a render stands alone in. Absent asks for the page's picture, which
  * paints with the page's colour tokens and so takes whichever theme the page
  * showing it is in; a theme asks for a document that carries that theme's
- * values, for a file or a bitmap.
+ * values, for a file or a bitmap, or with `auto` both, for a file that follows
+ * its reader's colour scheme.
  */
-const RenderThemeSchema = z.enum(["light", "dark"]).optional();
+const RenderThemeSchema = StandaloneThemeSchema.optional();
 
 /**
  * Where the drawn faces come from.
@@ -151,7 +154,7 @@ function renderRoute(req: Request, res: Response): void {
 
 /** What a render request selects, once every stated selector has been read. */
 interface RenderChoices {
-	readonly theme?: "light" | "dark" | undefined;
+	readonly theme?: StandaloneTheme | undefined;
 	readonly fonts: "linked" | "embedded";
 	readonly variant?: string;
 	readonly view?: string;
@@ -230,7 +233,10 @@ function chosen(
 	| { readonly ok: false; readonly why: string } {
 	const theme = RenderThemeSchema.safeParse(stated["theme"]);
 	if (!theme.success) {
-		return { ok: false, why: `"theme" says "${stated["theme"]}"; a render is light or dark` };
+		return {
+			ok: false,
+			why: `"theme" says "${stated["theme"]}"; a render is ${StandaloneThemeSchema.options.join(", ")}`,
+		};
 	}
 	const fonts = RenderFontsSchema.safeParse(stated["fonts"]);
 	if (!fonts.success) {

@@ -81,6 +81,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "tests/system/semantic-boards/rasterize.test.ts"
+				},
+				{
+					"path": "semantic render --theme auto",
+					"expectedUse": "one SVG for a document, README or pull request that shows the ground of the reader's colour scheme; a PNG takes light or dark",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/theme.test.ts owns the declared tokens; src/runtime/semantic-rasterizer/tests/theme-following.test.ts owns the ground under each colour scheme as an image, a background and inline"
 				}
 			]
 		},

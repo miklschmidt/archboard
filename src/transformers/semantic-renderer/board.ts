@@ -15,7 +15,7 @@ import {
 	nothingBuilt,
 	scopedContent,
 	type DiagramGrammar,
-	type DiagramTheme,
+	type StandaloneTheme,
 	type LayoutEngineName,
 	type FontSource,
 	type OfferedView,
@@ -38,7 +38,7 @@ interface BoardRenderChoices {
 	/** Whether the picture includes comparison marks and removed context. Defaults to true. */
 	readonly comparison?: boolean | undefined;
 	/** The theme a document that stands alone is drawn in; absent, it is for a page. */
-	readonly theme?: DiagramTheme | undefined;
+	readonly theme?: StandaloneTheme | undefined;
 	readonly fonts: FontSource;
 	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
 	readonly layout?: LayoutEngineName | undefined;
@@ -111,7 +111,7 @@ async function drawnReply(
 	variant: SemanticVariant,
 	view: SemanticView | undefined,
 	how: {
-		theme: DiagramTheme | undefined;
+		theme: StandaloneTheme | undefined;
 		fonts: FontSource;
 		policy: SemanticPolicy;
 		comparison: boolean;
