@@ -423,7 +423,7 @@ describe("semantic rasterize", () => {
 			});
 			// A title with no words, and a legend alone with no layout, are refused.
 			for (const command of ["render", "rasterize"]) {
-				for (const refused of [["--title", ""], ["--legend-only"]]) {
+				for (const refused of [["--title", ""], ["--title", " "], ["--legend-only"]]) {
 					const answer = cli(["semantic", command, "transfers", ...refused]);
 					expect(answer.status, refused.join(" ")).toBe(2);
 					expect(answer.stdoutBytes).toHaveLength(0);

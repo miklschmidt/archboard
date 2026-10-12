@@ -172,8 +172,13 @@ const LEGEND_ONLY_REFUSAL = {
 	path: ["legendOnly"],
 };
 
-/** What `--title` takes: words of its own, or nothing for the names of what is drawn. */
-const TitleOptionSchema = z.union([z.string().min(1), z.literal(true)]).optional();
+/**
+ * What `--title` takes: words of its own, or nothing for the names of what is
+ * drawn. Blank words are refused here, as the render route refuses them.
+ */
+const TitleOptionSchema = z
+	.union([z.string().regex(/\S/u, "A title needs words"), z.literal(true)])
+	.optional();
 
 /** The `--title` option both drawing commands declare. */
 const TITLE_OPTION = {
