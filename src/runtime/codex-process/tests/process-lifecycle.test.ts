@@ -435,7 +435,7 @@ describe("Codex process lifecycle", () => {
 			await startReady(owner);
 			const stopped = await driveManual(owner.stop(), lifecycle.clock);
 			expect(stopped.state).toBe("stopped");
-			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGKILL"]);
+			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGSTOP", "SIGKILL"]);
 		} finally {
 			if (owner) {
 				await owner.stop().catch(() => undefined);

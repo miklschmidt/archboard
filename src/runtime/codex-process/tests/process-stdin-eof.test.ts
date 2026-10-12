@@ -7,7 +7,11 @@ import {
 	CODEX_STDIN_EOF_GRACE_MS,
 	CODEX_TERM_GRACE_MS,
 } from "@/shared/timing/timing";
-import { driveManual, fakeLifecycle } from "@/runtime/codex-process/tests/lifecycle-support";
+import {
+	driveManual,
+	expectKillAfterGrace,
+	fakeLifecycle,
+} from "@/runtime/codex-process/tests/lifecycle-support";
 import {
 	fixture,
 	processOptions,
@@ -79,8 +83,8 @@ describe("Codex stdin EOF shutdown", () => {
 			const stopped = owner.stop();
 			expect(lifecycle.signals).toEqual([]);
 			expect((await driveManual(stopped, lifecycle.clock)).state).toBe("stopped");
-			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGKILL"]);
-			expect(lifecycle.clock.now()).toBe(CODEX_STDIN_EOF_GRACE_MS + CODEX_TERM_GRACE_MS);
+			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGSTOP", "SIGKILL"]);
+			expectKillAfterGrace(lifecycle.clock.now(), CODEX_STDIN_EOF_GRACE_MS + CODEX_TERM_GRACE_MS);
 		} finally {
 			lifecycle.quiesce();
 			await driveManual(owner.stop(), lifecycle.clock).catch(() => undefined);
@@ -105,8 +109,8 @@ describe("Codex stdin EOF shutdown", () => {
 			const stopped = owner.stop();
 			expect(lifecycle.signals).toEqual(["SIGTERM"]);
 			await expect(driveManual(stopped, lifecycle.clock)).rejects.toBeInstanceOf(CodexProcessError);
-			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGKILL"]);
-			expect(lifecycle.clock.now()).toBe(CODEX_TERM_GRACE_MS);
+			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGSTOP", "SIGKILL"]);
+			expectKillAfterGrace(lifecycle.clock.now(), CODEX_TERM_GRACE_MS);
 			expect(owner.snapshot().state).toBe("terminal_failure");
 			expect((await driveManual(owner.stop(), lifecycle.clock)).state).toBe("stopped");
 		} finally {
@@ -128,7 +132,7 @@ describe("Codex stdin EOF shutdown", () => {
 			await expect(driveManual(owner.stop(), lifecycle.clock)).rejects.toBeInstanceOf(
 				CodexProcessError,
 			);
-			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGKILL"]);
+			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGSTOP", "SIGKILL"]);
 			expect(lifecycle.clock.now()).toBe(CODEX_COMPOSED_SHUTDOWN_MS);
 			expect(owner.snapshot().state).toBe("terminal_failure");
 			expect(owner.currentChild()).not.toBeNull();

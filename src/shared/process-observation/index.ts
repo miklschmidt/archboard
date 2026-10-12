@@ -2,6 +2,10 @@ import fs from "node:fs";
 
 import { dlopen, type Library } from "bun:ffi";
 
+import {
+	awaitFrozenGroup,
+	type FrozenGroupSeam,
+} from "@/shared/process-observation/lib/frozen-group";
 import { parseLinuxProcessStat } from "@/shared/process-observation/lib/linux-stat";
 
 type ProcessState = "live" | "stopped" | "zombie";
@@ -528,6 +532,8 @@ function recordedOwnerIsGone(record: string): boolean {
 }
 
 export {
+	awaitFrozenGroup,
+	type FrozenGroupSeam,
 	type ProcessObservation,
 	type ProcessState,
 	readProcessObservation,
