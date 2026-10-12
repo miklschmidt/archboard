@@ -1,11 +1,11 @@
 ---
 id: TASK-465
 title: Hosted test lanes hang in synchronous child spawns until the case timeout
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-11 22:33'
-updated_date: '2026-10-11 23:06'
+updated_date: '2026-10-12 01:43'
 labels: []
 dependencies: []
 references:
@@ -23,9 +23,9 @@ Hosted GitHub CI (Linux, and once macOS) intermittently fails whole runs of test
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 CI and local development run on a Bun release that carries the spawnSync loop fix
-- [ ] #2 Repeated hosted complete gates on the fix show no synchronous-spawn hang
-- [ ] #3 The complete local gate passes on the fix
+- [x] #1 CI and local development run on a Bun release that carries the spawnSync loop fix
+- [x] #2 Repeated hosted complete gates on the fix show no synchronous-spawn hang
+- [x] #3 The complete local gate passes on the fix
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -47,4 +47,12 @@ Diagnostic runs with a process watchdog (38176977625, 38178028512, 38179430149, 
 Bun 1.4.3 reports a refused fetch with code ECONNREFUSED and a message prefixed with it. tests/system/cli/resource-cleanup.test.ts now accepts either code and no longer pins Bun's message. Product classification in server-client-transport still covers both versions (message prefix on older Bun, ECONNREFUSED code on 1.4.3).
 
 Local complete gate with Bun 1.4.3 on d385acaa6: exit 0; 4505 module tests, 198 system tests, repository lane and 19 browser owners pass. The downloaded Bun binary needs its interpreter patched to the Nix glibc loader on this box; through nix-ld it adds LD_LIBRARY_PATH to child environments and fails the closed-environment Codex process case.
+
+Hosted proof on the pin (Bun 1.4.3): main run 38185785653 (26af600c5) green; run 38188575539 (bd8076b19, same code) attempts 1, 2 and 3 all had the Linux gate green, no synchronous-spawn hang. Attempt 1's macOS job failed in the unrelated git-async process-group case (now TASK-470). Before the pin 3 of 6 hosted runs had the hang. The user also raised the minimum Bun to 1.4.3 (package.json engines, README, INSTALL.md).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Root cause: Bun 1.4.0 to 1.4.2 can lose a child's exit in spawnSync after a GC finalizer runs (oven-sh/bun#34069, fixed by PR 44581 in 1.4.3). CI now pins bun@1.4.3, the minimum Bun is 1.4.3, and two test races found on the way are fixed (resource-cleanup ECONNREFUSED wording, the force-reap fixture's TERM handler). Verified by the local gate on 1.4.3 and four green hosted Linux gates in a row after the pin.
+<!-- SECTION:FINAL_SUMMARY:END -->
