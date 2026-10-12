@@ -43,19 +43,20 @@ function stoppedMembership(members: readonly GroupMember[]): string | undefined 
  * two censuses one poll apart find the same members, all of them stopped. A
  * kill sent after this returns reaches every member there can be.
  * @param seam The census, stop signal, clock and wait.
- * @param deadlineAtMs The instant after which an unfrozen group is a failure.
- * @throws {Error} When the group is not frozen by the deadline, or a census or signal fails.
+ * @param deadlineAtMs The instant after which the group is given up as unfrozen.
+ * @returns True once the group is frozen, false when the deadline passed first.
+ * @throws {Error} When a census or signal fails.
  */
-async function awaitFrozenGroup(seam: FrozenGroupSeam, deadlineAtMs: number): Promise<void> {
+async function awaitFrozenGroup(seam: FrozenGroupSeam, deadlineAtMs: number): Promise<boolean> {
 	let frozen: string | undefined;
 	for (;;) {
 		const census = stoppedMembership(seam.census());
 		if (census !== undefined && census === frozen) {
-			return;
+			return true;
 		}
 		frozen = census;
 		if (seam.now() >= deadlineAtMs) {
-			throw new Error("The process group did not stop within its cleanup grace.");
+			return false;
 		}
 		if (census === undefined) seam.stop();
 		// oxlint-disable-next-line no-await-in-loop -- a process group is sampled until the bounded barrier
