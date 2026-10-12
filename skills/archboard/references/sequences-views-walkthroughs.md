@@ -166,7 +166,8 @@ subjects and, on a proposal, how each was added or changed. The voice does not
 speak about a change that no beat names.
 
 - If the variant states several walkthroughs, `--walkthrough <name>` picks one.
-  `--variant` and `--theme dark` choose what is drawn.
+  `--variant`, `--theme dark` and `--layout blocks` choose what is drawn. The
+  default layout is Track, and the talk keeps the layout it was drawn with.
 - The voice speaks English. `--language <tag>` names another language as a
   BCP 47 tag, such as `da`, `fr` or `pt-BR`. The voice speaks only that
   language, whatever language the beats are written in. The command refuses a
@@ -275,7 +276,8 @@ the words or the board change, record again instead.
 1. **Find the talk**: the directory that the recording's receipt names as
    `talk`. Done: it holds `talk.json` and `voice.wav`.
 2. **Render it** with `semantic replay <talk> --out <file>`, and with
-   `--theme dark` for the other palette. It needs the Archboard server, a
+   `--theme dark` for the other palette. It draws the layout the talk was
+   recorded with, and `--layout track` or `--layout blocks` draws the other. It needs the Archboard server, a
    browser and ffmpeg, as `record` does, but no Codex sign-in. A talk that
    cannot be read is a usage error (exit 2) before a browser starts. Done: the
    receipt's `frames` and `durationMs` are the recording's.
