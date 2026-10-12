@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-12 01:12'
-updated_date: '2026-10-12 01:42'
+updated_date: '2026-10-12 01:59'
 labels:
   - ci
 dependencies: []
@@ -56,4 +56,6 @@ Local gate: 'bun run check' on Bun 1.4.3 exited 0 twice on this branch, the seco
 Main's own run 38188575539 attempt 3 (started before the billing block) went green on both jobs; attempt 1 was the macOS Git failure fixed here.
 
 Still open, AC 4: branch flake-gate (the fixes plus a CI trigger on flake-* pushes) is pushed, and its run 38192895885 was refused for billing like every job since 01:21 UTC. Once billing allows jobs: rerun 38192895885 five times in a row (gh run rerun 38192895885, one attempt after another, since the CI concurrency group cancels a parallel one), and optionally rerun 38191583178 (after) and 38191581195 (before) for the larger macOS A/B loop and the zombie-group probe that confirms the EPERM reading.
+
+Review: EPERM from the Darwin group probe also means a live member this process may not signal, and libproc answers an empty census on failure too, so the probe now counts EPERM as empty only when the full process census holds no live member of the group (src/shared/process-observation/index.ts). Not verified on macOS hardware. Open sibling, not fixed: Codex group cleanup (src/runtime/codex-process/lib/process-group-cleanup.ts drainKilledGroup, and terminateGroups in src/runtime/engine/server-startup-cleanup.ts) sends SIGKILL once and drains without signalling again, so a member forked during that SIGKILL can escape it the way the Git child did.
 <!-- SECTION:NOTES:END -->
