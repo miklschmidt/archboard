@@ -9,7 +9,8 @@
 // the language --language named (TASK-380); the picture is rendered from the talk frame by frame
 // and encoded by the ffmpeg ARCHBOARD_FFMPEG names, proven before the talk starts, which is a fake
 // here (TASK-381); the talk keeps the --layout engine its picture was rendered with (TASK-469);
-// the receipt says what was recorded; and --discard removes the board once the file is written. Rendering a kept talk again is walkthrough-replay.test.ts's.
+// the receipt says what was recorded; and --discard removes the board once the file is written.
+// Rendering a kept talk again is walkthrough-replay.test.ts's.
 
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
