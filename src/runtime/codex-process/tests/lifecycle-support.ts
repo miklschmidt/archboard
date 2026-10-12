@@ -76,6 +76,9 @@ function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 	const members = new Map<number, "live" | "stopped">();
 	let censuses = 0;
 	let lateForkAtCensus: number | undefined;
+	// A member SIGSTOP cannot stop, as one in a killable kernel wait reads, which KILL still ends.
+	let holdUnstoppable = false;
+	const unstoppable = new Set<number>();
 	let membersAtKill: string[] = [];
 	const dependencies = {
 		spawn: () => {
@@ -108,6 +111,10 @@ function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 			members: (identity: { readonly pgid: number }) => {
 				censuses += 1;
 				if (censuses === lateForkAtCensus) members.set(identity.pgid + 1000, "live");
+				if (holdUnstoppable && unstoppable.size === 0) {
+					unstoppable.add(identity.pgid + 2000);
+					members.set(identity.pgid + 2000, "live");
+				}
 				if (groupStatus === "quiescent") return [];
 				return [...members].map(([pid, state]) => ({
 					pid,
@@ -121,7 +128,7 @@ function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 				signals.push(signal);
 				if (signal === "SIGSTOP" || signal === "SIGCONT") {
 					for (const pid of members.keys())
-						members.set(pid, signal === "SIGSTOP" ? "stopped" : "live");
+						if (!unstoppable.has(pid)) members.set(pid, signal === "SIGSTOP" ? "stopped" : "live");
 				}
 				if (signal === "SIGKILL")
 					membersAtKill = [...members].map(([pid, state]) => `${pid}:${state}`);
@@ -142,6 +149,10 @@ function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 		/** A child joins the group at the n-th census, after the signal that stopped its parent. */
 		forkAtCensus: (census: number) => {
 			lateForkAtCensus = census;
+		},
+		/** A member that SIGSTOP never stops joins the group at the next census. */
+		holdUnstoppableMember: () => {
+			holdUnstoppable = true;
 		},
 		/** Each member of the group as it stood when KILL was sent. */
 		membersAtKill: () => membersAtKill,
@@ -180,7 +191,7 @@ async function driveManual<T>(
 			return undefined;
 		},
 	);
-	for (let turn = 0; turn < 32; turn += 1) {
+	for (let turn = 0; turn < 128; turn += 1) {
 		// Enough microtask turns for the driven code's chained awaits to schedule their next timer.
 		for (let hop = 0; hop < MICROTASK_HOPS; hop += 1) await Promise.resolve();
 		if (settled) {

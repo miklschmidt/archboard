@@ -17,6 +17,7 @@ const REVIEWED_VALUES = {
 	CODEX_REALTIME_RECOVERY_MS: 45_000,
 	CODEX_TERM_GRACE_MS: 5000,
 	CODEX_STDIN_EOF_GRACE_MS: 1000,
+	CODEX_GROUP_FREEZE_MS: 500,
 	CODEX_COMPOSED_SHUTDOWN_MS: 10_000,
 } as const;
 
@@ -46,6 +47,7 @@ describe("Codex workbench timing policy", () => {
 			CODEX_REALTIME_RECOVERY_MS: timing.CODEX_REALTIME_RECOVERY_MS,
 			CODEX_TERM_GRACE_MS: timing.CODEX_TERM_GRACE_MS,
 			CODEX_STDIN_EOF_GRACE_MS: timing.CODEX_STDIN_EOF_GRACE_MS,
+			CODEX_GROUP_FREEZE_MS: timing.CODEX_GROUP_FREEZE_MS,
 			CODEX_COMPOSED_SHUTDOWN_MS: timing.CODEX_COMPOSED_SHUTDOWN_MS,
 		}).toEqual(REVIEWED_VALUES);
 	});
@@ -69,7 +71,10 @@ describe("Codex workbench timing policy", () => {
 		expect(timing.CODEX_REALTIME_STOP_MS).toBeLessThan(timing.CODEX_TERM_GRACE_MS);
 		expect(timing.CODEX_STDIN_EOF_GRACE_MS).toBeGreaterThan(0);
 		expect(
-			timing.CODEX_REALTIME_STOP_MS + timing.CODEX_STDIN_EOF_GRACE_MS + timing.CODEX_TERM_GRACE_MS,
+			timing.CODEX_REALTIME_STOP_MS +
+				timing.CODEX_STDIN_EOF_GRACE_MS +
+				timing.CODEX_TERM_GRACE_MS +
+				timing.CODEX_GROUP_FREEZE_MS,
 		).toBeLessThan(timing.CODEX_COMPOSED_SHUTDOWN_MS);
 	});
 });
