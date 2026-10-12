@@ -277,10 +277,10 @@ the words or the board change, record again instead.
    `talk`. Done: it holds `talk.json` and `voice.wav`.
 2. **Render it** with `semantic replay <talk> --out <file>`, and with
    `--theme dark` for the other palette. It draws the layout the talk was
-   recorded with, and `--layout track` or `--layout blocks` draws the other. It needs the Archboard server, a
-   browser and ffmpeg, as `record` does, but no Codex sign-in. A talk that
-   cannot be read is a usage error (exit 2) before a browser starts. Done: the
-   receipt's `frames` and `durationMs` are the recording's.
+   recorded with, unless `--layout` names the other. It needs the Archboard
+   server, a browser and ffmpeg, as `record` does, but no Codex sign-in. A talk
+   that cannot be read is a usage error (exit 2) before a browser starts. Done:
+   the receipt's `frames` and `durationMs` are the recording's.
 
 ```bash
 archboard semantic record pr-128 --variant "This pull request" --talk ~/recordings/pr-128-talk --out ~/recordings/pr-128.mp4 --discard --doing "recording pull request 128 for its reviewers"
