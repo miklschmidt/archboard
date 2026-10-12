@@ -289,8 +289,8 @@ anti-patterns.
    - [ ] Each part under **What it can reach** has one question to check.
    - [ ] The reading order is grouped, with the riskiest group first. A change
          above about 400 lines is split into passes.
-   - [ ] A video has three to six beats and is under 10 MB. It has chapters,
-         a transcript and the note on its layout.
+   - [ ] A video has three to six beats and is under 10 MB. It is drawn with
+         Blocks, like the renders, and has chapters and a transcript.
    - [ ] The explainer reads in a few minutes. File lists and API detail stay
          in the diff.
 

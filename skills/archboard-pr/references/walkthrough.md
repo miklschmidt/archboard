@@ -81,7 +81,7 @@ from the beats alone.
 ## Record
 
 ```bash
-archboard semantic record <board> --variant "<proposal>" --walkthrough "Review: <head branch>" --talk "$tmp/talk" --out "$tmp/walkthrough.mp4"
+archboard semantic record <board> --variant "<proposal>" --walkthrough "Review: <head branch>" --layout blocks --talk "$tmp/talk" --out "$tmp/walkthrough.mp4"
 ```
 
 - Leave out `--discard`. It deletes the board: a vault board belongs to the
@@ -90,6 +90,9 @@ archboard semantic record <board> --variant "<proposal>" --walkthrough "Review: 
   2026). Keep the talk in `$tmp`, outside the ephemeral vault.
 - Use `.mp4`. It is H.264 with AAC sound, and GitHub recommends H.264 for
   greatest compatibility [GitHub, attaching files].
+- Pass `--layout blocks`, so the video draws the layout the renders show. The
+  default layout is Track. The talk keeps the layout, so `semantic replay`
+  draws it again.
 - The video is drawn in the light theme unless you pass `--theme dark`. A video
   cannot follow the reader's theme, so record one video only.
 
@@ -139,7 +142,7 @@ jq -r '.events[] | select(.kind == "said" and .final) | .text' "$tmp/talk/talk.j
 Put this under the after render, as the explainer's part 3:
 
 ```markdown
-**Walkthrough**, <m:ss>, narrated. The video uses the Track layout; the renders above use Blocks.
+**Walkthrough**, <m:ss>, narrated.
 
 ![](/absolute/path/to/walkthrough.mp4)
 
@@ -159,9 +162,6 @@ bare URL of the upload, and GitHub plays a bare URL alone on its line
 
 ## What the video cannot do yet
 
-- **Layout.** `semantic record` and `semantic replay` have no `--layout`, so a
-  video is always drawn in Track, while the renders use Blocks. The note in the
-  pull request says so.
 - **Subtitles.** The recording always shows subtitles, and a caption with the
   beat's heading and body. Narration together with the same words on screen
   can hurt learning [Mayer and Moreno: redundancy]. Subtitles also serve a
