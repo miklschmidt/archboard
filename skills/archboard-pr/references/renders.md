@@ -27,7 +27,8 @@ Done: the view is named, and it holds every part and relationship that
 Draw every render with Blocks: pass `--layout blocks`, because the default
 layout is Track. Draw SVG for the pull request, because SVG stays sharp at
 every zoom. Pass `--theme auto`: the one file carries the light and the dark
-colours and shows the ground of the reader's colour scheme. Pass `--title` and
+colours and shows the ground of the colour scheme that the browser reports
+(see [What GitHub supports](#what-github-supports)). Pass `--title` and
 `--legend horizontal`, which draw the title line above the picture and its key
 under it (see [Title, key and alt text](#title-key-and-alt-text)). Write all
 files to a temporary directory, `$tmp`, never into the checkout.
@@ -107,15 +108,21 @@ afresh, so cards move between the two pictures and do not line up.
 - An exported SVG draws correctly as an `<img>` in Chromium, fonts and colours
   included (checked in October 2026). Its colours use CSS `light-dark()`, which
   browsers support since 2024 [MDN].
-- A `--theme auto` SVG declares `color-scheme: light dark`. Shown as an
-  `<img>`, a CSS background or inline, it paints the ground of the colour
-  scheme that the browser reports (`prefers-color-scheme`), the same media
-  feature by which a `<picture>` chooses its source (checked in headless
-  Chromium in October 2026).
+- A `--theme auto` SVG declares `color-scheme: light dark` and paints its
+  ground under the whole picture. Shown as an `<img>`, a CSS background or
+  inline, it paints the ground of the colour scheme that the browser reports
+  (`prefers-color-scheme`) (checked in headless Chromium in October 2026).
 - gh rewrites only Markdown references to an attached file, such as
   `![alt](path)`, and keeps their alt text. It does not rewrite HTML, and a
-  path with `#fragment` does not match [gh source]. So each render is a
-  Markdown image line.
+  path with `#fragment` does not match [gh source].
+- GitHub documents an image that changes with the theme only as a `<picture>`
+  with `prefers-color-scheme` sources [GitHub, quickstart]. It does not
+  document whether an uploaded SVG follows the reader's GitHub theme, and that
+  is not checked on a pull request (**unverified**), so never say in the pull
+  request that a render follows the theme. Each render is still one auto SVG
+  as a Markdown image: whichever ground it shows, it is a whole picture on its
+  own ground, and it needs one file and one pass, where a `<picture>` needs two
+  files and a second pass to put the uploaded URLs in its HTML.
 
 ## Sources
 
@@ -126,6 +133,8 @@ afresh, so cards move between the two pictures and do not line up.
 - C4 notation: <https://c4model.com/diagrams/notation>
 - GitHub, attaching files:
   <https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/attaching-files>
+- GitHub, quickstart:
+  <https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/quickstart-for-writing-on-github>
 - gh source: `internal/attachments` in cli/cli, and `gh pr create --help`.
   <https://github.com/cli/cli/tree/f0b5f183c30585971a0d1544b8ac34c0b5af816d/internal/attachments>
 - MDN:

@@ -301,8 +301,7 @@ The explainer is one section between `<!-- archboard-pr:begin -->` and
 markers. Text outside them belongs to the author and reviewers.
 
 Post it with [posting](references/posting.md): upload the files with gh
-`--attach` (gh 2.99 or later). Each render is one Markdown image, which follows
-the reader's colour scheme by itself.
+`--attach` (gh 2.99 or later), with each render as one Markdown image.
 
 Then read the body back. Done:
 
