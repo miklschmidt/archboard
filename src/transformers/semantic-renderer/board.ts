@@ -15,13 +15,13 @@ import {
 	nothingBuilt,
 	scopedContent,
 	type DiagramGrammar,
-	type StandaloneTheme,
 	type LayoutEngineName,
 	type FontSource,
 	type OfferedView,
 	type SemanticBoard,
 	type SemanticRenderReply,
 	type SemanticVariant,
+	type StandaloneTheme,
 	type SemanticView,
 	type ToldStanding,
 	type ViewScope,
@@ -42,6 +42,11 @@ interface BoardRenderChoices {
 	readonly fonts: FontSource;
 	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
 	readonly layout?: LayoutEngineName | undefined;
+	/**
+	 * A title drawn above the picture (TASK-467): these words, or `true` for the
+	 * names of what is drawn. None when absent.
+	 */
+	readonly title?: string | true | undefined;
 }
 
 /** The answer, or which of the request's names this board does not have. */
@@ -91,6 +96,35 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
 }
 
 /**
+ * The title drawn above a picture: the words asked for, or when asked for
+ * without words, the names of what it draws: the board, the view, the
+ * variant, and the variant it is compared with when the picture draws the
+ * comparison.
+ * @param title The words, true for the names, or nothing for no title.
+ * @param identity What the answer says was drawn.
+ * @param identity.board The board's name.
+ * @param identity.view The view, or null for the whole variant.
+ * @param identity.variant The variant.
+ * @param identity.changes What the variant is read against, or null.
+ * @param comparison Whether the picture draws the comparison.
+ * @returns The title, or nothing.
+ */
+function titleOf(
+	title: string | true | undefined,
+	identity: Pick<SemanticRenderReply, "board" | "view" | "variant" | "changes">,
+	comparison: boolean,
+): string | undefined {
+	if (title !== true) return title;
+	const where =
+		identity.view === null ? identity.board : `${identity.board}, view ${identity.view.name}`;
+	const against =
+		comparison && identity.changes !== null
+			? `, compared with ${identity.changes.against.name}`
+			: "";
+	return `${where}: ${identity.variant.name}${against}`;
+}
+
+/**
  * Draw one variant of a board, or say that there is nothing on it yet.
  *
  * An empty board is not an error: it is a board somebody has just made and has
@@ -104,6 +138,7 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
  * @param how.policy The vault's presentation policy.
  * @param how.comparison Whether to draw comparison treatment.
  * @param how.layout Which engine lays the architecture out.
+ * @param how.title The title drawn above the picture: words, or true for the names of what is drawn.
  * @returns The answer.
  */
 async function drawnReply(
@@ -116,6 +151,7 @@ async function drawnReply(
 		policy: SemanticPolicy;
 		comparison: boolean;
 		layout: LayoutEngineName | undefined;
+		title: string | true | undefined;
 	},
 ): Promise<SemanticRenderReply> {
 	const reading = readingOf(view);
@@ -151,6 +187,7 @@ async function drawnReply(
 			theme: how.theme,
 			fonts: how.fonts,
 			layout: how.layout,
+			frame: { title: titleOf(how.title, identity, how.comparison) },
 			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
 			unbuilt: nothingBuilt(board),
 			level: board.level,
@@ -195,6 +232,7 @@ async function renderBoard(
 		policy,
 		comparison: choices.comparison !== false,
 		layout: choices.layout,
+		title: choices.title,
 	});
 	return { ok: true, reply };
 }

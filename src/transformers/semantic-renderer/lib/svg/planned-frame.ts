@@ -122,4 +122,30 @@ function framedAsPlanned(page: PaintedPage, palette: Palette): PaintedPage {
 	};
 }
 
-export { framedAsPlanned, PLANNED_LABEL, type PaintedPage };
+/**
+ * The page a painting is drawn on: as painted, or framed as planned when the board says
+ * nothing it describes is built.
+ * @param painting The painted body, its size and its atlas.
+ * @param palette The theme's colours.
+ * @param unbuilt Whether the board has no current variant.
+ * @returns The page.
+ */
+function pageFor(
+	painting: PaintedPage,
+	palette: Palette,
+	unbuilt: boolean | undefined,
+): PaintedPage {
+	return unbuilt === true ? framedAsPlanned(painting, palette) : painting;
+}
+
+/**
+ * The accessible name, saying what the frame says when the board is planned.
+ * @param title The picture's own name.
+ * @param unbuilt Whether the board has no current variant.
+ * @returns The name.
+ */
+function plannedTitle(title: string, unbuilt: boolean | undefined): string {
+	return unbuilt === true ? `${title}. ${PLANNED_LABEL}` : title;
+}
+
+export { framedAsPlanned, movedAll, pageFor, plannedTitle, PLANNED_LABEL, type PaintedPage };

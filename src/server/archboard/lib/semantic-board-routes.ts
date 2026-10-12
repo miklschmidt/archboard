@@ -63,6 +63,12 @@ const RenderFontsSchema = z.enum(["linked", "embedded"]).default("linked");
 const RenderComparisonSchema = z.enum(["on", "off"]).default("on");
 
 /**
+ * Whether a render carries a title above the picture (TASK-467). `title`
+ * states its words; `titled=on` asks for the names of what is drawn.
+ */
+const RenderTitledSchema = z.enum(["on", "off"]).default("off");
+
+/**
  * The board name a request is about.
  * @param req The request.
  * @returns The name, or undefined when the request named none.
@@ -160,10 +166,20 @@ interface RenderChoices {
 	readonly view?: string;
 	readonly comparison: boolean;
 	readonly layout?: LayoutEngineName;
+	readonly title?: string | true;
 }
 
 /** The selectors a render request may state, all of them optional. */
-const RENDER_SELECTORS = ["variant", "view", "theme", "fonts", "comparison", "layout"] as const;
+const RENDER_SELECTORS = [
+	"variant",
+	"view",
+	"theme",
+	"fonts",
+	"comparison",
+	"layout",
+	"title",
+	"titled",
+] as const;
 
 /**
  * One stated selector, or why it cannot be acted on.
@@ -248,6 +264,8 @@ function chosen(
 	}
 	const layout = statedLayout(stated["layout"]);
 	if (!layout.ok) return layout;
+	const framing = statedTitle(stated);
+	if (!framing.ok) return framing;
 	return {
 		ok: true,
 		how: {
@@ -256,6 +274,7 @@ function chosen(
 			comparison: comparison.data === "on",
 			...namedIn(stated),
 			...layout.choice,
+			...framing.choice,
 		},
 	};
 }
@@ -270,6 +289,25 @@ function namedIn(stated: Readonly<Record<string, string>>): { variant?: string; 
 		...(stated["variant"] === undefined ? {} : { variant: stated["variant"] }),
 		...(stated["view"] === undefined ? {} : { view: stated["view"] }),
 	};
+}
+
+/** The title a render request asks an export to carry above its drawing, or why it cannot. */
+type Framing =
+	| { readonly ok: true; readonly choice: Pick<RenderChoices, "title"> }
+	| { readonly ok: false; readonly why: string };
+
+/**
+ * The title a render request asks for: its words, or with `titled=on` the names of what is drawn.
+ * @param stated The selectors that were stated, by name.
+ * @returns The title, or why it is not one.
+ */
+function statedTitle(stated: Readonly<Record<string, string>>): Framing {
+	const titled = RenderTitledSchema.safeParse(stated["titled"]);
+	if (!titled.success) {
+		return { ok: false, why: `"titled" says "${stated["titled"]}"; choose on or off` };
+	}
+	const title = stated["title"] ?? (titled.data === "on" ? true : undefined);
+	return { ok: true, choice: title === undefined ? {} : { title } };
 }
 
 /**

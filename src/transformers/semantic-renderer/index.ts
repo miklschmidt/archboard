@@ -27,8 +27,8 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 	type DiagramAtlas,
 	type DiagramGrammar,
-	type StandaloneTheme,
 	type FontSource,
+	type StandaloneTheme,
 	type LayoutEngineName,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
@@ -48,6 +48,11 @@ import { pulseLook } from "@/transformers/semantic-renderer/lib/svg/beam-light";
 import { paintDataFlow } from "@/transformers/semantic-renderer/lib/svg/dataflow";
 import { svgDocument } from "@/transformers/semantic-renderer/lib/svg/document";
 import {
+	exportedName,
+	framedForExport,
+	type ExportFrame,
+} from "@/transformers/semantic-renderer/lib/svg/export-frame";
+import {
 	drillDirection,
 	type DrillDirection,
 } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
@@ -57,11 +62,7 @@ import {
 	STROKE_WIDTH,
 	type Weight,
 } from "@/transformers/semantic-renderer/lib/svg/styles";
-import {
-	framedAsPlanned,
-	PLANNED_LABEL,
-	type PaintedPage,
-} from "@/transformers/semantic-renderer/lib/svg/planned-frame";
+import { pageFor, plannedTitle } from "@/transformers/semantic-renderer/lib/svg/planned-frame";
 import {
 	standingPinAt,
 	standingsFrom,
@@ -177,6 +178,8 @@ interface DiagramRenderRequest {
 	readonly level?: string | undefined;
 	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
 	readonly layout?: LayoutEngineName | undefined;
+	/** What a picture exported to stand alone carries beside its drawing: a title. */
+	readonly frame?: ExportFrame | undefined;
 }
 
 /** The same, plus which of the two pictures to draw. */
@@ -383,13 +386,13 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		// The page is the comparison's page whether or not its marks are drawn.
 		{ drawing, standingOf: standingsFrom(request.standing) },
 	);
-	const page = pageFor(painting, PALETTE, request.unbuilt);
+	const page = framedForExport(pageFor(painting, PALETTE, request.unbuilt), request, PALETTE);
 
 	const svg = svgDocument({
 		width: page.width,
 		height: page.height,
 		palette: PALETTE,
-		title: plannedTitle(titleFor(told), request.unbuilt),
+		title: exportedName(plannedTitle(titleFor(told), request.unbuilt), request.frame),
 		description: descriptionFor(shown.containers.map(({ measured }) => measured.node.name)),
 		fonts: request.fonts ?? "linked",
 		body: page.body,
@@ -404,32 +407,6 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		atlas: page.atlas,
 		readingDirection: drawing.direction,
 	};
-}
-
-/**
- * The page a painting is drawn on: as painted, or framed as planned when the board says
- * nothing it describes is built.
- * @param painting The painted body, its size and its atlas.
- * @param palette The theme's colours.
- * @param unbuilt Whether the board has no current variant.
- * @returns The page.
- */
-function pageFor(
-	painting: PaintedPage,
-	palette: Palette,
-	unbuilt: boolean | undefined,
-): PaintedPage {
-	return unbuilt === true ? framedAsPlanned(painting, palette) : painting;
-}
-
-/**
- * The accessible name, saying what the frame says when the board is planned.
- * @param title The picture's own name.
- * @param unbuilt Whether the board has no current variant.
- * @returns The name.
- */
-function plannedTitle(title: string, unbuilt: boolean | undefined): string {
-	return unbuilt === true ? `${title}. ${PLANNED_LABEL}` : title;
 }
 
 /**
@@ -487,13 +464,13 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		{ policy: request.policy ?? DEFAULT_SEMANTIC_POLICY, level: request.level },
 		{ held: plain ? told.flows : undefined, standingOf: standingsFrom(request.standing) },
 	);
-	const page = pageFor(painting, PALETTE, request.unbuilt);
+	const page = framedForExport(pageFor(painting, PALETTE, request.unbuilt), request, PALETTE);
 
 	const svg = svgDocument({
 		width: page.width,
 		height: page.height,
 		palette: PALETTE,
-		title: plannedTitle(sequenceTitleFor(told), request.unbuilt),
+		title: exportedName(plannedTitle(sequenceTitleFor(told), request.unbuilt), request.frame),
 		description: sequenceDescriptionFor(told),
 		fonts: request.fonts ?? "linked",
 		body: page.body,

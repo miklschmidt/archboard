@@ -393,6 +393,41 @@ describe("semantic rasterize", () => {
 	);
 
 	test(
+		"carries a title from either command into the picture, its words given or the names of what is drawn",
+		() => {
+			const before = boardFile();
+			const plain = JSON.parse(
+				cli(["semantic", "render", "transfers", "--out", path.join(vault, "plain.svg")]).stdout,
+			);
+			const framed = cli(["semantic", "render", "transfers", "--title"]);
+			expect(framed.status, framed.stderr).toBe(0);
+			const words = /data-slot="export-title"><text [^>]*>([^<]*)</u.exec(framed.stdout)?.[1];
+			expect(words).toContain("transfers");
+			expect(words).toContain(plain.variant.name);
+			const out = path.join(vault, "framed.png");
+			const png = cli(["semantic", "rasterize", "transfers", "--title", "Transfers", "--out", out]);
+			expect(png.status, png.stderr).toBe(0);
+			const receipt = JSON.parse(png.stdout);
+			// The title takes a band above the drawing, and the bitmap holds both.
+			expect(receipt.diagram.height).toBeGreaterThan(plain.height);
+			expect(pngSize(fs.readFileSync(out))).toEqual({
+				width: receipt.width,
+				height: receipt.height,
+			});
+			// A title with no words is refused.
+			for (const command of ["render", "rasterize"]) {
+				for (const refused of [["--title", ""]]) {
+					const answer = cli(["semantic", command, "transfers", ...refused]);
+					expect(answer.status, refused.join(" ")).toBe(2);
+					expect(answer.stdoutBytes).toHaveLength(0);
+				}
+			}
+			expect(boardFile()).toEqual(before);
+		},
+		TEST_WALL_CLOCK_BUDGET_MS,
+	);
+
+	test(
 		"pipes a PNG region without a file and refuses invalid images without stdout bytes",
 		() => {
 			const out = path.join(vault, "never.png");

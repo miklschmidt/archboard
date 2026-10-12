@@ -337,7 +337,7 @@ fonts in it, and needs no browser. `archboard semantic rasterize <board> --out
 Both take `--variant`, `--view` and `--theme`. Add `--no-comparison` to hide
 comparison marks and removed subjects when exporting a variant. `semantic
 render --theme auto` draws one SVG that shows the ground of the reader's colour
-scheme.
+scheme. Both commands take `--title` to draw a title above the picture.
 
 The CLI starts the browser itself, with a private temporary profile, and stops
 it and removes the profile before the command ends. It uses the first of

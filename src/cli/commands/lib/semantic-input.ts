@@ -82,13 +82,18 @@ type RenderOptions = NonNullable<Parameters<typeof renderSemanticBoardOnServer>[
 
 /**
  * Select the same self-contained picture for SVG, PNG and clipboard output.
- * @param input The requested variant, view, theme, layout and comparison treatment.
+ * @param input The requested variant, view, theme, layout, comparison treatment and title.
  * @returns The request with embedded fonts, so the picture outlives its server.
  */
 function exportRenderRequest(
 	input: {
-		[Key in keyof Omit<RenderOptions, "fonts" | "comparison">]?: RenderOptions[Key] | undefined;
-	} & { noComparison: boolean },
+		[Key in keyof Omit<RenderOptions, "fonts" | "comparison" | "title" | "titled">]?:
+			| RenderOptions[Key]
+			| undefined;
+	} & {
+		noComparison: boolean;
+		title?: string | true | undefined;
+	},
 ): RenderOptions {
 	return {
 		...(input.variant === undefined ? {} : { variant: input.variant }),
@@ -96,9 +101,37 @@ function exportRenderRequest(
 		...(input.theme === undefined ? {} : { theme: input.theme }),
 		...(input.layout === undefined ? {} : { layout: input.layout }),
 		...(input.noComparison ? { comparison: "off" } : {}),
+		...framingRequest(input),
 		fonts: "embedded",
 	};
 }
+
+/**
+ * What an export asks to carry beside its drawing, as the render route reads it.
+ * @param input The requested title.
+ * @param input.title Words for the title, or true for the names of what is drawn.
+ * @returns The route's title parameters.
+ */
+function framingRequest(input: {
+	title?: string | true | undefined;
+}): Pick<RenderOptions, "title" | "titled"> {
+	if (input.title === undefined) return {};
+	return input.title === true ? { titled: "on" } : { title: input.title };
+}
+
+/** What `--title` takes: words of its own, or nothing for the names of what is drawn. */
+const TitleOptionSchema = z.union([z.string().min(1), z.literal(true)]).optional();
+
+/** The `--title` option both drawing commands declare. */
+const TITLE_OPTION = {
+	kind: "option",
+	key: "title",
+	spellings: ["--title"],
+	value: "optional",
+	placeholder: "text",
+	description:
+		"Draw a title above the picture: this text, or without text the board's, view's and variant's names",
+} as const;
 
 /**
  * The stated change, from a file when one was named and standard input
@@ -436,6 +469,8 @@ export {
 	SemanticBoardReadSchema,
 	drawnAgainst,
 	exportRenderRequest,
+	TitleOptionSchema,
+	TITLE_OPTION,
 	DRAWN_AGAINST,
 	SemanticBoardResultSchema,
 	describedWrite,
