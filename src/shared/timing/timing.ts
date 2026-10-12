@@ -369,9 +369,8 @@ const CLI_INTERRUPT_CLEANUP_MS = 3 * GIT_PROCESS_GROUP_CLEANUP_MS;
 //
 // Restart delay doubles after each failed child attempt, caps at the maximum,
 // and resets only after one account-ready session. Shutdown is ordered around
-// the child lifecycle: stop realtime first, settle local waiters, close stdin,
-// wait for EOF closure, send TERM, then send KILL at the grace bound. The full
-// sequence stays within the composed shutdown cap.
+// the child lifecycle: stop realtime, settle local waiters, close stdin, wait for
+// EOF, TERM, then freeze and KILL the group (lib/codex-group-freeze), all within the composed cap.
 
 /** Retry-delay classification. Pulls against the first restart attempt. */
 const CODEX_PROCESS_RESTART_BASE_MS = 1000;
@@ -590,6 +589,7 @@ export { LOCALITY_DEFAULT_PERIOD_MS } from "@/shared/timing/lib/history-lens";
 export { LANGUAGE_SERVER_STOP_MS } from "@/shared/timing/lib/code-check";
 
 export { createElapsedClock } from "@/shared/timing/lib/elapsed-clock";
+export { CODEX_GROUP_FREEZE_MS } from "@/shared/timing/lib/codex-group-freeze";
 
 export {
 	SERVER_HTTP_STOP_GRACE_MS,

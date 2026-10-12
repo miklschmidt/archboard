@@ -1,5 +1,9 @@
 import { awaitFrozenGroup } from "@/shared/process-observation";
-import { CODEX_TERM_GRACE_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@/shared/timing/timing";
+import {
+	CODEX_GROUP_FREEZE_MS,
+	CODEX_TERM_GRACE_MS,
+	PROCESS_GROUP_OBSERVATION_POLL_MS,
+} from "@/shared/timing/timing";
 import type { CodexProcessError } from "@/runtime/codex-process/lib/process-contract";
 import type {
 	CodexProcessGroupIdentity,
@@ -293,11 +297,13 @@ function createProcessGroupCleanup(
 
 	/**
 	 * Stop every member of the group so none can fork, waiting for two agreeing censuses
-	 * (TASK-470). A freeze that fails or runs out of time only leaves the group unfrozen:
-	 * the KILL that follows is the cleanup, and it is sent either way.
+	 * (TASK-470). A freeze that fails or runs out of its own bound only leaves the group
+	 * unfrozen: the KILL that follows is the cleanup, and it is sent either way, with the
+	 * rest of the composed deadline left to prove the group gone.
 	 * @param input - The group, its close promise and the composed deadline.
 	 */
 	const freezeGroup = async (input: ProcessGroupCleanupInput): Promise<void> => {
+		const freezeDeadlineAtMs = Math.min(input.deadlineAtMs, clock.now() + CODEX_GROUP_FREEZE_MS);
 		try {
 			await awaitFrozenGroup(
 				{
@@ -312,14 +318,14 @@ function createProcessGroupCleanup(
 					},
 					now: clock.now,
 					/**
-					 * Pause one poll on the injected clock.
+					 * Pause one poll on the injected clock, never past the freeze bound.
 					 * @param ms - The pause.
 					 * @returns A promise settled after the pause.
 					 */
-					wait: (ms) => waitUntil(clock.now() + ms),
+					wait: (ms) => waitUntil(Math.min(freezeDeadlineAtMs, clock.now() + ms)),
 					pollMs: PROCESS_GROUP_OBSERVATION_POLL_MS,
 				},
-				input.deadlineAtMs,
+				freezeDeadlineAtMs,
 			);
 		} catch {
 			// KILL still reaches every member the freeze did not.
