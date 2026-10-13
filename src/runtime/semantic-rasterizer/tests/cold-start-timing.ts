@@ -7,9 +7,12 @@
 /**
  * Bun's deadline for a case, or a hook, that cold-starts Chromium and then
  * draws with it. A hosted Linux runner's cold start took past ten seconds in 2
- * of 5 gate runs (TASK-470), and the product allows a start thirty. This is
- * that start plus fifteen seconds of drawing. It is a ceiling that a passing
- * run never reaches; the 60 s wall-clock budget still applies to every case.
+ * of 5 gate runs (TASK-470), both times before the browser connection opened.
+ * The product gives that launch phase thirty seconds, and opening the page
+ * another thirty. This is the launch's thirty plus fifteen seconds for the page
+ * and the drawing, so it is below the two phases' sixty: a page that also
+ * stalls fails here first. It is a ceiling that a passing run never reaches;
+ * the 60 s wall-clock budget still applies to every case.
  */
 const TEST_CHROMIUM_COLD_START_CASE_MS = 45_000;
 
