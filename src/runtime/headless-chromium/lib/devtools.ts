@@ -188,25 +188,55 @@ class DevTools {
 	 * @param method The method.
 	 * @param params Its parameters.
 	 * @param timeoutMs How long to wait.
+	 * @param signal Stops waiting for the answer.
 	 * @returns The result.
 	 */
 	async call(
 		method: string,
 		params: JsonRecord = {},
 		timeoutMs: number = HEADLESS_CHROMIUM_CALL_MS,
+		signal?: AbortSignal,
 	): Promise<JsonRecord> {
 		if (this.#closed) {
 			throw failed("Chromium DevTools connection is closed.");
 		}
+		signal?.throwIfAborted();
 		const id = this.#nextId++;
-		return await new Promise<JsonRecord>((resolveCall, rejectCall) => {
-			const timeout = setTimeout(() => {
-				this.#pending.delete(id);
-				rejectCall(failed(`Chromium DevTools ${method} timed out after ${timeoutMs} ms.`));
-			}, timeoutMs);
-			this.#pending.set(id, { resolve: resolveCall, reject: rejectCall, timeout });
-			this.socket.send(JSON.stringify({ id, method, params }));
-		});
+		const release = this.rejectOnAbort(id, signal);
+		try {
+			return await new Promise<JsonRecord>((resolveCall, rejectCall) => {
+				const timeout = setTimeout(() => {
+					this.#pending.delete(id);
+					rejectCall(failed(`Chromium DevTools ${method} timed out after ${timeoutMs} ms.`));
+				}, timeoutMs);
+				this.#pending.set(id, { resolve: resolveCall, reject: rejectCall, timeout });
+				this.socket.send(JSON.stringify({ id, method, params }));
+			});
+		} finally {
+			release();
+		}
+	}
+
+	/**
+	 * Fail one pending call when its caller cancels it. The call is forgotten,
+	 * so a late answer finds nothing pending.
+	 * @param id The call.
+	 * @param signal Cancels it.
+	 * @returns What stops listening once the call has settled.
+	 */
+	private rejectOnAbort(id: number, signal?: AbortSignal): () => void {
+		if (signal === undefined) return () => undefined;
+		/** Forget the call and fail it with the caller's reason. */
+		const cancel = (): void => {
+			const pending = this.#pending.get(id);
+			if (!pending) return;
+			this.#pending.delete(id);
+			clearTimeout(pending.timeout);
+			const reason: unknown = signal.reason;
+			pending.reject(reason instanceof Error ? reason : new Error(String(reason)));
+		};
+		signal.addEventListener("abort", cancel, { once: true });
+		return () => signal.removeEventListener("abort", cancel);
 	}
 
 	/**

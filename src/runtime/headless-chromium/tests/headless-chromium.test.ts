@@ -94,6 +94,23 @@ describe("a window", () => {
 	});
 });
 
+describe("a page", () => {
+	test("opening it ends at its caller's cancellation, while Chromium does not answer", async () => {
+		const controller = new AbortController();
+		const reason = new Error("interrupted");
+		// A frozen Chromium answers nothing, as a wedged or cold one may not.
+		process.kill(-chromium.pid, "SIGSTOP");
+		try {
+			const opening = chromium.openPage(HEADLESS_CHROMIUM_CALL_MS, controller.signal);
+			controller.abort(reason);
+			// It settles on the cancellation, not on the page's own deadline.
+			await expect(opening).rejects.toBe(reason);
+		} finally {
+			process.kill(-chromium.pid, "SIGCONT");
+		}
+	});
+});
+
 describe("events", () => {
 	test("reach a listener until it unsubscribes", async () => {
 		const heard: unknown[] = [];
