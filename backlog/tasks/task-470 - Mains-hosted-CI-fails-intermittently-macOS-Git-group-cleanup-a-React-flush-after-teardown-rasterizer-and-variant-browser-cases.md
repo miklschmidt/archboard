@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-12 01:12'
-updated_date: '2026-10-12 01:59'
+updated_date: '2026-10-13 22:52'
 labels:
   - ci
 dependencies: []
@@ -58,4 +58,6 @@ Main's own run 38188575539 attempt 3 (started before the billing block) went gre
 Still open, AC 4: branch flake-gate (the fixes plus a CI trigger on flake-* pushes) is pushed, and its run 38192895885 was refused for billing like every job since 01:21 UTC. Once billing allows jobs: rerun 38192895885 five times in a row (gh run rerun 38192895885, one attempt after another, since the CI concurrency group cancels a parallel one), and optionally rerun 38191583178 (after) and 38191581195 (before) for the larger macOS A/B loop and the zombie-group probe that confirms the EPERM reading.
 
 Review: EPERM from the Darwin group probe also means a live member this process may not signal, and libproc answers an empty census on failure too, so the probe now counts EPERM as empty only when the full process census holds no live member of the group (src/shared/process-observation/index.ts). Not verified on macOS hardware. Open sibling, not fixed: Codex group cleanup (src/runtime/codex-process/lib/process-group-cleanup.ts drainKilledGroup, and terminateGroups in src/runtime/engine/server-startup-cleanup.ts) sends SIGKILL once and drains without signalling again, so a member forked during that SIGKILL can escape it the way the Git child did.
+
+Raised SEMANTIC_RASTER_STARTUP_TIMEOUT_MS 10_000 -> 30_000 (applies per startup phase: launch/DevTools port, then renderer page). Hosted Linux cold starts exceeded 10 s in 2 of 5 gate runs (runs 38475307159, 38479273786). Test side: modules' tests cannot import tests/system/support/timing.ts (boundaries), so semantic-rasterizer/tests/cold-start-timing.ts holds TEST_CHROMIUM_COLD_START_CASE_MS = 45_000 (rasterizer.test.ts, theme-following.test.ts via setDefaultTimeout, which covers beforeAll too) and headless-chromium.test.ts carries its own COLD_START_CASE_MS = 45_000. Fast-failure tests (startup.test.ts exit 17, startup-cancellation, no-executable) never wait on the bound, so left on the product constant. Hosted behaviour not verifiable locally.
 <!-- SECTION:NOTES:END -->
