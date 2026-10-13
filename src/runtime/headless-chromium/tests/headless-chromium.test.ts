@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, setDefaultTimeout, test } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -22,6 +22,17 @@ import {
 // a Chromium-family executable (ARCHBOARD_RENDERER_CHROMIUM names one).
 
 const CHROMIUM_PATH = discoveredChromiumPath();
+
+/**
+ * Bun's deadline for the hook that cold-starts the shared Chromium and for each
+ * case. A hosted Linux runner's cold start took past ten seconds in 2 of 5 gate
+ * runs (TASK-470) and the product allows a start thirty; this is that start
+ * plus fifteen seconds of work. It is a ceiling that a passing run never reaches.
+ * A module's tests may not import another owner's budgets, so the literal is
+ * here, and it is not computed from the product bound (TASK-154).
+ */
+const COLD_START_CASE_MS = 45_000;
+setDefaultTimeout(COLD_START_CASE_MS);
 
 /**
  * Start a private Chromium for one test file.

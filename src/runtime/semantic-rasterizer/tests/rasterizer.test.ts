@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, setDefaultTimeout, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import {
@@ -15,12 +15,16 @@ import {
 	readPngDimensions,
 	type SemanticRasterizer,
 } from "@/runtime/semantic-rasterizer/index";
+import { TEST_CHROMIUM_COLD_START_CASE_MS } from "./cold-start-timing.ts";
 import { pngRgbCounts } from "./png-colors.ts";
 
 // The rasterizer is held to what it promises about the bitmap: real pixels of
 // the renderer's own picture, exactly the diagram's size at the stated scale,
 // the whole page however tall, the embedded faces loaded, and a Chromium that
 // is provably gone afterwards. Layout itself is the renderer's to prove.
+
+// Every capture cold-starts its own Chromium.
+setDefaultTimeout(TEST_CHROMIUM_COLD_START_CASE_MS);
 
 /**
  * One variant, as its own contract reads it.

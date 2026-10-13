@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -20,8 +20,12 @@ import {
 	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
 	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
 } from "@/shared/timing/timing";
+import { TEST_CHROMIUM_COLD_START_CASE_MS } from "./cold-start-timing.ts";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import { pngRgbCounts } from "./png-colors.ts";
+
+// The shared Chromium starts cold in beforeAll.
+setDefaultTimeout(TEST_CHROMIUM_COLD_START_CASE_MS);
 
 // One file drawn `auto` follows the colour scheme of whoever reads it (TASK-466):
 // shown as an image, as a CSS background and inline, under each scheme, it
