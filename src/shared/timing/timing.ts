@@ -247,13 +247,13 @@ const BROWSER_VIEWPORT_SETTLEMENT_MS = 10_000;
 const SEMANTIC_RASTER_JOB_TIMEOUT_MS = 10_000;
 
 /**
- * Bound for the private Chromium control port, target, and renderer page to
- * become ready. Startup is lazy, so this delay belongs to the first Board
- * render rather than to every server launch. A five-second page deadline
- * expired under a half-CPU quota; ten seconds completed three cold starts
- * with valid PNG/SVG output (TASK-162).
+ * Bound for each startup phase of the private Chromium: its control port, then
+ * the renderer page. Startup is lazy, so it delays the first Board render only.
+ * It pulls against how soon an operator learns that Chromium cannot start. Ten
+ * seconds completed three cold starts under a half-CPU quota (TASK-162), but
+ * hosted Linux cold starts exceeded it in 2 of 5 gate runs (October 2026, TASK-470).
  */
-const SEMANTIC_RASTER_STARTUP_TIMEOUT_MS = 10_000;
+const SEMANTIC_RASTER_STARTUP_TIMEOUT_MS = 30_000;
 
 /**
  * Bound for each renderer TERM/KILL phase. Two phases fit inside the CLI
