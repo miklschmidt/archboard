@@ -369,6 +369,7 @@ class ChromiumSession implements HeadlessChromium {
 			"Target.createTarget",
 			{ url: "about:blank" },
 			timeoutMs,
+			signal,
 		);
 		return this.attach(targetIdOf(created), deadline, signal);
 	}
