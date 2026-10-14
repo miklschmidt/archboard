@@ -302,6 +302,11 @@ has these steps:
 - Every environment variable is named `ARCHBOARD_*`. Renaming one refuses the
   old name by name, as `renamedUrlMessage` does. A silent fallback to the
   default URL starts a second Archboard server over the same vault.
+- Every server call names its vault (ADR 0049), and the server has no default.
+  A new board route mounts `requireVault` and reads the vault with
+  `vaultOfRequest`. Server memory about a board is keyed with `boardMemoryKey`
+  (vault and board together), never by the board name alone. The system test
+  requesters add `?vault=` for you, and `openObservedPane` takes a `vault`.
 - An optional field is a promise to every reader of its object. Adding one means
   finding every path that reads the object and making each honour it: a
   binding's `branch` and `commit` were accepted and stored while the local

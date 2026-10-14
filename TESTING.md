@@ -41,8 +41,11 @@ groups. Its `config.yaml` defines the kinds that the examples below use. `start`
 prints the URL and the process id of the server. `status` says whether the
 server runs, how many boards it sees and how many browser pages are open.
 
-A server keeps the vault that it started with. It also keeps the source that it
-read at start:
+Every call to the server names its vault (ADR 0049). The CLI names the vault
+in `ARCHBOARD_VAULT`, and the browser names the one that `/api/served-vault`
+reports. When you call the API by hand, add `?vault=<directory>`. A call that
+names no vault gets `VAULT_REQUIRED` with status 400. A server keeps the source
+that it read at start:
 
 - After you edit a file under `src/`, run
   `./bin/archboard stop && ./bin/archboard start`. Until you do, `status`
