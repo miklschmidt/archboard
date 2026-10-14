@@ -2,7 +2,8 @@
 // (ADR 0046, TASK-367.17).
 //
 // The server takes a path from any request on this machine, so it reads a plan
-// only inside a registered checkout: the path must stay inside the checkout
+// only inside a checkout the pass reads, the chosen checkout of its repository
+// (ADR 0049): the path must stay inside the checkout
 // before and after its symbolic links resolve, as the code opener's rules
 // hold a bound path. A plan is usually a file Git ignores, written by
 // `terraform show -json` or `tofu show -json`, so Git need not list it. It is
@@ -74,7 +75,9 @@ function locatePlan(
 		return "there is no such file";
 	}
 	const root = checkoutHolding(path.resolve(named), real, snapshot);
-	if (root === undefined) return "it is not inside a checkout this machine has registered";
+	if (root === undefined) {
+		return "it is not inside the chosen checkout of any repository on this machine, which is the checkout the check reads";
+	}
 	const relative = path.relative(root, real).split(path.sep).join("/");
 	return neverRead(relative)
 		? "it is Terraform state, a variable file or under .terraform"
