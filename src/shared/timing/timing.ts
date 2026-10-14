@@ -325,12 +325,12 @@ const SERVER_MUTATION_DRAIN_TIMEOUT_MS = 1000;
 // ── Git checkout inspection ───────────────────────────────────────────────
 
 /**
- * Outer bound for one Git identity probe while an operation captures its
- * checkout snapshot. Snapshot work runs before a board lock or synchronous
- * note write, so this never extends either critical section. It is longer
- * than the server mutation-drain refusal window: stop may refuse and keep the
- * application intact while a slow probe is still cancellable by its request
- * or application owner.
+ * Outer bound for one Git identity probe while an operation captures its checkout snapshot. Snapshot
+ * work runs before a board lock or synchronous note write, so this never extends either critical
+ * section. It is longer than the server mutation-drain refusal window: stop may refuse and keep the
+ * application intact while a slow probe is still cancellable by its request or application owner.
+ * The exception is code-target's probe of the checkout that holds a vault: its Git calls, at most
+ * three, are synchronous for the synchronous vault check, so each can block the event loop this long.
  */
 const GIT_COMMAND_TIMEOUT_MS = 5000;
 
