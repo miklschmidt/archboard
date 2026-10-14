@@ -4,6 +4,16 @@ status: accepted
 
 # A binding names a repository, and a machine-local registry says where that repository is
 
+Amended by [ADR
+0049](0049-one-server-serves-every-vault-and-every-call-names-its-vault.md)
+(2026-10-14). The registry holds every known checkout with its identity, and one
+chosen checkout for each identity. A command registers the checkout that it runs
+in and says so once, and `git worktree list` adds the worktrees of a known
+checkout. `repo add` does not change the chosen checkout, and `repo use` does. A
+binding into the vault's own repository resolves in the vault's own checkout.
+The `cwd` origin in the table below went earlier, with the command that used it.
+Everything else stands.
+
 A binding is a logical address: a repository identity, a path inside it, and the
 branch and commit at which it was last confirmed (CONTEXT.md). It must be a
 logical address because boards persist in a vault that spans repositories and is

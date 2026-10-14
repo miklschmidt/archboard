@@ -4,6 +4,13 @@ status: accepted
 
 # Backend source changes require a server restart
 
+Amended by [ADR
+0049](0049-one-server-serves-every-vault-and-every-call-names-its-vault.md)
+(2026-10-14). Inside an archboard checkout, `archboard` runs that checkout's
+source. A linked worktree of archboard runs its own server on a port derived
+from its path, so a restart there never stops the server on port 3000.
+Everything else stands.
+
 Archboard used Bun hot reload to replace backend modules while keeping sockets,
 panes, and process state alive. That required a global `kept()` registry, reload
 tokens and canaries, and a whole-project module-scope analyzer. The analyzer

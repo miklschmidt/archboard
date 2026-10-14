@@ -26,9 +26,11 @@ time for exploration and inspection.
 _Avoid_: scene, workspace, session, drawing area
 
 **Archboard server**:
-The process on one port that keeps the boards, serves the panes in the browser
-and runs Codex for the agents. `archboard start` starts it, and every other
-command talks to it.
+The one process on the machine that serves every vault. It serves the vault of
+every registered checkout and untracked vault, the panes in the browser, and
+Codex for the agents. The first command that finds none starts it, and every call
+names the vault that it means. A worktree of archboard itself runs its own
+server, from its own source, on a port of its own.
 _Avoid_: canvas server, canvas (that is the surface), host, backend
 
 **View**:
@@ -197,9 +199,18 @@ One copy of a repository sitting at a path on one machine.
 _Avoid_: clone, working copy, workspace, local repo
 
 **Checkout registry**:
-The machine-local record of which checkout holds which repository identity
-here. The only place a directory on one machine is written down.
+The machine-local record of every checkout known here, each with its repository
+identity, and of the chosen checkout of each identity. The only place a
+directory on one machine is written down.
 _Avoid_: index, cache, catalogue, repo config
+
+**Chosen checkout**:
+The one checkout of a repository identity that this machine reads for it. The
+browser reads its vault, and a binding or drill-down that another vault makes
+into that identity resolves there. A binding into a vault's own repository
+resolves in the vault's own checkout instead. A person changes the choice, never
+a command that only registers a checkout.
+_Avoid_: default checkout, primary checkout, active checkout, project
 
 ### Structure
 
@@ -289,7 +300,8 @@ _Avoid_: layer, depth, zoom, tier, granularity
 Moving from a node on one board to an explicitly linked board and variant
 describing that node's internals. It is an affordance on a part the board draws
 for its own sake: upward from the container the board describes, downward or
-sideways from a card.
+sideways from a card. A drill-down into another vault names the repository
+identity of that vault, never a path, and it cannot reach an untracked vault.
 _Avoid_: zoom in, expand, descend, navigate, open
 
 **Variant**:
@@ -456,8 +468,17 @@ _Avoid_: revision, generation, sequence, edition, variant (that is a different
 architectural state, rather than the board's edit counter)
 
 **Vault**:
-The cross-repository collection in which every board is persisted.
+The `.archboard/vault` directory of one checkout, where its boards are kept. A
+vault is versioned with its repository, so each checkout has its own copy, and
+its boards can describe any repository. A meta project that plans across
+repositories is a repository too.
 _Avoid_: library, workspace, store, repository, folder
+
+**Untracked vault**:
+A vault in a directory that is not a git checkout, at `<dir>/.archboard/vault`.
+It has no repository identity, so no board in another vault can drill down
+into it.
+_Avoid_: loose vault, external vault, global vault
 
 ### Reading
 
@@ -607,13 +628,14 @@ violation, drift, problem
 ### Working
 
 **Tab session**:
-The conversation of one browser tab with Codex. The tab keeps the session id in
+The work of one browser tab with Codex: one voice coordinator for the whole
+app, and one workhorse for each checkout that the tab works in. The tab keeps the session id in
 sessionStorage, and both of its panes name that id to the server. So a reload
 keeps the conversation, and a new tab or window starts a new one. A tab that the
 browser duplicates shares the session of the original. Each tab session has its
-own thread link, workhorse, voice coordinator and voice session. It also has
-its own queue, command lease and approvals. So two tabs can talk at the same
-time. A session ends 60
+own voice coordinator and voice session, and for each checkout its own thread
+link, workhorse, queue and approvals. It also has its own command lease. So two
+tabs can talk at the same time. A session ends 60
 seconds after the last pane of its tab closes. A reload within that time keeps
 the conversation and its approvals. When a session ends, Archboard cancels its
 approvals and stops the board news to its workhorse. It unsubscribes each of
@@ -621,30 +643,35 @@ its threads once no turn runs on it, and Codex then unloads the thread.
 _Avoid_: browser session (that names the realtime handle), session alone, canvas
 
 **Workhorse**:
-The primary Codex thread of a tab session, for architectural inspection,
-analysis, and proposals. It can continue its work while the voice coordinator
-answers and investigates separately.
+The Codex thread of a tab session that works in one checkout, for architectural
+inspection, analysis, and proposals. It runs in that checkout's directory, so it
+reads that repository's own agent instructions and skills. A tab session has at
+most one for each checkout. It can continue its work while the voice
+coordinator answers and investigates separately.
 _Avoid_: main agent, coding thread, backend agent, worker (that is also an agent
 role)
 
 **Thread link**:
-The runtime association between one tab session and one controllable Codex
-workhorse on Archboard's owned app-server child. The first message or Talk of
-the tab makes it, and the focused pane of the tab speaks through it. New
-conversation links a new workhorse in its place. The link never lives in the
+The runtime association between one tab session, one checkout and one
+controllable Codex workhorse on Archboard's owned app-server child. The first
+typed message for that checkout makes it, or the coordinator's first
+delegation to it. New conversation links a new workhorse in place of the one in
+the shown conversation. The link never lives in the
 board or follows the active thread of another client. Child exit and the end of
 the tab session clear it, so the next message or Talk makes a new one.
 _Avoid_: binding (that means node-to-code here), attachment, selected thread,
 active task, task link
 
 **Voice coordinator**:
-The fast Codex thread beside the workhorse of a tab session. It starts with the
-first message or Talk of the tab. A coordinator carries at most one voice
+The fast Codex thread beside the workhorses of a tab session. It serves the
+whole app and works in no checkout. It starts with the first message or Talk
+of the tab. A coordinator carries at most one voice
 session, so a later voice start replaces it with a fresh one. Realtime voice
-attaches to it. It handles conversation and bounded direct work, and it gives
-sustained work to the workhorse. With the voice model it is one assistant: the
+attaches to it. It handles conversation and reading boards. It gives
+work in a checkout to the workhorse of that checkout, and it starts that
+workhorse if there is none. With the voice model it is one assistant: the
 voice model speaks, and the coordinator is its subconscious, which reads the
-boards, follows the workhorse and decides what the voice model says. With no
+boards, follows its workhorses and decides what the voice model says. With no
 voice session it has nothing to do and is never run.
 _Avoid_: voice model (that is only one part of the realtime path), voice agent,
 router, facilitator, copilot
@@ -678,6 +705,13 @@ A request to stop a tab session's workhorse and its sub-agents, and clear its
 pending requests. Speech and the workbench Stop control request this outcome,
 but accepting the request does not prove that its work stopped.
 _Avoid_: steer, pause, end voice
+
+**Shown conversation**:
+The workhorse conversation that the agent dock shows. It belongs to the
+checkout that the user last activated by focusing a pane, opening a board or
+drilling down. The user can also pick it from the dock's list of workhorses. What an agent does to a
+pane never changes it.
+_Avoid_: active thread, current conversation, selected thread
 
 **Workhorse news**:
 What the voice coordinator is told about the workhorse of its tab session while

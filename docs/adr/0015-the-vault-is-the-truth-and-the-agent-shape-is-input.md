@@ -1,5 +1,11 @@
 # The vault is the truth, and the agent-friendly shape is an input format
 
+Amended by [ADR
+0049](0049-one-server-serves-every-vault-and-every-call-names-its-vault.md)
+(2026-10-14). The server starts without a vault, because every call names its
+vault. A command that finds no vault refuses, so nobody still draws into
+nowhere. Everything else stands.
+
 A board persists as a note in the vault. While a board was open, the canvas also
 kept its own copy of it. That copy was not always in the same shape as the note.
 One board therefore had two shapes, with a conversion between them. Each side

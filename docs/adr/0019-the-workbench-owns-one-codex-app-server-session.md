@@ -4,6 +4,15 @@ status: accepted
 
 # The workbench owns one Codex app-server session
 
+Amended by [ADR
+0050](0050-the-browser-is-one-app-and-each-checkout-has-its-own-workhorse.md)
+(2026-10-14). A tab session has one workhorse for each checkout, which runs in
+that checkout, and one voice coordinator for the whole app, which runs in no
+checkout. The child environment keeps `ARCHBOARD_URL` and
+`ARCHBOARD_NO_AUTOSTART` and loses `ARCHBOARD_VAULT`. The sentences below that
+speak of one workhorse for each tab session mean one for each checkout.
+Everything else stands.
+
 Amended by [ADR 0047](0047-built-in-agents-support-architecture-and-hand-off-implementation.md):
 the built-in agents support architecture work and hand off implementation to
 the user's own coding agent.
