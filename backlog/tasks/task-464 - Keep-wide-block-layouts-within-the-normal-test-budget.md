@@ -1,11 +1,11 @@
 ---
 id: TASK-464
 title: Keep wide block layouts within the normal test budget
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:52'
-updated_date: '2026-10-11 21:30'
+updated_date: '2026-10-14 01:21'
 labels: []
 dependencies: []
 references:
@@ -23,9 +23,9 @@ Hosted run 38148069388 at c80c70d6 times out rendering Browser application with 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every wide-board assertion and layout contract remains intact.
-- [ ] #2 The complete local and hosted gates pass without weakening selection, timeouts, assertions, or validation policy.
-- [ ] #3 The exact failing wide-board owner passes within its 120-second budget on hosted Linux. The user approved 120 s for the two heavy Blocks cases because hosted GitHub Actions runners are much slower than local machines.
+- [x] #1 Every wide-board assertion and layout contract remains intact.
+- [x] #2 The complete local and hosted gates pass without weakening selection, timeouts, assertions, or validation policy.
+- [x] #3 The exact failing wide-board owner passes within its 120-second budget on hosted Linux. The user approved 120 s for the two heavy Blocks cases because hosted GitHub Actions runners are much slower than local machines.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -54,4 +54,12 @@ The one-worker merged profile performs eight native solves in 30.46 seconds. Rou
 The merged handoff probe runs seven needed solves in 28.38 seconds instead of eight in 30.46 seconds. The SVG bytes match the merged baseline exactly. Review also repairs final fatal and stopped-worker refusal paths so caller cleanup can cancel queued speculation before promotion. The unchanged first retry remains immediate. Focused owners reproduce both failure-path races without the repair. A separate review covers browser MessagePort startup, FIFO order, and process lifetime. The full command-prefixed Chrome for Testing gate finishes all 19 browser owners and cleanup with exit zero. That run starts before this handoff patch. Final-source validation remains pending.
 
 Integration with main 3581b9dd7 and bf0184d53: main had its own cancellation of the joins' ahead solves (one AbortController per batch, every solve asked ahead called off when a turn is kept, a called-off layout forgotten at once). The merge keeps this branch's design, which called off fewer solves and finished sooner: the pool's queued handoff, retries that refuse a solve already called off, and calling off only layouts no turn to come weighs, sharing an active one. It takes main's Joined type, the layJoined export and the joins-ahead unit owner, which now has a two-block and a three-block case. layingOnce drops the settled flag, because calling off a settled layout does nothing. Measured three times each with Bun 1.4.2, one layout worker (taskset -c 0,1) and 23 workers. Browser application blocks: main 8 solves of 12 asked, median 35.64 s; branch 7, 32.14 s; merge 7, 32.11 s. With all workers: main 11 solves, 16.61 s; branch 10, 15.61 s; merge 10, 15.57 s. Board viewer blocks with one worker: main 7 of 9, 20.72 s; branch and merge 6, 18.28 s and 18.47 s. With all workers each solves all 9 in about 10.5 s. Every SVG is the same bytes in every run. Main's 120 s TEST_HEAVY_BLOCKS_CASE_MS hosted deadline for the two heavy Blocks cases stays, with its wall-clock declaration, as the user approved. Its proposal variants were renamed to TASK-464 through semantic rename, which keeps TASK-454 as their former name.
+
+Hosted proof: Browser application (blocks) passed in 21.6 s on hosted Linux in run 38494300687, against its 120 s budget; the full gate was green in five consecutive hosted runs (38489413057, 38490536009, 38491861794, 38492983646, 38494300687).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The blocks layout handoff change keeps the output bytes and every wide-board assertion, and the two heavy Blocks cases keep the approved 120 s hosted budget. Verified by the complete local gate and five green hosted full gates (runs 38489413057, 38490536009, 38491861794, 38492983646, 38494300687), where Browser application (blocks) took 21.6 s on the last Linux run.
+<!-- SECTION:FINAL_SUMMARY:END -->
