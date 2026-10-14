@@ -30,6 +30,14 @@ import {
 	writeSemanticBoard,
 } from "@/runtime/semantic-board-store/index";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
+import { ARCHBOARD_VAULT, noVaultMessage } from "@/runtime/engine/config";
+
+if (!ARCHBOARD_VAULT) {
+	throw new Error(noVaultMessage());
+}
+
+/** The vault the example is built into. */
+const vault = path.resolve(ARCHBOARD_VAULT);
 
 /** Where the statements live, relative to the checkout. */
 const STATED = "docs/design/semantic-pipeline";
@@ -61,10 +69,11 @@ function stated(name: string): Record<string, unknown> {
 async function build(name: string): Promise<string> {
 	const says = stated(name);
 	const board = String(says["name"]);
-	if (readSemanticBoard(board).ok) {
+	if (readSemanticBoard(vault, board).ok) {
 		return `${board}: already built, left alone`;
 	}
 	const written = await writeSemanticBoard({
+		vault,
 		board,
 		writer: { kind: "agent", reason: "building the tracked pipeline example" },
 		transition: createBoardTransition(BoardCreateInputSchema.parse(says)),
@@ -87,7 +96,7 @@ async function propose(): Promise<string> {
 	const says = stated("proposal");
 	const board = String(says["board"]);
 	const name = String(says["name"]);
-	const read = readSemanticBoard(board);
+	const read = readSemanticBoard(vault, board);
 	if (!read.ok) {
 		throw new Error(`${board}: ${read.problem}`);
 	}
@@ -95,6 +104,7 @@ async function propose(): Promise<string> {
 		return `${board}: "${name}" already proposed, left alone`;
 	}
 	const branched = await writeSemanticBoard({
+		vault,
 		board,
 		writer: { kind: "agent", reason: "building the tracked pipeline example" },
 		expectedVersion: read.board.version,
@@ -110,6 +120,7 @@ async function propose(): Promise<string> {
 		throw new Error(`${board}: ${branched.problem}`);
 	}
 	const edited = await writeSemanticBoard({
+		vault,
 		board,
 		writer: { kind: "agent", reason: "building the tracked pipeline example" },
 		expectedVersion: branched.board.version,
@@ -142,11 +153,11 @@ function asEdit(says: Record<string, unknown>): Record<string, unknown> {
  * @returns What was drawn, one line each.
  */
 async function draw(board: string): Promise<string[]> {
-	const read = readSemanticBoard(board);
+	const read = readSemanticBoard(vault, board);
 	if (!read.ok) {
 		throw new Error(`${board}: ${read.problem}`);
 	}
-	const policy = readSemanticBoardConfiguration().configuration;
+	const policy = readSemanticBoardConfiguration(vault).configuration;
 	const pictures = await Promise.all(
 		read.board.variants.flatMap((variant) =>
 			read.board.views.map(async (view) => {

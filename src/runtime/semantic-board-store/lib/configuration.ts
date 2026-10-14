@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { requireVaultRoot } from "@/runtime/engine/board";
 import { errnoCode, errorMessage } from "@/shared/thrown-error/index";
 import {
 	DEFAULT_SEMANTIC_POLICY,
@@ -34,7 +33,7 @@ interface SemanticBoardConfigurationRead {
  * @param root The vault root.
  * @returns The absolute policy path.
  */
-function semanticBoardConfigurationPath(root = requireVaultRoot()): string {
+function semanticBoardConfigurationPath(root: string): string {
 	return path.join(root, SEMANTIC_BOARD_CONFIG_PATH);
 }
 
@@ -43,7 +42,7 @@ function semanticBoardConfigurationPath(root = requireVaultRoot()): string {
  * @param root The vault root.
  * @returns Current policy, health and fingerprint.
  */
-function readSemanticBoardConfiguration(root = requireVaultRoot()): SemanticBoardConfigurationRead {
+function readSemanticBoardConfiguration(root: string): SemanticBoardConfigurationRead {
 	const file = semanticBoardConfigurationPath(root);
 	let source = "";
 	let problem: string | undefined;

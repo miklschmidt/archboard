@@ -10,6 +10,7 @@ import {
 } from "@/server/code-opener";
 import { diagramIconPaths } from "@/runtime/semantic-renderer/index";
 import { app } from "@/server/archboard/lib/server-app";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { mountCodeCheckRoute } from "@/server/archboard/lib/code-check-route";
 import { mountFootprintRoute } from "@/server/archboard/lib/footprint-route";
@@ -82,7 +83,7 @@ app.get("/assets/diagram-icons/:name", (req, res) => {
 });
 
 app.use(
-	createCodeOpenerRouter({
+	createCodeOpenerRouter(serverVault, {
 		/**
 		 * Run checkout work tracked against the response.
 		 * @param req The request.

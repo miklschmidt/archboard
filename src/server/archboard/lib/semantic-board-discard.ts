@@ -21,6 +21,7 @@ import {
 	writerOf,
 } from "@/server/archboard/lib/semantic-board-writes";
 import { expectedVersion, statedEnvelope } from "@/server/archboard/lib/semantic-write-requests";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * Tell everything that shows the board that it is gone.
@@ -80,6 +81,7 @@ async function discardRoute(
 		return;
 	}
 	const result = await discardSemanticBoard({
+		vault: serverVault(),
 		board: envelope.board,
 		writer: writerOf(envelope),
 		expectedVersion: stated.version,

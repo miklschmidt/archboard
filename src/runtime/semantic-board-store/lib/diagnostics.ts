@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { normalizeBoardKey, requireVaultRoot } from "@/runtime/engine/board";
+import { normalizeBoardKey } from "@/runtime/engine/board";
 import { errorMessage } from "@/shared/thrown-error/index";
 import type { SemanticBoard } from "@/shared/semantic-board/index";
 import type { VaultCheck, VaultDiagnostic } from "@/shared/semantic-policy/index";
@@ -31,7 +31,7 @@ import {
  * @param root The vault root.
  * @returns Current policy and all diagnostics.
  */
-function checkSemanticVault(root = requireVaultRoot()): VaultCheck {
+function checkSemanticVault(root: string): VaultCheck {
 	const configured = readSemanticBoardConfiguration(root);
 	const diagnostics = [...configured.diagnostics];
 	const addresses = new Map<string, string>();
@@ -97,7 +97,7 @@ function readBoardFile(
 			.slice(0, -SEMANTIC_BOARD_FILE_SUFFIX.length);
 		const location = { ...semanticBoardAddress(name), file };
 		recordAddress(location, addresses, diagnostics);
-		const result = readSemanticBoardAt(location, configured);
+		const result = readSemanticBoardAt(root, location, configured);
 		if (!result.ok) {
 			diagnostics.push({
 				severity: "error",

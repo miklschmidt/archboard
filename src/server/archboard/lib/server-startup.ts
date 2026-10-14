@@ -1,5 +1,4 @@
 import { closeLogger, forceCloseLogger, logger } from "@/runtime/engine/logger";
-import { ARCHBOARD_VAULT, noVaultMessage } from "@/runtime/engine/config";
 import { removePidFile } from "@/runtime/engine/pidfile";
 import { SERVER_HTTP_STOP_GRACE_MS } from "@/shared/timing/timing";
 import {
@@ -30,6 +29,7 @@ import {
 	PORT,
 } from "@/server/archboard/lib/listener-address";
 import { messageOf } from "@/server/archboard/lib/request-board";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 import { serverStartupFailureMessage } from "@/server/archboard/lib/startup-error";
 import {
 	closeWebSocketServer,
@@ -84,12 +84,15 @@ function reportServerStopError(error: unknown): void {
  * @returns The refusal, or null when a vault is configured.
  */
 function vaultRefusal(): string | null {
-	if (ARCHBOARD_VAULT) {
+	try {
+		serverVault();
 		return null;
+	} catch (error) {
+		const message = messageOf(error);
+		process.stderr.write(message + "\n");
+		logger.error("Refusing to start Archboard server: no vault (ARCHBOARD_VAULT is unset).");
+		return message;
 	}
-	process.stderr.write(noVaultMessage() + "\n");
-	logger.error("Refusing to start Archboard server: no vault (ARCHBOARD_VAULT is unset).");
-	return noVaultMessage();
 }
 
 /**

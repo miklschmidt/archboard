@@ -21,9 +21,9 @@ const ARCHBOARD_NO_AUTOSTART = process.env["ARCHBOARD_NO_AUTOSTART"] === "1";
 const ARCHBOARD_VAULT = process.env["ARCHBOARD_VAULT"] || undefined;
 
 /**
- * What an Archboard server with no vault says, in one place because three surfaces say it:
- * the server before it binds, the CLI before it spawns a server, and
- * requireVaultRoot() for anything that gets past both.
+ * What an Archboard server with no vault says, in one place because two surfaces say it:
+ * the CLI before it spawns a server, and the server's own vault (`serverVault()`), which it
+ * asks before it binds and for anything that gets past that.
  *
  * It points at the install step rather than teaching what a vault is.
  * `install-skill` is what chooses a vault, creates it and writes the path into

@@ -4,7 +4,6 @@ import { basename, dirname } from "node:path";
 import type * as LockModule from "@/runtime/engine/board-lock";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 // Renaming a board or a variant through the write boundary (TASK-281, ADR
@@ -25,7 +24,6 @@ let board = "";
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 	lock = await import("@/runtime/engine/board-lock");
 });
@@ -42,6 +40,7 @@ beforeEach(async () => {
 	board = `platform-public-api-${serial}`;
 	applied(
 		await store.writeSemanticBoard({
+			vault,
 			board,
 			writer,
 			transition: store.createBoardTransition(
@@ -80,7 +79,7 @@ function readable(): string {
  * @returns The board.
  */
 function read(name = board) {
-	const answer = store.readSemanticBoard(name);
+	const answer = store.readSemanticBoard(vault, name);
 	if (!answer.ok) throw new Error(answer.problem);
 	return answer.board;
 }
@@ -103,6 +102,7 @@ function applied(result: StoreModule.SemanticWriteResult) {
  */
 async function write(transition: StoreModule.SemanticTransition, name = board) {
 	return store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		expectedVersion: read(name).version,
@@ -137,7 +137,7 @@ function identity(one: ContractModule.SemanticBoard) {
 
 test("a board renamed keeps every id and all its history, moves its file, and answers to its old name", async () => {
 	const before = read();
-	const oldFile = store.locateSemanticBoard(board).file;
+	const oldFile = store.locateSemanticBoard(board, vault).file;
 	const renamed = applied(await write(rename(readable())));
 	expect(renamed.renamedFrom?.key).toBe(board);
 	expect(renamed.location.key).toBe(readable().toLowerCase());
@@ -149,8 +149,8 @@ test("a board renamed keeps every id and all its history, moves its file, and an
 	expect(identity(after)).toEqual(identity(before));
 	expect(existsSync(oldFile)).toBeFalse();
 	expect(existsSync(renamed.location.file)).toBeTrue();
-	expect(store.listSemanticBoards().map((one) => one.name)).toContain(readable());
-	expect(store.listSemanticBoards().map((one) => one.key)).not.toContain(board);
+	expect(store.listSemanticBoards(vault).map((one) => one.name)).toContain(readable());
+	expect(store.listSemanticBoards(vault).map((one) => one.key)).not.toContain(board);
 
 	// The old name opens the board, and a write addressed by it lands on it.
 	expect(read(board).id).toBe(before.id);
@@ -188,6 +188,7 @@ test("a drill-down naming a board's old name still opens a board the vault holds
 	const linking = `linking-${serial}`;
 	applied(
 		await store.writeSemanticBoard({
+			vault,
 			board: linking,
 			writer,
 			transition: store.createBoardTransition(
@@ -210,7 +211,7 @@ test("a drill-down naming a board's old name still opens a board the vault holds
 	await write(rename(readable()));
 	await write(rename("Independent Public and Phone APIs", "public-api-independent"));
 	const unknown = store
-		.checkSemanticVault()
+		.checkSemanticVault(vault)
 		.diagnostics.filter((one) => one.code === "DRILL_DOWN_UNKNOWN_BOARD" && one.board === linking);
 	expect(unknown).toEqual([]);
 	// The linking board was not written: nothing but the renamed board changed.
@@ -218,9 +219,10 @@ test("a drill-down naming a board's old name still opens a board the vault holds
 });
 
 test("a stale rename is refused and the vault is left exactly as it was", async () => {
-	const location = store.locateSemanticBoard(board);
+	const location = store.locateSemanticBoard(board, vault);
 	const bytes = readFileSync(location.file, "utf-8");
 	const stale = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version - 1,
@@ -228,13 +230,14 @@ test("a stale rename is refused and the vault is left exactly as it was", async 
 	});
 	expect(stale).toMatchObject({ outcome: "rejected", code: "BOARD_VERSION_CONFLICT" });
 	expect(readFileSync(location.file, "utf-8")).toBe(bytes);
-	expect(store.readSemanticBoard(readable())).toMatchObject({ code: "BOARD_MISSING" });
+	expect(store.readSemanticBoard(vault, readable())).toMatchObject({ code: "BOARD_MISSING" });
 });
 
 test("a name another board carries, or used to carry, is refused and nothing moves", async () => {
 	const other = `other-${serial}`;
 	applied(
 		await store.writeSemanticBoard({
+			vault,
 			board: other,
 			writer,
 			transition: store.createBoardTransition(
@@ -242,7 +245,7 @@ test("a name another board carries, or used to carry, is refused and nothing mov
 			),
 		}),
 	);
-	const location = store.locateSemanticBoard(board);
+	const location = store.locateSemanticBoard(board, vault);
 	const bytes = readFileSync(location.file, "utf-8");
 	for (const taken of [other, other.toUpperCase()]) {
 		expect(await write(rename(taken))).toMatchObject({ outcome: "rejected", code: "BOARD_EXISTS" });
@@ -252,6 +255,7 @@ test("a name another board carries, or used to carry, is refused and nothing mov
 	await write(rename(`Other ${serial}`), other);
 	expect(await write(rename(other))).toMatchObject({ outcome: "rejected", code: "BOARD_EXISTS" });
 	const created = await store.writeSemanticBoard({
+		vault,
 		board: other,
 		writer,
 		transition: store.createBoardTransition(
@@ -294,12 +298,12 @@ test("the name it already has is refused, and a change of case alone keeps every
 	expect(await write(rename("Initial", "Initial"))).toMatchObject({ code: "NAME_UNCHANGED" });
 	expect(read().version).toBe(version);
 
-	const oldFile = store.locateSemanticBoard(board).file;
+	const oldFile = store.locateSemanticBoard(board, vault).file;
 	const cased = applied(await write(rename(board.toUpperCase())));
 	expect(cased.renamedFrom).toBeUndefined();
 	expect(cased.location.key).toBe(board);
 	expect(cased.board.formerNames).toBeUndefined();
-	expect(store.locateSemanticBoard(board).file).toBe(cased.location.file);
+	expect(store.locateSemanticBoard(board, vault).file).toBe(cased.location.file);
 	expect(cased.location.file.endsWith(`${board.toUpperCase()}.semantic.json`)).toBeTrue();
 	const entries = readdirSync(dirname(cased.location.file));
 	expect(entries).toContain(basename(cased.location.file));
@@ -319,18 +323,19 @@ test("a board given back a name it had drops it from its former names", async ()
 test("a rename waits for nobody: a new name somebody is writing is refused, naming no change", async () => {
 	const key = readable().toLowerCase();
 	const hold = await lock.holdBoard({
+		vault,
 		board: key,
 		holder: { id: "someone-creating-it", kind: "agent" },
 		leaseMs: 30_000,
 	});
 	try {
-		const bytes = readFileSync(store.locateSemanticBoard(board).file, "utf-8");
+		const bytes = readFileSync(store.locateSemanticBoard(board, vault).file, "utf-8");
 		expect(await write(rename(readable()))).toMatchObject({
 			outcome: "rejected",
 			code: "BOARD_HELD",
 		});
-		expect(readFileSync(store.locateSemanticBoard(board).file, "utf-8")).toBe(bytes);
+		expect(readFileSync(store.locateSemanticBoard(board, vault).file, "utf-8")).toBe(bytes);
 	} finally {
-		lock.releaseHold(key, hold.holder.id);
+		lock.releaseHold(vault, key, hold.holder.id);
 	}
 });

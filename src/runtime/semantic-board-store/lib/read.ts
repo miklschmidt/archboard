@@ -194,13 +194,15 @@ function persistBoardMigration(
 
 /**
  * Read and, if necessary, persist a migration inside an already-held lease.
+ * @param vault The vault root the board lives in.
  * @param location The board address.
- * @param configured The vault configuration.
+ * @param configured The vault configuration; the vault's own when not given.
  * @returns The current board or refusal.
  */
 function readSemanticBoardAtUnderLease(
+	vault: string,
 	location: SemanticBoardLocation,
-	configured = readSemanticBoardConfiguration(),
+	configured = readSemanticBoardConfiguration(vault),
 ): SemanticBoardRead {
 	const result = readAt(location, configured, true);
 	if ("migration" in result) {
@@ -213,26 +215,30 @@ function readSemanticBoardAtUnderLease(
  * Read without delaying current boards. A legacy document needs the same
  * per-board lease that protects all writes, and is read again once held so a
  * concurrent writer's committed version is never overwritten by a stale one.
+ * @param vault The vault root the board lives in.
  * @param location The board address.
- * @param configured The vault configuration.
+ * @param configured The vault configuration; the vault's own when not given.
  * @returns The current board or refusal.
  */
 function readSemanticBoardAt(
+	vault: string,
 	location: SemanticBoardLocation,
-	configured = readSemanticBoardConfiguration(),
+	configured = readSemanticBoardConfiguration(vault),
 ): SemanticBoardRead {
 	const first = readAt(location, configured, false);
 	if (!("migration" in first)) return first;
-	return migrateOnRead(location, configured);
+	return migrateOnRead(vault, location, configured);
 }
 
 /**
  * Attempt one nonblocking migration and return a normalized pending read if held.
+ * @param vault The vault root the board lives in.
  * @param location The board address.
  * @param configured The vault configuration.
  * @returns The migrated or still-pending board.
  */
 function migrateOnRead(
+	vault: string,
 	location: SemanticBoardLocation,
 	configured: ReturnType<typeof readSemanticBoardConfiguration>,
 ): SemanticBoardRead {
@@ -240,6 +246,7 @@ function migrateOnRead(
 	try {
 		const attempted = withBoardLockIfFreeSync(
 			{
+				vault,
 				board: location.key,
 				holder: {
 					id: claim ?? `schema-migration-${mintId()}`,
@@ -247,7 +254,7 @@ function migrateOnRead(
 					...(claim === null ? {} : { claimed: true }),
 				},
 			},
-			() => readSemanticBoardAtUnderLease(location, configured),
+			() => readSemanticBoardAtUnderLease(vault, location, configured),
 		);
 		if (attempted.acquired) return attempted.value;
 	} catch (error) {
@@ -299,12 +306,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * or the one that carried it before a rename (ADR 0036). What comes back is
  * that board under its own name, so a caller that asked by a former name learns
  * the name it goes by now from `board.name` and `location`.
+ * @param vault The vault root to read from.
  * @param asked The board name as typed.
  * @returns The board, or why it could not be read.
  * @throws {Error} When the name is not usable or would escape the vault.
  */
-function readSemanticBoard(asked: string): SemanticBoardRead {
-	return readSemanticBoardAt(resolveSemanticBoard(asked));
+function readSemanticBoard(vault: string, asked: string): SemanticBoardRead {
+	return readSemanticBoardAt(vault, resolveSemanticBoard(asked, vault));
 }
 
 export {

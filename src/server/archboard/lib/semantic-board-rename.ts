@@ -47,6 +47,7 @@ import {
 	writerOf,
 } from "@/server/archboard/lib/semantic-board-writes";
 import { asCommand } from "@/server/archboard/lib/semantic-write-requests";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /** A write that landed. */
 type Applied = Extract<SemanticWriteResult, { outcome: "applied" }>;
@@ -73,6 +74,7 @@ async function renameRoute(
 		return;
 	}
 	const result = await writeSemanticBoard({
+		vault: serverVault(),
 		board: stated.envelope.board,
 		writer: writerOf(stated.envelope),
 		transition: renameTransition(renaming),
@@ -153,6 +155,7 @@ async function carryClaim(from: string, to: string): Promise<VaultDiagnostic | n
 	releaseClaim(from);
 	try {
 		await claimBoard({
+			vault: serverVault(),
 			board: to,
 			reason: claim.holder.reason ?? "",
 			forMs: Date.parse(claim.expires) - Date.now(),

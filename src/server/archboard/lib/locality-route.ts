@@ -24,6 +24,7 @@ import {
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
 import { errorMessage } from "@/shared/thrown-error/index";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface LocalityRouteDependencies {
@@ -183,7 +184,7 @@ function readableVariant(
 function askedLocality(request: Request): Asked {
 	const query = statedQuery(request);
 	if (!query.ok) return query;
-	const read = readSemanticBoard(query.query.board);
+	const read = readSemanticBoard(serverVault(), query.query.board);
 	if (!read.ok) {
 		const status = read.code === "BOARD_MISSING" ? 404 : 422;
 		return { ok: false, status, code: read.code, error: read.problem };

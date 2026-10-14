@@ -21,6 +21,7 @@ import {
 	sendToPane,
 	syncLockWatch,
 } from "@/server/archboard/lib/pane-registry";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * A board's writer changed, so every pane showing it is told (ADR 0016).
@@ -136,7 +137,7 @@ function tellPaneAboutLock(clientId: string, board: string): void {
 	// looking at the same file as a pane showing what is current, and telling it
 	// about a lock of its own would be inventing a second answer.
 	const aggregate = aggregateOf(board) ?? board;
-	sendToPane(clientId, lockMessage(aggregate, boardLockState(aggregate)), board);
+	sendToPane(clientId, lockMessage(aggregate, boardLockState(serverVault(), aggregate)), board);
 	// And the last few things an agent said it was doing here (TASK-095). A pane
 	// that has just been given a board an agent is part way through would
 	// otherwise show the banner saying somebody has it and nothing at all about

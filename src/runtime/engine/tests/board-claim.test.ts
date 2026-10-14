@@ -32,6 +32,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		const board = "claimed";
 		boards.add(board);
 		const first = await lock.claimBoard({
+			vault,
 			board,
 			reason: "redrawing the payment path",
 			forMs: 30_000,
@@ -42,7 +43,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			reason: "redrawing the payment path",
 		});
 		const claimedRefusal = await lock
-			.holdBoard({ board, holder: agent("claimed-rival"), waitMs: 0 })
+			.holdBoard({ vault, board, holder: agent("claimed-rival"), waitMs: 0 })
 			.catch((error: unknown) => error);
 		expect(claimedRefusal).toBeInstanceOf(lock.BoardHeldError);
 		expect((claimedRefusal as Error).message).toContain(
@@ -54,28 +55,34 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			const writer = lock.claimWriterId(board);
 			expect(writer).toBe(first.claim.holder.id);
 			expect(
-				await lock.withBoardLock({ board, holder: agent(writer!), waitMs: 0 }, () => index),
+				await lock.withBoardLock({ vault, board, holder: agent(writer!), waitMs: 0 }, () => index),
 			).toBe(index);
 			const rival = await lock
-				.holdBoard({ board, holder: agent(`rival-${index}`), waitMs: 0 })
+				.holdBoard({ vault, board, holder: agent(`rival-${index}`), waitMs: 0 })
 				.catch((error: unknown) => error);
 			if (!(rival instanceof lock.BoardHeldError)) {
 				gaps += 1;
 			}
 		}
 		expect(gaps).toBe(0);
-		expect(lock.boardLockState(board)?.since).toBe(since);
-		const extended = await lock.claimBoard({ board, reason: "now the queues", forMs: 40_000 });
+		expect(lock.boardLockState(vault, board)?.since).toBe(since);
+		const extended = await lock.claimBoard({
+			vault,
+			board,
+			reason: "now the queues",
+			forMs: 40_000,
+		});
 		expect(extended.created).toBeFalse();
 		expect(extended.claim.holder.id).toBe(first.claim.holder.id);
 		expect(extended.claim.holder.reason).toBe("now the queues");
 
 		const camera = await lock
-			.holdBoard({ board, holder: human("camera"), waitMs: 0, revokeClaim: false })
+			.holdBoard({ vault, board, holder: human("camera"), waitMs: 0, revokeClaim: false })
 			.catch((error: unknown) => error);
 		expect(camera).toBeInstanceOf(lock.BoardHeldError);
 		expect(lock.claimOn(board)).not.toBeNull();
 		const takeoverRequest = lock.holdBoard({
+			vault,
 			board,
 			holder: human("user"),
 			waitMs: 0,
@@ -90,12 +97,12 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			claim: { holder: { reason: "now the queues" } },
 		});
 		expect(lock.takeClaimRevocation(board)).toBeNull();
-		lock.releaseHold(board, "user");
+		lock.releaseHold(vault, board, "user");
 
 		for (const mode of ["expired", "deleted"] as const) {
 			const lapsed = `lapsed-${mode}`;
 			boards.add(lapsed);
-			await lock.claimBoard({ board: lapsed, reason: "lapsed work", forMs: 60_000 });
+			await lock.claimBoard({ vault, board: lapsed, reason: "lapsed work", forMs: 60_000 });
 			const file = join(vault, ".archboard/locks", `${lapsed}.lock`);
 			if (mode === "expired") {
 				const record = JSON.parse(readFileSync(file, "utf8")) as { until: string };
@@ -105,6 +112,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 				rmSync(file);
 			}
 			const lapsedTakeover = lock.holdBoard({
+				vault,
 				board: lapsed,
 				holder: human("user"),
 				waitMs: 0,
@@ -121,35 +129,35 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 				claim: { holder: { reason: "lapsed work" } },
 			});
 			expect(lock.takeClaimRevocation(lapsed)).toBeNull();
-			lock.releaseHold(lapsed, "user");
+			lock.releaseHold(vault, lapsed, "user");
 		}
 
 		const idle = "idle";
 		boards.add(idle);
-		const idleClaim = await lock.claimBoard({ board: idle, reason: "reading", forMs: 60_000 });
+		const idleClaim = await lock.claimBoard({
+			vault,
+			board: idle,
+			reason: "reading",
+			forMs: 60_000,
+		});
 		jest.advanceTimersByTime(LOCK_LEASE_MS + 250);
-		expect(lock.boardLockState(idle)?.id).toBe(idleClaim.claim.holder.id);
-		expect(lock.boardLockState(idle)?.since).toBe(idleClaim.claim.holder.since);
+		expect(lock.boardLockState(vault, idle)?.id).toBe(idleClaim.claim.holder.id);
+		expect(lock.boardLockState(vault, idle)?.since).toBe(idleClaim.claim.holder.since);
 		expect(lock.releaseClaim(idle)).not.toBeNull();
 
 		const brief = "brief";
 		boards.add(brief);
-		await lock.claimBoard({ board: brief, reason: "a moment", forMs: CLAIM_LEASE_MS });
+		await lock.claimBoard({ vault, board: brief, reason: "a moment", forMs: CLAIM_LEASE_MS });
 		jest.advanceTimersByTime(CLAIM_LEASE_MS);
-		expect(lock.boardLockState(brief)).toBeNull();
+		expect(lock.boardLockState(vault, brief)).toBeNull();
 		expect(lock.claimOn(brief)).toBeNull();
 		expect(lock.releaseClaim(brief)).toBeNull();
 
 		const plain = "plain";
 		boards.add(plain);
-		await lock.holdBoard({ board: plain, holder: agent("one-write"), waitMs: 0 });
+		await lock.holdBoard({ vault, board: plain, holder: agent("one-write"), waitMs: 0 });
 		const refusal = lock
-			.holdBoard({
-				board: plain,
-				holder: human("user"),
-				waitMs: 100,
-				revokeClaim: true,
-			})
+			.holdBoard({ vault, board: plain, holder: human("user"), waitMs: 100, revokeClaim: true })
 			.catch((error: unknown) => error);
 		await advanceLockTime(100);
 		const plainRefusal = await refusal;
@@ -162,7 +170,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		for (const board of boards) {
 			lock.releaseClaim(board);
 			for (const id of ["user", "camera", "one-write"]) {
-				lock.releaseHold(board, id);
+				lock.releaseHold(vault, board, id);
 			}
 		}
 		lock.forgetLockAnnouncements();

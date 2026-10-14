@@ -7,7 +7,6 @@
 // the semantic brief that says what the person is actually looking at.
 
 import fs from "node:fs";
-import { requireVaultRoot } from "@/runtime/engine/board";
 import { listSemanticBoards } from "@/runtime/semantic-board-store/index";
 
 // Leaves room for the separate semantic brief within Codex's realtime context budget.
@@ -18,7 +17,7 @@ const CATALOGUE_MAX_BYTES = 8192;
  * @param root The vault to list.
  * @returns The byte-bounded JSON inventory, including its omitted count.
  */
-function readBoardCatalogue(root = requireVaultRoot()): string {
+function readBoardCatalogue(root: string): string {
 	const entries = listSemanticBoards(root)
 		.map(({ key, name }) => ({ key, board: name }))
 		.toSorted((left, right) => (left.key < right.key ? -1 : left.key > right.key ? 1 : 0));
@@ -52,7 +51,7 @@ function readBoardCatalogue(root = requireVaultRoot()): string {
 function watchBoardCatalogue(
 	onChange: () => void,
 	onError: (error: Error) => void,
-	root = requireVaultRoot(),
+	root: string,
 ): () => void {
 	const watcher = fs.watch(root, { recursive: true, persistent: false }, (event, filename) => {
 		if (event === "rename" && !filename?.split(/[\\/]/).some((part) => part.startsWith("."))) {

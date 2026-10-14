@@ -60,6 +60,7 @@ interface BoundBoard {
 async function boundBoard(repository: string, path: string): Promise<BoundBoard> {
 	const name = `payments-${Math.random().toString(36).slice(2, 8)}`;
 	const written = await writeSemanticBoard({
+		vault: ownerVault,
 		board: name,
 		writer: { kind: "agent" },
 		transition: createBoardTransition({
@@ -75,7 +76,7 @@ async function boundBoard(repository: string, path: string): Promise<BoundBoard>
 	if (written.outcome !== "applied") {
 		throw new Error(`Could not write the bound board: ${written.problem}`);
 	}
-	const read = readSemanticBoard(name);
+	const read = readSemanticBoard(ownerVault, name);
 	if (!read.ok) {
 		throw new Error(`Could not read the bound board: ${read.problem}`);
 	}
@@ -84,7 +85,7 @@ async function boundBoard(repository: string, path: string): Promise<BoundBoard>
 	if (node === undefined) {
 		throw new Error("The written board has no node.");
 	}
-	return { key: name, node: node.id, file: locateSemanticBoard(name).file };
+	return { key: name, node: node.id, file: locateSemanticBoard(name, ownerVault).file };
 }
 
 afterAll(() => {

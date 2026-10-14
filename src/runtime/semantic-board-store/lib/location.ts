@@ -23,13 +23,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import {
-	boardKey,
-	makeIdentity,
-	normalizeBoardKey,
-	requireVaultRoot,
-	vaultPathFor,
-} from "@/runtime/engine/board";
+import { boardKey, makeIdentity, normalizeBoardKey, vaultPathFor } from "@/runtime/engine/board";
 
 /** What a semantic board's aggregate is stored under, inside the vault. */
 const SEMANTIC_BOARD_FILE_SUFFIX = ".semantic.json";
@@ -108,11 +102,11 @@ function insideVault(file: string, root: string): boolean {
 /**
  * Where the board a caller asked for lives.
  * @param asked The board name as typed.
- * @param root The vault root; defaults to the configured vault.
+ * @param root The vault root.
  * @returns Where that board is.
  * @throws {Error} When the name is not usable or would escape the vault.
  */
-function locateSemanticBoard(asked: string, root = requireVaultRoot()): SemanticBoardLocation {
+function locateSemanticBoard(asked: string, root: string): SemanticBoardLocation {
 	const address = semanticBoardAddress(asked);
 	const file = vaultPathFor(makeIdentity({ board: asked }), root, SEMANTIC_BOARD_FILE_SUFFIX);
 	if (!insideVault(file, root)) {

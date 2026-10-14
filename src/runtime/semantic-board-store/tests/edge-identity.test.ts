@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import type * as ContractModule from "@/shared/semantic-board/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-edge-identity-"));
@@ -18,7 +17,6 @@ let boards = 0;
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
 	contract = await import("@/shared/semantic-board/index");
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("identity owner").file);
 });
 
 beforeEach(async () => {
@@ -26,6 +24,7 @@ beforeEach(async () => {
 	expect(
 		(
 			await store.writeSemanticBoard({
+				vault,
 				board,
 				writer,
 				transition: store.createBoardTransition(
@@ -54,7 +53,7 @@ afterAll(() => {
 
 /** Read this test's persisted board. */
 function read() {
-	const result = store.readSemanticBoard(board);
+	const result = store.readSemanticBoard(vault, board);
 	if (!result.ok) throw new Error(result.problem);
 	return result.board;
 }
@@ -67,6 +66,7 @@ function variant(name = "Proposal") {
 /** Apply an authored batch against the version read by this test. */
 function edit(input: unknown) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -88,6 +88,7 @@ function warningsOf(result: Awaited<ReturnType<typeof edit>>) {
 /** Derive a fresh successor. */
 function branch(from: string, name: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,

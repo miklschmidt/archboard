@@ -20,6 +20,7 @@ import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { callerGone, trackMutationWork } from "@/server/archboard/lib/mutation-work";
 import { boardOfRequest, bodyOf, bodyString } from "@/server/archboard/lib/request-board";
 import { aggregateOf } from "@/server/archboard/lib/pane-registry";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * Answer a lock failure, unless the caller has already gone after cancelling
@@ -91,7 +92,7 @@ function lockableKey(req: Request, res: Response, what: string): string | null {
 	// document somebody is holding. Reading the pane's address as a board name
 	// would refuse a pane that happens to be on a proposal.
 	const board = aggregateOf(asked) ?? asked;
-	const read = readSemanticBoard(board);
+	const read = readSemanticBoard(serverVault(), board);
 	if (!read.ok) {
 		res.status(404).json({
 			success: false,
@@ -149,14 +150,14 @@ function takeBackRoute(req: Request, res: Response): void {
 		return;
 	}
 	const holder = { id: clientId, kind: "human" as const };
-	const standing = boardLockState(key);
+	const standing = boardLockState(serverVault(), key);
 	const claim = standing?.kind === "agent" && standing.claimed ? standing : null;
 	void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>
-		holdBoard({ board: key, holder, revokeClaim: true, signal }),
+		holdBoard({ vault: serverVault(), board: key, holder, revokeClaim: true, signal }),
 	)
 		.then((hold) => {
 			if (hold.created) {
-				releaseHold(key, hold.holder.id);
+				releaseHold(serverVault(), key, hold.holder.id);
 			}
 			return res.json({
 				success: true,
@@ -186,12 +187,13 @@ async function takeClaim(
 	signal: AbortSignal,
 ): Promise<Record<string, unknown>> {
 	const { claim, created } = await claimBoard({
+		vault: serverVault(),
 		board: key,
 		reason,
 		...(forMs === undefined ? {} : { forMs }),
 		signal,
 	});
-	const read = readSemanticBoard(key);
+	const read = readSemanticBoard(serverVault(), key);
 	return {
 		success: true,
 		board: key,

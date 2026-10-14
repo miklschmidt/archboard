@@ -43,6 +43,7 @@ import {
 	editRoute,
 	resolveRoute,
 } from "@/server/archboard/lib/semantic-board-writes";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * The theme a render stands alone in. Absent asks for the page's picture, which
@@ -105,9 +106,9 @@ function refuseUnnamedBoard(res: Response): void {
  */
 function listRoute(_req: Request, res: Response): void {
 	try {
-		const configured = readSemanticBoardConfiguration();
-		const read = listSemanticBoards().map(
-			(location) => [location, readSemanticBoard(location.name)] as const,
+		const configured = readSemanticBoardConfiguration(serverVault());
+		const read = listSemanticBoards(serverVault()).map(
+			(location) => [location, readSemanticBoard(serverVault(), location.name)] as const,
 		);
 		// A drill-down written before a rename names the board as it was then;
 		// the listing names it as it is now, so the navigator places the board
@@ -136,7 +137,7 @@ function readRoute(req: Request, res: Response): void {
 		return;
 	}
 	try {
-		const read = readSemanticBoard(asked);
+		const read = readSemanticBoard(serverVault(), asked);
 		if (!read.ok) {
 			res.status(read.code === "BOARD_MISSING" ? 404 : 422).json({
 				success: false,
@@ -403,7 +404,7 @@ async function answerRender(req: Request, res: Response, asked: string): Promise
 	const outcome = await renderBoard(
 		board,
 		stated.how,
-		readSemanticBoardConfiguration().configuration,
+		readSemanticBoardConfiguration(serverVault()).configuration,
 	);
 	if (!outcome.ok) {
 		res.status(404).json({ success: false, code: outcome.code, error: outcome.error });
@@ -419,7 +420,7 @@ async function answerRender(req: Request, res: Response, asked: string): Promise
  * @returns The board, or null when it could not be read.
  */
 function readableBoard(res: Response, asked: string): SemanticBoard | null {
-	const read = readSemanticBoard(asked);
+	const read = readSemanticBoard(serverVault(), asked);
 	if (read.ok) {
 		return read.board;
 	}
@@ -444,7 +445,7 @@ function readableBoard(res: Response, asked: string): SemanticBoard | null {
  */
 function mountSemanticBoardRoutes(app: Express): void {
 	app.get("/api/vault/check", (_req, res) => {
-		res.json({ success: true, ...checkSemanticVault() });
+		res.json({ success: true, ...checkSemanticVault(serverVault()) });
 	});
 	app.get("/api/semantic-boards", listRoute);
 	app.get("/api/semantic-boards/board", readRoute);

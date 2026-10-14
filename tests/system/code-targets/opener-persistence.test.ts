@@ -56,6 +56,7 @@ describe("machine-wide opener persistence", () => {
 				const { createOpenerFixture } = await import("./support/opener-fixture.ts");
 				const timeline: ActivationTimelineEntry[] = [];
 				const fixture = await createOpenerFixture({
+					vault,
 					// The real binding lookup, against the real store: what is being
 					// checked is that a node's binding survives a restart, and a stub
 					// standing in for the board would check the stub instead.
@@ -72,6 +73,7 @@ describe("machine-wide opener persistence", () => {
 				// One board with one bound node, written through the store every other
 				// writer goes through, so the opener resolves a real binding.
 				const written = await writeSemanticBoard({
+					vault,
 					board: "payments",
 					writer: { kind: "agent" },
 					transition: createBoardTransition({
@@ -91,7 +93,7 @@ describe("machine-wide opener persistence", () => {
 					}),
 				});
 				expect(written.outcome).toBe("applied");
-				const read = readSemanticBoard("payments");
+				const read = readSemanticBoard(vault, "payments");
 				if (!read.ok) {
 					throw new Error(`The bound board could not be read: ${read.problem}`);
 				}
@@ -99,7 +101,7 @@ describe("machine-wide opener persistence", () => {
 					read.board.variants.find((one) => one.id === read.board.current)?.content.nodes[0]?.id ??
 					"";
 				expect(boundNode).not.toBe("");
-				const note = locateSemanticBoard("payments").file;
+				const note = locateSemanticBoard("payments", vault).file;
 				const noteBytes = readFileSync(note);
 				const noteMtime = statSync(note, { bigint: true }).mtimeNs;
 

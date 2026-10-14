@@ -264,6 +264,7 @@ function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promi
  * or lapsed state is acquired. A person's explicit take-back of a claim (ADR
  * 0022) follows the contested lapsed path; a short write is never revoked,
  * and an ordinary human hold is refused by a claim like any other rival.
+ * @param vault The vault root the board lives in.
  * @param board The board key, already normalized.
  * @param who Who is asking, and whether they are claiming it.
  * @param leaseMs How long the lease runs for.
@@ -272,12 +273,13 @@ function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promi
  * @throws {Error} When the lease file cannot be written.
  */
 async function attempt(
+	vault: string,
 	board: string,
 	who: Asker,
 	leaseMs: number,
 	revoke: boolean,
 ): Promise<Attempt> {
-	const file = lockPathFor(board);
+	const file = lockPathFor(vault, board);
 	const current = readRecord(file);
 	const live = liveRecord(current);
 	/**
@@ -367,7 +369,7 @@ async function holdBoard(request: LockRequest): Promise<LockHold> {
 		// oxlint-disable-next-line no-await-in-loop -- one attempt at a time is the mutex
 		const result = await attemptOnce(board, request, plan.leaseMs);
 		if (result.ok) {
-			return holdFrom(result, board, wait.blocker);
+			return holdFrom(result, request.vault, board, wait.blocker);
 		}
 		const verdict = nextStep(result, request, wait, plan.deadline);
 		if (verdict === "stop") {
@@ -476,16 +478,18 @@ function givesUp(wait: WaitState): boolean {
  * A commit receipt is useful only when this newly-created acquirer observed
  * its exact predecessor; the state owner consumes and validates it once.
  * @param result The proven acquisition.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param blocker The last concrete blocker this wait saw.
  * @returns The hold.
  */
 function holdFrom(
 	result: Extract<Attempt, { ok: true }>,
+	vault: string,
 	board: string,
 	blocker: LockRecord | null,
 ): LockHold {
-	const predecessorHash = result.created ? takeHandoff(board, blocker) : undefined;
+	const predecessorHash = result.created ? takeHandoff(vault, board, blocker) : undefined;
 	return {
 		holder: holderOf(result.record),
 		leaseToken: result.record.token,
@@ -508,9 +512,15 @@ function holdFrom(
  */
 async function attemptOnce(board: string, request: LockRequest, leaseMs: number): Promise<Attempt> {
 	refuseIfCancelled(request);
-	const result = await attempt(board, request.holder, leaseMs, request.revokeClaim === true);
+	const result = await attempt(
+		request.vault,
+		board,
+		request.holder,
+		leaseMs,
+		request.revokeClaim === true,
+	);
 	if (request.signal?.aborted && result.ok && result.created) {
-		releaseHold(board, request.holder.id);
+		releaseHold(request.vault, board, request.holder.id);
 	}
 	refuseIfCancelled(request);
 	return result;
@@ -569,7 +579,7 @@ async function withBoardLock<T>(request: LockRequest, write: () => T): Promise<T
 		return write();
 	} finally {
 		if (hold.created) {
-			releaseHold(request.board, request.holder.id);
+			releaseHold(request.vault, request.board, request.holder.id);
 		}
 	}
 }

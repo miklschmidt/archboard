@@ -42,6 +42,7 @@ let reported = 0;
  */
 async function writeBoard(name: string, walkthroughs: readonly { name: string }[]): Promise<void> {
 	await store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
@@ -62,17 +63,17 @@ beforeAll(async () => {
 	server = await import("@/server/archboard/index");
 	store = await import("@/runtime/semantic-board-store/index");
 	contract = await import("@/shared/semantic-board/index");
-	const landing = store.locateSemanticBoard(NARRATED).file;
-	if (!landing.startsWith(vault)) {
+	const { ARCHBOARD_VAULT } = await import("@/runtime/engine/config");
+	if (ARCHBOARD_VAULT !== vault) {
 		throw new Error(
-			`This owner writes boards, and its vault is not the one it made: ${landing} is outside ` +
-				`${vault}. Run it in its own process — \`bun test --isolate ${import.meta.file}\` — ` +
+			`The server under test reads its vault from the environment, and it read ${ARCHBOARD_VAULT} ` +
+				`rather than ${vault}. Run it in its own process — \`bun test --isolate ${import.meta.file}\` — ` +
 				"rather than alongside a file that resolved the vault first.",
 		);
 	}
 	await writeBoard(NARRATED, [{ name: "How a request lands" }]);
 	await writeBoard(OTHER, []);
-	const read = store.readSemanticBoard(NARRATED);
+	const read = store.readSemanticBoard(vault, NARRATED);
 	if (!read.ok) {
 		throw new Error(read.problem);
 	}

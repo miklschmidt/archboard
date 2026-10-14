@@ -17,7 +17,7 @@
 // once went by this name.
 
 import fs from "node:fs";
-import { normalizeBoardKey, requireVaultRoot } from "@/runtime/engine/board";
+import { normalizeBoardKey } from "@/runtime/engine/board";
 import { listSemanticBoards } from "@/runtime/semantic-board-store/lib/listing";
 import {
 	locateSemanticBoard,
@@ -81,11 +81,11 @@ function boardFormerlyCalled(
  * Reads a directory, so a writer asks it before taking a board's lease and
  * takes the lease on the key it answers, locating the file again once held.
  * @param asked The board name as typed.
- * @param root The vault root; defaults to the configured vault.
+ * @param root The vault root.
  * @returns Where that board is.
  * @throws {Error} When the name is not usable or would escape the vault.
  */
-function resolveSemanticBoard(asked: string, root = requireVaultRoot()): SemanticBoardLocation {
+function resolveSemanticBoard(asked: string, root: string): SemanticBoardLocation {
 	const own = locateSemanticBoard(asked, root);
 	return fs.existsSync(own.file) ? own : (boardFormerlyCalled(own.key, root) ?? own);
 }

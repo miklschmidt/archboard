@@ -17,7 +17,6 @@
 
 import fs from "fs";
 import path from "path";
-import { ARCHBOARD_VAULT, noVaultMessage } from "@/runtime/engine/config";
 
 interface BoardIdentity {
 	// The name as a key: normalised, so it is the same string whoever typed it
@@ -365,18 +364,6 @@ function isScratchKey(key: string): boolean {
 }
 
 /**
- * The vault root, or the same refusal a server gives when it has none. A
- * server refuses to start without a vault (ADR 0015), so in a running server
- * this cannot fire; it stays as the backstop for anything that reaches vault
- * paths another way.
- * @returns The absolute vault path.
- */
-function requireVaultRoot(): string {
-	if (!ARCHBOARD_VAULT) throw new Error(noVaultMessage());
-	return path.resolve(ARCHBOARD_VAULT);
-}
-
-/**
  * The entry in `dir` whose name is the same as `wanted` once normalised, or
  * null. One readdir per path segment, which is what a case-insensitive
  * filesystem does in the kernel and what archboard has to emulate on a
@@ -541,6 +528,5 @@ export {
 	paneBoardAddress,
 	parseBoardKey,
 	isScratchKey,
-	requireVaultRoot,
 	vaultPathFor,
 };

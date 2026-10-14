@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 // A board for something nobody has built (ADR 0031): created with a draft and
@@ -20,7 +19,6 @@ const board = "planned";
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 afterAll(() => {
@@ -34,7 +32,7 @@ afterAll(() => {
  * @returns The board.
  */
 function read() {
-	const answer = store.readSemanticBoard(board);
+	const answer = store.readSemanticBoard(vault, board);
 	if (!answer.ok) throw new Error(answer.problem);
 	return answer.board;
 }
@@ -46,6 +44,7 @@ function read() {
  */
 function write(transition: StoreModule.SemanticTransition) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -55,6 +54,7 @@ function write(transition: StoreModule.SemanticTransition) {
 
 test("a planned board is written, worked on unqualified, and adopted into existence", async () => {
 	const created = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(

@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
@@ -61,14 +60,13 @@ const SEED = {
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 beforeEach(async () => {
 	boards += 1;
 	board = `narrated-${boards}`;
 	seeded = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(
@@ -87,7 +85,7 @@ afterAll(() => {
  * @returns The one variant's content.
  */
 const held = (): ContractModule.VariantContent => {
-	const read = store.readSemanticBoard(board);
+	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error(read.problem);
 	return read.board.variants[0]!.content;
 };
@@ -98,9 +96,10 @@ const held = (): ContractModule.VariantContent => {
  * @returns What the write boundary said.
  */
 const edit = async (edit_: Record<string, unknown>) => {
-	const read = store.readSemanticBoard(board);
+	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error(read.problem);
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read.board.version,
@@ -121,7 +120,7 @@ test("an explanation lands in one batch and reads back resolved", () => {
 	const ledger = content.nodes.find((node) => node.name === "Ledger")!;
 	const cli = content.nodes.find((node) => node.name === "CLI")!;
 	expect(walkthrough.beats[1]!.subjects).toEqual([ledger.id, cli.id]);
-	const read = store.readSemanticBoard(board);
+	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error(read.problem);
 	expect(walkthrough.beats[1]!.view).toBe(read.board.views[0]!.id);
 	// A beat about nothing keeps an empty list rather than gaining one.
@@ -360,7 +359,7 @@ test("an explanation is removed by the name it is addressed under", async () => 
 	expect(held().walkthroughs).toEqual([]);
 	// The architecture it explained is untouched: a narrative is not content.
 	expect(held().nodes).not.toHaveLength(0);
-	const read = store.readSemanticBoard(board);
+	const read = store.readSemanticBoard(vault, board);
 	expect(read.ok && read.board.views).toHaveLength(1);
 }, 20_000);
 

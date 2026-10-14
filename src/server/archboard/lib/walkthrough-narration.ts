@@ -32,6 +32,7 @@ import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-con
 import { aggregateKey } from "@/server/archboard/lib/semantic-board-context";
 import { tabSessionOf } from "@/server/archboard/lib/tab-sessions";
 import type { TabSessionId } from "@/server/codex-workbench";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * What one live pane is showing: what the pane itself last said is on screen,
@@ -75,7 +76,7 @@ function walkthroughOnPane(clientId: string, walkthroughId: string): ShownWalkth
 	if (showing === null) {
 		return undefined;
 	}
-	const read = readSemanticBoard(showing.board);
+	const read = readSemanticBoard(serverVault(), showing.board);
 	if (!read.ok) {
 		return undefined;
 	}

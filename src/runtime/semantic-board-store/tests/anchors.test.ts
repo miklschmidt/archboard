@@ -7,7 +7,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import type * as ContractModule from "@/shared/semantic-board/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-anchors-"));
@@ -25,12 +24,12 @@ const REPLY = { repo: REPO, path: "src/orders.ts", symbol: "Orders.accept" };
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
 	contract = await import("@/shared/semantic-board/index");
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("anchor owner").file);
 });
 
 beforeEach(async () => {
 	board = `anchors-${++boards}`;
 	const created = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(
@@ -73,7 +72,7 @@ afterAll(() => {
  * @returns The current variant's content.
  */
 function current() {
-	const result = store.readSemanticBoard(board);
+	const result = store.readSemanticBoard(vault, board);
 	if (!result.ok) throw new Error(result.problem);
 	return result.board.variants[0]!.content;
 }
@@ -84,9 +83,10 @@ function current() {
  * @returns What the write did.
  */
 function edit(input: unknown) {
-	const read = store.readSemanticBoard(board);
+	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error(read.problem);
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read.board.version,

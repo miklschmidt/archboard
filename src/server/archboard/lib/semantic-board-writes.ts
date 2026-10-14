@@ -40,6 +40,7 @@ import { broadcast } from "@/server/archboard/lib/pane-registry";
 import { settledChangeFields } from "@/server/archboard/lib/semantic-change-feed";
 import { checkDoing, recordDoing } from "@/runtime/engine/board-doing";
 import { announceDoing, refuseUndescribedWrite } from "@/server/archboard/lib/board-announcements";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * Tell every pane holding this board that it has changed, so the pane asks for
@@ -144,7 +145,7 @@ function answerWrite(
 ): void {
 	if (result.outcome === "applied") {
 		announce(result, envelope);
-		const current = readSemanticBoard(result.board.name);
+		const current = readSemanticBoard(serverVault(), result.board.name);
 		res.json({
 			warnings: [...result.warnings, ...(current.ok ? current.warnings : [])],
 			success: true,
@@ -238,6 +239,7 @@ async function createRoute(
 		return;
 	}
 	const result = await writeSemanticBoard({
+		vault: serverVault(),
 		board: envelope.board,
 		writer: writerOf(envelope),
 		transition: createBoardTransition(input),
@@ -281,6 +283,7 @@ async function editRoute(
 		return;
 	}
 	const result = await writeSemanticBoard({
+		vault: serverVault(),
 		board: envelope.board,
 		writer: writerOf(envelope),
 		transition: editVariantTransition(edit),
@@ -332,6 +335,7 @@ async function branchRoute(
 		return;
 	}
 	const result = await writeSemanticBoard({
+		vault: serverVault(),
 		board: envelope.board,
 		writer: writerOf(envelope),
 		transition: branchVariantTransition(branch),
@@ -471,6 +475,7 @@ async function answerFrom(
 	signal: AbortSignal,
 ): Promise<void> {
 	const result = await writeSemanticBoard({
+		vault: serverVault(),
 		board: stated.envelope.board,
 		writer: writerOf(stated.envelope),
 		transition,

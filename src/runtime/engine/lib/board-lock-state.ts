@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { LOCK_WATCH_MS } from "@/shared/timing/timing";
-import { VAULT_STATE_DIR, normalizeBoardKey, requireVaultRoot } from "@/runtime/engine/board";
+import { VAULT_STATE_DIR, normalizeBoardKey } from "@/runtime/engine/board";
 import { logger } from "@/runtime/engine/logger";
 import type {
 	LockHandoff,
@@ -19,9 +19,15 @@ const processAnnounced = new Map<string, string>();
 const processSink = { notify: null as LockSink | null };
 const processSweep = { also: null as ((board: string) => void) | null };
 const processWatcher: {
-	boards: (() => string[]) | null;
+	watched: WatchedBoards | null;
 	timer: ReturnType<typeof setInterval> | null;
-} = { boards: null, timer: null };
+} = { watched: null, timer: null };
+
+/** The boards a browser has on screen, and the vault they live in. */
+interface WatchedBoards {
+	readonly vault: string;
+	readonly boards: () => string[];
+}
 
 /**
  * A moment as the lease records it.
@@ -49,12 +55,13 @@ function newToken(): string {
  *
  * One percent-encoded filename per normalized board keeps nested board names
  * from becoming directories and makes this the sole vault lock-path owner.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @returns The lease file's path.
  */
-function lockPathFor(board: string): string {
+function lockPathFor(vault: string, board: string): string {
 	return path.join(
-		requireVaultRoot(),
+		vault,
 		VAULT_STATE_DIR,
 		"locks",
 		`${encodeURIComponent(normalizeBoardKey(board))}.lock`,
@@ -63,11 +70,12 @@ function lockPathFor(board: string): string {
 
 /**
  * Where a released writer leaves its commit receipt for the next one.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @returns The receipt's path.
  */
-function handoffPathFor(board: string): string {
-	return `${lockPathFor(board)}.handoff`;
+function handoffPathFor(vault: string, board: string): string {
+	return `${lockPathFor(vault, board)}.handoff`;
 }
 
 /**
@@ -201,14 +209,15 @@ function writeRecord(file: string, record: LockRecord): void {
  *
  * The handoff is written before lease removal. Failure loses optional proof,
  * but must never keep every future writer behind an already committed lease.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param record The lease being released.
  */
-function writeHandoff(board: string, record: LockRecord): void {
+function writeHandoff(vault: string, board: string, record: LockRecord): void {
 	if (!record.committedHash) {
 		return;
 	}
-	writeJsonRecord(handoffPathFor(board), {
+	writeJsonRecord(handoffPathFor(vault, board), {
 		id: record.id,
 		process: record.process,
 		since: record.since,
@@ -224,12 +233,17 @@ function writeHandoff(board: string, record: LockRecord): void {
  * only when id, process, original since time and token exactly match the
  * blocker this waiter actually observed; an unobserved or intervening writer
  * proves nothing about the successor's conflict baseline.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param predecessor The lease this waiter watched, when it saw one.
  * @returns The committed note hash, or undefined when nothing proves one.
  */
-function takeHandoff(board: string, predecessor: LockRecord | null): string | undefined {
-	const file = handoffPathFor(board);
+function takeHandoff(
+	vault: string,
+	board: string,
+	predecessor: LockRecord | null,
+): string | undefined {
+	const file = handoffPathFor(vault, board);
 	const handoff = readHandoff(file);
 	try {
 		fs.unlinkSync(file);
@@ -284,11 +298,12 @@ function holderOf(record: LockRecord): LockHolder {
 
 /**
  * Who has one board now.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @returns The holder, or null when the board is free.
  */
-function boardLockState(board: string): LockHolder | null {
-	const live = liveRecord(readRecord(lockPathFor(normalizeBoardKey(board))));
+function boardLockState(vault: string, board: string): LockHolder | null {
+	const live = liveRecord(readRecord(lockPathFor(vault, normalizeBoardKey(board))));
 	return live ? holderOf(live) : null;
 }
 
@@ -328,10 +343,11 @@ function announceHeld(board: string, holder: LockHolder): void {
  * is held is a pane refusing edits for no reason. The lease is re-read rather
  * than assumed, so a board another process has taken meanwhile is announced
  * held, never falsely free from stale release state.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  */
-function announceFree(board: string): void {
-	announce(board, boardLockState(board));
+function announceFree(vault: string, board: string): void {
+	announce(board, boardLockState(vault, board));
 }
 
 /**
@@ -339,16 +355,17 @@ function announceFree(board: string): void {
  *
  * Attached only when the exact enclosing lease still owns the file. This is
  * best-effort proof; persistence has already succeeded.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param leaseToken The acquisition this commit happened inside.
  * @param hash The note's hash.
  * @returns True when the proof was stamped.
  */
-function recordLockCommit(board: string, leaseToken: string, hash: string): boolean {
+function recordLockCommit(vault: string, board: string, leaseToken: string, hash: string): boolean {
 	let key = board;
 	try {
 		key = normalizeBoardKey(board);
-		const file = lockPathFor(key);
+		const file = lockPathFor(vault, key);
 		const current = readRecord(file);
 		if (!current || current.token !== leaseToken || hash.length === 0) {
 			return false;
@@ -367,20 +384,21 @@ function recordLockCommit(board: string, leaseToken: string, hash: string): bool
  * Released only if the lease is still ours: a lapsed one may already belong to
  * a successor, and unlinking that record would admit a third writer. The
  * ordering is deliberate — optional handoff, immediate unlink, then the news.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param holderId Who is releasing it.
  * @returns True when this holder had it to release.
  */
-function releaseHold(board: string, holderId: string): boolean {
+function releaseHold(vault: string, board: string, holderId: string): boolean {
 	const key = normalizeBoardKey(board);
-	const file = lockPathFor(key);
+	const file = lockPathFor(vault, key);
 	const current = readRecord(file);
 	if (!current || current.id !== holderId) {
 		return false;
 	}
 	if (current.committedHash) {
 		try {
-			writeHandoff(key, current);
+			writeHandoff(vault, key, current);
 		} catch (error) {
 			logger.warn(`Could not record the released-writer handoff for "${key}".`, { error });
 		}
@@ -390,7 +408,7 @@ function releaseHold(board: string, holderId: string): boolean {
 	} catch {
 		/* already gone: released is released */
 	}
-	announceFree(key);
+	announceFree(vault, key);
 	return true;
 }
 
@@ -399,13 +417,14 @@ function releaseHold(board: string, holderId: string): boolean {
  *
  * Renewal answers only "do I still have this?" It refuses to acquire a free or
  * rival lease, which is what keeps a remotely revoked claim from resurrecting.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param id Who is renewing.
  * @param leaseMs How much longer to hold it.
  * @returns The renewed holder, or null when the lease is no longer theirs.
  */
-function renewRecord(board: string, id: string, leaseMs: number): LockHolder | null {
-	const file = lockPathFor(board);
+function renewRecord(vault: string, board: string, id: string, leaseMs: number): LockHolder | null {
+	const file = lockPathFor(vault, board);
 	const live = liveRecord(readRecord(file));
 	if (!live || live.id !== id) {
 		return null;
@@ -420,8 +439,11 @@ function renewRecord(board: string, id: string, leaseMs: number): LockHolder | n
  * Look at every board on screen and announce who has it.
  */
 function sweepBoardLocks(): void {
-	const boards = processWatcher.boards?.() ?? [];
-	for (const board of new Set(boards.map(normalizeBoardKey))) {
+	if (!processWatcher.watched) {
+		return;
+	}
+	const { vault, boards } = processWatcher.watched;
+	for (const board of new Set(boards().map(normalizeBoardKey))) {
 		// The note-watch passenger shares this exact board list and cadence. It runs
 		// first, but its failure must never stop lock observation.
 		try {
@@ -431,7 +453,7 @@ function sweepBoardLocks(): void {
 				error,
 			});
 		}
-		announce(board, boardLockState(board));
+		announce(board, boardLockState(vault, board));
 	}
 }
 
@@ -441,11 +463,12 @@ function sweepBoardLocks(): void {
  * A lock file cannot call another server, so the state is polled. Polling runs
  * only while a browser supplies boards that are actually on screen; with no
  * pane, nobody can be misled.
- * @param boards Which boards are on screen, or null to stop watching.
+ * @param watched Which boards are on screen and the vault they live in, or null
+ *   to stop watching.
  */
-function watchBoardLocks(boards: (() => string[]) | null): void {
-	processWatcher.boards = boards;
-	if (!boards) {
+function watchBoardLocks(watched: WatchedBoards | null): void {
+	processWatcher.watched = watched;
+	if (!watched) {
 		if (processWatcher.timer) {
 			clearInterval(processWatcher.timer);
 		}
@@ -490,6 +513,7 @@ function forgetLockState(): void {
 }
 
 export {
+	type WatchedBoards,
 	announceHeld,
 	boardLockState,
 	forgetLockState,

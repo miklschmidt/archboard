@@ -19,6 +19,7 @@ import { newToken, releaseHold } from "@/runtime/engine/lib/board-lock-state";
  */
 async function claimBoard(
 	request: Readonly<{
+		vault: string;
 		board: string;
 		reason: string;
 		forMs?: number;
@@ -35,6 +36,7 @@ async function claimBoard(
 	const existing = liveClaim(board);
 	const id = existing === null ? `claim-${newToken()}` : existing.holder.id;
 	const hold = await holdBoard({
+		vault: request.vault,
 		board,
 		holder: { id, kind: "agent", reason: request.reason, claimed: true },
 		leaseMs: CLAIM_LEASE_MS,
@@ -42,6 +44,7 @@ async function claimBoard(
 		...(request.signal !== undefined ? { signal: request.signal } : {}),
 	});
 	const entry: ClaimEntry = {
+		vault: request.vault,
 		holder: hold.holder,
 		expires: Date.now() + forMs,
 		timer: existing === null ? null : existing.timer,
@@ -74,7 +77,7 @@ function releaseClaim(board: string): Claim | null {
 		return null;
 	}
 	dropClaim(key, entry);
-	releaseHold(key, entry.holder.id);
+	releaseHold(entry.vault, key, entry.holder.id);
 	return claimOf(key, entry);
 }
 
