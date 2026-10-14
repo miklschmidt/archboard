@@ -216,7 +216,7 @@ const semanticFootprintContract = defineCommand({
 			method: "GET",
 			path: "/api/semantic-boards/footprint",
 			cardinality: "one",
-			description: "The footprint, read from Git in each registered checkout",
+			description: "The footprint, read from Git in each chosen checkout",
 		},
 	],
 	/**
