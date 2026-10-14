@@ -94,6 +94,7 @@ test("check --code reads the worktree for its own repository and the chosen chec
 				{ name: "Worktree", kind: "service", binding: binding(ORDERS, "inTheWorktree") },
 				{ name: "Main", kind: "service", binding: binding(ORDERS, "inTheMainCheckout") },
 				{ name: "Billing", kind: "service", binding: binding(BILLING, "inBilling") },
+				{ name: "Not billing", kind: "service", binding: binding(BILLING, "inTheWorktree") },
 			],
 		}),
 	);
@@ -104,10 +105,13 @@ test("check --code reads the worktree for its own repository and the chosen chec
 		codeCheck: { findings: { code: string; subject?: { name: string } }[] };
 	};
 	// The symbol that only the worktree defines is found, and the one that only
-	// the chosen main checkout defines is not: the worktree is what is read.
+	// the chosen main checkout defines is not: the worktree is what is read. In
+	// billing, read in its chosen checkout, its own symbol is found and the
+	// worktree's is not; a repository that was not read would be skipped instead.
 	expect(
 		answer.codeCheck.findings
 			.filter((finding) => finding.code === "BINDING_SYMBOL_MISSING")
-			.map((finding) => finding.subject?.name),
-	).toEqual(["Main"]);
+			.map((finding) => finding.subject?.name)
+			.toSorted(),
+	).toEqual(["Main", "Not billing"]);
 }, 120_000);

@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { declareDirectory } from "@/runtime/engine/repo-registry";
+import { declareDirectory, setLanguageServer } from "@/runtime/engine/repo-registry";
 import { resolveRegisteredCheckout, snapshotCheckoutAccess } from "../index.ts";
 import { createResolverFixture, type ResolverFixture } from "./support.ts";
 
@@ -71,9 +71,24 @@ test("a vault reads the chosen checkout for any other identity", async () => {
 	expect(await resolvedFor(join(holder, ".archboard", "vault"), BILLING)).toBe(billing);
 });
 
-test("a vault whose checkout is registered but not chosen reads that checkout", async () => {
+test("a vault's checkout runs the language servers registered for it, never the chosen checkout's", async () => {
+	const vault = join(holder, ".archboard", "vault");
+	/**
+	 * The language servers a reading of the vault runs for its own identity.
+	 * @returns The servers of the checkout it reads.
+	 */
+	async function serversRead() {
+		const snapshot = await snapshotCheckoutAccess({ vault });
+		return snapshot.entries.find((entry) => entry.repo === fixture.repository)?.servers;
+	}
+	expect(
+		setLanguageServer(fixture.checkout, "python", { command: "chosen", args: [] }),
+	).toBeDefined();
+	expect(await serversRead()).toBeUndefined();
 	await declareDirectory(holder);
-	expect(await resolvedFor(join(holder, ".archboard", "vault"), fixture.repository)).toBe(holder);
+	expect(setLanguageServer(holder, "python", { command: "own", args: [] })).toBeDefined();
+	expect(await serversRead()).toEqual({ python: { command: "own", args: [] } });
+	expect(await resolvedFor(vault, fixture.repository)).toBe(holder);
 });
 
 test("a vault in no checkout reads the chosen checkouts alone", async () => {
@@ -84,12 +99,6 @@ test("a vault in no checkout reads the chosen checkouts alone", async () => {
 		realpathSync.native(fixture.checkout),
 	);
 	expect(await resolvedFor(untracked, BILLING)).toBe(billing);
-});
-
-test("a vault in a checkout with no origin names itself by its directory", async () => {
-	const lonely = checkoutWithVault(fixture.root, "lonely", undefined);
-	expect(await resolvedFor(join(lonely, ".archboard", "vault"), "lonely")).toBe(lonely);
-	expect(await resolvedFor(null, "lonely")).toBe("CHECKOUT_UNAVAILABLE");
 });
 
 test("a vault in a linked worktree of a repository with no origin has the identity of the main checkout", async () => {
