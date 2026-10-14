@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { afterAll, expect, jest, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,6 +8,16 @@ const previousVault = process.env["ARCHBOARD_VAULT"];
 process.env["ARCHBOARD_VAULT"] = join(home, "unused");
 const lock = await import("../board-lock.ts");
 const { recentDoing, recordDoing, forgetDoing } = await import("../board-doing.ts");
+const { LOCK_WATCH_MS } = await import("../../../shared/timing/timing.ts");
+
+afterAll(() => {
+	if (previousVault === undefined) {
+		delete process.env["ARCHBOARD_VAULT"];
+	} else {
+		process.env["ARCHBOARD_VAULT"] = previousVault;
+	}
+	rmSync(home, { recursive: true, force: true });
+});
 
 // One server serves several vaults (ADR 0049), so a board of one name in two vaults is two boards.
 test("a board of one name in two vaults keeps its claim, lease, announcements and doing line apart", async () => {
@@ -49,11 +59,43 @@ test("a board of one name in two vaults keeps its claim, lease, announcements an
 		lock.onBoardLockChanged(null);
 		lock.forgetLockAnnouncements();
 		forgetDoing();
-		if (previousVault === undefined) {
-			delete process.env["ARCHBOARD_VAULT"];
-		} else {
-			process.env["ARCHBOARD_VAULT"] = previousVault;
-		}
-		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+// A lease another server took is seen only by the sweep, which must read each board on screen
+// in the vault its pane shows.
+test("the lock sweep reads each board on screen in its own vault", async () => {
+	const vaultA = join(home, "sweep-a");
+	const vaultB = join(home, "sweep-b");
+	await lock.holdBoard({
+		vault: vaultB,
+		board: "payments",
+		holder: { id: "another-server", kind: "agent" },
+		waitMs: 0,
+	});
+	lock.forgetLockAnnouncements();
+	const told: Array<{ vault: string; held: boolean }> = [];
+	lock.onBoardLockChanged((vault, _board, holder) => {
+		told.push({ vault, held: holder !== null });
+	});
+	jest.useFakeTimers();
+	try {
+		lock.watchBoardLocks({
+			boards: () => [
+				{ vault: vaultA, board: "payments" },
+				{ vault: vaultB, board: "Payments" },
+			],
+		});
+		jest.advanceTimersByTime(LOCK_WATCH_MS);
+		expect(told).toEqual([
+			{ vault: vaultA, held: false },
+			{ vault: vaultB, held: true },
+		]);
+	} finally {
+		lock.watchBoardLocks(null);
+		jest.useRealTimers();
+		lock.onBoardLockChanged(null);
+		lock.releaseHold(vaultB, "payments", "another-server");
+		lock.forgetLockAnnouncements();
 	}
 });

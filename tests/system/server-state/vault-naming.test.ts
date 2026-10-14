@@ -1,12 +1,21 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	realpathSync,
+	renameSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { WebSocket } from "ws";
 
 import { startOwnedServer } from "../support/owned-server.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
-import { createRequester } from "./support/http.ts";
+import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent } from "./support/pane-session.ts";
 
 // ADR 0049: one server serves several vaults, and every call names the one it means.
@@ -41,6 +50,19 @@ const WRITE_ROUTES = [
 	"/api/panes/show",
 	"/api/code-targets/open",
 ];
+
+/**
+ * Whether a pane event shows an agent's claim: on the board's lock, or in the navigator's
+ * account of agent work.
+ * @param event What the pane heard.
+ * @returns True when it shows a claim.
+ */
+function claimed(event: PaneEvent): boolean {
+	return (
+		(event.type === "board_lock" && JSON.stringify(event["holder"]).includes('"claimed":true')) ||
+		(event.type === "agent_activity" && JSON.stringify(event["activity"]).includes('"claim":{'))
+	);
+}
 
 describe.serial("every call names its vault", () => {
 	test("two vaults on one server keep their boards, news, claims and leases apart", async () => {
@@ -110,6 +132,8 @@ describe.serial("every call names its vault", () => {
 		expect(heardInB).toEqual([]);
 
 		// A claim in vault A does not block vault B, and the lease is a file of vault A alone.
+		const beforeClaimA = paneA.mark();
+		const beforeClaimB = paneB.mark();
 		const claim = await inA("/api/semantic-boards/claim?board=payments", {
 			method: "POST",
 			doing: false,
@@ -129,11 +153,39 @@ describe.serial("every call names its vault", () => {
 		);
 		expect(JSON.stringify(boardInA.body)).toContain("Queue");
 		expect(JSON.stringify(boardInA.body)).not.toContain("Ledger");
+
+		// The claim is shown wherever vault A's board is shown, by its lock and in the
+		// navigator's account of agent work, and on no pane of vault B (ADR 0022).
+		await waitFor(
+			() =>
+				["board_lock", "agent_activity"].every((type) =>
+					paneA.events.slice(beforeClaimA).some((event) => event.type === type && claimed(event)),
+				),
+			"vault A's pane to show the claim by its lock and its agent activity",
+		);
+		await paneB.sync();
+		expect(paneB.events.slice(beforeClaimB).filter(claimed)).toEqual([]);
 		await inA("/api/semantic-boards/claim/release?board=payments", {
 			method: "POST",
 			doing: false,
 			body: {},
 		});
+
+		// A board of vault B replaced by another writer is news to B's pane and to no pane of A.
+		const beforeDiskA = paneA.mark();
+		const beforeDiskB = paneB.mark();
+		const fileB = join(vaultB, "payments.semantic.json");
+		const onDisk = JSON.parse(readFileSync(fileB, "utf8")) as { version: number };
+		writeFileSync(`${fileB}.incoming`, JSON.stringify({ ...onDisk, version: onDisk.version + 1 }));
+		renameSync(`${fileB}.incoming`, fileB);
+		await waitFor(
+			() => paneB.events.slice(beforeDiskB).some((event) => event.type === "board_note"),
+			"vault B's pane to hear that its board changed on disk",
+		);
+		await paneA.sync();
+		expect(paneA.events.slice(beforeDiskA).filter((event) => event.type === "board_note")).toEqual(
+			[],
+		);
 	}, 60_000);
 
 	test("a call that names no vault, or one the server cannot read, is refused and creates nothing", async () => {
