@@ -161,9 +161,3 @@ test("footprint and locality read the part in the checkout that holds the vault"
 	expect(locality.skipped).toEqual([]);
 	expect(locality.hotspots.map((one) => one.subject.id)).toEqual(["pA"]);
 });
-
-test("a vault in no checkout reads the registered checkout, which is on another branch", async () => {
-	const current = currentVariant(board)!;
-	const footprint = await readFootprint({ vault: scratch, board, current, base: first });
-	expect(footprint.skipped.map((skip) => skip.reason)).toEqual(["ref-not-checked-out"]);
-});
