@@ -222,13 +222,15 @@ function recordCheckout(
 
 /**
  * The worktrees of a checkout other than the checkout itself, as Git reports
- * them for it.
+ * them for it, that are checkouts of its identity. A repository with no
+ * remote is named by its directory, so each of its worktrees is an identity
+ * of its own and is left out: it is not another checkout of this one.
  * @param checkout The checkout.
  * @param options Cancellation.
  * @returns Each worktree's root and identity.
  */
 async function worktreesOf(
-	checkout: Pick<CheckoutGitInspection, "root">,
+	checkout: Pick<CheckoutGitInspection, "root" | "identity">,
 	options: DeclareOptions,
 ): Promise<Readonly<CheckoutGitInspection>[]> {
 	const paths = (await worktreePaths(checkout.root, options)).filter(
@@ -236,7 +238,9 @@ async function worktreesOf(
 	);
 	const inspected = await Promise.all(paths.map((each) => inspectCheckout(each, options)));
 	return inspected.flatMap((each) =>
-		each === undefined || each.root === checkout.root ? [] : each,
+		each === undefined || each.root === checkout.root || each.identity !== checkout.identity
+			? []
+			: each,
 	);
 }
 

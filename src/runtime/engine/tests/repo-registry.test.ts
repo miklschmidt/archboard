@@ -138,6 +138,17 @@ test("the worktrees that git lists for a known checkout are known, and a deleted
 	expect(orders().chosen).toEqual([worktree]);
 });
 
+test("a worktree of a repository with no remote is another identity, so it does not become known with the checkout", async () => {
+	const local = join(scratch, "local");
+	mkdirSync(local);
+	git(local, "init", "-q", "-b", "main");
+	git(local, "commit", "-q", "--allow-empty", "-m", "init");
+	git(local, "worktree", "add", "-q", "-b", "side", join(scratch, "local-side"));
+	const declared = await declareDirectory(local);
+	expect(declared).toMatchObject({ kind: "checkout", worktrees: [] });
+	expect(listRegistry().checkouts.map((each) => each.repo)).toEqual(["local"]);
+});
+
 test("a directory inside a checkout registers the checkout", async () => {
 	mkdirSync(join(main, "src"), { recursive: true });
 	await declareDirectory(join(main, "src"));
