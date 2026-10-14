@@ -3,11 +3,11 @@ id: TASK-472.02
 title: >-
   The checkout registry knows every checkout and one chosen checkout for each
   repository identity
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-14 22:04'
+updated_date: '2026-10-14 22:43'
 labels: []
 dependencies: []
 references:
@@ -30,16 +30,16 @@ The registry holds one checkout per repository identity, so two worktrees or two
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `repo add <dir>` registers a checkout and does not change the chosen checkout of its identity, except that the first known checkout of an identity becomes its chosen checkout
-- [ ] #2 `repo add <dir>` on a directory outside any git checkout that holds `.archboard/vault` registers an untracked vault with a registry name: the base name of the directory, made unique on this machine
-- [ ] #3 `repo use <dir>` makes that checkout the chosen checkout of its identity, registering it first when it is unknown
-- [ ] #4 The worktrees that `git worktree list` reports for a known checkout are known checkouts
-- [ ] #5 `repo list` reports each known checkout with its identity and each untracked vault with its registry name, whether it is chosen, and whether its directory exists
-- [ ] #6 `repo forget <dir>` removes a checkout or an untracked vault. If it removes the chosen checkout of an identity, that identity has no chosen checkout until `repo use`, `repo list` says so, and its bindings resolve as unregistered
-- [ ] #7 A `repos.json` written by an earlier version reads without a manual step: each entry becomes a known checkout that is chosen for its identity, and a legacy `observed` source stays readable
-- [ ] #8 Every reader that resolved a repository identity to a checkout (code targets, the code check, behind, footprint, locality, language servers) resolves it to the chosen checkout, with unchanged results when an identity has one checkout
-- [ ] #9 INSTALL.md, the help of the `repo` commands, the archboard skill and AGENTS.md describe `repo add`, `repo use`, `repo list` and `repo forget` as built, and CONTEXT.md's Checkout registry and Chosen checkout match the behaviour
-- [ ] #10 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 `repo add <dir>` registers a checkout and does not change the chosen checkout of its identity, except that the first known checkout of an identity becomes its chosen checkout
+- [x] #2 `repo add <dir>` on a directory outside any git checkout that holds `.archboard/vault` registers an untracked vault with a registry name: the base name of the directory, made unique on this machine
+- [x] #3 `repo use <dir>` makes that checkout the chosen checkout of its identity, registering it first when it is unknown
+- [x] #4 The worktrees that `git worktree list` reports for a known checkout are known checkouts
+- [x] #5 `repo list` reports each known checkout with its identity and each untracked vault with its registry name, whether it is chosen, and whether its directory exists
+- [x] #6 `repo forget <dir>` removes a checkout or an untracked vault. If it removes the chosen checkout of an identity, that identity has no chosen checkout until `repo use`, `repo list` says so, and its bindings resolve as unregistered
+- [x] #7 A `repos.json` written by an earlier version reads without a manual step: each entry becomes a known checkout that is chosen for its identity, and a legacy `observed` source stays readable
+- [x] #8 Every reader that resolved a repository identity to a checkout (code targets, the code check, behind, footprint, locality, language servers) resolves it to the chosen checkout, with unchanged results when an identity has one checkout
+- [x] #9 INSTALL.md, the help of the `repo` commands, the archboard skill and AGENTS.md describe `repo add`, `repo use`, `repo list` and `repo forget` as built, and CONTEXT.md's Checkout registry and Chosen checkout match the behaviour
+- [x] #10 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,3 +55,19 @@ The registry holds one checkout per repository identity, so two worktrees or two
 
 8. Board proposals (drawn with the plan): Archboard@TASK-472.02 (Repository checkout: every checkout, chosen for each repository, untracked vaults; Agent CLI description; the two relationships anchored on chosenCheckouts and declareDirectory) and Command interface@TASK-472.02 (Repositories: repo use, choosing and forgetting). No other board is affected: the readers (code opener, code check, history lens) keep their parts and only change which checkout they are handed.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Decisions: registry stays a bare JSON array keyed by directory; a checkout entry carries chosen:boolean, an entry with no chosen field is legacy and reads as chosen, so legacy files read with no migration and a read never writes. Untracked vault entries are {name,root,addedAt}; repo add walks up from the directory to the nearest .archboard/vault holder (same rule as vault finding in ADR 0049); names are base name, then -2, -3, unique among vault names and checkout identities. Worktrees become known on repo add/use (registration events), not on repo list, so repo forget of a live worktree sticks. repo forget takes a directory (identity argument dropped as the spec says). Language servers belong to the checkout entry: --repo <identity> configures the chosen checkout, the working-directory form configures the known checkout it stands in (chosen or not; the diagnostic says when a pass will not read it). Registry write failures now throw (RegistryWriteError, exit 1) instead of being ignored by add. Resolver error for an identity with no chosen checkout names repo use. repo.ts split: language-server contract moved to repo-language-server.ts (600-line limit). No files in TASK-472.01 scope changed.
+
+Closing (parent, 2026-10-15). Code check against the proposals: they add no finding and clear two ANCHOR_SYMBOL_MISSING warnings (declareRepo, listRepos). Footprint read against base 9720b707d, the parent of the first code commit 612aeb4c6. Archboard: Repository checkout is named and changed. Command interface: Repositories is named and changed. Changed but not named, each without a board change: Command catalogue (run.ts registers the repo language-server contract that moved to its own file for the 600-line limit), Vault check, Locality and Footprint (help text now says chosen checkout, 0166b9058), and the Commands container that holds them. Review fixes: 68ac7f410, ba828d192, eef51ce8e (registry review), b8c3a8ffe, f7184edff (boundary review with TASK-472.01), 0166b9058 (help sweep that the boundary review named). Open for the owner: the worktrees of a repository with no origin remote each get their own identity, so they are not known with their main checkout; fixing it changes the identity rule of ADR 0011.
+
+Adopted Archboard@TASK-472.02 (version 41) and Command interface@TASK-472.02 (version 58), then restored the board-scope summary of each current variant. archboard check reports no diagnostics. Complete gate on 0166b9058: bun run check exit 0.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The checkout registry holds every known checkout with its identity, every untracked vault with a registry name, and one chosen checkout per identity. repo use chooses, repo add registers without changing a choice, repo forget takes a directory, git worktree list adds worktrees, and a legacy repos.json reads unchanged. Every reader resolves an identity in its chosen checkout. Verified by tests/system/cli/repo-checkouts.test.ts, src/runtime/engine/tests/repo-registry.test.ts, src/runtime/code-target/tests/chosen-checkout.test.ts, two reviews and bun run check exit 0.
+<!-- SECTION:FINAL_SUMMARY:END -->
