@@ -178,6 +178,22 @@ test("a worktree of a bare repository is named by the bare directory without its
 	expect(declared).toMatchObject({ kind: "checkout", checkout: { repo: "shop" } });
 });
 
+test("a worktree registered under its own directory name becomes known under its main checkout's identity", async () => {
+	const ledger = join(scratch, "ledger");
+	mkdirSync(ledger);
+	git(ledger, "init", "-q", "-b", "main");
+	git(ledger, "commit", "-q", "--allow-empty", "-m", "init");
+	const side = addWorktree(ledger, "ledger-side");
+	const stale = { repo: "ledger-side", root: side, source: "declared", addedAt: "t", chosen: true };
+	writeFileSync(registry, JSON.stringify([stale]));
+	const declared = await declareDirectory(ledger);
+	expect(declared).toMatchObject({ worktrees: [{ root: side, repo: "ledger" }] });
+	expect(listRegistry().checkouts.map((each) => [each.repo, each.chosen])).toEqual([
+		["ledger", true],
+		["ledger", false],
+	]);
+});
+
 test("a directory inside a checkout registers the checkout", async () => {
 	mkdirSync(join(main, "src"), { recursive: true });
 	await declareDirectory(join(main, "src"));
