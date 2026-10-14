@@ -1,12 +1,13 @@
 // The checkout registry: which repositories exist on this machine, and where.
 //
 // A binding is a logical address, a repository identity plus a path inside it
-// (CONTEXT.md), because the vault spans repositories and is not co-located
-// with any of them (ADR 0004). That leaves one thing unanswered on every
-// machine that opens a board: where `github.com/acme/payments` actually is
-// here. ADR 0004 promised a machine-local registry for it and never built one;
-// this is it, and ADR 0011 says why it is the thing that replaces resolving
-// against a working directory.
+// (CONTEXT.md), so that a vault's boards can describe any repository, not only
+// the one whose checkout holds the vault (ADR 0049). That leaves one thing
+// unanswered on every machine that opens a board: where
+// `github.com/acme/payments` actually is here. ADR 0004 promised a
+// machine-local registry for it and never built one; this is it, and ADR 0011
+// says why it is the thing that replaces resolving against a working
+// directory.
 //
 // ADR 0049 widens it. It holds every checkout known here, each with its
 // identity, and every untracked vault, each with a registry name. For each
