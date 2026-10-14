@@ -227,12 +227,19 @@ test("a directory that is gone is listed as gone and forgotten by its path", asy
 	expect(await forgetDirectory(doomed)).toBeUndefined();
 });
 
-test("forgetting an untracked vault removes it and a directory nobody registered changes nothing", async () => {
+test("forgetting an untracked vault removes it, from the directory below it that add accepts too, and a directory nobody registered changes nothing", async () => {
 	const holder = join(scratch, "three", "plans");
 	mkdirSync(join(holder, ".archboard", "vault"), { recursive: true });
+	mkdirSync(join(holder, "notes"), { recursive: true });
 	await declareDirectory(holder);
 	expect(await forgetDirectory(join(scratch, "three"))).toBeUndefined();
 	expect(await forgetDirectory(holder)).toMatchObject({ kind: "vault", vault: { name: "plans" } });
+	expect(listRegistry().vaults).toEqual([]);
+	await declareDirectory(join(holder, "notes"));
+	expect(await forgetDirectory(join(holder, "notes"))).toMatchObject({
+		kind: "vault",
+		vault: { root: holder },
+	});
 	expect(listRegistry().vaults).toEqual([]);
 });
 

@@ -338,8 +338,9 @@ async function declareDirectory(dir: string, options: DeclareOptions = {}): Prom
 
 /**
  * The directories a person may mean by a path: the path itself, where it
- * leads, and the root of the checkout it is inside. A directory that is gone
- * (a deleted worktree) is only the path.
+ * leads, and the root of the checkout it is inside or, outside any checkout,
+ * the directory that holds the vault it is inside, as `repo add` registers it.
+ * A directory that is gone (a deleted worktree) is only the path.
  * @param dir The path.
  * @param options How to cancel the git call.
  * @returns The candidates.
@@ -352,7 +353,7 @@ async function directoriesNamedBy(
 	const named = new Set([target]);
 	if (!isDirectory(target)) return named;
 	named.add(fs.realpathSync.native(target));
-	const root = await repoRootOf(target, options);
+	const root = (await repoRootOf(target, options)) ?? vaultHolder(target);
 	if (root !== undefined) named.add(root);
 	return named;
 }
