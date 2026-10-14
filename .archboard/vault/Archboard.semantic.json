@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 39,
+	"version": 40,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-14T22:03:51.981Z",
+	"updatedAt": "2026-10-14T22:20:40.788Z",
 	"views": [],
 	"variants": [
 		{
@@ -2923,7 +2923,7 @@
 						"name": "Repository checkout",
 						"kind": "datastore",
 						"responsibility": "Every checkout known here, the one chosen for each repository that bindings resolve in, and untracked vaults; each checkout holds its configured language servers",
-						"description": "A binding names a repository identity and a path inside it, which are the same in every clone; a machine-local registry is the only place a directory on one machine is written down. It holds every known checkout (clones, and the worktrees that git lists for a known one), each with its identity, and every directory outside a checkout that holds .archboard/vault, under a registry name. For each identity one checkout is chosen: the first known one, then only repo use changes it, and repo add never does. A reader that turns an identity into a directory asks for the chosen checkouts and so never sees the others; an identity whose chosen checkout was forgotten resolves as unregistered. Each checkout's entry also holds the language servers an agent set with repo language-server (TASK-433): a command and its arguments for Python, C (which covers C++ and Objective-C), C# or Swift, kept with the checkout and removed with it.",
+						"description": "A binding names a repository identity and a path inside it, which are the same in every clone; a machine-local registry is the only place a directory on one machine is written down. It holds every known checkout (clones, and the worktrees of its identity that git lists for a known one), each with its identity, and every registered directory outside a checkout that holds .archboard/vault, under a registry name. For each identity one checkout is chosen: the first known one, then only repo use changes it, and repo add never does. A reader that turns an identity into a directory asks for the chosen checkouts and so never sees the others; an identity whose chosen checkout was forgotten resolves as unregistered. Each checkout's entry also holds the language servers an agent set with repo language-server (TASK-433): a command and its arguments for Python, C (which covers C++ and Objective-C), C# or Swift, kept with the checkout and removed with it.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/repo-registry.ts"
@@ -3091,7 +3091,7 @@
 						"from": "cPOdAA3f",
 						"to": "19855Ply",
 						"kind": "data",
-						"label": "resolve each repository in its chosen checkout",
+						"label": "resolve in the chosen checkout and read its language servers",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
