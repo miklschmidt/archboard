@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { vaultUrl } from "../support/http.ts";
 import { runServerCli } from "../support/run-cli.ts";
 
 // The public path a person and an agent use: commands create, change, read and
@@ -11,6 +12,9 @@ import { runServerCli } from "../support/run-cli.ts";
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-workflow-"));
 let server: OwnedServer;
+/** Draw a board through the route the viewer reads, naming the vault as every call does. */
+const render = (query: string): Promise<Response> =>
+	fetch(vaultUrl(server, `/api/semantic-boards/render?${query}`));
 
 /**
  * Run one archboard command against the owned server.
@@ -259,16 +263,8 @@ describe("authoring and opening a semantic board", () => {
 		const flow = stored.variants[0].content.flows[0];
 		const view = stored.views[0];
 
-		const whole = await (
-			await fetch(
-				`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=pipeline`,
-			)
-		).json();
-		const sequence = await (
-			await fetch(
-				`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=pipeline&view=${view.id}`,
-			)
-		).json();
+		const whole = await (await render(`board=pipeline`)).json();
+		const sequence = await (await render(`board=pipeline&view=${view.id}`)).json();
 
 		// The answer says which reading it is, and what else could be asked for.
 		expect(whole.view).toBeNull();
@@ -288,9 +284,7 @@ describe("authoring and opening a semantic board", () => {
 
 	test("a render selector that says nothing is refused rather than answered with everything", async () => {
 		const asked = async (query: string): Promise<{ status: number; code: string }> => {
-			const answer = await fetch(
-				`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=pipeline${query}`,
-			);
+			const answer = await render(`board=pipeline${query}`);
 			const body = (await answer.json()) as { code?: string };
 			return { status: answer.status, code: body.code ?? "" };
 		};
@@ -387,11 +381,7 @@ describe("authoring and opening a semantic board", () => {
 			(node: { name: string }) => node.name === "Ingest queue",
 		);
 
-		const drawn = await (
-			await fetch(
-				`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=pipeline&variant=${proposal.id}`,
-			)
-		).json();
+		const drawn = await (await render(`board=pipeline&variant=${proposal.id}`)).json();
 		expect(drawn.changes.against.id).toBe(baseline.id);
 		// The one node the proposal added is the one thing labelled as added.
 		expect(drawn.changes.standing[queue.id]).toBe("added");
@@ -400,11 +390,7 @@ describe("authoring and opening a semantic board", () => {
 		}
 
 		// The variant it came from changed nothing, because it came from nothing.
-		const base = await (
-			await fetch(
-				`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=pipeline&variant=${baseline.id}`,
-			)
-		).json();
+		const base = await (await render(`board=pipeline&variant=${baseline.id}`)).json();
 		expect(base.changes).toBeNull();
 
 		// And none of it is on the board: the file says what the architecture is.
@@ -478,8 +464,8 @@ describe("authoring and opening a semantic board", () => {
 		const everything = stored.views.find((view: { name: string }) => view.name === "All of it");
 		const reporting = stored.views.find((view: { name: string }) => view.name === "Reporting only");
 
-		const endpoint = `${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=two-roots&variant=${proposal.id}`;
-		const draw = async (view = "") => (await fetch(`${endpoint}${view}`)).json();
+		const endpoint = `board=two-roots&variant=${proposal.id}`;
+		const draw = async (view = "") => (await render(`${endpoint}${view}`)).json();
 		const whole = await draw();
 		const plain = await draw("&comparison=off");
 		const named = await draw(`&view=${everything.id}`);
