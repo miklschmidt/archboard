@@ -74,7 +74,7 @@ type Declared =
 			added: boolean;
 			/** The checkout that the choice replaced, when `choose` changed the chosen one. */
 			replaced?: RegisteredRepo;
-			/** The worktrees of the checkout that were unknown before. */
+			/** The worktrees of the checkout that were not known under its identity before. */
 			worktrees: RegisteredRepo[];
 	  }
 	| { kind: "vault"; vault: UntrackedVault; added: boolean };
@@ -251,7 +251,13 @@ async function declareCheckout(
 			(each) => each.repo === inspected.identity && each.chosen,
 		);
 		const { entry, added } = recordCheckout(registry, inspected, options.choose === true);
-		const known = new Set(registry.checkouts.map((each) => each.root));
+		// A worktree known under another identity, such as its own directory name
+		// before every worktree had the identity of its main checkout, is recorded again.
+		const known = new Set(
+			registry.checkouts
+				.filter((each) => each.repo === inspected.identity)
+				.map((each) => each.root),
+		);
 		const recorded = worktrees
 			.filter((each) => !known.has(each.root))
 			.map((each) => recordCheckout(registry, each, false).entry);
