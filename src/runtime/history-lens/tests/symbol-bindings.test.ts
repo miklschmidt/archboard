@@ -325,9 +325,10 @@ beforeAll(async () => {
 	const current = currentVariant(board);
 	if (current === undefined) throw new Error("no current variant");
 	locality = LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(board, current, new Date("2000-01-01")),
+		await lens.createLocalityReading().read(scratch, board, current, new Date("2000-01-01")),
 	);
-	const answer = FootprintAnswerSchema.parse(await lens.readFootprint({ board, current, base }));
+	const request = { vault: scratch, board, current, base };
+	const answer = FootprintAnswerSchema.parse(await lens.readFootprint(request));
 	if (answer.proposal !== null) throw new Error("no proposal expected");
 	footprint = answer.changed;
 	footprintCommits = answer.commits;

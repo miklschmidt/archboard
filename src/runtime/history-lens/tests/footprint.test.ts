@@ -187,7 +187,7 @@ async function footprint(base: string, proposal?: string): Promise<FootprintAnsw
 	if (current === undefined) throw new Error("the board has no current variant");
 	const named = proposal === undefined ? undefined : resolveVariant(value, proposal);
 	return FootprintAnswerSchema.parse(
-		await lens.readFootprint({ board: value, current, proposal: named, base }),
+		await lens.readFootprint({ vault: scratch, board: value, current, proposal: named, base }),
 	);
 }
 

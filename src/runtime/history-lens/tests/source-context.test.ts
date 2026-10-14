@@ -119,7 +119,7 @@ test("bound declarations retain historical C, Objective-C and Nix parser context
 		});
 		const current = currentVariant(board);
 		if (current === undefined) throw new Error("Missing current variant");
-		const answer = await readFootprint({ board, current, base });
+		const answer = await readFootprint({ vault: scratch, board, current, base });
 		if (answer.proposal !== null) throw new Error("Unexpected proposal");
 		expect(answer.changed).toMatchObject([
 			{

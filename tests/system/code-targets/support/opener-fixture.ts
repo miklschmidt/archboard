@@ -217,8 +217,11 @@ async function createOpenerFixture(options: OpenerFixtureOptions = {}): Promise<
 					};
 		app.use(
 			createCodeOpenerRouter(() => {
-				if (options.vault === undefined) throw new Error("The real binding lookup needs a vault.");
-				return options.vault;
+				if (options.vault !== undefined) return options.vault;
+				if (options.defaultDependencies) throw new Error("The real binding lookup needs a vault.");
+				// The binding is stated by the test, so the vault is only where bindings resolve from:
+				// a directory in no checkout, which reads the chosen checkouts alone.
+				return root;
 			}, routeDependencies),
 		);
 		app.use((_request, response) =>

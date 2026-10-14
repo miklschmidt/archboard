@@ -30,7 +30,9 @@ afterEach(() => {
 
 describe("registered checkout", () => {
 	test("re-reads and verifies the canonical checkout identity", async () => {
-		expect(resolveRegisteredCheckout(fixture.repository, await snapshotCheckoutAccess())).toEqual({
+		expect(
+			resolveRegisteredCheckout(fixture.repository, await snapshotCheckoutAccess({ vault: null })),
+		).toEqual({
 			ok: true,
 			repository: fixture.repository,
 			root: fixture.checkout,
@@ -38,12 +40,12 @@ describe("registered checkout", () => {
 	});
 
 	test("refuses a changed origin identity", async () => {
-		const before = await snapshotCheckoutAccess();
+		const before = await snapshotCheckoutAccess({ vault: null });
 		expect(resolveRegisteredCheckout(fixture.repository, before).ok).toBeTrue();
 		Bun.spawnSync(["git", "remote", "set-url", "origin", "https://github.com/other/repo.git"], {
 			cwd: fixture.checkout,
 		});
-		const after = await snapshotCheckoutAccess();
+		const after = await snapshotCheckoutAccess({ vault: null });
 		expect(resolveRegisteredCheckout(fixture.repository, after)).toMatchObject({
 			ok: false,
 			code: "CHECKOUT_IDENTITY_CHANGED",
@@ -77,7 +79,10 @@ describe("a binding pinned to a branch or commit", () => {
 	 */
 	async function pinned(pin: { branch?: string; commit?: string }) {
 		const binding = { repo: fixture.repository, path: "src/index.ts", ...pin };
-		return resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ bindings: [binding] }));
+		return resolveLocalCodeTarget(
+			binding,
+			await snapshotCheckoutAccess({ vault: null, bindings: [binding] }),
+		);
 	}
 
 	test("opens locally on the bound ref, and names both refs when the checkout is on another", async () => {
@@ -122,7 +127,10 @@ describe("local code target containment", () => {
 	] as const)("accepts %s as an in-root %s", async (relative, kind, expected) => {
 		const binding = { repo: fixture.repository, path: relative };
 		expect(
-			resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ bindings: [binding] })),
+			resolveLocalCodeTarget(
+				binding,
+				await snapshotCheckoutAccess({ vault: null, bindings: [binding] }),
+			),
 		).toEqual({
 			ok: true,
 			repository: fixture.repository,
@@ -138,7 +146,10 @@ describe("local code target containment", () => {
 		async (relative) => {
 			const binding = { repo: fixture.repository, path: relative };
 			expect(
-				resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ bindings: [binding] })),
+				resolveLocalCodeTarget(
+					binding,
+					await snapshotCheckoutAccess({ vault: null, bindings: [binding] }),
+				),
 			).toMatchObject({
 				ok: false,
 				code: "TARGET_OUTSIDE_CHECKOUT",
@@ -151,7 +162,10 @@ describe("local code target containment", () => {
 		async (relative) => {
 			const binding = { repo: fixture.repository, path: relative };
 			expect(
-				resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ bindings: [binding] })),
+				resolveLocalCodeTarget(
+					binding,
+					await snapshotCheckoutAccess({ vault: null, bindings: [binding] }),
+				),
 			).toMatchObject({
 				ok: false,
 				code: "TARGET_OUTSIDE_CHECKOUT",
@@ -162,7 +176,10 @@ describe("local code target containment", () => {
 	test("rejects a missing target", async () => {
 		const binding = { repo: fixture.repository, path: "src/missing.ts" };
 		expect(
-			resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ bindings: [binding] })),
+			resolveLocalCodeTarget(
+				binding,
+				await snapshotCheckoutAccess({ vault: null, bindings: [binding] }),
+			),
 		).toMatchObject({
 			ok: false,
 			code: "TARGET_UNAVAILABLE",
@@ -171,7 +188,7 @@ describe("local code target containment", () => {
 
 	test("one snapshot is deeply immutable and resolves only its captured filesystem evidence", async () => {
 		const binding = { repo: fixture.repository, path: "src/index.ts" };
-		const snapshot = await snapshotCheckoutAccess({ bindings: [binding] });
+		const snapshot = await snapshotCheckoutAccess({ vault: null, bindings: [binding] });
 		const first = resolveLocalCodeTarget(binding, snapshot);
 		const entry = snapshot.entries[0]!;
 		const inspection = snapshot.inspection(fixture.repository)!;
@@ -182,7 +199,7 @@ describe("local code target containment", () => {
 		expect(() => ((inspection as { root: string }).root = "/mutated")).toThrow();
 		fs.rmSync(join(fixture.checkout, "src/index.ts"));
 		expect(resolveLocalCodeTarget(binding, snapshot)).toEqual(first);
-		const fresh = await snapshotCheckoutAccess({ bindings: [binding] });
+		const fresh = await snapshotCheckoutAccess({ vault: null, bindings: [binding] });
 		expect(resolveLocalCodeTarget(binding, fresh)).toMatchObject({
 			ok: false,
 			code: "TARGET_UNAVAILABLE",
@@ -191,12 +208,12 @@ describe("local code target containment", () => {
 
 	test("one snapshot does not follow a target symlink replaced after capture", async () => {
 		const binding = { repo: fixture.repository, path: "src/inside-file.ts" };
-		const snapshot = await snapshotCheckoutAccess({ bindings: [binding] });
+		const snapshot = await snapshotCheckoutAccess({ vault: null, bindings: [binding] });
 		const first = resolveLocalCodeTarget(binding, snapshot);
 		fs.unlinkSync(join(fixture.checkout, binding.path));
 		fs.symlinkSync(join(fixture.outside, "secret.ts"), join(fixture.checkout, binding.path));
 		expect(resolveLocalCodeTarget(binding, snapshot)).toEqual(first);
-		const fresh = await snapshotCheckoutAccess({ bindings: [binding] });
+		const fresh = await snapshotCheckoutAccess({ vault: null, bindings: [binding] });
 		expect(resolveLocalCodeTarget(binding, fresh)).toMatchObject({
 			ok: false,
 			code: "TARGET_OUTSIDE_CHECKOUT",
@@ -205,12 +222,12 @@ describe("local code target containment", () => {
 
 	test("one snapshot does not inspect a checkout root replaced after capture", async () => {
 		const binding = { repo: fixture.repository, path: "src/index.ts" };
-		const snapshot = await snapshotCheckoutAccess({ bindings: [binding] });
+		const snapshot = await snapshotCheckoutAccess({ vault: null, bindings: [binding] });
 		const first = resolveLocalCodeTarget(binding, snapshot);
 		fs.renameSync(fixture.checkout, join(fixture.root, "retired-checkout"));
 		fs.mkdirSync(fixture.checkout);
 		expect(resolveLocalCodeTarget(binding, snapshot)).toEqual(first);
-		const fresh = await snapshotCheckoutAccess({ bindings: [binding] });
+		const fresh = await snapshotCheckoutAccess({ vault: null, bindings: [binding] });
 		expect(resolveLocalCodeTarget(binding, fresh)).toMatchObject({
 			ok: false,
 			code: "CHECKOUT_UNAVAILABLE",

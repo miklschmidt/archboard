@@ -226,7 +226,7 @@ beforeAll(async () => {
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
 	// No language server, so the judgement reads the evidence code facts give alone.
-	outcome = await check.checkCode(read.boards, new AbortController().signal, [], NO_SERVER);
+	outcome = await check.checkCode(vault, read.boards, new AbortController().signal, [], NO_SERVER);
 });
 
 afterAll(() => {

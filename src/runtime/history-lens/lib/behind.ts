@@ -352,6 +352,7 @@ function createBehindReading(): BehindReading {
 			const [vaultRoot, snapshot] = await Promise.all([
 				vaultCheckoutOf(vault, options),
 				snapshotCheckoutAccess({
+					vault,
 					...(signal === undefined ? {} : { signal }),
 					bindings: bindingsOf(boards),
 					timeoutMs: null,

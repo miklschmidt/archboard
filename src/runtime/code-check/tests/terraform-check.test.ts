@@ -228,13 +228,14 @@ beforeAll(async () => {
 	check = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	withoutPlan = await check.checkCode(read.boards, new AbortController().signal);
+	withoutPlan = await check.checkCode(vault, read.boards, new AbortController().signal);
 	const plans = await check.readPlans(
+		vault,
 		[join(shop, "infra", "plan.json")],
 		new AbortController().signal,
 	);
 	if (!plans.ok) throw new Error(`the plan was refused: ${plans.reason}`);
-	withPlan = await check.checkCode(read.boards, new AbortController().signal, plans.plans);
+	withPlan = await check.checkCode(vault, read.boards, new AbortController().signal, plans.plans);
 });
 
 afterAll(() => {
@@ -316,7 +317,7 @@ test("the check never reads state, variable files or .terraform, never runs terr
 	for (const secret of SECRETS) expect(answers).not.toContain(secret);
 	expect(existsSync(ran)).toBe(false);
 	const refused = async (named: string) =>
-		!(await check.readPlans([named], new AbortController().signal)).ok;
+		!(await check.readPlans(vault, [named], new AbortController().signal)).ok;
 	writeFileSync(join(scratch, "elsewhere.json"), JSON.stringify(PLAN));
 	// Inside the checkout as named, outside it once its link resolves.
 	symlinkSync(join(scratch, "elsewhere.json"), join(shop, "infra", "linked.json"));

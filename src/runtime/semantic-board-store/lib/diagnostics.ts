@@ -40,7 +40,7 @@ function checkSemanticVault(root: string): VaultCheck {
 		return board === null ? [] : [{ board, file }];
 	});
 	const targets = drillTargets(read.map(({ board }) => board));
-	const checkoutOf = createCheckoutLookup();
+	const checkoutOf = createCheckoutLookup(root);
 	for (const { board, file } of read) {
 		diagnostics.push(...semanticDrillDownDiagnostics(board, file, targets));
 		diagnostics.push(...semanticBindingDiagnostics(board, file, checkoutOf));

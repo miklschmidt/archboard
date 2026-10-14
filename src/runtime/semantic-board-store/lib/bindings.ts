@@ -35,8 +35,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { isPathWithin } from "@/runtime/code-target/index";
-import { checkoutFor } from "@/runtime/engine/repo-registry";
+import { checkoutsReadFrom, isPathWithin } from "@/runtime/code-target/index";
 import type { CodeBinding } from "@/shared/code-target/index";
 import { currentVariant, type SemanticBoard } from "@/shared/semantic-board/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
@@ -47,14 +46,19 @@ type CheckoutLookup = (repo: string) => string | undefined;
 
 /**
  * One lookup per check run, so a vault of boards bound to one repository reads
- * the registry once rather than once per node.
- * @returns A memoized checkout lookup, including the misses.
+ * the registry once rather than once per node, and none when no node is bound.
+ * A repository resolves where every reader of the vault resolves it: in the
+ * checkout that holds the vault for its own repository, and in the chosen
+ * checkout for any other (ADR 0049).
+ * @param vault The vault directory.
+ * @returns A checkout lookup.
  */
-function createCheckoutLookup(): CheckoutLookup {
-	const known = new Map<string, string | undefined>();
+function createCheckoutLookup(vault: string): CheckoutLookup {
+	let checkouts: ReturnType<typeof checkoutsReadFrom> | undefined;
 	return (repo: string) => {
-		if (!known.has(repo)) known.set(repo, checkoutFor(repo));
-		return known.get(repo);
+		checkouts ??= checkoutsReadFrom(vault);
+		const found = checkouts.find((entry) => entry.repo === repo);
+		return found?.exists ? found.root : undefined;
 	};
 }
 

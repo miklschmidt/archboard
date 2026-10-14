@@ -475,6 +475,8 @@ function timedFacts(facts: FactsPass) {
 /**
  * Hold every board's anchors and bound symbols to the code facts of the files
  * on disk, then its relationships to the evidence between its bound parts.
+ * @param vault The vault directory the boards were read from: the checkout that holds
+ * it is read for its own repository, and the chosen checkout for every other (ADR 0049).
  * @param boards The boards, each at the variant the check reads.
  * @param signal Cancels the pass, every Git command it runs, every file it
  * reads and every language server it started.
@@ -484,6 +486,7 @@ function timedFacts(facts: FactsPass) {
  * @returns The findings and what the pass did not read.
  */
 async function checkCode(
+	vault: string,
 	boards: readonly BoardToCheck[],
 	signal: AbortSignal,
 	plans: FactsPass["plans"] = [],
@@ -492,7 +495,7 @@ async function checkCode(
 	const claims = boards.flatMap(claimsOf);
 	const bound = partBindings(boards);
 	const bindings = [...claims.flatMap(pathsOf), ...bound];
-	const snapshot = await snapshotCheckoutAccess({ signal, bindings, timeoutMs: null });
+	const snapshot = await snapshotCheckoutAccess({ vault, signal, bindings, timeoutMs: null });
 	const repos = [...claims.map(repoOf), ...bound.map((binding) => binding.repo)];
 	const checkouts = await readCheckouts(repos, snapshot, signal);
 	const reading = timedFacts(codeFacts.pass(signal, plans));

@@ -1,0 +1,111 @@
+// Where a binding resolves (ADR 0049, TASK-472.03): in the checkout that holds
+// the vault when it names the vault's own identity, and in the chosen checkout
+// of the identity when it names any other. The cases here are the ones that
+// only the rule can get wrong; the CLI and opener owners prove the readers use it.
+
+import { afterEach, beforeEach, expect, test } from "bun:test";
+import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { declareDirectory } from "@/runtime/engine/repo-registry";
+import { resolveRegisteredCheckout, snapshotCheckoutAccess } from "../index.ts";
+import { createResolverFixture, type ResolverFixture } from "./support.ts";
+
+const BILLING = "github.com/acme/billing";
+let fixture: ResolverFixture;
+let previousRegistry: string | undefined;
+let billing = "";
+let holder = "";
+
+/**
+ * A checkout of an identity, with a vault in it.
+ * @param parent The directory it goes in.
+ * @param name Its directory name.
+ * @param origin The identity it names as its origin, or none.
+ * @returns Its canonical root.
+ */
+function checkoutWithVault(parent: string, name: string, origin: string | undefined): string {
+	const root = join(parent, name);
+	mkdirSync(join(root, ".archboard", "vault"), { recursive: true });
+	for (const args of [["init", "-q"], ...(origin ? [["remote", "add", "origin", origin]] : [])]) {
+		Bun.spawnSync(["git", ...args], { cwd: root });
+	}
+	return realpathSync.native(root);
+}
+
+/**
+ * Where an identity resolves for a vault.
+ * @param vault The vault directory, or null for no vault.
+ * @param repository The identity.
+ * @returns The root it resolved to, or the failure code.
+ */
+async function resolvedFor(vault: string | null, repository: string): Promise<string> {
+	const resolved = resolveRegisteredCheckout(repository, await snapshotCheckoutAccess({ vault }));
+	return resolved.ok ? resolved.root : resolved.code;
+}
+
+beforeEach(async () => {
+	fixture = createResolverFixture();
+	previousRegistry = process.env["ARCHBOARD_REPOS"];
+	process.env["ARCHBOARD_REPOS"] = fixture.registry;
+	// A second checkout of the fixture's repository, which holds a vault and is not registered.
+	holder = checkoutWithVault(fixture.root, "holder", `https://${fixture.repository}.git`);
+	// Another repository, registered and so chosen.
+	billing = checkoutWithVault(fixture.root, "billing", `https://${BILLING}.git`);
+	await declareDirectory(billing);
+});
+
+afterEach(() => {
+	if (previousRegistry === undefined) delete process.env["ARCHBOARD_REPOS"];
+	else process.env["ARCHBOARD_REPOS"] = previousRegistry;
+	fixture.dispose();
+});
+
+test("a vault reads its own checkout for its own identity, though nobody registered it", async () => {
+	const vault = join(holder, ".archboard", "vault");
+	expect(await resolvedFor(vault, fixture.repository)).toBe(holder);
+	expect(await resolvedFor(null, fixture.repository)).toBe(realpathSync.native(fixture.checkout));
+});
+
+test("a vault reads the chosen checkout for any other identity", async () => {
+	expect(await resolvedFor(join(holder, ".archboard", "vault"), BILLING)).toBe(billing);
+});
+
+test("a vault whose checkout is registered but not chosen reads that checkout", async () => {
+	await declareDirectory(holder);
+	expect(await resolvedFor(join(holder, ".archboard", "vault"), fixture.repository)).toBe(holder);
+});
+
+test("a vault in no checkout reads the chosen checkouts alone", async () => {
+	const untracked = join(fixture.root, "untracked", ".archboard", "vault");
+	mkdirSync(untracked, { recursive: true });
+	writeFileSync(join(untracked, "marker"), "");
+	expect(await resolvedFor(untracked, fixture.repository)).toBe(
+		realpathSync.native(fixture.checkout),
+	);
+	expect(await resolvedFor(untracked, BILLING)).toBe(billing);
+});
+
+test("a vault in a checkout with no origin names itself by its directory", async () => {
+	const lonely = checkoutWithVault(fixture.root, "lonely", undefined);
+	expect(await resolvedFor(join(lonely, ".archboard", "vault"), "lonely")).toBe(lonely);
+	expect(await resolvedFor(null, "lonely")).toBe("CHECKOUT_UNAVAILABLE");
+});
+
+test("a vault in a linked worktree of a repository with no origin has the identity of the main checkout", async () => {
+	const main = checkoutWithVault(fixture.root, "lonely-main", undefined);
+	const linked = join(fixture.root, "lonely-linked");
+	writeFileSync(join(main, "file.ts"), "export {};\n");
+	for (const args of [
+		["add", "-A"],
+		["-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "first"],
+		["worktree", "add", "-q", "-b", "feature", linked],
+	]) {
+		expect(Bun.spawnSync(["git", ...args], { cwd: main }).exitCode).toBe(0);
+	}
+	mkdirSync(join(linked, ".archboard", "vault"), { recursive: true });
+	await declareDirectory(main);
+	expect(await resolvedFor(join(linked, ".archboard", "vault"), "lonely-main")).toBe(
+		realpathSync.native(linked),
+	);
+});

@@ -15,12 +15,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { CodeTargetOpenReplySchema } from "../../../src/shared/code-target/index.ts";
-import {
-	createBoardTransition,
-	locateSemanticBoard,
-	readSemanticBoard,
-	writeSemanticBoard,
-} from "../../../src/runtime/semantic-board-store/index.ts";
+import { boundBoard } from "./support/bound-board.ts";
 import {
 	createOpenerFixture,
 	jsonBody,
@@ -30,54 +25,6 @@ import {
 
 // The vault the real binding lookup reads, handed to the opener fixture.
 const ownerVault = mkdtempSync(join(tmpdir(), "archboard-code-target-owner-"));
-
-/** A board written to the owner vault, and the node whose binding is bound. */
-interface BoundBoard {
-	/** The board key an activation names. */
-	readonly key: string;
-	/** The node id an activation names. */
-	readonly node: string;
-	/** The file the board lives in, so a test can prove it was not touched. */
-	readonly file: string;
-}
-
-/**
- * Write one board whose single node is bound to a file in the fixture's
- * repository, through the store that every other writer goes through.
- * @param repository The repository identity the binding names.
- * @param path The path inside it.
- * @returns The board key, the node's id and the board's file.
- */
-async function boundBoard(repository: string, path: string): Promise<BoundBoard> {
-	const name = `payments-${Math.random().toString(36).slice(2, 8)}`;
-	const written = await writeSemanticBoard({
-		vault: ownerVault,
-		board: name,
-		writer: { kind: "agent" },
-		transition: createBoardTransition({
-			name,
-			level: "system",
-			nodes: [{ name: "Payments", kind: "service", binding: { repo: repository, path } }],
-			edges: [],
-			flows: [],
-			views: [],
-			walkthroughs: [],
-		}),
-	});
-	if (written.outcome !== "applied") {
-		throw new Error(`Could not write the bound board: ${written.problem}`);
-	}
-	const read = readSemanticBoard(ownerVault, name);
-	if (!read.ok) {
-		throw new Error(`Could not read the bound board: ${read.problem}`);
-	}
-	const variant = read.board.variants.find((one) => one.id === read.board.current);
-	const node = variant?.content.nodes[0];
-	if (node === undefined) {
-		throw new Error("The written board has no node.");
-	}
-	return { key: name, node: node.id, file: locateSemanticBoard(name, ownerVault).file };
-}
 
 afterAll(() => {
 	rmSync(ownerVault, { recursive: true, force: true });
@@ -216,7 +163,7 @@ describe("public code-target activation contract", () => {
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
-		const board = await boundBoard(fixture.repository, "src/index.ts");
+		const board = await boundBoard(ownerVault, fixture.repository, "src/index.ts");
 		const { key, file: note } = board;
 		const beforeBytes = readFileSync(note);
 		const beforeMtime = statSync(note, { bigint: true }).mtimeNs;
@@ -419,7 +366,7 @@ describe("public code-target activation contract", () => {
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
-		const board = await boundBoard(fixture.repository, "src/index.ts");
+		const board = await boundBoard(ownerVault, fixture.repository, "src/index.ts");
 		const { key, file: note } = board;
 		const brokenExecutable = join(fixture.root, "broken-opener");
 		writeFileSync(brokenExecutable, `#!${join(fixture.root, "missing-interpreter")}\n`);

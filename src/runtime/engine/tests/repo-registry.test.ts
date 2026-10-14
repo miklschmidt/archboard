@@ -9,13 +9,21 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	chosenCheckouts,
-	checkoutFor,
 	declareDirectory,
 	forgetDirectory,
 	listRegistry,
 	RepoRegistryError,
 	setLanguageServer,
 } from "@/runtime/engine/repo-registry";
+
+/**
+ * The root of the chosen checkout of an identity.
+ * @param repo The repository identity.
+ * @returns Its root, or undefined when it has none.
+ */
+function chosenRoot(repo: string): string | undefined {
+	return chosenCheckouts().find((each) => each.repo === repo)?.root;
+}
 
 const IDENTITY = "github.com/test/orders";
 const caller = process.env["ARCHBOARD_REPOS"];
@@ -106,7 +114,7 @@ test("the first known checkout of an identity is chosen, and adding another neve
 	await declareDirectory(clone);
 	await declareDirectory(main);
 	expect(orders().chosen).toEqual([clone]);
-	expect(checkoutFor(IDENTITY)).toBe(clone);
+	expect(chosenRoot(IDENTITY)).toBe(clone);
 	expect(chosenCheckouts().map((each) => each.root)).toEqual([clone]);
 	// Registering the chosen checkout again keeps it chosen.
 	await declareDirectory(clone);
@@ -118,7 +126,7 @@ test("use chooses a checkout, registers it when it is unknown, and says which it
 	const used = await declareDirectory(clone, { choose: true });
 	expect(used).toMatchObject({ kind: "checkout", added: true, replaced: { root: main } });
 	expect(orders().chosen).toEqual([clone]);
-	expect(checkoutFor(IDENTITY)).toBe(clone);
+	expect(chosenRoot(IDENTITY)).toBe(clone);
 	// Choosing the chosen checkout replaces nothing.
 	const again = await declareDirectory(clone, { choose: true });
 	expect(again).not.toHaveProperty("replaced");
@@ -154,7 +162,7 @@ test("a repository with no remote is named by its main checkout, and so is every
 	const chosen = await declareDirectory(side, { choose: true });
 	expect(chosen).toMatchObject({ checkout: { repo: "local", root: side, chosen: true } });
 	expect(listRegistry().checkouts.filter((each) => each.chosen)).toHaveLength(1);
-	expect(checkoutFor("local")).toBe(side);
+	expect(chosenRoot("local")).toBe(side);
 	expect(listRegistry().checkouts.map((each) => each.root)).toContain(realpathSync.native(local));
 });
 
@@ -217,7 +225,7 @@ test("forgetting the chosen checkout leaves its identity with none chosen until 
 	const forgotten = await forgetDirectory(main);
 	expect(forgotten).toMatchObject({ kind: "checkout", unchosen: true, others: [worktree] });
 	expect(chosenCheckouts()).toEqual([]);
-	expect(checkoutFor(IDENTITY)).toBeUndefined();
+	expect(chosenRoot(IDENTITY)).toBeUndefined();
 	expect(listRegistry().unchosen).toEqual([IDENTITY]);
 	// Adding a checkout does not choose it, because the identity still has a known one.
 	await declareDirectory(clone);

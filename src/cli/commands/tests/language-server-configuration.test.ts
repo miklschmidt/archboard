@@ -160,7 +160,7 @@ async function listed(root = checkout): Promise<unknown> {
 async function missingSkips() {
 	const read = readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	const { skipped } = await checkCode(read.boards, new AbortController().signal);
+	const { skipped } = await checkCode(vault, read.boards, new AbortController().signal);
 	return skipped.filter((skip) => skip.reason === "language-server-missing");
 }
 

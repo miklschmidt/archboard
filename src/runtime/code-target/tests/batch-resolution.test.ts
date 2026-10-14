@@ -33,7 +33,10 @@ test("batch resolution returns one ordered result for every binding", async () =
 		{ repo: fixture.repository, path: "src/index.ts" },
 		{ repo: fixture.repository, path: "src/nested" },
 	] as const;
-	const results = resolveLocalCodeTargets(bindings, await snapshotCheckoutAccess({ bindings }));
+	const results = resolveLocalCodeTargets(
+		bindings,
+		await snapshotCheckoutAccess({ vault: null, bindings }),
+	);
 	expect(results).toHaveLength(4);
 	expect(
 		results.map((result) => (result.ok ? `${result.kind}:${result.path}` : result.code)),
@@ -63,7 +66,10 @@ test("one unavailable checkout does not discard another repository's valid evide
 		{ repo: fixture.repository, path: "src/index.ts" },
 		{ repo: "github.com/acme/unavailable", path: "src/index.ts" },
 	] as const;
-	const results = resolveLocalCodeTargets(bindings, await snapshotCheckoutAccess({ bindings }));
+	const results = resolveLocalCodeTargets(
+		bindings,
+		await snapshotCheckoutAccess({ vault: null, bindings }),
+	);
 	expect(results[0]?.ok).toBeTrue();
 	expect(results[1]).toMatchObject({ ok: false, code: "CHECKOUT_UNAVAILABLE" });
 });
