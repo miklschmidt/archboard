@@ -290,7 +290,7 @@ The language is `python`, `csharp`, `swift` or `c`. The language `c` covers C, C
 
 `--repo <identity>` names another repository, and the command then configures its chosen checkout. Without it, the command configures the known checkout that holds the working directory. `--remove` removes the server of the language. `archboard repo list` shows the configured servers of each checkout. `archboard repo forget` removes them with the checkout.
 
-The configuration stays on your machine. It is in `repos.json` with the checkout. If you register the same directory again, the configuration stays. Another checkout of the same repository has its own configuration. The check reads the configuration of the chosen checkout.
+The configuration stays on your machine. It is in `repos.json` with the checkout. If you register the same directory again, the configuration stays. Another checkout of the same repository has its own configuration. The check reads the configuration of the checkout it reads: the chosen checkout, or the checkout that holds the vault for its own repository, which has a configuration only if it is registered.
 
 The Archboard server reads `repos.json` again each time that the check runs. So a running Archboard server uses a configuration that you wrote after it started. The Archboard server looks up a command that is a name on its own `PATH`. That `PATH` is the `PATH` of the command that started it. If that `PATH` lacks the command, give the absolute path of the command. Or run `archboard stop` and run a command again.
 

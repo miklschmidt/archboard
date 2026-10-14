@@ -77,7 +77,7 @@ const planRefusal = {
 	exit: 2,
 	stream: "stderr" as const,
 	description:
-		"--plan names a file outside the checkout that holds the vault and every chosen checkout, Terraform state, a variable file or a file under .terraform, or a file that is not a plan JSON. The refusal names the plan and why.",
+		"--plan names a file outside the checkout that holds the vault and the chosen checkout of every other repository, Terraform state, a variable file or a file under .terraform, or a file that is not a plan JSON. The refusal names the plan and why.",
 };
 
 /**
@@ -136,7 +136,7 @@ const checkContract = defineCommand({
 			value: "none",
 			requiredWhen: "with --variant or --plan",
 			description:
-				"Then run the code check, which reads the code and Git history of the checkout that holds the vault and of every chosen checkout",
+				"Then run the code check, which reads the code and Git history of the checkout that holds the vault and of the chosen checkout of every other repository",
 		},
 		{
 			kind: "option",
@@ -155,7 +155,7 @@ const checkContract = defineCommand({
 			occurrences: "append",
 			placeholder: "file",
 			description:
-				"With --code, read this plan JSON from terraform show -json or tofu show -json, inside the checkout that holds the vault or a chosen checkout, for the root module of its directory: only its addresses and references, for the modules the check does not read",
+				"With --code, read this plan JSON from terraform show -json or tofu show -json, inside the checkout that holds the vault or the chosen checkout of another repository, for the root module of its directory: only its addresses and references, for the modules the check does not read",
 		},
 	],
 	input: {
