@@ -4,6 +4,11 @@ status: accepted
 
 # Built-in agents support architecture and hand off implementation
 
+Amended by [ADR
+0050](0050-the-browser-is-one-app-and-each-checkout-has-its-own-workhorse.md)
+(2026-10-14). The implementation brief names the checkout and gives `-C` with
+it, in place of `ARCHBOARD_VAULT`. Everything else stands.
+
 Archboard's coordinator and workhorse inspect architecture, analyze code, and
 author requested proposals and architecture documents. They can run existing
 tests and diagnostic commands, and create temporary experiments outside the

@@ -4,6 +4,12 @@ status: accepted
 
 # A workhorse stop ends the whole work tree
 
+Amended by [ADR
+0050](0050-the-browser-is-one-app-and-each-checkout-has-its-own-workhorse.md)
+(2026-10-14). The Stop control stops the workhorse of the shown conversation. A
+spoken stop stops every running workhorse of the tab session. Everything else
+stands.
+
 A workhorse stop ends its current work, stops every sub-agent that it spawned,
 and clears its pending requests. Spoken requests and the workbench Stop
 control use the same operation. Archboard reports success only after it

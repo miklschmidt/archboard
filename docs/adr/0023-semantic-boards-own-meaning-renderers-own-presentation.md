@@ -4,6 +4,10 @@ status: accepted
 
 # Semantic boards own meaning, and renderers own presentation
 
+Amended by [ADR 0051](0051-a-person-can-move-a-board-to-another-repository.md)
+(2026-10-14). The browser moves a board when a person asks it to. That is the
+one board write a browser makes besides a take-back. Everything else stands.
+
 The user amended this ADR in a decision of 2026-09-27. What a variant is drawn
 against is the board's current variant, not its predecessor. The user's words
 were: "Diff should be on 'historical' and not 'current', when a board has

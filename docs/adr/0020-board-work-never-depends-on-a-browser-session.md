@@ -4,6 +4,11 @@ status: accepted
 
 # Board work never depends on a browser session
 
+Amended by [ADR
+0049](0049-one-server-serves-every-vault-and-every-call-names-its-vault.md)
+(2026-10-14). "The configured vault" below is now the vault that the call names.
+Everything else stands.
+
 ADR 0009 removed the ambient active-board pointer. That was correct. It also
 mixed board authority with browser display state. That made loading, rendering,
 Mermaid conversion, selection-based writes and several ordinary workflows depend

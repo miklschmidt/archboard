@@ -1,8 +1,14 @@
 ---
-status: accepted
+status: superseded by ADR-0049
 ---
 
 # Boards persist as files in an Obsidian vault that spans repositories
+
+Superseded by [ADR
+0049](0049-one-server-serves-every-vault-and-every-call-names-its-vault.md) on
+2026-10-14. A vault is now the `.archboard/vault` directory of one checkout, or
+of a directory outside any checkout, and its boards can describe any repository.
+The logical code references of this decision stay, through ADR 0011.
 
 Boards are stored as `.excalidraw.md` notes in a single Obsidian vault. The
 vault spans every repository we work on. It is not inside any one repo.
