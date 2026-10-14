@@ -234,7 +234,7 @@ describe("public code-target activation contract", () => {
 
 	test("re-reads a real note binding without changing note bytes or mtime", async () => {
 		await using resources = new AsyncDisposableStack();
-		const fixture = await createOpenerFixture({ defaultDependencies: true });
+		const fixture = await createOpenerFixture({ vault: ownerVault, defaultDependencies: true });
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
@@ -437,7 +437,7 @@ describe("public code-target activation contract", () => {
 
 	test("returns a typed real spawn error without changing note or state", async () => {
 		await using resources = new AsyncDisposableStack();
-		const fixture = await createOpenerFixture({ defaultDependencies: true });
+		const fixture = await createOpenerFixture({ vault: ownerVault, defaultDependencies: true });
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
