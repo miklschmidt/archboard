@@ -8,12 +8,13 @@ import {
 	paneOpenContract,
 	panesContract,
 } from "@/cli/commands/pane";
+import { repoLanguageServerContract } from "@/cli/commands/repo-language-server";
 import {
 	repoAddContract,
 	repoContract,
 	repoForgetContract,
-	repoLanguageServerContract,
 	repoListContract,
+	repoUseContract,
 } from "@/cli/commands/repo";
 import {
 	semanticContract,
@@ -111,8 +112,11 @@ const COMMANDS: Record<string, CommandRoute> = {
 		children: {
 			list: child(contract(repoListContract, "src/cli/commands/repo.ts")),
 			add: child(contract(repoAddContract, "src/cli/commands/repo.ts")),
+			use: child(contract(repoUseContract, "src/cli/commands/repo.ts")),
 			forget: child(contract(repoForgetContract, "src/cli/commands/repo.ts")),
-			"language-server": child(contract(repoLanguageServerContract, "src/cli/commands/repo.ts")),
+			"language-server": child(
+				contract(repoLanguageServerContract, "src/cli/commands/repo-language-server.ts"),
+			),
 		},
 		bare: { kind: "default", child: "list", withLeadingOptions: true },
 	},

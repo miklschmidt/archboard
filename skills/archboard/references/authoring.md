@@ -90,7 +90,9 @@ boundary relationships, and their immediate neighbours) is the answer of
 Register each checkout whose implementation you bind with
 `archboard repo add <dir>`; the answer's `repo` is the identity (such as
 `github.com/<owner>/<name>`) and every binding on every machine uses it with a
-repo-relative `path`. `branch`, `commit` and `confirmedAt` record what you
+repo-relative `path`. A repository with several known checkouts, such as a
+worktree, resolves in its chosen checkout; `repo add` never changes that, and
+`archboard repo use <dir>` does, on the user's request only. `branch`, `commit` and `confirmedAt` record what you
 actually confirmed; restating the node keeps them only if you restate them.
 
 `symbol` names the one definition at `path` that the node stands for, spelled

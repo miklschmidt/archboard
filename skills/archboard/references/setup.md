@@ -69,10 +69,11 @@ of your shell.
 3. For Swift, use Swift 6.1 or later. sourcekit-lsp builds a package itself on
    the first run to prepare its background index. The check waits until the
    index is ready before it asks for definitions.
-4. If the repository is not registered, run `archboard repo add <dir>`. If it is
-   registered at another directory, the command in step 5 refuses to run here.
-   Registering this directory moves the registration and drops the servers of the
-   other one. Tell the user before you do this.
+4. If the repository is not registered, run `archboard repo add <dir>`. If it
+   is registered at another directory, `repo add` makes this directory a second
+   known checkout, and the check reads only the chosen one, so the servers of
+   step 5 take effect only if this directory is chosen. Say so to the user. Run `archboard repo use <dir>` only when the user asks, because it
+   changes what every board on this machine reads.
 5. In the repository, run `archboard repo language-server <language> <command>`.
    Write one `--arg=<argument>` for each argument. The language is `python`,
    `csharp`, `swift` or `c`. The language `c` covers C, C++ and Objective-C.
@@ -96,11 +97,12 @@ For basedpyright, use `basedpyright-langserver` in place of
 `pyright-langserver`. Do not pass `--background-index=false` to clangd. The check
 waits for the index of clangd until it finishes.
 
-`--remove` removes the server of a language. `--repo <identity>` names another
-registered checkout. Without it, the command uses the registered checkout that
-holds the working directory. `archboard repo list` shows the configured servers
+`--remove` removes the server of a language. `--repo <identity>` names the chosen
+checkout of another repository. Without it, the command uses the known checkout
+that holds the working directory. `archboard repo list` shows the configured servers
 of each checkout. The configuration stays on this machine. `archboard repo forget`
-removes it with the checkout. Registering the same directory again keeps it.
+removes it with the checkout. Registering the same directory again keeps it. The check
+reads the servers of the chosen checkout.
 
 The check reads the configuration each time it runs, so you do not restart the
 Archboard server.

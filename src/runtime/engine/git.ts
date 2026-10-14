@@ -181,8 +181,29 @@ async function checkoutHead(
 	return Object.freeze({ ...(branch ? { branch } : {}), ...(commit ? { commit } : {}) });
 }
 
+/**
+ * The working trees of a repository that `git worktree list` reports, the
+ * checkout itself first. A bare repository has no working tree, so it is left
+ * out, and a worktree whose directory is gone is `prunable` in Git's own words
+ * and is left out too.
+ * @param root A checkout's root.
+ * @param options Cancellation.
+ * @returns Each working tree's path; none when Git cannot list them.
+ */
+async function worktreePaths(root: string, options: InspectOptions = {}): Promise<string[]> {
+	const listing = await optionalGit(root, ["worktree", "list", "--porcelain"], options);
+	return (listing ?? "")
+		.split(/\n\n+/u)
+		.map((block) => block.split("\n"))
+		.filter(
+			(lines) => !lines.includes("bare") && !lines.some((line) => line.startsWith("prunable")),
+		)
+		.flatMap((lines) => lines.find((line) => line.startsWith("worktree "))?.slice(9) ?? []);
+}
+
 export {
 	type CheckoutHead,
+	worktreePaths,
 	checkoutHead,
 	type GitFailure,
 	GitCommandError,

@@ -1,20 +1,16 @@
 import { z } from "zod";
 import {
-	declareRepo,
-	forgetRepo,
-	listRepos,
+	chosenCheckouts,
+	declareDirectory,
+	forgetDirectory,
+	listRegistry,
 	registryPath,
 	RepoRegistryError,
-	setLanguageServer,
+	type RegistryListing,
 } from "@/runtime/engine/repo-registry";
-import { inspectCheckout } from "@/runtime/engine/git";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
-import {
-	CONFIGURABLE_LANGUAGES,
-	ConfiguredServerSchema,
-	LanguageServersSchema,
-	type ConfiguredServer,
-} from "@/shared/language-servers/index";
+import { commandLine } from "@/cli/commands/lib/command-line";
+import { LanguageServersSchema } from "@/shared/language-servers/index";
 
 const tail = z.array(z.string()).default([]);
 
@@ -26,7 +22,7 @@ const repoContract = defineCommand({
 	path: ["repo"],
 	shared: [],
 	summary:
-		"The repository checkouts on this machine, so a binding can name a repo instead of a directory",
+		"The repository checkouts on this machine and the one that is read for each repository, so a binding can name a repo instead of a directory",
 	description: "Routes repository registry subcommands.",
 	examples: ["archboard repo list"],
 	parameters: [
@@ -66,7 +62,7 @@ const repoContract = defineCommand({
 	 * @returns Never; the usage error is the whole behaviour.
 	 */
 	async handler() {
-		throw new CliUsageError("repo needs a subcommand: list, add, forget, or language-server");
+		throw new CliUsageError("repo needs a subcommand: list, add, use, forget, or language-server");
 	},
 });
 
@@ -76,16 +72,25 @@ const RegisteredRepoResultSchema = z.object({
 	// Existing registry files can still contain an observed registration.
 	source: z.enum(["declared", "observed"]),
 	addedAt: z.string(),
+	chosen: z.boolean(),
 	exists: z.boolean().optional(),
 	servers: LanguageServersSchema.optional(),
 });
 type RegisteredRepoResult = z.infer<typeof RegisteredRepoResultSchema>;
+const UntrackedVaultResultSchema = z.object({
+	name: z.string(),
+	root: z.string(),
+	addedAt: z.string(),
+	exists: z.boolean().optional(),
+});
 const RepoListInputSchema = z.object({ text: z.boolean().default(false), tail });
 type RepoListInput = z.infer<typeof RepoListInputSchema>;
 const RepoListJsonResultSchema = z.object({
 	success: z.literal(true),
 	registry: z.string(),
 	repos: z.array(RegisteredRepoResultSchema),
+	vaults: z.array(UntrackedVaultResultSchema),
+	unchosen: z.array(z.string()),
 });
 type RepoListJsonResult = z.infer<typeof RepoListJsonResultSchema>;
 const RepoListResultSchema = z.union([RepoListJsonResultSchema, z.string()]);
@@ -93,9 +98,9 @@ type RepoListResult = z.infer<typeof RepoListResultSchema>;
 const repoListContract = defineCommand({
 	path: ["repo", "list"],
 	shared: [],
-	summary: "List registered repository checkouts",
+	summary: "List known repository checkouts and untracked vaults",
 	description:
-		"Reads the machine-local repository registry, with the language servers configured for each checkout.",
+		"Reads the machine-local checkout registry: every known checkout with its repository identity, whether it is the chosen one for that identity and whether its directory exists, the language servers configured for each, every untracked vault with its registry name, and the identities that have no chosen checkout.",
 	examples: ["archboard repo list"],
 	parameters: [
 		{
@@ -123,7 +128,7 @@ const repoListContract = defineCommand({
 				id: "json",
 				when: { key: "text", present: false },
 				mode: "json",
-				description: "Repository registry",
+				description: "Checkout registry",
 			},
 			{
 				id: "text",
@@ -144,147 +149,302 @@ const repoListContract = defineCommand({
 	refusals: [],
 	relationships: [],
 	/**
-	 * Lists the registered checkouts, noting the ones whose directory is gone.
+	 * Lists the known checkouts and vaults, noting the ones whose directory is
+	 * gone and the identities that have no chosen checkout.
 	 * @param input - The parsed list options.
 	 * @returns The registry as text or json.
 	 */
 	async handler(input) {
-		const repos = listRepos();
+		const listing = listRegistry();
 		if (!input.text) {
-			return { result: { success: true as const, registry: registryPath(), repos } };
-		}
-		if (repos.length === 0) {
+			const { checkouts, vaults, unchosen } = listing;
 			return {
-				result:
-					"No repository is registered on this machine yet.\nRun `repo add` inside a checkout to register it.",
+				result: {
+					success: true as const,
+					registry: registryPath(),
+					repos: checkouts,
+					vaults,
+					unchosen,
+				},
 			};
 		}
-		return {
-			result: repos
-				.map((entry) => {
-					const servers = Object.entries(entry.servers ?? {}).map(
-						([language, server]) => `\n  ${language}: ${commandLine(server)}`,
-					);
-					return `${entry.repo}\n  ${entry.root}${entry.exists ? "" : "  (gone)"}  [${entry.source}]${servers.join("")}`;
-				})
-				.join("\n"),
-		};
+		return { result: listingText(listing) };
 	},
 });
 
+/**
+ * The registry as a person reads it: each identity with its checkouts, then
+ * the untracked vaults.
+ * @param listing The registry.
+ * @returns The text.
+ */
+function listingText(listing: RegistryListing): string {
+	if (listing.checkouts.length === 0 && listing.vaults.length === 0) {
+		return "No checkout is known on this machine yet.\nRun `repo add` inside a checkout to register it.";
+	}
+	const identities = [...new Set(listing.checkouts.map((entry) => entry.repo))];
+	const checkouts = identities.map((repo) => {
+		const own = listing.checkouts.filter((entry) => entry.repo === repo);
+		const lines = own.map((entry) => {
+			const servers = Object.entries(entry.servers ?? {}).map(
+				([language, server]) => `\n    ${language}: ${commandLine(server)}`,
+			);
+			const marks = `${entry.chosen ? "  (chosen)" : ""}${entry.exists ? "" : "  (gone)"}`;
+			return `  ${entry.root}${marks}  [${entry.source}]${servers.join("")}`;
+		});
+		const unchosen = listing.unchosen.includes(repo)
+			? ["  No checkout is chosen: run `repo use <dir>` with one of these."]
+			: [];
+		return [repo, ...unchosen, ...lines].join("\n");
+	});
+	const vaults = listing.vaults.map(
+		(vault) => `${vault.name}  (untracked vault)\n  ${vault.root}${vault.exists ? "" : "  (gone)"}`,
+	);
+	return [...checkouts, ...vaults].join("\n");
+}
+
 const RepoAddInputSchema = z.object({ dir: z.string().optional(), tail });
 type RepoAddInput = z.infer<typeof RepoAddInputSchema>;
-const RepoAddResultSchema = z.object({
+const CheckoutDeclaredSchema = z.object({
 	success: z.literal(true),
+	kind: z.literal("checkout"),
 	repo: z.string(),
 	root: z.string(),
 	source: z.literal("declared"),
 	addedAt: z.string(),
+	/** Whether this checkout is the one this machine reads for its repository. */
+	chosen: z.boolean(),
+	/** Whether the directory was unknown before. */
+	added: z.boolean(),
+	/** The root of the chosen checkout that `repo use` replaced. */
+	replaced: z.string().optional(),
+	/** The worktrees of the checkout that became known with it. */
+	worktrees: z.array(z.string()),
 	registry: z.string(),
 });
+const VaultDeclaredSchema = z.object({
+	success: z.literal(true),
+	kind: z.literal("vault"),
+	name: z.string(),
+	root: z.string(),
+	addedAt: z.string(),
+	added: z.boolean(),
+	registry: z.string(),
+});
+const RepoAddResultSchema = z.union([CheckoutDeclaredSchema, VaultDeclaredSchema]);
 type RepoAddResult = z.infer<typeof RepoAddResultSchema>;
+const dirParameters = [
+	{
+		kind: "positional",
+		key: "dir",
+		name: "dir",
+		description: "Directory; the working directory when absent",
+	},
+	{
+		kind: "positional",
+		key: "tail",
+		name: "ignored",
+		repeatable: true,
+		route: "pass-through",
+		hidden: true,
+		description: "Legacy ignored positional content",
+	},
+] as const;
+const registryOutput = {
+	cases: [
+		{
+			id: "json",
+			when: {},
+			mode: "json",
+			description: "Registry receipt",
+			presentation: ["diagnostics", "result"],
+		},
+	],
+	/**
+	 * Selects the only output case.
+	 * @returns The json case id.
+	 */
+	select: () => "json",
+} as const;
+
+/**
+ * Declare a directory, turning a registry refusal into a usage error.
+ * @param dir The directory the person named.
+ * @param choose Whether to make a checkout the chosen one.
+ * @param signal Cancels the git calls.
+ * @returns What was recorded.
+ */
+async function declare(dir: string, choose: boolean, signal: AbortSignal) {
+	try {
+		return await declareDirectory(dir, { choose, signal });
+	} catch (error) {
+		if (error instanceof RepoRegistryError) {
+			throw new CliUsageError(error.message);
+		}
+		throw error;
+	}
+}
+
+type Declared = Awaited<ReturnType<typeof declare>>;
+
+/**
+ * The receipt of a declared untracked vault.
+ * @param declared What was recorded.
+ * @returns The result and its diagnostics.
+ */
+function vaultReceipt(declared: Extract<Declared, { kind: "vault" }>) {
+	const { name, root, addedAt } = declared.vault;
+	return {
+		result: {
+			success: true as const,
+			kind: "vault" as const,
+			name,
+			root,
+			addedAt,
+			added: declared.added,
+			registry: registryPath(),
+		},
+		diagnostics: [`"${name}" is the registry name of the untracked vault at ${root}.`],
+	};
+}
+
+/**
+ * The receipt of a declared checkout, with what a person needs to know next:
+ * which checkout is read for its repository.
+ * @param declared What was recorded.
+ * @returns The result and its diagnostics.
+ */
+function checkoutReceipt(declared: Extract<Declared, { kind: "checkout" }>) {
+	const { checkout, added, replaced, worktrees } = declared;
+	const chosenRoot = chosenCheckouts().find((each) => each.repo === checkout.repo)?.root;
+	const reading = checkout.chosen
+		? `"${checkout.repo}" is now read at ${checkout.root}: a node bound to ${checkout.repo} opens the file it names there.`
+		: `${checkout.root} is known, and ${chosenRoot ?? "no checkout"} stays the one read for "${checkout.repo}". Run archboard repo use ${checkout.root} to read this one instead.`;
+	const worktreeNote =
+		worktrees.length === 0
+			? []
+			: [`${worktrees.length} of its worktrees became known too; repo list shows them.`];
+	return {
+		result: {
+			success: true as const,
+			kind: "checkout" as const,
+			repo: checkout.repo,
+			root: checkout.root,
+			source: "declared" as const,
+			addedAt: checkout.addedAt,
+			chosen: checkout.chosen,
+			added,
+			...(replaced === undefined ? {} : { replaced: replaced.root }),
+			worktrees: worktrees.map((each) => each.root),
+			registry: registryPath(),
+		},
+		diagnostics: [reading, ...worktreeNote],
+	};
+}
+
 const repoAddContract = defineCommand({
 	path: ["repo", "add"],
 	shared: [],
-	summary: "Register a repository checkout",
+	summary: "Register a repository checkout or an untracked vault",
 	description:
-		"Derives a checkout identity from git and records its local root. Registering the same root again keeps its language servers.",
+		"Derives a checkout's identity from git and records its local root, with the worktrees that git lists for it. The first known checkout of a repository becomes the one read for it; adding another never changes that, and repo use does. Outside any git checkout, a directory that holds .archboard/vault is registered as an untracked vault under its base name, made unique on this machine. Registering the same root again keeps its language servers.",
 	examples: ["archboard repo add ."],
-	parameters: [
-		{
-			kind: "positional",
-			key: "dir",
-			name: "dir",
-			description: "Checkout directory; the working directory when absent",
-		},
-		{
-			kind: "positional",
-			key: "tail",
-			name: "ignored",
-			repeatable: true,
-			route: "pass-through",
-			hidden: true,
-			description: "Legacy ignored positional content",
-		},
-	],
+	parameters: dirParameters,
 	input: { ingress: RepoAddInputSchema },
 	result: RepoAddResultSchema,
-	output: {
-		cases: [
-			{
-				id: "json",
-				when: {},
-				mode: "json",
-				description: "Registered checkout",
-				presentation: ["diagnostics", "result"],
-			},
-		],
-		/**
-		 * Selects the only output case.
-		 * @returns The json case id.
-		 */
-		select: () => "json",
-	},
+	output: registryOutput,
 	prerequisites: [],
 	effects: ["local-read", "local-write"],
 	refusals: [],
 	relationships: [],
 	/**
-	 * Registers the checkout at the given directory, or the working directory,
-	 * turning a registry refusal into a usage error.
+	 * Registers the checkout or vault at the given directory, or the working directory.
 	 * @param input - The parsed add options.
 	 * @param context - The command context.
-	 * @returns The registered entry with a hint on how to bind through it.
+	 * @returns The registered entry with a note on what is read.
 	 */
 	async handler(input, context) {
-		let entry;
-		try {
-			entry = await declareRepo(context.resolvePath(input.dir ?? process.cwd()), {
-				signal: context.signal,
-			});
-		} catch (error) {
-			if (error instanceof RepoRegistryError) {
-				throw new CliUsageError(error.message);
-			}
-			throw error;
+		const declared = await declare(
+			context.resolvePath(input.dir ?? process.cwd()),
+			false,
+			context.signal,
+		);
+		return declared.kind === "vault" ? vaultReceipt(declared) : checkoutReceipt(declared);
+	},
+});
+
+const RepoUseInputSchema = z.object({ dir: z.string().optional(), tail });
+type RepoUseInput = z.infer<typeof RepoUseInputSchema>;
+const RepoUseResultSchema = CheckoutDeclaredSchema;
+type RepoUseResult = z.infer<typeof RepoUseResultSchema>;
+const repoUseContract = defineCommand({
+	path: ["repo", "use"],
+	shared: [],
+	summary: "Choose the checkout that this machine reads for its repository",
+	description:
+		"Makes the checkout the chosen one of its repository identity: the browser reads its vault, and a binding that another vault makes into that identity resolves there. Registers the checkout, with its worktrees, when it is unknown. An untracked vault has no repository identity and is refused.",
+	examples: ["archboard repo use ../payments-worktree"],
+	parameters: dirParameters,
+	input: { ingress: RepoUseInputSchema },
+	result: RepoUseResultSchema,
+	output: registryOutput,
+	prerequisites: [],
+	effects: ["local-read", "local-write"],
+	refusals: [],
+	relationships: [],
+	/**
+	 * Chooses the checkout at the given directory, or the working directory.
+	 * @param input - The parsed use options.
+	 * @param context - The command context.
+	 * @returns The chosen entry, and the root that it replaced.
+	 */
+	async handler(input, context) {
+		const declared = await declare(
+			context.resolvePath(input.dir ?? process.cwd()),
+			true,
+			context.signal,
+		);
+		if (declared.kind !== "checkout") {
+			throw new CliUsageError("repo use chooses a checkout, and an untracked vault is not one");
 		}
-		return {
-			result: { success: true as const, ...entry, registry: registryPath() },
-			diagnostics: [
-				`"${entry.repo}" is now resolvable from anywhere on this machine: a node bound to ${entry.repo} opens the file it names.`,
-			],
-		};
+		return checkoutReceipt(declared);
 	},
 });
 
 const RepoForgetInputSchema = z.object({
-	identity: z
-		.string({ error: "repo forget needs a repository identity, e.g. github.com/acme/payments" })
+	dir: z
+		.string({ error: "repo forget needs the directory of a known checkout or untracked vault" })
 		.min(1),
 	tail,
 });
 type RepoForgetInput = z.infer<typeof RepoForgetInputSchema>;
 const RepoForgetResultSchema = z.object({
 	success: z.literal(true),
-	repo: z.string(),
+	/** The directory that was named, as an absolute path. */
+	root: z.string(),
 	forgotten: z.boolean(),
+	kind: z.enum(["checkout", "vault"]).optional(),
+	repo: z.string().optional(),
+	name: z.string().optional(),
+	/** True when the checkout was the chosen one and its repository has others, so none is chosen now. */
+	unchosen: z.boolean(),
 	registry: z.string(),
 });
 type RepoForgetResult = z.infer<typeof RepoForgetResultSchema>;
 const repoForgetContract = defineCommand({
 	path: ["repo", "forget"],
 	shared: [],
-	summary: "Forget a local repository checkout",
+	summary: "Forget a known checkout or untracked vault",
 	description:
-		"Removes one identity, and the language servers configured for it, from the machine-local registry.",
-	examples: ["archboard repo forget github.com/acme/payments"],
+		"Removes the checkout or untracked vault at a directory, and the language servers configured for it, from the machine-local registry. The directory need not exist. Forgetting the chosen checkout of a repository that has other known checkouts leaves it with no chosen checkout until repo use, and bindings into it resolve as unregistered meanwhile.",
+	examples: ["archboard repo forget ../payments-worktree"],
 	parameters: [
 		{
 			kind: "positional",
-			key: "identity",
-			name: "identity",
+			key: "dir",
+			name: "dir",
 			required: true,
-			description: "Repository identity, such as github.com/acme/payments",
+			description: "The directory of a known checkout or untracked vault",
 		},
 		{
 			kind: "positional",
@@ -298,252 +458,66 @@ const repoForgetContract = defineCommand({
 	],
 	input: { ingress: RepoForgetInputSchema },
 	result: RepoForgetResultSchema,
-	output: {
-		cases: [
-			{
-				id: "json",
-				when: {},
-				mode: "json",
-				description: "Forget receipt",
-				presentation: ["diagnostics", "result"],
-			},
-		],
-		/**
-		 * Selects the only output case.
-		 * @returns The json case id.
-		 */
-		select: () => "json",
-	},
+	output: registryOutput,
 	prerequisites: [],
 	effects: ["local-read", "local-write"],
 	refusals: [],
 	relationships: [],
 	/**
-	 * Forgets one registered identity, explaining what that does and does not
-	 * change for bindings that already name it.
+	 * Forgets one known checkout or untracked vault, explaining what that does
+	 * and does not change for bindings that already name it.
 	 * @param input - The parsed forget options.
+	 * @param context - The command context.
 	 * @returns The forget receipt with its explanation.
 	 */
-	async handler(input) {
-		const forgotten = forgetRepo(input.identity);
-		const known = forgotten ? [] : listRepos().map((entry) => entry.repo);
-		const diagnostic = forgotten
-			? `Forgot where "${input.identity}" is checked out. Bindings that already name it keep their address; they just have nothing to resolve to until it is registered again.`
-			: `"${input.identity}" was not registered, so nothing changed.${known.length > 0 ? ` Registered here: ${known.join(", ")}.` : ""}`;
-		return {
-			result: { success: true as const, repo: input.identity, forgotten, registry: registryPath() },
-			diagnostics: [diagnostic],
-		};
-	},
-});
-
-const RepoLanguageServerInputSchema = z.object({
-	language: z.enum(CONFIGURABLE_LANGUAGES, {
-		error: `repo language-server needs a language: ${CONFIGURABLE_LANGUAGES.join(", ")}. Use c for C, C++ and Objective-C.`,
-	}),
-	command: z.string().min(1).optional(),
-	arg: z.array(z.string()).default([]),
-	remove: z.boolean().default(false),
-	repo: z.string().min(1).optional(),
-	tail,
-});
-type RepoLanguageServerInput = z.infer<typeof RepoLanguageServerInputSchema>;
-const RepoLanguageServerResultSchema = z.object({
-	success: z.literal(true),
-	repo: z.string(),
-	language: z.enum(CONFIGURABLE_LANGUAGES),
-	servers: LanguageServersSchema,
-	registry: z.string(),
-});
-type RepoLanguageServerResult = z.infer<typeof RepoLanguageServerResultSchema>;
-const repoLanguageServerContract = defineCommand({
-	path: ["repo", "language-server"],
-	shared: [],
-	summary: "Set or remove the language server of one language for a registered checkout",
-	description:
-		"A language server resolves what the code check can only match by name. Python, C, C++, Objective-C, C# and Swift have no default server, because a server there runs code of the checkout as your editor's does: configure one only for a repository you work in. The Archboard server then runs exactly this command and its arguments, with the environment and PATH that the server started with. The language is python, csharp, swift or c (C, C++ and Objective-C). TypeScript needs no configuration. The checkout is the working directory's, unless --repo names another registered one.",
-	examples: [
-		"archboard repo language-server c clangd",
-		"archboard repo language-server python pyright-langserver --arg=--stdio",
-		"archboard repo language-server swift --remove",
-	],
-	parameters: [
-		{
-			kind: "positional",
-			key: "language",
-			name: "language",
-			required: true,
-			description: `One of ${CONFIGURABLE_LANGUAGES.join(", ")}`,
-		},
-		{
-			kind: "positional",
-			key: "command",
-			name: "command",
-			description:
-				"A program on the PATH or the absolute path of one; required unless --remove is given",
-		},
-		{
-			kind: "option",
-			key: "arg",
-			spellings: ["--arg"],
-			value: "required",
-			occurrences: "append",
-			placeholder: "argument",
-			description:
-				"An argument after the command; write one that starts with - as --arg=<argument>",
-		},
-		{
-			kind: "option",
-			key: "remove",
-			spellings: ["--remove"],
-			value: "none",
-			description: "Remove the language's server instead of setting it",
-		},
-		{
-			kind: "option",
-			key: "repo",
-			spellings: ["--repo"],
-			value: "required",
-			placeholder: "identity",
-			description:
-				"The registered repository, such as github.com/acme/payments; the working directory's checkout when absent",
-		},
-		{
-			kind: "positional",
-			key: "tail",
-			name: "ignored",
-			repeatable: true,
-			route: "pass-through",
-			hidden: true,
-			description: "Legacy ignored positional content",
-		},
-	],
-	input: { ingress: RepoLanguageServerInputSchema },
-	result: RepoLanguageServerResultSchema,
-	output: {
-		cases: [
-			{
-				id: "json",
-				when: {},
-				mode: "json",
-				description: "The servers now configured for the checkout",
-				presentation: ["diagnostics", "result"],
-			},
-		],
-		/**
-		 * Selects the only output case.
-		 * @returns The json case id.
-		 */
-		select: () => "json",
-	},
-	prerequisites: [],
-	effects: ["local-read", "local-write"],
-	refusals: [],
-	relationships: [],
-	/**
-	 * Sets or removes one language's server on a registered checkout.
-	 * @param input - The parsed options.
-	 * @param context - The command context.
-	 * @returns The checkout's servers after the change.
-	 */
 	async handler(input, context) {
-		const server = requestedServer(input);
-		const repo =
-			input.repo ??
-			(await workingDirectoryRepo(context.resolvePath(process.cwd()), context.signal));
-		const entry = setLanguageServer(repo, input.language, server);
-		if (entry === undefined) throw new CliUsageError(notRegistered(repo));
+		const dir = context.resolvePath(input.dir);
+		const gone = await forgetDirectory(dir, { signal: context.signal });
+		const base = { success: true as const, root: dir, registry: registryPath() };
+		if (gone === undefined) {
+			const known = listRegistry();
+			const where = [
+				...known.checkouts.map((each) => each.root),
+				...known.vaults.map((each) => each.root),
+			];
+			return {
+				result: { ...base, forgotten: false, unchosen: false },
+				diagnostics: [
+					`${dir} is not a known checkout or untracked vault, so nothing changed.${where.length > 0 ? ` Known here: ${where.join(", ")}.` : ""}`,
+				],
+			};
+		}
+		if (gone.kind === "vault") {
+			return {
+				result: {
+					...base,
+					forgotten: true,
+					kind: "vault" as const,
+					name: gone.vault.name,
+					unchosen: false,
+				},
+				diagnostics: [`Forgot the untracked vault "${gone.vault.name}" at ${gone.vault.root}.`],
+			};
+		}
+		const { repo } = gone.checkout;
 		return {
 			result: {
-				success: true as const,
+				...base,
+				forgotten: true,
+				kind: "checkout" as const,
 				repo,
-				language: input.language,
-				servers: entry.servers ?? {},
-				registry: registryPath(),
+				unchosen: gone.unchosen,
 			},
 			diagnostics: [
-				server === undefined
-					? `"${repo}" has no ${input.language} server now. check --code starts none there.`
-					: `check --code runs ${commandLine(server)} for ${input.language} in "${repo}", with the environment and PATH that the Archboard server started with. It runs code of that checkout.`,
+				gone.unchosen
+					? `Forgot ${gone.checkout.root}, the chosen checkout of "${repo}". No checkout of it is chosen now, so its bindings resolve as unregistered until archboard repo use <dir> chooses one of: ${gone.others.join(", ")}.`
+					: `Forgot ${gone.checkout.root}. Bindings that already name "${repo}" keep their address; they have nothing to resolve to until a checkout of it is registered again.`,
 			],
 		};
 	},
 });
 
-/**
- * A configured server as a person reads it: its command, then its arguments.
- * @param server The server.
- * @returns The line.
- */
-function commandLine(server: ConfiguredServer): string {
-	return [server.command, ...server.args].join(" ");
-}
-
-/**
- * The server a `repo language-server` call asks for.
- * @param input The parsed options.
- * @returns The command and arguments to set, or undefined to remove the server.
- * @throws {CliUsageError} When the options ask for both or neither, or the command is not one.
- */
-function requestedServer(input: RepoLanguageServerInput): ConfiguredServer | undefined {
-	if (input.remove) {
-		if (input.command === undefined && input.arg.length === 0) return undefined;
-		throw new CliUsageError("--remove takes no command and no --arg");
-	}
-	if (input.command === undefined) {
-		throw new CliUsageError(
-			`repo language-server ${input.language} needs the command that starts the server, or --remove`,
-		);
-	}
-	const parsed = ConfiguredServerSchema.safeParse({ command: input.command, args: input.arg });
-	if (!parsed.success) throw new CliUsageError(z.prettifyError(parsed.error));
-	return parsed.data;
-}
-
-/**
- * Why a repository cannot be configured: it is not registered.
- * @param repo The identity.
- * @returns The refusal.
- */
-function notRegistered(repo: string): string {
-	const known = listRepos().map((each) => each.repo);
-	const registered = known.length > 0 ? ` (registered: ${known.join(", ")})` : "";
-	return `"${repo}" is not registered on this machine${registered}. Register its checkout with archboard repo add <dir>.`;
-}
-
-/**
- * The repository identity of the working directory's checkout, when this
- * machine registered that checkout.
- * @param dir The working directory.
- * @param signal Cancels the git call.
- * @returns The identity.
- * @throws {CliUsageError} When the directory is in no repository, or its
- * checkout is not the registered one.
- */
-async function workingDirectoryRepo(dir: string, signal: AbortSignal): Promise<string> {
-	const checkout = await inspectCheckout(dir, { signal });
-	if (checkout === undefined) {
-		throw new CliUsageError(
-			`${dir} is in no git repository: run this in a checkout, or name one with --repo.`,
-		);
-	}
-	const registered = listRepos().find((entry) => entry.repo === checkout.identity);
-	if (registered === undefined || registered.root !== checkout.root) {
-		throw new CliUsageError(
-			registered === undefined
-				? `"${checkout.identity}" is not registered on this machine. Register this checkout with archboard repo add ${checkout.root}.`
-				: `"${checkout.identity}" is registered at ${registered.root}, not here. Run this there, or register this checkout with archboard repo add ${checkout.root}.`,
-		);
-	}
-	return checkout.identity;
-}
-
 export {
-	RepoLanguageServerInputSchema,
-	type RepoLanguageServerInput,
-	RepoLanguageServerResultSchema,
-	type RepoLanguageServerResult,
-	repoLanguageServerContract,
 	RepoNamespaceInputSchema,
 	type RepoNamespaceInput,
 	RepoNamespaceResultSchema,
@@ -563,6 +537,11 @@ export {
 	RepoAddResultSchema,
 	type RepoAddResult,
 	repoAddContract,
+	RepoUseInputSchema,
+	type RepoUseInput,
+	RepoUseResultSchema,
+	type RepoUseResult,
+	repoUseContract,
 	RepoForgetInputSchema,
 	type RepoForgetInput,
 	RepoForgetResultSchema,

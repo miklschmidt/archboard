@@ -82,8 +82,8 @@ async function run(directory: string, argv: string[]) {
  */
 async function listed(): Promise<unknown> {
 	const { stdout } = await run(scratch, ["repo", "list"]);
-	const parsed = JSON.parse(stdout) as { repos: { repo: string; servers?: unknown }[] };
-	return parsed.repos.find((entry) => entry.repo === IDENTITY)?.servers;
+	const parsed = JSON.parse(stdout) as { repos: { root: string; servers?: unknown }[] };
+	return parsed.repos.find((entry) => entry.root === checkout)?.servers;
 }
 
 test("repo language-server sets the server of a language for the working directory's registered checkout, repo list shows it, and registering the checkout again keeps it", async () => {
@@ -117,7 +117,7 @@ test("repo language-server sets the server of a language for the working directo
 });
 
 test("repo forget removes the servers with the checkout", async () => {
-	await run(scratch, ["repo", "forget", IDENTITY]);
+	await run(scratch, ["repo", "forget", checkout]);
 	await run(checkout, ["repo", "add", "."]);
 	expect(await listed()).toBeUndefined();
 });
@@ -135,7 +135,7 @@ test.each([
 ])(
 	"repo language-server refuses %s with a usage error and changes nothing",
 	async (_, argv, state) => {
-		await run(scratch, ["repo", "forget", IDENTITY]);
+		await run(scratch, ["repo", "forget", checkout]);
 		if (state === "registered") await run(checkout, ["repo", "add", "."]);
 		if (state === "invalid") writeFileSync(registry, "{");
 		const before = readFileSync(registry, "utf8");
@@ -151,7 +151,10 @@ test("a registration from before servers existed, and one that was observed, tak
 	const before = readFileSync(registry, "utf8");
 	const listedLegacy = await run(scratch, ["repo", "list"]);
 	expect(listedLegacy.exited).toBe(0);
-	expect(JSON.parse(listedLegacy.stdout)).toMatchObject({ repos: [{ ...stored, exists: true }] });
+	expect(JSON.parse(listedLegacy.stdout)).toMatchObject({
+		repos: [{ ...stored, exists: true, chosen: true }],
+		unchosen: [],
+	});
 	expect(readFileSync(registry, "utf8")).toBe(before);
 	expect((await run(checkout, ["repo", "language-server", "c", "clangd"])).exited).toBe(0);
 	expect(await listed()).toEqual({ c: { command: "clangd", args: [] } });
@@ -160,7 +163,7 @@ test("a registration from before servers existed, and one that was observed, tak
 });
 
 test("repo commands that run together keep every change", async () => {
-	await run(scratch, ["repo", "forget", IDENTITY]);
+	await run(scratch, ["repo", "forget", checkout]);
 	await run(checkout, ["repo", "add", "."]);
 	const cli = join(import.meta.dir, "..", "..", "..", "bin.ts");
 	const commands = {

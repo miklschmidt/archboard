@@ -3,7 +3,7 @@ import path from "node:path";
 
 import type { CodeBinding } from "@/shared/code-target";
 import { checkoutHead, repoIdentityAt, repoRootOf, type CheckoutHead } from "@/runtime/engine/git";
-import { listRepos, type RegisteredRepoStatus } from "@/runtime/engine/repo-registry";
+import { chosenCheckouts, type RegisteredRepoStatus } from "@/runtime/engine/repo-registry";
 import {
 	isPathWithin,
 	resolveLocalCodeTargetsWith,
@@ -207,7 +207,7 @@ function rememberBindingPath(
 export async function snapshotCheckoutAccess(
 	options: SnapshotOptions = {},
 ): Promise<CheckoutSnapshot> {
-	const entries = listRepos().map((entry) => Object.freeze({ ...entry }));
+	const entries = chosenCheckouts().map((entry) => Object.freeze({ ...entry }));
 	const settled = await Promise.allSettled(entries.map((entry) => inspectCheckout(entry, options)));
 	const failed = settled.find(
 		(result): result is PromiseRejectedResult => result.status === "rejected",

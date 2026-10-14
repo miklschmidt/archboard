@@ -201,10 +201,27 @@ archboard repo add ~/Projects/payments-api
 ```
 
 The identity of the repository comes from its `origin` remote. If the repository
-has no remote, the identity is the directory name. `archboard repo list` shows the
-registered checkouts, and `archboard repo forget <identity>` removes one. The
-list is in `repos.json` in the state directory, or in the file that
-`ARCHBOARD_REPOS` names.
+has no remote, the identity is the directory name. Archboard also knows the
+worktrees that `git worktree list` reports for a checkout that you register.
+
+One repository can have several known checkouts here: clones and worktrees.
+This machine reads one of them for each repository, the chosen checkout. The first
+checkout that you register is chosen. `archboard repo add` never changes the
+choice, so adding a worktree does not move what the browser and the code check read.
+`archboard repo use <dir>` chooses a checkout and registers it first if it is
+unknown. `archboard repo list` shows each known checkout with its repository,
+whether it is chosen and whether its directory exists, and it names a repository
+that has no chosen checkout. `archboard repo forget <dir>` removes a checkout.
+If it was the chosen checkout, the repository has no chosen checkout until you
+run `repo use`, and its bindings resolve as unregistered meanwhile.
+
+A directory outside any git checkout that holds `.archboard/vault` is an
+untracked vault. `repo add <dir>` registers it under its base name, made unique
+on this machine, and `repo list` shows it. `repo forget <dir>` removes it.
+
+The registry is `repos.json` in the state directory, or the file that
+`ARCHBOARD_REPOS` names. A `repos.json` from an earlier version reads as it is:
+each entry is a known checkout and the chosen one for its repository.
 
 If a checkout is registered, the browser opens the file with the opener in the
 browser configuration. By default, that is `xdg-open` on Linux and `open` on
@@ -261,9 +278,9 @@ archboard repo language-server <language> <command> [--arg=<argument>]...
 
 The language is `python`, `csharp`, `swift` or `c`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
 
-`--repo <identity>` names another registered repository. `--remove` removes the server of the language. `archboard repo list` shows the configured servers of each checkout. `archboard repo forget` removes them with the checkout.
+`--repo <identity>` names another repository, and the command then configures its chosen checkout. Without it, the command configures the known checkout that holds the working directory. `--remove` removes the server of the language. `archboard repo list` shows the configured servers of each checkout. `archboard repo forget` removes them with the checkout.
 
-The configuration stays on your machine. It is in `repos.json` with the checkout. If you register the same directory again, the configuration stays. If you register the repository at another directory, the configuration goes.
+The configuration stays on your machine. It is in `repos.json` with the checkout. If you register the same directory again, the configuration stays. Another checkout of the same repository has its own configuration. The check reads the configuration of the chosen checkout.
 
 The Archboard server reads `repos.json` again each time that the check runs. So a running Archboard server uses a configuration that you wrote after it started. The Archboard server looks up a command that is a name on its own `PATH`. That `PATH` is the `PATH` of the command that started it. If that `PATH` lacks the command, give the absolute path of the command. Or run `archboard stop` and run a command again.
 

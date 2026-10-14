@@ -150,7 +150,7 @@ function resolveCheckout(
 	if (!entry) {
 		return failure(
 			"CHECKOUT_UNAVAILABLE",
-			`No registered checkout exists for ${repository}. Add it with archboard repo add <dir>.`,
+			`No chosen checkout exists for ${repository}. Choose one with archboard repo use <dir>.`,
 		);
 	}
 	const root = canonicalRegisteredRoot(repository, entry.root, dependencies);

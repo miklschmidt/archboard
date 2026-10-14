@@ -138,7 +138,8 @@ Record each repair and the passing gate result before closing the original task.
      - A relationship across a network hop, through an event bus or through a
        value that a part receives. Anchor the code that sends or subscribes.
      - A part with no binding, and a binding into a repository that this
-       machine has not registered (`./bin/dogfood repo add`).
+       machine has not registered or has no chosen checkout for
+       (`./bin/dogfood repo add`, `repo use`).
 
      Every place where the build left the plan is a deviation.
 2. Correct the proposal to what was built, not to what was planned.

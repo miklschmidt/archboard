@@ -143,13 +143,14 @@ async function run(directory: string, argv: string[]) {
 }
 
 /**
- * The servers `repo list` shows for the checkout.
+ * The servers `repo list` shows for a checkout.
+ * @param root The checkout.
  * @returns Them, or undefined when it shows none.
  */
-async function listed(): Promise<unknown> {
+async function listed(root = checkout): Promise<unknown> {
 	const { stdout } = await run(scratch, ["repo", "list"]);
-	const parsed = JSON.parse(stdout) as { repos: { repo: string; servers?: unknown }[] };
-	return parsed.repos.find((entry) => entry.repo === IDENTITY)?.servers;
+	const parsed = JSON.parse(stdout) as { repos: { root: string; servers?: unknown }[] };
+	return parsed.repos.find((entry) => entry.root === root)?.servers;
 }
 
 /**
@@ -194,7 +195,9 @@ test("a configuration belongs to the checkout it was written for", async () => {
 	const refused = await run(other, ["repo", "language-server", "c", "--remove"]);
 	expect(refused.exited).toBe(2);
 	expect(await listed()).toEqual({ c: { command: NEVER, args: [] } });
-	// A registration at another root is another place, where nobody configured a server.
+	// A registration at another root is another place, where nobody configured a server,
+	// and the checkout that was configured keeps its servers.
 	await run(other, ["repo", "add", "."]);
-	expect(await listed()).toBeUndefined();
+	expect(await listed(other)).toBeUndefined();
+	expect(await listed()).toEqual({ c: { command: NEVER, args: [] } });
 });
