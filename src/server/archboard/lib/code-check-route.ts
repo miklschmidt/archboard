@@ -143,8 +143,8 @@ function refusalOf(refused: CodeCheckRefusal): { code: string; error: string } {
 		code: "PLAN_REFUSED",
 		error:
 			`The check does not read the plan ${JSON.stringify(refused.plan)}: ${refused.reason}. ` +
-			"Name a plan JSON that terraform show -json or tofu show -json wrote inside a " +
-			"registered checkout, by its path.",
+			"Name a plan JSON that terraform show -json or tofu show -json wrote inside the " +
+			"chosen checkout of its repository, by its path. archboard repo list shows which checkout is chosen.",
 	};
 }
 
