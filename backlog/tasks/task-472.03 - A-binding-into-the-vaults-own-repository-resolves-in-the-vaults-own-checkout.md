@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-14 22:48'
+updated_date: '2026-10-14 23:05'
 labels: []
 dependencies:
   - TASK-472.01
@@ -49,3 +49,17 @@ The code check resolves every binding through the registry, so a proposal in a w
 5. Board proposals: Archboard@TASK-472.03 (Repository checkout datastore description; the server to registry relationship, re-anchored on code-target's vault-checkout.ts), Archboard server@TASK-472.03 and Archboard server routes@TASK-472.03 (Code check description: where it reads). No other board is affected. Drawn on 2026-10-15 before the code.
 6. Gate, one lane at a time: lint, type-check, fmt:check, test:modules, test:system, test:repository, test:serial-browser.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built (commits: plan 94aabb9e4, code feat(code-target) and docs(cli) after 212e0f37b). Decisions:
+- One function, checkoutsReadFrom(vault) in src/runtime/code-target/lib/vault-checkout.ts (exported by code-target). vault is a path or null; null is for the machine's opener settings, which belong to no vault and see chosen checkouts only. snapshotCheckoutAccess takes it as a required option, so every snapshot consumer (code opener, code check, behind, footprint, locality) gets the rule and none can forget it. bindings.ts (vault check) calls the same function through createCheckoutLookup(vault).
+- The vault's checkout is found with two synchronous Bun.spawnSync git calls (rev-parse --show-toplevel, remote get-url origin, plus worktree list when there is no remote, per TASK-472.17's repoIdentityFor). Synchronous because checkSemanticVault, polled by every canvas, is synchronous and its route is TASK-472.04's; measured 2 ms per call. A Git failure means no own checkout, so the reader falls back to chosen checkouts.
+- A registered entry for the vault's root keeps its language servers; an unregistered vault checkout has none. The entry is read as chosen for its identity in this reading.
+- checkoutFor in repo-registry had no production caller left, so it is removed; its tests use chosenCheckouts.
+- Fence: code-check-route.ts, footprint-route.ts, locality-route.ts and code-opener/lib/routes.ts were edited by the TASK-472.04 implementer at the same time; their versions pass the vault to my reader signatures (checkCode(vault, ...), readPlans(vault, ...), readFootprint({vault}), locality read(vault, ...), resolveTarget(binding, signal, vault)). I committed none of those four files. routes.ts holds my resolveInVault wiring (new file src/server/code-opener/lib/resolve-target.ts) and must be committed by the 472.04 implementer.
+- Evidence: tests/system/cli/vault-checkout.test.ts (owned server, worktree vault, main chosen), tests/system/code-targets/vault-checkout.test.ts (opener), src/runtime/code-target/tests/vault-checkout.test.ts, src/runtime/history-lens/tests/own-checkout.test.ts, semantic-board-store/tests/bindings.test.ts. All eight fail when checkoutsReadFrom ignores the vault.
+- Evals: no scenario's expectedFeatures or outcomes change, so evals/ is untouched.
+- Board proposals: Archboard@TASK-472.03, Archboard server@TASK-472.03, Archboard server routes@TASK-472.03 (drawn at planning; check --code --variant TASK-472.03 introduces no finding and clears ANCHOR_SYMBOL_MISSING on the registry relationship, which the code move caused). Not adopted: closing is the parent's.
+<!-- SECTION:NOTES:END -->
