@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import type { SemanticBoard } from "@/shared/semantic-board/index";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { vaultUrl } from "../support/http.ts";
 import { runServerCli } from "../support/run-cli.ts";
 
 // The whole path a person and an agent actually use: a command makes a board,
@@ -158,9 +159,7 @@ describe("settling a proposal and adopting an architecture", () => {
 
 	test("adopting moves the designation and records why, through the command line", async () => {
 		const held = JSON.parse(cli(["semantic", "show", "settling"]).stdout).board;
-		const beforeListing = await (
-			await fetch(`${server.base}/api/semantic-boards?vault=${encodeURIComponent(server.vault)}`)
-		).json();
+		const beforeListing = await (await fetch(vaultUrl(server, "/api/semantic-boards"))).json();
 		expect(
 			beforeListing.boards.find((entry: { key: string }) => entry.key === "settling").variants,
 		).toEqual(listedVariants(held));
@@ -190,9 +189,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		);
 		expect(after.adoptions).toHaveLength(1);
 		expect(after.adoptions[0].reason).toBe("the gateway shipped");
-		const afterListing = await (
-			await fetch(`${server.base}/api/semantic-boards?vault=${encodeURIComponent(server.vault)}`)
-		).json();
+		const afterListing = await (await fetch(vaultUrl(server, "/api/semantic-boards"))).json();
 		expect(
 			afterListing.boards.find((entry: { key: string }) => entry.key === "settling").variants,
 		).toEqual(listedVariants(after));
@@ -307,9 +304,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		// What the picture was answered with, read off the route the viewer reads:
 		// which state has to decide, and nothing the store keeps for itself.
 		const answered = await fetch(
-			`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=blocking&variant=${encodeURIComponent(
-				"Queued and batched",
-			)}`,
+			vaultUrl(server, `/api/semantic-boards/render?board=blocking&variant=Queued%20and%20batched`),
 		);
 		expect(answered.status).toBe(200);
 		expect(((await answered.json()) as { waiting: unknown }).waiting).toEqual({
@@ -332,7 +327,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		// names the board alone — every variant lives in the one document — so this
 		// is a caller spelling a write the way it spells what it is looking at.
 		const answer = await fetch(
-			`${server.base}/api/semantic-boards/edit?vault=${encodeURIComponent(server.vault)}&expectVersion=${start.version}`,
+			vaultUrl(server, `/api/semantic-boards/edit?expectVersion=${start.version}`),
 			{
 				method: "POST",
 				headers: { "content-type": "application/json" },
@@ -385,7 +380,7 @@ describe("settling a proposal and adopting an architecture", () => {
 			const at = JSON.parse(cli(["semantic", "show", "attributed"]).stdout).board.version;
 			const before = heard.length;
 			const answer = await fetch(
-				`${server.base}/api/semantic-boards/edit?vault=${encodeURIComponent(server.vault)}&expectVersion=${at}&doing=${encodeURIComponent("attributing a write")}`,
+				vaultUrl(server, `/api/semantic-boards/edit?expectVersion=${at}&doing=a%20write`),
 				{
 					method: "POST",
 					headers: { "content-type": "application/json" },

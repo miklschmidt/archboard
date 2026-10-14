@@ -1,5 +1,15 @@
 import type { OwnedServer } from "./owned-server.ts";
 
+/**
+ * The URL of one API route of a server, naming the server's vault as every call does (ADR 0049).
+ * @param server The owned server.
+ * @param route The route and its query, starting with a slash.
+ * @returns The absolute URL.
+ */
+export function vaultUrl(server: Pick<OwnedServer, "base" | "vault">, route: string): string {
+	return `${server.base}${route}${route.includes("?") ? "&" : "?"}vault=${encodeURIComponent(server.vault)}`;
+}
+
 export interface JsonResponse<T> {
 	status: number;
 	body: T;
