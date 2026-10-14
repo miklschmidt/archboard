@@ -10,7 +10,7 @@ import {
 } from "@/server/code-opener";
 import { diagramIconPaths } from "@/runtime/semantic-renderer/index";
 import { app } from "@/server/archboard/lib/server-app";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { mountCodeCheckRoute } from "@/server/archboard/lib/code-check-route";
 import { mountFootprintRoute } from "@/server/archboard/lib/footprint-route";
@@ -82,8 +82,13 @@ app.get("/assets/diagram-icons/:name", (req, res) => {
 	res.set("Cache-Control", "no-cache").json({ paths });
 });
 
+// Every route that reads or writes a board names the vault it means (ADR 0049).
+// The routes of this server mount that requirement themselves; this one belongs to
+// the code opener, whose router does not know the server.
+app.post("/api/code-targets/open", requireVault);
+
 app.use(
-	createCodeOpenerRouter(serverVault, {
+	createCodeOpenerRouter(vaultOfRequest, {
 		/**
 		 * Run checkout work tracked against the response.
 		 * @param req The request.

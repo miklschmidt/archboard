@@ -99,6 +99,8 @@ async function closeSocket(socket: WebSocket, clientId: string, timeoutMs: numbe
 async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	base: string;
 	clientId: string;
+	/** The vault the pane shows boards of, which its socket names when it connects (ADR 0049). */
+	vault: string;
 	preferredBoard?: string;
 	register: (board: string | null, signal: AbortSignal) => Promise<Response>;
 	readPanes: (signal: AbortSignal) => Promise<Response>;
@@ -106,6 +108,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	const endpoint = new URL(options.base);
 	endpoint.protocol = "ws:";
 	endpoint.searchParams.set("clientId", options.clientId);
+	endpoint.searchParams.set("vault", options.vault);
 	// Every pane a system owner opens belongs to one browser tab, as a split shell's two do.
 	endpoint.searchParams.set("tabSession", "system-tab");
 	const socket = new WebSocket(endpoint);

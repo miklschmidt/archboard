@@ -188,24 +188,26 @@ interface Admission {
  * two such writes can never be mistaken for one writer. An agent whose claim was
  * taken back is refused once, so it learns rather than writing over the person
  * who took it.
+ * @param vault The vault root the board lives in.
  * @param key The board's canonical key.
  * @param writer The writer as stated.
  * @returns The identity to hold the lease under, or the refusal.
  */
 function admit(
+	vault: string,
 	key: string,
 	writer: SemanticWriter,
 ): Admission | { readonly ok: false; readonly problem: string } {
 	if (writer.kind !== "agent") {
 		return { ok: true, id: writer.id ?? `pane-${mintId()}`, claimed: false };
 	}
-	if (takeClaimRevocation(key) !== null) {
+	if (takeClaimRevocation(vault, key) !== null) {
 		return {
 			ok: false,
 			problem: `the claim on "${key}" was taken back; claim the board again before writing`,
 		};
 	}
-	const claim = claimWriterId(key);
+	const claim = claimWriterId(vault, key);
 	return claim === null
 		? { ok: true, id: `agent-${mintId()}`, claimed: false }
 		: { ok: true, id: claim, claimed: true };
@@ -526,7 +528,7 @@ async function underBoardLease<Done extends { readonly outcome: "applied" | "dis
 	// "Payments" and "payments" on a case-sensitive filesystem take one lease
 	// in turn rather than resolving two absent paths of their own (ADR 0010).
 	const address = resolveSemanticBoard(ask.board, ask.vault);
-	const admission = admit(address.key, ask.writer);
+	const admission = admit(ask.vault, address.key, ask.writer);
 	if (!admission.ok) {
 		return {
 			outcome: "rejected",

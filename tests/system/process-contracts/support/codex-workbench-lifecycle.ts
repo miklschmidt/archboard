@@ -33,6 +33,8 @@ export interface FixtureRecord {
 
 export interface ServerProcess {
 	readonly base: string;
+	/** The vault the server was started with, which every call to it names. */
+	readonly vault: string;
 	readonly pid: number;
 	output(): string;
 	normalClose(): Promise<void>;
@@ -162,6 +164,7 @@ export async function startServer(options: {
 	);
 	const server: ServerProcess = {
 		base,
+		vault: options.vault,
 		pid: child.pid,
 		output: () => output,
 		async normalClose() {

@@ -29,6 +29,11 @@ interface PaneRegistration {
 	/** Stable within the tab, and what the human sees on the pane tab. */
 	paneId: string;
 	/**
+	 * The vault this pane shows boards of: the directory it named when its socket
+	 * connected (ADR 0049). A board key means a board of this vault and no other.
+	 */
+	vault: string;
+	/**
 	 * Board key, e.g. `payments` or `payments@option-a`; null when the pane is
 	 * showing no board. A pane exists as long as its socket does, whether or not
 	 * there is anything on it — a fresh vault holds no board, and a pane that

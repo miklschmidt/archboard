@@ -20,8 +20,9 @@ import {
 } from "@/shared/semantic-pane-context/index";
 import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
 import { panePresentations } from "@/server/archboard/lib/pane-presentation";
-import { panes } from "@/server/archboard/lib/pane-registry";
+import { paneVaults, panes } from "@/server/archboard/lib/pane-registry";
 import { bodyOf } from "@/server/archboard/lib/request-board";
+import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /** The latest report from each pane, by the client id that sent it. */
 const reports = new Map<string, SemanticPaneContext>();
@@ -79,12 +80,13 @@ function semanticPaneContextFor(clientId: string): SemanticPaneContext | null {
 }
 
 /**
- * Every live pane's report, in no particular order.
+ * Every live pane's report in one vault, in no particular order.
+ * @param vault The vault whose panes are asked about.
  * @returns The reports.
  */
-function semanticPaneContexts(): readonly SemanticPaneContext[] {
+function semanticPaneContexts(vault: string): readonly SemanticPaneContext[] {
 	pruneClosedPanes();
-	return [...reports.values()];
+	return [...reports.values()].filter((report) => paneVaults.get(report.clientId) === vault);
 }
 
 /** Forget every report, for a server that is starting over. */
@@ -104,6 +106,17 @@ function reportRoute(req: Request, res: Response): void {
 			success: false,
 			error: "That is not a semantic pane context.",
 			problem: parsed.error.issues.map((issue) => issue.message).join("; "),
+		});
+		return;
+	}
+	const vault = vaultOfRequest(req);
+	if (paneVaults.get(parsed.data.clientId) !== vault) {
+		res.status(409).json({
+			success: false,
+			code: "VAULT_MISMATCH",
+			error:
+				`Pane ${parsed.data.clientId} is not connected for the vault "${vault}", ` +
+				"so it cannot report what it is reading there.",
 		});
 		return;
 	}
@@ -128,11 +141,11 @@ function reportRoute(req: Request, res: Response): void {
 /**
  * What the panes are reading, for anything that wants to see it without being
  * an agent: the same reports, in the shape they arrived.
- * @param _req The request.
+ * @param req The request.
  * @param res Its response.
  */
-function listRoute(_req: Request, res: Response): void {
-	res.json({ success: true, panes: semanticPaneContexts() });
+function listRoute(req: Request, res: Response): void {
+	res.json({ success: true, panes: semanticPaneContexts(vaultOfRequest(req)) });
 }
 
 /**
@@ -140,8 +153,8 @@ function listRoute(_req: Request, res: Response): void {
  * @param app The express application.
  */
 function mountSemanticPaneContextRoutes(app: Express): void {
-	app.post(SEMANTIC_PANE_CONTEXT_ROUTE, reportRoute);
-	app.get(SEMANTIC_PANE_CONTEXT_ROUTE, listRoute);
+	app.post(SEMANTIC_PANE_CONTEXT_ROUTE, requireVault, reportRoute);
+	app.get(SEMANTIC_PANE_CONTEXT_ROUTE, requireVault, listRoute);
 }
 
 export {

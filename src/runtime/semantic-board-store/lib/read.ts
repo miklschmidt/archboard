@@ -242,7 +242,7 @@ function migrateOnRead(
 	location: SemanticBoardLocation,
 	configured: ReturnType<typeof readSemanticBoardConfiguration>,
 ): SemanticBoardRead {
-	const claim = claimWriterId(location.key);
+	const claim = claimWriterId(vault, location.key);
 	try {
 		const attempted = withBoardLockIfFreeSync(
 			{

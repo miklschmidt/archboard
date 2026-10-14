@@ -11,6 +11,7 @@ export {
 	CURRENT_VARIANT,
 	VAULT_STATE_DIR,
 	LEVELS,
+	boardMemoryKey,
 	normalizeBoardKey,
 	normalizeBoardName,
 	validateBoardName,

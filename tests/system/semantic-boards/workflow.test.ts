@@ -260,10 +260,14 @@ describe("authoring and opening a semantic board", () => {
 		const view = stored.views[0];
 
 		const whole = await (
-			await fetch(`${server.base}/api/semantic-boards/render?board=pipeline`)
+			await fetch(
+				`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=pipeline`,
+			)
 		).json();
 		const sequence = await (
-			await fetch(`${server.base}/api/semantic-boards/render?board=pipeline&view=${view.id}`)
+			await fetch(
+				`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=pipeline&view=${view.id}`,
+			)
 		).json();
 
 		// The answer says which reading it is, and what else could be asked for.
@@ -285,7 +289,7 @@ describe("authoring and opening a semantic board", () => {
 	test("a render selector that says nothing is refused rather than answered with everything", async () => {
 		const asked = async (query: string): Promise<{ status: number; code: string }> => {
 			const answer = await fetch(
-				`${server.base}/api/semantic-boards/render?board=pipeline${query}`,
+				`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=pipeline${query}`,
 			);
 			const body = (await answer.json()) as { code?: string };
 			return { status: answer.status, code: body.code ?? "" };
@@ -384,7 +388,9 @@ describe("authoring and opening a semantic board", () => {
 		);
 
 		const drawn = await (
-			await fetch(`${server.base}/api/semantic-boards/render?board=pipeline&variant=${proposal.id}`)
+			await fetch(
+				`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=pipeline&variant=${proposal.id}`,
+			)
 		).json();
 		expect(drawn.changes.against.id).toBe(baseline.id);
 		// The one node the proposal added is the one thing labelled as added.
@@ -395,7 +401,9 @@ describe("authoring and opening a semantic board", () => {
 
 		// The variant it came from changed nothing, because it came from nothing.
 		const base = await (
-			await fetch(`${server.base}/api/semantic-boards/render?board=pipeline&variant=${baseline.id}`)
+			await fetch(
+				`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=pipeline&variant=${baseline.id}`,
+			)
 		).json();
 		expect(base.changes).toBeNull();
 
@@ -470,7 +478,7 @@ describe("authoring and opening a semantic board", () => {
 		const everything = stored.views.find((view: { name: string }) => view.name === "All of it");
 		const reporting = stored.views.find((view: { name: string }) => view.name === "Reporting only");
 
-		const endpoint = `${server.base}/api/semantic-boards/render?board=two-roots&variant=${proposal.id}`;
+		const endpoint = `${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=two-roots&variant=${proposal.id}`;
 		const draw = async (view = "") => (await fetch(`${endpoint}${view}`)).json();
 		const whole = await draw();
 		const plain = await draw("&comparison=off");

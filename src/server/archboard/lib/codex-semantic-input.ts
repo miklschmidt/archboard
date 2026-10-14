@@ -24,7 +24,6 @@ import {
 	semanticBoardContext,
 } from "@/server/archboard/lib/semantic-board-context";
 import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
-import { serverVault } from "@/server/archboard/lib/server-vault";
 
 type FreshBrief = ReturnType<CodexWorkbenchSessionComponents["semanticPublisher"]["freshBrief"]>;
 
@@ -122,12 +121,17 @@ interface BoardReading {
  * The read is of the document on disk every time, never a copy: an agent told
  * what version a board is at must be told the version the next write will be
  * checked against, and a cached one would differ exactly when it matters.
+ * @param vault The vault the board lives in.
  * @param asked The board name.
  * @param pane What the pane said it was reading, or null when it has not said.
  * @returns The reading.
  */
-function readBoardForContext(asked: string, pane: SemanticPaneContext | null): BoardReading {
-	const read = readSemanticBoard(serverVault(), asked);
+function readBoardForContext(
+	vault: string,
+	asked: string,
+	pane: SemanticPaneContext | null,
+): BoardReading {
+	const read = readSemanticBoard(vault, asked);
 	if (!read.ok) {
 		return {
 			architecture: NOTHING_READ,
@@ -285,13 +289,19 @@ interface ContextPane {
  * presentation to report and the context says so rather than being refused or
  * borrowing somebody else's. What a person selected in one architecture is not
  * a fact about another.
+ * @param vault The vault the board lives in: a pane of another vault showing a board of the
+ *   same name is showing another board.
  * @param contextBoard The board key.
  * @param clientId The exact pane's client id, or null when no pane speaks for the context.
  * @returns The pane, or null when it is not showing this board.
  */
-function contextPane(contextBoard: string, clientId: string | null): PaneRegistration | null {
+function contextPane(
+	vault: string,
+	contextBoard: string,
+	clientId: string | null,
+): PaneRegistration | null {
 	const pane = clientId === null ? undefined : panes.get(clientId);
-	if (pane === undefined) {
+	if (pane === undefined || pane.vault !== vault) {
 		return null;
 	}
 	// A pane may be holding no board at all: a fresh vault has none, and there is
@@ -430,12 +440,16 @@ function linkedIdentities(active: SemanticInputOwners | null): LinkedIdentities 
 
 /**
  * What the lock and the last announced step say about a board, for the brief.
+ * @param vault The vault the board lives in.
  * @param contextBoard The board key.
  * @returns The claim and the current step.
  */
-function claimOf(contextBoard: string): Required<Pick<SemanticContextInput, "claim" | "doing">> {
-	const holder = boardLockState(serverVault(), contextBoard);
-	const doing = recentDoing(contextBoard).at(-1)?.doing ?? null;
+function claimOf(
+	vault: string,
+	contextBoard: string,
+): Required<Pick<SemanticContextInput, "claim" | "doing">> {
+	const holder = boardLockState(vault, contextBoard);
+	const doing = recentDoing(vault, contextBoard).at(-1)?.doing ?? null;
 	return {
 		claim: {
 			holder: holder === null ? "none" : holder.kind,
@@ -448,6 +462,7 @@ function claimOf(contextBoard: string): Required<Pick<SemanticContextInput, "cla
 /**
  * The semantic context input for one board as seen from one pane.
  * @param active The active components, or null while none are installed.
+ * @param vault The vault the board lives in.
  * @param contextBoard The board key.
  * @param cursor The change-feed cursor the context is at, or null for a fresh read.
  * @param forPane The pane the context is for, and the exact pane on screen that speaks for it.
@@ -455,19 +470,21 @@ function claimOf(contextBoard: string): Required<Pick<SemanticContextInput, "cla
  */
 function semanticInputFor(
 	active: SemanticInputOwners | null,
+	vault: string,
 	contextBoard: string,
 	cursor: SemanticContextInput["cursor"],
 	forPane: ContextPane,
 ): SemanticContextInput {
 	const exactPaneId = forPane.paneId;
 	// The pane that can speak for what is on screen, or nothing when none can.
-	const pane = contextPane(contextBoard, forPane.clientId);
+	const pane = contextPane(vault, contextBoard, forPane.clientId);
 	// One parse, here. A pane showing a proposal reports `payments@<variant>`,
 	// and that address is what the context is filed under — but a board is one
 	// document holding every variant, so what is READ is the aggregate, and
 	// `readSemanticBoard` refuses an address carrying a variant outright.
 	const aggregate = aggregateKey(contextBoard);
 	const read = readBoardForContext(
+		vault,
 		aggregate,
 		pane === null ? null : semanticPaneContextFor(pane.clientId),
 	);
@@ -485,7 +502,7 @@ function semanticInputFor(
 		// and a pane that is not showing this board is not focused on it.
 		pane: { paneId: exactPaneId, focused: pane?.focused ?? false },
 		architecture: read.architecture,
-		...claimOf(contextBoard),
+		...claimOf(vault, contextBoard),
 		cursor,
 		description: read.description,
 		ambiguity: read.ambiguity,

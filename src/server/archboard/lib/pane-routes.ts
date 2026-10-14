@@ -23,6 +23,7 @@ import {
 	notePaneOpened,
 	paneBoards,
 	paneResponse,
+	paneVaults,
 	panes,
 	pendingPaneCloses,
 	pendingPaneOpens,
@@ -38,6 +39,7 @@ import { showPaneRoute } from "@/server/archboard/lib/pane-show-route";
 import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
 import type { SemanticPaneContext } from "@/shared/semantic-pane-context";
 import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
+import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /**
  * No pane means no browser, which is a different thing from a bad request.
@@ -100,6 +102,23 @@ function paneTelemetryRefusal(error: z.ZodError): string {
 }
 
 /**
+ * What a pane reported, filed under the vault it named.
+ * @param reported The validated report.
+ * @param vault The vault the call named.
+ * @returns The registration.
+ */
+function registrationOf(reported: z.infer<typeof PaneSchema>, vault: string): PaneRegistration {
+	const { build, recording, ...requiredRegistration } = reported;
+	return {
+		...requiredRegistration,
+		vault,
+		...(build === undefined ? {} : { build }),
+		...(recording === true ? { recording } : {}),
+		at: new Date().toISOString(),
+	};
+}
+
+/**
  * A pane says what it is showing, and hears back whether it is out of date.
  *
  * This is the pulse a browser already has. A pane posts here when it connects,
@@ -119,13 +138,8 @@ function postPaneRoute(req: Request, res: Response): void {
 	}
 	const frontend = frontendState(parsed.data.build);
 	const staleFrontend = frontend.stale ? frontend : undefined;
-	const { build, recording, ...requiredRegistration } = parsed.data;
-	const registration: PaneRegistration = {
-		...requiredRegistration,
-		...(build === undefined ? {} : { build }),
-		...(recording === true ? { recording } : {}),
-		at: new Date().toISOString(),
-	};
+	const vault = vaultOfRequest(req);
+	const registration = registrationOf(parsed.data, vault);
 	// A pane exists exactly as long as the socket that owns it. A report arriving
 	// without one is either a pane on its way out — React tears the canvas down
 	// in its own order, so a last change can be reported after the close — or one
@@ -141,6 +155,16 @@ function postPaneRoute(req: Request, res: Response): void {
 			registered: false,
 			paneCount: addressablePanes([...panes.values()]).length,
 			staleFrontend,
+		});
+		return;
+	}
+	if (paneVaults.get(registration.clientId) !== vault) {
+		res.status(409).json({
+			success: false,
+			code: "VAULT_MISMATCH",
+			error:
+				`Pane ${registration.clientId} connected for another vault than "${vault}", ` +
+				"and a pane belongs to one vault for as long as its socket lasts. Open a new pane for this vault.",
 		});
 		return;
 	}
@@ -463,9 +487,9 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
  * @param app The application to mount on.
  */
 function mountPaneRoutes(app: Express): void {
-	app.post("/api/panes", postPaneRoute);
+	app.post("/api/panes", requireVault, postPaneRoute);
 	app.get("/api/panes", getPanesRoute);
-	app.post("/api/panes/show", showPaneRoute);
+	app.post("/api/panes/show", requireVault, showPaneRoute);
 	app.post("/api/panes/open", asyncEndpoint(openPaneRoute));
 	app.post("/api/panes/close", asyncEndpoint(closePaneRoute));
 }
@@ -565,6 +589,9 @@ function arrivedOnBoard(clientId: string, board: string): void {
 	// What the board's file is right now, which is what this pane is about to
 	// read. Anything that replaces it after this is a change the pane has to
 	// hear about, and taking the baseline any later would let one slip past.
-	noteBoardShown(aggregateOf(board) ?? board);
+	const vault = paneVaults.get(clientId);
+	if (vault !== undefined) {
+		noteBoardShown(vault, aggregateOf(board) ?? board);
+	}
 	tellPaneAboutLock(clientId, board);
 }

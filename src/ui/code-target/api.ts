@@ -19,7 +19,7 @@ import {
 	type OpenerSettingsReply,
 	type OpenerTestReply,
 } from "@/shared/code-target";
-import { mutation, strictReply, type ReplySchema } from "@/ui/server-requests";
+import { mutation, strictReply, vaultNamed, type ReplySchema } from "@/ui/server-requests";
 
 /**
  * The failure reported when the server's reply matches no schema.
@@ -56,9 +56,11 @@ function codeTargetReply<T>(
  * @returns The typed success or failure.
  */
 function openCodeTarget(request: CodeTargetOpenRequest): Promise<CodeTargetOpenReply> {
+	// The route takes no query, so the vault rides in the body (ADR 0049).
+	const vault = vaultNamed();
 	return codeTargetReply(
 		"/api/code-targets/open",
-		mutation("POST", request),
+		mutation("POST", vault === null ? request : { ...request, vault }),
 		CodeTargetOpenSuccessSchema,
 	);
 }

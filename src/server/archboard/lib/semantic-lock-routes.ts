@@ -20,7 +20,7 @@ import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { callerGone, trackMutationWork } from "@/server/archboard/lib/mutation-work";
 import { boardOfRequest, bodyOf, bodyString } from "@/server/archboard/lib/request-board";
 import { aggregateOf } from "@/server/archboard/lib/pane-registry";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /**
  * Answer a lock failure, unless the caller has already gone after cancelling
@@ -41,11 +41,12 @@ function answerLockError(req: Request, res: Response, error: unknown): void {
  * for is answered (ADR 0022). Without this it would claim its way straight
  * back onto a board somebody had just taken from it.
  * @param res The response.
+ * @param vault The vault the board lives in.
  * @param board The board key.
  * @returns True once the refusal has been sent.
  */
-function refuseRevokedClaim(res: Response, board: string): boolean {
-	const lost = takeClaimRevocation(board);
+function refuseRevokedClaim(res: Response, vault: string, board: string): boolean {
+	const lost = takeClaimRevocation(vault, board);
 	if (!lost) {
 		return false;
 	}
@@ -92,7 +93,7 @@ function lockableKey(req: Request, res: Response, what: string): string | null {
 	// document somebody is holding. Reading the pane's address as a board name
 	// would refuse a pane that happens to be on a proposal.
 	const board = aggregateOf(asked) ?? asked;
-	const read = readSemanticBoard(serverVault(), board);
+	const read = readSemanticBoard(vaultOfRequest(req), board);
 	if (!read.ok) {
 		res.status(404).json({
 			success: false,
@@ -150,14 +151,15 @@ function takeBackRoute(req: Request, res: Response): void {
 		return;
 	}
 	const holder = { id: clientId, kind: "human" as const };
-	const standing = boardLockState(serverVault(), key);
+	const vault = vaultOfRequest(req);
+	const standing = boardLockState(vault, key);
 	const claim = standing?.kind === "agent" && standing.claimed ? standing : null;
 	void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>
-		holdBoard({ vault: serverVault(), board: key, holder, revokeClaim: true, signal }),
+		holdBoard({ vault, board: key, holder, revokeClaim: true, signal }),
 	)
 		.then((hold) => {
 			if (hold.created) {
-				releaseHold(serverVault(), key, hold.holder.id);
+				releaseHold(vault, key, hold.holder.id);
 			}
 			return res.json({
 				success: true,
@@ -174,6 +176,7 @@ function takeBackRoute(req: Request, res: Response): void {
  * the record of what it has seen starts with the board it just took (TASK-091).
  * Without the seed the first write under a claim would be the one write
  * nothing checked, and the rest of the claimed work may depend on it.
+ * @param vault The vault the board lives in.
  * @param key The board.
  * @param reason What the claim is for.
  * @param forMs How long the agent asked for, if it said.
@@ -181,19 +184,20 @@ function takeBackRoute(req: Request, res: Response): void {
  * @returns The answer body.
  */
 async function takeClaim(
+	vault: string,
 	key: string,
 	reason: string,
 	forMs: number | undefined,
 	signal: AbortSignal,
 ): Promise<Record<string, unknown>> {
 	const { claim, created } = await claimBoard({
-		vault: serverVault(),
+		vault,
 		board: key,
 		reason,
 		...(forMs === undefined ? {} : { forMs }),
 		signal,
 	});
-	const read = readSemanticBoard(serverVault(), key);
+	const read = readSemanticBoard(vault, key);
 	return {
 		success: true,
 		board: key,
@@ -244,12 +248,13 @@ function claimRoute(req: Request, res: Response): void {
 		});
 		return;
 	}
-	if (refuseRevokedClaim(res, key)) {
+	const vault = vaultOfRequest(req);
+	if (refuseRevokedClaim(res, vault, key)) {
 		return;
 	}
 	const forMs = claimDuration(bodyOf(req)["forMs"]);
 	void trackMutationWork(req, `${req.method} ${req.path} claim wait`, (signal) =>
-		takeClaim(key, reason, forMs, signal),
+		takeClaim(vault, key, reason, forMs, signal),
 	)
 		.then((answer) => res.json(answer))
 		.catch((error) => answerLockError(req, res, error));
@@ -270,7 +275,7 @@ function claimReleaseRoute(req: Request, res: Response): void {
 	if (key === null) {
 		return;
 	}
-	const claim = releaseClaim(key);
+	const claim = releaseClaim(vaultOfRequest(req), key);
 	res.json({ success: true, board: key, released: claim !== null, claim });
 }
 
@@ -279,9 +284,9 @@ function claimReleaseRoute(req: Request, res: Response): void {
  * @param app The application to mount on.
  */
 function mountSemanticLockRoutes(app: Express): void {
-	app.post("/api/semantic-boards/take-back", takeBackRoute);
-	app.post("/api/semantic-boards/claim", claimRoute);
-	app.post("/api/semantic-boards/claim/release", claimReleaseRoute);
+	app.post("/api/semantic-boards/take-back", requireVault, takeBackRoute);
+	app.post("/api/semantic-boards/claim", requireVault, claimRoute);
+	app.post("/api/semantic-boards/claim/release", requireVault, claimReleaseRoute);
 }
 
 export { mountSemanticLockRoutes, refuseRevokedClaim };

@@ -14,6 +14,7 @@ import {
 	createLocalPictureSource,
 	takePicturesFrom,
 } from "@/ui/semantic-board-canvas";
+import { learnServedVault } from "@/ui/server-requests";
 import { startWalkthroughReplay } from "@/ui/walkthrough-replay";
 
 const root = document.getElementById("root");
@@ -71,10 +72,20 @@ takePicturesFrom(
 if (replayAskedOf(window.location.search)) {
 	startWalkthroughReplay(root);
 } else {
-	const Root = createBoardRoutingHost(Application);
-	createRoot(root).render(
-		<StrictMode>
-			<Root />
-		</StrictMode>,
-	);
+	// Every call names its vault (ADR 0049), so the page learns the one the server
+	// serves before any pane makes a call.
+	void (async () => {
+		try {
+			await learnServedVault();
+		} catch (error) {
+			root.textContent = error instanceof Error ? error.message : String(error);
+			return;
+		}
+		const Root = createBoardRoutingHost(Application);
+		createRoot(root).render(
+			<StrictMode>
+				<Root />
+			</StrictMode>,
+		);
+	})();
 }

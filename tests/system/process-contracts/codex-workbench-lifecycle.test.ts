@@ -44,7 +44,11 @@ describe.serial("composed Codex process lifecycle", () => {
 			server = await startServer(fixture);
 			const ownedServer = server;
 			resources.defer(() => ownedServer.dispose());
-			const request = createRequester({ base: server.base, assertRunning: async () => undefined });
+			const request = createRequester({
+				base: server.base,
+				assertRunning: async () => undefined,
+				vault: server.vault,
+			});
 			let socket = await openApplicationSocket(server.base, "lifecycle-client");
 			resources.defer(() => socket.close());
 			expect(

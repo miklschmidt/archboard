@@ -20,7 +20,10 @@ export interface PaneRegistration {
 	rect: { x: number; y: number; width: number; height: number };
 }
 
-type Request = <T>(path: string, options?: JsonRequestOptions) => Promise<JsonResponse<T>>;
+type Request = (<T>(path: string, options?: JsonRequestOptions) => Promise<JsonResponse<T>>) & {
+	/** The vault the requester names on every call, which the pane's socket names too. */
+	readonly vault: string;
+};
 
 export interface TestPane {
 	readonly clientId: string;
@@ -55,6 +58,7 @@ export async function openTestPane(
 	const pane = await openObservedPane<PaneMessage>({
 		base,
 		clientId,
+		vault: request.vault,
 		...(options.board === undefined ? {} : { preferredBoard: options.board }),
 		register: (board, signal) =>
 			request("/api/panes", {

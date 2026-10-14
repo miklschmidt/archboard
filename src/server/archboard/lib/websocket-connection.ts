@@ -21,11 +21,14 @@ import {
 	latestSocketAcceptanceByClient,
 	notePaneClosed,
 	paneBoards,
+	paneVaults,
 	panes,
+	socketVaults,
 	syncLockWatch,
 } from "@/server/archboard/lib/pane-registry";
 import { forgetTabSession, noteTabSession } from "@/server/archboard/lib/tab-sessions";
 import { isRecord } from "@/server/archboard/lib/request-board";
+import { namedVault, VAULT_PARAMETER } from "@/server/archboard/lib/request-vault";
 
 /**
  * Retire the client-id keyed state of a socket that owned its pane identity:
@@ -48,6 +51,7 @@ function retirePaneOwner(closingId: string): void {
  */
 function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void {
 	clients.delete(ws);
+	socketVaults.delete(ws);
 	const closingId = clientIds.get(ws);
 	clientIds.delete(ws);
 	const closingCodexInstance = codexSocketInstances.get(ws);
@@ -119,6 +123,7 @@ function sendStartingBoard(ws: WebSocket, startingKey: string | null): Promise<v
  * @param clientId The pane's client id.
  * @param acceptanceToken The token this socket's acceptance was stamped with.
  * @param startingKey The board the pane starts on.
+ * @param vault The vault the socket named.
  * @returns False when this socket was superseded and has been terminated.
  */
 function takePaneAuthority(
@@ -126,12 +131,19 @@ function takePaneAuthority(
 	clientId: string,
 	acceptanceToken: object,
 	startingKey: string | null,
+	vault: string,
 ): boolean {
 	if (latestSocketAcceptanceByClient.get(clientId) !== acceptanceToken) {
 		ws.terminate();
 		return false;
 	}
 	const previous = currentSocketsByClient.get(clientId);
+	// A pane that comes back naming another vault holds none of what it held in
+	// the first: a board key means a board of one vault.
+	if (paneVaults.get(clientId) !== vault) {
+		paneBoards.delete(clientId);
+	}
+	paneVaults.set(clientId, vault);
 	if (startingKey !== null) {
 		paneBoards.set(clientId, startingKey);
 	}
@@ -235,11 +247,13 @@ function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
  * @param ws The socket.
  * @param clientId The pane's client id, or null for an anonymous socket.
  * @param startingKey The board the pane starts on, or null when it starts on none.
+ * @param vault The vault the pane named.
  */
 function announceToNewPane(
 	ws: WebSocket,
 	clientId: string | null,
 	startingKey: string | null,
+	vault: string,
 ): void {
 	// Where its lock stands. A broadcast only reaches panes that were already
 	// connected, so a tab that has just arrived — or come back from a dropped
@@ -249,11 +263,13 @@ function announceToNewPane(
 	}
 	// And which boards an agent has right now, across the whole vault (ADR
 	// 0022): the same reasoning, for the navigator rather than the pane.
-	ws.send(JSON.stringify(agentActivity.snapshot()));
+	ws.send(JSON.stringify(agentActivity.snapshot(vault)));
 }
 
 /** What one accepted socket is registered as, before it is presented anything. */
 interface RegisteredSocket {
+	/** The vault it named when it connected: its panes show boards of this vault only. */
+	vault: string;
 	/** The pane it presents, or null for a socket that named none. */
 	clientId: string | null;
 	/** The browser tab it belongs to, or null for a socket that named none or a malformed one. */
@@ -267,12 +283,15 @@ interface RegisteredSocket {
 /**
  * Register one accepted socket and attach the listeners that retire it.
  * @param ws The socket.
- * @param req The upgrade request, whose `?clientId=` names the pane and `?tabSession=` its tab.
+ * @param req The upgrade request, whose `?clientId=` names the pane, `?tabSession=` its tab and
+ *   `?vault=` its vault.
+ * @param vault The vault the upgrade named, already checked.
  * @returns What the socket is registered as.
  */
-function registerSocket(ws: WebSocket, req: IncomingMessage): RegisteredSocket {
+function registerSocket(ws: WebSocket, req: IncomingMessage, vault: string): RegisteredSocket {
 	const codexInstance = Object.freeze({});
 	codexSocketInstances.set(ws, codexInstance);
+	socketVaults.set(ws, vault);
 	const query = new URL(req.url ?? "/", "http://localhost").searchParams;
 	const clientId = query.get("clientId");
 	const tabSessionId = parseTabSessionId(query.get("tabSession"));
@@ -286,7 +305,7 @@ function registerSocket(ws: WebSocket, req: IncomingMessage): RegisteredSocket {
 		logger.error("WebSocket error:", error);
 		clients.delete(ws);
 	});
-	return { clientId, tabSessionId, acceptanceToken, codexInstance };
+	return { vault, clientId, tabSessionId, acceptanceToken, codexInstance };
 }
 
 /**
@@ -306,7 +325,7 @@ function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: strin
 		clients.add(ws);
 		return true;
 	}
-	if (!takePaneAuthority(ws, clientId, acceptanceToken, startingKey)) {
+	if (!takePaneAuthority(ws, clientId, acceptanceToken, startingKey, socket.vault)) {
 		return false;
 	}
 	noteTabSession(clientId, socket.tabSessionId);
@@ -325,15 +344,21 @@ function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: strin
  * route its Codex requests. Creating and closing the server itself belongs to
  * startWebSocketServer and closeWebSocketServer; this owns one socket only.
  * @param ws The accepted socket.
- * @param req The upgrade request, whose `?clientId=` names the pane and `?tabSession=` its tab.
+ * @param req The upgrade request, whose `?clientId=` names the pane, `?tabSession=` its tab and
+ *   `?vault=` its vault.
+ * @param vault The vault the upgrade named, already checked.
  */
-async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): Promise<void> {
-	const socket = registerSocket(ws, req);
+async function acceptWebSocketConnection(
+	ws: WebSocket,
+	req: IncomingMessage,
+	vault: string,
+): Promise<void> {
+	const socket = registerSocket(ws, req, vault);
 	// Which board this pane gets, and it is a board *for this pane* — not "the"
 	// board, which no longer exists as a single thing. A pane that has been here
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
-	const startingKey = socket.clientId === null ? null : boardForNewPane(socket.clientId);
+	const startingKey = socket.clientId === null ? null : boardForNewPane(socket.clientId, vault);
 	await sendStartingBoard(ws, startingKey);
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
@@ -344,11 +369,24 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 	logger.info(
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);
-	announceToNewPane(ws, socket.clientId, startingKey);
+	announceToNewPane(ws, socket.clientId, startingKey, vault);
 	listenForCodexRequests(ws, socket);
 }
 
 let wss: WebSocketServer | null = null;
+
+/** The vault each upgrade named, checked when the upgrade was admitted. */
+const upgradeVaults = new WeakMap<IncomingMessage, string>();
+
+/**
+ * The vault an upgrade request names, or why it names none a socket can use.
+ * @param req The upgrade request.
+ * @returns The canonical vault, or the refusal.
+ */
+function vaultOfUpgrade(req: IncomingMessage): ReturnType<typeof namedVault> {
+	const query = new URL(req.url ?? "/", "http://localhost").searchParams;
+	return namedVault(query.get(VAULT_PARAMETER));
+}
 
 /**
  * Install the WebSocket server over the HTTP server and start accepting panes.
@@ -377,13 +415,26 @@ function startWebSocketServer(): void {
 				done(false, 403, result.code);
 				return;
 			}
+			// A pane belongs to one vault from its first message (ADR 0049), so a socket
+			// that names none is turned away before it can own a pane.
+			const vault = vaultOfUpgrade(info.req);
+			if (!vault.ok) {
+				done(false, vault.refusal.status, `${vault.refusal.code}: ${vault.refusal.error}`);
+				return;
+			}
+			upgradeVaults.set(info.req, vault.vault);
 			done(true);
 		},
 	});
 	owner.on("connection", (socket, request) => {
 		acceptedSockets.add(socket);
 		socket.once("close", () => acceptedSockets.delete(socket));
-		void acceptWebSocketConnection(socket, request).catch((error) => {
+		const vault = upgradeVaults.get(request);
+		if (vault === undefined) {
+			socket.terminate();
+			return;
+		}
+		void acceptWebSocketConnection(socket, request, vault).catch((error) => {
 			logger.error("WebSocket pane acceptance failed:", error);
 			socket.terminate();
 		});

@@ -37,8 +37,12 @@ interface ApplicationSocket {
 
 async function openApplicationSocket(base: string, clientId: string): Promise<ApplicationSocket> {
 	const endpoint = new URL(base);
+	const served = (await (await fetch(new URL("/api/served-vault", base))).json()) as {
+		vault: string;
+	};
 	endpoint.protocol = "ws:";
 	endpoint.searchParams.set("clientId", clientId);
+	endpoint.searchParams.set("vault", served.vault);
 	endpoint.searchParams.set("tabSession", "system-tab");
 	const socket = new WebSocket(endpoint);
 	const pending = new Map<string, (value: WorkbenchResult) => void>();
@@ -233,7 +237,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 			});
 			expect(await original.request("connect")).toMatchObject({ ok: true });
 			replacement = new WebSocket(
-				`${server.base.replace(/^http/u, "ws")}?clientId=${encodeURIComponent(clientId)}&tabSession=system-tab`,
+				`${server.base.replace(/^http/u, "ws")}?clientId=${encodeURIComponent(clientId)}&vault=${encodeURIComponent(server.vault)}&tabSession=system-tab`,
 			);
 			replacement.on("error", () => undefined);
 			const replacementClosed = new Promise<void>((resolveClosed) =>

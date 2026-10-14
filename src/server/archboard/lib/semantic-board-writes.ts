@@ -38,19 +38,21 @@ import {
 } from "@/runtime/semantic-board-store/index";
 import { broadcast } from "@/server/archboard/lib/pane-registry";
 import { settledChangeFields } from "@/server/archboard/lib/semantic-change-feed";
-import { checkDoing, recordDoing } from "@/runtime/engine/board-doing";
+import { checkDoing } from "@/runtime/engine/board-doing";
 import { announceDoing, refuseUndescribedWrite } from "@/server/archboard/lib/board-announcements";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import { vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /**
  * Tell every pane holding this board that it has changed, so the pane asks for
  * a new picture, and put the change on the feed a thread's context reads. The
  * board is the news; what changed is not, because the pane patches nothing: it
  * reads the board again (ADR 0023).
+ * @param vault The vault the board lives in.
  * @param result What the write did.
  * @param envelope What the write stated about itself.
  */
 function announce(
+	vault: string,
 	result: SemanticWriteResult,
 	envelope: z.infer<typeof WriteEnvelopeSchema>,
 ): void {
@@ -74,6 +76,7 @@ function announce(
 				...(result.renamedFrom === undefined ? {} : { renamedFrom: result.renamedFrom.key }),
 			}),
 		},
+		vault,
 		result.location.key,
 	);
 }
@@ -108,11 +111,13 @@ function describedWrite(
 
 /**
  * Put what the write said it was doing up on every pane holding the board.
+ * @param vault The vault the board lives in.
  * @param result What the write did.
  * @param doing The line the writer wrote.
  * @param envelope What the write stated about itself.
  */
 function announceWork(
+	vault: string,
 	result: SemanticWriteResult,
 	doing: string,
 	envelope: z.infer<typeof WriteEnvelopeSchema>,
@@ -128,24 +133,25 @@ function announceWork(
 		by: "agent",
 		kind: envelope.origin,
 	};
-	recordDoing(result.location.key, entry);
-	announceDoing(result.location.key, entry);
+	announceDoing(vault, result.location.key, entry);
 }
 
 /**
  * Answer a write with what it did.
  * @param res The response.
+ * @param vault The vault the board lives in.
  * @param result What the write did.
  * @param envelope What the write stated about itself.
  */
 function answerWrite(
 	res: Response,
+	vault: string,
 	result: SemanticWriteResult,
 	envelope: z.infer<typeof WriteEnvelopeSchema>,
 ): void {
 	if (result.outcome === "applied") {
-		announce(result, envelope);
-		const current = readSemanticBoard(serverVault(), result.board.name);
+		announce(vault, result, envelope);
+		const current = readSemanticBoard(vault, result.board.name);
 		res.json({
 			warnings: [...result.warnings, ...(current.ok ? current.warnings : [])],
 			success: true,
@@ -238,15 +244,16 @@ async function createRoute(
 	if (input === null) {
 		return;
 	}
+	const vault = vaultOfRequest(req);
 	const result = await writeSemanticBoard({
-		vault: serverVault(),
+		vault,
 		board: envelope.board,
 		writer: writerOf(envelope),
 		transition: createBoardTransition(input),
 		signal,
 	});
-	announceWork(result, doing, envelope);
-	answerWrite(res, result, envelope);
+	announceWork(vault, result, doing, envelope);
+	answerWrite(res, vault, result, envelope);
 }
 
 /**
@@ -282,16 +289,17 @@ async function editRoute(
 	if (edit === null) {
 		return;
 	}
+	const vault = vaultOfRequest(req);
 	const result = await writeSemanticBoard({
-		vault: serverVault(),
+		vault,
 		board: envelope.board,
 		writer: writerOf(envelope),
 		transition: editVariantTransition(edit),
 		expectedVersion: expected,
 		signal,
 	});
-	announceWork(result, doing, envelope);
-	answerWrite(res, result, envelope);
+	announceWork(vault, result, doing, envelope);
+	answerWrite(res, vault, result, envelope);
 }
 
 /**
@@ -334,16 +342,17 @@ async function branchRoute(
 	if (branch === null) {
 		return;
 	}
+	const vault = vaultOfRequest(req);
 	const result = await writeSemanticBoard({
-		vault: serverVault(),
+		vault,
 		board: envelope.board,
 		writer: writerOf(envelope),
 		transition: branchVariantTransition(branch),
 		expectedVersion: expected,
 		signal,
 	});
-	announceWork(result, doing, envelope);
-	answerWrite(res, result, envelope);
+	announceWork(vault, result, doing, envelope);
+	answerWrite(res, vault, result, envelope);
 }
 
 /**
@@ -425,6 +434,7 @@ async function shelveRoute(
 
 /** Everything a write to an existing board states before it is a command. */
 interface StatedWrite {
+	readonly vault: string;
 	readonly envelope: z.infer<typeof WriteEnvelopeSchema>;
 	readonly doing: string;
 	readonly expected: number;
@@ -458,7 +468,9 @@ async function statedWrite(
 		return null;
 	}
 	const body = statedContent(req, res, field, true);
-	return body === null || body === undefined ? null : { envelope, doing, expected, body };
+	return body === null || body === undefined
+		? null
+		: { vault: vaultOfRequest(req), envelope, doing, expected, body };
 }
 
 /**
@@ -475,15 +487,15 @@ async function answerFrom(
 	signal: AbortSignal,
 ): Promise<void> {
 	const result = await writeSemanticBoard({
-		vault: serverVault(),
+		vault: stated.vault,
 		board: stated.envelope.board,
 		writer: writerOf(stated.envelope),
 		transition,
 		expectedVersion: stated.expected,
 		signal,
 	});
-	announceWork(result, stated.doing, stated.envelope);
-	answerWrite(res, result, stated.envelope);
+	announceWork(stated.vault, result, stated.doing, stated.envelope);
+	answerWrite(res, stated.vault, result, stated.envelope);
 }
 
 /**

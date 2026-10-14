@@ -4,14 +4,13 @@ import type { WebSocketMessage } from "@/runtime/engine/types";
 import { addressablePanes, panesInOrder, resolvePaneSpec, soloPane } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { listSemanticBoards, readSemanticBoard } from "@/runtime/semantic-board-store/index";
-import { parseBoardKey, statedVariant } from "@/runtime/engine/board";
-import type { BoardIdentity } from "@/runtime/engine/board";
+import { statedVariant } from "@/runtime/engine/board";
+import { aggregateOf, paneAddress } from "@/server/archboard/lib/pane-board-key";
 import { addressedVariant } from "@/shared/semantic-board/index";
-import { sleep, watchBoardLocks } from "@/runtime/engine/board-lock";
+import { sleep, watchBoardLocks, type WatchedBoard } from "@/runtime/engine/board-lock";
 import { PANE_SETTLE_CAP_MS } from "@/shared/timing/timing";
 import type { BrowserConnectionInstance } from "@/server/archboard/codex-workbench-browser";
 import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "@/server/codex-workbench";
-import { serverVault } from "@/server/archboard/lib/server-vault";
 
 // WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the board file
 // is the board and the server holds no copy of one (ADR 0015, ADR 0023).
@@ -29,10 +28,14 @@ const clients = new Set<WebSocket>();
 // is broadcast-admitted only after initial_elements, but teardown must be able
 // to terminate a peer that never reaches that point or ignores a close frame.
 const acceptedSockets = new Set<WebSocket>();
-// Browser client id per socket, taken from the ?clientId= connect param. The
-// same id is sent with every selection post, which is what lets a disconnect
-// retire that client's selection.
+// Client id per socket, from the ?clientId= connect param. Every selection
+// post sends it too, so a disconnect retires that client's selection.
 const clientIds = new Map<WebSocket, string>();
+// The vault each socket named when it connected (ADR 0049). A board's news goes
+// only to the sockets of its own vault.
+const socketVaults = new Map<WebSocket, string>();
+// The vault each pane belongs to, by client id. Like `paneBoards` it outlives the socket.
+const paneVaults = new Map<string, string>();
 // The exact socket currently presenting one pane identity. A reconnect may
 // overlap the prior transport; only this map's value owns client-id keyed pane,
 // selection, hold, and note-open state.
@@ -110,12 +113,16 @@ function socketsFor(clientId: string): WebSocket[] {
 }
 
 /**
- * Send one serialized message to every admitted client, dropping a client
- * whose socket refuses it.
+ * Send one serialized message to every admitted client of one vault, dropping
+ * a client whose socket refuses it.
+ * @param vault The vault whose clients hear it.
  * @param data The JSON already serialized for the wire.
  */
-function sendToAllClients(data: string): void {
+function sendToVaultClients(vault: string, data: string): void {
 	clients.forEach((client) => {
+		if (socketVaults.get(client) !== vault) {
+			return;
+		}
 		try {
 			if (client.readyState === WebSocket.OPEN) {
 				client.send(data);
@@ -128,33 +135,35 @@ function sendToAllClients(data: string): void {
 }
 
 /**
- * Broadcast board news to every connected client.
+ * Broadcast board news to every client connected for the board's vault.
  *
  * The board key is not optional: a client showing board A has to be able to
  * drop a message about board B rather than merge it into what it is rendering.
- * With two panes on two boards that filter stops being a formality — it is the
- * only thing keeping an edit on one board out of the other one's scene.
+ * The vault is not optional either, and it is filtered here: a pane never hears
+ * of a board of another vault, even one of the same name (ADR 0049).
  * @param message The message to send.
+ * @param vault The vault the board lives in.
  * @param board The board the message is about; stamped onto the message.
  */
-function broadcast(message: WebSocketMessage, board: string): void {
-	sendToAllClients(JSON.stringify({ ...message, board }));
+function broadcast(message: WebSocketMessage, vault: string, board: string): void {
+	sendToVaultClients(vault, JSON.stringify({ ...message, board }));
 	for (const observer of broadcastObservers) {
-		observer(message, board);
+		observer(message, vault, board);
 	}
 }
 
 /**
- * Broadcast something that is not about a board.
+ * Broadcast something that is not about a board to the clients of one vault.
  *
  * Only the navigator's agent activity qualifies: it is one thing behind every
- * board, so a client applies it without asking which board the message came
- * from. Kept separate from `broadcast` so that omitting the board key stays a
- * deliberate act rather than a missing argument.
+ * board of the vault, so a client applies it without asking which board the
+ * message came from. Kept separate from `broadcast` so that omitting the board
+ * key stays a deliberate act rather than a missing argument.
+ * @param vault The vault whose clients hear it.
  * @param message The boardless message to send.
  */
-function broadcastBoardless(message: WebSocketMessage): void {
-	sendToAllClients(JSON.stringify(message));
+function broadcastBoardless(vault: string, message: WebSocketMessage): void {
+	sendToVaultClients(vault, JSON.stringify(message));
 }
 
 /**
@@ -223,21 +232,27 @@ function sendLayoutToPane(clientId: string, message: WebSocketMessage): boolean 
  */
 function syncLockWatch(): void {
 	/**
-	 * The boards on screen, as the aggregates their panes show.
-	 * @returns Their keys.
+	 * The boards on screen, as the aggregates their panes show, each in the
+	 * vault its pane belongs to.
+	 * @returns Their vaults and keys.
 	 */
-	const boards = (): string[] => [
-		...new Set([...paneBoards.values()].flatMap((key) => aggregateOf(key) ?? [])),
-	];
-	watchBoardLocks(clients.size > 0 ? { vault: serverVault(), boards } : null);
+	const boards = (): WatchedBoard[] =>
+		[...paneBoards].flatMap(([clientId, key]) => {
+			const vault = paneVaults.get(clientId);
+			const board = aggregateOf(key);
+			return vault === undefined || board === null ? [] : [{ vault, board }];
+		});
+	watchBoardLocks(clients.size > 0 ? { boards } : null);
 }
 
 /**
- * The pane a new pane copies: the primary one, else the focused one, else any.
+ * The pane a new pane copies: the primary one, else the focused one, else any,
+ * of its own vault.
+ * @param vault The vault the new pane belongs to.
  * @returns The reference pane, or null with nothing on screen.
  */
-function referencePane(): PaneRegistration | null {
-	const existing = addressablePanes([...panes.values()]);
+function referencePane(vault: string): PaneRegistration | null {
+	const existing = addressablePanes(panesOfVault(vault));
 	return (
 		existing.find((pane) => pane.primary) ??
 		existing.find((pane) => pane.focused) ??
@@ -253,18 +268,19 @@ function referencePane(): PaneRegistration | null {
  * whatever is already in front of the human and is then pointed somewhere else
  * deliberately.
  * @param clientId The client id of the arriving pane.
+ * @param vault The vault the arriving pane named.
  * @returns The board key that pane starts on, or null when the vault is empty.
  */
-function boardForNewPane(clientId: string): string | null {
-	for (const candidate of copyableBoards(clientId)) {
-		if (stillThere(candidate)) {
+function boardForNewPane(clientId: string, vault: string): string | null {
+	for (const candidate of copyableBoards(clientId, vault)) {
+		if (stillThere(vault, candidate)) {
 			return candidate;
 		}
 	}
 	// Nothing to copy: the vault's first board, so a tab opened on an empty
 	// address shows an architecture rather than an empty frame. A vault with no
 	// board at all leaves the pane on none, and the navigator says so.
-	const first = listSemanticBoards(serverVault())[0];
+	const first = listSemanticBoards(vault)[0];
 	return first === undefined ? null : first.key;
 }
 
@@ -278,15 +294,16 @@ function boardForNewPane(clientId: string): string | null {
  * whole refuses every proposal a pane was showing, and the pane comes back on
  * the current variant of the first board in the vault: not what it was looking
  * at, and quietly so.
+ * @param vault The vault the board lives in.
  * @param key The pane's board key.
  * @returns True when that board is still there and has the variant the key states.
  */
-function stillThere(key: string): boolean {
+function stillThere(vault: string, key: string): boolean {
 	const identity = paneAddress(key);
 	if (identity === null) {
 		return false;
 	}
-	const read = readSemanticBoard(serverVault(), identity.board);
+	const read = readSemanticBoard(vault, identity.board);
 	// A bare key names the board, whatever it opens: on a board nobody has built
 	// that is its draft, or a refusal the pane draws naming the drafts to choose
 	// from. Either is the board it was on, said on screen, never another board.
@@ -295,50 +312,16 @@ function stillThere(key: string): boolean {
 }
 
 /**
- * What a pane's key names, or nothing when it does not name a board at all.
- *
- * Parsing rather than reading the key whole, and never throwing: a key reaches
- * here from a pane that has been reconnecting for a while, and a bad one must
- * cost that pane its board rather than cost the socket its acceptance.
- * @param key The pane's board key.
- * @returns The identity, or null when the key is not one.
- */
-function paneAddress(key: string): BoardIdentity | null {
-	try {
-		return parseBoardKey(key);
-	} catch {
-		return null;
-	}
-}
-
-/**
- * The aggregate a pane key is about, which is what a lease, a claim and a
- * settled change are all keyed by.
- *
- * Every variant of a board lives in the one document (ADR 0023), so there is
- * one lock for the family and not one per proposal. A pane showing a proposal
- * is looking at the same file as a pane showing what is current, and has to be
- * told the same things about it.
- * @param key The pane's board key, or null when it is showing none.
- * @returns The board's name, or null.
- */
-function aggregateOf(key: string | null): string | null {
-	if (key === null) {
-		return null;
-	}
-	return paneAddress(key)?.board ?? null;
-}
-
-/**
  * The boards a new pane would take over from, in order of preference: the one
  * it was showing before its socket dropped, then whatever is already in front
  * of the human.
  * @param clientId The client id of the arriving pane.
+ * @param vault The vault the arriving pane named.
  * @returns The candidates, best first.
  */
-function copyableBoards(clientId: string): string[] {
-	const remembered = paneBoards.get(clientId);
-	const reference = referencePane();
+function copyableBoards(clientId: string, vault: string): string[] {
+	const remembered = paneVaults.get(clientId) === vault ? paneBoards.get(clientId) : undefined;
+	const reference = referencePane(vault);
 	const boards: string[] = [];
 	if (remembered !== undefined) {
 		boards.push(remembered);
@@ -357,15 +340,27 @@ function copyableBoards(clientId: string): string[] {
  * cannot be wrong: one pane on screen means that pane, no pane on screen means
  * the board is loaded without being shown, and two panes means say which
  * (src/runtime/engine/panes.ts). The response always names where the board landed.
+ * Only the panes of the board's own vault are candidates: a board of one vault
+ * is never put in front of a pane that shows another.
+ * @param vault The vault the board lives in.
  * @param spec The pane spec the caller sent, if any.
  * @returns The pane, or null when the board is loaded without being shown.
  */
-function paneFromRequest(spec: unknown): PaneRegistration | null {
-	const registrations = Array.from(panes.values());
+function paneFromRequest(vault: string, spec: unknown): PaneRegistration | null {
+	const registrations = panesOfVault(vault);
 	if (typeof spec === "string" && spec.trim()) {
 		return resolvePaneSpec(registrations, spec);
 	}
 	return soloPane(registrations);
+}
+
+/**
+ * The panes on screen that belong to one vault.
+ * @param vault The vault.
+ * @returns Their registrations.
+ */
+function panesOfVault(vault: string): PaneRegistration[] {
+	return [...panes.values()].filter((pane) => pane.vault === vault);
 }
 
 /**
@@ -532,6 +527,8 @@ function forgetDisplay(): void {
 	acceptedSockets.clear();
 	clients.clear();
 	clientIds.clear();
+	socketVaults.clear();
+	paneVaults.clear();
 	currentSocketsByClient.clear();
 	latestSocketAcceptanceByClient.clear();
 	codexSocketInstances.clear();
@@ -560,6 +557,7 @@ export {
 	paneBoardOf,
 	paneBoards,
 	paneFromRequest,
+	paneVaults,
 	paneRef,
 	paneResponse,
 	panes,
@@ -570,13 +568,16 @@ export {
 	sendLayoutToPane,
 	sendToPane,
 	settleAfterLayout,
+	socketVaults,
 	socketsFor,
 	syncLockWatch,
 };
 export type { PendingPaneClose, PendingPaneOpen };
 
 /** Whoever is watching what the panes are told about boards. */
-const broadcastObservers = new Set<(message: WebSocketMessage, board: string) => void>();
+const broadcastObservers = new Set<
+	(message: WebSocketMessage, vault: string, board: string) => void
+>();
 
 /**
  * Watch every board announcement this server makes.
@@ -588,7 +589,7 @@ const broadcastObservers = new Set<(message: WebSocketMessage, board: string) =>
  * @returns Stops watching.
  */
 function onBoardBroadcast(
-	observer: (message: WebSocketMessage, board: string) => void,
+	observer: (message: WebSocketMessage, vault: string, board: string) => void,
 ): () => void {
 	broadcastObservers.add(observer);
 	return (): void => {

@@ -17,6 +17,7 @@ import { z } from "zod";
 import { RememberedFindingsSchema, type RememberedFindings } from "@/shared/code-check/index";
 import { LocalityReplySchema, type LocalityAnswer } from "@/shared/locality/index";
 import { VaultCheckSchema, type VaultCheck } from "@/shared/semantic-policy/index";
+import { withVault } from "@/ui/server-requests";
 import {
 	BoardListingSchema,
 	SemanticRenderReplySchema,
@@ -175,7 +176,7 @@ function refusalFrom(body: unknown, status: number): SemanticBoardError {
  */
 async function requestRoute(url: string, signal?: AbortSignal): Promise<Response> {
 	try {
-		return await fetch(url, signal === undefined ? {} : { signal });
+		return await fetch(withVault(url), signal === undefined ? {} : { signal });
 	} catch (error) {
 		if (signal?.aborted === true) {
 			throw error;

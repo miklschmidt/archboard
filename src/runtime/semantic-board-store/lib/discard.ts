@@ -98,8 +98,11 @@ async function discardSemanticBoard(
 	const result = await underBoardLease(command, (location) =>
 		discardUnderLease(command.vault, location, command.expectedVersion),
 	);
-	if (result.outcome === "discarded" && claimWriterId(result.location.key) === result.heldAs) {
-		releaseClaim(result.location.key);
+	if (
+		result.outcome === "discarded" &&
+		claimWriterId(command.vault, result.location.key) === result.heldAs
+	) {
+		releaseClaim(command.vault, result.location.key);
 	}
 	return result;
 }

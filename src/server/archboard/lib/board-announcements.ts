@@ -18,10 +18,10 @@ import {
 	aggregateOf,
 	broadcast,
 	broadcastBoardless,
+	paneVaults,
 	sendToPane,
 	syncLockWatch,
 } from "@/server/archboard/lib/pane-registry";
-import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * A board's writer changed, so every pane showing it is told (ADR 0016).
@@ -45,15 +45,17 @@ function lockMessage(board: string, holder: LockHolder | null): WebSocketMessage
  * The boardless account of agent work, for the navigator (ADR 0022).
  *
  * Fed by the same announcements the board-scoped messages ride on, so it can
- * never say something different from what the pane on that board hears.
+ * never say something different from what the pane on that board hears. One
+ * account per vault, told only to the panes of that vault.
  */
 const agentActivity = createAgentActivity({
 	/**
-	 * Deliver one navigator message to every client.
+	 * Deliver one navigator message to every client of the vault it is about.
+	 * @param vault The vault.
 	 * @param message The boardless activity message.
 	 */
-	send: (message) => {
-		broadcastBoardless(message);
+	send: (vault, message) => {
+		broadcastBoardless(vault, message);
 	},
 	/**
 	 * The key a board is displayed under.
@@ -63,9 +65,9 @@ const agentActivity = createAgentActivity({
 	displayKey: (board) => normalizeBoardKey(board),
 });
 
-onBoardLockChanged((board, holder) => {
-	broadcast(lockMessage(board, holder), board);
-	agentActivity.lockChanged(board, holder);
+onBoardLockChanged((vault, board, holder) => {
+	broadcast(lockMessage(board, holder), vault, board);
+	agentActivity.lockChanged(vault, board, holder);
 });
 
 syncLockWatch();
@@ -80,13 +82,14 @@ syncLockWatch();
  * The whole list rides with each line, so a pane that has just opened, or has
  * just been given this board, is not blank until the next write. It costs a few
  * hundred bytes and it is what makes two panes on one board tell the same story.
+ * @param vault The vault the board lives in.
  * @param board The board that was written.
  * @param entry What the writer said it was doing.
  */
-function announceDoing(board: string, entry: DoingEntry): void {
-	const recent = recordDoing(board, entry);
-	broadcast({ type: "board_doing", doing: entry, recent }, board);
-	agentActivity.doingLanded(board, entry);
+function announceDoing(vault: string, board: string, entry: DoingEntry): void {
+	const recent = recordDoing(vault, board, entry);
+	broadcast({ type: "board_doing", doing: entry, recent }, vault, board);
+	agentActivity.doingLanded(vault, board, entry);
 }
 
 /**
@@ -131,18 +134,22 @@ function refuseUndescribedWrite(
  * @param board The board the pane has just been given.
  */
 function tellPaneAboutLock(clientId: string, board: string): void {
+	const vault = paneVaults.get(clientId);
+	if (vault === undefined) {
+		return;
+	}
 	// Keyed by the aggregate, not by the pane's address. Every variant of a
 	// board is in the one document, so there is one lease and one account of
 	// what an agent is doing for the whole family: a pane showing a proposal is
 	// looking at the same file as a pane showing what is current, and telling it
 	// about a lock of its own would be inventing a second answer.
 	const aggregate = aggregateOf(board) ?? board;
-	sendToPane(clientId, lockMessage(aggregate, boardLockState(serverVault(), aggregate)), board);
+	sendToPane(clientId, lockMessage(aggregate, boardLockState(vault, aggregate)), board);
 	// And the last few things an agent said it was doing here (TASK-095). A pane
 	// that has just been given a board an agent is part way through would
 	// otherwise show the banner saying somebody has it and nothing at all about
 	// what has happened so far.
-	const said = recentDoing(aggregate);
+	const said = recentDoing(vault, aggregate);
 	if (said.length > 0) {
 		sendToPane(clientId, { type: "board_doing", board: aggregate, recent: said }, board);
 	}

@@ -290,11 +290,11 @@ describe("one writer at a time, over the whole board", () => {
 				expectedVersion: 1,
 			});
 			expect(written.outcome).toBe("applied");
-			expect(lock.claimOn(store.locateSemanticBoard("claimed", vault).key)?.holder.id).toBe(
+			expect(lock.claimOn(vault, store.locateSemanticBoard("claimed", vault).key)?.holder.id).toBe(
 				claim.holder.id,
 			);
 		} finally {
-			lock.releaseClaim(store.locateSemanticBoard("claimed", vault).key);
+			lock.releaseClaim(vault, store.locateSemanticBoard("claimed", vault).key);
 		}
 	}, 30_000);
 
@@ -400,6 +400,6 @@ describe("a write says which identity it held the board under", () => {
 		// Under one claim they are one act, however many commands it took.
 		expect(third.heldAs).toBe(claimed.claim.holder.id);
 		expect(fourth.heldAs).toBe(claimed.claim.holder.id);
-		lock.releaseClaim("held-as");
+		lock.releaseClaim(vault, "held-as");
 	}, 30_000);
 });

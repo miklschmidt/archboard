@@ -22,7 +22,7 @@ test("announcements isolate passenger failure and report release at once", async
 		lock.onBoardSweep(() => {
 			throw new Error("note-watch fixture failed");
 		});
-		lock.watchBoardLocks({ vault, boards: () => ["passenger"] });
+		lock.watchBoardLocks({ boards: () => [{ vault, board: "passenger" }] });
 		jest.advanceTimersByTime(LOCK_WATCH_MS);
 		expect(
 			warnings.some(([message]) => String(message).includes("lock watch continues")),
@@ -31,7 +31,7 @@ test("announcements isolate passenger failure and report release at once", async
 		lock.onBoardSweep(null);
 
 		const news: Array<{ board: string; id: string | null; held: boolean }> = [];
-		lock.onBoardLockChanged((board, holder) =>
+		lock.onBoardLockChanged((_vault, board, holder) =>
 			news.push({ board, id: holder?.id ?? null, held: holder !== null }),
 		);
 		await lock.holdBoard({
@@ -69,7 +69,7 @@ test("announcements isolate passenger failure and report release at once", async
 		lock.onBoardSweep(null);
 		lock.onBoardLockChanged(null);
 		lock.releaseHold(vault, "broadcast", "pane");
-		lock.releaseClaim("broadcast");
+		lock.releaseClaim(vault, "broadcast");
 		lock.forgetLockAnnouncements();
 		jest.useRealTimers();
 		logger.warn = originalWarn;

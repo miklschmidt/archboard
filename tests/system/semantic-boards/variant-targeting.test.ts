@@ -247,7 +247,9 @@ describe("a board nobody has built", () => {
 		const [draft] = held.variants;
 		// What the route answers is what the browser's parse of it keeps.
 		const listing = BoardListingSchema.parse(
-			await (await fetch(`${server.base}/api/semantic-boards`)).json(),
+			await (
+				await fetch(`${server.base}/api/semantic-boards?vault=${encodeURIComponent(server.vault)}`)
+			).json(),
 		);
 		const listed = listing.boards.find((entry) => entry.name === planned);
 		expect(listed?.opens).toBe(draft.id);

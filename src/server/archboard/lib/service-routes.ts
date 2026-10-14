@@ -81,6 +81,20 @@ function syncStatusRoute(_req: Request, res: Response): void {
 }
 
 /**
+ * The vault this server was started with, for the browser to name on every call.
+ *
+ * The browser has no navigator of repositories yet, so it learns the one vault
+ * the server serves and names it, as every other caller does (ADR 0049). It is
+ * the only route the browser calls without a vault, because it is how it learns
+ * one.
+ * @param _req The request.
+ * @param res Its response.
+ */
+function servedVaultRoute(_req: Request, res: Response): void {
+	res.json({ success: true, vault: serverVault() });
+}
+
+/**
  * Answer an error no route handled.
  * @param err The error.
  * @param _req The request.
@@ -96,7 +110,7 @@ function unhandledErrorRoute(err: Error, _req: Request, res: Response, _next: Ne
 }
 
 /**
- * Mount the frontend page, the health and sync status routes, and the
+ * Mount the frontend page, the health, sync status and served-vault routes, and the
  * error handler that must come last.
  * @param app The application to mount on.
  */
@@ -104,6 +118,7 @@ function mountServiceRoutes(app: Express): void {
 	app.get("/", frontendRoute);
 	app.get("/health", healthRoute);
 	app.get("/api/sync/status", syncStatusRoute);
+	app.get("/api/served-vault", servedVaultRoute);
 	app.use(unhandledErrorRoute);
 }
 

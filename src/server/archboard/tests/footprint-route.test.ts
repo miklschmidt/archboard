@@ -159,7 +159,7 @@ afterAll(() => {
 
 test("the production application answers the footprint of a proposal against a commit", async () => {
 	const base = await listen(server.app);
-	const query = new URLSearchParams({ board: "Shop", base: before, variant: "Plan" });
+	const query = new URLSearchParams({ vault, board: "Shop", base: before, variant: "Plan" });
 	const reply = await fetch(`${base}/api/semantic-boards/footprint?${query}`);
 	expect(reply.status).toBe(200);
 	const answer = FootprintReplySchema.parse(await reply.json());
@@ -172,7 +172,7 @@ test("a request that cannot be read is turned away with the code the CLI maps to
 	const base = await listen(server.app);
 	const refusal = async (params: Record<string, string>) => {
 		const reply = await fetch(
-			`${base}/api/semantic-boards/footprint?${new URLSearchParams(params)}`,
+			`${base}/api/semantic-boards/footprint?${new URLSearchParams({ vault, ...params })}`,
 		);
 		const body: unknown = await reply.json();
 		return { status: reply.status, body };
@@ -216,9 +216,12 @@ test("a caller that hangs up cancels the reading", async () => {
 	});
 	const base = await listen(app);
 	const hangUp = new AbortController();
-	const request = fetch(`${base}/api/semantic-boards/footprint?board=Shop&base=${before}`, {
-		signal: hangUp.signal,
-	}).catch((error: unknown) => error);
+	const request = fetch(
+		`${base}/api/semantic-boards/footprint?vault=${encodeURIComponent(vault)}&board=Shop&base=${before}`,
+		{
+			signal: hangUp.signal,
+		},
+	).catch((error: unknown) => error);
 	await running;
 	hangUp.abort();
 	await request;

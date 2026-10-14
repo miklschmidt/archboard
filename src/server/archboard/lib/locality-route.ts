@@ -24,7 +24,7 @@ import {
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
 import { errorMessage } from "@/shared/thrown-error/index";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface LocalityRouteDependencies {
@@ -35,8 +35,9 @@ interface LocalityRouteDependencies {
 		name: string,
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
-	/** Read the hotspots of one variant of one board. */
+	/** Read the hotspots of one variant of one board of a vault. */
 	readonly read: (
+		vault: string,
 		board: SemanticBoard,
 		variant: SemanticVariant,
 		since: Date | undefined,
@@ -59,6 +60,7 @@ interface Refusal {
 type Asked =
 	| {
 			readonly ok: true;
+			readonly vault: string;
 			readonly board: SemanticBoard;
 			readonly variant: SemanticVariant;
 			readonly since: Date | undefined;
@@ -184,7 +186,8 @@ function readableVariant(
 function askedLocality(request: Request): Asked {
 	const query = statedQuery(request);
 	if (!query.ok) return query;
-	const read = readSemanticBoard(serverVault(), query.query.board);
+	const vault = vaultOfRequest(request);
+	const read = readSemanticBoard(vault, query.query.board);
 	if (!read.ok) {
 		const status = read.code === "BOARD_MISSING" ? 404 : 422;
 		return { ok: false, status, code: read.code, error: read.problem };
@@ -194,6 +197,7 @@ function askedLocality(request: Request): Asked {
 	const { since } = query.query;
 	return {
 		ok: true,
+		vault,
 		board: read.board,
 		variant: chosen.variant,
 		since: since === undefined ? undefined : new Date(since),
@@ -231,7 +235,7 @@ async function answerLocality(
 			request,
 			response,
 			"GET /api/semantic-boards/locality",
-			(signal) => dependencies.read(asked.board, asked.variant, asked.since, signal),
+			(signal) => dependencies.read(asked.vault, asked.board, asked.variant, asked.since, signal),
 		);
 		if (!callerGone(request, response)) response.json({ success: true, ...answer });
 	} catch (error) {
@@ -263,16 +267,18 @@ function mountLocalityRoute(
 			checkoutWork.trackRequest(request, response, name, work),
 		/**
 		 * Read through the server's one reading, so its memory serves every request.
+		 * @param vault The vault the board lives in.
 		 * @param board The board.
 		 * @param variant The variant.
 		 * @param since The start of the period.
 		 * @param signal Cancels the reading.
 		 * @returns The answer.
 		 */
-		read: (board, variant, since, signal) => localityReading.read(board, variant, since, signal),
+		read: (vault, board, variant, since, signal) =>
+			localityReading.read(vault, board, variant, since, signal),
 		...overrides,
 	};
-	app.get("/api/semantic-boards/locality", (request, response) => {
+	app.get("/api/semantic-boards/locality", requireVault, (request, response) => {
 		void answerLocality(dependencies, request, response);
 	});
 }

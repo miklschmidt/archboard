@@ -50,7 +50,11 @@ describe.serial("composed Codex mutation outcomes", () => {
 			const clientId = "mutation-outcomes";
 			const socket = await openApplicationSocket(server.base, clientId);
 			resources.defer(() => socket.close());
-			const request = createRequester({ base: server.base, assertRunning: async () => undefined });
+			const request = createRequester({
+				base: server.base,
+				assertRunning: async () => undefined,
+				vault: server.vault,
+			});
 			expect(
 				(
 					await request("/api/panes", {

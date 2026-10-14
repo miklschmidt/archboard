@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { LOCK_WATCH_MS } from "@/shared/timing/timing";
-import { VAULT_STATE_DIR, normalizeBoardKey } from "@/runtime/engine/board";
+import { VAULT_STATE_DIR, boardMemoryKey, normalizeBoardKey } from "@/runtime/engine/board";
 import { logger } from "@/runtime/engine/logger";
 import type {
 	LockHandoff,
@@ -17,16 +17,21 @@ import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
 
 const processAnnounced = new Map<string, string>();
 const processSink = { notify: null as LockSink | null };
-const processSweep = { also: null as ((board: string) => void) | null };
+const processSweep = { also: null as ((vault: string, board: string) => void) | null };
 const processWatcher: {
 	watched: WatchedBoards | null;
 	timer: ReturnType<typeof setInterval> | null;
 } = { watched: null, timer: null };
 
-/** The boards a browser has on screen, and the vault they live in. */
-interface WatchedBoards {
+/** One board of one vault. */
+interface WatchedBoard {
 	readonly vault: string;
-	readonly boards: () => string[];
+	readonly board: string;
+}
+
+/** The boards a browser has on screen, each with the vault it lives in. */
+interface WatchedBoards {
+	readonly boards: () => readonly WatchedBoard[];
 }
 
 /**
@@ -312,28 +317,32 @@ function boardLockState(vault: string, board: string): LockHolder | null {
  *
  * Renewal changes `until` but not whether a pane may draw, so expiry is absent
  * from this fingerprint. Holder, start, reason and claim changes remain real
- * news.
+ * news. What was told is remembered per board of a vault, so a board of one
+ * name in two vaults is told twice.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param holder Who has it, or null when it is free.
  */
-function announce(board: string, holder: LockHolder | null): void {
+function announce(vault: string, board: string, holder: LockHolder | null): void {
 	const announced = holder
 		? `${holder.id}|${holder.kind}|${holder.since}|${holder.reason ?? ""}|${holder.claimed ? "claim" : "write"}`
 		: "";
-	if (processAnnounced.get(board) === announced) {
+	const key = boardMemoryKey(vault, board);
+	if (processAnnounced.get(key) === announced) {
 		return;
 	}
-	processAnnounced.set(board, announced);
-	processSink.notify?.(board, holder);
+	processAnnounced.set(key, announced);
+	processSink.notify?.(vault, normalizeBoardKey(board), holder);
 }
 
 /**
  * Tell the panes a board is held.
+ * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param holder Who has it.
  */
-function announceHeld(board: string, holder: LockHolder): void {
-	announce(board, holder);
+function announceHeld(vault: string, board: string, holder: LockHolder): void {
+	announce(vault, board, holder);
 }
 
 /**
@@ -347,7 +356,7 @@ function announceHeld(board: string, holder: LockHolder): void {
  * @param board The board key.
  */
 function announceFree(vault: string, board: string): void {
-	announce(board, boardLockState(vault, board));
+	announce(vault, board, boardLockState(vault, board));
 }
 
 /**
@@ -431,7 +440,7 @@ function renewRecord(vault: string, board: string, id: string, leaseMs: number):
 	}
 	const renewed: LockRecord = { ...live, until: stamp(Date.now() + leaseMs) };
 	writeRecord(file, renewed);
-	announceHeld(board, holderOf(renewed));
+	announceHeld(vault, board, holderOf(renewed));
 	return holderOf(renewed);
 }
 
@@ -442,18 +451,21 @@ function sweepBoardLocks(): void {
 	if (!processWatcher.watched) {
 		return;
 	}
-	const { vault, boards } = processWatcher.watched;
-	for (const board of new Set(boards().map(normalizeBoardKey))) {
+	const watched = new Map<string, WatchedBoard>();
+	for (const { vault, board } of processWatcher.watched.boards()) {
+		watched.set(boardMemoryKey(vault, board), { vault, board: normalizeBoardKey(board) });
+	}
+	for (const { vault, board } of watched.values()) {
 		// The note-watch passenger shares this exact board list and cadence. It runs
 		// first, but its failure must never stop lock observation.
 		try {
-			processSweep.also?.(board);
+			processSweep.also?.(vault, board);
 		} catch (error) {
 			logger.warn(`Board lock sweep passenger failed for "${board}"; lock watch continues.`, {
 				error,
 			});
 		}
-		announce(board, boardLockState(vault, board));
+		announce(vault, board, boardLockState(vault, board));
 	}
 }
 
@@ -463,8 +475,8 @@ function sweepBoardLocks(): void {
  * A lock file cannot call another server, so the state is polled. Polling runs
  * only while a browser supplies boards that are actually on screen; with no
  * pane, nobody can be misled.
- * @param watched Which boards are on screen and the vault they live in, or null
- *   to stop watching.
+ * @param watched Which boards are on screen, each with the vault it lives in, or
+ *   null to stop watching.
  */
 function watchBoardLocks(watched: WatchedBoards | null): void {
 	processWatcher.watched = watched;
@@ -489,9 +501,9 @@ function watchBoardLocks(watched: WatchedBoards | null): void {
 /**
  * Ride along with the lock sweep, which is the one poll that already knows
  * which boards are on screen.
- * @param sink What to run for each board, or null to stop.
+ * @param sink What to run for each board of a vault, or null to stop.
  */
-function onBoardSweep(sink: ((board: string) => void) | null): void {
+function onBoardSweep(sink: ((vault: string, board: string) => void) | null): void {
 	processSweep.also = sink;
 }
 
@@ -513,6 +525,7 @@ function forgetLockState(): void {
 }
 
 export {
+	type WatchedBoard,
 	type WatchedBoards,
 	announceHeld,
 	boardLockState,

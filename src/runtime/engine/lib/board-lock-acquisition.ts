@@ -7,7 +7,7 @@ import {
 	LOCK_STEAL_GUARD_MS,
 	LOCK_WAIT_CAP_MS,
 } from "@/shared/timing/timing";
-import { normalizeBoardKey } from "@/runtime/engine/board";
+import { boardMemoryKey, normalizeBoardKey } from "@/runtime/engine/board";
 import { noteClaimRevoked, processClaims } from "@/runtime/engine/lib/board-lock-claim-state";
 import {
 	BoardHeldError,
@@ -112,6 +112,7 @@ function isTakingBack(live: LockRecord, who: Asker, revoke: boolean): boolean {
  * If another process wins between the read and the create, its record is
  * re-read: a live winner is the blocker, while a lapsed or malformed result
  * falls through to the contested steal below.
+ * @param vault The vault root the board lives in.
  * @param file The lease file's path.
  * @param record The lease to write.
  * @param board The board key.
@@ -120,6 +121,7 @@ function isTakingBack(live: LockRecord, who: Asker, revoke: boolean): boolean {
  * @throws {Error} When the create fails for any reason but the file existing.
  */
 function createExclusively(
+	vault: string,
 	file: string,
 	record: LockRecord,
 	board: string,
@@ -134,7 +136,7 @@ function createExclusively(
 			fs.closeSync(handle);
 		}
 		endsClaimHere(record);
-		announceHeld(board, holderOf(record));
+		announceHeld(vault, board, holderOf(record));
 		return { ok: true, record, created: true };
 	} catch (error) {
 		if (!isAlreadyThere(error)) {
@@ -145,12 +147,13 @@ function createExclusively(
 	if (!raced) {
 		return null;
 	}
-	announceHeld(board, holderOf(raced));
+	announceHeld(vault, board, holderOf(raced));
 	return { ok: false, record: raced };
 }
 
 /** What one attempt is asking for. */
 interface AttemptContext {
+	vault: string;
 	board: string;
 	file: string;
 	who: Asker;
@@ -171,7 +174,7 @@ function decideAgainstLive(
 	context: AttemptContext,
 	endsClaimHere: (taker: LockRecord) => void,
 ): Attempt | null {
-	const { board, file, who, leaseMs, revoke } = context;
+	const { vault, board, file, who, leaseMs, revoke } = context;
 	if (live.id === who.id) {
 		// Reentrant renewal preserves `since`, so refusals describe when the holder
 		// began rather than its latest heartbeat. Joining is not creating: callers
@@ -179,13 +182,13 @@ function decideAgainstLive(
 		const renewed = renewedRecord(live, who, leaseMs);
 		writeRecord(file, renewed);
 		endsClaimHere(renewed);
-		announceHeld(board, holderOf(renewed));
+		announceHeld(vault, board, holderOf(renewed));
 		return { ok: true, record: renewed, created: false };
 	}
 	if (isTakingBack(live, who, revoke)) {
 		return null;
 	}
-	announceHeld(board, holderOf(live));
+	announceHeld(vault, board, holderOf(live));
 	return { ok: false, record: live };
 }
 
@@ -292,14 +295,19 @@ async function attempt(
 	 * @param taker The acquisition that has just been proven.
 	 */
 	const endsClaimHere = (taker: LockRecord): void => {
-		const claimHere = revoke && who.kind === "human" ? processClaims.get(board) : undefined;
+		const claimHere =
+			revoke && who.kind === "human" ? processClaims.get(boardMemoryKey(vault, board)) : undefined;
 		if (claimHere && claimHere.holder.id !== who.id) {
-			noteClaimRevoked(board, claimHere.holder, holderOf(taker));
+			noteClaimRevoked(vault, board, claimHere.holder, holderOf(taker));
 		}
 	};
 
 	if (live) {
-		const decided = decideAgainstLive(live, { board, file, who, leaseMs, revoke }, endsClaimHere);
+		const decided = decideAgainstLive(
+			live,
+			{ vault, board, file, who, leaseMs, revoke },
+			endsClaimHere,
+		);
 		if (decided) {
 			return decided;
 		}
@@ -307,13 +315,13 @@ async function attempt(
 
 	const record = freshRecord(who, leaseMs);
 	if (!current) {
-		const settled = createExclusively(file, record, board, endsClaimHere);
+		const settled = createExclusively(vault, file, record, board, endsClaimHere);
 		if (settled) {
 			return settled;
 		}
 	}
 
-	return stealContested(file, record, board, endsClaimHere);
+	return stealContested(vault, file, record, board, endsClaimHere);
 }
 
 /**
@@ -323,6 +331,7 @@ async function attempt(
  * expired lease and both rename. Both pay the steal guard, and then only the
  * one whose token remains in the file believes it owns the board. The
  * ordinary absent and live-holder paths never pay this delay.
+ * @param vault The vault root the board lives in.
  * @param file The lease file's path.
  * @param record The lease to write.
  * @param board The board key.
@@ -330,6 +339,7 @@ async function attempt(
  * @returns This acquisition, or the writer that won the steal.
  */
 async function stealContested(
+	vault: string,
 	file: string,
 	record: LockRecord,
 	board: string,
@@ -342,7 +352,7 @@ async function stealContested(
 		return { ok: false, record: liveRecord(settled) };
 	}
 	endsClaimHere(record);
-	announceHeld(board, holderOf(record));
+	announceHeld(vault, board, holderOf(record));
 	return { ok: true, record, created: true };
 }
 

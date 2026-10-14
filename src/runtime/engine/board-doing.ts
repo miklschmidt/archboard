@@ -1,4 +1,4 @@
-// What an agent said it was doing, per board.
+// What an agent said it was doing, per board of each vault.
 //
 // A person at the wall sees boxes move. Without this they infer the intent
 // afterwards, if they can — which is the connection between a creator and what
@@ -30,7 +30,7 @@
 // worse. So the line is capped and the list is short, and both caps are here
 // rather than in the middleware, the pane and the injector separately.
 
-import { normalizeBoardKey } from "@/runtime/engine/board";
+import { boardMemoryKey } from "@/runtime/engine/board";
 import type { HolderKind } from "@/runtime/engine/board-lock";
 
 /**
@@ -65,6 +65,7 @@ interface DoingEntry {
 }
 
 interface Store {
+	/** Keyed by `boardMemoryKey`: one server serves several vaults (ADR 0049). */
 	byBoard: Map<string, DoingEntry[]>;
 }
 
@@ -118,12 +119,13 @@ function checkDoing(raw: unknown): DoingCheck {
  * the same sentence about one board inside five writes therefore read as one
  * line. That is the cheaper of the two mistakes: the other one is a list that
  * is the same sentence five times, which is what this is for.
+ * @param vault The vault the board lives in.
  * @param board Which board it was said about.
  * @param entry What was said, and who said it.
  * @returns The board's lines, oldest first.
  */
-function recordDoing(board: string, entry: DoingEntry): DoingEntry[] {
-	const key = normalizeBoardKey(board);
+function recordDoing(vault: string, board: string, entry: DoingEntry): DoingEntry[] {
+	const key = boardMemoryKey(vault, board);
 	const { byBoard } = store();
 	const existing = byBoard.get(key) ?? [];
 	const last = existing[existing.length - 1];
@@ -135,11 +137,12 @@ function recordDoing(board: string, entry: DoingEntry): DoingEntry[] {
 
 /**
  * The last few things said about this board, oldest first.
+ * @param vault The vault the board lives in.
  * @param board Which board.
  * @returns The lines.
  */
-function recentDoing(board: string): DoingEntry[] {
-	return store().byBoard.get(normalizeBoardKey(board)) ?? [];
+function recentDoing(vault: string, board: string): DoingEntry[] {
+	return store().byBoard.get(boardMemoryKey(vault, board)) ?? [];
 }
 
 /**
@@ -148,14 +151,16 @@ function recentDoing(board: string): DoingEntry[] {
  * Nothing calls this on the ordinary path — the list is meant to outlive the
  * work it describes for as long as somebody might still be looking at the
  * board. It exists for the checks, which run several boards through one server.
- * @param board Which board, or every board when omitted.
+ * @param which The vault and board, or every board of every vault when omitted.
+ * @param which.vault The vault the board lives in.
+ * @param which.board Which board.
  */
-function forgetDoing(board?: string): void {
+function forgetDoing(which?: { readonly vault: string; readonly board: string }): void {
 	const { byBoard } = store();
-	if (board === undefined) {
+	if (which === undefined) {
 		byBoard.clear();
 	} else {
-		byBoard.delete(normalizeBoardKey(board));
+		byBoard.delete(boardMemoryKey(which.vault, which.board));
 	}
 }
 

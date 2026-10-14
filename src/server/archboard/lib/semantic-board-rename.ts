@@ -37,7 +37,12 @@ import {
 } from "@/runtime/semantic-board-store/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
-import { aggregateOf, paneBoards, sendToPane } from "@/server/archboard/lib/pane-registry";
+import {
+	aggregateOf,
+	paneBoards,
+	paneVaults,
+	sendToPane,
+} from "@/server/archboard/lib/pane-registry";
 import { arrivedOnBoard } from "@/server/archboard/lib/pane-routes";
 import { acceptedIdentity } from "@/server/archboard/lib/pane-show-route";
 import {
@@ -47,7 +52,6 @@ import {
 	writerOf,
 } from "@/server/archboard/lib/semantic-board-writes";
 import { asCommand } from "@/server/archboard/lib/semantic-write-requests";
-import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /** A write that landed. */
 type Applied = Extract<SemanticWriteResult, { outcome: "applied" }>;
@@ -74,44 +78,46 @@ async function renameRoute(
 		return;
 	}
 	const result = await writeSemanticBoard({
-		vault: serverVault(),
+		vault: stated.vault,
 		board: stated.envelope.board,
 		writer: writerOf(stated.envelope),
 		transition: renameTransition(renaming),
 		expectedVersion: stated.expected,
 		signal,
 	});
-	const answered = result.outcome === "applied" ? await followBoard(result) : result;
-	announceWork(answered, stated.doing, stated.envelope);
-	answerWrite(res, answered, stated.envelope);
+	const answered = result.outcome === "applied" ? await followBoard(stated.vault, result) : result;
+	announceWork(stated.vault, answered, stated.doing, stated.envelope);
+	answerWrite(res, stated.vault, answered, stated.envelope);
 }
 
 /**
  * Move everything this server keyed by the board's old name to its new one,
  * and point every pane on it at the name it goes by now.
+ * @param vault The vault the board lives in.
  * @param result The rename that landed.
  * @returns The same result, with a warning when the claim could not follow.
  */
-async function followBoard(result: Applied): Promise<Applied> {
+async function followBoard(vault: string, result: Applied): Promise<Applied> {
 	const from = result.renamedFrom?.key ?? result.location.key;
-	repointPanes(from, result.board);
+	repointPanes(vault, from, result.board);
 	if (result.renamedFrom === undefined) {
 		return result;
 	}
-	carryDoing(from, result.location.key);
-	const lost = await carryClaim(from, result.location.name);
+	carryDoing(vault, from, result.location.key);
+	const lost = await carryClaim(vault, from, result.location.name);
 	return lost === null ? result : { ...result, warnings: [...result.warnings, lost] };
 }
 
 /**
  * Point every pane on the board at the address it answers to now. A pane whose
  * address was already the board's own is left alone.
+ * @param vault The vault the board lives in; panes of another vault are not on it.
  * @param from The key the panes are on.
  * @param board The board as it now stands.
  */
-function repointPanes(from: string, board: SemanticBoard): void {
+function repointPanes(vault: string, from: string, board: SemanticBoard): void {
 	for (const [clientId, key] of paneBoards) {
-		if (aggregateOf(key) !== from) {
+		if (paneVaults.get(clientId) !== vault || aggregateOf(key) !== from) {
 			continue;
 		}
 		const identity = parseBoardKey(key);
@@ -130,32 +136,38 @@ function repointPanes(from: string, board: SemanticBoard): void {
 
 /**
  * Keep what agents said they were doing to the board with the board.
+ * @param vault The vault the board lives in.
  * @param from The key it was said under.
  * @param to The key the board has now.
  */
-function carryDoing(from: string, to: string): void {
-	for (const entry of recentDoing(from)) {
-		recordDoing(to, entry);
+function carryDoing(vault: string, from: string, to: string): void {
+	for (const entry of recentDoing(vault, from)) {
+		recordDoing(vault, to, entry);
 	}
-	forgetDoing(from);
+	forgetDoing({ vault, board: from });
 }
 
 /**
  * Carry this server's claim on the board to its new name, for what is left of
  * the campaign and for the reason it was taken.
+ * @param vault The vault the board lives in.
  * @param from The key the claim was taken on.
  * @param to The board's new name.
  * @returns A warning when the claim could not follow the board, else null.
  */
-async function carryClaim(from: string, to: string): Promise<VaultDiagnostic | null> {
-	const claim = claimOn(from);
+async function carryClaim(
+	vault: string,
+	from: string,
+	to: string,
+): Promise<VaultDiagnostic | null> {
+	const claim = claimOn(vault, from);
 	if (claim === null) {
 		return null;
 	}
-	releaseClaim(from);
+	releaseClaim(vault, from);
 	try {
 		await claimBoard({
-			vault: serverVault(),
+			vault,
 			board: to,
 			reason: claim.holder.reason ?? "",
 			forMs: Date.parse(claim.expires) - Date.now(),

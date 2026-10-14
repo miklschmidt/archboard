@@ -40,13 +40,15 @@ import {
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
 import { errorMessage } from "@/shared/thrown-error/index";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /**
- * What one request asks for: the draft to read where a board has one, the
- * plans an agent named, and how to cancel.
+ * What one request asks for: the vault it reads, the draft to read where a
+ * board has one, the plans an agent named, and how to cancel.
  */
 interface CodeCheckRequest {
+	/** The vault the request named: the boards it reads and the checkouts it reads them against. */
+	readonly vault: string;
 	readonly variant: string | undefined;
 	readonly plans: readonly string[];
 	readonly signal: AbortSignal;
@@ -87,14 +89,14 @@ const codeFindings = createCodeFindingsMemory();
 async function runCodeCheck(
 	request: CodeCheckRequest,
 ): Promise<CodeCheckAnswer | CodeCheckRefusal> {
-	const vault = serverVault();
+	const { vault } = request;
 	const read = readBoardsToCheck(vault, request.variant);
 	if (!read.ok) return read;
-	const plans = await readPlans(request.plans, request.signal);
+	const plans = await readPlans(vault, request.plans, request.signal);
 	if (!plans.ok) return plans;
 	const historyStarted = performance.now();
 	const [code, history] = await Promise.all([
-		checkCode(read.boards, request.signal, plans.plans),
+		checkCode(vault, read.boards, request.signal, plans.plans),
 		behindReading
 			.read(
 				vault,
@@ -190,6 +192,7 @@ async function answerCodeCheck(
 	request: Request,
 	response: Response,
 ): Promise<void> {
+	const vault = vaultOfRequest(request);
 	const variant = variantOf(request);
 	const plans = plansOf(request);
 	const checkedAt = new Date();
@@ -199,10 +202,10 @@ async function answerCodeCheck(
 			response,
 			"GET /api/vault/code-check",
 			async (signal) => {
-				const checked = await dependencies.check({ variant, plans, signal });
+				const checked = await dependencies.check({ vault, variant, plans, signal });
 				// A cancelled pass may have stopped short, so it is nobody's news.
 				if ("boards" in checked && !signal.aborted) {
-					dependencies.memory.remember(checked, checkedAt);
+					dependencies.memory.remember(vault, checked, checkedAt);
 				}
 				return checked;
 			},
@@ -242,11 +245,11 @@ function mountCodeCheckRoute(
 		memory: codeFindings,
 		...overrides,
 	};
-	app.get("/api/vault/code-check", (request, response) => {
+	app.get("/api/vault/code-check", requireVault, (request, response) => {
 		void answerCodeCheck(dependencies, request, response);
 	});
-	app.get("/api/vault/code-findings", (_request, response) => {
-		response.json({ success: true, ...dependencies.memory.recall() });
+	app.get("/api/vault/code-findings", requireVault, (request, response) => {
+		response.json({ success: true, ...dependencies.memory.recall(vaultOfRequest(request)) });
 	});
 }
 

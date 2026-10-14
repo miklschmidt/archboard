@@ -142,7 +142,9 @@ afterAll(() => {
 
 test("the application answers the hotspots of a board's current variant", async () => {
 	const base = await listen(server.app);
-	const reply = await fetch(`${base}/api/semantic-boards/locality?board=Shop`);
+	const reply = await fetch(
+		`${base}/api/semantic-boards/locality?vault=${encodeURIComponent(vault)}&board=Shop`,
+	);
 	expect(reply.status).toBe(200);
 	const answer = LocalityReplySchema.parse(await reply.json());
 	expect(answer.variant.id).toBe("v2");
@@ -152,7 +154,9 @@ test("the application answers the hotspots of a board's current variant", async 
 test("a request that cannot be read is refused with the code the command maps to its exit status", async () => {
 	const base = await listen(server.app);
 	const refused = async (query: string): Promise<[number, string]> => {
-		const reply = await fetch(`${base}/api/semantic-boards/locality?${query}`);
+		const reply = await fetch(
+			`${base}/api/semantic-boards/locality?vault=${encodeURIComponent(vault)}&${query}`,
+		);
 		const body = (await reply.json()) as { success: boolean; code: string };
 		expect(body.success).toBe(false);
 		return [reply.status, body.code];
@@ -174,7 +178,7 @@ test("a caller that hangs up cancels the reading", async () => {
 	});
 	const cancelled = new Promise<unknown>((resolve) => {
 		route.mountLocalityRoute(app, {
-			read: async (_board, _variant, _since, signal): Promise<LocalityAnswer> => {
+			read: async (_vault, _board, _variant, _since, signal): Promise<LocalityAnswer> => {
 				started();
 				await new Promise<void>((settle) => {
 					signal.addEventListener("abort", () => settle(), { once: true });
@@ -186,9 +190,12 @@ test("a caller that hangs up cancels the reading", async () => {
 	});
 	const base = await listen(app);
 	const hangUp = new AbortController();
-	const request = fetch(`${base}/api/semantic-boards/locality?board=Shop`, {
-		signal: hangUp.signal,
-	}).catch((error: unknown) => error);
+	const request = fetch(
+		`${base}/api/semantic-boards/locality?vault=${encodeURIComponent(vault)}&board=Shop`,
+		{
+			signal: hangUp.signal,
+		},
+	).catch((error: unknown) => error);
 	await running;
 	hangUp.abort();
 	await request;

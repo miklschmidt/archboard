@@ -21,7 +21,6 @@ import {
 	type OpenerSelection,
 } from "@/shared/code-target";
 import {
-	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
 	type LocalCodeTarget,
@@ -42,6 +41,7 @@ import {
 	resolveOpenerCommand,
 	type LaunchResult,
 } from "@/server/code-opener/lib/launch";
+import { resolveInVault } from "@/server/code-opener/lib/resolve-target";
 import { symbolLine } from "@/server/code-opener/lib/symbol-line";
 import {
 	planOpenerCommand,
@@ -100,10 +100,13 @@ const pass: RequestHandler = (_request, _response, next) => {
 };
 
 export interface CodeOpenerRouteDependencies {
-	bindingForElement(board: string, element: string): BindingLookup;
+	/** Reads the binding a node carries, off the board of the vault the call names. */
+	bindingForElement(board: string, element: string, vault: string): BindingLookup;
+	/** Resolves a binding to the code it opens, in the checkout the vault the call names reads. */
 	resolveTarget(
 		binding: CodeBinding,
-		signal?: AbortSignal,
+		signal: AbortSignal | undefined,
+		vault: string,
 	): Promise<LocalCodeTargetResult> | LocalCodeTargetResult;
 	launch(command: { executable: string; argv: string[] }): Promise<LaunchResult>;
 	runCheckout<T>(
@@ -179,13 +182,10 @@ const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement
 	 * Resolves a binding against a fresh checkout snapshot limited to that binding.
 	 * @param binding The code binding to resolve.
 	 * @param signal Cancels the snapshot when the request is abandoned.
+	 * @param vault The vault the binding was read from.
 	 * @returns The local code target, or why it could not be resolved.
 	 */
-	resolveTarget: async (binding, signal) =>
-		resolveLocalCodeTarget(
-			binding,
-			await snapshotCheckoutAccess({ ...(signal ? { signal } : {}), bindings: [binding] }),
-		),
+	resolveTarget: (binding, signal, vault) => resolveInVault(vault, binding, signal),
 	launch: launchOpener,
 	/**
 	 * Runs checkout work directly; the Archboard server supplies request-scoped scheduling in production.
@@ -410,7 +410,10 @@ function parseActivationRequest(request: Request): ActivationRequest {
 			failure: { code: "REQUEST_INVALID", error: "Activation query parameters are not accepted." },
 		};
 	}
-	const parsed = CodeTargetOpenRequestSchema.safeParse(request.body);
+	// The vault the call names is the server's own requirement and is read from the call
+	// before this route runs (ADR 0049); what is left is the board and the element.
+	const { vault: _named, ...link } = typeof request.body === "object" ? (request.body ?? {}) : {};
+	const parsed = CodeTargetOpenRequestSchema.safeParse(link);
 	return parsed.success
 		? { ok: true, request: parsed.data }
 		: {
@@ -421,13 +424,13 @@ function parseActivationRequest(request: Request): ActivationRequest {
 
 /**
  * Builds the opener routes: settings read, save, reset and test, and code-target activation.
- * @param vault Names the vault root whose boards carry the bindings the routes open; asked
- * per request, because the server may have no vault until it starts.
+ * @param vault Names the vault root whose boards carry the bindings a request opens; asked
+ * per request, because every call names its own vault (ADR 0049).
  * @param overrides Dependencies replaced by the Archboard server or by tests.
  * @returns The opener router.
  */
 export function createCodeOpenerRouter(
-	vault: () => string,
+	vault: (request: Request) => string,
 	overrides: Partial<CodeOpenerRouteDependencies> = {},
 ): Router {
 	const dependencies = {
@@ -436,10 +439,11 @@ export function createCodeOpenerRouter(
 		 * Reads the binding off the board of the vault.
 		 * @param board The board the node is on.
 		 * @param element The node whose binding is wanted.
+		 * @param vaultRoot The vault the call named.
 		 * @returns The binding, or which of board, node or binding was missing.
 		 */
-		bindingForElement: (board: string, element: string) =>
-			canonicalBinding(vault(), board, element),
+		bindingForElement: (board: string, element: string, vaultRoot: string) =>
+			canonicalBinding(vaultRoot, board, element),
 		...overrides,
 	};
 	const router = Router();
@@ -463,7 +467,7 @@ export function createCodeOpenerRouter(
 				request,
 				response,
 				"GET /api/settings/opener checkout snapshot",
-				(signal) => snapshotCheckoutAccess({ signal }),
+				(signal) => snapshotCheckoutAccess({ vault: null, signal }),
 			);
 			const repositories = snapshot.entries.map((entry) => {
 				const resolved = resolveRegisteredCheckout(entry.repo, snapshot);
@@ -528,7 +532,7 @@ export function createCodeOpenerRouter(
 				}
 				const checkout = resolveRegisteredCheckout(
 					parsed.data.repository,
-					await snapshotCheckoutAccess({ signal }),
+					await snapshotCheckoutAccess({ vault: null, signal }),
 				);
 				if (!checkout.ok) return sendFailure(response, checkout);
 				const launched = await planAndLaunch(
@@ -548,13 +552,15 @@ export function createCodeOpenerRouter(
 			dependencies.runMutation(request, "POST /api/code-targets/open launch", async (signal) => {
 				const activation = parseActivationRequest(request);
 				if (!activation.ok) return sendFailure(response, activation.failure, 400);
+				const vaultRoot = vault(request);
 				const found = dependencies.bindingForElement(
 					activation.request.board,
 					activation.request.element,
+					vaultRoot,
 				);
 				if (!found.ok) return sendFailure(response, found);
 				const opening = openable(
-					await dependencies.resolveTarget(found.binding, signal),
+					await dependencies.resolveTarget(found.binding, signal, vaultRoot),
 					found.binding,
 				);
 				if (!opening.ok)

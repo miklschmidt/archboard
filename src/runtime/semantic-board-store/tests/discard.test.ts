@@ -91,7 +91,7 @@ test("a discard under this server's claim ends the claim with the board", async 
 
 	const discarded = await store.discardSemanticBoard({ vault, board: "claimed", writer });
 	expect(discarded).toMatchObject({ outcome: "discarded", heldAs: claim.holder.id });
-	expect(lock.claimOn(key)).toBeNull();
+	expect(lock.claimOn(vault, key)).toBeNull();
 	expect(lock.boardLockState(vault, key)).toBeNull();
 });
 

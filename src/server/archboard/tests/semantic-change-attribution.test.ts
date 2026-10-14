@@ -39,6 +39,7 @@ function announced(
 	try {
 		broadcast(
 			{ type: "board_note", board: "payments", ...settledChangeFields(announcement) },
+			"/vault",
 			"payments",
 		);
 	} finally {

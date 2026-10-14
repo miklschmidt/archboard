@@ -1,7 +1,7 @@
 // One request to the Archboard server, and the identity gate in front of it.
 
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
-import { withBoard, withWriteClaims } from "@/runtime/engine/lib/server-client-session";
+import { withBoard, withVault, withWriteClaims } from "@/runtime/engine/lib/server-client-session";
 import { isBoardRefusal } from "@/runtime/engine/lib/server-client-refusal";
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
 
@@ -173,11 +173,9 @@ function describeFailure(error: ServerError, body: Record<string, unknown>): voi
 /**
  * One request to the Archboard server, answered as JSON.
  *
- * Every server request carries the board when one was named, and every answer
- * is read for what it says about that board — whether it is still saving, and
- * which version of it this process has now been told about (TASK-091).
- * Attached and read here rather than at 30 call sites, so a route can never be
- * the one that forgot.
+ * Every server request carries the board when one was named, and every API
+ * request carries the vault (ADR 0049). Attached here rather than at 30 call
+ * sites, so a route can never be the one that forgot.
  * @param path The request path.
  * @param init The request, whose method decides whether write claims ride along.
  * @returns The answer body, as the route's own shape.
@@ -186,7 +184,7 @@ function describeFailure(error: ServerError, body: Record<string, unknown>): voi
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	await assertServerIdentity();
 	const response = await fetch(
-		`${ARCHBOARD_URL}${withWriteClaims(withBoard(path), init?.method)}`,
+		`${ARCHBOARD_URL}${withWriteClaims(withVault(withBoard(path)), init?.method)}`,
 		init,
 	);
 	const data: unknown = await response.json().catch(() => null);

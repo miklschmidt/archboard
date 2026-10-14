@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import { vaultRefusals } from "@/cli/command-contract/lib/common";
 
 class CliUsageError extends Error {
 	readonly exitCode = 2;
@@ -441,7 +442,27 @@ function defineCommand<Shape extends z.ZodRawShape, Result>(
 	assertParameters(contract);
 	assertOutputCases(contract);
 	assertOutcomes(contract);
-	return contract;
+	return namesItsVault(contract);
+}
+
+/**
+ * Adds the refusals of a call that names no usable vault to a command that
+ * calls the server. Every server call states a vault, so the refusal is a fact
+ * of the call and not of any one command: derived from the `server`
+ * prerequisite, a new command cannot forget it (ADR 0049).
+ * @param contract - The contract being defined.
+ * @returns The same contract, with the vault refusals a command that calls the
+ * server can get.
+ */
+function namesItsVault<Shape extends z.ZodRawShape, Result>(
+	contract: CommandContract<Shape, Result>,
+): CommandContract<Shape, Result> {
+	if (!contract.prerequisites.includes("server")) {
+		return contract;
+	}
+	const declared = new Set(contract.refusals.map((refusal) => refusal.code));
+	const added = vaultRefusals.filter((refusal) => !declared.has(refusal.code));
+	return { ...contract, refusals: [...contract.refusals, ...added] };
 }
 
 type AnyCommandContract = CommandContract<z.ZodRawShape, unknown>;
