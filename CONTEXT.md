@@ -191,7 +191,9 @@ _Avoid_: path, file reference, location, URI
 
 **Repository identity**:
 What a repository is called in a way that is the same in every clone and on
-every machine: host, owner and name, taken from its `origin` remote.
+every machine: host, owner and name, taken from its `origin` remote. A
+repository with no remote is called by the directory name of its main checkout,
+so all its worktrees share one identity.
 _Avoid_: repo URL, remote, origin, project, package
 
 **Checkout**:

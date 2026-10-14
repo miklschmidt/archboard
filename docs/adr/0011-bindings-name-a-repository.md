@@ -14,6 +14,13 @@ binding into the vault's own repository resolves in the vault's own checkout.
 The `cwd` origin in the table below went earlier, with the command that used it.
 Everything else stands.
 
+Amended by the owner on 2026-10-15 (TASK-472.17). Every worktree of a repository
+has the identity of its main checkout. With an `origin` remote, that is the
+remote's host, owner and name, which all worktrees share. Without one, it is the
+name of the main checkout's directory, not of the worktree's directory. Thus a
+worktree of a repository with no remote is known together with its main
+checkout.
+
 A binding is a logical address: a repository identity, a path inside it, and the
 branch and commit at which it was last confirmed (CONTEXT.md). It must be a
 logical address because boards persist in a vault that spans repositories and is
