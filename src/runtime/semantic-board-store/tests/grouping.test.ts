@@ -12,7 +12,6 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 
@@ -48,7 +47,6 @@ function configure(policy: SemanticPolicy): void {
 beforeAll(async () => {
 	configure(POLICY);
 	store = await import("@/runtime/semantic-board-store/index");
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 beforeEach(async () => {
@@ -58,6 +56,7 @@ beforeEach(async () => {
 	// Fulfillment crosses two containers; the worker inside Shipping is also
 	// Billing's. The ledger belongs to nothing.
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(
@@ -98,7 +97,7 @@ afterAll(() => {
  * @returns The board and its warnings.
  */
 function read(name: string) {
-	const answer = store.readSemanticBoard(name);
+	const answer = store.readSemanticBoard(vault, name);
 	if (!answer.ok) throw new Error(answer.problem);
 	return answer;
 }
@@ -128,6 +127,7 @@ function nodeNamed(name: string, variant?: string) {
  */
 async function restate(node: Record<string, unknown>, variant?: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read(board).board.version,
@@ -150,6 +150,7 @@ async function branch(name: string): Promise<void> {
 	expect(
 		(
 			await store.writeSemanticBoard({
+				vault,
 				board,
 				writer,
 				expectedVersion: held.version,
@@ -281,6 +282,7 @@ test("a node removed here and regrouped there is still a deletion somebody has t
 	expect(
 		(
 			await store.writeSemanticBoard({
+				vault,
 				board,
 				writer,
 				expectedVersion: read(board).board.version,
@@ -317,6 +319,7 @@ test("adopting a proposal carries its memberships into the architecture", async 
 	expect(
 		(
 			await store.writeSemanticBoard({
+				vault,
 				board,
 				writer,
 				expectedVersion: read(board).board.version,
@@ -378,7 +381,7 @@ test("a board from before 2.2.0 carrying the singular label is refused with the 
 	worker["group"] = "the write path";
 	const before = JSON.stringify(legacy);
 	writeFileSync(held.location.file, before);
-	const refused = store.readSemanticBoard(board);
+	const refused = store.readSemanticBoard(vault, board);
 	expect(refused.ok).toBe(false);
 	if (!refused.ok) {
 		expect(refused.code).toBe("BOARD_UNREADABLE");

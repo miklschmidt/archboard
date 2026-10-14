@@ -71,7 +71,7 @@ function liveClaim(board: string): ClaimEntry | null {
 	// Claim expiry bounds a live agent or one that walked away. Drop immediately
 	// when asked rather than depending on where the renewal timer last landed.
 	dropClaim(board, entry);
-	releaseHold(board, entry.holder.id);
+	releaseHold(entry.vault, board, entry.holder.id);
 	return null;
 }
 
@@ -107,14 +107,14 @@ function renewClaim(board: string): void {
 	if (!entry) {
 		return;
 	}
-	const renewed = renewRecord(board, entry.holder.id, CLAIM_LEASE_MS);
+	const renewed = renewRecord(entry.vault, board, entry.holder.id, CLAIM_LEASE_MS);
 	if (renewed) {
 		entry.holder = renewed;
 		return;
 	}
 	// Never call ordinary acquisition here. Retaking a free lease would restore
 	// a claim the person explicitly took back (ADR 0022).
-	noteClaimRevoked(board, entry.holder, boardLockState(board));
+	noteClaimRevoked(board, entry.holder, boardLockState(entry.vault, board));
 }
 
 /**

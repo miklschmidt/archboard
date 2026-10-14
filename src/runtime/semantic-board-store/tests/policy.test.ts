@@ -30,7 +30,7 @@ const policy: SemanticPolicy = {
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
 	contract = await import("@/shared/semantic-board/index");
-	expect(store.locateSemanticBoard("test").file.startsWith(vault)).toBe(true);
+	expect(store.locateSemanticBoard("test", vault).file.startsWith(vault)).toBe(true);
 });
 beforeEach(() => {
 	serial++;
@@ -48,6 +48,7 @@ function save(value: SemanticPolicy) {
 }
 async function create(kind = "api", level = "context") {
 	return store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
@@ -56,12 +57,13 @@ async function create(kind = "api", level = "context") {
 	});
 }
 function read() {
-	const result = store.readSemanticBoard(name);
+	const result = store.readSemanticBoard(vault, name);
 	if (!result.ok) throw new Error(result.problem);
 	return result;
 }
 async function edit(input: unknown) {
 	return store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		expectedVersion: read().board.version,
@@ -103,6 +105,7 @@ test("removed definitions remain readable and editable, and cloning them preserv
 	expect((await edit({ nodes: [{ ...node, name: "Renamed" }] })).outcome).toBe("applied");
 	expect((await edit({ nodes: [{ name: "Another", kind: "api" }] })).outcome).toBe("rejected");
 	const branch = await store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		expectedVersion: read().board.version,
@@ -117,6 +120,7 @@ test("an unknown kind names the node or the relationship that states it", async 
 	expect(
 		(
 			await store.writeSemanticBoard({
+				vault,
 				board: name,
 				writer,
 				transition: store.createBoardTransition(
@@ -165,6 +169,7 @@ test("a historical removed kind cannot authorize a newly authored reference in a
 	await create();
 	const node = read().board.variants[0]!.content.nodes[0]!;
 	await store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		expectedVersion: read().board.version,
@@ -187,6 +192,7 @@ test("a removed definition is reported on frozen history too, because config.yam
 	// the vault should keep saying out loud (TASK-259).
 	await create();
 	await store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		expectedVersion: read().board.version,
@@ -199,6 +205,7 @@ test("a removed definition is reported on frozen history too, because config.yam
 		(await edit({ variant: "Worker instead", nodes: [{ ...node, kind: "worker" }] })).outcome,
 	).toBe("applied");
 	const adopted = await store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		expectedVersion: read().board.version,

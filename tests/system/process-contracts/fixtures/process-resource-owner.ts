@@ -83,14 +83,16 @@ async function lockMode(): Promise<void> {
 	const { holdBoard, releaseHold } = await import(
 		join(repoRoot, "src/runtime/engine/board-lock.ts")
 	);
+	const vault = process.env["ARCHBOARD_VAULT"]!;
 	const board = process.env["ARCHBOARD_TEST_LOCK_BOARD"] ?? "resource-cleanup";
 	const holderId = process.env["ARCHBOARD_TEST_LOCK_HOLDER"] ?? "resource-owner";
 	const hold = await holdBoard({
+		vault,
 		board,
 		holder: { id: holderId, kind: "agent" },
 		waitMs: 0,
 	});
-	const lockFile = join(process.env["ARCHBOARD_VAULT"]!, ".archboard/locks", `${board}.lock`);
+	const lockFile = join(vault, ".archboard/locks", `${board}.lock`);
 	const port = Number(process.env["ARCHBOARD_TEST_STUBBORN_PORT"]) || undefined;
 	const server = port ? createServer((socket) => socket.end()) : undefined;
 	if (server) {
@@ -102,15 +104,11 @@ async function lockMode(): Promise<void> {
 	// eslint-disable-next-line no-console -- stdout is the peer readiness protocol.
 	console.log(JSON.stringify({ pid: process.pid, lockFile, process: hold.holder.process, port }));
 	const renewal = setInterval(() => {
-		void holdBoard({
-			board,
-			holder: { id: holderId, kind: "agent" },
-			waitMs: 0,
-		});
+		void holdBoard({ vault, board, holder: { id: holderId, kind: "agent" }, waitMs: 0 });
 	}, 800);
 	const stop = () => {
 		clearInterval(renewal);
-		releaseHold(board, holderId);
+		releaseHold(vault, board, holderId);
 		if (server) {
 			server.close(() => process.exit(0));
 		} else {

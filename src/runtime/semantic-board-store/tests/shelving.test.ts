@@ -2,7 +2,6 @@ import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
@@ -24,14 +23,13 @@ let apiId = "";
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 beforeEach(async () => {
 	boards += 1;
 	board = `shelving-${boards}`;
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(
@@ -62,7 +60,7 @@ afterAll(() => {
  * @returns The board.
  */
 function read() {
-	const answer = store.readSemanticBoard(board);
+	const answer = store.readSemanticBoard(vault, board);
 	if (!answer.ok) throw new Error(answer.problem);
 	return answer.board;
 }
@@ -97,6 +95,7 @@ function api(name: string) {
  */
 async function branch(from: string, name: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -114,6 +113,7 @@ async function branch(from: string, name: string) {
  */
 async function edit(on: string, stated: Record<string, unknown>) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -141,6 +141,7 @@ async function rename(on: string, to: string) {
  */
 async function shelve(name: string, reason = "the parent already says this") {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -157,6 +158,7 @@ async function shelve(name: string, reason = "the parent already says this") {
  */
 async function adopt(name: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -319,6 +321,7 @@ test("the vault checker stops asking a shelved proposal to repair its content", 
 	const at = `linked-${boards}`;
 	const from = `linking-${boards}`;
 	await store.writeSemanticBoard({
+		vault,
 		board: at,
 		writer,
 		transition: store.createBoardTransition(
@@ -330,6 +333,7 @@ test("the vault checker stops asking a shelved proposal to repair its content", 
 		),
 	});
 	await store.writeSemanticBoard({
+		vault,
 		board: from,
 		writer,
 		transition: store.createBoardTransition(
@@ -360,6 +364,7 @@ test("the vault checker stops asking a shelved proposal to repair its content", 
 
 	const proposal = "Same link, restated";
 	const branched = await store.writeSemanticBoard({
+		vault,
 		board: from,
 		writer,
 		expectedVersion: 1,
@@ -372,6 +377,7 @@ test("the vault checker stops asking a shelved proposal to repair its content", 
 	expect(mismatches()).toHaveLength(2);
 
 	const shelved = await store.writeSemanticBoard({
+		vault,
 		board: from,
 		writer,
 		expectedVersion: 2,

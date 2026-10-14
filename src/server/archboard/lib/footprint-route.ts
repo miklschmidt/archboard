@@ -28,6 +28,7 @@ import {
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
 import { errorMessage } from "@/shared/thrown-error/index";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface FootprintRouteDependencies {
@@ -146,7 +147,7 @@ function askedOf(request: Request): Asked | undefined {
  * @returns What to read, or why the request is turned away.
  */
 function readableOf(wanted: Asked): Readable | Refusal {
-	const read = readSemanticBoard(wanted.board);
+	const read = readSemanticBoard(serverVault(), wanted.board);
 	if (!read.ok) {
 		return {
 			status: read.code === "BOARD_MISSING" ? 404 : 422,

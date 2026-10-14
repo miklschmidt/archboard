@@ -74,16 +74,18 @@ interface Reading {
 
 /**
  * Read one board at the variant the check reads, or skip it with the reason.
+ * @param vault The vault directory the board is in.
  * @param location Where the board is.
  * @param variant The draft `--variant` names, if any.
  * @param reading What the pass has read so far, which this adds to.
  */
 function readOne(
+	vault: string,
 	location: ReturnType<typeof listSemanticBoards>[number],
 	variant: string | undefined,
 	reading: Reading,
 ): void {
-	const read = readSemanticBoardAt(location);
+	const read = readSemanticBoardAt(vault, location);
 	if (!read.ok) {
 		reading.skipped.push({
 			reason: "board-unreadable",
@@ -120,7 +122,7 @@ function readOne(
 function readBoardsToCheck(vault: string, variant?: string): BoardsToCheck | NoSuchDraft {
 	const { relationshipKinds } = readSemanticBoardConfiguration(vault).configuration;
 	const reading: Reading = { boards: [], skipped: [], drafts: new Set(), relationshipKinds };
-	for (const location of listSemanticBoards(vault)) readOne(location, variant, reading);
+	for (const location of listSemanticBoards(vault)) readOne(vault, location, variant, reading);
 	if (variant !== undefined && !reading.boards.some((board) => board.named)) {
 		return { ok: false, variant, drafts: [...reading.drafts].toSorted() };
 	}

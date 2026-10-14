@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
@@ -24,14 +23,13 @@ let baseline = "";
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 beforeEach(async () => {
 	boards += 1;
 	board = `settling-${boards}`;
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(
@@ -58,7 +56,7 @@ afterAll(() => {
  * @returns The board.
  */
 function read() {
-	const answer = store.readSemanticBoard(board);
+	const answer = store.readSemanticBoard(vault, board);
 	if (!answer.ok) throw new Error(answer.problem);
 	return answer.board;
 }
@@ -91,6 +89,7 @@ function variant(name: string) {
  */
 async function branch(from: string, name: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -108,6 +107,7 @@ async function branch(from: string, name: string) {
  */
 async function rename(on: string, to: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -137,6 +137,7 @@ async function disagree(): Promise<void> {
  */
 async function settle(on: string, side: "mine" | "theirs") {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -157,6 +158,7 @@ async function settle(on: string, side: "mine" | "theirs") {
  */
 async function adopt(name: string, reason?: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -196,6 +198,7 @@ test("an answer to something nothing is holding is refused, and writes nothing",
 	await disagree();
 	const before = read();
 	const refused = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: before.version,
@@ -214,6 +217,7 @@ test("a stale answer is refused by the same version check every write makes", as
 	await disagree();
 	const stale = read().version - 1;
 	const refused = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: stale,
@@ -307,6 +311,7 @@ test("taking one side of one disagreement touches nothing else", async () => {
 	// The draft has its own responsibility; the baseline renames the node. A
 	// choice about the name is not permission to take everything else.
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -330,6 +335,7 @@ test("settling catches the proposal up with everything decided while it waited",
 	await disagree();
 	// The baseline goes on working while the draft is unsettled.
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,

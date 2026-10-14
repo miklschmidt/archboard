@@ -13,7 +13,6 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { requireVaultRoot } from "@/runtime/engine/board";
 import {
 	locateSemanticBoard,
 	SEMANTIC_BOARD_FILE_SUFFIX,
@@ -79,10 +78,10 @@ function boardName(prefix: string, file: string): string[] {
 
 /**
  * Every semantic board in the vault, by name.
- * @param root The vault root; defaults to the configured vault.
+ * @param root The vault root.
  * @returns The boards, sorted by key.
  */
-function listSemanticBoards(root = requireVaultRoot()): SemanticBoardLocation[] {
+function listSemanticBoards(root: string): SemanticBoardLocation[] {
 	const found: SemanticBoardLocation[] = [];
 	for (const name of namesUnder(path.resolve(root), "", 0)) {
 		try {

@@ -73,6 +73,8 @@ interface OpenerFixture {
 }
 
 interface OpenerFixtureOptions {
+	/** The vault the real binding lookup reads; needed with `defaultDependencies`. */
+	vault?: string;
 	defaultDependencies?: boolean;
 	routeDependencies?: Partial<CodeOpenerRouteDependencies>;
 }
@@ -213,7 +215,12 @@ async function createOpenerFixture(options: OpenerFixtureOptions = {}): Promise<
 						bindingForElement,
 						...options.routeDependencies,
 					};
-		app.use(createCodeOpenerRouter(routeDependencies));
+		app.use(
+			createCodeOpenerRouter(() => {
+				if (options.vault === undefined) throw new Error("The real binding lookup needs a vault.");
+				return options.vault;
+			}, routeDependencies),
+		);
 		app.use((_request, response) =>
 			response.status(404).json({ success: false, code: "NOT_FOUND" }),
 		);

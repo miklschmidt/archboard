@@ -26,7 +26,7 @@ type MigrationHold<T> =
  */
 function withBoardLockIfFreeSync<T>(request: LockRequest, migrate: () => T): MigrationHold<T> {
 	const board = normalizeBoardKey(request.board);
-	const file = lockPathFor(board);
+	const file = lockPathFor(request.vault, board);
 	const current = readRecord(file);
 	const live = liveRecord(current);
 	if (live !== null) return joinedOrPending(live.id, request.holder.id, migrate);
@@ -39,7 +39,7 @@ function withBoardLockIfFreeSync<T>(request: LockRequest, migrate: () => T): Mig
 	try {
 		return { acquired: true, value: migrate() };
 	} finally {
-		releaseHold(board, record.id);
+		releaseHold(request.vault, board, record.id);
 	}
 }
 

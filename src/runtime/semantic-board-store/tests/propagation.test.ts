@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
@@ -24,14 +23,13 @@ let boards = 0;
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 beforeEach(async () => {
 	boards += 1;
 	board = `family-${boards}`;
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(
@@ -62,7 +60,7 @@ afterAll(() => {
  * @returns The board.
  */
 function read() {
-	const answer = store.readSemanticBoard(board);
+	const answer = store.readSemanticBoard(vault, board);
 	if (!answer.ok) throw new Error(answer.problem);
 	return answer.board;
 }
@@ -108,6 +106,7 @@ function blockerOf(name: string): string | undefined {
  */
 async function branch(from: string, name: string) {
 	const answer = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -127,6 +126,7 @@ async function branch(from: string, name: string) {
  */
 async function edit(on: string, stated: Record<string, unknown>) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -191,7 +191,7 @@ test("what is unsettled survives a restart, because it is on the board", async (
 	const written = read();
 
 	// Nothing is held in memory: a fresh read of the file says the same.
-	const reread = store.readSemanticBoard(board);
+	const reread = store.readSemanticBoard(vault, board);
 	if (!reread.ok) throw new Error(reread.problem);
 	expect(reread.board).toEqual(written);
 	expect(reread.board.variants.find((one) => one.name === A)?.reconciliation?.issues).toHaveLength(
@@ -291,6 +291,7 @@ test("a draft recovers fully once it stops naming what its predecessor removed",
 	const wired = variant(A).content.edges.find((one) => one.label === "asks");
 	await edit(A, { removeEdges: [wired?.id ?? ""] });
 	const settled = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,

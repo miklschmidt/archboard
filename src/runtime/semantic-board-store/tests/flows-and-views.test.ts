@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
@@ -52,14 +51,13 @@ const SEED = {
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 beforeEach(async () => {
 	boards += 1;
 	board = `two-views-${boards}`;
 	seeded = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(
@@ -75,7 +73,7 @@ afterAll(() => {
 
 test("flows and views land in one batch and read back resolved", () => {
 	expect(seeded.outcome).toBe("applied");
-	const read = store.readSemanticBoard(board);
+	const read = store.readSemanticBoard(vault, board);
 	expect(read.ok).toBe(true);
 	if (!read.ok) return;
 	const content = read.board.variants[0]!.content;
@@ -97,9 +95,10 @@ test("flows and views land in one batch and read back resolved", () => {
 }, 20_000);
 
 test("a node cannot be taken out from under a flow without saying so", async () => {
-	const read = store.readSemanticBoard(board);
+	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error("no board");
 	const refused = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read.board.version,
@@ -111,11 +110,12 @@ test("a node cannot be taken out from under a flow without saying so", async () 
 }, 20_000);
 
 test("a board view keeps a stale selection and explicitly draws nothing", async () => {
-	const read = store.readSemanticBoard(board);
+	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error("no board");
 	const view = read.board.views[1]!;
 	const selectedFlow = read.board.variants[0]!.content.flows[0]!.id;
 	const applied = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read.board.version,
@@ -137,7 +137,7 @@ test("a board view keeps a stale selection and explicitly draws nothing", async 
 }, 20_000);
 
 test("a step keeps its id when its flow is rewritten, and a stated id must name one", async () => {
-	const before = store.readSemanticBoard(board);
+	const before = store.readSemanticBoard(vault, board);
 	if (!before.ok) throw new Error("no board");
 	const flow = before.board.variants[0]!.content.flows[0]!;
 	const kept = flow.steps[0]!.id;
@@ -145,6 +145,7 @@ test("a step keeps its id when its flow is rewritten, and a stated id must name 
 
 	// The same flow, reordered and reworded, with two of its steps named.
 	const rewritten = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: before.board.version,
@@ -174,6 +175,7 @@ test("a step keeps its id when its flow is rewritten, and a stated id must name 
 
 	// A step id that names nothing is a typo, not a new step.
 	const refused = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: rewritten.board.version,
@@ -194,9 +196,10 @@ test("a step keeps its id when its flow is rewritten, and a stated id must name 
 }, 20_000);
 
 test("a stated flow or view id that names nothing is refused", async () => {
-	const read = store.readSemanticBoard(board);
+	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error("no board");
 	const noFlow = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read.board.version,
@@ -216,6 +219,7 @@ test("a stated flow or view id that names nothing is refused", async () => {
 	expect(noFlow.outcome === "rejected" && noFlow.code).toBe("UNKNOWN_FLOW");
 
 	const noView = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read.board.version,
@@ -229,10 +233,11 @@ test("a stated flow or view id that names nothing is refused", async () => {
 }, 20_000);
 
 test("a board view can select an identity held only by another variant without changing either", async () => {
-	const initial = store.readSemanticBoard(board);
+	const initial = store.readSemanticBoard(vault, board);
 	if (!initial.ok) throw new Error(initial.problem);
 	const baseline = initial.board.variants[0]!;
 	const branched = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: initial.board.version,
@@ -244,6 +249,7 @@ test("a board view can select an identity held only by another variant without c
 	if (branched.outcome !== "applied") return;
 
 	const extended = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: branched.board.version,
@@ -257,6 +263,7 @@ test("a board view can select an identity held only by another variant without c
 	expect(extended.outcome).toBe("applied");
 	if (extended.outcome !== "applied") return;
 	const adopted = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: extended.board.version,
@@ -272,6 +279,7 @@ test("a board view can select an identity held only by another variant without c
 	);
 
 	const viewed = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: adopted.board.version,
@@ -298,6 +306,7 @@ test("a board view can select an identity held only by another variant without c
 	const historicalNode = viewed.board.variants.find((variant) => variant.id === baseline.id)!
 		.content.nodes[0]!;
 	const refused = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: viewed.board.version,
@@ -310,7 +319,7 @@ test("a board view can select an identity held only by another variant without c
 		),
 	});
 	expect(refused.outcome === "rejected" && refused.code).toBe("VARIANT_HISTORICAL");
-	const unchanged = store.readSemanticBoard(board);
+	const unchanged = store.readSemanticBoard(vault, board);
 	if (!unchanged.ok) throw new Error(unchanged.problem);
 	expect(unchanged.board.version).toBe(viewed.board.version);
 	expect(unchanged.board.views).toEqual(viewed.board.views);
@@ -320,6 +329,7 @@ test("a node keeps everything it was written with, including where it drills dow
 	// The field an agent may author is the field a hand-written copier forgets:
 	// this one passed the schema and the coherence check and then was not there.
 	const made = await store.writeSemanticBoard({
+		vault,
 		board: "drilling",
 		writer,
 		transition: store.createBoardTransition(
@@ -333,10 +343,11 @@ test("a node keeps everything it was written with, including where it drills dow
 		),
 	});
 	expect(made.outcome).toBe("applied");
-	const read = store.readSemanticBoard("drilling");
+	const read = store.readSemanticBoard(vault, "drilling");
 	if (!read.ok) throw new Error("no board");
 	const node = read.board.variants[0]!.content.nodes[0]!;
 	const edited = await store.writeSemanticBoard({
+		vault,
 		board: "drilling",
 		writer,
 		expectedVersion: read.board.version,
@@ -356,7 +367,7 @@ test("a node keeps everything it was written with, including where it drills dow
 		),
 	});
 	expect(edited.outcome).toBe("applied");
-	const after = store.readSemanticBoard("drilling");
+	const after = store.readSemanticBoard(vault, "drilling");
 	if (!after.ok) throw new Error("no board");
 	const kept = after.board.variants[0]!.content.nodes[0]!;
 	expect(kept.drillDown).toEqual({

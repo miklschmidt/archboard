@@ -58,17 +58,19 @@ type SemanticDiscardResult =
  * another board's name, one that is not a board at all, or one at another
  * version than the discarder stated, is refused exactly as a write to it would
  * be, and a board that is not there is refused as missing.
+ * @param vault The vault root the board lives in.
  * @param location Where the board lives.
  * @param expected The version the discarder read, when it stated one.
  * @returns What was removed, or why nothing was.
  */
 function discardUnderLease(
+	vault: string,
 	location: SemanticBoardLocation,
 	expected: number | undefined,
 ):
 	| Omit<Extract<SemanticDiscardResult, { outcome: "discarded" }>, "heldAs">
 	| SemanticWriteRejection {
-	const before = boardBefore(location, expected);
+	const before = boardBefore(vault, location, expected);
 	if (!("ok" in before)) {
 		return before;
 	}
@@ -94,7 +96,7 @@ async function discardSemanticBoard(
 	command: SemanticDiscardCommand,
 ): Promise<SemanticDiscardResult> {
 	const result = await underBoardLease(command, (location) =>
-		discardUnderLease(location, command.expectedVersion),
+		discardUnderLease(command.vault, location, command.expectedVersion),
 	);
 	if (result.outcome === "discarded" && claimWriterId(result.location.key) === result.heldAs) {
 		releaseClaim(result.location.key);

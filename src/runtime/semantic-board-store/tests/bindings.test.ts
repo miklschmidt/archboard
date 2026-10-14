@@ -10,7 +10,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 
@@ -43,7 +42,6 @@ beforeAll(async () => {
 		]),
 	);
 	store = await import("@/runtime/semantic-board-store/index");
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 afterAll(() => {
@@ -61,6 +59,7 @@ afterAll(() => {
  */
 async function create(input: Record<string, unknown>): Promise<void> {
 	const written = await store.writeSemanticBoard({
+		vault,
 		board: String(input["name"]),
 		writer,
 		transition: store.createBoardTransition(contract.BoardCreateInputSchema.parse(input)),
@@ -74,7 +73,7 @@ async function create(input: Record<string, unknown>): Promise<void> {
  * @returns The saved family.
  */
 function read(board: string): ContractModule.SemanticBoard {
-	const result = store.readSemanticBoard(board);
+	const result = store.readSemanticBoard(vault, board);
 	if (!result.ok) throw new Error(result.problem);
 	return result.board;
 }
@@ -159,6 +158,7 @@ test("a binding a frozen variant carries is not reported once it is history", as
 
 	const baseline = read("rebound-system").variants[0]!.name;
 	const branched = await store.writeSemanticBoard({
+		vault,
 		board: "rebound-system",
 		writer,
 		expectedVersion: read("rebound-system").version,
@@ -168,6 +168,7 @@ test("a binding a frozen variant carries is not reported once it is history", as
 	});
 	expect(branched.outcome).toBe("applied");
 	const rebound = await store.writeSemanticBoard({
+		vault,
 		board: "rebound-system",
 		writer,
 		expectedVersion: read("rebound-system").version,
@@ -180,6 +181,7 @@ test("a binding a frozen variant carries is not reported once it is history", as
 	});
 	expect(rebound.outcome).toBe("applied");
 	const adopted = await store.writeSemanticBoard({
+		vault,
 		board: "rebound-system",
 		writer,
 		expectedVersion: read("rebound-system").version,
@@ -207,6 +209,7 @@ test("a binding on a draft is ahead of the code until adoption says the code is 
 	// A proposal names where code will live; nothing claims it is there yet.
 	expect(bindingFindings("planned-system")).toEqual([]);
 	const adopted = await store.writeSemanticBoard({
+		vault,
 		board: "planned-system",
 		writer,
 		expectedVersion: read("planned-system").version,

@@ -8,7 +8,6 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 
@@ -21,7 +20,6 @@ const writer = { kind: "agent" as const };
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 afterAll(() => {
@@ -37,6 +35,7 @@ afterAll(() => {
  */
 async function create(input: Record<string, unknown>): Promise<void> {
 	const written = await store.writeSemanticBoard({
+		vault,
 		board: String(input["name"]),
 		writer,
 		transition: store.createBoardTransition(contract.BoardCreateInputSchema.parse(input)),
@@ -53,6 +52,7 @@ async function create(input: Record<string, unknown>): Promise<void> {
  */
 async function branch(on: string, from: string, name: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board: on,
 		writer,
 		expectedVersion: read(on).version,
@@ -71,6 +71,7 @@ async function branch(on: string, from: string, name: string) {
  */
 async function restate(on: string, variant: string, node: Record<string, unknown>) {
 	return store.writeSemanticBoard({
+		vault,
 		board: on,
 		writer,
 		expectedVersion: read(on).version,
@@ -88,6 +89,7 @@ async function restate(on: string, variant: string, node: Record<string, unknown
  */
 async function adopt(on: string, variant: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board: on,
 		writer,
 		expectedVersion: read(on).version,
@@ -325,7 +327,7 @@ test("a link a proposal introduces is reported, because a proposal can still be 
  * @returns The saved family.
  */
 function read(board: string): ContractModule.SemanticBoard {
-	const result = store.readSemanticBoard(board);
+	const result = store.readSemanticBoard(vault, board);
 	if (!result.ok) throw new Error(result.problem);
 	return result.board;
 }

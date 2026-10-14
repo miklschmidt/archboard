@@ -31,7 +31,6 @@ import {
 	type NoSuchDraft,
 	type PlanRefused,
 } from "@/runtime/code-check/index";
-import { requireVaultRoot } from "@/runtime/engine/board";
 import { createBehindReading } from "@/runtime/history-lens/index";
 import { queryString } from "@/server/archboard/lib/request-board";
 import {
@@ -41,6 +40,7 @@ import {
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
 import { errorMessage } from "@/shared/thrown-error/index";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * What one request asks for: the draft to read where a board has one, the
@@ -87,7 +87,7 @@ const codeFindings = createCodeFindingsMemory();
 async function runCodeCheck(
 	request: CodeCheckRequest,
 ): Promise<CodeCheckAnswer | CodeCheckRefusal> {
-	const vault = requireVaultRoot();
+	const vault = serverVault();
 	const read = readBoardsToCheck(vault, request.variant);
 	if (!read.ok) return read;
 	const plans = await readPlans(request.plans, request.signal);

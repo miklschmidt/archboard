@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
@@ -30,14 +29,13 @@ const SEED = {
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 beforeEach(async () => {
 	boards += 1;
 	board = `handled-${boards}`;
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(
@@ -56,7 +54,7 @@ afterAll(() => {
  * @returns The board.
  */
 const readBack = (): ContractModule.SemanticBoard => {
-	const read = store.readSemanticBoard(board);
+	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error(read.problem);
 	return read.board;
 };
@@ -74,6 +72,7 @@ const held = (): ContractModule.VariantContent => readBack().variants[0]!.conten
  */
 const edit = async (stated: Record<string, unknown>) => {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: readBack().version,

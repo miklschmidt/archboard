@@ -66,6 +66,7 @@ function readVault(): {
 			.flatMap((file) => {
 				copyFileSync(join(vault, file), join(copy, file));
 				const read = readSemanticBoardAt(
+					copy,
 					locateSemanticBoard(file.slice(0, -".semantic.json".length), copy),
 					configured,
 				);

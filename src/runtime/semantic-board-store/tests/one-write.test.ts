@@ -3,7 +3,6 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 // config.ts snapshots the environment at import time, so this owner takes its
@@ -25,6 +24,7 @@ const writer = { id: "test-agent", kind: "agent" as const };
  */
 async function create(name: string, stated: Record<string, unknown> = {}) {
 	return store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
@@ -41,8 +41,9 @@ async function create(name: string, stated: Record<string, unknown> = {}) {
  * @returns What the write did.
  */
 async function edit(name: string, stated: Record<string, unknown>, expectedVersion?: number) {
-	const read = store.readSemanticBoard(name);
+	const read = store.readSemanticBoard(vault, name);
 	return store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		transition: store.editVariantTransition(contract.VariantEditInputSchema.parse(stated)),
@@ -56,8 +57,6 @@ const namesOn = (board: ContractModule.SemanticBoard) =>
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 
@@ -83,7 +82,7 @@ describe("one thing asked for is one write", () => {
 					{ name: "Host", kind: "service" },
 				],
 			});
-			const read = store.readSemanticBoard(name);
+			const read = store.readSemanticBoard(vault, name);
 			const inner = read.ok
 				? read.board.variants[0]!.content.nodes.find((n) => n.name === "Inner")!
 				: undefined;
@@ -117,7 +116,7 @@ describe("one thing asked for is one write", () => {
 			],
 			edges: [{ from: "Left", to: "Right", kind: "call" }],
 		});
-		const read = store.readSemanticBoard("overlap");
+		const read = store.readSemanticBoard(vault, "overlap");
 		const edgeId = read.ok ? read.board.variants[0]!.content.edges[0]!.id : "";
 		const result = await edit("overlap", { removeNodes: ["Right"], removeEdges: [edgeId] });
 		expect(result.outcome).toBe("applied");
@@ -134,7 +133,7 @@ describe("one thing asked for is one write", () => {
 			],
 			edges: [{ from: "Driver", to: "Old", kind: "call", label: "place grid" }],
 		});
-		const read = store.readSemanticBoard("moved-endpoint");
+		const read = store.readSemanticBoard(vault, "moved-endpoint");
 		const before = read.ok ? read.board.variants[0]!.content.edges[0]! : undefined;
 		const result = await edit("moved-endpoint", {
 			removeNodes: ["Old"],
@@ -160,9 +159,9 @@ describe("one thing asked for is one write", () => {
 			],
 			edges: [{ from: "Driver", to: "Old", kind: "call", label: "place grid" }],
 		});
-		const read = store.readSemanticBoard("stranded-endpoint");
+		const read = store.readSemanticBoard(vault, "stranded-endpoint");
 		const before = read.ok ? read.board.variants[0]!.content.edges[0]! : undefined;
-		const location = store.locateSemanticBoard("stranded-endpoint");
+		const location = store.locateSemanticBoard("stranded-endpoint", vault);
 		const bytes = readFileSync(location.file, "utf-8");
 		const refused = await edit("stranded-endpoint", {
 			removeNodes: ["Old"],
@@ -192,9 +191,9 @@ describe("one thing asked for is one write", () => {
 			],
 			edges: [{ from: "Driver", to: "Grid", kind: "call", label: "place grid" }],
 		});
-		const read = store.readSemanticBoard("remove-and-restate");
+		const read = store.readSemanticBoard(vault, "remove-and-restate");
 		const before = read.ok ? read.board.variants[0]!.content.edges[0]! : undefined;
-		const location = store.locateSemanticBoard("remove-and-restate");
+		const location = store.locateSemanticBoard("remove-and-restate", vault);
 		const bytes = readFileSync(location.file, "utf-8");
 		const refused = await edit("remove-and-restate", {
 			removeEdges: [before?.id],

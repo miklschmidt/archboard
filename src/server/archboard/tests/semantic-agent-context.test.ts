@@ -33,24 +33,19 @@ beforeAll(async () => {
 	server = await import("@/server/archboard/index");
 	store = await import("@/runtime/semantic-board-store/index");
 	contract = await import("@/shared/semantic-board/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	//
-	// The vault is read from the environment once, when the config module is
-	// first imported. Setting it at the top of this file is enough when the file
-	// has the process to itself, and not enough when it shares one: another file
-	// that imported the config first has already fixed the answer, and this
-	// owner's writes would land in whatever vault the caller happened to have —
-	// a person's own, with their boards in it. Refusing here turns that into a
-	// failure nobody can miss instead of a write nobody sees.
-	const landing = store.locateSemanticBoard(BOARD).file;
-	if (!landing.startsWith(vault)) {
+	// The server reads its vault from the environment once, when the config module is
+	// first imported. A file that shares the process with one that imported it first
+	// would serve whatever vault the caller happened to have, so refuse that loudly.
+	const { ARCHBOARD_VAULT } = await import("@/runtime/engine/config");
+	if (ARCHBOARD_VAULT !== vault) {
 		throw new Error(
-			`This owner writes boards, and its vault is not the one it made: ${landing} is outside ` +
-				`${vault}. Run it in its own process — \`bun test --isolate ${import.meta.file}\` — ` +
+			`The server under test reads its vault from the environment, and it read ${ARCHBOARD_VAULT} ` +
+				`rather than ${vault}. Run it in its own process — \`bun test --isolate ${import.meta.file}\` — ` +
 				"rather than alongside a file that resolved the vault first.",
 		);
 	}
 	await store.writeSemanticBoard({
+		vault,
 		board: BOARD,
 		writer,
 		transition: store.createBoardTransition(
@@ -87,7 +82,7 @@ afterAll(() => {
  * @returns The board.
  */
 function board(): ContractModule.SemanticBoard {
-	const answer = store.readSemanticBoard(BOARD);
+	const answer = store.readSemanticBoard(vault, BOARD);
 	if (!answer.ok) {
 		throw new Error(answer.problem);
 	}
@@ -193,6 +188,7 @@ test("an id the variant no longer holds is reported rather than passed on", () =
 
 test("a proposal reaches the agent with its differences derived, not authored", async () => {
 	await store.writeSemanticBoard({
+		vault,
 		board: BOARD,
 		writer,
 		expectedVersion: board().version,
@@ -204,6 +200,7 @@ test("a proposal reaches the agent with its differences derived, not authored", 
 		),
 	});
 	await store.writeSemanticBoard({
+		vault,
 		board: BOARD,
 		writer,
 		expectedVersion: board().version,
@@ -243,6 +240,7 @@ test("an edit that landed and left a proposal in disagreement carries its repair
 	// The proposal renames the node one way and the state it came from renames
 	// it another. The second write is the one that lands and leaves work behind.
 	await store.writeSemanticBoard({
+		vault,
 		board: BOARD,
 		writer,
 		expectedVersion: board().version,
@@ -254,6 +252,7 @@ test("an edit that landed and left a proposal in disagreement carries its repair
 		),
 	});
 	const landed = await store.writeSemanticBoard({
+		vault,
 		board: BOARD,
 		writer,
 		expectedVersion: board().version,
@@ -343,6 +342,7 @@ test("the context an operation delivers is the board's grounding, not a summary 
 test("the description reads as sentences, because a coordinator says it out loud", async () => {
 	const unterminated = "What the pipeline becomes once a board is meaning rather than a drawing";
 	await store.writeSemanticBoard({
+		vault,
 		board: BOARD,
 		writer,
 		expectedVersion: board().version,

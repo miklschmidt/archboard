@@ -24,6 +24,7 @@ import { logger } from "@/runtime/engine/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { locateSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { broadcast, onBoardBroadcast } from "@/server/archboard/lib/pane-registry";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * What a board's file looked like when it was last seen, by board key.
@@ -48,7 +49,7 @@ let stopObserving: (() => void) | null = null;
  */
 function fingerprintOf(board: string): string {
 	try {
-		const entry = fs.statSync(locateSemanticBoard(board).file, { bigint: true });
+		const entry = fs.statSync(locateSemanticBoard(board, serverVault()).file, { bigint: true });
 		return `${entry.ino}:${entry.size}:${entry.mtimeNs}`;
 	} catch {
 		// No file is a fingerprint too: a board that was deleted under an open

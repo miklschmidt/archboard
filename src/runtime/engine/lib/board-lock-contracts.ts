@@ -47,6 +47,8 @@ interface LockHold {
 }
 
 interface LockRequest {
+	/** The vault root the board lives in; the lease is a file under it. */
+	readonly vault: string;
 	/** Normalized by the acquisition owner so aliases name one mutex. */
 	readonly board: string;
 	readonly holder: Readonly<{
@@ -85,6 +87,8 @@ interface ClaimRevocation {
 }
 
 interface ClaimEntry {
+	/** The vault the claimed board lives in. */
+	vault: string;
 	holder: LockHolder;
 	expires: number;
 	timer: ReturnType<typeof setInterval> | null;

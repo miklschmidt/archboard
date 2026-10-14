@@ -34,6 +34,7 @@ import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-con
 import type { SemanticAgentSwitch } from "@/runtime/codex-semantic-context";
 import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
 import { arrivedOnBoard, noBrowserBody } from "@/server/archboard/lib/pane-routes";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * Point one pane at one board.
@@ -132,7 +133,7 @@ function shownName(pane: PaneRegistration, address: string | null): string | nul
  * @returns The address to show, or null once the refusal has been sent.
  */
 function shownIdentity(identity: BoardIdentity, res: Response): BoardIdentity | null {
-	const read = readSemanticBoard(identity.board);
+	const read = readSemanticBoard(serverVault(), identity.board);
 	if (!read.ok) {
 		res.status(read.code === "BOARD_MISSING" ? 404 : 422).json({
 			success: false,

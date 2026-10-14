@@ -22,7 +22,7 @@ test("announcements isolate passenger failure and report release at once", async
 		lock.onBoardSweep(() => {
 			throw new Error("note-watch fixture failed");
 		});
-		lock.watchBoardLocks(() => ["passenger"]);
+		lock.watchBoardLocks({ vault, boards: () => ["passenger"] });
 		jest.advanceTimersByTime(LOCK_WATCH_MS);
 		expect(
 			warnings.some(([message]) => String(message).includes("lock watch continues")),
@@ -35,6 +35,7 @@ test("announcements isolate passenger failure and report release at once", async
 			news.push({ board, id: holder?.id ?? null, held: holder !== null }),
 		);
 		await lock.holdBoard({
+			vault,
 			board: "broadcast",
 			holder: { id: "pane", kind: "human" },
 			waitMs: 0,
@@ -42,19 +43,20 @@ test("announcements isolate passenger failure and report release at once", async
 		expect(news.at(-1)).toEqual({ board: "broadcast", id: "pane", held: true });
 		const beforeRenew = news.length;
 		await lock.holdBoard({
+			vault,
 			board: "broadcast",
 			holder: { id: "pane", kind: "human" },
 			waitMs: 0,
 		});
 		expect(news.length).toBe(beforeRenew);
 		// Release news goes out with the release, not after a linger (TASK-153).
-		lock.releaseHold("broadcast", "pane");
+		lock.releaseHold(vault, "broadcast", "pane");
 		expect(news.at(-1)).toEqual({ board: "broadcast", id: null, held: false });
 
 		const start = news.length;
 		for (let index = 0; index < 8; index += 1) {
 			await lock.withBoardLock(
-				{ board: "broadcast", holder: { id: `fan-${index}`, kind: "agent" } },
+				{ vault, board: "broadcast", holder: { id: `fan-${index}`, kind: "agent" } },
 				() => undefined,
 			);
 		}
@@ -66,7 +68,7 @@ test("announcements isolate passenger failure and report release at once", async
 		lock.watchBoardLocks(null);
 		lock.onBoardSweep(null);
 		lock.onBoardLockChanged(null);
-		lock.releaseHold("broadcast", "pane");
+		lock.releaseHold(vault, "broadcast", "pane");
 		lock.releaseClaim("broadcast");
 		lock.forgetLockAnnouncements();
 		jest.useRealTimers();

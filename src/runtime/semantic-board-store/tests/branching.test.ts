@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
@@ -23,14 +22,13 @@ const PROPOSAL = "Queue in front";
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 beforeEach(async () => {
 	boards += 1;
 	board = `ancestry-${boards}`;
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(
@@ -59,7 +57,7 @@ afterAll(() => {
  * @returns The board.
  */
 function read(name: string) {
-	const answer = store.readSemanticBoard(name);
+	const answer = store.readSemanticBoard(vault, name);
 	if (!answer.ok) throw new Error(answer.problem);
 	return answer.board;
 }
@@ -73,6 +71,7 @@ function read(name: string) {
  */
 async function branch(on: string, from: string, name: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board: on,
 		writer,
 		expectedVersion: read(on).version,
@@ -126,6 +125,7 @@ test("a proposal is edited like any other variant, and its predecessor does not 
 	const before = read(board);
 	const baseline = before.variants[0]!;
 	const applied = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: before.version,
@@ -164,6 +164,7 @@ test("a branch is one version, written against the version it was asked for", as
 	// rather than applied to whatever the board says now, which is how one
 	// agent's proposal would quietly be derived from another's change.
 	const stale = await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: before.version,
@@ -187,7 +188,13 @@ test("an edit restates the summary of the variant it lands on, and a record refu
 	 * @returns What the write did.
 	 */
 	const write = async (transition: StoreModule.SemanticTransition) =>
-		store.writeSemanticBoard({ board, writer, expectedVersion: read(board).version, transition });
+		store.writeSemanticBoard({
+			vault,
+			board,
+			writer,
+			expectedVersion: read(board).version,
+			transition,
+		});
 	/**
 	 * Edit the board with one stated batch.
 	 * @param batch The batch.

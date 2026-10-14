@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 // Settling a disagreement about order rather than about a field.
@@ -28,14 +27,13 @@ let baseline = "";
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 beforeEach(async () => {
 	boards += 1;
 	board = `ordering-${boards}`;
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		transition: store.createBoardTransition(
@@ -49,6 +47,7 @@ beforeEach(async () => {
 	baseline = read().variants[0]!.name;
 	apiId = read().variants[0]!.content.nodes[0]!.id;
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -68,7 +67,7 @@ afterAll(() => {
  * @returns The board.
  */
 function read() {
-	const answer = store.readSemanticBoard(board);
+	const answer = store.readSemanticBoard(vault, board);
 	if (!answer.ok) throw new Error(answer.problem);
 	return answer.board;
 }
@@ -91,6 +90,7 @@ function variant(name: string) {
  */
 async function tellAFlow() {
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -125,6 +125,7 @@ async function tellAFlow() {
 async function retell(on: string, order: readonly number[]) {
 	const flow = variant(on).content.flows[0]!;
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -147,6 +148,7 @@ async function settleOrder(on: string, choices?: readonly number[]) {
 	const issues = variant(on).reconciliation?.issues ?? [];
 	const answering = choices === undefined ? issues : choices.map((at) => issues[at]!);
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -181,6 +183,7 @@ test("an order this proposal means is kept, and stays kept when the predecessor 
 	// And the decision is durable: something else the predecessor does next does
 	// not reopen an argument somebody has already settled.
 	await store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,
@@ -218,6 +221,7 @@ test("answering where one step sits is refused, because it places the others too
  */
 async function rename(on: string, to: string) {
 	return store.writeSemanticBoard({
+		vault,
 		board,
 		writer,
 		expectedVersion: read().version,

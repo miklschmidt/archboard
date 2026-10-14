@@ -81,6 +81,8 @@ interface SemanticWriter {
 
 /** One stated command against one board. */
 interface SemanticWriteCommand {
+	/** The root of the vault the board lives in. */
+	readonly vault: string;
 	/** The board name as typed. */
 	readonly board: string;
 	/** Who is writing. */
@@ -213,17 +215,19 @@ function admit(
  * The board as it stands, ready for the transition, or the refusal a caller
  * gets instead. A board that is simply not there yet is not a refusal: that is
  * what a create command expects to find.
+ * @param vault The vault root the board lives in.
  * @param location Where the board lives.
  * @param expected The version the writer stated, when it stated one.
  * @returns The board and its version, or why the write cannot go ahead.
  */
 function boardBefore(
+	vault: string,
 	location: SemanticBoardLocation,
 	expected: number | undefined,
 ):
 	| { readonly ok: true; readonly board: SemanticBoard | null; readonly version: number | null }
 	| SemanticWriteRejection {
-	const read = readSemanticBoardAtUnderLease(location);
+	const read = readSemanticBoardAtUnderLease(vault, location);
 	const unusable = unusableRefusal(location, read);
 	if (unusable !== null) {
 		return unusable;
@@ -381,7 +385,7 @@ function applyUnderLease(
 	if (missing !== null) {
 		return missing;
 	}
-	const before = boardBefore(location, command.expectedVersion);
+	const before = boardBefore(command.vault, location, command.expectedVersion);
 	if (!("ok" in before)) {
 		return before;
 	}
@@ -389,13 +393,16 @@ function applyUnderLease(
 	if (!candidate.ok) {
 		return rejected(location, before.version, candidate.code, candidate.problem);
 	}
-	const moved = relocation(location, before.board, candidate.board);
+	const moved = relocation(command.vault, location, before.board, candidate.board);
 	const checked = acceptable(moved.location, command, before.board, candidate.board, at);
 	if (!("board" in checked)) {
 		return { ...checked, version: before.version };
 	}
-	const written = underNewName(moved, { id: heldAs, kind: command.writer.kind }, () =>
-		persisted(moved, checked.board, before.version, candidate),
+	const written = underNewName(
+		command.vault,
+		moved,
+		{ id: heldAs, kind: command.writer.kind },
+		() => persisted(moved, checked.board, before.version, candidate),
 	);
 	return "outcome" in written
 		? written
@@ -419,7 +426,7 @@ function acceptable(
 	produced: SemanticBoard,
 	at: string,
 ): { readonly board: SemanticBoard } | Omit<SemanticWriteRejection, "version"> {
-	const configured = readSemanticBoardConfiguration();
+	const configured = readSemanticBoardConfiguration(command.vault);
 	const accepted = acceptedBoard(
 		before,
 		produced,
@@ -463,7 +470,7 @@ function versionRefusal(
 }
 
 /** Who is asking for a board's lease, and for which board. */
-type BoardLeaseAsk = Pick<SemanticWriteCommand, "board" | "writer" | "signal">;
+type BoardLeaseAsk = Pick<SemanticWriteCommand, "vault" | "board" | "writer" | "signal">;
 
 /**
  * How the lease is asked for: the board's key, the identity the write runs
@@ -475,6 +482,7 @@ type BoardLeaseAsk = Pick<SemanticWriteCommand, "board" | "writer" | "signal">;
  */
 function leaseRequest(key: string, ask: BoardLeaseAsk, admission: Admission): LockRequest {
 	return {
+		vault: ask.vault,
 		board: key,
 		holder: {
 			id: admission.id,
@@ -517,7 +525,7 @@ async function underBoardLease<Done extends { readonly outcome: "applied" | "dis
 	// located again only once the lease is held, so two processes creating
 	// "Payments" and "payments" on a case-sensitive filesystem take one lease
 	// in turn rather than resolving two absent paths of their own (ADR 0010).
-	const address = resolveSemanticBoard(ask.board);
+	const address = resolveSemanticBoard(ask.board, ask.vault);
 	const admission = admit(address.key, ask.writer);
 	if (!admission.ok) {
 		return {
@@ -530,7 +538,7 @@ async function underBoardLease<Done extends { readonly outcome: "applied" | "dis
 	}
 	try {
 		const result = await withBoardLock(leaseRequest(address.key, ask, admission), () =>
-			pass(locateSemanticBoard(address.name), admission.id),
+			pass(locateSemanticBoard(address.name, ask.vault), admission.id),
 		);
 		// Said here rather than carried through the pass inside the lease: the pass
 		// reads, checks, applies and writes, and an identity it takes but never uses

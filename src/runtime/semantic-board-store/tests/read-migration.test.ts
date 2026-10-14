@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import type * as LockModule from "@/runtime/engine/board-lock";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
@@ -58,7 +57,7 @@ function legacyBoard(name: string) {
 }
 
 function put(name: string, board: Record<string, unknown>): string {
-	const file = store.locateSemanticBoard(name).file;
+	const file = store.locateSemanticBoard(name, vault).file;
 	writeFileSync(file, `${JSON.stringify(board)}\n`);
 	return file;
 }
@@ -66,7 +65,6 @@ function put(name: string, board: Record<string, unknown>): string {
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
 	lock = await import("@/runtime/engine/board-lock");
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("migration-probe").file);
 });
 
 afterAll(() => {
@@ -79,7 +77,7 @@ test("read migrates every variant and persists one new board version", async () 
 	const name = "legacy-ordered";
 	const original = legacyBoard(name);
 	const file = put(name, original);
-	const result = await store.readSemanticBoard(name);
+	const result = await store.readSemanticBoard(vault, name);
 	expect(result.ok).toBe(true);
 	if (!result.ok) return;
 	const persisted = JSON.parse(readFileSync(file, "utf8"));
@@ -115,7 +113,7 @@ test("read migrates every variant and persists one new board version", async () 
 		1000, 4000, 3000,
 	]);
 	const migratedBytes = readFileSync(file, "utf8");
-	expect((await store.readSemanticBoard(name)).ok).toBe(true);
+	expect((await store.readSemanticBoard(vault, name)).ok).toBe(true);
 	expect(readFileSync(file, "utf8")).toBe(migratedBytes);
 });
 
@@ -152,7 +150,7 @@ test("invalid legacy content is refused without persisting an upgrade", async ()
 	variants[0]!.content.edges[0]!["order"] = -1;
 	const file = put(name, board);
 	const bytes = readFileSync(file, "utf8");
-	const result = await store.readSemanticBoard(name);
+	const result = await store.readSemanticBoard(vault, name);
 	expect(result.ok).toBe(false);
 	expect(readFileSync(file, "utf8")).toBe(bytes);
 });
@@ -161,11 +159,11 @@ test("a held board remains readable and migration waits for the holder to leave"
 	const name = "held-legacy";
 	const file = put(name, legacyBoard(name));
 	const bytes = readFileSync(file, "utf8");
-	const key = store.locateSemanticBoard(name).key;
+	const key = store.locateSemanticBoard(name, vault).key;
 	const holder = "other-agent";
-	await lock.holdBoard({ board: key, holder: { id: holder, kind: "agent", claimed: true } });
+	await lock.holdBoard({ vault, board: key, holder: { id: holder, kind: "agent", claimed: true } });
 	try {
-		const pending = await store.readSemanticBoard(name);
+		const pending = await store.readSemanticBoard(vault, name);
 		expect(pending.ok).toBe(true);
 		if (!pending.ok) return;
 		expect(pending.warnings.some((warning) => warning.code === "SCHEMA_MIGRATION_PENDING")).toBe(
@@ -174,9 +172,9 @@ test("a held board remains readable and migration waits for the holder to leave"
 		expect(pending.board.variants[0]?.content.nodes[0]?.order).toBe(1000);
 		expect(readFileSync(file, "utf8")).toBe(bytes);
 	} finally {
-		lock.releaseHold(key, holder);
+		lock.releaseHold(vault, key, holder);
 	}
-	const migrated = await store.readSemanticBoard(name);
+	const migrated = await store.readSemanticBoard(vault, name);
 	expect(migrated.ok).toBe(true);
 	expect(JSON.parse(readFileSync(file, "utf8")).schemaVersion).toBe(SEMANTIC_BOARD_SCHEMA_VERSION);
 });
@@ -186,7 +184,7 @@ test("a version without a registered path is refused without rewriting", async (
 	const board = { ...legacyBoard(name), schemaVersion: "2.1.5" };
 	const file = put(name, board);
 	const bytes = readFileSync(file, "utf8");
-	const result = await store.readSemanticBoard(name);
+	const result = await store.readSemanticBoard(vault, name);
 	expect(result.ok).toBe(false);
 	expect(readFileSync(file, "utf8")).toBe(bytes);
 });
@@ -194,7 +192,7 @@ test("a version without a registered path is refused without rewriting", async (
 test("known older contracts advance through compatibility steps", async () => {
 	const name = "old-compatible";
 	const file = put(name, { ...legacyBoard(name), schemaVersion: "2.0.0" });
-	const result = await store.readSemanticBoard(name);
+	const result = await store.readSemanticBoard(vault, name);
 	expect(result.ok).toBe(true);
 	expect(JSON.parse(readFileSync(file, "utf8")).schemaVersion).toBe(SEMANTIC_BOARD_SCHEMA_VERSION);
 });

@@ -21,7 +21,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { moveFileDurably, writeFileAtomic } from "@/runtime/engine/atomic-write";
-import { requireVaultRoot } from "@/runtime/engine/board";
 import { withBoardLockIfFreeSync, type HolderKind } from "@/runtime/engine/board-lock";
 import type { SemanticBoard } from "@/shared/semantic-board/index";
 import { boardFormerlyCalled } from "@/runtime/semantic-board-store/lib/former-names";
@@ -55,12 +54,14 @@ interface RelocationRefusal {
  * the key and the directory, and re-spells the file's own name; the
  * directories on the way are other boards' too and keep their spelling. Any
  * other change goes where the new name resolves.
+ * @param vault The vault root the board lives in.
  * @param location Where the board is now.
  * @param before The board as it stands, or null before there is one.
  * @param candidate The board as it would be.
  * @returns Where it is written, and whether that moves it.
  */
 function relocation(
+	vault: string,
 	location: SemanticBoardLocation,
 	before: SemanticBoard | null,
 	candidate: SemanticBoard,
@@ -72,7 +73,7 @@ function relocation(
 	const to =
 		address.key === location.key
 			? { ...address, file: respelled(location.file, address.name) }
-			: locateSemanticBoard(candidate.name);
+			: locateSemanticBoard(candidate.name, vault);
 	return { location: to, from: to.file === location.file ? null : location };
 }
 
@@ -92,6 +93,7 @@ function respelled(file: string, name: string): string {
  * taken. The write runs only once nothing else answers to the name and, when
  * the key changes, while this writer holds the new name's lease as well. A
  * write that keeps its name just runs.
+ * @param vault The vault root the board lives in.
  * @param moved Where the board goes, and where its file was when it moves.
  * @param holder Who is writing: the identity the board is held under, and its kind.
  * @param holder.id The identity.
@@ -100,6 +102,7 @@ function respelled(file: string, name: string): string {
  * @returns What the write answered, or why the name could not be taken.
  */
 function underNewName<Written>(
+	vault: string,
 	moved: Relocation,
 	holder: { readonly id: string; readonly kind: HolderKind },
 	write: () => Written,
@@ -112,8 +115,8 @@ function underNewName<Written>(
 	if (location.key === from.key) {
 		return fileTaken(moving) ?? write();
 	}
-	const held = withBoardLockIfFreeSync({ board: moving.location.key, holder }, () => {
-		return takenBy(moving) ?? write();
+	const held = withBoardLockIfFreeSync({ vault, board: moving.location.key, holder }, () => {
+		return takenBy(vault, moving) ?? write();
 	});
 	return held.acquired
 		? held.value
@@ -128,21 +131,25 @@ function underNewName<Written>(
 /**
  * Whether another board already answers to the new name: one that carries it,
  * or one that carried it before a rename of its own and still opens by it.
+ * @param vault The vault root the board lives in.
  * @param moving Where the board goes, and where it was.
  * @param moving.location Where the board goes.
  * @param moving.from Where its file is now.
  * @returns The refusal, or null when the name is free.
  */
-function takenBy(moving: {
-	readonly location: SemanticBoardLocation;
-	readonly from: SemanticBoardLocation;
-}): RelocationRefusal | null {
+function takenBy(
+	vault: string,
+	moving: {
+		readonly location: SemanticBoardLocation;
+		readonly from: SemanticBoardLocation;
+	},
+): RelocationRefusal | null {
 	const { location, from } = moving;
 	const file = fileTaken(moving);
 	if (file !== null) {
 		return file;
 	}
-	const formerly = boardFormerlyCalled(location.key, requireVaultRoot(), from.key);
+	const formerly = boardFormerlyCalled(location.key, vault, from.key);
 	if (formerly === null) {
 		return null;
 	}

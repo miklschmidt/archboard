@@ -11,6 +11,7 @@ import { sleep, watchBoardLocks } from "@/runtime/engine/board-lock";
 import { PANE_SETTLE_CAP_MS } from "@/shared/timing/timing";
 import type { BrowserConnectionInstance } from "@/server/archboard/codex-workbench-browser";
 import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "@/server/codex-workbench";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 // WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the board file
 // is the board and the server holds no copy of one (ADR 0015, ADR 0023).
@@ -221,11 +222,14 @@ function sendLayoutToPane(clientId: string, message: WebSocketMessage): boolean 
  * looking at and by no other.
  */
 function syncLockWatch(): void {
-	watchBoardLocks(
-		clients.size > 0
-			? () => [...new Set([...paneBoards.values()].flatMap((key) => aggregateOf(key) ?? []))]
-			: null,
-	);
+	/**
+	 * The boards on screen, as the aggregates their panes show.
+	 * @returns Their keys.
+	 */
+	const boards = (): string[] => [
+		...new Set([...paneBoards.values()].flatMap((key) => aggregateOf(key) ?? [])),
+	];
+	watchBoardLocks(clients.size > 0 ? { vault: serverVault(), boards } : null);
 }
 
 /**
@@ -260,7 +264,7 @@ function boardForNewPane(clientId: string): string | null {
 	// Nothing to copy: the vault's first board, so a tab opened on an empty
 	// address shows an architecture rather than an empty frame. A vault with no
 	// board at all leaves the pane on none, and the navigator says so.
-	const first = listSemanticBoards()[0];
+	const first = listSemanticBoards(serverVault())[0];
 	return first === undefined ? null : first.key;
 }
 
@@ -282,7 +286,7 @@ function stillThere(key: string): boolean {
 	if (identity === null) {
 		return false;
 	}
-	const read = readSemanticBoard(identity.board);
+	const read = readSemanticBoard(serverVault(), identity.board);
 	// A bare key names the board, whatever it opens: on a board nobody has built
 	// that is its draft, or a refusal the pane draws naming the drafts to choose
 	// from. Either is the board it was on, said on screen, never another board.

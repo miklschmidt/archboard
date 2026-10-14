@@ -24,6 +24,7 @@ import {
 	semanticBoardContext,
 } from "@/server/archboard/lib/semantic-board-context";
 import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
+import { serverVault } from "@/server/archboard/lib/server-vault";
 
 type FreshBrief = ReturnType<CodexWorkbenchSessionComponents["semanticPublisher"]["freshBrief"]>;
 
@@ -126,7 +127,7 @@ interface BoardReading {
  * @returns The reading.
  */
 function readBoardForContext(asked: string, pane: SemanticPaneContext | null): BoardReading {
-	const read = readSemanticBoard(asked);
+	const read = readSemanticBoard(serverVault(), asked);
 	if (!read.ok) {
 		return {
 			architecture: NOTHING_READ,
@@ -433,7 +434,7 @@ function linkedIdentities(active: SemanticInputOwners | null): LinkedIdentities 
  * @returns The claim and the current step.
  */
 function claimOf(contextBoard: string): Required<Pick<SemanticContextInput, "claim" | "doing">> {
-	const holder = boardLockState(contextBoard);
+	const holder = boardLockState(serverVault(), contextBoard);
 	const doing = recentDoing(contextBoard).at(-1)?.doing ?? null;
 	return {
 		claim: {

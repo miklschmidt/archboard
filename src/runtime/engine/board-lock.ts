@@ -68,5 +68,6 @@ export {
 	recordLockCommit,
 	releaseHold,
 	watchBoardLocks,
+	type WatchedBoards,
 } from "@/runtime/engine/lib/board-lock-state";
 export { forgetLockAnnouncements };

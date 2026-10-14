@@ -58,7 +58,7 @@ function vaultBoards(): {
 			.map((file) => {
 				copyFileSync(join(vault, file), join(copy, file));
 				const name = file.slice(0, -".semantic.json".length);
-				const read = readSemanticBoardAt(locateSemanticBoard(name, copy), configured);
+				const read = readSemanticBoardAt(copy, locateSemanticBoard(name, copy), configured);
 				if (!read.ok) throw new Error(`the vault board ${file} does not parse`);
 				const current = read.board.variants.find(({ id }) => id === read.board.current);
 				if (current === undefined)

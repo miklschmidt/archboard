@@ -10,7 +10,6 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
 import type * as ContractModule from "@/shared/semantic-board/index";
 
 // config.ts snapshots the environment at import time, so this owner takes its
@@ -32,6 +31,7 @@ const writer = { id: "test-agent", kind: "agent" as const };
  */
 async function create(name: string, stated: Record<string, unknown> = {}) {
 	return store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
@@ -48,8 +48,9 @@ async function create(name: string, stated: Record<string, unknown> = {}) {
  * @returns What the write did.
  */
 async function edit(name: string, stated: Record<string, unknown>, expectedVersion?: number) {
-	const read = store.readSemanticBoard(name);
+	const read = store.readSemanticBoard(vault, name);
 	return store.writeSemanticBoard({
+		vault,
 		board: name,
 		writer,
 		transition: store.editVariantTransition(contract.VariantEditInputSchema.parse(stated)),
@@ -63,8 +64,6 @@ const namesOn = (board: ContractModule.SemanticBoard) =>
 
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	// Where this owner's boards actually land, asked rather than assumed.
-	ownVaultOrRefuse(vault, store.locateSemanticBoard("where this owner writes").file);
 	contract = await import("@/shared/semantic-board/index");
 });
 
@@ -88,7 +87,7 @@ describe("the semantic board aggregate", () => {
 		});
 		expect(written.outcome).toBe("applied");
 
-		const read = store.readSemanticBoard("round-trip");
+		const read = store.readSemanticBoard(vault, "round-trip");
 		expect(read.ok).toBe(true);
 		if (!read.ok) return;
 		expect(read.board.version).toBe(1);
@@ -131,7 +130,7 @@ describe("the semantic board aggregate", () => {
 		const fresh = (await import(
 			`@/runtime/semantic-board-store/index?restart=${Date.now()}`
 		)) as typeof StoreModule;
-		const read = fresh.readSemanticBoard("restart");
+		const read = fresh.readSemanticBoard(vault, "restart");
 		expect(read.ok && namesOn(read.board)).toEqual(["Vault"]);
 	});
 
@@ -147,7 +146,7 @@ describe("the semantic board aggregate", () => {
 
 	test("a write from a stale read is refused and changes nothing on disk", async () => {
 		await create("stale", { nodes: [{ name: "Only", kind: "module" }] });
-		const location = store.locateSemanticBoard("stale");
+		const location = store.locateSemanticBoard("stale", vault);
 		const before = readFileSync(location.file, "utf-8");
 
 		const refused = await edit("stale", { nodes: [{ name: "Second", kind: "module" }] }, 99);
@@ -160,7 +159,7 @@ describe("the semantic board aggregate", () => {
 
 	test("a write that would leave the board incoherent changes nothing on disk", async () => {
 		await create("incoherent", { nodes: [{ name: "Held", kind: "module" }] });
-		const location = store.locateSemanticBoard("incoherent");
+		const location = store.locateSemanticBoard("incoherent", vault);
 		const before = readFileSync(location.file, "utf-8");
 
 		const refused = await edit("incoherent", {
@@ -173,9 +172,9 @@ describe("the semantic board aggregate", () => {
 	test("a second board is untouched by a write to the first", async () => {
 		await create("neighbour-a", { nodes: [{ name: "A", kind: "module" }] });
 		await create("neighbour-b", { nodes: [{ name: "B", kind: "module" }] });
-		const other = readFileSync(store.locateSemanticBoard("neighbour-b").file, "utf-8");
+		const other = readFileSync(store.locateSemanticBoard("neighbour-b", vault).file, "utf-8");
 		await edit("neighbour-a", { nodes: [{ name: "A2", kind: "module" }] });
-		expect(readFileSync(store.locateSemanticBoard("neighbour-b").file, "utf-8")).toBe(other);
+		expect(readFileSync(store.locateSemanticBoard("neighbour-b", vault).file, "utf-8")).toBe(other);
 	});
 
 	test("creating a board that is already there is refused", async () => {
@@ -185,9 +184,9 @@ describe("the semantic board aggregate", () => {
 	});
 
 	test("a file that is not a coherent board is refused rather than read around", async () => {
-		const location = store.locateSemanticBoard("broken");
+		const location = store.locateSemanticBoard("broken", vault);
 		writeFileSync(location.file, '{"kind":"semantic-board"}\n');
-		const read = store.readSemanticBoard("broken");
+		const read = store.readSemanticBoard(vault, "broken");
 		expect(read.ok === false && read.code).toBe("BOARD_UNREADABLE");
 		const refused = await edit("broken", { nodes: [{ name: "X", kind: "module" }] });
 		expect(refused.outcome === "rejected" && refused.code).toBe("BOARD_UNREADABLE");
@@ -204,7 +203,7 @@ describe("the semantic board aggregate", () => {
 describe("identity across edits", () => {
 	test("renaming a node keeps its id", async () => {
 		await create("renaming", { nodes: [{ name: "Old", kind: "module" }] });
-		const first = store.readSemanticBoard("renaming");
+		const first = store.readSemanticBoard(vault, "renaming");
 		const id = first.ok ? first.board.variants[0]!.content.nodes[0]!.id : "";
 		const renamed = await edit("renaming", { nodes: [{ id, name: "New", kind: "module" }] });
 		expect(renamed.outcome).toBe("applied");
@@ -214,7 +213,7 @@ describe("identity across edits", () => {
 
 	test("a node removed and written again is a new node, not the old one back", async () => {
 		await create("reborn", { nodes: [{ name: "Gone", kind: "module" }] });
-		const before = store.readSemanticBoard("reborn");
+		const before = store.readSemanticBoard(vault, "reborn");
 		const oldId = before.ok ? before.board.variants[0]!.content.nodes[0]!.id : "";
 		await edit("reborn", { removeNodes: ["Gone"] });
 		const again = await edit("reborn", { nodes: [{ name: "Gone", kind: "module" }] });
@@ -230,7 +229,7 @@ describe("identity across edits", () => {
 		});
 		expect(refused.outcome === "rejected" && refused.code).toBe("UNKNOWN_NODE");
 		expect(refused.outcome === "rejected" && refused.problem).toContain("Leave the id out");
-		const read = store.readSemanticBoard("typo");
+		const read = store.readSemanticBoard(vault, "typo");
 		expect(read.ok && namesOn(read.board)).toEqual(["Real"]);
 	});
 
@@ -253,7 +252,7 @@ describe("identity across edits", () => {
 		// rather than reached through an edit, which would have replaced one with
 		// the other by name.
 		await create("ambiguous", { nodes: [{ name: "Shell", kind: "service" }] });
-		const location = store.locateSemanticBoard("ambiguous");
+		const location = store.locateSemanticBoard("ambiguous", vault);
 		const board = JSON.parse(readFileSync(location.file, "utf-8"));
 		board.variants[0].content.nodes.push(
 			{ id: "cl1", order: 2000, name: "Client", kind: "module" },
@@ -274,13 +273,15 @@ describe("one writer at a time, over the whole board", () => {
 		await create("claimed", { nodes: [{ name: "First", kind: "module" }] });
 		const lock = await import("@/runtime/engine/board-lock");
 		const { claim } = await lock.claimBoard({
-			board: store.locateSemanticBoard("claimed").key,
+			vault,
+			board: store.locateSemanticBoard("claimed", vault).key,
 			reason: "restructuring the board",
 		});
 		try {
 			// A different per-write identity. The lease is the claim's, so this is
 			// the same writer as far as the board is concerned and is admitted.
 			const written = await store.writeSemanticBoard({
+				vault,
 				board: "claimed",
 				writer: { id: "some-other-agent", kind: "agent" },
 				transition: store.editVariantTransition(
@@ -289,27 +290,29 @@ describe("one writer at a time, over the whole board", () => {
 				expectedVersion: 1,
 			});
 			expect(written.outcome).toBe("applied");
-			expect(lock.claimOn(store.locateSemanticBoard("claimed").key)?.holder.id).toBe(
+			expect(lock.claimOn(store.locateSemanticBoard("claimed", vault).key)?.holder.id).toBe(
 				claim.holder.id,
 			);
 		} finally {
-			lock.releaseClaim(store.locateSemanticBoard("claimed").key);
+			lock.releaseClaim(store.locateSemanticBoard("claimed", vault).key);
 		}
 	}, 30_000);
 
 	test("a write is refused while somebody else holds the board", async () => {
 		await create("busy", { nodes: [{ name: "Held", kind: "module" }] });
 		const lock = await import("@/runtime/engine/board-lock");
-		const key = store.locateSemanticBoard("busy").key;
+		const key = store.locateSemanticBoard("busy", vault).key;
 		const hold = await lock.holdBoard({
+			vault,
 			board: key,
 			holder: { id: "the-other-writer", kind: "human" },
 			leaseMs: 30_000,
 		});
 		try {
-			const location = store.locateSemanticBoard("busy");
+			const location = store.locateSemanticBoard("busy", vault);
 			const before = readFileSync(location.file, "utf-8");
 			const refused = await store.writeSemanticBoard({
+				vault,
 				board: "busy",
 				writer: { id: "me", kind: "agent" },
 				transition: store.editVariantTransition(
@@ -320,7 +323,7 @@ describe("one writer at a time, over the whole board", () => {
 			expect(refused.outcome === "rejected" && refused.code).toBe("BOARD_HELD");
 			expect(readFileSync(location.file, "utf-8")).toBe(before);
 		} finally {
-			lock.releaseHold(key, hold.holder.id);
+			lock.releaseHold(vault, key, hold.holder.id);
 		}
 	}, 30_000);
 });
@@ -358,6 +361,7 @@ describe("where a board is allowed to be", () => {
 describe("a board is the board its address names", () => {
 	test("a create whose stated name is not the address it is written to is refused", async () => {
 		const refused = await store.writeSemanticBoard({
+			vault,
 			board: "target-location",
 			writer,
 			transition: store.createBoardTransition(
@@ -365,8 +369,8 @@ describe("a board is the board its address names", () => {
 			),
 		});
 		expect(refused.outcome === "rejected" && refused.code).toBe("BOARD_MISADDRESSED");
-		expect(store.readSemanticBoard("target-location").ok).toBe(false);
-		expect(store.readSemanticBoard("declared-name").ok).toBe(false);
+		expect(store.readSemanticBoard(vault, "target-location").ok).toBe(false);
+		expect(store.readSemanticBoard(vault, "declared-name").ok).toBe(false);
 	});
 });
 
@@ -383,7 +387,11 @@ describe("a write says which identity it held the board under", () => {
 		// them apart, and after ADR 0023 "an agent wrote it" tells it nothing.
 		expect(first.heldAs).not.toBe(second.heldAs);
 
-		const claimed = await lock.claimBoard({ board: "held-as", reason: "settling the ingest" });
+		const claimed = await lock.claimBoard({
+			vault,
+			board: "held-as",
+			reason: "settling the ingest",
+		});
 		const third = await edit("held-as", { nodes: [{ name: "Store", kind: "datastore" }] });
 		const fourth = await edit("held-as", { nodes: [{ name: "Ledger", kind: "service" }] });
 		if (third.outcome !== "applied" || fourth.outcome !== "applied") {

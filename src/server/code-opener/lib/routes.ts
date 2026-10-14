@@ -126,13 +126,14 @@ export interface CodeOpenerRouteDependencies {
  * proposal's binding is read off the proposal rather than off whatever is
  * current: a person following code from a draft lands in the code that draft
  * names (ADR 0023).
+ * @param vault The vault root the board lives in.
  * @param boardKey The board the node is on, variant and all.
  * @param subjectId The node whose binding is wanted.
  * @returns The binding, or which of board, node or binding was missing.
  */
-function canonicalBinding(boardKey: string, subjectId: string): BindingLookup {
+function canonicalBinding(vault: string, boardKey: string, subjectId: string): BindingLookup {
 	const address = boardAddressOf(boardKey);
-	const read = readSemanticBoard(address.board);
+	const read = readSemanticBoard(vault, address.board);
 	if (!read.ok) {
 		return { ok: false, code: "BOARD_NOT_FOUND", error: read.problem };
 	}
@@ -173,8 +174,7 @@ function boardAddressOf(key: string): { board: string; variant: string | undefin
 	return { board: key.slice(0, mark), variant: variant === "" ? undefined : variant };
 }
 
-const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
-	bindingForElement: canonicalBinding,
+const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement"> = {
 	/**
 	 * Resolves a binding against a fresh checkout snapshot limited to that binding.
 	 * @param binding The code binding to resolve.
@@ -421,13 +421,27 @@ function parseActivationRequest(request: Request): ActivationRequest {
 
 /**
  * Builds the opener routes: settings read, save, reset and test, and code-target activation.
+ * @param vault Names the vault root whose boards carry the bindings the routes open; asked
+ * per request, because the server may have no vault until it starts.
  * @param overrides Dependencies replaced by the Archboard server or by tests.
  * @returns The opener router.
  */
 export function createCodeOpenerRouter(
+	vault: () => string,
 	overrides: Partial<CodeOpenerRouteDependencies> = {},
 ): Router {
-	const dependencies = { ...DEFAULT_DEPENDENCIES, ...overrides };
+	const dependencies = {
+		...DEFAULT_DEPENDENCIES,
+		/**
+		 * Reads the binding off the board of the vault.
+		 * @param board The board the node is on.
+		 * @param element The node whose binding is wanted.
+		 * @returns The binding, or which of board, node or binding was missing.
+		 */
+		bindingForElement: (board: string, element: string) =>
+			canonicalBinding(vault(), board, element),
+		...overrides,
+	};
 	const router = Router();
 
 	router.get(
