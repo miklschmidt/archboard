@@ -35,6 +35,18 @@ beforeAll(() => {
 afterAll(() => fixture.dispose());
 
 /**
+ * Run Git as a test owner in a directory.
+ * @param cwd Where it runs.
+ * @param args Its arguments.
+ */
+function git(cwd: string, args: readonly string[]) {
+	execFileSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", ...args], {
+		cwd,
+		stdio: "ignore",
+	});
+}
+
+/**
  * Run a `repo` command and read its JSON answer.
  * @param args The arguments after `repo`.
  * @param cwd Where it runs; the directory with no checkout when absent.
@@ -102,6 +114,30 @@ test("use chooses a known or unknown checkout, names the one it replaced and ref
 	expect(listed().chosen).toEqual([worktree]);
 	expect(repo(["use", fixture.nowhere]).status).toBe(2);
 	expect(repo(["use", plans]).status).toBe(2);
+});
+
+test("add and use of a checkout with no remote make its worktrees known under one identity", () => {
+	const local = join(fixture.root, "ledger");
+	mkdirSync(local);
+	git(local, ["init", "-q", "-b", "main"]);
+	git(local, ["commit", "-q", "--allow-empty", "-m", "init"]);
+	const target = join(fixture.root, "ledger-feature");
+	git(local, ["worktree", "add", "-q", "-b", "feature", target]);
+	const side = realpathSync.native(target);
+	const root = realpathSync.native(local);
+	const added = repo(["add", local]);
+	expect(added.status, added.failure).toBe(0);
+	expect(added.answer).toMatchObject({ repo: "ledger", chosen: true, worktrees: [side] });
+	const used = repo(["use", side]);
+	expect(used.answer).toMatchObject({ repo: "ledger", root: side, chosen: true, replaced: root });
+	const { answer } = repo(["list"]);
+	const entries = (answer as { repos: { repo: string; root: string; chosen: boolean }[] }).repos;
+	expect(entries.filter((each) => each.repo === "ledger")).toHaveLength(2);
+	expect(entries.filter((each) => each.repo === "ledger" && each.chosen)).toMatchObject([
+		{ root: side },
+	]);
+	expect(repo(["forget", side]).status).toBe(0);
+	expect(repo(["forget", root]).status).toBe(0);
 });
 
 test("add registers an untracked vault under its base name", () => {

@@ -142,8 +142,8 @@ function vaultHolder(dir: string): string | undefined {
 
 /**
  * A name that nothing else on this machine's registry has: the base name, then
- * `-2`, `-3` and so on. A remoteless repository is named by its directory, so
- * its identity counts as taken too.
+ * `-2`, `-3` and so on. A remoteless repository is named by the directory of its
+ * main checkout, so its identity counts as taken too.
  * @param base The directory's base name.
  * @param registry The registry the name goes in.
  * @returns The name.
@@ -223,9 +223,9 @@ function recordCheckout(
 
 /**
  * The worktrees of a checkout other than the checkout itself, as Git reports
- * them for it, that are checkouts of its identity. A repository with no
- * remote is named by its directory, so each of its worktrees is an identity
- * of its own and is left out: it is not another checkout of this one.
+ * them for it, that are checkouts of its identity. Every worktree has the
+ * identity of the main checkout, so this leaves out only one that overrides
+ * `origin` for itself (`extensions.worktreeConfig`): it is another repository.
  * @param checkout The checkout.
  * @param options Cancellation.
  * @returns Each worktree's root and identity.
