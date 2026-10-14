@@ -71,8 +71,9 @@ of your shell.
    index is ready before it asks for definitions.
 4. If the repository is not registered, run `archboard repo add <dir>`. If it
    is registered at another directory, `repo add` makes this directory a second
-   known checkout, and the check reads only the chosen one, so the servers of
-   step 5 take effect only if this directory is chosen. Say so to the user. Run `archboard repo use <dir>` only when the user asks, because it
+   known checkout, and the check reads only the chosen one, or the one that
+   holds the vault for its own repository, so the servers of step 5 take effect
+   only if this directory is chosen or holds the vault. Say so to the user. Run `archboard repo use <dir>` only when the user asks, because it
    changes what every board on this machine reads.
 5. In the repository, run `archboard repo language-server <language> <command>`.
    Write one `--arg=<argument>` for each argument. The language is `python`,
@@ -102,7 +103,8 @@ checkout of another repository. Without it, the command uses the known checkout
 that holds the working directory. `archboard repo list` shows the configured servers
 of each checkout. The configuration stays on this machine. `archboard repo forget`
 removes it with the checkout. Registering the same directory again keeps it. The check
-reads the servers of the chosen checkout.
+reads the servers of the checkout it reads: the chosen checkout, or the one that holds
+the vault for its own repository, which has servers only if it is registered.
 
 The check reads the configuration each time it runs, so you do not restart the
 Archboard server.

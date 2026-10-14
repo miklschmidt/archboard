@@ -93,8 +93,10 @@ Register each checkout whose implementation you bind with
 the repository has no `origin` remote) and every binding on every machine uses
 it with a repo-relative `path`. Every worktree has the identity of its main
 checkout. A repository with several known checkouts, such as a worktree,
-resolves in its chosen checkout; `repo add` never changes that, and
-`archboard repo use <dir>` does, on the user's request only. `branch`, `commit` and `confirmedAt` record what you
+resolves in its chosen checkout, except that a binding or anchor into the
+repository whose checkout holds the vault resolves in that checkout, so a board
+in a worktree is read against the worktree. `repo add` never changes the choice,
+and `archboard repo use <dir>` does, on the user's request only. `branch`, `commit` and `confirmedAt` record what you
 actually confirmed; restating the node keeps them only if you restate them.
 
 `symbol` names the one definition at `path` that the node stands for, spelled
