@@ -3,11 +3,11 @@ id: TASK-470
 title: >-
   Main's hosted CI fails intermittently: macOS Git group cleanup, a React flush
   after teardown, rasterizer and variant browser cases
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-12 01:12'
-updated_date: '2026-10-13 22:52'
+updated_date: '2026-10-14 01:21'
 labels:
   - ci
 dependencies: []
@@ -26,7 +26,7 @@ Main's hosted gate fails in roughly one of four runs for reasons unrelated to th
 - [x] #1 The Git lifecycle owner's macOS failure has a confirmed root cause and a fix in the product or the test that matches it
 - [x] #2 The traffic-rest owner leaves no React work that outlives its DOM teardown
 - [x] #3 Each rarer failure seen on main or branches in the last two days is either fixed at its cause or listed with its run ids as unexplained
-- [ ] #4 At least five consecutive hosted full gates (Linux and macOS) pass on the fixes
+- [x] #4 At least five consecutive hosted full gates (Linux and macOS) pass on the fixes
 - [x] #5 The complete local gate passes on the fixes
 <!-- AC:END -->
 
@@ -60,4 +60,12 @@ Still open, AC 4: branch flake-gate (the fixes plus a CI trigger on flake-* push
 Review: EPERM from the Darwin group probe also means a live member this process may not signal, and libproc answers an empty census on failure too, so the probe now counts EPERM as empty only when the full process census holds no live member of the group (src/shared/process-observation/index.ts). Not verified on macOS hardware. Open sibling, not fixed: Codex group cleanup (src/runtime/codex-process/lib/process-group-cleanup.ts drainKilledGroup, and terminateGroups in src/runtime/engine/server-startup-cleanup.ts) sends SIGKILL once and drains without signalling again, so a member forked during that SIGKILL can escape it the way the Git child did.
 
 Raised SEMANTIC_RASTER_STARTUP_TIMEOUT_MS 10_000 -> 30_000 (applies per startup phase: launch/DevTools port, then renderer page). Hosted Linux cold starts exceeded 10 s in 2 of 5 gate runs (runs 38475307159, 38479273786). Test side: modules' tests cannot import tests/system/support/timing.ts (boundaries), so semantic-rasterizer/tests/cold-start-timing.ts holds TEST_CHROMIUM_COLD_START_CASE_MS = 45_000 (rasterizer.test.ts, theme-following.test.ts via setDefaultTimeout, which covers beforeAll too) and headless-chromium.test.ts carries its own COLD_START_CASE_MS = 45_000. Fast-failure tests (startup.test.ts exit 17, startup-cancellation, no-executable) never wait on the bound, so left on the product constant. Hosted behaviour not verifiable locally.
+
+Hosted proof, AC 4: five consecutive hosted full gates on main at 5c8ba32cb, each green on both jobs (Complete validation gate on ubuntu-latest, macOS native process ownership on macos-latest): runs 38489413057, 38490536009, 38491861794, 38492983646, 38494300687. They ran one after another, the first on the push and four by workflow_dispatch. Before this, two earlier sets each failed once: runs 38475307159 and 38479273786 (Chromium cold start over 10 s, fixed by the 30 s bound) and run 38487923827 (macOS storage-refusal test gave the server only 3 s to start, 3.9 s seen; the bound is now 10 s in tests/system/process-contracts/codex-workbench-storage.test.ts). The fifth run of the last set shows zero failed tests.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Fixed the hosted flakes at their causes: the Git group freeze barrier (macOS), the Darwin EPERM probe, the traffic-rest act() gap, the browser drilling waits, the Codex group freeze before SIGKILL, the Chromium cold-start bound (30 s) with cancel-aware page opening, and the macOS storage-refusal start bound (10 s). Verified by the complete local gate (bun run check, exit 0) and five consecutive green hosted full gates on both runners (runs 38489413057, 38490536009, 38491861794, 38492983646, 38494300687). The two rarer failures in the first list (rasterizer 'real pixels', variant navigator) have not failed on main since Bun 1.4.3, and the rasterizer one is covered by the cold-start fix.
+<!-- SECTION:FINAL_SUMMARY:END -->

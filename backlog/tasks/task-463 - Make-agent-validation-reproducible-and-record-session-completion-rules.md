@@ -1,11 +1,11 @@
 ---
 id: TASK-463
 title: Make agent validation reproducible and record session completion rules
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-11 14:22'
-updated_date: '2026-10-11 17:39'
+updated_date: '2026-10-14 01:21'
 labels: []
 dependencies: []
 references:
@@ -62,4 +62,12 @@ The user reports repeated desktop Chrome default-browser prompts and directs thi
 The subsequent gate failed two module cases. The Codex process fixture expected seven exact environment keys, but Bun loaded .env and added both browser overrides. The failing full gate is retained in /private/tmp/archboard-retro-cft-full-check.log. The local .env is removed. Both Chrome for Testing selections now come from the command environment before every local macOS lane or gate.
 
 The exact Codex process and project-binding owners pass 16 tests and 80 assertions with command variables. Their result is retained in /private/tmp/archboard-retro-cft-environment-repro.log. Machine-specific executable paths remain untracked. No runtime, test, or timing contract changes. The TASK-461 timing proposal remains unapplied.
+
+Hosted proof: the macOS job (sandbox startup regression and platform fixtures) and the Linux gate were green in five consecutive hosted runs on main (38489413057, 38490536009, 38491861794, 38492983646, 38494300687).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Pinned agent-browser resolution with prerequisite diagnostics, hosted macOS coverage of the startup regression and platform owners, skills/ ownership and completion guidance, link validation and compact browser-lane progress. Verified by the complete local gate, scoped Standards and Spec reviews, and five green hosted full gates on both runners (runs 38489413057, 38490536009, 38491861794, 38492983646, 38494300687).
+<!-- SECTION:FINAL_SUMMARY:END -->
