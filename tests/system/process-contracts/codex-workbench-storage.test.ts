@@ -31,7 +31,9 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 		mkdirSync(staging, { recursive: true });
 		resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 		const fixture = prepareProductionFixture(resources, extendFixture(staging, mode));
-		const startup = await startServer({ ...fixture, readinessTimeoutMs: 3_000 }).then(
+		// A refusing server exits at once, so this bound only matters for a server that
+		// hangs. It must still cover a cold Bun start on a hosted macOS runner (3.9 s seen).
+		const startup = await startServer({ ...fixture, readinessTimeoutMs: 10_000 }).then(
 			(server) => ({ server, error: null }),
 			(error: unknown) => ({ server: null, error }),
 		);
