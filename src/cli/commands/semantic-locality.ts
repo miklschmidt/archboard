@@ -121,11 +121,11 @@ const semanticLocalityContract = defineCommand({
 		"Reads Git through the bindings of each part of one variant, and ranks every part " +
 		"by the number of commits that changed its declaration or path in a period. A hotspot is a part " +
 		"that many commits changed. The period of a repository is the commits on the HEAD of " +
-		"its registered checkout from a start up to the commit time of HEAD, the year before " +
+		"its chosen checkout from a start up to the commit time of HEAD, the year before " +
 		"it by default, so one HEAD always gives one answer. Each part lists its commits, " +
 		"newest first. Commits of more than 30 files are left out of every count, and the " +
 		"answer says how many. A part with no binding, a part that opens another board, a part " +
-		"bound into a repository this machine has not registered and a part pinned to a ref " +
+		"bound into a repository with no chosen checkout on this machine and a part pinned to a ref " +
 		"that its checkout does not have out are not read; the answer lists them with the " +
 		"reason, so they never look like a part that no commit changed. The count is of " +
 		"commits, not of changed lines or of the complexity of the code. Nothing is written, " +
