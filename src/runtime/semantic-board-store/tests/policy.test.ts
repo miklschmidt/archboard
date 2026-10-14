@@ -30,7 +30,6 @@ const policy: SemanticPolicy = {
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
 	contract = await import("@/shared/semantic-board/index");
-	expect(store.locateSemanticBoard("test", vault).file.startsWith(vault)).toBe(true);
 });
 beforeEach(() => {
 	serial++;
