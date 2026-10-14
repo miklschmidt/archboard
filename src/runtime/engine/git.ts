@@ -67,19 +67,54 @@ async function repoRootOf(
 }
 
 /**
- * What a checkout calls itself.
+ * What a checkout calls itself: the identity of its repository, which every
+ * worktree of the repository shares.
  *
  * `origin` when there is one, because that is the name the same repository has
- * on every machine and in every clone. A repo with no remote falls back to the
- * directory name, which is machine-local and therefore weaker. A binding that
- * says which local repo it means still beats one that says nothing.
+ * on every machine and in every clone, and every worktree reads the same
+ * remote. A repo with no remote falls back to the directory name of its main
+ * checkout, which is machine-local and therefore weaker. A binding that says
+ * which local repo it means still beats one that says nothing.
  * @param root The repository root.
  * @param options Cancellation.
- * @returns The remote-derived identity, or the directory name.
+ * @returns The remote-derived identity, or the name of the main checkout's directory.
  */
 async function repoIdentityAt(root: string, options: InspectOptions = {}): Promise<string> {
 	const remote = await optionalGit(root, ["remote", "get-url", "origin"], options);
-	return remote ? repoIdentityFromRemote(remote) : path.basename(root);
+	const listing =
+		remote === undefined
+			? await optionalGit(root, ["worktree", "list", "--porcelain"], options)
+			: undefined;
+	return repoIdentityFor(root, remote, listing);
+}
+
+/**
+ * The identity of a checkout: the one rule, for a caller that has asked Git
+ * itself (`repoIdentityAt`) and for one that cannot wait for it.
+ * @param root The repository root.
+ * @param remote The URL of `origin`, or undefined when there is none.
+ * @param worktreeListing What `git worktree list --porcelain` printed in the
+ * checkout. Git lists the main worktree first, and a repository with no remote
+ * is named by that directory so that its linked worktrees share its identity.
+ * A bare repository has no working tree and is named by its own directory
+ * without the `.git` suffix. Without a listing the checkout is named by its own
+ * directory, which is wrong for a linked worktree: pass it whenever `remote`
+ * is absent.
+ * @returns The remote-derived identity, or the name of the main checkout's directory.
+ */
+function repoIdentityFor(
+	root: string,
+	remote: string | undefined,
+	worktreeListing?: string,
+): string {
+	if (remote) {
+		return repoIdentityFromRemote(remote);
+	}
+	const main = worktreeEntries(worktreeListing)[0];
+	if (main === undefined) {
+		return path.basename(root);
+	}
+	return path.basename(main.bare ? main.path.replace(/\.git$/u, "") : main.path);
 }
 
 interface CheckoutGitInspection {
@@ -181,6 +216,33 @@ async function checkoutHead(
 	return Object.freeze({ ...(branch ? { branch } : {}), ...(commit ? { commit } : {}) });
 }
 
+/** One entry of `git worktree list --porcelain`. */
+interface WorktreeEntry {
+	readonly path: string;
+	readonly bare: boolean;
+	readonly prunable: boolean;
+}
+
+/**
+ * The entries of a `git worktree list --porcelain` listing, in Git's order:
+ * the main worktree first.
+ * @param listing What Git printed, or undefined when it did not answer.
+ * @returns Each entry with a path.
+ */
+function worktreeEntries(listing: string | undefined): WorktreeEntry[] {
+	return (listing ?? "").split(/\n\n+/u).flatMap((block) => {
+		const lines = block.split("\n");
+		const worktree = lines.find((line) => line.startsWith("worktree "));
+		return worktree === undefined
+			? []
+			: {
+					path: worktree.slice(9),
+					bare: lines.includes("bare"),
+					prunable: lines.some((line) => line.startsWith("prunable")),
+				};
+	});
+}
+
 /**
  * The working trees of a repository that `git worktree list` reports, the
  * checkout itself first. A bare repository has no working tree, so it is left
@@ -192,13 +254,9 @@ async function checkoutHead(
  */
 async function worktreePaths(root: string, options: InspectOptions = {}): Promise<string[]> {
 	const listing = await optionalGit(root, ["worktree", "list", "--porcelain"], options);
-	return (listing ?? "")
-		.split(/\n\n+/u)
-		.map((block) => block.split("\n"))
-		.filter(
-			(lines) => !lines.includes("bare") && !lines.some((line) => line.startsWith("prunable")),
-		)
-		.flatMap((lines) => lines.find((line) => line.startsWith("worktree "))?.slice(9) ?? []);
+	return worktreeEntries(listing)
+		.filter((entry) => !entry.bare && !entry.prunable)
+		.map((entry) => entry.path);
 }
 
 export {
@@ -212,6 +270,7 @@ export {
 	existingDir,
 	repoRootOf,
 	repoIdentityAt,
+	repoIdentityFor,
 	type CheckoutGitInspection,
 	inspectCheckout,
 };

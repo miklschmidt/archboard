@@ -347,7 +347,7 @@ const repoAddContract = defineCommand({
 	shared: [],
 	summary: "Register a repository checkout or an untracked vault",
 	description:
-		"Derives a checkout's identity from git and records its local root, with the worktrees that git lists for it. The first known checkout of a repository becomes the one read for it; adding another never changes that, and repo use does. Outside any git checkout, a directory that holds .archboard/vault is registered as an untracked vault under its base name, made unique on this machine. Registering the same root again keeps its language servers.",
+		"Derives a checkout's identity from git (its origin remote, or with none the directory name of its main checkout; every worktree has the identity of its main checkout) and records its local root, with the worktrees that git lists for it. The first known checkout of a repository becomes the one read for it; adding another never changes that, and repo use does. Outside any git checkout, a directory that holds .archboard/vault is registered as an untracked vault under its base name, made unique on this machine. Registering the same root again keeps its language servers.",
 	examples: ["archboard repo add ."],
 	parameters: dirParameters,
 	input: { ingress: RepoAddInputSchema },

@@ -138,15 +138,36 @@ test("the worktrees that git lists for a known checkout are known, and a deleted
 	expect(orders().chosen).toEqual([worktree]);
 });
 
-test("a worktree of a repository with no remote is another identity, so it does not become known with the checkout", async () => {
+test("a repository with no remote is named by its main checkout, and so is every worktree of it", async () => {
 	const local = join(scratch, "local");
 	mkdirSync(local);
 	git(local, "init", "-q", "-b", "main");
 	git(local, "commit", "-q", "--allow-empty", "-m", "init");
-	git(local, "worktree", "add", "-q", "-b", "side", join(scratch, "local-side"));
+	const side = addWorktree(local, "local-side");
+	// Asked from the main checkout the worktree becomes known under the one identity.
 	const declared = await declareDirectory(local);
-	expect(declared).toMatchObject({ kind: "checkout", worktrees: [] });
-	expect(listRegistry().checkouts.map((each) => each.repo)).toEqual(["local"]);
+	expect(declared).toMatchObject({ kind: "checkout", worktrees: [{ root: side, repo: "local" }] });
+	expect(listRegistry().checkouts.map((each) => each.repo)).toEqual(["local", "local"]);
+	// Asked from the worktree, the main checkout becomes known too, and choosing moves the choice.
+	rmSync(registry);
+	await declareDirectory(side);
+	const chosen = await declareDirectory(side, { choose: true });
+	expect(chosen).toMatchObject({ checkout: { repo: "local", root: side, chosen: true } });
+	expect(listRegistry().checkouts.filter((each) => each.chosen)).toHaveLength(1);
+	expect(checkoutFor("local")).toBe(side);
+	expect(listRegistry().checkouts.map((each) => each.root)).toContain(realpathSync.native(local));
+});
+
+test("a worktree of a bare repository is named by the bare directory without its .git suffix", async () => {
+	const bare = join(scratch, "shop.git");
+	mkdirSync(bare);
+	git(bare, "init", "-q", "--bare", "-b", "main");
+	const seed = repository(join(scratch, "shop-seed"));
+	git(seed, "remote", "remove", "origin");
+	git(seed, "push", "-q", bare, "main");
+	git(bare, "worktree", "add", "-q", join(scratch, "shop-main"), "main");
+	const declared = await declareDirectory(join(scratch, "shop-main"));
+	expect(declared).toMatchObject({ kind: "checkout", checkout: { repo: "shop" } });
 });
 
 test("a directory inside a checkout registers the checkout", async () => {

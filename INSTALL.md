@@ -201,10 +201,11 @@ archboard repo add ~/Projects/payments-api
 ```
 
 The identity of the repository comes from its `origin` remote. If the repository
-has no remote, the identity is the directory name, so each of its worktrees is
-a repository of its own. Archboard also knows the worktrees that
-`git worktree list` reports for a checkout that you register, when they have
-its identity.
+has no remote, the identity is the directory name of its main checkout. Every
+worktree of a repository has the identity of its main checkout, so a worktree
+of a repository with no remote is named by the main checkout's directory, not
+its own. Archboard also knows the worktrees that `git worktree list` reports
+for a checkout that you register.
 
 One repository can have several known checkouts here: clones and worktrees.
 This machine reads one of them for each repository, the chosen checkout. The first

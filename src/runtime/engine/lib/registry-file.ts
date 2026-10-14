@@ -19,7 +19,7 @@ import { LanguageServersSchema, type LanguageServers } from "@/shared/language-s
 type RepoSource = "declared" | "observed";
 
 interface RegisteredRepo {
-	/** Repository identity: host/owner/name, or a directory name for a remoteless repo. */
+	/** Repository identity: host/owner/name, or the directory name of the main checkout for a remoteless repo. */
 	repo: string;
 	/** Absolute path to the checkout on this machine. */
 	root: string;
