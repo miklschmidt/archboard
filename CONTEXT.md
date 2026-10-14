@@ -200,8 +200,9 @@ _Avoid_: clone, working copy, workspace, local repo
 
 **Checkout registry**:
 The machine-local record of every checkout known here, each with its repository
-identity, and of the chosen checkout of each identity. The only place a
-directory on one machine is written down.
+identity, of every untracked vault with its registry name, and of the chosen
+checkout of each identity. The only place a directory on one machine is written
+down.
 _Avoid_: index, cache, catalogue, repo config
 
 **Chosen checkout**:
@@ -209,7 +210,9 @@ The one checkout of a repository identity that this machine reads for it. The
 browser reads its vault, and a binding or drill-down that another vault makes
 into that identity resolves there. A binding into a vault's own repository
 resolves in the vault's own checkout instead. A person changes the choice, never
-a command that only registers a checkout.
+a command that only registers a checkout. An identity whose chosen checkout was
+forgotten has none until a person chooses again, and its bindings resolve as
+unregistered.
 _Avoid_: default checkout, primary checkout, active checkout, project
 
 ### Structure

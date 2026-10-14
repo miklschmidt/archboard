@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { resolveLocalCodeTargets, snapshotCheckoutAccess } from "../index.ts";
 import { resolveLocalCodeTargetsForDiagnostics, type ResolverDiagnostics } from "../diagnostics.ts";
 import { repoIdentityAt, repoRootOf } from "../../engine/git.ts";
-import { readRegistry } from "../../engine/repo-registry.ts";
+import { chosenCheckouts } from "../../engine/repo-registry.ts";
 import { createResolverFixture, type ResolverFixture } from "./support.ts";
 
 let fixture: ResolverFixture;
@@ -107,7 +107,7 @@ test("one batch validates each repository once and every target independently", 
 	const diagnostics: ResolverDiagnostics = {
 		readRegistry: () => {
 			counts.registry++;
-			return readRegistry();
+			return chosenCheckouts();
 		},
 		realpath: (candidate) => {
 			counts.realpath++;
