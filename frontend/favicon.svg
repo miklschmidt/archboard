@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -4 64 64" width="64" height="64">
+	<defs>
+		<linearGradient id="archboard-mark" x1="0" y1="0" x2="0.3" y2="1">
+			<stop offset="0" stop-color="#f6d888" />
+			<stop offset="1" stop-color="#d49838" />
+		</linearGradient>
+	</defs>
+	<g fill="url(#archboard-mark)">
+		<path d="M28,3 L56,53 L47,53 L28,19 L9,53 L0,53 Z" />
+		<path d="M20,53 L28,38 L32,44.5 L26,53 Z" />
+	</g>
+	<path d="M37,7 Q54,19 49,37" fill="none" stroke="url(#archboard-mark)" stroke-width="3.4" stroke-linecap="round" />
+</svg>
