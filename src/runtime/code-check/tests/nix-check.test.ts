@@ -169,7 +169,7 @@ beforeAll(async () => {
 		return Array.isArray(command) ? spawnSync(command, options) : spawnSync(command);
 	}) as typeof Bun.spawnSync;
 	try {
-		outcome = await check.checkCode(read.boards, new AbortController().signal);
+		outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
 	} finally {
 		Bun.spawn = spawn;
 		Bun.spawnSync = spawnSync;

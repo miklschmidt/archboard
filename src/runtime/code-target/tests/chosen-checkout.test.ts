@@ -7,13 +7,22 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { checkoutFor, declareDirectory, forgetDirectory } from "@/runtime/engine/repo-registry";
+import { chosenCheckouts, declareDirectory, forgetDirectory } from "@/runtime/engine/repo-registry";
 import {
 	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
 } from "../index.ts";
 import { createResolverFixture, type ResolverFixture } from "./support.ts";
+
+/**
+ * The root of the chosen checkout of an identity.
+ * @param repo The repository identity.
+ * @returns Its root, or undefined when it has none.
+ */
+function chosenRoot(repo: string): string | undefined {
+	return chosenCheckouts().find((each) => each.repo === repo)?.root;
+}
 
 let fixture: ResolverFixture;
 let previousRegistry: string | undefined;
@@ -48,6 +57,7 @@ afterEach(() => {
  */
 async function resolvedRoot(): Promise<string> {
 	const snapshot = await snapshotCheckoutAccess({
+		vault: null,
 		bindings: [{ repo: fixture.repository, path: "src/clone-only.ts" }],
 	});
 	const checkout = resolveRegisteredCheckout(fixture.repository, snapshot);
@@ -58,14 +68,15 @@ test("a checkout that is added later is not read, and the one that use chooses i
 	expect(await resolvedRoot()).toBe(fixture.checkout);
 	await declareDirectory(other);
 	expect(await resolvedRoot()).toBe(fixture.checkout);
-	expect(checkoutFor(fixture.repository)).toBe(fixture.checkout);
+	expect(chosenRoot(fixture.repository)).toBe(fixture.checkout);
 
 	await declareDirectory(other, { choose: true });
 	expect(await resolvedRoot()).toBe(other);
-	expect(checkoutFor(fixture.repository)).toBe(other);
+	expect(chosenRoot(fixture.repository)).toBe(other);
 	const target = resolveLocalCodeTarget(
 		{ repo: fixture.repository, path: "src/clone-only.ts" },
 		await snapshotCheckoutAccess({
+			vault: null,
 			bindings: [{ repo: fixture.repository, path: "src/clone-only.ts" }],
 		}),
 	);
@@ -76,8 +87,8 @@ test("an identity whose chosen checkout was forgotten resolves as unregistered, 
 	await declareDirectory(other);
 	await forgetDirectory(fixture.checkout);
 	expect(await resolvedRoot()).toBe("CHECKOUT_UNAVAILABLE");
-	expect(checkoutFor(fixture.repository)).toBeUndefined();
-	const snapshot = await snapshotCheckoutAccess();
+	expect(chosenRoot(fixture.repository)).toBeUndefined();
+	const snapshot = await snapshotCheckoutAccess({ vault: null });
 	expect(snapshot.inspection(fixture.repository)).toBeUndefined();
 	expect(snapshot.entries).toEqual([]);
 });

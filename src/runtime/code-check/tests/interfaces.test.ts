@@ -255,7 +255,7 @@ beforeAll(async () => {
 	const check: typeof CheckModule = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(read.boards, new AbortController().signal);
+	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
 });
 
 afterAll(() => {

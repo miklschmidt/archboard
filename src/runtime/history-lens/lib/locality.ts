@@ -270,6 +270,7 @@ async function readLocality(
 interface LocalityReading {
 	/**
 	 * The hotspots and change coupling of one variant of one board.
+	 * @param vault The vault directory the board is in: its own checkout is read for its own repository.
 	 * @param board The board as the store read it.
 	 * @param variant The variant to read: the current one, or a draft.
 	 * @param since The start of the period, or undefined for the year before each HEAD.
@@ -277,6 +278,7 @@ interface LocalityReading {
 	 * @returns The answer.
 	 */
 	read(
+		vault: string,
 		board: SemanticBoard,
 		variant: SemanticVariant,
 		since: Date | undefined,
@@ -295,17 +297,19 @@ function createLocalityReading(): LocalityReading {
 	return {
 		/**
 		 * Read, or answer from memory.
+		 * @param vault The vault directory.
 		 * @param board The board.
 		 * @param variant The variant.
 		 * @param since The start of the period.
 		 * @param signal Cancels the reading.
 		 * @returns The answer.
 		 */
-		async read(board, variant, since, signal) {
+		async read(vault, board, variant, since, signal) {
 			const bindings = variant.content.nodes.flatMap((node) =>
 				node.binding === undefined ? [] : [node.binding],
 			);
 			const snapshot = await snapshotCheckoutAccess({
+				vault,
 				...(signal === undefined ? {} : { signal }),
 				bindings,
 			});

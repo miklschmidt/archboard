@@ -5,7 +5,7 @@
 // ARCHBOARD_REPOS, so nothing here reads or writes the machine's real one.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
@@ -56,10 +56,11 @@ afterAll(() => {
 /**
  * Write one board, refusing to continue when the store would not take it.
  * @param input The create payload.
+ * @param into The vault to write it in.
  */
-async function create(input: Record<string, unknown>): Promise<void> {
+async function create(input: Record<string, unknown>, into: string = vault): Promise<void> {
 	const written = await store.writeSemanticBoard({
-		vault,
+		vault: into,
 		board: String(input["name"]),
 		writer,
 		transition: store.createBoardTransition(contract.BoardCreateInputSchema.parse(input)),
@@ -219,4 +220,45 @@ test("a binding on a draft is ahead of the code until adoption says the code is 
 	});
 	expect(adopted.outcome).toBe("applied");
 	expect(bindingFindings("planned-system")).toHaveLength(1);
+}, 30_000);
+
+test("a binding into the vault's own repository is looked for in the checkout that holds the vault", async () => {
+	// A second checkout of the bound repository, not registered, with a file that the registered one lacks.
+	const own = mkdtempSync(join(tmpdir(), "archboard-bound-own-"));
+	try {
+		mkdirSync(join(own, "src"), { recursive: true });
+		writeFileSync(join(own, "src", "own-only.ts"), "export {};\n");
+		for (const args of [
+			["init", "-q"],
+			["remote", "add", "origin", `https://${REPO}.git`],
+		]) {
+			Bun.spawnSync(["git", ...args], { cwd: own });
+		}
+		const ownVault = join(own, "vault");
+		mkdirSync(join(ownVault, ".archboard"), { recursive: true });
+		writeFileSync(
+			join(ownVault, ".archboard", "config.yaml"),
+			readFileSync(join(vault, ".archboard", "config.yaml")),
+		);
+		const board = {
+			name: "own-system",
+			level: "system",
+			nodes: [
+				{ name: "Kept", kind: "module", binding: { repo: REPO, path: PRESENT } },
+				{ name: "Here", kind: "module", binding: { repo: REPO, path: "src/own-only.ts" } },
+			],
+			edges: [{ from: "Kept", to: "Here", kind: "call" }],
+		};
+		await create(board, ownVault);
+		await create(board);
+		// The registered checkout lacks the file, so a vault elsewhere is wrong about it.
+		expect(bindingFindings("own-system").map((issue) => issue.subject?.name)).toEqual(["Here"]);
+		// The vault that stands in a checkout of the repository reads that checkout, which has it.
+		const inOwn = store
+			.checkSemanticVault(ownVault)
+			.diagnostics.filter((issue) => issue.code === "BINDING_PATH_MISSING");
+		expect(inOwn.map((issue) => issue.subject?.name)).toEqual(["Kept"]);
+	} finally {
+		rmSync(own, { recursive: true, force: true });
+	}
 }, 30_000);

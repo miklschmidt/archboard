@@ -33,6 +33,8 @@ import {
 
 /** What to read: a board's current variant, the ref, and the proposal to set it against. */
 interface FootprintRequest {
+	/** The vault directory the board is in: its own checkout is read for its own repository. */
+	readonly vault: string;
 	readonly board: SemanticBoard;
 	/** The variant that is built, which the commits are read against. */
 	readonly current: SemanticVariant;
@@ -305,10 +307,11 @@ function namedBy(
  * @returns The footprint.
  */
 async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer> {
-	const { board, current, proposal, base, signal } = request;
+	const { vault, board, current, proposal, base, signal } = request;
 	const nodes = partsOf(current, proposal);
 	const named = namedBy(current, proposal, nodes);
 	const snapshot = await snapshotCheckoutAccess({
+		vault,
 		...(signal === undefined ? {} : { signal }),
 		bindings: nodes.flatMap((node) => (node.binding === undefined ? [] : [node.binding])),
 	});

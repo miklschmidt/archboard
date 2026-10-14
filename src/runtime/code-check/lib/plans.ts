@@ -76,7 +76,7 @@ function locatePlan(
 	}
 	const root = checkoutHolding(path.resolve(named), real, snapshot);
 	if (root === undefined) {
-		return "it is not inside the chosen checkout of any repository on this machine, which is the checkout the check reads";
+		return "it is not inside the checkout that holds the vault or the chosen checkout of any repository on this machine, which are the checkouts the check reads";
 	}
 	const relative = path.relative(root, real).split(path.sep).join("/");
 	return neverRead(relative)
@@ -113,13 +113,18 @@ async function readPlan(
 
 /**
  * Read every plan an agent named.
+ * @param vault The vault directory the check reads.
  * @param named Each plan's path, absolute, as the agent named it.
  * @param signal Cancels the reading.
  * @returns The plans, or the first the check refuses.
  */
-async function readPlans(named: readonly string[], signal: AbortSignal): Promise<ReadPlans> {
+async function readPlans(
+	vault: string,
+	named: readonly string[],
+	signal: AbortSignal,
+): Promise<ReadPlans> {
 	if (named.length === 0) return { ok: true, plans: [] };
-	const snapshot = await snapshotCheckoutAccess({ signal, timeoutMs: null });
+	const snapshot = await snapshotCheckoutAccess({ vault, signal, timeoutMs: null });
 	const plans: TerraformPlan[] = [];
 	for (const plan of named) {
 		// oxlint-disable-next-line no-await-in-loop -- the first plan refused refuses the check, so later plans are never read

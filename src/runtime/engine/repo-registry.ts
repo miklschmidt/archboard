@@ -15,7 +15,7 @@
 // person's choice changes it (`repo use`). Registering a checkout never does,
 // except that the first known checkout of an identity becomes its chosen one.
 // Readers that turn an identity into a directory ask for `chosenCheckouts()`
-// or `checkoutFor()` and so never see the others.
+// and so never see the others.
 //
 // A checkout becomes known when a person declares it. Its worktrees, as
 // `git worktree list` reports them, become known with it. Nothing is
@@ -116,16 +116,6 @@ function listRegistry(): RegistryListing {
  */
 function chosenCheckouts(): RegisteredRepoStatus[] {
 	return listRegistry().checkouts.filter((entry) => entry.chosen);
-}
-
-/**
- * The chosen checkout for a repository identity, but only while it is still there.
- * @param repo The repository identity.
- * @returns Its root on this machine, or undefined.
- */
-function checkoutFor(repo: string): string | undefined {
-	const entry = chosenCheckouts().find((candidate) => candidate.repo === repo);
-	return entry?.exists ? entry.root : undefined;
 }
 
 /**
@@ -433,7 +423,6 @@ export {
 	readRegistry,
 	listRegistry,
 	chosenCheckouts,
-	checkoutFor,
 	declareDirectory,
 	forgetDirectory,
 	setLanguageServer,

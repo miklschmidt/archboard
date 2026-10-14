@@ -173,7 +173,7 @@ const built = board(1);
  */
 async function hotspots(since?: Date, variant = "v1"): Promise<LocalityAnswer> {
 	return LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(built, variantOf(built, variant), since),
+		await lens.createLocalityReading().read(scratch, built, variantOf(built, variant), since),
 	);
 }
 
@@ -353,7 +353,7 @@ test("a board with no part in a registered repository answers an empty ranking, 
 		],
 	});
 	const answer = LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(lonely, variantOf(lonely, "v1"), undefined),
+		await lens.createLocalityReading().read(scratch, lonely, variantOf(lonely, "v1"), undefined),
 	);
 	expect(answer.hotspots).toEqual([]);
 	expect(answer.periods).toEqual([]);
@@ -378,19 +378,19 @@ test("an answer is kept until the board's version, the start of the period or a 
 			],
 		});
 	const first = small(1);
-	const answer = await reading.read(first, variantOf(first, "v1"), undefined);
-	expect(await reading.read(first, variantOf(first, "v1"), undefined)).toBe(answer);
+	const answer = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
+	expect(await reading.read(scratch, first, variantOf(first, "v1"), undefined)).toBe(answer);
 	const next = small(2);
-	expect(await reading.read(next, variantOf(next, "v1"), undefined)).not.toBe(answer);
+	expect(await reading.read(scratch, next, variantOf(next, "v1"), undefined)).not.toBe(answer);
 	expect(
-		await reading.read(first, variantOf(first, "v1"), new Date(LAST * 1000 - DAY * 1000)),
+		await reading.read(scratch, first, variantOf(first, "v1"), new Date(LAST * 1000 - DAY * 1000)),
 	).not.toBe(answer);
 	write(shop, edit("src/c.ts", 3));
 	commit(shop, 0, "a commit in a repository the board does not bind");
-	expect(await reading.read(first, variantOf(first, "v1"), undefined)).toBe(answer);
+	expect(await reading.read(scratch, first, variantOf(first, "v1"), undefined)).toBe(answer);
 	write(tiny, edit("t.ts", 1));
 	commit(tiny, 0, "tiny again");
-	const moved = await reading.read(first, variantOf(first, "v1"), undefined);
+	const moved = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
 	expect(moved).not.toBe(answer);
 	expect(moved.hotspots[0]?.count).toBe(2);
 });

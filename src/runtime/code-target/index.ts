@@ -3,7 +3,8 @@ import path from "node:path";
 
 import type { CodeBinding } from "@/shared/code-target";
 import { checkoutHead, repoIdentityAt, repoRootOf, type CheckoutHead } from "@/runtime/engine/git";
-import { chosenCheckouts, type RegisteredRepoStatus } from "@/runtime/engine/repo-registry";
+import type { RegisteredRepoStatus } from "@/runtime/engine/repo-registry";
+import { checkoutsReadFrom } from "@/runtime/code-target/lib/vault-checkout";
 import {
 	isPathWithin,
 	resolveLocalCodeTargetsWith,
@@ -20,7 +21,7 @@ export type {
 	RegisteredCheckoutResult,
 	ResolutionFailure,
 } from "@/runtime/code-target/lib/resolver-core";
-export { isPathWithin };
+export { checkoutsReadFrom, isPathWithin };
 
 interface CheckoutInspection {
 	readonly registeredRoot?: string;
@@ -43,6 +44,11 @@ export interface CheckoutSnapshot {
 }
 
 type SnapshotOptions = NonNullable<Parameters<typeof repoRootOf>[1]> & {
+	/**
+	 * The vault whose bindings are resolved: its own checkout stands for its own
+	 * identity (ADR 0049). Null for a reading that belongs to no vault.
+	 */
+	vault: string | null;
 	bindings?: readonly CodeBinding[];
 };
 type InspectedCheckout = readonly [string, CheckoutInspection];
@@ -201,13 +207,11 @@ function rememberBindingPath(
  * Captures every checkout and binding path the caller will resolve as one
  * immutable snapshot, so a whole operation reads one consistent view of the
  * filesystem instead of racing concurrent edits.
- * @param options - An abort signal and the bindings whose paths must be captured.
+ * @param options - The vault read, an abort signal and the bindings whose paths must be captured.
  * @returns The frozen snapshot the resolvers read from.
  */
-export async function snapshotCheckoutAccess(
-	options: SnapshotOptions = {},
-): Promise<CheckoutSnapshot> {
-	const entries = chosenCheckouts().map((entry) => Object.freeze({ ...entry }));
+export async function snapshotCheckoutAccess(options: SnapshotOptions): Promise<CheckoutSnapshot> {
+	const entries = checkoutsReadFrom(options.vault).map((entry) => Object.freeze({ ...entry }));
 	const settled = await Promise.allSettled(entries.map((entry) => inspectCheckout(entry, options)));
 	const failed = settled.find(
 		(result): result is PromiseRejectedResult => result.status === "rejected",
