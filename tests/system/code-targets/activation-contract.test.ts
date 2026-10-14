@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import {
 	chmodSync,
 	existsSync,
@@ -15,30 +15,21 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { CodeTargetOpenReplySchema } from "../../../src/shared/code-target/index.ts";
-import type * as StoreModule from "../../../src/runtime/semantic-board-store/index.ts";
-import type * as OpenerSupport from "./support/opener-fixture.ts";
-import type { Invocation, OpenerFixture } from "./support/opener-fixture.ts";
+import {
+	createBoardTransition,
+	locateSemanticBoard,
+	readSemanticBoard,
+	writeSemanticBoard,
+} from "../../../src/runtime/semantic-board-store/index.ts";
+import {
+	createOpenerFixture,
+	jsonBody,
+	type Invocation,
+	type OpenerFixture,
+} from "./support/opener-fixture.ts";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
+// The vault the real binding lookup reads, handed to the opener fixture.
 const ownerVault = mkdtempSync(join(tmpdir(), "archboard-code-target-owner-"));
-// The default route dependency reads boards out of this process's vault. Set
-// it before importing either the route fixture or the board store.
-process.env["ARCHBOARD_VAULT"] = ownerVault;
-
-let configuredVault: string | undefined;
-let createBoardTransition: typeof StoreModule.createBoardTransition;
-let locateSemanticBoard: typeof StoreModule.locateSemanticBoard;
-let readSemanticBoard: typeof StoreModule.readSemanticBoard;
-let writeSemanticBoard: typeof StoreModule.writeSemanticBoard;
-let createOpenerFixture: typeof OpenerSupport.createOpenerFixture;
-let jsonBody: typeof OpenerSupport.jsonBody;
-
-beforeAll(async () => {
-	({ createOpenerFixture, jsonBody } = await import("./support/opener-fixture.ts"));
-	({ createBoardTransition, locateSemanticBoard, readSemanticBoard, writeSemanticBoard } =
-		await import("../../../src/runtime/semantic-board-store/index.ts"));
-	configuredVault = (await import("../../../src/runtime/engine/config.ts")).ARCHBOARD_VAULT;
-});
 
 /** A board written to the owner vault, and the node whose binding is bound. */
 interface BoundBoard {
@@ -89,15 +80,7 @@ async function boundBoard(repository: string, path: string): Promise<BoundBoard>
 }
 
 afterAll(() => {
-	try {
-		rmSync(ownerVault, { recursive: true, force: true });
-	} finally {
-		if (callerVault === undefined) {
-			delete process.env["ARCHBOARD_VAULT"];
-		} else {
-			process.env["ARCHBOARD_VAULT"] = callerVault;
-		}
-	}
+	rmSync(ownerVault, { recursive: true, force: true });
 });
 
 async function saveSelection(fixture: OpenerFixture, invocation: Invocation): Promise<void> {
@@ -116,11 +99,6 @@ async function activate(
 }
 
 describe("public code-target activation contract", () => {
-	test("uses its owned vault for default route dependencies", () => {
-		expect(process.env["ARCHBOARD_VAULT"]).toBe(ownerVault);
-		expect(configuredVault).toBe(ownerVault);
-	});
-
 	test.each([
 		["src/index.ts", "file"],
 		["src/directory", "directory"],

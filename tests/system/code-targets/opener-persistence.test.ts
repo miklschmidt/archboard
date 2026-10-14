@@ -34,19 +34,10 @@ describe("machine-wide opener persistence", () => {
 	test(
 		"applies the latest save to independent callers and survives a restarted base",
 		async () => {
-			const previousVault = process.env["ARCHBOARD_VAULT"];
 			{
 				await using resources = new AsyncDisposableStack();
 				const vault = mkdtempSync(join(tmpdir(), "archboard-opener-vault-"));
 				resources.defer(() => rmSync(vault, { recursive: true }));
-				process.env["ARCHBOARD_VAULT"] = vault;
-				resources.defer(() => {
-					if (previousVault === undefined) {
-						delete process.env["ARCHBOARD_VAULT"];
-					} else {
-						process.env["ARCHBOARD_VAULT"] = previousVault;
-					}
-				});
 				const {
 					createBoardTransition,
 					locateSemanticBoard,
@@ -69,7 +60,6 @@ describe("machine-wide opener persistence", () => {
 					},
 				});
 				resources.defer(() => fixture.dispose());
-				expect(process.env["ARCHBOARD_VAULT"]).toBe(vault);
 				// One board with one bound node, written through the store every other
 				// writer goes through, so the opener resolves a real binding.
 				const written = await writeSemanticBoard({
@@ -172,11 +162,6 @@ describe("machine-wide opener persistence", () => {
 				]) {
 					expect(noteText).not.toContain(forbidden);
 				}
-			}
-			if (previousVault === undefined) {
-				expect(process.env["ARCHBOARD_VAULT"]).toBeUndefined();
-			} else {
-				expect(process.env["ARCHBOARD_VAULT"]).toBe(previousVault);
 			}
 		},
 		TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS,
