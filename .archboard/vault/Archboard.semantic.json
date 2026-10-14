@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 37,
+	"version": 39,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-07T19:14:05.099Z",
+	"updatedAt": "2026-10-14T22:03:51.981Z",
 	"views": [],
 	"variants": [
 		{
@@ -2711,6 +2711,504 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/repo.ts",
 							"symbol": "declareRepo"
+						}
+					},
+					{
+						"id": "FCRYdY4h",
+						"order": 15000,
+						"from": "TBnOCNx2",
+						"to": "nugpFSIX",
+						"kind": "call",
+						"label": "encode the frames and the voice",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/video-encoder/lib/encode.ts",
+							"symbol": "spawn"
+						}
+					},
+					{
+						"id": "OPwTCiKt",
+						"order": 16000,
+						"from": "TBnOCNx2",
+						"to": "VgzgNAGW",
+						"kind": "data",
+						"label": "keep a talk; read one to render again",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/walkthrough-recorder/index.ts",
+							"symbol": "writeTalk"
+						}
+					},
+					{
+						"id": "RwZDQDsa",
+						"order": 17000,
+						"from": "PxnjFfV3",
+						"to": "VgzgNAGW",
+						"kind": "data",
+						"label": "a fixture's talk, read back to replay",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/replay.ts",
+							"symbol": "readTalk"
+						}
+					},
+					{
+						"id": "sp1HWQNm",
+						"order": 18000,
+						"from": "TBnOCNx2",
+						"to": "yEgsaWnA",
+						"kind": "call",
+						"label": "copy PNG and HTML together",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/image-clipboard/index.ts",
+							"symbol": "fork"
+						}
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "SssnycS0",
+						"name": "Read this board",
+						"beats": [
+							{
+								"id": "JnVoCQnm",
+								"heading": "Agents author, people read",
+								"body": "An agent states meaning through the CLI. The Archboard server checks the write, takes the board's lease, commits the whole family to disk and only then answers. Nothing else writes a board.",
+								"subjects": [
+									"TBnOCNx2",
+									"9m47dJzG",
+									"cPOdAA3f",
+									"8XKRkSHl"
+								]
+							},
+							{
+								"id": "coggGU2D",
+								"heading": "The browser is a viewer",
+								"body": "A pane holds board content only as a read-only cache of what the server said, and reads again when it is told a new version exists. What it owns is the camera, the view, the walkthrough position and what somebody picked out.",
+								"subjects": [
+									"6nZjwK9W",
+									"iF6W48DS",
+									"4p2LMrOt"
+								]
+							},
+							{
+								"id": "JuKj0ZMA",
+								"heading": "Pictures are taken outside the server",
+								"body": "rasterize paints the SVG the server drew in a headless browser the CLI starts. record opens the server's own page in one: the page plays the walkthrough, the Codex voice narrates it, and the CLI keeps the talk. A second browser then draws the talk frame by frame, and ffmpeg makes the video file. replay renders a kept talk again.",
+								"subjects": [
+									"t7W7wJHv",
+									"chzSzpL4",
+									"vKDw0TwV",
+									"nugpFSIX",
+									"VgzgNAGW",
+									"FCRYdY4h",
+									"OPwTCiKt"
+								]
+							},
+							{
+								"id": "FlAhpGUe",
+								"heading": "Agent work has a lifetime of its own",
+								"body": "The Archboard server owns a private Codex child in its own process group. Sign-in, config and threads live in one Codex home that every Archboard server on this machine shares. Each browser tab has its own conversation: a workhorse that does the work, and a coordinator that voice talks to. A reload keeps the conversation. A minute after a tab closes, its conversation ends, and Codex unloads its threads once no work runs on them. When the child exits, each tab starts a new conversation with its next message. The threads author boards through the CLI, like any agent.",
+								"subjects": [
+									"xr1MHYE7",
+									"2OeapIzk",
+									"zs8yTQLI",
+									"t3P6jc5T",
+									"DcdR8rPv"
+								]
+							},
+							{
+								"id": "bnH63t0c",
+								"heading": "The skill is measured, not assumed",
+								"body": "The guidance an agent in another repository reads is held to real runs: two versions of the package, the same CLI and fixtures, real authors, and a blinded grading session. A person starts it; the gate never does.",
+								"subjects": [
+									"PxnjFfV3"
+								]
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "b30wppUO",
+			"name": "TASK-472.02",
+			"lifecycle": "draft",
+			"parent": "hSjwvPjz",
+			"summary": "The checkout registry knows every checkout and one chosen checkout for each repository identity",
+			"content": {
+				"nodes": [
+					{
+						"id": "TBnOCNx2",
+						"order": 1000,
+						"name": "Agent CLI",
+						"kind": "service",
+						"responsibility": "Authors named boards: one short-lived process per command, writing no board itself",
+						"description": "Every board operation reaches the Archboard server over HTTP. Three commands draw for themselves in a headless browser here: rasterize photographs the SVG the server made; record keeps a narrated talk from the server's own page, then draws it frame by frame and has ffmpeg encode the video; replay draws a kept talk again. repo add, repo use, repo forget and repo language-server write this machine's list of checkouts itself. With --clipboard, rasterize publishes PNG and self-contained HTML to the local desktop through a native clipboard helper.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/bin.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "cPOdAA3f",
+						"order": 2000,
+						"name": "Archboard server",
+						"kind": "service",
+						"responsibility": "Owns every board, draws every view, and answers both applications",
+						"description": "One process. Board persistence, the renderer, the pane sockets and the agent workbench all live in it; the Codex app-server is its private child.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard"
+						},
+						"drillDown": {
+							"board": "Archboard server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "6nZjwK9W",
+						"order": 3000,
+						"name": "Browser",
+						"kind": "service",
+						"responsibility": "Reads architecture; owns the camera, the view, the walkthrough and the selection, and nothing else",
+						"description": "It also carries voice: the Archboard server negotiates the session with Codex for the page, and the microphone and the voice then travel over the connection that negotiation opens.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/index.tsx"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8XKRkSHl",
+						"order": 4000,
+						"name": "Board vault",
+						"kind": "datastore",
+						"responsibility": "One document per board, holding every variant of it",
+						"description": "Tracked in the repository. The file is the board and nothing holds a copy of it: an accepted write is on disk, fsync included, before it is answered (ADR 0015, ADR 0023)."
+					},
+					{
+						"id": "xr1MHYE7",
+						"order": 5000,
+						"name": "Codex app-server",
+						"kind": "external",
+						"responsibility": "Runs each browser tab's agent threads, as one private child of the Archboard server",
+						"description": "Its own process group, spoken to over stdio; what it keeps is in the Codex home. Its threads author boards the way any agent does, by running the CLI from a sandbox that reaches the server over localhost. The child's environment names the URL and vault of the server that started it, so that CLI talks to that server and never starts another. Archboard's side of it is the agent workbench inside the Archboard server.",
+						"groups": [
+							"agent"
+						]
+					},
+					{
+						"id": "19855Ply",
+						"order": 6000,
+						"name": "Repository checkout",
+						"kind": "datastore",
+						"responsibility": "Every checkout known here, the one chosen for each repository that bindings resolve in, and untracked vaults; each checkout holds its configured language servers",
+						"description": "A binding names a repository identity and a path inside it, which are the same in every clone; a machine-local registry is the only place a directory on one machine is written down. It holds every known checkout (clones, and the worktrees that git lists for a known one), each with its identity, and every directory outside a checkout that holds .archboard/vault, under a registry name. For each identity one checkout is chosen: the first known one, then only repo use changes it, and repo add never does. A reader that turns an identity into a directory asks for the chosen checkouts and so never sees the others; an identity whose chosen checkout was forgotten resolves as unregistered. Each checkout's entry also holds the language servers an agent set with repo language-server (TASK-433): a command and its arguments for Python, C (which covers C++ and Objective-C), C# or Swift, kept with the checkout and removed with it.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/repo-registry.ts"
+						}
+					},
+					{
+						"id": "PxnjFfV3",
+						"order": 7000,
+						"name": "Skill evaluation",
+						"kind": "service",
+						"responsibility": "Measures one version of the agent skill against another, on real authors and real checkouts",
+						"description": "Started by a person, never by the gate: every author run and the grading session call a model.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation"
+						},
+						"drillDown": {
+							"board": "Skill evaluation",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "t7W7wJHv",
+						"order": 8000,
+						"name": "Headless Chromium",
+						"kind": "external",
+						"responsibility": "Paints an SVG and answers with the bitmap, or opens the Archboard server's page to record a walkthrough's talk or draw it frame by frame, when a command asks"
+					},
+					{
+						"id": "zs8yTQLI",
+						"order": 9000,
+						"name": "Codex home",
+						"kind": "datastore",
+						"responsibility": "Codex's sign-in, config and threads, shared by every Archboard server on this machine",
+						"description": "An archboard-only CODEX_HOME under the state directory, readable by nobody else. One sign-in serves every server, since Codex takes several processes on one home; what a server keeps about its own child, the owner lock and the epoch ledger, sits under its port. The server fills in the config it needs (auto-review approvals, a sandbox with network access) and keeps what Codex or the user set.",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-process/lib/storage.ts"
+						}
+					},
+					{
+						"id": "nugpFSIX",
+						"order": 10000,
+						"name": "ffmpeg",
+						"kind": "external",
+						"responsibility": "Encodes a recording's frames and voice into its video file, when a command asks",
+						"description": "Named by ARCHBOARD_FFMPEG, found on PATH, or run as nixpkgs#ffmpeg-headless through Nix. Without one, record and replay are refused before a browser starts."
+					},
+					{
+						"id": "VgzgNAGW",
+						"order": 11000,
+						"name": "Recorded talks",
+						"kind": "datastore",
+						"responsibility": "Each recording's talk: its voice, and when each step and line came, kept to render again",
+						"description": "talk.json and voice.wav, under the state directory's recordings, where the newest 10 stay, or in a directory --talk names, which is never pruned. A talk holds the board and the policy it was drawn from, so it renders again without the board.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/walkthrough-recorder/lib/talk-files.ts"
+						}
+					},
+					{
+						"id": "yEgsaWnA",
+						"order": 12000,
+						"name": "Clipboard owner",
+						"kind": "service",
+						"responsibility": "Publishes PNG and HTML to the native desktop clipboard; retains Linux ownership until another copy replaces it",
+						"description": "Uses @teddyzhu/clipboard on Linux and macOS. A detached Bun process owns Linux clipboard data after the command exits. macOS retains the data itself.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/image-clipboard"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "9m47dJzG",
+						"order": 1000,
+						"from": "TBnOCNx2",
+						"to": "cPOdAA3f",
+						"kind": "http",
+						"label": "semantic commands",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/lib/server-client-transport.ts",
+							"symbol": "fetch"
+						}
+					},
+					{
+						"id": "iF6W48DS",
+						"order": 2000,
+						"from": "6nZjwK9W",
+						"to": "cPOdAA3f",
+						"kind": "http",
+						"label": "views and controls",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/server-requests/index.ts",
+							"symbol": "fetch"
+						}
+					},
+					{
+						"id": "mjjIPV4U",
+						"order": 3000,
+						"from": "cPOdAA3f",
+						"to": "8XKRkSHl",
+						"kind": "data",
+						"label": "read / commit",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"symbol": "writeSemanticBoard"
+						}
+					},
+					{
+						"id": "4p2LMrOt",
+						"order": 4000,
+						"from": "cPOdAA3f",
+						"to": "6nZjwK9W",
+						"kind": "event",
+						"label": "board and agent news",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/board-announcements.ts",
+							"symbol": "broadcast"
+						}
+					},
+					{
+						"id": "2OeapIzk",
+						"order": 5000,
+						"from": "cPOdAA3f",
+						"to": "xr1MHYE7",
+						"kind": "rpc",
+						"label": "private stdio session",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-process/lib/process-spawn.ts",
+							"symbol": "CODEX_APP_SERVER_ARGUMENTS"
+						}
+					},
+					{
+						"id": "oK9fPKdv",
+						"order": 6000,
+						"from": "cPOdAA3f",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "resolve each repository in its chosen checkout",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/code-target/index.ts",
+							"symbol": "chosenCheckouts"
+						}
+					},
+					{
+						"id": "chzSzpL4",
+						"order": 7000,
+						"from": "TBnOCNx2",
+						"to": "t7W7wJHv",
+						"kind": "call",
+						"label": "photograph a board, record a talk, draw its frames",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/headless-chromium/lib/process.ts",
+							"symbol": "spawnChromium"
+						}
+					},
+					{
+						"id": "xKVVomRU",
+						"order": 8000,
+						"from": "PxnjFfV3",
+						"to": "TBnOCNx2",
+						"kind": "call",
+						"label": "the CLI under test",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/archboard.ts",
+							"symbol": "archboard"
+						}
+					},
+					{
+						"id": "SoK3eMhj",
+						"order": 9000,
+						"from": "PxnjFfV3",
+						"to": "cPOdAA3f",
+						"kind": "call",
+						"label": "one per run, on its own port",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/server.ts",
+							"symbol": "startServer"
+						}
+					},
+					{
+						"id": "vKDw0TwV",
+						"order": 10000,
+						"from": "t7W7wJHv",
+						"to": "cPOdAA3f",
+						"kind": "http",
+						"label": "the recording and replay pages",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/walkthrough-recorder/index.ts",
+							"symbol": "pageUrl"
+						}
+					},
+					{
+						"id": "pxP5bkpx",
+						"order": 11000,
+						"from": "cPOdAA3f",
+						"to": "zs8yTQLI",
+						"kind": "data",
+						"label": "prepare, write its config",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-process/lib/owner-dependencies.ts",
+							"symbol": "prepareCodexStorage"
+						}
+					},
+					{
+						"id": "t3P6jc5T",
+						"order": 12000,
+						"from": "xr1MHYE7",
+						"to": "zs8yTQLI",
+						"kind": "data",
+						"label": "sign-in, config, threads",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-process/lib/environment.ts",
+							"symbol": "buildCodexChildEnvironment"
+						}
+					},
+					{
+						"id": "DcdR8rPv",
+						"order": 13000,
+						"from": "xr1MHYE7",
+						"to": "TBnOCNx2",
+						"kind": "call",
+						"label": "a thread's board commands",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-process/lib/environment.ts",
+							"symbol": "buildCodexChildEnvironment"
+						}
+					},
+					{
+						"id": "J5WjwmUn",
+						"order": 14000,
+						"from": "TBnOCNx2",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "register, choose and forget checkouts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/repo.ts",
+							"symbol": "declareDirectory"
 						}
 					},
 					{
