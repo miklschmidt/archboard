@@ -139,7 +139,9 @@ Record each repair and the passing gate result before closing the original task.
        value that a part receives. Anchor the code that sends or subscribes.
      - A part with no binding, and a binding into a repository that this
        machine has not registered or has no chosen checkout for
-       (`./bin/dogfood repo add`, `repo use`).
+       (`./bin/dogfood repo add`, `repo use`). The checkout that holds the
+       vault stands for its own repository, registered or not, so a task in a
+       worktree is checked against that worktree.
 
      Every place where the build left the plan is a deviation.
 2. Correct the proposal to what was built, not to what was planned.

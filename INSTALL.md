@@ -218,6 +218,13 @@ that has no chosen checkout. `archboard repo forget <dir>` removes a checkout.
 If it was the chosen checkout, the repository has no chosen checkout until you
 run `repo use`, and its bindings resolve as unregistered meanwhile.
 
+One rule overrides the choice. A binding or anchor into the repository whose
+checkout holds the vault resolves in that checkout, whether or not it is
+registered or chosen. So a board in a worktree is checked against that
+worktree's code, while a binding into any other repository resolves in that
+repository's chosen checkout. A vault outside any checkout has no repository of
+its own, so all its bindings use chosen checkouts.
+
 A directory outside any git checkout that holds `.archboard/vault` is an
 untracked vault. `repo add <dir>` registers it under its base name, made unique
 on this machine, and `repo list` shows it. `repo forget <dir>` removes it.

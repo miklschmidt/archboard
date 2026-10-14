@@ -171,7 +171,10 @@ recipe names.
   `archboard check --code` holds every anchor and bound `symbol` of each
   board's current variant to the files on disk: a file that is not there or
   does not hold the symbol is a warning that names its part, relationship or
-  step, and exits 1. Repair the anchor or binding it names. Code that one bound
+  step, and exits 1. Repair the anchor or binding it names. A binding or anchor
+  into the repository whose checkout holds the vault is read in that checkout
+  (a worktree reads its own files); one into any other repository is read in
+  its chosen checkout. Code that one bound
   part runs in another, with no relationship between them, is a warning on the
   part it reaches (`RELATIONSHIP_UNDRAWN`): draw the relationship. A
   relationship with no anchor that the code runs the other way or does not show

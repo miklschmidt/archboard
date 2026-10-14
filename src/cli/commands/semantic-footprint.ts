@@ -135,9 +135,8 @@ const semanticFootprintContract = defineCommand({
 		"A bound symbol narrows commits to its declaration through the language adapters. " +
 		"The answer labels path-wide fallback when a symbol is unsupported or unresolved. " +
 		"Reports which parts of a board's current variant the commits from the merge base of --base " +
-		"and HEAD up to HEAD changed, through their bound declarations or paths, in each checkout the machine has " +
-		"registered. --base is any ref that resolves in the checkout, such as main, origin/main or " +
-		"a commit; nothing is fetched, and a checkout where it does not resolve is named in the " +
+		"and HEAD up to HEAD changed, through their bound declarations or paths, in the checkout that holds the vault for its own repository and in the chosen checkout of every " +
+		"other. --base is any ref that resolves in the checkout, such as main, origin/main or a commit; nothing is fetched, and a checkout where it does not resolve is named in the " +
 		"answer and not read. Each checkout is read at its HEAD, so a change that is not committed " +
 		"is not in it. Each part lists its commits; large commits (more than 30 files) are " +
 		"kept and marked. With --variant it also reads a proposal, a draft of the board, against " +
@@ -216,7 +215,8 @@ const semanticFootprintContract = defineCommand({
 			method: "GET",
 			path: "/api/semantic-boards/footprint",
 			cardinality: "one",
-			description: "The footprint, read from Git in each chosen checkout",
+			description:
+				"The footprint, read from Git in the checkout that holds the vault and in each chosen checkout",
 		},
 	],
 	/**
