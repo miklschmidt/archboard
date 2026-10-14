@@ -1,9 +1,11 @@
 ---
 id: TASK-472.04
 title: Every server call names its vault
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-14 21:49'
+updated_date: '2026-10-14 22:45'
 labels: []
 dependencies:
   - TASK-472.01
