@@ -27,7 +27,11 @@ async function startLinkedWorkbench(
 	const clientId = `process-${label}`;
 	const socket = await openApplicationSocket(server.base, clientId);
 	resources.defer(() => socket.close());
-	const request = createRequester({ base: server.base, assertRunning: async () => undefined });
+	const request = createRequester({
+		base: server.base,
+		assertRunning: async () => undefined,
+		vault: server.vault,
+	});
 	expect(
 		(
 			await request("/api/panes", {

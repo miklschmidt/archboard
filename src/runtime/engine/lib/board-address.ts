@@ -92,6 +92,19 @@ function normalizeBoardKey(key: string): string {
 }
 
 /**
+ * The key process memory files a board under: the vault it lives in and its
+ * normalised name together. Two vaults can each hold a board of one name
+ * (ADR 0049), so a claim, an announcement or a fingerprint is never keyed by
+ * the name alone.
+ * @param vault The vault the board lives in, as the call named it.
+ * @param board A board key or name as typed.
+ * @returns One string per board of one vault.
+ */
+function boardMemoryKey(vault: string, board: string): string {
+	return `${vault}\n${normalizeBoardKey(board)}`;
+}
+
+/**
  * The key form of a board name, `/` separators and all.
  * @param name A board name as typed.
  * @returns The normalised name.
@@ -517,6 +530,7 @@ export {
 	SCRATCH_BOARD,
 	VAULT_STATE_DIR,
 	LEVELS,
+	boardMemoryKey,
 	normalizeBoardKey,
 	normalizeBoardName,
 	validateBoardName,

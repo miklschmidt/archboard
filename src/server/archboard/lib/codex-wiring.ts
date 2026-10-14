@@ -1,5 +1,7 @@
 import { logger } from "@/runtime/engine/logger";
 import { semanticChangeFeed } from "@/server/archboard/lib/semantic-change-feed";
+import { serverVault } from "@/server/archboard/lib/server-vault";
+import { workbenchFeed } from "@/server/archboard/lib/codex-workbench-feed";
 
 import { panesInOrder } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
@@ -96,6 +98,19 @@ function shownBoard(pane: PaneRegistration): string {
 		throw new Error(`Pane ${pane.paneId} is showing no board, so there is no context to read.`);
 	}
 	return board;
+}
+
+/**
+ * The semantic input for the board a pane shows, read fresh in the pane's vault.
+ * @param owners The active components.
+ * @param pane The pane.
+ * @returns The input.
+ */
+function fullInputFor(
+	owners: Parameters<typeof semanticInputFor>[0],
+	pane: PaneRegistration,
+): ReturnType<typeof semanticInputFor> {
+	return semanticInputFor(owners, pane.vault, shownBoard(pane), null, pane);
 }
 
 /** Forget every browser callback the workbench installed. */
@@ -366,7 +381,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		 * @returns The publisher options.
 		 */
 		semanticPublisherFor: (tabSessionId) => ({
-			feed: semanticChangeFeed,
+			feed: workbenchFeed,
 			feedId: semanticChangeFeed.feedId,
 			fresh: {
 				/**
@@ -376,12 +391,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				read: () => {
 					const { components, session } = liveSession(tabSessionId);
 					const pane = openPaneOf(session);
-					return semanticInputFor(
-						semanticOwners(components, session),
-						shownBoard(pane),
-						null,
-						pane,
-					);
+					return fullInputFor(semanticOwners(components, session), pane);
 				},
 			},
 			/**
@@ -393,6 +403,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				const { components, session } = liveSession(tabSessionId);
 				return semanticInputFor(
 					semanticOwners(components, session),
+					serverVault(),
 					event.board,
 					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
 					changePane(session),
@@ -428,12 +439,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			if (!bindingMatchesAuthority(components.threadLink.read(session.id), authority)) {
 				throw new Error("The lease-bound Codex pane context changed before capture.");
 			}
-			const exactInput = semanticInputFor(
-				semanticOwners(components, session),
-				shownBoard(pane),
-				null,
-				pane,
-			);
+			const exactInput = fullInputFor(semanticOwners(components, session), pane);
 			return canonicalContextFromBrief(
 				session.components.semanticPublisher.freshBriefFor(exactInput),
 				pane.paneId,
@@ -484,12 +490,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				if (pane === undefined || session === null) return;
 				const { semanticPublisher } = session.components;
 				try {
-					const read = semanticInputFor(
-						semanticOwners(components, session),
-						shownBoard(pane),
-						null,
-						pane,
-					);
+					const read = fullInputFor(semanticOwners(components, session), pane);
 					const said = { ...read.pane, userChanged, ...(agentSwitch ? { agentSwitch } : {}) };
 					const input = { ...read, pane: said };
 					if (kind === "selection") semanticPublisher.publishPaneSelection(input);

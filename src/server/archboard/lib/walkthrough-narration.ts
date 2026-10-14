@@ -32,20 +32,17 @@ import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-con
 import { aggregateKey } from "@/server/archboard/lib/semantic-board-context";
 import { tabSessionOf } from "@/server/archboard/lib/tab-sessions";
 import type { TabSessionId } from "@/server/codex-workbench";
-import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
- * What one live pane is showing: what the pane itself last said is on screen,
- * which follows a drill-down, and otherwise the board the server pointed it at.
+ * The board a pane shows: what the pane itself last said is on screen, which
+ * follows a drill-down, and otherwise the board the server pointed it at.
  * @param clientId The pane's client id.
- * @returns The board by name and the variant, or null when the pane has gone or shows no board.
+ * @returns The board by name and the variant, or null when the pane shows no board.
  */
-function showingOf(
-	clientId: string,
-): { readonly board: string; readonly variant: string | undefined } | null {
-	if (!panes.has(clientId)) {
-		return null;
-	}
+function boardOnPane(clientId: string): {
+	readonly board: string;
+	readonly variant: string | undefined;
+} | null {
 	const said = semanticPaneContextFor(clientId);
 	if (said?.board != null) {
 		return { board: said.board.name, variant: said.variant?.id };
@@ -56,6 +53,21 @@ function showingOf(
 	}
 	const identity = parseBoardKey(key);
 	return { board: identity.board, variant: statedVariant(identity) };
+}
+
+/**
+ * What one live pane is showing, and the vault it shows it in.
+ * @param clientId The pane's client id.
+ * @returns The vault, board and variant, or null when the pane has gone or shows no board.
+ */
+function showingOf(clientId: string): {
+	readonly vault: string;
+	readonly board: string;
+	readonly variant: string | undefined;
+} | null {
+	const pane = panes.get(clientId);
+	const shown = pane === undefined ? null : boardOnPane(clientId);
+	return pane === undefined || shown === null ? null : { vault: pane.vault, ...shown };
 }
 
 /** One walkthrough of the board a pane is showing, with the board and variant it belongs to. */
@@ -76,7 +88,7 @@ function walkthroughOnPane(clientId: string, walkthroughId: string): ShownWalkth
 	if (showing === null) {
 		return undefined;
 	}
-	const read = readSemanticBoard(serverVault(), showing.board);
+	const read = readSemanticBoard(showing.vault, showing.board);
 	if (!read.ok) {
 		return undefined;
 	}

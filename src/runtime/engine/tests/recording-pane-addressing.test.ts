@@ -25,6 +25,7 @@ function pane(clientId: string, extra: Partial<PaneRegistration> = {}): PaneRegi
 	return {
 		clientId,
 		paneId: "A",
+		vault: "/vault",
 		board: "tour",
 		primary: false,
 		focused: false,

@@ -6,6 +6,19 @@ const boardRequiredRefusal = {
 	stream: "stderr" as const,
 	description: "A board-sensitive request did not name a board.",
 };
+const vaultRequiredRefusal = {
+	code: "VAULT_REQUIRED",
+	exit: 2,
+	stream: "stderr" as const,
+	description: "A server call named no vault. Set ARCHBOARD_VAULT.",
+};
+const vaultUnreadableRefusal = {
+	code: "VAULT_UNREADABLE",
+	exit: 2,
+	stream: "stderr" as const,
+	description: "The vault the command names is not a directory the server can read.",
+};
+const vaultRefusals = [vaultRequiredRefusal, vaultUnreadableRefusal] as const;
 const serverRefusal = {
 	code: "SERVER_UNREACHABLE",
 	exit: 3,
@@ -64,6 +77,7 @@ const tail = z.array(z.string()).default([]);
 export {
 	boardRequiredRefusal,
 	serverRefusal,
+	vaultRefusals,
 	browserRefusal,
 	doingRefusal,
 	boardHeldRefusal,

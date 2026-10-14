@@ -7,10 +7,20 @@
 // it once is what keeps a write's `--board`, `--doing` and `--expect-version`
 // from being forgotten by whichever call site was written last.
 
+import { resolve } from "node:path";
+
+import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
 import { isRecord } from "@/runtime/engine/lib/unknown-record";
 
 /** The board this invocation names, or null when it names none. */
 let requestedBoard: string | null = null;
+
+/**
+ * The vault this invocation names, which every server call states (ADR 0049):
+ * one server serves several vaults and cannot guess which this command means.
+ * Today that is the vault the environment configures, or none.
+ */
+const requestedVault: string | null = ARCHBOARD_VAULT ? resolve(ARCHBOARD_VAULT) : null;
 
 /** What this invocation says it is doing, or null when it says nothing. */
 let writeDoing: string | null = null;
@@ -48,6 +58,21 @@ function currentRequestedBoard(): string | null {
 function addQuery(path: string, key: string, value: string | number): string {
 	const separator = path.includes("?") ? "&" : "?";
 	return `${path}${separator}${key}=${encodeURIComponent(String(value))}`;
+}
+
+/**
+ * A path carrying the vault this invocation names. Only an API call states
+ * one: the health probe asks about the server, and no vault holds its answer.
+ * @param requestPath The path.
+ * @returns The path, with `?vault=` when it is an API call and there is a vault to state.
+ */
+function withVault(requestPath: string): string {
+	if (requestedVault === null || !requestPath.startsWith("/api/")) {
+		return requestPath;
+	}
+	return /[?&]vault=/u.test(requestPath)
+		? requestPath
+		: addQuery(requestPath, "vault", requestedVault);
 }
 
 /**
@@ -177,6 +202,7 @@ function withWriteClaims(path: string, method?: string): string {
 }
 
 export {
+	withVault,
 	setWriteSession,
 	currentWriteSession,
 	addQuery,

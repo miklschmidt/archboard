@@ -70,11 +70,14 @@ test("production crash revokes dispatch and replaces only after the exact prior 
 		resources.defer(async () => {
 			await socket.close();
 		});
-		const registered = await fetch(new URL("/api/panes", server.base), {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(pane("crash-replacement-client")),
-		});
+		const registered = await fetch(
+			new URL(`/api/panes?vault=${encodeURIComponent(server.vault)}`, server.base),
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(pane("crash-replacement-client")),
+			},
+		);
 		expect(registered.status).toBe(200);
 		expect(await socket.request("connect")).toMatchObject({ ok: true });
 

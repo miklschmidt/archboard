@@ -103,12 +103,22 @@ async function serverWith(
 }
 
 /**
+ * The query that names a vault, as every call to the server does (ADR 0049).
+ * @param vault The vault, which is the one the test owns unless another is named.
+ * @returns The query string.
+ */
+function named(vault = scratch): string {
+	return `vault=${encodeURIComponent(vault)}`;
+}
+
+/**
  * What a pane reads.
  * @param base The server.
+ * @param vault The vault the pane shows.
  * @returns The remembered readings, by board.
  */
-async function readFindings(base: string): Promise<Map<string, number>> {
-	const reply = await fetch(`${base}/api/vault/code-findings`);
+async function readFindings(base: string, vault = scratch): Promise<Map<string, number>> {
+	const reply = await fetch(`${base}/api/vault/code-findings?${named(vault)}`);
 	expect(reply.status).toBe(200);
 	const { readings } = RememberedFindingsSchema.parse(await reply.json());
 	return new Map(readings.map((reading) => [reading.board, reading.findings.length]));
@@ -118,10 +128,10 @@ test("a pass fills the memory, and reading it starts no pass", async () => {
 	const { base, passes } = await serverWith([answerOver(["orders", "payments"], ["orders"])]);
 
 	expect((await readFindings(base)).size).toBe(0);
-	await (await fetch(`${base}/api/vault/code-check`)).json();
+	await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
 	expect(passes()).toBe(1);
 
-	const reply = await fetch(`${base}/api/vault/code-findings`);
+	const reply = await fetch(`${base}/api/vault/code-findings?${named()}`);
 	const { readings } = RememberedFindingsSchema.parse(await reply.json());
 	expect(readings.map(({ board, variant, version }) => ({ board, variant, version }))).toEqual([
 		{ board: "orders", variant: "v1", version: 3 },
@@ -137,8 +147,8 @@ test("a later pass replaces what it read and keeps the rest", async () => {
 		answerOver(["orders", "payments"], ["orders", "payments"]),
 		answerOver(["orders"], []),
 	]);
-	await (await fetch(`${base}/api/vault/code-check`)).json();
-	await (await fetch(`${base}/api/vault/code-check`)).json();
+	await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
+	await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
 
 	expect(await readFindings(base)).toEqual(
 		new Map([
@@ -150,8 +160,21 @@ test("a later pass replaces what it read and keeps the rest", async () => {
 
 test("a cancelled pass leaves the memory as it was", async () => {
 	const { base, passes } = await serverWith([answerOver(["orders"], ["orders"])], true);
-	await fetch(`${base}/api/vault/code-check`).catch(() => undefined);
+	await fetch(`${base}/api/vault/code-check?${named()}`).catch(() => undefined);
 
 	expect(passes()).toBe(1);
 	expect((await readFindings(base)).size).toBe(0);
+});
+
+test("what a pass found in one vault is not shown for a board of the same name in another", async () => {
+	const other = mkdtempSync(join(tmpdir(), "archboard-code-findings-other-"));
+	try {
+		const { base } = await serverWith([answerOver(["orders"], ["orders"])]);
+		await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
+
+		expect((await readFindings(base)).get("orders")).toBe(1);
+		expect((await readFindings(base, other)).size).toBe(0);
+	} finally {
+		rmSync(other, { recursive: true, force: true });
+	}
 });

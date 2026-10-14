@@ -158,7 +158,12 @@ describe.serial("production Codex setup cleanup", () => {
 				logged: true,
 			});
 			socket = await openApplicationSocket(base, "signed-out-client");
-			const request = createRequester({ base, assertRunning: async () => undefined });
+			const served = (await (await fetch(`${base}/api/served-vault`)).json()) as { vault: string };
+			const request = createRequester({
+				base,
+				assertRunning: async () => undefined,
+				vault: served.vault,
+			});
 			expect(
 				(
 					await request("/api/panes", {
@@ -342,6 +347,7 @@ describe.serial("production Codex setup cleanup", () => {
 						: (peer?.base ?? server.base);
 				let socket: WebSocket | null = null;
 				const failure = await openApplicationSocket(failureBase, "bound-client", {
+					vault: server.vault,
 					timeoutMs: scenario === "timeout" ? 25 : 2_000,
 					onSocket: (value) => {
 						socket = value;

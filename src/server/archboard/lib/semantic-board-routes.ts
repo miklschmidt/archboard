@@ -43,7 +43,7 @@ import {
 	editRoute,
 	resolveRoute,
 } from "@/server/archboard/lib/semantic-board-writes";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /**
  * The theme a render stands alone in. Absent asks for the page's picture, which
@@ -100,15 +100,16 @@ function refuseUnnamedBoard(res: Response): void {
 }
 
 /**
- * Every semantic board in the vault.
- * @param _req The request.
+ * Every semantic board in the vault the request names.
+ * @param req The request.
  * @param res Its response.
  */
-function listRoute(_req: Request, res: Response): void {
+function listRoute(req: Request, res: Response): void {
 	try {
-		const configured = readSemanticBoardConfiguration(serverVault());
-		const read = listSemanticBoards(serverVault()).map(
-			(location) => [location, readSemanticBoard(serverVault(), location.name)] as const,
+		const vault = vaultOfRequest(req);
+		const configured = readSemanticBoardConfiguration(vault);
+		const read = listSemanticBoards(vault).map(
+			(location) => [location, readSemanticBoard(vault, location.name)] as const,
 		);
 		// A drill-down written before a rename names the board as it was then;
 		// the listing names it as it is now, so the navigator places the board
@@ -137,7 +138,7 @@ function readRoute(req: Request, res: Response): void {
 		return;
 	}
 	try {
-		const read = readSemanticBoard(serverVault(), asked);
+		const read = readSemanticBoard(vaultOfRequest(req), asked);
 		if (!read.ok) {
 			res.status(read.code === "BOARD_MISSING" ? 404 : 422).json({
 				success: false,
@@ -397,14 +398,15 @@ async function answerRender(req: Request, res: Response, asked: string): Promise
 		res.status(400).json({ success: false, code: "BAD_REQUEST", error: stated.why });
 		return;
 	}
-	const board = readableBoard(res, asked);
+	const vault = vaultOfRequest(req);
+	const board = readableBoard(res, vault, asked);
 	if (board === null) {
 		return;
 	}
 	const outcome = await renderBoard(
 		board,
 		stated.how,
-		readSemanticBoardConfiguration(serverVault()).configuration,
+		readSemanticBoardConfiguration(vault).configuration,
 	);
 	if (!outcome.ok) {
 		res.status(404).json({ success: false, code: outcome.code, error: outcome.error });
@@ -416,11 +418,12 @@ async function answerRender(req: Request, res: Response, asked: string): Promise
 /**
  * The board a request is about, or nothing once the refusal has been answered.
  * @param res The response.
+ * @param vault The vault the request named.
  * @param asked The board name.
  * @returns The board, or null when it could not be read.
  */
-function readableBoard(res: Response, asked: string): SemanticBoard | null {
-	const read = readSemanticBoard(serverVault(), asked);
+function readableBoard(res: Response, vault: string, asked: string): SemanticBoard | null {
+	const read = readSemanticBoard(vault, asked);
 	if (read.ok) {
 		return read.board;
 	}
@@ -444,20 +447,20 @@ function readableBoard(res: Response, asked: string): SemanticBoard | null {
  * @param app The express application.
  */
 function mountSemanticBoardRoutes(app: Express): void {
-	app.get("/api/vault/check", (_req, res) => {
-		res.json({ success: true, ...checkSemanticVault(serverVault()) });
+	app.get("/api/vault/check", requireVault, (req, res) => {
+		res.json({ success: true, ...checkSemanticVault(vaultOfRequest(req)) });
 	});
-	app.get("/api/semantic-boards", listRoute);
-	app.get("/api/semantic-boards/board", readRoute);
-	app.get("/api/semantic-boards/render", renderRoute);
-	app.post("/api/semantic-boards/create", asyncEndpoint(createRoute));
-	app.post("/api/semantic-boards/edit", asyncEndpoint(editRoute));
-	app.post("/api/semantic-boards/branch", asyncEndpoint(branchRoute));
-	app.post("/api/semantic-boards/resolve", asyncEndpoint(resolveRoute));
-	app.post("/api/semantic-boards/adopt", asyncEndpoint(adoptRoute));
-	app.post("/api/semantic-boards/shelve", asyncEndpoint(shelveRoute));
-	app.post("/api/semantic-boards/rename", asyncEndpoint(renameRoute));
-	app.post("/api/semantic-boards/discard", asyncEndpoint(discardRoute));
+	app.get("/api/semantic-boards", requireVault, listRoute);
+	app.get("/api/semantic-boards/board", requireVault, readRoute);
+	app.get("/api/semantic-boards/render", requireVault, renderRoute);
+	app.post("/api/semantic-boards/create", requireVault, asyncEndpoint(createRoute));
+	app.post("/api/semantic-boards/edit", requireVault, asyncEndpoint(editRoute));
+	app.post("/api/semantic-boards/branch", requireVault, asyncEndpoint(branchRoute));
+	app.post("/api/semantic-boards/resolve", requireVault, asyncEndpoint(resolveRoute));
+	app.post("/api/semantic-boards/adopt", requireVault, asyncEndpoint(adoptRoute));
+	app.post("/api/semantic-boards/shelve", requireVault, asyncEndpoint(shelveRoute));
+	app.post("/api/semantic-boards/rename", requireVault, asyncEndpoint(renameRoute));
+	app.post("/api/semantic-boards/discard", requireVault, asyncEndpoint(discardRoute));
 }
 
 export { mountSemanticBoardRoutes };

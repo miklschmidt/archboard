@@ -19,6 +19,8 @@ import { onBoardBroadcast } from "@/server/archboard/lib/pane-registry";
 interface SettledBoardChange {
 	/** Monotonic within this feed: what a reader says it has read up to. */
 	readonly cursor: number;
+	/** The vault the board lives in: a board name alone does not say which board changed. */
+	readonly vault: string;
 	readonly board: string;
 	readonly at: string;
 	readonly origin: "agent";
@@ -146,13 +148,14 @@ function authorOf(message: WebSocketMessage): string | null {
 	return typeof message["by"] === "string" ? message["by"] : null;
 }
 
-onBoardBroadcast((message, board) => {
+onBoardBroadcast((message, vault, board) => {
 	if (!isBoardChange(message)) {
 		return;
 	}
 	cursor += 1;
 	const event: SettledBoardChange = {
 		cursor,
+		vault,
 		board,
 		at: new Date().toISOString(),
 		// Only an agent writes a board: a person reads one (ADR 0023).

@@ -28,7 +28,7 @@ import {
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
 import { errorMessage } from "@/shared/thrown-error/index";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface FootprintRouteDependencies {
@@ -113,6 +113,7 @@ interface Asked {
 
 /** A request the route can read: the board, its variants, and the ref. */
 interface Readable extends FootprintVariants {
+	readonly vault: string;
 	readonly board: SemanticBoard;
 	readonly base: string;
 }
@@ -143,11 +144,12 @@ function askedOf(request: Request): Asked | undefined {
 
 /**
  * Read the board a request names and the variants it asks for.
+ * @param vault The vault the request named.
  * @param wanted What the request asks for.
  * @returns What to read, or why the request is turned away.
  */
-function readableOf(wanted: Asked): Readable | Refusal {
-	const read = readSemanticBoard(serverVault(), wanted.board);
+function readableOf(vault: string, wanted: Asked): Readable | Refusal {
+	const read = readSemanticBoard(vault, wanted.board);
 	if (!read.ok) {
 		return {
 			status: read.code === "BOARD_MISSING" ? 404 : 422,
@@ -156,7 +158,9 @@ function readableOf(wanted: Asked): Readable | Refusal {
 		};
 	}
 	const variants = variantsOf(read.board, wanted.variant);
-	return isRefusal(variants) ? variants : { board: read.board, base: wanted.base, ...variants };
+	return isRefusal(variants)
+		? variants
+		: { vault, board: read.board, base: wanted.base, ...variants };
 }
 
 /**
@@ -201,7 +205,7 @@ async function answerFootprint(
 		return;
 	}
 	try {
-		const readable = readableOf(wanted);
+		const readable = readableOf(vaultOfRequest(request), wanted);
 		if (isRefusal(readable)) {
 			refuse(response, readable);
 			return;
@@ -245,7 +249,7 @@ function mountFootprintRoute(
 		read: readFootprint,
 		...overrides,
 	};
-	app.get("/api/semantic-boards/footprint", (request, response) => {
+	app.get("/api/semantic-boards/footprint", requireVault, (request, response) => {
 		void answerFootprint(dependencies, request, response);
 	});
 }

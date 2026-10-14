@@ -158,7 +158,9 @@ describe("settling a proposal and adopting an architecture", () => {
 
 	test("adopting moves the designation and records why, through the command line", async () => {
 		const held = JSON.parse(cli(["semantic", "show", "settling"]).stdout).board;
-		const beforeListing = await (await fetch(`${server.base}/api/semantic-boards`)).json();
+		const beforeListing = await (
+			await fetch(`${server.base}/api/semantic-boards?vault=${encodeURIComponent(server.vault)}`)
+		).json();
 		expect(
 			beforeListing.boards.find((entry: { key: string }) => entry.key === "settling").variants,
 		).toEqual(listedVariants(held));
@@ -188,7 +190,9 @@ describe("settling a proposal and adopting an architecture", () => {
 		);
 		expect(after.adoptions).toHaveLength(1);
 		expect(after.adoptions[0].reason).toBe("the gateway shipped");
-		const afterListing = await (await fetch(`${server.base}/api/semantic-boards`)).json();
+		const afterListing = await (
+			await fetch(`${server.base}/api/semantic-boards?vault=${encodeURIComponent(server.vault)}`)
+		).json();
 		expect(
 			afterListing.boards.find((entry: { key: string }) => entry.key === "settling").variants,
 		).toEqual(listedVariants(after));
@@ -303,7 +307,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		// What the picture was answered with, read off the route the viewer reads:
 		// which state has to decide, and nothing the store keeps for itself.
 		const answered = await fetch(
-			`${server.base}/api/semantic-boards/render?board=blocking&variant=${encodeURIComponent(
+			`${server.base}/api/semantic-boards/render?vault=${encodeURIComponent(server.vault)}&board=blocking&variant=${encodeURIComponent(
 				"Queued and batched",
 			)}`,
 		);
@@ -328,7 +332,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		// names the board alone — every variant lives in the one document — so this
 		// is a caller spelling a write the way it spells what it is looking at.
 		const answer = await fetch(
-			`${server.base}/api/semantic-boards/edit?expectVersion=${start.version}`,
+			`${server.base}/api/semantic-boards/edit?vault=${encodeURIComponent(server.vault)}&expectVersion=${start.version}`,
 			{
 				method: "POST",
 				headers: { "content-type": "application/json" },
@@ -359,7 +363,7 @@ describe("settling a proposal and adopting an architecture", () => {
 				JSON.stringify({ level: "system", nodes: [{ name: "API", kind: "service" }] }),
 			).status,
 		).toBe(0);
-		const endpoint = new URL(server.base);
+		const endpoint = new URL(`${server.base}?vault=${encodeURIComponent(server.vault)}`);
 		endpoint.protocol = "ws:";
 		endpoint.searchParams.set("clientId", "listening-pane");
 		const socket = new WebSocket(endpoint);
@@ -381,7 +385,7 @@ describe("settling a proposal and adopting an architecture", () => {
 			const at = JSON.parse(cli(["semantic", "show", "attributed"]).stdout).board.version;
 			const before = heard.length;
 			const answer = await fetch(
-				`${server.base}/api/semantic-boards/edit?expectVersion=${at}&doing=${encodeURIComponent("attributing a write")}`,
+				`${server.base}/api/semantic-boards/edit?vault=${encodeURIComponent(server.vault)}&expectVersion=${at}&doing=${encodeURIComponent("attributing a write")}`,
 				{
 					method: "POST",
 					headers: { "content-type": "application/json" },

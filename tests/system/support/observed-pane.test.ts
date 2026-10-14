@@ -57,6 +57,7 @@ test("registration timeout aborts the request and closes the accepted socket", a
 		const opening = openObservedPane<Event>({
 			base: server.base,
 			clientId: "registration-timeout",
+			vault: "/vault",
 			register: (_board, signal) => {
 				resolveStarted();
 				return new Promise((_resolve, reject) => {
@@ -90,6 +91,7 @@ test("close timeout terminates the socket and does not consult stale registry st
 		const pane = await openObservedPane<Event>({
 			base: server.base,
 			clientId: "close-timeout",
+			vault: "/vault",
 			register: async () => ({ status: 200, body: { success: true, registered: true } }),
 			readPanes: async () => {
 				registryReads += 1;
@@ -123,6 +125,7 @@ test("close rejects a malformed successful registry response with its body", asy
 		const pane = await openObservedPane<Event>({
 			base: server.base,
 			clientId: "malformed-registry",
+			vault: "/vault",
 			register: async () => ({ status: 200, body: { success: true, registered: true } }),
 			readPanes: async () => ({ status: 200, body: { success: true } }),
 		});
@@ -143,6 +146,7 @@ test("close accepts a valid registry containing only another client id", async (
 		const pane = await openObservedPane<Event>({
 			base: server.base,
 			clientId: "closing-client",
+			vault: "/vault",
 			register: async () => ({ status: 200, body: { success: true, registered: true } }),
 			readPanes: async () => {
 				registryReads += 1;

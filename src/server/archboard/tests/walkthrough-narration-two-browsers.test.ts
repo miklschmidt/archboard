@@ -100,6 +100,7 @@ function browserPane(clientId: string, board: string): void {
 	const registration: PaneRegistration = {
 		clientId,
 		paneId: "A",
+		vault,
 		board: board.toLowerCase(),
 		primary: true,
 		focused: true,

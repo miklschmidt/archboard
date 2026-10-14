@@ -34,7 +34,7 @@ function withBoardLockIfFreeSync<T>(request: LockRequest, migrate: () => T): Mig
 	// alone and retry after a regular writer has resolved it.
 	if (current !== null) return { acquired: false };
 	const record = freshRecord(request.holder, request.leaseMs ?? LOCK_LEASE_MS);
-	const acquired = createExclusively(file, record, board, () => {});
+	const acquired = createExclusively(request.vault, file, record, board, () => {});
 	if (acquired?.ok !== true) return { acquired: false };
 	try {
 		return { acquired: true, value: migrate() };

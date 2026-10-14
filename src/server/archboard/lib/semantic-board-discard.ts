@@ -21,7 +21,7 @@ import {
 	writerOf,
 } from "@/server/archboard/lib/semantic-board-writes";
 import { expectedVersion, statedEnvelope } from "@/server/archboard/lib/semantic-write-requests";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import { vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /**
  * Tell everything that shows the board that it is gone.
@@ -30,6 +30,7 @@ import { serverVault } from "@/server/archboard/lib/server-vault";
  * board is about to leave; then the board's news; then the lines are forgotten,
  * because they were about a board that no longer exists and a new board given
  * the same name did not say them.
+ * @param vault The vault the board lived in.
  * @param key The board's canonical key.
  * @param doing The line the discarder wrote, or empty for a person.
  * @param custody Who discarded it: the agent session and the identity it held the board under.
@@ -37,18 +38,20 @@ import { serverVault } from "@/server/archboard/lib/server-vault";
  * @param custody.heldAs The identity the board was held under while it went.
  */
 function announceDiscard(
+	vault: string,
 	key: string,
 	doing: string,
 	custody: { readonly by: string | null; readonly heldAs: string },
 ): void {
 	if (doing !== "") {
-		announceDoing(key, { doing, at: new Date().toISOString(), by: "agent", kind: "agent" });
+		announceDoing(vault, key, { doing, at: new Date().toISOString(), by: "agent", kind: "agent" });
 	}
 	broadcast(
 		{ type: "board_note", board: key, ...settledChangeFields({ ...custody, discarded: true }) },
+		vault,
 		key,
 	);
-	forgetDoing(key);
+	forgetDoing({ vault, board: key });
 }
 
 /**
@@ -80,8 +83,9 @@ async function discardRoute(
 		res.status(400).json({ success: false, code: "BAD_EXPECTED_VERSION", error: stated.problem });
 		return;
 	}
+	const vault = vaultOfRequest(req);
 	const result = await discardSemanticBoard({
-		vault: serverVault(),
+		vault,
 		board: envelope.board,
 		writer: writerOf(envelope),
 		expectedVersion: stated.version,
@@ -91,7 +95,7 @@ async function discardRoute(
 		answerRefusal(res, result);
 		return;
 	}
-	announceDiscard(result.location.key, doing, {
+	announceDiscard(vault, result.location.key, doing, {
 		by: envelope.session ?? null,
 		heldAs: result.heldAs,
 	});

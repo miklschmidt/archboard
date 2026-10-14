@@ -72,7 +72,11 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 		}
 		const server = startup.server;
 		resources.defer(() => server.dispose());
-		const request = createRequester({ base: server.base, assertRunning: async () => undefined });
+		const request = createRequester({
+			base: server.base,
+			assertRunning: async () => undefined,
+			vault: server.vault,
+		});
 		const clientId = `storage-${mode}`;
 		const socket = await openApplicationSocket(server.base, clientId);
 		resources.defer(() => socket.close());
@@ -148,7 +152,11 @@ describe.serial("composed Codex process lifecycle", () => {
 			const clientId = "managed-requirements";
 			const socket = await openApplicationSocket(server.base, clientId);
 			resources.defer(() => socket.close());
-			const request = createRequester({ base: server.base, assertRunning: async () => undefined });
+			const request = createRequester({
+				base: server.base,
+				assertRunning: async () => undefined,
+				vault: server.vault,
+			});
 			expect(
 				(
 					await request("/api/panes", {
@@ -252,6 +260,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				const request = createRequester({
 					base: server.base,
 					assertRunning: async () => undefined,
+					vault: server.vault,
 				});
 				const socket = await openApplicationSocket(server.base, clientId);
 				resources.defer(() => socket.close());

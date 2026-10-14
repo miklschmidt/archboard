@@ -30,7 +30,7 @@ async function cleanup(): Promise<void> {
 	lock.onBoardSweep(null);
 	lock.onBoardLockChanged(null);
 	for (const board of boards) {
-		lock.releaseClaim(board);
+		lock.releaseClaim(vault, board);
 		for (const id of ["first", "user", "later", "patient", "upper", "nested", "departed"]) {
 			lock.releaseHold(vault, board, id);
 		}
@@ -66,13 +66,13 @@ test("post-attempt cancellation preserves a reentrant claim for explicit release
 		});
 		controller.abort();
 		await expect(cancelledRenewal).rejects.toBeInstanceOf(lock.BoardLockCancelledError);
-		expect(lock.claimOn(board)?.holder.id).toBe(originalClaim.claim.holder.id);
+		expect(lock.claimOn(vault, board)?.holder.id).toBe(originalClaim.claim.holder.id);
 		expect(lock.boardLockState(vault, board)?.id).toBe(originalClaim.claim.holder.id);
-		expect(lock.releaseClaim(board)?.holder.id).toBe(originalClaim.claim.holder.id);
-		expect(lock.claimOn(board)).toBeNull();
+		expect(lock.releaseClaim(vault, board)?.holder.id).toBe(originalClaim.claim.holder.id);
+		expect(lock.claimOn(vault, board)).toBeNull();
 		expect(lock.boardLockState(vault, board)).toBeNull();
 	} finally {
-		lock.releaseClaim(board);
+		lock.releaseClaim(vault, board);
 	}
 });
 

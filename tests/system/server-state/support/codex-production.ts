@@ -1,4 +1,4 @@
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { WebSocket } from "ws";
@@ -63,7 +63,10 @@ function prepareProductionFixture(
 			.replaceAll("__ARCHBOARD_TEST_CODEX_CONTROL__", controlPath),
 	);
 	chmodSync(executablePath, 0o700);
-	return { root, logPath, controlPath, executablePath, vault: join(root, "vault") };
+	// A pane names the vault, and the server refuses one that is not a directory (ADR 0049).
+	const vault = join(root, "vault");
+	mkdirSync(vault, { recursive: true });
+	return { root, logPath, controlPath, executablePath, vault };
 }
 
 async function closeSocket(socket: WebSocket): Promise<void> {
@@ -122,11 +125,22 @@ async function openApplicationSocket(
 		readonly timeoutMs?: number;
 		/** The browser tab the pane belongs to; every pane opened without one shares one tab. */
 		readonly tabSession?: string;
+		/** The vault the pane names; the one the server at `base` reports unless stated. */
+		readonly vault?: string;
 	} = {},
 ): Promise<ApplicationSocket> {
 	const endpoint = new URL(base);
+	// The pane names the one vault the server reports, as the browser does.
+	const vault =
+		options.vault ??
+		(
+			(await (await fetch(new URL("/api/served-vault", base))).json()) as {
+				vault: string;
+			}
+		).vault;
 	endpoint.protocol = "ws:";
 	endpoint.searchParams.set("clientId", clientId);
+	endpoint.searchParams.set("vault", vault);
 	endpoint.searchParams.set("tabSession", options.tabSession ?? "system-tab");
 	const socket = new WebSocket(endpoint);
 	const pending = new Map<

@@ -1,6 +1,7 @@
 import type { OwnedServer } from "../../support/owned-server.ts";
 
-type RequestServer = Pick<OwnedServer, "base" | "assertRunning">;
+type RequestServer = Pick<OwnedServer, "base" | "assertRunning"> &
+	Partial<Pick<OwnedServer, "vault">>;
 
 export interface CapturedResponse<T = unknown> {
 	status: number;
@@ -14,18 +15,24 @@ export interface RequestOptions {
 	doing?: string | false;
 	headers?: Record<string, string>;
 	signal?: AbortSignal;
+	/** The vault the call names; the server's own unless stated. `false` names none, as a refusal test does. */
+	vault?: string | false;
 }
 
 export const sleep = (ms: number): Promise<void> =>
 	new Promise((resolve) => setTimeout(resolve, ms));
 
 export function createRequester(server: RequestServer) {
-	return async <T = unknown>(
+	const request = async <T = unknown>(
 		path: string,
 		options: RequestOptions = {},
 	): Promise<CapturedResponse<T>> => {
 		const method = (options.method ?? "GET").toUpperCase();
 		const url = new URL(path, server.base);
+		const vault = options.vault ?? server.vault ?? false;
+		if (vault !== false && url.pathname.startsWith("/api/") && !url.searchParams.has("vault")) {
+			url.searchParams.set("vault", vault);
+		}
 		if (
 			method !== "GET" &&
 			method !== "HEAD" &&
@@ -61,6 +68,8 @@ export function createRequester(server: RequestServer) {
 			throw error;
 		}
 	};
+	// Every call names its vault (ADR 0049); a pane the requester opens names the same one.
+	return Object.assign(request, { vault: server.vault });
 }
 
 export async function waitFor<T>(

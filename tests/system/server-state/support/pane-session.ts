@@ -9,10 +9,13 @@ export interface PaneEvent {
 	[key: string]: unknown;
 }
 
-type Request = <T = unknown>(
+type Request = (<T = unknown>(
 	path: string,
 	options?: RequestOptions,
-) => Promise<CapturedResponse<T>>;
+) => Promise<CapturedResponse<T>>) & {
+	/** The vault the requester names on every call, which the pane's socket names too. */
+	readonly vault: string | undefined;
+};
 
 export interface PaneSession {
 	readonly clientId: string;
@@ -49,6 +52,7 @@ export async function openPaneSession(
 	const pane = await openObservedPane<PaneEvent>({
 		base,
 		clientId: options.clientId,
+		vault: requireVault(request.vault),
 		...(options.board === undefined ? {} : { preferredBoard: options.board }),
 		register: (board, signal) =>
 			request("/api/panes", {
@@ -72,4 +76,11 @@ export async function openPaneSession(
 			pane.waitFor((event) => event.type === type, start, timeoutMs),
 		close: pane.close,
 	};
+}
+
+function requireVault(vault: string | undefined): string {
+	if (vault === undefined) {
+		throw new Error("A pane belongs to a vault: open it through a requester that names one.");
+	}
+	return vault;
 }

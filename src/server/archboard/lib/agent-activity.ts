@@ -12,14 +12,18 @@
 // unclaimed agent write, so a lone write is on screen long enough to be seen.
 // Human holds are not activity: a person's own hold is what their pane is
 // doing, and it is nobody else's business.
+//
+// One list per vault (ADR 0049): a board of one name in two vaults is two
+// boards, and a pane is told only of the boards of its own vault.
 
 import type { DoingEntry } from "@/runtime/engine/board-doing";
 import type { LockHolder } from "@/runtime/engine/board-lock";
-import { normalizeBoardKey } from "@/runtime/engine/board";
+import { boardMemoryKey } from "@/runtime/engine/board";
 import type { AgentActivity, AgentActivityMessage } from "@/runtime/engine/types";
 import { ACTIVITY_LINGER_MS } from "@/shared/timing/timing";
 
 interface Entry {
+	vault: string;
 	board: string;
 	claim: LockHolder | null;
 	doing: DoingEntry | null;
@@ -28,11 +32,11 @@ interface Entry {
 
 interface AgentActivityTracker {
 	/** A board's lock announced: a claim taken, changed or gone. Anything else is not activity. */
-	lockChanged(board: string, holder: Readonly<LockHolder> | null): void;
+	lockChanged(vault: string, board: string, holder: Readonly<LockHolder> | null): void;
 	/** An agent's write landed and said what it was doing. */
-	doingLanded(board: string, entry: Readonly<DoingEntry>): void;
-	/** The whole list, for a client that has just connected. Reference-stable until it changes. */
-	snapshot(): AgentActivityMessage;
+	doingLanded(vault: string, board: string, entry: Readonly<DoingEntry>): void;
+	/** One vault's whole list, for a client that has just connected. Reference-stable until it changes. */
+	snapshot(vault: string): AgentActivityMessage;
 }
 
 /**
@@ -50,28 +54,30 @@ function clearLinger(entry: Entry): void {
  * The tracker of which boards an agent is editing right now, which publishes
  * one snapshot to every pane whenever that changes.
  * @param options How to reach the panes and how to name a board to them.
- * @param options.send Sends the snapshot to every connected client.
+ * @param options.send Sends one vault's snapshot to every client of that vault.
  * @param options.displayKey The board key as panes know it.
  * @returns The tracker.
  */
 function createAgentActivity(options: {
-	/** Sends the snapshot to every connected client. */
-	send: (message: AgentActivityMessage) => void;
+	/** Sends one vault's snapshot to every client connected for that vault. */
+	send: (vault: string, message: AgentActivityMessage) => void;
 	/** The board key as panes know it, for a key the lock module normalized. */
 	displayKey: (board: string) => string;
 }): AgentActivityTracker {
 	const entries = new Map<string, Entry>();
-	let current: AgentActivityMessage = { type: "agent_activity", activity: [] };
+	const snapshots = new Map<string, AgentActivityMessage>();
 
-	/** Rebuild the snapshot and send it to every pane. */
-	const publish = (): void => {
-		const activity: AgentActivity[] = [...entries.values()].map(({ board, claim, doing }) => ({
-			board,
-			claim,
-			doing,
-		}));
-		current = { type: "agent_activity", activity };
-		options.send(current);
+	/**
+	 * Rebuild one vault's snapshot and send it to every pane of that vault.
+	 * @param vault The vault whose list changed.
+	 */
+	const publish = (vault: string): void => {
+		const activity: AgentActivity[] = [...entries.values()]
+			.filter((entry) => entry.vault === vault)
+			.map(({ board, claim, doing }) => ({ board, claim, doing }));
+		const current: AgentActivityMessage = { type: "agent_activity", activity };
+		snapshots.set(vault, current);
+		options.send(vault, current);
 	};
 
 	// Each write restarts the linger, so continuous unclaimed work is one
@@ -90,7 +96,7 @@ function createAgentActivity(options: {
 				return;
 			}
 			entries.delete(key);
-			publish();
+			publish(entry.vault);
 		}, ACTIVITY_LINGER_MS);
 		timer.unref();
 		entry.linger = timer;
@@ -98,25 +104,32 @@ function createAgentActivity(options: {
 
 	/**
 	 * Record that an agent has claimed this board.
+	 * @param vault The vault the board lives in.
 	 * @param board The board as the lock spelled it.
-	 * @param key Its normalized key.
+	 * @param key Its memory key.
 	 * @param claim The claim.
 	 */
-	const claimTaken = (board: string, key: string, claim: LockHolder): void => {
+	const claimTaken = (vault: string, board: string, key: string, claim: LockHolder): void => {
 		const entry = entries.get(key);
 		if (entry) {
 			clearLinger(entry);
 			entry.claim = claim;
 		} else {
-			entries.set(key, { board: options.displayKey(board), claim, doing: null, linger: null });
+			entries.set(key, {
+				vault,
+				board: options.displayKey(board),
+				claim,
+				doing: null,
+				linger: null,
+			});
 		}
-		publish();
+		publish(vault);
 	};
 
 	/**
 	 * Record that a claim this list was showing has ended, keeping the entry on
 	 * screen for a moment when the agent had said what it was doing.
-	 * @param key The normalized board key.
+	 * @param key The board's memory key.
 	 */
 	const claimEnded = (key: string): void => {
 		const entry = entries.get(key);
@@ -131,34 +144,36 @@ function createAgentActivity(options: {
 		} else {
 			entries.delete(key);
 		}
-		publish();
+		publish(entry.vault);
 	};
 
 	return {
 		/**
 		 * A board's lock announced: a claim taken, changed or gone.
+		 * @param vault The vault the board lives in.
 		 * @param board The board as the lock spelled it.
 		 * @param holder Who holds it now, or null when it is free.
 		 */
-		lockChanged(board, holder) {
-			const key = normalizeBoardKey(board);
+		lockChanged(vault, board, holder) {
+			const key = boardMemoryKey(vault, board);
 			const claim = holder?.kind === "agent" && holder.claimed ? holder : null;
 			if (claim) {
-				claimTaken(board, key, claim);
+				claimTaken(vault, board, key, claim);
 				return;
 			}
 			claimEnded(key);
 		},
 		/**
 		 * An agent's write landed and said what it was doing.
+		 * @param vault The vault the board lives in.
 		 * @param board The board it wrote.
 		 * @param doing What it said.
 		 */
-		doingLanded(board, doing) {
+		doingLanded(vault, board, doing) {
 			if (doing.kind !== "agent") {
 				return;
 			}
-			const key = normalizeBoardKey(board);
+			const key = boardMemoryKey(vault, board);
 			const entry = entries.get(key);
 			if (entry) {
 				entry.doing = doing;
@@ -166,18 +181,19 @@ function createAgentActivity(options: {
 					lingerThenDrop(key, entry);
 				}
 			} else {
-				const made: Entry = { board, claim: null, doing, linger: null };
+				const made: Entry = { vault, board, claim: null, doing, linger: null };
 				entries.set(key, made);
 				lingerThenDrop(key, made);
 			}
-			publish();
+			publish(vault);
 		},
 		/**
-		 * The whole list, for a client that has just connected.
+		 * One vault's whole list, for a client that has just connected.
+		 * @param vault The vault the client connected for.
 		 * @returns The snapshot, reference-stable until it changes.
 		 */
-		snapshot() {
-			return current;
+		snapshot(vault) {
+			return snapshots.get(vault) ?? { type: "agent_activity", activity: [] };
 		},
 	};
 }

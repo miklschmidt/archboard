@@ -140,12 +140,12 @@ afterAll(() => {
 test("the polled check never reads code or says how far a board is behind, and the code check route does", async () => {
 	const base = await listen(server.app);
 	const polled = VaultCheckSchema.passthrough().parse(
-		await (await fetch(`${base}/api/vault/check`)).json(),
+		await (await fetch(`${base}/api/vault/check?vault=${encodeURIComponent(vault)}`)).json(),
 	);
 	expect(Object.keys(polled)).not.toContain("behind");
 	expect(polled.diagnostics.map((one) => one.code)).not.toContain("BINDING_SYMBOL_MISSING");
 	const answer = CodeCheckAnswerSchema.parse(
-		await (await fetch(`${base}/api/vault/code-check`)).json(),
+		await (await fetch(`${base}/api/vault/code-check?vault=${encodeURIComponent(vault)}`)).json(),
 	);
 	expect(answer.timings.map((timing) => timing.check)).toEqual(["code-facts", "history"]);
 	expect(answer.timings.every((timing) => timing.elapsedMs > 0)).toBe(true);
@@ -159,7 +159,9 @@ test("the polled check never reads code or says how far a board is behind, and t
 
 test("a variant that names no draft is refused", async () => {
 	const base = await listen(server.app);
-	const refused = await fetch(`${base}/api/vault/code-check?variant=TASK-0`);
+	const refused = await fetch(
+		`${base}/api/vault/code-check?vault=${encodeURIComponent(vault)}&variant=TASK-0`,
+	);
 	expect(refused.status).toBe(422);
 	expect(await refused.json()).toMatchObject({ success: false, code: "NO_SUCH_DRAFT" });
 });
@@ -169,7 +171,7 @@ test("a plan outside every registered checkout is refused before the pass", asyn
 	const outside = join(scratch, "plan.json");
 	writeFileSync(outside, '{"configuration":{"root_module":{}}}');
 	const refused = await fetch(
-		`${base}/api/vault/code-check?${new URLSearchParams({ plan: outside })}`,
+		`${base}/api/vault/code-check?${new URLSearchParams({ vault, plan: outside })}`,
 	);
 	expect(refused.status).toBe(422);
 	expect(await refused.json()).toMatchObject({ success: false, code: "PLAN_REFUSED" });
@@ -195,9 +197,9 @@ test("a caller that hangs up cancels the code check", async () => {
 	});
 	const base = await listen(app);
 	const hangUp = new AbortController();
-	const request = fetch(`${base}/api/vault/code-check`, { signal: hangUp.signal }).catch(
-		(error: unknown) => error,
-	);
+	const request = fetch(`${base}/api/vault/code-check?vault=${encodeURIComponent(vault)}`, {
+		signal: hangUp.signal,
+	}).catch((error: unknown) => error);
 	await running;
 	hangUp.abort();
 	await request;

@@ -18,16 +18,17 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 	const server = await startOwnedServer({ serverPath: join(repoRoot, "src/server.ts"), vault });
 	resources.defer(() => server.dispose());
 	const boardFile = join(vault, "payments.semantic.json");
-	const create = "/api/semantic-boards/create?doing=checking%20local%20tools";
+	const named = `vault=${encodeURIComponent(server.vault)}`;
+	const create = `/api/semantic-boards/create?${named}&doing=checking%20local%20tools`;
 	const body = JSON.stringify({
 		board: "payments",
 		create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
 	});
 
 	for (const [path, method] of [
-		["/api/semantic-boards", "GET"],
+		[`/api/semantic-boards?${named}`, "GET"],
 		[create, "POST"],
-		["/api/vault/code-check", "GET"],
+		[`/api/vault/code-check?${named}`, "GET"],
 		["/assets/diagram-fonts/Onest-wght-v1.000.ttf", "GET"],
 		["/health", "OPTIONS"],
 		["/missing-route", "GET"],
@@ -43,7 +44,7 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 		expect(response.headers.get("access-control-allow-origin")).toBeNull();
 	}
 	expect(existsSync(boardFile)).toBeFalse();
-	const findings = await (await fetch(`${server.base}/api/vault/code-findings`)).json();
+	const findings = await (await fetch(`${server.base}/api/vault/code-findings?${named}`)).json();
 	expect(findings).toMatchObject({ success: true, readings: [] });
 
 	// Originless local tools still create/read, and the pane still reads static assets.
@@ -64,9 +65,12 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 		// The Vite proxy preserves this browser Host for the shared origin guard.
 		{ Host: "localhost:5173", Origin: "http://localhost:5173", "Sec-Fetch-Site": "same-origin" },
 	]) {
-		const response = await fetch(`${server.base}/api/semantic-boards/board?board=payments`, {
-			headers,
-		});
+		const response = await fetch(
+			`${server.base}/api/semantic-boards/board?${named}&board=payments`,
+			{
+				headers,
+			},
+		);
 		expect(response.status).toBe(200);
 		expect(response.headers.get("access-control-allow-origin")).toBeNull();
 	}
@@ -77,18 +81,21 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 			})
 		).status,
 	).toBe(200);
-	const refusedEdit = await fetch(`${server.base}/api/semantic-boards/edit?doing=foreign%20write`, {
-		method: "POST",
-		headers: { Origin: "https://example.com", "Content-Type": "application/json" },
-		body: JSON.stringify({
-			board: "payments",
-			edit: { nodes: [{ name: "Foreign", kind: "service" }] },
-		}),
-	});
+	const refusedEdit = await fetch(
+		`${server.base}/api/semantic-boards/edit?${named}&doing=foreign%20write`,
+		{
+			method: "POST",
+			headers: { Origin: "https://example.com", "Content-Type": "application/json" },
+			body: JSON.stringify({
+				board: "payments",
+				edit: { nodes: [{ name: "Foreign", kind: "service" }] },
+			}),
+		},
+	);
 	expect(refusedEdit.status).toBe(403);
 	expect(readFileSync(boardFile)).toEqual(before);
 
-	const socketUrl = server.base.replace(/^http/u, "ws");
+	const socketUrl = `${server.base.replace(/^http/u, "ws")}/?vault=${encodeURIComponent(server.vault)}`;
 	const response = await new Promise<IncomingMessage>((received, reject) => {
 		const upgrade = request(
 			server.base,

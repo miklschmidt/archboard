@@ -101,7 +101,7 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			// A write arriving after admission closed is refused rather than queued,
 			// and it is told why: the server is on its way down.
 			const raced = await fetch(
-				`${server.base}/api/semantic-boards/edit?expectVersion=1&doing=${encodeURIComponent("a write that arrives too late")}`,
+				`${server.base}/api/semantic-boards/edit?vault=${encodeURIComponent(server.vault)}&expectVersion=1&doing=${encodeURIComponent("a write that arrives too late")}`,
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },

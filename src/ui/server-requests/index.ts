@@ -9,6 +9,51 @@
 type JsonRecord = Readonly<Record<string, unknown>>;
 
 /**
+ * The vault every call names (ADR 0049). One server serves several vaults and
+ * cannot guess which one a call means, so the browser says. It has no
+ * navigator of repositories yet, so it names the one vault the server reports
+ * to it, learned once before the page draws anything. It is one opaque string
+ * here: what the server calls the vault, and nothing the page shows or keeps in
+ * an address.
+ */
+let namedVault: string | null = null;
+
+/**
+ * Ask the server which vault it serves, and name that vault from now on.
+ * @returns When the vault is known.
+ * @throws {Error} When the server does not say.
+ */
+async function learnServedVault(): Promise<void> {
+	const response = await fetch("/api/served-vault");
+	const body: unknown = await response.json().catch(() => null);
+	const vault = isRecord(body) ? body["vault"] : undefined;
+	if (!response.ok || typeof vault !== "string" || vault === "") {
+		throw new Error("The Archboard server did not say which vault it serves.");
+	}
+	namedVault = vault;
+}
+
+/**
+ * The vault every call names.
+ * @returns The vault, or null before the server has said.
+ */
+function vaultNamed(): string | null {
+	return namedVault;
+}
+
+/**
+ * A request URL that names the vault, as a call does that reads or writes a board.
+ * @param url The endpoint, with or without a query.
+ * @returns The URL with `vault=` on its query, or the URL as it was when no vault is known or it names one.
+ */
+function withVault(url: string): string {
+	if (namedVault === null || /[?&]vault=/u.test(url)) {
+		return url;
+	}
+	return `${url}${url.includes("?") ? "&" : "?"}vault=${encodeURIComponent(namedVault)}`;
+}
+
+/**
  * Whether a decoded JSON value is a plain object.
  * @param value Any decoded JSON value.
  * @returns True for an object that is not an array or null.
@@ -72,7 +117,7 @@ function plainFailure(
  * @returns The decoded reply, trusted to be the endpoint's contract.
  */
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
-	const response = await fetch(url, init);
+	const response = await fetch(withVault(url), init);
 	const body = await readBody(response);
 	const record = isRecord(body) ? body : null;
 	if (refused(response, record)) {
@@ -170,9 +215,12 @@ export {
 	cancellable,
 	isRecord,
 	json,
+	learnServedVault,
 	mutation,
 	post,
 	strictReply,
 	trustReply,
+	vaultNamed,
+	withVault,
 	type ReplySchema,
 };

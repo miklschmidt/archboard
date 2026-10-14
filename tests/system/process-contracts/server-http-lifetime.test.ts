@@ -326,7 +326,9 @@ test(
 				"runtime-error server readiness",
 				{ timeoutMs: TEST_SERVER_STARTUP_TIMEOUT_MS },
 			);
-			const socket = new WebSocket(server.base.replace("http:", "ws:"));
+			const socket = new WebSocket(
+				`${server.base.replace("http:", "ws:")}/?vault=${encodeURIComponent(fixture.vault)}`,
+			);
 			resources.defer(() => socket.terminate());
 			await new Promise<void>((resolve, reject) => {
 				socket.once("open", resolve);

@@ -8,6 +8,7 @@ import {
 	type PaneRegistrationLatch,
 } from "@/ui/pane-session/workbench-socket";
 import { tabSessionId } from "@/ui/pane-session/lib/tab-session";
+import { vaultNamed } from "@/ui/server-requests";
 import type { WebSocketMessage } from "@/ui/types";
 
 /** A socket generation: the socket and its registration latch. */
@@ -45,13 +46,20 @@ interface PaneSocketConnector {
 }
 
 /**
- * The socket URL for this pane: its own identity, and the tab session every pane of the tab shares.
+ * The socket URL for this pane: its own identity, the tab session every pane of the tab shares,
+ * and the vault the pane shows boards of. A socket belongs to one pane and one vault for its whole
+ * life, so everything it carries is about that vault (ADR 0049).
  * @param clientId The pane's identity to the server.
  * @returns The URL.
  */
 function socketUrl(clientId: string): string {
 	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-	const query = new URLSearchParams({ clientId, tabSession: tabSessionId() });
+	const vault = vaultNamed();
+	const query = new URLSearchParams({
+		clientId,
+		tabSession: tabSessionId(),
+		...(vault === null ? {} : { vault }),
+	});
 	return `${protocol}//${window.location.host}/?${query.toString()}`;
 }
 

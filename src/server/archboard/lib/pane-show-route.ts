@@ -34,7 +34,7 @@ import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-con
 import type { SemanticAgentSwitch } from "@/runtime/codex-semantic-context";
 import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
 import { arrivedOnBoard, noBrowserBody } from "@/server/archboard/lib/pane-routes";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import { vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /**
  * Point one pane at one board.
@@ -49,6 +49,7 @@ import { serverVault } from "@/server/archboard/lib/server-vault";
  */
 function showPaneRoute(req: Request, res: Response): void {
 	const body = bodyOf(req);
+	const vault = vaultOfRequest(req);
 	const asked = typeof body["board"] === "string" ? body["board"].trim() : "";
 	if (asked === "") {
 		res.status(400).json({
@@ -60,11 +61,11 @@ function showPaneRoute(req: Request, res: Response): void {
 	// A pane address names a board and, after the last `@`, one of its variants
 	// (ADR 0009). The board file is the whole family, so the variant is resolved
 	// against what was read rather than looked for on disk.
-	const identity = shownIdentity(parseBoardKey(asked), res);
+	const identity = shownIdentity(vault, parseBoardKey(asked), res);
 	if (identity === null) {
 		return;
 	}
-	const pane = showablePane(body["pane"], res);
+	const pane = showablePane(vault, body["pane"], res);
 	if (pane === null) {
 		return;
 	}
@@ -128,12 +129,17 @@ function shownName(pane: PaneRegistration, address: string | null): string | nul
  * rather than something made on the way. A name the board had before a rename
  * opens it under the name it has now (ADR 0036), so a saved address lands on the
  * board and the address bar is rewritten to what the pane then reports.
+ * @param vault The vault the address is in.
  * @param identity What the address names.
  * @param res The response, which carries the refusal when there is one.
  * @returns The address to show, or null once the refusal has been sent.
  */
-function shownIdentity(identity: BoardIdentity, res: Response): BoardIdentity | null {
-	const read = readSemanticBoard(serverVault(), identity.board);
+function shownIdentity(
+	vault: string,
+	identity: BoardIdentity,
+	res: Response,
+): BoardIdentity | null {
+	const read = readSemanticBoard(vault, identity.board);
 	if (!read.ok) {
 		res.status(read.code === "BOARD_MISSING" ? 404 : 422).json({
 			success: false,
@@ -182,14 +188,15 @@ function acceptedIdentity(
 
 /**
  * The pane a show is addressed to, or nothing once the refusal has been sent.
+ * @param vault The vault the board is in: only the panes of that vault can show it.
  * @param spec The pane spec the caller stated, if any.
  * @param res The response.
  * @returns The pane, or null.
  */
-function showablePane(spec: unknown, res: Response): PaneRegistration | null {
+function showablePane(vault: string, spec: unknown, res: Response): PaneRegistration | null {
 	let pane: PaneRegistration | null;
 	try {
-		pane = paneFromRequest(spec);
+		pane = paneFromRequest(vault, spec);
 	} catch (error) {
 		res.status(400).json({ success: false, error: messageOf(error) });
 		return null;

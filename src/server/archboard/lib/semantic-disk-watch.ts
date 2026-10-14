@@ -19,15 +19,16 @@
 
 import fs from "node:fs";
 
+import { boardMemoryKey } from "@/runtime/engine/board";
 import { onBoardSweep } from "@/runtime/engine/board-lock";
 import { logger } from "@/runtime/engine/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { locateSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { broadcast, onBoardBroadcast } from "@/server/archboard/lib/pane-registry";
-import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
- * What a board's file looked like when it was last seen, by board key.
+ * What a board's file looked like when it was last seen, by the board's memory
+ * key: a board of one name in two vaults is two files (ADR 0049).
  *
  * The fingerprint and nothing else: this is not a cache of the board, and a
  * reader that wanted the board would read the board.
@@ -44,12 +45,13 @@ let stopObserving: (() => void) | null = null;
  * by an ordinary write: an atomic replace makes a new inode, an in-place edit
  * of the same length moves only the time, and a filesystem with coarse time
  * resolution can leave the time alone for two writes in the same tick.
+ * @param vault The vault the board lives in.
  * @param board The board key.
  * @returns The fingerprint, or the empty string when the board has no file.
  */
-function fingerprintOf(board: string): string {
+function fingerprintOf(vault: string, board: string): string {
 	try {
-		const entry = fs.statSync(locateSemanticBoard(board, serverVault()).file, { bigint: true });
+		const entry = fs.statSync(locateSemanticBoard(board, vault).file, { bigint: true });
 		return `${entry.ino}:${entry.size}:${entry.mtimeNs}`;
 	} catch {
 		// No file is a fingerprint too: a board that was deleted under an open
@@ -68,11 +70,12 @@ function fingerprintOf(board: string): string {
  *
  * No version rides along, because this process has not read one. The pane's
  * answer is to ask for the board again, which is where the version comes from.
+ * @param vault The vault the board lives in.
  * @param board The board key.
  */
-function announceChangedOnDisk(board: string): void {
-	logger.info(`Board changed on disk by another writer: "${board}"`);
-	broadcast({ type: "board_note", board, semantic: true } satisfies WebSocketMessage, board);
+function announceChangedOnDisk(vault: string, board: string): void {
+	logger.info(`Board changed on disk by another writer: "${board}" (${vault})`);
+	broadcast({ type: "board_note", board, semantic: true } satisfies WebSocketMessage, vault, board);
 }
 
 /**
@@ -83,23 +86,26 @@ function announceChangedOnDisk(board: string): void {
  * with no fingerprint yet is one nobody was watching, so there is nobody to
  * tell and the fingerprint is simply taken; a board with one is judged against
  * it, and a difference is news.
+ * @param vault The vault the board lives in.
  * @param board The board key.
  */
-function observe(board: string): void {
-	const now = fingerprintOf(board);
-	const before = seen.get(board);
-	seen.set(board, now);
+function observe(vault: string, board: string): void {
+	const now = fingerprintOf(vault, board);
+	const key = boardMemoryKey(vault, board);
+	const before = seen.get(key);
+	seen.set(key, now);
 	if (before !== undefined && before !== now) {
-		announceChangedOnDisk(board);
+		announceChangedOnDisk(vault, board);
 	}
 }
 
 /**
  * The lock sweep looked at one of the boards on screen.
+ * @param vault The vault the board lives in.
  * @param board The board key, as the lock sweep supplies it.
  */
-function sweepBoard(board: string): void {
-	observe(board);
+function sweepBoard(vault: string, board: string): void {
+	observe(vault, board);
 }
 
 /**
@@ -117,11 +123,12 @@ function sweepBoard(board: string): void {
  * what it found, the panes already there would never be told, for as long as
  * they stayed open. So the same rule as a sweep — a fingerprint that is not the
  * one we had is news, whoever noticed it.
+ * @param vault The vault the pane named.
  * @param board The board key the pane arrived on.
  */
-function noteBoardShown(board: string): void {
+function noteBoardShown(vault: string, board: string): void {
 	if (stopObserving !== null) {
-		observe(board);
+		observe(vault, board);
 	}
 }
 
@@ -130,10 +137,11 @@ function noteBoardShown(board: string): void {
  *
  * For a board this process has just announced itself: the write already told
  * every pane, and the file it left behind is not news a second time.
+ * @param vault The vault the board lives in.
  * @param board The board key.
  */
-function noteAnnounced(board: string): void {
-	seen.set(board, fingerprintOf(board));
+function noteAnnounced(vault: string, board: string): void {
+	seen.set(boardMemoryKey(vault, board), fingerprintOf(vault, board));
 }
 
 /**
@@ -145,9 +153,9 @@ function watchSemanticBoardFiles(): void {
 	if (stopObserving !== null) {
 		return;
 	}
-	stopObserving = onBoardBroadcast((message, board) => {
+	stopObserving = onBoardBroadcast((message, vault, board) => {
 		if (message.type === "board_note") {
-			noteAnnounced(board);
+			noteAnnounced(vault, board);
 		}
 	});
 	onBoardSweep(sweepBoard);

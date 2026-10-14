@@ -71,7 +71,8 @@ interface LockRequest {
 	readonly signal?: Readonly<AbortSignal>;
 }
 
-type LockSink = (board: string, holder: Readonly<LockHolder> | null) => void;
+/** Hears who holds a board of a vault: the vault comes first because a name alone is ambiguous. */
+type LockSink = (vault: string, board: string, holder: Readonly<LockHolder> | null) => void;
 
 interface Claim {
 	readonly board: string;
@@ -89,6 +90,8 @@ interface ClaimRevocation {
 interface ClaimEntry {
 	/** The vault the claimed board lives in. */
 	vault: string;
+	/** The claimed board's normalised key. */
+	board: string;
 	holder: LockHolder;
 	expires: number;
 	timer: ReturnType<typeof setInterval> | null;
