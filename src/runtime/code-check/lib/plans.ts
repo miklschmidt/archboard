@@ -76,7 +76,7 @@ function locatePlan(
 	}
 	const root = checkoutHolding(path.resolve(named), real, snapshot);
 	if (root === undefined) {
-		return "it is not inside the checkout that holds the vault or the chosen checkout of any repository on this machine, which are the checkouts the check reads";
+		return "it is not inside the checkout that holds the vault or the chosen checkout of any other repository on this machine, which are the checkouts the check reads";
 	}
 	const relative = path.relative(root, real).split(path.sep).join("/");
 	return neverRead(relative)
