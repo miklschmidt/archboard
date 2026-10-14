@@ -62,6 +62,19 @@ rules that will not stop you:
   belongs to, and it is not board content. A user's one control over a
   board is taking back
   somebody else's claim.
+- **Every call to the server names its vault** (ADR 0049). The vault on the wire
+  is the vault's own directory: `?vault=<directory>` on a request or a `vault`
+  field in its body, and `?vault=` on the pane socket's URL, which names it once
+  for that socket. A call that names none is refused with `VAULT_REQUIRED`
+  (400). A vault the server cannot read is refused with `VAULT_UNREADABLE` (404),
+  and nothing is created. There is no default vault. The server's process memory
+  is keyed by vault and board together (`boardMemoryKey`): claims, revocations,
+  announced lock state, doing lines, agent activity, the change feed and the
+  disk watch. News of a write goes only to the panes of that vault. The CLI
+  names `ARCHBOARD_VAULT` on every call. The browser learns the one vault the
+  server reports at `/api/served-vault` and names it on every call. The server
+  still starts with `ARCHBOARD_VAULT` for the Codex workbench, which stays bound
+  to that vault until TASK-472.10.
 - **One writer at a time per board** (ADR 0016), a lease file taken by one
   write-boundary middleware, deny by default. Claim before substantial work.
 - **A claim is visible, and the one control is taking it back** (ADR 0022).
