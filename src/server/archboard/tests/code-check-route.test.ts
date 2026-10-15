@@ -21,13 +21,11 @@ import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 import { VaultCheckSchema } from "@/shared/semantic-policy/index";
 
 const caller = {
-	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
 };
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-check-route-"));
 const checkout = join(scratch, "checkout");
 const vault = join(checkout, "vault");
-process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 let server: typeof ServerModule;
 let route: typeof RouteModule;

@@ -11,18 +11,13 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as ServerModule from "@/server/archboard/index";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as server from "@/server/archboard/index";
+import * as store from "@/runtime/semantic-board-store/index";
+import * as contract from "@/shared/semantic-board/index";
 import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-agent-context-"));
-process.env["ARCHBOARD_VAULT"] = vault;
 
-let server: typeof ServerModule;
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 const BOARD = "Ingest pipeline";
 const PROPOSAL = "Queued ingest";
@@ -30,20 +25,6 @@ const PROPOSAL = "Queued ingest";
 let reported = 0;
 
 beforeAll(async () => {
-	server = await import("@/server/archboard/index");
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-	// The server reads its vault from the environment once, when the config module is
-	// first imported. A file that shares the process with one that imported it first
-	// would serve whatever vault the caller happened to have, so refuse that loudly.
-	const { ARCHBOARD_VAULT } = await import("@/runtime/engine/config");
-	if (ARCHBOARD_VAULT !== vault) {
-		throw new Error(
-			`The server under test reads its vault from the environment, and it read ${ARCHBOARD_VAULT} ` +
-				`rather than ${vault}. Run it in its own process — \`bun test --isolate ${import.meta.file}\` — ` +
-				"rather than alongside a file that resolved the vault first.",
-		);
-	}
 	await store.writeSemanticBoard({
 		vault,
 		board: BOARD,
@@ -69,11 +50,6 @@ beforeAll(async () => {
 	});
 });
 afterAll(() => {
-	if (callerVault === undefined) {
-		delete process.env["ARCHBOARD_VAULT"];
-	} else {
-		process.env["ARCHBOARD_VAULT"] = callerVault;
-	}
 	rmSync(vault, { recursive: true, force: true });
 });
 
@@ -81,7 +57,7 @@ afterAll(() => {
  * The board as it now stands.
  * @returns The board.
  */
-function board(): ContractModule.SemanticBoard {
+function board(): contract.SemanticBoard {
 	const answer = store.readSemanticBoard(vault, BOARD);
 	if (!answer.ok) {
 		throw new Error(answer.problem);
