@@ -20,6 +20,9 @@ remote's host, owner and name, which all worktrees share. Without one, it is the
 name of the main checkout's directory, not of the worktree's directory. Thus a
 worktree of a repository with no remote is known together with its main
 checkout.
+A bare repository, and a repository whose git directory lives apart from its
+main checkout, is named by its git directory without `.git`, because git leads
+from a linked worktree only to that directory.
 
 A binding is a logical address: a repository identity, a path inside it, and the
 branch and commit at which it was last confirmed (CONTEXT.md). It must be a
