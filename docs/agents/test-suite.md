@@ -69,7 +69,12 @@ the browser shows.
 - A command runs in the directory that holds its vault, with the registry of
   the server it talks to: `runServerCli` in `tests/system/support/run-cli.ts`
   and in the browser support. It never runs in this checkout, because there it
-  finds the boards of this repository.
+  finds the boards of this repository. It never runs in another archboard
+  checkout either, because there `archboard` runs that checkout's source
+  instead of the source under test.
+- A command that reaches a server names it with `ARCHBOARD_URL`. Without it,
+  the command reaches the server on the port of the checkout under test:
+  3000 in the main checkout, which is probably your everyday server.
 - No test sets `ARCHBOARD_VAULT`. A helper that copies the caller's
   environment into a child clears the variable with `callerVaultCleared`, so a
   vault that you export never receives a test's writes. A command test under
