@@ -137,10 +137,16 @@ rules that will not stop you:
   code" resolves.
 - **Codex runs as one private package-local app-server session over stdio**
   with an archboard-only `CODEX_HOME` every Archboard server on the machine shares.
-  Each browser tab is a tab session with its own thread link, workhorse and
-  coordinator, and voice belongs to that coordinator. [ADR
+  Each browser tab is a tab session with one coordinator, and voice belongs to
+  that coordinator. The app-server and the coordinator work in a directory of
+  their own under the state directory, which is no checkout and holds no
+  vault, so a coordinator command without `-C` is refused. A tab session has
+  one workhorse for each checkout it works in, built on first use. Each
+  workhorse works in its checkout (the directory that holds the vault) and
+  has its own thread link, queue and approvals. A pane shows the workhorse of
+  the checkout of its vault (ADR 0050). [ADR
   0019](docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md)
-  records that design.
+  records the app-server session.
 - The shell is desktop-only at 1920×1080. Do not add phone or narrow layouts.
 
 ## Test policy
