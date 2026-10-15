@@ -8,7 +8,9 @@
 // following a voice that speaks and falls silent; the orb moves on every frame once it is shown;
 // every frame is 1920x1080, one per 1/30 s of the talk; the other theme is another picture from
 // the first frame; a talk recorded with Blocks is drawn with Blocks unless --layout names the other
-// engine, which is another picture (TASK-469); and the receipt says what was rendered.
+// engine, which is another picture (TASK-469); a talk read against a variant draws that comparison
+// and no planned frame, which is another picture from the one it draws without it (TASK-478.01);
+// and the receipt says what was rendered.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
@@ -53,6 +55,11 @@ let server: OwnedServer;
 let talkDirectory: string;
 /** The same talk, recorded with Blocks. */
 let blocksTalkDirectory: string;
+/** The talk of a proposal on an unbuilt board, read against the variant below it, and the same without. */
+let againstTalkDirectory: string;
+let plainTalkDirectory: string;
+/** The id of the variant the talk is read against. */
+let againstVariant: string;
 let ffmpeg: string;
 /** The variant the talk was recorded on, the board's current one. */
 let recordedVariant: string;
@@ -103,6 +110,52 @@ function talkOf(document: unknown, policy: unknown, layout: LayoutEngineName): T
 		],
 		document,
 		policy,
+	});
+}
+
+/**
+ * A talk of the proposal on a board nobody has built, drawn as the server served it.
+ * @param served The board and the vault check, as the server served them.
+ * @param served.document The board.
+ * @param served.policy The vault check.
+ * @param against Whether the talk is read against the variant below the proposal.
+ * @returns The talk.
+ */
+function proposalTalk(served: { document: unknown; policy: unknown }, against: boolean): Talk {
+	const parsed = parseSemanticBoard(served.document);
+	if (!parsed.ok) throw new Error(parsed.problem);
+	const { board } = parsed;
+	const proposal = board.variants.find((entry) => entry.name === "one")!;
+	againstVariant = board.variants.find((entry) => entry.name === "base")!.id;
+	const walkthrough = proposal.content.walkthroughs![0]!;
+	return TalkSchema.parse({
+		format: "archboard-talk",
+		version: 1,
+		recordedAt: "2026-09-30T10:00:00.000Z",
+		language: "en",
+		theme: "light",
+		board: {
+			name: "stacked",
+			variant: proposal.id,
+			...(against ? { against: againstVariant } : {}),
+			version: board.version,
+			walkthrough: { id: walkthrough.id, name: walkthrough.name },
+			steps: 1,
+		},
+		audio: {
+			file: "voice.wav",
+			sampleRate: 48_000,
+			channels: 1,
+			samples: 12 * 1600,
+			baseLatencyMs: 0,
+		},
+		events: [
+			{ kind: "drawn", at: 0, version: board.version },
+			{ kind: "step", at: 3200, beat: 0 },
+			{ kind: "end", at: 12 * 1600 },
+		],
+		document: served.document,
+		policy: served.policy,
 	});
 }
 
@@ -161,8 +214,72 @@ beforeAll(async () => {
 		voice: voiceOf(talk.audio.samples),
 		place: askedTalkPlace(join(root, "blocks-talk")),
 	});
+	await keepStackedTalks(request);
 	ffmpeg = prepareFakeFfmpeg(root).executablePath;
 }, TEST_RECORDING_CASE_MS);
+
+/**
+ * Make a board of two unbuilt variants, the second a part larger than the first, keep a talk of
+ * the second read against the first and one read as the board reads it, and discard the board.
+ * @param request The requester of the owned server.
+ */
+async function keepStackedTalks(request: ReturnType<typeof createRequester>): Promise<void> {
+	const created = await request("/api/semantic-boards/create", {
+		method: "POST",
+		doing: "making a stack to replay",
+		body: {
+			board: "stacked",
+			create: {
+				level: "system",
+				lifecycle: "draft",
+				variant: "base",
+				nodes: [
+					{ name: "Gateway", kind: "service" },
+					{ name: "Ledger", kind: "service" },
+				],
+				walkthroughs: [
+					{ name: "What changes", beats: [{ heading: "A worker", body: "The worker is new." }] },
+				],
+			},
+		},
+	});
+	expect(created.status).toBe(200);
+	const branched = await request("/api/semantic-boards/branch?expectVersion=1", {
+		method: "POST",
+		doing: "proposing a worker",
+		body: { board: "stacked", branch: { from: "base", name: "one" } },
+	});
+	expect(branched.status).toBe(200);
+	const edited = await request("/api/semantic-boards/edit?expectVersion=2", {
+		method: "POST",
+		doing: "adding the worker",
+		body: {
+			board: "stacked",
+			edit: { variant: "one", nodes: [{ name: "Worker", kind: "service" }] },
+		},
+	});
+	expect(edited.status).toBe(200);
+	const served = await request<{ board: unknown }>("/api/semantic-boards/board?board=stacked");
+	const policy = (await request("/api/vault/check")).body;
+	const from = { document: served.body!.board, policy };
+	const voice = voiceOf(12 * 1600);
+	againstTalkDirectory = writeTalk({
+		talk: proposalTalk(from, true),
+		voice,
+		place: askedTalkPlace(join(root, "against-talk")),
+	});
+	plainTalkDirectory = writeTalk({
+		talk: proposalTalk(from, false),
+		voice,
+		place: askedTalkPlace(join(root, "plain-talk")),
+	});
+	const discarded = await request("/api/semantic-boards/discard", {
+		method: "POST",
+		doing: "discarding the replayed stack",
+		body: { board: "stacked", session: "replay" },
+	});
+	expect(discarded.status).toBe(200);
+}
 
 afterAll(async () => {
 	await server.dispose();
@@ -279,6 +396,19 @@ test(
 		expect(blocks.receipt).toMatchObject({ layout: "blocks", frames: FRAMES });
 		expect(track.receipt).toMatchObject({ layout: "track", frames: FRAMES });
 		expect(blocks.frames[0]).not.toBe(track.frames[0]);
+	},
+	TEST_RECORDING_CASE_MS,
+);
+
+test(
+	"a talk read against a variant draws that comparison without the planned frame, and the receipt names it",
+	() => {
+		const against = replay("against", { talk: againstTalkDirectory });
+		const plain = replay("against-plain", { talk: plainTalkDirectory });
+		expect(against.receipt).toMatchObject({ against: againstVariant, frames: 12 });
+		expect(plain.receipt).toMatchObject({ against: null, frames: 12 });
+		// The plain talk is drawn framed as planned, the other is not: they are not one picture.
+		expect(against.frames[11]).not.toBe(plain.frames[11]);
 	},
 	TEST_RECORDING_CASE_MS,
 );

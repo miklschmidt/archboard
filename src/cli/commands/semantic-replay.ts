@@ -35,6 +35,8 @@ const ReplayReceiptSchema = z.object({
 	talk: z.string(),
 	board: z.string(),
 	variant: z.string().nullable(),
+	/** The id of the variant every frame is read against, when the talk was recorded with --against. */
+	against: z.string().nullable(),
 	walkthrough: z.object({ id: z.string(), name: z.string() }),
 	steps: z.int(),
 	file: z.string(),
@@ -194,6 +196,7 @@ const semanticReplayContract = defineCommand({
 				talk: directory,
 				board: talk.board.name,
 				variant: talk.board.variant ?? currentVariantOf(talk.document),
+				against: talk.board.against ?? null,
 				walkthrough: talk.board.walkthrough,
 				steps: talk.board.steps,
 				file: made.file,

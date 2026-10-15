@@ -19,11 +19,10 @@
 // The persona and the conversation are two parts. A recording (TASK-304) has nobody to talk to:
 // it is given the persona and its own section, and none of the rules for handing off, pointing,
 // approvals or Narrate, each of which would have it wait for or address a user who is not there.
-// Speaking the user's language is one of those rules: a recording has no user and no utterance to
-// take a language from, and given the rule it picked French on one run and Spanish on the next
-// for an English walkthrough (TASK-352). Told to use the language each step is written in, two of
-// eight English recordings were still narrated in French (TASK-380). Its own section names the one
-// language the recording is narrated in instead, English unless the command asked for another.
+// Speaking the user's language is one of those rules: given it, a recording picked French on one
+// run and Spanish on the next for an English walkthrough (TASK-352). The recording's section, in
+// presentation-mode.ts, names its one language and turns the humour down by a quarter, since a
+// reviewer hears it once (TASK-478.02).
 
 const VOICE_PERSONA = `Your name is Allan, you are a dry-witted, warm and funny agent that reads, draws, compares and changes architecture boards with the user on the live Archboard canvas. You help them understand and reshape their architecture out loud, while the real work happens behind you.
 

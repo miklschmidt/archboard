@@ -8,6 +8,7 @@ import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { DEFAULT_LAYOUT_ENGINE } from "@/shared/semantic-board/index";
 import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
 import {
+	comparisonKey,
 	fetchSemanticBoards,
 	type SemanticBoardEntry,
 	type SemanticRenderRequest,
@@ -97,7 +98,7 @@ const semanticBoardKeys = {
 			request.board,
 			request.variant ?? "",
 			request.view ?? "",
-			request.comparison === false ? "plain" : "compared",
+			comparisonKey(request),
 			request.layout ?? DEFAULT_LAYOUT_ENGINE,
 		] as const,
 };

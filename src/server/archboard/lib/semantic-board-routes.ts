@@ -181,6 +181,7 @@ interface RenderChoices {
 	readonly fonts: "linked" | "embedded";
 	readonly variant?: string;
 	readonly view?: string;
+	readonly against?: string;
 	readonly comparison: boolean;
 	readonly layout?: LayoutEngineName;
 	readonly title?: string | true;
@@ -192,6 +193,7 @@ interface RenderChoices {
 const RENDER_SELECTORS = [
 	"variant",
 	"view",
+	"against",
 	"theme",
 	"fonts",
 	"comparison",
@@ -279,10 +281,8 @@ function chosen(
 	if (!fonts.success) {
 		return { ok: false, why: `"fonts" says "${stated["fonts"]}"; they are linked or embedded` };
 	}
-	const comparison = RenderComparisonSchema.safeParse(stated["comparison"]);
-	if (!comparison.success) {
-		return { ok: false, why: `"comparison" says "${stated["comparison"]}"; choose on or off` };
-	}
+	const comparison = statedComparison(stated);
+	if (!comparison.ok) return comparison;
 	const layout = statedLayout(stated["layout"]);
 	if (!layout.ok) return layout;
 	const framing = statedFraming(stated);
@@ -292,7 +292,7 @@ function chosen(
 		how: {
 			theme: theme.data,
 			fonts: fonts.data,
-			comparison: comparison.data === "on",
+			comparison: comparison.on,
 			...namedIn(stated),
 			...layout.choice,
 			...framing.choice,
@@ -301,14 +301,40 @@ function chosen(
 }
 
 /**
- * The variant and view a request names, when it names them.
+ * Whether the comparison is drawn. A variant read against another cannot be drawn without one.
+ * @param stated The selectors that were stated, by name.
+ * @returns Whether it is drawn, or why the request cannot be acted on.
+ */
+function statedComparison(
+	stated: Readonly<Record<string, string>>,
+): { readonly ok: true; readonly on: boolean } | { readonly ok: false; readonly why: string } {
+	const comparison = RenderComparisonSchema.safeParse(stated["comparison"]);
+	if (!comparison.success) {
+		return { ok: false, why: `"comparison" says "${stated["comparison"]}"; choose on or off` };
+	}
+	if (stated["against"] !== undefined && comparison.data === "off") {
+		return {
+			ok: false,
+			why: '"against" reads the variant against another, so it cannot be asked with "comparison" off',
+		};
+	}
+	return { ok: true, on: comparison.data === "on" };
+}
+
+/**
+ * The variant, view and variant to read it against that a request names, when it names them.
  * @param stated The selectors that were stated, by name.
  * @returns The named ones.
  */
-function namedIn(stated: Readonly<Record<string, string>>): { variant?: string; view?: string } {
+function namedIn(stated: Readonly<Record<string, string>>): {
+	variant?: string;
+	view?: string;
+	against?: string;
+} {
 	return {
 		...(stated["variant"] === undefined ? {} : { variant: stated["variant"] }),
 		...(stated["view"] === undefined ? {} : { view: stated["view"] }),
+		...(stated["against"] === undefined ? {} : { against: stated["against"] }),
 	};
 }
 

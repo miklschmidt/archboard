@@ -12,7 +12,8 @@ const vaultNotFoundRefusal = {
 	stream: "stderr" as const,
 	description:
 		"No vault was found from the working directory or the directory -C names. " +
-		"Inside a checkout only <root>/.archboard/vault counts; outside one, the nearest enclosing <dir>/.archboard/vault. Nothing was done.",
+		"Inside a checkout only <root>/.archboard/vault counts; outside one, the nearest enclosing <dir>/.archboard/vault. " +
+		"In a checkout with no vault, the refusal names each known vault whose boards bind the checkout's repository, as the -C to give. Nothing was done.",
 };
 const vaultRequiredRefusal = {
 	code: "VAULT_REQUIRED",

@@ -10,10 +10,17 @@
 // A recording (TASK-304) is a narration nobody listens to live and nobody steps by hand: the
 // recording page moves to the next step itself once the voice has finished the one on screen,
 // so the voice is told to explain each step and fall silent, since silence is what moves the
-// screen on. Its steps are handed over as "On screen now", and leaving is never told: the page
-// ends a recording by stopping the session.
+// screen on. Leaving is never told: the page ends a recording by stopping the session.
 //
-// A recording is narrated in one language, named outright at the start of its section and again
+// A recording is heard once, later, by a reviewer, so it is told as an explanation of the system
+// and not as a tour of a screen (TASK-478.02). Its voice gets narrator instructions of its own and
+// none of the live persona. Given the persona, a recording joked ("Whew!"); handed each step as
+// "On screen now: step 2 of 5", it opened beats with "On screen now: step two" and "This step is
+// about", and closed with "That completes the walkthrough". So a recorded step is handed over as
+// what to explain, never as where it is or which step it is, and the prompt asks for no opening or
+// closing line, so the voice needs no step number.
+//
+// A recording is narrated in one language, named outright at the start of its prompt and again
 // where a step is explained (TASK-380). Codex sets no language anywhere in a realtime session and
 // hands the voice model this prompt as it is (Codex 0.158.0 to 0.160.0,
 // `prepare_realtime_backend_prompt`), so the prompt is the only place a language can come from.
@@ -62,7 +69,7 @@ function presentationName(name: string): string {
 		: `${name.slice(0, PRESENTATION_NAME_MAX_CHARS - 1)}…`;
 }
 
-/** What every presenting voice is told about the subjects a step hands over. */
+/** What a narrating voice is told about the subjects a step hands over. */
 const STEP_SUBJECTS_RULE =
 	'A step may end with "It highlights", listing what the screen highlights for that step and, when the architecture on screen is not the current one, whether each was added or changed against the current architecture (on a board with none, against the one it was branched from) and what moved. Use it to say what the step is about and what changed, in your own words; never read the list out, say "highlighted", or name a change the list does not give.';
 
@@ -83,27 +90,36 @@ function narrationPrompt(name: string): string {
 	].join("\n\n");
 }
 
+/** What a recorded step begins with when the voice model is handed it: what to do with it. */
+const RECORDED_STEP_LEAD_IN = "Explain in your own words";
+
+/** What the subjects of a recorded step follow. */
+const RECORDED_SUBJECTS_LEAD_IN = "Subjects";
+
 /**
- * What the voice model is told when it is started to narrate a walkthrough for a recording.
+ * What the voice model is told, after the persona, when it is started to narrate a walkthrough for
+ * a recording. A recording has no conversation, so it gets none of the conversation's rules.
  * @param name The walkthrough's name.
  * @param recording The language the recording is narrated in.
- * @returns The section appended to the voice prompt.
+ * @returns The voice model's prompt.
  */
 function recordingPrompt(name: string, recording: RecordingNarration): string {
 	const language = languageName(recording.language) ?? recording.language;
 	return [
-		`Recorded walkthrough, narrated in ${language}. Speak only ${language}, from your first word to your last. You are narrating the walkthrough "${presentationName(name)}" for a video people will watch later. Nobody is listening live, nobody will answer you, and nobody is at the controls: the screen moves to the next step by itself once you have finished explaining the one on it. Each step reaches you as it lands on screen, beginning "On screen now", with which step of how many it is, its heading and what it says.`,
-		`When a step reaches you, explain it at once in ${language}, as a good conference speaker would: what it shows and why it matters, in your own words, with names and never ids. A step written in another language is still explained in ${language}: put what it says into ${language}. Keep it to a few sentences with at most one aside. The screen shows the heading and the text, so explain them rather than read them out. Never say a step's number or the total aloud; the number is how you know the last step.`,
-		STEP_SUBJECTS_RULE,
-		"When you have explained a step, stop talking: your silence is what moves the screen on. Never ask or invite questions, never ask for the next step, never hand anything to the coordinator, and never say you are waiting. After the last step, close the walkthrough with one short sentence.",
+		`This time nobody is talking with you: you narrate a recorded explanation of a software architecture, in ${language}. Speak only ${language}, from your first word to your last. The listener reviews or studies this architecture and hears you once, later, with its board in front of them. Nobody answers you, and nobody is at the controls.`,
+		`The explanation is "${presentationName(name)}". It reaches you one point at a time. Each point begins "${RECORDED_STEP_LEAD_IN}" and gives its heading and what it says. It can end with "${RECORDED_SUBJECTS_LEAD_IN}": the parts and relationships it is about. A subject the change added or changed says so, and says what moved.`,
+		`Explain each point at once, in ${language}, in a few sentences of your own. Say what its subjects do and why that matters, by the names the board uses and never by ids. Do not read the heading or the text out: say what they mean. A point written in another language is still explained in ${language}. Say that something was added or changed only when the point says so.`,
+		'Talk about the system, never about the explanation. Never mention the screen, the picture, the video, a step, a point, the walkthrough, or what is highlighted or shown. Never begin with words such as "on screen now", "this step", "here we see" or "next". Begin with the system itself.',
+		"Stay yourself, dry wit and all, with your humour turned down by a quarter from how you talk live: where a conversation would get four jokes, this gets three. No greeting, no opening line, no summary and no closing line.",
+		"When you have explained a point, stop talking: your silence moves the recording on. Never ask or invite questions, never hand anything to the coordinator, and never say you are waiting.",
 	].join("\n\n");
 }
 
 /**
- * What the voice model is told when it is started to present a walkthrough: a narration the user
- * steps, or a recording that steps itself.
+ * The section a walkthrough adds to the voice model's prompt: the narration's for a walkthrough the
+ * user steps, the recording's for one that steps itself.
  * @param presentation The walkthrough, and whether the talk is recorded.
- * @returns The section appended to the voice prompt.
+ * @returns The section.
  */
 function voicePresentationPrompt(presentation: RealtimePresentation): string {
 	return presentation.recording === null
@@ -156,8 +172,8 @@ function subjectSpeech(subject: StepSubject): string {
  * In a full-duplex session appended text is quiet context whatever role it carries, and nothing
  * asks for a response (Codex 0.160.0, `conversation_item_create_message`). What the voice model
  * says is what arrives as speakable text, the way a coordinator's answer does, so both are
- * speech: a step to explain now, and leaving to acknowledge. A recording's step is on a screen
- * nobody is watching live, and is named so.
+ * speech: a step to explain now, and leaving to acknowledge. A recording's step is handed over as
+ * what to explain, with no screen and no step number for the voice to repeat (TASK-478.02).
  * @param change Where the walkthrough now is.
  * @param recording Whether the talk is recorded.
  * @returns The speakable text.
@@ -170,11 +186,13 @@ function presentationSpeech(change: RealtimePresentationChange, recording: boole
 		change.body.length <= STEP_BODY_MAX_CHARS
 			? change.body
 			: `${change.body.slice(0, STEP_BODY_MAX_CHARS - 1)}…`;
-	const where = recording ? "On screen now" : "On the user's screen now";
-	const said = `${where}: step ${change.step} of ${change.of}, "${change.heading}". ${body}`;
+	const said = recording
+		? `${RECORDED_STEP_LEAD_IN}: "${change.heading}". ${body}`
+		: `On the user's screen now: step ${change.step} of ${change.of}, "${change.heading}". ${body}`;
+	const subjects = recording ? RECORDED_SUBJECTS_LEAD_IN : "It highlights";
 	return change.subjects.length === 0
 		? said
-		: `${said}\nIt highlights: ${change.subjects.map(subjectSpeech).join("; ")}.`;
+		: `${said}\n${subjects}: ${change.subjects.map(subjectSpeech).join("; ")}.`;
 }
 
 export {

@@ -19,7 +19,9 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 	DiagramThemeSchema,
 	LayoutEngineSchema,
+	addressedVariant,
 	parseSemanticBoard,
+	type SemanticBoard,
 } from "@/shared/semantic-board/index";
 import { VaultCheckSchema } from "@/shared/semantic-policy/index";
 import { RecordingLanguageSchema } from "@/shared/walkthrough-recording/lib/language";
@@ -85,6 +87,12 @@ const TalkBoardSchema = z
 		name: z.string().min(1),
 		/** The variant presented, by id, or null for the variant that was current. */
 		variant: z.string().min(1).nullable(),
+		/**
+		 * The variant every picture of the talk is read against, by id (TASK-478.01). A talk
+		 * kept without it reads against the variant the board ordinarily reads it against, as
+		 * before, so the format version stays 1.
+		 */
+		against: z.string().min(1).optional(),
 		/** The version the board was at, which every picture of it was drawn from. */
 		version: z.int().nonnegative(),
 		/** The walkthrough presented. */
@@ -201,6 +209,7 @@ function boardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
 			`The talk's board is at version ${parsed.board.version}, not ${talk.board.version}.`,
 		);
 	}
+	problems.push(...againstProblems(talk, parsed.board));
 	for (const event of talk.events) {
 		if (event.kind === "drawn" && event.version !== talk.board.version) {
 			problems.push(
@@ -209,6 +218,27 @@ function boardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
 		}
 	}
 	return problems;
+}
+
+/**
+ * Whether the variant a talk is read against is one its board has, other than the one drawn.
+ * @param talk The talk.
+ * @param board The talk's board, as read.
+ * @returns The problems.
+ */
+function againstProblems(
+	talk: z.infer<typeof TalkSchema>,
+	board: SemanticBoard,
+): readonly string[] {
+	const { against } = talk.board;
+	if (against === undefined) return [];
+	if (!board.variants.some((variant) => variant.id === against)) {
+		return [`The talk is read against variant ${against}, which its board does not have.`];
+	}
+	const drawn = addressedVariant(board, talk.board.variant ?? undefined);
+	return drawn.ok && drawn.variant.id === against
+		? ["The talk is read against the variant it draws."]
+		: [];
 }
 
 /** The search parameter that opens the page as the renderer of a talk. */

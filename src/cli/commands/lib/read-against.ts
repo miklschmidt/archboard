@@ -60,4 +60,30 @@ function readAgainst(
 	);
 }
 
-export { nothingToCompareRefusal, readAgainst };
+/**
+ * The variant a picture or a recording is drawn against, when `--against` names one.
+ *
+ * It is resolved as `semantic compare --against` resolves it. A picture of a
+ * variant against itself would mark nothing and drop the planned frame, which
+ * is a request that went wrong, so that is refused as well.
+ * @param board The board as read.
+ * @param variant The variant to be drawn.
+ * @param named The variant `--against` named.
+ * @returns The variant to read it against.
+ * @throws {CliUsageError} When the named one is not on the board, or is the drawn variant.
+ */
+function drawnAgainstNamed(
+	board: SemanticBoard,
+	variant: SemanticVariant,
+	named: string,
+): SemanticVariant {
+	const against = readAgainst(board, variant, named);
+	if (against.id === variant.id) {
+		throw new CliUsageError(
+			`"${variant.name}" on "${board.name}" cannot be drawn against itself: name the variant it should be read against with --against.`,
+		);
+	}
+	return against;
+}
+
+export { drawnAgainstNamed, nothingToCompareRefusal, readAgainst };

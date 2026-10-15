@@ -44,6 +44,8 @@ import {
 	renderFailedRefusal,
 	requireWritableDirectory,
 } from "@/cli/commands/lib/recording-output";
+import { drawnAgainstNamed } from "@/cli/commands/lib/read-against";
+import { AGAINST_OPTION } from "@/cli/commands/lib/drawn-against";
 import { SelectorSchema, UNNAMED_VARIANT, askedVariant } from "@/cli/commands/lib/semantic-input";
 
 const THEMES = DiagramThemeSchema.options;
@@ -51,6 +53,7 @@ const THEMES = DiagramThemeSchema.options;
 const RecordInputSchema = z.object({
 	name: z.string(),
 	variant: SelectorSchema.optional(),
+	against: SelectorSchema.optional(),
 	walkthrough: z.string().optional(),
 	theme: DiagramThemeSchema.default("light"),
 	layout: LayoutEngineSchema.default(DEFAULT_LAYOUT_ENGINE),
@@ -64,6 +67,8 @@ const RecordReceiptSchema = z.object({
 	success: z.literal(true),
 	board: z.string(),
 	variant: z.string(),
+	/** The id of the variant every frame is read against, when --against named one. */
+	against: z.string().nullable(),
 	walkthrough: z.object({ id: z.string(), name: z.string() }),
 	steps: z.int(),
 	file: z.string(),
@@ -270,7 +275,8 @@ const semanticRecordContract = defineCommand({
 		"have Codex signed in. A recording is a conversation of its own, so voice live in a browser " +
 		"tab does not stop it. The voice speaks only the --language it is given, whatever language " +
 		"the steps are written in. Every frame is laid out by the --layout engine, which the talk " +
-		"keeps, so a replay draws the same layout. " +
+		"keeps, so a replay draws the same layout. With --against every frame is drawn relative to " +
+		"that variant, without the Planned frame, and the talk keeps it too. " +
 		"--discard " +
 		"deletes the board once the recording is written, for a board made only to be recorded; " +
 		"a failed recording keeps it, and so does a board changed while it was " +
@@ -279,6 +285,7 @@ const semanticRecordContract = defineCommand({
 		"ARCHBOARD_FFMPEG, else on PATH, else nixpkgs#ffmpeg-headless run through Nix.",
 	examples: [
 		"archboard semantic record pipeline --out pipeline.mp4",
+		'archboard semantic record pipeline --variant "TASK-2" --against "TASK-1" --out task-2.mp4',
 		'archboard semantic record pr-1234-talk --walkthrough "What changes" --out talk.mp4 --discard --doing "recording the PR talk"',
 	],
 	parameters: [
@@ -313,6 +320,12 @@ const semanticRecordContract = defineCommand({
 			value: "required",
 			placeholder: "variant",
 			description: `Which variant's walkthrough to record, by id or name; ${UNNAMED_VARIANT}`,
+		},
+		{
+			...AGAINST_OPTION,
+			description:
+				"Draw every frame relative to this variant, by id or name: each marks only what the recorded variant adds, " +
+				"changes and removes over it, and none carries a Planned frame. It cannot be the recorded variant. The talk keeps it",
 		},
 		{
 			kind: "option",
@@ -429,6 +442,8 @@ const semanticRecordContract = defineCommand({
 		await context.require("server", "semantic record");
 		const board = await readSemanticBoardOnServer(input.name);
 		const variant = askedVariant(board, input.variant);
+		const against =
+			input.against === undefined ? null : drawnAgainstNamed(board, variant, input.against).id;
 		const walkthrough = chosenWalkthrough(variant.content.walkthroughs, input.walkthrough);
 		const talk = talkPlaceOf(
 			input.talk === undefined ? undefined : context.resolvePath(input.talk),
@@ -439,6 +454,7 @@ const semanticRecordContract = defineCommand({
 			board,
 			policy: await checkSemanticVaultOnServer(),
 			variant: input.variant === undefined ? null : variant.id,
+			against,
 			repository,
 			walkthrough: { id: walkthrough.id, name: walkthrough.name },
 			language: input.language,
@@ -470,6 +486,7 @@ const semanticRecordContract = defineCommand({
 				success: true as const,
 				board: board.name,
 				variant: variant.id,
+				against,
 				walkthrough: { id: walkthrough.id, name: walkthrough.name },
 				steps: made.steps,
 				file: made.file,

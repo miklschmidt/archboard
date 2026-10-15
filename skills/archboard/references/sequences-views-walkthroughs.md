@@ -75,6 +75,21 @@ Both export commands accept `--no-comparison`. Use it to hide comparison marks
 and removed subjects when exporting a variant. The file or clipboard receipt
 then reports `comparedWith: null`. Without the flag, comparisons stay visible.
 
+`--against <variant>` draws the picture relative to another variant than the
+usual one, and `semantic record` takes it too. The picture marks only what the
+drawn variant adds, changes and removes over the variant named, the same
+entries that `semantic compare --variant <drawn> --against <variant>` reports.
+Use it for a proposal that stacks on another one, such as a pull request on the
+pull request below it, so the picture shows only its own change. The picture
+carries no "Planned" frame, also on a board with no current variant, because it
+says nothing about whether the board is built. The receipt names the variant
+under `comparedWith`. A variant that the board lacks, the drawn variant itself
+and `--no-comparison` with `--against` are usage errors (exit 2).
+
+```bash
+archboard semantic render pr-128 --variant "This pull request" --against "Pull request 127" --out pr-128.svg
+```
+
 For a picture in a document, a README or a pull request, draw one SVG with
 `semantic render <board> --theme auto --out <file.svg>`. It carries both
 grounds and shows the one of the reader's colour scheme (the page's own scheme where the
@@ -185,6 +200,9 @@ speak about a change that no beat names.
 - If the variant states several walkthroughs, `--walkthrough <name>` picks one.
   `--variant`, `--theme dark` and `--layout blocks` choose what is drawn. The
   default layout is Track, and the talk keeps the layout it was drawn with.
+  `--against <variant>` draws every frame relative to that variant, without the
+  "Planned" frame, as `render` does, and the talk keeps it too, so a replay
+  draws the same comparison.
 - The voice speaks English. `--language <tag>` names another language as a
   BCP 47 tag, such as `da`, `fr` or `pt-BR`. The voice speaks only that
   language, whatever language the beats are written in. The command refuses a
