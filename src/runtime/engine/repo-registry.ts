@@ -337,8 +337,23 @@ async function declareIfUnknown(
 	options: Pick<DeclareOptions, "signal"> = {},
 ): Promise<Declared | undefined> {
 	const { checkouts, vaults } = readRegistry();
-	const known = [...checkouts, ...vaults].some((entry) => entry.root === holder);
+	// A finder names the holder by its real path, and an entry written before
+	// the registry stored real paths can name it through a link.
+	const known = [...checkouts, ...vaults].some((entry) => realRoot(entry.root) === holder);
 	return known ? undefined : declareDirectory(holder, options);
+}
+
+/**
+ * A registered root as its real path.
+ * @param root The root as the registry spells it.
+ * @returns Its real path, or the root itself when it is gone.
+ */
+function realRoot(root: string): string {
+	try {
+		return fs.realpathSync.native(root);
+	} catch {
+		return root;
+	}
 }
 
 /** The repository a vault is in, as the browser names it. */
