@@ -12,14 +12,14 @@ against, and which comparisons work.
   the vault states. It shows in every pane and, when Git tracks the vault, in
   the vault's history. No command deletes a board, except `semantic record
 --discard` after a recording.
-- A command reaches the server at `ARCHBOARD_URL`, and that server keeps the
-  vault that it started with. Nothing checks that the command's
-  `ARCHBOARD_VAULT` is that vault. With `ARCHBOARD_VAULT` set to a temporary
-  vault and `ARCHBOARD_URL` left at the repository's server, `semantic config`
-  answered with the repository's `configurationFile` (checked in October
-  2026). A write sent that way goes to the repository's vault. So an ephemeral
-  board needs both variables and its own server, and `semantic config` proves
-  which vault the server holds.
+- A command reaches the server at `ARCHBOARD_URL` and names its
+  `ARCHBOARD_VAULT` on every call, so it reads and writes the vault it names,
+  whichever server answers. The browser of a server, and the page that
+  `semantic record` draws in, show the vault that the server started with. With
+  `ARCHBOARD_URL` left at the repository's server, an ephemeral board is
+  written to the temporary vault, but no pane can show it and no recording can
+  draw it. So an ephemeral board needs both variables and its own server, and
+  `semantic config` proves which vault the commands name.
 - A copy of the vault's `config.yaml` gives the ephemeral vault the same kinds,
   levels, groups and evidence rules, so the board draws as the vault's boards
   do.

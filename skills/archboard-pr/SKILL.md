@@ -190,8 +190,8 @@ own serves, so nothing reaches the repository's vault or its server. Follow
 1. Make the temporary vault with a copy of the vault's `config.yaml`, point
    `ARCHBOARD_VAULT` and `ARCHBOARD_URL` (a free loopback port) at it, and
    start its server. Before the first write, `archboard semantic config` must
-   name a `configurationFile` inside it: nothing else checks which server a
-   command reaches.
+   name a `configurationFile` inside it, which proves that the commands name the
+   temporary vault.
 2. Draw the base branch's code as the current variant, with the parts named as
    the vault's boards name them. Branch a draft named after the head branch,
    and restate what the head branch does with the ids you were given. A flow
