@@ -116,8 +116,16 @@ describe("the drill trail", () => {
 
 	test("a refused dive leaves the trail where it was", () => {
 		const there = drillInto(drillInto(NO_TRAIL, SHOP, CART).trail, SHOP, CART).trail;
-		const refused = drillRefused(drillInto(there, SHOP, LEDGER).trail);
+		const refused = drillRefused(drillInto(there, SHOP, LEDGER).trail, LEDGER);
 		expect(stopsOf(refused, SHOP)).toEqual(stopsOf(there, SHOP));
 		expect(drillArrived(refused, LEDGER)).toEqual(NO_TRAIL);
+	});
+
+	test("a dive refused after the reader asked for another leaves the later one waiting", () => {
+		const first = drillInto(NO_TRAIL, SHOP, LEDGER);
+		const journal = { ...LEDGER, board: "journal" };
+		const second = drillInto(first.trail, SHOP, journal);
+		const refused = drillRefused(second.trail, LEDGER);
+		expect(stopsOf(drillArrived(refused, journal), journal)).toEqual([SHOP, journal]);
 	});
 });
