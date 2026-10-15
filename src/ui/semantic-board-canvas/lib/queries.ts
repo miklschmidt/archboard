@@ -3,17 +3,20 @@
 // call sites, so a subscription and an invalidation always name the same cache
 // entry and each resource's freshness contract is written down once.
 
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 
 import { DEFAULT_LAYOUT_ENGINE } from "@/shared/semantic-board/index";
 import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
 import {
 	fetchSemanticBoards,
+	type SemanticBoardEntry,
 	type SemanticRenderRequest,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { ReadingOnScreen } from "@/ui/semantic-board-canvas/hooks/use-code-findings";
+import { sameBoardName } from "@/ui/semantic-board-canvas/lib/address";
 import { boardReads } from "@/ui/semantic-board-canvas/lib/board-reads";
 import { pictureSource } from "@/ui/semantic-board-canvas/lib/picture-source";
+import { readAgain } from "@/ui/semantic-board-canvas/lib/read-again";
 
 /** The one root every semantic resource hangs under, so a sweep can find it. */
 const SEMANTIC_KEY = "semantic-board";
@@ -110,6 +113,25 @@ function versionOf(data: unknown): number | undefined {
 }
 
 /**
+ * Whether one cached reading is of another version than the listing says its board is at.
+ * @param asked The board name the reading was asked by.
+ * @param data What the cache holds for it.
+ * @param boards The boards the server lists, with their versions.
+ * @returns True when both say a version and the two differ.
+ */
+function readingMoved(
+	asked: string,
+	data: unknown,
+	boards: readonly SemanticBoardEntry[],
+): boolean {
+	const held = versionOf(data);
+	const listed = boards.find(
+		(entry) => sameBoardName(asked, entry.key) || sameBoardName(asked, entry.name),
+	)?.version;
+	return held !== undefined && listed !== undefined && listed !== held;
+}
+
+/**
  * Read again every board of one vault whose cached document or picture is of
  * another version than the one the server lists.
  *
@@ -129,20 +151,15 @@ function readMovedBoardsAgain(
 	vault: string,
 	boards: readonly SemanticBoardEntry[],
 ): void {
-	const moved = new Set<string>();
 	const cached = client.getQueryCache();
-	for (const query of [
-		...cached.findAll({ queryKey: [...semanticBoardKeys.documents, vault] }),
-		...cached.findAll({ queryKey: semanticBoardKeys.rendersIn(vault) }),
-	]) {
-		const [, , , asked] = query.queryKey;
-		const held = versionOf(query.state.data);
-		if (typeof asked !== "string" || held === undefined) continue;
-		const listed = boards.find(
-			(entry) => sameBoardName(asked, entry.key) || sameBoardName(asked, entry.name),
-		);
-		if (listed?.version !== undefined && listed.version !== held) moved.add(asked);
-	}
+	const moved = new Set(
+		[
+			...cached.findAll({ queryKey: [...semanticBoardKeys.documents, vault] }),
+			...cached.findAll({ queryKey: semanticBoardKeys.rendersIn(vault) }),
+		].flatMap(({ queryKey: [, , , asked], state }) =>
+			typeof asked === "string" && readingMoved(asked, state.data, boards) ? [asked] : [],
+		),
+	);
 	for (const board of moved) {
 		const queryKeys = [
 			semanticBoardKeys.document(vault, board),
