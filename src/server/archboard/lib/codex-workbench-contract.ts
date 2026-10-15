@@ -160,7 +160,9 @@ interface ProductionCodexWorkbenchBindings {
 		>
 	>;
 	/** How the generation's tab sessions settle what an ended session was asked. */
-	readonly sessions: ComponentBuilder<Pick<CreateCodexWorkbenchSessionsOptions, "endApprovals">>;
+	readonly sessions: ComponentBuilder<
+		Pick<CreateCodexWorkbenchSessionsOptions, "endApprovals" | "shownConversationOf">
+	>;
 	/** What each component of one tab session is configured with. */
 	readonly tabSession: (
 		scope: CodexWorkbenchTabSessionScope,

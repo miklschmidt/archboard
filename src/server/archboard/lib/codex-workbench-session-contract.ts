@@ -22,6 +22,7 @@ import type {
 } from "@/shared/codex-workbench-identity";
 import type { BrowserRealtimeActions, TabSessionId } from "@/server/codex-workbench";
 import type { TabSessionEnding } from "@/server/archboard/lib/codex-workbench-session-end";
+import type { CoordinatorTurnHome } from "@/server/archboard/lib/codex-workbench-delegations";
 import type {
 	CodexWorkbenchWorkhorse,
 	CodexWorkbenchWorkhorseActions,
@@ -51,6 +52,8 @@ interface CodexWorkbenchTabSessionActions {
 interface CodexWorkbenchTabSessionState {
 	/** Which coordinator turn delegated each workhorse turn, newest last; bounded. */
 	readonly delegations: Map<TurnId, TurnId>;
+	/** Which conversation each coordinator turn shows in, newest last; bounded (ADR 0050). */
+	readonly coordinatorTurnHomes: Map<TurnId, CoordinatorTurnHome>;
 	/** The coordinator tool call running now, which every owner that asks sees the same. */
 	currentCoordinatorCall: LogicalToolCallCorrelation | null;
 	/** Every thread this tab started, its coordinator's and its workhorses', current and replaced. */
@@ -64,7 +67,7 @@ interface CodexWorkbenchTabSessionState {
 	 */
 	presenting: { readonly paneId: string; readonly vault: string } | null;
 	/**
-	 * The checkout of the pane voice last started from. Voice speaks for the whole tab, and its
+	 * The checkout the tab showed when voice last started. Voice speaks for the whole tab, and its
 	 * session is bound to that checkout's workhorse for as long as it runs; null before any start.
 	 */
 	voiceCheckout: string | null;
@@ -105,6 +108,8 @@ interface CodexWorkbenchTabSessionScope {
 	readonly workhorse: (checkout: string) => CodexWorkbenchWorkhorse;
 	/** The workhorse voice is bound to, or null. */
 	readonly voiceWorkhorse: () => CodexWorkbenchWorkhorse | null;
+	/** Stop the workhorse of one checkout, or every workhorse of the tab when the checkout is null. */
+	readonly stopWork: CodexWorkbenchTabSession["stopWork"];
 	/** Hear what every workhorse of the tab reports about its operations, built later or not. */
 	readonly workhorseOperations: {
 		readonly subscribe: (listener: WorkhorseOperationEventListener) => () => void;
@@ -151,6 +156,8 @@ interface CreateCodexWorkbenchSessionsOptions {
 	readonly threadLink: TabSessionEnding["threadLink"];
 	/** Settle every approval an ended session was still to answer. */
 	readonly endApprovals: TabSessionEnding["endApprovals"];
+	/** The checkout whose conversation a tab shows now, or null before any pane of it was read. */
+	readonly shownConversationOf: (id: TabSessionId) => string | null;
 	/** Build one session's coordinator and voice. */
 	readonly build: (scope: CodexWorkbenchTabSessionScope) => BuiltTabSession;
 	/** Build one workhorse of a session. */

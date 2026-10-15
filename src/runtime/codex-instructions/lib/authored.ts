@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 =
 	"4c2856242c43436035c77bc933243eea5ee7cca553501b8de4d0bca903f55d03" as const;
 const COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256 =
-	"667c1285eb610064532e1f2c1ddf750f16d906176922b3fdee1ce2b2ff0c45d3" as const;
+	"b9aa33ffc2e568670150aad919979b79de7e4a9136c5ed6aa8c37a1fd7eaea47" as const;
 
 interface AuthoredInstructionIntegrity {
 	readonly workhorseSha256: string;

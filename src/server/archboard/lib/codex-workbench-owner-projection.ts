@@ -22,6 +22,8 @@ import {
 	type ServerReadinessProcessFacts,
 } from "@/server/archboard/lib/codex-workbench-readiness";
 import { visibleApprovalViews } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
+import { readWorkhorseList } from "@/server/archboard/lib/codex-workbench-workhorse-list";
+import { coordinatorTurnsShownIn } from "@/server/archboard/lib/codex-workbench-delegations";
 import {
 	UNAVAILABLE_QUEUE,
 	type ServerBrowserBindingState,
@@ -46,12 +48,12 @@ type SemanticBinding = NonNullable<
 
 /**
  * Everything a projection read needs: the pane's tab session, whose coordinator, voice and
- * approvals it is shown, the workhorse of the pane's checkout, and what the generation shares.
+ * approvals it is shown, the workhorse of the shown checkout, and what the generation shares.
  */
 interface ServerOwnerProjectionInput {
 	readonly approvals: CodexWorkbenchComponents["approvals"];
-	readonly session: Pick<CodexWorkbenchTabSession, "components" | "state">;
-	/** The workhorse of the pane's checkout, or null while that checkout has none. */
+	readonly session: Pick<CodexWorkbenchTabSession, "components" | "state" | "workhorses">;
+	/** The workhorse of the shown checkout, or null while that checkout has none. */
 	readonly workhorse: Pick<CodexWorkbenchWorkhorse, "components" | "state"> | null;
 	readonly dynamicApprovals: ServerDynamicApprovalOwner;
 	readonly state: ServerBrowserBindingState;
@@ -60,6 +62,8 @@ interface ServerOwnerProjectionInput {
 	readonly coordinatorTimeline: ServerTimelineOwner;
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
 	readonly process: () => ServerReadinessProcessFacts;
+	/** The repository a checkout is listed under, or null when the navigator lists it nowhere. */
+	readonly repositoryOf: (checkout: string) => string | null;
 }
 
 /**
@@ -318,6 +322,7 @@ function readBrowserOwnerProjection(
 			coordinatorTarget(coordinator, context.paneId, threadCapable),
 			threadCapable,
 			context.connection,
+			coordinatorTurnsShownIn(input.session.state.coordinatorTurnHomes, context.checkout),
 		),
 		delegations: input.session.state.delegations,
 		queue: owned.queue,
@@ -343,6 +348,13 @@ function readBrowserOwnerProjection(
 		},
 		spokenApproval: components.spokenApproval.snapshot(),
 		voiceContext: projectServerVoiceContext(realtimeGeneration, components.callbacks),
+		workhorses: readWorkhorseList({
+			tabSessionId: context.tabSessionId,
+			session: input.session,
+			approvals: input.approvals,
+			shown: context.checkout,
+			repositoryOf: input.repositoryOf,
+		}),
 	};
 }
 

@@ -47,6 +47,18 @@ const SteerWorkhorseResultSchema = z
 		delivery: DeliverySchema,
 	})
 	.strict();
+const STOP_OUTCOMES = ["interrupt_sent", "idle"] as const;
+const StopWorkhorsesResultSchema = z
+	.object({
+		stopped: z
+			.array(
+				z
+					.object({ checkout: z.string().min(1).max(4_096), outcome: z.enum(STOP_OUTCOMES) })
+					.strict(),
+			)
+			.max(100),
+	})
+	.strict();
 const ResolveSpokenApprovalResultSchema = z
 	.object({
 		verdict: z.enum(["accept", "decline"]),
@@ -58,6 +70,7 @@ type InspectWorkhorseResult = z.infer<typeof InspectWorkhorseResultSchema>;
 type DelegateToWorkhorseResult = z.infer<typeof DelegateToWorkhorseResultSchema>;
 type ManageWorkhorseQueueResult = z.infer<typeof ManageWorkhorseQueueResultSchema>;
 type SteerWorkhorseResult = z.infer<typeof SteerWorkhorseResultSchema>;
+type StopWorkhorsesResult = z.infer<typeof StopWorkhorsesResultSchema>;
 type ResolveSpokenApprovalResult = z.infer<typeof ResolveSpokenApprovalResultSchema>;
 
 const COORDINATOR_TOOL_RESULT_SCHEMAS = Object.freeze({
@@ -65,6 +78,7 @@ const COORDINATOR_TOOL_RESULT_SCHEMAS = Object.freeze({
 	delegate_to_workhorse: DelegateToWorkhorseResultSchema,
 	manage_workhorse_queue: ManageWorkhorseQueueResultSchema,
 	steer_workhorse: SteerWorkhorseResultSchema,
+	stop_workhorses: StopWorkhorsesResultSchema,
 	resolve_spoken_approval: ResolveSpokenApprovalResultSchema,
 } satisfies Record<CoordinatorToolName, z.ZodTypeAny>);
 
@@ -147,6 +161,22 @@ const TOOL_SUCCESS_RESULT_SCHEMAS = deepFreeze({
 		{ turnId: JsonStringSchema, delivery: ResultDeliverySchema },
 		["turnId", "delivery"],
 	),
+	stop_workhorses: strictResultObject(
+		{
+			stopped: deepFreeze({
+				type: "array",
+				maxItems: 100,
+				items: strictResultObject(
+					{
+						checkout: deepFreeze({ type: "string", minLength: 1, maxLength: 4096 }),
+						outcome: deepFreeze({ type: "string", enum: [...STOP_OUTCOMES] }),
+					},
+					["checkout", "outcome"],
+				),
+			}),
+		},
+		["stopped"],
+	),
 	resolve_spoken_approval: strictResultObject(
 		{
 			verdict: deepFreeze({ type: "string", enum: ["accept", "decline"] }),
@@ -161,11 +191,13 @@ export {
 	DelegateToWorkhorseResultSchema,
 	ManageWorkhorseQueueResultSchema,
 	SteerWorkhorseResultSchema,
+	StopWorkhorsesResultSchema,
 	ResolveSpokenApprovalResultSchema,
 	type InspectWorkhorseResult,
 	type DelegateToWorkhorseResult,
 	type ManageWorkhorseQueueResult,
 	type SteerWorkhorseResult,
+	type StopWorkhorsesResult,
 	type ResolveSpokenApprovalResult,
 	COORDINATOR_TOOL_RESULT_SCHEMAS,
 	parseCoordinatorToolResult,

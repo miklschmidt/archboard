@@ -1,7 +1,7 @@
 import type { CodexSession, SessionThreadTurnPageResult } from "@/runtime/codex-session";
 import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
-import type { ThreadId, TrustedIdentityDecoder } from "@/shared/codex-workbench-identity";
+import type { ThreadId, TrustedIdentityDecoder, TurnId } from "@/shared/codex-workbench-identity";
 import type {
 	BrowserConnectionInstance,
 	CodexTimelineProjectionInput,
@@ -21,7 +21,10 @@ import {
 	projectData,
 	timelineBytes,
 } from "@/server/archboard/lib/codex-timeline-budget";
-import { createTimelineLiveHolder } from "@/server/archboard/lib/codex-timeline-live";
+import {
+	createTimelineLiveHolder,
+	eventThreadId,
+} from "@/server/archboard/lib/codex-timeline-live";
 import { textEncoder } from "@/server/archboard/lib/codex-timeline-text";
 
 /** The two session reads one timeline is built from. */
@@ -63,13 +66,16 @@ interface ServerTimelineOwner {
 	) => CodexTimelineProjectionInput | null;
 	/**
 	 * The same read for a thread that is not a pane's link, such as the voice coordinator's.
-	 * The caller builds the target's key from whatever would make the history the wrong one.
+	 * The caller builds the target's key from whatever would make the history the wrong one. A
+	 * `keepTurn` keeps only the turns it names, before the budget is spent, so the turns it leaves
+	 * out take none of it.
 	 */
 	readonly readTarget: (
 		paneId: string,
 		target: TimelineTarget,
 		threadCapable: boolean,
 		connection: BrowserConnectionInstance,
+		keepTurn?: (turnId: TurnId) => boolean,
 	) => CodexTimelineProjectionInput | null;
 	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly retire: (paneId: string, connection: BrowserConnectionInstance) => void;
@@ -85,15 +91,6 @@ interface ServerTimelineOwnerOptions {
 	};
 	readonly onChange: () => void;
 	readonly budget?: ServerBrowserProjectionBudget;
-}
-
-/**
- * Whether a value is a plain object that can be read by key.
- * @param value Anything a notification carried.
- * @returns True for a non-null, non-array object.
- */
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 /**
@@ -123,36 +120,6 @@ function bindingKey(
 		link.canAcceptDirectInput,
 		threadCapable,
 	]);
-}
-
-/**
- * The thread one notification is about, read from its parameters or, for a
- * thread that has just started, from the thread it carries.
- * @param event The notification.
- * @returns The thread as the wire spells it, or null.
- */
-function eventThreadId(event: TransportServerNotification): string | null {
-	const params = event.notification.params;
-	if (!isRecord(params)) {
-		return null;
-	}
-	if (typeof params["threadId"] === "string") {
-		return params["threadId"];
-	}
-	return event.notification.method === "thread/started" ? startedThreadId(params) : null;
-}
-
-/**
- * The thread a thread/started notification carries.
- * @param params The notification's parameters.
- * @returns The thread as the wire spells it, or null.
- */
-function startedThreadId(params: Readonly<Record<string, unknown>>): string | null {
-	const thread = params["thread"];
-	if (!isRecord(thread) || typeof thread["id"] !== "string") {
-		return null;
-	}
-	return thread["id"];
 }
 
 /**
@@ -406,6 +373,7 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 	 * @param target The thread, the child epoch it arrives on, and the key of that binding.
 	 * @param threadCapable Whether the workbench can serve threads yet.
 	 * @param connection Its browser connection.
+	 * @param keepTurn Which turns to keep, when only some are this pane's.
 	 * @returns The projected timeline, or null while there is none.
 	 */
 	const readTarget: ServerTimelineOwner["readTarget"] = (
@@ -413,6 +381,7 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 		target,
 		threadCapable,
 		connection,
+		keepTurn,
 	): CodexTimelineProjectionInput | null => {
 		const state = stateFor(paneId, connection, target, threadCapable);
 		if (state.ready && state.target.threadId !== null && !state.started) {
@@ -425,6 +394,7 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 					options.approvals.inspectViews(),
 					live.forThread(state.data.threadId),
 					budget,
+					keepTurn,
 				);
 	};
 

@@ -267,6 +267,7 @@ export function createCodexWorkbenchGenerationFixture(
 		session,
 		threadLink,
 		endApprovals: async () => undefined,
+		shownConversationOf: () => null,
 		build: (scope) => {
 			events.push("create:tabSession");
 			claims.coordinator = scope.claimThread;

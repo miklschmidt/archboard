@@ -660,10 +660,10 @@ The Codex thread of a tab session that works in one checkout, for architectural
 inspection, analysis, and proposals. It runs in that checkout's directory, so it
 reads that repository's own agent instructions and skills. The checkout is the
 directory that holds the vault: a checkout root, or the directory that holds an
-untracked vault. A tab session has at most one for each checkout, and a pane
-shows the one of the checkout of its vault. A new chosen checkout of a
-repository moves the panes to the workhorse of that checkout, and the one they
-left stays linked. It can continue its work while the voice
+untracked vault. A tab session has at most one for each checkout, and every
+pane of the tab shows the one of the shown conversation. A new chosen checkout
+of a repository moves the panes, but not the shown conversation, and every
+workhorse stays linked. It can continue its work while the voice
 coordinator answers and investigates separately.
 _Avoid_: main agent, coding thread, backend agent, worker (that is also an agent
 role)
@@ -721,14 +721,22 @@ _Avoid_: interrupt, inject, cancel
 
 **Workhorse stop**:
 A request to stop the workhorse of one checkout and its sub-agents, and clear
-its pending requests, or to stop every workhorse of a tab session. Speech and the workbench Stop control request this outcome,
-but accepting the request does not prove that its work stopped.
+its pending requests, or to stop every workhorse of a tab session. The workbench
+Stop control stops the workhorse of the shown conversation, and a spoken stop
+stops every running workhorse of the tab session. Accepting the request does
+not prove that its work stopped.
 _Avoid_: steer, pause, end voice
 
 **Shown conversation**:
-The workhorse conversation that the agent dock shows: the one of the checkout
-of the focused pane. TASK-472.11 makes it the checkout that the user last
-activated, and adds the dock's list of workhorses.
+The workhorse conversation that the agent dock of every pane of a tab shows:
+the one of the checkout that the user last activated. Focusing a pane, opening
+a board, drilling down, going back or forward and picking a workhorse from the
+dock's list activate a checkout. Until the first activation it is the checkout
+of the first pane that the server read. Nothing that an agent does to a pane
+changes it, so it never changes while somebody types. A typed message, New
+conversation, the Stop control and approvals all act on it. A coordinator turn
+shows in the conversations of the workhorses that it gave work to, and a turn
+that gave none in the conversation that was shown when it started.
 _Avoid_: active thread, current conversation, selected thread
 
 **Workhorse news**:

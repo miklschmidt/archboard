@@ -212,6 +212,7 @@ function approvalBindings(
 		 * @returns The sessions binding.
 		 */
 		sessions: (created) => ({
+			shownConversationOf: context.server.shownConversationOf,
 			/**
 			 * Settle every approval an ended tab session was still to answer.
 			 * @param id The tab session.

@@ -4,11 +4,10 @@
 // so it reads that repository's agent instructions, skills and Codex configuration. Each one has
 // its own thread link, keyed by the tab session and the checkout, its own queue, its own
 // operations and its own board-change delivery. A workhorse is built the first time something
-// asks for its checkout: a pane of that checkout, or the coordinator giving it work.
+// asks for its checkout: the tab's shown conversation, or the coordinator giving it work.
 //
 // A workhorse belongs to a checkout, not to a repository identity, so a new chosen checkout of its
-// identity leaves it as it is. The panes that move to the new checkout show that checkout's
-// workhorse, and the one they left stays linked until its tab session ends.
+// identity leaves it as it is, linked until its tab session ends.
 
 import type { TransportServerNotification } from "@/runtime/codex-transport";
 import type { SemanticContextPublisher } from "@/runtime/codex-semantic-context";

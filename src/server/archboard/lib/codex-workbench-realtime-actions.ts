@@ -57,7 +57,7 @@ type ActiveRealtime = Readonly<{
 	connection: BrowserActionContext["connection"];
 	browserId: string;
 	paneId: string;
-	/** The checkout of the pane voice started from, whose workhorse it is bound to. */
+	/** The checkout the tab showed when voice started, whose workhorse it is bound to. */
 	checkout: string;
 	childId: ChildId;
 	epoch: ChildEpoch;

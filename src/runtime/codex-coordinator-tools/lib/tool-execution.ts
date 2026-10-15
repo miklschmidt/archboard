@@ -16,6 +16,7 @@ import type {
 } from "@/runtime/codex-coordinator-tools/lib/contract";
 import type {
 	ValidatedCoordinatorToolCall,
+	ValidatedOperationCall,
 	ValidatedWorkhorseCall,
 } from "@/runtime/codex-coordinator-tools/lib/validation";
 import {
@@ -119,12 +120,13 @@ function refusalFromError(error: unknown): DynamicToolRefusalReason | null {
  * Whether a call changes workhorse state, so an unproven outcome must be reported as unknown
  * rather than refused.
  * @param call - The validated call.
- * @returns True for every workhorse tool except reads.
+ * @returns True for every workhorse tool except reads. A stop changes what the workhorses run.
  */
 function isMutation(call: ValidatedCoordinatorToolCall): boolean {
 	return (
 		call.tool === "delegate_to_workhorse" ||
 		call.tool === "steer_workhorse" ||
+		call.tool === "stop_workhorses" ||
 		(call.tool === "manage_workhorse_queue" && call.input.operation !== "list")
 	);
 }
@@ -150,6 +152,21 @@ function queueRequest(
 }
 
 /**
+ * Start the stop of every workhorse of the tab session, with each outcome named as the tool
+ * reports it.
+ * @param options - The dispatcher options, which stop the tab session's workhorses.
+ * @returns The pending stops.
+ */
+function invokeStop(options: CodexCoordinatorToolsOptions): Promise<unknown> {
+	return options.stopWork().then((stops) => ({
+		stopped: stops.map(({ checkout, outcome }) => ({
+			checkout,
+			outcome: outcome === "interrupted" ? "interrupt_sent" : outcome,
+		})),
+	}));
+}
+
+/**
  * Start one workhorse tool through the operations port of the checkout it names. The port's
  * promise is returned as it is, with its result widened to unknown, so the caller's single await
  * sits directly on the port and the result is proven against the tool's reviewed schema when the
@@ -159,7 +176,7 @@ function queueRequest(
  * @param operation - The issued operation identity the effect runs under.
  * @returns The port's pending result.
  */
-function invokeWorkhorse(
+function invokeCheckoutWorkhorse(
 	options: CodexCoordinatorToolsOptions,
 	validated: ValidatedWorkhorseCall,
 	operation: IssuedOperationIdentity,
@@ -191,6 +208,24 @@ function invokeWorkhorse(
 		input: validated.input.input,
 		operationId: operation.id,
 	});
+}
+
+/**
+ * Start one tool of the coordinator that acts on workhorses: a stop of the whole tab session, or
+ * a tool of the one checkout it names.
+ * @param options - The dispatcher options.
+ * @param validated - The validated call.
+ * @param operation - The issued operation identity the effect runs under.
+ * @returns The pending result.
+ */
+function invokeWorkhorse(
+	options: CodexCoordinatorToolsOptions,
+	validated: ValidatedOperationCall,
+	operation: IssuedOperationIdentity,
+): Promise<unknown> {
+	return validated.tool === "stop_workhorses"
+		? invokeStop(options)
+		: invokeCheckoutWorkhorse(options, validated, operation);
 }
 
 /**

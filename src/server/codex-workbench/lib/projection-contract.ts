@@ -9,6 +9,7 @@ import type {
 	BrowserSettings,
 	BrowserSnapshot,
 	BrowserVoiceContext,
+	BrowserWorkhorses,
 } from "@/shared/codex-browser-model";
 import type {
 	BrowserCommandId,
@@ -332,6 +333,8 @@ interface BrowserProjectionInput {
 	readonly voice: CodexVoiceProjectionInput;
 	readonly spokenApproval: SpokenApprovalSnapshot;
 	readonly voiceContext?: BrowserVoiceContext | null;
+	/** The tab session's workhorses and the one whose conversation it shows (ADR 0050). */
+	readonly workhorses?: BrowserWorkhorses;
 	readonly lease: BrowserCommandLease | null;
 	readonly operation: BrowserOperationOutcome | null;
 }

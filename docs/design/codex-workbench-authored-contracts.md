@@ -998,6 +998,9 @@ The `ok.value` object is closed per tool:
 		"turnId": "<opaque>",
 		"delivery": "delivered|not_delivered|outcome_unknown"
 	},
+	"stop_workhorses": {
+		"stopped": [{ "checkout": "<directory>", "outcome": "interrupt_sent|idle" }]
+	},
 	"resolve_spoken_approval": {
 		"verdict": "accept|decline",
 		"settlement": "delivered|not_delivered|outcome_unknown"
@@ -1881,6 +1884,13 @@ is retried after a lost settlement.
 				"required": ["input"],
 				"additionalProperties": false
 			},
+			"deferLoading": false
+		},
+		{
+			"type": "function",
+			"name": "stop_workhorses",
+			"description": "Stop every running workhorse of this conversation, in every checkout, when the person asks to stop. A sent interrupt is not proof that work stopped.",
+			"inputSchema": { "type": "object", "properties": {}, "additionalProperties": false },
 			"deferLoading": false
 		}
 	]

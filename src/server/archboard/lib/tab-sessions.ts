@@ -9,6 +9,11 @@
 // that returns within the grace keeps the conversation. Once the grace passes with no pane back,
 // the session has ended, and whoever listens is told once. This outlives every Codex child: a tab
 // that was present before a restart is still present after it.
+//
+// Each tab also shows one checkout's conversation in its agent dock, the shown conversation (ADR
+// 0050). It is pinned to the checkout of the first pane the workbench reads it for, and after that
+// only the person's own act in the browser changes it, through the activation route. What an
+// agent does to a pane never does, so it never changes while somebody types. It ends with the tab.
 
 import { logger } from "@/runtime/engine/logger";
 import { TAB_SESSION_GRACE_MS } from "@/shared/timing/timing";
@@ -27,6 +32,30 @@ interface TabSessions {
 	readonly forgetAll: () => void;
 	/** Hear each tab session that ended, once the grace passed with no pane of it back. */
 	readonly onEnded: (listener: (tabSessionId: TabSessionId) => void) => () => void;
+	/**
+	 * The checkout whose conversation a tab shows. A tab that shows none yet is pinned to the
+	 * checkout the asker names, which is the asking pane's own.
+	 */
+	readonly shown: (tabSessionId: TabSessionId, pin: () => string) => string;
+	/** The checkout whose conversation a tab shows, or null before anything read it. */
+	readonly current: (tabSessionId: TabSessionId) => string | null;
+	/** Show a checkout's conversation in a tab, as the person activated it; true when it changed. */
+	readonly show: (tabSessionId: TabSessionId, checkout: string) => boolean;
+	/** Hear each tab whose shown conversation changed. */
+	readonly onShownChange: (listener: (tabSessionId: TabSessionId) => void) => () => void;
+}
+
+/**
+ * Add a listener to a set, and say how to take it out again.
+ * @param listeners The set.
+ * @param listener The listener.
+ * @returns How to stop listening.
+ */
+function subscribe<Listener>(listeners: Set<Listener>, listener: Listener): () => void {
+	listeners.add(listener);
+	return () => {
+		listeners.delete(listener);
+	};
 }
 
 /**
@@ -38,6 +67,8 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 	const byClient = new Map<string, TabSessionId>();
 	const graces = new Map<TabSessionId, ReturnType<typeof setTimeout>>();
 	const listeners = new Set<(tabSessionId: TabSessionId) => void>();
+	const shownByTab = new Map<TabSessionId, string>();
+	const shownListeners = new Set<(tabSessionId: TabSessionId) => void>();
 
 	/**
 	 * Whether any pane on screen belongs to a tab.
@@ -57,6 +88,7 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 		}
 		const grace = setTimeout(() => {
 			graces.delete(tabSessionId);
+			shownByTab.delete(tabSessionId);
 			for (const listener of listeners) listener(tabSessionId);
 		}, graceMs);
 		grace.unref();
@@ -112,18 +144,55 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 			byClient.clear();
 			for (const grace of graces.values()) clearTimeout(grace);
 			graces.clear();
+			shownByTab.clear();
 		},
 		/**
 		 * Hear each tab session that ended.
 		 * @param listener Told the session's id.
 		 * @returns How to stop listening.
 		 */
-		onEnded: (listener) => {
-			listeners.add(listener);
-			return () => {
-				listeners.delete(listener);
-			};
+		onEnded: (listener) => subscribe(listeners, listener),
+		/**
+		 * The checkout whose conversation a tab shows, pinned on the first read.
+		 * @param tabSessionId The tab.
+		 * @param pin The checkout to pin a tab that shows none yet to.
+		 * @returns The shown checkout.
+		 */
+		shown: (tabSessionId, pin) => {
+			const shown = shownByTab.get(tabSessionId);
+			if (shown !== undefined) {
+				return shown;
+			}
+			const pinned = pin();
+			shownByTab.set(tabSessionId, pinned);
+			return pinned;
 		},
+		/**
+		 * The checkout whose conversation a tab shows.
+		 * @param tabSessionId The tab.
+		 * @returns It, or null before anything read it.
+		 */
+		current: (tabSessionId) => shownByTab.get(tabSessionId) ?? null,
+		/**
+		 * Show a checkout's conversation in a tab, telling every listener when that changed it.
+		 * @param tabSessionId The tab.
+		 * @param checkout The checkout.
+		 * @returns True when the tab showed another one before.
+		 */
+		show: (tabSessionId, checkout) => {
+			if (shownByTab.get(tabSessionId) === checkout) {
+				return false;
+			}
+			shownByTab.set(tabSessionId, checkout);
+			for (const listener of shownListeners) listener(tabSessionId);
+			return true;
+		},
+		/**
+		 * Hear each tab whose shown conversation changed.
+		 * @param listener Told the tab's id.
+		 * @returns How to stop listening.
+		 */
+		onShownChange: (listener) => subscribe(shownListeners, listener),
 	} satisfies TabSessions);
 }
 
@@ -155,6 +224,46 @@ function forgetTabSession(clientId: string): void {
 	tabSessions.forget(clientId);
 }
 
+/**
+ * The checkout whose conversation a pane's tab shows (ADR 0050). A pane whose socket named no tab
+ * shows its own checkout's.
+ * @param clientId The pane's client id.
+ * @param own The checkout of the pane's own vault, which pins a tab that shows none yet.
+ * @returns The shown checkout.
+ */
+function shownCheckoutOf(clientId: string, own: () => string): string {
+	const tabSessionId = tabSessions.of(clientId);
+	return tabSessionId === null ? own() : tabSessions.shown(tabSessionId, own);
+}
+
+/**
+ * The checkout whose conversation a tab shows.
+ * @param tabSessionId The tab.
+ * @returns It, or null before anything read it.
+ */
+function currentShownCheckout(tabSessionId: TabSessionId): string | null {
+	return tabSessions.current(tabSessionId);
+}
+
+/**
+ * Show a checkout's conversation in a tab, because the person activated it.
+ * @param tabSessionId The tab.
+ * @param checkout The checkout.
+ * @returns True when the tab showed another checkout's before.
+ */
+function showConversation(tabSessionId: TabSessionId, checkout: string): boolean {
+	return tabSessions.show(tabSessionId, checkout);
+}
+
+/**
+ * Hear each tab whose shown conversation changed.
+ * @param listener Told the tab's id.
+ * @returns How to stop listening.
+ */
+function onShownChange(listener: (tabSessionId: TabSessionId) => void): () => void {
+	return tabSessions.onShownChange(listener);
+}
+
 /** Forget every pane's tab, because the server is stopping and there is no screen any more. */
 function forgetTabSessions(): void {
 	tabSessions.forgetAll();
@@ -180,10 +289,14 @@ function endTabSessionsOnceGone(
 
 export {
 	createTabSessions,
+	currentShownCheckout,
 	endTabSessionsOnceGone,
 	forgetTabSession,
 	forgetTabSessions,
 	noteTabSession,
+	onShownChange,
+	showConversation,
+	shownCheckoutOf,
 	tabSessionOf,
 };
 export type { TabSessions };

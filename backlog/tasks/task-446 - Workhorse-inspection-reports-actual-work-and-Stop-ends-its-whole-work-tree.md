@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 19:57'
-updated_date: '2026-10-07 20:11'
+updated_date: '2026-10-15 08:51'
 labels:
   - voice
   - coordinator
@@ -82,3 +82,13 @@ Protocol facts come from Codex rust-v0.160.1, commit c3e23d4c4385619ecec78408766
 
 The board check passes with no diagnostics. semantic compare matches the planned module responsibilities and relationships. Current content remains unchanged. No proposal is adopted.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-10-15 08:51
+---
+TASK-472.11 adds the coordinator tool stop_workhorses (archboard_workhorse namespace, no input), which calls the tab session's stopWork(null) and answers {stopped: [{checkout, outcome: interrupt_sent | idle}]}; the coordinator instructions say to call it when the person asks to stop and to claim a stop only on workhorse news that the turn ended. TASK-446 deepens stopWork (sub-agents, pending requests, observed end of work, ADR 0048) and adds no second tool.
+---
+<!-- COMMENTS:END -->

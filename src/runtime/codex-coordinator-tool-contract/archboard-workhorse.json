@@ -1,7 +1,7 @@
 {
 	"type": "namespace",
 	"name": "archboard_workhorse",
-	"description": "Work with your workhorses, the agents that do sustained work for this Archboard server. There is one workhorse for each checkout, and it works in that checkout. Every tool takes checkout: the directory of the checkout, the repository in your board context. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
+	"description": "Work with your workhorses, the agents that do sustained work for this Archboard server. There is one workhorse for each checkout, and it works in that checkout. Every tool but stop_workhorses takes checkout: the directory of the checkout, the repository in your board context. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	"tools": [
 		{
 			"type": "function",
@@ -71,6 +71,13 @@
 				"required": ["checkout", "input"],
 				"additionalProperties": false
 			},
+			"deferLoading": false
+		},
+		{
+			"type": "function",
+			"name": "stop_workhorses",
+			"description": "Stop every running workhorse of this conversation, in every checkout, when the person asks to stop. Returns at once with one entry for each workhorse: interrupt_sent when a stop was sent to its running turn, idle when it had none. A sent interrupt is not proof that work stopped: the work has stopped only once workhorse news says its turn ended.",
+			"inputSchema": { "type": "object", "properties": {}, "additionalProperties": false },
 			"deferLoading": false
 		}
 	]
