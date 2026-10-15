@@ -3,7 +3,7 @@
 // call sites, so a subscription and an invalidation always name the same cache
 // entry and each resource's freshness contract is written down once.
 
-import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 
 import { DEFAULT_LAYOUT_ENGINE } from "@/shared/semantic-board/index";
 import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
@@ -100,6 +100,62 @@ const semanticBoardKeys = {
 };
 
 /**
+ * The version a cached document or picture is of, when it says.
+ * @param data What the cache holds.
+ * @returns The version, or nothing.
+ */
+function versionOf(data: unknown): number | undefined {
+	if (typeof data !== "object" || data === null || !("version" in data)) return undefined;
+	return typeof data.version === "number" ? data.version : undefined;
+}
+
+/**
+ * Read again every board of one vault whose cached document or picture is of
+ * another version than the one the server lists.
+ *
+ * A pane hears of a write only to a board of the vault it is in, so nothing
+ * tells this tab about a vault none of its panes is in: a board drawn ahead from
+ * the navigator's listing, or left behind when a pane moved to another checkout.
+ * Without this its old picture would be shown when somebody opens it.
+ *
+ * The readings are marked stale at once, so that the drawing ahead that follows
+ * this listing draws them again rather than keeping them.
+ * @param client The tab's cache.
+ * @param vault The vault.
+ * @param boards The boards the server lists there, with their versions.
+ */
+function readMovedBoardsAgain(
+	client: QueryClient,
+	vault: string,
+	boards: readonly SemanticBoardEntry[],
+): void {
+	const moved = new Set<string>();
+	const cached = client.getQueryCache();
+	for (const query of [
+		...cached.findAll({ queryKey: [...semanticBoardKeys.documents, vault] }),
+		...cached.findAll({ queryKey: semanticBoardKeys.rendersIn(vault) }),
+	]) {
+		const [, , , asked] = query.queryKey;
+		const held = versionOf(query.state.data);
+		if (typeof asked !== "string" || held === undefined) continue;
+		const listed = boards.find(
+			(entry) => sameBoardName(asked, entry.key) || sameBoardName(asked, entry.name),
+		);
+		if (listed?.version !== undefined && listed.version !== held) moved.add(asked);
+	}
+	for (const board of moved) {
+		const queryKeys = [
+			semanticBoardKeys.document(vault, board),
+			semanticBoardKeys.boardRenders(vault, board),
+		];
+		for (const queryKey of queryKeys) {
+			void client.invalidateQueries({ queryKey, refetchType: "none" });
+		}
+		void readAgain(client, queryKeys);
+	}
+}
+
+/**
  * One vault's semantic boards.
  *
  * Read again when the tab comes back: nothing announces that the vault gained
@@ -111,14 +167,16 @@ function semanticBoardListQuery(vault: string) {
 	return queryOptions({
 		queryKey: semanticBoardKeys.boards(vault),
 		/**
-		 * Read the vault's semantic boards, and tell the picture source which
-		 * versions they are at, so it can forget pictures of older ones and draw
-		 * the boards ahead.
+		 * Read the vault's semantic boards, read again what this tab holds of a
+		 * board that has moved since, and tell the picture source which versions
+		 * they are at, so it can forget pictures of older ones and draw the boards
+		 * ahead.
 		 * @param context The query context, carrying this read's cancellation and the tab's cache.
 		 * @returns The listing.
 		 */
 		queryFn: async (context) => {
 			const listing = await fetchSemanticBoards(vault, context.signal);
+			readMovedBoardsAgain(context.client, vault, listing.boards);
 			pictureSource().listed?.(vault, listing.boards, context.client);
 			return listing;
 		},
@@ -301,7 +359,7 @@ function codeFindingsQuery(vault: string) {
  * A new version of the board is a new key, so the part on screen is read again
  * as the board now stands, which is what says whether a relationship joins two
  * parts. Its last answer stays on screen while that read runs, so a write by an
- * agent does not empty the region.
+ * agent does not empty the region. An answer about another vault does not stay.
  * @param on The board, the variant by id and the version on screen.
  * @returns The query options.
  */
@@ -313,7 +371,15 @@ function localityQuery(on: ReadingOnScreen) {
 		 * @returns The answer.
 		 */
 		queryFn: () => boardReads().locality(on.vault, on.board, on.variant),
-		placeholderData: keepPreviousData,
+		/**
+		 * The last answer, while this one is on its way, when it was of this
+		 * vault: another checkout's history is not this one's.
+		 * @param previous What the last query held, if anything.
+		 * @param previousQuery The query that held it.
+		 * @returns That, when it was of this vault.
+		 */
+		placeholderData: (previous, previousQuery) =>
+			previousQuery?.queryKey[1] === on.vault ? previous : undefined,
 		staleTime: 0,
 		refetchOnMount: true,
 		refetchOnWindowFocus: false,
