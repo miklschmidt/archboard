@@ -315,7 +315,7 @@
 					"expectedUse": "only when the user asks to move a board to the repository it belongs in; a stopped move is run again, never repaired by hand, and each repository commits its own half",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests/move.test.ts (the whole note, both rewrite directions, each refusal, the stopped move and its re-run); tests/system/cli/semantic-move.test.ts (the command through an owned server: the answer, the files in both vaults, the target registered, the panes of the source vault, a refusal's exit status). Mechanical validation: no Flask scenario has a second repository to move a board to"
+					"owner": "src/runtime/semantic-board-store/tests/move.test.ts (the whole note, both rewrite directions, each refusal, the stopped move and its re-run); tests/system/cli/semantic-move.test.ts (the command through an owned server: the answer, the files in both vaults, the target registered, the panes of the source vault, the checkout a move into a worktree chooses, a refusal's exit status). Mechanical validation: no Flask scenario has a second repository to move a board to"
 				},
 				{
 					"path": "detail boards separate from proposals",

@@ -100,7 +100,7 @@ function showPaneRoute(req: Request, res: Response): void {
 	});
 }
 
-/** A choice of checkout that a show made, as its answer names it. */
+/** A choice of checkout that a show or a move made, as its answer names it. */
 interface ShowChoice {
 	readonly repository: string;
 	/** The checkout chosen now. */
@@ -112,11 +112,13 @@ interface ShowChoice {
 /**
  * Make the checkout of a shown vault the chosen one of its repository, when it
  * is a known checkout that is not chosen. An untracked vault is always read, and
- * a vault no registered directory holds has no repository to choose for.
- * @param vault The vault of the board shown.
- * @returns The choice, or undefined when the show changed no choice.
+ * a vault no registered directory holds has no repository to choose for. A move
+ * into a checkout chooses it the same way (ADR 0051).
+ * @param vault The vault of the board shown, or moved into.
+ * @param act What chose, as the log says it.
+ * @returns The choice, or undefined when it changed no choice.
  */
-function chooseShownCheckout(vault: string): ShowChoice | undefined {
+function chooseShownCheckout(vault: string, act = "A show"): ShowChoice | undefined {
 	const shown = registeredRepositoryOf(vault);
 	if (shown === undefined || shown.chosen) {
 		return undefined;
@@ -125,7 +127,7 @@ function chooseShownCheckout(vault: string): ShowChoice | undefined {
 	if (chosen?.changed !== true) {
 		return undefined;
 	}
-	logger.info(`A show made ${shown.root} the chosen checkout of ${shown.name}`);
+	logger.info(`${act} made ${shown.root} the chosen checkout of ${shown.name}`);
 	return { repository: shown.name, checkout: shown.root, replaced: chosen.replaced };
 }
 
@@ -285,4 +287,4 @@ function showablePane(vault: string, spec: unknown, res: Response): PaneRegistra
 	return pane;
 }
 
-export { acceptedIdentity, showPaneRoute };
+export { acceptedIdentity, chooseShownCheckout, showPaneRoute, type ShowChoice };

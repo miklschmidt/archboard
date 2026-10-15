@@ -61,8 +61,22 @@ function rewrittenLine(one: MovedDrillDown): string {
 }
 
 /**
- * What a move is worth saying out loud: where the board went, and every
- * drill-down it rewrote.
+ * The line that says a move chose the target's checkout, which the agent tells the user.
+ * @param moved The answer.
+ * @returns The line, or none when the move changed no choice.
+ */
+function choiceLines(moved: MoveResult): string[] {
+	const { chose } = moved;
+	if (chose === undefined) return [];
+	const instead = chose.replaced === null ? "" : ` in place of ${chose.replaced}`;
+	return [
+		`This machine now reads ${chose.checkout} for ${chose.repository}${instead}: every pane of it reads this checkout. Tell the user.`,
+	];
+}
+
+/**
+ * What a move is worth saying out loud: where the board went, every
+ * drill-down it rewrote, and the choice of checkout it made.
  * @param moved The answer.
  * @returns The lines to print.
  */
@@ -71,6 +85,7 @@ function movedLines(moved: MoveResult): string[] {
 		`Semantic board "${moved.board.name}" moved from ${endWords(moved.from)} to ${endWords(moved.to)}, ` +
 			`and is now at version ${moved.version} in ${moved.to.vault}.`,
 		...moved.rewritten.map(rewrittenLine),
+		...choiceLines(moved),
 	];
 }
 
@@ -116,7 +131,9 @@ const semanticMoveContract = defineCommand({
 		"target vault has a board or a " +
 		"former name that the board's names answer to, and when it needs a drill-down into an " +
 		"untracked vault, which has no identity to name. A pane that showed the board shows it in " +
-		"its new repository. The move ends this writer's claim on the board; claim it again in the " +
+		"its new repository. When --to is a known checkout that is not the chosen one of its " +
+		"repository, a finished move makes it the chosen one for the whole machine, as an agent's " +
+		"browser show does, and the answer's chose names the checkout it replaced. The move ends this writer's claim on the board; claim it again in the " +
 		"target vault to go on.",
 	examples: [
 		'archboard semantic move Payments --to ../payments --expect-version 14 --doing "moving the board into the repository it describes"',

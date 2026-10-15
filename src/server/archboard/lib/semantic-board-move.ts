@@ -13,8 +13,11 @@
 // board it wrote and on the board in the source vault. Every pane that showed
 // the board in the source vault moves with it into the target vault and shows
 // it there (ADR 0051), as a show of another repository's board moves a pane.
-// A move that stopped part way announces what it did write, moves no pane,
-// and is answered as a refusal that says to run it again.
+// A target in a known checkout that is not the chosen one of its repository
+// becomes the chosen one once the move has finished, as an agent's show makes
+// it (ADR 0050), so the app goes on reading the board where it is now. A move
+// that stopped part way announces what it did write, moves no pane, chooses
+// nothing, and is answered as a refusal that says to run it again.
 
 import type { NextFunction, Request, Response } from "express";
 import type { z } from "zod";
@@ -34,8 +37,10 @@ import {
 	sendToPane,
 } from "@/server/archboard/lib/pane-registry";
 import { arrivedOnBoard } from "@/server/archboard/lib/pane-routes";
+import { chooseShownCheckout, type ShowChoice } from "@/server/archboard/lib/pane-show-route";
 import { movePaneVault, paneClientsOfVault } from "@/server/archboard/lib/pane-vaults";
 import { repositoryOfVault } from "@/server/archboard/lib/repositories";
+import { followRegistry } from "@/server/archboard/lib/repository-routes";
 import { namedVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 import { settledChangeFields } from "@/server/archboard/lib/semantic-change-feed";
 import {
@@ -80,14 +85,16 @@ function followMovedBoard(from: string, to: string, key: string): void {
 /**
  * Tell the panes of each vault about every board the move wrote, and say what
  * the mover was doing on each of them and on the board in the source vault. A
- * finished move then moves every pane on the board to the target vault, tells
- * the source vault the board is gone from it, and forgets the lines said about
- * it there.
+ * finished move then chooses the target's checkout when it is a known one that
+ * is not chosen, moves every pane on the board to the target vault, tells the
+ * source vault the board is gone from it, forgets the lines said about it
+ * there, and brings every other pane in line with the choice it made.
  * @param result What the move did.
  * @param doing The line the mover wrote, or empty for a person.
  * @param by The agent session that asked, or null when it named none.
+ * @returns The choice of checkout a finished move made, or undefined when it changed none.
  */
-function announceMove(result: Wrote, doing: string, by: string | null): void {
+function announceMove(result: Wrote, doing: string, by: string | null): ShowChoice | undefined {
 	const { from, to, heldAs } = result;
 	const { key } = semanticBoardAddress(result.board.name);
 	if (doing !== "") {
@@ -106,7 +113,9 @@ function announceMove(result: Wrote, doing: string, by: string | null): void {
 			write.location.key,
 		);
 	}
-	if (result.outcome !== "moved") return;
+	if (result.outcome !== "moved") return undefined;
+	// Chosen only once nothing can stop the move (ADR 0050).
+	const chose = chooseShownCheckout(to.vault, "A move");
 	followMovedBoard(from.vault, to.vault, key);
 	broadcast(
 		{
@@ -118,6 +127,8 @@ function announceMove(result: Wrote, doing: string, by: string | null): void {
 		key,
 	);
 	forgetDoing({ vault: from.vault, board: key });
+	if (chose !== undefined) followRegistry();
+	return chose;
 }
 
 /**
@@ -213,7 +224,7 @@ async function moveRoute(
 		answerRefusal(res, result);
 		return;
 	}
-	announceMove(result, stated.doing, envelope.session ?? null);
+	const chose = announceMove(result, stated.doing, envelope.session ?? null);
 	if (result.outcome === "stopped") {
 		res.status(409).json({
 			success: false,
@@ -223,7 +234,7 @@ async function moveRoute(
 		});
 		return;
 	}
-	res.json({ success: true, ...moveFields(result) });
+	res.json({ success: true, ...moveFields(result), ...(chose === undefined ? {} : { chose }) });
 }
 
 export { moveRoute };

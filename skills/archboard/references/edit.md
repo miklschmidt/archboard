@@ -119,7 +119,11 @@ source's repository is rewritten too, to name no repository, as a link within
 the vault. The answer's `rewritten` lists every drill-down that it rewrote,
 and `to.registered` says when the command registered the target checkout.
 `--expect-version` is the version you read, as for every write. The move ends
-your claim on the board: claim it again with `-C <dir>` to go on there.
+your claim on the board: claim it again with `-C <dir>` to go on there. When
+`<dir>` is a checkout that is not the chosen one of its repository, such as a
+worktree, a finished move makes it the chosen one for the whole machine, as
+`browser show` does, and the answer's `chose` names the checkout it replaced.
+Tell the user.
 
 ```bash
 archboard -C ~/meta semantic move Payments --to ~/payments --expect-version 14 --doing "moving the board into the repository it describes"
