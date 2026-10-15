@@ -315,6 +315,7 @@ test("a coordinator turn is remembered with the conversation shown as it started
 	reportOperation(payments.key, {
 		operation: "delegate_to_workhorse",
 		queueOperation: null,
+		outcome: "delivered",
 		correlation: { coordinatorTurnId: voiceTurn },
 	});
 
