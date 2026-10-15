@@ -110,11 +110,33 @@ function repoIdentityFor(
 	if (remote) {
 		return repoIdentityFromRemote(remote);
 	}
-	const main = worktreeEntries(worktreeListing)[0];
+	const entries = worktreeEntries(worktreeListing);
+	const main = entries[0];
 	if (main === undefined) {
 		return path.basename(root);
 	}
+	// A main checkout whose git directory lives elsewhere (`git init
+	// --separate-git-dir`) is listed by that directory and not by its own, so it
+	// is in the listing nowhere: its own directory names it.
+	const self = canonicalPath(root);
+	if (!entries.some((entry) => canonicalPath(entry.path) === self)) {
+		return path.basename(root);
+	}
 	return path.basename(main.bare ? main.path.replace(/\.git$/u, "") : main.path);
+}
+
+/**
+ * A path with its symbolic links resolved, so that Git's spelling of a
+ * worktree and the caller's spelling of a root compare equal.
+ * @param target An absolute path.
+ * @returns The resolved path, or the path as given when it cannot be resolved.
+ */
+function canonicalPath(target: string): string {
+	try {
+		return fs.realpathSync.native(target);
+	} catch {
+		return path.resolve(target);
+	}
 }
 
 interface CheckoutGitInspection {

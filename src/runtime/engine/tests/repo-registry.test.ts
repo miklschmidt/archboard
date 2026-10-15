@@ -178,6 +178,14 @@ test("a worktree of a bare repository is named by the bare directory without its
 	expect(declared).toMatchObject({ kind: "checkout", checkout: { repo: "shop" } });
 });
 
+test("a main checkout whose git directory lives elsewhere is named by its own directory", async () => {
+	const work = join(scratch, "sepwork");
+	git(scratch, "init", "-q", "-b", "main", "--separate-git-dir", join(scratch, "sep.git"), work);
+	git(work, "commit", "-q", "--allow-empty", "-m", "init");
+	const declared = await declareDirectory(work);
+	expect(declared).toMatchObject({ kind: "checkout", checkout: { repo: "sepwork" } });
+});
+
 test("a worktree registered under its own directory name becomes known under its main checkout's identity", async () => {
 	const ledger = join(scratch, "ledger");
 	mkdirSync(ledger);

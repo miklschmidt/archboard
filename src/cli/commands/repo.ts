@@ -347,7 +347,7 @@ const repoAddContract = defineCommand({
 	shared: [],
 	summary: "Register a repository checkout or an untracked vault",
 	description:
-		"Derives a checkout's identity from git (its origin remote, or with none the directory name of its main checkout; every worktree has the identity of its main checkout) and records its local root, with the worktrees that git lists for it. The first known checkout of a repository becomes the one read for it; adding another never changes that, and repo use does. Outside any git checkout, a directory that holds .archboard/vault is registered as an untracked vault under its base name, made unique on this machine. Registering the same root again keeps its language servers.",
+		"Derives a checkout's identity from git (its origin remote, or with none the directory name of its main checkout; every worktree has the identity of its main checkout) and records its local root, with the worktrees that git lists for it. The first known checkout of a repository becomes the one read for it; adding another never changes that, and repo use does. Outside any git checkout, a directory that holds .archboard/vault is registered as an untracked vault under its base name, made unique on this machine. Registering the same root again keeps its language servers, unless its identity changed.",
 	examples: ["archboard repo add ."],
 	parameters: dirParameters,
 	input: { ingress: RepoAddInputSchema },
@@ -436,7 +436,7 @@ const repoForgetContract = defineCommand({
 	shared: [],
 	summary: "Forget a known checkout or untracked vault",
 	description:
-		"Removes the checkout or untracked vault at a directory, and the language servers configured for it, from the machine-local registry. The directory need not exist. Forgetting the chosen checkout of a repository that has other known checkouts leaves it with no chosen checkout until repo use, and bindings into it resolve as unregistered meanwhile.",
+		"Removes the checkout or untracked vault at a directory, and the language servers configured for it, from the machine-local registry. The directory need not exist. Forgetting the chosen checkout of a repository that has other known checkouts leaves it with no chosen checkout until repo use, and meanwhile its bindings resolve as unregistered, except from a vault inside one of its checkouts, which reads its own checkout.",
 	examples: ["archboard repo forget ../payments-worktree"],
 	parameters: [
 		{
@@ -510,7 +510,7 @@ const repoForgetContract = defineCommand({
 			},
 			diagnostics: [
 				gone.unchosen
-					? `Forgot ${gone.checkout.root}, the chosen checkout of "${repo}". No checkout of it is chosen now, so its bindings resolve as unregistered until archboard repo use <dir> chooses one of: ${gone.others.join(", ")}.`
+					? `Forgot ${gone.checkout.root}, the chosen checkout of "${repo}". No checkout of it is chosen now, so its bindings resolve as unregistered, except from a vault inside one of its checkouts, until archboard repo use <dir> chooses one of: ${gone.others.join(", ")}.`
 					: `Forgot ${gone.checkout.root}. Bindings that already name "${repo}" keep their address; they have nothing to resolve to until a checkout of it is registered again.`,
 			],
 		};
