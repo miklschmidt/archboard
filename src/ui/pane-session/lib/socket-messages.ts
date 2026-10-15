@@ -19,13 +19,13 @@ import type {
 	WebSocketMessage,
 } from "@/ui/types";
 
-/** Everything a message handler may read or do. */
 /** Where the server says a pane is: a vault, and the repository it is listed under. */
 interface PanePlace {
 	readonly vault: string;
 	readonly repository: string | null;
 }
 
+/** Everything a message handler may read or do. */
 interface MessageContext {
 	readonly clientId: string;
 	readonly boardKey: () => string | null;
