@@ -995,7 +995,7 @@ criterion as the tasks must now read it.
 - **TASK-367.24 #3** ("The pane reads cached findings"). The server keeps the
   findings of the last pass in memory, and TASK-367.24 builds that memory.
 - **TASK-367.26 #1** ("on each proposal before adoption"). One run of
-  `./bin/dogfood check --code --variant TASK-<n>` reads every proposal of the
+  `archboard check --code --variant TASK-<n>` reads every proposal of the
   task, because they share its name.
 
 ### What ADR 0045 assumed
@@ -1259,7 +1259,7 @@ These are the sources that TASK-367.01 rejected:
   `RELATIONSHIP_UNSUPPORTED` then says which side has no evidence.
 - TASK-367.24 builds the memory of the findings of the last pass and the route
   that reads it. The pane never starts a pass. The bell stays the plain check's.
-- TASK-367.26 runs `./bin/dogfood check --code --variant TASK-<n>` once for all
+- TASK-367.26 runs `archboard check --code --variant TASK-<n>` once for all
   the proposals of a task.
 - TASK-367.27 adds the `evidence` key to the dogfood configuration, and anchors
   to the dogfood boards.

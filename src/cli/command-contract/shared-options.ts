@@ -7,6 +7,7 @@
 // those, and one it does not read is refused instead of accepted in silence.
 
 import type { OptionParameter, SharedOptionKey } from "@/cli/command-contract/contract";
+import { DEFAULT_ARCHBOARD_URL } from "@/runtime/engine/source-checkout";
 
 /** One shared option, as help and the parser both describe it. */
 type SharedOption = Omit<OptionParameter, "kind" | "key" | "route" | "hidden"> & {
@@ -20,7 +21,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 		value: "required",
 		placeholder: "url",
 		description: "The Archboard server to talk to; overrides ARCHBOARD_URL",
-		default: "http://127.0.0.1:3000",
+		default: DEFAULT_ARCHBOARD_URL,
 	},
 	directory: {
 		key: "directory",

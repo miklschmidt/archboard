@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -14,6 +14,7 @@ const executable = join(repoRoot, "bin/archboard");
 interface Health {
 	pid: number;
 	source: {
+		checkout: string;
 		stale: boolean;
 		evaluatedAt: string;
 		newestFile: string;
@@ -60,6 +61,9 @@ describe.serial("source staleness", () => {
 		};
 
 		const first = await health();
+		// The checkout whose source the server runs, which a command of another
+		// checkout's source refuses (ADR 0049).
+		expect(first.source.checkout).toBe(realpathSync.native(repoRoot));
 		expect(first.source.stale).toBeFalse();
 		expect(first.source.newestFile).toStartWith("src/");
 		expect(Number.isNaN(Date.parse(first.source.evaluatedAt))).toBeFalse();

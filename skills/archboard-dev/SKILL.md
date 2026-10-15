@@ -18,7 +18,7 @@ documents will tell you.
 
 ## A task's board proposal
 
-The dogfood vault is `.archboard/vault`, and only `./bin/dogfood` writes it. It
+The dogfood vault is `.archboard/vault`, and only `archboard` writes it. It
 is how the next agent learns this repository. A task therefore changes it the
 way it changes the code. During planning, you draw a proposal. When the task
 closes, you adopt it. Edit a current variant in place only to correct a board
@@ -33,7 +33,7 @@ While you plan, before `backlog task edit --plan`:
    Done: the plan names every affected board, or it says that no board is
    affected (a test or a wording fix).
 2. Branch one proposal per affected board, named by the task id:
-   `./bin/dogfood semantic branch "<board>" --as TASK-123 --summary "<task title>" --expect-version <n> --doing "..."`.
+   `archboard semantic branch "<board>" --as TASK-123 --summary "<task title>" --expect-version <n> --doing "..."`.
    If code needs a board of its own, `semantic new` makes it as a draft that
    nobody has built. The proposal on the board above it gains the part that
    drills down to it.
@@ -60,7 +60,7 @@ Record each repair and the passing gate result before closing the original task.
 1. Inspect each proposal against the code as built. The code check reads most
    of it ([ADR 0046](../../docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md)),
    and you read the rest.
-   - Run `./bin/dogfood check --code --variant TASK-123`. It reads the draft
+   - Run `archboard check --code --variant TASK-123`. It reads the draft
      of that name on every board that has one, and the current variant on every
      other board, so one run covers every proposal of the task. A restated
      proposal (`TASK-123 after TASK-122`) has a name of its own: the run for
@@ -74,7 +74,7 @@ Record each repair and the passing gate result before closing the original task.
      the run with the same run without `--variant`:
      ```bash
      findings() {
-       ./bin/dogfood check --code "$@" 2>&1 >/dev/null |
+       archboard check --code "$@" 2>&1 >/dev/null |
          sed -n -E '/^(warning|information): [A-Z_]+:/p' |
          sed -E 's/:variants\.[^.]+\./:/' | sort
      }
@@ -139,7 +139,7 @@ Record each repair and the passing gate result before closing the original task.
        value that a part receives. Anchor the code that sends or subscribes.
      - A part with no binding, and a binding into a repository that this
        machine has not registered or has no chosen checkout for
-       (`./bin/dogfood repo add`, `repo use`). The checkout that holds the
+       (`archboard repo add`, `repo use`). The checkout that holds the
        vault stands for its own repository, registered or not, so a task in a
        worktree is checked against that worktree.
 
@@ -168,7 +168,7 @@ Record each repair and the passing gate result before closing the original task.
      base=$(git rev-parse "$(git log --reverse --format=%H --grep='^Refs:.*TASK-123\b' -- . ':!backlog' ':!.archboard' | sed -n 1p)^")
      ```
    - For each proposal, run
-     `./bin/dogfood semantic footprint "<board>" --base "$base" --variant TASK-123`.
+     `archboard semantic footprint "<board>" --base "$base" --variant TASK-123`.
      The answer's `current` must be the proposal's parent. If it is not,
      another task adopted since you branched, and that task's parts read as
      removed by your proposal. Restate first (step 5), and read the footprint
@@ -209,7 +209,7 @@ Record each repair and the passing gate result before closing the original task.
    that base.
 
 4. Adopt it:
-   `./bin/dogfood semantic adopt "<board>" --variant TASK-123 --reason "<what the task changed>" --expect-version <n> --doing "..."`.
+   `archboard semantic adopt "<board>" --variant TASK-123 --reason "<what the task changed>" --expect-version <n> --doing "..."`.
    If the proposal holds a disagreement, adoption is refused until
    `semantic resolve` settles it ([variants](../archboard/references/variants.md)).
 5. If adoption is refused as `PARENT_SUPERSEDED`, another task adopted a
@@ -223,9 +223,9 @@ Record each repair and the passing gate result before closing the original task.
    Shelve the old proposal with that reason, run steps 1 and 3 on the new one by
    its own name, and adopt it.
    Use `--force` only to drop the change of the other task on purpose.
-6. Run `./bin/dogfood check`.
+6. Run `archboard check`.
    Done: it reports no diagnostics. Commit the vault files with the closing.
-7. Run `./bin/dogfood check --code` and read `behind` (ADR 0045). It lists,
+7. Run `archboard check --code` and read `behind` (ADR 0045). It lists,
    for each board and each part, the commits to bound files after the
    board's current variant last changed. An adoption moves that point, so
    your adopted boards read clean. Read every other board that your task's
@@ -598,6 +598,15 @@ Three facts about the evidence that the first batch had to teach:
 
 ## Facts that will mislead you
 
+- In a worktree, `archboard` is not the main checkout's CLI. `archboard` on
+  PATH links to the main checkout, but inside another archboard checkout it
+  runs that checkout's own `bin/archboard` (ADR 0049). So a worktree's
+  commands run the worktree's source and reach the worktree's own server: port
+  3000 is the main checkout's, and a linked worktree takes a port from 10000
+  to 19999 that its path decides. To test a server change, run
+  `archboard stop && archboard start` in the worktree. The owner's server on
+  3000 keeps running. If a command finds a server of another checkout's
+  source on its port, it refuses and names both checkouts.
 - A pane key carries a variant, but a board name never does.
   `payments@<variant>` is an address, and `readSemanticBoard` on one throws, because a
   board is one document that holds the whole family. Split it first (`parseBoardKey`, or

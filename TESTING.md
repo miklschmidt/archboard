@@ -64,11 +64,23 @@ from your sign-in: set `XDG_STATE_HOME` to an empty directory before `start`.
 The test server then starts with no sign-in, and it keeps its log in that
 directory.
 
-If `ARCHBOARD_VAULT` is unset, `./bin/archboard` in this checkout finds the
+If `ARCHBOARD_VAULT` is unset, `archboard` in this checkout finds the
 boards of this repository in `.archboard/vault`, from any directory of the
-checkout. `./bin/dogfood` does the same by setting `ARCHBOARD_VAULT`, and stays
-until TASK-472.08. Read the boards as you like. Change them only through the
+checkout. Read the boards as you like. Change them only through the
 proposal of a task, as the `archboard-dev` skill describes.
+
+In an archboard checkout, `archboard` runs that checkout's own `bin/archboard`,
+even when the `archboard` on your PATH links to another checkout (ADR 0049).
+So a worktree runs its own source and has its own server:
+
+- The server of the main checkout listens on port 3000.
+- The server of a linked worktree listens on a port from 10000 to 19999. The
+  port is a hash of the worktree's path, so it is the same on every run.
+  `archboard status` gives the URL.
+- A set `ARCHBOARD_URL` or `--url` still decides.
+- If the server on that port runs the source of another checkout, the command
+  refuses and names both checkouts. It does not try another port. Run the
+  command in the checkout that the refusal names, or stop that server there.
 
 ## 3. Write and read a board
 

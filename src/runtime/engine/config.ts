@@ -1,10 +1,12 @@
 import dotenv from "dotenv";
+import { DEFAULT_ARCHBOARD_URL } from "@/runtime/engine/source-checkout";
 
 // Load environment variables once for every entry point (CLI and Archboard server)
 dotenv.config({ quiet: true });
 
-// The Archboard server the CLI talks to, and where an auto-started one listens.
-const ARCHBOARD_URL = process.env["ARCHBOARD_URL"] || "http://127.0.0.1:3000";
+// The Archboard server the CLI talks to, and where an auto-started one listens:
+// this checkout's own port unless a set ARCHBOARD_URL or --url names another.
+const ARCHBOARD_URL = process.env["ARCHBOARD_URL"] || DEFAULT_ARCHBOARD_URL;
 
 // Opt out of auto-starting the Archboard server from the CLI.
 const ARCHBOARD_NO_AUTOSTART = process.env["ARCHBOARD_NO_AUTOSTART"] === "1";
