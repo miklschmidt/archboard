@@ -110,6 +110,9 @@ function Go(props: GoProps): JSX.Element {
  * @returns The sentence, or null when there is nothing wrong.
  */
 function refusalWords(resolution: DrillResolution, target: DrillDown): string | null {
+	if (resolution.kind === "other-repository") {
+		return `${target.board} is a board of repository ${resolution.repo}, which this pane does not open yet.`;
+	}
 	if (resolution.kind === "no-variant") {
 		return `${target.board} has no variant called "${resolution.asked}". Nothing was opened in its place.`;
 	}
@@ -239,11 +242,18 @@ interface WayDownProps {
  */
 function WayDown(props: WayDownProps): JSX.Element {
 	const { target, onOpen, kind, here } = props;
-	const document = useQuery(semanticBoardDocumentQuery(target.board));
+	// A board of another repository is not the board of this vault that shares its name.
+	const document = useQuery({
+		...semanticBoardDocumentQuery(target.board),
+		enabled: target.repo === undefined,
+	});
 	const name = drillTargetName(target, document.data);
 	// Heard under the name the board goes by now, so a state superseded since the
 	// link was written is never opened as though it were current.
 	useSemanticBoardChanges(target.board, name);
+	if (target.repo !== undefined) {
+		return <p className="text-body">{refusalWords(resolveDrillDown(target, undefined), target)}</p>;
+	}
 	if (document.error !== null) {
 		return (
 			<p className="text-body">

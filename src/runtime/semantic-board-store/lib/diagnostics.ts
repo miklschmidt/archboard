@@ -12,6 +12,7 @@ import {
 } from "@/runtime/semantic-board-store/lib/location";
 import { readSemanticBoardAt } from "@/runtime/semantic-board-store/lib/read";
 import {
+	createDrillLookup,
 	type DrillDownTarget,
 	semanticDrillDownDiagnostics,
 } from "@/runtime/semantic-board-store/lib/drill-down";
@@ -39,10 +40,10 @@ function checkSemanticVault(root: string): VaultCheck {
 		const board = readBoardFile(file, root, configured, addresses, diagnostics);
 		return board === null ? [] : [{ board, file }];
 	});
-	const targets = drillTargets(read.map(({ board }) => board));
+	const lookup = createDrillLookup(root, drillTargets(read.map(({ board }) => board)));
 	const checkoutOf = createCheckoutLookup(root);
 	for (const { board, file } of read) {
-		diagnostics.push(...semanticDrillDownDiagnostics(board, file, targets));
+		diagnostics.push(...semanticDrillDownDiagnostics(board, file, lookup));
 		diagnostics.push(...semanticBindingDiagnostics(board, file, checkoutOf));
 	}
 	return {

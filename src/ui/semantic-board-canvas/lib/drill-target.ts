@@ -18,6 +18,7 @@ import { readBoard } from "@/ui/semantic-board-canvas/lib/board-document";
 /** Where a drill-down leads, once the target board has been read. */
 type DrillResolution =
 	| { readonly kind: "ready"; readonly board: SemanticBoard; readonly variant: SemanticVariant }
+	| { readonly kind: "other-repository"; readonly repo: string }
 	| { readonly kind: "no-variant"; readonly asked: string }
 	| { readonly kind: "no-current" }
 	| { readonly kind: "unreadable"; readonly problem: string };
@@ -34,6 +35,11 @@ type DrillResolution =
  * @returns The variant to open, or why there is none.
  */
 function resolveDrillDown(target: DrillDown, document: unknown): DrillResolution {
+	// The board is in the vault of another repository, and `document` is the board
+	// of this vault that goes by the same name, if any: not what the link opens.
+	if (target.repo !== undefined) {
+		return { kind: "other-repository", repo: target.repo };
+	}
 	const reading = readBoard(document);
 	if (!reading.ok) {
 		return { kind: "unreadable", problem: reading.problem };
@@ -61,7 +67,7 @@ function resolveDrillDown(target: DrillDown, document: unknown): DrillResolution
  * @returns The board's own name once it has been read, else the link's.
  */
 function drillTargetName(target: DrillDown, document: unknown): string {
-	if (document === undefined) {
+	if (document === undefined || target.repo !== undefined) {
 		return target.board;
 	}
 	const reading = readBoard(document);

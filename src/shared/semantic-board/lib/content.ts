@@ -94,15 +94,38 @@ const DrillDownVariantSchema = z.discriminatedUnion("kind", [
 type DrillDownVariant = z.infer<typeof DrillDownVariantSchema>;
 
 /**
+ * A repository identity as a drill-down names one: the identity a binding
+ * names, never a path. A note is committed and read on other machines, so no
+ * file archboard writes can hold a path of the machine that wrote it (ADR 0049).
+ */
+const DrillDownRepoSchema = CodeBindingSchema.shape.repo.refine(
+	(repo) => !/^(?:[/~\\]|\.{1,2}(?:[/\\]|$)|[A-Za-z]:[/\\])|\\/u.test(repo),
+	{
+		message:
+			"a repository identity, such as github.com/acme/payments, and never a path: the note " +
+			"is read on other machines",
+	},
+);
+
+/**
  * The board one level down from a node, and which of its variants to open.
  *
  * The target is named rather than identified, because a board is addressed by
  * name everywhere a person meets one, and because nothing validates it here: a
  * board owns its own content, so whether the target exists is a question only
  * the thing opening it can answer, and it answers by saying so.
+ *
+ * `repo` says the board is in another repository: the vault of that identity's
+ * chosen checkout holds it. Without it the target is in the vault of the board
+ * that carries the drill-down, so a drill-down written before the field existed
+ * means what it always meant (ADR 0049).
  */
 const DrillDownSchema = z
-	.object({ board: DisplayNameSchema, variant: DrillDownVariantSchema })
+	.object({
+		board: DisplayNameSchema,
+		variant: DrillDownVariantSchema,
+		repo: DrillDownRepoSchema.optional(),
+	})
 	.strict();
 type DrillDown = z.infer<typeof DrillDownSchema>;
 
