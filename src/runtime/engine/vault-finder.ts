@@ -7,10 +7,16 @@
 // root belongs to another repository, or to none, and using it would put this
 // repository's boards somewhere its clones never see. Outside any checkout the
 // nearest enclosing directory that holds a vault is an untracked vault.
+//
+// A checkout with no vault of its own can have its architecture in another
+// repository's vault, whose boards bind its code. A command can give the search
+// a lookup of those vaults, and the refusal then names each one as the `-C` to
+// give (TASK-480). The lookup reads boards, which this module cannot import:
+// the registry imports it, and the board store imports the registry.
 
 import fs from "fs";
 import path from "path";
-import { repoRootOf } from "@/runtime/engine/git";
+import { repoIdentityAt, repoRootOf } from "@/runtime/engine/git";
 import { isDirectory } from "@/runtime/engine/lib/registry-file";
 
 /** A vault is the `.archboard/vault` of a directory (ADR 0049). */
@@ -31,6 +37,19 @@ interface VaultSearch {
 	readonly option?: string;
 	/** The working directory, which a relative `-C` resolves against. */
 	readonly cwd: string;
+	/**
+	 * The known vaults whose boards bind a repository, asked when the search
+	 * stops in a checkout with no vault. Without it, the refusal names none.
+	 */
+	readonly vaultsBoundTo?: (repo: string) => readonly BoundVault[];
+}
+
+/** A known vault whose boards bind a repository's code. */
+interface BoundVault {
+	/** The directory that holds the vault: what `-C` names. */
+	readonly holder: string;
+	/** The names of its boards that bind the repository. */
+	readonly boards: readonly string[];
 }
 
 /** The vault a command addresses. */
@@ -61,6 +80,14 @@ interface VaultNotFound {
 	readonly origin: VaultOrigin;
 	/** The root of the checkout the directory is in, when it is in one. */
 	readonly checkoutRoot?: string;
+	/**
+	 * The repository of a checkout with no vault, and the known vaults whose
+	 * boards bind it, when the search was given a lookup and it found some.
+	 */
+	readonly boundElsewhere?: {
+		readonly repository: string;
+		readonly vaults: readonly BoundVault[];
+	};
 	/**
 	 * The vault a link leads out of the layout: its `.archboard/vault` and the real directory it
 	 * leads to, which the server does not serve (`isVaultLayout`).
@@ -162,7 +189,7 @@ function notFoundMessage(
 	refusal: Omit<VaultNotFound, "code" | "message">,
 	named: string | undefined,
 ): string {
-	const { directory, origin, checkoutRoot } = refusal;
+	const { directory, origin, checkoutRoot, boundElsewhere } = refusal;
 	const option = named ?? "-C";
 	if (refusal.reason === "directory-missing") {
 		return `${option} names ${directory}, which is not a directory. Nothing was done.`;
@@ -170,6 +197,14 @@ function notFoundMessage(
 	const start = startPhrase(origin, directory, option);
 	if (refusal.reason === "checkout-without-vault") {
 		const root = checkoutRoot ?? directory;
+		if (boundElsewhere !== undefined) {
+			return (
+				`${start} is inside the git checkout ${root}, which has no ${VAULT_DIRECTORY} at its root. ` +
+				`The boards of its repository, ${boundElsewhere.repository}, are in another vault. ` +
+				`Run the command with ${option} <dir>: ${boundElsewhere.vaults.map(holdsPhrase).join(" ")} ` +
+				`Nothing was done.`
+			);
+		}
 		return (
 			`${start} is inside the git checkout ${root}, which has no ${VAULT_DIRECTORY} at its root. ` +
 			`Inside a checkout a command uses only the vault at the checkout root, and a vault above the checkout is never used. ` +
@@ -183,6 +218,41 @@ function notFoundMessage(
 		`of the nearest enclosing directory. Run the command inside a checkout that has a vault, create ` +
 		`<dir>/${VAULT_DIRECTORY} in the directory that should hold the boards, or name one with ${option} <dir>. Nothing was done.`
 	);
+}
+
+/** How many board names a refusal gives for one vault. It counts the rest. */
+const NAMED_BOARDS = 5;
+
+/**
+ * One vault a refusal names, in words.
+ * @param vault The vault and its boards that bind the repository.
+ * @returns The phrase.
+ */
+function holdsPhrase(vault: BoundVault): string {
+	const named = vault.boards.slice(0, NAMED_BOARDS).map((board) => JSON.stringify(board));
+	const more = vault.boards.length - named.length;
+	return `${vault.holder} holds ${named.join(", ")}${more > 0 ? ` and ${String(more)} more` : ""}.`;
+}
+
+/**
+ * The known vaults whose boards bind a checkout's repository.
+ * @param root The checkout root.
+ * @param lookup The lookup the search was given.
+ * @returns The repository and its vaults, or undefined when there are none or the lookup failed.
+ */
+async function boundElsewhereOf(
+	root: string,
+	lookup: VaultSearch["vaultsBoundTo"],
+): Promise<VaultNotFound["boundElsewhere"]> {
+	if (lookup === undefined) return undefined;
+	try {
+		const repository = await repoIdentityAt(root);
+		const vaults = lookup(repository);
+		return vaults.length === 0 ? undefined : { repository, vaults };
+	} catch {
+		// The vaults are a hint on a refusal. A lookup that cannot read leaves the refusal as it was.
+		return undefined;
+	}
 }
 
 /**
@@ -224,23 +294,32 @@ function heldVault(
  * The vault of the directory a search starts from.
  * @param start The start directory, absolute and existing.
  * @param origin How it was given.
- * @param option The option that named it, when it was not `-C`.
+ * @param search What the command was given: the option that named it, and the lookup of bound vaults.
  * @returns The finding.
  */
 async function vaultFrom(
 	start: string,
 	origin: VaultOrigin,
-	option: string | undefined,
+	search: VaultSearch,
 ): Promise<VaultFinding> {
+	const { option } = search;
 	const directory = realPath(start);
 	const root = await repoRootOf(directory);
 	if (root !== undefined) {
-		return isDirectory(path.join(root, VAULT_DIRECTORY))
-			? heldVault(root, { directory, origin, checkoutRoot: root }, option)
-			: notFound(
-					{ reason: "checkout-without-vault", directory, origin, checkoutRoot: root },
-					option,
-				);
+		if (isDirectory(path.join(root, VAULT_DIRECTORY))) {
+			return heldVault(root, { directory, origin, checkoutRoot: root }, option);
+		}
+		const boundElsewhere = await boundElsewhereOf(root, search.vaultsBoundTo);
+		return notFound(
+			{
+				reason: "checkout-without-vault",
+				directory,
+				origin,
+				checkoutRoot: root,
+				...(boundElsewhere === undefined ? {} : { boundElsewhere }),
+			},
+			option,
+		);
 	}
 	const holder = vaultHolder(directory);
 	return holder === undefined
@@ -259,10 +338,10 @@ async function findVault(search: VaultSearch): Promise<VaultFinding> {
 	if (search.directory !== null) {
 		const start = path.resolve(search.cwd, search.directory);
 		return isDirectory(start)
-			? vaultFrom(start, "-C", option)
+			? vaultFrom(start, "-C", search)
 			: notFound({ reason: "directory-missing", directory: start, origin: "-C" }, option);
 	}
-	return vaultFrom(search.cwd, "working-directory", option);
+	return vaultFrom(search.cwd, "working-directory", search);
 }
 
 export {
@@ -270,6 +349,7 @@ export {
 	VAULT_ORIGINS,
 	type VaultOrigin,
 	type VaultSearch,
+	type BoundVault,
 	type FoundVault,
 	type VaultNotFound,
 	type VaultNotFoundReason,

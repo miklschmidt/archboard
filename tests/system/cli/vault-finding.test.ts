@@ -211,6 +211,41 @@ test("inside a checkout without a vault a command refuses, and creates and regis
 	expect(existsSync(fixture.registry) ? readFileSync(fixture.registry) : null).toEqual(before);
 });
 
+test("a checkout without a vault is told which known vault holds boards of its code, and nothing is created", () => {
+	// Another directory keeps the architecture of the billing checkout's code.
+	const architecture = holdingVault(join(fixture.root, "architecture"));
+	const board = JSON.stringify({
+		level: "system",
+		nodes: [
+			{
+				name: "Invoices",
+				kind: "service",
+				binding: { repo: "github.com/acme/billing", path: "src/invoices.ts" },
+			},
+		],
+	});
+	const drawn = archboard(
+		["semantic", "new", "Billing flow", "--doing", "drawing billing's architecture"],
+		architecture,
+		{},
+		board,
+	);
+	expect(drawn.status, drawn.failure).toBe(0);
+	const before = readFileSync(fixture.registry);
+	const refused = archboard(["semantic"], join(billing, "src"));
+	expect(refused.status, refused.failure).toBe(2);
+	expect(refused.stdout).toBe("");
+	expect(refused.stderr).toContain(architecture);
+	expect(refused.stderr).toContain("Billing flow");
+	expect(existsSync(join(billing, ".archboard"))).toBe(false);
+	expect(readFileSync(fixture.registry)).toEqual(before);
+	// A checkout whose code no known vault binds is not sent there.
+	const ledger = fixture.repository("ledger", "https://github.com/acme/ledger.git");
+	const unbound = archboard(["semantic"], ledger);
+	expect(unbound.status, unbound.failure).toBe(2);
+	expect(unbound.stderr).not.toContain(architecture);
+});
+
 test("outside any checkout and any vault a command refuses before it starts a server", async () => {
 	const port = await availablePort();
 	const refused = archboard(["semantic"], fixture.nowhere, {

@@ -61,7 +61,7 @@ const REALTIME_END_INSTRUCTIONS =
 
 /**
  * The voice model's prompt: the ordinary one, the ordinary one with a narration added, or for a
- * recording the persona alone with the recording's section, since nobody is there to talk to.
+ * recording the persona with the recording's section, since nobody is there to talk to.
  * @param presentation The walkthrough the session presents, or null.
  * @returns The prompt.
  */

@@ -83,6 +83,13 @@
 					"owner": "tests/system/semantic-boards/rasterize.test.ts"
 				},
 				{
+					"path": "semantic render/rasterize/record --against",
+					"expectedUse": "draw a picture or a recording relative to a named variant, such as the pull request below a stacked one: it marks only what the drawn variant changes over it, carries no Planned frame, and the receipt names the variant under comparedWith",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/semantic-boards/draw-against.test.ts owns the CLI in SVG and PNG with its refusals; src/runtime/semantic-renderer/tests/drawn-against.test.ts owns the marks and the missing frame; tests/system/server-state/walkthrough-replay.test.ts owns a talk read against a variant"
+				},
+				{
 					"path": "semantic render --theme auto",
 					"expectedUse": "one SVG for a document, README or pull request that shows the ground of the reader's colour scheme; a PNG takes light or dark",
 					"scenarios": [],

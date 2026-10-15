@@ -73,6 +73,7 @@ export {
 	type PictureStorage,
 } from "@/ui/semantic-board-canvas/lib/picture-cache";
 export {
+	pictureSource,
 	takePicturesFrom,
 	type PictureSource,
 } from "@/ui/semantic-board-canvas/lib/picture-source";

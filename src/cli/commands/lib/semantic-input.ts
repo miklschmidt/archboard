@@ -98,13 +98,32 @@ function exportRenderRequest(
 	},
 ): RenderOptions {
 	return {
-		...(input.variant === undefined ? {} : { variant: input.variant }),
-		...(input.view === undefined ? {} : { view: input.view }),
+		...selectedVariant(input),
 		...(input.theme === undefined ? {} : { theme: input.theme }),
 		...(input.layout === undefined ? {} : { layout: input.layout }),
 		...(input.noComparison ? { comparison: "off" } : {}),
 		...framingRequest(input),
 		fonts: "embedded",
+	};
+}
+
+/**
+ * Which variant and view an export draws, and which variant it is read against.
+ * @param input The requested variant, view and variant to read it against.
+ * @param input.variant The variant, by id or name.
+ * @param input.view The view, by id or name.
+ * @param input.against The id of the variant to read it against.
+ * @returns The route's parameters.
+ */
+function selectedVariant(input: {
+	variant?: string | undefined;
+	view?: string | undefined;
+	against?: string | undefined;
+}): Pick<RenderOptions, "variant" | "view" | "against"> {
+	return {
+		...(input.variant === undefined ? {} : { variant: input.variant }),
+		...(input.view === undefined ? {} : { view: input.view }),
+		...(input.against === undefined ? {} : { against: input.against }),
 	};
 }
 

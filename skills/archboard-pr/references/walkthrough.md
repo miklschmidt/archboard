@@ -1,18 +1,16 @@
 # A narrated walkthrough for the reviewer
 
-A walkthrough video is an overview that a voice explains while the picture
-highlights what it speaks of. Section 4 of the skill decides whether to record
-one. This file says what it needs, how to write it, how to record it, and what
-goes into the pull request with it.
+A walkthrough video is the long version of the Summary: a voice explains the
+picture while the picture highlights what it speaks of. The sentences above
+the picture are the short version, so the two never repeat each other.
+Section 5 of the skill decides whether to record one. This file says what it
+needs, how to write it, how to record it, and what goes into the pull request
+with it.
 
-## Why the signs in section 4
-
-Narration beside a picture helps a learner more than text beside it. Narration
-at the same time as the picture it explains helps more still [Mayer and
-Moreno]. These effects appear with material whose elements interact a lot, and
-they disappear with simple material [Sweller]. A video of a one-part change
-costs the reviewer time and gives nothing back. So the signs for a recording are many
-interacting parts, or a request from the user.
+Narration at the same time as the picture it explains helps a learner more
+than text beside the picture [Mayer and Moreno]. The effect appears with
+material whose parts interact a lot, and it disappears with simple material
+[Sweller]. That is why a change of one or two parts gets no video.
 
 ## What it needs
 
@@ -22,7 +20,7 @@ interacting parts, or a request from the user.
   record. A recording that still finds one missing refuses before it records:
   `Codex is not signed in on this Archboard server` (exit 4, measured with a
   server that had no sign-in), or `ENCODER_UNAVAILABLE` (exit 4) for ffmpeg.
-  Then post the explainer without a video, and say why in your final report.
+  Then post the body without a video, and say why in your final report.
 - The chosen checkout. The recording's page reads the chosen checkout of the
   repository. In another checkout, such as a worktree, `semantic record`
   refuses with `CHECKOUT_NOT_CHOSEN` (exit 2). If the user has the app open,
@@ -32,8 +30,9 @@ interacting parts, or a request from the user.
   `archboard repo use <checkout>`.
 - Time: about twice the length of the talk.
 - Size: GitHub takes a video of up to 10 MB on a free plan and 100 MB on a paid
-  plan [GitHub, attaching files]. Three archboard recordings measured 3.2 to
-  4.3 MB a minute. So a talk under about two minutes fits every plan.
+  plan [GitHub, attaching files]. Archboard recordings measured 3.2 to 6.7 MB a
+  minute, and a dense view costs the most. The voice speaks 20 to 25 seconds
+  for each beat, whatever the length of its body.
 
 `archboard semantic record --help` lists the options.
 
@@ -43,63 +42,55 @@ On a vault board, claim it first. Add one walkthrough to the proposal, or on an
 ephemeral board to the head branch's draft, in one edit with
 `--variant "<proposal>"`. Name it `Review: <head branch>`. The `archboard`
 skill's walkthroughs section gives the payload rules for beats, subjects and
-views. Write the beats in this order:
+views. In a stack, every proposal branched from this one takes the walkthrough
+too, and its removal: record it and remove it before you work on the
+proposal above. Write the beats in this order:
 
-1. **Why.** The why sentence of the explainer, with no subjects. A beat with no
-   subjects is about the whole picture.
-2. **The parts.** Name the few parts the change touches and what each one
-   does, with those parts as subjects. Learners who know the names and
-   behaviour of the parts first learn more from what follows [Mayer and
-   Moreno: pretraining].
-3. **One beat for each change, the most important first.** The heading states
-   what the pull request did ("The ledger now takes the lease"), not what is
-   drawn ("The ledger"). The subjects are the two or three things the beat is
-   about, so the highlight lands while the voice speaks of them [Mayer and
-   Moreno: signalling and temporal contiguity, de Koning et al.]. A removed
-   part cannot be a subject, so the body names what was removed.
-4. **Where to look.** The last beat says where to look closely and what to
-   check there. It is the same place as the explainer's **Where to look
-   closely**. The voice closes the walkthrough by itself in one sentence.
+1. **Why, and where.** Why the change exists, and where it sits: the design
+   part it builds, and in a stack the pull request before it. No subjects: a
+   beat with no subjects is about the whole picture.
+2. **The changes.** One beat for each change that the reviewer must
+   understand, the most important first. The
+   heading states what the pull request does ("The ledger now takes the
+   lease"), not what is drawn ("The ledger"). The subjects are the two or
+   three parts the beat is about, so the highlight lands while the voice
+   speaks of them [Mayer and Moreno: signalling]. A removed part cannot be a
+   subject, so the body names what was removed.
+3. **Where to look.** The last beat names the one place where a reviewer must
+   look closely, and what to check there. It is the place that Merge Danger
+   names.
 
 Rules for every beat:
 
 - It makes one point. Short segments help more than one continuous talk
   [Mayer and Moreno: segmenting].
-- Its body is a few sentences that the voice can explain. The voice explains
-  in its own words and does not read the body out. It also hears each
-  subject's standing: added or changed against the current variant.
-- It names parts exactly as the board names them, and gives the one number
-  that matters, such as a limit or a timeout.
-- It sets `view` to the view of the renders, so the video shows the picture the
-  explainer shows.
-- Leave out the history of the pull request and context the reviewer does not
-  need. Removing extra material helps learning [Mayer and Moreno: coherence].
+- Its body is two or three sentences about the system, in the board's names.
+  The voice explains them in its own words. Never write about the screen, the
+  beat or the walkthrough itself.
+- It gives the one number that matters, such as a limit or a timeout.
+- It sets `view` to the view of the picture, so the video shows what the
+  Summary shows.
+- It leaves out the history of the pull request and how anything was made
+  [Mayer and Moreno: coherence].
 
-Keep it to three to six beats, one to three minutes in all. A beat of a few
-sentences is about 20 to 30 seconds of speech. Viewers stay with a tutorial
-video for about 2 to 3 minutes, whatever its length [Guo et al.]. Under two
-minutes also fits GitHub's free plan. The three-minute cap is **judgement**
-from that evidence.
-
-Done: three to six beats. Each beat has a `view`, the first has no subjects,
-and the last says where to look. A reviewer can answer "what changed, and why"
-from the beats alone.
+Done: each beat makes one point and has a `view`, the first has no subjects,
+and the last says where to look.
 
 ## Record
 
 ```bash
-archboard semantic record <board> --variant "<proposal>" --walkthrough "Review: <head branch>" --layout blocks --talk "$tmp/talk" --out "$tmp/walkthrough.mp4"
+archboard semantic record <board> --variant "<proposal>" --against "<below>" --walkthrough "Review: <head branch>" --layout blocks --talk "$tmp/talk" --out "$tmp/walkthrough.mp4"
 ```
 
+- Pass the same `--against` as the picture, so every frame marks the same
+  change.
 - Leave out `--discard`. It deletes the board: a vault board belongs to the
-  vault, and an ephemeral board goes with its whole vault afterwards. Recording
-  on an ephemeral board's own server works the same way (checked in October
-  2026). Keep the talk in `$tmp`, outside the ephemeral vault.
+  vault, and an ephemeral board goes with its whole vault afterwards. Keep the
+  talk in `$tmp`, outside any vault.
 - Use `.mp4`. It is H.264 with AAC sound, and GitHub recommends H.264 for
   greatest compatibility [GitHub, attaching files].
-- Pass `--layout blocks`, so the video draws the layout the renders show. The
-  default layout is Track. The talk keeps the layout, so `semantic replay`
-  draws it again.
+- Pass `--layout blocks`, so the video draws the layout of the picture. The
+  talk keeps the layout, so `semantic replay` draws it again.
 - The video is drawn in the light theme unless you pass `--theme dark`. A video
   cannot follow the reader's theme, so record one video only.
 
@@ -109,10 +100,10 @@ Its beats speak of the change, and after the merge the proposal becomes the
 current architecture. The kept talk in `$tmp/talk` can render the video again
 with `semantic replay`, without the board.
 
-Done: the receipt names the video and its `talk`, its `bytes` is under 10 MB
-(10,000,000), and on a vault board `semantic compare` no longer lists the
-walkthrough. If the video is too large, cut a beat or shorten the bodies, and
-record again.
+Done: the receipt names the video and its `talk`, and on a vault board
+`semantic compare` no longer lists the walkthrough. If gh refuses the upload
+for its size, post the body without the video, and give the user the video's
+path and size.
 
 ## Check the video
 
@@ -125,15 +116,17 @@ place of `ffmpeg`:
 ffmpeg -loglevel error -ss <seconds> -i "$tmp/walkthrough.mp4" -frames:v 1 "$tmp/frame-<beat>.png"
 ```
 
-Done: on each frame, the beat's subjects are highlighted, and the caption shows
-that beat's heading.
+Then read the transcript (below) against the diff. The voice explains in its
+own words, so it can state something that the code does not do. Rewrite the
+body of such a beat to say it plainly, and record again. Done: on each frame,
+the beat's subjects are highlighted and the caption shows the beat's heading,
+and the transcript says nothing about the screen and nothing that the code
+does not do.
 
 ## Chapters and transcript
 
-A video has no alt text on GitHub [gh source]. Chapters let a reviewer skip to
-a part, and a transcript lets a reviewer read instead of watch. Visual
-signposts help viewers find their way in a tutorial video [Guo et al.], and
-chapters show how the video is organised [Brame].
+A video has no alt text on GitHub [gh source]. A transcript lets a reviewer
+read instead of watch, and chapters show how the video is organised [Brame].
 
 Read both from the kept talk. Times are counted in samples at 48 kHz.
 
@@ -144,38 +137,40 @@ jq -r '.board as $b | ([.document.variants[] | select(.id == $b.variant) | .cont
 jq -r '.events[] | select(.kind == "said" and .final) | .text' "$tmp/talk/talk.json"
 ```
 
+Copy the voice's words as they are. Correct only spacing, such as a missing
+space between two sentences.
+
 ## In the pull request
 
-Put this under the after render, as the explainer's part 3:
+Put this in the Summary, under the picture:
 
 ```markdown
 **Walkthrough**, <m:ss>, narrated.
 
 ![](/absolute/path/to/walkthrough.mp4)
 
-- 0:01 <heading of beat 1>
-- 0:20 <heading of beat 2>
-
 <details><summary>Transcript</summary>
 
-<the transcript>
+**0:01 <heading of beat 1>.** <what the voice said in beat 1>
+
+**0:24 <heading of beat 2>.** <what the voice said in beat 2>
 
 </details>
 ```
 
-The video reference stands alone in its paragraph. gh then replaces it with the
-bare URL of the upload, and GitHub plays a bare URL alone on its line
-[gh source]. Section 5 of the skill attaches the file.
+Each chapter is the bold start of its part of the transcript, so the visible
+Summary keeps one line and one video. The video reference stands alone in its
+paragraph. gh then replaces it with the bare URL of the upload, and GitHub
+plays a bare URL alone on its line [gh source]. Section 7 of the skill attaches
+the file.
 
 ## What the video cannot do yet
 
-- **Subtitles.** The recording always shows subtitles, and a caption with the
-  beat's heading and body. Narration together with the same words on screen
-  can hurt learning [Mayer and Moreno: redundancy]. Subtitles also serve a
-  viewer with the sound off. This cannot be turned off. Keep each body short,
-  so the caption stays short.
-- **Chapters and transcript.** No command prints them. Use the `jq` lines
-  above.
+The recording always shows subtitles, and a caption with the beat's heading
+and body. Narration together with the same words on screen can hurt learning
+[Mayer and Moreno: redundancy]. Subtitles also serve a viewer with the sound
+off. This cannot be turned off, so keep each body short, and the caption
+stays short.
 
 ## Sources
 
@@ -184,12 +179,6 @@ bare URL of the upload, and GitHub plays a bare URL alone on its line
   <https://www.uky.edu/~gmswan3/544/9_ways_to_reduce_CL.pdf>
 - Sweller: J. Sweller, "Visualisation and Instructional Design", 2002.
   <https://nielsolson.us/STLHE020409/SwellerVisualizationAndInstructionalDesign.pdf>
-- de Koning et al.: B. de Koning et al., "Towards a Framework for Attention
-  Cueing in Instructional Animations", Educational Psychology Review 2009.
-  <https://repub.eur.nl/pub/16961/DeKoning%20et%20al._2009_EdPsyRev.pdf>
-- Guo et al.: P. Guo, J. Kim, R. Rubin, "How Video Production Affects Student
-  Engagement", Learning at Scale 2014.
-  <https://www.cs.rochester.edu/hci/pubs/pdfs/edX-MOOC-video-production-and-engagement_LAS-2014.pdf>
 - Brame: C. Brame, "Effective Educational Videos", CBE Life Sciences
   Education 2016 (a review).
   <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5132380/fullTextXML>

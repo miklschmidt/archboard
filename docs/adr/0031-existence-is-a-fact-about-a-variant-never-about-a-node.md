@@ -235,3 +235,31 @@ code comment and the refusal wording.
 
 - Every reader of `current` handles its absence or is shown unreachable for such
   a board. TASK-270 records the audit of those readers.
+
+## Amendment: a picture drawn against a named variant (2026-10-15)
+
+The user decided on 2026-10-15 that a stacked pull request is drawn against the
+pull request below it, without the "Planned" frame (TASK-478.01). Until then,
+every picture of a board with no current variant carried the frame. A pull
+request that builds code was therefore drawn under "nothing on this board is
+built", and a picture on a built board marked everything the pull requests below
+it added.
+
+`semantic render`, `semantic rasterize` and `semantic record` take
+`--against <variant>`, as `semantic compare` does. A picture drawn with it is
+read relative to the variant named. It marks what the drawn variant adds,
+changes and removes over that variant, and it carries no frame. The frame says
+that the whole board is unbuilt. A picture relative to a named variant says
+nothing about that, and the variant it is read against may be unbuilt too.
+
+This is not a second way to say that something is built. The frame is still
+drawn from the board, and a picture without `--against` is drawn as before. The
+frame goes only when the caller names what the picture is relative to. For a
+reviewer, that is the base branch.
+
+Three requests are refused, because each is a request that went wrong. A variant
+that the board lacks is refused as `semantic compare --against` refuses it.
+`--against` with `--no-comparison` is refused. `--against` naming the drawn
+variant is refused, because such a picture marks nothing. A recording keeps the
+variant in its talk, so `semantic replay` draws the same comparison in every
+frame (ADR 0041).

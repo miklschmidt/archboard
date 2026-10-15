@@ -70,11 +70,16 @@ test("a narration or recording start names the walkthrough to the voice model an
 		const [plain] = ordinary.session.starts;
 		const base = plain?.prompt ?? "\0";
 		expect(plain?.prompt).not.toContain("For the board");
-		// A narration adds to the ordinary prompt. A recording keeps who the voice is and none of
-		// the conversation, since nobody is there to talk to.
+		// A narration adds to the ordinary prompt. A recording keeps who the voice is, the
+		// ordinary prompt's leading paragraphs, and none of how it converses, since nobody is there
+		// to talk to (TASK-352, TASK-478.02).
 		expect(presented?.prompt?.startsWith(base)).toBe(true);
-		expect(recorded?.prompt?.startsWith(base)).toBe(false);
-		expect(recorded?.prompt?.split("\n")[0]).toBe(base.split("\n")[0]);
+		const live = paragraphs(base);
+		const recordedParagraphs = new Set(paragraphs(recorded?.prompt));
+		const kept = live.filter((one) => recordedParagraphs.has(one));
+		expect(kept.length).toBeGreaterThan(0);
+		expect(kept.length).toBeLessThan(live.length);
+		expect(kept).toEqual(live.slice(0, kept.length));
 		for (const start of [presented, recorded]) {
 			expect(start?.prompt).toContain("For the board");
 			// The session opens with nothing said as the user: the first step is handed over by
@@ -229,25 +234,46 @@ function leadIn(speech: string | undefined): string {
 	return speech?.slice(0, speech.indexOf(":")) ?? "";
 }
 
-test("a recording's steps reach the voice model in the words its prompt names, and leaving it is never told", async () => {
+/**
+ * A prompt's paragraphs.
+ * @param prompt The prompt.
+ * @returns Each paragraph, trimmed, without empty ones.
+ */
+function paragraphs(prompt: string | null | undefined): string[] {
+	return (prompt ?? "")
+		.split("\n\n")
+		.map((one) => one.trim())
+		.filter((one) => one.length > 0);
+}
+
+test("a recording's steps reach the voice model as what to explain, in the words its prompt names, never which step they are, and leaving it is never told", async () => {
 	const source = changeSource();
 	const h = harness(undefined, source);
 	try {
 		await started(h, "", walkthrough("en"));
 		source.fire({
 			kind: "stepped",
-			step: 1,
-			of: 2,
-			heading: "All of it",
-			body: "Three parts.",
-			subjects: [],
+			step: 2,
+			of: 3,
+			heading: "One writer",
+			body: "It owns writes.",
+			subjects: [{ name: "Ledger", standing: "added", moved: [] }],
 		});
 		source.fire({ kind: "left" });
 		await settle();
 		const said = h.session.speeches.map((speech) => speech.text);
 		expect(said).toHaveLength(1);
-		expect(said[0]).toContain("All of it");
-		expect(h.session.starts[0]?.prompt).toContain(`"${leadIn(said[0])}"`);
+		const prompt = h.session.starts[0]?.prompt;
+		expect(said[0]).toContain("One writer");
+		expect(said[0]).toContain("It owns writes.");
+		expect(said[0]).toContain("Ledger (added)");
+		expect(prompt).toContain(`"${leadIn(said[0])}"`);
+		// The subjects follow words the prompt names, as a narration's do.
+		const subjectsLeadIn = said[0]?.split("\n")[1]?.split(":")[0] ?? "\0";
+		expect(prompt).toContain(`"${subjectsLeadIn}"`);
+		// Nothing tells the voice which step it is or how many there are, so it cannot open a
+		// beat with "step two" (TASK-478.02).
+		expect(said[0]).not.toMatch(/[23]/u);
 		expect(h.session.texts).toHaveLength(0);
 	} finally {
 		h.adapter.dispose();

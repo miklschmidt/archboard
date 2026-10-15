@@ -24,6 +24,7 @@ export {
 	locateSemanticBoard,
 } from "@/runtime/semantic-board-store/lib/location";
 export { listSemanticBoards } from "@/runtime/semantic-board-store/lib/listing";
+export { vaultsBoundTo } from "@/runtime/semantic-board-store/lib/bound-vaults";
 export {
 	SEMANTIC_BOARD_CONFIG_PATH,
 	SemanticBoardConfigurationSchema,

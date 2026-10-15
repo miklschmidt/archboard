@@ -164,6 +164,37 @@ describe("a talk", () => {
 	});
 });
 
+describe("a talk read against a variant", () => {
+	/** The board with a proposal beside its current variant, both stating the walkthrough. */
+	const withProposal = {
+		...BOARD,
+		variants: [
+			...BOARD.variants,
+			{ ...BOARD.variants[0]!, id: "v2", name: "Proposal", lifecycle: "draft", parent: "v1" },
+		],
+	};
+
+	/**
+	 * A talk of the proposal, read against the named variant.
+	 * @param against The variant id, as the talk states it.
+	 * @returns The talk, not yet checked.
+	 */
+	function readAgainst(against: string): Record<string, unknown> {
+		const board = { name: "Pipeline", version: 3, walkthrough: { id: "wk", name: "x" }, steps: 2 };
+		return talk({ document: withProposal, board: { ...board, variant: "v2", against } });
+	}
+
+	test("keeps the variant it is read against, so a replay draws the same comparison", () => {
+		expect(TalkSchema.parse(readAgainst("v1")).board.against).toBe("v1");
+		expect(TalkSchema.parse(talk()).board.against).toBeUndefined();
+	});
+
+	test("is refused when that variant is not on its board, or is the one it draws", () => {
+		expect(TalkSchema.safeParse(readAgainst("gone")).success).toBe(false);
+		expect(TalkSchema.safeParse(readAgainst("v2")).success).toBe(false);
+	});
+});
+
 describe("a talk's voice", () => {
 	test("is as loud on each frame as the voice meter would read it at the frame's moment, from the samples heard by then", () => {
 		// Silent for two frames, then a square wave at half scale.

@@ -10,6 +10,8 @@
 // with no current variant has no now to read against, so each of its drafts is
 // read against the one it came from, and its root draft carries nothing.
 // Reconciliation and adoption never read this: they follow the parent.
+// A caller can name the variant to read against instead (`--against`, TASK-478.01),
+// which is how a stacked proposal is drawn against the one below it.
 //
 // That reading happens on the way to a picture, so no tombstone is ever
 // written. It is shared because whatever draws — the server's render route,
@@ -80,14 +82,17 @@ function comparedWith(board: SemanticBoard, variant: SemanticVariant): SemanticV
  * @param board The board.
  * @param variant The variant being drawn.
  * @param scope The shared view selection, applied to both sides of the change.
+ * @param named The variant to read it against when the caller named one, in place of
+ * `comparedWith`.
  * @returns The content to draw and the changes to mark on it.
  */
 function drawingOf(
 	board: SemanticBoard,
 	variant: SemanticVariant,
 	scope: ViewScope = { kind: "all" },
+	named?: SemanticVariant,
 ): DrawnProposal {
-	const base = comparedWith(board, variant);
+	const base = named ?? comparedWith(board, variant);
 	if (base === undefined) {
 		return { content: scopedContent(variant.content, scope), changes: null };
 	}

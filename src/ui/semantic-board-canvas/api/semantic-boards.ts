@@ -87,10 +87,27 @@ interface SemanticRenderRequest {
 	 * in the request and in the address, and no answer to it writes anything.
 	 */
 	readonly view?: string | undefined;
+	/**
+	 * A variant id to read the variant against, in place of the one it is ordinarily read
+	 * against; the picture then carries no planned frame (TASK-478.01). A recording's replay
+	 * asks with it.
+	 */
+	readonly against?: string | undefined;
 	/** Whether to show proposal comparison treatment; defaults to true. */
 	readonly comparison?: boolean | undefined;
 	/** Which engine lays it out; the default one when absent (TASK-348). */
 	readonly layout?: LayoutEngineName | undefined;
+}
+
+/**
+ * How a request is compared, as a picture is kept: plain, compared with what the board
+ * ordinarily reads the variant against, or compared with the variant it names.
+ * @param request What is asked for.
+ * @returns The part of the key that says so.
+ */
+function comparisonKey(request: SemanticRenderRequest): string {
+	if (request.comparison === false) return "plain";
+	return request.against === undefined ? "compared" : `compared-with-${request.against}`;
 }
 
 /**
@@ -234,6 +251,7 @@ function renderQuery(request: SemanticRenderRequest): string {
 	const stated = {
 		variant: request.variant,
 		view: request.view,
+		against: request.against,
 		comparison: request.comparison === false ? "off" : undefined,
 		layout: request.layout,
 	};
@@ -370,6 +388,7 @@ export {
 	fetchLocality,
 	fetchSemanticBoardDocument,
 	fetchSemanticBoards,
+	comparisonKey,
 	fetchSemanticRender,
 	fetchVaultCheck,
 	type SemanticAtlas,

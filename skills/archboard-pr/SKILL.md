@@ -1,41 +1,47 @@
 ---
 name: archboard-pr
 description: >-
-  Give a pull request an explainer drawn with archboard boards: what the change
-  does to the architecture, to a request or data flow, to a process or state
-  progression, to infrastructure or ownership, or to the behaviour inside one
-  part. An architecture change becomes a proposal on a vault board, compared
-  with the base branch. Anything else is drawn on an ephemeral board that never
-  touches the vault. It names the parts the change can reach and embeds
-  board renders in the description. Use it for every pull request that you
-  create or update in a repository that has an .archboard/vault directory.
-  Also use it to explain a pull request.
+  Write a pull request body with three sections, Summary, Evidence and Merge
+  Danger, whose Summary shows the change on an archboard board: a proposal on
+  a vault board when the architecture changes, or an ephemeral board for a
+  flow, a process or infrastructure that the vault need not keep, with a short
+  narrated walkthrough when the change crosses several parts. A branch that
+  builds several parts of the planned architecture becomes a stack of pull
+  requests, each drawn against the one below it. Use it for every
+  pull request that you create or update in a repository that has an
+  .archboard/vault directory, or whose architecture another repository's vault
+  keeps. Also use it to explain a pull request.
 ---
 
-# Archboard pull request explainer
+# A pull request body with an archboard picture
 
-A reviewer reads a pull request one file at a time. The explainer shows first
-what the change does, why, and which callers it can reach: the parts it adds,
-removes or rewires, the order a request now takes, the process or state it
-moves through, the infrastructure it deploys. It takes one of two forms:
+A reviewer reads a pull request to learn what changes, why, and what the merge
+can break. The body answers that in three sections, and in nothing else:
 
-- **A proposal** on a board that the vault keeps, when the architecture
-  changes. After the merge, the proposal becomes the current architecture, so
-  nothing is drawn twice.
-- **An ephemeral board**, drawn only for this review in a vault of its own and
-  deleted after it. It explains whatever the vault should not keep.
+- **Summary**: the picture of the change, a few sentences, and for a change
+  across several parts a narrated walkthrough.
+- **Evidence**: a before and an after that show that the change works.
+- **Merge Danger**: whether the merge can be walked back, and what it can
+  break.
+
+The three sections follow the
+[`pr` skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/pr/SKILL.md)
+by Matt Pocock (MIT license). This skill adds the picture and the walkthrough.
+When another pull request skill is also in use, write one body: its sections
+are these three.
 
 The `archboard` skill holds every board operation, its evidence rules and its
 refusals. Read its Essentials before the first command, its propose and
 compare recipe before section 2, and the recipe of the diagram you draw
 (architecture or sequence) before section 3.
 
-A command finds its vault from the directory it runs in. Run the commands of
-sections 1, 2 and 4 inside the checkout of the pull request: they use the
-`.archboard/vault` at its root. A checkout with no such vault refuses, and a
-vault above the checkout is never used. In another directory, give
-`-C <checkout>`. Section 3 names its own directory with `-C`. The
-`archboard` skill's Essentials say how a command finds its vault.
+A command finds its vault from the directory it runs in. Run the board
+commands inside the checkout that holds the vault, or give `-C <checkout>`.
+That is usually the checkout of the pull request. When the user keeps the
+architecture in another repository, it is the checkout of that repository.
+If the pull request's checkout has no vault, a board command refuses and names
+each known vault that holds boards of its code. Use that directory as `-C`.
+The `archboard` skill's Essentials say how a command finds its vault.
 
 ## 0. Check the prerequisites
 
@@ -74,119 +80,136 @@ question that names everything missing, with two answers:
    of the Archboard server at `ARCHBOARD_URL`. Chromium or ffmpeg: name the
    exact command you will run to install it on this machine. Run the checks
    again afterwards.
-2. **No narrated walkthrough for this pull request.** The explainer is posted
-   with its still renders only, and the recording steps are not run. Without
-   Chromium, you also cannot rasterize a render to look at it, so the renders
-   are posted unseen: the question says so, and so does your final report.
+2. **No narrated walkthrough for this pull request.** The body is posted with
+   its picture only, and the recording steps are not run. Without Chromium,
+   you also cannot rasterize a render to look at it, so the picture is posted
+   unseen: the question says so, and so does your final report.
 
 This is one of the two places where you ask the user. The other is in
 [reconciling a proposal](references/reconcile.md). Decide everything else on
 your own.
 
-## 1. Decide what needs explaining
+## 1. Decide what to draw
 
 1. Name the base: the branch the pull request merges into. In a stack of pull
    requests, the base is the branch directly below this one, never the trunk.
    The [gh-stack skill](https://github.com/github/gh-stack/tree/main/skills/gh-stack),
-   if it is installed, names that branch. Each pull request of a stack gets its
-   own proposal, unless it builds part of an earlier one (section 2). Branch it
-   from the proposal of the branch below (`semantic branch --from`), and
-   compare it with that proposal (`semantic compare --against`). A render
-   reads a proposal against the current variant, and so do the parts that a
-   footprint says it names. So they also show the changes below: say so beside
-   the render.
+   if it is installed, names that branch.
 2. Read the change from the merge base: `git diff --find-renames <base>...HEAD`.
 3. List the boards with `archboard semantic`. For each board whose parts bind
    this repository, run `archboard semantic footprint <board> --base <base>`.
    Its `changed` lists the parts the commits changed. For the parts in
    `skipped`, and for each repository that it did not read, use the diff. A
-   board with no current variant refuses (`NO_CURRENT_VARIANT`): nothing on it
-   was built, and the diff says whether this change builds its draft.
-4. Name what a reviewer must understand, and pick the form from the first row
-   that fits:
+   board with no current variant refuses (`NO_CURRENT_VARIANT`): read the diff
+   instead.
+4. Pick the picture from the first row that fits:
 
-| The change                                                                                                                                | The explainer                                                                                     |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Adds, removes, renames or rewires something that a vault board draws, or changes what a part is for                                       | A proposal on that board (section 2)                                                              |
-| Adds or rewires durable architecture that no board draws                                                                                  | Draw the board as `current` from the base branch first (below), then a proposal on it (section 2) |
-| Changes a request or data flow, an ordering, a process or a state progression, or the steps inside one part, while every board stays true | An ephemeral sequence board: a `flow` through a `data-flow` view (section 3)                      |
-| Changes infrastructure, deployment topology, ownership or dependencies that no board draws and the vault need not keep                    | An ephemeral architecture board (section 3)                                                       |
-| Formatting, a rename inside one part, a dependency bump, generated files, a fix whose diff explains itself                                | No explainer: the ordinary description stands, and your final report says why                     |
+| The change                                                                                                                                          | The picture                                                                                                                                                                                                                |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Adds, removes, renames or rewires something that a vault board draws, changes what a part is for, or adds durable architecture                      | A proposal on that board (section 2). When no board draws the code, first draw the board from the base branch with the `archboard` skill's create recipe, or start it with a base draft when the base has none of the code |
+| Changes a request or data flow, an order, a process or state progression, or infrastructure, ownership or dependencies that the vault need not keep | An ephemeral board (section 3)                                                                                                                                                                                             |
+| Formatting, a rename or refactor that changes nothing a board draws, a dependency bump, generated files, a fix whose diff explains itself           | No board. The Summary uses the smallest text view that makes the point: pseudocode, a call tree, a file tree, or a diff of one of them, in a fenced block                                                                  |
 
-**Persistent or ephemeral.** Draw on a vault board only what the vault should
-keep: parts, boundaries and relationships that stay true after the merge and
-that a later reader of the vault needs, at a level the vault's boards use.
-Everything else is ephemeral: a flow drawn for one change, a before and after
-of one behaviour, an incidental helper. A pull request can need both: the
-proposal leads, and an ephemeral flow follows it as a second render.
+Draw on a vault board only what the vault should keep: parts, boundaries and
+relationships that stay true after the merge, at the level that the vault's
+boards use. A flow drawn for one change, or an incidental helper, goes on an
+ephemeral board.
 
-**Draw the missing board.** When durable architecture changes and no board
-draws the code, use the `archboard` skill's create recipe on the base branch's
-code. Draw only the area that the change touches and the parts around it that
-it can reach, and bind every part to its code. Create the board as `current`:
-it states what the base branch is. Then run step 3 again.
+5. If the branch has no pull request yet and step 4 chose a proposal, read
+   [split](references/split.md). A branch that builds more than one part of
+   the planned architecture, or one part and groundwork that no board draws,
+   becomes a stack with one pull request for each.
 
-Done: each part in `changed` is drawn by the form you chose, or you can say
-why its change needs no explanation.
+Done: each part in `changed` is in the picture you chose, or needs no picture.
 
 ## 2. Find or draw the proposal
 
-Do this for each vault board that section 1 found changed.
+Do this for each vault board that section 1 chose.
 
 1. Read the board with `archboard semantic show <board>` and note its
    `version`.
-2. Find the proposal that this pull request builds. Often the user drew it
-   before the code existed.
-   - When the pull request exists, read its body with
-     `gh pr view <number> --json body`. If the body holds the explainer, its
-     `Open it` line (section 4) names the board and the proposal: use them.
-   - Otherwise, the candidates are the variants whose `lifecycle` is `draft`.
-     A draft named after the head branch of another pull request belongs to
-     that pull request. A candidate fits in two cases: the user names it, or
-     it shows both of these signs:
-     - Its name or `summary` describes this change: the head branch, the
-       title, the summary of the pull request.
-     - The change builds what it proposes:
-       `archboard semantic footprint <board> --base <base> --variant "<draft>"`
-       lists parts under `namedAndChanged`, or the diff adds the code of a
-       part that the draft adds.
-   - If exactly one fits, use it. If several fit, use the one whose footprint
-     lists the most changed parts. A draft that shows only one sign does not
-     fit. If none fits, step 4 branches a new one.
+2. Find the proposal of this pull request:
+   - When the pull request exists, its body's state comment (section 6) names
+     the board, the proposal and what it is drawn against. A body that an
+     earlier version of this skill wrote names them in its `Open it` line.
+   - Otherwise, a draft named after the head branch is the proposal.
+   - A draft that the user drew before the code for exactly this change is
+     the proposal too: reconcile it with the code
+     ([reconcile](references/reconcile.md)).
 
-   A found proposal keeps its name for life, so never rename it after the head
-   branch. Below, `<proposal>` is its name.
+   A found proposal keeps its name for life, so never rename it after the
+   head branch. Below, `<proposal>` is its name. A found chain that was cut
+   down from a design breaks the stack rules below and cannot be repaired,
+   because its first proposal's parent is the cut design. Start a new chain
+   on a board of its own, leave the old drafts as they are, and say so in
+   your final report.
 
 3. Claim the board: `archboard claim --board <board> --reason "explaining <head branch> for its reviewers"`.
-4. If no proposal was found, branch one and name it after the head branch,
-   because a new pull request has no number yet. Branch it from the current
-   variant, or in a stack from the proposal below:
-   `archboard semantic branch <board> --as "<head branch>" --summary "<pull request title>" --expect-version <n> --doing "..."`.
-5. Edit the proposal with the propose and compare recipe. Each `edit` names it
-   with `--variant "<proposal>"`, so the current variant stays as it was.
-   Anchor every relationship you add or move in the head branch's code. Give
-   the binding of each part whose code is only on the head branch
-   `"branch": "<head branch>"`. Reconcile a found proposal with the code
-   ([reconcile](references/reconcile.md)) instead of drawing it again.
-6. Check the proposal against the code:
-   - `archboard semantic compare <board> --variant "<proposal>"` reports
-     every change the diff makes to the architecture. It reports nothing else,
-     except what the explainer lists as left for later.
-   - `archboard semantic footprint <board> --base <base> --variant "<proposal>"`:
-     each part in `changedNotNamed` and `namedNotChanged` is drawn or has a
-     reason.
-   - `archboard check --code --variant "<proposal>"` reports no warning
-     that the same run without `--variant` lacks, except on what the explainer
-     lists as left.
-7. Release the claim: `archboard release --board <board>`.
+4. If no proposal was found, branch one named after the head branch:
+   `archboard semantic branch <board> --from "<below>" --as "<head branch>" --summary "<pull request title>" --expect-version <n> --doing "..."`.
+   `<below>` is the first of these that exists:
+   - In a stack, the proposal of the nearest pull request below that has one
+     on this board.
+   - The current variant.
+   - The base draft of a board that nobody has built (below).
 
-On a board with no current variant, nothing is built yet. `footprint` refuses
-there, and `compare` refuses its first draft. Read the differences from
-`check --code --variant` and the diff, and draw only the after render.
+   For a found proposal, `<below>` is the variant it came from: its `parent`
+   in `semantic show`. Every picture and recording of the proposal is drawn
+   against `<below>`.
+
+5. Edit the proposal with the propose and compare recipe. Each `edit` names it
+   with `--variant "<proposal>"`. Anchor every relationship you add or move in
+   the head branch's code. Give the binding of each part whose code is only on
+   the head branch `"branch": "<head branch>"`.
+6. Check the proposal against the code. These checks are for you. The body
+   never quotes them.
+   - `archboard semantic compare <board> --variant "<proposal>" --against "<below>"`
+     reports every change that the diff makes to what the board draws, and
+     nothing else.
+   - `archboard semantic footprint <board> --base <base> --variant "<proposal>"`:
+     each part in `changedNotNamed` and `namedNotChanged` is drawn, or you can
+     say why its change needs no picture. On a board that nobody has built,
+     footprint refuses: read the diff instead.
+   - `archboard check --code --variant "<proposal>"` reports no warning that
+     the same run without `--variant` lacks. It reads the draft of that name
+     on every board, and it skips a part whose binding names a branch that is
+     not checked out, such as a part of a lower pull request in a stack.
+7. Release the claim: `archboard release --board <board>`.
 
 When the vault is inside this repository and Git tracks it, commit the changed
 `.semantic.json` file on the head branch. The reviewer then reads the board
 change in the same diff as the code.
+
+### A board that nobody has built
+
+When the base branch has none of the code that a board draws, the board has
+no current variant. A proposal must still be drawn against something, so the
+board starts with a first draft that states the base:
+`archboard semantic new <board> --input base.json --doing "..."`, where
+`base.json` holds the board's `level`, `"lifecycle": "draft"`, a `summary`
+that names the base branch, and only the parts that already exist and that
+the change connects to, such as an API it calls. A proposal branched from it
+reads as added, except for those existing parts.
+
+### A stack of pull requests
+
+A stack explains one design across several pull requests. The reader of each
+pull request must see where its change sits in that design.
+
+- Each board that the stack changes carries one chain of proposals. A pull
+  request's proposal is branched from the proposal of the nearest pull
+  request below that has one on that board, and it is drawn against it, so it
+  marks only its own change.
+- Each proposal holds what is built up to and including its pull request.
+- Name every part as the design names it. When two design boards name the
+  same thing, use the names of the board at the level you draw.
+- Draw a finer part inside the design part it belongs to, on the same board.
+  A finer part that serves two design parts sits beside them. A drill-down
+  board would need a base draft of its own.
+- A design drawn before the code, which several pull requests build, stays a
+  draft. Never cut it down into the first proposal: the cut parts read as
+  removed. If the design's board has nothing built, draw the stack on a board
+  of its own that starts with a base draft.
 
 ## 3. Draw an ephemeral board
 
@@ -194,119 +217,161 @@ An ephemeral board lives in a temporary vault that an Archboard server of its
 own serves, so nothing reaches the repository's vault or its server. Follow
 [ephemeral boards](references/ephemeral.md), which gives every command:
 
-1. Make a temporary directory with a `.archboard/vault` inside it that holds a
-   copy of the vault's `config.yaml`. Point `ARCHBOARD_URL` (a free loopback
-   port) at a server of its own, and start it. Give `-C <temporary directory>`
-   to every command after that. Before the first write, the
-   `configurationFile` that `semantic config` names must be inside the
-   temporary vault, which proves that the commands name it.
+1. Make the temporary vault and start its server.
 2. Draw the base branch's code as the current variant, with the parts named as
    the vault's boards name them. Branch a draft named after the head branch,
-   and restate what the head branch does with the ids you were given. A flow
-   that the base lacks goes on a board created as a draft, with no before.
+   and restate what the head branch does with the ids you were given.
 3. Check the draft as section 2 step 6 does.
-4. Keep the server for the renders and the walkthrough (section 4 steps 2 and
-   3), then stop it, forget and delete the vault and restore `ARCHBOARD_URL`.
+4. Keep the server for the picture and the walkthrough, then tear it down.
 
-Done: `compare` reports every change the diff makes to what the board draws.
-After section 4 step 3, the server is stopped, its vault is forgotten and
-deleted, and the repository's vault is unchanged.
+Done: `compare` reports every change the diff makes to what the board draws,
+and the repository's vault is unchanged.
 
-## 4. Write the explainer
+## 4. Draw the picture
 
-A reviewer's main problem is to understand the change, and above all why it
-was made. The explainer gives that understanding and a route through the diff,
-so the review takes less time and misses less. It points at the code and never
-stands in for it. Read every statement from the `compare` and `footprint`
-answers and the diff, not from the change you meant to draw.
+Draw it with [renders](references/renders.md). In short:
 
-Read [the explainer reference](references/explainer.md) before step 1. It
-gives the evidence for each part, more on splitting a large review, and the
-anti-patterns.
+1. Draw one picture. Add a second when the change moves both structure and a
+   flow (one architecture picture and one sequence), or when one picture of
+   every added part cannot be read at the size it will show (one picture for
+   each design part).
+2. Draw it through a view of the changed parts and their direct neighbours.
+   In a stack, use the view of the design parts that the pull request builds,
+   named `Inside <design part>` or `Inside <part> and <part>`, and share it
+   with the other pull requests that build inside those parts.
+3. Draw it `--against "<below>"`. The picture then marks only this pull
+   request's change, and it has no planned frame.
+4. Give it a title that names where it sits and what it adds, such as
+   `--title "Inside Board store: the lease table replaces lock files"`.
 
-1. **Size the review.** Count the changed lines with
-   `git diff --numstat <base>...HEAD`, without generated, lock and snapshot
-   files. Above about 400 lines, or with more than one independent purpose,
-   split the review into passes. Each pass is one named group of related parts,
-   with one purpose and a rough size. The riskiest pass comes first. Done: the
-   review is one pass, or each pass has a name, a purpose and a size.
-2. **Draw the renders** with [renders](references/renders.md): Blocks, one
-   view, one `--theme auto` file for each render. Done: the files are in
-   `$tmp`, and you looked at the after render at the size it will show.
-3. **Decide on a walkthrough video.** Skip it if the user chose no walkthrough
-   in section 0. Otherwise, record one at the user's request, and for a change
-   with many interacting parts. Any one of these signs is enough:
-   - Three or more relationships or steps change across three or more parts.
-   - An ordering or a protocol matters.
-   - The reviewer must follow a path through several parts.
+Done: you looked at the picture at the size it will show, and every part that
+`compare` reports as added or removed is on it.
 
-   A change of one or two parts gets no video, because the after render
-   already shows it. These thresholds are judgement. To record, follow
-   [walkthrough](references/walkthrough.md). Done: the video, its chapters and
-   its transcript are in `$tmp`, or you can name the sign that is missing.
+## 5. Record a walkthrough
 
-4. **Write the parts in this order** into `$tmp/body.md`:
-   1. **Why**: one or two sentences on the need or the problem and how urgent
-      it is, never the files. Then one shortcoming accepted or one alternative
-      rejected, with the reason.
-   2. **The after render**, with its drawn title and key
-      ([renders](references/renders.md#title-key-and-alt-text)). Under it, the
-      before render in a collapsed `<details>`.
-   3. **The walkthrough**: for a recorded video, the block that
-      [walkthrough](references/walkthrough.md#in-the-pull-request) gives.
-   4. **What changed**: the interface changes first (`interfaceChanges`), each
-      with the callers it gains and loses. Then the parts added and removed,
-      then each relationship and step that is not `unchanged`, with where it
-      now lands. Use the board's names.
-   5. **Changed but not drawn**: each part in `changedNotNamed`, each
-      `RELATIONSHIP_UNDRAWN` warning, and the diff's code that no part binds,
-      each with its reason. If there is none, write "Nothing".
-   6. **What it can reach**: each caller of a changed entry point, and each
-      part with a relationship to a changed part. Give each one concrete
-      question to check.
-   7. **Reading order**: a numbered list of files, each with the part it
-      implements, grouped by pass. Inside a group, a part comes before the
-      parts that call or read it.
-   8. **Where to look closely**: the seam or invariant the change relies on,
-      and what to check there. Give a place to look, not a verdict on the code.
-   9. **Proposed and built**, for a proposal drawn before the code: what this
-      pull request builds of it, each difference from it and why, and what is
-      left for later. `compare` and the after render show the whole proposal,
-      so **What changed** names only what this pull request builds.
-   10. For a proposal, **Open it**: one line for each board,
-       `archboard semantic compare "<board>" --variant "<proposal>"`, with the
-       exact names. A reviewer with the vault runs it, and an update of the
-       pull request reads the names from it. For an ephemeral board, **About
-       the picture**: one line saying that it is an ephemeral board, drawn from
-       the code at `<base>` and the head branch and kept in no vault, and that
-       an update of the pull request draws it again from the code.
+Skip this if the user chose no walkthrough in section 0. Otherwise, record one
+when the user asks, or when the change crosses three or more parts, or when an
+order or a protocol matters. A change of one or two parts gets no video: the
+picture already shows it.
 
-   Done: each part is written, except a walkthrough you did not record and
-   **Proposed and built** for anything but a proposal drawn before the code.
+Follow [walkthrough](references/walkthrough.md): one beat for each point the
+reviewer needs, drawn like the picture and against the same variant. The
+first beat says why the change exists and where it sits. The last says where
+to look closely.
 
-5. **Check before you post.** Done: every line holds.
-   - [ ] **Why** names the problem, its urgency, and one rejected alternative
-         or accepted shortcoming.
-   - [ ] Every statement under **What changed** comes from `compare` or
-         `footprint`. **Changed but not drawn** lists each part, or says
-         "Nothing".
-   - [ ] The after render comes first. It is drawn with Blocks, through a view
-         of the changed parts, with `--theme auto`, `--title` and
-         `--legend horizontal`. It has alt text. The before render is
-         collapsed under it.
-   - [ ] Each part under **What it can reach** has one question to check.
-   - [ ] The reading order is grouped, with the riskiest group first. A change
-         above about 400 lines is split into passes.
-   - [ ] A video has three to six beats and is under 10 MB. It is drawn with
-         Blocks, like the renders, and has chapters and a transcript.
-   - [ ] The explainer reads in a few minutes. File lists and API detail stay
-         in the diff.
+Done: the video, its chapters and its transcript are in `$tmp`, or you can
+name why there is none.
 
-## 5. Put it in the pull request
+## 6. Write the body
 
-The explainer is one section between `<!-- archboard-pr:begin -->` and
-`<!-- archboard-pr:end -->`. On an update, replace only the text between the
-markers. Text outside them belongs to the author and reviewers.
+Write the body into `$tmp/body.md` in this shape. The example is a change to
+archboard's own renderer:
+
+```markdown
+<!-- archboard-pr:begin -->
+<!-- archboard-pr board="Semantic renderer" proposal="TASK-467" against="TASK-464" -->
+
+## Summary
+
+A picture exported into a pull request or a document had no name for what it shows, so every author wrote a caption by hand. `semantic render` and `semantic rasterize` now draw a title above the picture: the given text, or the board, view and variant names.
+
+![Inside Renderer core: the export frame wraps the painted page and draws the title band](/tmp/pr/after.svg)
+
+**Walkthrough**, 1:12, narrated.
+
+![](/tmp/pr/walkthrough.mp4)
+
+<details><summary>Transcript</summary>
+
+**0:01 An exported picture names itself.** ...
+
+**0:24 The export frame wraps the page.** ...
+
+**0:51 Where to look: the page moves whole.** ...
+
+</details>
+
+## Evidence
+
+- **Before:** `archboard semantic render pipeline --title --out a.svg` is refused: unknown option `--title`.
+  **After:** `bun test src/runtime/semantic-renderer/tests/export-title.test.ts` passes: the titled page is the untitled one moved down by the band, and a wide title widens the page.
+
+## Merge Danger
+
+**Door:** two-way
+
+**Blast Radius:** exports
+
+Every exported picture now passes through the export frame. Without a title it must return the page untouched. Look at `framedForExport` in `lib/svg/export-frame.ts`.
+<!-- archboard-pr:end -->
+```
+
+**The state comment** is the second line. It names the board, the proposal
+and `against="<below>"`. When the vault is in another repository, it also
+names that repository as bindings name it, such as
+`vault="github.com/<owner>/<name>"`. An ephemeral board
+writes `<!-- archboard-pr ephemeral -->`, because an update draws it again
+from the code. The comment is for the next agent that updates the body. The
+reader never sees it.
+
+**Summary.**
+
+- In a stack, the first line gives the position, the design and the
+  neighbours: `Part 10 of 18 of device trust (#589). Below: #606. Next: #608.`
+  Count every pull request of the stack from the bottom, the design's pull
+  request included. A design with no pull request of its own has no number.
+- Then one to three sentences: the problem or need, and what the change does
+  about it. Use the repository's domain words: its glossary (`CONTEXT.md`,
+  `GLOSSARY.md` or similar) and the names that the picture carries.
+- Then the picture, with alt text that says what it shows, not the file name.
+  If a card carries a triangle on its top-right corner, say under the picture
+  that it marks a disagreement with the current variant that nobody settled.
+- Then the walkthrough. Its chapters are the bold headings of the transcript,
+  collapsed with it. The sentences above the picture do not repeat the
+  walkthrough: they are the short version, and it is the long one.
+
+**Evidence.** One before and one after. A test that fails before and passes
+after is best: name the test and what it checks. For new code with no before,
+show the test or the output that covers it. In a stack, the pull request's own
+CI run is evidence. Name the one or two tests that show the change best, not
+every test that covers it. A visible change gets a screenshot.
+
+**Merge Danger.** The door is one-way when the merge does something that a
+revert cannot undo, such as a migration, a deletion or a key rotation, and
+two-way otherwise. Blast Radius is one word, then one or two sentences: which
+callers or users can break, and the one place to look first. Find the callers
+in the parts that have a relationship to a changed part.
+
+**The body never contains:**
+
+- archboard's own words, unless the change is about archboard itself:
+  variant, proposal, vault, footprint, ephemeral, board version, claim,
+  receipt, or a command that opens or compares a board.
+- How the picture, the video or a test result was made, or where and when you
+  ran anything.
+- A list of what the pull request does not do or does not claim. One
+  sentence, `Not in this pull request: …`, is allowed when a reader would
+  otherwise expect it.
+- A paragraph copied from another pull request's body.
+- Status news, such as a CI fix. That goes in a pull request comment.
+
+Check before you post. Done: every line holds.
+
+- [ ] The sections are Summary, Evidence and Merge Danger, in that order, and
+      nothing stands between them.
+- [ ] The visible body reads in about two minutes. The Summary has at most
+      three sentences above the picture, after the stack line.
+- [ ] No sentence breaks the never-list.
+- [ ] The picture is drawn with Blocks, `--theme auto`, a title and a
+      horizontal legend, against `<below>`, and it has alt text.
+- [ ] Each beat of a video makes one point, and the transcript is collapsed
+      under the video.
+
+## 7. Put it in the pull request
+
+The body is one section between `<!-- archboard-pr:begin -->` and
+`<!-- archboard-pr:end -->`. On an update, replace all of the text between
+the markers. Text outside them belongs to the author and reviewers.
 
 Post it with [posting](references/posting.md): upload the files with gh
 `--attach` (gh 2.99 or later), with each render as one Markdown image.
@@ -318,19 +383,18 @@ Then read the body back. Done:
 - Each render is an uploaded image with alt text.
 - The video's URL stands alone on its line.
 
-## 6. After the merge
+## 8. After the merge
 
 An ephemeral board needs nothing: it was deleted with its vault.
 
 For a proposal: when the pull request merges, its code is on the default
 branch. So restate each binding that names the head branch without its
-`branch`. When all of the proposal is on the default branch, adopt it:
+`branch`. Then adopt the proposal:
 `archboard semantic adopt <board> --variant "<proposal>" --reason "<what the pull request changed>" --expect-version <n> --doing "..."`.
-While another open pull request still builds part of it, the proposal stays a
-draft. A refusal as `PARENT_SUPERSEDED` means another proposal was
-adopted first. The `archboard` skill's variants reference says how to state
-the change again.
+A stack merges from the bottom, so its proposals are adopted in that order. A
+refusal as `PARENT_SUPERSEDED` means that another proposal was adopted first.
+The `archboard` skill's variants reference says how to state the change again.
 
-When the pull request closes without a merge, shelve a proposal that it drew,
-with that reason. A proposal drawn before the code can outlive the pull
-request: leave it a draft, and say so in your final report.
+When the pull request closes without a merge, shelve its proposal with that
+reason. A design drawn before the code stays a draft until all of it is
+built. Then shelve it, because the adopted proposals state what was built.

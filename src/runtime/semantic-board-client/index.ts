@@ -189,6 +189,7 @@ async function readSemanticBoardOnServer(board: string): Promise<SemanticBoard> 
  * @param options Which variant and which theme.
  * @param options.variant The variant to draw; the current one when absent.
  * @param options.view A view id or name; the whole variant when absent.
+ * @param options.against A variant id or name to read the variant against; the board's own reading when absent.
  * @param options.theme Which colour scheme to draw for, or `auto` for both.
  * @param options.fonts Where the drawn faces come from; embedded makes the file self-contained.
  * @param options.layout Which layout engine lays it out; the default one when absent.
@@ -204,6 +205,7 @@ async function renderSemanticBoardOnServer(
 	options: {
 		variant?: string;
 		view?: string;
+		against?: string;
 		theme?: StandaloneTheme;
 		fonts?: FontSource;
 		layout?: LayoutEngineName;
