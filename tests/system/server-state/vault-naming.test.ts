@@ -9,10 +9,13 @@ import {
 	rmSync,
 	writeFileSync,
 } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { WebSocket } from "ws";
 
+import { createRepositoryFixture } from "../cli/support/repository-fixture.ts";
+import { packageBin } from "../cli/support/package-cli.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
 import { createRequester, waitFor } from "./support/http.ts";
@@ -267,8 +270,56 @@ describe.serial("every call names its vault", () => {
 		});
 		expect(outcome).toBe("refused");
 
-		// The browser learns the one vault the server reports.
-		const served = await request<{ vault: string }>("/api/served-vault", { vault: false });
+		// A page opens in the vault a set ARCHBOARD_VAULT names.
+		const served = await request<{ vault: string | null }>("/api/served-vault", { vault: false });
 		expect(served.body.vault).toBe(realpathSync(join(root, "vault")));
+	}, 60_000);
+
+	test("a server started without a vault opens a page in the first ready repository by name, or in none", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = createRepositoryFixture();
+		resources.defer(() => fixture.dispose());
+		const server = await startOwnedServer({
+			serverPath: join(
+				repoRoot,
+				"tests/system/process-contracts/fixtures/server-start-environment.ts",
+			),
+			vault: fixture.vault,
+			env: {
+				...fixture.serverEnvironment,
+				ARCHBOARD_TEST_SERVER_ENTRY: join(repoRoot, "src/server.ts"),
+				ARCHBOARD_TEST_BIND_MODE: "no-vault",
+			},
+		});
+		resources.defer(() => server.dispose());
+		const opening = async () => {
+			const servedVault = (await (await fetch(`${server.base}/api/served-vault`)).json()) as {
+				vault: string | null;
+			};
+			const listing = (await (
+				await fetch(`${server.base}/api/repositories`, {
+					headers: { Origin: server.base, "Sec-Fetch-Site": "same-origin" },
+				})
+			).json()) as { repositories: { vault: string | null }[]; served: string | null };
+			return { vault: servedVault.vault, served: listing.served, listed: listing.repositories };
+		};
+
+		// No repository with a vault is known, and nothing stands in for one.
+		expect(await opening()).toEqual({ vault: null, served: null, listed: [] });
+
+		const vaults = ["zeta", "alpha"].map((name) => {
+			const holder = join(fixture.root, name);
+			mkdirSync(join(holder, ".archboard", "vault"), { recursive: true });
+			const added = spawnSync(packageBin, ["repo", "add", holder], {
+				cwd: fixture.nowhere,
+				env: fixture.serverEnvironment,
+				encoding: "utf8",
+			});
+			expect(added.status, added.stderr).toBe(0);
+			return realpathSync(join(holder, ".archboard", "vault"));
+		});
+		const now = await opening();
+		expect([now.vault, now.served]).toEqual([vaults[1]!, vaults[1]!]);
+		expect(now.listed).toHaveLength(2);
 	}, 60_000);
 });

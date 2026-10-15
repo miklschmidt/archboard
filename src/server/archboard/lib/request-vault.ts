@@ -32,7 +32,7 @@ type NamedVault =
 
 const HOW_TO_NAME =
 	"Name it: `?vault=<absolute path of the vault directory>` on the API, or a `vault` field in the " +
-	"request body. The command line names its own vault from ARCHBOARD_VAULT.";
+	"request body. A command line finds its vault from the directory it runs in, or from `-C <dir>`.";
 
 /**
  * The refusal for a call that named no vault.
@@ -104,8 +104,7 @@ function namedVault(raw: unknown): NamedVault {
 }
 
 /**
- * The vault the server was started with, canonical. The browser is told it
- * until it has a navigator of its own, and the Codex workbench serves it.
+ * A vault the environment names, canonical: where a page opens while `ARCHBOARD_VAULT` is set.
  * @param configured The configured vault directory.
  * @returns The canonical path, or the resolved one when it is not a directory yet.
  */

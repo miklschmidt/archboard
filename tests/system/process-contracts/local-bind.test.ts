@@ -79,7 +79,7 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 	}
 }, 20_000);
 
-test("rejects foreign health, recovers the port, and refuses no-vault startup", async () => {
+test("rejects foreign health, recovers the port, and starts without a vault", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-local-bind-refusal-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
@@ -115,15 +115,18 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 		expect(recovered.pid).toBeNumber();
 		await recovered.dispose();
 
-		const noVaultPort = await availablePort();
-		const noVault = await runOwnedPeerToExit({
-			argv: [process.execPath, fixture],
-			env: { ...fixtureEnv(root, vault, "no-vault"), PORT: String(noVaultPort) },
+		// The server needs no vault, because every call names its own (ADR 0049).
+		const noVault = await startOwnedServer({
+			serverPath: fixture,
+			port: await availablePort(),
+			vault,
+			env: fixtureEnv(root, vault, "no-vault"),
 		});
-		expect(noVault.code).not.toBe(0);
-		for (const text of ["no vault", "install-skill", "ARCHBOARD_VAULT"]) {
-			expect(`${noVault.stdout}${noVault.stderr}`).toContain(text);
-		}
+		resources.defer(() => noVault.dispose());
+		const noVaultHealth = await fetch(`${noVault.base}/health`);
+		expect(noVaultHealth.status).toBe(200);
+		expect(HealthSchema.parse(await noVaultHealth.json()).pid).toBe(noVault.pid!);
+		await noVault.dispose();
 
 		const cliEnv = sanitizedEnvironment(root, vault);
 		delete cliEnv["ARCHBOARD_VAULT"];
