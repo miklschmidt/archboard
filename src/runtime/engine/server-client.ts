@@ -73,8 +73,6 @@ interface HealthStatus {
 	status: string;
 	service?: string;
 	pid?: number;
-	/** How many boards the vault holds. */
-	boards?: number;
 	/** How many browsers are looking at this server. */
 	websocket_clients?: number;
 	/** Whether this process is running the source that is on disk now. */

@@ -15,27 +15,6 @@ const ARCHBOARD_NO_AUTOSTART = process.env["ARCHBOARD_NO_AUTOSTART"] === "1";
 const ARCHBOARD_VAULT = process.env["ARCHBOARD_VAULT"] || undefined;
 
 /**
- * What a script that builds into the vault `ARCHBOARD_VAULT` names says when
- * the variable is unset. Its one reader is `scripts/build-pipeline-example.ts`;
- * a command finds its vault itself and never says this.
- * @returns The refusal text, ready to print.
- */
-function noVaultMessage(): string {
-	return [
-		"ARCHBOARD_VAULT is not set, so there is no vault to build into.",
-		"",
-		"Boards are files in a vault directory, and choosing one is part of installing",
-		"archboard into a repository:",
-		"",
-		"  archboard install-skill",
-		"",
-		"Then run this again with the vault set:",
-		"",
-		"  export ARCHBOARD_VAULT=/path/to/vault",
-	].join("\n");
-}
-
-/**
  * The refusal for the server URL's old name, before archboard named its own environment
  * (TASK-310). A shell or `.envrc` that still sets it would otherwise have its server ignored and
  * another started on the default port, over the same vault.
@@ -47,10 +26,4 @@ function renamedUrlMessage(): string | null {
 		: "EXPRESS_SERVER_URL is now ARCHBOARD_URL. Rename it where it is set (a shell profile, an .envrc or a .env file), then run the command again.";
 }
 
-export {
-	ARCHBOARD_URL,
-	renamedUrlMessage,
-	ARCHBOARD_NO_AUTOSTART,
-	ARCHBOARD_VAULT,
-	noVaultMessage,
-};
+export { ARCHBOARD_URL, renamedUrlMessage, ARCHBOARD_NO_AUTOSTART, ARCHBOARD_VAULT };

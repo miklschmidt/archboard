@@ -50,7 +50,7 @@ const paneRef = { paneId: "pane-right", clientId: "client-right", place: "right"
  */
 function answerFor(method: string, url: URL): Response | null {
 	if (method === "GET" && url.pathname === "/api/sync/status") {
-		return Response.json({ success: true, boards: [], timestamp: new Date().toISOString() });
+		return Response.json({ success: true, timestamp: new Date().toISOString() });
 	}
 	if (method === "GET" && url.pathname === "/api/panes") {
 		return Response.json({
