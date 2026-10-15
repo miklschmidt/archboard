@@ -37,9 +37,11 @@ function useDrillRepositories(
 	}, [listed]);
 	const dive = useCallback<Dive>(
 		(stop) => {
-			// A vault the navigator does not list has no name to move the pane by.
-			const name = listed?.find((each) => each.vault === stop.vault)?.name;
-			if (name === undefined) return Promise.resolve(false);
+			// A vault the navigator no longer lists, such as a checkout chosen away
+			// since, is asked for by the repository it was in, so the shell says why
+			// it cannot show it rather than the crumb doing nothing.
+			const name =
+				listed?.find((each) => each.vault === stop.vault)?.name ?? stop.repository ?? stop.vault;
 			return openBoard(boardKeyFor(stop.board, stop.variant), name);
 		},
 		[listed, openBoard],
