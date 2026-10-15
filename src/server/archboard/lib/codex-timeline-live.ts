@@ -1,7 +1,8 @@
 // What the timeline shows that thread history never carries: the latest plan
 // Codex published for each turn and the thread's latest token usage. Both
 // arrive only as notifications, so they are held here, keyed by the wire
-// spelling of their ids, and bounded so a long-lived server cannot grow.
+// spelling of their ids, and bounded so a long-lived server cannot grow. Which thread a
+// notification is about is read here too.
 
 import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import type { ThreadId, TrustedIdentityDecoder } from "@/shared/codex-workbench-identity";
@@ -121,5 +122,44 @@ function createTimelineLiveHolder(
 	return Object.freeze(holder);
 }
 
-export { createTimelineLiveHolder, TIMELINE_PLANS_HELD, TIMELINE_USAGES_HELD };
+/**
+ * Whether a value is a plain object that can be read by key.
+ * @param value Anything a notification carried.
+ * @returns True for a non-null, non-array object.
+ */
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * The thread one notification is about, read from its parameters or, for a
+ * thread that has just started, from the thread it carries.
+ * @param event The notification.
+ * @returns The thread as the wire spells it, or null.
+ */
+function eventThreadId(event: TransportServerNotification): string | null {
+	const params = event.notification.params;
+	if (!isRecord(params)) {
+		return null;
+	}
+	if (typeof params["threadId"] === "string") {
+		return params["threadId"];
+	}
+	return event.notification.method === "thread/started" ? startedThreadId(params) : null;
+}
+
+/**
+ * The thread a thread/started notification carries.
+ * @param params The notification's parameters.
+ * @returns The thread as the wire spells it, or null.
+ */
+function startedThreadId(params: Readonly<Record<string, unknown>>): string | null {
+	const thread = params["thread"];
+	if (!isRecord(thread) || typeof thread["id"] !== "string") {
+		return null;
+	}
+	return thread["id"];
+}
+
+export { eventThreadId, createTimelineLiveHolder, TIMELINE_PLANS_HELD, TIMELINE_USAGES_HELD };
 export type { TimelineLiveHolder };

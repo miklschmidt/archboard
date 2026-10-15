@@ -103,3 +103,43 @@ test("a target's timeline is read from its own thread, re-read on that thread's 
 	expect(reads).toEqual([first, first, second, second]);
 	owner.dispose();
 });
+
+test("a target read shows only the turns its reader keeps, and every turn to a reader that keeps all", async () => {
+	const authorities = createIdentityAuthorities();
+	const decoder = authorities.identity.decoder;
+	const thread = decoder.adoptThreadId("coordinator");
+	const owner = createServerTimelineOwner({
+		session: {
+			threadTurnsListPage: async (): Promise<SessionThreadTurnPageResult> => ({
+				data: [turnFixture(authorities, "turn-one", []), turnFixture(authorities, "turn-two", [])],
+				nextCursor: null,
+				backwardsCursor: null,
+			}),
+			timelineListPage: async () => ({
+				data: [],
+				nextCursor: null,
+				activeRealtimeSessionAtPageStart: null,
+			}),
+		},
+		identity: decoder,
+		approvals: { inspectViews: () => [] },
+		onChange: () => undefined,
+	});
+	const { childId, epoch } = authorities.identity.validator;
+	const target = { key: "coordinator", threadId: thread, childId, epoch };
+	const connection = {};
+	type Turn = Parameters<typeof decoder.serializeCodexIdentity>[0];
+	const turnsShown = (keepTurn?: (turnId: Turn) => boolean) =>
+		owner
+			.readTarget("pane", target, true, connection, keepTurn)
+			?.turns.map(({ turn }) => decoder.serializeCodexIdentity(turn.id));
+	turnsShown();
+	await flush();
+
+	expect(turnsShown()?.toSorted()).toEqual(["turn-one", "turn-two"]);
+	// One conversation shows only the coordinator turns that belong to it (ADR 0050).
+	expect(turnsShown((turnId) => decoder.serializeCodexIdentity(turnId) === "turn-two")).toEqual([
+		"turn-two",
+	]);
+	owner.dispose();
+});

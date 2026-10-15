@@ -8,6 +8,7 @@ import {
 	ManageWorkhorseQueueInputSchema,
 	ResolveSpokenApprovalInputSchema,
 	SteerWorkhorseInputSchema,
+	StopWorkhorsesInputSchema,
 	parseCoordinatorToolInput,
 	type CoordinatorToolName,
 	type DelegateToWorkhorseInput,
@@ -16,6 +17,7 @@ import {
 	type NamespaceName,
 	type ResolveSpokenApprovalInput,
 	type SteerWorkhorseInput,
+	type StopWorkhorsesInput,
 } from "@/runtime/codex-coordinator-tool-contract";
 import type { CodexCoordinatorToolsOptions } from "@/runtime/codex-coordinator-tools/lib/contract";
 import {
@@ -51,6 +53,7 @@ type CoordinatorToolInput =
 	| DelegateToWorkhorseInput
 	| ManageWorkhorseQueueInput
 	| SteerWorkhorseInput
+	| StopWorkhorsesInput
 	| ResolveSpokenApprovalInput;
 
 /** The reviewed namespace and tool name pair a logical call may carry. */
@@ -73,6 +76,7 @@ type ParsedToolInput =
 	| { readonly tool: "delegate_to_workhorse"; readonly input: DelegateToWorkhorseInput }
 	| { readonly tool: "manage_workhorse_queue"; readonly input: ManageWorkhorseQueueInput }
 	| { readonly tool: "steer_workhorse"; readonly input: SteerWorkhorseInput }
+	| { readonly tool: "stop_workhorses"; readonly input: StopWorkhorsesInput }
 	| { readonly tool: "resolve_spoken_approval"; readonly input: ResolveSpokenApprovalInput };
 
 interface ValidatedCallEvidence {
@@ -107,6 +111,21 @@ type ValidatedWorkhorseCall = ValidatedCallEvidence & {
 		  }
 	);
 
+/**
+ * A stop names no checkout, so it has no workhorse binding to resolve and proves no turn: the
+ * server finds the workhorses of the tab session itself.
+ */
+type ValidatedStopCall = ValidatedCallEvidence & {
+	readonly namespace: "archboard_workhorse";
+	readonly tool: "stop_workhorses";
+	readonly input: StopWorkhorsesInput;
+	readonly workhorseBinding: null;
+	readonly expectedTurnId: null;
+};
+
+/** A call whose effect runs under a server-issued operation identity. */
+type ValidatedOperationCall = ValidatedWorkhorseCall | ValidatedStopCall;
+
 type ValidatedVoiceCall = ValidatedCallEvidence & {
 	readonly namespace: "archboard_voice";
 	readonly tool: "resolve_spoken_approval";
@@ -115,7 +134,7 @@ type ValidatedVoiceCall = ValidatedCallEvidence & {
 	readonly expectedTurnId: null;
 };
 
-type ValidatedCoordinatorToolCall = ValidatedWorkhorseCall | ValidatedVoiceCall;
+type ValidatedCoordinatorToolCall = ValidatedOperationCall | ValidatedVoiceCall;
 
 /**
  * Canonical text for the queue operations that name exactly one submission.
@@ -169,7 +188,7 @@ function canonicalQueueInput(value: ManageWorkhorseQueueInput): string {
 /**
  * Canonical text for any tool input, so equal arguments always hash equally. A workhorse tool's
  * text leads with the checkout it names, because the same arguments in another checkout are work
- * for another workhorse (ADR 0050).
+ * for another workhorse (ADR 0050). A stop names none, so its canonical input is empty.
  * @param parsed - The tool and its parsed input.
  * @returns The JSON text to hash.
  */
@@ -187,6 +206,8 @@ function canonicalInput(parsed: ParsedToolInput): string {
 			return canonicalQueueInput(parsed.input);
 		case "steer_workhorse":
 			return JSON.stringify({ checkout: parsed.input.checkout, input: parsed.input.input });
+		case "stop_workhorses":
+			return JSON.stringify({});
 		default:
 			return JSON.stringify({ verdict: parsed.input.verdict });
 	}
@@ -225,6 +246,8 @@ function taggedInput(tool: CoordinatorToolName, parsed: unknown): ParsedToolInpu
 			return { tool, input: ManageWorkhorseQueueInputSchema.parse(parsed) };
 		case "steer_workhorse":
 			return { tool, input: SteerWorkhorseInputSchema.parse(parsed) };
+		case "stop_workhorses":
+			return { tool, input: StopWorkhorsesInputSchema.parse(parsed) };
 		default:
 			return { tool, input: ResolveSpokenApprovalInputSchema.parse(parsed) };
 	}
@@ -296,7 +319,10 @@ function steerExpectedTurnId(options: CodexCoordinatorToolsOptions): TurnId {
 function workhorseCall(
 	options: CodexCoordinatorToolsOptions,
 	evidence: ValidatedCallEvidence,
-	parsed: Exclude<ParsedToolInput, { readonly tool: "resolve_spoken_approval" }>,
+	parsed: Exclude<
+		ParsedToolInput,
+		{ readonly tool: "resolve_spoken_approval" | "stop_workhorses" }
+	>,
 	binding: WorkhorseOperationBinding,
 ): ValidatedWorkhorseCall {
 	const namespace = "archboard_workhorse" as const;
@@ -348,6 +374,15 @@ function validateCoordinatorToolRequest(
 			expectedTurnId: null,
 		});
 	}
+	if (parsed.tool === "stop_workhorses") {
+		return Object.freeze({
+			...evidence,
+			namespace: "archboard_workhorse",
+			...parsed,
+			workhorseBinding: null,
+			expectedTurnId: null,
+		});
+	}
 	return workhorseCall(
 		options,
 		evidence,
@@ -391,6 +426,8 @@ function logicalCallKey(call: LogicalToolCallCorrelation): string {
 export {
 	type CoordinatorToolInput,
 	type ValidatedCoordinatorToolCall,
+	type ValidatedOperationCall,
+	type ValidatedStopCall,
 	type ValidatedVoiceCall,
 	type ValidatedWorkhorseCall,
 	CoordinatorToolValidationError,

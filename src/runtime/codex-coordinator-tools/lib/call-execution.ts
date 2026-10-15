@@ -2,8 +2,8 @@ import {
 	CoordinatorToolValidationError,
 	validateCoordinatorToolRequest,
 	type ValidatedCoordinatorToolCall,
+	type ValidatedOperationCall,
 	type ValidatedVoiceCall,
-	type ValidatedWorkhorseCall,
 } from "@/runtime/codex-coordinator-tools/lib/validation";
 import type {
 	CodexCoordinatorToolsOptions,
@@ -145,7 +145,7 @@ function spokenResult(
  * @returns An unknown outcome for a mutation, a refusal for a read.
  */
 function cancelledWorkhorseResult(
-	validated: ValidatedWorkhorseCall,
+	validated: ValidatedOperationCall,
 	operation: IssuedOperationIdentity,
 ): CoordinatorToolDispatchResult {
 	if (isMutation(validated)) {
@@ -174,7 +174,7 @@ function cancelledWorkhorseResult(
 function workhorseResult(
 	context: ExecutionContext,
 	state: CallState,
-	validated: ValidatedWorkhorseCall,
+	validated: ValidatedOperationCall,
 	operation: IssuedOperationIdentity,
 	result: unknown,
 ): CoordinatorToolDispatchResult {
@@ -200,7 +200,7 @@ type CallPlan =
 	| { readonly kind: "voice"; readonly validated: ValidatedVoiceCall }
 	| {
 			readonly kind: "workhorse";
-			readonly validated: ValidatedWorkhorseCall;
+			readonly validated: ValidatedOperationCall;
 			readonly operation: IssuedOperationIdentity;
 	  };
 

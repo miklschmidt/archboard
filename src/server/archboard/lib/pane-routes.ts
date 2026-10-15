@@ -29,6 +29,9 @@ import {
 import { tellPaneAboutLock } from "@/server/archboard/lib/board-announcements";
 import { noteBoardShown } from "@/server/archboard/lib/semantic-disk-watch";
 import { showPaneRoute } from "@/server/archboard/lib/pane-show-route";
+import { shownConversationRoute } from "@/server/archboard/lib/shown-conversation-route";
+import { SHOWN_CONVERSATION_ROUTE } from "@/shared/shown-conversation";
+import { createBrowserOriginGuard } from "@/server/browser-origin";
 import { getPanesRoute } from "@/server/archboard/lib/pane-report-route";
 import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
 import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
@@ -418,6 +421,13 @@ function mountPaneRoutes(app: Express): void {
 	app.post("/api/panes", requireVault, postPaneRoute);
 	app.get("/api/panes", getPanesRoute);
 	app.post("/api/panes/show", requireVault, showPaneRoute);
+	// The person's own act in the page, so only the page reaches it (ADR 0050).
+	app.post(
+		SHOWN_CONVERSATION_ROUTE,
+		createBrowserOriginGuard("mutation"),
+		requireVault,
+		shownConversationRoute,
+	);
 	app.post("/api/panes/open", asyncEndpoint(openPaneRoute));
 	app.post("/api/panes/close", asyncEndpoint(closePaneRoute));
 }

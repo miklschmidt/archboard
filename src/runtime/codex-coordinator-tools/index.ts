@@ -23,6 +23,7 @@ export type {
 	CoordinatorToolResponsePort,
 	CoordinatorReplayStateSnapshot,
 	CoordinatorToolSpokenResult,
+	CoordinatorToolStop,
 	CoordinatorToolThread,
 	CoordinatorToolValue,
 	CoordinatorToolValueFor,

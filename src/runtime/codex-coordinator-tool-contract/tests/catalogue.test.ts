@@ -27,6 +27,7 @@ import {
 	QueueUpdateInputSchema,
 	ResolveSpokenApprovalResultSchema,
 	SteerWorkhorseResultSchema,
+	StopWorkhorsesResultSchema,
 	ThreadQueueAddParamsSchema,
 	ThreadQueueDeleteParamsSchema,
 	ThreadQueueListParamsSchema,
@@ -53,7 +54,7 @@ describe("coordinator namespace manifests", () => {
 		expect(JSON.parse(ARCHBOARD_WORKHORSE_MANIFEST_JSON)).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
 		expect(JSON.parse(ARCHBOARD_VOICE_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
 		expect(verifyCoordinatorManifestIntegrity()).toEqual({
-			workhorseSha256: "c390cc7414541e276f1454a3a846289ad895b28383129be7f1c1ad569a9d510a",
+			workhorseSha256: "98288fd32a02454888efa7b2db531edc61c15555bca1720fe55c12bf60be17d6",
 			voiceSha256: "04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b",
 		});
 		for (const namespace of [ARCHBOARD_WORKHORSE_NAMESPACE, ARCHBOARD_VOICE_NAMESPACE]) {
@@ -293,11 +294,18 @@ describe("dynamic tool schemas and queue protocol", () => {
 		expect(() =>
 			parseCoordinatorToolInput("archboard_voice", "resolve_spoken_approval", { verdict: "maybe" }),
 		).toThrow();
+		expect(parseCoordinatorToolInput("archboard_workhorse", "stop_workhorses", {})).toEqual({});
+		expect(() =>
+			parseCoordinatorToolInput("archboard_workhorse", "stop_workhorses", {
+				checkout: "/work/payments",
+			}),
+		).toThrow();
 		expect(Object.keys(WORKHORSE_TOOL_INPUT_SCHEMAS)).toEqual([
 			"inspect_workhorse",
 			"delegate_to_workhorse",
 			"manage_workhorse_queue",
 			"steer_workhorse",
+			"stop_workhorses",
 		]);
 		expect(Object.keys(VOICE_TOOL_INPUT_SCHEMAS)).toEqual(["resolve_spoken_approval"]);
 
@@ -317,6 +325,15 @@ describe("dynamic tool schemas and queue protocol", () => {
 			],
 			[ManageWorkhorseQueueResultSchema, { operation: "list", queuedSubmissionIds: [] }],
 			[SteerWorkhorseResultSchema, { turnId: "turn-1", delivery: "delivered" }],
+			[
+				StopWorkhorsesResultSchema,
+				{
+					stopped: [
+						{ checkout: "/work/payments", outcome: "interrupt_sent" },
+						{ checkout: "/work/billing", outcome: "idle" },
+					],
+				},
+			],
 			[ResolveSpokenApprovalResultSchema, { verdict: "decline", settlement: "not_delivered" }],
 		] as const;
 		for (const [schema, value] of values) {

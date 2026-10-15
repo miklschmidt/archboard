@@ -85,6 +85,8 @@ const ManageWorkhorseQueueInputSchema = z.discriminatedUnion("operation", [
 const SteerWorkhorseInputSchema = z
 	.object({ checkout: CheckoutSchema, input: z.string().min(1).max(4_096) })
 	.strict();
+/** A stop names no workhorse: it stops every running workhorse of the calling tab session. */
+const StopWorkhorsesInputSchema = z.object({}).strict();
 const ResolveSpokenApprovalInputSchema = z
 	.object({ verdict: z.enum(["accept", "decline"]) })
 	.strict();
@@ -93,6 +95,7 @@ type InspectWorkhorseInput = z.infer<typeof InspectWorkhorseInputSchema>;
 type DelegateToWorkhorseInput = z.infer<typeof DelegateToWorkhorseInputSchema>;
 type ManageWorkhorseQueueInput = z.infer<typeof ManageWorkhorseQueueInputSchema>;
 type SteerWorkhorseInput = z.infer<typeof SteerWorkhorseInputSchema>;
+type StopWorkhorsesInput = z.infer<typeof StopWorkhorsesInputSchema>;
 type ResolveSpokenApprovalInput = z.infer<typeof ResolveSpokenApprovalInputSchema>;
 
 const WORKHORSE_TOOL_INPUT_SCHEMAS = Object.freeze({
@@ -100,6 +103,7 @@ const WORKHORSE_TOOL_INPUT_SCHEMAS = Object.freeze({
 	delegate_to_workhorse: DelegateToWorkhorseInputSchema,
 	manage_workhorse_queue: ManageWorkhorseQueueInputSchema,
 	steer_workhorse: SteerWorkhorseInputSchema,
+	stop_workhorses: StopWorkhorsesInputSchema,
 } satisfies Record<WorkhorseToolName, z.ZodTypeAny>);
 
 const VOICE_TOOL_INPUT_SCHEMAS = Object.freeze({
@@ -183,11 +187,13 @@ export {
 	QueueStartInputSchema,
 	ManageWorkhorseQueueInputSchema,
 	SteerWorkhorseInputSchema,
+	StopWorkhorsesInputSchema,
 	ResolveSpokenApprovalInputSchema,
 	type InspectWorkhorseInput,
 	type DelegateToWorkhorseInput,
 	type ManageWorkhorseQueueInput,
 	type SteerWorkhorseInput,
+	type StopWorkhorsesInput,
 	type ResolveSpokenApprovalInput,
 	WORKHORSE_TOOL_INPUT_SCHEMAS,
 	VOICE_TOOL_INPUT_SCHEMAS,

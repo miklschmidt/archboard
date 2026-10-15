@@ -47,12 +47,16 @@ function recordingWorkhorse(
 	label: string,
 	events: string[],
 	thread: { current: ThreadId | null },
+	operationListeners: Set<(event: unknown) => void>,
 ): CodexWorkbenchWorkhorseComponents {
 	return {
 		workhorse: { snapshot: () => ({ threadId: thread.current }) },
 		operations: {
 			onNotification: () => void events.push(`${label}:operations`),
-			subscribe: () => () => undefined,
+			subscribe: (listener: (event: unknown) => void) => {
+				operationListeners.add(listener);
+				return () => void operationListeners.delete(listener);
+			},
 		},
 	} as unknown as CodexWorkbenchWorkhorseComponents;
 }
@@ -85,6 +89,8 @@ function twoSessions() {
 	const tabScopes = new Map<string, CodexWorkbenchTabSessionScope>();
 	const workhorseScopes = new Map<string, CodexWorkbenchWorkhorseScope>();
 	const threads = new Map<string, { current: ThreadId | null }>();
+	const operationListeners = new Map<string, Set<(event: unknown) => void>>();
+	const shown = { current: null as string | null };
 	const sessions = createCodexWorkbenchSessions({
 		identity: identity.identity,
 		transport: {
@@ -106,6 +112,7 @@ function twoSessions() {
 			},
 		},
 		endApprovals: async () => undefined,
+		shownConversationOf: () => shown.current,
 		build: (scope) => {
 			tabScopes.set(scope.id, scope);
 			return {
@@ -118,7 +125,10 @@ function twoSessions() {
 			const thread = { current: null };
 			threads.set(scope.key, thread);
 			const label = `${labels.get(scope.session.id) ?? "?"}${scope.checkout}`;
-			return { components: recordingWorkhorse(label, events, thread), actions: {} as never };
+			const listeners = new Set<(event: unknown) => void>();
+			operationListeners.set(scope.key, listeners);
+			const components = recordingWorkhorse(label, events, thread, listeners);
+			return { components, actions: {} as never };
 		},
 	});
 	/**
@@ -146,6 +156,15 @@ function twoSessions() {
 		cleared,
 		decoder,
 		startWorkhorseThread,
+		shown,
+		/**
+		 * Tell a workhorse's listeners what one of its operations reported.
+		 * @param key The workhorse's link key.
+		 * @param event The report.
+		 */
+		reportOperation: (key: string, event: unknown) => {
+			for (const listener of operationListeners.get(key) ?? []) listener(event);
+		},
 	};
 }
 
@@ -281,4 +300,25 @@ test("a workhorse stays linked when its tab's panes move to another checkout of 
 	expect(a.workhorse(PAYMENTS)).toBe(before);
 	expect(sessions.workhorseForThread(thread)).toBe(before);
 	expect(cleared).toEqual([]);
+});
+
+test("a coordinator turn is remembered with the conversation shown as it started, and each workhorse it gave work to", () => {
+	const { sessions, a, decoder, shown, startWorkhorseThread, reportOperation } = twoSessions();
+	const payments = a.workhorse(PAYMENTS);
+	startWorkhorseThread(payments.key, "thread-payments");
+	const voiceTurn = decoder.adoptTurnId("voice-turn");
+
+	shown.current = SHOP;
+	sessions.onNotification(notification("thread-a", "turn/started", "voice-turn"));
+	// A workhorse's own turn is no coordinator turn.
+	sessions.onNotification(notification("thread-payments", "turn/started", "work-turn"));
+	reportOperation(payments.key, {
+		operation: "delegate_to_workhorse",
+		queueOperation: null,
+		correlation: { coordinatorTurnId: voiceTurn },
+	});
+
+	expect([...a.state.coordinatorTurnHomes]).toEqual([
+		[voiceTurn, { shownAtStart: SHOP, gaveWorkTo: new Set([PAYMENTS]) }],
+	]);
 });

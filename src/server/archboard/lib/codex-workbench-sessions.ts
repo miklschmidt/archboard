@@ -43,6 +43,10 @@ import {
 	type WorkhorseStop,
 } from "@/server/archboard/lib/codex-workbench-session-workhorses";
 import { sessionVoiceStartTrace } from "@/server/archboard/lib/voice-start-trace";
+import {
+	noteCoordinatorTurnStart,
+	recordGivenWork,
+} from "@/server/archboard/lib/codex-workbench-delegations";
 import type {
 	BuiltTabSession,
 	BuiltWorkhorse,
@@ -69,6 +73,7 @@ interface ThreadOwner {
 function freshState(): CodexWorkbenchTabSessionState {
 	return {
 		delegations: new Map(),
+		coordinatorTurnHomes: new Map(),
 		currentCoordinatorCall: null,
 		threads: new Set(),
 		voiceTrace: sessionVoiceStartTrace(),
@@ -250,6 +255,9 @@ function createCodexWorkbenchSessions(
 			state,
 		});
 		built.components.operations.subscribe(fanOut);
+		built.components.operations.subscribe(
+			recordGivenWork(session.state.coordinatorTurnHomes, checkout),
+		);
 		workhorses.set(checkout, workhorse);
 		publish();
 		return workhorse;
@@ -295,6 +303,18 @@ function createCodexWorkbenchSessions(
 		 */
 		const voiceWorkhorse = (): CodexWorkbenchWorkhorse | null =>
 			state.voiceCheckout === null ? null : (workhorses.get(state.voiceCheckout) ?? null);
+		/**
+		 * Stop the workhorse of one checkout, or every one of the tab.
+		 * @param checkout The checkout, or null for every workhorse.
+		 * @returns What each stopped workhorse did.
+		 */
+		const stopWork = (checkout: string | null): Promise<readonly WorkhorseStop[]> =>
+			stopWorkhorses(
+				[...workhorses.values()].filter(
+					(candidate) => checkout === null || candidate.checkout === checkout,
+				),
+				options.session,
+			);
 		const built = options.build({
 			id,
 			state,
@@ -320,6 +340,7 @@ function createCodexWorkbenchSessions(
 			workhorses: () => [...workhorses.values()],
 			workhorse,
 			voiceWorkhorse,
+			stopWork,
 			workhorseOperations: {
 				/**
 				 * Hear every workhorse's operation reports.
@@ -342,17 +363,7 @@ function createCodexWorkbenchSessions(
 			workhorses,
 			workhorse,
 			voiceWorkhorse,
-			/**
-			 * Stop the workhorse of one checkout, or every one of the tab.
-			 * @param checkout The checkout, or null for every workhorse.
-			 * @returns What each stopped workhorse did.
-			 */
-			stopWork: (checkout: string | null) => {
-				const targets = [...workhorses.values()].filter(
-					(candidate) => checkout === null || candidate.checkout === checkout,
-				);
-				return stopWorkhorses(targets, options.session);
-			},
+			stopWork,
 		});
 		return session;
 	};
@@ -420,6 +431,11 @@ function createCodexWorkbenchSessions(
 		onNotification: (event) => {
 			unloads.onNotification(event);
 			const owner = owning(notificationThread(event));
+			if (owner?.workhorse === null) {
+				noteCoordinatorTurnStart(owner.session.state.coordinatorTurnHomes, event, decoder, () =>
+					options.shownConversationOf(owner.session.id),
+				);
+			}
 			for (const session of owner === null ? every() : [owner.session]) {
 				deliver(session, event, decoder);
 			}

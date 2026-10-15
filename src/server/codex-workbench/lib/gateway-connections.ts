@@ -111,7 +111,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 
 		/**
 		 * The thread link of the workhorse a connection's pane shows: the one of its tab session
-		 * for the checkout of the pane's vault now (ADR 0050), refusing a binding that does not
+		 * for the checkout the pane's tab shows now (ADR 0050), refusing a binding that does not
 		 * describe that workhorse. The link port keys a link by the workhorse (its `paneId`).
 		 * @param state The connection.
 		 * @returns Its binding.
@@ -402,8 +402,8 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	}
 
 	/**
-	 * Whether a connection's pane is in a checkout now. A pane whose vault the server no longer
-	 * knows is in none, so it is shown no workhorse's approval.
+	 * Whether a connection's pane shows a checkout's conversation now. A pane the server cannot
+	 * place shows none, so it is shown no workhorse's approval.
 	 * @param state The connection.
 	 * @param checkout The checkout.
 	 * @returns True when it is.
@@ -419,8 +419,8 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	/**
 	 * The terminals every open connection they are shown to has been shown,
 	 * which are the ones the approval owner may stop presenting. A terminal is
-	 * shown only to its tab session, and a workhorse's only to the panes of its
-	 * checkout now, so a connection of another tab or another checkout never
+	 * shown only to its tab session, and a workhorse's only to the panes that show
+	 * its checkout now, so a connection of another tab or another checkout never
 	 * holds it back; with none of those open there is nobody left to show it to.
 	 * @param candidates The terminals still being presented, with the panes they are shown to.
 	 * @returns The terminals that may be acknowledged.

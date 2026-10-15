@@ -96,6 +96,8 @@ interface HarnessOverrides {
 	readonly coordinator?: Partial<FixtureSessionComponents["coordinator"]>;
 	/** The clock the authoritative re-read floor reads. */
 	readonly now?: () => number;
+	/** The repository each checkout is listed under; none by default. */
+	readonly repositoryOf?: (checkout: string) => string | null;
 	/** A live workhorse and queue, for the paths that read authoritative state. */
 	readonly workhorse?: Partial<FixtureWorkhorseComponents["workhorse"]>;
 	readonly queue?: Partial<FixtureWorkhorseComponents["queue"]>;
@@ -144,6 +146,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		session: fixture.session,
 		threadLink: fixture.threadLink,
 		endApprovals: async () => undefined,
+		shownConversationOf: () => null,
 		build: () => ({ components: sessionComponents, actions: generation.tabSession.actions }),
 		buildWorkhorse: () => {
 			const fixtureWorkhorse = createWorkhorseComponentsFixture([]);
@@ -176,6 +179,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 	};
 	const options = createServerBrowserGatewayOptions({
 		components,
+		repositoryOf: overrides.repositoryOf ?? (() => null),
 		sessions,
 		dynamicApprovals: createServerDynamicApprovalOwner({
 			identity: authorities,

@@ -67,7 +67,7 @@ function checkoutOfLink(link: string | null): string | null {
  * its checkout asked, while they await an answer or their terminal has not yet been delivered.
  * @param approvals The broker.
  * @param tabSessionId The pane's tab session.
- * @param checkout The checkout of the pane's vault.
+ * @param checkout The checkout the pane's tab shows.
  * @returns The views, in the broker's own order.
  */
 function visibleApprovalViews(

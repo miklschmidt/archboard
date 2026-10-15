@@ -47,13 +47,18 @@ export interface CodexWorkbenchServer {
 		tabSessionId: TabSessionId,
 		checkout: string,
 	) => SemanticContextPublisherOptions;
-	/** The checkout of the vault a browser's pane is in now, whose workhorse the pane shows. */
-	readonly checkoutOfBrowser: (browserId: string) => string;
 	/**
-	 * Hear every move of a pane into another vault, after which `checkoutOfBrowser` may name
-	 * another checkout while the pane's socket stays open.
+	 * The checkout whose conversation a browser pane's tab shows, the shown conversation (ADR 0050):
+	 * pinned to the checkout of the first pane it is read for, and changed after that only by the
+	 * person's own act in the browser. Every pane of the tab shows that checkout's workhorse.
 	 */
-	readonly onPaneVaultMove: (listener: () => void) => () => void;
+	readonly shownCheckoutOf: (browserId: string) => string;
+	/** The checkout whose conversation a tab shows now, or null before any pane of it was read. */
+	readonly shownConversationOf: (tabSessionId: TabSessionId) => string | null;
+	/** Hear every change of a tab's shown conversation, after which `shownCheckoutOf` names another. */
+	readonly onShownChange: (listener: () => void) => () => void;
+	/** The repository a checkout is listed under, or null when the navigator lists it nowhere. */
+	readonly repositoryOfCheckout: (checkout: string) => string | null;
 	/** The canonical context of a settled change, filed under the pane the change presents. */
 	readonly contextForEvent: (
 		event: SettledSemanticChangeEvent,

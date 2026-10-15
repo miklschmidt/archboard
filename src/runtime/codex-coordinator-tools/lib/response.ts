@@ -7,6 +7,7 @@ import {
 	ManageWorkhorseQueueResultSchema,
 	ResolveSpokenApprovalResultSchema,
 	SteerWorkhorseResultSchema,
+	StopWorkhorsesResultSchema,
 	UnknownDynamicToolResponseSchema,
 	ValidDynamicToolResponseSchema,
 	parseCoordinatorToolResult,
@@ -34,6 +35,7 @@ const CANONICAL_RESULT_SCHEMAS = Object.freeze({
 	delegate_to_workhorse: z.object(DelegateToWorkhorseResultSchema.shape),
 	manage_workhorse_queue: z.object(ManageWorkhorseQueueResultSchema.shape),
 	steer_workhorse: z.object(SteerWorkhorseResultSchema.shape),
+	stop_workhorses: z.object(StopWorkhorsesResultSchema.shape),
 	resolve_spoken_approval: z.object(ResolveSpokenApprovalResultSchema.shape),
 } satisfies Readonly<Record<CoordinatorToolName, z.ZodObject>>);
 

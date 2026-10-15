@@ -36,30 +36,14 @@ function broadcastEverywhere(message: WebSocketMessage): void {
 	});
 }
 
-/** Whoever hears that a pane moved into another vault. */
-const paneMoveObservers = new Set<() => void>();
-
-/**
- * Hear every move of a pane into another vault. A pane's socket stays open across a move, and
- * what it is shown of an agent's work belongs to the checkout of its vault (ADR 0050), so a
- * reader of that work presents the pane again.
- * @param observer What to tell, after the pane is in its new vault.
- * @returns Stops hearing.
- */
-function onPaneVaultMove(observer: () => void): () => void {
-	paneMoveObservers.add(observer);
-	return (): void => {
-		paneMoveObservers.delete(observer);
-	};
-}
-
 /**
  * Move a pane into another vault (ADR 0050). The server decides which vault a
  * pane is in, as it decides which board it holds: a show into another
  * repository moves it, and so does choosing another checkout of the repository
  * it shows. Its sockets carry the news of the new vault from now on, and its
  * registration says the new vault until the pane next reports. What it said it
- * was reading is of the vault it left, so it is forgotten. Whoever hears moves is told last.
+ * was reading is of the vault it left, so it is forgotten. The conversation its tab's agent dock
+ * shows stays as it is: only the person's own act in the browser changes that (ADR 0050).
  * @param clientId The pane's client id.
  * @param vault The vault it moves into.
  */
@@ -79,13 +63,6 @@ function movePaneVault(clientId: string, vault: string): void {
 	}
 	forgetSemanticPaneContext(clientId);
 	syncLockWatch();
-	for (const observer of paneMoveObservers) {
-		try {
-			observer();
-		} catch (error) {
-			logger.error(`Cannot tell of pane ${clientId}'s move into ${vault}:`, error);
-		}
-	}
 }
 
 /**
@@ -97,4 +74,4 @@ function paneClientsOfVault(vault: string): string[] {
 	return [...paneVaults].flatMap(([clientId, held]) => (held === vault ? [clientId] : []));
 }
 
-export { broadcastEverywhere, movePaneVault, onPaneVaultMove, paneClientsOfVault };
+export { broadcastEverywhere, movePaneVault, paneClientsOfVault };
