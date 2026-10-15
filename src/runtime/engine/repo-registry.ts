@@ -359,11 +359,19 @@ interface VaultRepository {
 function repositoryOfVault(vault: string): VaultRepository | undefined {
 	const { checkouts, vaults } = readRegistry();
 	/**
-	 * Whether a registered directory holds the vault.
+	 * Whether a registered directory holds the vault. Its `.archboard/vault` is
+	 * compared by real path, as a command names a vault and the server lists one,
+	 * so a vault that is a symbolic link is still the vault of its checkout.
 	 * @param root The directory.
 	 * @returns True when its `.archboard/vault` is the vault.
 	 */
-	const holds = (root: string): boolean => path.join(root, VAULT_DIRECTORY) === vault;
+	const holds = (root: string): boolean => {
+		try {
+			return fs.realpathSync.native(path.join(root, VAULT_DIRECTORY)) === vault;
+		} catch {
+			return false;
+		}
+	};
 	const checkout = checkouts.find((entry) => holds(entry.root));
 	if (checkout !== undefined) {
 		return { name: checkout.repo, root: checkout.root, chosen: checkout.chosen };
