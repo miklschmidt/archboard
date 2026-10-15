@@ -112,7 +112,11 @@ rules that will not stop you:
   claim, the server tells it once, on its next write.
 - **One thing somebody asked for is one write** (TASK-068). A board's whole
   family lands together or not at all: a parent edit and every descendant's
-  answer to it are one version.
+  answer to it are one version. A move to another repository's vault cannot be
+  one write, because two vaults are two files (ADR 0051). It writes the target
+  note first, then each drill-down it rewrites, and deletes the source note
+  last. A stopped move leaves the board in both vaults, never in neither, and
+  the same move run again finishes it.
 - **A board is addressed by name, and a variant is a reading of it.**
   `payments` and `payments@<variant>` name the same document, split at the FIRST
   `@`. A board name can never hold one, and a variant's name can. The file, the
