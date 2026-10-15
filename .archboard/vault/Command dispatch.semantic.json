@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 39,
+	"version": 41,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-15T18:29:36.770Z",
+	"updatedAt": "2026-10-15T18:34:26.202Z",
 	"views": [],
 	"variants": [
 		{
@@ -2904,7 +2904,7 @@
 		{
 			"id": "nwLUhxAZ",
 			"name": "TASK-472.09",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "YXFMdMay",
 			"summary": "How one CLI invocation is routed: help, shared flags, the vault it addresses, dispatch and the run",
 			"content": {
@@ -3417,9 +3417,9 @@
 		{
 			"id": "zjQeLMip",
 			"name": "TASK-480",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "nwLUhxAZ",
-			"summary": "A checkout with no vault is told which known vaults hold boards of its code",
+			"summary": "How one CLI invocation is routed: help, shared flags, the vault it addresses or the vaults that hold its code, dispatch and the run",
 			"content": {
 				"nodes": [
 					{
@@ -3982,7 +3982,7 @@
 			}
 		}
 	],
-	"current": "nwLUhxAZ",
+	"current": "zjQeLMip",
 	"adoptions": [
 		{
 			"variant": "eLxlFOKI",
@@ -4025,6 +4025,12 @@
 			"from": "YXFMdMay",
 			"at": "2026-10-15T08:26:15.374Z",
 			"reason": "A set ARCHBOARD_VAULT is refused and no environment variable names a vault, so the finder's origin is -C or the working directory; it refuses a vault whose link leads out of the .archboard/vault layout"
+		},
+		{
+			"variant": "zjQeLMip",
+			"from": "nwLUhxAZ",
+			"at": "2026-10-15T18:34:26.202Z",
+			"reason": "A checkout with no vault is told which known vaults hold boards of its code"
 		}
 	]
 }
