@@ -5,6 +5,7 @@ import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import {
 	getHealth,
 	ARCHBOARD_SERVICE_NAME,
+	OtherSourceError,
 	type HealthStatus,
 } from "@/runtime/engine/server-client";
 import { codedError } from "@/runtime/engine/lib/thrown-error";
@@ -81,13 +82,19 @@ function startupRefusal(message: string): Error {
 }
 
 /**
- * Probe `/health`, treating any failure as no answer.
+ * Probe `/health`, treating any failure as no answer, except a server that
+ * runs another checkout's source: that server answers, and the caller must
+ * neither start another on its port nor signal it.
  * @returns The health payload, or null when nothing usable answered.
+ * @throws {OtherSourceError} When the server runs another checkout's source.
  */
 async function healthOrNull(): Promise<HealthStatus | null> {
 	try {
 		return await getHealth();
-	} catch {
+	} catch (error) {
+		if (error instanceof OtherSourceError) {
+			throw error;
+		}
 		return null;
 	}
 }

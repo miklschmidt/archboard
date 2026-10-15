@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getHealth, getSyncStatus } from "@/runtime/engine/server-client";
+import { getHealth, getSyncStatus, OtherSourceError } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { readPidFile } from "@/runtime/engine/pidfile";
 import { serverPort, isServerHealth } from "@/runtime/engine/spawn";
@@ -164,7 +164,8 @@ const statusContract = defineCommand({
 		{
 			id: "foreign-service",
 			exit: 3,
-			description: "Another service or an incompatible Archboard server is answering.",
+			description:
+				"Another service, an incompatible Archboard server or a server of another checkout's source is answering.",
 			stream: "stdout-only",
 			presentation: ["result"],
 		},
@@ -191,7 +192,13 @@ const statusContract = defineCommand({
 		let health;
 		try {
 			health = await getHealth();
-		} catch {
+		} catch (error) {
+			if (error instanceof OtherSourceError) {
+				return {
+					result: { running: false as const, url: ARCHBOARD_URL, conflict: error.message },
+					outcome: "foreign-service",
+				};
+			}
 			return {
 				result: { running: false as const, url: ARCHBOARD_URL },
 				outcome: "unavailable",
