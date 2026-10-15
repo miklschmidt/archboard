@@ -12,7 +12,7 @@
 // every value here is exactly what the pane was given — a pane nobody has
 // drilled into behaves as though this hook were not there.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import {
 	NO_TRAIL,
@@ -76,28 +76,33 @@ interface OwnBoard {
 
 /**
  * Keep the trail across the shell's arrivals: the one the trail asked for keeps
- * it, any other one ends it.
+ * it, any other one ends it. An arrival is folded in during render, as React
+ * asks for state that follows a prop, so no frame draws a board of the vault
+ * the pane left as though it were in the one it arrived in.
  * @param own The board the shell pointed the pane at.
+ * @param held The trail as last set.
  * @param setTrail Replace the trail.
+ * @returns The trail, the arrival folded in.
  */
 function useArrivals(
 	own: OwnBoard,
-	setTrail: (next: (trail: DrillTrail) => DrillTrail) => void,
-): void {
+	held: DrillTrail,
+	setTrail: (next: DrillTrail) => void,
+): DrillTrail {
 	const { board, variant, arrival, vault } = own;
-	const opened = useRef({ board, variant, arrival, vault });
-	useEffect(() => {
-		const was = opened.current;
-		if (
-			was.board !== board ||
-			was.variant !== variant ||
-			was.arrival !== arrival ||
-			was.vault !== vault
-		) {
-			opened.current = { board, variant, arrival, vault };
-			setTrail((trail) => drillArrived(trail, { board, variant, vault, repository: null }));
-		}
-	}, [board, variant, arrival, vault, setTrail]);
+	const [opened, setOpened] = useState({ board, variant, arrival, vault });
+	if (
+		opened.board === board &&
+		opened.variant === variant &&
+		opened.arrival === arrival &&
+		opened.vault === vault
+	) {
+		return held;
+	}
+	const arrived = drillArrived(held, { board, variant, vault, repository: null });
+	setOpened({ board, variant, arrival, vault });
+	setTrail(arrived);
+	return arrived;
 }
 
 /**
@@ -107,8 +112,8 @@ function useArrivals(
  * @returns The board on screen, the trail behind it, and the moves.
  */
 function useDrillDown(own: OwnBoard, dive: Dive | undefined): DrillNavigation {
-	const [trail, setTrail] = useState<DrillTrail>(NO_TRAIL);
-	useArrivals(own, setTrail);
+	const [held, setTrail] = useState<DrillTrail>(NO_TRAIL);
+	const trail = useArrivals(own, held, setTrail);
 	const ownStop = useMemo<DrillStop>(
 		() => ({
 			board: own.board,

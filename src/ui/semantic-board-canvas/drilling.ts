@@ -4,6 +4,7 @@
 // repositories can be held to from outside the module's private folders.
 
 export { drillPlace, type RepositoryPlaces } from "@/ui/semantic-board-canvas/lib/drill-target";
+export { useDrillDown } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
 export { useLevelReading } from "@/ui/semantic-board-canvas/hooks/use-level-reading";
 export {
 	NO_TRAIL,
