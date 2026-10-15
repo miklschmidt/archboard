@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 99,
+	"version": 100,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-15T04:42:12.632Z",
+	"updatedAt": "2026-10-15T04:57:49.906Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -30433,7 +30433,7 @@
 		{
 			"id": "tybzLnMr",
 			"name": "TASK-472.05",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "KCF7QFb0",
 			"summary": "The viewer, camera presentation store, host entry points and warning navigation, each reading in the vault of its pane",
 			"content": {
@@ -32786,7 +32786,7 @@
 		{
 			"id": "d66pQWDQ",
 			"name": "TASK-472.13",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "tybzLnMr",
 			"summary": "A pane dives into a board of another repository",
 			"content": {
@@ -35234,7 +35234,7 @@
 			}
 		}
 	],
-	"current": "tybzLnMr",
+	"current": "d66pQWDQ",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
@@ -35367,6 +35367,12 @@
 			"from": "KCF7QFb0",
 			"at": "2026-10-15T02:26:53.990Z",
 			"reason": "Every read, query key and picture cache key names the vault of its pane, which the pane provides"
+		},
+		{
+			"variant": "d66pQWDQ",
+			"from": "tybzLnMr",
+			"at": "2026-10-15T04:57:49.906Z",
+			"reason": "A drill-down into another repository moves the pane there, and the trail and breadcrumb lead back"
 		}
 	],
 	"shelvings": [

@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 60,
+	"version": 61,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-15T04:42:28.761Z",
+	"updatedAt": "2026-10-15T04:57:50.126Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -8041,7 +8041,7 @@
 		{
 			"id": "QQyrWqEG",
 			"name": "TASK-472.06",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Du6umKm2",
 			"summary": "Service level: browser application modules. Follow linked subjects for related levels.",
 			"content": {
@@ -9245,7 +9245,7 @@
 		{
 			"id": "L7BQsaGv",
 			"name": "TASK-472.13",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "QQyrWqEG",
 			"summary": "A pane dives into a board of another repository",
 			"content": {
@@ -10461,7 +10461,7 @@
 			}
 		}
 	],
-	"current": "QQyrWqEG",
+	"current": "L7BQsaGv",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -10510,6 +10510,12 @@
 			"from": "Du6umKm2",
 			"at": "2026-10-15T04:08:50.944Z",
 			"reason": "The page learns the vault it opens in, or that there is none"
+		},
+		{
+			"variant": "L7BQsaGv",
+			"from": "QQyrWqEG",
+			"at": "2026-10-15T04:57:50.126Z",
+			"reason": "A drill-down into another repository moves the pane there through the shell"
 		}
 	]
 }
