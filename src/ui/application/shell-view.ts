@@ -92,17 +92,32 @@ function shellPanes(inputs: ShellViewInputs): ShellPane[] {
 }
 
 /**
+ * What agents are doing in each vault a pane of this tab is in. The server tells
+ * a vault's activity only to the panes in that vault (ADR 0022), so what the tab
+ * last heard of a vault that none of its panes is in now is old news.
+ * @param inputs The view's inputs.
+ * @returns The activity of the vaults the panes are in.
+ */
+function currentActivity(inputs: ShellViewInputs): AgentActivityByVault {
+	const vaults = new Set(
+		inputs.list.panes.map((entry) => recordFor(inputs.records, entry.paneId).status.vault),
+	);
+	return Object.fromEntries(
+		Object.entries(inputs.agentActivity).filter(([vault]) => vaults.has(vault)),
+	);
+}
+
+/**
  * The shell's view.
  * @param inputs What it is assembled from.
  * @returns The view.
  */
 function assembleShellView(inputs: ShellViewInputs): ShellView {
 	const active = recordFor(inputs.records, inputs.list.activePaneId);
+	const activity = currentActivity(inputs);
 	return {
 		theme: inputs.theme,
-		repositories: inputs.catalog.repositories.map((entry) =>
-			shellRepository(entry, inputs.agentActivity),
-		),
+		repositories: inputs.catalog.repositories.map((entry) => shellRepository(entry, activity)),
 		boardsError: inputs.catalog.error,
 		boardsLoading: inputs.catalog.loading,
 		selectedBoardKey: active.status.boardKey,

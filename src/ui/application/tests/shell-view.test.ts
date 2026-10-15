@@ -151,3 +151,33 @@ test("a board stops being shown when the last pane showing it in its vault lets 
 	// A board of the same name in another vault is another board.
 	expect(releasedBoards([checkout], [elsewhere])).toEqual([checkout]);
 });
+
+test("what an agent does in a vault is shown only while a pane of the tab is in it", () => {
+	const since = "2026-10-15T00:00:00.000Z";
+	const claim = { id: "agent-1", kind: "agent", since, until: since, process: "codex" } as const;
+	const entry = { board: "Checkout", claim, doing: null };
+	/**
+	 * The view while the tab's one pane is in a vault.
+	 * @param vault The vault.
+	 * @returns The view.
+	 */
+	const viewWith = (vault: string) =>
+		assembleShellView({
+			theme: "dark",
+			list: initialPaneList(),
+			records: patchRecord({}, "A", {
+				status: { ...emptyPaneStatus("A"), board: CHECKOUT, boardKey: "Checkout", vault },
+				holder: null,
+			}),
+			panes: {},
+			catalog: catalogOf(),
+			presentation: null,
+			notices: [],
+			// The last snapshot this tab heard of VAULT, before its pane moved out.
+			agentActivity: { [VAULT]: { Checkout: entry } },
+		});
+	expect(viewWith(VAULT).repositories[0]?.activity).toEqual({ Checkout: entry });
+	// The server tells a vault's activity only to the panes in it, so once none
+	// is, what the tab heard last is old news.
+	expect(viewWith("/work/blog/.archboard/vault").repositories[0]?.activity).toEqual({});
+});
