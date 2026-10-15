@@ -3,7 +3,7 @@
 You install archboard once on a machine. The repositories that you diagram do
 not build or import it. Setup puts a vault directory, `.archboard/vault`, in a
 repository. The vault is the directory that holds the boards. Each board is one
-`<name>.semantic.json` file in it. Setup writes nothing else into the repository.
+`<name>.semantic.json` file in it. Setup adds nothing else to the repository.
 
 This document is also the installation reference for agents: the installed
 skill carries a copy of it. To set up the voice loop for development of
@@ -83,8 +83,9 @@ Codex. The installer does these things:
    else in them. Commit that change.
 
 The repository is the nearest parent directory that holds `.git`. The installer
-writes no `CLAUDE.md` or `AGENTS.md`, because a command finds the vault from the
-repository (see section 4), and the file would hold paths of your machine.
+creates no `CLAUDE.md` or `AGENTS.md` and adds nothing to them, because a command
+finds the vault from the repository (see section 4), and the file would hold
+paths of your machine.
 
 The installer prints what it did, and a JSON receipt. If Git ignores the vault,
 the installer warns you. Commit the vault with your code.
