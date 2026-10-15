@@ -236,7 +236,7 @@ describe.serial("the repositories of the navigator", () => {
 		});
 	});
 
-	test("a choice moves the panes of every other checkout, and refuses a checkout with no vault", async () => {
+	test("a registry change nobody told this server of moves its panes, and a choice refuses a checkout with no vault", async () => {
 		await using resources = new AsyncDisposableStack();
 		const mainVault = vaultOf(main);
 		const target = join(fixture.root, "orders-fix");
@@ -255,9 +255,15 @@ describe.serial("the repositories of the navigator", () => {
 			},
 		);
 		resources.defer(() => pane.close());
-		// This `repo use` runs without this server's URL, so this server never hears
-		// of it, and the pane stays in the main checkout while the worktree is chosen.
+		// This `repo use` reaches no server, as one in another checkout reaches only
+		// that checkout's server. This server follows the registry it reads all the same.
+		const used = pane.mark();
 		cli("repo", "use", worktree);
+		expect(await pane.waitFor("pane_board", used)).toMatchObject({
+			board: "payments",
+			vault: vaultOf(worktree),
+			repository: ORDERS,
+		});
 
 		// The fix worktree has no vault yet: choosing it is refused, and no pane moves.
 		const mark = pane.mark();
@@ -267,8 +273,7 @@ describe.serial("the repositories of the navigator", () => {
 		await pane.sync();
 		expect(pane.events.slice(mark).filter((event) => event.type === "pane_board")).toEqual([]);
 
-		// With a vault it is chosen, and the pane the main checkout still showed moves
-		// there too, although the worktree was the chosen checkout before.
+		// With a vault it is chosen, and the pane moves there with its board.
 		const fixVault = vaultOf(fix);
 		expect((await choose(fix)).status).toBe(200);
 		const moved = await pane.waitFor("pane_board", mark);
@@ -277,13 +282,14 @@ describe.serial("the repositories of the navigator", () => {
 });
 
 /**
- * Run the CLI against this server's registry.
+ * Run the CLI against this server's registry, as a command that reaches no
+ * server: whatever it changes, this server hears of only from the registry.
  * @param args Its arguments.
  */
 function cli(...args: string[]): void {
 	const ran = spawnSync(packageBin, args, {
 		cwd: fixture.nowhere,
-		env: fixture.serverEnvironment,
+		env: { ...fixture.serverEnvironment, ARCHBOARD_URL: "http://127.0.0.1:9" },
 		encoding: "utf8",
 	});
 	if (ran.status !== 0) throw new Error(`${args.join(" ")}: ${ran.stderr}`);

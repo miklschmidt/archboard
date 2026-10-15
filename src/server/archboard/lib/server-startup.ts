@@ -29,6 +29,7 @@ import {
 	PORT,
 } from "@/server/archboard/lib/listener-address";
 import { messageOf } from "@/server/archboard/lib/request-board";
+import { unwatchRegistry, watchRegistry } from "@/server/archboard/lib/repository-routes";
 import { serverStartupFailureMessage } from "@/server/archboard/lib/startup-error";
 import {
 	closeWebSocketServer,
@@ -333,6 +334,11 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 					logger.info(`WebSocket server running on ws://${formatHostForUrl(HOST)}:${PORT}`);
 				},
 				stop: closeWebSocketServer,
+			},
+			{
+				name: "registry-watch",
+				start: watchRegistry,
+				stop: unwatchRegistry,
 			},
 			{ name: "browser-and-pending-operations", stop: closeBrowserOwners },
 			{

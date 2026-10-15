@@ -260,9 +260,9 @@ An agent's `archboard browser show` from a checkout that is not chosen, such as
 a worktree, makes that checkout the chosen one before it shows the board. Its
 answer names the checkout that it replaced. Only `browser show`, `repo use` and
 the menu in the navigator change the choice. A board command never does.
-`repo add`, `repo use`, `repo forget` and the first command in a new checkout
-tell a running server. So every pane of the repository moves to the chosen
-checkout with its board, and every tab lists the change at once.
+Every running server watches the registry, whichever command or server
+changed it. So every pane of the repository moves to the chosen checkout with
+its board, and every tab lists the change at once.
 
 One rule overrides the choice. A binding or anchor into the repository whose
 checkout holds the vault resolves in that checkout, whether or not it is
