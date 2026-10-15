@@ -168,29 +168,53 @@ function labelLook(palette: Palette): SlabLook {
 }
 
 /**
- * A container's tray: a neutral well, its floor only just darker than what
- * holds it and its walls shades of that floor, with a header slab standing on
- * the floor, which looks as a card does: in the colour of the group that places
- * the container, or neutral (ADR 0038). Each tray nested in another is cut a
- * step deeper into that one's floor, its walls with it.
- * @param header The header slab: its box, and how it looks.
+ * The floor of a tray nested in some containers: a step deeper for each.
+ * @param depth How many containers the tray is nested in.
  * @param palette Selected theme.
- * @param depth How many containers it is nested in.
- * @returns The tray's look.
+ * @returns The floor's colour.
  */
-function trayLook(header: TrayLook["header"], palette: Palette, depth: number): TrayLook {
+function floorAt(depth: number, palette: Palette): string {
 	const sink: Share = {
 		light: Math.min(TRAY_SINK_MAX.light, depth * TRAY_SINK.light),
 		dark: Math.min(TRAY_SINK_MAX.dark, depth * TRAY_SINK.dark),
 	};
-	const floor = tinted(palette.trayFloor, palette.traySink, sink);
+	return tinted(palette.trayFloor, palette.traySink, sink);
+}
+
+/**
+ * A container's tray: a neutral well, its floor only just darker than what
+ * holds it and its walls shades of that floor, with a header slab standing on
+ * the floor. The header rises to the level of what the tray is cut into and is
+ * made of it: its face is the page's colour, or the colour of the floor of the
+ * tray around it, and its front edge is that colour turned from the light, as
+ * the top wall is. So it reads as the head of the well and not as one more
+ * card, and no group tints it: the region of the group that places the
+ * container says the group (TASK-474). Each tray nested in another is cut a
+ * step deeper into that one's floor, its walls with it.
+ * @param header The header slab's box.
+ * @param palette Selected theme.
+ * @param depth How many containers it is nested in.
+ * @returns The tray's look.
+ */
+function trayLook(header: Box, palette: Palette, depth: number): TrayLook {
+	const floor = floorAt(depth, palette);
+	const ground = depth === 0 ? palette.background : floorAt(depth - 1, palette);
 	return {
 		floor,
 		walls: {
 			top: tinted(floor, palette.slabDeep, TOP_WALL),
 			side: tinted(floor, palette.slabDeep, SIDE_WALL),
 		},
-		header,
+		header: {
+			box: header,
+			look: {
+				face: ground,
+				edge: tinted(ground, palette.slabDeep, TOP_WALL),
+				thickness: CARD_THICKNESS,
+				radius: SLAB_RADIUS,
+				sheen: false,
+			},
+		},
 	};
 }
 

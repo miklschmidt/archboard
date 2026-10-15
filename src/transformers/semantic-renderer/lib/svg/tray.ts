@@ -15,16 +15,17 @@
 // nested in another is cut a step deeper into that one's floor. Nothing about
 // a tray floats: it casts no shadow.
 //
-// Its header is a slab like a card's (`slab`), standing on the floor and rising
-// to the level of what the tray is cut into. It stands inside the walls, a
-// gap of only two units from the top wall and from each side wall
-// (`WELL_GAP`), friction fit in the well, as far from the outer edge on the top
-// as on either side. It takes its colour from the group
-// that places the container, as a card does. What the container itself
-// relates to leaves from the foot of the header's front edge, so the edge is
-// the line's visible origin. A proposal's standing borders the header's face,
-// as it does a card's; a removed container leaves the ghost every removed block
-// leaves (`slab.ts`).
+// Its header is a slab (`slab`), standing on the floor and rising to the level
+// of what the tray is cut into, and made of it: its face is the colour of the
+// page, or of the floor of the tray it is nested in, and its front edge is that
+// colour in shade. So it reads as the head of the well and not as a card, and
+// no group tints it (`trayLook`). It stands inside the walls, a gap of only two
+// units from the top wall and from each side wall (`WELL_GAP`), friction fit in
+// the well, as far from the outer edge on the top as on either side. What the
+// container itself relates to leaves from the foot of the header's front edge,
+// so the edge is the line's visible origin. A proposal's standing borders the
+// header's face, as it does a card's; a removed container leaves the ghost
+// every removed block leaves (`slab.ts`).
 //
 // Every shape of the well is a rect at an offset from the container's box or a
 // line across it, so a viewer that carries a container from one picture to the

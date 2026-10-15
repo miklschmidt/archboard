@@ -202,6 +202,27 @@ describe("a part's near and far views", () => {
 		});
 	}
 
+	test("a tall card's far tile stands at its top, where its chip stands near, not halfway down", async () => {
+		const tall = orderedFixture({
+			nodes: [
+				{
+					id: "tall",
+					name: "Picture transition",
+					kind: "service",
+					responsibility:
+						"Carries one picture into the next: kept parts fly to their new places, departed ones fade, and the traffic's clock carries over; a picture a flight arrived at is put up as it is.",
+				},
+			],
+		});
+		const rendered = await renderSemanticView({
+			grammar: "architecture",
+			content: tall,
+			theme: "light",
+		});
+		const [chip] = viewsOf(rendered.svg, "tall", "card").chips;
+		expect(chip!.far.y).toBeLessThanOrEqual(chip!.near.y);
+	});
+
 	test("data-flow save: a flow's heading, which has no chip, moves its words between the near and the far place", async () => {
 		const rendered = await renderSemanticView({ grammar: "data-flow", content, theme: "light" });
 		const views = viewsOf(rendered.svg, "save", "flow");

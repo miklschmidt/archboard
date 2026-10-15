@@ -13,7 +13,10 @@ import {
 /** The independent visual channels of a node in this reading. */
 interface NodeAppearance {
 	readonly container: boolean;
-	/** Its body's colour: its placing group's, a card's and a container's header alike (ADR 0038). */
+	/**
+	 * Its body's colour: a card's placing group's (ADR 0038). A container's well
+	 * and header are made of what the well is cut into, so it has none (TASK-474).
+	 */
 	readonly bodyColor?: PaletteColor | undefined;
 	/** The group whose colour it takes, if any. */
 	readonly group?: string | undefined;
@@ -39,10 +42,11 @@ function ownDefinition<Definition>(
 }
 
 /**
- * Resolve each drawn subject's channels: a card's body and a container's
- * header take the colour of the group they are placed with, and every chip the
- * colour of its type. A container colours nothing inside it; that is a group's
- * role (TASK-347, ADR 0038, TASK-423).
+ * Resolve each drawn subject's channels: a card's body takes the colour of the
+ * group it is placed with, and every chip the colour of its type. A container
+ * takes no colour and passes none to what it holds: its well and its header are
+ * made of what the well is cut into, and the region of its group says the group
+ * (TASK-347, ADR 0038, TASK-474).
  * A part that opens another board says which way it lies (`drill`), read from
  * its kind against the board's own level (ADR 0029).
  * @param nodes Subjects present in the drawing.
@@ -63,9 +67,10 @@ function nodeAppearances(
 			...typeAppearance(node.kind, policy),
 			drill: node.drillDown === undefined ? null : drillDirection(node.kind, level, policy.levels),
 		};
+		const container = parents.has(node.id);
 		resolved.set(node.id, {
-			container: parents.has(node.id),
-			...groupColour(placing.get(node.id), policy),
+			container,
+			...groupColour(placing.get(node.id), policy, container),
 			...type,
 		});
 	}
@@ -73,16 +78,19 @@ function nodeAppearances(
 }
 
 /**
- * A body's colour, a card's or a container's header's: its placing group's.
+ * The group that places a part, and its body's colour: a card's is its placing
+ * group's, and a container's is none.
  * @param group The group that places it, if any.
  * @param policy The current vault policy.
- * @returns The group and its colour, or nothing for a part no group places.
+ * @param container Whether it is drawn as a container, with its children inside it.
+ * @returns The group and the colour, or no colour for a container or a part no group places.
  */
 function groupColour(
 	group: string | undefined,
 	policy: SemanticPolicy,
+	container: boolean,
 ): Pick<NodeAppearance, "bodyColor" | "group"> {
-	const placed = group === undefined ? undefined : ownDefinition(policy.groups, group);
+	const placed = group === undefined || container ? undefined : ownDefinition(policy.groups, group);
 	return { bodyColor: placed?.color, group };
 }
 

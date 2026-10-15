@@ -1,7 +1,8 @@
-// What a card draws when the picture is seen from far away: a tile down its
-// start that holds its kind's glyph large, and beside it its name and the
-// start of its responsibility. Each is set at a size that still reads from
-// far away without filling the card the way a name grown to its height did.
+// What a card draws when the picture is seen from far away: a tile at its top
+// left that holds its kind's glyph large, where the chip stands near, and
+// beside it its name and the start of its responsibility, level with the tile.
+// Each is set at a size that still reads from far away without filling the
+// card the way a name grown to its height did.
 //
 // The words are laid out from the card's own box, so a short card and a tall
 // one stay one design: a card too short for both name and gist keeps its name.
@@ -299,8 +300,10 @@ function wordsOf(runs: readonly TextRun[], box: Box, palette: Palette): Words {
 /**
  * A card's near and far views, and the chip they share. Near, the chip, the
  * name and the responsibility stand where the card measured them. From far
- * away the chip grows to a tile down the card's start, and beside it stand the
- * name and the start of the responsibility, at a size that still reads. The
+ * away the chip grows to a tile at the top of the card's start, as it stands
+ * near, and beside it stand the name and the start of the responsibility, at a
+ * size that still reads: from the tile's top, or centred on the tile when they
+ * are shorter than it (TASK-474). The
  * stylesheet moves the chip and the words between the two places when the
  * picture swaps its views. The mark of a board the card opens stands at one
  * place in both views, larger from far away, and fades with its view.
@@ -333,9 +336,10 @@ function paintCardViews(
 	const room = box.width - x - END - (drill === null ? 0 : DRILL_MARK_ROOM * MARK_SCALE);
 	const gist = node.responsibility?.trim() === "" ? undefined : node.responsibility;
 	const stack = settle(node.name, gist, room, box.height - PAD_Y * 2);
-	const far = wordsOf(runsOf(stack, x, (box.height - stack.height) / 2), box, look.palette);
+	const top = EDGE + Math.max(0, (tile - stack.height) / 2);
+	const far = wordsOf(runsOf(stack, x, top), box, look.palette);
 	const nearChip: ChipPlace = { x: near.chip.x, y: near.chip.y, size: ICON_CHIP_SIZE };
-	const farChip: ChipPlace = { x: box.x + EDGE, y: box.y + (box.height - tile) / 2, size: tile };
+	const farChip: ChipPlace = { x: box.x + EDGE, y: box.y + EDGE, size: tile };
 	return fragments([
 		sharedChip(near.chip.markup, nearChip, farChip),
 		nearLayer(movingWords(near.words.markup, near.words.anchor, far.anchor) + mark(1)),
