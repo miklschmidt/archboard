@@ -1,10 +1,11 @@
 ---
 id: TASK-472.10
 title: 'Each checkout has its own workhorse, and the coordinator works in no checkout'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 03:38'
+updated_date: '2026-10-15 05:13'
 labels: []
 dependencies:
   - TASK-472.04
@@ -39,6 +40,12 @@ A tab session has one workhorse and one coordinator, both running in the archboa
 - [ ] #8 AGENTS.md's Codex invariant, PRODUCT.md, CONTEXT.md and the archboard-dev skill describe one coordinator and one workhorse per checkout as built
 - [ ] #9 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Decision (hand-off vs workhorse checkouts, raised in the TASK-472.08 review): a command whose environment sets ARCHBOARD_URL hands off to no checkout (src/runtime/engine/source-checkout.ts handOffTarget). The URL already names the server, and the source that matters is the one that server runs. That alone is not enough: a thread's `archboard` on PATH links to one checkout, so with a worktree server a thread in another checkout would run the main source and the identity probe would refuse it (OtherSourceError). So the Codex child environment also puts the server's own bin directory first on PATH (src/runtime/codex-process/lib/environment.ts, archboardServer.binDirectory). Every thread's archboard then runs the server's source in whichever checkout it works. Owners: src/runtime/engine/tests/source-checkout.test.ts 'a command whose environment names its server runs where it is, as a workhorse in a worktree does', and src/runtime/codex-process/tests/storage.test.ts (PATH leads with the server bin). AGENTS.md and TESTING.md say so.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 

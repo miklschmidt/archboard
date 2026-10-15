@@ -43,8 +43,12 @@ Where things are written down:
   port 3000. The server of a linked worktree listens on a port in 10000 to
   19999, a hash of the worktree's path, so each worktree has its own server.
   `archboard status` gives the URL. A set `ARCHBOARD_URL` or `--url` still
-  decides. A command that finds a server of another checkout's source on its
-  port refuses and names both checkouts.
+  decides. A command whose environment sets `ARCHBOARD_URL` runs where it is
+  and hands off to no checkout: the URL names its server already. The Codex
+  workbench sets it on every thread and puts the server's own `bin` first on
+  the thread's PATH, so a workhorse in an archboard worktree reaches the server
+  that started it. A command that finds a server of another checkout's source
+  on its port refuses and names both checkouts.
 - `bun run check` is the complete gate. Only shippable, repository-authored
   Archboard skills live under `skills/`. Tracked symlinks expose them through
   `.claude/skills/` and `.agents/skills/`. For other skills, use the exact path
