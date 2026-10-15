@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-15 15:39'
-updated_date: '2026-10-15 17:12'
+updated_date: '2026-10-15 17:44'
 labels: []
 dependencies: []
 parent_task_id: TASK-478
@@ -24,10 +24,10 @@ Recorded walkthroughs in pull requests narrate the screen and joke. Transcripts 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 A recording gives its voice session narrator instructions of its own, without the live persona: speak about the system in the board's names, never about the screen, the step or the walkthrough itself, no jokes, and no closing line; live narration and conversation keep their persona
+- [x] #1 A recording gives its voice session the live persona with a recording section of its own, and none of the conversation rules: speak about the system in the board's names, never about the screen, the step or the walkthrough itself, humour turned down by a quarter from live talk and no further, and no closing line; live narration and conversation keep their prompts unchanged
 - [x] #2 What the voice receives for each recorded beat invites no screen narration; the source of the "On screen now" and "This step" openings is found and named in the task notes
-- [ ] #3 A recording made after the change, of a walkthrough in the dogfood vault, is read by a person, and its transcript in the task notes shows no screen talk, joke or closing formula
-- [x] #4 A test owner proves that a recording session receives the narrator instructions and a live narration session the persona, without matching their wording
+- [ ] #3 A recording made after the change, of a walkthrough in the dogfood vault, is heard by a person, and its transcript in the task notes shows no screen talk and no closing formula
+- [x] #4 A test owner proves that a recording session receives the persona and its own section without the conversation rules, and a live narration session the whole live prompt, without matching their wording
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,6 +42,8 @@ Boards: none affected. The change rewrites what a recording's voice session is t
 5. Owner: src/runtime/codex-realtime/tests/presentation-mode.test.ts. A recording start's prompt shares no paragraph with the live prompt (persona and conversation); a narration start's prompt begins with the whole live prompt; a recorded beat's speech carries heading, body and subjects but not its position, and begins with the lead-in its prompt names. No wording matched.
 6. One real recording of a dogfood walkthrough after the change; transcript into the notes.
 7. Report: ADR 0041 and docs/design/codex-workbench-authored-contracts.md say a recording gets 'the voice's persona with a recording section'; both are outside this task's write scope, so the parent amends them.
+
+8. The user wants the persona kept on recordings, with the jokes turned down by about a quarter and no more. Put the persona back in front of the recording section (start-policy.ts, ARCHBOARD_RECORDING_VOICE_PROMPT). Replace the no-jokes rule with a quarter less humour than live talk. Keep the rules against screen talk, step numbers and a closing line. The test owner proves that a recording keeps the persona and none of the conversation rules. Amend ADR 0041 and the authored contracts doc again.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -77,4 +79,6 @@ No screen talk, no step talk, no joke and no closing formula. Each beat is a rew
 Outside this task's write scope, for the parent: docs/adr/0041-a-recording-is-a-talk-rendered-frame-by-frame.md (Decision: the voice model gets the voice's persona and a recording section) and docs/design/codex-workbench-authored-contracts.md (the start that records a walkthrough: prompt is the voice's persona with a recording section) are now false. A recording's prompt is its narrator instructions alone, with no persona.
 
 Gate: bun run check passed at e92b4f82f plus the skill commits (exit 0, no failing test in any lane, serial browser lane included). AC 3 stays open: the transcripts of this recording and of the three trial recordings (TASK-478.04) show no screen talk, joke or closing line, but no person has listened to a video yet. Listen to /tmp/t47802-rec/codex-session.mp4 or /tmp/pr-audit/trial-out/607/walkthrough.mp4, then check AC 3.
+
+Persona restored. The user enjoyed the persona and asked to turn the jokes down by 25% and no more. A recording now gets VOICE_PERSONA (ARCHBOARD_RECORDING_VOICE_PROMPT again, chosen in start-policy.ts) followed by the recording section. The section replaces "No jokes, no asides, no exclamations" with a rule to stay in character, with the humour turned down by a quarter from live talk: three jokes where a conversation would get four. The rules against screen talk, step numbers, a greeting and a closing line stay, and so does the one-language rule. The section no longer repeats the persona's "heard, not read" paragraph. Live conversation and live narration prompts are byte-identical to before. Test owner: presentation-mode.test.ts proves that a recording keeps a leading run of the live prompt's paragraphs (the persona) and none of the rest (the conversation), with no wording matched. Two mutations of start-policy.ts each fail it: a recording given the whole live prompt, and a recording given its section alone. bun test src/runtime/codex-realtime: 32 pass. lint, type-check, fmt:check and tests/system/repository-policy (27 pass) are clean. ADR 0041 and docs/design/codex-workbench-authored-contracts.md now say that a recording gets the persona with a recording section and none of the conversation rules. AC 3 was restated: a joke is allowed again, so the transcript only has to show no screen talk and no closing formula.
 <!-- SECTION:NOTES:END -->

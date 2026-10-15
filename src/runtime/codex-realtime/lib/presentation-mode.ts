@@ -97,8 +97,8 @@ const RECORDED_STEP_LEAD_IN = "Explain in your own words";
 const RECORDED_SUBJECTS_LEAD_IN = "Subjects";
 
 /**
- * What the voice model is told when it is started to narrate a walkthrough for a recording. It is
- * the whole prompt: a recording has no conversation and no persona.
+ * What the voice model is told, after the persona, when it is started to narrate a walkthrough for
+ * a recording. A recording has no conversation, so it gets none of the conversation's rules.
  * @param name The walkthrough's name.
  * @param recording The language the recording is narrated in.
  * @returns The voice model's prompt.
@@ -106,27 +106,24 @@ const RECORDED_SUBJECTS_LEAD_IN = "Subjects";
 function recordingPrompt(name: string, recording: RecordingNarration): string {
 	const language = languageName(recording.language) ?? recording.language;
 	return [
-		`You narrate a recorded explanation of a software architecture, in ${language}. Speak only ${language}, from your first word to your last. The listener reviews or studies this architecture and hears you once, later, with its board in front of them. Nobody answers you, and nobody is at the controls.`,
+		`This time nobody is talking with you: you narrate a recorded explanation of a software architecture, in ${language}. Speak only ${language}, from your first word to your last. The listener reviews or studies this architecture and hears you once, later, with its board in front of them. Nobody answers you, and nobody is at the controls.`,
 		`The explanation is "${presentationName(name)}". It reaches you one point at a time. Each point begins "${RECORDED_STEP_LEAD_IN}" and gives its heading and what it says. It can end with "${RECORDED_SUBJECTS_LEAD_IN}": the parts and relationships it is about. A subject the change added or changed says so, and says what moved.`,
 		`Explain each point at once, in ${language}, in a few sentences of your own. Say what its subjects do and why that matters, by the names the board uses and never by ids. Do not read the heading or the text out: say what they mean. A point written in another language is still explained in ${language}. Say that something was added or changed only when the point says so.`,
 		'Talk about the system, never about the explanation. Never mention the screen, the picture, the video, a step, a point, the walkthrough, or what is highlighted or shown. Never begin with words such as "on screen now", "this step", "here we see" or "next". Begin with the system itself.',
-		"Speak plainly, as an engineer explains a design to a colleague. No jokes, no asides, no exclamations. No greeting, no opening line, no summary and no closing line.",
+		"Stay yourself, dry wit and all, with your humour turned down by a quarter from how you talk live: where a conversation would get four jokes, this gets three. No greeting, no opening line, no summary and no closing line.",
 		"When you have explained a point, stop talking: your silence moves the recording on. Never ask or invite questions, never hand anything to the coordinator, and never say you are waiting.",
-		"You are heard, not read. No lists, no markdown, no ids, JSON or file paths. Keep board and system names exactly as they are.",
 	].join("\n\n");
 }
 
 /**
- * The voice model's prompt for a walkthrough. A narration the user steps adds its section to the
- * conversation's prompt, since the voice is still the board assistant between steps. A recording
- * that steps itself gets its narrator instructions alone.
- * @param conversation The prompt of a voice session that presents nothing.
+ * The section a walkthrough adds to the voice model's prompt: the narration's for a walkthrough the
+ * user steps, the recording's for one that steps itself.
  * @param presentation The walkthrough, and whether the talk is recorded.
- * @returns The prompt.
+ * @returns The section.
  */
-function voicePresentationPrompt(conversation: string, presentation: RealtimePresentation): string {
+function voicePresentationPrompt(presentation: RealtimePresentation): string {
 	return presentation.recording === null
-		? `${conversation}\n\n${narrationPrompt(presentation.name)}`
+		? narrationPrompt(presentation.name)
 		: recordingPrompt(presentation.name, presentation.recording);
 }
 

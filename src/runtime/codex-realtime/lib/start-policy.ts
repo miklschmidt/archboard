@@ -8,7 +8,10 @@ import {
 	voicePresentationPrompt,
 	type RealtimePresentation,
 } from "@/runtime/codex-realtime/lib/presentation-mode";
-import { ARCHBOARD_VOICE_PROMPT } from "@/runtime/codex-realtime/lib/voice-prompt";
+import {
+	ARCHBOARD_RECORDING_VOICE_PROMPT,
+	ARCHBOARD_VOICE_PROMPT,
+} from "@/runtime/codex-realtime/lib/voice-prompt";
 
 /**
  * How the coordinator says which of its messages the voice model speaks.
@@ -58,14 +61,15 @@ const REALTIME_END_INSTRUCTIONS =
 
 /**
  * The voice model's prompt: the ordinary one, the ordinary one with a narration added, or for a
- * recording its narrator instructions alone, since nobody is there to talk to.
+ * recording the persona with the recording's section, since nobody is there to talk to.
  * @param presentation The walkthrough the session presents, or null.
  * @returns The prompt.
  */
 function voicePrompt(presentation: RealtimePresentation | null): string {
-	return presentation === null
-		? ARCHBOARD_VOICE_PROMPT
-		: voicePresentationPrompt(ARCHBOARD_VOICE_PROMPT, presentation);
+	if (presentation === null) return ARCHBOARD_VOICE_PROMPT;
+	const base =
+		presentation.recording === null ? ARCHBOARD_VOICE_PROMPT : ARCHBOARD_RECORDING_VOICE_PROMPT;
+	return `${base}\n\n${voicePresentationPrompt(presentation)}`;
 }
 
 /**

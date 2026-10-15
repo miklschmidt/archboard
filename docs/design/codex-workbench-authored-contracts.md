@@ -861,8 +861,8 @@ over as one line the voice model acknowledges. Nothing is retried: the next
 step says where the picture is. No coordinator turn is started for any of it.
 
 A start that records a walkthrough (TASK-304, `presentation.recording`) differs
-in four ways. `prompt` is the narrator's instructions alone, with neither the
-voice's persona nor the conversation rules (TASK-478.02). `realtimeStartInstructions` add to the channel
+in four ways. `prompt` is the voice's persona with a recording section, and none
+of the conversation rules (TASK-478.02). `realtimeStartInstructions` add to the channel
 rule that a recording holds the voice, so the coordinator writes only
 `[COMMENTARY]` until it ends; a workhorse outcome during a recording is
 injected, not reported through a coordinator turn. `delegationAckFiller` is

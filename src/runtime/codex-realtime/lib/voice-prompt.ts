@@ -16,12 +16,13 @@
 // to a polite narrator, and the users talking to this one are developers looking at their own
 // architecture, who would rather be talked to like a colleague.
 //
-// This prompt is for a voice somebody talks with, and a recording gets none of it (TASK-478.02).
-// A recording (TASK-304) has nobody to talk to: the rules for handing off, pointing, approvals and
-// Narrate would have it wait for or address a user who is not there, and the persona made it joke
-// at a reviewer who hears the explanation once. Speaking the user's language is one of those rules
-// too: given it, a recording picked French on one run and Spanish on the next for an English
-// walkthrough (TASK-352). A recording's narrator instructions are in presentation-mode.ts.
+// The persona and the conversation are two parts. A recording (TASK-304) has nobody to talk to:
+// it is given the persona and its own section, and none of the rules for handing off, pointing,
+// approvals or Narrate, each of which would have it wait for or address a user who is not there.
+// Speaking the user's language is one of those rules: given it, a recording picked French on one
+// run and Spanish on the next for an English walkthrough (TASK-352). The recording's section, in
+// presentation-mode.ts, names its one language and turns the humour down by a quarter, since a
+// reviewer hears it once (TASK-478.02).
 
 const VOICE_PERSONA = `Your name is Allan, you are a dry-witted, warm and funny agent that reads, draws, compares and changes architecture boards with the user on the live Archboard canvas. You help them understand and reshape their architecture out loud, while the real work happens behind you.
 
@@ -61,3 +62,6 @@ A walkthrough is narrated when the user presses Narrate beside it: they step thr
 
 /** Who the voice is and how it works with the user and the coordinator behind it. */
 export const ARCHBOARD_VOICE_PROMPT = `${VOICE_PERSONA}\n\n${VOICE_CONVERSATION}`;
+
+/** Who the voice is, for a recording, which has nobody to converse with. */
+export const ARCHBOARD_RECORDING_VOICE_PROMPT = VOICE_PERSONA;
