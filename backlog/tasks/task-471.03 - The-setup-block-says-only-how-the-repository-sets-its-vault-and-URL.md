@@ -3,11 +3,11 @@ id: TASK-471.03
 title: >-
   install-skill writes no setup block, and archboard-pr triggers on the vault
   directory
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 14:40'
-updated_date: '2026-10-15 08:31'
+updated_date: '2026-10-15 08:43'
 labels: []
 dependencies:
   - TASK-472.09
@@ -23,10 +23,10 @@ The block that `install-skill` writes into a repository's CLAUDE.md or AGENTS.md
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `install-skill` writes no block into CLAUDE.md or AGENTS.md
-- [ ] #2 Rerunning `install-skill` in a repository that holds a block from an earlier version removes that block and leaves the rest of the file unchanged, and its output says so
-- [ ] #3 The archboard-pr skill triggers on a repository that has `.archboard/vault`, and no shipped skill names `ARCHBOARD_VAULT`
-- [ ] #4 A test holds that no file that `install-skill` writes into a repository contains a path of the machine that ran it
+- [x] #1 `install-skill` writes no block into CLAUDE.md or AGENTS.md
+- [x] #2 Rerunning `install-skill` in a repository that holds a block from an earlier version removes that block and leaves the rest of the file unchanged, and its output says so
+- [x] #3 The archboard-pr skill triggers on a repository that has `.archboard/vault`, and no shipped skill names `ARCHBOARD_VAULT`
+- [x] #4 A test holds that no file that `install-skill` writes into a repository contains a path of the machine that ran it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -41,4 +41,12 @@ The block that `install-skill` writes into a repository's CLAUDE.md or AGENTS.md
 Decisions: install-skill options --vault, --doc and --yes are removed (the vault is always <repo>/.archboard/vault and nothing is asked or written into a document), --no-doc is --no-setup. The receipt's setup is {repo, vault, vaultCreated, vaultIgnored, removedBlocks}; removedBlocks lists the CLAUDE.md/AGENTS.md files a block was cut from, and a diagnostic line per file says so. Removal deletes the markers, what is between them and the newline after the end marker; every other byte stays, and only CLAUDE.md and AGENTS.md at the repository root are looked at. The guard for the archboard checkout itself is gone (nothing is written there now). The skill-evaluation harness installs with --repo only and no longer reads or records the block. Left for TASK-471.02: resolveInvocation in skill-destination.ts has no caller now; 471.02's PATH warning will use it.
 
 Board closing: Skill evaluation@TASK-471.03 corrected (summary is the board's scope; Skill install description says the run's vault is the .archboard/vault the checkout already holds) and adopted. The install-skill parts of this task are on Command interface@TASK-472.09 (Install skill: vault made at the root of the git checkout that holds --repo or the working directory, checkoutRootOf in repo-setup.ts; Repository setup: line-anchored block removal, CRLF safe, never past another begin marker), adopted with that task. Code check with and without --variant TASK-471.03: no difference. Footprint on Skill evaluation read against base f57fab66c (parent of the first code commit 10f827af3): Skill install named and changed; Evaluation harness (container) changed only by install.ts, which is named; Evaluation inputs (evals) changed only by wording in evals/README.md, so the board stays true. skill-destination.ts (resolveAgent return type, 10f827af3) and the withoutOldBlock re-export from install-skill.ts (4ca78b0ff) changed how Commands works inside, not what it draws.
+
+Review: 4ca78b0ff (block removal is line-anchored: a marker quoted in prose, an orphan begin marker and CRLF files are safe, with install-skill-setup.test.ts), aeb23ca92 (--repo help and the CLI audit), 89b441d01 (install-skill takes the checkout root from git for --repo and the working directory, so a directory inside a checkout sets up the root where commands find the vault; owner in install-targets.test.ts). Removed options (--vault, --doc, --yes, --no-doc) are refused as unknown flags. Criterion #3: the one mention of ARCHBOARD_VAULT in a shipped skill is the generated copy of INSTALL.md describing the refusal (TASK-472.09), which tells somebody with an old setting what to unset. Gate: bun run check passed on a4496d8d3.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+install-skill writes no block into CLAUDE.md or AGENTS.md. It makes <checkout root>/.archboard/vault, and a rerun in a repository that holds a block from an earlier version removes exactly that block, leaves every other byte, and reports removedBlocks with one stderr line per file. The archboard-pr skill triggers on a repository that has .archboard/vault. Verified by install-targets.test.ts (no block written, earlier block removed byte for byte, no machine path in any written file, a directory inside a checkout sets up the root) and install-skill-setup.test.ts, a review, and the full gate on a4496d8d3.
+<!-- SECTION:FINAL_SUMMARY:END -->
