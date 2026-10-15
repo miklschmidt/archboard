@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 45,
+	"version": 47,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-15T06:50:13.643Z",
+	"updatedAt": "2026-10-15T07:01:56.007Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -10961,7 +10961,7 @@
 		{
 			"id": "vuIqmjLY",
 			"name": "TASK-472.14",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "rCXbD4vW",
 			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches.",
 			"content": {
@@ -12519,9 +12519,9 @@
 		{
 			"id": "plROBSTr",
 			"name": "TASK-472.16",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "vuIqmjLY",
-			"summary": "A person looks at what a move would rewrite before moving a board",
+			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches, including a board's move to another repository and the look at what it would rewrite",
 			"content": {
 				"nodes": [
 					{
@@ -12881,7 +12881,7 @@
 						"name": "Move route",
 						"kind": "route",
 						"responsibility": "Moves a whole board into another repository's vault under the write's admission, tells each vault's panes and takes the board's panes along; says beforehand what a move would rewrite",
-						"description": "TASK-472.15, ADR 0051: semantic move. move.to names the target vault, read as strictly as the vault of the call. The source vault's change feed says the board moved and where to. A move that stopped part way announces what it wrote, moves no pane, and answers MOVE_STOPPED. TASK-472.16: movePreviewRoute answers GET move-preview, holding and writing nothing, so it takes no lease and no claim; it can be out of date when the move runs, and the version it answers is the version the move states. Its refusal is answered in the move's own words.",
+						"description": "TASK-472.15, ADR 0051: semantic move. move.to names the target vault, read as strictly as the vault of the call. The source vault's change feed says the board moved and where to. A move that stopped part way announces what it wrote, moves no pane, and answers MOVE_STOPPED. TASK-472.16: movePreviewRoute answers GET move-preview, holding and writing nothing, so it takes no lease and no claim; it can be out of date when the move runs, and the version it answers is the version the move states. A board name that cannot be used is refused as every write refuses it (BAD_BOARD_NAME, through usableBoard), and any other refusal is answered in the move's own words and codes.",
 						"groups": [
 							"writes"
 						],
@@ -14141,7 +14141,7 @@
 			}
 		}
 	],
-	"current": "vuIqmjLY",
+	"current": "plROBSTr",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -14190,6 +14190,12 @@
 			"from": "rCXbD4vW",
 			"at": "2026-10-15T06:19:48.517Z",
 			"reason": "TASK-472.14: the repository routes watch the registry file and every pane follows it; an agent's show and a finished move choose their checkout through the registry"
+		},
+		{
+			"variant": "plROBSTr",
+			"from": "vuIqmjLY",
+			"at": "2026-10-15T07:01:56.007Z",
+			"reason": "The move route answers GET move-preview, holding and writing nothing, and refuses a board name in the move's codes"
 		}
 	],
 	"shelvings": [

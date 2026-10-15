@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 54,
+	"version": 57,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-15T06:51:32.340Z",
+	"updatedAt": "2026-10-15T07:01:55.823Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -7785,7 +7785,7 @@
 		{
 			"id": "MPiVvKed",
 			"name": "TASK-472.15",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "mK3EsXXB",
 			"summary": "The semantic board store: board reads, transitions, vault checks, durable writes and a board's move to another vault",
 			"content": {
@@ -9229,9 +9229,9 @@
 		{
 			"id": "ATO5MjZC",
 			"name": "TASK-472.16",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "MPiVvKed",
-			"summary": "The semantic board store: board reads, transitions, vault checks, durable writes and a board's move to another vault, and a look at what that move would rewrite",
+			"summary": "The semantic board store: board reads, transitions, vault checks, durable writes, a board's move to another repository's vault and a look at what that move would rewrite",
 			"content": {
 				"nodes": [
 					{
@@ -9283,7 +9283,7 @@
 						"name": "Read and validate",
 						"kind": "function",
 						"responsibility": "Reads a coherent aggregate from disk, by its name or a name it used to have",
-						"description": "readSemanticBoard asks Former names which board a name answers to; readSemanticBoardAt synchronously reads fresh bytes, asks Decode board bytes to parse and migrate the shared semantic schema, distinguishes missing from unreadable files, and rejects a document whose internal name disagrees with its address. A document of an older contract is migrated, and persisted when its lease is free, before it is answered.",
+						"description": "readSemanticBoard asks Former names which board a name answers to; readSemanticBoardAt synchronously reads fresh bytes, asks Decode board bytes to parse and migrate the shared semantic schema, distinguishes missing from unreadable files, and rejects a document whose internal name disagrees with its address. A document of an older contract is migrated, and persisted when its lease is free, before it is answered. readSemanticBoardAtAsLeased, for a question asked before a write, answers a board that awaits its migration as the migration would leave it, at the version the migration commits, and persists nothing.",
 						"parent": "jar7RnTP",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -9360,7 +9360,7 @@
 						"name": "Write under lease",
 						"kind": "function",
 						"responsibility": "Commits one durable version",
-						"description": "writeSemanticBoard locates the target, acquires the board-wide claim/lease, reads and validates under that lease, checks the expected version, applies one transition, validates the candidate, advances once, and persists once.",
+						"description": "writeSemanticBoard locates the target, acquires the board-wide claim/lease, reads and validates under that lease, checks the expected version, applies one transition, validates the candidate, advances once, and persists once. boardBefore reads the board through a reader its caller may choose: under the lease, which persists a migration the board awaits, unless the caller holds none and writes nothing.",
 						"parent": "jar7RnTP",
 						"groups": [
 							"writes"
@@ -9637,7 +9637,7 @@
 						"name": "Move",
 						"kind": "function",
 						"responsibility": "Moves a whole board, every variant, former name and id, into another repository's vault: the target note first, then each rewritten drill-down, the source note deleted last",
-						"description": "ADR 0051, TASK-472.15. Holds the board's lease in the source vault, then its name's lease in the target without waiting. move-checks.ts refuses a same repository, a taken name and a link needing an untracked identity; move-drill-downs.ts rewrites the links in both vaults. checkedMove runs those checks and rewrites in memory, and the move writes what it found; Move preview runs it alone. A move that stopped part way leaves the board in both vaults, and running it again finishes it. It gives back the claim it ran under.",
+						"description": "ADR 0051, TASK-472.15. Holds the board's lease in the source vault, then its name's lease in the target without waiting. move-checks.ts refuses a same repository, a taken name and a link needing an untracked identity; move-drill-downs.ts rewrites the links in both vaults. checkedMove runs those checks and rewrites in memory, reading the board through the reader its caller gives it (under the lease by default), and the move writes what it found; Move preview runs it alone. A move that stopped part way leaves the board in both vaults, and running it again finishes it. It gives back the claim it ran under.",
 						"parent": "jar7RnTP",
 						"groups": [
 							"writes"
@@ -10768,7 +10768,7 @@
 			}
 		}
 	],
-	"current": "MPiVvKed",
+	"current": "ATO5MjZC",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -10817,6 +10817,12 @@
 			"from": "mK3EsXXB",
 			"at": "2026-10-15T06:05:03.467Z",
 			"reason": "semantic move: the store's Move writes the whole board into another repository's vault under both leases, rewrites the drill-downs the move changes, and deletes the source note last"
+		},
+		{
+			"variant": "ATO5MjZC",
+			"from": "MPiVvKed",
+			"at": "2026-10-15T07:01:55.823Z",
+			"reason": "A person can look at what a move would rewrite before moving a board: Move preview reads the board as its lease would, holding and writing nothing"
 		}
 	],
 	"shelvings": [
