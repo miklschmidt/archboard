@@ -97,26 +97,42 @@ function assertOwnedWorkhorse(binding: WorkhorseOperationBinding): void {
 	}
 }
 
+/** What a checkout is, in the words of the coordinator's board context. */
+const CHECKOUT_MEANING =
+	"A checkout is the directory that holds a board's vault: the repository your board context names for the board.";
+
+/**
+ * Why a workhorse tool found no ready workhorse, and what the coordinator can do next. A
+ * delegation has already tried to start the workhorse, so telling it to delegate would loop.
+ * @param checkout - The checkout the call names.
+ * @param delegation - Whether the call is delegate_to_workhorse.
+ * @returns The message.
+ */
+function noWorkhorseMessage(checkout: string, delegation: boolean): string {
+	return delegation
+		? `No workhorse could start in ${checkout}. ${CHECKOUT_MEANING} If ${checkout} is one, starting its workhorse failed: tell the user.`
+		: `This conversation has no ready workhorse in ${checkout}. Delegate work there to start one. ${CHECKOUT_MEANING}`;
+}
+
 /**
  * Resolve the server-bound workhorse of the checkout a workhorse-namespace call names.
  * @param options - The dispatcher options carrying the server authority.
  * @param call - The decoded logical call.
  * @param coordinator - The current coordinator facts.
- * @param checkout - The checkout the call names.
+ * @param target - The checkout the call names, and whether the call is a delegation.
+ * @param target.checkout - The checkout.
+ * @param target.delegation - Whether the call is delegate_to_workhorse.
  * @returns The current workhorse binding.
  */
 function workhorseBinding(
 	options: CodexCoordinatorToolsOptions,
 	call: LogicalToolCallCorrelation,
 	coordinator: CoordinatorToolCoordinatorAuthority,
-	checkout: string,
+	target: { readonly checkout: string; readonly delegation: boolean },
 ): WorkhorseOperationBinding {
-	const binding = options.workhorseFor(checkout)?.binding() ?? null;
+	const binding = options.workhorseFor(target.checkout)?.binding() ?? null;
 	if (binding === null) {
-		fail(
-			"not_ready",
-			`This conversation has no ready workhorse in ${checkout}. Delegate work there to start one.`,
-		);
+		fail("not_ready", noWorkhorseMessage(target.checkout, target.delegation));
 	}
 	assertCurrentChildEpoch(options, binding, "bound workhorse");
 	assertAttachedToCoordinator(binding, call, coordinator);
