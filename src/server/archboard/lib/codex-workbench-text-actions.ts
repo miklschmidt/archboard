@@ -134,20 +134,12 @@ export function createServerCanonicalTextActions(
 			return { outcome: "delivered" };
 		},
 		/**
-		 * Stop the turn that is running on the workhorse of the pane's checkout, and on no other:
-		 * the Stop control stops the workhorse the pane shows (ADR 0050).
+		 * Stop the turn that is running on the workhorse of the pane's checkout. The gateway admits
+		 * the command only when its thread is the link of that workhorse (ADR 0050).
 		 * @param command The thread and the turn.
-		 * @param context The pane and the link it named.
 		 * @returns The browser outcome.
 		 */
-		interrupt: async (command, context) => {
-			if (command.threadId !== browserLeaseThreadId(context)) {
-				throw new CodexWorkbenchGatewayError(
-					"invalid_command",
-					"Stop acts on the workhorse of this pane's checkout; read the pane again.",
-					{ outcome: "not_delivered" },
-				);
-			}
+		interrupt: async (command) => {
 			await options.session.turnInterrupt({
 				threadId: command.threadId,
 				turnId: command.turnId,
