@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 08:10'
+updated_date: '2026-10-15 08:52'
 labels:
   - frontend
 dependencies:
@@ -51,3 +51,21 @@ With one workhorse per checkout, the agent dock must show one of them. ADR 0050 
 3. Owners: shown-conversation route and projection tests on the server, activation tests in src/ui/application/tests, a rendered list test, dispatcher test for stop_workhorses, one browser segment in codex-text-workbench.test.ts.
 4. Docs: PRODUCT.md agent dock, AGENTS.md Codex invariant, CONTEXT.md, the archboard skill. Boards: proposals TASK-472.11 on Agent workbench, Codex workhorse, Voice coordinator, Browser application, Live panes, drawn after the code lands.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Backend slice built (implementer, 2026-10-15), commits 329330518, 3c3e0a9a6, d4b14ac10, b8c825f35. Decisions and their reasons:
+
+- Shown checkout per tab: in the tab registry (src/server/archboard/lib/tab-sessions.ts), beside the tab's grace, so it outlives every Codex child and ends with the tab. shown(tab, pin) pins the asking pane's own checkout on the first read; show(tab, checkout) is the only change and tells onShownChange; current(tab) peeks without pinning (the route and the coordinator-turn record use it). forgetAll clears it.
+- The gateway seam keeps its shape: CodexWorkbenchServer.checkoutOfBrowser became shownCheckoutOf(browserId) (codex-wiring.ts), falling back to the pane's own checkout when its socket names no tab (only a teardown race). The server's onPaneVaultMove went away with its only listener: the dock follows onShownChange instead, so neither an agent's browser show nor a new chosen checkout moves it. pane-vaults.ts no longer has move observers.
+- Liveness: a workhorse is live once its workhorse start has a thread (snapshot().threadId), not by reading its thread link. Same fact, and it needs no thread-link read in the projection (the generation fixture has no link reads).
+- Activation route: src/server/archboard/lib/shown-conversation-route.ts, mounted in pane-routes.ts as POST SHOWN_CONVERSATION_ROUTE with createBrowserOriginGuard("mutation") and requireVault. A pick is showable when it is a live workhorse's checkout, a pane's of the tab, or the one shown now (a no-op). A bad body is 400 BAD_REQUEST, the repository's code for one. The live checkouts reach the route through codexWiring.codex.liveWorkhorseCheckouts, installed with the generation's lifecycle signals.
+- Lease after a switch: the existing ensureLeaseBinding already compares the lease's checkout with checkoutOf, so a command or renewal under a lease taken before a switch is refused link_changed and the lease is released; the next claim binds the shown checkout. No new lease code.
+- Workhorse list: codex-workbench-workhorse-list.ts, read in readBrowserOwnerProjection with shown = context.checkout and repositoryOf = repositoryOfVault(vaultIn(checkout)) through CodexWorkbenchServer.repositoryOfCheckout. Entries are bounded to BROWSER_WORKHORSE_LIMIT (the shown one first, then the newest live ones), so a snapshot never exceeds the contract. The shared model now exports BROWSER_WORKHORSE_LIMIT (an export, no shape change).
+- Coordinator turn homes: CodexWorkbenchTabSessionState.coordinatorTurnHomes, bounded at MAX_DELEGATIONS. shownAtStart is noted in the sessions store's onNotification for a turn/started on a thread the session's coordinator owns (byThread owner with no workhorse), not in deliver(), so it needs no coordinator snapshot. gaveWorkTo is a second operations subscription per workhorse in buildWorkhorse: delegate, steer, and queue add/start. keepTurn is the last parameter of ServerTimelineOwner.readTarget and is applied in projectData before the projection budget. The ingestion budget still bounds the retained coordinator history, so a conversation shows its turns among the coordinator's newest retained turns.
+- Spoken stop: stop_workhorses in archboard_workhorse with the new authority target server_tab_session_workhorses and only the tool correlation links; port stopWork on CodexCoordinatorToolsOptions, wired in codex-workbench-session-bindings.ts to scope.stopWork(null) (the scope gained stopWork). Manifest digest 98288fd3..., coordinator instructions digest b9aa33ff....
+- Lint limits: the notification-thread helpers moved from codex-workbench-timeline.ts to codex-timeline-live.ts; sessions.ts stays at 599 lines.
+
+Owners: src/server/archboard/tests/shown-conversation.test.ts (pin, show, end), tests/system/server-state/shown-conversation.test.ts (route, refusals, origin guard, every pane follows, New conversation and a message from a payments pane reach the shop workhorse by cwd and turn/start thread, an agent's show leaves the dock), codex-workbench-workhorse-list.test.ts (entries, order, marks), codex-workbench-delegations.test.ts and codex-workbench-sessions.test.ts (homes), codex-workbench-timeline-target.test.ts (keepTurn), gateway-checkouts.test.ts (a lease from before a switch is refused link_changed, a new one runs on the shown workhorse), codex-coordinator-tools/tests/stop.test.ts and codex-workbench-session-bindings.test.ts (stop_workhorses).
+<!-- SECTION:NOTES:END -->
