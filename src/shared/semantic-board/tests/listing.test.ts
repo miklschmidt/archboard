@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
 	BoardListingSchema,
+	DrillDownSchema,
 	listedBoard,
 	parseSemanticBoard,
 	type SemanticBoard,
@@ -57,6 +58,7 @@ function board(variants: Variant[], current?: string): SemanticBoard {
  * @param name Its name.
  * @param target The board it opens, and the named variant when not the current one.
  * @param parent The node containing it, if any.
+ * @param repo The repository whose vault holds the board, when it is not this one's.
  * @returns The node.
  */
 function drilling(
@@ -64,6 +66,7 @@ function drilling(
 	name: string,
 	target: readonly [board: string, variant?: string],
 	parent?: string,
+	repo?: string,
 ): Record<string, unknown> {
 	const [to, variant] = target;
 	return {
@@ -74,6 +77,7 @@ function drilling(
 		drillDown: {
 			board: to,
 			variant: variant === undefined ? { kind: "current" } : { kind: "named", name: variant },
+			...(repo === undefined ? {} : { repo }),
 		},
 	};
 }
@@ -105,6 +109,55 @@ describe("a listed board's links", () => {
 		expect(listed.links).toEqual([
 			{ board: "Archboard", variant: null, node: "Archboard", container: true },
 			{ board: "semantic-board-store", variant: "Queued", node: "Store", container: false },
+		]);
+	});
+
+	test("into another repository say so, keep the name the link spells, and are never a link back to the board itself", () => {
+		const listed = listedBoard(
+			LOCATION,
+			{
+				ok: true,
+				board: board(
+					[
+						{
+							id: "v1",
+							lifecycle: "current",
+							nodes: [
+								// The same name as a board of this vault, and not that board.
+								drilling(
+									"n1",
+									"Elsewhere",
+									["Archboard server"],
+									undefined,
+									"github.com/acme/other",
+								),
+								drilling("n2", "Former", ["old name"], undefined, "github.com/acme/other"),
+								drilling("n3", "Here", ["old name"]),
+							],
+						},
+					],
+					"v1",
+				),
+			},
+			// This vault knows the board once called "old name"; the other vault is not asked.
+			(name) => (name === "old name" ? "new name" : name),
+		);
+		expect(listed.links).toEqual([
+			{
+				board: "Archboard server",
+				variant: null,
+				repo: "github.com/acme/other",
+				node: "Elsewhere",
+				container: false,
+			},
+			{
+				board: "old name",
+				variant: null,
+				repo: "github.com/acme/other",
+				node: "Former",
+				container: false,
+			},
+			{ board: "new name", variant: null, node: "Here", container: false },
 		]);
 	});
 
@@ -201,5 +254,35 @@ test("the browser's parse of the listing keeps the levels, the links, the descri
 		updatedAt: "2026-09-23T00:00:00.000Z",
 		description: "Serves boards.",
 		links: [{ board: "Archboard" }],
+	});
+});
+
+/**
+ * Whether the schema takes a drill-down that names this repository.
+ * @param repo The repository, or none.
+ * @returns True when it parses.
+ */
+function opensRepository(repo?: string): boolean {
+	return DrillDownSchema.safeParse({
+		board: "B",
+		variant: { kind: "current" },
+		...(repo === undefined ? {} : { repo }),
+	}).success;
+}
+
+describe("a drill-down's repository", () => {
+	test("is optional, and is an identity and never a path", () => {
+		expect(opensRepository()).toBe(true);
+		expect(opensRepository("github.com/acme/payments")).toBe(true);
+		for (const path of [
+			"/home/me/payments",
+			"~/payments",
+			"./payments",
+			"../payments",
+			"C:\\x",
+			"a\\b",
+		]) {
+			expect(opensRepository(path)).toBe(false);
+		}
 	});
 });

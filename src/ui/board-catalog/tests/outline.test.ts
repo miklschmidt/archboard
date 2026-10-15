@@ -159,3 +159,18 @@ test("folders spelled in two cases are one folder", () => {
 	const outline = buildOutline([board("Payments/a", null), board("payments/b", null)], LEVELS);
 	expect(shape(outline)).toEqual(["Payments/ 2", "  a", "  b"]);
 });
+
+test("a link that names a repository places no board of this vault under its parent", () => {
+	const outline = buildOutline(
+		[
+			{
+				name: "Meta",
+				level: "system",
+				links: [{ board: "Payments", repo: "github.com/acme/payments", container: false }],
+			},
+			board("Payments", "service"),
+		],
+		LEVELS,
+	);
+	expect(shape(outline)).toEqual(["Meta", "Payments"]);
+});

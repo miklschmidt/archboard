@@ -8,6 +8,8 @@
 interface OutlineLink {
 	/** The board the link opens. */
 	readonly board: string;
+	/** The repository whose vault holds that board, when it is not this vault's. */
+	readonly repo?: string | undefined;
 	/** The linking node contains other nodes: the link climbs to the board it describes. */
 	readonly container: boolean;
 }
@@ -205,6 +207,8 @@ function parentCandidates(
 	};
 	for (const board of boards) {
 		for (const link of board.links) {
+			// A board of another repository is not one of these, whatever it is called here.
+			if (link.repo !== undefined) continue;
 			const target = byName.get(foldName(link.board));
 			const placed =
 				target === undefined ? null : linkPlacement(board, target, link.container, levels);

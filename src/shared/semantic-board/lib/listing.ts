@@ -23,6 +23,12 @@ const LISTED_DESCRIPTION_LIMIT = 160;
 /**
  * One drill-down on the variant a board's bare name opens.
  *
+ * `repo` is the repository identity a drill-down into another repository names
+ * (ADR 0049). Such a link is not to a board of this vault: its `board` is the
+ * name as the link spells it, because only the other vault can say what the
+ * board goes by now, and a reader that places boards by their links (the
+ * navigator) leaves it out. A link without one is in this vault.
+ *
  * `container` says whether the linking node contains other nodes: a link on a
  * container points up, to the board this one is a part of, and one on a card
  * points down or sideways (ADR 0029).
@@ -32,6 +38,7 @@ const BoardLinkSchema = z.object({
 	board: z.string(),
 	/** The target variant's name, or null for whichever is current there. */
 	variant: z.string().nullable(),
+	repo: z.string().optional(),
 	/** The name of the node carrying the drill-down. */
 	node: z.string(),
 	container: z.boolean(),
@@ -124,10 +131,15 @@ function linksOf(
 	const links: BoardLink[] = [];
 	for (const node of nodes) {
 		const link = linkOn(node, containers, accepted);
-		if (link === null || comparable(link.board) === comparable(board.name)) {
+		// A link back to the board's own name is no link, unless it names a
+		// repository: then the board it opens is another one that shares the name.
+		if (
+			link === null ||
+			(link.repo === undefined && comparable(link.board) === comparable(board.name))
+		) {
 			continue;
 		}
-		const identity = JSON.stringify([link.board, link.variant, link.node]);
+		const identity = JSON.stringify([link.repo, link.board, link.variant, link.node]);
 		if (!seen.has(identity)) {
 			seen.add(identity);
 			links.push(link);
@@ -153,8 +165,9 @@ function linkOn(
 		return null;
 	}
 	return {
-		board: accepted(drill.board),
+		board: drill.repo === undefined ? accepted(drill.board) : drill.board,
 		variant: drill.variant.kind === "named" ? drill.variant.name : null,
+		...(drill.repo === undefined ? {} : { repo: drill.repo }),
 		node: node.name,
 		container: containers.has(node.id),
 	};

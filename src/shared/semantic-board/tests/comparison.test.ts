@@ -35,6 +35,19 @@ describe("what a proposal changed about the variant it came from", () => {
 		expect(comparison.edges.get("w1")?.kind).toBe("unchanged");
 	});
 
+	test("naming another repository in a drill-down is a change of that drill-down", () => {
+		const opens = { board: "Orders", variant: { kind: "current" as const } };
+		const before = content({ nodes: [GATEWAY, { ...ORDERS, drillDown: opens }], edges: [WIRE] });
+		const after = content({
+			nodes: [GATEWAY, { ...ORDERS, drillDown: { ...opens, repo: "github.com/acme/orders" } }],
+			edges: [WIRE],
+		});
+		const comparison = compareVariants(before, after);
+		expect(comparison.nodes.get("or")?.kind).toBe("changed");
+		expect(comparison.nodes.get("or")?.fields.map((one) => one.field)).toEqual(["drillDown"]);
+		expect(compareVariants(after, after).nodes.get("or")?.kind).toBe("unchanged");
+	});
+
 	test("the same node with a fresh id is a removal standing beside an addition", () => {
 		const after = content({ nodes: [GATEWAY, { ...ORDERS, id: "o2" }], edges: [] });
 		const comparison = compareVariants(BASELINE, after);
