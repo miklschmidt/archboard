@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 50,
+	"version": 51,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-15T11:41:50.240Z",
+	"updatedAt": "2026-10-15T12:30:29.106Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -10182,7 +10182,7 @@
 			"name": "TASK-474",
 			"lifecycle": "draft",
 			"parent": "wRhU4Sgu",
-			"summary": "A container's header reads as the ground it is cut into, and a far card's chip stands at its top",
+			"summary": "Meaning to SVG and interaction geometry",
 			"content": {
 				"nodes": [
 					{
