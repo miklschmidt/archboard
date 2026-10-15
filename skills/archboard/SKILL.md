@@ -147,7 +147,9 @@ recipe names.
   `vault.registered`, and one line goes to stderr. If no `-C` is given, a set
   `ARCHBOARD_VAULT` decides, and it never registers anything. It is going away,
   so give `-C` instead. A thread of the Archboard workbench receives each
-  board's vault directory in its board context. Pass it as `-C`.
+  board's vault directory in its board context. Pass it as `-C`. A workhorse
+  works in the checkout of its vault. The voice coordinator works in a
+  directory that holds no vault, so its commands without `-C` are refused.
 - **Where the user reads.** One Archboard server serves every vault on the
   machine, and the user reads them all in one browser app at its address. The
   navigator lists every repository that has a vault, each with the boards of

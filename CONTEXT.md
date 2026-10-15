@@ -650,15 +650,19 @@ link, workhorse, queue and approvals. It also has its own command lease. So two
 tabs can talk at the same time. A session ends 60
 seconds after the last pane of its tab closes. A reload within that time keeps
 the conversation and its approvals. When a session ends, Archboard cancels its
-approvals and stops the board news to its workhorse. It unsubscribes each of
+approvals and stops the board news to its workhorses. It unsubscribes each of
 its threads once no turn runs on it, and Codex then unloads the thread.
 _Avoid_: browser session (that names the realtime handle), session alone, canvas
 
 **Workhorse**:
 The Codex thread of a tab session that works in one checkout, for architectural
 inspection, analysis, and proposals. It runs in that checkout's directory, so it
-reads that repository's own agent instructions and skills. A tab session has at
-most one for each checkout. It can continue its work while the voice
+reads that repository's own agent instructions and skills. The checkout is the
+directory that holds the vault: a checkout root, or the directory that holds an
+untracked vault. A tab session has at most one for each checkout, and a pane
+shows the one of the checkout of its vault. A new chosen checkout of a
+repository moves the panes to the workhorse of that checkout, and the one they
+left stays linked. It can continue its work while the voice
 coordinator answers and investigates separately.
 _Avoid_: main agent, coding thread, backend agent, worker (that is also an agent
 role)
@@ -676,7 +680,9 @@ active task, task link
 
 **Voice coordinator**:
 The fast Codex thread beside the workhorses of a tab session. It serves the
-whole app and works in no checkout. It starts with the first message or Talk
+whole app and works in no checkout: it runs in a directory of its own under the
+state directory, which holds no vault, so it names the vault with `-C` on every
+command. It starts with the first message or Talk
 of the tab. A coordinator carries at most one voice
 session, so a later voice start replaces it with a fresh one. Realtime voice
 attaches to it. It handles conversation and reading boards. It gives
@@ -713,22 +719,21 @@ interruption.
 _Avoid_: interrupt, inject, cancel
 
 **Workhorse stop**:
-A request to stop a tab session's workhorse and its sub-agents, and clear its
-pending requests. Speech and the workbench Stop control request this outcome,
+A request to stop the workhorse of one checkout and its sub-agents, and clear
+its pending requests, or to stop every workhorse of a tab session. Speech and the workbench Stop control request this outcome,
 but accepting the request does not prove that its work stopped.
 _Avoid_: steer, pause, end voice
 
 **Shown conversation**:
-The workhorse conversation that the agent dock shows. It belongs to the
-checkout that the user last activated by focusing a pane, opening a board or
-drilling down. The user can also pick it from the dock's list of workhorses. What an agent does to a
-pane never changes it.
+The workhorse conversation that the agent dock shows: the one of the checkout
+of the focused pane. TASK-472.11 makes it the checkout that the user last
+activated, and adds the dock's list of workhorses.
 _Avoid_: active thread, current conversation, selected thread
 
 **Workhorse news**:
-What the voice coordinator is told about the workhorse of its tab session while
-voice is live: a
-turn that ended or waits on the user, and a message the workhorse sent it. The
+What the voice coordinator is told about the workhorses of its tab session while
+voice is live: a turn that ended or waits on the user, and a message a
+workhorse sent it. Each piece names the checkout of its workhorse. The
 coordinator gets it as it happens, in the turn it is running or in a new one.
 It decides what the voice model says and what it only knows.
 _Avoid_: callback, notification, outcome report

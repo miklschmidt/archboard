@@ -146,7 +146,8 @@ interface CodexCoordinatorOptions {
 	readonly threadLink: CoordinatorThreadLinkPort;
 	readonly epoch: CoordinatorEpochPort;
 	readonly identity: CoordinatorIdentityPort;
-	readonly checkoutRoot: string;
+	/** The directory of its own the coordinator works in. It is no checkout (ADR 0050). */
+	readonly workingDirectory: string;
 	readonly persisted?: CoordinatorPersistedState | null;
 }
 

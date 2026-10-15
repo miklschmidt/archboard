@@ -9,7 +9,7 @@ import {
 	isCoordinatorToolRequest,
 	type CoordinatorToolsServerRequest,
 } from "../index.js";
-import { fixture, responseEnvelope, type CoordinatorToolsFixture } from "./support.js";
+import { CHECKOUT, fixture, responseEnvelope, type CoordinatorToolsFixture } from "./support.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 
 function dispatch(fixtureValue: CoordinatorToolsFixture, request: DynamicServerRequest) {
@@ -130,7 +130,7 @@ describe("coordinator dynamic-tool identity and authority validation", () => {
 				reason: "invalid_call",
 				make: (h) =>
 					h.request("delegate_to_workhorse", {
-						arguments: { input: "", transcriptDelta: "" },
+						arguments: { checkout: CHECKOUT, input: "", transcriptDelta: "" },
 					}),
 			},
 			{

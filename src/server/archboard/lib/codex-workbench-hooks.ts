@@ -11,7 +11,10 @@ import {
 	retire,
 	type GenerationOwners,
 } from "@/server/archboard/lib/codex-workbench-generation-owners";
-import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";
+import type {
+	CodexWorkbenchServer,
+	CodexWorkbenchStorage,
+} from "@/server/archboard/lib/codex-workbench-server";
 
 /** An empty SHA-256, which is what an effect-free epoch step hashes to. */
 const EMPTY_HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
@@ -19,6 +22,8 @@ const EMPTY_HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852
 /** What building one generation's hooks needs from around it. */
 interface HookContext {
 	readonly server: CodexWorkbenchServer;
+	/** Where the child keeps what it writes, and the directory it works in. */
+	readonly storage: Pick<CodexWorkbenchStorage, "coordinatorDirectory">;
 	readonly input: CodexWorkbenchGenerationInput;
 	readonly owners: GenerationOwners;
 }
@@ -35,7 +40,7 @@ async function startEpochAndSession(
 	session: Parameters<CodexWorkbenchGenerationHooks["initializeSession"]>[0],
 	components: CodexWorkbenchComponents,
 ): Promise<void> {
-	const { input, server } = context;
+	const { input, storage } = context;
 	const epochSnapshot = components.epoch.snapshot();
 	input.assertActivationCurrent();
 	components.epoch.startEpoch({
@@ -44,7 +49,7 @@ async function startEpochAndSession(
 		operationId: components.identity.operation.issuer.mintOperationId(),
 		kind: "epoch_start",
 		rpc: "epoch/start",
-		workspaceRoot: server.checkoutRoot,
+		workspaceRoot: storage.coordinatorDirectory,
 		// Epoch ownership has no remote instruction or tool-manifest effect.
 		instructionHash: EMPTY_HASH,
 		manifestHash: EMPTY_HASH,

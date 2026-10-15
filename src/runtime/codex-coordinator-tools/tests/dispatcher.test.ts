@@ -21,6 +21,7 @@ import {
 	type DynamicToolResponse,
 } from "../index.js";
 import {
+	CHECKOUT,
 	fixture,
 	nextMicrotasks,
 	responseEnvelope,
@@ -76,7 +77,12 @@ describe("coordinator dynamic-tool dispatcher", () => {
 		const delegateRequest = h.request("delegate_to_workhorse");
 		const delegate = await dispatch(h, delegateRequest);
 		const queueRequest = h.request("manage_workhorse_queue", {
-			arguments: { operation: "update", submissionId: "submission-1", prompt: "updated prompt" },
+			arguments: {
+				checkout: CHECKOUT,
+				operation: "update",
+				submissionId: "submission-1",
+				prompt: "updated prompt",
+			},
 		});
 		const queue = await dispatch(h, queueRequest);
 		const steerRequest = h.request("steer_workhorse");
@@ -151,6 +157,34 @@ describe("coordinator dynamic-tool dispatcher", () => {
 			"workhorse.steer",
 			"transport.respond",
 		]);
+	});
+
+	test("a workhorse tool acts only on the workhorse of the checkout it names", async () => {
+		// One workhorse for each checkout (ADR 0050): a checkout this conversation has no
+		// workhorse in is refused before any effect, so no call lands on another checkout's.
+		const h = fixture();
+		for (const tool of [
+			"inspect_workhorse",
+			"delegate_to_workhorse",
+			"manage_workhorse_queue",
+			"steer_workhorse",
+		] as const) {
+			const defaults = h.request(tool).params.arguments as Record<string, unknown>;
+			const elsewhere = await dispatch(
+				h,
+				h.request(tool, { arguments: { ...defaults, checkout: "/work/shop" } }),
+			);
+			expect(elsewhere.attempted).toBe(false);
+			expect(responseEnvelope(elsewhere.response)).toMatchObject({
+				tag: "refused",
+				reason: "not_ready",
+			});
+		}
+		expect(Object.values(h.operations.calls).flat()).toHaveLength(0);
+
+		const here = await dispatch(h, h.request("inspect_workhorse"));
+		expect(here.attempted).toBe(true);
+		expect(h.operations.calls.inspect).toHaveLength(1);
 	});
 
 	test("routes voice only through the spoken gate and preserves its settlement", async () => {

@@ -166,7 +166,7 @@ function createCoordinatorStarter(
 		hooks.setPersistence(null);
 		const transaction = stageStart(operationId, configured, reviewed, epochSnapshot);
 		const startParams = createCoordinatorThreadStartParams(
-			options.checkoutRoot,
+			options.workingDirectory,
 			selection.configuredServiceTier,
 		);
 		hooks.setSnapshot(
@@ -316,7 +316,7 @@ function createCoordinatorStarter(
 			};
 		}
 		try {
-			assertStartedResponse(started, options.checkoutRoot, selection.configuredServiceTier);
+			assertStartedResponse(started, options.workingDirectory, selection.configuredServiceTier);
 			return { ok: true, started, startedThreadId: started.thread.id };
 		} catch (error) {
 			const threadId = startedThreadIdOrNull(started);
@@ -400,7 +400,7 @@ function createCoordinatorStarter(
 				operationId,
 				kind: COORDINATOR_OPERATION_KIND,
 				rpc: COORDINATOR_RPC,
-				workspaceRoot: options.checkoutRoot,
+				workspaceRoot: options.workingDirectory,
 				instructionHash: reviewed.instructionHash,
 				manifestHash: reviewed.catalogueHash,
 				expected: epochSnapshot.cas,

@@ -147,6 +147,9 @@ function bindingFor(
 	});
 }
 
+/** The checkout the fixture's one workhorse works in (ADR 0050). */
+const CHECKOUT = "/work/payments";
+
 function fixture(
 	authorities: IdentityAuthorities = createIdentityAuthorities(),
 ): CoordinatorToolsFixture {
@@ -346,7 +349,6 @@ function fixture(
 
 	const authority = {
 		currentCoordinator: () => coordinator,
-		currentWorkhorseBinding: () => currentBinding,
 		currentCall: () => currentCall,
 		expectedTurnId: () => currentExpectedTurnId,
 		setCoordinator: (value: CoordinatorToolCoordinatorAuthority | null) => {
@@ -386,7 +388,13 @@ function fixture(
 		identity,
 		authority,
 		operation,
-		operations,
+		/**
+		 * The fixture's one workhorse, which works in its one checkout.
+		 * @param checkout - The checkout a call names.
+		 * @returns The workhorse, or null for another checkout.
+		 */
+		workhorseFor: (checkout) =>
+			checkout === CHECKOUT ? { binding: () => currentBinding, operations } : null,
 		spokenApproval,
 		transport,
 	});
@@ -417,13 +425,13 @@ function fixture(
 		const argumentsValue =
 			options.arguments ??
 			(tool === "inspect_workhorse"
-				? {}
+				? { checkout: CHECKOUT }
 				: tool === "delegate_to_workhorse"
-					? { input: "delegate input", transcriptDelta: "spoken context" }
+					? { checkout: CHECKOUT, input: "delegate input", transcriptDelta: "spoken context" }
 					: tool === "manage_workhorse_queue"
-						? { operation: "list" }
+						? { checkout: CHECKOUT, operation: "list" }
 						: tool === "steer_workhorse"
-							? { input: "steer input" }
+							? { checkout: CHECKOUT, input: "steer input" }
 							: { verdict: "accept" });
 		const call = identity.decoder.createLogicalToolCallCorrelation({
 			threadId,
@@ -475,7 +483,7 @@ function fixture(
 	};
 }
 
-export { type ResponseWrite, type CoordinatorToolsFixture, fixture };
+export { type ResponseWrite, type CoordinatorToolsFixture, CHECKOUT, fixture };
 export {
 	copyRequest,
 	responseValue,

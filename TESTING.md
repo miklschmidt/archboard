@@ -85,7 +85,11 @@ So a worktree runs its own source and has its own server:
 - The server of a linked worktree listens on a port from 10000 to 19999. The
   port is a hash of the worktree's path, so it is the same on every run.
   `archboard status` gives the URL.
-- A set `ARCHBOARD_URL` or `--url` still decides.
+- A set `ARCHBOARD_URL` or `--url` still decides. A set `ARCHBOARD_URL` also
+  stops the hand-off: the command runs the source it was started from. Every
+  Codex thread has it, with the server's own `bin/archboard` first on its PATH,
+  so a workhorse that works in a worktree still talks to the server that
+  started it.
 - If the server on that port runs the source of another checkout, the command
   refuses and names both checkouts. It does not try another port. Run the
   command in the checkout that the refusal names, or stop that server there.

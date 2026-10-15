@@ -145,16 +145,15 @@ function turnParams(
  * @param target The target's authority.
  * @param relation How the caller stands to the target.
  * @param boundary Where the fork stops.
- * @param checkoutRoot The workspace the forked thread runs in.
- * @returns The parameters.
+ * @returns The parameters, with the forked thread in the caller's workspace.
  */
 function forkParams(
 	caller: DynamicCallerAuthority,
 	target: DynamicTargetAuthority,
 	relation: DynamicRelation,
 	boundary: TurnId | null,
-	checkoutRoot: string,
 ): SessionParams<"thread/fork"> {
+	const workspace = callerWorkspace(caller);
 	if (relation === "self") {
 		if (boundary !== caller.turnId) {
 			throw new CodexDynamicToolsError(
@@ -164,7 +163,7 @@ function forkParams(
 		}
 		const built = createSelfThreadForkParams({
 			threadId: target.threadId,
-			cwd: checkoutRoot,
+			cwd: workspace,
 			executingTurnId: caller.turnId,
 		});
 		const threadId: ThreadId = target.threadId;
@@ -182,7 +181,7 @@ function forkParams(
 	}
 	const built = createThreadForkParams({
 		threadId: target.threadId,
-		cwd: checkoutRoot,
+		cwd: workspace,
 		...(boundary === null ? {} : { beforeTurnId: boundary }),
 	});
 	const threadId: ThreadId = target.threadId;
@@ -210,15 +209,35 @@ function forkParams(
 }
 
 /**
- * The parameters one thread is started with: archboard's own workspace, developer instructions
- * and dynamic tools, so a thread a child creates is one the boundary can go on talking to.
- * @param checkoutRoot The workspace the thread runs in.
+ * The workspace a calling thread works in, as the epoch ledger recorded it when the thread
+ * started. A thread the caller creates or forks works there too: a workhorse works in its own
+ * checkout (ADR 0050), and so does every thread it starts.
+ * @param caller The caller's authority.
+ * @returns The workspace.
+ * @throws {CodexDynamicToolsError} When the ledger names no workspace for the caller.
+ */
+function callerWorkspace(caller: DynamicCallerAuthority): string {
+	const workspace = caller.provenance?.record.provenance.workspaceRoot ?? "";
+	if (workspace.length === 0) {
+		throw new CodexDynamicToolsError(
+			"invalid_call",
+			"The epoch ledger names no workspace for the calling thread, so it can start no thread.",
+		);
+	}
+	return workspace;
+}
+
+/**
+ * The parameters one thread is started with: the caller's workspace, archboard's developer
+ * instructions and dynamic tools, so a thread a child creates is one the boundary can go on
+ * talking to.
+ * @param workspace The workspace the thread runs in.
  * @returns The parameters.
  */
-function threadStartParams(checkoutRoot: string): SessionParams<"thread/start"> {
+function threadStartParams(workspace: string): SessionParams<"thread/start"> {
 	return {
-		cwd: checkoutRoot,
-		runtimeWorkspaceRoots: [checkoutRoot],
+		cwd: workspace,
+		runtimeWorkspaceRoots: [workspace],
 		serviceName: "archboard",
 		developerInstructions: WORKHORSE_DEVELOPER_INSTRUCTIONS,
 		ephemeral: false,
@@ -505,6 +524,7 @@ async function executeInitialTurn(input: InitialTurnInput): Promise<InitialTurnR
 }
 
 export {
+	callerWorkspace,
 	type InitialTurnResult,
 	targetThreadSource,
 	executeInitialTurn,

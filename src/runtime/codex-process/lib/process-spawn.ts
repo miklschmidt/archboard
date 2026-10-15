@@ -22,7 +22,7 @@ import {
 	type UnprovenChild,
 } from "@/runtime/codex-process/lib/process-owner-state";
 import {
-	canonicalCheckout,
+	canonicalWorkingDirectory,
 	exactArguments,
 	executableFailureCode,
 } from "@/runtime/codex-process/lib/process-startup-checks";
@@ -98,14 +98,14 @@ function exactArgumentsStage(state: ProcessOwnerState): void {
 }
 
 /**
- * Resolve the checkout cwd once per owner.
+ * Resolve the working directory once per owner.
  * @param state - The owner state.
- * @returns The canonical checkout directory.
+ * @returns The canonical working directory.
  */
-function checkoutStage(state: ProcessOwnerState): string {
+function workingDirectoryStage(state: ProcessOwnerState): string {
 	if (state.cwd) return state.cwd;
 	try {
-		state.cwd = canonicalCheckout(state.options.checkoutRoot);
+		state.cwd = canonicalWorkingDirectory(state.options.workingDirectory);
 		return state.cwd;
 	} catch (cause) {
 		return failStartup(
@@ -117,7 +117,7 @@ function checkoutStage(state: ProcessOwnerState): string {
 					new CodexProcessError({
 						code: "storage_refused",
 						terminal: true,
-						message: `Could not establish the canonical Codex checkout cwd: ${message}.`,
+						message: `Could not establish the canonical Codex working directory: ${message}.`,
 						cause,
 					}),
 			),
@@ -231,7 +231,7 @@ function storageStage(state: ProcessOwnerState): PreparedCodexStorage {
 /**
  * Spawn the exact app-server child, refusing one without a pid.
  * @param state - The owner state.
- * @param cwd - The canonical checkout directory.
+ * @param cwd - The canonical working directory.
  * @returns The spawned child, which has a pid.
  */
 function spawnStage(state: ProcessOwnerState, cwd: string): Child {
@@ -386,7 +386,7 @@ function spawnAttempt(state: ProcessOwnerState): void {
 	if (!stillStarting(state)) return;
 	verifyExecutableStage(state);
 	exactArgumentsStage(state);
-	const cwd = checkoutStage(state);
+	const cwd = workingDirectoryStage(state);
 	storageStage(state);
 	const child = spawnStage(state, cwd);
 	let group: CodexProcessGroupIdentity;

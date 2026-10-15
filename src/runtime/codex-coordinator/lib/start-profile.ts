@@ -47,13 +47,13 @@ function threadIdOrNull(response: LooseStartResponse): ThreadId | null {
  * Prove a thread/start response is the authored coordinator profile, naming every field that does
  * not match so a refusal can be diagnosed from its message alone.
  * @param response - The thread/start response.
- * @param checkoutRoot - The checkout the coordinator must be in.
+ * @param workingDirectory - The directory of its own the coordinator must be in.
  * @param serviceTier - The advertised priority tier, or null.
  * @throws {CodexCoordinatorError} When any field does not match the authored profile.
  */
 function assertStartedResponse(
 	response: CoordinatorStartResponse,
-	checkoutRoot: string,
+	workingDirectory: string,
 	serviceTier: "priority" | null,
 ): void {
 	const mismatches = Object.entries({
@@ -62,11 +62,11 @@ function assertStartedResponse(
 		modelProvider: response.modelProvider.length === 0,
 		"thread.modelProvider": response.thread.modelProvider !== response.modelProvider,
 		serviceTier: serviceTier === "priority" && response.serviceTier !== "priority",
-		cwd: response.cwd !== checkoutRoot,
+		cwd: response.cwd !== workingDirectory,
 		runtimeWorkspaceRoots:
 			response.runtimeWorkspaceRoots.length !== 1 ||
-			response.runtimeWorkspaceRoots[0] !== checkoutRoot,
-		"thread.cwd": response.thread.cwd !== checkoutRoot,
+			response.runtimeWorkspaceRoots[0] !== workingDirectory,
+		"thread.cwd": response.thread.cwd !== workingDirectory,
 		"thread.historyMode": response.thread.historyMode !== "paginated",
 		"thread.source": response.thread.source !== COORDINATOR_THREAD_SOURCE,
 		"thread.threadSource": response.thread.threadSource !== "archboard",
@@ -151,7 +151,7 @@ function modelSettingsMismatch(
 	settings: CoordinatorThreadSettings,
 ): string | null {
 	if (settings.cwd !== started.cwd) {
-		return "Coordinator settings changed the checkout root.";
+		return "Coordinator settings changed its working directory.";
 	}
 	if (settings.model !== COORDINATOR_MODEL) {
 		return `Coordinator settings did not confirm ${COORDINATOR_MODEL}.`;

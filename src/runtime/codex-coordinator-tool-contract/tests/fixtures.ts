@@ -3,17 +3,23 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 	type: "namespace",
 	name: "archboard_workhorse",
 	description:
-		"Work with your workhorse, the agent that does sustained work for this Archboard server. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
+		"Work with your workhorses, the agents that do sustained work for this Archboard server. There is one workhorse for each checkout, and it works in that checkout. Every tool takes checkout: the directory of the checkout, the repository in your board context. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	tools: [
 		{
 			type: "function",
 			name: "inspect_workhorse",
 			description:
-				"Read what the workhorse is doing now: whether a turn is running, what is waiting for it, and its recent progress. Returns at once.",
+				"Read what the workhorse of one checkout is doing now: whether a turn is running, what is waiting for it, and its recent progress. Returns at once.",
 			inputSchema: {
 				type: "object",
-				properties: {},
-				required: [],
+				properties: {
+					checkout: {
+						type: "string",
+						minLength: 1,
+						maxLength: 4096,
+					},
+				},
+				required: ["checkout"],
 				additionalProperties: false,
 			},
 			deferLoading: false,
@@ -22,14 +28,27 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 			type: "function",
 			name: "delegate_to_workhorse",
 			description:
-				"Give the workhorse one piece of sustained work, written in English with the conversation context it needs.",
+				"Give the workhorse of one checkout one piece of sustained work, written in English with the conversation context it needs. If that checkout has no workhorse yet, this starts one.",
 			inputSchema: {
 				type: "object",
 				properties: {
-					input: { type: "string", minLength: 1, maxLength: 4096 },
-					transcriptDelta: { type: "string", minLength: 0, maxLength: 4096 },
+					checkout: {
+						type: "string",
+						minLength: 1,
+						maxLength: 4096,
+					},
+					input: {
+						type: "string",
+						minLength: 1,
+						maxLength: 4096,
+					},
+					transcriptDelta: {
+						type: "string",
+						minLength: 0,
+						maxLength: 4096,
+					},
 				},
-				required: ["input", "transcriptDelta"],
+				required: ["checkout", "input", "transcriptDelta"],
 				additionalProperties: false,
 			},
 			deferLoading: false,
@@ -38,25 +57,42 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 			type: "function",
 			name: "manage_workhorse_queue",
 			description:
-				"See or change the requests waiting for the workhorse to finish what it is doing.",
+				"See or change the requests waiting for the workhorse of one checkout to finish what it is doing.",
 			inputSchema: {
 				type: "object",
 				properties: {
+					checkout: {
+						type: "string",
+						minLength: 1,
+						maxLength: 4096,
+					},
 					operation: {
 						type: "string",
 						enum: ["list", "add", "update", "delete", "reorder", "start"],
 					},
-					submissionId: { type: "string", minLength: 1, maxLength: 128 },
-					prompt: { type: "string", minLength: 1, maxLength: 16_384 },
+					submissionId: {
+						type: "string",
+						minLength: 1,
+						maxLength: 128,
+					},
+					prompt: {
+						type: "string",
+						minLength: 1,
+						maxLength: 16384,
+					},
 					orderedSubmissionIds: {
 						type: "array",
 						minItems: 1,
 						maxItems: 100,
 						uniqueItems: true,
-						items: { type: "string", minLength: 1, maxLength: 128 },
+						items: {
+							type: "string",
+							minLength: 1,
+							maxLength: 128,
+						},
 					},
 				},
-				required: ["operation"],
+				required: ["checkout", "operation"],
 				additionalProperties: false,
 			},
 			deferLoading: false,
@@ -65,11 +101,22 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 			type: "function",
 			name: "steer_workhorse",
 			description:
-				"Add one short instruction, such as a correction, to the turn the workhorse is running now. Works only while a turn is running.",
+				"Add one short instruction, such as a correction, to the turn the workhorse of one checkout is running now. Works only while a turn is running.",
 			inputSchema: {
 				type: "object",
-				properties: { input: { type: "string", minLength: 1, maxLength: 4096 } },
-				required: ["input"],
+				properties: {
+					checkout: {
+						type: "string",
+						minLength: 1,
+						maxLength: 4096,
+					},
+					input: {
+						type: "string",
+						minLength: 1,
+						maxLength: 4096,
+					},
+				},
+				required: ["checkout", "input"],
 				additionalProperties: false,
 			},
 			deferLoading: false,

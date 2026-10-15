@@ -31,27 +31,27 @@ function truncateUtf8(text: string, limitBytes: number): string {
 }
 
 /**
- * Refuse a checkout cwd that is not an absolute path.
- * @param value - The configured checkout root.
+ * Refuse a working directory that is not an absolute path.
+ * @param value - The configured working directory.
  */
-function assertAbsoluteCheckout(value: string): void {
+function assertAbsoluteWorkingDirectory(value: string): void {
 	if (!value || value.includes("\0") || !path.isAbsolute(value))
 		throw new CodexProcessError({
 			code: "storage_refused",
 			terminal: true,
-			message: `The Codex checkout cwd must be an existing absolute path, received ${JSON.stringify(value)}.`,
+			message: `The Codex working directory must be an existing absolute path, received ${JSON.stringify(value)}.`,
 		});
 }
 
 /**
- * Resolve the checkout root the child runs in, refusing anything that is not
+ * Resolve the working directory the child runs in, refusing anything that is not
  * an existing directory.
- * @param candidate - The configured checkout root.
- * @returns The real path of the checkout directory.
+ * @param candidate - The configured working directory.
+ * @returns The real path of the working directory.
  */
-function canonicalCheckout(candidate: string | undefined): string {
+function canonicalWorkingDirectory(candidate: string | undefined): string {
 	const value = candidate ?? "";
-	assertAbsoluteCheckout(value);
+	assertAbsoluteWorkingDirectory(value);
 	try {
 		const canonical = fs.realpathSync(value);
 		if (!fs.statSync(canonical).isDirectory()) throw new Error("not a directory");
@@ -60,7 +60,7 @@ function canonicalCheckout(candidate: string | undefined): string {
 		throw new CodexProcessError({
 			code: "storage_refused",
 			terminal: true,
-			message: `The Codex checkout cwd ${value} is missing or not a directory.`,
+			message: `The Codex working directory ${value} is missing or not a directory.`,
 		});
 	}
 }
@@ -146,7 +146,7 @@ function executableFailureCode(cause: CodexExecutableError): CodexProcessFailure
 }
 
 export {
-	canonicalCheckout,
+	canonicalWorkingDirectory,
 	diagnosticSecrets,
 	exactArguments,
 	executableFailureCode,

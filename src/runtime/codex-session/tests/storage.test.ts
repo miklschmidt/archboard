@@ -114,7 +114,7 @@ describe("Codex session storage proof", () => {
 					params === null ||
 					typeof params !== "object" ||
 					Array.isArray(params) ||
-					(params as { readonly cwd?: unknown }).cwd !== fixture.checkoutRoot
+					(params as { readonly cwd?: unknown }).cwd !== fixture.workingDirectory
 				) {
 					return;
 				}
@@ -130,7 +130,7 @@ describe("Codex session storage proof", () => {
 			);
 			expect(configRequest?.params).toEqual({
 				includeLayers: true,
-				cwd: fixture.checkoutRoot,
+				cwd: fixture.workingDirectory,
 			});
 		} finally {
 			fixture.close();

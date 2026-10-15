@@ -15,7 +15,7 @@ import type { CodexWorkbenchTabSession } from "@/server/archboard/lib/codex-work
 
 /** What ending a session reaches beyond the session itself. */
 interface TabSessionEnding {
-	/** Where the session's link is cleared. */
+	/** Where the links of the session's workhorses are cleared. */
 	readonly threadLink: Pick<CodexThreadLinkPort, "read" | "clear">;
 	/** Settle every approval the session was still to answer. */
 	readonly endApprovals: (id: TabSessionId) => Promise<void>;
@@ -61,15 +61,15 @@ async function stopVoice(realtime: CodexRealtimeAdapter): Promise<void> {
 }
 
 /**
- * Clear a session's link, so a tab that comes back under the same id starts without one and a
+ * Clear a workhorse's link, so a tab that comes back under the same id starts without one and a
  * create still running for the session that ended cannot take it.
  * @param threadLink The link port.
- * @param id The session.
+ * @param key The workhorse's link key.
  */
-function clearLink(threadLink: TabSessionEnding["threadLink"], id: TabSessionId): void {
-	const binding = threadLink.read(id);
+function clearLink(threadLink: TabSessionEnding["threadLink"], key: string): void {
+	const binding = threadLink.read(key);
 	if (binding.link.state !== "unbound") {
-		threadLink.clear(id, binding.cas);
+		threadLink.clear(key, binding.cas);
 	}
 }
 
@@ -82,18 +82,30 @@ function clearLink(threadLink: TabSessionEnding["threadLink"], id: TabSessionId)
  */
 function endTabSession(session: CodexWorkbenchTabSession, ending: TabSessionEnding): Promise<void> {
 	const { components, state } = session;
+	const workhorses = [...session.workhorses.values()];
 	return settleEach(
 		[
 			// First, and at once: a tab coming back under this id meanwhile starts unlinked, and the
 			// approvals settled are exactly this session's.
-			() => clearLink(ending.threadLink, session.id),
+			...workhorses.map(
+				({ key }) =>
+					() =>
+						clearLink(ending.threadLink, key),
+			),
 			() => ending.endApprovals(session.id),
 			() => stopVoice(components.realtime),
 			() => components.spokenApproval.dispose(),
-			() => components.semanticDelivery.dispose(),
+			...workhorses.map(
+				({ components: owned }) =>
+					() =>
+						owned.semanticDelivery.dispose(),
+			),
 			() => components.callbacks.dispose(),
 			() => components.semanticPublisher.dispose(),
-			() => components.queue.shutdown(),
+			...workhorses.flatMap(({ components: owned }) => [
+				() => owned.semanticPublisher.dispose(),
+				() => owned.queue.shutdown(),
+			]),
 			() => Promise.all([...state.threads].map((threadId) => ending.unload(threadId))),
 			() => components.realtime.dispose(),
 			() => components.coordinatorTools.dispose(),

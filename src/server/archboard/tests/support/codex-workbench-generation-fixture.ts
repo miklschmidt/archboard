@@ -14,10 +14,14 @@ import {
 	type CodexWorkbenchGenerationHooks,
 	type CodexWorkbenchSessionComponents,
 	type CodexWorkbenchTabSession,
+	type CodexWorkbenchTabSessionScope,
 } from "../../codex-workbench-generation.js";
 import { parseTabSessionId } from "../../../codex-workbench/index.js";
 
-import { createSessionComponentsFixture } from "./codex-workbench-session-fixture.js";
+import {
+	createSessionComponentsFixture,
+	createWorkhorseComponentsFixture,
+} from "./codex-workbench-session-fixture.js";
 
 export { CODEX_WORKBENCH_COMPONENT_ORDER } from "./codex-workbench-generation-values.js";
 
@@ -147,7 +151,7 @@ export function createCodexWorkbenchGenerationFixture(
 			sqliteHome: "/fixture/sqlite-home",
 			configPath: "/fixture/codex-home/config.toml",
 		},
-		checkoutRoot: "/fixture/checkout",
+		workingDirectory: "/fixture/coordinator",
 		listenerOwnership: "composition",
 	});
 	const session = {
@@ -240,6 +244,9 @@ export function createCodexWorkbenchGenerationFixture(
 		dispose: () => void events.push("dynamic:dispose"),
 	} satisfies CodexWorkbenchComponents["dynamicTools"];
 	const sessionComponents = createSessionComponentsFixture(events);
+	const claims: { coordinator: CodexWorkbenchTabSessionScope["claimThread"] | null } = {
+		coordinator: null,
+	};
 	const gateway = {
 		connect: () => unavailable("gateway.connect"),
 		snapshot: () => unavailable("gateway.snapshot"),
@@ -260,12 +267,12 @@ export function createCodexWorkbenchGenerationFixture(
 		session,
 		threadLink,
 		endApprovals: async () => undefined,
-		build: () => {
+		build: (scope) => {
 			events.push("create:tabSession");
+			claims.coordinator = scope.claimThread;
 			return {
 				components: sessionComponents,
 				actions: {
-					threadLinks: { create: async () => unavailable("threadLinks.create") },
 					realtime: {
 						start: async () => unavailable("realtime.start"),
 						appendText: async () => unavailable("realtime.appendText"),
@@ -274,10 +281,22 @@ export function createCodexWorkbenchGenerationFixture(
 				},
 			};
 		},
+		buildWorkhorse: () => {
+			events.push("create:workhorse");
+			return {
+				components: createWorkhorseComponentsFixture(events),
+				actions: {
+					threadLinks: { create: async () => unavailable("threadLinks.create") },
+					ensureStarted: async () => unavailable("workhorse.ensureStarted"),
+				},
+			};
+		},
 	});
 	const tabSession = sessions.open(parseTabSessionId("tab-one")!);
+	// One workhorse, in the checkout a connecting pane would show, so its owners settle and stop too.
+	tabSession.workhorse("/work/payments");
 	const claimedThread = "fixture-claimed-thread";
-	sessions.claimThread(tabSession, identity.identity.decoder.adoptThreadId(claimedThread));
+	claims.coordinator?.(identity.identity.decoder.adoptThreadId(claimedThread));
 	const components: CodexWorkbenchComponents = {
 		identity,
 		epoch,

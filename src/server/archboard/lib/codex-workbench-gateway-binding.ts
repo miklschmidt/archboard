@@ -81,6 +81,7 @@ function createGatewayBinding(
 				return server.contextForOperation(
 					{
 						tabSessionId: commandContext.tabSessionId,
+						checkout: commandContext.checkout,
 						clientId: commandContext.browserId,
 						childId: commandContext.childId,
 						epoch: commandContext.epoch,
@@ -115,6 +116,7 @@ function createGatewayBinding(
 		});
 		return {
 			...options,
+			checkoutOf: server.checkoutOfBrowser,
 			lifecycle: {
 				/**
 				 * The owned process is the gateway's change source.

@@ -311,6 +311,12 @@ has these steps:
   A system test makes its vault with `vaultIn(<dir>)` and runs a command in
   that directory. It never sets `ARCHBOARD_VAULT`. The "Isolated servers and
   vaults" section of `docs/agents/test-suite.md` has the rules.
+- A tab session has one coordinator and one workhorse for each checkout
+  (ADR 0050). A workhorse is keyed by its tab session and its checkout
+  (`workhorseLinkKey`), and the checkout of a vault is `checkoutOfVault`. A pane
+  reads the workhorse of the checkout of its vault, which can change while the
+  pane stays open, so ask for it on every read. Never key workhorse state, a
+  thread link or an approval by the tab session alone.
 - An optional field is a promise to every reader of its object. Adding one means
   finding every path that reads the object and making each honour it: a
   binding's `branch` and `commit` were accepted and stored while the local
@@ -375,7 +381,9 @@ only at this point: nothing states a version that nobody re-read.
    default state directory, so that the server uses the Archboard Codex sign-in of the machine.
    If the workbench of a server is not ready, the server exits with "The production Codex
    workbench did not become ready". Open the server in a browser and send one message.
-   The first message starts the coordinator and then the workhorse. A server that found
+   The first message starts the coordinator and then the workhorse. The workhorse works in
+   `<scratch>`, and the coordinator in `codex-workbench/canvases/<port>/coordinator` in the
+   state directory. A server that found
    its model records the `thread/start` of the coordinator as delivered. It records it in
    `codex-workbench/canvases/<port>/epoch/epoch-manifest.json`
    in the state directory.

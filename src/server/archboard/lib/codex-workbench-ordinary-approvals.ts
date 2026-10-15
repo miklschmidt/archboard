@@ -1,6 +1,8 @@
 import type { ApprovalOwnerView, CodexApprovalBroker } from "@/runtime/codex-approvals";
 import {
 	parseTabSessionId,
+	parseWorkhorseLinkKey,
+	workhorseLinkKey,
 	type BrowserOrdinaryApprovalActions,
 	type TabSessionId,
 } from "@/server/codex-workbench";
@@ -8,8 +10,11 @@ import {
 /** How an approval's link names the tab session it is shown to. */
 const TAB_SESSION_LINK_PREFIX = "tab:";
 
+/** How an approval's link names the workhorse that asked it, by the workhorse's link key. */
+const WORKHORSE_LINK_PREFIX = "workhorse:";
+
 /**
- * The link of an approval shown to one tab session.
+ * The link of an approval shown to every pane of one tab session, as its coordinator's are.
  * @param tabSessionId The tab session.
  * @returns The link.
  */
@@ -18,32 +23,55 @@ function tabSessionLink(tabSessionId: TabSessionId): string {
 }
 
 /**
- * The tab session an approval's link names.
+ * The link of an approval one workhorse asked, shown to the panes of its checkout (ADR 0050).
+ * @param tabSessionId The workhorse's tab session.
+ * @param checkout The checkout it works in.
+ * @returns The link.
+ */
+function workhorseApprovalLink(tabSessionId: TabSessionId, checkout: string): string {
+	return `${WORKHORSE_LINK_PREFIX}${workhorseLinkKey(tabSessionId, checkout)}`;
+}
+
+/**
+ * The tab session an approval's link names, whether a workhorse of it or its coordinator asked.
  * @param link The link, or null when the approval has none.
  * @returns The tab session, or null when the link names none.
  */
 function tabSessionOfLink(link: string | null): TabSessionId | null {
-	return link?.startsWith(TAB_SESSION_LINK_PREFIX) === true
-		? parseTabSessionId(link.slice(TAB_SESSION_LINK_PREFIX.length))
-		: null;
+	if (link === null) {
+		return null;
+	}
+	if (link.startsWith(TAB_SESSION_LINK_PREFIX)) {
+		return parseTabSessionId(link.slice(TAB_SESSION_LINK_PREFIX.length));
+	}
+	if (!link.startsWith(WORKHORSE_LINK_PREFIX)) {
+		return null;
+	}
+	return parseWorkhorseLinkKey(link.slice(WORKHORSE_LINK_PREFIX.length))?.tabSessionId ?? null;
 }
 
 /**
- * The approvals one tab session may be shown: those of the threads it started that are still
- * awaiting an answer, and those whose terminal has not yet been delivered.
+ * The approvals a pane may be shown: those its tab's coordinator asked and those the workhorse of
+ * its checkout asked, while they await an answer or their terminal has not yet been delivered.
  * @param approvals The broker.
- * @param tabSessionId The tab session.
+ * @param tabSessionId The pane's tab session.
+ * @param checkout The checkout of the pane's vault.
  * @returns The views, in the broker's own order.
  */
 function visibleApprovalViews(
 	approvals: CodexApprovalBroker,
 	tabSessionId: TabSessionId,
+	checkout: string,
 ): readonly ApprovalOwnerView[] {
+	const links = new Set([
+		tabSessionLink(tabSessionId),
+		workhorseApprovalLink(tabSessionId, checkout),
+	]);
 	return approvals
 		.inspectViews()
 		.filter(
 			(view) =>
-				view.snapshot.binding.link === tabSessionLink(tabSessionId) &&
+				links.has(view.snapshot.binding.link ?? "") &&
 				(view.snapshot.state === "staged" ||
 					view.snapshot.state === "pending" ||
 					view.terminalDelivery !== null),
@@ -61,12 +89,11 @@ async function cancelTabSessionApprovals(
 	approvals: CodexApprovalBroker,
 	tabSessionId: TabSessionId,
 ): Promise<void> {
-	const link = tabSessionLink(tabSessionId);
 	const open = approvals
 		.inspect()
 		.filter(
 			(snapshot) =>
-				snapshot.binding.link === link &&
+				tabSessionOfLink(snapshot.binding.link) === tabSessionId &&
 				(snapshot.state === "staged" || snapshot.state === "pending"),
 		);
 	await Promise.all(
@@ -168,4 +195,5 @@ export {
 	tabSessionLink,
 	tabSessionOfLink,
 	visibleApprovalViews,
+	workhorseApprovalLink,
 };

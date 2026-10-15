@@ -171,9 +171,6 @@ function quarantinedDispatch(
  * @returns The dynamic tools.
  */
 function createCodexDynamicTools(options: CodexDynamicToolsOptions): CodexDynamicTools {
-	if (options.checkoutRoot.length === 0) {
-		throw new CodexDynamicToolsError("invalid_call", "Dynamic tools require a checkout root.");
-	}
 	let disposed = false;
 	const responses = new WeakMap<object, Promise<DynamicToolCallResponse>>();
 	const quarantine = createDynamicQuarantineDispatcher(options);

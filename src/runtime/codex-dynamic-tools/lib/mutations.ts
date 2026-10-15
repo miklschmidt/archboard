@@ -25,6 +25,7 @@ import {
 	type MutationExecution,
 } from "@/runtime/codex-dynamic-tools/lib/mutation-staging";
 import {
+	callerWorkspace,
 	executeInitialTurn,
 	targetThreadSource,
 	forkParams,
@@ -95,7 +96,7 @@ async function executeCreate(
 	}
 	let thread: SessionThread;
 	try {
-		thread = (await options.session.threadStart(threadStartParams(options.checkoutRoot))).thread;
+		thread = (await options.session.threadStart(threadStartParams(callerWorkspace(caller)))).thread;
 	} catch (error) {
 		return undeliveredThread(error, "The thread start was not delivered.", operationWireId, {
 			options,
@@ -267,13 +268,7 @@ async function forkThread(input: ForkThreadInput): Promise<ForkThreadResult> {
 	try {
 		thread = (
 			await input.options.session.threadFork(
-				forkParams(
-					input.caller,
-					input.target,
-					input.relation,
-					input.prepared.boundary,
-					input.options.checkoutRoot,
-				),
+				forkParams(input.caller, input.target, input.relation, input.prepared.boundary),
 			)
 		).thread;
 	} catch (error) {

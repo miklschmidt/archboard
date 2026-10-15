@@ -259,9 +259,21 @@ test("live voice and its coordinator are told what another agent did to a board 
 		);
 		expect(catalogueVaults().slice(cataloguedBefore)).toEqual([realpathSync(elsewhere)]);
 
+		// The pane comes back to the checkout whose workhorse the tab linked: the other vault is
+		// another checkout, with a workhorse of its own that nothing started (ADR 0050).
+		const cataloguedAway = catalogueVaults().length;
+		const back = show("scratch", null);
+		expect(back.status, back.stderr).toBe(0);
+		await waitFor(
+			() => catalogueVaults().length > cataloguedAway,
+			"the catalogue of the vault the pane came back to to reach the coordinator",
+			{ timeoutMs: 2000 },
+		);
+
 		// A reload closes every pane of the tab for a moment. Another agent's write meanwhile to a
-		// board of the vault the tab was in still reaches its workhorse as context; a write to a
-		// board of the same name in another vault does not.
+		// board of the vault the tab was in still reaches that checkout's workhorse as context; a
+		// write to a board of the same name in another vault does not.
+		// The vault of each board the workhorse was told about, and the checkout its brief names.
 		const workhorseVaults = (): unknown[] =>
 			frames("thread/inject_items")
 				.filter((entry) => entry.params?.["threadId"] === WORKHORSE_WIRE_THREAD)
@@ -269,7 +281,11 @@ test("live voice and its coordinator are told what another agent did to a board 
 					const context = JSON.parse(developerText(entry.params?.["items"])) as {
 						semantic: { brief: string };
 					};
-					return (JSON.parse(context.semantic.brief) as { board: { vault: unknown } }).board.vault;
+					const brief = JSON.parse(context.semantic.brief) as {
+						repository: unknown;
+						board: { vault: unknown };
+					};
+					return { vault: brief.board.vault, checkout: brief.repository };
 				});
 		const toldBefore = workhorseVaults().length;
 		await socket.close();
@@ -291,7 +307,10 @@ test("live voice and its coordinator are told what another agent did to a board 
 			{ timeoutMs: 2000 },
 		);
 		await sleep(NEWS_SETTLE_MS);
-		expect(workhorseVaults().slice(toldBefore)).toEqual([realpathSync(elsewhere)]);
+		// The brief names the checkout of the board: for this untracked vault, what holds it.
+		expect(workhorseVaults().slice(toldBefore)).toEqual([
+			{ vault: realpathSync(fixture.vault), checkout: realpathSync(fixture.root) },
+		]);
 	} finally {
 		await resources.disposeAsync();
 	}

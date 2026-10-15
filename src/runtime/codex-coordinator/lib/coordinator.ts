@@ -62,8 +62,11 @@ interface StagedCoordinator {
  * @returns The coordinator module.
  */
 export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexCoordinator {
-	if (options.checkoutRoot.length === 0) {
-		throw new CodexCoordinatorError("invalid_input", "The coordinator requires a checkout root.");
+	if (options.workingDirectory.length === 0) {
+		throw new CodexCoordinatorError(
+			"invalid_input",
+			"The coordinator requires a working directory.",
+		);
 	}
 	let retainedPersistence = options.persisted ? freezePersistence(options.persisted) : null;
 	// The coordinator starts this module made: another conversation's are not its evidence.

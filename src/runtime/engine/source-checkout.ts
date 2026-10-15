@@ -11,7 +11,11 @@
 // `archboard` on PATH is a link to one checkout's `bin/archboard`. In another
 // archboard checkout it runs that checkout's own `bin/archboard` instead, so a
 // command in a worktree runs the worktree's source and reaches the worktree's
-// server.
+// server. A command whose environment sets `ARCHBOARD_URL` hands off to no
+// checkout: the URL already names its server, and the source that matters is
+// the one that server runs. The Codex workbench sets it on every thread, whose
+// `archboard` is the server's own (ADR 0050), so a workhorse in an archboard
+// worktree still reaches the server that started it.
 
 import { spawn } from "child_process";
 import { createHash } from "crypto";
@@ -102,7 +106,8 @@ function isArchboardCheckout(root: string): boolean {
 /**
  * The `bin/archboard` a command must run instead of this process's source: the
  * one of the archboard checkout that the working directory stands in, when
- * that checkout is not the running source.
+ * that checkout is not the running source and no `ARCHBOARD_URL` names the
+ * server.
  *
  * The target must resolve inside its own checkout. Its `bin/archboard` runs the
  * source beside its real path, so the command it starts runs exactly that
@@ -111,19 +116,29 @@ function isArchboardCheckout(root: string): boolean {
  * would hand off again.
  * @param cwd The working directory.
  * @param running The real path of the checkout this process runs.
+ * @param serverUrl The `ARCHBOARD_URL` of the environment, or undefined when it is unset.
  * @returns The entry point to run, or null to run this process's source.
  */
-function handOffTarget(cwd: string, running: string): string | null {
-	const found = checkoutRootOf(cwd);
-	if (found === null || !isArchboardCheckout(found)) {
+function handOffTarget(cwd: string, running: string, serverUrl: string | undefined): string | null {
+	if (serverUrl !== undefined && serverUrl !== "") {
 		return null;
 	}
-	const root = fs.realpathSync(found);
+	const root = archboardCheckoutOf(cwd);
+	if (root === null) {
+		return null;
+	}
 	const target = path.join(root, CHECKOUT_BIN);
-	if (root === running || fs.realpathSync(target) !== target) {
-		return null;
-	}
-	return target;
+	return root === running || fs.realpathSync(target) !== target ? null : target;
+}
+
+/**
+ * The real path of the archboard checkout a directory stands in.
+ * @param cwd The directory.
+ * @returns The checkout's real path, or null when it stands in none or in another repository.
+ */
+function archboardCheckoutOf(cwd: string): string | null {
+	const found = checkoutRootOf(cwd);
+	return found !== null && isArchboardCheckout(found) ? fs.realpathSync(found) : null;
 }
 
 /** The signals that end a command, which the command that runs instead must get too. */
@@ -146,7 +161,7 @@ async function handOff(argv: readonly string[]): Promise<number | null> {
 		// A working directory that was deleted stands in no checkout.
 		return null;
 	}
-	const target = handOffTarget(cwd, SOURCE_CHECKOUT);
+	const target = handOffTarget(cwd, SOURCE_CHECKOUT, process.env["ARCHBOARD_URL"]);
 	if (target === null) {
 		return null;
 	}

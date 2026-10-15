@@ -62,7 +62,7 @@ export function createTransportSessionFixture(now: () => number): TransportSessi
 		transport,
 		identity,
 		storage,
-		checkoutRoot: realpathSync(process.cwd()),
+		workingDirectory: realpathSync(process.cwd()),
 		now,
 	});
 	return {
