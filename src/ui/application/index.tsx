@@ -14,6 +14,7 @@ import { OpenerSettings } from "@/ui/application/components/OpenerSettings";
 import { paneEvents } from "@/ui/application/lib/pane-events";
 import { heldBoards, recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import { createShellActions } from "@/ui/application/actions";
+import { vaultOf } from "@/ui/application/lib/shell-actions";
 import {
 	addressingOver,
 	announcingViews,
@@ -271,11 +272,7 @@ function useVaultOf(catalog: BoardCatalog): ((repository: string) => string | nu
 	const { repositories, loading } = catalog;
 	return useMemo(
 		() =>
-			loading
-				? null
-				: (repository: string): string | null =>
-						repositories.find((each) => each.repository.name === repository)?.repository.vault ??
-						null,
+			loading ? null : (repository: string): string | null => vaultOf({ repositories }, repository),
 		[repositories, loading],
 	);
 }
@@ -343,8 +340,8 @@ function ApplicationBody(): JSX.Element {
 	const slots = useAgentSlots({ agent, workbench, context, reducedMotion, dockless });
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
-	const vaultOf = useVaultOf(catalog);
-	useWorkspaceAddressing({ panes, notices, readings, vaultOf }, addressBinding);
+	const repositoryVaults = useVaultOf(catalog);
+	useWorkspaceAddressing({ panes, notices, readings, vaultOf: repositoryVaults }, addressBinding);
 	usePresentationTransfer(panes, fullscreen);
 	// Bound each render, after the owners the events reach exist.
 	panes.bindEvents(paneEvents({ notices, catalog, readings, workbench, activity: agentActivity }));

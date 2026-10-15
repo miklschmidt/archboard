@@ -194,12 +194,13 @@ function placeFor(
 }
 
 /**
- * The vault a repository's boards are read from.
+ * The vault a repository's boards are read from. A click and a restored address
+ * both resolve a repository's name here, so they open the same vault.
  * @param catalog The catalog.
  * @param repository The repository's name.
  * @returns Its chosen checkout's vault, or null when it has none to read.
  */
-function vaultOf(catalog: BoardCatalog, repository: string): string | null {
+function vaultOf(catalog: Pick<BoardCatalog, "repositories">, repository: string): string | null {
 	return (
 		catalog.repositories.find((each) => each.repository.name === repository)?.repository.vault ??
 		null
@@ -329,4 +330,4 @@ function createShellActions(deps: ShellActionDeps): ComposedShellActions {
 	};
 }
 
-export { createShellActions, type ComposedShellActions, type ShellActionDeps };
+export { createShellActions, vaultOf, type ComposedShellActions, type ShellActionDeps };
