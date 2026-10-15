@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 44,
+	"version": 45,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-11T14:30:26.432Z",
+	"updatedAt": "2026-10-15T00:26:48.623Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -4819,7 +4819,7 @@
 						"order": 13000,
 						"name": "Server requests",
 						"kind": "module",
-						"responsibility": "The one way this tab speaks JSON to the Archboard server",
+						"responsibility": "The one way this tab speaks JSON to the Archboard server, naming the vault it learned from the server on every call",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -5625,6 +5625,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
 							"symbol": "OrbHost"
+						}
+					},
+					{
+						"id": "wQi4PrJj",
+						"order": 51000,
+						"from": "dtYjWvlf",
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "names the vault on each read",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+							"symbol": "withVault"
 						}
 					}
 				],
@@ -5922,7 +5936,7 @@
 						"order": 13000,
 						"name": "Server requests",
 						"kind": "module",
-						"responsibility": "The one way this tab speaks JSON to the Archboard server",
+						"responsibility": "The one way this tab speaks JSON to the Archboard server, naming the vault it learned from the server on every call",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -6728,6 +6742,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
 							"symbol": "OrbHost"
+						}
+					},
+					{
+						"id": "wQi4PrJj",
+						"order": 51000,
+						"from": "dtYjWvlf",
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "names the vault on each read",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+							"symbol": "withVault"
 						}
 					}
 				],
