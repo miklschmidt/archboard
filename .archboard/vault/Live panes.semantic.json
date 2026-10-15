@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 30,
+	"version": 32,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T06:00:35.834Z",
+	"updatedAt": "2026-10-15T06:05:04.342Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -3660,7 +3660,7 @@
 		{
 			"id": "G3kDfojO",
 			"name": "TASK-472.06",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "7aPQQv25",
 			"summary": "Live pane connections, presentation state and board announcements, with the vault each pane is in",
 			"content": {
@@ -5041,9 +5041,9 @@
 		{
 			"id": "Cyq736we",
 			"name": "TASK-472.15",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "G3kDfojO",
-			"summary": "archboard semantic move moves a board to another repository",
+			"summary": "Live pane connections, presentation state and board announcements, with the vault each pane is in",
 			"content": {
 				"nodes": [
 					{
@@ -6434,7 +6434,7 @@
 			}
 		}
 	],
-	"current": "G3kDfojO",
+	"current": "Cyq736we",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -6458,6 +6458,12 @@
 			"from": "7aPQQv25",
 			"at": "2026-10-15T04:08:51.177Z",
 			"reason": "The server serves every vault, and a pane opens in the page's opening vault"
+		},
+		{
+			"variant": "Cyq736we",
+			"from": "G3kDfojO",
+			"at": "2026-10-15T06:05:04.342Z",
+			"reason": "A moved board takes its panes to the target vault"
 		}
 	]
 }

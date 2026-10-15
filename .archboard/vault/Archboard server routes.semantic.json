@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 37,
+	"version": 39,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-15T06:00:20.286Z",
+	"updatedAt": "2026-10-15T06:05:03.675Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -8154,7 +8154,7 @@
 		{
 			"id": "C3V6dUPI",
 			"name": "TASK-472.08",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "OhAsaop7",
 			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches.",
 			"content": {
@@ -9487,9 +9487,9 @@
 		{
 			"id": "rCXbD4vW",
 			"name": "TASK-472.15",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "C3V6dUPI",
-			"summary": "archboard semantic move moves a board to another repository",
+			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches.",
 			"content": {
 				"nodes": [
 					{
@@ -10959,7 +10959,7 @@
 			}
 		}
 	],
-	"current": "C3V6dUPI",
+	"current": "rCXbD4vW",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -10996,6 +10996,12 @@
 			"from": "OhAsaop7",
 			"at": "2026-10-15T05:06:54.001Z",
 			"reason": "/health names the checkout whose source the server runs (TASK-472.08)"
+		},
+		{
+			"variant": "rCXbD4vW",
+			"from": "C3V6dUPI",
+			"at": "2026-10-15T06:05:03.675Z",
+			"reason": "semantic move: the move route moves a board into another repository's vault, announces every board it wrote and where the board went, and takes the board's panes along"
 		}
 	],
 	"shelvings": [
