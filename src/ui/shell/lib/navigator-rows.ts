@@ -7,6 +7,7 @@
 // (variant-rows). Pure: no React.
 
 import type { OutlineBoardNode, OutlineFolder, OutlineNode } from "@/ui/board-catalog";
+import { shownRepository } from "@/ui/repository-name/shown-name";
 import { repositoryRowId, scopedRowId } from "@/ui/shell/lib/row-ids";
 import { matchIn, type TextRange } from "@/ui/shell/lib/text-match";
 import { listsVariants, paneOnBoard, variantRows } from "@/ui/shell/lib/variant-rows";
@@ -68,6 +69,20 @@ function boardMatch(node: OutlineNode<CatalogBoard>, query: string): TextRange |
 	if (label !== null) return label;
 	const elsewhere = matchIn(node.board.name, query) ?? matchIn(node.board.description ?? "", query);
 	return elsewhere === null ? null : { start: 0, end: 0 };
+}
+
+/**
+ * Whether a repository matches the filter by its identity: the range in the
+ * words its row shows, or a zero-length marker for a match in the host that
+ * GitHub's mark stands in for, as a board's match elsewhere is marked.
+ * @param identity The repository's identity, or an untracked vault's registry name.
+ * @param query The folded filter.
+ * @returns The range in its shown name, the marker, or null.
+ */
+function repositoryMatch(identity: string, query: string): TextRange | null {
+	const shown = matchIn(shownRepository(identity).name, query);
+	if (shown !== null) return shown;
+	return matchIn(identity, query) === null ? null : { start: 0, end: 0 };
 }
 
 /**
@@ -396,7 +411,7 @@ function repositoryRow(
 ): Unplaced<RepositoryRow> {
 	const { open, expandable } = disclosure;
 	const name = shell.repository.name;
-	const match = inputs.query.length > 0 ? matchIn(name, inputs.query) : null;
+	const match = inputs.query.length > 0 ? repositoryMatch(name, inputs.query) : null;
 	return {
 		kind: "repository",
 		id: repositoryRowId(name),

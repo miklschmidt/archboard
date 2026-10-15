@@ -176,3 +176,41 @@ test("a pane is marked in the repository the server says it is in, before the re
 	});
 	expect(carrying("B")).toEqual([`repository:${BILLING}|board:payments`]);
 });
+
+/**
+ * Type a filter into the navigator, as a person does.
+ * @param text The whole filter.
+ */
+function filterBy(text: string): void {
+	const input = document.querySelector<HTMLInputElement>('input[type="search"]');
+	const value = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+	act(() => {
+		value?.set?.call(input, text);
+		input?.dispatchEvent(new Event("input", { bubbles: true }));
+	});
+}
+
+test("a GitHub repository is named by its owner and name beside GitHub's mark, and the filter finds it by its whole identity", () => {
+	mountNavigator({
+		repositories: [
+			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_BOARDS),
+			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_BOARDS),
+		],
+	});
+	const billing = `[data-row-id="${CSS.escape(`repository:${BILLING}`)}"]`;
+	const shop = `[data-row-id="${CSS.escape(`repository:${SHOP}`)}"]`;
+	expect(document.querySelector(`${billing} [title="GitHub repository"]`)).not.toBeNull();
+	expect(document.querySelector(`${billing} [title="${BILLING}"]`)?.textContent).toBe(
+		"acme/billing",
+	);
+	expect(document.querySelector(billing)?.getAttribute("aria-label")).toStartWith(BILLING);
+	// A match in the words the row shows is marked there.
+	filterBy("acme/bill");
+	expect(document.querySelector(`${billing} mark`)?.textContent).toBe("acme/bill");
+	expect(document.querySelector(shop)).toBeNull();
+	// A match that reaches into the host keeps the row, with nothing marked.
+	filterBy("github.com/acme/billing");
+	expect(document.querySelector(billing)).not.toBeNull();
+	expect(document.querySelector(`${billing} mark`)).toBeNull();
+	expect(document.querySelector(shop)).toBeNull();
+});

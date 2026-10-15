@@ -17,6 +17,8 @@ import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } fr
 import type { SemanticEdge, SemanticNode, VariantContent } from "@/shared/semantic-board/index";
 import { cn } from "@/ui/components/class-names";
 import { IconButton } from "@/ui/components/IconButton";
+import { RepositoryName } from "@/ui/repository-name";
+import { shownRepository } from "@/ui/repository-name/shown-name";
 import { KindIcon, RelationshipChip } from "@/ui/semantic-board-canvas/components/KindMarks";
 import { LevelMark } from "@/ui/semantic-board-canvas/components/LevelMark";
 import { SemanticGroupChip } from "@/ui/semantic-board-canvas/components/SemanticGroupChip";
@@ -227,7 +229,8 @@ function GroupsCell(props: {
 /**
  * The board a part opens, with the mark of its level: the part's kind (ADR 0029).
  * A board of another repository is in a vault that only opening it finds, so it
- * has the plain mark and names its repository under it (ADR 0049).
+ * has the plain mark and names its repository under it (ADR 0049). GitHub's
+ * mark stands under the level's, so both names start on one line.
  * @param props The part.
  * @param props.node The part.
  * @returns The cell.
@@ -244,9 +247,10 @@ function OpensCell(props: { readonly node: SemanticNode }): JSX.Element {
 				<span className="truncate">{board}</span>
 			</span>
 			{repo !== undefined && (
-				<span className="text-muted-foreground truncate pl-5" title={repo}>
-					{repo}
-				</span>
+				<RepositoryName
+					identity={repo}
+					className={cn("text-muted-foreground", !shownRepository(repo).onGitHub && "pl-5")}
+				/>
 			)}
 		</span>
 	);
