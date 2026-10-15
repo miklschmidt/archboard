@@ -76,8 +76,9 @@ export interface WebSocketMessage {
 	/** On `board_doing`: the last few, oldest first, so a pane that has just arrived is not blank. */
 	recent?: DoingEntry[];
 	/**
-	 * On `agent_activity`: every board this server serves that an agent holds
-	 * or has just written, as one snapshot. Boardless: every client hears it.
+	 * On `agent_activity`: every board of the pane's vault that an agent holds
+	 * or has just written, as one snapshot. Boardless, and told only to the
+	 * panes in that vault, after the `pane_board` that put the pane there.
 	 */
 	activity?: AgentActivityEntry[];
 }
