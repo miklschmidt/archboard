@@ -126,6 +126,10 @@ test("the camera moves with the keyboard and survives the board changing under i
 	const asked = server.calls.length;
 	const transform = surface().style.transform;
 	server.reply = { status: 200, body: drawing(2) };
+	// News of a board of the same name in another repository is not news of this one.
+	act(() => announceSemanticBoardChange("/work/payments/.archboard/vault", "pipeline", 2));
+	await settle();
+	expect(server.calls.length).toBe(asked);
 	act(() => announceSemanticBoardChange(PANE_VAULT, "pipeline", 2));
 	await settle();
 	expect(server.calls.length).toBeGreaterThan(asked);
