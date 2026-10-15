@@ -49,19 +49,25 @@ function vaultRequiredRefusal(): VaultRefusal {
 	};
 }
 
+/** What a caller does with a readable directory in no layout. */
+const HOW_TO_LAY_OUT =
+	"The server serves only a vault at <dir>/.archboard/vault, because its agents work in <dir>. " +
+	"Move the boards to <dir>/.archboard/vault and name that directory.";
+
 /**
  * The refusal for a vault the server cannot read.
  * @param named What the call named.
  * @param why What is wrong with it.
+ * @param next What the caller can do next.
  * @returns The refusal.
  */
-function vaultUnreadableRefusal(named: string, why: string): VaultRefusal {
+function vaultUnreadableRefusal(named: string, why: string, next = HOW_TO_NAME): VaultRefusal {
 	return {
 		status: 404,
 		code: "VAULT_UNREADABLE",
 		error:
 			`The vault "${named}" is ${why}, so the server cannot read boards from it. Nothing was done ` +
-			`and nothing was created. ${HOW_TO_NAME}`,
+			`and nothing was created. ${next}`,
 	};
 }
 
@@ -108,7 +114,11 @@ function namedVault(raw: unknown): NamedVault {
 		? { ok: true, vault: found.real }
 		: {
 				ok: false,
-				refusal: vaultUnreadableRefusal(raw, "not the .archboard/vault of a directory"),
+				refusal: vaultUnreadableRefusal(
+					raw,
+					"not the .archboard/vault of a directory",
+					HOW_TO_LAY_OUT,
+				),
 			};
 }
 
