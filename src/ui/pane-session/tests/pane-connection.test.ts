@@ -139,6 +139,188 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 });
 
 /**
+ * Say something to the pane over its socket, as the server does.
+ * @param socket The pane's socket.
+ * @param message The message.
+ */
+function deliver(socket: ControlledSocket, message: Record<string, unknown>): void {
+	socket.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(message) }));
+}
+
+/** The vault a pane opens in, and the vault of another checkout of its repository. */
+const LEFT_VAULT = "/work/archboard/.archboard/vault";
+const CHOSEN_VAULT = "/work/archboard-next/.archboard/vault";
+const PAYMENTS = { board: "payments", variant: "current" };
+
+/** One call the pane made, held until the test answers it. */
+interface HeldCall {
+	readonly path: string;
+	readonly vault: string | null;
+	readonly answer: ReturnType<typeof Promise.withResolvers<Response>>;
+}
+
+/**
+ * A pane in the left vault, connected and registered, showing `payments`, with
+ * every call it makes held for the test to answer.
+ * @returns The pane, its socket, its calls, and what it said of itself and its holder.
+ */
+async function paneOnPayments() {
+	const calls: HeldCall[] = [];
+	const firstCall = Promise.withResolvers<void>();
+	const fetchMock = spyOn(globalThis, "fetch").mockImplementation(
+		Object.assign(
+			(url: Parameters<typeof fetch>[0]) => {
+				const answer = Promise.withResolvers<Response>();
+				const parsed = new URL(url instanceof Request ? url.url : url, "http://localhost/");
+				calls.push({ path: parsed.pathname, vault: parsed.searchParams.get("vault"), answer });
+				firstCall.resolve();
+				return answer.promise;
+			},
+			{ preconnect: fetch.preconnect },
+		),
+	);
+	const statuses: PaneStatus[] = [];
+	const holders: unknown[] = [];
+	const core = createPaneCore({
+		paneId: "A",
+		clientId: "A-mv01",
+		/**
+		 * Read the fixture state.
+		 * @returns The pane's facets and listeners.
+		 */
+		options: () => ({
+			paneId: "A",
+			theme: "dark",
+			openingVault: LEFT_VAULT,
+			primary: true,
+			focused: true,
+			/**
+			 * Record what the pane says it is.
+			 * @param status The pane's status.
+			 */
+			onStatus: (status): void => {
+				statuses.push(status);
+			},
+			/**
+			 * Record who the pane says holds its board.
+			 * @param _paneId The pane.
+			 * @param _board The board.
+			 * @param holder The holder.
+			 */
+			onHolder: (_paneId, _board, holder): void => {
+				holders.push(holder);
+			},
+		}),
+		/**
+		 * Read the fixture state.
+		 * @returns No element; an unplaced pane still registers.
+		 */
+		paneElement: () => null,
+		workbenchSockets: null,
+		/** Read from the published status instead. */
+		setConnected: (): void => {},
+		/** Read from the published status instead. */
+		setBoard: (): void => {},
+		/** Read from the published status instead. */
+		setOpened: (): void => {},
+		/** Read from the published status instead. */
+		arrived: (): void => {},
+		/** Read from the holder listener instead. */
+		setHeldBy: (): void => {},
+		/** No agent activity is involved. */
+		setDoing: (): void => {},
+		/** Read from the published status instead. */
+		setVault: (): void => {},
+	});
+	core.connect();
+	const socket = ControlledSocket.created.at(-1)!;
+	socket.open();
+	await firstCall.promise;
+	calls[0]!.answer.resolve(registeredReply());
+	deliver(socket, {
+		type: "pane_board",
+		board: "payments",
+		identity: PAYMENTS,
+		vault: LEFT_VAULT,
+		repository: "r",
+	});
+	/** Put everything back. */
+	function restore(): void {
+		core.dispose();
+		fetchMock.mockRestore();
+	}
+	return { core, socket, calls, statuses, holders, restore };
+}
+
+/**
+ * The server's answer to a report from a pane it has.
+ * @returns The answer.
+ */
+function registeredReply(): Response {
+	return Response.json({ success: true, registered: true, paneCount: 1 });
+}
+
+/**
+ * The server moves the pane to the chosen checkout of its repository, keeping its board.
+ * @param socket The pane's socket.
+ */
+function chooseOtherCheckout(socket: ControlledSocket): void {
+	deliver(socket, {
+		type: "pane_board",
+		board: "payments",
+		identity: PAYMENTS,
+		vault: CHOSEN_VAULT,
+		repository: "r",
+	});
+}
+
+test("a pane moved into another checkout's vault reports there, and the answer from the vault it left does not disconnect it", async () => {
+	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
+	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
+	const pane = await paneOnPayments();
+	try {
+		// The report of arriving on the board is still unanswered when the
+		// repository's chosen checkout changes and the server moves the pane.
+		chooseOtherCheckout(pane.socket);
+		expect(pane.calls.map((each) => each.vault)).toEqual([LEFT_VAULT, LEFT_VAULT, CHOSEN_VAULT]);
+		// The server answers the report that named the vault the pane left as it
+		// answers any report from a vault a pane is not in.
+		pane.calls[1]!.answer.resolve(
+			Response.json({ success: true, registered: false, paneCount: 1 }),
+		);
+		pane.calls[2]!.answer.resolve(registeredReply());
+		await Bun.sleep(0);
+		expect(pane.statuses.at(-1)).toMatchObject({
+			vault: CHOSEN_VAULT,
+			connected: true,
+			registered: true,
+		});
+	} finally {
+		pane.restore();
+		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
+	}
+});
+
+test("a take-back answered after the pane moved to another checkout does not free the board it shows now", async () => {
+	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
+	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
+	const pane = await paneOnPayments();
+	try {
+		const taken = pane.core.takeBack();
+		const takeBack = pane.calls.at(-1)!;
+		expect(takeBack).toMatchObject({ path: "/api/semantic-boards/take-back", vault: LEFT_VAULT });
+		chooseOtherCheckout(pane.socket);
+		takeBack.answer.resolve(Response.json({ success: true, released: true }));
+		expect(await taken).toEqual({ outcome: "failure" });
+		// The board of the new checkout is somebody else's until the server says it is not.
+		expect(pane.holders.at(-1)).not.toBeNull();
+	} finally {
+		pane.restore();
+		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
+	}
+});
+
+/**
  * Open one pane's socket, the way the shell does for each pane of a tab, and read the tab
  * session it named to the server.
  * @param paneId The pane.
