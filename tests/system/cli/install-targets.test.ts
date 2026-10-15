@@ -1,26 +1,63 @@
 import { describe, expect, test } from "bun:test";
 import {
-	appendFileSync,
 	existsSync,
 	lstatSync,
 	mkdirSync,
 	readFileSync,
 	readdirSync,
 	symlinkSync,
+	writeFileSync,
 } from "node:fs";
+import { homedir } from "node:os";
 import path from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { z } from "zod";
 import { createInstallFixture, installFailure, shippedSkills } from "./support/install-fixture.ts";
+import { checkoutRoot } from "./support/package-cli.ts";
 
-const begin = "<!-- archboard:begin -->";
 const { join } = path;
+
+/**
+ * The block that versions before TASK-471.03 wrote into a repository's agent document.
+ * @param machine The machine's path that the block held.
+ * @returns The block, markers included, ending in a newline.
+ */
+function earlierBlock(machine: string): string {
+	return [
+		"<!-- archboard:begin -->",
+		"<!-- Written by `archboard install-skill`. Re-running replaces this block. -->",
+		"## Architecture canvas (archboard)",
+		"",
+		"```bash",
+		`export ARCHBOARD_VAULT=${machine}/.archboard/vault`,
+		"```",
+		"",
+		"<!-- archboard:end -->",
+		"",
+	].join("\n");
+}
+
+/**
+ * Every file below a directory with its bytes, keyed by the path relative to it. The repository's
+ * own history is left out.
+ * @param directory The directory.
+ * @returns The files.
+ */
+function filesBelow(directory: string): Map<string, Buffer> {
+	const files = new Map<string, Buffer>();
+	for (const entry of readdirSync(directory, { recursive: true, withFileTypes: true })) {
+		const file = join(entry.parentPath, entry.name);
+		const relative = path.relative(directory, file);
+		if (entry.isFile() && !relative.startsWith(".git")) files.set(relative, readFileSync(file));
+	}
+	return files;
+}
 
 describe("install targets", () => {
 	test("defaults to the isolated shared agent skill root", () => {
 		using fixture = createInstallFixture();
 		const repo = fixture.repo("default-home");
-		const result = fixture.install(repo, ["--yes"], { home: true });
+		const result = fixture.install(repo, [], { home: true });
 		const diagnostic = installFailure(result.spawn);
 		const root = join(fixture.home, ".agents", "skills");
 		expect(result, diagnostic).toMatchObject({ mode: "target:agents", root });
@@ -28,10 +65,9 @@ describe("install targets", () => {
 			shippedSkills.map((skill) => expect.objectContaining({ skill, target: join(root, skill) })),
 		);
 		expect(result.setup, diagnostic).toMatchObject({
-			doc: join(repo, "AGENTS.md"),
-			docCreated: true,
+			vault: join(repo, ".archboard", "vault"),
+			vaultCreated: true,
 		});
-		expect(existsSync(join(repo, "CLAUDE.md")), diagnostic).toBe(false);
 		expect(() => {
 			fixture.assertSkillBytes(root);
 		}, diagnostic).not.toThrow();
@@ -39,30 +75,27 @@ describe("install targets", () => {
 
 	test("keeps Claude and skills.sh selectors explicit", () => {
 		using fixture = createInstallFixture();
-		const claudeRepo = fixture.repo("claude-home");
-		const claude = fixture.install(claudeRepo, ["--target", "claude", "--yes"], { home: true });
-		const claudeDiagnostic = installFailure(claude.spawn);
-		expect(claude, claudeDiagnostic).toMatchObject({
+		const claude = fixture.install(fixture.repo("claude-home"), ["--target", "claude"], {
+			home: true,
+		});
+		expect(claude, installFailure(claude.spawn)).toMatchObject({
 			mode: "target:claude",
 			root: join(fixture.home, ".claude", "skills"),
 		});
-		expect(claude.setup?.doc, claudeDiagnostic).toBe(join(claudeRepo, "CLAUDE.md"));
-		expect(existsSync(join(claudeRepo, "AGENTS.md")), claudeDiagnostic).toBe(false);
-		const codexRepo = fixture.repo("agent-codex");
-		const codex = fixture.install(codexRepo, ["--agent", "codex", "--yes"], { home: true });
-		const codexDiagnostic = installFailure(codex.spawn);
-		expect(codex, codexDiagnostic).toMatchObject({
+		const codex = fixture.install(fixture.repo("agent-codex"), ["--agent", "codex"], {
+			home: true,
+		});
+		expect(codex, installFailure(codex.spawn)).toMatchObject({
 			mode: "agent:codex",
 			root: join(fixture.home, ".agents", "skills"),
 		});
-		const codeRepo = fixture.repo("agent-claude-code");
-		const code = fixture.install(codeRepo, ["--agent", "claude-code", "--yes"], { home: true });
-		const codeDiagnostic = installFailure(code.spawn);
-		expect(code, codeDiagnostic).toMatchObject({
+		const code = fixture.install(fixture.repo("agent-claude-code"), ["--agent", "claude-code"], {
+			home: true,
+		});
+		expect(code, installFailure(code.spawn)).toMatchObject({
 			mode: "agent:claude-code",
 			root: join(fixture.home, ".claude", "skills"),
 		});
-		expect(code.setup?.doc, codeDiagnostic).toBe(join(codeRepo, "CLAUDE.md"));
 	});
 
 	test("refuses obsolete, unknown, and conflicting selectors without installation", () => {
@@ -78,8 +111,7 @@ describe("install targets", () => {
 			expect(result.status, installFailure(result)).toBe(2);
 			expect(result.stdout, installFailure(result)).toBe("");
 			expect(result.stderr, installFailure(result)).toContain("Usage:");
-			expect(existsSync(join(repo, "AGENTS.md")), installFailure(result)).toBe(false);
-			expect(existsSync(join(repo, "CLAUDE.md")), installFailure(result)).toBe(false);
+			expect(existsSync(join(repo, ".archboard")), installFailure(result)).toBe(false);
 			expect(
 				existsSync(join(fixture.home, ".agents", "skills", "archboard")),
 				installFailure(result),
@@ -116,84 +148,78 @@ describe("install targets", () => {
 		expect(readdirSync(linkedRoot), installFailure(refused)).toEqual(["archboard"]);
 	});
 
-	test("creates a usable repo setup and remains byte-idempotent", () => {
+	test("makes the vault and writes no agent document, and a rerun changes nothing", () => {
 		using fixture = createInstallFixture();
 		const repo = fixture.repo("fresh");
 		const first = fixture.install(repo);
 		const firstDiagnostic = installFailure(first.spawn);
-		const doc = join(repo, "AGENTS.md");
+		const vault = join(repo, ".archboard", "vault");
 		expect(first.setup, firstDiagnostic).toMatchObject({
-			doc,
-			docCreated: true,
-			vault: join(repo, ".archboard", "vault"),
+			vault,
 			vaultCreated: true,
+			removedBlocks: [],
 		});
-		if (!first.setup) {
-			throw new Error(firstDiagnostic);
-		}
-		const setupBytes = readFileSync(doc);
-		expect(
-			setupBytes.includes(Buffer.from(`export ARCHBOARD_VAULT=${first.setup.vault}`)),
-			firstDiagnostic,
-		).toBe(true);
-		expect(
-			setupBytes.includes(
-				Buffer.from(`ARCHBOARD_VAULT=${first.setup.vault} ${first.setup.command} semantic`),
-			),
-			firstDiagnostic,
-		).toBe(true);
-		expect(setupBytes.includes(Buffer.from("the `archboard` skill")), firstDiagnostic).toBe(true);
-		const firstBytes = readFileSync(doc);
+		expect(existsSync(join(vault, ".archboard", "config.yaml")), firstDiagnostic).toBe(true);
+		expect(existsSync(join(repo, "AGENTS.md")), firstDiagnostic).toBe(false);
+		expect(existsSync(join(repo, "CLAUDE.md")), firstDiagnostic).toBe(false);
+		const before = filesBelow(repo);
 		const second = fixture.install(repo);
 		const secondDiagnostic = installFailure(second.spawn);
-		expect(second.setup, secondDiagnostic).toMatchObject({ docCreated: false, blockUpdated: true });
-		expect(readFileSync(doc), secondDiagnostic).toEqual(firstBytes);
-		expect(readFileSync(doc, "utf8").split(begin), secondDiagnostic).toHaveLength(2);
+		expect(second.setup, secondDiagnostic).toMatchObject({
+			vaultCreated: false,
+			removedBlocks: [],
+		});
+		expect(filesBelow(repo), secondDiagnostic).toEqual(before);
 		expect(() => fixture.assertSkillBytes(fixture.skillRoot), secondDiagnostic).not.toThrow();
 	});
 
-	test("preserves surrounding prose and chooses one existing doc", () => {
+	test("removes the block of an earlier version, says so, and leaves every other byte of the document", () => {
 		using fixture = createInstallFixture();
-		const prose = fixture.repo("prose", { "CLAUDE.md": "# House rules\n\nRun the tests.\n" });
-		const proseFirst = fixture.install(prose);
-		appendFileSync(join(prose, "CLAUDE.md"), "\n## Afterwards\n\nStill here.\n");
-		const proseSecond = fixture.install(prose);
-		const proseDiagnostic = installFailure(proseSecond.spawn);
-		const text = readFileSync(join(prose, "CLAUDE.md"), "utf8");
-		expect(proseFirst.spawn.status, installFailure(proseFirst.spawn)).toBe(0);
-		expect(text, proseDiagnostic).toStartWith("# House rules\n\nRun the tests.\n");
-		expect(text, proseDiagnostic).toContain("## Afterwards");
-		expect(text.split(begin), proseDiagnostic).toHaveLength(2);
-		const agents = fixture.repo("agents", { "AGENTS.md": "# Agents\n" });
-		const agentsOnly = fixture.install(agents);
-		const agentsDiagnostic = installFailure(agentsOnly.spawn);
-		expect(agentsOnly.setup?.doc, agentsDiagnostic).toBe(join(agents, "AGENTS.md"));
-		expect(existsSync(join(agents, "CLAUDE.md")), agentsDiagnostic).toBe(false);
-		const both = fixture.repo("both", { "CLAUDE.md": "# Claude\n", "AGENTS.md": "# Agents\n" });
-		const result = fixture.install(both);
+		const authored = "# House rules\n\nRun the tests.\n\n";
+		const afterwards = "## Afterwards\n\nStill here.\n";
+		const repo = fixture.repo("upgraded", {
+			"CLAUDE.md": `${authored}${earlierBlock(fixture.root)}${afterwards}`,
+			"AGENTS.md": `# Agents\n\n${earlierBlock(fixture.root)}`,
+		});
+		writeFileSync(join(repo, "NOTES.md"), `Not an agent document.\n${earlierBlock(fixture.root)}`);
+		const result = fixture.install(repo);
 		const diagnostic = installFailure(result.spawn);
-		expect(result.setup?.doc, diagnostic).toBe(join(both, "CLAUDE.md"));
-		expect(readFileSync(join(both, "AGENTS.md"), "utf8"), diagnostic).not.toContain(begin);
+		expect(readFileSync(join(repo, "CLAUDE.md"), "utf8"), diagnostic).toBe(
+			`${authored}${afterwards}`,
+		);
+		expect(readFileSync(join(repo, "AGENTS.md"), "utf8"), diagnostic).toBe("# Agents\n\n");
+		// Only the two agent documents are managed: any other file keeps what it holds.
+		expect(readFileSync(join(repo, "NOTES.md"), "utf8"), diagnostic).toContain("archboard:begin");
+		expect(result.setup?.removedBlocks.toSorted(), diagnostic).toEqual([
+			join(repo, "AGENTS.md"),
+			join(repo, "CLAUDE.md"),
+		]);
+		// The next run finds nothing to remove.
+		const again = fixture.install(repo);
+		expect(again.setup?.removedBlocks, installFailure(again.spawn)).toEqual([]);
 	});
 
-	test("honors named answers and no-doc", () => {
+	test("no file written into a repository holds a path of the machine that ran the installer", () => {
 		using fixture = createInstallFixture();
-		const named = fixture.repo("named");
-		const vault = join(fixture.root, "shared-vault");
-		const customDoc = join(named, "docs", "AGENTS.md");
-		const result = fixture.install(named, ["--vault", vault, "--doc", customDoc]);
-		const diagnostic = installFailure(result.spawn);
-		expect(result.setup?.vault, diagnostic).toBe(vault);
-		expect(existsSync(vault), diagnostic).toBe(true);
-		expect(existsSync(customDoc), diagnostic).toBe(true);
-		expect(existsSync(join(named, "CLAUDE.md")), diagnostic).toBe(false);
+		const repo = fixture.repo("portable", { "AGENTS.md": earlierBlock(fixture.root) });
+		fixture.install(repo);
+		const machine = [fixture.root, fixture.home, checkoutRoot, homedir()];
+		for (const [file, bytes] of filesBelow(repo)) {
+			for (const held of machine) {
+				expect(bytes.includes(Buffer.from(held)), `${file} holds ${held}`).toBe(false);
+			}
+		}
+	});
+
+	test("honors a named repository and no-setup", () => {
+		using fixture = createInstallFixture();
 		const untouched = fixture.repo("untouched");
-		const noDocRoot = join(fixture.root, "no-doc-skills");
-		const noDoc = fixture.install(untouched, ["--dir", noDocRoot, "--no-doc"]);
-		const noDocDiagnostic = installFailure(noDoc.spawn);
-		expect(noDoc.setup, noDocDiagnostic).toBeUndefined();
-		expect(readdirSync(untouched), noDocDiagnostic).toEqual([]);
-		expect(existsSync(join(noDocRoot, "archboard", "SKILL.md")), noDocDiagnostic).toBe(true);
+		const noSetupRoot = join(fixture.root, "no-setup-skills");
+		const noSetup = fixture.install(untouched, ["--dir", noSetupRoot, "--no-setup"]);
+		const noSetupDiagnostic = installFailure(noSetup.spawn);
+		expect(noSetup.setup, noSetupDiagnostic).toBeUndefined();
+		expect(readdirSync(untouched), noSetupDiagnostic).toEqual([]);
+		expect(existsSync(join(noSetupRoot, "archboard", "SKILL.md")), noSetupDiagnostic).toBe(true);
 	});
 });
 
@@ -202,7 +228,7 @@ describe("what an install carries beyond the authored skill", () => {
 		using fixture = createInstallFixture();
 		const repo = fixture.repo("portable");
 		const custom = join(fixture.root, "portable-root");
-		const result = fixture.install(repo, ["--dir", custom, "--no-doc"]);
+		const result = fixture.install(repo, ["--dir", custom, "--no-setup"]);
 		const diagnostic = installFailure(result.spawn);
 		const skill = join(custom, "archboard");
 		const generated = join(skill, "references", "generated");
