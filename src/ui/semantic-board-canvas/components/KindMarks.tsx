@@ -75,13 +75,11 @@ const DASHES: Readonly<Record<"solid" | "dashed" | "dotted", string>> = {
 interface RelationshipChipProps {
 	readonly look: KindLook;
 	readonly kind: string;
-	/** Whether it sits on a plate of its own, as it does in a table, or bare, as it does in a list. */
-	readonly plate?: boolean;
 }
 
 /**
  * A relationship kind: a short sample of its line, then its name.
- * @param props The kind, and whether it sits on a plate.
+ * @param props The kind.
  * @returns The chip.
  */
 function RelationshipChip(props: RelationshipChipProps): JSX.Element {
@@ -90,10 +88,7 @@ function RelationshipChip(props: RelationshipChipProps): JSX.Element {
 	return (
 		<span
 			data-slot="relationship-chip"
-			className={cn(
-				"text-body text-foreground/80 inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap",
-				props.plate === true && "bg-muted rounded-control px-2 py-1",
-			)}
+			className="text-body text-foreground/80 inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
 		>
 			<span aria-hidden="true" className={cn("w-3 border-t-2", DASHES[dash])} style={sample} />
 			{name}
