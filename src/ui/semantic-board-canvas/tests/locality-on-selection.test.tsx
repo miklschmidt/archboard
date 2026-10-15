@@ -21,7 +21,7 @@ import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 
-const { QueryClient, QueryClientProvider, focusManager, onlineManager, useQuery } =
+const { QueryClient, QueryClientProvider, QueryObserver, focusManager, onlineManager, useQuery } =
 	await import("@tanstack/react-query");
 const { act, cleanup, render } = await import("@testing-library/react");
 const { localityQuery, readBoardsFrom, vaultCheckQuery } =
@@ -224,5 +224,26 @@ test("picks made while the locality is read wait for that read and ask nothing m
 	await choose(4);
 	expect(asked.locality).toBe(2);
 	unmount();
+	client.clear();
+});
+
+test("a pane that moves to another repository shows none of the last one's history while it reads", async () => {
+	jest.useFakeTimers();
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const on = { board: "pipeline", variant: "v1", version: 1 } as const;
+	const observer = new QueryObserver(client, localityQuery({ vault: VAULT, ...on }));
+	const unsubscribe = observer.subscribe(() => undefined);
+	await pass(0);
+	expect(observer.getCurrentResult().data).toEqual(ANSWER);
+
+	// The same board in another checkout, whose history is its own.
+	walking = Promise.withResolvers<LocalityAnswer>();
+	observer.setOptions(localityQuery({ vault: "/work/archboard-next/.archboard/vault", ...on }));
+	expect(observer.getCurrentResult().data).toBeUndefined();
+
+	walking.resolve(ANSWER);
+	walking = undefined;
+	await pass(0);
+	unsubscribe();
 	client.clear();
 });
