@@ -128,15 +128,41 @@ function currentBindingReaders(
 				 */
 				read: () => readBoardCatalogue(server.presentingVaultFor(tabSessionId)),
 				/**
-				 * Watch the vault the session presents through when its voice starts, for boards
-				 * appearing and disappearing.
+				 * Watch the vault the session presents through for boards appearing and disappearing,
+				 * and follow it when a pane's report moves it into another vault.
 				 * @param onChange Receives catalogue invalidations.
 				 * @param onError Receives filesystem watch failures.
 				 * @returns Stops the watcher.
 				 */
 				subscribe: (onChange, onError) => {
-					const vault = server.presentingVaultFor(tabSessionId);
-					return vault === null ? () => undefined : watchBoardCatalogue(onChange, onError, vault);
+					let watched: string | null = null;
+					let unwatch: (() => void) | null = null;
+					/**
+					 * Watch the vault the session presents through now, when it is another one.
+					 * @returns Whether the watched vault changed.
+					 */
+					const follow = (): boolean => {
+						const vault = server.presentingVaultFor(tabSessionId);
+						if (vault === watched) return false;
+						unwatch?.();
+						watched = vault;
+						unwatch = vault === null ? null : watchBoardCatalogue(onChange, onError, vault);
+						return true;
+					};
+					follow();
+					/** A pane reported: another vault's catalogue is news. */
+					const reported = (): void => {
+						if (follow()) onChange();
+					};
+					const semantic = requireCreated(created, "semanticPublisher");
+					const stops = [
+						semantic.subscribePaneFocus(reported),
+						semantic.subscribePaneSelection(reported),
+					];
+					return () => {
+						for (const stop of stops) stop();
+						unwatch?.();
+					};
 				},
 			},
 			presentationChanges: { subscribe: server.narrationChangesFor(tabSessionId) },

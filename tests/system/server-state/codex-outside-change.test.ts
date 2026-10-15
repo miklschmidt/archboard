@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -18,15 +18,28 @@ import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@/shared/semantic-pane-context";
 const NEWS_SETTLE_MS = 600;
 /** The coordinator thread as the fake Codex names it on the wire: the first thread started. */
 const COORDINATOR_WIRE_THREAD = "thread-1";
+/** The workhorse thread as the fake Codex names it on the wire: the second thread started. */
+const WORKHORSE_WIRE_THREAD = "thread-2";
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 const repoRoot = resolve(import.meta.dir, "../../..");
+
+/**
+ * The text of the one developer message a `thread/inject_items` call carries.
+ * @param items The call's items.
+ * @returns The text.
+ */
+function developerText(items: unknown): string {
+	const [item] = items as { content: { text: string }[] }[];
+	return item?.content[0]?.text ?? "";
+}
 
 // An outside change (TASK-293.06): a board write or a pane switch by an agent that is neither this
 // tab's workhorse nor its coordinator. Neither model asked for it, and what they hold about the
 // board stops being true, so both are told: the voice model quietly, the coordinator as context
 // in its thread that starts no turn. What the session did itself, and a write to a board no pane
-// shows, reach nobody.
+// shows, reach nobody. The session hears the vault its pane is in, follows the pane into another
+// vault, and still hears that vault while a reload has closed the pane.
 test("live voice and its coordinator are told what another agent did to a board on screen, and nothing of what they did themselves", async () => {
 	const resources = new AsyncDisposableStack();
 	try {
@@ -195,10 +208,10 @@ test("live voice and its coordinator are told what another agent did to a board 
 		// The session's own show tells nobody; another agent's show of the pane is told to both,
 		// worded so it never credits the user. Through the command line, which is what says a show
 		// is an agent's and which session made it: the page's own shows name no agent.
-		const show = (board: string, session: string | null) =>
+		const show = (board: string, session: string | null, vault = fixture.vault) =>
 			runServerCli({
 				repoRoot,
-				vault: fixture.vault,
+				vault,
 				base: server.base,
 				args: [
 					"browser",
@@ -225,6 +238,60 @@ test("live voice and its coordinator are told what another agent did to a board 
 		expect(switched).not.toMatch(/\buser\b/u);
 		expect(injected()).toHaveLength(3);
 		expect(frames("turn/start")).toEqual([]);
+
+		// An agent shows the pane a board of another vault. The coordinator's board catalogue
+		// follows the pane into that vault, and names it.
+		const catalogueVaults = (): unknown[] =>
+			frames("thread/inject_items")
+				.filter((entry) => entry.params?.["threadId"] === COORDINATOR_WIRE_THREAD)
+				.map((entry) => developerText(entry.params?.["items"]))
+				.filter((text) => text.startsWith("Available Archboard boards"))
+				.map(
+					(text) => (JSON.parse(text.slice(text.indexOf("\n") + 1)) as { vault: unknown }).vault,
+				);
+		const cataloguedBefore = catalogueVaults().length;
+		const away = show("scratch", null, elsewhere);
+		expect(away.status, away.stderr).toBe(0);
+		await waitFor(
+			() => catalogueVaults().length > cataloguedBefore,
+			"the catalogue of the vault the pane moved into to reach the coordinator",
+			{ timeoutMs: 2000 },
+		);
+		expect(catalogueVaults().slice(cataloguedBefore)).toEqual([realpathSync(elsewhere)]);
+
+		// A reload closes every pane of the tab for a moment. Another agent's write meanwhile to a
+		// board of the vault the tab was in still reaches its workhorse as context; a write to a
+		// board of the same name in another vault does not.
+		const workhorseVaults = (): unknown[] =>
+			frames("thread/inject_items")
+				.filter((entry) => entry.params?.["threadId"] === WORKHORSE_WIRE_THREAD)
+				.map((entry) => {
+					const context = JSON.parse(developerText(entry.params?.["items"])) as {
+						semantic: { brief: string };
+					};
+					return (JSON.parse(context.semantic.brief) as { board: { vault: unknown } }).board.vault;
+				});
+		const toldBefore = workhorseVaults().length;
+		await socket.close();
+		await waitFor(
+			async () => (await request<{ paneCount: number }>("/api/panes")).body.paneCount === 0,
+			"the tab's pane to leave the server",
+		);
+		await edit("Reconciler", null);
+		const elsewhereWhileClosed = await request("/api/semantic-boards/edit?expectVersion=2", {
+			method: "POST",
+			vault: elsewhere,
+			doing: "adding Faraway",
+			body: { board: "scratch", edit: { nodes: [{ name: "Faraway", kind: "service" }] } },
+		});
+		expect(elsewhereWhileClosed.status).toBe(200);
+		await waitFor(
+			() => workhorseVaults().length > toldBefore,
+			"the write while the tab reloads to reach its workhorse",
+			{ timeoutMs: 2000 },
+		);
+		await sleep(NEWS_SETTLE_MS);
+		expect(workhorseVaults().slice(toldBefore)).toEqual([realpathSync(elsewhere)]);
 	} finally {
 		await resources.disposeAsync();
 	}
