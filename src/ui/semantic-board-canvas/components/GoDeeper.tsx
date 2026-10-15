@@ -34,13 +34,18 @@ import {
 	drillDownAsked,
 	drillTargetName,
 	resolveDrillDown,
+	type DrillPlace,
 	type DrillResolution,
+	type OtherRepository,
 } from "@/ui/semantic-board-canvas/lib/drill-target";
+import { PaneVaultContext } from "@/ui/semantic-board-canvas/lib/pane-vault";
+import { useDrillPlace } from "@/ui/semantic-board-canvas/hooks/use-drill-place";
 import {
 	semanticBoardDocumentQuery,
 	vaultCheckQuery,
 } from "@/ui/semantic-board-canvas/lib/queries";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
+import type { OpenDown } from "@/ui/semantic-board-canvas/lib/drill-target";
 
 /** Inputs for one way to go deeper. */
 interface GoProps {
@@ -111,9 +116,6 @@ function Go(props: GoProps): JSX.Element {
  * @returns The sentence, or null when there is nothing wrong.
  */
 function refusalWords(resolution: DrillResolution, target: DrillDown): string | null {
-	if (resolution.kind === "other-repository") {
-		return `${target.board} is a board of repository ${resolution.repo}, which this pane does not open yet.`;
-	}
 	if (resolution.kind === "no-variant") {
 		return `${target.board} has no variant called "${resolution.asked}". Nothing was opened in its place.`;
 	}
@@ -144,12 +146,10 @@ interface OpenBoardProps {
 	readonly kind: string;
 	/** The level of the board the part is drawn on. */
 	readonly here: string | undefined;
-	/**
-	 * Open the board one level down.
-	 * @param board The target board.
-	 * @param variant The variant to open, by id.
-	 */
-	readonly onOpen: (board: string, variant: string) => void;
+	/** Open the board one level down. */
+	readonly onOpen: OpenDown;
+	/** The other repository the board is in, when it is not in the pane's own. */
+	readonly there: OtherRepository | undefined;
 }
 
 /** What each state that is not the current architecture is called where a person reads it. */
@@ -196,13 +196,13 @@ function standingOf(props: OpenBoardProps, levels: readonly string[] | undefined
  * @returns The primary action.
  */
 function OpenBoard(props: OpenBoardProps): JSX.Element {
-	const { target, board, variant, kind, here, onOpen } = props;
+	const { target, board, variant, kind, here, onOpen, there } = props;
 	const vault = usePaneVault();
 	const levels = useQuery(vaultCheckQuery(vault)).data?.policy.levels;
 	const way = drillWay(kind, here, levels);
 	const open = useCallback((): void => {
-		onOpen(board.name, variant.id);
-	}, [onOpen, board.name, variant.id]);
+		onOpen(board.name, variant.id, there);
+	}, [onOpen, board.name, variant.id, there]);
 	return (
 		<>
 			<Go
@@ -227,36 +227,85 @@ interface WayDownProps {
 	readonly kind: string;
 	/** The level of the board the part is drawn on. */
 	readonly here: string | undefined;
-	/**
-	 * Open the board one level down.
-	 * @param board The target board.
-	 * @param variant The variant to open, by id.
-	 */
-	readonly onOpen: (board: string, variant: string) => void;
+	/** Open the board one level down. */
+	readonly onOpen: OpenDown;
+}
+
+/** What the way down says when the board is in a repository this machine cannot read. */
+const UNREACHABLE_WORDS: Readonly<
+	Record<Extract<DrillPlace, { readonly kind: "unreachable" }>["state"], string>
+> = {
+	gone: "whose chosen checkout is gone",
+	"no-vault": "whose chosen checkout has no vault",
+	unchosen: "which has no chosen checkout",
+};
+
+/**
+ * Why a board of another repository cannot be read here, and what to do.
+ * @param place Where the link lies, when it cannot be read.
+ * @param board The board the link names.
+ * @returns The sentence, and the slot it is drawn in.
+ */
+function placeRefusal(
+	place: Extract<DrillPlace, { readonly kind: "unregistered" | "unreachable" }>,
+	board: string,
+): { readonly slot: string; readonly words: string } {
+	if (place.kind === "unregistered") {
+		return {
+			slot: "semantic-drill-unregistered",
+			words: `${board} is a board of ${place.repo}, and this machine knows no checkout of it with a vault. Register one with archboard repo add <directory>.`,
+		};
+	}
+	return {
+		slot: "semantic-drill-unreachable",
+		words: `${board} is a board of ${place.repo}, ${UNREACHABLE_WORDS[place.state]}. Choose another checkout in its menu in Board navigation.`,
+	};
 }
 
 /**
  * The way down, or the reason there is none. A target that cannot be opened
  * says why, in its place: it is never swapped for a state the link did not ask
- * for (ADR 0023).
+ * for (ADR 0023). A board of another repository is read in that repository's
+ * vault (ADR 0050).
  * @param props The target and how to open it.
  * @returns The way down, or the reason there is none.
  */
 function WayDown(props: WayDownProps): JSX.Element {
-	const { target, onOpen, kind, here } = props;
+	const place = useDrillPlace(props.target);
 	const vault = usePaneVault();
-	// A board of another repository is not the board of this vault that shares its name.
-	const document = useQuery({
-		...semanticBoardDocumentQuery(vault, target.board),
-		enabled: target.repo === undefined,
-	});
+	if (place === undefined) {
+		return <p className="text-muted-foreground text-body">Reading {props.target.board}…</p>;
+	}
+	if (place.kind !== "readable") {
+		const refusal = placeRefusal(place, props.target.board);
+		return (
+			<p data-slot={refusal.slot} className="text-body">
+				{refusal.words}
+			</p>
+		);
+	}
+	return (
+		<PaneVaultContext value={place.there?.vault ?? vault}>
+			<WayDownIn {...props} there={place.there} />
+		</PaneVaultContext>
+	);
+}
+
+/**
+ * The way down to a board read in its own vault, or the reason there is none.
+ * @param props The target, how to open it, and the other repository it is in, if any.
+ * @returns The way down, or the reason there is none.
+ */
+function WayDownIn(
+	props: WayDownProps & { readonly there: OtherRepository | undefined },
+): JSX.Element {
+	const { target, onOpen, kind, here, there } = props;
+	const vault = usePaneVault();
+	const document = useQuery(semanticBoardDocumentQuery(vault, target.board));
 	const name = drillTargetName(target, document.data);
 	// Heard under the name the board goes by now, so a state superseded since the
 	// link was written is never opened as though it were current.
 	useSemanticBoardChanges(vault, target.board, name);
-	if (target.repo !== undefined) {
-		return <p className="text-body">{refusalWords(resolveDrillDown(target, undefined), target)}</p>;
-	}
 	if (document.error !== null) {
 		return (
 			<p className="text-body">
@@ -279,6 +328,7 @@ function WayDown(props: WayDownProps): JSX.Element {
 			kind={kind}
 			here={here}
 			onOpen={onOpen}
+			there={there}
 		/>
 	);
 }
@@ -435,7 +485,7 @@ interface GoDeeperProps extends ViewInCodeProps {
 	readonly kind: string;
 	/** The level of the board the part is drawn on. */
 	readonly here: string | undefined;
-	readonly onOpen: (board: string, variant: string) => void;
+	readonly onOpen: OpenDown;
 }
 
 /**

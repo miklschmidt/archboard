@@ -138,7 +138,7 @@ function homeRowId(rows: readonly NavigatorRow[], panes: readonly PaneMark[]): s
  */
 function openKey(actions: ShellActions, key: string, beside: boolean, repository: string): void {
 	if (beside) actions.openBeside(key, repository);
-	else actions.selectBoard(key, undefined, repository);
+	else void actions.selectBoard(key, undefined, repository);
 }
 
 /**

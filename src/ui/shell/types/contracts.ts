@@ -131,8 +131,9 @@ interface ShellActions {
 	 * @param key The board key.
 	 * @param paneId Which pane shows it; the active one when none is named.
 	 * @param repository The repository the board is in; the pane's own when none is named.
+	 * @returns Whether the pane shows it now. When it does not, a notice says why.
 	 */
-	selectBoard(key: string, paneId?: string, repository?: string): void;
+	selectBoard(key: string, paneId?: string, repository?: string): Promise<boolean>;
 	/**
 	 * Show a board beside the one being read: in the pane that is not active,
 	 * adding the second pane when there is only one.

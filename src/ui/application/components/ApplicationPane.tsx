@@ -14,6 +14,7 @@ import { useVaultPolicyRefresh } from "@/ui/vault-diagnostics";
 
 import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
 import { PartSearchHost } from "@/ui/application/components/PartSearchHost";
+import { useDrillRepositories } from "@/ui/application/hooks/use-drill-repositories";
 import type { PaneCallbacks } from "@/ui/application/hooks/use-panes";
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import { readingOf } from "@/ui/application/pane-reading";
@@ -32,6 +33,7 @@ import {
 	boardAddressOf,
 	NoBoardHeader,
 	PaneVaultContext,
+	RepositoryPlacesContext,
 	SemanticBoardStage,
 	usePaneVault,
 	type SelectedSubject,
@@ -81,10 +83,12 @@ interface ApplicationPaneProps {
 	/** The vault the pane opens in, until the server moves it (ADR 0050). */
 	openingVault: string;
 	/**
-	 * Show a board in this pane: where a part its search found is.
+	 * Show a board in this pane: where a part its search found is, or where a drill-down leads.
 	 * @param key The board key.
+	 * @param repository The repository the board is in; the pane's own when none is named.
+	 * @returns Whether the pane shows it now.
 	 */
-	onOpenBoard: (key: string) => void;
+	onOpenBoard: (key: string, repository?: string) => Promise<boolean>;
 	/** A walkthrough step the page moves this pane to itself (a recording, TASK-304), or null. */
 	step?: SemanticBoardStageProps["driven"];
 	/** The pane is a recording page's, which the server leaves out of addressing (TASK-304). */
@@ -313,8 +317,15 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  */
 const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
-	const { onOpenBoard, shown } = props;
+	const { shown, onOpenBoard: openBoard } = props;
 	const { boards, outline } = useVaultBoards(usePaneVault());
+	const { places, dive } = useDrillRepositories(openBoard);
+	const onOpenBoard = useCallback(
+		(key: string): void => {
+			void openBoard(key);
+		},
+		[openBoard],
+	);
 	// Where a board sits, as the navigator places it: each board above, a way to it here.
 	const placeOf = useCallback(
 		(board: string) =>
@@ -367,25 +378,28 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 		}
 	}, [openCode, picked]);
 	return (
-		<SemanticBoardStage
-			board={address.board}
-			variant={address.variant}
-			arrival={props.arrival}
-			onVariantChange={props.onVariantChange}
-			view={view === null ? undefined : view}
-			onViewChange={onView}
-			selection={picked === null ? null : picked.id}
-			onSelect={onSelect}
-			onUserChanged={onUserChanged}
-			onOpenCode={onOpenCode}
-			onReading={props.onReading}
-			driven={props.driven}
-			narration={props.narration}
-			overlay={props.overlay}
-			reducedMotion={props.reducedMotion}
-			search={search}
-			placeOf={placeOf}
-		/>
+		<RepositoryPlacesContext value={places}>
+			<SemanticBoardStage
+				board={address.board}
+				variant={address.variant}
+				arrival={props.arrival}
+				onVariantChange={props.onVariantChange}
+				view={view === null ? undefined : view}
+				onViewChange={onView}
+				selection={picked === null ? null : picked.id}
+				onSelect={onSelect}
+				onUserChanged={onUserChanged}
+				onOpenCode={onOpenCode}
+				onReading={props.onReading}
+				driven={props.driven}
+				narration={props.narration}
+				overlay={props.overlay}
+				reducedMotion={props.reducedMotion}
+				search={search}
+				placeOf={placeOf}
+				onDive={dive}
+			/>
+		</RepositoryPlacesContext>
 	);
 });
 

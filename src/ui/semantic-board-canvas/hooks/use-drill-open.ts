@@ -9,26 +9,48 @@
 // to another board or state, to another double-click or away from the
 // picture, belongs to a card that is no longer there to open, and opens nothing.
 
-import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef } from "react";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { use, useCallback, useEffect, useRef } from "react";
 
 import type { DrillDown } from "@/shared/semantic-board/index";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
-import { resolveDrillDown } from "@/ui/semantic-board-canvas/lib/drill-target";
-import { semanticBoardDocumentQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import {
+	drillPlace,
+	resolveDrillDown,
+	type OpenDown,
+} from "@/ui/semantic-board-canvas/lib/drill-target";
+import {
+	semanticBoardDocumentQuery,
+	semanticBoardListQuery,
+} from "@/ui/semantic-board-canvas/lib/queries";
+import { RepositoryPlacesContext } from "@/ui/semantic-board-canvas/lib/repository-places";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /**
- * The drill-down of a subject, when it opens a board of this pane's own vault.
- * A board of another repository is not the board of this vault that shares its
- * name, so nothing here reads it (TASK-472.13 dives into it).
+ * The repository identity of the vault a link is drawn in, read only when the
+ * link names a repository it could be compared with.
+ * @param queryClient The page's queries.
+ * @param target The link.
+ * @param vault The vault it is drawn in.
+ * @returns The identity, or undefined when the link names none or the vault has none.
+ */
+async function ownRepository(
+	queryClient: QueryClient,
+	target: DrillDown,
+	vault: string,
+): Promise<string | undefined> {
+	if (target.repo === undefined) return undefined;
+	return (await queryClient.fetchQuery(semanticBoardListQuery(vault))).repository;
+}
+
+/**
+ * The drill-down of a subject.
  * @param reading The variant on screen.
  * @param id The subject's semantic id.
  * @returns The drill-down, or undefined.
  */
-function localDrillDown(reading: VariantReading | null, id: string | null): DrillDown | undefined {
-	const target = reading?.variant?.content.nodes.find((node) => node.id === id)?.drillDown;
-	return target?.repo === undefined ? target : undefined;
+function drillDownOf(reading: VariantReading | null, id: string | null): DrillDown | undefined {
+	return reading?.variant?.content.nodes.find((node) => node.id === id)?.drillDown;
 }
 
 /**
@@ -39,10 +61,11 @@ function localDrillDown(reading: VariantReading | null, id: string | null): Dril
  */
 function useDrillOpen(
 	reading: VariantReading | null,
-	onOpenDown: ((board: string, variant: string) => void) | undefined,
+	onOpenDown: OpenDown | undefined,
 ): (id: string | null) => void {
 	const queryClient = useQueryClient();
 	const vault = usePaneVault();
+	const places = use(RepositoryPlacesContext);
 	// A read answers for the latest request, made from the reading still on
 	// screen, while the picture is: a newer request, another reading or the
 	// picture going away leaves it answering for nothing.
@@ -59,31 +82,42 @@ function useDrillOpen(
 	);
 	return useCallback(
 		(id: string | null): void => {
-			const target = localDrillDown(reading, id);
+			const target = drillDownOf(reading, id);
 			if (target === undefined || onOpenDown === undefined) {
 				return;
 			}
 			latest.current += 1;
 			const asked = latest.current;
-			/** Read the target board, and open the variant the link names when it is there. */
+			/**
+			 * Whether the picture the request came from is still on screen.
+			 * @returns Whether nothing has moved on since.
+			 */
+			const current = (): boolean =>
+				asked === latest.current &&
+				shown.current.reading === reading &&
+				shown.current.onOpenDown === onOpenDown;
+			/**
+			 * Find the vault the target board is in, read it there, and open the
+			 * variant the link names when it is there. A board of a repository this
+			 * machine cannot read opens nothing; the inspector says why.
+			 */
 			const follow = async (): Promise<void> => {
+				const place = drillPlace(target, await ownRepository(queryClient, target, vault), places);
+				if (place.kind !== "readable") return;
+				const { there } = place;
 				const document = await queryClient.fetchQuery(
-					semanticBoardDocumentQuery(vault, target.board),
+					semanticBoardDocumentQuery(there?.vault ?? vault, target.board),
 				);
 				const resolved = resolveDrillDown(target, document);
-				const current =
-					asked === latest.current &&
-					shown.current.reading === reading &&
-					shown.current.onOpenDown === onOpenDown;
-				if (resolved.kind === "ready" && current) {
-					onOpenDown(resolved.board.name, resolved.variant.id);
+				if (resolved.kind === "ready" && current()) {
+					onOpenDown(resolved.board.name, resolved.variant.id, there);
 				}
 			};
 			// A board that could not be read opens nothing; the inspector reads the
 			// same board and says why.
 			follow().catch(() => undefined);
 		},
-		[reading, onOpenDown, queryClient, vault],
+		[reading, onOpenDown, queryClient, vault, places],
 	);
 }
 

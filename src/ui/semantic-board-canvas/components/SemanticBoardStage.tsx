@@ -29,7 +29,7 @@ import { useBoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camer
 import { useClearOfPanel } from "@/ui/semantic-board-canvas/hooks/use-clear-of-panel";
 import { useDeparture } from "@/ui/semantic-board-canvas/hooks/use-departure";
 import { useDive } from "@/ui/semantic-board-canvas/hooks/use-dive";
-import { useDrillDown } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
+import { useDrillDown, type Dive } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
 import { useDrillMoves } from "@/ui/semantic-board-canvas/hooks/use-drill-moves";
 import { useKindLook } from "@/ui/semantic-board-canvas/hooks/use-kind-look";
 import { useLayoutEngine } from "@/ui/semantic-board-canvas/hooks/use-layout-engine";
@@ -48,7 +48,10 @@ import { useWalkthrough, type DrivenPlace } from "@/ui/semantic-board-canvas/hoo
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas/lib/address";
 import type { SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
-import { semanticRenderQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import {
+	semanticBoardListQuery,
+	semanticRenderQuery,
+} from "@/ui/semantic-board-canvas/lib/queries";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /** Inputs for a semantic pane. */
@@ -146,6 +149,12 @@ interface SemanticBoardStageProps {
 	 */
 	placeOf?: ((board: string) => readonly BoardPlace[]) | undefined;
 	/**
+	 * Show a board of another vault in this pane: a drill-down into another
+	 * repository, or back along a trail that came from one (ADR 0050). Without
+	 * it, such a drill-down opens nothing.
+	 */
+	onDive?: Dive | undefined;
+	/**
 	 * Whether the person asked for reduced motion.
 	 *
 	 * Passed in rather than read here: the shell owns that preference through
@@ -210,7 +219,12 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	const { resting, ...stage } = props;
 	const { board, variant, onSelect, onUserChanged } = props;
 	const [comparison, onComparisonChange] = useState(true);
-	const drill = useDrillDown(board, variant, props.arrival);
+	const vault = usePaneVault();
+	const repository = useQuery(semanticBoardListQuery(vault)).data?.repository ?? null;
+	const drill = useDrillDown(
+		{ board, variant, arrival: props.arrival, vault, repository },
+		props.onDive,
+	);
 	// How the board on screen is read: the shell's answer for the pane's own
 	// board, and this pane's own for a level somebody drilled into, where there
 	// is no address to hold it and the ids from the level above mean nothing.
@@ -235,7 +249,6 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	// narrative decides the reading while somebody is following it, and what the
 	// person chose is what they come back to.
 	const layout = useLayoutEngine();
-	const vault = usePaneVault();
 	const render = useQuery(
 		semanticRenderQuery({
 			vault,

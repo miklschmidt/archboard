@@ -124,8 +124,11 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 		[board, depth, onUserChanged],
 	);
 
+	// The pane's own board is read as the shell says; a trail kept across a dive
+	// into another repository puts boards before it (ADR 0050).
+	const ownDepth = drill.own;
 	return useMemo(() => {
-		if (depth === 0) {
+		if (depth === ownDepth) {
 			return {
 				variant: drill.variant,
 				view: own.view,
@@ -141,7 +144,17 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 			onView,
 			onVariant,
 		};
-	}, [depth, drill.variant, here, onVariant, onView, own.onVariant, own.onView, own.view]);
+	}, [
+		depth,
+		ownDepth,
+		drill.variant,
+		here,
+		onVariant,
+		onView,
+		own.onVariant,
+		own.onView,
+		own.view,
+	]);
 }
 
 export { useLevelReading, type OwnReading, type PaneReading };

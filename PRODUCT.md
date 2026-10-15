@@ -92,7 +92,8 @@ adoption, walkthrough and the rest). Product copy uses those terms.
 Shipped capabilities:
 
 - architecture boards, and sequence views over the same parts
-- levels and drill-down from board to board
+- levels and drill-down from board to board, also into a board of another
+  repository, with a breadcrumb that leads back
 - variants with a lifecycle, and comparison of any two of them
 - walkthroughs, narration by the Codex voice, and recording to video
 - an agent dock and conversation that read the board and the selection

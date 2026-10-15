@@ -13,21 +13,33 @@
 // board the reader came from, and the pane would then offer no way back to it.
 //
 // Each board the reader came through is named as it names itself, with its
-// level, from the document the pane read while that board was on screen.
+// level, from the document the pane read while that board was on screen, in
+// the vault it is in. A trail can cross repositories (ADR 0050): then the first
+// crumb of each run from one repository names that repository, muted, and the
+// navigator's placing is left out unless the trail starts in the pane's vault.
 
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import type { BoardPlace } from "@/ui/semantic-board-canvas/components/PaneHeader";
+import type { BoardPlace, PaneHeaderProps } from "@/ui/semantic-board-canvas/components/PaneHeader";
 import type { DrillNavigation } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
 import { readBoard } from "@/ui/semantic-board-canvas/lib/board-document";
-import { semanticBoardDocumentQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import {
+	semanticBoardDocumentQuery,
+	semanticBoardListQuery,
+} from "@/ui/semantic-board-canvas/lib/queries";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /** What a board calls itself, and its level. */
 interface Named {
 	readonly name: string;
 	readonly level: string | undefined;
+}
+
+/** A crumb, and the vault and repository it is in. */
+interface Located {
+	readonly vault: string;
+	readonly repository: string | null;
 }
 
 /**
@@ -43,35 +55,91 @@ function namesOf(results: readonly { readonly data: unknown }[]): (Named | undef
 }
 
 /**
- * The boards above the one on screen, outermost first, each a way to it.
+ * Which crumbs name their repository: every first crumb of a run from one
+ * vault, and none at all while the whole trail is in one.
+ * @param crumbs Every crumb, the board on screen last.
+ * @returns For each crumb, the repository to name, or undefined.
+ */
+function repositoryLabels(crumbs: readonly Located[]): (string | undefined)[] {
+	const across = new Set(crumbs.map((crumb) => crumb.vault)).size > 1;
+	return crumbs.map((crumb, at) =>
+		across && crumbs[at - 1]?.vault !== crumb.vault ? (crumb.repository ?? undefined) : undefined,
+	);
+}
+
+/**
+ * The boards above the one on screen, outermost first, each a way to it, and
+ * the repository to name on the board on screen.
  * @param placeOf The boards above one as the navigator places them, when the shell can say.
  * @param drill The board on screen, and how the pane got there.
  * @param onBackTo Go back to the board at this depth of the trail.
- * @returns The places.
+ * @returns The places, and the repository of the board on screen when it is named.
  */
 function useDrillPlaces(
 	placeOf: ((board: string) => readonly BoardPlace[]) | undefined,
 	drill: Pick<DrillNavigation, "board" | "trail">,
 	onBackTo: (depth: number) => void,
-): readonly BoardPlace[] {
+): Pick<PaneHeaderProps, "ancestors" | "repository"> {
 	const { board, trail } = drill;
 	const vault = usePaneVault();
+	const repository = useQuery(semanticBoardListQuery(vault)).data?.repository ?? null;
 	const names = useQueries({
-		queries: trail.map((stop) => semanticBoardDocumentQuery(vault, stop.board)),
+		queries: trail.map((stop) => semanticBoardDocumentQuery(stop.vault, stop.board)),
 		combine: namesOf,
 	});
 	return useMemo(() => {
-		const own = trail[0]?.board ?? board;
 		const passed = trail.map((stop, at) => ({
-			name: names[at]?.name ?? stop.board,
-			level: names[at]?.level,
-			/** Go back to this board of the trail. */
-			open: (): void => {
-				onBackTo(at);
+			place: {
+				name: names[at]?.name ?? stop.board,
+				level: names[at]?.level,
+				vault: stop.vault,
+				/** Go back to this board of the trail. */
+				open: (): void => {
+					onBackTo(at);
+				},
 			},
+			where: stop,
 		}));
-		return [...(placeOf?.(own) ?? []), ...passed];
-	}, [placeOf, board, trail, names, onBackTo]);
+		const placed = navigatorPlaces(placeOf, trail[0] ?? { board, vault }, vault);
+		const here = { vault, repository };
+		return labelled([...placed.map((place) => ({ place, where: here })), ...passed], here);
+	}, [placeOf, board, trail, names, onBackTo, vault, repository]);
+}
+
+/**
+ * Where the navigator places the first board of the trail. It places the boards
+ * of the pane's vault, so a trail that starts in another vault has no such places.
+ * @param placeOf The boards above one as the navigator places them, when the shell can say.
+ * @param first The first board of the trail, or the board on screen.
+ * @param vault The pane's vault.
+ * @returns The places, outermost first.
+ */
+function navigatorPlaces(
+	placeOf: ((board: string) => readonly BoardPlace[]) | undefined,
+	first: Pick<Located, "vault"> & { readonly board: string },
+	vault: string,
+): readonly BoardPlace[] {
+	return first.vault === vault ? (placeOf?.(first.board) ?? []) : [];
+}
+
+/**
+ * The crumbs, each naming its repository where a run from one vault starts,
+ * when the crumbs span more than one.
+ * @param ancestors The boards above the one on screen, each with where it is.
+ * @param here Where the board on screen is.
+ * @returns The places, and the repository of the board on screen when it is named.
+ */
+function labelled(
+	ancestors: readonly { readonly place: BoardPlace; readonly where: Located }[],
+	here: Located,
+): Pick<PaneHeaderProps, "ancestors" | "repository"> {
+	const labels = repositoryLabels([...ancestors.map((each) => each.where), here]);
+	const places = ancestors.map(({ place }, at) => {
+		const label = labels[at];
+		return label === undefined ? place : { ...place, repository: label };
+	});
+	const own = labels.at(-1);
+	return own === undefined ? { ancestors: places } : { ancestors: places, repository: own };
 }
 
 export { useDrillPlaces };

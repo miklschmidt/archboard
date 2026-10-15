@@ -14,6 +14,7 @@ import type { SemanticPanePart } from "@/shared/semantic-pane-context";
 import type { Destination, Flier } from "@/ui/semantic-board-canvas/hooks/use-dive";
 import type { DrillNavigation } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
 import type { DepartureWay } from "@/ui/semantic-board-canvas/lib/picture-departure";
+import type { OpenDown } from "@/ui/semantic-board-canvas/lib/drill-target";
 
 /** What a pane's moves between boards are made from. */
 interface DrillMovesInputs {
@@ -47,7 +48,7 @@ interface DrillMoves {
 	 * @param board The target board.
 	 * @param variant The variant to open, by id.
 	 */
-	readonly onOpenDown: (board: string, variant: string) => void;
+	readonly onOpenDown: OpenDown;
 	/**
 	 * Go back to one of the boards the reader came down through.
 	 * @param depth Where it is in the trail: 0 is the board the pane was opened on.
@@ -59,22 +60,25 @@ interface DrillMoves {
  * The board above the one on screen, and how the pane reads it once the reader
  * is back on it: the shell's view for the board the pane was opened on, and the
  * whole of the board for one a level further down.
- * @param trail How the pane got here, from the board it was opened on.
+ * @param drill How the pane got here, and where its own board is in that.
  * @param ownView The view the shell has the pane read its own board through.
  * @returns The board, or null when the pane is on the board it was opened on.
  */
 function levelAbove(
-	trail: DrillNavigation["trail"],
+	drill: Pick<DrillNavigation, "trail" | "own">,
 	ownView: string | undefined,
 ): Destination | null {
+	const { trail, own } = drill;
 	const above = trail.at(-1);
-	if (above === undefined) {
+	// A board before the pane's own is in another vault, or another board the
+	// pane held: going back to it is a move of the pane, not a flight.
+	if (above === undefined || trail.length - 1 < own) {
 		return null;
 	}
 	return {
 		board: above.board,
 		variant: above.variant,
-		view: trail.length === 1 ? ownView : undefined,
+		view: trail.length - 1 === own ? ownView : undefined,
 	};
 }
 
@@ -86,9 +90,17 @@ function levelAbove(
 function useDrillMoves(inputs: DrillMovesInputs): DrillMoves {
 	const { drill, flier, leave, picked, ownView, onSelect, onUserChanged } = inputs;
 	const { into, out } = flier;
-	const above = useMemo(() => levelAbove(drill.trail, ownView), [drill.trail, ownView]);
-	const onOpenDown = useCallback(
-		(board: string, variant: string): void => {
+	const above = useMemo(() => levelAbove(drill, ownView), [drill, ownView]);
+	const onOpenDown = useCallback<OpenDown>(
+		(board, variant, there) => {
+			// A board of another repository is shown by the shell, which moves the
+			// pane and tells everybody; the pane reports nothing of its own here.
+			if (there !== undefined) {
+				leave("into", picked);
+				onSelect(null);
+				drill.open(board, variant, there);
+				return;
+			}
 			into(picked, { board, variant }, () => {
 				leave("into", picked);
 				onSelect(null);
@@ -104,7 +116,8 @@ function useDrillMoves(inputs: DrillMovesInputs): DrillMoves {
 			const proceed = (): void => {
 				leave("out");
 				onSelect(null);
-				onUserChanged?.("board");
+				// Back before the pane's own board is a move the shell makes and announces.
+				if (depth >= drill.own) onUserChanged?.("board");
 				drill.backTo(depth);
 			};
 			if (above === null || depth !== drill.trail.length - 1) {

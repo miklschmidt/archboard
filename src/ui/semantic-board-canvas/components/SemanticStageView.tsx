@@ -45,6 +45,7 @@ import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
 import type { Departure } from "@/ui/semantic-board-canvas/lib/picture-departure";
+import type { OpenDown } from "@/ui/semantic-board-canvas/lib/drill-target";
 
 /** What the view is assembled from. */
 interface RenderView extends SemanticBoardStageProps {
@@ -72,7 +73,7 @@ interface RenderView extends SemanticBoardStageProps {
 	 */
 	readonly onPickInPicture: (id: string | null) => void;
 	/** Follow a drill-down, clearing the selection it was made from. */
-	readonly onOpenDown: (board: string, variant: string) => void;
+	readonly onOpenDown: OpenDown;
 	/**
 	 * Go back to one of the boards the reader came down through, clearing the selection made below it.
 	 * @param depth Where it is in the trail: 0 is the board the pane was opened on.

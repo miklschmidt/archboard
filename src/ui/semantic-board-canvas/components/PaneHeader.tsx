@@ -70,6 +70,28 @@ interface BoardPlace {
 	readonly level: string | undefined;
 	/** Show it in this pane. */
 	readonly open: () => void;
+	/** The vault it is in, when it is not the pane's own (ADR 0050). */
+	readonly vault?: string;
+	/** Its repository, named where a trail across repositories enters it. */
+	readonly repository?: string;
+}
+
+/**
+ * The repository a crumb names, muted, where a trail across repositories enters it.
+ * @param props The repository.
+ * @param props.repository Its name, or undefined when the crumb names none.
+ * @returns The name, or nothing.
+ */
+function RepositoryOf(props: { readonly repository: string | undefined }): JSX.Element | null {
+	if (props.repository === undefined) return null;
+	return (
+		<span
+			data-slot="pane-crumb-repository"
+			className="text-muted-foreground/80 max-w-32 truncate font-normal"
+		>
+			{props.repository}
+		</span>
+	);
 }
 
 /** Inputs for the header. */
@@ -80,6 +102,8 @@ interface PaneHeaderProps {
 	readonly name: string;
 	/** Its level, when the board states one. */
 	readonly level: string | undefined;
+	/** Its repository, named where a trail across repositories enters it. */
+	readonly repository?: string;
 	/** The boards above it, outermost first. */
 	readonly ancestors: readonly BoardPlace[];
 	/** The variant on screen, when it is not the one the board's name opens. */
@@ -141,7 +165,7 @@ function Step(): JSX.Element {
  */
 function Ancestor(props: { readonly place: BoardPlace; readonly middle: boolean }): JSX.Element {
 	const { place } = props;
-	const vault = usePaneVault();
+	const paneVault = usePaneVault();
 	return (
 		<li
 			className={cn(
@@ -156,7 +180,8 @@ function Ancestor(props: { readonly place: BoardPlace; readonly middle: boolean 
 				title={place.level === undefined ? place.name : `${place.name} · ${place.level}`}
 				className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent text-control rounded-control -mx-1 flex h-7 max-w-44 min-w-0 items-center gap-1.5 px-1 font-medium"
 			>
-				<LevelMark level={place.level} vault={vault} />
+				<RepositoryOf repository={place.repository} />
+				<LevelMark level={place.level} vault={place.vault ?? paneVault} />
 				<span className="truncate">{place.name}</span>
 			</button>
 			<Step />
@@ -171,7 +196,7 @@ function Ancestor(props: { readonly place: BoardPlace; readonly middle: boolean 
  * @returns The fold, or nothing when there is nothing to fold.
  */
 function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element | null {
-	const vault = usePaneVault();
+	const paneVault = usePaneVault();
 	if (props.places.length === 0) return null;
 	return (
 		<li className="flex shrink-0 items-center gap-1 @min-[880px]/pane-header:hidden">
@@ -185,7 +210,8 @@ function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element 
 				<DropdownMenuContent align="start" sideOffset={6} className="w-56">
 					{props.places.map(({ place, key }) => (
 						<DropdownMenuItem key={key} onClick={place.open} className="gap-2">
-							<LevelMark level={place.level} vault={vault} />
+							<RepositoryOf repository={place.repository} />
+							<LevelMark level={place.level} vault={place.vault ?? paneVault} />
 							{place.name}
 						</DropdownMenuItem>
 					))}
@@ -218,6 +244,7 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 					<Ancestor key={key} place={place} middle={index < ancestors.length - 1} />
 				))}
 				<li className="flex min-w-24 shrink items-center gap-1.5" aria-current="page">
+					<RepositoryOf repository={props.repository} />
 					<LevelMark level={level} vault={vault} />
 					<h2
 						data-slot="pane-board-name"

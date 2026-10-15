@@ -84,12 +84,12 @@ function headerFacts(
 function StageHeader(props: { readonly view: StageHeaderView }): JSX.Element {
 	const { view } = props;
 	const facts = useMemo(() => headerFacts(view.reading), [view.reading]);
-	const ancestors = useDrillPlaces(view.placeOf, view.drill, view.onBackTo);
+	const crumbs = useDrillPlaces(view.placeOf, view.drill, view.onBackTo);
 	return (
 		<PaneHeader
 			{...facts}
 			name={view.render.data?.board ?? view.drill.board}
-			ancestors={ancestors}
+			{...crumbs}
 			tab={view.tab}
 			onTab={view.onTab}
 			sidebar={view.sidebar}

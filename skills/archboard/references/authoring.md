@@ -386,6 +386,13 @@ before you write the link
 `archboard repo list` shows), and write the name the board
 goes by there.
 
+A reader who follows the link moves the pane into that repository, as a choice
+in the navigator does: the pane, its address and `archboard browser panes` then
+name the other repository. The breadcrumb names the repository where the trail
+crosses into one, and its crumbs lead back. A link into a repository that this
+machine does not list opens nothing, and the inspector says to register a
+checkout with `archboard repo add <directory>`.
+
 ```json
 {
 	"name": "Payments",
