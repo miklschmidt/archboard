@@ -228,7 +228,6 @@ async function startWorkhorseThread(
 	options: ServerThreadLinkActionOptions,
 	expected: ThreadLinkCasToken,
 ): Promise<void> {
-	await readyCoordinator(options);
 	const started = await options.workhorse.start({ paneId: options.key, expected });
 	if (started.threadId !== null) {
 		options.claimThread(started.threadId);
@@ -283,6 +282,7 @@ function createServerThreadLinkActions(
 		create: (_command, context) =>
 			serializeLinkChange(async () => {
 				assertBrowserLinkStands(options.threadLink, options.key, context);
+				await readyCoordinator(options);
 				await startWorkhorseThread(options, expectedBrowserLink(options.key, context));
 				return { outcome: "delivered" as const };
 			}),
@@ -291,7 +291,9 @@ function createServerThreadLinkActions(
 		threadLinks: Object.freeze(threadLinks),
 		/**
 		 * Start the workhorse's thread when its link cannot run turns, as work the coordinator gives
-		 * its checkout needs. A link that can is left as it is.
+		 * its checkout needs. A link that can is left as it is. The coordinator is left alone: it is
+		 * running the turn that gives the work, and readying it again would show it unready to that
+		 * turn's other calls while it proved itself.
 		 * @returns Resolves once the workhorse has a thread that can run turns.
 		 */
 		ensureStarted: () =>
