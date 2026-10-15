@@ -1,7 +1,10 @@
 // One run's private world: its own HOME, repository registry, CLI log and an
 // `archboard` on PATH that runs this checkout. The run's vault is the
 // `.archboard/vault` of its Flask checkout, where a command finds it from the
-// checkout's directory, as it does for any repository (ADR 0049). Nothing here is shared
+// checkout's directory, as it does for any repository (ADR 0049). A batch sits
+// in the archboard checkout, whose own vault a command run outside the Flask
+// checkout would find, so the run's directory holds a link to the run's vault
+// and git looks no higher than it. Nothing here is shared
 // between runs, so parallel authors cannot see each other, and nothing the
 // operator has in their own ~/.codex — AGENTS.md, skills, MCP servers, model
 // choice — reaches an author.
@@ -104,6 +107,12 @@ function prepareRunDirectory(root: string): RunPaths {
 	]) {
 		fs.mkdirSync(directory, { recursive: true });
 	}
+	// The nearest vault above the author's home, TMPDIR or world: the run's own,
+	// not the archboard checkout's that the batch sits in. Git stops at the run's
+	// directory (runEnvironment), so the search reaches this link.
+	const above = path.join(root, ".archboard");
+	fs.mkdirSync(above);
+	fs.symlinkSync(path.relative(above, paths.vault), path.join(above, "vault"));
 	return paths;
 }
 
@@ -198,7 +207,9 @@ const FORWARDED_TOOLS = ["ARCHBOARD_RENDERER_CHROMIUM", "ARCHBOARD_FFMPEG"] as c
  * The environment every process of a run gets: the run's registry and server,
  * the private homes, PATH with the run's bin first, and the tools the operator
  * named. It names no vault: a command finds the run's vault from the Flask
- * checkout it runs in.
+ * checkout it runs in, or from the run's directory when it runs outside it.
+ * Git looks no higher than the run's directory, so neither the author's git
+ * nor its archboard reaches the archboard checkout the batch sits in.
  * @param paths The run.
  * @param serverUrl The run's own server.
  * @returns The environment.
@@ -211,6 +222,7 @@ function runEnvironment(paths: RunPaths, serverUrl: string): Record<string, stri
 		XDG_STATE_HOME: paths.xdgState,
 		XDG_CONFIG_HOME: paths.xdgConfig,
 		TMPDIR: paths.temporary,
+		GIT_CEILING_DIRECTORIES: paths.root,
 		ARCHBOARD_REPOS: paths.repos,
 		ARCHBOARD_URL: serverUrl,
 		ARCHBOARD_NO_AUTOSTART: "1",

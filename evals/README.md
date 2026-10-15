@@ -67,6 +67,12 @@ grader, untouched.
    after the clone, because a clone needs an empty destination. The author sees
    it, for example in `git status`. The harness sets no `ARCHBOARD_VAULT`: every
    command finds the vault from the checkout it runs in, as it does for anyone.
+   The batch sits in the archboard checkout, whose own vault a command run
+   outside the Flask checkout would find. So `GIT_CEILING_DIRECTORIES` stops
+   git at the run's directory, and that directory holds `.archboard/vault`, a
+   link to the run's vault. A command in the author's home, `TMPDIR` or world
+   finds the run's vault there, and registers the run's directory as an
+   untracked vault.
 3. An Archboard server of its own on a free port. It starts without a vault, and
    every call it gets names the run's vault.
 4. `archboard install-skill --agent codex --repo <flask> --vault <flask>/.archboard/vault --yes`.
@@ -81,8 +87,9 @@ grader, untouched.
    command in a checkout registers it, so the checkout is registered by now. A
    fixture that says the checkout is not registered (`registerRepo: false`) has
    the registration forgotten again after the snapshot, so the author starts
-   with an unknown checkout. The author's own first command registers it, and
-   says so on stderr. A fixture
+   with an unknown checkout. The first command that finds the vault from the
+   checkout registers it again and says so on stderr; a command whose vault
+   comes from an exported `ARCHBOARD_VAULT` registers nothing. A fixture
    that keeps a talk has it written after its boards, in the run's home where
    `semantic record --talk` would have kept it: a walkthrough of a board the
    steps laid, from the board and vault check the CLI serves, through the
