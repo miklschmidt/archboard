@@ -1,11 +1,10 @@
 // The boards above the one on screen, as the header's breadcrumb lists them.
 //
-// While the pane is on the board it was opened on, they are where the navigator
-// places that board. Once the reader has followed a drill-down, they are where
-// the navigator places the board the pane was opened on, then every board the
+// While nothing has been followed, they are where the navigator places the
+// board on screen. Once the reader has followed a drill-down, they are where
+// the navigator places the first board of the trail, then every board the
 // reader came down through. Each of those is a way back along the drill, not a
-// way to open the board again: the pane is still on the board it was opened on,
-// and only the drill moved.
+// way to open the board again.
 //
 // The way back is not read off the navigator's placing of the board on screen.
 // A drill-down can run up a level or across, and a board that several boards

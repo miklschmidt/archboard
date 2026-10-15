@@ -51,18 +51,19 @@ interface DrillMoves {
 	readonly onOpenDown: OpenDown;
 	/**
 	 * Go back to one of the boards the reader came down through.
-	 * @param depth Where it is in the trail: 0 is the board the pane was opened on.
+	 * @param depth Where it is in the trail: 0 is its first board.
 	 */
 	readonly onBackTo: (depth: number) => void;
 }
 
 /**
  * The board above the one on screen, and how the pane reads it once the reader
- * is back on it: the shell's view for the board the pane was opened on, and the
- * whole of the board for one a level further down.
+ * is back on it: the shell's view for the pane's own board, and the whole of
+ * the board for one a level further down.
  * @param drill How the pane got here, and where its own board is in that.
  * @param ownView The view the shell has the pane read its own board through.
- * @returns The board, or null when the pane is on the board it was opened on.
+ * @returns The board, or null when the pane is on its own board, which nothing
+ *   in the pane opened from a card.
  */
 function levelAbove(
 	drill: Pick<DrillNavigation, "trail" | "own">,
