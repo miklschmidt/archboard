@@ -13,8 +13,7 @@ import {
 	repositoryOfVault as registeredRepositoryOf,
 	type RegisteredRepoStatus,
 } from "@/runtime/engine/repo-registry";
-import { checkoutOfVault } from "@/runtime/engine/vault-finder";
-import { isVaultLayout } from "@/runtime/engine/vault-finder";
+import { checkoutOfVault, isVaultLayout } from "@/runtime/engine/vault-finder";
 import type { RepositoryEntry, RepositoryState } from "@/shared/repositories/index";
 
 /** Where a checkout keeps its vault (ADR 0049). */
