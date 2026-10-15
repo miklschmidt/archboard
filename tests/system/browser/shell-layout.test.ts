@@ -42,6 +42,7 @@ import {
 	PANE_LETTERS,
 	PANE_SECTIONS,
 	STAGE_ROOT,
+	tabLineBelowHeader,
 } from "./support/shell-dom.ts";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
@@ -227,6 +228,8 @@ test(
 				REFERENCE_PANE.width,
 			);
 		}
+		// Below the header's edge the docked sidebar is drawn over the open tab's line (TASK-476).
+		expect(await tabLineBelowHeader(browser), "the open tab's line below the header").toBe(0);
 		// With its sidebar put away, the picture has the whole stage.
 		await roleAction(browser, "button", "Sidebar");
 		const stage = await pollUntil(
