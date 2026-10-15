@@ -102,16 +102,18 @@ const semanticMoveContract = defineCommand({
 	description:
 		"Moves the whole board in the vault this command finds into the vault found from --to, as -C " +
 		"finds one: every variant, every former name and every subject id stay as they are, and the " +
-		"board keeps its name. A drill-down whose meaning the move changes is rewritten to name a " +
-		"repository identity: one in the source vault that opens the board then names the target's " +
-		"repository, and one on the board that opens a board of the source vault then names the " +
-		"source's repository. The answer lists every drill-down it rewrote. The move holds the board " +
-		"in the source vault and its name in the target vault, writes the target note first, then the " +
-		"rewritten drill-downs, and deletes the source note last. A move that stopped part way leaves " +
-		"the board in both vaults and lists the drill-downs it rewrote already, and running the same " +
-		"move again finishes it. Each repository " +
-		"commits its own half. It is refused between two checkouts of one repository, while somebody " +
-		"else holds the board or its name in the target vault, when the target vault has a board or a " +
+		"board keeps its name. Every drill-down whose meaning the move changes is rewritten, on every " +
+		"variant: one in the source vault that opens the board then names the target's repository; " +
+		"one on the board that opens another board of the source vault then names the source's " +
+		"repository; and one in the target vault, the board's own included, that opens the board " +
+		"through the source's repository then names no repository. The answer lists every drill-down " +
+		"it rewrote. The move holds the board in the source vault and its name in the target vault, " +
+		"writes the target vault first, then the rewritten drill-downs of the source vault, and " +
+		"deletes the source note last. A move that stopped part way leaves the board in both vaults " +
+		"and lists the drill-downs it rewrote already, and running the same move again finishes it. " +
+		"Each repository commits its own half. It is refused between two checkouts of one " +
+		"repository, while somebody else holds the board or its name in the target vault, when the " +
+		"target vault has a board or a " +
 		"former name that the board's names answer to, and when it needs a drill-down into an " +
 		"untracked vault, which has no identity to name. A pane that showed the board shows it in " +
 		"its new repository. The move ends this writer's claim on the board; claim it again in the " +
