@@ -40,7 +40,7 @@ function VaultDiagnostics(props: VaultDiagnosticsProps): JSX.Element {
 	const recheck = useCallback(() => {
 		void refetch();
 	}, [refetch]);
-	const repair = useVaultRepair(transport, ask, recheck);
+	const repair = useVaultRepair(props.vault, transport, ask, recheck);
 	const count = check.data?.diagnostics.length ?? 0;
 	const handleRepair = useCallback(() => {
 		repair();
