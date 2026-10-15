@@ -1,26 +1,38 @@
-# Post the explainer
+# Post the body
 
-Section 5 of the skill sends you here. It says where the explainer goes in the
-body; this file says how to attach the renders and the video.
+Section 7 of the skill sends you here. The body is one section between
+`<!-- archboard-pr:begin -->` and `<!-- archboard-pr:end -->`, and this file
+says how to attach the picture and the video.
 
-Each render is one `--theme auto` file, posted as a plain Markdown image
+The picture is one `--theme auto` file, posted as a plain Markdown image
 ([why](renders.md#what-github-supports)). gh `--attach` uploads a file and
-rewrites a Markdown reference to it. `--attach` needs gh 2.99 or
-later. Without it, leave the renders and the video out of the body, and give
-the user their paths.
+rewrites a Markdown reference to it. `--attach` needs gh 2.99 or later.
+Without it, leave the picture and the video out of the body, and give the
+user their paths.
 
-In the section, reference each file by the absolute path that you give
-`--attach`, each on a line of its own. For a render, the alt text says what
-the picture shows, as in `![Board store, Write path: the proposal adds Lease
-table](/tmp/pr/after.svg)`. Give the video a paragraph of its own:
+In the body, reference each file by the absolute path that you give
+`--attach`, each on a line of its own. For the picture, the alt text says what
+it shows, as in `![Inside Board store: the lease table replaces lock
+files](/tmp/pr/after.svg)`. Give the video a paragraph of its own:
 `![](/tmp/pr/walkthrough.mp4)`. Inside a `<details>`, leave a blank line after
 the `<summary>` line and before `</details>`, so that the lines between are
 read as Markdown. gh replaces each path with the URL of the upload and keeps
 the alt text.
 
 ```bash
-gh pr create --title "<title>" --body-file "$tmp/body.md" --attach "$tmp/after.svg" --attach "$tmp/before.svg"
-gh pr edit <number> --body-file "$tmp/body.md" --attach "$tmp/after.svg" --attach "$tmp/before.svg"
+gh pr create --title "<title>" --body-file "$tmp/body.md" --attach "$tmp/after.svg"
+gh pr edit <number> --body-file "$tmp/body.md" --attach "$tmp/after.svg"
 ```
 
 For a video, add `--attach "$tmp/walkthrough.mp4"`.
+
+## Updating a body
+
+Read the body with `gh pr view <number> --json body`. Keep the text outside
+the markers, because it belongs to the author and the reviewers. Replace all
+of the text between the markers with the new section, then post the whole
+body with `gh pr edit`. Never add a paragraph to the old section: a body that
+grows with each update reads as its history.
+
+News about the pull request, such as a CI fix or a rebase, goes in a comment
+with `gh pr comment <number>`, never in the body.

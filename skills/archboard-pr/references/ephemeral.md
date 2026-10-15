@@ -2,7 +2,7 @@
 
 An ephemeral board is drawn only to explain one pull request. It lives in a
 temporary vault that an Archboard server of its own serves, and both are gone
-once the renders and the video are made. Section 1 of the skill decides when to draw one, and
+once the picture and the video are made. Section 1 of the skill decides when to draw one, and
 section 3 lists the steps. This file gives the commands, what they were checked
 against, and which comparisons work.
 
@@ -106,7 +106,7 @@ vault needs it.
 
 ## Render and record
 
-Draw the renders with [renders](renders.md) while the server runs: the
+Draw the picture with [renders](renders.md) while the server runs: the
 commands are the same, with `-C "$tmp"`, the ephemeral board's name, its view
 and the draft. Record a walkthrough with [walkthrough](walkthrough.md) the same way.
 A recording on the ephemeral server worked: two beats, 51 s of talk, 3.9 MB,
@@ -116,7 +116,7 @@ with `--talk` in `$tmp`, outside the vault.
 
 ## Tear it down
 
-Once the renders, the video, its chapters and its transcript are in `$tmp`:
+Once the picture, the video, its chapters and its transcript are in `$tmp`:
 
 ```bash
 archboard stop
@@ -133,18 +133,17 @@ git status --short -- "$(archboard semantic config | jq -r .vault.path)"   # whe
   directory for the port, `codex-workbench/canvases/<port>` (12 kB measured),
   as it does for every server that ran there.
 - Keep the rest of `$tmp` until the pull request is posted: the body and the
-  files that section 5 attaches are there.
+  files that section 7 attaches are there.
 
 Done: the ephemeral server is stopped, its vault is forgotten and deleted,
 `ARCHBOARD_URL` names what it named before, and the repository's vault is
 unchanged.
 
-## What the explainer says about it
+## What the body says about it
 
-An ephemeral board has no `Open it` line, because no vault holds it. The
-explainer's **About the picture** line says that the board is ephemeral, that
-it was drawn from the code at the base and the head branch, and that an update
-of the pull request draws it again from the code.
+Nothing. The reader needs the picture, not where it was drawn. The state
+comment is `<!-- archboard-pr ephemeral -->`, which tells the agent of an
+update to draw the board again from the code.
 
 The board's JSON is not attached. The draft's payload names the ids that the
 base's write minted, so it does not replay on a new board. `semantic new` takes
