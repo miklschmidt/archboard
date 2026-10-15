@@ -118,7 +118,7 @@ export interface BrowserLeaseBinding {
 	readonly paneId: string;
 	/** The tab the socket belongs to, which every pane of that tab shares. */
 	readonly tabSessionId: TabSessionId;
-	/** The checkout of the pane's vault, whose workhorse the command is for (ADR 0050). */
+	/** The checkout the pane's tab shows, whose workhorse the command is for (ADR 0050). */
 	readonly checkout: string;
 	readonly commandId: BrowserCommandId;
 	readonly childId: ChildId;
@@ -131,7 +131,7 @@ export interface BrowserProjectionContext {
 	readonly browserId: BrowserConnectionId;
 	readonly paneId: string;
 	readonly tabSessionId: TabSessionId;
-	/** The checkout of the pane's vault now, whose workhorse the pane shows. */
+	/** The checkout the pane's tab shows now, whose workhorse the pane shows (ADR 0050). */
 	readonly checkout: string;
 	/** Exact process-local socket identity; never serialized to the browser. */
 	readonly connection: BrowserConnectionInstance;
@@ -342,8 +342,8 @@ export interface CodexWorkbenchGatewayOptions {
 	readonly projection: BrowserProjectionPort;
 	readonly threadLink: Pick<CodexThreadLinkPort, "read">;
 	/**
-	 * The checkout of the vault a browser's pane is in now. The server can move a pane into
-	 * another vault, so it is asked each time, never kept.
+	 * The checkout whose conversation a browser pane's tab shows now (ADR 0050). The person can
+	 * activate another one at any time, so it is asked each time, never kept.
 	 */
 	readonly checkoutOf: (browserId: BrowserConnectionId) => string;
 	readonly actions: BrowserWorkbenchActions;

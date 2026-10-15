@@ -140,11 +140,11 @@ function createServerBrowserGatewayOptions(
 	const sessionOf = (context: { readonly tabSessionId: TabSessionId }): CodexWorkbenchTabSession =>
 		input.sessions.require(context.tabSessionId);
 	/**
-	 * The workhorse a pane's command is for: the one of its tab session for the checkout of its
-	 * vault (ADR 0050), built the first time a pane of that checkout asks for it.
+	 * The workhorse a pane's command is for: the one of its tab session for the checkout the tab
+	 * shows (ADR 0050), built the first time a pane asks for it.
 	 * @param context The pane, its tab session and its checkout.
 	 * @param context.tabSessionId The tab session.
-	 * @param context.checkout The checkout of the pane's vault.
+	 * @param context.checkout The checkout the pane's tab shows.
 	 * @returns The workhorse.
 	 */
 	const workhorseOf = (context: {
@@ -332,7 +332,7 @@ function createServerBrowserGatewayOptions(
 		},
 		threadLinks: {
 			/**
-			 * Start a new conversation of the workhorse of the pane's checkout, with the tab's
+			 * Start a new conversation of the workhorse of the shown checkout, with the tab's
 			 * coordinator, and link the panes of that checkout to it.
 			 * @param command The creation.
 			 * @param context The pane.
