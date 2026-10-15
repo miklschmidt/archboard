@@ -5,7 +5,7 @@
 // Opening a board here is the same command the navigator runs, so a restore
 // and a click go down one path and get the same refusals.
 
-import { unreachableBoardsNotice } from "@/ui/application/notices";
+import { unreachableBoardsNotice, unreachableRepositoryNotice } from "@/ui/application/notices";
 import { PANE_IDS, paneListOf, type PaneList } from "@/ui/application/pane-list";
 import { paneReady, recordFor } from "@/ui/application/pane-records";
 import type { LiveBinding } from "@/ui/application/lib/live-binding";
@@ -13,7 +13,12 @@ import { userMoves } from "@/ui/application/lib/user-moves";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { PaneReadings } from "@/ui/application/hooks/use-pane-reading";
 import type { Panes } from "@/ui/application/hooks/use-panes";
-import type { OpenedBoard, OpenOutcome, WorkspacePort } from "@/ui/board-routing/contracts";
+import type {
+	AskedBoard,
+	OpenedBoard,
+	OpenOutcome,
+	WorkspacePort,
+} from "@/ui/board-routing/contracts";
 import type { WorkspaceAddress, WorkspaceAddressing } from "@/ui/board-routing";
 import { showBoard } from "@/ui/pane-session";
 
@@ -250,11 +255,26 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		closePane: panes.close,
 		selectPane: panes.select,
 		/**
-		 * Boards the address named that no pane could reach.
-		 * @param boardKeys The boards.
+		 * Boards the address named that no pane could reach. A board of a
+		 * repository with no vault to read is named by its repository, because
+		 * the next step is about the repository and not the board.
+		 * @param boards The boards, and the repositories the address named.
 		 */
-		reportUnreachable: (boardKeys: readonly string[]): void => {
-			deps.notices.raise(unreachableBoardsNotice(boardKeys));
+		reportUnreachable: (boards: readonly AskedBoard[]): void => {
+			const unread = new Set(
+				boards.flatMap(({ repository }) =>
+					repository !== null && (deps.vaultOf?.(repository) ?? null) === null ? [repository] : [],
+				),
+			);
+			for (const repository of unread) {
+				deps.notices.raise(unreachableRepositoryNotice(repository));
+			}
+			const others = boards.filter(
+				({ repository }) => repository === null || !unread.has(repository),
+			);
+			if (others.length > 0) {
+				deps.notices.raise(unreachableBoardsNotice(others.map(({ boardKey }) => boardKey)));
+			}
 		},
 	};
 }

@@ -15,6 +15,12 @@ interface OpenedBoard {
 	readonly repository: string | null;
 }
 
+/** A board an address asked for, and the repository it named, or null for the pane's own. */
+interface AskedBoard {
+	readonly boardKey: string;
+	readonly repository: string | null;
+}
+
 /** How pointing one pane at one board ended. */
 type OpenOutcome = ({ readonly kind: "opened" } & OpenedBoard) | { readonly kind: "unreachable" };
 
@@ -58,7 +64,7 @@ interface WorkspacePort {
 	readonly closePane: (paneId: string) => boolean;
 	readonly selectPane: (paneId: string) => boolean;
 	/** A restore could not reach these boards; the workspace is what is shown. */
-	readonly reportUnreachable: (boardKeys: readonly string[]) => void;
+	readonly reportUnreachable: (boards: readonly AskedBoard[]) => void;
 }
 
-export type { OpenedBoard, OpenOutcome, WorkspacePort };
+export type { AskedBoard, OpenedBoard, OpenOutcome, WorkspacePort };

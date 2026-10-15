@@ -98,6 +98,22 @@ function unreachableBoardsNotice(boardKeys: readonly string[]): ShellNotice {
 }
 
 /**
+ * The address named a repository this page cannot read boards of: it lists
+ * no such repository, or the repository's chosen checkout has no vault.
+ * @param repository The repository's name.
+ * @returns The notice.
+ */
+function unreachableRepositoryNotice(repository: string): ShellNotice {
+	return {
+		id: `unreachable-repository:${repository}`,
+		title: `${repository} cannot be read`,
+		description: `The address asked for boards of ${repository}, and this machine has no checkout of it with a vault. If it is in Board navigation, choose a checkout with a vault in its menu. If it is not, add a checkout with archboard repo add <directory>.`,
+		tone: "destructive",
+		actions: [],
+	};
+}
+
+/**
  * The browser refused or lost a fullscreen presentation.
  * @param error The presentation's plain words.
  * @returns The notice.
@@ -154,6 +170,7 @@ export {
 	presentationNotice,
 	staleFrontendNotice,
 	unreachableBoardsNotice,
+	unreachableRepositoryNotice,
 	withNotice,
 	withoutNotice,
 };

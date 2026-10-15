@@ -224,10 +224,10 @@ function fakeShell(
 			},
 			/**
 			 * Boards nothing could reach.
-			 * @param boardKeys The boards.
+			 * @param boards The boards.
 			 */
-			reportUnreachable: (boardKeys): void => {
-				shell.unreachable.push(...boardKeys);
+			reportUnreachable: (boards): void => {
+				shell.unreachable.push(...boards.map(({ boardKey }) => boardKey));
 			},
 		}),
 	};
