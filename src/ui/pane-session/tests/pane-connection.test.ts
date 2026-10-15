@@ -301,6 +301,34 @@ test("a pane moved into another checkout's vault reports there, and the answer f
 	}
 });
 
+test("an answer from the vault a pane left that comes back before the move leaves the pane connected", async () => {
+	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
+	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
+	const pane = await paneOnPayments();
+	try {
+		pane.calls[1]!.answer.resolve(registeredReply());
+		await Bun.sleep(0);
+		deliver(pane.socket, {
+			type: "pane_board",
+			board: "ledger",
+			identity: { board: "ledger", variant: "current" },
+			vault: LEFT_VAULT,
+			repository: "r",
+		});
+		expect(pane.calls.map((each) => each.vault)).toEqual([LEFT_VAULT, LEFT_VAULT, LEFT_VAULT]);
+		// The server moved the pane before this report reached it, and its answer
+		// reaches the pane before the move does.
+		pane.calls[2]!.answer.resolve(
+			Response.json({ success: true, registered: false, code: "PANE_MOVED", paneCount: 1 }),
+		);
+		await Bun.sleep(0);
+		expect(pane.statuses.at(-1)).toMatchObject({ connected: true, registered: true });
+	} finally {
+		pane.restore();
+		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
+	}
+});
+
 test("a take-back answered after the pane moved to another checkout does not free the board it shows now", async () => {
 	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
 	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
