@@ -105,6 +105,8 @@ interface CodexWorkbenchTabSessionScope {
 	readonly workhorse: (checkout: string) => CodexWorkbenchWorkhorse;
 	/** The workhorse voice is bound to, or null. */
 	readonly voiceWorkhorse: () => CodexWorkbenchWorkhorse | null;
+	/** Stop the workhorse of one checkout, or every workhorse of the tab when the checkout is null. */
+	readonly stopWork: CodexWorkbenchTabSession["stopWork"];
 	/** Hear what every workhorse of the tab reports about its operations, built later or not. */
 	readonly workhorseOperations: {
 		readonly subscribe: (listener: WorkhorseOperationEventListener) => () => void;
