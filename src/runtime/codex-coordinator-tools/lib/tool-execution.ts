@@ -141,33 +141,46 @@ function queueRequest(
 	input: ManageWorkhorseQueueInput,
 	operation: IssuedOperationIdentity,
 ): ManageWorkhorseQueueRequest {
-	if (input.operation === "list") {
+	const { checkout: _checkout, ...queue } = input;
+	if (queue.operation === "list") {
 		return { call, operation: "list" };
 	}
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the reviewed input schema carries submission ids as plain strings while the port brands them as QueuedSubmissionId; the brand is nominal, the port passes the ids to Codex unchanged, and the session boundary parses them as issued identities before they reach the wire, so branding them here would only move that refusal.
-	return { call, operationId: operation.id, ...input } as ManageWorkhorseQueueRequest;
+	return { call, operationId: operation.id, ...queue } as ManageWorkhorseQueueRequest;
 }
 
 /**
- * Start one workhorse tool through the operations port. The port's promise is returned as it is,
- * with its result widened to unknown, so the caller's single await sits directly on the port and
- * the result is proven against the tool's reviewed schema when the response is built.
- * @param operations - The workhorse operations port.
+ * Start one workhorse tool through the operations port of the checkout it names. The port's
+ * promise is returned as it is, with its result widened to unknown, so the caller's single await
+ * sits directly on the port and the result is proven against the tool's reviewed schema when the
+ * response is built.
+ * @param options - The dispatcher options, which find the workhorse of a checkout.
  * @param validated - The validated workhorse call.
  * @param operation - The issued operation identity the effect runs under.
  * @returns The port's pending result.
  */
 function invokeWorkhorse(
-	operations: CodexCoordinatorToolsOptions["operations"],
+	options: CodexCoordinatorToolsOptions,
 	validated: ValidatedWorkhorseCall,
 	operation: IssuedOperationIdentity,
 ): Promise<unknown> {
 	const { call } = validated;
+	const { checkout } = validated.input;
+	const operations = options.workhorseFor(checkout)?.operations;
+	if (operations === undefined) {
+		return Promise.reject(
+			Object.assign(new Error(`This conversation has no workhorse in ${checkout}.`), {
+				code: "not_ready",
+				outcome: "not_delivered",
+			}),
+		);
+	}
 	if (validated.tool === "inspect_workhorse") {
-		return operations.inspect({ call, ...validated.input });
+		return operations.inspect({ call });
 	}
 	if (validated.tool === "delegate_to_workhorse") {
-		return operations.delegate({ call, ...validated.input, operationId: operation.id });
+		const { input, transcriptDelta } = validated.input;
+		return operations.delegate({ call, input, transcriptDelta, operationId: operation.id });
 	}
 	if (validated.tool === "manage_workhorse_queue") {
 		return operations.manageQueue(queueRequest(call, validated.input, operation));
@@ -175,7 +188,7 @@ function invokeWorkhorse(
 	return operations.steer({
 		call,
 		expectedTurnId: validated.expectedTurnId,
-		...validated.input,
+		input: validated.input.input,
 		operationId: operation.id,
 	});
 }

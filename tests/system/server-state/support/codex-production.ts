@@ -253,6 +253,8 @@ interface FixtureRecord {
 	readonly id?: string;
 	readonly method?: string;
 	readonly pid?: number;
+	/** The working directory the app-server child was spawned in. */
+	readonly cwd?: string;
 	readonly params?: Record<string, unknown>;
 	readonly result?: unknown;
 	readonly frame?: { readonly id?: unknown; readonly result?: unknown; readonly error?: unknown };

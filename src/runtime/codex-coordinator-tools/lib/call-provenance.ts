@@ -98,20 +98,25 @@ function assertOwnedWorkhorse(binding: WorkhorseOperationBinding): void {
 }
 
 /**
- * Resolve the server-bound workhorse a workhorse-namespace call operates on.
+ * Resolve the server-bound workhorse of the checkout a workhorse-namespace call names.
  * @param options - The dispatcher options carrying the server authority.
  * @param call - The decoded logical call.
  * @param coordinator - The current coordinator facts.
+ * @param checkout - The checkout the call names.
  * @returns The current workhorse binding.
  */
 function workhorseBinding(
 	options: CodexCoordinatorToolsOptions,
 	call: LogicalToolCallCorrelation,
 	coordinator: CoordinatorToolCoordinatorAuthority,
+	checkout: string,
 ): WorkhorseOperationBinding {
-	const binding = options.authority.currentWorkhorseBinding();
+	const binding = options.workhorseFor(checkout)?.binding() ?? null;
 	if (binding === null) {
-		fail("not_ready", "The coordinator has no current workhorse bound by the Archboard server.");
+		fail(
+			"not_ready",
+			`This conversation has no ready workhorse in ${checkout}. Delegate work there to start one.`,
+		);
 	}
 	assertCurrentChildEpoch(options, binding, "bound workhorse");
 	assertAttachedToCoordinator(binding, call, coordinator);

@@ -24,7 +24,7 @@ import {
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import { FakeEpoch } from "./fake-epoch.js";
 
-const CHECKOUT_ROOT = "/workspace/archboard";
+const WORKING_DIRECTORY = "/state/codex-workbench/coordinator";
 
 function coordinatorModel(overrides: Partial<CoordinatorModel> = {}): CoordinatorModel {
 	return {
@@ -74,7 +74,7 @@ function startResponse(
 		recencyAt: null,
 		status: { type: "idle" },
 		path: null,
-		cwd: CHECKOUT_ROOT,
+		cwd: WORKING_DIRECTORY,
 		cliVersion: CODEX_PROTOCOL_VERSION,
 		source: "vscode",
 		canAcceptDirectInput: true,
@@ -95,8 +95,8 @@ function startResponse(
 		model: COORDINATOR_MODEL,
 		modelProvider: "openai",
 		serviceTier,
-		cwd: CHECKOUT_ROOT,
-		runtimeWorkspaceRoots: [CHECKOUT_ROOT],
+		cwd: WORKING_DIRECTORY,
+		runtimeWorkspaceRoots: [WORKING_DIRECTORY],
 		instructionSources: [],
 		approvalPolicy: "on-request",
 		approvalsReviewer: "user",
@@ -113,7 +113,7 @@ function settings(
 	overrides: Partial<CoordinatorThreadSettings> = {},
 ): CoordinatorThreadSettings {
 	return {
-		cwd: CHECKOUT_ROOT,
+		cwd: WORKING_DIRECTORY,
 		approvalPolicy: started.approvalPolicy,
 		approvalsReviewer: started.approvalsReviewer,
 		sandboxPolicy: started.sandbox,
@@ -358,10 +358,10 @@ function fixture(options: FixtureOptions = {}): Fixture {
 		threadLink: link,
 		epoch,
 		identity: authority,
-		checkoutRoot: CHECKOUT_ROOT,
+		workingDirectory: WORKING_DIRECTORY,
 	});
 	session.notify = coordinator.onNotification;
 	return { authority, epoch, link, session, coordinator };
 }
 
-export { CHECKOUT_ROOT, coordinatorModel, type FixtureOptions, type Fixture, fixture };
+export { WORKING_DIRECTORY, coordinatorModel, type FixtureOptions, type Fixture, fixture };

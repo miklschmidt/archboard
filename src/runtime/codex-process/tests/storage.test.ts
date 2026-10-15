@@ -25,7 +25,7 @@ function fileSystem(): CodexStorageFileSystem {
 }
 
 describe("Codex child environment", () => {
-	const archboardServer = { url: "http://127.0.0.1:3404" };
+	const archboardServer = { url: "http://127.0.0.1:3404", binDirectory: "/opt/archboard/bin" };
 
 	test("copies only the authored keys in order and overwrites both roots", () => {
 		const ambient: Record<string, string> = Object.fromEntries(
@@ -60,7 +60,8 @@ describe("Codex child environment", () => {
 		expect(child["PWD"]).toBeUndefined();
 		expect(child["OPENAI_API_KEY"]).toBeUndefined();
 		expect(child["CODEX_HOME"]).not.toBe("poisoned-home");
-		expect(child["PATH"]).toBe("value:PATH");
+		// A thread's `archboard` is the server's own, in whichever checkout it works (ADR 0050).
+		expect(child["PATH"]).toBe(`/opt/archboard/bin${path.delimiter}value:PATH`);
 		expect(child["ARCHBOARD_URL"]).toBe(archboardServer.url);
 
 		const optional = buildCodexChildEnvironment({
@@ -71,6 +72,7 @@ describe("Codex child environment", () => {
 		});
 		expect(Object.keys(optional)).toEqual([
 			"HOME",
+			"PATH",
 			"CODEX_HOME",
 			"CODEX_SQLITE_HOME",
 			"ARCHBOARD_URL",

@@ -17,14 +17,13 @@ import type { CodexEpochStore, EpochOperationRecord } from "@/runtime/codex-epoc
 import type { CodexThreadLinkPort, ThreadLinkClassification } from "@/runtime/codex-thread-link";
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
-import type { TabSessionId } from "@/server/codex-workbench";
 
 export interface ServerDynamicAuthorityOptions {
 	readonly identity: IdentityAuthorities;
 	readonly epoch: Pick<CodexEpochStore, "snapshot">;
 	readonly threadLink: Pick<CodexThreadLinkPort, "classify" | "read">;
-	/** The tab session that started a thread, or null when none did. */
-	readonly sessionForThread: (threadId: ThreadId) => TabSessionId | null;
+	/** The link key of the workhorse that started a thread, or null when no workhorse did. */
+	readonly linkKeyForThread: (threadId: ThreadId) => string | null;
 	readonly contextFor: (input: {
 		readonly caller: DynamicCallerAuthority;
 		readonly authority: DynamicContextAuthority;
@@ -41,10 +40,10 @@ export interface ServerDynamicAuthorityAdapters {
 	readonly thread: DynamicThreadAuthorityPort;
 	readonly context: DynamicContextPort;
 	/**
-	 * The tab session whose link can run turns on a thread: the link key a dynamic caller's
-	 * context is read under.
+	 * The link key of the workhorse whose link can run turns on a thread: the key a dynamic
+	 * caller's context is read under, which the link port calls its pane.
 	 */
-	readonly paneForThread: (threadId: ThreadId) => TabSessionId | null;
+	readonly paneForThread: (threadId: ThreadId) => string | null;
 	readonly dispose: () => void;
 }
 
@@ -202,18 +201,16 @@ export function createServerDynamicAuthorityAdapters(
 		return issued;
 	};
 	/**
-	 * The link key one thread's agent reads context under: the tab session that
-	 * started the thread, while its link can run turns on that thread.
+	 * The link key one thread's agent reads context under: that of the workhorse that started
+	 * the thread, while its link can run turns on that thread.
 	 * @param threadId The thread.
-	 * @returns The tab session, or null when no session's link names the thread.
+	 * @returns The link key, or null when no workhorse's link names the thread.
 	 */
-	const paneForThread = (threadId: ThreadId): TabSessionId | null => {
-		const tabSessionId = options.sessionForThread(threadId);
-		if (tabSessionId === null) return null;
-		const binding = options.threadLink.read(tabSessionId);
-		return binding.link.state === "executable" && binding.link.threadId === threadId
-			? tabSessionId
-			: null;
+	const paneForThread = (threadId: ThreadId): string | null => {
+		const key = options.linkKeyForThread(threadId);
+		if (key === null) return null;
+		const binding = options.threadLink.read(key);
+		return binding.link.state === "executable" && binding.link.threadId === threadId ? key : null;
 	};
 	/**
 	 * Everything an authority over one thread is decided from, read fresh from

@@ -4,6 +4,7 @@ import type { ArchboardContext } from "../../../../runtime/codex-instructions/in
 import type { TransportServerNotification } from "../../../../runtime/codex-transport/index.js";
 import {
 	parseTabSessionId,
+	workhorseLinkKey,
 	type BrowserActionContext,
 	type BrowserProjectionContext,
 } from "../../../codex-workbench/index.js";
@@ -11,6 +12,8 @@ import {
 	createCodexWorkbenchSessions,
 	type CodexWorkbenchSessionComponents,
 	type CodexWorkbenchTabSession,
+	type CodexWorkbenchWorkhorse,
+	type CodexWorkbenchWorkhorseComponents,
 } from "../../codex-workbench-generation.js";
 import {
 	createServerBrowserGatewayOptions,
@@ -21,6 +24,10 @@ import {
 } from "../../codex-workbench-adapters.js";
 import { createCodexWorkbenchGenerationFixture } from "./codex-workbench-generation-fixture.js";
 import { processFacts } from "./codex-workbench-process-fixture.js";
+import { createWorkhorseComponentsFixture } from "./codex-workbench-session-fixture.js";
+
+/** The checkout every pane of the harness is in, so its one workhorse is the one it shows. */
+const HARNESS_CHECKOUT = "/work/payments";
 
 /** The production browser adapter over the generation fixture, live sources injectable. */
 const archboardContext: ArchboardContext = {
@@ -65,8 +72,10 @@ function executableLink(authorities: IdentityAuthorities): ThreadLinkSnapshot {
 interface ProjectionHarness {
 	readonly options: ReturnType<typeof createServerBrowserGatewayOptions>;
 	readonly state: ServerBrowserBindingState;
-	/** The one tab session the adapter reads, whose queue listing a test can set. */
+	/** The one tab session the adapter reads. */
 	readonly session: CodexWorkbenchTabSession;
+	/** The workhorse of the harness's checkout, whose queue listing a test can set. */
+	readonly workhorse: CodexWorkbenchWorkhorse;
 	readonly context: BrowserProjectionContext;
 	readonly actionContext: BrowserActionContext;
 	readonly loginId: ReturnType<IdentityAuthorities["identity"]["decoder"]["adoptLoginId"]>;
@@ -80,6 +89,7 @@ interface ProjectionHarness {
 
 type FixtureComponents = ReturnType<typeof createCodexWorkbenchGenerationFixture>["components"];
 type FixtureSessionComponents = CodexWorkbenchSessionComponents;
+type FixtureWorkhorseComponents = CodexWorkbenchWorkhorseComponents;
 
 interface HarnessOverrides {
 	readonly session?: Partial<FixtureComponents["session"]>;
@@ -87,8 +97,8 @@ interface HarnessOverrides {
 	/** The clock the authoritative re-read floor reads. */
 	readonly now?: () => number;
 	/** A live workhorse and queue, for the paths that read authoritative state. */
-	readonly workhorse?: Partial<FixtureSessionComponents["workhorse"]>;
-	readonly queue?: Partial<FixtureSessionComponents["queue"]>;
+	readonly workhorse?: Partial<FixtureWorkhorseComponents["workhorse"]>;
+	readonly queue?: Partial<FixtureWorkhorseComponents["queue"]>;
 	readonly spokenApproval?: Partial<FixtureSessionComponents["spokenApproval"]>;
 	/** Exact realtime and callback evidence supplied to the browser projection. */
 	readonly voiceContext?: (authorities: IdentityAuthorities) => {
@@ -124,8 +134,6 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 	const sessionComponents: CodexWorkbenchSessionComponents = {
 		...fixtureSession,
 		coordinator: { ...fixtureSession.coordinator, ...overrides.coordinator },
-		workhorse: { ...fixtureSession.workhorse, ...overrides.workhorse },
-		queue: { ...fixtureSession.queue, ...overrides.queue },
 		spokenApproval: { ...fixtureSession.spokenApproval, ...overrides.spokenApproval },
 		realtime: { ...fixtureSession.realtime, ...voiceContext?.realtime },
 		callbacks: { ...fixtureSession.callbacks, ...voiceContext?.callbacks },
@@ -137,8 +145,24 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		threadLink: fixture.threadLink,
 		endApprovals: async () => undefined,
 		build: () => ({ components: sessionComponents, actions: generation.tabSession.actions }),
+		buildWorkhorse: () => {
+			const fixtureWorkhorse = createWorkhorseComponentsFixture([]);
+			return {
+				components: {
+					...fixtureWorkhorse,
+					workhorse: { ...fixtureWorkhorse.workhorse, ...overrides.workhorse },
+					queue: { ...fixtureWorkhorse.queue, ...overrides.queue },
+				},
+				actions: {
+					threadLinks: { create: async () => ({ outcome: "delivered" as const }) },
+					ensureStarted: async () => undefined,
+				},
+			};
+		},
 	});
 	const session = sessions.open(parseTabSessionId("tab-one")!);
+	const workhorse = session.workhorse(HARNESS_CHECKOUT);
+	const key = workhorseLinkKey(session.id, HARNESS_CHECKOUT);
 	const state: ServerBrowserBindingState = {
 		account: { kind: "account", state: "unknown", reason: "not read" },
 		login: { kind: "login", state: "idle" },
@@ -179,20 +203,22 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		options,
 		state,
 		session,
+		workhorse,
 		threadId: link.threadId,
 		context: {
 			browserId: "browser-projection",
 			paneId: "pane-readiness",
 			connection: {},
 			tabSessionId: parseTabSessionId("tab-one")!,
-			// A link is keyed by its tab session, which every pane of the tab shows.
+			checkout: HARNESS_CHECKOUT,
+			// A link is keyed by its workhorse: its tab session and its checkout.
 			binding: {
-				paneId: "tab-one",
+				paneId: key,
 				revision: 1,
 				link,
 				cas: {
 					revision: 1,
-					paneId: "tab-one",
+					paneId: key,
 					childId: link.childId,
 					epoch: link.epoch,
 					threadId: link.threadId,
@@ -206,6 +232,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 			connection: {},
 			paneId: "pane-readiness",
 			tabSessionId: parseTabSessionId("tab-one")!,
+			checkout: HARNESS_CHECKOUT,
 			commandId: harnessCommandId,
 			childId: authorities.identity.validator.childId,
 			epoch: authorities.identity.validator.epoch,

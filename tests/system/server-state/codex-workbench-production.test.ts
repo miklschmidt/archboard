@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
 
 import { processExists, startOwnedServer } from "../support/owned-server.ts";
 import {
@@ -15,6 +15,8 @@ import { createRequester, waitFor } from "./support/http.ts";
 
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
+/** The archboard checkout these tests run from, where no thread of a served vault works. */
+const repoRoot = realpathSync(resolve(import.meta.dir, "../../.."));
 
 describe.serial("actual production Codex composition", () => {
 	test("src/server.ts crosses every browser, protocol, semantic, approval, and cleanup seam", async () => {
@@ -115,6 +117,20 @@ describe.serial("actual production Codex composition", () => {
 			// The coordinator's thread starts before the workhorse's.
 			expect(startedModels()[0]).toBe("gpt-6-sol");
 			expect(startedModels()).toHaveLength(2);
+			// The app-server and the coordinator work in a directory of their own under the state
+			// directory, which holds no vault. The workhorse works in its checkout: for this untracked
+			// vault, the directory that holds it. No thread works in the archboard checkout (ADR 0050).
+			const [coordinatorStart, workhorseStart] = records(logPath).filter(
+				(entry) => entry.kind === "frame" && entry.method === "thread/start",
+			);
+			const coordinatorDirectory = String(coordinatorStart?.params?.["cwd"]);
+			const spawned = records(logPath).filter((entry) => entry.kind === "app_server_cwd");
+			expect(spawned.map((entry) => entry.cwd)).toEqual([coordinatorDirectory]);
+			expect(basename(coordinatorDirectory)).toBe("coordinator");
+			expect(existsSync(join(coordinatorDirectory, ".archboard"))).toBe(false);
+			expect(coordinatorDirectory.startsWith(repoRoot)).toBe(false);
+			expect(workhorseStart?.params?.["cwd"]).toBe(realpathSync(root));
+			expect(workhorseStart?.params?.["runtimeWorkspaceRoots"]).toEqual([realpathSync(root)]);
 
 			const linked = snapshots(await current.request("snapshot"));
 			const threadLink = linked["threadLink"] as Record<string, unknown>;

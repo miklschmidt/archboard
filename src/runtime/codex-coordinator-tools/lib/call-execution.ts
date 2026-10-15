@@ -266,11 +266,7 @@ async function executeCall(
 		return spokenResult(state, plan.validated, result, spokenOperation);
 	}
 	try {
-		const result = await invokeWorkhorse(
-			context.options.operations,
-			plan.validated,
-			plan.operation,
-		);
+		const result = await invokeWorkhorse(context.options, plan.validated, plan.operation);
 		return workhorseResult(context, state, plan.validated, plan.operation, result);
 	} catch (error) {
 		return complete(

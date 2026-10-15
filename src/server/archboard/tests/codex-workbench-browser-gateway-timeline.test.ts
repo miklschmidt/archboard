@@ -22,6 +22,7 @@ import {
 import { createCodexWorkbenchSessions } from "../codex-workbench-generation.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
 import { runningProcessFacts } from "./support/codex-workbench-process-fixture.js";
+import { createWorkhorseComponentsFixture } from "./support/codex-workbench-session-fixture.js";
 
 const archboardContext: ArchboardContext = {
 	schema: 1,
@@ -123,6 +124,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 			},
 			actions: fixture.tabSession.actions,
 		}),
+		buildWorkhorse: inertWorkhorse,
 	});
 	const tabSessionId = parseTabSessionId("tab-one")!;
 	sessions.open(tabSessionId);
@@ -172,6 +174,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		browserId: "browser-timeline",
 		paneId: "pane-timeline",
 		tabSessionId,
+		checkout: "/work/payments",
 		binding: {
 			paneId: "pane-timeline",
 			revision: 7,
@@ -202,6 +205,11 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	);
 	expect(received.retire).toEqual({ paneId: "pane-timeline", connection });
 });
+
+/** A workhorse that is never asked anything: these projections read no workhorse. */
+function inertWorkhorse() {
+	return { components: createWorkhorseComponentsFixture([]), actions: {} as never };
+}
 
 function timelineFor(threadId: ThreadId): CodexTimelineProjectionInput {
 	return { kind: "codex_timeline", threadId, turns: [], cursor: null, usage: null };
@@ -246,6 +254,7 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 			},
 			actions: fixture.tabSession.actions,
 		}),
+		buildWorkhorse: inertWorkhorse,
 	});
 	const options = createServerBrowserGatewayOptions({
 		components: fixture.components,
@@ -277,6 +286,7 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 			browserId: `browser-${tab}`,
 			paneId: `pane-${tab}`,
 			tabSessionId,
+			checkout: "/work/payments",
 			binding: {
 				paneId: tab,
 				revision: 1,

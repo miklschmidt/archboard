@@ -11,12 +11,12 @@ import { readSemanticBoard } from "@/runtime/semantic-board-store";
 import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
 import type { SemanticBoard } from "@/shared/semantic-board/index";
 import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
+import { checkoutOfVault } from "@/runtime/engine/vault-finder";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchSessionComponents,
+	CodexWorkbenchWorkhorseComponents,
 } from "@/server/archboard/codex-workbench-generation";
-import type { TabSessionId } from "@/server/codex-workbench";
-import { checkoutRoot } from "@/server/archboard/lib/module-paths";
 import { boardForPane, panes } from "@/server/archboard/lib/pane-registry";
 import {
 	aggregateKey,
@@ -315,15 +315,20 @@ function contextPane(
 
 type ThreadLinkOf = ReturnType<CodexWorkbenchComponents["threadLink"]["read"]>["link"];
 type ExecutableLink = Extract<ThreadLinkOf, { state: "executable" }>;
-type WorkhorseSnapshot = ReturnType<CodexWorkbenchSessionComponents["workhorse"]["snapshot"]>;
+type WorkhorseSnapshot = ReturnType<CodexWorkbenchWorkhorseComponents["workhorse"]["snapshot"]>;
 type CoordinatorSnapshot = ReturnType<CodexWorkbenchSessionComponents["coordinator"]["snapshot"]>;
 /**
- * What a pane's identities are read from: the thread link of the tab session the pane belongs
- * to, and that conversation's workhorse, coordinator and voice.
+ * What a context's identities are read from: the tab session's coordinator and voice, and the
+ * workhorse the context is told to, with its thread link; that workhorse is null when there is
+ * none, as before voice starts or in a checkout with no workhorse yet.
  */
 type SemanticInputOwners = Pick<CodexWorkbenchComponents, "threadLink"> &
-	Pick<CodexWorkbenchSessionComponents, "workhorse" | "coordinator" | "realtime"> & {
-		readonly tabSessionId: TabSessionId;
+	Pick<CodexWorkbenchSessionComponents, "coordinator" | "realtime"> & {
+		readonly workhorse: {
+			readonly start: CodexWorkbenchWorkhorseComponents["workhorse"];
+			/** Its thread-link key. */
+			readonly key: string;
+		} | null;
 	};
 type LinkedIdentities = Required<
 	Pick<SemanticContextInput, "child" | "threadLink" | "workhorse" | "coordinator">
@@ -339,7 +344,7 @@ interface GraphView {
 }
 
 /**
- * Read the tab session's link and its conversation's snapshots once.
+ * Read the workhorse's link and the snapshots of it and the tab's coordinator once.
  * @param active The session's owners, or null while none are installed.
  * @returns The view.
  */
@@ -347,13 +352,29 @@ function graphView(active: SemanticInputOwners | null): GraphView {
 	if (active === null) {
 		return { active, link: null, executable: null, workhorse: null, coordinator: null };
 	}
-	const link = active.threadLink.read(active.tabSessionId).link;
 	return {
 		active,
+		...workhorseView(active),
+		coordinator: active.coordinator.snapshot(),
+	};
+}
+
+/**
+ * Read the link and the snapshot of the workhorse a context is told to.
+ * @param active The session's owners.
+ * @returns Its link, that link when it can run turns, and its snapshot; all null without one.
+ */
+function workhorseView(
+	active: SemanticInputOwners,
+): Pick<GraphView, "link" | "executable" | "workhorse"> {
+	if (active.workhorse === null) {
+		return { link: null, executable: null, workhorse: null };
+	}
+	const { link } = active.threadLink.read(active.workhorse.key);
+	return {
 		link,
 		executable: link.state === "executable" ? link : null,
-		workhorse: active.workhorse.snapshot(),
-		coordinator: active.coordinator.snapshot(),
+		workhorse: active.workhorse.start.snapshot(),
 	};
 }
 
@@ -388,9 +409,9 @@ function childIdentity(view: GraphView): LinkedIdentities["child"] {
 }
 
 /**
- * The thread this pane's context is about: the one its tab session's executable
- * link names, which is the thread that session's workhorse started. Read from
- * the link, whose state the context reports anyway.
+ * The thread this context is about: the one the executable link of its workhorse
+ * names, which is the thread that workhorse started. Read from the link, whose
+ * state the context reports anyway.
  *
  * The child and the epoch are reported separately, from the graph, and the
  * delivery's own capability check is what proves them. This is identity, not
@@ -489,7 +510,8 @@ function semanticInputFor(
 		pane === null ? null : semanticPaneContextFor(pane.clientId),
 	);
 	return {
-		repository: checkoutRoot,
+		// The checkout the board is in, which `-C` names (ADR 0050).
+		repository: checkoutOfVault(vault),
 		...linkedIdentities(active),
 		board: {
 			key: contextBoard,

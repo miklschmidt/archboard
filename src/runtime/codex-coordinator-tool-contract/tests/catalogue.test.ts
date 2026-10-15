@@ -53,7 +53,7 @@ describe("coordinator namespace manifests", () => {
 		expect(JSON.parse(ARCHBOARD_WORKHORSE_MANIFEST_JSON)).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
 		expect(JSON.parse(ARCHBOARD_VOICE_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
 		expect(verifyCoordinatorManifestIntegrity()).toEqual({
-			workhorseSha256: "ba8e69a7b6fc09441da65d93cf1e00dc96a707f5b37b3965f88a8c8a778a6b17",
+			workhorseSha256: "c390cc7414541e276f1454a3a846289ad895b28383129be7f1c1ad569a9d510a",
 			voiceSha256: "04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b",
 		});
 		for (const namespace of [ARCHBOARD_WORKHORSE_NAMESPACE, ARCHBOARD_VOICE_NAMESPACE]) {
@@ -115,47 +115,96 @@ describe("coordinator namespace manifests", () => {
 describe("dynamic tool schemas and queue protocol", () => {
 	test("validates every operation-dependent queue input and rejects invented fields", () => {
 		const valid = [
-			{ operation: "list" },
-			{ operation: "add", prompt: "Build the selected component." },
-			{ operation: "update", submissionId: "queue-1", prompt: "Revise the component." },
-			{ operation: "delete", submissionId: "queue-1" },
-			{ operation: "reorder", orderedSubmissionIds: ["queue-2", "queue-1"] },
-			{ operation: "start", submissionId: "queue-1" },
+			{ checkout: "/work/payments", operation: "list" },
+			{ checkout: "/work/payments", operation: "add", prompt: "Build the selected component." },
+			{
+				checkout: "/work/payments",
+				operation: "update",
+				submissionId: "queue-1",
+				prompt: "Revise the component.",
+			},
+			{ checkout: "/work/payments", operation: "delete", submissionId: "queue-1" },
+			{
+				checkout: "/work/payments",
+				operation: "reorder",
+				orderedSubmissionIds: ["queue-2", "queue-1"],
+			},
+			{ checkout: "/work/payments", operation: "start", submissionId: "queue-1" },
 		] as const;
 		for (const input of valid) {
 			expect(ManageWorkhorseQueueInputSchema.parse(input)).toEqual(
 				JSON.parse(JSON.stringify(input)),
 			);
 		}
-		expect(() => ManageWorkhorseQueueInputSchema.parse({ operation: "pause" })).toThrow();
 		expect(() =>
-			ManageWorkhorseQueueInputSchema.parse({ operation: "list", prompt: "x" }),
+			ManageWorkhorseQueueInputSchema.parse({ checkout: "/work/payments", operation: "pause" }),
 		).toThrow();
 		expect(() =>
 			ManageWorkhorseQueueInputSchema.parse({
+				checkout: "/work/payments",
+				operation: "list",
+				prompt: "x",
+			}),
+		).toThrow();
+		expect(() =>
+			ManageWorkhorseQueueInputSchema.parse({
+				checkout: "/work/payments",
 				operation: "reorder",
 				orderedSubmissionIds: ["x", "x"],
 			}),
 		).toThrow();
 		expect(() =>
-			ManageWorkhorseQueueInputSchema.parse({ operation: "list", revision: 1 }),
+			ManageWorkhorseQueueInputSchema.parse({
+				checkout: "/work/payments",
+				operation: "list",
+				revision: 1,
+			}),
 		).toThrow();
-		expect(QueueListInputSchema.parse({ operation: "list" })).toEqual({ operation: "list" });
-		expect(QueueAddInputSchema.parse({ operation: "add", prompt: "x" })).toEqual({
+		expect(QueueListInputSchema.parse({ checkout: "/work/payments", operation: "list" })).toEqual({
+			checkout: "/work/payments",
+			operation: "list",
+		});
+		expect(
+			QueueAddInputSchema.parse({ checkout: "/work/payments", operation: "add", prompt: "x" }),
+		).toEqual({
+			checkout: "/work/payments",
 			operation: "add",
 			prompt: "x",
 		});
 		expect(
-			QueueUpdateInputSchema.parse({ operation: "update", submissionId: "q", prompt: "x" }),
-		).toEqual({ operation: "update", submissionId: "q", prompt: "x" });
-		expect(QueueDeleteInputSchema.parse({ operation: "delete", submissionId: "q" })).toEqual({
+			QueueUpdateInputSchema.parse({
+				checkout: "/work/payments",
+				operation: "update",
+				submissionId: "q",
+				prompt: "x",
+			}),
+		).toEqual({ checkout: "/work/payments", operation: "update", submissionId: "q", prompt: "x" });
+		expect(
+			QueueDeleteInputSchema.parse({
+				checkout: "/work/payments",
+				operation: "delete",
+				submissionId: "q",
+			}),
+		).toEqual({
+			checkout: "/work/payments",
 			operation: "delete",
 			submissionId: "q",
 		});
 		expect(
-			QueueReorderInputSchema.parse({ operation: "reorder", orderedSubmissionIds: ["q"] }),
-		).toEqual({ operation: "reorder", orderedSubmissionIds: ["q"] });
-		expect(QueueStartInputSchema.parse({ operation: "start", submissionId: "q" })).toEqual({
+			QueueReorderInputSchema.parse({
+				checkout: "/work/payments",
+				operation: "reorder",
+				orderedSubmissionIds: ["q"],
+			}),
+		).toEqual({ checkout: "/work/payments", operation: "reorder", orderedSubmissionIds: ["q"] });
+		expect(
+			QueueStartInputSchema.parse({
+				checkout: "/work/payments",
+				operation: "start",
+				submissionId: "q",
+			}),
+		).toEqual({
+			checkout: "/work/payments",
 			operation: "start",
 			submissionId: "q",
 		});
@@ -214,20 +263,32 @@ describe("dynamic tool schemas and queue protocol", () => {
 	});
 
 	test("validates only the declared tool inputs and closed results", () => {
-		expect(parseCoordinatorToolInput("archboard_workhorse", "inspect_workhorse", {})).toEqual({});
+		expect(
+			parseCoordinatorToolInput("archboard_workhorse", "inspect_workhorse", {
+				checkout: "/work/payments",
+			}),
+		).toEqual({ checkout: "/work/payments" });
+		// Every workhorse tool names the checkout whose workhorse it works with (ADR 0050).
+		expect(() =>
+			parseCoordinatorToolInput("archboard_workhorse", "inspect_workhorse", {}),
+		).toThrow();
 		expect(
 			parseCoordinatorToolInput("archboard_workhorse", "delegate_to_workhorse", {
+				checkout: "/work/payments",
 				input: "inspect",
 				transcriptDelta: "heard",
 			}),
-		).toEqual({ input: "inspect", transcriptDelta: "heard" });
+		).toEqual({ checkout: "/work/payments", input: "inspect", transcriptDelta: "heard" });
 		expect(
 			parseCoordinatorToolInput("archboard_voice", "resolve_spoken_approval", {
 				verdict: "accept",
 			}),
 		).toEqual({ verdict: "accept" });
 		expect(() =>
-			parseCoordinatorToolInput("archboard_workhorse", "inspect_workhorse", { target: "other" }),
+			parseCoordinatorToolInput("archboard_workhorse", "inspect_workhorse", {
+				checkout: "/work/payments",
+				target: "other",
+			}),
 		).toThrow();
 		expect(() =>
 			parseCoordinatorToolInput("archboard_voice", "resolve_spoken_approval", { verdict: "maybe" }),

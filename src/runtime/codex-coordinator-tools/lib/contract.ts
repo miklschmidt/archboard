@@ -70,12 +70,11 @@ type CoordinatorToolCoordinatorAuthority = Pick<
 >;
 
 /**
- * Server facts for the executing coordinator call and its bound workhorse.
- * None of these values are accepted from dynamic-tool arguments.
+ * Server facts for the executing coordinator call. None of these values are accepted from
+ * dynamic-tool arguments.
  */
 interface CoordinatorToolAuthorityPort {
 	readonly currentCoordinator: () => CoordinatorToolCoordinatorAuthority | null;
-	readonly currentWorkhorseBinding: () => WorkhorseOperationBinding | null;
 	readonly currentCall: () => LogicalToolCallCorrelation | null;
 	/** Supplies expectedTurnId; the coordinator never receives it from tool arguments. */
 	readonly expectedTurnId: () => TurnId | null;
@@ -90,14 +89,25 @@ interface CoordinatorToolResponsePort {
 	) => Promise<void>;
 }
 
-interface CodexCoordinatorToolsOptions {
-	readonly identity: IdentityAuthority;
-	readonly operation: Pick<OperationAuthority, "issuer" | "validator" | "decoder">;
-	readonly authority: CoordinatorToolAuthorityPort;
+/** The workhorse of one checkout, as the coordinator tools reach it. */
+interface CoordinatorToolWorkhorse {
+	/** The operation binding of this workhorse and the coordinator, or null while they share none. */
+	readonly binding: () => WorkhorseOperationBinding | null;
 	readonly operations: Pick<
 		CodexWorkhorseOperations,
 		"inspect" | "delegate" | "manageQueue" | "steer"
 	>;
+}
+
+interface CodexCoordinatorToolsOptions {
+	readonly identity: IdentityAuthority;
+	readonly operation: Pick<OperationAuthority, "issuer" | "validator" | "decoder">;
+	readonly authority: CoordinatorToolAuthorityPort;
+	/**
+	 * The workhorse of the checkout a workhorse tool names (ADR 0050), or null when the tab session
+	 * has none there. The checkout is the one argument that chooses; the binding is the server's.
+	 */
+	readonly workhorseFor: (checkout: string) => CoordinatorToolWorkhorse | null;
 	readonly spokenApproval: Pick<CodexSpokenApprovalGate, "snapshot" | "resolve">;
 	readonly transport: CoordinatorToolResponsePort;
 }
@@ -211,6 +221,7 @@ export {
 	type CoordinatorToolCoordinatorAuthority,
 	type CoordinatorToolAuthorityPort,
 	type CoordinatorToolResponsePort,
+	type CoordinatorToolWorkhorse,
 	type CodexCoordinatorToolsOptions,
 	type CoordinatorToolsServerRequest,
 	type DynamicToolResponse,

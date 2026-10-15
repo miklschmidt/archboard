@@ -60,10 +60,10 @@ test("a command in another archboard checkout runs that checkout's bin/archboard
 	const standing = checkout("standing", { packageName: "archboard", linked: true });
 	mkdirSync(join(standing, "src", "deep"), { recursive: true });
 
-	expect(handOffTarget(join(standing, "src", "deep"), running)).toBe(
+	expect(handOffTarget(join(standing, "src", "deep"), running, undefined)).toBe(
 		join(standing, "bin", "archboard"),
 	);
-	expect(handOffTarget(standing, standing)).toBeNull();
+	expect(handOffTarget(standing, standing, undefined)).toBeNull();
 });
 
 test("only the checkout root the directory stands in decides", () => {
@@ -76,9 +76,9 @@ test("only the checkout root the directory stands in decides", () => {
 	const plain = join(scratch, "no-checkout");
 	mkdirSync(plain);
 
-	expect(handOffTarget(nested, running)).toBeNull();
-	expect(handOffTarget(elsewhere, running)).toBeNull();
-	expect(handOffTarget(plain, running)).toBeNull();
+	expect(handOffTarget(nested, running, undefined)).toBeNull();
+	expect(handOffTarget(elsewhere, running, undefined)).toBeNull();
+	expect(handOffTarget(plain, running, undefined)).toBeNull();
 });
 
 test("a bin/archboard that links to a third checkout gets no hand-off, so none can loop", () => {
@@ -88,5 +88,15 @@ test("a bin/archboard that links to a third checkout gets no hand-off, so none c
 	rmSync(join(standing, "bin", "archboard"));
 	symlinkSync(join(third, "bin", "archboard"), join(standing, "bin", "archboard"));
 
-	expect(handOffTarget(standing, running)).toBeNull();
+	expect(handOffTarget(standing, running, undefined)).toBeNull();
+});
+
+test("a command whose environment names its server runs where it is, as a workhorse in a worktree does", () => {
+	const main = checkout("url-main", { packageName: "archboard" });
+	const worktree = checkout("url-worktree", { packageName: "archboard", linked: true });
+
+	// The Codex child names the server that started it, the main checkout's on
+	// port 3000, and a workhorse runs in the worktree it works in (ADR 0050).
+	expect(handOffTarget(worktree, main, "http://127.0.0.1:3000")).toBeNull();
+	expect(handOffTarget(worktree, main, "")).toBe(join(worktree, "bin", "archboard"));
 });

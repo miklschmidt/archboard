@@ -133,6 +133,7 @@ function link(ids: Identities): CoordinatorCallbackLinkCorrelation {
 			operationId: "link-operation",
 			provenance: proof(ids),
 		},
+		checkout: "/work/payments",
 	};
 }
 
@@ -209,6 +210,8 @@ interface HarnessState {
 	child: CoordinatorCallbackCurrentChild | null;
 	coordinator: CoordinatorCallbackReadyCoordinator | null;
 	link: CoordinatorCallbackLinkCorrelation | null;
+	/** The workhorses of the tab session's other checkouts (ADR 0050). */
+	others: CoordinatorCallbackLinkCorrelation[];
 	generation: CoordinatorCallbackRealtimeGeneration | null;
 	classification: ThreadLinkClassification;
 	/** The boards the tab's panes show. */
@@ -267,6 +270,7 @@ function harness(active = true): Harness {
 			reason: null,
 		},
 		link: capturedLink,
+		others: [],
 		generation: activeGeneration,
 		classification: {
 			link: classifiedLink,
@@ -342,14 +346,17 @@ function harness(active = true): Harness {
 		realtime,
 		coordinatorTurn,
 		threadLink: {
-			classify: async () => {
+			classify: async (target) => {
 				classifyHook?.();
-				return state.classification;
+				const other = state.others.find((each) => each.target.threadId === target.threadId);
+				return other === undefined
+					? state.classification
+					: ({ ...state.classification, link: other.binding.link } as ThreadLinkClassification);
 			},
 		},
 		currentChild: () => state.child,
 		currentCoordinator: () => state.coordinator,
-		currentWorkhorseLink: () => state.link,
+		workhorseLinks: () => (state.link === null ? state.others : [state.link, ...state.others]),
 		currentRealtimeGeneration: () => state.generation,
 		canvas: () => ({ boards: state.boards, narrated: state.narrated }),
 		coordinatorContext: {

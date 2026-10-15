@@ -17,6 +17,7 @@ import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/code
 import type {
 	CodexWorkbenchSessions,
 	CodexWorkbenchTabSession,
+	CodexWorkbenchWorkhorse,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
 import type {
@@ -75,12 +76,12 @@ interface ServerBrowserGatewayInput {
 }
 
 /**
- * Forget a session's cached queue, so no pane is shown another link's submissions.
- * @param session The session.
+ * Forget a workhorse's cached queue, so no pane is shown another link's submissions.
+ * @param workhorse The workhorse.
  */
-function clearQueue(session: CodexWorkbenchTabSession): void {
-	session.state.queue = UNAVAILABLE_QUEUE;
-	session.state.queueThreadId = null;
+function clearQueue(workhorse: CodexWorkbenchWorkhorse): void {
+	workhorse.state.queue = UNAVAILABLE_QUEUE;
+	workhorse.state.queueThreadId = null;
 }
 
 /**
@@ -126,7 +127,7 @@ function watchSessionTranscripts(
  */
 function createServerBrowserGatewayOptions(
 	input: ServerBrowserGatewayInput,
-): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink"> {
+): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink" | "checkoutOf"> {
 	const { components, dynamicApprovals, state } = input;
 	/**
 	 * The tab session a pane's command or snapshot belongs to: its own tab's conversation.
@@ -137,17 +138,29 @@ function createServerBrowserGatewayOptions(
 	const sessionOf = (context: { readonly tabSessionId: TabSessionId }): CodexWorkbenchTabSession =>
 		input.sessions.require(context.tabSessionId);
 	/**
-	 * Record one authoritative listing as the queue a session's link is on.
-	 * @param session The session.
+	 * The workhorse a pane's command is for: the one of its tab session for the checkout of its
+	 * vault (ADR 0050), built the first time a pane of that checkout asks for it.
+	 * @param context The pane, its tab session and its checkout.
+	 * @param context.tabSessionId The tab session.
+	 * @param context.checkout The checkout of the pane's vault.
+	 * @returns The workhorse.
+	 */
+	const workhorseOf = (context: {
+		readonly tabSessionId: TabSessionId;
+		readonly checkout: string;
+	}): CodexWorkbenchWorkhorse => sessionOf(context).workhorse(context.checkout);
+	/**
+	 * Record one authoritative listing as the queue a workhorse's link is on.
+	 * @param workhorse The workhorse.
 	 * @param result What the queue port answered.
 	 * @returns That same result, so a caller can go on using it.
 	 */
 	const updateQueue = <Result extends { readonly queue: readonly SessionQueuedSubmission[] }>(
-		session: CodexWorkbenchTabSession,
+		workhorse: CodexWorkbenchWorkhorse,
 		result: Result,
 	): Result => {
-		session.state.queue = queueOwnerView(result.queue, components.identity.operation);
-		session.state.queueThreadId = session.components.workhorse.snapshot().threadId;
+		workhorse.state.queue = queueOwnerView(result.queue, components.identity.operation);
+		workhorse.state.queueThreadId = workhorse.components.workhorse.snapshot().threadId;
 		return result;
 	};
 	/**
@@ -156,19 +169,19 @@ function createServerBrowserGatewayOptions(
 	 */
 	const issueOperation = (): OperationId => components.identity.operation.issuer.mintOperationId();
 	/**
-	 * Read the queue for the link a session has just moved to.
+	 * Read the queue for the link a workhorse has just moved to.
 	 *
 	 * A thread link change re-targets every queue: the cached submissions belong
 	 * to the previous thread and must not be presented for the new one.
-	 * @param session The session.
+	 * @param workhorse The workhorse.
 	 */
-	const refreshLinkedQueue = async (session: CodexWorkbenchTabSession): Promise<void> => {
-		clearQueue(session);
-		if (session.components.workhorse.snapshot().state !== "ready") {
+	const refreshLinkedQueue = async (workhorse: CodexWorkbenchWorkhorse): Promise<void> => {
+		clearQueue(workhorse);
+		if (workhorse.components.workhorse.snapshot().state !== "ready") {
 			return;
 		}
 		try {
-			updateQueue(session, await session.components.queue.list());
+			updateQueue(workhorse, await workhorse.components.queue.list());
 		} catch {
 			// The queue stays unavailable until an owner read succeeds; the browser
 			// presents that as its own state rather than another thread's entries.
@@ -181,19 +194,19 @@ function createServerBrowserGatewayOptions(
 	 * submissions are exactly what a lost mutation or a workhorse-side drain left
 	 * behind. Unlike a link change, the cache is not cleared first: a failed
 	 * re-read must not present a healthy queue as somebody else's.
-	 * @param session The session.
+	 * @param workhorse The workhorse.
 	 */
-	const rereadLinkedQueue = async (session: CodexWorkbenchTabSession): Promise<void> => {
-		if (session.components.workhorse.snapshot().state !== "ready") {
-			clearQueue(session);
+	const rereadLinkedQueue = async (workhorse: CodexWorkbenchWorkhorse): Promise<void> => {
+		if (workhorse.components.workhorse.snapshot().state !== "ready") {
+			clearQueue(workhorse);
 			return;
 		}
 		try {
-			updateQueue(session, await session.components.queue.list());
+			updateQueue(workhorse, await workhorse.components.queue.list());
 		} catch {
 			// The read failed, so nothing about the cache is proven: the browser is
 			// told the queue is unavailable rather than shown an unverified list.
-			clearQueue(session);
+			clearQueue(workhorse);
 		}
 	};
 	const now = input.now ?? Date.now;
@@ -209,12 +222,12 @@ function createServerBrowserGatewayOptions(
 	 * the read that just finished — so a looping client cannot amplify app-server
 	 * traffic. The floor is keyed to the link, so navigating to another workhorse
 	 * always reads rather than reusing the previous link's timing.
-	 * @param session The session whose queue is read.
+	 * @param workhorse The workhorse whose queue is read.
 	 * @param threadId The link's thread.
 	 * @returns The read this request is served by.
 	 */
 	const coalescedReread = (
-		session: CodexWorkbenchTabSession,
+		workhorse: CodexWorkbenchWorkhorse,
 		threadId: ThreadId,
 	): Promise<void> => {
 		if (inFlightReread?.threadId === threadId) {
@@ -226,7 +239,7 @@ function createServerBrowserGatewayOptions(
 		) {
 			return Promise.resolve();
 		}
-		const read = rereadLinkedQueue(session).finally(() => {
+		const read = rereadLinkedQueue(workhorse).finally(() => {
 			lastRereadAtMs = { threadId, atMs: now() };
 			if (inFlightReread?.threadId === threadId) {
 				inFlightReread = null;
@@ -238,29 +251,31 @@ function createServerBrowserGatewayOptions(
 	const account = createServerBrowserAccountOwner({
 		components,
 		state,
-		/** Sign-out drops every session's queue with the account it belonged to. */
+		/** Sign-out drops every workhorse's queue with the account it belonged to. */
 		clearQueue: () => {
-			for (const session of input.sessions.list()) clearQueue(session);
+			for (const session of input.sessions.list()) {
+				for (const workhorse of session.workhorses.values()) clearQueue(workhorse);
+			}
 		},
 		onNotification: input.onAccountNotification,
 	});
 	/**
-	 * Run one queue mutation for the pane's session and cache the listing it answers.
+	 * Run one queue mutation for the pane's workhorse and cache the listing it answers.
 	 * @param context The pane.
-	 * @param mutate The mutation, given the session's queue and a fresh operation.
+	 * @param mutate The mutation, given the workhorse's queue and a fresh operation.
 	 * @returns The browser outcome.
 	 */
 	const mutateQueue = (
 		context: BrowserActionContext,
 		mutate: (
-			queue: CodexWorkbenchTabSession["components"]["queue"],
+			queue: CodexWorkbenchWorkhorse["components"]["queue"],
 			operationId: OperationId,
 		) => Promise<{ readonly queue: readonly SessionQueuedSubmission[] }>,
 	): Promise<BrowserActionResult> => {
-		const session = sessionOf(context);
+		const workhorse = workhorseOf(context);
 		return runMutation(
 			async () =>
-				void updateQueue(session, await mutate(session.components.queue, issueOperation())),
+				void updateQueue(workhorse, await mutate(workhorse.components.queue, issueOperation())),
 		);
 	};
 	const realtime: BrowserRealtimeActions = {
@@ -306,25 +321,25 @@ function createServerBrowserGatewayOptions(
 			 */
 			read: async (context) => {
 				const result = await account.actions.read(context);
-				const session = sessionOf(context);
-				if (session.components.workhorse.snapshot().state === "ready") {
-					updateQueue(session, await session.components.queue.list());
+				const workhorse = sessionOf(context).workhorses.get(context.checkout);
+				if (workhorse?.components.workhorse.snapshot().state === "ready") {
+					updateQueue(workhorse, await workhorse.components.queue.list());
 				}
 				return result;
 			},
 		},
 		threadLinks: {
 			/**
-			 * Start a new conversation, its coordinator and workhorse, and link this
-			 * pane to it.
+			 * Start a new conversation of the workhorse of the pane's checkout, with the tab's
+			 * coordinator, and link the panes of that checkout to it.
 			 * @param command The creation.
 			 * @param context The pane.
 			 * @returns What the link owner answered.
 			 */
 			create: async (command, context) => {
-				const session = sessionOf(context);
-				const result = await session.actions.threadLinks.create(command, context);
-				await refreshLinkedQueue(session);
+				const workhorse = workhorseOf(context);
+				const result = await workhorse.actions.threadLinks.create(command, context);
+				await refreshLinkedQueue(workhorse);
 				return result;
 			},
 		},
@@ -401,10 +416,11 @@ function createServerBrowserGatewayOptions(
 		 */
 		refresh: async (context): Promise<void> => {
 			const link = context.binding.link;
-			if (link.state !== "executable") {
+			const workhorse = sessionOf(context).workhorses.get(context.checkout);
+			if (link.state !== "executable" || workhorse === undefined) {
 				return;
 			}
-			await coalescedReread(sessionOf(context), link.threadId);
+			await coalescedReread(workhorse, link.threadId);
 		},
 		/**
 		 * One complete snapshot of the workbench as this pane is shown it.
@@ -416,6 +432,7 @@ function createServerBrowserGatewayOptions(
 				{
 					approvals: components.approvals,
 					session: sessionOf(context),
+					workhorse: sessionOf(context).workhorses.get(context.checkout) ?? null,
 					dynamicApprovals,
 					state,
 					timeline: input.timeline,

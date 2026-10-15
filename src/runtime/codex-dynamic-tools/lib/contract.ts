@@ -269,7 +269,6 @@ interface CodexDynamicToolsOptions {
 	readonly operationId: DynamicOperationIdPort;
 	readonly lifecycle: DynamicToolLifecyclePort;
 	readonly catalogue?: DynamicCatalogueDependency;
-	readonly checkoutRoot: string;
 	readonly now?: () => number;
 }
 

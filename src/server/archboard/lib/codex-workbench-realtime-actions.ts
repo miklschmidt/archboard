@@ -1,5 +1,8 @@
 // One browser tab's voice session: started, spoken into and stopped by the tab that holds it.
 //
+// Voice speaks for the whole tab (ADR 0050). A start is bound to the workhorse of the checkout of
+// the pane it came from, for as long as that session runs, and any pane of the tab can stop it.
+//
 // Each tab session has its own coordinator and its own voice (TASK-373), so two tabs talk at once
 // and a recording, whose headless page is a tab session of its own (TASK-304), never stops
 // somebody who is talking in another tab. A start replaces whatever session its own tab was
@@ -24,6 +27,7 @@ import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-work
 import type {
 	CodexWorkbenchSessionComponents,
 	CodexWorkbenchTabSessionScope,
+	CodexWorkbenchWorkhorseComponents,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 import {
 	sessionVoiceStartTrace,
@@ -37,7 +41,13 @@ import {
 } from "@/server/archboard/lib/walkthrough-narration";
 
 type RealtimeComponents = Pick<CodexWorkbenchComponents, "identity"> &
-	Pick<CodexWorkbenchSessionComponents, "coordinator" | "realtime" | "workhorse">;
+	Pick<CodexWorkbenchSessionComponents, "coordinator" | "realtime">;
+
+/** What a voice start reads and records of its tab session: its workhorses, and voice's checkout. */
+type RealtimeScope = Pick<
+	CodexWorkbenchTabSessionScope,
+	"claimThread" | "releaseThread" | "workhorses" | "state"
+>;
 
 /** A browser's request to start voice. */
 type RealtimeStartCommand = Parameters<BrowserRealtimeActions["start"]>[0];
@@ -47,6 +57,8 @@ type ActiveRealtime = Readonly<{
 	connection: BrowserActionContext["connection"];
 	browserId: string;
 	paneId: string;
+	/** The checkout of the pane voice started from, whose workhorse it is bound to. */
+	checkout: string;
 	childId: ChildId;
 	epoch: ChildEpoch;
 	threadId: ThreadId;
@@ -59,7 +71,7 @@ type ActiveRealtime = Readonly<{
 type CoordinatorSnapshot = ReturnType<RealtimeComponents["coordinator"]["snapshot"]>;
 
 /** The workhorse as it describes itself. */
-type WorkhorseSnapshot = ReturnType<RealtimeComponents["workhorse"]["snapshot"]>;
+type WorkhorseSnapshot = ReturnType<CodexWorkbenchWorkhorseComponents["workhorse"]["snapshot"]>;
 
 /**
  * Keep what became of a replaced coordinator's thread in the voice start trace, where a failed
@@ -130,8 +142,9 @@ function coordinatorHolds(coordinator: CoordinatorSnapshot, active: ActiveRealti
 
 /**
  * Whether a realtime session is the one this command may act on: the same
- * handle, link, and coordinator it was started under, and — for a command that
- * speaks into it — the same socket, whose media is what plays the voice.
+ * handle and coordinator it was started under, and — for a command that
+ * speaks into it — the same socket and link, whose media is what plays the voice.
+ * A stop may come from any pane of the tab, whichever checkout it shows.
  * @param active The realtime session.
  * @param handle The handle the command named.
  * @param context The pane and the link it named.
@@ -148,8 +161,7 @@ function isCurrentRealtime(
 ): boolean {
 	return (
 		active.handle === handle &&
-		(!socketBound || sameSocket(active, context)) &&
-		sameLink(active, context) &&
+		(!socketBound || (sameSocket(active, context) && sameLink(active, context))) &&
 		coordinatorHolds(coordinator, active)
 	);
 }
@@ -172,14 +184,50 @@ function coordinatorReadyFor(
 }
 
 /**
- * Whether the workhorse is running the thread this pane is linked to, which is
- * the thread voice would be speaking about.
- * @param workhorse The workhorse snapshot.
+ * Whether the workhorse of the pane's checkout is running the thread the pane is linked to,
+ * which is the thread voice would be bound to.
+ * @param workhorse The workhorse snapshot, or null while the checkout has no workhorse.
  * @param threadId The pane's linked thread.
  * @returns True when it is.
  */
-function workhorseReadyFor(workhorse: WorkhorseSnapshot, threadId: ThreadId): boolean {
-	return workhorse.state === "ready" && workhorse.threadId === threadId;
+function workhorseReadyFor(workhorse: WorkhorseSnapshot | null, threadId: ThreadId): boolean {
+	return workhorse?.state === "ready" && workhorse.threadId === threadId;
+}
+
+/**
+ * The workhorse of one checkout of the tab, as it describes its thread.
+ * @param threads The tab session's workhorses.
+ * @param checkout The checkout of the pane voice starts from.
+ * @returns Its snapshot, or null while the checkout has no workhorse.
+ */
+function workhorseSnapshotOf(threads: RealtimeScope, checkout: string): WorkhorseSnapshot | null {
+	const workhorse = threads.workhorses().find((candidate) => candidate.checkout === checkout);
+	return workhorse === undefined ? null : workhorse.components.workhorse.snapshot();
+}
+
+/**
+ * Keep in the start trace which of the conditions a voice start needs held: which one a refusal
+ * turned on is the first thing anybody asks.
+ * @param trace The tab session's voice start trace.
+ * @param coordinator The coordinator snapshot.
+ * @param workhorse The snapshot of the workhorse of the pane's checkout, or null.
+ * @param context The pane and the link it named.
+ */
+function notePreconditions(
+	trace: SessionVoiceStartTrace,
+	coordinator: CoordinatorSnapshot,
+	workhorse: WorkhorseSnapshot | null,
+	context: BrowserActionContext,
+): void {
+	const threadId = context.link.threadId;
+	trace.note("preconditions", {
+		linkedThread: threadId !== null,
+		coordinatorState: coordinator.state,
+		coordinatorReason: coordinator.reason,
+		coordinatorReady: coordinatorReadyFor(coordinator, context),
+		workhorseState: workhorse?.state ?? "unbound",
+		workhorseReady: threadId !== null && workhorseReadyFor(workhorse, threadId),
+	});
 }
 
 /**
@@ -225,15 +273,16 @@ function openFirstStep(
 /**
  * Own one continuous realtime session for one tab session, spoken through one
  * exact browser socket binding.
- * @param components The tab session's coordinator, realtime adapter and workhorse.
+ * @param components The tab session's coordinator and realtime adapter.
  * @param threads Records that the session started a thread, the fresh coordinator a start
- * replaces the voiced one with, and that it no longer owns the one replaced once that unloaded.
+ * replaces the voiced one with, and that it no longer owns the one replaced once that unloaded;
+ * the session's workhorses, and where it keeps the checkout voice is bound to.
  * @param trace Where this tab session's voice starts are kept; each start begins its own attempt.
  * @returns The actions.
  */
 export function createServerRealtimeActions(
 	components: RealtimeComponents,
-	threads: Pick<CodexWorkbenchTabSessionScope, "claimThread" | "releaseThread">,
+	threads: RealtimeScope,
 	trace: SessionVoiceStartTrace = sessionVoiceStartTrace(),
 ): BrowserRealtimeActions {
 	let activeRealtime: ActiveRealtime | null = null;
@@ -357,16 +406,8 @@ export function createServerRealtimeActions(
 		const coordinator = components.coordinator.snapshot();
 		const threadId = context.link.threadId;
 		const coordinatorThreadId = coordinator.threadId;
-		const workhorse = components.workhorse.snapshot();
-		// Which of the conditions a refusal turned on is the first thing anybody asks.
-		trace.note("preconditions", {
-			linkedThread: threadId !== null,
-			coordinatorState: coordinator.state,
-			coordinatorReason: coordinator.reason,
-			coordinatorReady: coordinatorReadyFor(coordinator, context),
-			workhorseState: workhorse.state,
-			workhorseReady: threadId !== null && workhorseReadyFor(workhorse, threadId),
-		});
+		const workhorse = workhorseSnapshotOf(threads, context.checkout);
+		notePreconditions(trace, coordinator, workhorse, context);
 		if (
 			threadId === null ||
 			coordinatorThreadId === null ||
@@ -381,6 +422,7 @@ export function createServerRealtimeActions(
 			connection: context.connection,
 			browserId: context.browserId,
 			paneId: context.paneId,
+			checkout: context.checkout,
 			childId: context.childId,
 			epoch: context.epoch,
 			threadId,
@@ -428,6 +470,8 @@ export function createServerRealtimeActions(
 				await freshCoordinator();
 				const pending = tracedPending(command.commandId, context);
 				activeRealtime = pending;
+				// Before the offer, which reads the binding: voice is bound to this checkout's workhorse.
+				threads.state.voiceCheckout = pending.checkout;
 				voicedCoordinator = pending.coordinatorThreadId;
 				if (voicedPane !== null) {
 					forgetNarration(voicedPane);
@@ -483,8 +527,8 @@ export function createServerRealtimeActions(
 				return { outcome: "delivered" as const };
 			}),
 		/**
-		 * Stop the session, from whichever pane of the tab holds the lease: the tab
-		 * has one conversation, and ending its voice needs no media of its own.
+		 * Stop the session, from whichever pane of the tab holds the lease, of whichever checkout:
+		 * the tab has one voice, and ending it needs no media of its own.
 		 * @param command The handle.
 		 * @param context The pane and the link it named.
 		 * @returns The browser outcome.

@@ -11,6 +11,7 @@ import {
 	type DynamicRefusalReason,
 } from "@/runtime/codex-dynamic-tools/lib/contract";
 import type { DynamicOperationSettlement } from "@/runtime/codex-dynamic-tools/lib/effects";
+import { callerWorkspace } from "@/runtime/codex-dynamic-tools/lib/mutation-context";
 
 /** The refusal codes an authority port may raise that the boundary passes through as its own. */
 const PASSTHROUGH_CODES = [
@@ -141,7 +142,7 @@ function stage(options: StageOptions): EpochTransaction {
 			operationId: operationWire(options.options, options.operationId),
 			kind: options.kind,
 			rpc: options.rpc,
-			workspaceRoot: options.options.checkoutRoot,
+			workspaceRoot: callerWorkspace(options.caller),
 			instructionHash: WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
 			manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
 			expected,

@@ -27,20 +27,35 @@ type PendingOperation = Omit<
  * lifetime. The server provides one of these; the workbench keeps none of it.
  */
 export interface CodexWorkbenchServer {
-	readonly checkoutRoot: string;
+	/**
+	 * The checkout whose source this server runs. The Codex child runs its `bin`, and the
+	 * coordinator reads its archboard skill. No thread works in it unless it is that thread's own
+	 * checkout (ADR 0050).
+	 */
+	readonly sourceRoot: string;
 	readonly onCodexProcessGroupOwned: (identity: CodexProcessGroupIdentity) => void;
 	/**
-	 * Where one tab session's semantic context is published from: the one change feed, read for
-	 * that session's own panes and link.
+	 * Where one tab session's voice context is published from: the one change feed, read for that
+	 * session's own panes and the workhorse its voice is bound to.
 	 */
 	readonly semanticPublisherFor: (tabSessionId: TabSessionId) => SemanticContextPublisherOptions;
+	/**
+	 * Where one workhorse's board news is published from: the changes of the boards of its
+	 * checkout that its tab session hears, as that workhorse is told them.
+	 */
+	readonly workhorsePublisherFor: (
+		tabSessionId: TabSessionId,
+		checkout: string,
+	) => SemanticContextPublisherOptions;
+	/** The checkout of the vault a browser's pane is in now, whose workhorse the pane shows. */
+	readonly checkoutOfBrowser: (browserId: string) => string;
 	/** The canonical context of a settled change, filed under the pane the change presents. */
 	readonly contextForEvent: (
 		event: SettledSemanticChangeEvent,
 		operation?: PendingOperation,
 	) => ArchboardContext;
 	/**
-	 * The context an operation of one tab session runs under, refused once that session's link has
+	 * The context an operation of one workhorse runs under, refused once that workhorse's link has
 	 * moved. A browser command names the exact pane that sent it by `clientId`; work nobody's
 	 * command started names null, and presents through a pane of the session: the one it presented
 	 * through last while that is open, else the focused one, else the first in reading order.
@@ -48,6 +63,8 @@ export interface CodexWorkbenchServer {
 	readonly contextForOperation: (
 		authority: {
 			readonly tabSessionId: TabSessionId;
+			/** The checkout the workhorse works in. */
+			readonly checkout: string;
 			readonly clientId: string | null;
 			readonly childId: LogicalToolCallCorrelation["child"];
 			readonly epoch: LogicalToolCallCorrelation["epoch"];
@@ -91,8 +108,14 @@ export interface CodexWorkbenchStorage {
 	readonly root: string;
 	readonly codexHome: string;
 	readonly sqliteHome: string;
-	/** What this server alone owns: its owner lock and its epoch ledger. */
+	/** What this server alone owns: its owner lock, its epoch ledger and its coordinators' directory. */
 	readonly ownerDirectory: string;
+	/**
+	 * The directory of its own every coordinator of this server, and the app-server child, work in.
+	 * It holds no vault and is in no checkout, so a command run there without `-C` is refused. It
+	 * holds the archboard skill under `.agents/skills`, where Codex finds a skill outside git.
+	 */
+	readonly coordinatorDirectory: string;
 	readonly epochRoot: string;
 	readonly configPath: string;
 }

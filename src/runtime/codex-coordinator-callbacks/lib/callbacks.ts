@@ -8,6 +8,10 @@ import { CODEX_SEMANTIC_FRESHNESS_MS } from "@/shared/timing/timing";
 import { createWorkhorseNewsObserver } from "@/runtime/codex-coordinator-callbacks/lib/workhorse-news";
 import { createTellCoordinator } from "@/runtime/codex-coordinator-callbacks/lib/tell-coordinator";
 import {
+	workhorseLinkOf,
+	workhorseThreadOf,
+} from "@/runtime/codex-coordinator-callbacks/lib/workhorse-links";
+import {
 	coordinatorCallbackCoalescingKey,
 	coordinatorCallbackKey,
 	normalizeCoordinatorCallback,
@@ -108,8 +112,8 @@ function subscribeSources(
 /**
  * Whether one settled change is this session's own work.
  *
- * The session is the pair: the workhorse this coordinator drives and the
- * coordinator itself. Both identities are read at the moment the change
+ * The session is the coordinator and every workhorse it drives, one for each
+ * checkout (ADR 0050). Both identities are read at the moment the change
  * arrives, because a coordinator is created, restarted and retired inside one
  * workhorse's life and New conversation replaces the workhorse under it — a value
  * sampled once would stop recognising the pair it was meant to.
@@ -178,14 +182,10 @@ function authorOf(event: CoordinatorCallbackSource): string | null {
 /**
  * The threads this session is, right now.
  * @param options - The callback options, for the live identities.
- * @returns The workhorse and the coordinator, whichever are there.
+ * @returns Every workhorse of the session and the coordinator, whichever are there.
  */
 function sessionThreads(options: CoordinatorCallbackOptions): readonly string[] {
-	const threads: string[] = [];
-	const workhorse = options.currentWorkhorseLink()?.target.threadId;
-	if (workhorse !== undefined) {
-		threads.push(String(workhorse));
-	}
+	const threads = options.workhorseLinks().map((link) => String(link.target.threadId));
 	const coordinator = options.currentCoordinator()?.threadId;
 	if (coordinator !== undefined) {
 		threads.push(String(coordinator));
@@ -341,13 +341,15 @@ export function createCodexCoordinatorCallbacks(
 	}
 
 	/**
-	 * Normalize one source event against the server's current link and voice generation.
+	 * Normalize one source event against the current link of the workhorse it names and the voice
+	 * generation.
 	 * @param event - The source event.
-	 * @returns The callback, or null when there is no link or the event cannot be normalized.
+	 * @returns The callback, or null when that workhorse has no link or the event cannot be
+	 * normalized.
 	 */
 	const normalizeOrNull = (event: CoordinatorCallbackSource): CoordinatorCallback | null => {
 		try {
-			const link = options.currentWorkhorseLink();
+			const link = workhorseLinkOf(options, workhorseThreadOf(event));
 			return link === null
 				? null
 				: normalizeCoordinatorCallback(event, link, options.currentRealtimeGeneration());

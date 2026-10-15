@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { checkoutPort, SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
+import { findVault } from "@/runtime/engine/vault-finder";
 import { withProductionState } from "@/server/archboard/tests/support/production-state";
 
 import {
@@ -29,6 +30,7 @@ import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchSessionComponents,
 	CodexWorkbenchSharedComponents,
+	CodexWorkbenchTabSessionScope,
 } from "../codex-workbench-generation.js";
 import type { CodexWorkbenchGenerationInput } from "../codex-workbench-owner.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
@@ -57,7 +59,7 @@ function installation(server: Record<string, unknown> = {}) {
 		return {
 			root,
 			value: createServerCodexWorkbenchInstallation({
-				checkoutRoot: "/repo",
+				sourceRoot: "/repo",
 				...server,
 			} as never),
 		};
@@ -65,7 +67,7 @@ function installation(server: Record<string, unknown> = {}) {
 }
 
 describe("production Codex storage", () => {
-	test("the servers on a machine share one Codex home, and each port owns its own state", () => {
+	test("the servers on a machine share one Codex home, and each port owns its own state", async () => {
 		const { root, value } = installation();
 		try {
 			const workbench =
@@ -81,6 +83,19 @@ describe("production Codex storage", () => {
 			);
 			expect(value.process.storage).toEqual({ rootDirectory: workbench, ownerDirectory: owner });
 			expect(statSync(owner).mode & 0o777).toBe(0o700);
+			// The coordinator works in a directory of its own, in no checkout, and reads the server's
+			// archboard skill from there (ADR 0050).
+			const coordinator = join(owner, "coordinator");
+			expect(value.process.workingDirectory).toBe(coordinator);
+			expect(readlinkSync(join(coordinator, ".agents", "skills", "archboard"))).toBe(
+				join("/repo", "skills", "archboard"),
+			);
+			expect(existsSync(join(coordinator, ".archboard"))).toBe(false);
+			// So a command the coordinator runs without -C finds no vault and is refused, rather than
+			// read the boards of a checkout it does not work in.
+			expect(
+				await findVault({ directory: null, environment: undefined, cwd: coordinator }),
+			).toMatchObject({ ok: false, code: "VAULT_NOT_FOUND" });
 		} finally {
 			rmSync(root, { recursive: true, force: true });
 		}
@@ -141,34 +156,40 @@ describe("production Codex generation ownership", () => {
 		try {
 			const components = {
 				semanticPublisher: publisher,
-				workhorse: {
-					snapshot: () => ({
-						state: "ready",
-						childId: authorities.identity.validator.childId,
-						epoch: authorities.identity.validator.epoch,
-						threadId: workhorseThreadId,
-					}),
-				},
 				coordinator: {
 					snapshot: () => ({ state: "ready", threadId: coordinatorThreadId }),
 				},
 			} as unknown as CodexWorkbenchSessionComponents;
+			// Voice is bound to the workhorse of the checkout it started from.
+			const voiced = {
+				components: {
+					workhorse: {
+						snapshot: () => ({
+							state: "ready",
+							childId: authorities.identity.validator.childId,
+							epoch: authorities.identity.validator.epoch,
+							threadId: workhorseThreadId,
+						}),
+					},
+				},
+			};
+			const scope = {
+				id: parseTabSessionId("tab-one")!,
+				state: {
+					delegations: new Map(),
+					currentCoordinatorCall: null,
+					threads: new Set(),
+					voiceTrace: { begin: () => undefined, note: () => undefined },
+					presenting: null,
+					voiceCheckout: "/repo",
+					phase: "live",
+				},
+				voiceWorkhorse: () => voiced,
+				workhorses: () => [voiced],
+			} as unknown as CodexWorkbenchTabSessionScope;
 			const production = owned.value
 				.bindings(generationInput(1))
-				.tabSession(
-					parseTabSessionId("tab-one")!,
-					{ identity: authorities } as unknown as CodexWorkbenchSharedComponents,
-					{
-						queue: { kind: "codex_queue", submissions: null },
-						queueThreadId: null,
-						delegations: new Map(),
-						currentCoordinatorCall: null,
-						threads: new Set(),
-						voiceTrace: { begin: () => undefined, note: () => undefined },
-						presenting: null,
-						phase: "live",
-					},
-				)
+				.tabSession(scope, { identity: authorities } as unknown as CodexWorkbenchSharedComponents)
 				.realtime(components);
 			const adapter = createCodexRealtimeAdapter({
 				...production,

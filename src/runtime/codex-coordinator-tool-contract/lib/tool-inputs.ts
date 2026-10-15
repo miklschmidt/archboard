@@ -11,9 +11,16 @@ import {
 	ARCHBOARD_WORKHORSE_TOOL_NAMES,
 } from "@/runtime/codex-coordinator-tool-contract/lib/manifest";
 
-const InspectWorkhorseInputSchema = z.object({}).strict();
+/**
+ * The checkout whose workhorse a tool works with (ADR 0050): the directory that holds the vault,
+ * as the board context names it.
+ */
+const CheckoutSchema = z.string().min(1).max(4_096);
+
+const InspectWorkhorseInputSchema = z.object({ checkout: CheckoutSchema }).strict();
 const DelegateToWorkhorseInputSchema = z
 	.object({
+		checkout: CheckoutSchema,
 		input: z.string().min(1).max(4_096),
 		transcriptDelta: z.string().min(0).max(4_096),
 	})
@@ -30,25 +37,40 @@ const QueueOrderSchema = z
 	.max(100)
 	.refine((values) => new Set(values).size === values.length, "submission ids must be unique");
 
-const QueueListInputSchema = z.object({ operation: z.literal("list") }).strict();
+const QueueListInputSchema = z
+	.object({ checkout: CheckoutSchema, operation: z.literal("list") })
+	.strict();
 const QueueAddInputSchema = z
-	.object({ operation: z.literal("add"), prompt: QueuePromptSchema })
+	.object({ checkout: CheckoutSchema, operation: z.literal("add"), prompt: QueuePromptSchema })
 	.strict();
 const QueueUpdateInputSchema = z
 	.object({
+		checkout: CheckoutSchema,
 		operation: z.literal("update"),
 		submissionId: QueueSubmissionIdSchema,
 		prompt: QueuePromptSchema,
 	})
 	.strict();
 const QueueDeleteInputSchema = z
-	.object({ operation: z.literal("delete"), submissionId: QueueSubmissionIdSchema })
+	.object({
+		checkout: CheckoutSchema,
+		operation: z.literal("delete"),
+		submissionId: QueueSubmissionIdSchema,
+	})
 	.strict();
 const QueueReorderInputSchema = z
-	.object({ operation: z.literal("reorder"), orderedSubmissionIds: QueueOrderSchema })
+	.object({
+		checkout: CheckoutSchema,
+		operation: z.literal("reorder"),
+		orderedSubmissionIds: QueueOrderSchema,
+	})
 	.strict();
 const QueueStartInputSchema = z
-	.object({ operation: z.literal("start"), submissionId: QueueSubmissionIdSchema })
+	.object({
+		checkout: CheckoutSchema,
+		operation: z.literal("start"),
+		submissionId: QueueSubmissionIdSchema,
+	})
 	.strict();
 
 const ManageWorkhorseQueueInputSchema = z.discriminatedUnion("operation", [
@@ -60,7 +82,9 @@ const ManageWorkhorseQueueInputSchema = z.discriminatedUnion("operation", [
 	QueueStartInputSchema,
 ]);
 
-const SteerWorkhorseInputSchema = z.object({ input: z.string().min(1).max(4_096) }).strict();
+const SteerWorkhorseInputSchema = z
+	.object({ checkout: CheckoutSchema, input: z.string().min(1).max(4_096) })
+	.strict();
 const ResolveSpokenApprovalInputSchema = z
 	.object({ verdict: z.enum(["accept", "decline"]) })
 	.strict();

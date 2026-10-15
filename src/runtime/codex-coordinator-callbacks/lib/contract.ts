@@ -68,6 +68,8 @@ type CoordinatorCallbackSource =
 interface CoordinatorCallbackLinkCorrelation {
 	readonly binding: ThreadLinkBindingSnapshot;
 	readonly target: ThreadLinkTarget;
+	/** The checkout the workhorse works in, which news of it names (ADR 0050). */
+	readonly checkout: string;
 }
 
 interface CoordinatorCallbackCorrelation {
@@ -385,7 +387,12 @@ interface CoordinatorCallbackOptions {
 	readonly threadLink: Pick<CodexThreadLinkClassifier, "classify">;
 	readonly currentChild: () => CoordinatorCallbackCurrentChild | null;
 	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
-	readonly currentWorkhorseLink: () => CoordinatorCallbackLinkCorrelation | null;
+	/**
+	 * The link of every ready workhorse of the tab session, one for each checkout (ADR 0050). A
+	 * callback is correlated with the workhorse its thread names, and pane news with the one voice
+	 * is bound to, which the semantic publisher names.
+	 */
+	readonly workhorseLinks: () => readonly CoordinatorCallbackLinkCorrelation[];
 	readonly currentRealtimeGeneration: () => CoordinatorCallbackRealtimeGeneration | null;
 	/** What the tab's canvas holds now: whether a narration is under way decides speech or quiet. */
 	readonly canvas: () => CoordinatorCallbackCanvas;

@@ -1,4 +1,7 @@
-import type { CodexWorkbenchSessionComponents } from "../../codex-workbench-generation.js";
+import type {
+	CodexWorkbenchSessionComponents,
+	CodexWorkbenchWorkhorseComponents,
+} from "../../codex-workbench-generation.js";
 
 function unavailable(owner: string): never {
 	throw new Error(`The tab session fixture does not implement ${owner}.`);
@@ -10,23 +13,6 @@ function unavailable(owner: string): never {
  * @returns The owners.
  */
 export function createSessionComponentsFixture(events: string[]): CodexWorkbenchSessionComponents {
-	const workhorse = {
-		start: async () => unavailable("workhorse.start"),
-		snapshot: () => ({
-			kind: "codex_workhorse",
-			state: "unbound",
-			paneId: null,
-			childId: null,
-			epoch: null,
-			threadId: null,
-			operationId: null,
-			outcome: null,
-			start: null,
-			binding: null,
-			cleanup: null,
-			reason: null,
-		}),
-	} satisfies CodexWorkbenchSessionComponents["workhorse"];
 	const semanticPublisher = {
 		subscribeSettledChange: () => () => undefined,
 		subscribePaneFocus: () => () => undefined,
@@ -51,16 +37,6 @@ export function createSessionComponentsFixture(events: string[]): CodexWorkbench
 		presentation: () => null,
 		dispose: () => void events.push("realtime:dispose"),
 	} satisfies CodexWorkbenchSessionComponents["realtime"];
-	const semanticDelivery = {
-		snapshot: () => ({ token: { revision: 0 }, binding: null }),
-		compareAndSwap: () => unavailable("semanticDelivery.compareAndSwap"),
-		deliver: async () => unavailable("semanticDelivery.deliver"),
-		inspect: () => [],
-		get: () => undefined,
-		replaceHooks: () => void events.push("semantic:hooks"),
-		childExit: async () => void events.push("semantic:child-exit"),
-		dispose: () => void events.push("semantic:dispose"),
-	} satisfies CodexWorkbenchSessionComponents["semanticDelivery"];
 	const coordinator = {
 		ensure: async () => unavailable("coordinator.ensure"),
 		replace: async () => unavailable("coordinator.replace"),
@@ -91,23 +67,6 @@ export function createSessionComponentsFixture(events: string[]): CodexWorkbench
 		persisted: () => null,
 		onNotification: () => undefined,
 	} satisfies CodexWorkbenchSessionComponents["coordinator"];
-	const queue = {
-		list: async () => unavailable("queue.list"),
-		add: async () => unavailable("queue.add"),
-		update: async () => unavailable("queue.update"),
-		delete: async () => unavailable("queue.delete"),
-		reorder: async () => unavailable("queue.reorder"),
-		start: async () => unavailable("queue.start"),
-		shutdown: async () => void events.push("queue:stop"),
-	} satisfies CodexWorkbenchSessionComponents["queue"];
-	const operations = {
-		inspect: async () => unavailable("operations.inspect"),
-		delegate: async () => unavailable("operations.delegate"),
-		manageQueue: async () => unavailable("operations.manageQueue"),
-		steer: async () => unavailable("operations.steer"),
-		onNotification: () => undefined,
-		subscribe: () => () => undefined,
-	} satisfies CodexWorkbenchSessionComponents["operations"];
 	const spokenApproval = {
 		arm: () => unavailable("spokenApproval.arm"),
 		snapshot: () => ({
@@ -166,15 +125,77 @@ export function createSessionComponentsFixture(events: string[]): CodexWorkbench
 		dispose: () => void events.push("callbacks:dispose"),
 	} satisfies CodexWorkbenchSessionComponents["callbacks"];
 	return {
-		workhorse,
 		semanticPublisher,
 		realtime,
-		semanticDelivery,
 		coordinator,
-		queue,
-		operations,
 		spokenApproval,
 		coordinatorTools,
 		callbacks,
 	};
+}
+
+/**
+ * Inert owners of one workhorse, recording what shutdown and child exit do to them.
+ * @param events Where each owner records what happened to it.
+ * @returns The owners.
+ */
+export function createWorkhorseComponentsFixture(
+	events: string[],
+): CodexWorkbenchWorkhorseComponents {
+	const workhorse = {
+		start: async () => unavailable("workhorse.start"),
+		snapshot: () => ({
+			kind: "codex_workhorse",
+			state: "unbound",
+			paneId: null,
+			childId: null,
+			epoch: null,
+			threadId: null,
+			operationId: null,
+			outcome: null,
+			start: null,
+			binding: null,
+			cleanup: null,
+			reason: null,
+		}),
+	} satisfies CodexWorkbenchWorkhorseComponents["workhorse"];
+	const semanticPublisher = {
+		subscribeSettledChange: () => () => undefined,
+		subscribePaneFocus: () => () => undefined,
+		subscribePaneSelection: () => () => undefined,
+		publishPaneFocus: () => unavailable("semanticPublisher.publishPaneFocus"),
+		publishPaneSelection: () => unavailable("semanticPublisher.publishPaneSelection"),
+		freshBrief: () => unavailable("semanticPublisher.freshBrief"),
+		freshBriefFor: () => unavailable("semanticPublisher.freshBriefFor"),
+		drainListenerFailures: () => ({ entries: [], droppedCount: 0 }),
+		dispose: () => void events.push("workhorse-publisher:dispose"),
+	} satisfies CodexWorkbenchWorkhorseComponents["semanticPublisher"];
+	const semanticDelivery = {
+		snapshot: () => ({ token: { revision: 0 }, binding: null }),
+		compareAndSwap: () => unavailable("semanticDelivery.compareAndSwap"),
+		deliver: async () => unavailable("semanticDelivery.deliver"),
+		inspect: () => [],
+		get: () => undefined,
+		replaceHooks: () => void events.push("semantic:hooks"),
+		childExit: async () => void events.push("semantic:child-exit"),
+		dispose: () => void events.push("semantic:dispose"),
+	} satisfies CodexWorkbenchWorkhorseComponents["semanticDelivery"];
+	const queue = {
+		list: async () => unavailable("queue.list"),
+		add: async () => unavailable("queue.add"),
+		update: async () => unavailable("queue.update"),
+		delete: async () => unavailable("queue.delete"),
+		reorder: async () => unavailable("queue.reorder"),
+		start: async () => unavailable("queue.start"),
+		shutdown: async () => void events.push("queue:stop"),
+	} satisfies CodexWorkbenchWorkhorseComponents["queue"];
+	const operations = {
+		inspect: async () => unavailable("operations.inspect"),
+		delegate: async () => unavailable("operations.delegate"),
+		manageQueue: async () => unavailable("operations.manageQueue"),
+		steer: async () => unavailable("operations.steer"),
+		onNotification: () => undefined,
+		subscribe: () => () => undefined,
+	} satisfies CodexWorkbenchWorkhorseComponents["operations"];
+	return { workhorse, semanticPublisher, semanticDelivery, queue, operations };
 }

@@ -3,7 +3,10 @@ export {
 	createServerOrdinaryApprovalActions,
 } from "@/server/archboard/lib/codex-workbench-browser-gateway";
 export type { ServerBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
-export { cancelTabSessionApprovals } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
+export {
+	cancelTabSessionApprovals,
+	visibleApprovalViews,
+} from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
 export { projectServerBrowserReadiness } from "@/server/archboard/lib/codex-workbench-readiness";
 export type {
 	ServerReadinessInput,
@@ -44,6 +47,7 @@ export {
 export { createServerCanonicalTextActions } from "@/server/archboard/lib/codex-workbench-text-actions";
 export { createServerRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
 export { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-pane";
+export { checkoutNamedBy, readyDelegatedWorkhorse } from "@/server/archboard/lib/codex-checkouts";
 export {
 	bindThreadContextToReadyWorkhorse,
 	clearServerThreadContextForLease,

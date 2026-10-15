@@ -97,6 +97,7 @@ test("after New conversation the coordinator hears the new thread's news and not
 						link: { ...h.state.link.binding.link, threadId: newWorkhorse as never },
 					},
 					target: { ...h.state.link.target, threadId: newWorkhorse as never },
+					checkout: h.state.link.checkout,
 				};
 
 	h.state.classification = {

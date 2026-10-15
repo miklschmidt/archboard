@@ -186,7 +186,12 @@ Several Archboard servers can run on one machine at the same time, each on its o
 The Codex agents of a server run `archboard` against that server, and they
 never start another server. The Codex child holds no `ARCHBOARD_VAULT`. The
 board context of a thread names the vault of each board, and the instructions
-tell the thread to pass it as `-C`. They share one Codex sign-in. If you sign out in one server, you sign out of all
+tell the thread to pass it as `-C`. The voice coordinator works in a directory
+of its own under the state directory, which holds no vault, so a command it
+runs without `-C` is refused. Each workhorse works in the checkout of its vault,
+or in the directory that holds an untracked vault, and follows that
+repository's agent instructions, skills and Codex configuration. They share one
+Codex sign-in. If you sign out in one server, you sign out of all
 of them. A server that is already running shows a sign-in or a sign-out from
 another server only after you restart it.
 

@@ -24,7 +24,7 @@ import type { WorkhorseOperationOptions } from "@/runtime/codex-workhorse-operat
 import type { WorkhorseQueueOptions } from "@/runtime/codex-workhorse-queue";
 import type { CodexWorkhorseStartOptions } from "@/runtime/codex-workhorse-start";
 import type { IdentityLedger, OperationId } from "@/shared/codex-workbench-identity";
-import type { CodexWorkbenchGatewayOptions, TabSessionId } from "@/server/codex-workbench";
+import type { CodexWorkbenchGatewayOptions } from "@/server/codex-workbench";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,
@@ -33,7 +33,9 @@ import type {
 import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";
 import type {
 	CodexWorkbenchSessionComponents,
-	CodexWorkbenchTabSessionState,
+	CodexWorkbenchTabSessionScope,
+	CodexWorkbenchWorkhorseComponents,
+	CodexWorkbenchWorkhorseScope,
 	CreateCodexWorkbenchSessionsOptions,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 
@@ -75,34 +77,47 @@ interface CodexWorkbenchCoordinatorCallOwner {
 /** One tab session component, by the name its session knows it under. */
 type SessionComponentName = keyof CodexWorkbenchSessionComponents;
 
+/** One workhorse component, by the name its workhorse knows it under. */
+type WorkhorseComponentName = keyof CodexWorkbenchWorkhorseComponents;
+
 /** Builds one tab session component's options from the session components built before it. */
 type SessionComponentBuilder<Value> = (
 	created: Readonly<Partial<CodexWorkbenchSessionComponents>>,
 ) => Value;
 
-/** What each of one tab session's components is configured with. */
-interface CodexWorkbenchSessionBindings {
-	readonly workhorse: SessionComponentBuilder<
+/** Builds one workhorse component's options from the workhorse components built before it. */
+type WorkhorseComponentBuilder<Value> = (
+	created: Readonly<Partial<CodexWorkbenchWorkhorseComponents>>,
+) => Value;
+
+/** What each owner of one workhorse is configured with. */
+interface CodexWorkbenchWorkhorseBindings {
+	readonly workhorse: WorkhorseComponentBuilder<
 		Omit<CodexWorkhorseStartOptions, "session" | "threadLink" | "epoch" | "identity" | "operation">
 	>;
-	readonly semanticPublisher: SessionComponentBuilder<SemanticContextPublisherOptions>;
-	readonly realtime: SessionComponentBuilder<
-		Omit<CodexRealtimeAdapterOptions, "session" | "identity">
-	>;
-	readonly semanticDelivery: SessionComponentBuilder<
+	readonly semanticPublisher: WorkhorseComponentBuilder<SemanticContextPublisherOptions>;
+	readonly semanticDelivery: WorkhorseComponentBuilder<
 		Omit<CodexThreadContextControllerOptions, "session" | "threadLink" | "identity" | "epoch">
 	>;
-	readonly coordinator: SessionComponentBuilder<
-		Omit<CodexCoordinatorOptions, "session" | "threadLink" | "epoch" | "identity">
-	>;
-	readonly queue: SessionComponentBuilder<
+	readonly queue: WorkhorseComponentBuilder<
 		Omit<WorkhorseQueueOptions<OperationId>, "session" | "identity" | "operationIds">
 	>;
-	readonly operations: SessionComponentBuilder<
+	readonly operations: WorkhorseComponentBuilder<
 		Omit<
 			WorkhorseOperationOptions,
 			"session" | "threadLink" | "queue" | "epoch" | "identity" | "operation"
 		>
+	>;
+}
+
+/** What each of one tab session's own components is configured with. */
+interface CodexWorkbenchSessionBindings {
+	readonly semanticPublisher: SessionComponentBuilder<SemanticContextPublisherOptions>;
+	readonly realtime: SessionComponentBuilder<
+		Omit<CodexRealtimeAdapterOptions, "session" | "identity">
+	>;
+	readonly coordinator: SessionComponentBuilder<
+		Omit<CodexCoordinatorOptions, "session" | "threadLink" | "epoch" | "identity">
 	>;
 	readonly spokenApproval: SessionComponentBuilder<
 		Omit<
@@ -111,14 +126,11 @@ interface CodexWorkbenchSessionBindings {
 		>
 	>;
 	readonly coordinatorTools: SessionComponentBuilder<
-		Omit<
-			CodexCoordinatorToolsOptions,
-			"identity" | "operation" | "operations" | "spokenApproval" | "transport"
-		>
+		Omit<CodexCoordinatorToolsOptions, "identity" | "operation" | "spokenApproval" | "transport">
 	>;
 	readonly coordinatorCall: CodexWorkbenchCoordinatorCallOwner;
 	readonly callbacks: SessionComponentBuilder<
-		Omit<CoordinatorCallbackOptions, "operations" | "identity" | "threadLink" | "transport">
+		Omit<CoordinatorCallbackOptions, "identity" | "threadLink" | "transport">
 	>;
 }
 
@@ -151,10 +163,14 @@ interface ProductionCodexWorkbenchBindings {
 	readonly sessions: ComponentBuilder<Pick<CreateCodexWorkbenchSessionsOptions, "endApprovals">>;
 	/** What each component of one tab session is configured with. */
 	readonly tabSession: (
-		id: TabSessionId,
+		scope: CodexWorkbenchTabSessionScope,
 		shared: CodexWorkbenchSharedComponents,
-		state: CodexWorkbenchTabSessionState,
 	) => CodexWorkbenchSessionBindings;
+	/** What each component of one workhorse of a tab session is configured with. */
+	readonly workhorse: (
+		scope: CodexWorkbenchWorkhorseScope,
+		shared: CodexWorkbenchSharedComponents,
+	) => CodexWorkbenchWorkhorseBindings;
 	readonly gateway: (
 		created: Readonly<Omit<CodexWorkbenchComponents, "gateway">>,
 	) => Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink">;
@@ -172,6 +188,7 @@ export type {
 	CodexWorkbenchCoordinatorCallOwner,
 	CodexWorkbenchDynamicAdapterFactories,
 	CodexWorkbenchSessionBindings,
+	CodexWorkbenchWorkhorseBindings,
 	ComponentBuilder,
 	ComponentName,
 	ComposeCodexWorkbenchGenerationOptions,
@@ -179,4 +196,6 @@ export type {
 	ProductionCodexWorkbenchBindings,
 	SessionComponentBuilder,
 	SessionComponentName,
+	WorkhorseComponentBuilder,
+	WorkhorseComponentName,
 };

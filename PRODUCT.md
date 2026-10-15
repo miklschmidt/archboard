@@ -101,7 +101,9 @@ Shipped capabilities:
   repository, with a breadcrumb that leads back
 - variants with a lifecycle, and comparison of any two of them
 - walkthroughs, narration by the Codex voice, and recording to video
-- an agent dock and conversation that read the board and the selection
+- an agent dock and conversation that read the board and the selection, with
+  one voice coordinator for the app and one workhorse for each checkout, which
+  works in that checkout and follows its repository's agent instructions
 - claims, the doing of each write, and the control that takes a board back
 - every repository's boards in one browser app, and a choice of checkout for
   each repository

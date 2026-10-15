@@ -472,6 +472,7 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 						browserId,
 						paneId,
 						tabSessionId: state.tabSessionId,
+						checkout: options.checkoutOf(state.browserId),
 					}),
 				);
 				const code = codeForOutcome(outcome);
