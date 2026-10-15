@@ -193,18 +193,40 @@ function panesOfTabSession(tabSessionId: TabSessionId): PaneRegistration[] {
 /**
  * The pane of a tab session that work nobody's command started presents through: the one it
  * presented through last while that is open, else the focused one, else the first. The session
- * remembers it, so its context is still filed under that pane while none of its panes is open.
+ * remembers it and its vault, so its context is still filed under that pane, and it still hears
+ * that vault's changes, while none of its panes is open.
  * @param session The tab session.
+ * @param open The session's open panes.
  * @returns The pane, or null while none of the session's panes is open.
  */
-function presentingPaneOf(session: CodexWorkbenchTabSession): PaneRegistration | null {
-	const open = panesOfTabSession(session.id);
+function presentingPaneOf(
+	session: CodexWorkbenchTabSession,
+	open: readonly PaneRegistration[] = panesOfTabSession(session.id),
+): PaneRegistration | null {
 	if (open.length === 0) {
 		return null;
 	}
-	const pane = presentingPane(session.state.presentingPaneId, open);
-	session.state.presentingPaneId = pane.paneId;
+	const pane = presentingPane(session.state.presenting?.paneId ?? null, open);
+	session.state.presenting = { paneId: pane.paneId, vault: pane.vault };
 	return pane;
+}
+
+/**
+ * Whether a tab session hears a settled change to a board of a vault: one its panes are in, or,
+ * while none of them is open, the vault of the pane it presented through last. A reload closes
+ * every pane of a tab for a moment, and what another agent wrote meanwhile is still its news.
+ * @param session The tab session.
+ * @param vault The vault of the changed board.
+ * @returns True when the change is the session's news.
+ */
+function hearsVault(session: CodexWorkbenchTabSession, vault: string): boolean {
+	const open = panesOfTabSession(session.id);
+	if (open.length === 0) {
+		return session.state.presenting?.vault === vault;
+	}
+	// Remember the presenting pane's vault now, for while none of the panes is open.
+	presentingPaneOf(session, open);
+	return open.some((pane) => pane.vault === vault);
 }
 
 /**
@@ -326,10 +348,10 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		if (open !== null) {
 			return { paneId: open.paneId, clientId: open.clientId };
 		}
-		if (session.state.presentingPaneId === null) {
+		if (session.state.presenting === null) {
 			throw new Error("No pane of this browser tab was ever open to file its context under.");
 		}
-		return { paneId: session.state.presentingPaneId, clientId: null };
+		return { paneId: session.state.presenting.paneId, clientId: null };
 	};
 
 	return {
@@ -349,9 +371,10 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		 * @returns The publisher options.
 		 */
 		semanticPublisherFor: (tabSessionId) => ({
-			feed: workbenchFeedFor((vault) =>
-				panesOfTabSession(tabSessionId).some((pane) => pane.vault === vault),
-			),
+			feed: workbenchFeedFor((vault) => {
+				const session = active?.sessions.list().find(({ id }) => id === tabSessionId);
+				return session !== undefined && hearsVault(session, vault);
+			}),
 			feedId: semanticChangeFeed.feedId,
 			fresh: {
 				/**

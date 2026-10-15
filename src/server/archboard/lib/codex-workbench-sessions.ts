@@ -98,10 +98,11 @@ interface CodexWorkbenchTabSessionState {
 	/** The attempt this conversation's latest voice start began, which its voice notes into. */
 	readonly voiceTrace: SessionVoiceStartTrace;
 	/**
-	 * The pane id work nobody's command started presented through last, which its context is
-	 * filed under while none of the tab's panes is open; null before any was.
+	 * The pane work nobody's command started presented through last, and the vault it was in. While
+	 * none of the tab's panes is open, its context is filed under that pane id, and the changes the
+	 * session hears are those of that vault; null before any pane was open.
 	 */
-	presentingPaneId: string | null;
+	presenting: { readonly paneId: string; readonly vault: string } | null;
 	/** Live while its tab may still use it; ending once the tab has gone, until its threads unload. */
 	phase: "live" | "ending";
 }
@@ -194,7 +195,7 @@ function freshState(): CodexWorkbenchTabSessionState {
 		currentCoordinatorCall: null,
 		threads: new Set(),
 		voiceTrace: sessionVoiceStartTrace(),
-		presentingPaneId: null,
+		presenting: null,
 		phase: "live",
 	};
 }

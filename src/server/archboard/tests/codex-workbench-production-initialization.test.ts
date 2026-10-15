@@ -164,7 +164,7 @@ describe("production Codex generation ownership", () => {
 						currentCoordinatorCall: null,
 						threads: new Set(),
 						voiceTrace: { begin: () => undefined, note: () => undefined },
-						presentingPaneId: null,
+						presenting: null,
 						phase: "live",
 					},
 				)
