@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 42,
+	"version": 44,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T09:19:47.566Z",
+	"updatedAt": "2026-10-15T09:31:26.537Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -7944,7 +7944,7 @@
 		{
 			"id": "nePU8eTs",
 			"name": "TASK-472.10",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "J6AUliSi",
 			"summary": "Live pane connections, presentation state and board announcements, with the vault each pane is in and the checkout registry every pane follows",
 			"content": {
@@ -9468,9 +9468,9 @@
 		{
 			"id": "CMMozJyq",
 			"name": "TASK-472.11",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "nePU8eTs",
-			"summary": "The agent dock shows the conversation of the checkout the user last activated",
+			"summary": "Live pane connections, presentation state and board announcements, with the vault each pane is in, the checkout registry every pane follows, and the checkout whose conversation each tab shows",
 			"content": {
 				"nodes": [
 					{
@@ -9684,7 +9684,7 @@
 						"name": "Tab session presence",
 						"kind": "module",
 						"responsibility": "Which browser tab each pane on screen belongs to, which checkout's conversation the tab shows, and the end of a tab that no pane came back to within 60 seconds",
-						"description": "A socket names its tab in its address, and both panes of one tab name the same one. It lives as long as the server process, so a tab that was present before a Codex child restart is still present after it. The shown checkout is pinned to the first pane's own checkout when it is first read, and only the activation route changes it: what an agent does to a pane never does. It ends with the tab.",
+						"description": "A socket names its tab in its address, and both panes of one tab name the same one. It lives as long as the server process, so a tab that was present before a Codex child restart is still present after it. The shown checkout is pinned on the first read to the checkout of the tab's focused pane, else of the pane that asked, and only the activation route changes it: what an agent does to a pane never does. It ends with the tab.",
 						"parent": "t1dQivSP",
 						"groups": [
 							"panes"
@@ -9792,6 +9792,7 @@
 						"name": "Pane vaults",
 						"kind": "module",
 						"responsibility": "Moves a pane into another vault, re-keying its sockets and registration and forgetting what it said it was reading, and broadcasts machine news to every tab",
+						"description": "It tells nobody that a pane moved: which conversation the tab's agent dock shows stays as it is, because only the person's own act in the page changes that.",
 						"parent": "t1dQivSP",
 						"groups": [
 							"panes"
@@ -9835,6 +9836,7 @@
 						"name": "Shown conversation",
 						"kind": "route",
 						"responsibility": "The person's own act in the page names the checkout whose conversation every pane of the tab shows; a pick of a checkout the tab does not work in is refused",
+						"description": "The page names the pane the person acted in and the vault that pane is in; the server reads the checkout from it. A pick from the dock's list names the checkout itself, and is taken when it is the checkout of a live workhorse of the tab, of one of its panes, or the one shown now; any other is refused as CHECKOUT_NOT_SHOWABLE. Only the browser's own page reaches it.",
 						"parent": "t1dQivSP",
 						"groups": [
 							"panes"
@@ -11088,7 +11090,7 @@
 			}
 		}
 	],
-	"current": "nePU8eTs",
+	"current": "CMMozJyq",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -11130,6 +11132,12 @@
 			"from": "J6AUliSi",
 			"at": "2026-10-15T07:38:05.745Z",
 			"reason": "A pane moved into another vault is told to the Codex workbench, whose gateway presents the pane again with the workhorse of its new checkout"
+		},
+		{
+			"variant": "CMMozJyq",
+			"from": "nePU8eTs",
+			"at": "2026-10-15T09:31:26.537Z",
+			"reason": "A tab shows one checkout's conversation, pinned to its focused pane's checkout on first read and changed only by the person's activation through a route the page alone reaches; a pane's move into another vault no longer moves it"
 		}
 	]
 }

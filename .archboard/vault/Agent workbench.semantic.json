@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 63,
+	"version": 65,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-15T09:19:25.584Z",
+	"updatedAt": "2026-10-15T09:31:26.326Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -11842,7 +11842,7 @@
 		{
 			"id": "uzYVfQyE",
 			"name": "TASK-472.10",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "e3BQcvOM",
 			"summary": "Codex integration inside the server",
 			"content": {
@@ -13306,9 +13306,9 @@
 		{
 			"id": "YjcSRk36",
 			"name": "TASK-472.11",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "uzYVfQyE",
-			"summary": "The agent dock shows the conversation of the checkout the user last activated",
+			"summary": "Codex integration inside the server",
 			"content": {
 				"nodes": [
 					{
@@ -13351,7 +13351,7 @@
 						"name": "Browser gateway",
 						"kind": "module",
 						"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease per tab session, and every pane of a tab is carried out by the workhorse of the checkout the tab shows",
-						"description": "The gateway asks which checkout the pane's tab shows on every read and command, because the person can activate another one at any time. It hears the change and presents every pane of the tab again, with the workhorse of the new checkout. A workhorse's approval terminal is retired once the panes that show its checkout have shown it, and a coordinator's once every pane of the tab has.",
+						"description": "The gateway asks which checkout the pane's tab shows on every read and command, because the person can activate another one at any time. It hears the change and presents every pane of the tab again, with the workhorse of the new checkout. A lease taken before a switch is refused as link_changed. A command runs on the workhorse its lease was claimed for, and once it has run only that workhorse's own link is asked whether it still stands, so a switch meanwhile does not make its outcome unknown. A workhorse's approval terminal is retired once the panes that show its checkout have shown it, and a coordinator's once every pane of the tab has.",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -13637,7 +13637,7 @@
 						"name": "Tab session presence",
 						"kind": "module",
 						"responsibility": "Knows which browser tab each pane on screen belongs to, which checkout's conversation the tab shows, and ends a tab session when no pane of it comes back within 60 seconds",
-						"description": "It lives as long as the server process, not as long as one child. A pane of the tab that comes back within the grace cancels the end, so a reload keeps the conversation. The shown checkout is pinned to the checkout of the first pane that reads it, and only the person's own act in the page changes it, through the activation route: an agent's browser show never does, so the dock never moves while somebody types. It ends with the tab.",
+						"description": "It lives as long as the server process, not as long as one child. A pane of the tab that comes back within the grace cancels the end, so a reload keeps the conversation. The shown checkout is pinned on the first read to the checkout of the tab's focused pane, else of the pane that asked, and only the person's own act in the page changes it, through the activation route: an agent's browser show never does, so the dock never moves while somebody types. It ends with the tab.",
 						"parent": "7TAwfrZF",
 						"groups": [
 							"panes"
@@ -13736,7 +13736,7 @@
 						"name": "Coordinator turn homes",
 						"kind": "module",
 						"responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the dock shows the turn in the right conversation",
-						"description": "A turn that delegated, steered or queued work shows in the conversation of each workhorse it gave work to. A turn that gave none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown. The timeline keeps only the turns of the shown conversation before it spends its budget.",
+						"description": "A turn that delivered, steered or queued work, or whose delivery may have reached the workhorse, shows in the conversation of each workhorse it reached. A delegation the workhorse refused as busy or with an invalid body gave it nothing, and moves the turn nowhere. A turn that gave work to none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown. The timeline keeps only the turns of the shown conversation before it spends its budget.",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -14921,7 +14921,7 @@
 			}
 		}
 	],
-	"current": "uzYVfQyE",
+	"current": "YjcSRk36",
 	"adoptions": [
 		{
 			"variant": "kUF7buv6",
@@ -14964,6 +14964,12 @@
 			"from": "e3BQcvOM",
 			"at": "2026-10-15T07:37:12.903Z",
 			"reason": "A tab session holds one coordinator, which works in a directory of its own, and one workhorse for each checkout, built on first use and working in that checkout; the gateway reads the workhorse of the checkout of the pane"
+		},
+		{
+			"variant": "YjcSRk36",
+			"from": "uzYVfQyE",
+			"at": "2026-10-15T09:31:26.326Z",
+			"reason": "Every pane of a tab shows the conversation of the checkout the person last activated: the tab pins it on first read, only the activation route changes it, the dock lists the tab's workhorses, and a coordinator turn is shown in the conversation of the work it gave"
 		}
 	]
 }
