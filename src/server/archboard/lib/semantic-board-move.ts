@@ -54,6 +54,7 @@ import {
 	requiredVersion,
 	statedContent,
 	statedEnvelope,
+	usableBoard,
 	type WriteEnvelopeSchema,
 } from "@/server/archboard/lib/semantic-write-requests";
 
@@ -248,9 +249,14 @@ async function moveRoute(
 function previewTarget(req: Request, res: Response): { board: string; to: string } | null {
 	const board = req.query["board"];
 	if (typeof board !== "string" || board === "") {
-		res.status(400).json({ success: false, error: "A move preview names its board in ?board=." });
+		res.status(400).json({
+			success: false,
+			code: "BAD_REQUEST",
+			error: "A move preview names its board in ?board=.",
+		});
 		return null;
 	}
+	if (usableBoard({ board }, res) === null) return null;
 	const target = namedVault(req.query["to"]);
 	if (target.ok) return { board, to: target.vault };
 	const { status, code, error } = target.refusal;
@@ -269,15 +275,7 @@ function previewTarget(req: Request, res: Response): { board: string; to: string
 function movePreviewRoute(req: Request, res: Response): void {
 	const asked = previewTarget(req, res);
 	if (asked === null) return;
-	let preview: ReturnType<typeof previewSemanticMove>;
-	try {
-		preview = previewSemanticMove({ vault: vaultOfRequest(req), ...asked });
-	} catch (error) {
-		res
-			.status(400)
-			.json({ success: false, error: error instanceof Error ? error.message : String(error) });
-		return;
-	}
+	const preview = previewSemanticMove({ vault: vaultOfRequest(req), ...asked });
 	if (preview.outcome === "rejected") {
 		answerRefusal(res, preview);
 		return;
