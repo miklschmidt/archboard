@@ -347,12 +347,13 @@ must raise a new approval; never repeat an approval whose outcome is unknown.
 The final status must be stopped. Confirm the owned app-server
 child exits and the browser microphone indicator is gone; CLI status alone
 does not prove browser media cleanup. Keep the dedicated
-Codex roots because they contain the supported sign-in. Remove only the exact
-disposable directory after validating its prefix:
+Codex roots because they contain the supported sign-in. The first command with
+`-C "$accept_home"` registered that directory as an untracked vault, so forget it.
+Then remove only the exact disposable directory after validating its prefix:
 
 ```bash
 case "$accept_home" in
-  /tmp/archboard-voice-acceptance.*) rm -rf -- "$accept_home" ;;
+  /tmp/archboard-voice-acceptance.*) ./bin/archboard repo forget "$accept_home" && rm -rf -- "$accept_home" ;;
   *) echo "refusing to remove unexpected directory path" >&2; exit 1 ;;
 esac
 ```
