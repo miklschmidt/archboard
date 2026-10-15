@@ -46,15 +46,18 @@ function holdingVault(holder: string): string {
  * @param args The command line.
  * @param cwd Where it runs.
  * @param env What this invocation's environment changes.
+ * @param input What to put on standard input.
  * @returns How it exited and what it printed.
  */
 function archboard(
 	args: readonly string[],
 	cwd: string,
 	env: Readonly<Record<string, string | undefined>> = {},
+	input?: string,
 ) {
 	const result = spawnSync(packageBin, [...args], {
 		cwd,
+		input,
 		encoding: "utf8",
 		env: {
 			...fixture.serverEnvironment,
@@ -204,3 +207,31 @@ test("outside any checkout and any vault a command refuses before it starts a se
 	expect(refused.status, refused.failure).toBe(2);
 	expect(await portIsReusable(port)).toBe(true);
 });
+
+test("autostart starts a server without a vault, and the server serves the vault each command names", async () => {
+	const port = await availablePort();
+	// Nothing in this environment names a vault: the server starts without one.
+	const started = { ARCHBOARD_URL: `http://127.0.0.1:${port}`, ARCHBOARD_NO_AUTOSTART: undefined };
+	try {
+		const drawn = archboard(
+			["semantic", "new", "Checkout", "--doing", "drawing a board in the shop"],
+			shop,
+			started,
+			JSON.stringify({ level: "system", nodes: [{ name: "Cart", kind: "service" }] }),
+		);
+		expect(drawn.status, drawn.failure).toBe(0);
+		const boards = (cwd: string, args: readonly string[] = []) => {
+			const result = archboard(["semantic", ...args], cwd, started);
+			expect(result.status, result.failure).toBe(0);
+			return z
+				.object({ boards: z.array(z.object({ name: z.string() })) })
+				.parse(JSON.parse(result.stdout))
+				.boards.map((board) => board.name);
+		};
+		expect(boards(shop)).toEqual(["Checkout"]);
+		expect(boards(fixture.nowhere, ["-C", plans])).toEqual([]);
+	} finally {
+		archboard(["stop"], fixture.nowhere, started);
+	}
+	expect(await portIsReusable(port)).toBe(true);
+}, 60_000);
