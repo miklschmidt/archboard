@@ -23,25 +23,10 @@ interface LockHolder {
 interface LockRecord extends LockHolder {
 	/** Unique acquisition proof; pid alone cannot distinguish two attempts. */
 	readonly token: string;
-	/** Exact note hash committed inside this lease; never exposed as holder state. */
-	readonly committedHash?: string;
-}
-
-/** One-use commit proof left by a released writer for its observed successor. */
-interface LockHandoff {
-	readonly id: string;
-	readonly process: string;
-	readonly since: string;
-	readonly token: string;
-	readonly hash: string;
 }
 
 interface LockHold {
 	readonly holder: Readonly<LockHolder>;
-	/** Disk lease identity used only to stamp a successful note commit. */
-	readonly leaseToken: string;
-	/** Exact committed hash of the immediately preceding lease this waiter saw. */
-	readonly predecessorHash?: string;
 	/** False when this call merely joined a reentrant hold it must not release. */
 	readonly created: boolean;
 }
@@ -198,7 +183,6 @@ export {
 	type ClaimEntry,
 	type ClaimRevocation,
 	type HolderKind,
-	type LockHandoff,
 	type LockHold,
 	type LockHolder,
 	type LockRecord,

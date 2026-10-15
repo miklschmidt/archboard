@@ -65,7 +65,6 @@ export {
 	boardLockState,
 	onBoardLockChanged,
 	onBoardSweep,
-	recordLockCommit,
 	releaseHold,
 	watchBoardLocks,
 	type WatchedBoard,
