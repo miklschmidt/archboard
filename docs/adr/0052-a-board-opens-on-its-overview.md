@@ -44,7 +44,9 @@ author:
   between a container and a part that it holds is not drawn either, because
   the nesting already shows it. The overview draws no flows.
 - Everything. It shows every part and every relationship, as the whole variant
-  did before. A reader asks for it as the view named `Everything`.
+  did before. A reader asks for it as the view named `Everything`. The view
+  list in the browser offers it last and dimmed, after the authored views: it
+  is the reading a person reaches for least.
 
 No authored view can be named `Overview` or `Everything`. A write that names one
 is refused.

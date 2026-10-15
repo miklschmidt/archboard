@@ -60,30 +60,30 @@ test("a variant with two views offers both, and says which one is on screen", as
 	}
 	mountStage(null, { onViewChange: record });
 	await settle();
-	// The overview is first, Everything second, then each named way of reading
-	// it (ADR 0052). Each button says the view's name and nothing else: the grammar is what the
+	// The overview is first, then each named way of reading it, and Everything
+	// last (ADR 0052). Each button says the view's name and nothing else: the grammar is what the
 	// picture is, and writing it under a name that already says it read as "The
 	// parts the parts".
 	expect(choices().map((one) => one.textContent)).toEqual([
 		"Overview",
-		"Everything",
 		"The parts",
 		"One edit, in order",
+		"Everything",
 	]);
-	expect(choices()[2]?.getAttribute("aria-pressed")).toBe("true");
-	expect(choices()[3]?.getAttribute("aria-pressed")).toBe("false");
+	expect(choices()[1]?.getAttribute("aria-pressed")).toBe("true");
+	expect(choices()[2]?.getAttribute("aria-pressed")).toBe("false");
 
 	// Choosing another reports it upward. The pane does not decide what it is
 	// showing; the shell does, because two panes hold two answers.
 	act(() => {
-		fireEvent.click(choices()[3]!);
+		fireEvent.click(choices()[2]!);
 	});
 	expect(picked).toEqual(["v2"]);
 
 	// Everything is asked for by its own id, and the overview, which a board
 	// opens on, is the absence of a view.
 	act(() => {
-		fireEvent.click(choices()[1]!);
+		fireEvent.click(choices()[3]!);
 	});
 	act(() => {
 		fireEvent.click(choices()[0]!);
@@ -96,7 +96,7 @@ test("the view the pane is told to read rides in the request", async () => {
 	mountStage(null, { view: "v2", onViewChange: ignoreChoice });
 	await settle();
 	expect(renderCalls().at(-1)).toContain("view=v2");
-	expect(choices()[3]?.getAttribute("aria-pressed")).toBe("true");
+	expect(choices()[2]?.getAttribute("aria-pressed")).toBe("true");
 });
 
 test("two panes read one board two ways at once", async () => {
@@ -124,11 +124,11 @@ test("a variant that names no view of its own offers its overview and everything
 	expect(choices()[0]?.getAttribute("aria-pressed")).toBe("true");
 });
 
-test("a variant with one view still offers the overview and everything beside it", async () => {
+test("a variant with one view still offers the overview before it and everything after it", async () => {
 	server.reply = { status: 200, body: { ...drawing(1), view: VIEWS[0], views: [VIEWS[0]] } };
 	mountStage(null, { view: "v1", onViewChange: ignoreChoice });
 	await settle();
-	expect(choices().map((one) => one.textContent)).toEqual(["Overview", "Everything", "The parts"]);
+	expect(choices().map((one) => one.textContent)).toEqual(["Overview", "The parts", "Everything"]);
 	expect(choices()[0]?.getAttribute("aria-pressed")).toBe("false");
 });
 
@@ -152,8 +152,8 @@ test("a selected view with no subjects keeps its resolved identity and remains v
 	});
 	await settle();
 
-	expect(choices().map((one) => one.textContent)).toEqual(["Overview", "Everything", "The parts"]);
-	expect(choices()[2]?.getAttribute("aria-pressed")).toBe("true");
+	expect(choices().map((one) => one.textContent)).toEqual(["Overview", "The parts", "Everything"]);
+	expect(choices()[1]?.getAttribute("aria-pressed")).toBe("true");
 	const stage = part("semantic-board-stage");
 	expect(stage.getAttribute("data-state")).toBe("empty");
 	expect(stage.textContent).toContain("The parts is empty on Proposal");
