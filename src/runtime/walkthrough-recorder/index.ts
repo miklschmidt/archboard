@@ -128,11 +128,24 @@ interface RecordedWalkthrough {
 }
 
 /**
+ * What the recording page's address names: the board in pane A, the repository
+ * it is in, the walkthrough and the language. It is read by the browser's own
+ * workspace address, so it is the contract between the recorder and the page.
+ */
+type RecordingPageAddress = Pick<
+	WalkthroughRecordingRequest,
+	"serverUrl" | "variant" | "repository" | "language"
+> & {
+	readonly board: Pick<SemanticBoard, "name">;
+	readonly walkthrough: Pick<WalkthroughRecordingRequest["walkthrough"], "id">;
+};
+
+/**
  * The address of the recording page.
  * @param request What to record.
  * @returns The page's URL.
  */
-function pageUrl(request: WalkthroughRecordingRequest): string {
+function recordingPageUrl(request: RecordingPageAddress): string {
 	const url = new URL("/", request.serverUrl);
 	const { board, variant } = request;
 	url.searchParams.set("paneA", variant === null ? board.name : `${board.name}@${variant}`);
@@ -214,7 +227,7 @@ async function openRecordingPage(
 	chromium: HeadlessChromium,
 	request: WalkthroughRecordingRequest,
 ): Promise<HeadlessWindow> {
-	const url = pageUrl(request);
+	const url = recordingPageUrl(request);
 	try {
 		await chromium.browser.call(
 			"Browser.grantPermissions",
@@ -460,6 +473,7 @@ export {
 	drive,
 	recordWalkthrough,
 	recordingFlags,
+	recordingPageUrl,
 	type RecordedWalkthrough,
 	type RecordingPageHandle,
 	type WalkthroughRecordingErrorCode,
