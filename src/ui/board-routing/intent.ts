@@ -10,7 +10,7 @@
 // whether or not it was met, and a gesture that failed clears it at once. There
 // is no marker left over for a later change to be mistaken for.
 
-import { boardIn, viewIn, type WorkspaceAddress } from "@/ui/board-routing/address";
+import { boardIn, repositoryIn, viewIn, type WorkspaceAddress } from "@/ui/board-routing/address";
 
 /** What a person's gesture asked the workspace to become. */
 type NavigationIntent =
@@ -19,6 +19,11 @@ type NavigationIntent =
 			readonly paneId: string;
 			/** The board that pane showed when the gesture was made. */
 			readonly from: string | null;
+			/**
+			 * The repository of that board: the same key in another repository is
+			 * another board (ADR 0050).
+			 */
+			readonly repository: string | null;
 	  }
 	| {
 			readonly kind: "panes";
@@ -65,7 +70,10 @@ function met(intent: NavigationIntent, address: WorkspaceAddress): boolean {
 	// The pane the person asked to move has moved. A board open is expected only
 	// once its own command has been seen through, so there is no window in which
 	// somebody else's change could be taken for theirs.
-	return boardIn(address, intent.paneId) !== intent.from;
+	return (
+		boardIn(address, intent.paneId) !== intent.from ||
+		repositoryIn(address, intent.paneId) !== intent.repository
+	);
 }
 
 /**

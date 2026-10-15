@@ -157,7 +157,7 @@ function picker() {
 			if (!record.status.registered) {
 				throw new Error("No pane is open; the browser command names nothing.");
 			}
-			return { board };
+			return { board, repository: null };
 		},
 	};
 	return {

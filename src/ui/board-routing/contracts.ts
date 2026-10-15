@@ -5,13 +5,18 @@
 import type { WorkspaceAddress } from "@/ui/board-routing/address";
 
 /**
- * How pointing one pane at one board ended. A board that opened comes back
- * with the key the server resolved it to, which is the only spelling that can
- * be compared with what a pane reports.
+ * Where the server says it put a pane: the key it resolved the board to, which
+ * is the only spelling that can be compared with what a pane reports, and the
+ * repository the pane is in now, which is what the pane reports beside it.
  */
-type OpenOutcome =
-	| { readonly kind: "opened"; readonly boardKey: string }
-	| { readonly kind: "unreachable" };
+interface OpenedBoard {
+	readonly boardKey: string;
+	/** The repository the server lists the pane's vault under, or null when none. */
+	readonly repository: string | null;
+}
+
+/** How pointing one pane at one board ended. */
+type OpenOutcome = ({ readonly kind: "opened" } & OpenedBoard) | { readonly kind: "unreachable" };
 
 /** The workspace the address bar reads and addresses. */
 interface WorkspacePort {
@@ -56,4 +61,4 @@ interface WorkspacePort {
 	readonly reportUnreachable: (boardKeys: readonly string[]) => void;
 }
 
-export type { OpenOutcome, WorkspacePort };
+export type { OpenedBoard, OpenOutcome, WorkspacePort };

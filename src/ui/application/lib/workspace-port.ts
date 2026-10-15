@@ -13,7 +13,7 @@ import { userMoves } from "@/ui/application/lib/user-moves";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { PaneReadings } from "@/ui/application/hooks/use-pane-reading";
 import type { Panes } from "@/ui/application/hooks/use-panes";
-import type { OpenOutcome, WorkspacePort } from "@/ui/board-routing/contracts";
+import type { OpenedBoard, OpenOutcome, WorkspacePort } from "@/ui/board-routing/contracts";
 import type { WorkspaceAddress, WorkspaceAddressing } from "@/ui/board-routing";
 import { showBoard } from "@/ui/pane-session";
 
@@ -122,9 +122,9 @@ interface WorkspacePortDeps {
 	 * @param clientId The pane's identity to the server.
 	 * @param boardKey The board.
 	 * @param vault The vault the board is in.
-	 * @returns The board the server says the pane is on now.
+	 * @returns The board the server says the pane is on now, and the repository it is in.
 	 */
-	readonly show?: (clientId: string, boardKey: string, vault: string) => Promise<string>;
+	readonly show?: (clientId: string, boardKey: string, vault: string) => Promise<OpenedBoard>;
 }
 
 /**
@@ -133,15 +133,15 @@ interface WorkspacePortDeps {
  * @param clientId The pane's identity to the server.
  * @param boardKey The board.
  * @param vault The vault the board is in.
- * @returns The board key the server says the pane is on.
+ * @returns The board key the server says the pane is on, and the repository it is in.
  */
 async function showThroughServer(
 	clientId: string,
 	boardKey: string,
 	vault: string,
-): Promise<string> {
+): Promise<OpenedBoard> {
 	const reply = await showBoard({ vault, board: boardKey, pane: clientId });
-	return reply.board;
+	return { boardKey: reply.board, repository: reply.repository };
 }
 
 /**
@@ -226,7 +226,7 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 			// else, so what the address bar asks for is theirs.
 			const move = userMoves(panes.handles, paneId);
 			try {
-				return { kind: "opened", boardKey: await show(clientId, boardKey, vault) };
+				return { kind: "opened", ...(await show(clientId, boardKey, vault)) };
 			} catch {
 				move.failed();
 				return { kind: "unreachable" };

@@ -11,8 +11,13 @@
 // the first writes the address from a workspace that is about to change again.
 // It is over when the pane has been seen to move — or when that pane is out of
 // contact, since nothing better is coming.
+//
+// Where a pane is means its board and the repository the board is in: the same
+// key in another repository is another board (ADR 0050), so a pane moving
+// between them has moved.
 
-import { boardIn, type WorkspaceAddress } from "@/ui/board-routing/address";
+import { boardIn, repositoryIn, type WorkspaceAddress } from "@/ui/board-routing/address";
+import type { OpenedBoard } from "@/ui/board-routing/contracts";
 import type { NavigationIntent } from "@/ui/board-routing/intent";
 
 /** Who asked for an operation. */
@@ -29,6 +34,8 @@ interface Operation {
 	readonly boardKey: string | null;
 	/** What that pane was showing when it was asked, so its move is observable. */
 	readonly from: string | null;
+	/** The repository of that board, when it was asked. */
+	readonly fromRepository: string | null;
 	/** The server's answer, or null while it has not given one. */
 	readonly answer: OperationAnswer | null;
 	/**
@@ -37,6 +44,8 @@ interface Operation {
 	 * the vault knows which board a spelling resolves to (ADR 0004).
 	 */
 	readonly openedKey: string | null;
+	/** The repository the server says the pane is in with that board. */
+	readonly openedRepository: string | null;
 	/**
 	 * What the user asked for, when this is theirs. The operation owns it, so
 	 * an expectation exists only between its pane moving and the address being
@@ -66,8 +75,10 @@ function startOperation(
 		paneId,
 		boardKey,
 		from: boardIn(displayed, paneId),
+		fromRepository: repositoryIn(displayed, paneId),
 		answer: null,
 		openedKey: null,
+		openedRepository: null,
 		intent,
 	};
 }
@@ -76,15 +87,20 @@ function startOperation(
  * Take the server's answer.
  * @param operation The operation.
  * @param answer What the server said.
- * @param openedKey The board it opened, as the server keys it, when it opened one.
+ * @param opened The board it opened and the repository it put the pane in, when it opened one.
  * @returns The operation, answered.
  */
 function operationAnswered(
 	operation: Operation,
 	answer: OperationAnswer,
-	openedKey: string | null = null,
+	opened: OpenedBoard | null = null,
 ): Operation {
-	return { ...operation, answer, openedKey };
+	return {
+		...operation,
+		answer,
+		openedKey: opened?.boardKey ?? null,
+		openedRepository: opened?.repository ?? null,
+	};
 }
 
 /**
@@ -107,13 +123,18 @@ function operationSettled(
 	if (operation.answer === "unreachable") {
 		return true;
 	}
-	const shown = boardIn(displayed, operation.paneId);
 	// That the pane moved at all is what says the open arrived. A pane already
-	// showing the board the server opened has nothing to wait for: that is a
-	// user opening the board their pane was on, which moves nothing and is
-	// still over. Both keys come from the server, so the same board is the same
-	// string however the request spelled the address.
-	return shown !== operation.from || shown === operation.openedKey || !ready(operation.paneId);
+	// showing the board the server opened, in the repository the server put it
+	// in, has nothing to wait for: that is a user opening the board their pane
+	// was on, which moves nothing and is still over. Every key and repository
+	// here comes from the server, so the same board is the same string however
+	// the request spelled the address.
+	return (
+		operationMovedPane(operation, displayed) ||
+		(boardIn(displayed, operation.paneId) === operation.openedKey &&
+			repositoryIn(displayed, operation.paneId) === operation.openedRepository) ||
+		!ready(operation.paneId)
+	);
 }
 
 /**
@@ -125,7 +146,10 @@ function operationSettled(
  * @returns True when the pane moved.
  */
 function operationMovedPane(operation: Operation, displayed: WorkspaceAddress): boolean {
-	return boardIn(displayed, operation.paneId) !== operation.from;
+	return (
+		boardIn(displayed, operation.paneId) !== operation.from ||
+		repositoryIn(displayed, operation.paneId) !== operation.fromRepository
+	);
 }
 
 export {

@@ -20,6 +20,9 @@ import type {
 } from "@/ui/shell";
 import type { PaneStatus } from "@/ui/types";
 
+/** What the server says a pane is showing after a show, and the repository it is in. */
+type ShownBoard = Pick<Awaited<ReturnType<typeof showBoard>>, "board" | "repository">;
+
 /** What the actions act on. */
 interface ShellActionDeps {
 	readonly setTheme: (theme: ThemeChoice) => void;
@@ -35,9 +38,9 @@ interface ShellActionDeps {
 	 * @param board The board key.
 	 * @param pane The pane's identity to the server.
 	 * @param vault The vault the board is in, which the pane moves into.
-	 * @returns What the server says the pane is showing.
+	 * @returns What the server says the pane is showing, and the repository it is in.
 	 */
-	readonly show?: (board: string, pane: string, vault: string) => Promise<{ board: string }>;
+	readonly show?: (board: string, pane: string, vault: string) => Promise<ShownBoard>;
 	/**
 	 * Say that the user asked for a pane to move (ADR 0034). Supplied by a test; the pane's own
 	 * session otherwise.
@@ -63,7 +66,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 	const moving = deps.userMoves ?? ((paneId: string): UserMove => userMoves(panes.handles, paneId));
 	const show =
 		deps.show ??
-		((board: string, pane: string, vault: string): Promise<{ board: string }> =>
+		((board: string, pane: string, vault: string): Promise<ShownBoard> =>
 			showBoard({ vault, board, pane }));
 	/**
 	 * Show a listed board in one pane.
@@ -74,7 +77,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 	async function selectBoard(key: string, inPane?: string, repository?: string): Promise<void> {
 		const paneId = inPane ?? panes.active.status.paneId;
 		const { status } = recordFor(panes.records, paneId);
-		const { clientId, boardKey } = status;
+		const { clientId, boardKey, repository: from } = status;
 		const place = placeFor(deps.catalog, status, repository);
 		if (typeof place !== "string") {
 			deps.notices.raise(place);
@@ -83,11 +86,16 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 		const vault = place;
 		// The command waits for the address bar's one slot, so what the person
 		// just asked for is the last thing the server is given.
-		const permission = await deps.addressing.claim({ kind: "board", paneId, from: boardKey });
+		const permission = await deps.addressing.claim({
+			kind: "board",
+			paneId,
+			from: boardKey,
+			repository: from,
+		});
 		const move = moving(paneId);
 		try {
 			const opened = await show(key, clientId, vault);
-			permission.move.done(opened.board);
+			permission.move.done(opened.board, opened.repository);
 			deps.notices.dismiss("board-command");
 			// The listing says which pane holds what, and this just moved one.
 			deps.catalog.refresh();
