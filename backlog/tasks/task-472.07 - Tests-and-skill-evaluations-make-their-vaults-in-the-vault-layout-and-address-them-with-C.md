@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 04:17'
+updated_date: '2026-10-15 04:51'
 labels: []
 dependencies:
   - TASK-472.06
@@ -55,4 +55,16 @@ System tests, fixtures and the skill evaluation harness point `ARCHBOARD_VAULT` 
 
 <!-- SECTION:NOTES:BEGIN -->
 Handed over from the review of TASK-472.01 (2026-10-15): about 25 board-store tests, 3 engine lock tests and the code-check unit tests still set and restore process.env.ARCHBOARD_VAULT and load the store late for that reason, though nothing on their path reads it since the refactor. Delete the setup and restore, use static imports, and drop the now false comment that config.ts snapshots the environment in one-write.test.ts, aggregate-writes.test.ts and discard.test.ts.
+
+Built (2026-10-15):
+- tests/system/support/test-vault.ts names the layout: vaultIn(<dir>) makes <dir>/.archboard/vault, holderOf(vault) refuses a vault outside the layout, listOnlyVault(registry, vault) writes a registry that lists one untracked vault.
+- startOwnedServer keeps a registry of its own in its namespace and lists only its vault there, so /api/served-vault is that vault without ARCHBOARD_VAULT. A caller that names ARCHBOARD_REPOS keeps its own registry, and nothing is added to it. OwnedServer.registry names the one in use.
+- runServerCli (tests/system/support/run-cli.ts) and the browser CLI helper take the server, run in the vault's holder and pass the server's registry. Running in the holder (not -C) because -C is refused on start, stop, status and browser panes/open.
+- RepositoryFixture keeps its vault at <root>/boards/.archboard/vault (outside nowhere); its unused run() is removed. package-cli keeps its vault at <outside>/.archboard/vault. install-fixture names no vault, so install-skill suggests <repo>/.archboard/vault. process-http drops the vault and its unused CLI helpers; the lock peer gets its vault through ARCHBOARD_TEST_LOCK_VAULT.
+- Module tests under src/ no longer set ARCHBOARD_VAULT; in-process CLI tests use -C <tmp> and an isolated ARCHBOARD_REPOS.
+- Skill evaluation: the run's vault is <world>/flask/.archboard/vault, made after the clone; runEnvironment names no vault; registerRepo:false fixtures forget the checkout after the snapshot; reaudit reads old batches at world/vault; guardrails and classify resolve board paths under the checkout.
+Removed owners (TASK-472.09 owns the refusal of the variable): the environment-origin cases of vault-finder.test.ts and tests/system/cli/vault-finding.test.ts, the env-suggested vault case of install-targets, the environment-vault naming assertion of repositories.test.ts, the ARCHBOARD_VAULT served-vault assertion of vault-naming.test.ts, the no-vault start mode of local-bind (every server now starts without one).
+Left: install-targets still asserts that the setup block exports ARCHBOARD_VAULT (product output until TASK-471.03). Production readers (config.ts, repositories.ts environmentVault, addressed-vault, repo-setup-block, scripts/readme-assets/server.ts, scripts/build-pipeline-example.ts) are TASK-472.09's sweep and now have no test owner.
+Boards: no dogfood board was edited. The Skill evaluation board's "Per-run server" (PEfE7dCL) and "Archboard server" (EJ2b3Szn) say the server runs against the run's vault; it now starts with none and each call names the run's vault.
+Gate: bun run check exit 0 with ARCHBOARD_REPOS=/tmp/t07-gate-repos.json, which no test created.
 <!-- SECTION:NOTES:END -->
