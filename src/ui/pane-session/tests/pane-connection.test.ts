@@ -2,6 +2,7 @@ import { afterAll, expect, spyOn, test } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 import { createPaneCore } from "@/ui/pane-session/core";
+import { onSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import type { PaneStatus } from "@/ui/types";
 
 GlobalRegistrator.register({ url: "http://localhost/" });
@@ -343,6 +344,28 @@ test("a take-back answered after the pane moved to another checkout does not fre
 		// The board of the new checkout is somebody else's until the server says it is not.
 		expect(pane.holders.at(-1)).not.toBeNull();
 	} finally {
+		pane.restore();
+		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
+	}
+});
+
+test("news of a board is news of the vault the pane is in, before and after the server moves it", async () => {
+	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
+	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
+	const pane = await paneOnPayments();
+	const heard: string[] = [];
+	const stop = onSemanticBoardChange((vault) => {
+		heard.push(vault);
+	});
+	try {
+		deliver(pane.socket, { type: "board_note", semantic: true, board: "payments", version: 2 });
+		chooseOtherCheckout(pane.socket);
+		deliver(pane.socket, { type: "board_note", semantic: true, board: "payments", version: 7 });
+		// The server sends a pane only its own vault's news, so the board the
+		// canvas reads again is the one of the vault it moved to.
+		expect(heard).toEqual([LEFT_VAULT, CHOSEN_VAULT]);
+	} finally {
+		stop();
 		pane.restore();
 		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
 	}
