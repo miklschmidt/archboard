@@ -27,7 +27,10 @@ import {
 	SemanticRenderReplySchema,
 	type SemanticRenderReply,
 } from "@/shared/semantic-board/index";
-import type { SemanticRenderRequest } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import {
+	comparisonKey,
+	type SemanticRenderRequest,
+} from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { sameBoardName } from "@/ui/semantic-board-canvas/lib/address";
 
 /** What a cached picture has to agree with to be shown. */
@@ -99,7 +102,7 @@ function pictureKey(request: SemanticRenderRequest, stamp: PictureStamp): string
 		request.board,
 		request.variant ?? "",
 		request.view ?? "",
-		request.comparison === false ? "plain" : "compared",
+		comparisonKey(request),
 		request.layout ?? DEFAULT_LAYOUT_ENGINE,
 		stamp.version,
 		stamp.fingerprint,

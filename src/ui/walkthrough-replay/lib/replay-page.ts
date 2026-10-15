@@ -32,8 +32,10 @@ import { driveFramesFrom } from "@/ui/frame-clock";
 import { createSteppedClock, type SteppedClock } from "@/ui/frame-clock/replay";
 import {
 	chooseLayoutEngine,
+	pictureSource,
 	readBoardsFrom,
 	sameBoardName,
+	takePicturesFrom,
 	type SemanticPaneReading,
 } from "@/ui/semantic-board-canvas";
 import { ReplayStage } from "@/ui/walkthrough-replay/components/ReplayStage";
@@ -62,6 +64,27 @@ interface Rendering {
 	beat: number | null;
 	/** The next frame to draw. */
 	next: number;
+}
+
+/**
+ * Draw every picture of the page against the variant a talk was recorded with, whichever
+ * variant the pane asks for: a talk read against a variant draws that comparison in every
+ * frame, and no pane could have asked for it.
+ * @param against The variant the talk is read against.
+ */
+function drawAgainst(against: string): void {
+	const source = pictureSource();
+	takePicturesFrom({
+		...source,
+		/**
+		 * Draw the picture the pane asked for, read against the talk's variant.
+		 * @param request What the pane asked for.
+		 * @param client The page's cache.
+		 * @param signal Cancels the read.
+		 * @returns The drawing.
+		 */
+		draw: (request, client, signal) => source.draw({ ...request, against }, client, signal),
+	});
 }
 
 /**
@@ -187,6 +210,7 @@ class WalkthroughReplay {
 			next: 0,
 		};
 		readBoardsFrom(talkReads(talk, (board) => rendering.foreign.push(board)));
+		if (talk.board.against !== undefined) drawAgainst(talk.board.against);
 		this.#rendering = rendering;
 		createRoot(this.#root).render(
 			createElement(ReplayStage, {
