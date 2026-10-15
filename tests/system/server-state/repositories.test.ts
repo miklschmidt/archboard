@@ -159,13 +159,10 @@ describe.serial("the repositories of the navigator", () => {
 		expect(chose.status).toBe(200);
 		const moved = await pane.waitFor("pane_board", mark);
 		expect(moved).toMatchObject({ board: "payments", vault: worktreeVault, repository: ORDERS });
-		// The pane reads who holds its board and what an agent has in the vault as
-		// news of the vault it is in, so both come after the move that put it there.
-		const movedAt = pane.events.indexOf(moved!);
-		for (const type of ["board_lock", "agent_activity"]) {
-			const told = await pane.waitFor(type, mark);
-			expect(pane.events.indexOf(told!)).toBeGreaterThan(movedAt);
-		}
+		// The pane reads who holds its board as news of the vault it is in, so it
+		// comes after the move that put it there.
+		const told = await pane.waitFor("board_lock", mark);
+		expect(pane.events.indexOf(told!)).toBeGreaterThan(pane.events.indexOf(moved!));
 		await pane.waitFor("repositories_changed", mark);
 		expect(await elsewhere.waitFor("repositories_changed", elsewhereMark)).toBeDefined();
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);

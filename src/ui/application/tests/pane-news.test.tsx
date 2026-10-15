@@ -151,6 +151,7 @@ test("a claim, an agent's doing, its activity and a pane status reach the shell 
 	act(() =>
 		socket.say({
 			type: "agent_activity",
+			vault: SERVED.vault,
 			activity: [{ board: "pipeline", claim: CLAIM, doing: DOING }],
 		}),
 	);

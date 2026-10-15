@@ -152,7 +152,7 @@ test("a board stops being shown when the last pane showing it in its vault lets 
 	expect(releasedBoards([checkout], [elsewhere])).toEqual([checkout]);
 });
 
-test("what an agent does in a vault is shown only while a pane of the tab is in it", () => {
+test("what an agent does in a vault is shown whether or not a pane of the tab is in it", () => {
 	const since = "2026-10-15T00:00:00.000Z";
 	const claim = { id: "agent-1", kind: "agent", since, until: since, process: "codex" } as const;
 	const entry = { board: "Checkout", claim, doing: null };
@@ -173,13 +173,14 @@ test("what an agent does in a vault is shown only while a pane of the tab is in 
 			catalog: catalogOf(),
 			presentation: null,
 			notices: [],
-			// The last snapshot this tab heard of VAULT, before its pane moved out.
 			agentActivity: { [VAULT]: { Checkout: entry } },
 		});
 	expect(viewWith(VAULT).repositories[0]?.activity).toEqual({ Checkout: entry });
-	// The server tells a vault's activity only to the panes in it, so once none
-	// is, what the tab heard last is old news.
-	expect(viewWith("/work/blog/.archboard/vault").repositories[0]?.activity).toEqual({});
+	// Every pane hears every vault's account (ADR 0022), so the navigator marks a
+	// board an agent has in a repository no pane is reading.
+	expect(viewWith("/work/blog/.archboard/vault").repositories[0]?.activity).toEqual({
+		Checkout: entry,
+	});
 });
 
 test("pane news keeps the repositories the navigator lists", () => {
@@ -202,9 +203,4 @@ test("pane news keeps the repositories the navigator lists", () => {
 		holder: { id: "agent-1", kind: "agent", since: "", until: "", process: "codex" },
 	});
 	expect(assembleShellView({ ...inputs, records: claimed }).repositories).toBe(before);
-	// Pane B arriving in another vault changes which activity the tab hears.
-	const moved = patchRecord(claimed, "B", {
-		status: { ...emptyPaneStatus("B"), vault: "/work/blog/.archboard/vault" },
-	});
-	expect(assembleShellView({ ...inputs, records: moved }).repositories).not.toBe(before);
 });

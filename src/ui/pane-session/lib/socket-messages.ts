@@ -141,15 +141,15 @@ function boardDoing(context: MessageContext, data: WebSocketMessage): void {
 }
 
 /**
- * Which boards an agent is working on, across this whole server (ADR 0022).
- * Boardless and sent to every client; the shell replaces its whole map, so
- * two panes hearing the same snapshot say the same thing twice, harmlessly.
+ * Which boards an agent is working on in one vault (ADR 0022). Boardless and
+ * sent to every client, naming its vault; the shell replaces that vault's whole
+ * map, so two panes hearing the same snapshot say the same thing twice, harmlessly.
  * @param context The pane.
  * @param data The message.
  */
 function agentActivity(context: MessageContext, data: WebSocketMessage): void {
-	if (Array.isArray(data.activity)) {
-		context.onAgentActivity?.(context.vault(), data.activity);
+	if (typeof data.vault === "string" && Array.isArray(data.activity)) {
+		context.onAgentActivity?.(data.vault, data.activity);
 	}
 }
 

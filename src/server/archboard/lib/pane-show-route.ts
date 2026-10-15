@@ -24,7 +24,6 @@ import {
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
 import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
-import { tellPaneAboutVault } from "@/server/archboard/lib/board-announcements";
 import {
 	boardForPane,
 	paneFromRequest,
@@ -76,13 +75,10 @@ function showPaneRoute(req: Request, res: Response): void {
 	const moved = agentSwitch(body, pane, key);
 	// A pane named by a show of another repository's board moves into that
 	// repository's vault first, so the board's news reaches it from here on.
-	const changedVault = movePaneVault(pane.clientId, vault);
+	movePaneVault(pane.clientId, vault);
 	const repository = repositoryOfVault(vault);
 	sendToPane(pane.clientId, { type: "pane_board", identity, vault, repository }, key);
 	arrivedOnBoard(pane.clientId, key);
-	if (changedVault) {
-		tellPaneAboutVault(pane.clientId, vault);
-	}
 	// A pane on a different board is a different context, and the workbench has
 	// to hear it from here: the pane's own registration will say the same thing a
 	// moment later, and until it does an agent would answer about the old board.

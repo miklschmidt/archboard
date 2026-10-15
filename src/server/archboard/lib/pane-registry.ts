@@ -153,20 +153,6 @@ function broadcast(message: WebSocketMessage, vault: string, board: string): voi
 }
 
 /**
- * Broadcast something that is not about a board to the clients of one vault.
- *
- * Only the navigator's agent activity qualifies: it is one thing behind every
- * board of the vault, so a client applies it without asking which board the
- * message came from. Kept separate from `broadcast` so that omitting the board
- * key stays a deliberate act rather than a missing argument.
- * @param vault The vault whose clients hear it.
- * @param message The boardless message to send.
- */
-function broadcastBoardless(vault: string, message: WebSocketMessage): void {
-	sendToVaultClients(vault, JSON.stringify(message));
-}
-
-/**
  * Deliver one serialized message to every live socket of one pane.
  * @param clientId The pane's client id.
  * @param data The JSON already serialized for the wire.
@@ -544,7 +530,6 @@ export {
 	boardForPane,
 	boardsOnScreen,
 	broadcast,
-	broadcastBoardless,
 	browserLeaseLedger,
 	clientIds,
 	clients,

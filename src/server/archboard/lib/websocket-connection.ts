@@ -272,17 +272,15 @@ function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
 
 /**
  * Tell a freshly admitted pane what it needs to know beyond its board: where
- * that board's lock stands, and which boards an agent has across the vault.
+ * that board's lock stands, and which boards an agent has in every vault.
  * @param ws The socket.
  * @param clientId The pane's client id, or null for an anonymous socket.
  * @param startingKey The board the pane starts on, or null when it starts on none.
- * @param vault The vault the pane named.
  */
 function announceToNewPane(
 	ws: WebSocket,
 	clientId: string | null,
 	startingKey: string | null,
-	vault: string,
 ): void {
 	// Where its lock stands. A broadcast only reaches panes that were already
 	// connected, so a tab that has just arrived — or come back from a dropped
@@ -290,9 +288,11 @@ function announceToNewPane(
 	if (clientId !== null && startingKey !== null) {
 		tellPaneAboutLock(clientId, startingKey);
 	}
-	// And which boards an agent has right now, across the whole vault (ADR
-	// 0022): the same reasoning, for the navigator rather than the pane.
-	ws.send(JSON.stringify(agentActivity.snapshot(vault)));
+	// And which boards an agent has right now, in every vault (ADR 0022): the
+	// same reasoning, for the navigator rather than the pane.
+	for (const snapshot of agentActivity.snapshots()) {
+		ws.send(JSON.stringify(snapshot));
+	}
 }
 
 /** What one accepted socket is registered as, before it is presented anything. */
@@ -399,7 +399,7 @@ async function acceptWebSocketConnection(
 	logger.info(
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);
-	announceToNewPane(ws, socket.clientId, startingKey, socketVaults.get(ws) ?? vault);
+	announceToNewPane(ws, socket.clientId, startingKey);
 	listenForCodexRequests(ws, socket);
 }
 
