@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 44,
+	"version": 45,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-15T03:53:02.380Z",
+	"updatedAt": "2026-10-15T04:08:50.726Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -11142,7 +11142,7 @@
 		{
 			"id": "iQ3Y0ErY",
 			"name": "TASK-436.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Po5nqvPy",
 			"summary": "Headless board and walkthrough rendering, recording and encoding",
 			"content": {
@@ -12887,7 +12887,7 @@
 		{
 			"id": "ZQvCed7x",
 			"name": "TASK-472.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "iQ3Y0ErY",
 			"summary": "Headless board and walkthrough rendering, recording and encoding",
 			"content": {
@@ -14630,7 +14630,7 @@
 			}
 		}
 	],
-	"current": "iQ3Y0ErY",
+	"current": "ZQvCed7x",
 	"adoptions": [
 		{
 			"variant": "PfFN8kCs",
@@ -14679,6 +14679,12 @@
 			"from": "Po5nqvPy",
 			"at": "2026-10-07T01:08:50.379Z",
 			"reason": "Corrected existing rasterizer and recording bindings to their actual public entry points"
+		},
+		{
+			"variant": "ZQvCed7x",
+			"from": "iQ3Y0ErY",
+			"at": "2026-10-15T04:08:50.726Z",
+			"reason": "The recording page names the repository of the command's vault"
 		}
 	],
 	"shelvings": [

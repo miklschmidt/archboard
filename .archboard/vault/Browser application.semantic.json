@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 57,
+	"version": 58,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-15T03:53:03.531Z",
+	"updatedAt": "2026-10-15T04:08:50.944Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -6837,7 +6837,7 @@
 		{
 			"id": "Du6umKm2",
 			"name": "TASK-472.05",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "8HM8SuqH",
 			"summary": "Service level: browser application modules. Follow linked subjects for related levels.",
 			"content": {
@@ -8041,7 +8041,7 @@
 		{
 			"id": "QQyrWqEG",
 			"name": "TASK-472.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Du6umKm2",
 			"summary": "Service level: browser application modules. Follow linked subjects for related levels.",
 			"content": {
@@ -9243,7 +9243,7 @@
 			}
 		}
 	],
-	"current": "Du6umKm2",
+	"current": "QQyrWqEG",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -9286,6 +9286,12 @@
 			"from": "8HM8SuqH",
 			"at": "2026-10-15T02:26:54.435Z",
 			"reason": "The navigator lists every repository with a checkout menu, each pane names its repository, and the address carries repoA and repoB"
+		},
+		{
+			"variant": "QQyrWqEG",
+			"from": "Du6umKm2",
+			"at": "2026-10-15T04:08:50.944Z",
+			"reason": "The page learns the vault it opens in, or that there is none"
 		}
 	]
 }

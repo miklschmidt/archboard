@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 39,
+	"version": 40,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-15T03:53:02.863Z",
+	"updatedAt": "2026-10-15T04:08:50.182Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -4733,7 +4733,7 @@
 		{
 			"id": "5MRuMNhh",
 			"name": "TASK-436.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "HQ2dUcmc",
 			"summary": "The coordinator thread, callbacks and prompt and call routing",
 			"content": {
@@ -7504,7 +7504,7 @@
 		{
 			"id": "TSfh8JQ7",
 			"name": "TASK-472.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "5MRuMNhh",
 			"summary": "The coordinator thread, callbacks and prompt and call routing",
 			"content": {
@@ -8420,7 +8420,7 @@
 			}
 		}
 	],
-	"current": "5MRuMNhh",
+	"current": "TSfh8JQ7",
 	"adoptions": [
 		{
 			"variant": "H3TW6CJC",
@@ -8463,6 +8463,12 @@
 			"from": "HQ2dUcmc",
 			"at": "2026-10-07T01:08:51.489Z",
 			"reason": "Corrected existing coordinator factory and callback entry point descriptions"
+		},
+		{
+			"variant": "TSfh8JQ7",
+			"from": "5MRuMNhh",
+			"at": "2026-10-15T04:08:50.182Z",
+			"reason": "The voice catalogue comes from the vault of the presenting pane"
 		}
 	]
 }
