@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 47,
+	"version": 49,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T21:52:39.772Z",
+	"updatedAt": "2026-10-15T22:05:45.586Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -9485,7 +9485,7 @@
 		{
 			"id": "CMMozJyq",
 			"name": "TASK-472.11",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "nePU8eTs",
 			"summary": "Live pane connections, presentation state and board announcements, with the vault each pane is in, the checkout registry every pane follows, and the checkout whose conversation each tab shows",
 			"content": {
@@ -11109,9 +11109,9 @@
 		{
 			"id": "4LCCZOMd",
 			"name": "TASK-482.03",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "CMMozJyq",
-			"summary": "Live panes gets inner structure for its overview",
+			"summary": "Live pane connections, presentation state and board announcements, in three areas of the server: the panes and the checkouts they read, board news, and server plumbing",
 			"content": {
 				"nodes": [
 					{
@@ -12755,7 +12755,7 @@
 			}
 		}
 	],
-	"current": "CMMozJyq",
+	"current": "4LCCZOMd",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -12803,6 +12803,12 @@
 			"from": "nePU8eTs",
 			"at": "2026-10-15T09:31:26.537Z",
 			"reason": "A tab shows one checkout's conversation, pinned to its focused pane's checkout on first read and changed only by the person's activation through a route the page alone reaches; a pane's move into another vault no longer moves it"
+		},
+		{
+			"variant": "4LCCZOMd",
+			"from": "CMMozJyq",
+			"at": "2026-10-15T22:05:45.586Z",
+			"reason": "Gathered the server's parts into three areas so the board opens on a readable overview (ADR 0052)"
 		}
 	]
 }
