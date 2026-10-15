@@ -1,11 +1,11 @@
 ---
 id: TASK-472.11
 title: The agent dock shows the conversation of the checkout the user last activated
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 09:32'
+updated_date: '2026-10-15 09:43'
 labels:
   - frontend
 dependencies:
@@ -31,15 +31,15 @@ With one workhorse per checkout, the agent dock must show one of them. ADR 0050 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Focusing a pane, opening a board from the navigator and drilling down switch the shown conversation to that board's checkout, and `browser show` never does
-- [ ] #2 The dock lists the live workhorses of the tab session by repository and checkout, and picking one shows it
-- [ ] #3 The list marks a workhorse that waits for an approval or for the user
-- [ ] #4 A typed message goes to the shown checkout's workhorse, and New conversation replaces only that workhorse
-- [ ] #5 A coordinator turn shows in the conversation of the workhorse it delegated to, and a turn that delegated nothing shows in the conversation shown while it ran
-- [ ] #6 The Stop control stops the shown workhorse, and a spoken stop stops every running workhorse of the tab session
-- [ ] #7 The list and its marks are operable from the keyboard and have accessible names
-- [ ] #8 PRODUCT.md's description of the agent dock and the archboard skill describe the shown conversation as built
-- [ ] #9 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 Focusing a pane, opening a board from the navigator and drilling down switch the shown conversation to that board's checkout, and `browser show` never does
+- [x] #2 The dock lists the live workhorses of the tab session by repository and checkout, and picking one shows it
+- [x] #3 The list marks a workhorse that waits for an approval or for the user
+- [x] #4 A typed message goes to the shown checkout's workhorse, and New conversation replaces only that workhorse
+- [x] #5 A coordinator turn shows in the conversation of the workhorse it delegated to, and a turn that delegated nothing shows in the conversation shown while it ran
+- [x] #6 The Stop control stops the shown workhorse, and a spoken stop stops every running workhorse of the tab session
+- [x] #7 The list and its marks are operable from the keyboard and have accessible names
+- [x] #8 PRODUCT.md's description of the agent dock and the archboard skill describe the shown conversation as built
+- [x] #9 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,6 +50,8 @@ With one workhorse per checkout, the agent dock must show one of them. ADR 0050 
 2. Frontend (parent): the browser activates on a user focus change, a successful user board open (navigator, drill-down, open beside), Back/Forward, a list pick and Fix with Codex; never on browser show/open/close, narration or first-load restore. A conversation list in the agent dock (toggle group, keyboard, accessible names, marks as text), shown with two or more entries.
 3. Owners: shown-conversation route and projection tests on the server, activation tests in src/ui/application/tests, a rendered list test, dispatcher test for stop_workhorses, one browser segment in codex-text-workbench.test.ts.
 4. Docs: PRODUCT.md agent dock, AGENTS.md Codex invariant, CONTEXT.md, the archboard skill. Boards: proposals TASK-472.11 on Agent workbench, Codex workhorse, Voice coordinator, Browser application, Live panes, drawn after the code lands.
+
+Revision (2026-10-15): Back/Forward and address restore activate nothing; only a pointer focus change, a successful user board open (navigator, drill-down, open beside), a list pick and Fix with Codex activate. The server's onPaneVaultMove went away: a new chosen checkout or an agent's show no longer moves the dock.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -76,4 +78,12 @@ Corrected to HEAD before adoption: the tab pins its shown checkout to the focuse
 Footprint read against base de53485ba (the parent of eefc09f3f, the first commit with a Refs: TASK-472.11 trailer; fde561836 merged the backend). The range also holds TASK-472.09, TASK-471.03 and TASK-472.14 commits. changedNotNamed decisions: Workhorse checkouts (codex-checkouts.ts, Agent workbench) changed only by a79cdac27, TASK-472.09: not ours. Repository list (repositories.ts, Live panes) changed only by 4ea5feee9 and 2f6f090d7, TASK-472.09: not ours. Authored instructions (src/runtime/codex-instructions, Codex workhorse and Voice coordinator) by 3c3e0a9a6: the coordinator instructions gained the sentence about stop_workhorses; the part still holds the instructions and their digest, so the board stays true. Workbench transport (src/ui/workbench-transport, Browser application) by eefc09f3f: one delta parser line for the new workhorses field; the channel is the same. namedNotChanged: Thread link, Workhorse queue, Workhorse start, Server requests, Pane registry and Browser origin guard are named only by a relationship, which is normal. Approvals and Conversation start (Agent workbench) are named by part though no commit changed their module: their words changed because the shown checkout, not the pane's, now decides which workhorse an approval is shown with (visibleApprovalViews in the owner projection, called with the shown checkout) and which workhorse a conversation start and New conversation work on (the gateway's checkout seam). The module code was right already, so the description is the only change. d4b14ac10 is the one large commit (over 30 files): it is the backend feature itself, not a sweep.
 
 Boards behind without a proposal: Archboard server (src/server/archboard, container bound to a directory) draws no part that the task changed (the activation route is drawn on Live panes) and stays right. Archboard (repo-registry.ts) was moved only by TASK-471.03 and TASK-472.14. The other behind boards are renderer boards, not this task's. Adopted versions: Codex workhorse 37, Voice coordinator 50, Agent workbench 65, Live panes 44, Browser application 70.
+
+Frontend and review (2026-10-15): showConversation in src/ui/pane-session, one conversationActivation in src/ui/application (shared by the shell actions, the pane pointer, the dock list and Fix with Codex, which reads the workbench again before it asks), and ConversationList in src/ui/workbench (a vertical ToggleGroup named Conversations, shown with two or more entries, marks as text). Reviewer fixes: 6ea662eb3 (only delivered or outcome-unknown work gives a turn a home), 60072fa16 (the first read pins the tab's focused pane's checkout), 6983748ff (ToggleGroup passes orientation, so the arrows move the list), 128af3b10, 24696a497, 94e629c92 (a command finished across a switch keeps its outcome). Boards adopted in b168159d3. Observations left open: after a list pick the workhorse's queue shows unavailable until a refresh (this predates the task), and stopWorkhorses' Promise.all turns any failure into outcome_unknown (TASK-446). Gate: bun run check passed at b168159d3 (exit 0, 4700 module tests and every browser lane file passed).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The agent dock shows the tab's shown conversation: the workhorse of the checkout the person last activated in the page by focusing a pane, opening a board, drilling down, picking it from the dock's list, or Fix with Codex. The server holds one shown checkout per tab, pinned on first read and changed only by POST /api/panes/conversation, so an agent's browser show never moves it. Messages, New conversation, Stop and approvals follow it, a coordinator turn shows where it gave work or where it started, and the coordinator's stop_workhorses stops every workhorse of the tab. Verified by tests/system/server-state/shown-conversation.test.ts, the browser case in codex-text-workbench.test.ts, the list, activation, timeline, delegation and stop unit owners, and the full bun run check at b168159d3. Boards: five proposals adopted in b168159d3.
+<!-- SECTION:FINAL_SUMMARY:END -->
