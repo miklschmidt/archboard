@@ -5,8 +5,9 @@ description: >-
   Danger, whose Summary shows the change on an archboard board: a proposal on
   a vault board when the architecture changes, or an ephemeral board for a
   flow, a process or infrastructure that the vault need not keep, with a short
-  narrated walkthrough when the change crosses several parts. In a stack of
-  pull requests, each one is drawn against the one below it. Use it for every
+  narrated walkthrough when the change crosses several parts. A branch that
+  builds several parts of the planned architecture becomes a stack of pull
+  requests, each drawn against the one below it. Use it for every
   pull request that you create or update in a repository that has an
   .archboard/vault directory, or whose architecture another repository's vault
   keeps. Also use it to explain a pull request.
@@ -107,12 +108,17 @@ your own.
 | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Adds, removes, renames or rewires something that a vault board draws, changes what a part is for, or adds durable architecture                      | A proposal on that board (section 2). When no board draws the code, first draw the board from the base branch with the `archboard` skill's create recipe, or start it with a base draft when the base has none of the code |
 | Changes a request or data flow, an order, a process or state progression, or infrastructure, ownership or dependencies that the vault need not keep | An ephemeral board (section 3)                                                                                                                                                                                             |
-| Formatting, a rename inside one part, a dependency bump, generated files, a fix whose diff explains itself                                          | No board. The Summary uses the smallest text view that makes the point: pseudocode, a call tree, a file tree, or a diff of one of them, in a fenced block                                                                  |
+| Formatting, a rename or refactor that changes nothing a board draws, a dependency bump, generated files, a fix whose diff explains itself           | No board. The Summary uses the smallest text view that makes the point: pseudocode, a call tree, a file tree, or a diff of one of them, in a fenced block                                                                  |
 
 Draw on a vault board only what the vault should keep: parts, boundaries and
 relationships that stay true after the merge, at the level that the vault's
 boards use. A flow drawn for one change, or an incidental helper, goes on an
 ephemeral board.
+
+5. If the branch has no pull request yet and step 4 chose a proposal, read
+   [split](references/split.md). A branch that builds more than one part of
+   the planned architecture, or one part and groundwork that no board draws,
+   becomes a stack with one pull request for each.
 
 Done: each part in `changed` is in the picture you chose, or needs no picture.
 
@@ -313,7 +319,7 @@ reader never sees it.
 - In a stack, the first line gives the position, the design and the
   neighbours: `Part 10 of 18 of device trust (#589). Below: #606. Next: #608.`
   Count every pull request of the stack from the bottom, the design's pull
-  request included.
+  request included. A design with no pull request of its own has no number.
 - Then one to three sentences: the problem or need, and what the change does
   about it. Use the repository's domain words: its glossary (`CONTEXT.md`,
   `GLOSSARY.md` or similar) and the names that the picture carries.
