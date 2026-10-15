@@ -5,12 +5,14 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 /**
  * Ask the agent to repair the vault, and check again whenever a turn ends.
+ * @param vault The vault to repair: the one diagnosed.
  * @param transport The focused pane's transport, or null.
  * @param ask Send the agent a message.
  * @param recheck Read diagnostics again.
  * @returns The repair action.
  */
 function useVaultRepair(
+	vault: string,
 	transport: BrowserWorkbenchTransport | null,
 	ask: (text: string) => void,
 	recheck: () => void,
@@ -31,7 +33,10 @@ function useVaultRepair(
 			turns = new Map(next.map((turn) => [turn.turnId, turn.status]));
 		});
 	}, [transport, recheck]);
-	return useCallback(() => ask(vaultRepairRequest(globalThis.location.origin)), [ask]);
+	return useCallback(
+		() => ask(vaultRepairRequest(globalThis.location.origin, vault)),
+		[ask, vault],
+	);
 }
 
 export { useVaultRepair };
