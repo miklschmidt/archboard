@@ -173,8 +173,9 @@ test("the server lists a vault a command registered under the path and name that
 	const { repositories } = z
 		.object({ repositories: z.array(z.object({ name: z.string(), vault: z.string().nullable() })) })
 		.parse(await response.json());
+	const { name } = z.object({ name: z.string() }).parse(vault.registered);
 	expect(repositories.filter((each) => each.vault === vault.path).map((each) => each.name)).toEqual(
-		[vault.registered?.["name"]],
+		[name],
 	);
 });
 
