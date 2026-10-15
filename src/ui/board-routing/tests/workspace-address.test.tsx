@@ -36,6 +36,7 @@ interface FakePane {
 interface HeldOpen {
 	readonly paneId: string;
 	readonly boardKey: string;
+	readonly repository: string | null;
 	readonly answer: (outcome: OpenOutcome) => void;
 }
 
@@ -47,6 +48,8 @@ interface HeldOpen {
 interface FakeOpenAnswer {
 	readonly reached: boolean;
 	readonly openedKey?: string;
+	/** The repository the server puts the pane in; the one it was asked for otherwise. */
+	readonly repository?: string | null;
 }
 
 /** A shell whose workspace changes only when the test says so. */
@@ -66,7 +69,7 @@ interface FakeShell {
 	/** Answer the oldest open the server was given. */
 	readonly answer: (answer: boolean | FakeOpenAnswer) => Promise<void>;
 	/** The socket told a pane its board, and the shell rendered. */
-	readonly adopt: (paneId: string, boardKey: string) => Promise<void>;
+	readonly adopt: (paneId: string, boardKey: string, repository?: string | null) => Promise<void>;
 	readonly port: () => WorkspacePort;
 }
 
@@ -118,7 +121,11 @@ function fakeShell(
 			await act(async () => {
 				open?.answer(
 					given.reached
-						? { kind: "opened", boardKey: given.openedKey ?? open.boardKey }
+						? {
+								kind: "opened",
+								boardKey: given.openedKey ?? open.boardKey,
+								repository: given.repository ?? open.repository,
+							}
 						: { kind: "unreachable" },
 				);
 			});
@@ -127,11 +134,13 @@ function fakeShell(
 		 * The socket told a pane its board.
 		 * @param paneId The pane.
 		 * @param boardKey The board it now shows.
+		 * @param repository The repository it is in now; where it was when not said.
 		 */
-		adopt: async (paneId: string, boardKey: string): Promise<void> => {
+		adopt: async (paneId: string, boardKey: string, repository?: string | null): Promise<void> => {
 			const pane = shell.panes.find((entry) => entry.paneId === paneId);
 			if (pane) {
 				pane.boardKey = boardKey;
+				pane.repository = repository === undefined ? pane.repository : repository;
 			}
 			await shell.render();
 		},
@@ -154,11 +163,12 @@ function fakeShell(
 			 * Point a pane at a board; the answer waits for the test.
 			 * @param paneId The pane.
 			 * @param boardKey The board.
+			 * @param repository The repository it is in, or null for the pane's own.
 			 * @returns The outcome, once the test gives one.
 			 */
-			open: (paneId: string, boardKey: string): Promise<OpenOutcome> =>
+			open: (paneId: string, boardKey: string, repository: string | null): Promise<OpenOutcome> =>
 				new Promise<OpenOutcome>((resolve) => {
-					shell.opens.push({ paneId, boardKey, answer: resolve });
+					shell.opens.push({ paneId, boardKey, repository, answer: resolve });
 				}),
 			/**
 			 * Read a pane's board another way.
@@ -310,7 +320,7 @@ test("a user's gesture during a restore waits for the slot and is never stranded
 	// the restore must not stop the address bar watching what it left running.
 	let granted: Permission | null = null;
 	const claimed = shell.addressing
-		?.claim({ kind: "board", paneId: "A", from: "payments" })
+		?.claim({ kind: "board", paneId: "A", from: "payments", repository: null })
 		.then((permission) => {
 			granted = permission;
 			return permission;
@@ -328,13 +338,13 @@ test("the slot is given to one waiting gesture at a time", async () => {
 	mounted = await mount(shell, "?paneA=billing");
 	const order: string[] = [];
 	const first = shell.addressing
-		?.claim({ kind: "board", paneId: "A", from: "payments" })
+		?.claim({ kind: "board", paneId: "A", from: "payments", repository: null })
 		.then((permission) => {
 			order.push("first");
 			return permission;
 		});
 	const second = shell.addressing
-		?.claim({ kind: "board", paneId: "A", from: "payments" })
+		?.claim({ kind: "board", paneId: "A", from: "payments", repository: null })
 		.then((permission) => {
 			order.push("second");
 			return permission;
@@ -346,7 +356,7 @@ test("the slot is given to one waiting gesture at a time", async () => {
 	// The second is still waiting: the first has the slot until its own command
 	// is over, so the server is never given two at once.
 	if (firstPermission?.kind === "granted") {
-		firstPermission.move.done("ledger");
+		firstPermission.move.done("ledger", null);
 	}
 	await shell.adopt("A", "ledger");
 	await second;
@@ -363,9 +373,10 @@ test("a user's open pushes a history entry only when it moved the pane", async (
 		kind: "board",
 		paneId: "A",
 		from: "payments",
+		repository: null,
 	});
 	if (noMove?.kind === "granted") {
-		noMove.move.done("payments");
+		noMove.move.done("payments", null);
 	}
 	await settle();
 	expect(window.history.length).toBe(before);
@@ -395,14 +406,16 @@ test("an open that had nothing to move gives the slot back rather than holding i
 		kind: "board",
 		paneId: "A",
 		from: "payments",
+		repository: null,
 	});
 	if (first?.kind === "granted") {
-		first.move.done("payments");
+		first.move.done("payments", null);
 	}
 	const second = await shell.addressing?.claim({
 		kind: "board",
 		paneId: "A",
 		from: "payments",
+		repository: null,
 	});
 	expect(second?.kind).toBe("granted");
 });
@@ -414,11 +427,21 @@ test("an address spelled one way and resolved another still gives the slot back"
 	// `payments@current` and `payments` are one board; only the server knows
 	// that, so it is the board it says it opened that decides whether the pane
 	// has anything to move to.
-	const first = await shell.addressing?.claim({ kind: "board", paneId: "A", from: "payments" });
+	const first = await shell.addressing?.claim({
+		kind: "board",
+		paneId: "A",
+		from: "payments",
+		repository: null,
+	});
 	if (first?.kind === "granted") {
-		first.move.done("payments");
+		first.move.done("payments", null);
 	}
-	const second = await shell.addressing?.claim({ kind: "board", paneId: "A", from: "payments" });
+	const second = await shell.addressing?.claim({
+		kind: "board",
+		paneId: "A",
+		from: "payments",
+		repository: null,
+	});
 	expect(second?.kind).toBe("granted");
 });
 
@@ -443,4 +466,44 @@ test("a restore reads the view it names once the server says how it spells the b
 	await settle();
 	expect(shell.panes[0]?.view).toBe("v1");
 	expect(new URLSearchParams(shownSearch()).get("viewA")).toBe("v1");
+});
+
+test("a person opening the same board in another repository has moved, and it waits for the pane and pushes", async () => {
+	const shell = fakeShell([["A", "payments"]]);
+	const pane = shell.panes[0];
+	if (pane) pane.repository = "github.com/acme/shop";
+	mounted = await mount(shell, "?paneA=payments&repoA=github.com%2Facme%2Fshop");
+	await settle();
+	const before = window.history.length;
+	const permission = await shell.addressing?.claim({
+		kind: "board",
+		paneId: "A",
+		from: "payments",
+		repository: "github.com/acme/shop",
+	});
+	if (permission?.kind === "granted") {
+		permission.move.done("payments", "github.com/acme/billing");
+	}
+	await settle();
+	// The server answered, but the pane is still on the shop's board.
+	expect(new URLSearchParams(shownSearch()).get("repoA")).toBe("github.com/acme/shop");
+	await shell.adopt("A", "payments", "github.com/acme/billing");
+	expect(new URLSearchParams(shownSearch()).get("repoA")).toBe("github.com/acme/billing");
+	expect(window.history.length).toBe(before + 1);
+});
+
+test("a restore of the same board in another repository reads its view once the pane is there", async () => {
+	const shell = fakeShell([["A", "pipeline"]]);
+	const pane = shell.panes[0];
+	if (pane) pane.repository = "github.com/acme/shop";
+	mounted = await mount(shell, "?paneA=pipeline&repoA=lab&viewA=v1");
+	expect(shell.opens.map((open) => open.repository)).toEqual(["lab"]);
+	await shell.answer(true);
+	await settle();
+	// Not over yet: the pane has not reached the lab's board.
+	expect(shownSearch()).toBe("paneA=pipeline&repoA=lab&viewA=v1");
+	await shell.adopt("A", "pipeline", "lab");
+	await settle();
+	expect(shell.panes[0]?.view).toBe("v1");
+	expect(shownSearch()).toBe("paneA=pipeline&repoA=lab&viewA=v1");
 });

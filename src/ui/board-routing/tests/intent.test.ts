@@ -22,13 +22,13 @@ test("a change nobody asked for is not deliberate", () => {
 
 test("the pane a user asked to move having moved is the deliberate change", () => {
 	const navigation = createDeliberateNavigation();
-	navigation.expect({ kind: "board", paneId: "A", from: "payments" });
+	navigation.expect({ kind: "board", paneId: "A", from: "payments", repository: null });
 	expect(navigation.settle(address([["A", "billing"]]))).toBe(true);
 });
 
 test("a pane that has not moved yet is not the change that was asked for", () => {
 	const navigation = createDeliberateNavigation();
-	navigation.expect({ kind: "board", paneId: "A", from: "payments" });
+	navigation.expect({ kind: "board", paneId: "A", from: "payments", repository: null });
 	expect(navigation.settle(address([["A", "payments"]]))).toBe(false);
 });
 
@@ -47,14 +47,14 @@ test("asking for a comparison is met by the number of panes the user asked for",
 
 test("a failed gesture leaves nothing behind for a later change to be mistaken for", () => {
 	const navigation = createDeliberateNavigation();
-	navigation.expect({ kind: "board", paneId: "A", from: "payments" });
+	navigation.expect({ kind: "board", paneId: "A", from: "payments", repository: null });
 	navigation.clear();
 	expect(navigation.settle(address([["A", "billing"]]))).toBe(false);
 });
 
 test("an expectation lives no longer than the next change, met or not", () => {
 	const navigation = createDeliberateNavigation();
-	navigation.expect({ kind: "board", paneId: "A", from: "payments" });
+	navigation.expect({ kind: "board", paneId: "A", from: "payments", repository: null });
 	expect(navigation.settle(address([["A", "payments"]]))).toBe(false);
 	// An agent moving the same pane afterwards is not the user's move.
 	expect(navigation.settle(address([["A", "billing"]]))).toBe(false);

@@ -56,15 +56,16 @@ import {
 	searchFromAddress,
 	validateWorkspaceSearch,
 } from "@/ui/board-routing/search";
-import type { WorkspacePort } from "@/ui/board-routing/contracts";
+import type { OpenedBoard, WorkspacePort } from "@/ui/board-routing/contracts";
 
 /** What a user's own board open reports back when it is over. */
 interface NavigationClaim {
 	/**
-	 * The command finished. The board it opened is the server's own answer, and
-	 * is what says whether the pane has anything to move to.
+	 * The command finished. The board it opened and the repository it put the
+	 * pane in are the server's own answer, and are what says whether the pane
+	 * has anything to move to.
 	 */
-	readonly done: (openedKey: string) => void;
+	readonly done: (openedKey: string, repository: string | null) => void;
 	/** The command did not finish, so nothing moved. */
 	readonly failed: () => void;
 }
@@ -148,17 +149,17 @@ function publishAddress(state: Reconciliation): void {
  * @param state The reconciliation.
  * @param operation The operation being answered.
  * @param answer What the server said.
- * @param openedKey The board it opened, as the server keys it, when it opened one.
+ * @param opened The board it opened and the pane's repository, as the server says, when it opened one.
  */
 function answerOperation(
 	state: Reconciliation,
 	operation: Operation,
 	answer: OperationAnswer,
-	openedKey: string | null = null,
+	opened: OpenedBoard | null = null,
 ): void {
 	// An answer is taken once, and only by the operation it belongs to.
 	if (state.operation === operation) {
-		state.operation = operationAnswered(operation, answer, openedKey);
+		state.operation = operationAnswered(operation, answer, opened);
 	}
 	reconcile(state);
 }
@@ -219,13 +220,14 @@ function grantSlot(state: Reconciliation): void {
 			/**
 			 * The command finished.
 			 * @param openedKey The board the server says it opened.
+			 * @param repository The repository the server says the pane is in now.
 			 */
-			done: (openedKey: string): void => {
+			done: (openedKey: string, repository: string | null): void => {
 				if (operation === null) {
 					reconcile(state);
 					return;
 				}
-				answerOperation(state, operation, "opened", openedKey);
+				answerOperation(state, operation, "opened", { boardKey: openedKey, repository });
 			},
 			/** The command did not finish. */
 			failed: (): void => {
@@ -279,7 +281,7 @@ function commandsOver(state: Reconciliation) {
 			state.operation = operation;
 			void state.port.open(paneId, boardKey, repository).then((outcome) => {
 				if (outcome.kind === "opened") {
-					answerOperation(state, operation, "opened", outcome.boardKey);
+					answerOperation(state, operation, "opened", outcome);
 				} else {
 					answerOperation(state, operation, "unreachable");
 				}
