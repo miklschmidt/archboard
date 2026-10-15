@@ -4,7 +4,7 @@ import path from "node:path";
 import type { CodeBinding } from "@/shared/code-target";
 import { checkoutHead, repoIdentityAt, repoRootOf, type CheckoutHead } from "@/runtime/engine/git";
 import type { RegisteredRepoStatus } from "@/runtime/engine/repo-registry";
-import { checkoutsReadFrom } from "@/runtime/code-target/lib/vault-checkout";
+import { checkoutsReadFrom, vaultIdentity } from "@/runtime/code-target/lib/vault-checkout";
 import {
 	isPathWithin,
 	resolveLocalCodeTargetsWith,
@@ -21,7 +21,7 @@ export type {
 	RegisteredCheckoutResult,
 	ResolutionFailure,
 } from "@/runtime/code-target/lib/resolver-core";
-export { checkoutsReadFrom, isPathWithin };
+export { checkoutsReadFrom, isPathWithin, vaultIdentity };
 
 interface CheckoutInspection {
 	readonly registeredRoot?: string;

@@ -31,6 +31,7 @@ import {
 	readSemanticBoard,
 	readSemanticBoardConfiguration,
 } from "@/runtime/semantic-board-store/index";
+import { vaultIdentity } from "@/runtime/code-target/index";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
 import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";
 import { discardRoute } from "@/server/archboard/lib/semantic-board-discard";
@@ -115,10 +116,13 @@ function listRoute(req: Request, res: Response): void {
 		// the listing names it as it is now, so the navigator places the board
 		// under the name it goes by (ADR 0036).
 		const accepted = acceptedBoardNames(read.map(([, one]) => one));
+		// A drill-down that names the vault's own repository is a link within it,
+		// so the navigator places its board as it places any other (ADR 0049).
+		const vaultRepo = vaultIdentity(vault);
 		const listing: BoardListing = {
 			success: true,
 			levels: configured.configuration.levels,
-			boards: read.map(([location, one]) => listedBoard(location, one, accepted)),
+			boards: read.map(([location, one]) => listedBoard(location, one, accepted, vaultRepo)),
 		};
 		res.json(listing);
 	} catch (error) {
