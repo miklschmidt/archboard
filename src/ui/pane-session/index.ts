@@ -23,6 +23,7 @@ export {
 export {
 	fetchPaneInventory,
 	showBoard,
+	showConversation,
 	type PaneReport,
 	type ShowBoardReply,
 	type ShowBoardRequest,

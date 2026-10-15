@@ -20,6 +20,11 @@ interface AgentActionTargets {
 	readonly releaseVoice: () => void;
 	readonly draft: DraftStore;
 	readonly openPanel: () => void;
+	/**
+	 * Show the conversation of a workhorse the person picked.
+	 * @param checkout The checkout it works in.
+	 */
+	readonly showConversation: (checkout: string) => void;
 }
 
 /**
@@ -133,7 +138,7 @@ function paneActions(
  * @returns The actions.
  */
 function agentActions(targets: AgentActionTargets): AgentActions {
-	const { setup, draft, openPanel } = targets;
+	const { setup, draft, openPanel, showConversation } = targets;
 	return {
 		...voiceActions(targets),
 		...paneActions(targets),
@@ -181,6 +186,7 @@ function agentActions(targets: AgentActionTargets): AgentActions {
 			if (text !== null) draft.fill(text);
 		},
 		openPanel,
+		showConversation,
 	};
 }
 

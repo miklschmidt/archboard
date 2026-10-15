@@ -4,8 +4,14 @@
 // Everything else a pane needs arrives over its socket or through the semantic
 // board cache. There is no write here, because a person does not author a
 // semantic board (ADR 0023); `takeBoardBack` is not a write to a board, it is
-// the release of somebody else's lease.
+// the release of somebody else's lease. Nor is `showConversation`: it says which
+// checkout's conversation the person activated, and the dock follows it.
 
+import {
+	SHOWN_CONVERSATION_ROUTE,
+	type ShownConversationReply,
+	type ShownConversationRequest,
+} from "@/shared/shown-conversation";
 import { boardQuery, cancellable, inVault, json, post } from "@/ui/server-requests";
 import type { BoardIdentity, BrowserPaneListing, LockHolder } from "@/ui/types";
 
@@ -139,11 +145,27 @@ function takeBoardBack(
 	return post(inVault(`/api/semantic-boards/take-back${boardQuery(board)}`, vault), { clientId });
 }
 
+/**
+ * Say that the person activated a checkout in this tab: the checkout of the
+ * pane they focused or opened a board in, or one they picked from the dock's
+ * list (ADR 0050). Every pane of the tab then shows that checkout's conversation.
+ * @param vault The vault the pane is in.
+ * @param request The pane, and the checkout of a pick from the list.
+ * @returns The checkout shown now.
+ */
+function showConversation(
+	vault: string,
+	request: ShownConversationRequest,
+): Promise<ShownConversationReply> {
+	return post(inVault(SHOWN_CONVERSATION_ROUTE, vault), request);
+}
+
 export {
 	fetchPaneInventory,
 	loadedBundle,
 	reportPane,
 	showBoard,
+	showConversation,
 	takeBoardBack,
 	type PaneReply,
 	type PaneReport,

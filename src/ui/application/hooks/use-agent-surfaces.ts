@@ -36,12 +36,21 @@ interface AgentSurfaces {
 /**
  * The agent's surfaces.
  * @param workbench The workbench.
+ * @param showConversation Show the conversation of a workhorse the person picked.
  * @returns The voice, the actions, the draft, the panel and a way to ask.
  */
-function useAgentSurfaces(workbench: Workbench): AgentSurfaces {
+function useAgentSurfaces(
+	workbench: Workbench,
+	showConversation: (checkout: string) => void,
+): AgentSurfaces {
 	const [draft] = useState(createDraftStore);
 	const panel = useAgentPanel();
-	const { voice, actions } = useAgent({ workbench, draft, openPanel: panel.openPanel });
+	const { voice, actions } = useAgent({
+		workbench,
+		draft,
+		openPanel: panel.openPanel,
+		showConversation,
+	});
 	const ask = useCallback((text: string): void => actions.send(text, false), [actions]);
 	return useMemo(
 		() => ({ voice, actions, draft, panel, ask }),

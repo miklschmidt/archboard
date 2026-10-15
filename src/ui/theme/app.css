@@ -542,7 +542,8 @@
 [data-slot="agent-dock"] > [data-part="status"],
 [data-slot="agent-dock"] > [data-part="plan"],
 [data-slot="agent-dock"] > [data-part="wide"],
-[data-slot="agent-dock"] > [data-part="problem"] {
+[data-slot="agent-dock"] > [data-part="problem"],
+[data-slot="agent-dock"] > [data-part="conversations"] {
 	grid-column: 1 / -1;
 }
 [data-slot="agent-dock"] > [data-part="voice"] {
