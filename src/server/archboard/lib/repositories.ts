@@ -66,6 +66,25 @@ function stateOf(chosen: RegisteredRepoStatus | undefined, vault: string | null)
 }
 
 /**
+ * The name of the served vault when no listed repository reads it: the
+ * directory that holds its `.archboard/vault`, or the vault's own directory when
+ * it is not in that layout, made unique the way a registry name is. A page
+ * resolves an address's repository by this name, so two listed repositories
+ * never share one.
+ * @param served The served vault.
+ * @param listed The repositories listed already.
+ * @returns The name.
+ */
+function servedName(served: string, listed: readonly RepositoryEntry[]): string {
+	const inLayout = served.endsWith(`${path.sep}${VAULT_DIRECTORY}`);
+	const base = path.basename(inLayout ? path.dirname(path.dirname(served)) : served);
+	const taken = new Set(listed.map((each) => each.name));
+	let name = base;
+	for (let n = 2; taken.has(name); n++) name = `${base}-${n}`;
+	return name;
+}
+
+/**
  * Every repository the navigator lists, by name.
  *
  * Until the first command registers its checkout (TASK-472.06), the vault this
@@ -92,7 +111,7 @@ function listRepositories(): RepositoryEntry[] {
 	const served = serverVault();
 	if (!listed.some((each) => each.vault === served) && fs.existsSync(served)) {
 		listed.push({
-			name: path.basename(path.dirname(path.dirname(served))),
+			name: servedName(served, listed),
 			untracked: true,
 			vault: served,
 			state: "ready",
