@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 25,
+	"version": 27,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-15T04:08:49.771Z",
+	"updatedAt": "2026-10-15T06:03:15.686Z",
 	"views": [],
 	"variants": [
 		{
@@ -1832,6 +1832,518 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/repo-registry.ts",
 							"symbol": "vaultHolder"
+						}
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "zDZxpKbX",
+						"name": "Read this board",
+						"beats": [
+							{
+								"id": "Z2h2pBRk",
+								"heading": "Address one command",
+								"body": "The catalogue hands the session argv and the one route table. Help is answered first, from that table alone, before any flag is applied or any server contacted. Dispatch finds the named subcommand through the registry's lookup.",
+								"subjects": [
+									"qHOothyT",
+									"ogSW3Rjt",
+									"0R2ysy3p",
+									"45uNvMac"
+								]
+							},
+							{
+								"id": "n5fln7Yb",
+								"heading": "Capture context before dispatch",
+								"body": "Global flags take the board, version, doing text and session out of argv. A shared option the selected command does not read is refused before anything runs; the rest become facts the server client puts on every request.",
+								"subjects": [
+									"zs4XwBa9",
+									"0R2ysy3p",
+									"EUV7iaLt"
+								]
+							},
+							{
+								"id": "2cENlO7N",
+								"heading": "Bound the invocation lifetime",
+								"body": "The interruptible run forwards SIGINT and SIGTERM as an abort and re-raises the signal once cleanup ends, or after a grace period. Failure reporting maps the error to a stable exit code, 5 for any refused board write, and writes the diagnostic.",
+								"subjects": [
+									"ZXGh0YmG",
+									"MmMnif7e",
+									"bV1RPiKW"
+								]
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "4LP6XwaN",
+			"name": "TASK-472.15",
+			"lifecycle": "draft",
+			"parent": "SgXh1GWP",
+			"summary": "archboard semantic move moves a board to another repository",
+			"content": {
+				"nodes": [
+					{
+						"id": "qHOothyT",
+						"order": 1000,
+						"name": "runCliWith",
+						"kind": "function",
+						"responsibility": "Owns one CLI invocation: help first, then the shared flags, dispatch and the run",
+						"parent": "EMV2VjBX",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts"
+						}
+					},
+					{
+						"id": "45uNvMac",
+						"order": 2000,
+						"name": "Registry",
+						"kind": "function",
+						"responsibility": "Builds the command registry and resolves a child command",
+						"parent": "EMV2VjBX",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/registry.ts"
+						}
+					},
+					{
+						"id": "zs4XwBa9",
+						"order": 3000,
+						"name": "Global flag readers",
+						"kind": "function",
+						"responsibility": "Takes -C, --board, --doing, --expect-version and --as-session out of argv before a command's parser sees them",
+						"parent": "EMV2VjBX",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/global-flags.ts"
+						}
+					},
+					{
+						"id": "0R2ysy3p",
+						"order": 4000,
+						"name": "dispatchedCommand",
+						"kind": "function",
+						"responsibility": "Finds the selected contract",
+						"parent": "EMV2VjBX",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/dispatch.ts"
+						}
+					},
+					{
+						"id": "ZXGh0YmG",
+						"order": 5000,
+						"name": "Interruptible run",
+						"kind": "function",
+						"responsibility": "Forwards SIGINT and SIGTERM as an abort, then re-raises the signal once cleanup ends",
+						"parent": "EMV2VjBX",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts",
+							"symbol": "runInterruptibleCommand"
+						}
+					},
+					{
+						"id": "MmMnif7e",
+						"order": 6000,
+						"name": "runCommand",
+						"kind": "module",
+						"responsibility": "The seam a bound command is run through, with its contract and the signal",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-contract/runner.ts"
+						}
+					},
+					{
+						"id": "bV1RPiKW",
+						"order": 7000,
+						"name": "Failure reporting",
+						"kind": "function",
+						"responsibility": "Maps errors to exit codes",
+						"parent": "EMV2VjBX",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/exit-codes.ts"
+						}
+					},
+					{
+						"id": "Swj3xzmd",
+						"order": 8000,
+						"name": "Command catalogue",
+						"kind": "service",
+						"responsibility": "The table of every command, and the caller that hands this module its argv",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/run.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "ogSW3Rjt",
+						"order": 9000,
+						"name": "Help text",
+						"kind": "function",
+						"responsibility": "The help a reader sees, projected from the table rather than written beside it",
+						"parent": "EMV2VjBX",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/help.ts"
+						}
+					},
+					{
+						"id": "EUV7iaLt",
+						"order": 10000,
+						"name": "Server client",
+						"kind": "module",
+						"responsibility": "Keeps what this invocation says about itself and puts it on every request to the Archboard server",
+						"description": "The board, the doing line, the expected version and the writing session are set once per invocation and ride on every request from here, not from each call site. It also formats a refused board write for the reader.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/server-client.ts"
+						}
+					},
+					{
+						"id": "EMV2VjBX",
+						"order": 11000,
+						"name": "Command routing",
+						"kind": "module",
+						"responsibility": "Turns argv and the command table into one bounded invocation; callers outside reach it only through what its index exports",
+						"description": "Callers outside the module import only src/cli/command-routing/index.ts. Every file under lib/ is private, so the parts the command catalogue reaches are the entry points that index re-exports (runCliWith, registryOf), and the rest are hidden parts.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing"
+						}
+					},
+					{
+						"id": "zUIObqwQ",
+						"order": 12000,
+						"name": "Addressed vault",
+						"kind": "function",
+						"responsibility": "Finds the vault a command addresses, registers its checkout or untracked vault on first use, and names it on every request",
+						"parent": "EMV2VjBX",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/addressed-vault.ts"
+						}
+					},
+					{
+						"id": "pgD9YyAN",
+						"order": 13000,
+						"name": "Vault finder",
+						"kind": "module",
+						"responsibility": "Finds a command's vault the way git finds its repository: from -C, a set ARCHBOARD_VAULT, or the working directory, at the checkout root",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/vault-finder.ts"
+						}
+					},
+					{
+						"id": "HXDhzWiE",
+						"order": 14000,
+						"name": "Checkout registry",
+						"kind": "module",
+						"responsibility": "Every checkout and untracked vault known on this machine, and the chosen checkout of each repository",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/repo-registry.ts"
+						}
+					},
+					{
+						"id": "kQsYPnIq",
+						"order": 15000,
+						"name": "Move command",
+						"kind": "module",
+						"responsibility": "semantic move, which finds the vault it moves a board to from --to, as the command's own vault is found from -C",
+						"description": "TASK-472.15. A --to that finds no vault is refused naming --to; a holder the registry does not know is registered.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-move.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "mVCMJYpN",
+						"order": 1000,
+						"from": "qHOothyT",
+						"to": "ogSW3Rjt",
+						"kind": "call",
+						"label": "help, and a failure's usage line",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts",
+							"symbol": "usageLine"
+						}
+					},
+					{
+						"id": "a4PkS2Do",
+						"order": 2000,
+						"from": "qHOothyT",
+						"to": "zs4XwBa9",
+						"kind": "call",
+						"label": "capture flags",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts",
+							"symbol": "takeBoardFlag"
+						}
+					},
+					{
+						"id": "GpvovZkt",
+						"order": 3000,
+						"from": "qHOothyT",
+						"to": "0R2ysy3p",
+						"kind": "call",
+						"label": "select",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts",
+							"symbol": "dispatchedCommand"
+						}
+					},
+					{
+						"id": "Kbtdm1ew",
+						"order": 4000,
+						"from": "qHOothyT",
+						"to": "ZXGh0YmG",
+						"kind": "call",
+						"label": "execute",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts",
+							"symbol": "runInterruptibleCommand"
+						}
+					},
+					{
+						"id": "MFROOcqh",
+						"order": 5000,
+						"from": "ZXGh0YmG",
+						"to": "MmMnif7e",
+						"kind": "call",
+						"label": "contract + signal",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts",
+							"symbol": "runCommand"
+						}
+					},
+					{
+						"id": "HZqRR3f0",
+						"order": 6000,
+						"from": "qHOothyT",
+						"to": "bV1RPiKW",
+						"kind": "call",
+						"label": "on failure",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts",
+							"symbol": "reportFailure"
+						}
+					},
+					{
+						"id": "Xqy7fxY0",
+						"order": 7000,
+						"from": "Swj3xzmd",
+						"to": "qHOothyT",
+						"kind": "call",
+						"label": "argv",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/run.ts",
+							"symbol": "runCliWith"
+						}
+					},
+					{
+						"id": "Ba2uml5A",
+						"order": 8000,
+						"from": "0R2ysy3p",
+						"to": "45uNvMac",
+						"kind": "call",
+						"label": "childOf",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/dispatch.ts",
+							"symbol": "childOf"
+						}
+					},
+					{
+						"id": "Ml9zYVzq",
+						"order": 9000,
+						"from": "Swj3xzmd",
+						"to": "45uNvMac",
+						"kind": "call",
+						"label": "registryOf, for the contract audit",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/run.ts",
+							"symbol": "registryOf"
+						}
+					},
+					{
+						"id": "wMSceuzp",
+						"order": 10000,
+						"from": "qHOothyT",
+						"to": "EUV7iaLt",
+						"kind": "call",
+						"label": "the stated board, doing and version",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts",
+							"symbol": "setRequestedBoard"
+						}
+					},
+					{
+						"id": "1LCJsaUZ",
+						"order": 11000,
+						"from": "bV1RPiKW",
+						"to": "EUV7iaLt",
+						"kind": "call",
+						"label": "formatBoardRefusal",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/exit-codes.ts",
+							"symbol": "formatBoardRefusal"
+						}
+					},
+					{
+						"id": "nYQ1B3GK",
+						"order": 13000,
+						"from": "Swj3xzmd",
+						"to": "EMV2VjBX",
+						"kind": "call",
+						"label": "routes built with contract and child",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/run.ts",
+							"symbol": "contract"
+						}
+					},
+					{
+						"id": "0TkUEWO5",
+						"order": 14000,
+						"from": "qHOothyT",
+						"to": "zUIObqwQ",
+						"kind": "call",
+						"label": "find the command's vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts",
+							"symbol": "addressVault"
+						}
+					},
+					{
+						"id": "zOLMDpzy",
+						"order": 15000,
+						"from": "zUIObqwQ",
+						"to": "pgD9YyAN",
+						"kind": "call",
+						"label": "-C, the environment, or the working directory",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/addressed-vault.ts",
+							"symbol": "findVault"
+						}
+					},
+					{
+						"id": "BdoA8zg1",
+						"order": 16000,
+						"from": "zUIObqwQ",
+						"to": "HXDhzWiE",
+						"kind": "call",
+						"label": "register it on first use",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/addressed-vault.ts",
+							"symbol": "declareIfUnknown"
+						}
+					},
+					{
+						"id": "5oeVTCuJ",
+						"order": 17000,
+						"from": "zUIObqwQ",
+						"to": "EUV7iaLt",
+						"kind": "call",
+						"label": "name the found vault on every request",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/addressed-vault.ts",
+							"symbol": "setRequestedVault"
+						}
+					},
+					{
+						"id": "CsZo87Fp",
+						"order": 18000,
+						"from": "HXDhzWiE",
+						"to": "pgD9YyAN",
+						"kind": "call",
+						"label": "the vault an untracked holder keeps",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/repo-registry.ts",
+							"symbol": "vaultHolder"
+						}
+					},
+					{
+						"id": "m3zJ1oto",
+						"order": 19000,
+						"from": "kQsYPnIq",
+						"to": "zUIObqwQ",
+						"kind": "call",
+						"label": "the --to vault, found as -C finds one",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-move.ts",
+							"symbol": "findVaultOf"
 						}
 					}
 				],
