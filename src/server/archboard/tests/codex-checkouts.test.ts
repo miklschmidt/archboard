@@ -67,6 +67,7 @@ test("a delegation starts the workhorse of the checkout it names, and nothing el
 	await readyDelegatedWorkhorse(call("inspect_workhorse", { checkout: repository }), workhorseOf);
 	await readyDelegatedWorkhorse(call("delegate_to_workhorse", { checkout: root }), workhorseOf);
 	await readyDelegatedWorkhorse(call("delegate_to_workhorse", {}), workhorseOf);
+	await readyDelegatedWorkhorse(call("stop_workhorses", {}), workhorseOf);
 	expect(started).toEqual([repository]);
 
 	// A start that fails leaves the delegation itself to answer.

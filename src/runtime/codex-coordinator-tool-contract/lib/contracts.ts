@@ -84,11 +84,13 @@ type AuthorityTarget =
 	| "server_bound_workhorse"
 	| "server_created_workhorse_queue"
 	| "server_proven_workhorse_turn"
+	| "server_tab_session_workhorses"
 	| "server_validated_spoken_approval";
 const AuthorityTargetSchema = z.enum([
 	"server_bound_workhorse",
 	"server_created_workhorse_queue",
 	"server_proven_workhorse_turn",
+	"server_tab_session_workhorses",
 	"server_validated_spoken_approval",
 ]);
 
@@ -174,6 +176,8 @@ const TOOL_CORRELATION_LINKS = [
 const WORKHORSE_LINKS = [...TOOL_CORRELATION_LINKS, "workhorseThreadId"] as const;
 const QUEUE_LINKS = [...WORKHORSE_LINKS, "queuedSubmissionIds"] as const;
 const STEER_LINKS = [...WORKHORSE_LINKS, "expectedTurnId"] as const;
+/** A stop names no workhorse and proves no turn: the server finds the tab session's workhorses. */
+const STOP_LINKS = TOOL_CORRELATION_LINKS;
 const VOICE_LINKS = [
 	...TOOL_CORRELATION_LINKS,
 	"realtimeSessionId",
@@ -203,6 +207,16 @@ const MUTATING_WORKHORSE_REFUSALS = [
 	"prior_epoch",
 	"unknown_provenance",
 	"approval_declined",
+	"busy",
+] as const satisfies readonly DynamicToolRefusalReason[];
+const STOP_REFUSALS = [
+	"invalid_call",
+	"not_ready",
+	"not_loaded",
+	"system_error",
+	"stale_child",
+	"prior_epoch",
+	"unknown_provenance",
 	"busy",
 ] as const satisfies readonly DynamicToolRefusalReason[];
 const QUEUE_REFUSALS = [
@@ -273,6 +287,12 @@ const ARCHBOARD_WORKHORSE_TOOL_CONTRACTS = deepFreeze([
 		requiredLinks: [...STEER_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.steer_workhorse },
 		refusalErrors: [...MUTATING_WORKHORSE_REFUSALS],
+	}),
+	contract("archboard_workhorse", "stop_workhorses", {
+		authorityTarget: "server_tab_session_workhorses",
+		requiredLinks: [...STOP_LINKS],
+		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.stop_workhorses },
+		refusalErrors: [...STOP_REFUSALS],
 	}),
 ] satisfies readonly CoordinatorToolContract[]);
 

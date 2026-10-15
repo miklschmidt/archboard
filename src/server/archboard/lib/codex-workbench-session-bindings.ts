@@ -96,8 +96,7 @@ function provenWorkhorseTarget(
 }
 
 /**
- * The bindings of a tab session's voice: what it is bound to, what it reads fresh, and what it
- * follows.
+ * The bindings of a tab session's voice: what it is bound to, reads fresh and follows.
  * @param context What the session provides.
  * @returns Those bindings.
  */
@@ -165,8 +164,7 @@ function voiceBindings(
 			presentationChanges: { subscribe: server.narrationChangesFor(scope.id) },
 			trace: scope.state.voiceTrace.note,
 			/**
-			 * The semantic brief one voice session opens with, read fresh and
-			 * stated against that session rather than whatever is current.
+			 * The semantic brief a voice session opens with, read fresh and stated against that session.
 			 * @param wireSessionId The session it is for.
 			 * @returns The brief.
 			 */
@@ -294,6 +292,11 @@ function coordinatorBindings(
 					operations: workhorse.components.operations,
 				};
 			},
+			/**
+			 * Stop every workhorse of this tab session: a spoken stop speaks for the whole app.
+			 * @returns What each one did.
+			 */
+			stopWork: () => scope.stopWork(null),
 		}),
 		coordinatorCall: {
 			/**
