@@ -77,8 +77,9 @@ state:
 - The proposed dependency diff is out of scope. Agent edits stay visible on the
   live board rather than accumulating behind a preview.
 - `Send`, `Stop` and a prompt input shipped once Archboard owned its Codex
-  session (ADR 0019). They drive the agent, never the board. A person's one
-  control over a board is still `Take back control`.
+  session (ADR 0019). They drive the agent, never the board. A person has two
+  controls over a board: `Take back control`, and the pane's Move board
+  control, which moves the board to another repository (ADR 0051).
 - Illustrative or synthetic board miniatures are out of scope. A navigator
   preview must depict real current board content and remain supplemental to
   accessible board identity and state.

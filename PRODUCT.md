@@ -110,9 +110,10 @@ Shipped capabilities:
 
 Constraints that every surface keeps:
 
-- Agents author, users read. The browser writes nothing to a board. A user's
-  one control over a board is to take back an agent's claim. Send, Stop and
-  Talk drive the agent and never edit a board.
+- Agents author, users read. The browser never edits what a board says. A
+  user has two controls over a board: take back an agent's claim, and move the
+  board to another repository. Send, Stop and Talk drive the agent and never
+  edit a board.
 - No layout by hand. If the meaning is right and the picture is wrong, the
   renderer has a bug.
 - Archboard is a desktop app for use near full screen at 1920×1080. Screens

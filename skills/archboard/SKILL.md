@@ -185,7 +185,8 @@ recipe names.
   with its new `version` and every minted id, so take ids and the version from
   it rather than reading again. `semantic move <board> --to <dir>` moves a
   board, with every variant, to another repository's vault
-  ([edit](references/edit.md#moving-a-board-to-another-repository)).
+  ([edit](references/edit.md#moving-a-board-to-another-repository)). A person
+  can make the same move from the pane's Move board control in the browser.
 - **References.** Inside a payload, name a node by its `name` or its `id`; a
   relationship or step, which has no name, by `id` or by a same-write handle
   `as`. Every id is minted, so a new subject of any kind — a view, a flow or a

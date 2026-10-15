@@ -61,15 +61,16 @@ rules that will not stop you:
   `src/runtime/semantic-board-store` is the one place one is read or written.
   Every write goes through `atomic-write.ts`, fsync included, and is committed
   before it is answered.
-- **Agents author, users read.** The browser is a viewer and writes nothing.
-  It holds board content only as a read-only cache of what the server said.
-  When the server announces a new version, the browser reads that content again
-  (ADR 0023). It owns only presentation: the camera, the active view, the
+- **Agents author, users read.** The browser is a viewer and writes no board
+  content. It holds board content only as a read-only cache of what the server
+  said. When the server announces a new version, the browser reads that content
+  again (ADR 0023). It owns only presentation: the camera, the active view, the
   walkthrough position and what somebody picked out. It also keeps its tab
   session id in sessionStorage. That id tells the server which tab a pane
-  belongs to, and it is not board content. A user's one control over a
-  board is taking back
-  somebody else's claim.
+  belongs to, and it is not board content. A user has two controls over a
+  board: taking back somebody else's claim, and moving the board to another
+  repository (ADR 0051). The move is the person's own act. It states the human
+  origin and the version the browser previewed, and it writes no doing line.
 - **Every call to the server names its vault** (ADR 0049). The vault on the wire
   is the vault's own directory: `?vault=<directory>` on a request or a `vault`
   field in its body, and `?vault=` on the pane socket's URL, which names it once
