@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 48,
+	"version": 53,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-12T01:29:36.433Z",
+	"updatedAt": "2026-10-15T16:11:39.439Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -8830,7 +8830,7 @@
 		{
 			"id": "wRhU4Sgu",
 			"name": "TASK-468",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "qe35sHIi",
 			"summary": "Meaning to SVG and interaction geometry",
 			"content": {
@@ -10176,9 +10176,1359 @@
 					}
 				]
 			}
+		},
+		{
+			"id": "A7NJp1XR",
+			"name": "TASK-478.01",
+			"lifecycle": "current",
+			"parent": "wRhU4Sgu",
+			"summary": "Meaning to SVG and interaction geometry",
+			"content": {
+				"nodes": [
+					{
+						"id": "LgbAlvMN",
+						"order": 1000,
+						"name": "Archboard server",
+						"kind": "service",
+						"responsibility": "Answers a render request with one board's drawing",
+						"description": "The read side of the semantic-board HTTP surface. It imports the Bun host's renderBoard; the CLI's render and rasterize commands reach the renderer only through this route.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts"
+						},
+						"drillDown": {
+							"board": "Archboard server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "wpI1LbzG",
+						"order": 2000,
+						"name": "View dispatcher",
+						"kind": "function",
+						"responsibility": "Chooses the grammar, lays out each distinct content once, and returns the document",
+						"description": "renderSemanticView picks architecture or data flow. renderArchitecture turns flow steps into lines, measures, lays out, paints and wraps, and frames the page as planned when the board has nothing built. The last 64 layouts are remembered by content and comparison standing, independent of theme, so a repeated render or a theme switch does not lay out again. Every variant is laid out fresh; nothing is carried over from a predecessor (ADR 0032).",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/index.ts"
+						}
+					},
+					{
+						"id": "y8vuJJKu",
+						"order": 3000,
+						"name": "Subject atlas",
+						"kind": "function",
+						"responsibility": "Records where every drawn node, relationship and region landed",
+						"description": "The geometry a reader's pointer is tested against, in viewBox units, so the picture and the inspector agree without a second measurement.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/atlas.ts"
+						}
+					},
+					{
+						"id": "Y0smyqtZ",
+						"order": 4000,
+						"name": "Layout engines",
+						"kind": "module",
+						"responsibility": "Settles cards, frames, routes and labels as one drawing, with the engine the render names: Track or Blocks",
+						"description": "Nothing after it may repair a coordinate. Track, the default, lays the board out with its containers and group regions drawn inline; Blocks packs each as a block of its own. Both rank cards with Graphviz and route on tracks, Blocks routes the trunks between its blocks with libavoid, and each keeps the way of laying the board out that reads best. Crossings are bridged here. Every variant is laid out fresh (ADR 0032, ADR 0040).",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/engines.ts"
+						},
+						"drillDown": {
+							"board": "Renderer layout",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "L51bfquE",
+						"order": 5000,
+						"name": "Edge geometry",
+						"kind": "function",
+						"responsibility": "Rounds a routed polyline into a curve and says where its label may sit",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/curves.ts"
+						}
+					},
+					{
+						"id": "wLF1X11D",
+						"order": 6000,
+						"name": "Data-flow layout",
+						"kind": "function",
+						"responsibility": "Places participant columns, lifelines and stacked messages for one exchange",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/dataflow.ts"
+						}
+					},
+					{
+						"id": "J3yMo4ag",
+						"order": 7000,
+						"name": "Measured text",
+						"kind": "function",
+						"responsibility": "Measures every card, note and label with the diagram faces loaded",
+						"description": "Pretext prepares and wraps the runs through the host canvas, and the width of each painted line is measured there too, never estimated (TASK-247). The painted width wins over the sum of segments, so no character is cut. The sequence grammar wraps its responsibilities and step notes with the same line breaking.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/measurement.ts"
+						}
+					},
+					{
+						"id": "u1OXg3Yy",
+						"order": 8000,
+						"name": "Theme palette",
+						"kind": "function",
+						"responsibility": "Resolves every drawn colour for the ground being drawn on",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/theme.ts"
+						}
+					},
+					{
+						"id": "J7mPrUeP",
+						"order": 9000,
+						"name": "Architecture painter",
+						"kind": "function",
+						"responsibility": "Paints a settled drawing as SVG marks and standing",
+						"description": "Paints neutral container wells, unfilled group frames, member-tagged shadows, lines and port interiors, traffic, card bodies, labels and header content in that order. Ports clip a card in its own box coordinates and traffic runs to the lid. Every card shadow lies below every line and card.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts"
+						}
+					},
+					{
+						"id": "eECDrhMc",
+						"order": 10000,
+						"name": "SVG document",
+						"kind": "function",
+						"responsibility": "Wraps a painted body in one self-contained document with its faces",
+						"description": "Wraps the painted SVG with fonts, markers, slab and port gradients, theme tokens and the near/far stylesheet. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/document.ts"
+						}
+					},
+					{
+						"id": "wskEBeIy",
+						"order": 11000,
+						"name": "Browser application",
+						"kind": "service",
+						"responsibility": "Installs its own host in the tab and draws the same board there",
+						"description": "startBrowserRenderer fills the seam with a pool of Web Workers running the same Graphviz and libavoid engine, the icons it fetched and linked faces, and loads the diagram faces into the tab so its own canvas measures in them. drawBoardHere then calls the same core the server calls (ADR 0023).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer/index.ts"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "0XCanbzp",
+						"order": 12000,
+						"name": "Bun host",
+						"kind": "module",
+						"responsibility": "The renderer under Bun: installs the Bun host once, then calls the core",
+						"description": "Every Bun entrypoint calls installBunHost (lib/bun-host.ts) first. It registers an @napi-rs/canvas canvas as the global OffscreenCanvas with the four diagram faces loaded, and installs a pool of Bun Workers that each run Graphviz placement and libavoid routing, the theme colours read from theme.css, the font bytes and the icon paths.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer"
+						}
+					},
+					{
+						"id": "4nyk76pY",
+						"order": 13000,
+						"name": "Renderer host",
+						"kind": "function",
+						"responsibility": "The seam a host fills: the layout engine, theme colours, font bytes and icon paths",
+						"description": "The host supplies layout solves, theme colors, font bytes and icon paths. A solve accepts an optional AbortSignal for queued work. An active solve still answers normally.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/host.ts"
+						}
+					},
+					{
+						"id": "yOV8Znnv",
+						"order": 14000,
+						"name": "Board answer",
+						"kind": "function",
+						"responsibility": "Resolves variant, view, scope and standing from one board before anything is drawn",
+						"description": "How a proposal's added, removed and changed subjects are worked out from the two variants' shared identities, per render, and never stored. A title asked for without words is named here, from the board, the view, the variant and what it is compared with, because only the board knows those names. A picture asked against a named variant reads relative to that variant and is drawn without the Planned frame, because what it adds is judged against the variant named and not against the board's lack of a current one (ADR 0031).",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/board.ts"
+						}
+					},
+					{
+						"id": "CtoOMxca",
+						"order": 15000,
+						"name": "Sequence painter",
+						"kind": "function",
+						"responsibility": "Paints the sequence grammar: frame, columns, messages and pulses",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts"
+						}
+					},
+					{
+						"id": "gUN928v4",
+						"order": 16000,
+						"name": "Host canvas",
+						"kind": "external",
+						"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded",
+						"description": "The global OffscreenCanvas: an @napi-rs/canvas canvas under Bun, the canvas of the tab in a browser. Pretext breaks lines through it and the renderer measures every painted line with it, so a word fits the face it is painted in (TASK-247)."
+					},
+					{
+						"id": "Ga3k1AaP",
+						"order": 19000,
+						"name": "Slab surfaces",
+						"kind": "function",
+						"responsibility": "Draws raised slabs and their shadows, selection seats and standing borders",
+						"description": "Cards, icon chips, relationship labels and activation bars use these flat shapes. The header slab of a neutral container well uses the same slab function through tray.ts. Card and label shadows are painted in separate member-tagged groups below the lines and cards. Standing marks border the top face; no wash or hatch replaces the group tint.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/slab.ts"
+						}
+					},
+					{
+						"id": "zPI3vU4A",
+						"order": 20000,
+						"name": "Tray surfaces",
+						"kind": "function",
+						"responsibility": "Draws a neutral recessed well with a group-tinted header slab",
+						"description": "A container and a sequence frame use the same top-lit tray. Its floor is neutral and a nested tray is deeper. The header is a card slab, two units from the top and side walls, eight units from the outer edges. Only a placing group colors the header; kind color stays on its icon.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/tray.ts"
+						}
+					},
+					{
+						"id": "Oqsd6MyT",
+						"order": 21000,
+						"name": "Card ports",
+						"kind": "function",
+						"responsibility": "Cuts foot slots in cards and extends lines and traffic into their holes",
+						"description": "portsOf finds lines ending at a card foot; portPlan gives the first painted line the shared well and every card its box-relative clip. portInside draws each line at its own width, and rideInto extends the pulse path to the lid. A port remains drawn in the near and far readings.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/ports.ts"
+						}
+					},
+					{
+						"id": "8jYL9wH6",
+						"order": 22000,
+						"name": "Near and far content",
+						"kind": "function",
+						"responsibility": "Draws both readings of a card or header around one shared icon chip",
+						"description": "paintCardViews uses sharedChip and movingWords from far-view.ts: the chip sits outside both word layers, and the words share their first baseline while moving and scaling. A container header and a sequence participant use the same card construction. paintHeadingViews draws a flow heading without a chip. document.ts supplies the swap rules.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/far-card.ts"
+						}
+					},
+					{
+						"id": "kSMUVN6V",
+						"order": 17000,
+						"name": "Renderer core",
+						"kind": "module",
+						"responsibility": "Turns one board and its policy into an SVG and its geometry, in any host; callers reach it only through its root files",
+						"description": "src/transformers/semantic-renderer runs unchanged under Bun and in a browser. Callers outside import only its root files: board.ts for renderBoard, host.ts for installRendererHost, engine-pool.ts for the layout's workers, index.ts, engine.ts, measurement.ts and layout.ts. Everything under lib/ is private, so the parts a host reaches are its entry points and the rest are hidden parts.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer"
+						}
+					},
+					{
+						"id": "JzHM3KOY",
+						"order": 18000,
+						"name": "Engine pool",
+						"kind": "function",
+						"responsibility": "Spreads the layout's solves over a few workers, each running the layout engine",
+						"description": "A solve waits until a worker is free and goes to the first that is. An optional AbortSignal cancels a solve that still waits. Active solves finish normally. A failed worker retries only work that still matters.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/engine-pool.ts"
+						}
+					},
+					{
+						"id": "Man3LVIp",
+						"order": 23000,
+						"name": "Measured card painter",
+						"kind": "function",
+						"responsibility": "Paints measured architecture cards, frames and headers through shared surface and content helpers",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/measured-cards.ts"
+						}
+					},
+					{
+						"id": "iXrVyvHz",
+						"order": 24000,
+						"name": "Export frame",
+						"kind": "function",
+						"responsibility": "Draws what an exported picture carries around its drawing: a title above it, and its legend under it or beside it, or the legend alone",
+						"description": "framedForExport moves the painted page down whole under a title band, with its atlas, sets the legend under the page or beside it, or draws the legend alone, and grows the page to hold them. Asked for nothing, it returns the page unchanged, byte for byte. exportedName starts the accessible name with the drawn title. Board answer turns a title asked for without words into the names of the board, view, variant and comparison.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/export-frame.ts"
+						}
+					},
+					{
+						"id": "YhQnj9ID",
+						"order": 25000,
+						"name": "Export legend",
+						"kind": "function",
+						"responsibility": "Lays out the key of an exported picture in a row or a column and draws each entry with the picture's own symbol",
+						"description": "legendOf lists the comparison's marks with their counts, each node kind with its chip and icon, each relationship kind with its ink, dash and head, and the two line marks, in the order the page's legend lists them. A row wraps at the picture's width; a column stands beside it.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/legend.ts"
+						}
+					},
+					{
+						"id": "X0CpwpF1",
+						"order": 26000,
+						"name": "Picture key",
+						"kind": "function",
+						"responsibility": "Reads from a drawn picture what its key lists, for the page's legend and an exported one alike",
+						"description": "pictureAppearances scans the drawn document without a DOM for each subject's applied appearance; keyOf keeps one sample of each node and relationship kind in drawing order; markCounts counts the comparison's marks. One reader, so the page's legend and an exported legend cannot list different things.",
+						"parent": "kSMUVN6V",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/picture-key.ts"
+						}
+					},
+					{
+						"id": "CzHSL7yr",
+						"order": 27000,
+						"name": "Board viewer",
+						"kind": "module",
+						"responsibility": "Shows the legend beside a pane's picture, read from the picture it draws",
+						"description": "The page's legend, the type samples and the subject tips read each subject's applied appearance from the drawn picture through the renderer's picture key, the reader an exported legend uses too.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas"
+						},
+						"drillDown": {
+							"board": "Board viewer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "fl3z5Duy",
+						"order": 1000,
+						"from": "LgbAlvMN",
+						"to": "0XCanbzp",
+						"kind": "call",
+						"label": "renderBoard",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "renderBoard"
+						}
+					},
+					{
+						"id": "qJrkH2Qg",
+						"order": 2000,
+						"from": "Y0smyqtZ",
+						"to": "L51bfquE",
+						"kind": "call",
+						"label": "round the routed polylines",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+							"symbol": "curveThrough"
+						}
+					},
+					{
+						"id": "WwNFCjLE",
+						"order": 3000,
+						"from": "wpI1LbzG",
+						"to": "u1OXg3Yy",
+						"kind": "call",
+						"label": "resolve theme",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/index.ts",
+							"symbol": "PALETTE"
+						}
+					},
+					{
+						"id": "SIdU2g2Q",
+						"order": 4000,
+						"from": "Y0smyqtZ",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "the settled drawing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/index.ts",
+							"symbol": "layoutEngine"
+						}
+					},
+					{
+						"id": "0s8raCUw",
+						"order": 5000,
+						"from": "L51bfquE",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "curves and label anchors",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts",
+							"symbol": "labelAnchorOf"
+						}
+					},
+					{
+						"id": "I1lGjMES",
+						"order": 6000,
+						"from": "u1OXg3Yy",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "each role's colour, as page tokens",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/index.ts",
+							"symbol": "PALETTE"
+						}
+					},
+					{
+						"id": "qDiEFiIT",
+						"order": 7000,
+						"from": "J7mPrUeP",
+						"to": "eECDrhMc",
+						"kind": "data",
+						"label": "the painted body",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts",
+							"symbol": "shifted"
+						}
+					},
+					{
+						"id": "4RbEQ6uO",
+						"order": 8000,
+						"from": "0XCanbzp",
+						"to": "yOV8Znnv",
+						"kind": "call",
+						"label": "renderBoard on the core",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/index.ts",
+							"symbol": "renderBoardIn"
+						}
+					},
+					{
+						"id": "veScCirT",
+						"order": 9000,
+						"from": "0XCanbzp",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "installRendererHost",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/bun-host.ts",
+							"symbol": "installRendererHost"
+						}
+					},
+					{
+						"id": "NFop37Ak",
+						"order": 10000,
+						"from": "wskEBeIy",
+						"to": "yOV8Znnv",
+						"kind": "call",
+						"label": "renderBoard, linked faces",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer/index.ts",
+							"symbol": "renderBoard"
+						}
+					},
+					{
+						"id": "aN2ABUiR",
+						"order": 11000,
+						"from": "wskEBeIy",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "installRendererHost",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer/index.ts",
+							"symbol": "installRendererHost"
+						}
+					},
+					{
+						"id": "iyXO5GUb",
+						"order": 12000,
+						"from": "yOV8Znnv",
+						"to": "wpI1LbzG",
+						"kind": "call",
+						"label": "renderSemanticView",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/board.ts",
+							"symbol": "renderSemanticView"
+						}
+					},
+					{
+						"id": "ezsxPVcK",
+						"order": 13000,
+						"from": "wpI1LbzG",
+						"to": "J3yMo4ag",
+						"kind": "call",
+						"label": "measure every word",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/index.ts",
+							"symbol": "measureArchitecture"
+						}
+					},
+					{
+						"id": "eJO5yog2",
+						"order": 14000,
+						"from": "wpI1LbzG",
+						"to": "Y0smyqtZ",
+						"kind": "call",
+						"label": "content and measured sizes",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/index.ts",
+							"symbol": "layoutEngine"
+						}
+					},
+					{
+						"id": "98et92HX",
+						"order": 15000,
+						"from": "wpI1LbzG",
+						"to": "J7mPrUeP",
+						"kind": "call",
+						"label": "paint the settled drawing",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/index.ts",
+							"symbol": "paintArchitecture"
+						}
+					},
+					{
+						"id": "NSEpn12D",
+						"order": 16000,
+						"from": "wpI1LbzG",
+						"to": "CtoOMxca",
+						"kind": "call",
+						"label": "paint the exchange",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/index.ts",
+							"symbol": "paintDataFlow"
+						}
+					},
+					{
+						"id": "rZknAbkb",
+						"order": 17000,
+						"from": "wpI1LbzG",
+						"to": "eECDrhMc",
+						"kind": "call",
+						"label": "wrap the painted body",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/index.ts",
+							"symbol": "svgDocument"
+						}
+					},
+					{
+						"id": "F5mgUBCT",
+						"order": 18000,
+						"from": "Y0smyqtZ",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "solve on the layout engine",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/blocks/solves.ts",
+							"symbol": "rendererHost"
+						}
+					},
+					{
+						"id": "NIW5ioWQ",
+						"order": 20000,
+						"from": "eECDrhMc",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "each token's value, for a picture that stands alone",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/document.ts",
+							"symbol": "themeColor"
+						}
+					},
+					{
+						"id": "WMtzvSOO",
+						"order": 21000,
+						"from": "J7mPrUeP",
+						"to": "y8vuJJKu",
+						"kind": "call",
+						"label": "where every subject landed",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts",
+							"symbol": "atlasBoxes"
+						}
+					},
+					{
+						"id": "IvQqev1K",
+						"order": 22000,
+						"from": "CtoOMxca",
+						"to": "wLF1X11D",
+						"kind": "call",
+						"label": "columns, lifelines and messages",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts",
+							"symbol": "layoutDataFlow"
+						}
+					},
+					{
+						"id": "BzVsPvqY",
+						"order": 23000,
+						"from": "J3yMo4ag",
+						"to": "gUN928v4",
+						"kind": "call",
+						"label": "measure every painted line",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+							"symbol": "canvasWidth"
+						}
+					},
+					{
+						"id": "V6JJ4OjE",
+						"order": 24000,
+						"from": "0XCanbzp",
+						"to": "gUN928v4",
+						"kind": "call",
+						"label": "install as OffscreenCanvas, faces registered",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/bun-host.ts",
+							"symbol": "nodeOffscreenCanvas"
+						}
+					},
+					{
+						"id": "tmrkphkd",
+						"order": 25000,
+						"from": "wskEBeIy",
+						"to": "gUN928v4",
+						"kind": "call",
+						"label": "load the diagram faces into the tab",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer/index.ts",
+							"symbol": "loadDiagramFaces"
+						}
+					},
+					{
+						"id": "oCH6TGpi",
+						"order": 26000,
+						"from": "wLF1X11D",
+						"to": "J3yMo4ag",
+						"kind": "call",
+						"label": "wrap responsibilities and step notes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/sequence-card.ts",
+							"symbol": "measureNoteLines"
+						}
+					},
+					{
+						"id": "xKJERQyv",
+						"order": 36000,
+						"from": "J7mPrUeP",
+						"to": "Ga3k1AaP",
+						"kind": "call",
+						"label": "slab labels and member-tagged card shadows",
+						"description": "architecture.ts paintEdgeWords calls slab for a relationship label; paintArchitecture calls shadowUnder before all lines and cards. measured-cards.ts draws card bodies with slab, while container headers are delegated to tray.ts.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts",
+							"symbol": "slab"
+						}
+					},
+					{
+						"id": "HDZqKmN4",
+						"order": 37000,
+						"from": "CtoOMxca",
+						"to": "Ga3k1AaP",
+						"kind": "call",
+						"label": "selection seats and removed ghosts; helper slabs",
+						"description": "dataflow.ts paintFrame calls slabSeat and slabShadow for the frame; cards.ts, flow-columns.ts and flow-words.ts draw participant cards, activations and message labels with slab. The neutral frame and its header are drawn by tray.ts.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts",
+							"symbol": "slabSeat"
+						}
+					},
+					{
+						"id": "lW0CBEfj",
+						"order": 38000,
+						"from": "Ga3k1AaP",
+						"to": "u1OXg3Yy",
+						"kind": "dependency",
+						"label": "the palette type its functions consume",
+						"description": "Slab functions receive palette colors through the Palette contract imported from theme.ts.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/slab.ts",
+							"symbol": "Palette"
+						}
+					},
+					{
+						"id": "FBttxPdB",
+						"order": 39000,
+						"from": "eECDrhMc",
+						"to": "Ga3k1AaP",
+						"kind": "call",
+						"label": "slabDefinitions: shared sheen gradient",
+						"description": "document.ts svgDocument adds slabDefinitions(palette) to its defs. The standing hatch was removed; slabs keep their group face.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/document.ts",
+							"symbol": "slabDefinitions"
+						}
+					},
+					{
+						"id": "0dHSQwEC",
+						"order": 40000,
+						"from": "Man3LVIp",
+						"to": "zPI3vU4A",
+						"kind": "call",
+						"label": "the measured frame well and its header slab",
+						"description": "paintMeasuredFrame calls tray for the neutral container well.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/measured-cards.ts",
+							"symbol": "tray"
+						}
+					},
+					{
+						"id": "qtD8CVTd",
+						"order": 41000,
+						"from": "CtoOMxca",
+						"to": "zPI3vU4A",
+						"kind": "call",
+						"label": "the neutral sequence frame and header slab",
+						"description": "dataflow.ts paintFrame calls tray(frame, look, palette, ghosted).",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts",
+							"symbol": "tray"
+						}
+					},
+					{
+						"id": "GlD7SMi0",
+						"order": 42000,
+						"from": "zPI3vU4A",
+						"to": "Ga3k1AaP",
+						"kind": "call",
+						"label": "the header slab and its shadow",
+						"description": "tray.ts tray calls slabShadow(header) and slab(header, look.header.look, palette, standing).",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/tray.ts",
+							"symbol": "slab"
+						}
+					},
+					{
+						"id": "pYtAAlpK",
+						"order": 43000,
+						"from": "J7mPrUeP",
+						"to": "Oqsd6MyT",
+						"kind": "call",
+						"label": "slots, clips, inside paint and pulse rides",
+						"description": "architecture.ts paintArchitecture calls portsOf and portPlan, paintEdgeLine calls portInside, and its traffic uses endsInPort and rideInto.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts",
+							"symbol": "portsOf"
+						}
+					},
+					{
+						"id": "aQe4gXE2",
+						"order": 44000,
+						"from": "eECDrhMc",
+						"to": "Oqsd6MyT",
+						"kind": "call",
+						"label": "portDefinitions: well and fade gradients",
+						"description": "document.ts svgDocument includes portDefinitions(palette) in its defs.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/document.ts",
+							"symbol": "portDefinitions"
+						}
+					},
+					{
+						"id": "WBfvIs2I",
+						"order": 45000,
+						"from": "Man3LVIp",
+						"to": "8jYL9wH6",
+						"kind": "call",
+						"label": "shared card and header content",
+						"description": "paintMeasuredCard and paintMeasuredHeader call paintCardViews.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/measured-cards.ts",
+							"symbol": "paintCardViews"
+						}
+					},
+					{
+						"id": "t5CUCz5T",
+						"order": 46000,
+						"from": "CtoOMxca",
+						"to": "8jYL9wH6",
+						"kind": "call",
+						"label": "flow heading, and participant content through cards",
+						"description": "dataflow.ts paintFrame calls paintHeadingViews; its paintFlow calls paintCards, whose cards.ts calls paintCardViews.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts",
+							"symbol": "paintHeadingViews"
+						}
+					},
+					{
+						"id": "TveKMtfC",
+						"order": 27000,
+						"from": "0XCanbzp",
+						"to": "JzHM3KOY",
+						"kind": "call",
+						"label": "Bun Workers, as the host's solve",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/bun-host.ts",
+							"symbol": "createEnginePool"
+						}
+					},
+					{
+						"id": "mKaf3NN2",
+						"order": 28000,
+						"from": "wskEBeIy",
+						"to": "JzHM3KOY",
+						"kind": "call",
+						"label": "Web Workers, as the host's solve",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer/index.ts",
+							"symbol": "createEnginePool"
+						}
+					},
+					{
+						"id": "hlcSv0hV",
+						"order": 29000,
+						"from": "0XCanbzp",
+						"to": "wpI1LbzG",
+						"kind": "call",
+						"label": "a picture with no board around it",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/index.ts",
+							"symbol": "renderArchitectureIn"
+						}
+					},
+					{
+						"id": "YlwhO14p",
+						"order": 30000,
+						"from": "0XCanbzp",
+						"to": "J3yMo4ag",
+						"kind": "call",
+						"label": "measure under the Bun host, for runtime checks",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/measurement.ts",
+							"symbol": "measureArchitectureIn"
+						}
+					},
+					{
+						"id": "KgeoU8Mf",
+						"order": 31000,
+						"from": "CtoOMxca",
+						"to": "y8vuJJKu",
+						"kind": "call",
+						"label": "where every subject landed",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts",
+							"symbol": "atlasBoxes"
+						}
+					},
+					{
+						"id": "FQBxwNeT",
+						"order": 32000,
+						"from": "CtoOMxca",
+						"to": "L51bfquE",
+						"kind": "call",
+						"label": "round a self-call's turns",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts",
+							"symbol": "curveThrough"
+						}
+					},
+					{
+						"id": "QDc3ch8T",
+						"order": 33000,
+						"from": "CtoOMxca",
+						"to": "eECDrhMc",
+						"kind": "data",
+						"label": "the painted body",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts",
+							"symbol": "shifted"
+						}
+					},
+					{
+						"id": "R3iBvVWQ",
+						"order": 34000,
+						"from": "J7mPrUeP",
+						"to": "J3yMo4ag",
+						"kind": "call",
+						"label": "the size far names are set at",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts",
+							"symbol": "farSizeFor"
+						}
+					},
+					{
+						"id": "ngvTrWBU",
+						"order": 35000,
+						"from": "0XCanbzp",
+						"to": "kSMUVN6V",
+						"kind": "data",
+						"label": "the diagram faces to register in its canvas",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/bun-host.ts",
+							"symbol": "FACES"
+						}
+					},
+					{
+						"id": "s3eeTdzY",
+						"order": 47000,
+						"from": "J7mPrUeP",
+						"to": "Man3LVIp",
+						"kind": "call",
+						"description": "Delegates measured architecture cards, frames and headers to their direct painter.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts",
+							"symbol": "paintMeasuredFrame"
+						}
+					},
+					{
+						"id": "sUAWU5K9",
+						"order": 48000,
+						"from": "Man3LVIp",
+						"to": "Ga3k1AaP",
+						"kind": "call",
+						"description": "Draws the measured card body, selection seat and removed shadow through shared slabs.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/measured-cards.ts",
+							"symbol": "slab"
+						}
+					},
+					{
+						"id": "V4rI4i48",
+						"order": 49000,
+						"from": "wpI1LbzG",
+						"to": "iXrVyvHz",
+						"kind": "call",
+						"label": "frame the page for export",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/index.ts",
+							"symbol": "framedForExport"
+						}
+					},
+					{
+						"id": "jrbBTxz5",
+						"order": 50000,
+						"from": "iXrVyvHz",
+						"to": "YhQnj9ID",
+						"kind": "call",
+						"label": "lay out the key",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/export-frame.ts",
+							"symbol": "legendOf"
+						}
+					},
+					{
+						"id": "0ylLwMwH",
+						"order": 51000,
+						"from": "YhQnj9ID",
+						"to": "X0CpwpF1",
+						"kind": "call",
+						"label": "what the picture draws",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/legend.ts",
+							"symbol": "pictureAppearances"
+						}
+					},
+					{
+						"id": "UTRklvpv",
+						"order": 52000,
+						"from": "iXrVyvHz",
+						"to": "X0CpwpF1",
+						"kind": "call",
+						"label": "count the marks",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/export-frame.ts",
+							"symbol": "markCounts"
+						}
+					},
+					{
+						"id": "m9XkQSPd",
+						"order": 53000,
+						"from": "CzHSL7yr",
+						"to": "X0CpwpF1",
+						"kind": "call",
+						"label": "read the picture's key",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-stage-appearances.ts",
+							"symbol": "pictureAppearances"
+						}
+					},
+					{
+						"id": "kxJJ5IPb",
+						"order": 54000,
+						"from": "CzHSL7yr",
+						"to": "wpI1LbzG",
+						"kind": "call",
+						"label": "the picture's own marks and inks, for its chrome",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/code-marks.ts",
+							"symbol": "cornerWarning"
+						}
+					}
+				],
+				"flows": [
+					{
+						"id": "ggtKmP5B",
+						"name": "Render sequence",
+						"summary": "One architecture render, from the Archboard server's route to the document it answers with.",
+						"participants": [
+							"LgbAlvMN",
+							"0XCanbzp",
+							"yOV8Znnv",
+							"wpI1LbzG",
+							"J3yMo4ag",
+							"Y0smyqtZ",
+							"J7mPrUeP",
+							"eECDrhMc"
+						],
+						"steps": [
+							{
+								"id": "1rKNzG1j",
+								"from": "LgbAlvMN",
+								"to": "0XCanbzp",
+								"label": "render this board, view and theme",
+								"kind": "sync"
+							},
+							{
+								"id": "PJduk2By",
+								"from": "0XCanbzp",
+								"to": "0XCanbzp",
+								"label": "install the canvas, the faces and the layout worker pool",
+								"kind": "self",
+								"note": "installBunHost is idempotent; later renders find the host already there"
+							},
+							{
+								"id": "llrceIKD",
+								"from": "0XCanbzp",
+								"to": "yOV8Znnv",
+								"label": "renderBoard on the core",
+								"kind": "sync"
+							},
+							{
+								"id": "UibFsWA6",
+								"from": "yOV8Znnv",
+								"to": "wpI1LbzG",
+								"label": "resolved content, grammar and standing",
+								"kind": "sync"
+							},
+							{
+								"id": "FFhy6eL9",
+								"from": "wpI1LbzG",
+								"to": "wpI1LbzG",
+								"label": "turn flow steps into lines",
+								"kind": "self"
+							},
+							{
+								"id": "32Ao2Mfe",
+								"from": "wpI1LbzG",
+								"to": "J3yMo4ag",
+								"label": "measure every card, note and label",
+								"kind": "sync",
+								"note": "skipped with the layout when the same content and standing were laid out before; the last 64 are remembered"
+							},
+							{
+								"id": "STISCFAG",
+								"from": "J3yMo4ag",
+								"to": "wpI1LbzG",
+								"label": "measured sizes and wrapped lines",
+								"kind": "return"
+							},
+							{
+								"id": "zrYLyVFk",
+								"from": "wpI1LbzG",
+								"to": "Y0smyqtZ",
+								"label": "content and measured sizes",
+								"kind": "sync"
+							},
+							{
+								"id": "WFtJLlx7",
+								"from": "Y0smyqtZ",
+								"to": "Y0smyqtZ",
+								"label": "lay out with Track or Blocks; keep what reads best",
+								"kind": "self",
+								"note": "every variant is laid out fresh (ADR 0032); each way to lay it out is solved on the host layout engine"
+							},
+							{
+								"id": "zJPQEVAa",
+								"from": "Y0smyqtZ",
+								"to": "wpI1LbzG",
+								"label": "cards, frames, ports, routes and labels",
+								"kind": "return"
+							},
+							{
+								"id": "1Yv9pTwY",
+								"from": "wpI1LbzG",
+								"to": "J7mPrUeP",
+								"label": "paint the settled drawing",
+								"kind": "sync"
+							},
+							{
+								"id": "Ix1Gsqd2",
+								"from": "J7mPrUeP",
+								"to": "wpI1LbzG",
+								"label": "marks and the subject atlas",
+								"kind": "return"
+							},
+							{
+								"id": "ppxdedYp",
+								"from": "wpI1LbzG",
+								"to": "eECDrhMc",
+								"label": "wrap the body with its faces",
+								"kind": "sync"
+							},
+							{
+								"id": "SrLHihKB",
+								"from": "eECDrhMc",
+								"to": "wpI1LbzG",
+								"label": "one self-contained document",
+								"kind": "return"
+							},
+							{
+								"id": "RqxmU0S4",
+								"from": "wpI1LbzG",
+								"to": "yOV8Znnv",
+								"label": "document, size and atlas",
+								"kind": "return"
+							},
+							{
+								"id": "gYWFY5g5",
+								"from": "yOV8Znnv",
+								"to": "0XCanbzp",
+								"label": "document, size and atlas",
+								"kind": "return"
+							},
+							{
+								"id": "AXncoKD3",
+								"from": "0XCanbzp",
+								"to": "LgbAlvMN",
+								"label": "document, size and atlas",
+								"kind": "return"
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "Gyc03kQp",
+						"name": "Meaning becomes an interactive SVG",
+						"beats": [
+							{
+								"id": "TxUv8QT5",
+								"heading": "One core, two hosts",
+								"body": "The renderer body reads no file, no clock and no random number. The server installs a Bun host: an @napi-rs/canvas canvas with the diagram faces, and Bun Workers running Graphviz and libavoid. The tab installs its own canvas and Web Workers running the same engines. Both then call the same board answer.",
+								"subjects": [
+									"4nyk76pY",
+									"0XCanbzp",
+									"wskEBeIy",
+									"yOV8Znnv",
+									"gUN928v4"
+								]
+							},
+							{
+								"id": "2XXwjrOX",
+								"heading": "Words are measured before anything is placed",
+								"body": "Every card, note and label is measured before the layout runs, by the canvas of the place drawing the picture with the diagram faces loaded. The space a name needs is a fact the layout is given rather than one it guesses.",
+								"subjects": [
+									"ezsxPVcK",
+									"J3yMo4ag",
+									"eJO5yog2",
+									"Y0smyqtZ",
+									"BzVsPvqY",
+									"gUN928v4"
+								]
+							},
+							{
+								"id": "u7etZu06",
+								"heading": "Every variant is laid out fresh, top to bottom",
+								"body": "The layout engine lays each variant out top to bottom, solving the board more than one way and keeping the drawing that reads best. Nothing is carried over from a predecessor: a proposal is laid out like any variant, and stable ids carry the comparison (ADR 0032, ADR 0040).",
+								"subjects": [
+									"Y0smyqtZ",
+									"eJO5yog2",
+									"F5mgUBCT"
+								]
+							},
+							{
+								"id": "g5qAhKaY",
+								"heading": "Painting and inspection share one geometry",
+								"body": "The painter asks the atlas where each subject landed, so the picture a reader points at and the subject the inspector opens are the same geometry, never two measurements that can disagree.",
+								"subjects": [
+									"98et92HX",
+									"J7mPrUeP",
+									"WMtzvSOO",
+									"y8vuJJKu",
+									"rZknAbkb"
+								]
+							}
+						]
+					}
+				]
+			}
 		}
 	],
-	"current": "wRhU4Sgu",
+	"current": "A7NJp1XR",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
@@ -10233,6 +11583,12 @@
 			"from": "qe35sHIi",
 			"at": "2026-10-12T01:29:36.433Z",
 			"reason": "An exported picture can carry its legend, or be the legend alone: the export legend draws what the picture key reads, the reader the page's legend shares (TASK-468)"
+		},
+		{
+			"variant": "A7NJp1XR",
+			"from": "wRhU4Sgu",
+			"at": "2026-10-15T16:11:39.439Z",
+			"reason": "A picture or recording drawn with --against reads relative to the named variant and carries no Planned frame"
 		}
 	],
 	"shelvings": [
