@@ -3,11 +3,11 @@ id: TASK-478.02
 title: >-
   A recorded walkthrough speaks to a reviewer about the system, not about the
   screen
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-15 15:39'
-updated_date: '2026-10-15 17:44'
+updated_date: '2026-10-15 21:00'
 labels: []
 dependencies: []
 parent_task_id: TASK-478
@@ -81,4 +81,12 @@ Outside this task's write scope, for the parent: docs/adr/0041-a-recording-is-a-
 Gate: bun run check passed at e92b4f82f plus the skill commits (exit 0, no failing test in any lane, serial browser lane included). AC 3 stays open: the transcripts of this recording and of the three trial recordings (TASK-478.04) show no screen talk, joke or closing line, but no person has listened to a video yet. Listen to /tmp/t47802-rec/codex-session.mp4 or /tmp/pr-audit/trial-out/607/walkthrough.mp4, then check AC 3.
 
 Persona restored. The user enjoyed the persona and asked to turn the jokes down by 25% and no more. A recording now gets VOICE_PERSONA (ARCHBOARD_RECORDING_VOICE_PROMPT again, chosen in start-policy.ts) followed by the recording section. The section replaces "No jokes, no asides, no exclamations" with a rule to stay in character, with the humour turned down by a quarter from live talk: three jokes where a conversation would get four. The rules against screen talk, step numbers, a greeting and a closing line stay, and so does the one-language rule. The section no longer repeats the persona's "heard, not read" paragraph. Live conversation and live narration prompts are byte-identical to before. Test owner: presentation-mode.test.ts proves that a recording keeps a leading run of the live prompt's paragraphs (the persona) and none of the rest (the conversation), with no wording matched. Two mutations of start-policy.ts each fail it: a recording given the whole live prompt, and a recording given its section alone. bun test src/runtime/codex-realtime: 32 pass. lint, type-check, fmt:check and tests/system/repository-policy (27 pass) are clean. ADR 0041 and docs/design/codex-workbench-authored-contracts.md now say that a recording gets the persona with a recording section and none of the conversation rules. AC 3 was restated: a joke is allowed again, so the transcript only has to show no screen talk and no closing formula.
+
+AC 3 waived by the user on 2026-10-15 ("Close 478 and merge!"). Nobody listened to a recording made with the restored persona, and no such recording exists. The transcripts of the recordings made without the persona show no screen talk and no closing formula. AC 3 stays unchecked, because no evidence proves it.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A recording now gives its voice session the live persona with a recording section of its own, and none of the conversation rules. The section forbids screen talk, step numbers, a greeting and a closing line, and turns the humour down by a quarter from live talk. Each recorded beat is handed over as its heading, body and subjects, with no screen position or step count. The test owner in presentation-mode.test.ts proves that a recording keeps the persona and none of the conversation rules, and two mutations fail it. AC 3, a person listening to a recording with the restored persona, was waived by the user and is unchecked. Commits f9caee1da and ff0bdac91.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,11 +1,11 @@
 ---
 id: TASK-478
 title: A pull request explained with archboard-pr reads as a short /pr body
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-15 15:38'
-updated_date: '2026-10-15 17:12'
+updated_date: '2026-10-15 21:00'
 labels: []
 dependencies: []
 priority: high
@@ -30,4 +30,12 @@ An audit of 15 pull request descriptions written with archboard-pr (Admin-By-Req
 
 <!-- SECTION:NOTES:BEGIN -->
 All three criteria hold (TASK-478.01, .03 and .04 are Done). TASK-478 stays In Progress until TASK-478.02 AC 3, a person listening to a recording, is checked.
+
+Closed on 2026-10-15 at the user's request. TASK-478.02 is Done with AC 3 waived by the user.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard-pr now writes a body with the three /pr sections, Summary, Evidence and Merge Danger, with the picture and a short walkthrough in the Summary (TASK-478.03). A picture of a stacked pull request is drawn against the pull request below it and has no planned frame (TASK-478.01). A recording speaks to a reviewer about the system in the persona, with a quarter less humour (TASK-478.02, AC 3 waived by the user). Three pull requests of the device trust stack were explained again into files for the user to read (TASK-478.04).
+<!-- SECTION:FINAL_SUMMARY:END -->
