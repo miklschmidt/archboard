@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import type { OwnedServer } from "./owned-server.ts";
-import { holderOf } from "./test-vault.ts";
+import { callerVaultCleared, holderOf } from "./test-vault.ts";
 import { TEST_VAULT_CLI_TIMEOUT_MS } from "./timing.ts";
 
 interface ServerCliInput {
@@ -40,6 +40,7 @@ export function runServerCli(options: ServerCliInput): ServerCliResult {
 		killSignal: "SIGKILL",
 		env: {
 			...process.env,
+			...callerVaultCleared,
 			ARCHBOARD_REPOS: options.server.registry,
 			ARCHBOARD_URL: options.server.base,
 			ARCHBOARD_NO_AUTOSTART: "1",
