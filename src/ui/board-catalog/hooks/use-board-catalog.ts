@@ -50,7 +50,11 @@ interface BoardCatalog {
 	readonly repositories: readonly RepositoryBoards[];
 	/** The vault the server was started with, where a page opens; null until read. */
 	readonly served: string | null;
-	/** Why the navigator cannot show what it should, or null. */
+	/**
+	 * Why the navigator cannot show what it should, or null: the repositories,
+	 * or which pane holds what, could not be read. A repository's own listing
+	 * failure is its own.
+	 */
 	readonly error: string | null;
 	/** The repositories have not answered yet and nothing of them is in hand. */
 	readonly loading: boolean;
@@ -236,14 +240,18 @@ function useBoardCatalog(): BoardCatalog {
 				return {
 					repository,
 					listing: listingOf(vault?.half, panes.data),
-					error: listingError(vault?.error ?? null, panes.error, panes.data !== undefined),
+					error: listingError(vault?.error ?? null, null, true),
 					loading: vault?.pending === true,
 				};
 			}),
-		[entries, readable, vaults, panes.data, panes.error],
+		[entries, readable, vaults, panes.data],
 	);
+	// Which pane holds what is one answer for every repository, so its failure
+	// is the navigator's and not each repository's.
 	const error =
-		listed.error === null ? null : `The repositories could not be read: ${listed.error.message}`;
+		listed.error === null
+			? listingError(null, panes.error, panes.data !== undefined)
+			: `The repositories could not be read: ${listed.error.message}`;
 	const served = listed.data?.served ?? null;
 	return useMemo(
 		() => ({ repositories, served, error, loading: listed.isPending, ...commands }),
