@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 
+import { holderOf, vaultIn } from "./test-vault.ts";
 import { TEST_SERVER_HEALTH_POLL_MS } from "./timing.ts";
 import { stateDir } from "../../../src/runtime/engine/state-dir.ts";
 
@@ -120,7 +121,7 @@ if (process.env["ARCHBOARD_FAILED_REAP_CHILD"] === "1") {
 	);
 	const ownedServerUrl = new URL("./owned-server.ts", import.meta.url).href;
 	const { startOwnedServer: startMockedServer } = await import(ownedServerUrl);
-	const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-failed-reap-"));
+	const vault = vaultIn(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-failed-reap-")));
 	const server = await startMockedServer({ serverPath, vault });
 	let surfaced = "";
 	try {
@@ -141,6 +142,7 @@ if (process.env["ARCHBOARD_FAILED_REAP_CHILD"] === "1") {
 			vaultExists: fs.existsSync(vault),
 		}),
 	);
+	fs.rmSync(holderOf(vault), { recursive: true, force: true });
 	process.exit(0);
 }
 
@@ -237,8 +239,8 @@ describe("owned server direct lifecycle", () => {
 	});
 
 	test("allocates and verifies a port when the caller names none", async () => {
-		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
-		emergencyVaults.add(vault);
+		const vault = vaultIn(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-")));
+		emergencyVaults.add(holderOf(vault));
 		const server = await startOwnedServer({ serverPath, vault });
 		try {
 			const health = (await fetch(`${server.base}/health`).then((response) => response.json())) as {
@@ -290,12 +292,12 @@ describe("owned server direct lifecycle", () => {
 		try {
 			first = await startOwnedServer({
 				serverPath: thisFile,
-				vault: path.join(callerRoot, "vault-first"),
+				vault: vaultIn(path.join(callerRoot, "vault-first")),
 				env,
 			});
 			second = await startOwnedServer({
 				serverPath: thisFile,
-				vault: path.join(callerRoot, "vault-second"),
+				vault: vaultIn(path.join(callerRoot, "vault-second")),
 				env,
 			});
 			for (const server of [first, second]) {
@@ -361,8 +363,8 @@ describe("owned server direct lifecycle", () => {
 	});
 
 	test("reallocates an automatic port stolen after the retired generation exits", async () => {
-		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
-		emergencyVaults.add(vault);
+		const vault = vaultIn(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-")));
+		emergencyVaults.add(holderOf(vault));
 		const server = await startOwnedServer({ serverPath, vault });
 		const retiredBase = server.base;
 		const retiredPid = server.pid;
@@ -398,8 +400,8 @@ describe("owned server direct lifecycle", () => {
 	});
 
 	test("bounds repeated bind collisions with all attempt diagnostics", async () => {
-		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
-		emergencyVaults.add(vault);
+		const vault = vaultIn(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-")));
+		emergencyVaults.add(holderOf(vault));
 		let failure: Error | undefined;
 		try {
 			await startOwnedServer({
@@ -426,8 +428,8 @@ describe("owned server direct lifecycle", () => {
 
 	test("refuses a foreign pid and never reallocates an explicit restart", async () => {
 		const port = await probeLoopbackPort();
-		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-foreign-pid-"));
-		emergencyVaults.add(vault);
+		const vault = vaultIn(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-foreign-pid-")));
+		emergencyVaults.add(holderOf(vault));
 		const server = await startOwnedServer({ serverPath, port, vault });
 		let foreign: ReturnType<typeof Bun.serve> | undefined;
 		try {

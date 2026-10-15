@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { WebSocket } from "ws";
 
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@/shared/semantic-pane-context";
 
@@ -94,7 +95,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-codex-application-sockets-"));
 		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
-			vault: join(root, "vault"),
+			vault: vaultIn(join(root, "vault")),
 		});
 		const request = createRequester(server);
 		const clientId = "overlapping-codex-pane";
@@ -214,7 +215,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 				repoRoot,
 				"tests/system/server-state/fixtures/initial-send-failure-server.ts",
 			),
-			vault: join(root, "vault"),
+			vault: vaultIn(join(root, "vault")),
 			env: { ARCHBOARD_TEST_INITIAL_SEND_LOG: sendLog },
 		});
 		const request = createRequester(server);

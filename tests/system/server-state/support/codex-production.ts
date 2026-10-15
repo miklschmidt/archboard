@@ -1,7 +1,8 @@
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { WebSocket } from "ws";
+import { vaultIn } from "../../support/test-vault.ts";
 
 interface WorkbenchResult {
 	readonly ok: boolean;
@@ -64,8 +65,7 @@ function prepareProductionFixture(
 	);
 	chmodSync(executablePath, 0o700);
 	// A pane names the vault, and the server refuses one that is not a directory (ADR 0049).
-	const vault = join(root, "vault");
-	mkdirSync(vault, { recursive: true });
+	const vault = vaultIn(root);
 	return { root, logPath, controlPath, executablePath, vault };
 }
 

@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { z } from "zod";
 
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { runOwnedPeerToExit, startOwnedPeer } from "./support/owned-peer-process.ts";
 import {
 	availablePort,
@@ -23,8 +24,8 @@ const healthFixture = join(import.meta.dir, "fixtures/health-responder.ts");
 const serverEntry = join(repoRoot, "src/server.ts");
 const HealthResponderReadySchema = ReadySchema.extend({ port: z.number().int().positive() });
 
-const fixtureEnv = (root: string, vault: string, mode: "default" | "broad" | "no-vault") => ({
-	...sanitizedEnvironment(root, vault),
+const fixtureEnv = (root: string, mode: "default" | "broad") => ({
+	...sanitizedEnvironment(root),
 	ARCHBOARD_TEST_SERVER_ENTRY: serverEntry,
 	ARCHBOARD_TEST_BIND_MODE: mode,
 });
@@ -38,12 +39,12 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 	const { mkdirSync, symlinkSync } = await import("node:fs");
 	mkdirSync(hiddenParent);
 	symlinkSync(repoRoot, hiddenRepo, "dir");
-	const vault = join(root, "vault");
+	const vault = vaultIn(join(root, "boards"));
 	const server = await startOwnedServer({
 		serverPath: fixture,
 		vault,
 		env: {
-			...fixtureEnv(root, vault, "default"),
+			...fixtureEnv(root, "default"),
 			ARCHBOARD_TEST_SERVER_ENTRY: join(hiddenRepo, "src/server.ts"),
 		},
 	});
@@ -70,7 +71,7 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 		for (const mode of ["default", "broad"] as const) {
 			const failed = await runOwnedPeerToExit({
 				argv: [process.execPath, fixture],
-				env: { ...fixtureEnv(root, vault, mode), PORT: String(port) },
+				env: { ...fixtureEnv(root, mode), PORT: String(port) },
 			});
 			expect(failed.code).not.toBe(0);
 			expect(`${failed.stdout}${failed.stderr}`).toMatch(/EADDRINUSE|already.*(?:use|listen)/i);
@@ -80,16 +81,16 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 	}
 }, 20_000);
 
-test("rejects foreign health, recovers the port, and starts without a vault", async () => {
+test("rejects foreign health, recovers the port, and refuses a command outside any vault", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-local-bind-refusal-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const vault = join(root, "vault");
+	const vault = vaultIn(join(root, "boards"));
 	const port = await availablePort();
 	const foreign = await startOwnedPeer({
 		argv: [process.execPath, healthFixture],
 		env: {
-			...sanitizedEnvironment(root, vault),
+			...sanitizedEnvironment(root),
 			PORT: String(port),
 			REPORTED_PID: "999999",
 		},
@@ -101,7 +102,7 @@ test("rejects foreign health, recovers the port, and starts without a vault", as
 			serverPath: fixture,
 			port,
 			vault,
-			env: fixtureEnv(root, vault, "default"),
+			env: fixtureEnv(root, "default"),
 		}).catch((error: unknown) => error);
 		expect(collision).toBeInstanceOf(Error);
 		expect((collision as Error).message).toMatch(/not owned pid|answered for pid/i);
@@ -110,29 +111,15 @@ test("rejects foreign health, recovers the port, and starts without a vault", as
 			serverPath: fixture,
 			port,
 			vault,
-			env: fixtureEnv(root, vault, "default"),
+			env: fixtureEnv(root, "default"),
 		});
 		resources.defer(() => recovered.dispose());
 		expect(recovered.pid).toBeNumber();
 		await recovered.dispose();
 
-		// The server needs no vault, because every call names its own (ADR 0049).
-		const noVault = await startOwnedServer({
-			serverPath: fixture,
-			port: await availablePort(),
-			vault,
-			env: fixtureEnv(root, vault, "no-vault"),
-		});
-		resources.defer(() => noVault.dispose());
-		const noVaultHealth = await fetch(`${noVault.base}/health`);
-		expect(noVaultHealth.status).toBe(200);
-		expect(HealthSchema.parse(await noVaultHealth.json()).pid).toBe(noVault.pid!);
-		await noVault.dispose();
-
 		// Outside any checkout and any vault, a command finds no vault and refuses
 		// before it starts a server (ADR 0049).
-		const cliEnv = sanitizedEnvironment(root, vault);
-		delete cliEnv["ARCHBOARD_VAULT"];
+		const cliEnv = sanitizedEnvironment(root);
 		delete cliEnv["ARCHBOARD_NO_AUTOSTART"];
 		const cliPort = await availablePort();
 		cliEnv["ARCHBOARD_URL"] = `http://127.0.0.1:${cliPort}`;

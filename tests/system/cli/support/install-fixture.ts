@@ -46,7 +46,6 @@ interface InstallFixture {
 	readonly state: string;
 	readonly log: string;
 	readonly registry: string;
-	readonly vault: string;
 	readonly skillRoot: string;
 	repo(name: string, files?: Readonly<Record<string, string>>): string;
 	run(repo: string, args?: readonly string[], options?: { home?: boolean }): InstallSpawn;
@@ -85,9 +84,8 @@ function createInstallFixture(): InstallFixture {
 	const state = join(root, "state");
 	const log = join(root, "logs", "archboard.log");
 	const registry = join(root, "repos.json");
-	const vault = join(root, "vault");
 	const skillRoot = join(root, "skills");
-	for (const directory of [home, state, dirname(log), vault]) {
+	for (const directory of [home, state, dirname(log)]) {
 		mkdirSync(directory, { recursive: true });
 	}
 	const repo = (name: string, files: Readonly<Record<string, string>> = {}) => {
@@ -127,7 +125,6 @@ function createInstallFixture(): InstallFixture {
 				XDG_STATE_HOME: state,
 				LOG_FILE_PATH: log,
 				ARCHBOARD_REPOS: registry,
-				ARCHBOARD_VAULT: vault,
 				ARCHBOARD_NO_AUTOSTART: "1",
 			},
 		});
@@ -147,7 +144,6 @@ function createInstallFixture(): InstallFixture {
 		state,
 		log,
 		registry,
-		vault,
 		skillRoot,
 		repo,
 		run,

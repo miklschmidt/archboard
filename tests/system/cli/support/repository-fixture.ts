@@ -1,45 +1,25 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { z } from "zod";
-import { packageBin } from "./package-cli.ts";
+import { vaultIn } from "../../support/test-vault.ts";
 
-const spawnSchema = z.object({
-	command: z.array(z.string()),
-	cwd: z.string(),
-	status: z.number().nullable(),
-	signal: z.string().nullable(),
-	stdout: z.string(),
-	stderr: z.string(),
-});
-type RepositorySpawn = z.infer<typeof spawnSchema>;
 type RepositoryServerEnvironment = Readonly<NodeJS.ProcessEnv>;
 
 interface RepositoryFixture {
 	readonly root: string;
+	/** A directory outside every checkout and every vault. */
 	readonly nowhere: string;
 	readonly home: string;
 	readonly state: string;
 	readonly log: string;
 	readonly registry: string;
+	/** An untracked vault, `<root>/boards/.archboard/vault`, that the registry does not list. */
 	readonly vault: string;
 	readonly serverEnvironment: RepositoryServerEnvironment;
 	repository(name: string, origin: string): string;
-	run(args: readonly string[], options?: { cwd?: string; url?: string }): RepositorySpawn;
 	dispose(): void;
 	[Symbol.dispose](): void;
-}
-
-function repositoryFailure(result: RepositorySpawn): string {
-	return [
-		`command: ${result.command.join(" ")}`,
-		`cwd: ${result.cwd}`,
-		`status: ${result.status ?? "null"}`,
-		`signal: ${result.signal ?? "null"}`,
-		`stdout:\n${result.stdout}`,
-		`stderr:\n${result.stderr}`,
-	].join("\n");
 }
 
 function createRepositoryFixture(): RepositoryFixture {
@@ -49,10 +29,10 @@ function createRepositoryFixture(): RepositoryFixture {
 	const state = join(root, "state");
 	const log = join(root, "logs", "archboard.log");
 	const registry = join(root, "repos.json");
-	const vault = join(root, "vault");
-	for (const directory of [nowhere, home, state, dirname(log), vault]) {
+	for (const directory of [nowhere, home, state, dirname(log)]) {
 		mkdirSync(directory, { recursive: true });
 	}
+	const vault = vaultIn(join(root, "boards"));
 	const serverEnvironment: RepositoryServerEnvironment = {
 		...process.env,
 		CODEX_HOME: undefined,
@@ -64,7 +44,6 @@ function createRepositoryFixture(): RepositoryFixture {
 		XDG_STATE_HOME: state,
 		LOG_FILE_PATH: log,
 		ARCHBOARD_REPOS: registry,
-		ARCHBOARD_VAULT: vault,
 		ARCHBOARD_NO_AUTOSTART: "1",
 	};
 	const repository = (name: string, origin: string) => {
@@ -100,38 +79,9 @@ function createRepositoryFixture(): RepositoryFixture {
 		vault,
 		serverEnvironment,
 		repository,
-		run(args, options = {}) {
-			const said = args.includes("--doing")
-				? [...args]
-				: [...args, "--doing", "checking repository resolution"];
-			const command = [packageBin, ...said];
-			const cwd = options.cwd ?? nowhere;
-			const result = spawnSync(command[0]!, command.slice(1), {
-				cwd,
-				encoding: "utf8",
-				env: {
-					...serverEnvironment,
-					...(options.url ? { ARCHBOARD_URL: options.url } : {}),
-				},
-			});
-			return spawnSchema.parse({
-				command,
-				cwd,
-				status: result.status,
-				signal: result.signal,
-				stdout: result.stdout,
-				stderr: result.stderr,
-			});
-		},
 		dispose,
 		[Symbol.dispose]: dispose,
 	};
 }
 
-export {
-	type RepositorySpawn,
-	type RepositoryServerEnvironment,
-	type RepositoryFixture,
-	repositoryFailure,
-	createRepositoryFixture,
-};
+export { type RepositoryServerEnvironment, type RepositoryFixture, createRepositoryFixture };

@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { Window } from "happy-dom";
 import { startOwnedServer, waitForProcessExit, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 
 // The public path to a bitmap: `semantic rasterize` draws the same picture
@@ -14,7 +15,8 @@ import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 // own owner proves pixels, bounds and teardown; this owner proves the command.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-rasterize-"));
+const holder = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-rasterize-"));
+const vault = vaultIn(holder);
 let server: OwnedServer;
 
 /**
@@ -24,7 +26,7 @@ let server: OwnedServer;
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string, env?: Readonly<Record<string, string>>) =>
-	runServerCli({ repoRoot, vault, base: server.base, args, input, env });
+	runServerCli({ repoRoot, server, args, input, env });
 
 const VIEW_NAME = 'Transfer "quoted" & <exchange>';
 
@@ -97,7 +99,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await server?.dispose();
-	fs.rmSync(vault, { recursive: true, force: true });
+	fs.rmSync(holder, { recursive: true, force: true });
 });
 
 describe("semantic rasterize", () => {

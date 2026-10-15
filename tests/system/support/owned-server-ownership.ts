@@ -21,7 +21,8 @@ type OwnedServerEnvironmentPaths = Pick<
 function buildOwnedServerEnvironment(options: {
 	paths: OwnedServerEnvironmentPaths;
 	port: number;
-	vault: string;
+	/** The registry the server lists repositories from, which no other server shares. */
+	registry: string;
 	env?: OwnedServerEnvironment;
 }): OwnedServerEnvironment {
 	const toolEnvironment: OwnedServerEnvironment = {
@@ -37,7 +38,7 @@ function buildOwnedServerEnvironment(options: {
 		TMPDIR: options.paths.temporary,
 		PORT: String(options.port),
 		HOST: "127.0.0.1",
-		ARCHBOARD_VAULT: options.vault,
+		ARCHBOARD_REPOS: options.registry,
 		LOG_LEVEL: "error",
 	};
 }

@@ -10,6 +10,7 @@ import {
 	TEST_SERVER_SHUTDOWN_TIMEOUT_MS,
 } from "./timing.ts";
 import { isOwnedServerNamespaceRoot, processExists } from "./owned-server.ts";
+import { holderOf } from "./test-vault.ts";
 
 type JsonRecord = Readonly<Record<string, unknown>>;
 
@@ -235,7 +236,7 @@ function createLifecycleChildRunner(
 				typeof recordedVault === "string" &&
 				recordedVault.startsWith(path.join(os.tmpdir(), "archboard-lifecycle-child-"))
 			) {
-				fs.rmSync(recordedVault, { recursive: true, force: true });
+				fs.rmSync(holderOf(recordedVault), { recursive: true, force: true });
 			}
 			if (reaped && owned !== undefined && isOwnedServerNamespaceRoot(owned.namespaceRoot)) {
 				fs.rmSync(owned.namespaceRoot, { recursive: true, force: true });
