@@ -15,7 +15,7 @@ import {
 	resolveExplicitDir,
 	resolveTarget,
 } from "@/cli/commands/lib/skill-destination";
-import { setUpRepository } from "@/cli/commands/lib/repo-setup";
+import { setUpRepository, withoutOldBlock } from "@/cli/commands/lib/repo-setup";
 import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
 
 const INSTALL_TARGETS = ["agents", "claude"] as const;
@@ -364,4 +364,5 @@ export {
 	InstallSkillResultSchema,
 	type InstallSkillResult,
 	installSkillContract,
+	withoutOldBlock,
 };

@@ -15,8 +15,14 @@ import { expandHome } from "@/cli/commands/lib/skill-destination";
 /** The agent documents an earlier version wrote its block into. */
 const AGENT_DOCUMENTS = ["CLAUDE.md", "AGENTS.md"] as const;
 
-/** A block an earlier version wrote, markers included, with the one newline that ended it. */
-const OLD_BLOCK = /<!-- archboard:begin -->[\s\S]*?<!-- archboard:end -->\n?/gu;
+/**
+ * A block an earlier version wrote, markers included, with the line ending that ended it. Each
+ * marker stood on a line of its own, so a marker quoted inside a line is prose and stays. A begin
+ * marker whose end marker somebody deleted stays too: the block runs from the last begin marker
+ * before an end marker, never across another one.
+ */
+const OLD_BLOCK =
+	/^<!-- archboard:begin -->\r?$(?:(?!^<!-- archboard:begin -->)[\s\S])*?^<!-- archboard:end -->\r?(?:\n|$)/gmu;
 
 interface SetupResult {
 	repo: string;
@@ -67,8 +73,8 @@ function gitIgnores(repo: string, target: string): boolean {
 }
 
 /**
- * Take the block of an earlier version out of a document: the text from its first marker through
- * its last marker and the newline after it. Every other byte stays.
+ * Take each block of an earlier version out of a document: the lines from its begin marker through
+ * its end marker, line endings included. Every other byte stays.
  * @param text - The document.
  * @returns The document without the block, or undefined when it holds none.
  */
@@ -132,4 +138,4 @@ function setUpRepository(options: SetupOptions): SetupResult {
 	return { repo, vault, vaultCreated, vaultIgnored, removedBlocks };
 }
 
-export { type SetupResult, type SetupOptions, setUpRepository };
+export { type SetupResult, type SetupOptions, setUpRepository, withoutOldBlock };
