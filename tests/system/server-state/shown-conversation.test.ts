@@ -60,8 +60,8 @@ async function listOf(socket: ApplicationSocket) {
 }
 
 // The shown conversation (ADR 0050, TASK-472.11): the panes of a tab show the conversation of the
-// checkout the person last activated in the page. What is guarded: the first pane read pins it,
-// the page's call changes it for every pane of the tab, a pick is taken only for a checkout the
+// checkout the person last activated in the page. What is guarded: the tab's focused pane pins it,
+// whichever pane is read first, the page's call changes it for every pane of the tab, a pick is taken only for a checkout the
 // tab works in, a message and New conversation from any pane go to the shown checkout's workhorse,
 // and an agent's show of a pane changes nothing of it.
 test("the page's activation changes the conversation every pane of a tab shows, and an agent's show does not", async () => {
@@ -107,22 +107,23 @@ test("the page's activation changes the conversation every pane of a tab shows, 
 			await request("/api/panes", {
 				method: "POST",
 				doing: false,
-				body: pane("client-a", "A", true, true),
+				body: pane("client-a", "A", false, true),
 			}),
 			await request("/api/panes", {
 				method: "POST",
 				doing: false,
 				vault: shopVault,
-				body: pane("client-b", "B", false, false),
+				body: pane("client-b", "B", true, false),
 			}),
 		];
 		expect(registered.map(({ status }) => status)).toEqual([200, 200]);
 		expect(await a.request("connect")).toMatchObject({ ok: true });
 		expect(await b.request("connect")).toMatchObject({ ok: true });
 
-		// The first pane read pins the tab, and both panes show that one conversation.
-		expect(await listOf(a)).toMatchObject({ shown: payments, entries: [[payments, false]] });
-		expect((await listOf(b)).shown).toBe(payments);
+		// The focused pane pins the tab though A is read first, and both panes show that one
+		// conversation.
+		expect(await listOf(a)).toMatchObject({ shown: shop, entries: [[shop, false]] });
+		expect((await listOf(b)).shown).toBe(shop);
 
 		const page: Record<string, string> = { Origin: server.base, "Sec-Fetch-Site": "same-origin" };
 		const activate = (clientId: string, checkout?: string, vault = fixture.vault, headers = page) =>
@@ -149,7 +150,15 @@ test("the page's activation changes the conversation every pane of a tab shows, 
 			[409, "VAULT_MISMATCH"],
 			[409, "CHECKOUT_NOT_SHOWABLE"],
 		]);
-		expect((await listOf(a)).shown).toBe(payments);
+		expect((await listOf(a)).shown).toBe(shop);
+
+		// The person focuses A: every pane of the tab shows payments.
+		expect((await activate("client-a")).body).toEqual({
+			success: true,
+			shown: payments,
+			changed: true,
+		});
+		expect((await listOf(b)).shown).toBe(payments);
 
 		// A picks the shop checkout, where B is: every pane of the tab shows it.
 		expect((await activate("client-a", shop)).body).toEqual({

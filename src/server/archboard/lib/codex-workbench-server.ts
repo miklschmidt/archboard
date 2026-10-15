@@ -49,8 +49,9 @@ export interface CodexWorkbenchServer {
 	) => SemanticContextPublisherOptions;
 	/**
 	 * The checkout whose conversation a browser pane's tab shows, the shown conversation (ADR 0050):
-	 * pinned to the checkout of the first pane it is read for, and changed after that only by the
-	 * person's own act in the browser. Every pane of the tab shows that checkout's workhorse.
+	 * pinned on the first read to the checkout of the tab's focused pane, and changed after that
+	 * only by the person's own act in the browser. Every pane of the tab shows that checkout's
+	 * workhorse.
 	 */
 	readonly shownCheckoutOf: (browserId: string) => string;
 	/** The checkout whose conversation a tab shows now, or null before any pane of it was read. */

@@ -31,6 +31,24 @@ function paneCheckoutOf(clientId: string): string {
 }
 
 /**
+ * The checkout a tab that shows no conversation yet is pinned to (ADR 0050): that of its focused
+ * pane, where the person was last, else the asking pane's own. Every pane of a tab reads the
+ * conversation as the page loads, in no fixed order, so the first reader alone would leave the
+ * choice to timing.
+ * @param clientId The asking pane's client id.
+ * @returns The checkout.
+ * @throws {Error} When the pane is in no vault.
+ */
+function pinnedCheckoutOf(clientId: string): string {
+	const tabSessionId = tabSessionOf(clientId);
+	const focused =
+		tabSessionId === null
+			? undefined
+			: panesOfTabSession(tabSessionId).find((pane) => pane.focused);
+	return paneCheckoutOf(focused?.clientId ?? clientId);
+}
+
+/**
  * The panes of one browser tab on screen, in reading order.
  * @param tabSessionId The tab's session.
  * @returns The panes.
@@ -213,6 +231,7 @@ export {
 	operationPane,
 	paneCheckoutOf,
 	panesOfTabSession,
+	pinnedCheckoutOf,
 	presentingPaneOf,
 	requireWorkhorse,
 	semanticOwners,

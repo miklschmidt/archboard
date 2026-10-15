@@ -54,7 +54,7 @@ import {
 	hearsVault,
 	openPaneOf,
 	operationPane,
-	paneCheckoutOf,
+	pinnedCheckoutOf,
 	presentingPaneOf,
 	requireWorkhorse,
 	semanticOwners,
@@ -326,12 +326,12 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			},
 		}),
 		/**
-		 * The checkout whose conversation a browser pane's tab shows, pinned to the pane's own
-		 * checkout the first time it is read.
+		 * The checkout whose conversation a browser pane's tab shows, pinned the first time it is
+		 * read to the checkout of the tab's focused pane, else of the asking pane.
 		 * @param browserId The browser's client id.
 		 * @returns The checkout.
 		 */
-		shownCheckoutOf: (browserId) => shownCheckoutOf(browserId, () => paneCheckoutOf(browserId)),
+		shownCheckoutOf: (browserId) => shownCheckoutOf(browserId, () => pinnedCheckoutOf(browserId)),
 		shownConversationOf: currentShownCheckout,
 		/**
 		 * Hear every change of a tab's shown conversation.
