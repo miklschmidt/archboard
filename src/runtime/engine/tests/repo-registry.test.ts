@@ -4,7 +4,15 @@
 // isolated registry file, and read the answers a command would print.
 
 import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	realpathSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -13,6 +21,7 @@ import {
 	forgetDirectory,
 	listRegistry,
 	RepoRegistryError,
+	repositoryOfVault,
 	setLanguageServer,
 } from "@/runtime/engine/repo-registry";
 
@@ -341,4 +350,23 @@ test("two chosen checkouts of one identity in a file read as one chosen", () => 
 		]),
 	);
 	expect(orders().chosen).toEqual([main]);
+});
+
+test("a vault that is a symbolic link is named by the checkout whose .archboard/vault leads to it", async () => {
+	// A command names the vault by its real path, and the server lists it by the
+	// real path too, so `semantic record` must find its repository by that path.
+	const elsewhere = join(scratch, "linked-vault");
+	mkdirSync(elsewhere);
+	mkdirSync(join(clone, ".archboard"), { recursive: true });
+	symlinkSync(elsewhere, join(clone, ".archboard", "vault"));
+	try {
+		await declareDirectory(clone);
+		expect(repositoryOfVault(realpathSync.native(elsewhere))).toEqual({
+			name: IDENTITY,
+			root: clone,
+			chosen: true,
+		});
+	} finally {
+		rmSync(join(clone, ".archboard"), { recursive: true, force: true });
+	}
 });
