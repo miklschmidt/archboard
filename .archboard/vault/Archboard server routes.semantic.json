@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 49,
+	"version": 53,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-15T08:13:40.765Z",
+	"updatedAt": "2026-10-15T08:27:55.668Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -12519,7 +12519,7 @@
 		{
 			"id": "plROBSTr",
 			"name": "TASK-472.16",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "vuIqmjLY",
 			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches, including a board's move to another repository and the look at what it would rewrite",
 			"content": {
@@ -14143,9 +14143,9 @@
 		{
 			"id": "AeC7wpXw",
 			"name": "TASK-472.09",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "plROBSTr",
-			"summary": "A set ARCHBOARD_VAULT is refused; the server serves only vaults in the .archboard/vault layout",
+			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches, including a board's move to another repository and the look at what it would rewrite",
 			"content": {
 				"nodes": [
 					{
@@ -14446,7 +14446,7 @@
 						"name": "Vault requirement",
 						"kind": "module",
 						"responsibility": "Refuses a call that names no vault, a vault the server cannot read, or a directory that is not the .archboard/vault of one, before any handler runs",
-						"description": "ADR 0049: every call names its vault as ?vault=<directory> or a vault field in its body. The refusal says how to name one (VAULT_REQUIRED, 400; VAULT_UNREADABLE, 404) and creates nothing. TASK-472.09: a vault outside the .archboard/vault layout is VAULT_UNREADABLE too, because a workhorse works in the directory that holds the vault (ADR 0050) and such a vault has none. A handler reads the canonical vault with vaultOfRequest.",
+						"description": "ADR 0049: every call names its vault as ?vault=<directory> or a vault field in its body. The refusal says how to name one (VAULT_REQUIRED, 400; VAULT_UNREADABLE, 404) and creates nothing. TASK-472.09: a vault whose real path is not <dir>/.archboard/vault is VAULT_UNREADABLE too, and the refusal says to move the boards there, because a workhorse works in the directory that holds the vault (ADR 0050) and such a vault has none. A handler reads the canonical vault with vaultOfRequest.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/request-vault.ts"
@@ -14482,7 +14482,7 @@
 						"name": "Repository listing",
 						"kind": "module",
 						"responsibility": "Turns the checkout registry into the repositories the navigator lists: each identity's chosen checkout, its vault and its state, and the names of the vaults",
-						"description": "An identity is listed when any known checkout has a vault; its state is ready, no-vault, gone or unchosen. The registry is the only source: no environment variable names a vault (TASK-472.09). The vault a page opens in is that of the first ready repository by name, else none. repositoryOfVault is how a show names the repository a pane moved into.",
+						"description": "An identity is listed when any known checkout has a vault in the .archboard/vault layout; its state is ready, no-vault, gone or unchosen. The registry is the only source: no environment variable names a vault (TASK-472.09). A vault whose link leads out of the layout is no vault here, because every call to it is refused: its checkout reads no-vault, and an untracked one is not listed. The vault a page opens in is that of the first ready repository by name, else none. repositoryOfVault is how a show names the repository a pane moved into. A vault that no registry entry holds has no repository name, and its checkout is the directory that holds it.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/repositories.ts"
@@ -15751,7 +15751,7 @@
 			}
 		}
 	],
-	"current": "plROBSTr",
+	"current": "AeC7wpXw",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -15806,6 +15806,12 @@
 			"from": "vuIqmjLY",
 			"at": "2026-10-15T07:01:56.007Z",
 			"reason": "The move route answers GET move-preview, holding and writing nothing, and refuses a board name in the move's codes"
+		},
+		{
+			"variant": "AeC7wpXw",
+			"from": "plROBSTr",
+			"at": "2026-10-15T08:27:55.668Z",
+			"reason": "The server serves only vaults whose real path is <dir>/.archboard/vault, and no environment variable decides where a page opens: the registry is the only source"
 		}
 	],
 	"shelvings": [

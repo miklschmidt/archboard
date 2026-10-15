@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 59,
+	"version": 60,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-15T07:37:12.903Z",
+	"updatedAt": "2026-10-15T08:30:48.674Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -12246,7 +12246,7 @@
 						"name": "Workhorse checkouts",
 						"kind": "module",
 						"responsibility": "Names the checkout a coordinator call gives work to, and starts that checkout's workhorse when a delegation finds none",
-						"description": "The checkout of a path is the real path of a directory that holds a vault, or of the directory that holds a vault the path is, so a checkout reached through a link is the same checkout. Of the coordinator's tools only a delegation starts a workhorse; the other three refuse a checkout that has none. A workhorse that cannot be built or started, because its tab has gone, leaves the delegation to refuse, so the coordinator's turn is always answered.",
+						"description": "The checkout a path names is the directory that holds the vault the path resolves to, by real path and in the layout the server serves: a directory that holds a .archboard/vault, or the directory that holds a vault the path is. So a checkout reached through a link, and a vault that is itself a link, name the checkout of the pane in it; a vault whose link leads out of the layout names none. Of the coordinator's tools only a delegation starts a workhorse; the other three refuse a checkout that has none. A workhorse that cannot be built or started, because its tab has gone, leaves the delegation to refuse, so the coordinator's turn is always answered.",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",

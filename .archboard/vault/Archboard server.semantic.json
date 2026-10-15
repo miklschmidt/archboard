@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 254,
+	"version": 255,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-15T04:08:50.392Z",
+	"updatedAt": "2026-10-15T08:30:54.234Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -103092,7 +103092,7 @@
 						"order": 37000,
 						"name": "Vault requirement",
 						"kind": "module",
-						"responsibility": "Refuses a call or a socket that names no vault, or one the server cannot read, and hands a route the canonical vault it named",
+						"responsibility": "Refuses a call or a socket that names no vault, or one the server cannot read, including a directory whose real path is not <dir>/.archboard/vault, and hands a route the canonical vault it named",
 						"description": "ADR 0049: the server has no working directory and no default vault, and it starts without one.",
 						"parent": "nmbXuHCg",
 						"binding": {

@@ -4,9 +4,9 @@
 	"id": "IbGtfJE2",
 	"name": "Skill evaluation",
 	"level": "service",
-	"version": 23,
+	"version": 25,
 	"createdAt": "2026-09-17T21:09:15.501Z",
-	"updatedAt": "2026-10-15T08:13:50.184Z",
+	"updatedAt": "2026-10-15T08:30:02.078Z",
 	"views": [
 		{
 			"id": "pth4q0ZY",
@@ -2771,7 +2771,7 @@
 		{
 			"id": "tgP6SniP",
 			"name": "TASK-472.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "x68m5AbH",
 			"summary": "Service level: the harness that measures the consumer skill, the four entry points the eval CLI reaches, and the runs, grading and report behind them. Follow linked subjects for related levels.",
 			"content": {
@@ -3908,9 +3908,9 @@
 		{
 			"id": "7bfnbjOG",
 			"name": "TASK-471.03",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "tgP6SniP",
-			"summary": "install-skill writes no setup block",
+			"summary": "Service level: the harness that measures the consumer skill, the four entry points the eval CLI reaches, and the runs, grading and report behind them. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -3994,7 +3994,7 @@
 						"name": "Skill install",
 						"kind": "module",
 						"responsibility": "Installs through the CLI, then swaps in the arm's package, the frozen baseline or the candidate copy the batch kept, and re-derives its generated files",
-						"description": "TASK-471.03. install-skill runs with --repo alone: it writes no setup block, and the run's vault is the one Run isolation made in the checkout, which a command there finds without a setting. The install record holds the digest of the installed skill and no block.",
+						"description": "TASK-471.03. install-skill runs with --repo alone and writes no setup block. The run's vault is the .archboard/vault that the run's checkout already holds (the run's configuration is written there before the install), so a command run in the checkout finds it without a setting. The install record holds the digest of the installed skill and no block.",
 						"parent": "CtuYEtaa",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -5044,7 +5044,7 @@
 			}
 		}
 	],
-	"current": "tgP6SniP",
+	"current": "7bfnbjOG",
 	"adoptions": [
 		{
 			"variant": "xLn27ZIg",
@@ -5063,6 +5063,12 @@
 			"from": "x68m5AbH",
 			"at": "2026-10-15T05:03:54.838Z",
 			"reason": "A run's vault is .archboard/vault in its Flask checkout and the run's environment names none; the per-run server starts with no vault and every call names the run's"
+		},
+		{
+			"variant": "7bfnbjOG",
+			"from": "tgP6SniP",
+			"at": "2026-10-15T08:30:02.078Z",
+			"reason": "install-skill writes no setup block, so a run installs with --repo alone and its install record holds no block"
 		}
 	]
 }

@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 34,
+	"version": 37,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-15T08:13:00.661Z",
+	"updatedAt": "2026-10-15T08:26:15.374Z",
 	"views": [],
 	"variants": [
 		{
@@ -2392,7 +2392,7 @@
 		{
 			"id": "YXFMdMay",
 			"name": "TASK-472.14",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "4LP6XwaN",
 			"summary": "How one CLI invocation is routed: help, shared flags, the vault it addresses, dispatch and the run",
 			"content": {
@@ -2904,9 +2904,9 @@
 		{
 			"id": "nwLUhxAZ",
 			"name": "TASK-472.09",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "YXFMdMay",
-			"summary": "A set ARCHBOARD_VAULT is refused",
+			"summary": "How one CLI invocation is routed: help, shared flags, the vault it addresses, dispatch and the run",
 			"content": {
 				"nodes": [
 					{
@@ -3064,7 +3064,7 @@
 						"name": "Vault finder",
 						"kind": "module",
 						"responsibility": "Finds a command's vault the way git finds its repository: from -C or the working directory, at the checkout root",
-						"description": "TASK-472.09. No environment variable names a vault any longer: a set ARCHBOARD_VAULT is refused before the command runs, and the finder's origin is -C or working-directory. isVaultLayout says whether a path is the .archboard/vault of a directory, and checkoutOfVault gives the directory that holds it. The server uses both to serve only vaults in that layout.",
+						"description": "TASK-472.09. No environment variable names a vault any longer: a set ARCHBOARD_VAULT is refused before the command runs, and the finder's origin is -C or working-directory. isVaultLayout says whether a path is the .archboard/vault of a directory, and checkoutOfVault gives the directory that holds it. The finder refuses a vault whose link leads out of that layout as VAULT_NOT_FOUND (reason vault-outside-layout), before the command registers anything. The server uses isVaultLayout and checkoutOfVault to serve only vaults in that layout.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/vault-finder.ts"
@@ -3415,7 +3415,7 @@
 			}
 		}
 	],
-	"current": "YXFMdMay",
+	"current": "nwLUhxAZ",
 	"adoptions": [
 		{
 			"variant": "eLxlFOKI",
@@ -3452,6 +3452,12 @@
 			"from": "4LP6XwaN",
 			"at": "2026-10-15T06:19:48.988Z",
 			"reason": "TASK-472.14: first-use registration says when an untracked vault is renamed, the registry keeps every name unique, and every server watches its file"
+		},
+		{
+			"variant": "nwLUhxAZ",
+			"from": "YXFMdMay",
+			"at": "2026-10-15T08:26:15.374Z",
+			"reason": "A set ARCHBOARD_VAULT is refused and no environment variable names a vault, so the finder's origin is -C or the working directory; it refuses a vault whose link leads out of the .archboard/vault layout"
 		}
 	]
 }

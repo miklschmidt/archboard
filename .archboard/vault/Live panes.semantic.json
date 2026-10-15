@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 38,
+	"version": 39,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T07:38:05.745Z",
+	"updatedAt": "2026-10-15T08:30:54.995Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -8227,7 +8227,7 @@
 						"order": 19000,
 						"name": "Vault requirement",
 						"kind": "module",
-						"responsibility": "Refuses a call or a socket that names no vault, or one the server cannot read, and hands a route the canonical vault it named",
+						"responsibility": "Refuses a call or a socket that names no vault, or one the server cannot read, including a directory whose real path is not <dir>/.archboard/vault, and hands a route the canonical vault it named",
 						"description": "ADR 0049: the socket names its vault once in its URL and the pane routes name it on every call. News of a board goes only to the panes of that board's vault.",
 						"parent": "t1dQivSP",
 						"binding": {
@@ -8283,6 +8283,7 @@
 						"name": "Repository list",
 						"kind": "module",
 						"responsibility": "Names each vault the way the navigator lists it: a repository identity, or an untracked vault's registry name, read from the chosen checkout",
+						"description": "A vault whose real path is not <dir>/.archboard/vault, such as one that a link leads out of the layout, is no vault here: its checkout reads no-vault, and an untracked one is not listed. A vault that no registry entry holds has no repository name. Every vault has a checkout, the directory that holds it, so a pane and a shown board always report one. No environment variable names a vault: the page opens in the first ready repository by name.",
 						"parent": "t1dQivSP",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
