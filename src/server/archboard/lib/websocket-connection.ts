@@ -28,7 +28,7 @@ import {
 } from "@/server/archboard/lib/pane-registry";
 import { forgetTabSession, noteTabSession } from "@/server/archboard/lib/tab-sessions";
 import { isRecord } from "@/server/archboard/lib/request-board";
-import { namedVault, VAULT_PARAMETER } from "@/server/archboard/lib/request-vault";
+import { namedVault, VAULT_PARAMETER, type NamedVault } from "@/server/archboard/lib/request-vault";
 
 /**
  * Retire the client-id keyed state of a socket that owned its pane identity:
@@ -383,7 +383,7 @@ const upgradeVaults = new WeakMap<IncomingMessage, string>();
  * @param req The upgrade request.
  * @returns The canonical vault, or the refusal.
  */
-function vaultOfUpgrade(req: IncomingMessage): ReturnType<typeof namedVault> {
+function vaultOfUpgrade(req: IncomingMessage): NamedVault {
 	const query = new URL(req.url ?? "/", "http://localhost").searchParams;
 	return namedVault(query.get(VAULT_PARAMETER));
 }
