@@ -7,7 +7,14 @@
 // owned server, with a registry, home and state directory of their own.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	realpathSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { z } from "zod";
@@ -152,6 +159,23 @@ test("-C finds the vault from the directory it names, before or after the comman
 		path: join(shop, ".archboard", "vault"),
 		origin: "-C",
 	});
+});
+
+test("the server lists a vault a command registered under the path and name that command answered", async () => {
+	// Reached through a symbolic link, by a relative -C with a trailing slash.
+	const holder = holdingVault(join(fixture.root, "linked-target"));
+	symlinkSync(holder, join(fixture.root, "linked"));
+	const { vault } = listed(fixture.root, ["-C", "linked/"]);
+	expect(vault.path).toBe(join(holder, ".archboard", "vault"));
+	const response = await fetch(`${server.base}/api/repositories`, {
+		headers: { Origin: server.base, "Sec-Fetch-Site": "same-origin" },
+	});
+	const { repositories } = z
+		.object({ repositories: z.array(z.object({ name: z.string(), vault: z.string().nullable() })) })
+		.parse(await response.json());
+	expect(repositories.filter((each) => each.vault === vault.path).map((each) => each.name)).toEqual(
+		[vault.registered?.["name"]],
+	);
 });
 
 test("a vault ARCHBOARD_VAULT names is used as it is and never registers", () => {
