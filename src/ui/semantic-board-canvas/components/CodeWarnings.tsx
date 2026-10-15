@@ -4,18 +4,14 @@ import { useCallback, useState, type JSX } from "react";
 import type { RememberedReading } from "@/shared/code-check/index";
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BoardTab } from "@/ui/semantic-board-canvas/components/PaneHeader";
-import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { useCodeFindings } from "@/ui/semantic-board-canvas/hooks/use-code-findings";
-import { useSubjectFocus } from "@/ui/semantic-board-canvas/hooks/use-subject-focus";
 
 /** The existing pane controls that a warning can use. */
 interface CodeWarningsProps {
 	readonly drawing: SemanticRender | undefined;
-	readonly camera: BoardCamera;
-	readonly onPick: (id: string | null) => void;
 	readonly onDiagram: (tab: BoardTab) => void;
-	readonly onView: (view: string | null) => void;
-	readonly reducedMotion: boolean;
+	/** Pick a subject out and show it on the diagram, as the About page's rows do. */
+	readonly onShow: (id: string) => void;
 }
 
 /**
@@ -48,19 +44,16 @@ function CodeWarnings(props: CodeWarningsProps): JSX.Element | null {
 function WarningSteps(
 	props: CodeWarningsProps & { readonly reading: RememberedReading },
 ): JSX.Element {
-	const { drawing, camera, onPick, onDiagram, onView, reducedMotion } = props;
+	const { onDiagram, onShow } = props;
 	const warnings = props.reading.findings.filter((finding) => finding.severity === "warning");
 	const [position, setPosition] = useState(-1);
-	const focus = useSubjectFocus(drawing, camera, reducedMotion, onView);
 	const onNext = useCallback((): void => {
 		const next = (position + 1) % warnings.length;
 		const id = warnings[next]?.subject?.id;
 		setPosition(next);
-		onDiagram("diagram");
-		if (id === undefined) return;
-		onPick(id);
-		focus(id);
-	}, [position, warnings, onDiagram, onPick, focus]);
+		if (id === undefined) onDiagram("diagram");
+		else onShow(id);
+	}, [position, warnings, onDiagram, onShow]);
 	const current = warnings[position];
 	return (
 		<WarningCount
