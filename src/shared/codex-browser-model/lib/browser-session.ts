@@ -1,11 +1,63 @@
 // The session-level DTOs: whether the app server is ready, whose account it
-// runs under, a login in flight, and the settings of each owner.
+// runs under, a login in flight, the settings of each owner, and the
+// workhorses of the tab session with the one whose conversation it shows.
 
 import { z } from "zod";
 
 import { boundedText, SafeUrlSchema } from "@/shared/codex-browser-model/lib/scalars";
 import type { IdentitySchemas } from "@/shared/codex-browser-model/lib/scalars";
 import { TimestampSchema } from "@/shared/codex-browser-model/lib/browser-vocabulary";
+
+/** At most this many workhorses are listed: one tab session works in this many checkouts at most. */
+const BROWSER_WORKHORSE_LIMIT = 32;
+
+/** One workhorse of the tab session, as the agent dock lists it (ADR 0050). */
+const BrowserWorkhorseSchema = z
+	.object({
+		/** The checkout it works in: the directory that holds the vault. */
+		checkout: boundedText(4096),
+		/** The repository identity, or an untracked vault's registry name; null when none is listed. */
+		repository: boundedText(512).nullable(),
+		/** Whether the tab session has a workhorse here; false only for the shown checkout before its first message. */
+		live: z.boolean(),
+		/** Whether a turn of it is running. */
+		running: z.boolean(),
+		/** Whether it waits for the person to answer an approval. */
+		waitingForApproval: z.boolean(),
+		/** Whether it waits for the person to answer a question. */
+		waitingForUser: z.boolean(),
+	})
+	.strict();
+
+/**
+ * The workhorses of the tab session and the checkout whose conversation the
+ * tab shows. Each checkout is listed once, and the shown one is always listed.
+ */
+const BrowserWorkhorsesSchema = z
+	.object({
+		kind: z.literal("codex_workhorses"),
+		/** The checkout whose conversation every pane of the tab shows. */
+		shown: boundedText(4096),
+		entries: z.array(BrowserWorkhorseSchema).max(BROWSER_WORKHORSE_LIMIT),
+	})
+	.strict()
+	.superRefine((value, context) => {
+		const checkouts = value.entries.map((entry) => entry.checkout);
+		if (new Set(checkouts).size !== checkouts.length) {
+			context.addIssue({
+				code: "custom",
+				path: ["entries"],
+				message: "a checkout is listed twice",
+			});
+		}
+		if (!checkouts.includes(value.shown)) {
+			context.addIssue({
+				code: "custom",
+				path: ["shown"],
+				message: "the shown checkout is not listed",
+			});
+		}
+	});
 
 /**
  * Builds the readiness, account, login and settings schemas.
@@ -170,7 +222,8 @@ function createBrowserSessionSchemas(identity: IdentitySchemas) {
 		BrowserAccountSchema,
 		BrowserLoginSchema,
 		BrowserSettingsSchema,
+		BrowserWorkhorsesSchema,
 	};
 }
 
-export { createBrowserSessionSchemas };
+export { BROWSER_WORKHORSE_LIMIT, createBrowserSessionSchemas };

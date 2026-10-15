@@ -80,6 +80,7 @@ export type {
 	BrowserSemanticDelivery,
 	BrowserSettings,
 	BrowserSnapshot,
+	BrowserWorkhorses,
 	BrowserTextCommand,
 	BrowserThreadLink,
 	BrowserThreadLinkSourcePresentation,

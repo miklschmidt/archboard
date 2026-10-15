@@ -81,6 +81,7 @@ const BROWSER_SNAPSHOT_DELTA_KEYS = [
 	"spokenApproval",
 	"voiceContext",
 	"coordinatorTimeline",
+	"workhorses",
 	"lease",
 	"operation",
 ] as const satisfies readonly (keyof BrowserSnapshotDelta)[];
