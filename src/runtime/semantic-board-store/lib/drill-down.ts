@@ -22,8 +22,9 @@
 // vault of that identity's chosen checkout, so the same three questions are
 // asked of that vault, and a fourth is added: whether this machine has a
 // checkout of the repository to ask at all. The checkout is the one every other
-// reader of this vault resolves (`checkoutsReadFrom`), so a drill-down that
-// names the vault's own repository stays in the vault. The target is read
+// reader of this vault resolves (`checkoutsReadFrom`), and a drill-down that
+// names the vault's own repository (`vaultIdentity`) stays in the vault, as the
+// board listing reads it. The target is read
 // without writing: a check of one repository never migrates a board of another.
 //
 // All of them are warnings. The board still draws, and the repair is an ordinary
@@ -34,7 +35,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { checkoutsReadFrom } from "@/runtime/code-target/index";
+import { checkoutsReadFrom, vaultIdentity } from "@/runtime/code-target/index";
 import type {
 	DrillDown,
 	SemanticBoard,
@@ -104,14 +105,19 @@ function placeIn(
 
 /**
  * The place each drill-down of one vault opens, asked at most once per check
- * and only when some drill-down names a repository.
+ * and only when some drill-down names a repository. A drill-down that names
+ * the vault's own identity opens a board of the vault itself, as the listing
+ * reads it (ADR 0049).
  * @param vault The vault the drill-downs are on.
  * @returns The place for a repository identity, or for none.
  */
 function createDrillPlaces(vault: string): (repo: string | undefined) => DrillPlace {
+	let own: { readonly identity: string | undefined } | undefined;
 	let checkouts: ReturnType<typeof checkoutsReadFrom> | undefined;
 	return (repo) => {
 		if (repo === undefined) return HERE;
+		own ??= { identity: vaultIdentity(vault) };
+		if (repo === own.identity) return HERE;
 		checkouts ??= checkoutsReadFrom(vault);
 		return placeIn(checkouts.find((entry) => entry.repo === repo));
 	};

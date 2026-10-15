@@ -176,6 +176,28 @@ test("a drill-down naming the identity of its own vault stays in that vault", as
 	expect(
 		(await linking("own-identity-missing", { board: "Ledger", repo: META })).map((one) => one.code),
 	).toEqual(["DRILL_DOWN_UNKNOWN_BOARD"]);
+	// A vault deeper in the checkout is the vault the link stays in, not the checkout root's.
+	const nested = join(root, "meta", "nested", ".archboard");
+	mkdirSync(join(nested, "vault"), { recursive: true });
+	writeFileSync(join(nested, "config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	const vault = join(nested, "vault");
+	await create(vault, { name: "Nested", level: "service", nodes: nodes("module") });
+	await create(vault, {
+		name: "Opens nested",
+		level: "system",
+		nodes: [
+			{ name: "Caller", kind: "app" },
+			{
+				name: "Callee",
+				kind: "service",
+				drillDown: { board: "Nested", variant: { kind: "current" }, repo: META },
+			},
+		],
+		edges: [{ from: "Caller", to: "Callee", kind: "http" }],
+	});
+	expect(
+		store.checkSemanticVault(vault).diagnostics.filter((one) => one.code.startsWith("DRILL_DOWN_")),
+	).toEqual([]);
 });
 
 test("a repository this machine has no checkout of is reported, with how to register one", async () => {
