@@ -27,6 +27,11 @@ function checkout() {
 	return { root, repository, linked };
 }
 
+/** The workhorse of a checkout of a tab session that has gone, which builds none. */
+function ended(): never {
+	throw new Error("The tab session is not live, so it can start no workhorse.");
+}
+
 /** A coordinator tool call. */
 function call(tool: string, args: unknown) {
 	return { params: { namespace: "archboard_workhorse", tool, arguments: args } } as never;
@@ -69,9 +74,6 @@ test("a delegation starts the workhorse of the checkout it names, and nothing el
 		await readyDelegatedWorkhorse(call("delegate_to_workhorse", { checkout: repository }), failing),
 	).toBeUndefined();
 	// So does a tab session that can build no workhorse any more, because its tab has gone.
-	const ended = () => {
-		throw new Error("The tab session is not live, so it can start no workhorse.");
-	};
 	expect(
 		await readyDelegatedWorkhorse(call("delegate_to_workhorse", { checkout: repository }), ended),
 	).toBeUndefined();
