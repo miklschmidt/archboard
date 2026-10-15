@@ -29,7 +29,7 @@ export {
 	paneInventoryQuery,
 	repositoriesQuery,
 } from "@/ui/board-catalog/lib/queries";
-export { chooseCheckout, type CheckoutChoice } from "@/ui/board-catalog/api/repositories";
+export { chooseCheckout } from "@/ui/board-catalog/api/repositories";
 export { outlineOf } from "@/ui/board-catalog/lib/vault-boards";
 export { useVaultBoards, type VaultBoards } from "@/ui/board-catalog/hooks/use-vault-boards";
 export {

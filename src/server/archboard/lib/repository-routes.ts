@@ -11,7 +11,6 @@
 
 import path from "path";
 import type { Express, Request, Response } from "express";
-import { z } from "zod";
 
 import { logger } from "@/runtime/engine/logger";
 import { parseBoardKey } from "@/runtime/engine/board";
@@ -27,6 +26,7 @@ import {
 import { arrivedOnBoard } from "@/server/archboard/lib/pane-routes";
 import { listRepositories, vaultIn, VAULT_DIRECTORY } from "@/server/archboard/lib/repositories";
 import { serverVault } from "@/server/archboard/lib/server-vault";
+import { CheckoutChoiceSchema, type CheckoutChoice } from "@/shared/repositories/index";
 
 /**
  * The repositories, as the navigator lists them.
@@ -36,8 +36,6 @@ import { serverVault } from "@/server/archboard/lib/server-vault";
 function repositoriesRoute(_req: Request, res: Response): void {
 	res.json({ success: true, repositories: listRepositories(), served: serverVault() });
 }
-
-const ChoiceSchema = z.object({ repository: z.string().min(1), root: z.string().min(1) });
 
 /**
  * Choose which checkout of a repository this machine reads, as `repo use` does.
@@ -69,11 +67,8 @@ async function chooseCheckoutRoute(req: Request, res: Response): Promise<void> {
  * @param res Its response, which carries the refusal when there is one.
  * @returns The repository, the checkout and its vault, or null once refused.
  */
-function statedChoice(
-	req: Request,
-	res: Response,
-): (z.infer<typeof ChoiceSchema> & { vault: string }) | null {
-	const parsed = ChoiceSchema.safeParse(req.body);
+function statedChoice(req: Request, res: Response): (CheckoutChoice & { vault: string }) | null {
+	const parsed = CheckoutChoiceSchema.safeParse(req.body);
 	if (!parsed.success) {
 		res.status(400).json({
 			success: false,

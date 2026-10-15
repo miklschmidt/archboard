@@ -2,7 +2,11 @@
 // them from the page: which checkout of a repository this machine reads (ADR
 // 0050). The choice is `repo use` for the whole machine, so every tab hears it.
 
-import { RepositoryListingSchema, type RepositoryListing } from "@/shared/repositories/index";
+import {
+	RepositoryListingSchema,
+	type CheckoutChoice,
+	type RepositoryListing,
+} from "@/shared/repositories/index";
 import { cancellable, json, mutation } from "@/ui/server-requests";
 
 /**
@@ -21,12 +25,6 @@ async function fetchRepositories(signal?: AbortSignal): Promise<RepositoryListin
 	return parsed.data;
 }
 
-/** Which checkout of which repository to read from now on. */
-interface CheckoutChoice {
-	readonly repository: string;
-	readonly root: string;
-}
-
 /**
  * Choose the checkout of a repository that this machine reads.
  * @param choice The repository and one of its known checkouts.
@@ -36,4 +34,4 @@ async function chooseCheckout(choice: CheckoutChoice): Promise<void> {
 	await json("/api/repositories/chosen", mutation("PUT", choice));
 }
 
-export { chooseCheckout, fetchRepositories, type CheckoutChoice };
+export { chooseCheckout, fetchRepositories };

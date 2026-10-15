@@ -42,13 +42,19 @@ const RepositoryListingSchema = z.object({
 	served: z.string(),
 });
 
+/** The body of `PUT /api/repositories/chosen`: which checkout of which repository to read from now on. */
+const CheckoutChoiceSchema = z.object({ repository: z.string().min(1), root: z.string().min(1) });
+
 type CheckoutEntry = z.infer<typeof CheckoutEntrySchema>;
+type CheckoutChoice = z.infer<typeof CheckoutChoiceSchema>;
 type RepositoryState = z.infer<typeof RepositoryStateSchema>;
 type RepositoryEntry = z.infer<typeof RepositoryEntrySchema>;
 type RepositoryListing = z.infer<typeof RepositoryListingSchema>;
 
 export {
+	CheckoutChoiceSchema,
 	RepositoryListingSchema,
+	type CheckoutChoice,
 	type CheckoutEntry,
 	type RepositoryEntry,
 	type RepositoryListing,
