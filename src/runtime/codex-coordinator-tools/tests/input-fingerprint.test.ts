@@ -28,7 +28,12 @@ const OTHER_CHECKOUT = "/work/shop";
  * @returns Them, with the checkout when they are an object a workhorse tool takes.
  */
 function named(tool: CoordinatorToolName, value: ToolArguments): ToolArguments {
-	if (tool === "resolve_spoken_approval" || value === null || typeof value !== "object") {
+	if (
+		tool === "resolve_spoken_approval" ||
+		tool === "stop_workhorses" ||
+		value === null ||
+		typeof value !== "object"
+	) {
 		return value;
 	}
 	return Array.isArray(value) ? value : { checkout: CHECKOUT, ...value };
@@ -43,7 +48,12 @@ function named(tool: CoordinatorToolName, value: ToolArguments): ToolArguments {
 function mismatchesOf(fingerprintCase: FingerprintCase): readonly ToolArguments[] {
 	const { tool, owner } = fingerprintCase;
 	const own = fingerprintCase.mismatches.map((mismatch) => named(tool, mismatch));
-	if (tool === "resolve_spoken_approval" || owner === null || typeof owner !== "object") {
+	if (
+		tool === "resolve_spoken_approval" ||
+		tool === "stop_workhorses" ||
+		owner === null ||
+		typeof owner !== "object"
+	) {
 		return own;
 	}
 	return [...own, { ...owner, checkout: OTHER_CHECKOUT }];
@@ -150,6 +160,14 @@ const CASES: readonly FingerprintCase[] = [
 		invalid: [null, {}, { input: "" }, { input: "styr", extra: true }],
 	},
 	{
+		name: "stop names no checkout",
+		tool: "stop_workhorses",
+		owner: {},
+		exact: {},
+		mismatches: [],
+		invalid: [null, [], "default", { extra: true }, { checkout: CHECKOUT }],
+	},
+	{
 		name: "spoken accept verdict",
 		tool: "resolve_spoken_approval",
 		owner: { verdict: "accept" },
@@ -204,6 +222,8 @@ function effectCount(h: CoordinatorToolsFixture, tool: CoordinatorToolName): num
 			return h.operations.calls.manageQueue.length;
 		case "steer_workhorse":
 			return h.operations.calls.steer.length;
+		case "stop_workhorses":
+			return h.stop.calls.count;
 		case "resolve_spoken_approval":
 			return h.spokenApproval.calls.length;
 	}

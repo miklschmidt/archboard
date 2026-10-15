@@ -53,3 +53,4 @@ export {
 	clearServerThreadContextForLease,
 	createServerThreadLinkActions,
 } from "@/server/archboard/lib/codex-workbench-thread-links";
+export { createSessionBindings } from "@/server/archboard/lib/codex-workbench-session-bindings";

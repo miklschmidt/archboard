@@ -35,6 +35,7 @@ import type {
 	ResolveSpokenApprovalResult,
 	SteerWorkhorseInput,
 	SteerWorkhorseResult,
+	StopWorkhorsesResult,
 } from "@/runtime/codex-coordinator-tool-contract";
 import {
 	ARCHBOARD_VOICE_MANIFEST_SHA256,
@@ -99,6 +100,12 @@ interface CoordinatorToolWorkhorse {
 	>;
 }
 
+/** What stopping one workhorse did: it had a running turn interrupted, or it had none. */
+interface CoordinatorToolStop {
+	readonly checkout: string;
+	readonly outcome: "interrupted" | "idle";
+}
+
 interface CodexCoordinatorToolsOptions {
 	readonly identity: IdentityAuthority;
 	readonly operation: Pick<OperationAuthority, "issuer" | "validator" | "decoder">;
@@ -108,6 +115,12 @@ interface CodexCoordinatorToolsOptions {
 	 * has none there. The checkout is the one argument that chooses; the binding is the server's.
 	 */
 	readonly workhorseFor: (checkout: string) => CoordinatorToolWorkhorse | null;
+	/**
+	 * Stop every running workhorse of the calling tab session (ADR 0048, ADR 0050), whichever
+	 * checkout it works in, and say what each one did, in the order the tab session keeps them. It
+	 * names no checkout and no turn. A rejection with no refusal code leaves the outcome unknown.
+	 */
+	readonly stopWork: () => Promise<readonly CoordinatorToolStop[]>;
 	readonly spokenApproval: Pick<CodexSpokenApprovalGate, "snapshot" | "resolve">;
 	readonly transport: CoordinatorToolResponsePort;
 }
@@ -125,6 +138,7 @@ type CoordinatorToolValue =
 	| DelegateToWorkhorseResult
 	| ManageWorkhorseQueueResult
 	| SteerWorkhorseResult
+	| StopWorkhorsesResult
 	| ResolveSpokenApprovalResult;
 
 type CoordinatorToolValueFor<Name extends CoordinatorToolName> = Name extends "inspect_workhorse"
@@ -135,7 +149,9 @@ type CoordinatorToolValueFor<Name extends CoordinatorToolName> = Name extends "i
 			? ManageWorkhorseQueueResult
 			: Name extends "steer_workhorse"
 				? SteerWorkhorseResult
-				: ResolveSpokenApprovalResult;
+				: Name extends "stop_workhorses"
+					? StopWorkhorsesResult
+					: ResolveSpokenApprovalResult;
 
 interface CoordinatorToolDispatchResult {
 	readonly response: DynamicToolResponse;
@@ -222,6 +238,7 @@ export {
 	type CoordinatorToolAuthorityPort,
 	type CoordinatorToolResponsePort,
 	type CoordinatorToolWorkhorse,
+	type CoordinatorToolStop,
 	type CodexCoordinatorToolsOptions,
 	type CoordinatorToolsServerRequest,
 	type DynamicToolResponse,

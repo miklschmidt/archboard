@@ -21,6 +21,7 @@ import {
 	type CoordinatorToolAuthorityPort,
 	type CoordinatorToolCoordinatorAuthority,
 	type CoordinatorToolDispatcher,
+	type CoordinatorToolStop,
 } from "../index.js";
 import {
 	createIdentityAuthorities,
@@ -33,6 +34,7 @@ import {
 	type ThreadId,
 	type TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
+import { bindingFor, readyAuthority } from "./authority-support.js";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeItemId,
@@ -69,6 +71,11 @@ interface CoordinatorToolsFixture {
 		setError: (error: unknown) => void;
 		hold: () => void;
 		release: () => void;
+	};
+	/** The tab session's stop of its workhorses; it shares the barrier and error of `operations`. */
+	readonly stop: {
+		readonly calls: { count: number };
+		setResult: (result: readonly CoordinatorToolStop[]) => void;
 	};
 	readonly spokenApproval: {
 		readonly snapshot: () => SpokenApprovalSnapshot;
@@ -108,43 +115,6 @@ interface CoordinatorToolsFixture {
 			readonly turnId?: TurnId;
 		},
 	) => DynamicServerRequest;
-}
-
-function readyAuthority(
-	identity: IdentityAuthority,
-	coordinatorThreadId: ThreadId,
-): CoordinatorToolCoordinatorAuthority {
-	return Object.freeze({
-		state: "ready",
-		childId: identity.validator.childId,
-		epoch: identity.validator.epoch,
-		threadId: coordinatorThreadId,
-	});
-}
-
-function bindingFor(
-	identity: IdentityAuthority,
-	coordinatorThreadId: ThreadId,
-	workhorseThreadId: ThreadId,
-): WorkhorseOperationBinding {
-	const childId = identity.validator.childId;
-	const epoch = identity.validator.epoch;
-	return Object.freeze({
-		childId,
-		epoch,
-		coordinator: Object.freeze({
-			childId,
-			epoch,
-			threadId: coordinatorThreadId,
-			operationId: "coordinator-link",
-		}),
-		workhorse: Object.freeze({
-			childId,
-			epoch,
-			threadId: workhorseThreadId,
-			operationId: "workhorse-link",
-		}),
-	});
 }
 
 /** The checkout the fixture's one workhorse works in (ADR 0050). */
@@ -264,6 +234,26 @@ function fixture(
 			releaseOperation = null;
 			operationBarrier = null;
 			release?.();
+		},
+	};
+
+	const stopCalls = { count: 0 };
+	let stopResult: readonly CoordinatorToolStop[] = [{ checkout: CHECKOUT, outcome: "interrupted" }];
+	const stopWork = async (): Promise<readonly CoordinatorToolStop[]> => {
+		stopCalls.count += 1;
+		timeline.push("workhorses.stop");
+		await waitForOperation();
+		if (nextOperationError !== null) {
+			const error = nextOperationError;
+			nextOperationError = null;
+			throw error;
+		}
+		return stopResult;
+	};
+	const stop = {
+		calls: stopCalls,
+		setResult: (result: readonly CoordinatorToolStop[]) => {
+			stopResult = result;
 		},
 	};
 
@@ -403,6 +393,7 @@ function fixture(
 		 */
 		workhorseFor: (checkout) =>
 			checkouts.includes(checkout) ? { binding: () => currentBinding, operations } : null,
+		stopWork,
 		spokenApproval,
 		transport,
 	});
@@ -440,7 +431,9 @@ function fixture(
 						? { checkout: CHECKOUT, operation: "list" }
 						: tool === "steer_workhorse"
 							? { checkout: CHECKOUT, input: "steer input" }
-							: { verdict: "accept" });
+							: tool === "stop_workhorses"
+								? {}
+								: { verdict: "accept" });
 		const call = identity.decoder.createLogicalToolCallCorrelation({
 			threadId,
 			turnId,
@@ -483,6 +476,7 @@ function fixture(
 		operation,
 		timeline,
 		operations,
+		stop,
 		spokenApproval,
 		transport,
 		authority,

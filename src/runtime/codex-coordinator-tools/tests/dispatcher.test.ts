@@ -66,7 +66,7 @@ describe("coordinator dynamic-tool dispatcher", () => {
 			workhorse: ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
 			voice: ARCHBOARD_VOICE_MANIFEST_SHA256,
 		});
-		expect(ARCHBOARD_WORKHORSE_TOOL_NAMES).toHaveLength(4);
+		expect(ARCHBOARD_WORKHORSE_TOOL_NAMES).toHaveLength(5);
 		expect(ARCHBOARD_VOICE_TOOL_NAMES).toEqual(["resolve_spoken_approval"]);
 	});
 
