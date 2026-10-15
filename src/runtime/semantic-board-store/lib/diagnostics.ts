@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { normalizeBoardKey } from "@/runtime/engine/board";
 import { errorMessage } from "@/shared/thrown-error/index";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import { currentVariant, overviewContent, type SemanticBoard } from "@/shared/semantic-board/index";
 import type { VaultCheck, VaultDiagnostic } from "@/shared/semantic-policy/index";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
 import {
@@ -20,6 +20,55 @@ import {
 	createCheckoutLookup,
 	semanticBindingDiagnostics,
 } from "@/runtime/semantic-board-store/lib/bindings";
+
+// How much a board's overview may draw before it reads as a wall of lines
+// (ADR 0052).
+//
+// The numbers come from the dogfood vault on 2026-10-15. Its four smallest
+// overviews drew 12 to 17 parts and 17 to 20 lines. Live panes, which its
+// owner found unreadable, drew 25 parts and 69 lines. A board over either
+// number needs structure: containers that gather its parts, and views that
+// open each one.
+
+/** The most parts an overview draws before the check asks for structure. */
+const OVERVIEW_MOST_PARTS = 15;
+
+/** The most lines an overview draws before the check asks for structure. */
+const OVERVIEW_MOST_LINES = 25;
+
+/**
+ * A warning when the overview of a board's current variant draws more than
+ * the budget allows.
+ * @param board The board, as read.
+ * @param file The file it was read from.
+ * @returns The warning, or nothing.
+ */
+function semanticOverviewDiagnostics(board: SemanticBoard, file: string): VaultDiagnostic[] {
+	const variant = currentVariant(board);
+	if (variant === undefined) {
+		return [];
+	}
+	const overview = overviewContent(variant.content);
+	const [parts, lines] = [overview.nodes.length, overview.edges.length];
+	if (parts <= OVERVIEW_MOST_PARTS && lines <= OVERVIEW_MOST_LINES) {
+		return [];
+	}
+	return [
+		{
+			severity: "warning",
+			code: "OVERVIEW_CROWDED",
+			file,
+			board: board.name,
+			variant: variant.name,
+			message:
+				`The overview of ${JSON.stringify(board.name)} draws ${parts} parts and ${lines} lines, ` +
+				`over the budget of ${OVERVIEW_MOST_PARTS} parts and ${OVERVIEW_MOST_LINES} lines. ` +
+				"Gather the parts of the board's subject into a few containers, each with a " +
+				"responsibility the code supports, and add a view that opens each one. Draw one " +
+				"relationship between two parts, and put the calls between them in a flow.",
+		},
+	];
+}
 
 /**
  * Check every board family and report traversal/read failures rather than hiding them.
@@ -45,6 +94,7 @@ function checkSemanticVault(root: string): VaultCheck {
 	for (const { board, file } of read) {
 		diagnostics.push(...semanticDrillDownDiagnostics(board, file, lookup));
 		diagnostics.push(...semanticBindingDiagnostics(board, file, checkoutOf));
+		diagnostics.push(...semanticOverviewDiagnostics(board, file));
 	}
 	return {
 		policy: configured.configuration,

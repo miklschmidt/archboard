@@ -502,6 +502,17 @@ and an explanation for somebody new to the code follows
 - Use the configured vocabulary and levels; extend `config.yaml` only when the
   request is about vocabulary ([Vocabulary](#essentials)).
 - Fewer, truer parts: every node has a responsibility the source supports.
+- Give a board's subject structure. A board opens on its overview: the root
+  parts and the parts directly inside each root container, with deeper
+  containers closed. If the subject holds more than about a dozen
+  parts, gather them into a few containers. Each container has a
+  responsibility and a binding that the code supports, never a box for layout.
+  Add a view that opens each container. `archboard check` warns
+  `OVERVIEW_CROWDED` when an overview draws more than 15 parts or 25 lines.
+- Draw one relationship between two parts. It says that one part needs or uses
+  the other, and its kind says how. The individual calls between them, in their
+  order, are steps of a flow that a `data-flow` view draws. A second
+  relationship between the same two parts is a call, not a relationship.
 
 ## When to read more
 
