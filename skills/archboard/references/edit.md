@@ -103,6 +103,38 @@ carry, or one a board name cannot hold (`@` is the variant's); a variant name
 another variant of the board answers to; and the name it already has. Each
 rename is one write, so take the next `--expect-version` from its answer.
 
+## Moving a board to another repository
+
+A board sometimes lives in the wrong repository, for example a board that a
+meta project drew for the product repository it describes.
+`archboard semantic move <board> --to <dir> --doing "..."` moves it from the
+vault this command finds into the vault found from `<dir>`, as `-C` finds one.
+The whole board moves: every variant, every former name and every id stay as
+they are, and the board keeps its name. Two kinds of drill-down change their
+meaning, and the move rewrites them to name a repository identity: one in the
+source vault that opens the board then names the target's repository, and one
+on the board that opens a board of the source vault then names the source's
+repository. The answer's `rewritten` lists every drill-down that it rewrote,
+and `to.registered` says when the command registered the target checkout.
+`--expect-version` is optional and checked when given.
+
+```bash
+archboard -C ~/meta semantic move Payments --to ~/payments --doing "moving the board into the repository it describes"
+```
+
+Refused, with nothing written: `--to` in the board's own repository, also in
+another checkout of it (git carries boards between checkouts); a target vault
+with a board or a former name that the board's names answer to; a board that
+somebody else holds, or whose name somebody else holds in the target; and a
+move that needs a drill-down into an untracked vault, which has no identity.
+
+Two vaults are two files, so the move writes in a fixed order: the board in the
+target vault, then each rewritten drill-down, then it deletes the board in the
+source vault. If the move stops part way (`MOVE_STOPPED`, exit 5), the board is
+in both vaults. Run the same command again to finish it. Each repository
+commits its own half. A drill-down in a third vault into the moved board now
+opens nothing, and `archboard check` in that vault names it.
+
 Read [authoring](authoring.md) only when the change needs it: a
 removal beyond `removeEdges`, a binding with revision evidence, group
 membership, a drill-down link, or a refusal you must repair. A change of one

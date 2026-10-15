@@ -104,6 +104,7 @@ Shipped capabilities:
 - claims, the doing of each write, and the control that takes a board back
 - every repository's boards in one browser app, and a choice of checkout for
   each repository
+- moving a board, with its whole history, to another repository's vault
 - groups, code bindings, illustrated traffic, and SVG and PNG renders
 
 Constraints that every surface keeps:
