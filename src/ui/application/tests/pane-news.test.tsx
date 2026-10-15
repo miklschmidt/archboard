@@ -5,9 +5,12 @@
 // navigator alone, so the pane's header is not drawn again for it either. A pane
 // on no board has no stage, and its header still shows its news and its controls.
 
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, jest, test } from "bun:test";
+
+import { SOCKET_RECONNECT_MS } from "@/shared/timing/timing";
 
 import {
+	FakeSocket,
 	SERVED,
 	act,
 	answer,
@@ -225,4 +228,48 @@ test("a pane on no board says its socket is down and can be closed", async () =>
 	await settleUntil(() => paneElement("B") === null);
 
 	expect(paneElement("B")).toBeNull();
+});
+
+test("a socket that comes back forgets the agent work it heard, since the server lists only vaults where an agent is at work", async () => {
+	const socket = await paneShowing("pipeline");
+	act(() =>
+		socket.say({
+			type: "agent_activity",
+			vault: SERVED.vault,
+			activity: [{ board: "pipeline", claim: CLAIM, doing: DOING }],
+		}),
+	);
+	await settle();
+	expect(document.querySelector("[data-slot='working-now']")).not.toBeNull();
+
+	// The socket drops, and the agent lets go while it is down. The server forgets
+	// a vault whose list is empty, so the socket that comes back hears nothing of it.
+	jest.useFakeTimers();
+	try {
+		act(() => {
+			socket.readyState = FakeSocket.CLOSED;
+			socket.dispatchEvent(new CloseEvent("close", { code: 1006 }));
+		});
+		act(() => {
+			jest.advanceTimersByTime(SOCKET_RECONNECT_MS);
+		});
+	} finally {
+		jest.useRealTimers();
+	}
+	const returned = FakeSocket.made.at(-1)!;
+	expect(returned).not.toBe(socket);
+	act(() => returned.open());
+	await settle();
+	expect(document.querySelector("[data-slot='working-now']")).toBeNull();
+
+	// What the socket that came back hears is kept.
+	act(() =>
+		returned.say({
+			type: "agent_activity",
+			vault: SERVED.vault,
+			activity: [{ board: "pipeline", claim: CLAIM, doing: DOING }],
+		}),
+	);
+	await settle();
+	expect(document.querySelector("[data-slot='working-now']")).not.toBeNull();
 });
