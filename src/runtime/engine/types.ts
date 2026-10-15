@@ -73,9 +73,11 @@ interface AgentActivity {
 	doing: DoingEntry | null;
 }
 
-/** One vault's whole activity snapshot, sent to every pane in that vault. */
+/** One vault's whole activity snapshot, sent to every pane. */
 interface AgentActivityMessage extends WebSocketMessage {
 	type: "agent_activity";
+	/** The vault the boards are in. */
+	vault: string;
 	activity: AgentActivity[];
 }
 

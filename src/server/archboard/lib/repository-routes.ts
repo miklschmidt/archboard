@@ -18,7 +18,6 @@ import { parseBoardKey } from "@/runtime/engine/board";
 import { declareDirectory, listRegistry, RepoRegistryError } from "@/runtime/engine/repo-registry";
 import { createBrowserOriginGuard } from "@/server/browser-origin";
 import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";
-import { tellPaneAboutVault } from "@/server/archboard/lib/board-announcements";
 import { paneBoardOf, sendBoardlessToPane, sendToPane } from "@/server/archboard/lib/pane-registry";
 import {
 	broadcastEverywhere,
@@ -169,7 +168,6 @@ function movePanesToVault(repository: string, to: string): void {
 			sendToPane(clientId, { type: "pane_board", identity, vault: to, repository }, key);
 			arrivedOnBoard(clientId, key);
 		}
-		tellPaneAboutVault(clientId, to);
 	}
 }
 

@@ -42,19 +42,11 @@ interface ShellViewInputs {
  * One repository as the shell lists it.
  * @param entry The repository and its boards.
  * @param activity What agents are doing, by vault.
- * @param heard The vaults a pane of this tab is in.
  * @returns The shell's repository.
  */
-function shellRepository(
-	entry: RepositoryBoards,
-	activity: AgentActivityByVault,
-	heard: ReadonlySet<string | null>,
-): ShellRepository {
+function shellRepository(entry: RepositoryBoards, activity: AgentActivityByVault): ShellRepository {
 	const { vault } = entry.repository;
-	// The server tells a vault's activity only to the panes in that vault (ADR
-	// 0022), so what the tab last heard of a vault that none of its panes is in
-	// now is old news.
-	const current = vault !== null && heard.has(vault) ? activity[vault] : undefined;
+	const current = vault === null ? undefined : activity[vault];
 	return {
 		repository: entry.repository,
 		boards: entry.listing,
@@ -68,8 +60,6 @@ function shellRepository(
 /** The repositories last made for one catalog answer, and what they were made from. */
 interface MadeRepositories {
 	readonly activity: AgentActivityByVault;
-	/** The vaults the panes were in, spelled as one key. */
-	readonly heard: string;
 	readonly repositories: readonly ShellRepository[];
 }
 
@@ -89,18 +79,12 @@ const madeRepositories = new WeakMap<readonly RepositoryBoards[], MadeRepositori
  */
 function shellRepositories(inputs: ShellViewInputs): readonly ShellRepository[] {
 	const { catalog, agentActivity: activity } = inputs;
-	const vaults = new Set(
-		inputs.list.panes.map((entry) => recordFor(inputs.records, entry.paneId).status.vault),
-	);
-	const heard = JSON.stringify([...vaults].toSorted((a, b) => (a ?? "").localeCompare(b ?? "")));
 	const kept = madeRepositories.get(catalog.repositories);
-	if (kept?.activity === activity && kept.heard === heard) {
+	if (kept?.activity === activity) {
 		return kept.repositories;
 	}
-	const repositories = catalog.repositories.map((entry) =>
-		shellRepository(entry, activity, vaults),
-	);
-	madeRepositories.set(catalog.repositories, { activity, heard, repositories });
+	const repositories = catalog.repositories.map((entry) => shellRepository(entry, activity));
+	madeRepositories.set(catalog.repositories, { activity, repositories });
 	return repositories;
 }
 

@@ -168,7 +168,8 @@ describe.serial("every call names its vault", () => {
 		expect(JSON.stringify(boardInA.body)).not.toContain("Ledger");
 
 		// The claim is shown wherever vault A's board is shown, by its lock and in the
-		// navigator's account of agent work, and on no pane of vault B (ADR 0022).
+		// navigator's account of agent work. A pane of vault B is told no lock, and
+		// hears the account named as vault A's, so its navigator marks it (ADR 0022).
 		await waitFor(
 			() =>
 				["board_lock", "agent_activity"].every((type) =>
@@ -177,7 +178,11 @@ describe.serial("every call names its vault", () => {
 			"vault A's pane to show the claim by its lock and its agent activity",
 		);
 		await paneB.sync();
-		expect(paneB.events.slice(beforeClaimB).filter(claimed)).toEqual([]);
+		const claimsInB = paneB.events.slice(beforeClaimB).filter(claimed);
+		expect(claimsInB.length).toBeGreaterThan(0);
+		expect(claimsInB.map((event) => [event.type, event["vault"]])).toEqual(
+			claimsInB.map(() => ["agent_activity", realpathSync(vaultA)]),
+		);
 		await inA("/api/semantic-boards/claim/release?board=payments", {
 			method: "POST",
 			doing: false,

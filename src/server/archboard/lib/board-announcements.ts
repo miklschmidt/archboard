@@ -14,12 +14,11 @@ import type { DoingEntry } from "@/runtime/engine/board-doing";
 import { normalizeBoardKey } from "@/runtime/engine/board";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { createAgentActivity } from "@/server/archboard/lib/agent-activity";
+import { broadcastEverywhere } from "@/server/archboard/lib/pane-vaults";
 import {
 	aggregateOf,
 	broadcast,
-	broadcastBoardless,
 	paneVaults,
-	sendBoardlessToPane,
 	sendToPane,
 	syncLockWatch,
 } from "@/server/archboard/lib/pane-registry";
@@ -47,16 +46,15 @@ function lockMessage(board: string, holder: LockHolder | null): WebSocketMessage
  *
  * Fed by the same announcements the board-scoped messages ride on, so it can
  * never say something different from what the pane on that board hears. One
- * account per vault, told only to the panes of that vault.
+ * account per vault, told to every pane with its vault named.
  */
 const agentActivity = createAgentActivity({
 	/**
-	 * Deliver one navigator message to every client of the vault it is about.
-	 * @param vault The vault.
+	 * Deliver one navigator message to every client.
 	 * @param message The boardless activity message.
 	 */
-	send: (vault, message) => {
-		broadcastBoardless(vault, message);
+	send: (message) => {
+		broadcastEverywhere(message);
 	},
 	/**
 	 * The key a board is displayed under.
@@ -156,22 +154,4 @@ function tellPaneAboutLock(clientId: string, board: string): void {
 	}
 }
 
-/**
- * Tell a pane that has just moved into another vault which boards an agent has
- * there (ADR 0022). Activity is told per vault, so what it heard before was
- * about the vault it left.
- * @param clientId The pane's client id.
- * @param vault The vault it is in now.
- */
-function tellPaneAboutVault(clientId: string, vault: string): void {
-	sendBoardlessToPane(clientId, agentActivity.snapshot(vault));
-}
-
-export {
-	agentActivity,
-	announceDoing,
-	lockMessage,
-	refuseUndescribedWrite,
-	tellPaneAboutLock,
-	tellPaneAboutVault,
-};
+export { agentActivity, announceDoing, lockMessage, refuseUndescribedWrite, tellPaneAboutLock };

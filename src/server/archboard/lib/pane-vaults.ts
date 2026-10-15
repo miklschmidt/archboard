@@ -17,7 +17,8 @@ import {
 
 /**
  * Broadcast something to every admitted client of every vault: news about the
- * machine rather than about one vault, such as a repository's chosen checkout.
+ * machine rather than about one vault, such as a repository's chosen checkout,
+ * or a vault's account of agent work, which names its vault (ADR 0022).
  * @param message The boardless message.
  */
 function broadcastEverywhere(message: WebSocketMessage): void {
@@ -42,11 +43,10 @@ function broadcastEverywhere(message: WebSocketMessage): void {
  * registration says the new vault until the pane next reports.
  * @param clientId The pane's client id.
  * @param vault The vault it moves into.
- * @returns Whether it moved; false when it was in that vault already.
  */
-function movePaneVault(clientId: string, vault: string): boolean {
+function movePaneVault(clientId: string, vault: string): void {
 	if (paneVaults.get(clientId) === vault) {
-		return false;
+		return;
 	}
 	paneVaults.set(clientId, vault);
 	clientIds.forEach((id, socket) => {
@@ -59,7 +59,6 @@ function movePaneVault(clientId: string, vault: string): boolean {
 		panes.set(clientId, { ...registration, vault });
 	}
 	syncLockWatch();
-	return true;
 }
 
 /**

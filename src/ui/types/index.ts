@@ -57,7 +57,7 @@ export interface WebSocketMessage {
 	/** The board a message is about, as a pane board key. */
 	board?: string;
 	identity?: BoardIdentity;
-	/** On `pane_board`: the vault the pane is in now (ADR 0050). */
+	/** On `pane_board`: the vault the pane is in now (ADR 0050). On `agent_activity`: the vault the boards are in. */
 	vault?: string;
 	/** On `pane_board`: the repository that vault is listed under, or null. */
 	repository?: string | null;
@@ -76,9 +76,8 @@ export interface WebSocketMessage {
 	/** On `board_doing`: the last few, oldest first, so a pane that has just arrived is not blank. */
 	recent?: DoingEntry[];
 	/**
-	 * On `agent_activity`: every board of the pane's vault that an agent holds
-	 * or has just written, as one snapshot. Boardless, and told only to the
-	 * panes in that vault, after the `pane_board` that put the pane there.
+	 * On `agent_activity`: every board of the named vault that an agent holds
+	 * or has just written, as one snapshot. Boardless, and told to every pane.
 	 */
 	activity?: AgentActivityEntry[];
 }

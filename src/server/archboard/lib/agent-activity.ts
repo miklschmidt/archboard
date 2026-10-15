@@ -14,7 +14,8 @@
 // doing, and it is nobody else's business.
 //
 // One list per vault (ADR 0049): a board of one name in two vaults is two
-// boards, and a pane is told only of the boards of its own vault.
+// boards. Every pane is told every vault's list, each naming its vault,
+// because the navigator marks the boards of every repository it lists.
 
 import type { DoingEntry } from "@/runtime/engine/board-doing";
 import type { LockHolder } from "@/runtime/engine/board-lock";
@@ -35,8 +36,8 @@ interface AgentActivityTracker {
 	lockChanged(vault: string, board: string, holder: Readonly<LockHolder> | null): void;
 	/** An agent's write landed and said what it was doing. */
 	doingLanded(vault: string, board: string, entry: Readonly<DoingEntry>): void;
-	/** One vault's whole list, for a client that has just connected. Reference-stable until it changes. */
-	snapshot(vault: string): AgentActivityMessage;
+	/** Every vault's list where an agent is at work, for a client that has just connected. */
+	snapshots(): AgentActivityMessage[];
 }
 
 /**
@@ -54,13 +55,13 @@ function clearLinger(entry: Entry): void {
  * The tracker of which boards an agent is editing right now, which publishes
  * one snapshot to every pane whenever that changes.
  * @param options How to reach the panes and how to name a board to them.
- * @param options.send Sends one vault's snapshot to every client of that vault.
+ * @param options.send Sends one vault's snapshot to every client.
  * @param options.displayKey The board key as panes know it.
  * @returns The tracker.
  */
 function createAgentActivity(options: {
-	/** Sends one vault's snapshot to every client connected for that vault. */
-	send: (vault: string, message: AgentActivityMessage) => void;
+	/** Sends one vault's snapshot to every client. */
+	send: (message: AgentActivityMessage) => void;
 	/** The board key as panes know it, for a key the lock module normalized. */
 	displayKey: (board: string) => string;
 }): AgentActivityTracker {
@@ -68,16 +69,21 @@ function createAgentActivity(options: {
 	const snapshots = new Map<string, AgentActivityMessage>();
 
 	/**
-	 * Rebuild one vault's snapshot and send it to every pane of that vault.
+	 * Rebuild one vault's snapshot and send it to every pane. A vault with no
+	 * agent at work is sent once as empty and then forgotten.
 	 * @param vault The vault whose list changed.
 	 */
 	const publish = (vault: string): void => {
 		const activity: AgentActivity[] = [...entries.values()]
 			.filter((entry) => entry.vault === vault)
 			.map(({ board, claim, doing }) => ({ board, claim, doing }));
-		const current: AgentActivityMessage = { type: "agent_activity", activity };
-		snapshots.set(vault, current);
-		options.send(vault, current);
+		const current: AgentActivityMessage = { type: "agent_activity", vault, activity };
+		if (activity.length === 0) {
+			snapshots.delete(vault);
+		} else {
+			snapshots.set(vault, current);
+		}
+		options.send(current);
 	};
 
 	// Each write restarts the linger, so continuous unclaimed work is one
@@ -188,12 +194,11 @@ function createAgentActivity(options: {
 			publish(vault);
 		},
 		/**
-		 * One vault's whole list, for a client that has just connected.
-		 * @param vault The vault the client connected for.
-		 * @returns The snapshot, reference-stable until it changes.
+		 * Every vault's list where an agent is at work, for a client that has just connected.
+		 * @returns The snapshots, one per vault.
 		 */
-		snapshot(vault) {
-			return snapshots.get(vault) ?? { type: "agent_activity", activity: [] };
+		snapshots() {
+			return [...snapshots.values()];
 		},
 	};
 }

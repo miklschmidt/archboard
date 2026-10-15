@@ -71,7 +71,9 @@ rules that will not stop you:
   is keyed by vault and board together (`boardMemoryKey`): claims, revocations,
   announced lock state, doing lines, agent activity and the disk watch. Each
   change on the change feed and each remembered code finding names its vault.
-  News of a write goes only to the panes of that vault. The CLI names
+  News of a write goes only to the panes of that vault. The one exception is
+  agent activity, which names its vault and goes to every pane, because the
+  navigator marks the boards of every repository (ADR 0022). The CLI names
   `ARCHBOARD_VAULT` on every call. Each browser pane names the vault the server
   put it in (ADR 0050), and a pane opens in the vault the server reports at
   `/api/served-vault`. The server
