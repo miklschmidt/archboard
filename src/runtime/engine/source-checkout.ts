@@ -123,16 +123,22 @@ function handOffTarget(cwd: string, running: string, serverUrl: string | undefin
 	if (serverUrl !== undefined && serverUrl !== "") {
 		return null;
 	}
-	const found = checkoutRootOf(cwd);
-	if (found === null || !isArchboardCheckout(found)) {
+	const root = archboardCheckoutOf(cwd);
+	if (root === null) {
 		return null;
 	}
-	const root = fs.realpathSync(found);
 	const target = path.join(root, CHECKOUT_BIN);
-	if (root === running || fs.realpathSync(target) !== target) {
-		return null;
-	}
-	return target;
+	return root === running || fs.realpathSync(target) !== target ? null : target;
+}
+
+/**
+ * The real path of the archboard checkout a directory stands in.
+ * @param cwd The directory.
+ * @returns The checkout's real path, or null when it stands in none or in another repository.
+ */
+function archboardCheckoutOf(cwd: string): string | null {
+	const found = checkoutRootOf(cwd);
+	return found !== null && isArchboardCheckout(found) ? fs.realpathSync(found) : null;
 }
 
 /** The signals that end a command, which the command that runs instead must get too. */

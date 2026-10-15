@@ -123,6 +123,15 @@ function endingOf(status: string): WorkhorseNewsSource["type"] | null {
 }
 
 /**
+ * The key one wait is news under: the coordinator it was told to and the workhorse thread.
+ * @param scope - The current identities.
+ * @returns The key.
+ */
+function waitKey(scope: NewsScope): string {
+	return `${String(scope.coordinatorThreadId)} ${scope.wire}`;
+}
+
+/**
  * Build the observer that turns the notifications of every linked workhorse thread into
  * workhorse news. A wait is reported when it begins, not on every status change while it lasts.
  * @param context - What the observer reads of the Archboard server.
@@ -166,13 +175,6 @@ function createWorkhorseNewsObserver(context: WorkhorseNewsContext): WorkhorseNe
 			detail,
 		});
 	};
-	/**
-	 * The key one wait is news under: the coordinator it was told to and the workhorse thread.
-	 * @param scope - The current identities.
-	 * @returns The key.
-	 */
-	const waitKey = (scope: NewsScope): string =>
-		`${String(scope.coordinatorThreadId)} ${scope.wire}`;
 	/**
 	 * News that the thread began waiting on the user, or null while a wait lasts or none began.
 	 * @param scope - The current identities.

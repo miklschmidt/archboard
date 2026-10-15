@@ -348,7 +348,7 @@ function harness(active = true): Harness {
 		threadLink: {
 			classify: async (target) => {
 				classifyHook?.();
-				const other = state.others.find((link) => link.target.threadId === target.threadId);
+				const other = state.others.find((each) => each.target.threadId === target.threadId);
 				return other === undefined
 					? state.classification
 					: ({ ...state.classification, link: other.binding.link } as ThreadLinkClassification);
