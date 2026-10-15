@@ -304,6 +304,13 @@
 					"owner": "node-drilldown named; src/ui/semantic-board-canvas/tests drill address (missing named target refused)"
 				},
 				{
+					"path": "node.drillDown.repo",
+					"expectedUse": "only when the detail board is in another repository: the identity a binding names, never a path; without it the link stays in the board's own vault. DRILL_DOWN_UNKNOWN_REPOSITORY (the repository has no usable checkout on this machine) and DRILL_DOWN_UNKNOWN_BOARD (the chosen checkout's vault lacks the board) are reported by check",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests/drill-down-repository.test.ts (the link without repo stays local, the chosen checkout's vault, the target's level, a former or recased name, the vault's own identity, an unknown or gone repository, no write to the other vault); tests/system/cli/drill-down-repository.test.ts (archboard check over two checkouts with a registry of their own); src/shared/semantic-board/tests/listing.test.ts (the schema refuses a path; the listed link carries repo) and comparison.test.ts (a changed repo is a changed drill-down). Mechanical validation: no Flask scenario links to a board of another repository"
+				},
+				{
 					"path": "detail boards separate from proposals",
 					"expectedUse": "the existing detail board is reused, not recreated",
 					"scenarios": ["S04"],

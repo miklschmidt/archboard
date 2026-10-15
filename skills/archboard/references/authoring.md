@@ -25,7 +25,9 @@ the CLI refuses. Fragments here go into the JSON of `semantic new` or
   `branch`, `commit`, `confirmedAt`.
 - `drillDown`: The board this part opens:
   `{ "board": "<name>", "variant": { "kind": "current" } }` or
-  `{ "kind": "named", "name": "<variant>" }`.
+  `{ "kind": "named", "name": "<variant>" }`. Add `"repo": "<identity>"` when
+  the board is in another repository
+  ([Drill-down](#drill-down)).
 
 ### Containment and receivers
 
@@ -369,13 +371,35 @@ relationships. Which way the link points says where it sits:
   `calls this module` draws an edge to a node of kind `module` whose drill-down
   opens it.
 
-`archboard check` warns on all three mistakes, naming the node:
-`DRILL_DOWN_ONLY_NODE` (nothing but the link: no relationship, no children, no
-part in a flow), `DRILL_DOWN_UNKNOWN_BOARD` (no such board, so the link opens
-nothing) and `DRILL_DOWN_LEVEL_MISMATCH` (the kind disagrees with the level of
-the board it opens).
+**A board of another repository.** Without `repo`, the target is a board of the
+vault that holds this board. A meta project's board reaches a product
+repository's board by naming the repository identity, the one a `binding` names
+(`github.com/acme/payments`), and never a directory: the note is read on other
+machines. The target is then looked up in the vault of the identity's chosen
+checkout (`archboard repo list`), by the same rules as in this vault: the name
+the board had before a rename and a name in other letters open it too, and the
+kind is the level that board declares. An identity that names this vault's own
+repository stays in this vault. A vault in no repository has no identity, so
+nothing can link into one. Check `archboard semantic` in that repository before
+you write the link (`archboard -C <directory> semantic`).
 
-Those three check a variant's content, so they run only over the variants a
+```json
+{ "name": "Payments", "kind": "service",
+  "drillDown": { "board": "Payments", "variant": { "kind": "current" },
+                 "repo": "github.com/acme/payments" } }
+```
+
+`archboard check` warns on these mistakes, naming the node:
+`DRILL_DOWN_ONLY_NODE` (nothing but the link: no relationship, no children, no
+part in a flow), `DRILL_DOWN_UNKNOWN_BOARD` (no such board, in this vault or,
+when `repo` is named, in the chosen checkout's vault, so the link opens
+nothing), `DRILL_DOWN_LEVEL_MISMATCH` (the kind disagrees with the level of
+the board it opens) and `DRILL_DOWN_UNKNOWN_REPOSITORY` (`repo` names a
+repository with no checkout on this machine, a chosen checkout that is gone, or
+one with no vault; unlike a binding, which draws no warning, a link that opens
+nothing is reported, and `archboard repo add <directory>` clears it).
+
+Those check a variant's content, so they run only over the variants a
 write can still change: no accepted write could clear a warning on a frozen
 variant. `BINDING_PATH_MISSING` runs only over the current variant: a binding to
 a file that existed then is a correct record, not drift, and one on a draft is

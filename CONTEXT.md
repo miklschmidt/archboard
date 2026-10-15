@@ -305,8 +305,12 @@ _Avoid_: layer, depth, zoom, tier, granularity
 Moving from a node on one board to an explicitly linked board and variant
 describing that node's internals. It is an affordance on a part the board draws
 for its own sake: upward from the container the board describes, downward or
-sideways from a card. A drill-down into another vault names the repository
-identity of that vault, never a path, and it cannot reach an untracked vault.
+sideways from a card. Without a repository identity it stays in the vault of the
+board that carries it. With one (`repo`, an identity as a binding names it,
+never a path) the board is in the vault of that identity's chosen checkout, with
+its former names and case-insensitive names as in any vault; an identity that
+names the vault's own repository stays in the vault. An untracked vault has no
+identity, so no drill-down reaches one.
 _Avoid_: zoom in, expand, descend, navigate, open
 
 **Variant**:

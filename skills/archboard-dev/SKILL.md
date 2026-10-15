@@ -195,7 +195,8 @@ Record each repair and the passing gate result before closing the original task.
      in step 2. A part named only by a relationship is normal, because a new
      caller does not change the file of what it calls.
    - `skipped` parts are in no list, so none of them reads as unchanged. A
-     `drill-down` part opens another board: run this step on that board when
+     `drill-down` part opens another board (in another repository, the board
+     of that repository's chosen checkout): run this step on that board when
      the task has a proposal there. For another reason, read
      `git log -- <path>`. A repository `unread` lacks the base: run `git log`
      in that checkout. A commit with `large` set (over 30 files) is a sweep,
