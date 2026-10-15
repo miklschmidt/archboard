@@ -134,10 +134,11 @@ move that needs a drill-down into an untracked vault, which has no identity.
 Two vaults are two files, so the move writes in a fixed order: the board in the
 target vault, then each rewritten drill-down, then it deletes the board in the
 source vault. If the move stops part way (`MOVE_STOPPED`, exit 5), the board is
-in both vaults. Run the same command again to finish it. If somebody wrote the
-target's copy since, the second run refuses with `BOARD_EXISTS` rather than
-write over it: discard the copy you do not want first. Each repository
-commits its own half. A drill-down in a third vault into the moved board now
+in both vaults, and the error lists the drill-downs that it rewrote already.
+Run the same command again to finish it: its answer lists only the rest. If
+somebody wrote the target's copy since, the second run refuses with
+`BOARD_EXISTS` rather than write over it: discard the copy you do not want
+first. Each repository commits its own half. A drill-down in a third vault into the moved board now
 opens nothing, and `archboard check` in that vault names it.
 
 Read [authoring](authoring.md) only when the change needs it: a

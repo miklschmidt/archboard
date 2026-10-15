@@ -108,7 +108,8 @@ const semanticMoveContract = defineCommand({
 		"source's repository. The answer lists every drill-down it rewrote. The move holds the board " +
 		"in the source vault and its name in the target vault, writes the target note first, then the " +
 		"rewritten drill-downs, and deletes the source note last. A move that stopped part way leaves " +
-		"the board in both vaults, and running the same move again finishes it. Each repository " +
+		"the board in both vaults and lists the drill-downs it rewrote already, and running the same " +
+		"move again finishes it. Each repository " +
 		"commits its own half. It is refused between two checkouts of one repository, while somebody " +
 		"else holds the board or its name in the target vault, when the target vault has a board or a " +
 		"former name that the board's names answer to, and when it needs a drill-down into an " +
