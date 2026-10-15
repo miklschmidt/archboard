@@ -3,10 +3,11 @@ id: TASK-472.07
 title: >-
   Tests and skill evaluations make their vaults in the vault layout and address
   them with -C
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-14 22:24'
+updated_date: '2026-10-15 04:10'
 labels: []
 dependencies:
   - TASK-472.06

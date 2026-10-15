@@ -3,9 +3,11 @@ id: TASK-472.08
 title: >-
   archboard runs the source of the archboard checkout it stands in, and each
   worktree has its own port
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-14 21:49'
+updated_date: '2026-10-15 04:10'
 labels: []
 dependencies:
   - TASK-472.06
