@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-14 21:49'
+updated_date: '2026-10-15 02:12'
 labels: []
 dependencies:
   - TASK-472.05
@@ -37,3 +38,17 @@ An agent in a worktree that runs `browser show` would show a board that the app 
 - [ ] #5 The archboard and archboard-pr skills and the help of the `browser` commands describe the new answers as built
 - [ ] #6 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-15 02:09
+---
+Found in the TASK-472.05 review: `archboard repo use` and `repo forget` change the registry without telling a running server, so no tab hears `repositories_changed` and no pane moves. Also, `pane_board.repository` is null for a pane in the vault of a checkout that is not the chosen one. Make the CLI commands go through the server (or announce the change), and decide what a pane in an unchosen checkout reports.
+---
+
+created: 2026-10-15 02:12
+---
+Also found in the TASK-472.05 review: a pane's repository name comes from `pane_board` and is not sent again when the repository list changes (a forgotten repository, or a second checkout that makes a name unique with -2). Make sure that the name a pane reports stays current.
+---
+<!-- COMMENTS:END -->

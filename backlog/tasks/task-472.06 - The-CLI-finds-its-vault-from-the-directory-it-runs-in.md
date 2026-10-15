@@ -4,6 +4,7 @@ title: The CLI finds its vault from the directory it runs in
 status: To Do
 assignee: []
 created_date: '2026-10-14 21:49'
+updated_date: '2026-10-15 02:12'
 labels: []
 dependencies:
   - TASK-472.02
@@ -40,3 +41,17 @@ Plain `archboard` needs `ARCHBOARD_VAULT` exported. ADR 0049 makes the CLI find 
 - [ ] #9 INSTALL.md, AGENTS.md, PRODUCT.md, .archboard/README.md, the archboard skill and the archboard-pr skill describe how a command finds its vault and what `-C` does
 - [ ] #10 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-15 02:09
+---
+Found in the TASK-472.05 review: a pane's repository name comes from `pane_board` and is not sent again when the repository list changes (a rename, a forgotten repository, or a second checkout that makes a name unique with -2). Make sure that the name a pane shows stays current.
+---
+
+created: 2026-10-15 02:12
+---
+The comment above about a stale repository name belongs to TASK-472.14, and is recorded there.
+---
+<!-- COMMENTS:END -->
