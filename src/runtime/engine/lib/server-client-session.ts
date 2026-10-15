@@ -7,9 +7,6 @@
 // it once is what keeps a write's `--board`, `--doing` and `--expect-version`
 // from being forgotten by whichever call site was written last.
 
-import { resolve } from "node:path";
-
-import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
 import { isRecord } from "@/runtime/engine/lib/unknown-record";
 
 /** The board this invocation names, or null when it names none. */
@@ -19,9 +16,9 @@ let requestedBoard: string | null = null;
  * The vault this invocation names, which every server call states (ADR 0049):
  * one server serves several vaults and cannot guess which this command means.
  * A command that finds its vault (`-C`, the working directory) names the one it
- * found; until it does, this is the vault the environment configures, or none.
+ * found; until it does, there is none.
  */
-let requestedVault: string | null = ARCHBOARD_VAULT ? resolve(ARCHBOARD_VAULT) : null;
+let requestedVault: string | null = null;
 
 /** What this invocation says it is doing, or null when it says nothing. */
 let writeDoing: string | null = null;

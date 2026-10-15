@@ -140,13 +140,12 @@ recipe names.
   resolve against the working directory. These commands take no `-C` and need
   no vault: `start`, `stop`, `status`, `repo`, `install-skill`,
   `browser panes`, `browser close` and `semantic replay`. A JSON answer of a
-  command that takes `-C` carries `vault: {path, origin}`. The origin is `-C`,
-  `environment` or `working-directory`. Read it to make sure that you wrote the
+  command that takes `-C` carries `vault: {path, origin}`. The origin is `-C`
+  or `working-directory`. Read it to make sure that you wrote the
   vault you meant. If this machine does not know the checkout or untracked
   vault, the first command in it registers it. That answer carries
-  `vault.registered`, and one line goes to stderr. If no `-C` is given, a set
-  `ARCHBOARD_VAULT` decides, and it never registers anything. It is going away,
-  so give `-C` instead. A thread of the Archboard workbench receives each
+  `vault.registered`, and one line goes to stderr. No environment variable names
+  a vault: give `-C`, or run the command in the directory that holds it. A thread of the Archboard workbench receives each
   board's vault directory in its board context. Pass it as `-C`. A workhorse
   works in the checkout of its vault. The voice coordinator works in a
   directory that holds no vault, so its commands without `-C` are refused.

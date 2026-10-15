@@ -28,10 +28,10 @@ const { applyCliBootstrap } = await import("@/cli/command-contract/bootstrap");
 const bootstrap = applyCliBootstrap(argv);
 
 if (!bootstrap.help) {
-	const { renamedUrlMessage } = await import("@/runtime/engine/config");
-	const renamed = renamedUrlMessage();
-	if (renamed !== null) {
-		process.stderr.write(`${renamed}\n`);
+	const { removedEnvironmentMessage } = await import("@/runtime/engine/config");
+	const removed = removedEnvironmentMessage();
+	if (removed !== null) {
+		process.stderr.write(`${removed}\n`);
 		process.exit(2);
 	}
 }

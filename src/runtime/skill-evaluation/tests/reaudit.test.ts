@@ -174,8 +174,8 @@ test("a path under no entry the batch holds reaches nothing, whatever the comman
 	// is read and nothing reports the path missing.
 	const vault = `${BATCH}/world/vault`;
 	for (const script of [
-		`ARCHBOARD_VAULT=${vault} archboard semantic list`,
-		`ARCHBOARD_VAULT=${WORLD}/vault archboard semantic render x && ARCHBOARD_VAULT=${vault} archboard semantic rasterize x`,
+		`VAULT_DIR=${vault} archboard semantic list`,
+		`VAULT_DIR=${WORLD}/vault archboard semantic render x && VAULT_DIR=${vault} archboard semantic rasterize x`,
 		`cat ${BATCH}/nope 2>/dev/null`,
 	])
 		expect(exposureOf(`bash -lc '${script}'`, '{"success":true}'), script).toBeNull();
@@ -208,8 +208,8 @@ test("a path under no entry the batch holds reaches nothing, whatever the comman
 test("a script is read as the shell receives it, so quoting inside a -lc argument names its own world", () => {
 	// An escaped and spliced -lc script whose every path lies in the run's world.
 	const script = [
-		`export ARCHBOARD_VAULT=${WORLD}/vault`,
-		`find \\""'$ARCHBOARD_VAULT" -maxdepth 3 -type f -print | sort`,
+		`export VAULT_DIR=${WORLD}/vault`,
+		`find \\""'$VAULT_DIR" -maxdepth 3 -type f -print | sort`,
 		`printf '"'%s\\n' '--- workspace status ---'`,
 		`git -C ${WORLD} status --short`,
 	].join("\n");

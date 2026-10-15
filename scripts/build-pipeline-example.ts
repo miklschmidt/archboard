@@ -10,7 +10,7 @@
 // lease, the coherence checks, one atomic write, one version. There is no
 // special path for an example.
 //
-// The vault it builds into is whichever one `ARCHBOARD_VAULT` names, and a
+// The vault it builds into is the directory named on the command line, and a
 // vault that already holds these two boards is left exactly as it is.
 
 import path from "node:path";
@@ -30,16 +30,16 @@ import {
 	writeSemanticBoard,
 } from "@/runtime/semantic-board-store/index";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
-import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
 
-if (!ARCHBOARD_VAULT) {
+const [named] = process.argv.slice(2);
+if (named === undefined) {
 	throw new Error(
-		"ARCHBOARD_VAULT is not set. Set it to the vault directory to build the example into, then run this again.",
+		"Name the vault directory to build the example into, then run this again: bun scripts/build-pipeline-example.ts <vault>.",
 	);
 }
 
 /** The vault the example is built into. */
-const vault = path.resolve(ARCHBOARD_VAULT);
+const vault = path.resolve(named);
 
 /** Where the statements live, relative to the checkout. */
 const STATED = "docs/design/semantic-pipeline";

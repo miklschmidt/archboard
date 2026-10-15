@@ -30,12 +30,13 @@ contains no username, repository secret, or account detail.
 
 ```bash
 accept_run="voice-$(date -u +%Y%m%dT%H%M%SZ)"
-accept_vault="$(mktemp -d -t archboard-voice-acceptance.XXXXXX)"
+accept_home="$(mktemp -d -t archboard-voice-acceptance.XXXXXX)"
 accept_board="voice-acceptance-${accept_run}"
-export ARCHBOARD_VAULT="$accept_vault"
+mkdir -p "$accept_home/.archboard/vault"
 ```
 
-Keep those three values in the terminal for this run. Record only the run
+The vault of this run is `$accept_home/.archboard/vault`. Every command below that
+calls a vault gives `-C "$accept_home"`. Keep those three values in the terminal for this run. Record only the run
 marker in review evidence. Replace the vault and state paths with `<vault>` and
 `<state-root>` in any retained failure note.
 
@@ -102,8 +103,8 @@ Start the server and create the empty acceptance board.
 ./bin/archboard start
 ./bin/archboard status
 echo '{"level":"module"}' |
-  ./bin/archboard semantic new "$accept_board" --doing "starting the voice acceptance board"
-./bin/archboard semantic show "$accept_board"
+  ./bin/archboard -C "$accept_home" semantic new "$accept_board" --doing "starting the voice acceptance board"
+./bin/archboard -C "$accept_home" semantic show "$accept_board"
 ```
 
 The status must name a running server with zero browser clients before the
@@ -157,7 +158,7 @@ reports (by default <http://127.0.0.1:3000>) in the real desktop browser, then
 point its pane at the acceptance board.
 
 ```bash
-./bin/archboard browser show "$accept_board" --pane primary
+./bin/archboard browser show "$accept_board" --pane primary -C "$accept_home"
 ```
 
 There is nothing to set up first. The first message starts the conversation of
@@ -259,7 +260,7 @@ Voice line, fails the smoke.
 
 ## 7. Prove one bounded board write and live semantics
 
-Read the current version with `./bin/archboard semantic show "$accept_board"`.
+Read the current version with `./bin/archboard -C "$accept_home" semantic show "$accept_board"`.
 Then say this exact bounded request:
 
 ```text
@@ -269,7 +270,7 @@ Make one direct board change. Add one node named Voice smoke <accept_run> to the
 After the voice reports completion, run:
 
 ```bash
-./bin/archboard semantic show "$accept_board"
+./bin/archboard -C "$accept_home" semantic show "$accept_board"
 ```
 
 The version must advance by exactly one and the board must hold exactly the
@@ -347,12 +348,12 @@ The final status must be stopped. Confirm the owned app-server
 child exits and the browser microphone indicator is gone; CLI status alone
 does not prove browser media cleanup. Keep the dedicated
 Codex roots because they contain the supported sign-in. Remove only the exact
-disposable vault after validating its prefix:
+disposable directory after validating its prefix:
 
 ```bash
-case "$accept_vault" in
-  /tmp/archboard-voice-acceptance.*) rm -rf -- "$accept_vault" ;;
-  *) echo "refusing to remove unexpected vault path" >&2; exit 1 ;;
+case "$accept_home" in
+  /tmp/archboard-voice-acceptance.*) rm -rf -- "$accept_home" ;;
+  *) echo "refusing to remove unexpected directory path" >&2; exit 1 ;;
 esac
 ```
 

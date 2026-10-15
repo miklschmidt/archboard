@@ -21,7 +21,7 @@ const caller = {
 };
 const scratch = mkdtempSync(join(tmpdir(), "archboard-footprint-route-"));
 const checkout = join(scratch, "checkout");
-const vault = join(checkout, "vault");
+const vault = join(checkout, ".archboard", "vault");
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const REPO = "github.com/test/footprint";
 let server: typeof ServerModule;
