@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 11,
+	"version": 12,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-14T23:26:46.898Z",
+	"updatedAt": "2026-10-15T00:00:15.081Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -1195,7 +1195,14 @@
 						"name": "Pane registry",
 						"kind": "module",
 						"responsibility": "The sockets and the vault each belongs to, what each pane is showing, and the news broadcast to the sockets of one vault",
-						"parent": "t1dQivSP"
+						"parent": "t1dQivSP",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-registry.ts"
+						}
 					},
 					{
 						"id": "TCMBvDpL",
@@ -1318,7 +1325,15 @@
 						"name": "Board announcements",
 						"kind": "module",
 						"responsibility": "Tells every pane on a board of one vault who holds it and what they said they were doing",
-						"parent": "t1dQivSP"
+						"description": "ADR 0022: a claim is visible wherever the board is shown. Board content is never in the news; a pane reads the board again.",
+						"parent": "t1dQivSP",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/board-announcements.ts"
+						}
 					},
 					{
 						"id": "mStVd7fZ",
@@ -1326,7 +1341,14 @@
 						"name": "Change feed",
 						"kind": "module",
 						"responsibility": "Every settled board change, filed under its vault, as one stream with a cursor, read off the panes' announcements, for the agent's context",
-						"parent": "t1dQivSP"
+						"parent": "t1dQivSP",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-change-feed.ts"
+						}
 					},
 					{
 						"id": "mAwzQrjT",
