@@ -4,7 +4,9 @@
 // What these catch: a pane that arrives in another repository drawing, for one
 // frame, a board of the vault it left, read in the vault it arrived in; and a
 // view chosen on one repository's board carried to a board of the same name,
-// at the same depth, in another repository, where its id names nothing.
+// at the same depth, in another repository, where its id names nothing; and a
+// drill asked for before somebody pointed the pane elsewhere, as a flight that
+// lands late, opening its board over the board the pane holds now.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
@@ -162,4 +164,28 @@ test("a pane that dives into another repository never draws a board of the vault
 
 	expect(drawn).toEqual(["/shop:shop", "/shop:cart", "/payments:ledger"]);
 	expect(moves.current?.trail.map((stop) => stop.board)).toEqual(["shop", "cart"]);
+});
+
+test("a drill asked for before the pane was pointed elsewhere opens nothing over the new board", () => {
+	const drawn: string[] = [];
+	/**
+	 * The board on screen was drawn.
+	 * @param where Its vault and name.
+	 */
+	const onDrawn = (where: string): void => {
+		drawn.push(where);
+	};
+	const { rerender } = render(
+		createElement(DrillProbe, { board: "shop", vault: "/shop", arrival: 0, onDrawn }),
+	);
+	// The reader asked for a card's board, and its flight is still in the air.
+	const asked = moves.current;
+	// Somebody else pointed the pane at another repository's board meanwhile.
+	rerender(createElement(DrillProbe, { board: "ledger", vault: "/payments", arrival: 1, onDrawn }));
+	act(() => {
+		asked?.open("cart", undefined);
+	});
+
+	expect(drawn.at(-1)).toBe("/payments:ledger");
+	expect(moves.current?.trail).toEqual([]);
 });
