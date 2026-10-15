@@ -1,10 +1,9 @@
 # Installing archboard for other repositories
 
 You install archboard once on a machine. The repositories that you diagram do
-not build or import it. Setup puts a block of instructions in the `CLAUDE.md` or
-`AGENTS.md` file of a repository. If you keep the boards with the code, setup
-also puts a vault directory in the repository. The vault is the directory that
-holds the boards. Each board is one `<name>.semantic.json` file in it.
+not build or import it. Setup puts a vault directory, `.archboard/vault`, in a
+repository. The vault is the directory that holds the boards. Each board is one
+`<name>.semantic.json` file in it. Setup writes nothing else into the repository.
 
 This document is also the installation reference for agents: the installed
 skill carries a copy of it. To set up the voice loop for development of
@@ -54,8 +53,8 @@ ln -s ~/Projects/archboard/bin/archboard ~/.local/bin/archboard
 ```
 
 `bin/archboard` finds its own location with `realpath`, so the link works from any
-directory. If you skip this step, the installer in the next step writes the
-absolute path of the CLI into the repository instead.
+directory. If you skip this step, the skills say `archboard` where your shell
+has no such command.
 
 ## 3. Set up a repository
 
@@ -75,28 +74,20 @@ Codex. The installer does these things:
    Codex reads. With `--agent claude-code` it is `~/.claude/skills`. Each copy
    replaces an earlier copy. If a target is a symlink, the installer stops and
    changes nothing.
-2. It chooses the vault. If `ARCHBOARD_VAULT` is set, it offers that vault.
-   If not, it offers `<repo>/.archboard/vault`. If it runs in a terminal, it
-   asks you. If an agent runs it, it takes the offer.
-3. If the vault directory does not exist, it creates it, with a
+2. If the repository has no `.archboard/vault`, it creates that directory, with a
    `.archboard/config.yaml` file that holds the default vocabulary. The
    archboard skill explains that file to the agents that write boards.
-4. If the repository has a `CLAUDE.md` file, it writes a block into it.
-   Otherwise, it writes the block into `AGENTS.md`. The block gives the location of the
-   skills and the vault of the repository. It also gives the command that runs
-   the CLI on this machine, and the Archboard server URL.
+3. It removes the block that earlier versions of the installer wrote into
+   `CLAUDE.md` and `AGENTS.md` between `<!-- archboard:begin -->` and
+   `<!-- archboard:end -->`. It says which files it changed and changes nothing
+   else in them. Commit that change.
 
-The repository is the nearest parent directory that holds `.git`. The block
-sits between `<!-- archboard:begin -->` and `<!-- archboard:end -->`. When you
-run the installer again, it replaces the block in place. Text outside the
-markers does not change, but text inside them does. If the repository has
-neither file, the installer creates `CLAUDE.md` for Claude Code and `AGENTS.md`
-otherwise, and never both. The installer writes no block in the archboard
-checkout itself.
+The repository is the nearest parent directory that holds `.git`. The installer
+writes no `CLAUDE.md` or `AGENTS.md`, because a command finds the vault from the
+repository (see section 4), and the file would hold paths of your machine.
 
-The installer prints what it did, and a JSON receipt. If the vault is inside the
-repository and Git does not ignore it, the installer warns you. Commit the
-vault or ignore it, as you choose.
+The installer prints what it did, and a JSON receipt. If Git ignores the vault,
+the installer warns you. Commit the vault with your code.
 
 These options change what the installer does:
 
@@ -106,19 +97,11 @@ These options change what the installer does:
 | `--agent codex`       | Install for Codex, in `~/.agents/skills`. This is the default.           |
 | `--target claude`     | The same as `--agent claude-code`. `--target agents` is the default.     |
 | `--dir <skills-root>` | Install into `<skills-root>/archboard` and `<skills-root>/archboard-pr`. |
-| `--vault <path>`      | Use this vault. A relative path starts from the current directory.       |
-| `--yes`               | Take the offered vault without a question.                               |
 | `--repo <dir>`        | Set up this repository instead of the current one.                       |
-| `--doc <file>`        | Write the block into this file.                                          |
-| `--no-doc`            | Install the skills only. Write no block and create no vault.             |
+| `--no-setup`          | Install the skills only. Leave the repository alone.                     |
 | `--print-source`      | Show the skill directories to install, and install nothing.              |
 
-Use one of `--agent`, `--target` and `--dir` at most. Do not use `--doc` and
-`--no-doc` together.
-
-The installer does not read the block that is already in the repository. If
-you use `--yes` without `--vault` and without `ARCHBOARD_VAULT`, the vault
-changes to `<repo>/.archboard/vault`.
+Use one of `--agent`, `--target` and `--dir` at most.
 
 ## 4. How a command finds its vault
 
@@ -146,18 +129,17 @@ directory, or in the directory that `-C <dir>` names:
   `semantic replay` take none, because they need no vault.
 
 A JSON answer of a command that takes `-C` names the vault it used, as
-`vault: {path, origin}`. The origin is `-C`, `environment` or
-`working-directory`.
+`vault: {path, origin}`. The origin is `-C` or `working-directory`.
 
 The first command in a checkout or an untracked vault that this machine does
 not know registers it, as `archboard repo add` does. The answer then carries
 `vault.registered`, and one line goes to stderr.
 
-`ARCHBOARD_VAULT` still works for now. If it is set and no `-C` is given, the
-command uses that vault as it is, and never registers it. `-C` wins over it.
-ADR 0049 removes the variable. In a later version, a set variable makes every
-command refuse. The block that the installer writes still holds the `export` line.
-Give `-C` in place of the variable in new scripts.
+A set `ARCHBOARD_VAULT` makes every command refuse with exit code 2, also when
+it comes from a `.env` file. Unset it where it is set. A vault outside a
+checkout moves to `<dir>/.archboard/vault`, where a command run in `<dir>` or
+given `-C <dir>` finds it. The Archboard server serves only a vault in that
+layout, and refuses a call that names another directory.
 
 A vault in the repository keeps the boards next to the code. A reviewer can
 then read a board change in the same diff as the code change. To diagram
@@ -180,11 +162,12 @@ started it.
 The server listens on <http://127.0.0.1:3000>. To use another address, set
 `ARCHBOARD_URL`, or give `--url` to one command. A command starts a server only
 for a loopback address, that is, an address that only this machine can reach.
-The old variable `EXPRESS_SERVER_URL` is refused with a message.
+The old variable `EXPRESS_SERVER_URL` is refused with a message, as
+`ARCHBOARD_VAULT` is.
 
 Several Archboard servers can run on one machine at the same time, each on its own port.
 The Codex agents of a server run `archboard` against that server, and they
-never start another server. The Codex child holds no `ARCHBOARD_VAULT`. The
+never start another server. The Codex child holds no vault setting. The
 board context of a thread names the vault of each board, and the instructions
 tell the thread to pass it as `-C`. The voice coordinator works in a directory
 of its own under the state directory, which holds no vault, so a command it
@@ -203,8 +186,7 @@ an OpenAI API key. The sign-in is kept apart from your own `~/.codex`, in
 The server needs no vault to start, and one server serves every vault. The
 navigator in the browser lists each repository that this machine knows and that
 has a vault. A command that runs in a checkout makes its repository known. So
-does `archboard repo add`. A page opens in the vault that a set
-`ARCHBOARD_VAULT` names. Otherwise it opens in the first repository, by name,
+does `archboard repo add`. A page opens in the first repository, by name,
 that is ready. If this machine knows no repository with a vault, the page says
 so and tells you how to make one known. Each repository row has a menu of its checkouts, for
 example a worktree. The checkout that you choose there is the one that the
@@ -519,13 +501,12 @@ gh 2.99 or newer.
 To update archboard, run `git pull`, `bun install` and `bun run build` in the
 checkout, then run `archboard stop`. `archboard status` reports a server that
 runs older source. Run `archboard install-skill` again in each repository to
-update its copy of the skills and its block.
+update its copy of the skills.
 
 There is no uninstall command. To remove archboard, delete these things:
 
 - The skill directories, for example `~/.agents/skills/archboard` and
   `~/.agents/skills/archboard-pr`.
-- The block between the markers in each repository.
 - The `archboard` link on your `PATH`.
 - The state directory. It holds the Codex sign-in, `repos.json` (with the
   configured language servers of each checkout), the opener configuration, the

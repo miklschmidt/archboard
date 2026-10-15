@@ -14,12 +14,9 @@ import { z } from "zod";
 import { checkoutRoot, clearedEnvironment, packageBin } from "./package-cli.ts";
 
 const setupSchema = z.object({
-	doc: z.string(),
-	docCreated: z.boolean(),
-	blockUpdated: z.boolean().optional(),
 	vault: z.string(),
 	vaultCreated: z.boolean(),
-	command: z.string(),
+	removedBlocks: z.array(z.string()),
 });
 const installResultSchema = z.object({
 	mode: z.string(),

@@ -65,8 +65,8 @@ grader, untouched.
    real origin recorded so the repository identity is `github.com/pallets/flask`.
    The run's vault is `.archboard/vault` in that checkout. The harness makes it
    after the clone, because a clone needs an empty destination. The author sees
-   it, for example in `git status`. The harness sets no `ARCHBOARD_VAULT`: every
-   command finds the vault from the checkout it runs in, as it does for anyone.
+   it, for example in `git status`. No variable names it: every command finds the
+   vault from the checkout it runs in, as it does for anyone.
    The batch sits in the archboard checkout, whose own vault a command run
    outside the Flask checkout would find. So `GIT_CEILING_DIRECTORIES` stops
    git at the run's directory, and that directory holds `.archboard/vault`, a
@@ -75,21 +75,19 @@ grader, untouched.
    untracked vault.
 3. An Archboard server of its own on a free port. It starts without a vault, and
    every call it gets names the run's vault.
-4. `archboard install-skill --agent codex --repo <flask> --vault <flask>/.archboard/vault --yes`.
+4. `archboard install-skill --agent codex --repo <flask>`.
    The other skills it ships, such as `archboard-pr`, are removed, so the run
    reads only the skill under evaluation. For the baseline arm the installed
    skill is then replaced by the frozen package under
    `docs/design/skill-evals/baseline/archboard` and prepared with the same
    generated files. The install is verified independently: the skill
-   files and generated schemas exist, and the setup block in the checkout's
-   `AGENTS.md` names the run's vault.
+   files and generated schemas exist.
 5. The fixture laid through the CLI, then a snapshot of every board. The first
    command in a checkout registers it, so the checkout is registered by now. A
    fixture that says the checkout is not registered (`registerRepo: false`) has
    the registration forgotten again after the snapshot, so the author starts
    with an unknown checkout. The first command that finds the vault from the
-   checkout registers it again and says so on stderr; a command whose vault
-   comes from an exported `ARCHBOARD_VAULT` registers nothing. A fixture
+   checkout registers it again and says so on stderr. A fixture
    that keeps a talk has it written after its boards, in the run's home where
    `semantic record --talk` would have kept it: a walkthrough of a board the
    steps laid, from the board and vault check the CLI serves, through the
@@ -250,7 +248,7 @@ A batch made before the vault moved into the checkout is not directly
 comparable with one made after it. The world the author works in changed: the
 vault used to sit beside the checkout. Now it sits in the checkout, where the
 author sees it, for example in `git status`.
-The vault was found from `ARCHBOARD_VAULT` then, and it is found from the
+The vault was found from an environment variable then, and it is found from the
 checkout now. Read an old batch against an old one, and a new batch against a
 new one.
 
