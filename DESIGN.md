@@ -438,8 +438,9 @@ The outline is a column 176px wide, 48px to the left of the sections, and it sta
 with the section's 16px mark, its name in Control and its count in Technical. The
 section being read has full ink and a 2px piece of Gold Mark on its left edge. On a
 page narrower than 1040px, the outline is a bar on Ground Chalk at the top of the
-page with a Rule under it. There the gold piece lies under the entry. A jump to a
-section scrolls the page smoothly, or at once with reduced motion.
+page with a Rule under it. There the gold piece lies under the entry, and a bar too
+narrow for its entries scrolls sideways. A jump to a section scrolls the page
+smoothly, or at once with reduced motion.
 
 A section heading is Subtitle in semibold, and 56px separate one section from the
 next. A walkthrough is a Page Card, 24px from the next one. Its head has the name
