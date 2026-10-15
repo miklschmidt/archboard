@@ -8,7 +8,7 @@
 // nothing reaches the registry of the machine that runs the test. `restore`
 // puts ARCHBOARD_REPOS back and removes the directory.
 
-import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -40,7 +40,15 @@ function makeStandInVault(): StandInVault {
 	const path = join(root, ".archboard", "vault");
 	mkdirSync(path, { recursive: true });
 	const before = process.env["ARCHBOARD_REPOS"];
-	process.env["ARCHBOARD_REPOS"] = join(root, "repos.json");
+	const registry = join(root, "repos.json");
+	// Registered already, so a command neither registers it nor tells the
+	// stand-in server that the registry changed: the server sees only the calls
+	// of the command under test.
+	writeFileSync(
+		registry,
+		JSON.stringify([{ name: "stand-in", root, addedAt: new Date().toISOString() }]),
+	);
+	process.env["ARCHBOARD_REPOS"] = registry;
 	return {
 		path,
 		argv: (args) => [...args, "-C", root],

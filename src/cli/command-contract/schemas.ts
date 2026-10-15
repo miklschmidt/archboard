@@ -58,6 +58,8 @@ const RegisteredVaultSchema = z.discriminatedUnion("kind", [
 		chosen: z.boolean(),
 		/** The worktrees that the checkout lists and that were registered with it. */
 		worktrees: z.array(z.string()),
+		/** The untracked vault that took a new registry name, because the identity is its old one. */
+		renamed: z.object({ root: z.string(), from: z.string(), to: z.string() }).optional(),
 	}),
 	z.object({
 		kind: z.literal("untracked"),

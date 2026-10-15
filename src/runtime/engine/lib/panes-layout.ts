@@ -96,10 +96,27 @@ interface PaneReport {
 	board: string | null;
 	/** What that board is, or null when there is no board. */
 	identity: BoardIdentity | null;
+	/** The vault the board is in. */
+	vault: string;
+	/**
+	 * The repository the vault is in, by identity or an untracked vault's
+	 * registry name, or null when no registered directory holds it.
+	 */
+	repository: string | null;
+	/** The checkout that holds the vault, or the directory of an untracked vault. */
+	checkout: string | null;
+	/** Whether the vault is the one the caller's own command finds. */
+	own: boolean;
 	rect: Rect;
 	reading: PaneReading;
 	/** When this pane last told the server about itself. */
 	at: string;
+}
+
+/** Where a vault is: its repository and its checkout. */
+interface VaultWhereabouts {
+	readonly repository: string | null;
+	readonly checkout: string | null;
 }
 
 type Arrangement =
@@ -133,6 +150,10 @@ interface PaneContext {
 	identity(board: string): BoardIdentity | null;
 	/** What this pane last reported reading, or null when it has said nothing. */
 	reading(clientId: string): Omit<PaneReading, "moreSelected" | "summary"> | null;
+	/** The repository and the checkout of a vault. */
+	whereabouts(vault: string): VaultWhereabouts;
+	/** The vault the caller's command finds, or null when it finds none. */
+	caller: string | null;
 	/** Where to open the canvas, for the no-pane case. */
 	serverUrl?: string;
 }

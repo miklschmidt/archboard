@@ -154,6 +154,16 @@ recipe names.
   its chosen checkout. A link to one board is `/?paneA=<board>&repoA=<repository>`.
   The repository is its identity, such as `github.com/acme/shop`, or an
   untracked vault's registry name, and never a path.
+- **Showing your board.** `archboard browser show <board> --pane <spec>` from
+  a checkout that is not the chosen one of its repository, such as a worktree,
+  makes your checkout the chosen one for the whole machine, before it shows the
+  board. Every pane of that repository then reads your checkout. The answer
+  then has `chose: {repository, checkout, replaced}`. `replaced` is the
+  checkout that the user read before. Tell the user that the app reads your
+  checkout now. A show from the chosen checkout has no `chose`, and no board
+  command changes the choice. `archboard browser panes` gives each pane its
+  `repository`, its `checkout` and `own`. `own` is true for a pane that shows
+  the vault of the directory that you run the command in.
 - **Vocabulary.** Read the `configurationFile` that `archboard semantic config`
   names (`<vault>/.archboard/config.yaml`) once: it
   defines the board `levels`, the `nodeKinds`, the `relationshipKinds` and the

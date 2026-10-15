@@ -140,6 +140,7 @@ function paneReport(
 	context: PaneContext,
 ): PaneReport {
 	const identity = identityOf(pane.board, context);
+	const { repository, checkout } = context.whereabouts(pane.vault);
 	return {
 		paneId: pane.paneId,
 		clientId: pane.clientId,
@@ -149,6 +150,10 @@ function paneReport(
 		primary: pane.primary,
 		board: identity === null ? null : paneBoardAddress(identity),
 		identity,
+		vault: pane.vault,
+		repository,
+		checkout,
+		own: pane.vault === context.caller,
 		rect: pane.rect,
 		reading: readingOf(pane, context),
 		at: pane.at,
@@ -304,8 +309,20 @@ function boardPhrase(identity: BoardIdentity | null): string {
 }
 
 /**
- * One pane as a line of the read-out: where it is, what it shows, how it is
- * being read, and what is picked.
+ * Where a pane's board is, as the read-out says it: the repository and the
+ * checkout, and whether that is the caller's own.
+ * @param pane The pane.
+ * @returns The phrase.
+ */
+function repositoryPhrase(pane: PaneReport): string {
+	const where = pane.checkout ?? pane.vault;
+	const named = pane.repository === null ? where : `${pane.repository} at ${where}`;
+	return pane.own ? `${named} (your checkout)` : named;
+}
+
+/**
+ * One pane as a line of the read-out: where it is, what it shows, which
+ * repository it is in, how it is being read, and what is picked.
  * @param pane The pane.
  * @returns The line.
  */
@@ -314,6 +331,7 @@ function paneLine(pane: PaneReport): string {
 	const parts = [
 		`${pane.position}. ${pane.place}`,
 		shownPhrase(pane),
+		repositoryPhrase(pane),
 		reading.variant === null ? "nothing drawn yet" : `variant ${reading.variant.name}`,
 		reading.view === null ? "whole variant" : `view ${reading.view.name} (${reading.view.grammar})`,
 		reading.summary,
