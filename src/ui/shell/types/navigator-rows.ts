@@ -114,7 +114,7 @@ type NavigatorRow = RepositoryRow | FolderRow | BoardRow | VariantRow | EarlierR
 /** One pane as the rows read it. */
 interface PaneMark {
 	readonly letter: string;
-	/** The repository the pane is in, by name, or null when no listed one reads its vault. */
+	/** The repository the server says the pane is in, by name, or null when it named none. */
 	readonly repository: string | null;
 	/** The board's name the pane shows, or null. */
 	readonly board: string | null;

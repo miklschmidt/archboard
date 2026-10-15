@@ -53,29 +53,20 @@ interface NavigatorProps {
 const MESSAGE_STYLE = { paddingLeft: nameX(0) } as const;
 
 /**
- * The repository whose chosen checkout is the vault a pane is in.
- * @param view The shell view.
- * @param vault The pane's vault, or null before the server placed it.
- * @returns The repository, or undefined.
- */
-function repositoryOfVault(view: ShellView, vault: string | null): ShellRepository | undefined {
-	return vault === null
-		? undefined
-		: view.repositories.find((shell) => shell.repository.vault === vault);
-}
-
-/**
  * Every pane as the rows mark it: its letter, its repository, its board, its
- * variant and whether it is active.
+ * variant and whether it is active. The repository is the one the server said
+ * the pane is in, as the address names it: the repositories as last read may
+ * not list a newly chosen checkout's vault yet.
  * @param view The shell view.
  * @returns The marks, in reading order.
  */
 function paneMarks(view: ShellView): PaneMark[] {
 	return view.panes.map((pane, index) => {
-		const shell = repositoryOfVault(view, pane.status.vault);
+		const { repository } = pane.status;
+		const shell = view.repositories.find((each) => each.repository.name === repository);
 		return {
 			letter: paneLetter(index),
-			repository: shell?.repository.name ?? null,
+			repository,
 			board: boardAddressOf(pane.status.boardKey)?.board ?? null,
 			key:
 				shell === undefined

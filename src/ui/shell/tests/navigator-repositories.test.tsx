@@ -34,7 +34,7 @@ test("every repository is a row with its own boards, and a board of one name in 
 			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_BOARDS),
 			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_BOARDS),
 		],
-		panes: [pane("A", "payments"), pane("B", "payments", BILLING_VAULT)],
+		panes: [pane("A", "payments"), pane("B", "payments", BILLING, BILLING_VAULT)],
 	});
 	const inBilling = `repository:${BILLING}|board:payments`;
 	expect(row(`repository:${SHOP}`).getAttribute("aria-level")).toBe("1");
@@ -128,4 +128,20 @@ test("a repository whose boards cannot be read offers to read them again, and th
 	show({ repositories: [repositoryOf(ready(BILLING, BILLING_VAULT), empty)], panes: [] });
 	expect(document.querySelector('[data-slot="navigator"] [role="alert"]')).toBeNull();
 	expect(document.querySelector('[data-slot="navigator-empty"]')).not.toBeNull();
+});
+
+test("a pane is marked in the repository the server says it is in, before the repositories are read again", () => {
+	// A checkout of billing was just chosen: the pane is in its new vault, which
+	// the repositories as last read do not name yet.
+	mountNavigator({
+		repositories: [
+			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_BOARDS),
+			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_BOARDS),
+		],
+		panes: [
+			pane("A", "payments"),
+			pane("B", "payments", BILLING, "/work/billing-next/.archboard/vault"),
+		],
+	});
+	expect(carrying("B")).toEqual([`repository:${BILLING}|board:payments`]);
 });

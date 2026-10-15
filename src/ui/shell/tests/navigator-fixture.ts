@@ -296,10 +296,16 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
  * One local pane.
  * @param paneId The pane.
  * @param boardKey What it shows, or null.
+ * @param repository The repository the server says it is in: the shop unless said.
  * @param vault The vault it is in: the shop's unless said.
  * @returns The pane.
  */
-function pane(paneId: string, boardKey: string | null, vault = SHOP_VAULT): ShellPane {
+function pane(
+	paneId: string,
+	boardKey: string | null,
+	repository: string | null = SHOP,
+	vault = SHOP_VAULT,
+): ShellPane {
 	return {
 		status: {
 			paneId,
@@ -307,7 +313,7 @@ function pane(paneId: string, boardKey: string | null, vault = SHOP_VAULT): Shel
 			connected: true,
 			registered: true,
 			vault,
-			repository: null,
+			repository,
 			boardKey,
 			opened: boardKey,
 			board: null,
