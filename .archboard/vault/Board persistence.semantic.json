@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 41,
+	"version": 44,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-15T00:20:01.697Z",
+	"updatedAt": "2026-10-15T00:50:26.061Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -5291,7 +5291,7 @@
 		{
 			"id": "30kb8Nuk",
 			"name": "TASK-436.14",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "NbjfMdrd",
 			"summary": "The semantic board store, decoding, leases and atomic persistence",
 			"content": {
@@ -6497,9 +6497,9 @@
 		{
 			"id": "mK3EsXXB",
 			"name": "TASK-472.12",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "30kb8Nuk",
-			"summary": "A drill-down can name the repository of the board it opens",
+			"summary": "The semantic board store: board reads, transitions, vault checks and durable writes",
 			"content": {
 				"nodes": [
 					{
@@ -6674,7 +6674,7 @@
 						"name": "Drill-down checks",
 						"kind": "function",
 						"responsibility": "What a board can say about a link to another one, checked across the whole vault and, for a link that names a repository, the vault of that repository",
-						"description": "A link is the one thing on a board that names something outside it, so no single board can check it: a node with nothing but its link, a board the vault does not hold, and a kind that disagrees with the level it opens (ADR 0029). A link that names a repository identity (ADR 0049) asks the same of the vault of that identity's chosen checkout, reading the target board there without migrating it, and adds one question: whether this machine has a checkout of the repository at all.",
+						"description": "A link is the one thing on a board that names something outside it, so no single board can check it: a node with nothing but its link, a board the vault does not hold, and a kind that disagrees with the level it opens (ADR 0029). A link that names a repository identity (ADR 0049) asks the same of the vault of that identity's chosen checkout, reading the target board there without migrating it, and adds two questions: whether this machine has a checkout of the repository at all, and whether the board there can be read. A link that names the vault's own repository stays in the vault, as the board listing reads it.",
 						"parent": "jar7RnTP",
 						"groups": [
 							"checks"
@@ -6892,12 +6892,11 @@
 						"order": 25000,
 						"name": "Vault checkouts",
 						"kind": "function",
-						"responsibility": "Which checkout holds each repository identity for one vault: the vault's own for its own identity, the chosen checkout for any other",
-						"description": "The one rule that every reader of a vault resolves a repository identity by (ADR 0049). The binding checks use it to find a bound file, and the drill-down checks use it to find the vault a link into another repository opens.",
+						"responsibility": "Which checkout holds each repository identity for one vault, and which identity the vault's own checkout holds",
+						"description": "The one rule that every reader of a vault resolves a repository identity by (ADR 0049): the vault's own checkout for its own identity, the chosen checkout for any other. The binding checks use it to find a bound file, and the drill-down checks use it to find the vault a link into another repository opens, and to tell a link that names the vault's own repository from one that leaves it.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/code-target/lib/vault-checkout.ts",
-							"symbol": "checkoutsReadFrom"
+							"path": "src/runtime/code-target/lib/vault-checkout.ts"
 						}
 					}
 				],
@@ -7699,6 +7698,20 @@
 							"path": "src/runtime/semantic-board-store/lib/drill-down.ts",
 							"symbol": "decodeSemanticBoardDocument"
 						}
+					},
+					{
+						"id": "XaXniKeI",
+						"order": 58000,
+						"from": "4P7YZdnj",
+						"to": "klNuMiwC",
+						"kind": "call",
+						"label": "the vault's own repository identity",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "vaultIdentity"
+						}
 					}
 				],
 				"flows": [],
@@ -7770,7 +7783,7 @@
 			}
 		}
 	],
-	"current": "30kb8Nuk",
+	"current": "mK3EsXXB",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -7807,6 +7820,12 @@
 			"from": "NbjfMdrd",
 			"at": "2026-10-07T01:08:49.898Z",
 			"reason": "Built historical decoding shares the pure store decoder without writing historical bytes"
+		},
+		{
+			"variant": "mK3EsXXB",
+			"from": "30kb8Nuk",
+			"at": "2026-10-15T00:50:26.061Z",
+			"reason": "A drill-down can name the repository of the board it opens: the drill-down checks read the vault of that repository's chosen checkout, a link naming the vault's own repository stays in the vault, and the vault checkouts say which identity a vault's own checkout holds"
 		}
 	],
 	"shelvings": [
