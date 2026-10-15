@@ -1,6 +1,7 @@
 // The dialog in which a person moves a board, every variant of it, to another
 // repository (ADR 0051): where to, what the move would rewrite, and Move. The
-// form mounts with the open dialog, so nothing is read while it is closed. Once
+// form mounts with the open dialog, so nothing is read while it is closed. It
+// does not close while the move is under way, so a refusal is read here. Once
 // the move has finished the server shows the board in its new repository in
 // every pane that showed it, this one included, and the dialog closes.
 
@@ -20,7 +21,11 @@ import { BusyText, CANCEL_BUTTON_CLASS } from "@/ui/dialog-parts";
 import { MoveRefusal } from "@/ui/board-move/components/MoveRefusal";
 import { MoveRewrites } from "@/ui/board-move/components/MoveRewrites";
 import { MoveTargets } from "@/ui/board-move/components/MoveTargets";
-import { useBoardMove, type MovingBoard } from "@/ui/board-move/hooks/use-board-move";
+import {
+	useBoardMove,
+	useMoveInFlight,
+	type MovingBoard,
+} from "@/ui/board-move/hooks/use-board-move";
 
 /** Inputs for the dialog. */
 interface MoveBoardDialogProps {
@@ -45,8 +50,16 @@ function firstTarget(): HTMLElement | null {
  * @returns The dialog.
  */
 function MoveBoardDialog(props: MoveBoardDialogProps): JSX.Element {
+	const { onOpenChange } = props;
+	const inFlight = useMoveInFlight(props.board.board);
+	const handleOpenChange = useCallback(
+		(open: boolean) => {
+			if (open || !inFlight) onOpenChange(open);
+		},
+		[inFlight, onOpenChange],
+	);
 	return (
-		<Dialog open={props.open} onOpenChange={props.onOpenChange}>
+		<Dialog open={props.open} onOpenChange={handleOpenChange}>
 			<DialogContent className="sm:max-w-lg" initialFocus={firstTarget}>
 				<DialogHeader>
 					<DialogTitle>Move {props.title}</DialogTitle>
@@ -55,7 +68,7 @@ function MoveBoardDialog(props: MoveBoardDialogProps): JSX.Element {
 						is then.
 					</DialogDescription>
 				</DialogHeader>
-				<MoveBoardForm board={props.board} onMoved={props.onOpenChange} />
+				<MoveBoardForm board={props.board} onMoved={onOpenChange} />
 			</DialogContent>
 		</Dialog>
 	);
