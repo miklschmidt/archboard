@@ -25,6 +25,12 @@ import {
 	LegendInputSchema,
 	legendStated,
 } from "@/cli/commands/lib/semantic-input";
+import {
+	AGAINST_NO_COMPARISON_REFUSAL,
+	AGAINST_OPTION,
+	againstAgreesWithComparison,
+	resolvedAgainst,
+} from "@/cli/commands/lib/drawn-against";
 import { serverRefusal } from "@/cli/command-contract/common";
 
 const RenderInputSchema = z
@@ -34,12 +40,14 @@ const RenderInputSchema = z
 		view: SelectorSchema.optional(),
 		theme: StandaloneThemeSchema.default("light"),
 		layout: LayoutEngineSchema.optional(),
+		against: SelectorSchema.optional(),
 		noComparison: z.boolean().default(false),
 		title: TitleOptionSchema,
 		...LegendInputSchema,
 		out: z.string().optional(),
 	})
-	.refine(legendStated, LEGEND_ONLY_REFUSAL);
+	.refine(legendStated, LEGEND_ONLY_REFUSAL)
+	.refine(againstAgreesWithComparison, AGAINST_NO_COMPARISON_REFUSAL);
 
 const SemanticRenderResultSchema = z.object({
 	success: z.literal(true),
@@ -55,7 +63,7 @@ const SemanticRenderResultSchema = z.object({
 	/**
 	 * The variant this picture is drawn against, or null when comparison is disabled or there is nothing
 	 * to read it against — it is the current variant, or a first draft on a
-	 * board with none — and it is therefore drawn plain.
+	 * board with none — and it is therefore drawn plain. With --against it is the variant named.
 	 *
 	 * By default, every other variant is drawn as the comparison with the board's
 	 * current one (on a board with none, with the one it came from) —
@@ -80,10 +88,13 @@ const semanticRenderContract = defineCommand({
 		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +
 		"routing belong to the renderer. Without --out, stdout carries the SVG, including its accessibility metadata. " +
 		"Use --no-comparison to hide comparison marks and removed subjects. " +
+		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
+		"leaving out the Planned frame. " +
 		"Use semantic rasterize --clipboard for PNG and HTML clipboard output.",
 	examples: [
 		"archboard semantic render pipeline --out pipeline.svg --theme dark",
 		'archboard semantic render pipeline --variant "Queued ingest" --no-comparison --out proposal.svg',
+		'archboard semantic render pipeline --variant "TASK-2" --against "TASK-1" --out task-2.svg',
 		"archboard semantic rasterize pipeline --clipboard",
 	],
 	parameters: [
@@ -119,6 +130,7 @@ const semanticRenderContract = defineCommand({
 			placeholder: "view",
 			description: "Which shared board view to draw, by id or name; the whole variant when absent",
 		},
+		AGAINST_OPTION,
 		{
 			kind: "option",
 			key: "noComparison",
@@ -200,7 +212,10 @@ const semanticRenderContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic render");
-		const drawn = await renderSemanticBoardOnServer(input.name, exportRenderRequest(input));
+		const drawn = await renderSemanticBoardOnServer(
+			input.name,
+			exportRenderRequest({ ...input, against: await resolvedAgainst(input.name, input) }),
+		);
 		if ("empty" in drawn) {
 			throw new CliUsageError(
 				`Semantic board "${drawn.board}" has nothing on it yet, so there is nothing to draw.`,

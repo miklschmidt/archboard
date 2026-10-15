@@ -77,6 +77,8 @@ interface WalkthroughRecordingRequest {
 	readonly policy: VaultCheck;
 	/** The variant asked for, by id, or null for the one that is current. */
 	readonly variant: string | null;
+	/** The variant every picture of the talk is read against, by id, or null for the usual one. */
+	readonly against: string | null;
 	/**
 	 * The repository the board is in, as the browser names it (ADR 0050): an
 	 * identity or an untracked vault's registry name. Null opens the page in the
@@ -351,6 +353,7 @@ function talkOf(request: WalkthroughRecordingRequest, log: TalkLog, steps: numbe
 		board: {
 			name: board.name,
 			variant: request.variant,
+			...(request.against === null ? {} : { against: request.against }),
 			version: board.version,
 			walkthrough: request.walkthrough,
 			steps,

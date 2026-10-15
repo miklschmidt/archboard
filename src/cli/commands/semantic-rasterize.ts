@@ -38,6 +38,12 @@ import {
 	LegendInputSchema,
 	legendStated,
 } from "@/cli/commands/lib/semantic-input";
+import {
+	AGAINST_NO_COMPARISON_REFUSAL,
+	AGAINST_OPTION,
+	againstAgreesWithComparison,
+	resolvedAgainst,
+} from "@/cli/commands/lib/drawn-against";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { copyImageToClipboard } from "@/cli/commands/lib/image-clipboard";
 
@@ -50,6 +56,7 @@ const RasterizeInputSchema = z
 		view: SelectorSchema.optional(),
 		theme: DiagramThemeSchema.default("light"),
 		layout: LayoutEngineSchema.optional(),
+		against: SelectorSchema.optional(),
 		noComparison: z.boolean().default(false),
 		title: TitleOptionSchema,
 		...LegendInputSchema,
@@ -69,6 +76,7 @@ const RasterizeInputSchema = z
 		clipboard: z.boolean().default(false),
 	})
 	.refine(legendStated, LEGEND_ONLY_REFUSAL)
+	.refine(againstAgreesWithComparison, AGAINST_NO_COMPARISON_REFUSAL)
 	.refine((input) => !input.clipboard || input.out === undefined, {
 		message: "Use either --clipboard or --out, not both.",
 		path: ["clipboard"],
@@ -184,11 +192,14 @@ const semanticRasterizeContract = defineCommand({
 		"Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM. " +
 		"Without --out or --clipboard, stdout carries PNG bytes. " +
 		"Use --clipboard to copy PNG and HTML with the accessible description on Linux and macOS. " +
-		"Use --no-comparison to hide comparison marks and removed subjects.",
+		"Use --no-comparison to hide comparison marks and removed subjects. " +
+		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
+		"leaving out the Planned frame.",
 	examples: [
 		"archboard semantic rasterize pipeline --out pipeline.png",
 		'archboard semantic rasterize pipeline --view "Startup exchange" --scale 2 --out startup@2x.png',
 		"archboard semantic rasterize pipeline --clipboard",
+		'archboard semantic rasterize pipeline --variant "TASK-2" --against "TASK-1" --out task-2.png',
 		'archboard semantic rasterize pipeline --view "Startup exchange" --clipboard --no-comparison',
 	],
 	parameters: [
@@ -232,6 +243,7 @@ const semanticRasterizeContract = defineCommand({
 			placeholder: "view",
 			description: "Which shared board view to draw, by id or name; the whole variant when absent",
 		},
+		AGAINST_OPTION,
 		{
 			kind: "option",
 			key: "noComparison",
@@ -354,7 +366,10 @@ const semanticRasterizeContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic rasterize");
-		const drawn = await renderSemanticBoardOnServer(input.name, exportRenderRequest(input));
+		const drawn = await renderSemanticBoardOnServer(
+			input.name,
+			exportRenderRequest({ ...input, against: await resolvedAgainst(input.name, input) }),
+		);
 		if ("empty" in drawn) {
 			throw new CliUsageError(
 				`Semantic board "${drawn.board}" has nothing on it yet, so there is nothing to draw.`,

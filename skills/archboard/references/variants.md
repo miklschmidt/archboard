@@ -73,7 +73,11 @@ asked for: added, removed and changed subjects are marked, removed ones stay on
 the page, and the receipt names the other side under `comparedWith`. The current
 variant draws plain, and so does the first draft of a board nobody has built, so
 parts added to a proposal arrive already marked as added, and its picture is
-read against the current variant, not on its own.
+read against the current variant, not on its own. To draw a variant against
+another one, such as a proposal that stacks on the proposal below it, add
+`--against <variant>` to `semantic render`, `semantic rasterize` or
+`semantic record`: it marks only what the variant changes over the one named, and
+the picture carries no "Planned" frame.
 
 Each variant is laid out fresh. Compare subjects by identity and Standing;
 a card moving or a container shrinking does not itself mean the architecture

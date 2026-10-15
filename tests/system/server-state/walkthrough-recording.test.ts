@@ -105,6 +105,17 @@ test(
 				},
 			});
 			expect(created.status).toBe(200);
+			// A proposal on it, which is what the talk is of, read against the variant it came from.
+			const branched = await request<{ board: { current: string } }>(
+				"/api/semantic-boards/branch?expectVersion=1",
+				{
+					method: "POST",
+					doing: "proposing the tour",
+					body: { board: BOARD, branch: { from: "current", name: "As proposed" } },
+				},
+			);
+			expect(branched.status).toBe(200);
+			const below = branched.body.board.current;
 
 			const out = join(fixture.root, "tour.mp4");
 			const kept = join(fixture.root, "tour-talk");
@@ -136,6 +147,10 @@ test(
 				out,
 				"--talk",
 				kept,
+				"--variant",
+				"As proposed",
+				"--against",
+				below,
 				"--language",
 				"da",
 				"--layout",
@@ -153,6 +168,7 @@ test(
 				discarded: boolean;
 				frames: number;
 				talk: string;
+				against: string;
 			};
 			expect(receipt).toMatchObject({
 				steps: 2,
@@ -160,6 +176,7 @@ test(
 				discarded: true,
 				talk: kept,
 				layout: "blocks",
+				against: below,
 			});
 			expect(receipt.mimeType.startsWith("video/mp4")).toBe(true);
 
@@ -168,6 +185,8 @@ test(
 			const talk = readTalk(kept);
 			// It keeps the engine its picture was laid out with, which a replay draws again.
 			expect(talk.layout).toBe("blocks");
+			// And the variant it is read against, which a replay draws the comparison with.
+			expect(talk.board.against).toBe(below);
 			const shown = talk.events.flatMap((event) => (event.kind === "step" ? [event.beat] : []));
 			expect(shown).toEqual([0, 1]);
 			expect(
