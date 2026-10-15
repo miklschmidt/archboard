@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 04:51'
+updated_date: '2026-10-15 05:04'
 labels: []
 dependencies:
   - TASK-472.06
@@ -67,4 +67,14 @@ Removed owners (TASK-472.09 owns the refusal of the variable): the environment-o
 Left: install-targets still asserts that the setup block exports ARCHBOARD_VAULT (product output until TASK-471.03). Production readers (config.ts, repositories.ts environmentVault, addressed-vault, repo-setup-block, scripts/readme-assets/server.ts, scripts/build-pipeline-example.ts) are TASK-472.09's sweep and now have no test owner.
 Boards: no dogfood board was edited. The Skill evaluation board's "Per-run server" (PEfE7dCL) and "Archboard server" (EJ2b3Szn) say the server runs against the run's vault; it now starts with none and each call names the run's vault.
 Gate: bun run check exit 0 with ARCHBOARD_REPOS=/tmp/t07-gate-repos.json, which no test created.
+
+Board proposal (2026-10-15): Skill evaluation@TASK-472.07 (variant tgP6SniP, branched from TASK-367.27 x68m5AbH), adopted as version 20. No other board is affected: the other task commits touch tests, test support and docs, which no board draws (.archboard/README.md).
+- Proposal content (semantic compare, no interface change on Evaluation harness): Per-run server (PEfE7dCL) and Archboard server (EJ2b3Szn) responsibilities now say the server starts with no vault and every call names the run's vault; Run vault (WbFIRpiE) responsibility adds forgetting a checkout the fixture leaves unregistered (forgetCheckout); descriptions added to Run isolation (vault is .archboard/vault in the Flask checkout, made after the clone, environment names no vault), Exposure re-audit (old batches keep the vault at world/vault, vaultOf), Command classifier (a board read is not a code read, .archboard/vault names the vault), Guardrails (board paths resolve from the checkout, or the vault after a cd) and Agent CLI (finds the run's vault from the checkout it runs in); labels of ovGUX3xQ (Guardrails -> Command classifier), UcQvakTJ (Author run -> Run vault) and Tt8yC8yW (Agent CLI -> Archboard server); beat 0oIkDlI0 body says the vault sits in the checkout. Anchors kept: unwrapped, layFixture and fetch still hold. Summary kept as the board's scope.
+- check --code diff, with and without --variant TASK-472.07: no line differs (no finding introduced or cleared). The one Skill evaluation finding in both runs is the existing EXPOSED_UNUSED on Evaluation harness; the task's new exports (checkoutOf, namesVault, forgetCheckout) are not among the names it lists.
+- Footprint base 2d678a94f (parent of the first Refs: TASK-472.07 code commit f247d3f74); current was the proposal's parent. namedAndChanged: Run isolation, Author run (by relationship), Guardrails, Run vault, Command classifier, Exposure re-audit.
+- changedNotNamed: Evaluation inputs (evals, bd8ce100f) - only evals/README.md changed, the inputs themselves and what the part is for did not, so the board stays true. Evaluation harness (directory container, 282d6d371, 898a65ce6, 5d8e1ec0d) - every changed lib file is named inside it; the rest are tests (run-world, evidence, vault-in-checkout).
+- namedNotChanged: Per-run server (server.ts) - not a deviation. server.ts is unchanged, but it starts the server with the environment Run isolation builds, and runEnvironment no longer sets ARCHBOARD_VAULT (282d6d371), so its responsibility became false through isolation.ts. The header comment of src/runtime/skill-evaluation/lib/server.ts still says "against the run's vault" and is left for a code change.
+- Skipped: Agent CLI and Archboard server are drill-downs to Command interface and Archboard server, where this task has no proposal; Codex CLI and Claude CLI are unbound.
+- archboard check after adoption: 0 diagnostics. The proposal edit warned WALKTHROUGH_VIEW_MISSING for all seven beats, as the current variant already lacked views; left as is, because neither board view holds every beat's subjects.
+- behind after adoption: Skill evaluation 0 commits. Task commits put Agent workbench (Codex process, d59c823f6), Archboard server (Archboard server 5db5d9af4, Code check 4713df8d1), Archboard server routes (Code check 4713df8d1), Board persistence (Board store f247d3f74) and Command interface (Commands 0e6c67343) behind; each of those commits changes only test files, so the boards stay right. Other behind entries are other tasks' commits.
 <!-- SECTION:NOTES:END -->
