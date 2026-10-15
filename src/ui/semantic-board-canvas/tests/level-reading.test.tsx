@@ -1,16 +1,18 @@
-// How a board a level down is read, once the pane has moved between repositories.
+// Which board a level is, and how it is read, once the pane has moved between
+// repositories (ADR 0050).
 //
-// What this catches: a view chosen on one repository's board carried to a board
-// of the same name, at the same depth, in another repository, where its id
-// names nothing (ADR 0050).
+// What these catch: a pane that arrives in another repository drawing, for one
+// frame, a board of the vault it left, read in the vault it arrived in; and a
+// view chosen on one repository's board carried to a board of the same name,
+// at the same depth, in another repository, where its id names nothing.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
-import { createElement, type JSX } from "react";
+import { createElement, useEffect, type JSX } from "react";
 
 import { PaneVaultContext } from "@/ui/semantic-board-canvas";
-import { useLevelReading } from "@/ui/semantic-board-canvas/drilling";
+import { useDrillDown, useLevelReading } from "@/ui/semantic-board-canvas/drilling";
 
 beforeAll(() => {
 	GlobalRegistrator.register();
@@ -91,4 +93,73 @@ test("a view chosen a level down stays with that repository's board", () => {
 	// board of the same name, as deep.
 	rerender(paneIn("/payments"));
 	expect(viewRead()).toBe("");
+});
+
+/** Where the pane in the arrival test is pointed, and what it has drawn. */
+interface Pointed {
+	readonly board: string;
+	readonly vault: string;
+	readonly arrival: number;
+	/**
+	 * The board on screen was drawn.
+	 * @param where Its vault and name.
+	 */
+	readonly onDrawn: (where: string) => void;
+}
+
+/** The moves of the pane in the arrival test, once it has drawn. */
+const moves: { current: ReturnType<typeof useDrillDown> | null } = { current: null };
+
+/**
+ * Hand the test the pane's moves, from an effect as a shell would hear of them.
+ * @param drill The pane's moves.
+ */
+function useHandedMoves(drill: ReturnType<typeof useDrillDown>): void {
+	useEffect(() => {
+		moves.current = drill;
+	}, [drill]);
+}
+
+/**
+ * Where the pane is, drawn: each board it has on screen is reported once drawn.
+ * @param props Where the shell pointed it, and who hears what it drew.
+ * @returns Nothing to see.
+ */
+function DrillProbe(props: Pointed): null {
+	const { board, vault, arrival, onDrawn } = props;
+	const drill = useDrillDown({ board, variant: undefined, arrival, vault, repository: null }, () =>
+		Promise.resolve(true),
+	);
+	useHandedMoves(drill);
+	const shown = `${vault}:${drill.board}`;
+	useEffect(() => {
+		onDrawn(shown);
+	}, [onDrawn, shown]);
+	return null;
+}
+
+test("a pane that dives into another repository never draws a board of the vault it left there", () => {
+	const drawn: string[] = [];
+	/**
+	 * The board on screen was drawn.
+	 * @param where Its vault and name.
+	 */
+	const onDrawn = (where: string): void => {
+		drawn.push(where);
+	};
+	const { rerender } = render(
+		createElement(DrillProbe, { board: "shop", vault: "/shop", arrival: 0, onDrawn }),
+	);
+	// Down a level in the pane's own vault, then into a board of another repository.
+	act(() => {
+		moves.current?.open("cart", undefined);
+	});
+	act(() => {
+		moves.current?.open("ledger", undefined, { vault: "/payments", repository: "payments" });
+	});
+	// The shell moved the pane there.
+	rerender(createElement(DrillProbe, { board: "ledger", vault: "/payments", arrival: 1, onDrawn }));
+
+	expect(drawn).toEqual(["/shop:shop", "/shop:cart", "/payments:ledger"]);
+	expect(moves.current?.trail.map((stop) => stop.board)).toEqual(["shop", "cart"]);
 });
