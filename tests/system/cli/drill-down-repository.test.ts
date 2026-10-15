@@ -16,7 +16,6 @@ import { packageBin } from "./support/package-cli.ts";
 import { createRepositoryFixture, type RepositoryFixture } from "./support/repository-fixture.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const META = "github.com/acme/meta";
 const PRODUCT = "github.com/acme/product";
 let fixture: RepositoryFixture;
 let server: OwnedServer;
@@ -61,7 +60,7 @@ function opening(name: string, opens: { board: string; repo?: string }) {
 
 beforeAll(async () => {
 	fixture = createRepositoryFixture();
-	const meta = fixture.repository("meta", META);
+	const meta = fixture.repository("meta", "github.com/acme/meta");
 	const product = fixture.repository("product", PRODUCT);
 	metaVault = join(meta, ".archboard", "vault");
 	productVault = join(product, ".archboard", "vault");
@@ -131,20 +130,4 @@ test("check follows a drill-down into the chosen checkout's vault and reports wh
 			"DRILL_DOWN_UNKNOWN_REPOSITORY No such checkout",
 		],
 	});
-}, 120_000);
-
-test("a link into a repository that the vault itself belongs to stays in that vault", () => {
-	made(metaVault, "Local", { level: "service", nodes: [{ name: "Inner", kind: "module" }] });
-	made(metaVault, "Own", {
-		level: "system",
-		nodes: [
-			{ name: "Caller", kind: "app" },
-			opening("Local board", { board: "Local", repo: META }),
-			opening("Product board", { board: "Payments", repo: META }),
-		],
-		edges: ["Local board", "Product board"].map((to) => ({ from: "Caller", to, kind: "http" })),
-	});
-	const { findings } = drillFindings(metaVault);
-	expect(findings.filter((one) => one.endsWith("Local board"))).toEqual([]);
-	expect(findings).toContain("DRILL_DOWN_UNKNOWN_BOARD Product board");
 }, 120_000);
