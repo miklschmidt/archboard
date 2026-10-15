@@ -198,16 +198,17 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 
 	/**
 	 * Put a report on the wire under the identity the pane holds now.
+	 * @param vault The vault the pane is in, which the report names.
 	 * @param report The report.
 	 */
-	function dispatchReport(report: PaneReport): void {
+	function dispatchReport(vault: string, report: PaneReport): void {
 		const now = current();
 		const dispatch: PaneReportDispatch = {
 			request: sequencer.begin(now.generation),
 			socket: now.socket,
 			registration: now.registration,
 		};
-		reportPane(parts.vault(), report)
+		reportPane(vault, report)
 			.then((result) => {
 				const outcome = { settled: true, registered: result.registered } as const;
 				apply(sequencer.settle(dispatch, current(), outcome), dispatch, report, result);
@@ -244,12 +245,16 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 			publishedKey = "";
 			return;
 		}
-		const key = paneReportKey(report);
+		// The same report in another vault is another report: the server moved the
+		// pane, and it answers one that names the vault the pane left as one from
+		// a pane it does not have, so only a report from the new vault puts it back.
+		const vault = parts.vault();
+		const key = JSON.stringify([vault, paneReportKey(report)]);
 		if (key === publishedKey) {
 			return;
 		}
 		publishedKey = key;
-		dispatchReport(report);
+		dispatchReport(vault, report);
 	}
 
 	/** Forget the last report. */

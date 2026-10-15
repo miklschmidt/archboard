@@ -417,9 +417,11 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 */
 	async function takeBack(): Promise<TakeBackResult> {
 		const target = status.boardKey;
+		const vault = status.vault;
 		try {
-			await takeBoardBack(status.vault, target, clientId);
-			if (status.boardKey !== target) {
+			await takeBoardBack(vault, target, clientId);
+			// The same board of another checkout is another board, with its own claim.
+			if (status.boardKey !== target || status.vault !== vault) {
 				return { outcome: "failure" };
 			}
 			// Released, or nobody claimed it any more: the board is free either
