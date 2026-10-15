@@ -3,11 +3,11 @@ id: TASK-472.08
 title: >-
   archboard runs the source of the archboard checkout it stands in, and each
   worktree has its own port
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 05:07'
+updated_date: '2026-10-15 05:23'
 labels: []
 dependencies:
   - TASK-472.06
@@ -31,13 +31,13 @@ A worktree of archboard that changes server source needs a server that runs its 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Inside an archboard checkout whose source is not the running source, `archboard` executes that checkout's `bin/archboard` with the same arguments and environment
-- [ ] #2 The main archboard checkout uses port 3000, and a linked worktree uses a port that is a stable hash of its root path into 10000 to 19999, the same on every run
-- [ ] #3 A set `ARCHBOARD_URL` or `--url` still decides the URL
-- [ ] #4 `/health` reports the source checkout of the server, and a command that finds a server of other source on its port refuses and names both checkouts
-- [ ] #5 `bin/dogfood` is deleted, and nothing in the repository runs or names it except history
-- [ ] #6 AGENTS.md, TESTING.md, .archboard/README.md, PRODUCT.md, docs/agents/readme-assets.md and the archboard-dev skill say `archboard` where they said `./bin/dogfood`, and describe worktree servers and ports
-- [ ] #7 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 Inside an archboard checkout whose source is not the running source, `archboard` executes that checkout's `bin/archboard` with the same arguments and environment
+- [x] #2 The main archboard checkout uses port 3000, and a linked worktree uses a port that is a stable hash of its root path into 10000 to 19999, the same on every run
+- [x] #3 A set `ARCHBOARD_URL` or `--url` still decides the URL
+- [x] #4 `/health` reports the source checkout of the server, and a command that finds a server of other source on its port refuses and names both checkouts
+- [x] #5 `bin/dogfood` is deleted, and nothing in the repository runs or names it except history
+- [x] #6 AGENTS.md, TESTING.md, .archboard/README.md, PRODUCT.md, docs/agents/readme-assets.md and the archboard-dev skill say `archboard` where they said `./bin/dogfood`, and describe worktree servers and ports
+- [x] #7 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -70,4 +70,12 @@ Footprint base: 97f1fb8f0, the parent of 9b5a710ff, the task's first code commit
 Adopted: Archboard v54, Command interface v68, Archboard server routes v35.
 `archboard check`: exit 0, no diagnostics.
 behind (check --code after adoption): the adopted boards read 0 commits. This task's commits put two other boards behind. (1) Archboard server, part Archboard server (src/server/archboard): 9b5a710ff only changed the server's default PORT, which now comes from its checkout's port (listener-address.ts), and one test's port. The board draws no port or listener, and "the one process that serves every vault" still holds for each checkout's server. That board's only finding is in the baseline. (2) Command dispatch, part Server client (server-client.ts): 9b5a710ff widened HealthStatus.source with checkout and re-exported OtherSourceError. What the invocation puts on every request is unchanged, and there is no finding on the part. Both boards are still right and were left as they are.
+
+Review (2026-10-15): the hand-off now waits for the child asynchronously and passes SIGINT, SIGTERM and SIGHUP on (37ae63e73, system test sends SIGTERM and gets 143), refuses a checkout without node_modules naming the bun install (098d3e983), and the narration acceptance procedure opens the URL start prints (a696681a8). Open for TASK-472.10, sent to its implementer: a workhorse in an archboard worktree would hand off to that worktree's source and be refused by the main checkout's server; recommended rule: a command with ARCHBOARD_URL set does not hand off. Command interface corrected in place at v69 (685edb477). #3 has no new owner: every system test that reaches an owned server through ARCHBOARD_URL depends on it. #5: git grep finds bin/dogfood only in ADR 0049's note that it is gone, and in backlog history. Gate: bun run check on fac8e4001, exit 0 (modules 4644, system 224, repository 27, browser 19/19).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard runs the source of the archboard checkout it stands in: src/bin.ts hands the command to that checkout's bin/archboard with the same arguments, environment, signals and exit status. The main checkout's server takes port 3000 and a linked worktree a stable port from a hash of its root path in 10000-19999; ARCHBOARD_URL and --url still decide. /health names the source checkout, and a command that finds another checkout's server refuses with exit 3, naming both. bin/dogfood is gone, and the docs say archboard. Verified by src/runtime/engine/tests/source-checkout.test.ts, tests/system/cli/source-checkout.test.ts, tests/system/server-state/staleness-source.test.ts and the full gate; boards Archboard v54, Command interface v68 (corrected at v69) and Archboard server routes v35.
+<!-- SECTION:FINAL_SUMMARY:END -->

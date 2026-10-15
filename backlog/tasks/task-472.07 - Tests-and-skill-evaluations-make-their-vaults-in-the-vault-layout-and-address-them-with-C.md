@@ -3,11 +3,11 @@ id: TASK-472.07
 title: >-
   Tests and skill evaluations make their vaults in the vault layout and address
   them with -C
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 05:04'
+updated_date: '2026-10-15 05:23'
 labels: []
 dependencies:
   - TASK-472.06
@@ -31,12 +31,12 @@ System tests, fixtures and the skill evaluation harness point `ARCHBOARD_VAULT` 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 No test, fixture, test support module or evaluation harness sets or reads `ARCHBOARD_VAULT`
-- [ ] #2 Every isolated server in tests and evaluations still has its own port, HOME, state directory and registry
-- [ ] #3 The evaluation world's vault is `.archboard/vault` inside its flask checkout, and evals/README.md records that batches after this change are not directly comparable with earlier ones
-- [ ] #4 `bun run check` passes
-- [ ] #5 TESTING.md, docs/agents/test-suite.md, evals/README.md and the archboard-dev skill describe isolated servers as built
-- [ ] #6 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 No test, fixture, test support module or evaluation harness sets or reads `ARCHBOARD_VAULT`
+- [x] #2 Every isolated server in tests and evaluations still has its own port, HOME, state directory and registry
+- [x] #3 The evaluation world's vault is `.archboard/vault` inside its flask checkout, and evals/README.md records that batches after this change are not directly comparable with earlier ones
+- [x] #4 `bun run check` passes
+- [x] #5 TESTING.md, docs/agents/test-suite.md, evals/README.md and the archboard-dev skill describe isolated servers as built
+- [x] #6 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -77,4 +77,12 @@ Board proposal (2026-10-15): Skill evaluation@TASK-472.07 (variant tgP6SniP, bra
 - Skipped: Agent CLI and Archboard server are drill-downs to Command interface and Archboard server, where this task has no proposal; Codex CLI and Claude CLI are unbound.
 - archboard check after adoption: 0 diagnostics. The proposal edit warned WALKTHROUGH_VIEW_MISSING for all seven beats, as the current variant already lacked views; left as is, because neither board view holds every beat's subjects.
 - behind after adoption: Skill evaluation 0 commits. Task commits put Agent workbench (Codex process, d59c823f6), Archboard server (Archboard server 5db5d9af4, Code check 4713df8d1), Archboard server routes (Code check 4713df8d1), Board persistence (Board store f247d3f74) and Command interface (Commands 0e6c67343) behind; each of those commits changes only test files, so the boards stay right. Other behind entries are other tasks' commits.
+
+Review (2026-10-15): test support reviewer fixed the leak of a caller's exported ARCHBOARD_VAULT into test children (1f5d25fca, proved with a decoy vault) and removed a repeated mkdirSync (a2a5f195b); the helpers now clear the variable with callerVaultCleared in tests/system/support/test-vault.ts, the only remaining mention, which removes a caller's value and never sets or reads one (accepted for #1). Evaluation reviewer fixed an author command reaching the archboard checkout's own vault from outside the Flask checkout (4568c827e: GIT_CEILING_DIRECTORIES and a run-directory link to the run's vault), the guardrail's cd tracking (bdeb8624f), a re-audit branch with no effect (72748dc12) and stale fixture and server wording (412451d60). Boundary reviewer confirmed every CLI spawn runs outside any archboard checkout or from the source under test, and documented it (fac8e4001). Skill evaluation corrected in place to the reviewed code at v21 (685edb477). Gate: bun run check on fac8e4001 with ARCHBOARD_REPOS=/tmp/gate-repos.json, exit 0: modules 4644 pass, system 224 pass, repository 27 pass, serial browser 19/19 owners; the registry file was never created.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Tests and the skill-evaluation harness no longer set ARCHBOARD_VAULT. Each test vault lives at <dir>/.archboard/vault, commands run in that directory with the server's own isolated registry, and an owned server lists only its vault, so the page opens there. A run's vault is .archboard/vault inside its Flask checkout, git looks no higher than the run, and evals/README.md says later batches are not directly comparable. TESTING.md, docs/agents/test-suite.md, evals/README.md and the archboard-dev skill describe it. Verified by the full gate and by a decoy-vault run that stayed empty; Skill evaluation adopted at v20 and corrected at v21.
+<!-- SECTION:FINAL_SUMMARY:END -->
