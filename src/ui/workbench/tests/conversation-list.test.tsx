@@ -92,7 +92,7 @@ test("the list marks the shown checkout, says what one waits on, and a pick name
 	expect(group.contains(shown)).toBe(true);
 	expect(shown.getAttribute("aria-pressed")).toBe("true");
 	expect(other.getAttribute("aria-pressed")).toBe("false");
-	// The other names its checkout's directory and its wait in words, not in colour alone.
+	// The other names its checkout's directory, which tells two checkouts of one repository apart.
 	expect(other.textContent).toContain("shop-feature");
 	expect(other.textContent).not.toBe(shown.textContent);
 
@@ -102,4 +102,26 @@ test("the list marks the shown checkout, says what one waits on, and a pick name
 	press(shown);
 	expect(picked).toEqual([WORKTREE]);
 	view.unmount();
+});
+
+test("the list says in words, not in colour alone, what a workhorse waits on", () => {
+	/**
+	 * The words of the second workhorse while it waits on something, or on nothing.
+	 * @param wait What it waits on.
+	 * @returns Its words.
+	 */
+	function wordsWhile(wait: Partial<BrowserWorkhorses["entries"][number]>): string | null {
+		const entries = [idle(SHOP), { ...idle(WORKTREE), ...wait }];
+		const view = render(<ConversationList workhorses={{ ...TWO, entries }} onPick={keepPick} />);
+		const [, other] = twoOf(view.getAllByRole("button"));
+		const words = other.textContent;
+		view.unmount();
+		return words;
+	}
+	const words = [
+		wordsWhile({}),
+		wordsWhile({ waitingForApproval: true }),
+		wordsWhile({ waitingForUser: true }),
+	];
+	expect(new Set(words).size).toBe(words.length);
 });
