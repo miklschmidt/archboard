@@ -127,16 +127,17 @@ function useDrillDown(own: OwnBoard, dive: Dive | undefined): DrillNavigation {
 	const take = useCallback(
 		(step: TrailStep): void => {
 			setTrail(step.trail);
-			if (step.dive === null) return;
-			/** The shell did not show it: the trail waits on nothing. */
+			const stop = step.dive;
+			if (stop === null) return;
+			/** The shell did not show it: the trail no longer waits on it. */
 			const refused = (): void => {
-				setTrail(drillRefused);
+				setTrail((current) => drillRefused(current, stop));
 			};
 			if (dive === undefined) {
 				refused();
 				return;
 			}
-			void dive(step.dive).then((shown) => {
+			void dive(stop).then((shown) => {
 				if (!shown) refused();
 				return shown;
 			}, refused);

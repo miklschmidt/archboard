@@ -123,12 +123,15 @@ function sameBoard(a: DrillStop, b: DrillStop): boolean {
 }
 
 /**
- * The shell could not show the board the trail asked for: the trail stays where it was.
+ * The shell could not show a board the trail asked for: the trail stays where
+ * it was. A refusal answers one dive, so a later dive the trail waits on now
+ * still waits.
  * @param trail The trail.
- * @returns The trail, waiting on nothing.
+ * @param stop The board the refused dive asked for.
+ * @returns The trail, no longer waiting on that dive.
  */
-function drillRefused(trail: DrillTrail): DrillTrail {
-	return trail.pending === null ? trail : { ...trail, pending: null };
+function drillRefused(trail: DrillTrail, stop: DrillStop): DrillTrail {
+	return trail.pending?.stop === stop ? { ...trail, pending: null } : trail;
 }
 
 export {
