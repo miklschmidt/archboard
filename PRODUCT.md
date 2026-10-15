@@ -61,11 +61,18 @@ board is narrated by a voice and recorded to video.
   `127.0.0.1`, with no authentication.
 - Boards live in a vault, a directory of `.semantic.json` files. The vault is
   usually committed with the code, so a board change is reviewed in the same
-  pull request as the code change.
+  pull request as the code change. A vault is the `.archboard/vault` directory
+  of one directory. A command finds its vault from the directory it runs in, as
+  git finds a repository: at the checkout root inside a git checkout, or in the
+  nearest enclosing directory outside any checkout. `-C <dir>` starts the
+  search elsewhere, and every answer names the vault that it used. The first
+  command in a checkout that the machine does not know registers it, and the
+  answer says so.
 - The shell has a navigator of boards, up to two panes side by side, a sidebar
   for each pane, and an agent dock at the foot of the navigator. Talk and Narrate start the
   voice.
-- One Archboard server serves every vault on the machine. The navigator lists
+- One Archboard server serves every vault on the machine, and it starts without
+  one. The navigator lists
   every repository that has a vault, each with the boards of its chosen
   checkout. A repository is named by its identity, or an untracked vault by its
   registry name. The menu on a repository's row chooses its checkout for the

@@ -382,8 +382,8 @@ kind is the level that board declares. An identity that names this vault's own
 repository stays in this vault. A vault in no repository has no identity, so
 nothing can link into one. List the boards of that repository's own vault
 before you write the link
-(`ARCHBOARD_VAULT=<checkout>/.archboard/vault archboard semantic`, with the
-chosen checkout that `archboard repo list` shows), and write the name the board
+(`archboard -C <checkout> semantic`, with the chosen checkout that
+`archboard repo list` shows), and write the name the board
 goes by there.
 
 ```json

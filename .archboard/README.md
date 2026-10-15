@@ -14,6 +14,16 @@ legends and generated editor schemas are derived artifacts, not authored boards.
 
 ## Open the vault
 
+A command finds its vault from the directory it runs in, as git finds its
+repository (ADR 0049). Inside this checkout, from any directory, that is
+`.archboard/vault` at the checkout root. A vault above the root is never used.
+`-C <dir>` starts the search in another directory, so
+`./bin/archboard -C <checkout> check` reads this vault from anywhere.
+Every JSON answer names the vault it used, as `vault: {path, origin}`. If no `-C` is given, a set
+`ARCHBOARD_VAULT` decides, until TASK-472.09 refuses it. If the variable is
+unset, plain `./bin/archboard` reads this vault.
+`./bin/dogfood` sets the variable to this vault, and stays until TASK-472.08.
+
 From the checkout root:
 
 ```bash
@@ -22,23 +32,23 @@ From the checkout root:
 ```
 
 Open <http://127.0.0.1:3000/?paneA=Archboard> before the browser command.
-The navigator lists every repository on the machine that has a vault. Once this
-checkout is registered (`./bin/dogfood repo add`), it lists this vault under
+The navigator lists every repository on the machine that has a vault. The
+first command that runs in this checkout registers it, and its answer says so
+in `vault.registered`. Then the navigator lists this vault under
 `github.com/miklschmidt/archboard`, and
 `?paneA=Archboard&repoA=github.com/miklschmidt/archboard` opens the board
-whichever vault the server was started with.
-The launcher explicitly selects this checkout's `.archboard/vault`, even when
-the shell exports another project's vault. If a server is already running for
-another vault, run `./bin/dogfood stop` before starting; the server retains the
-vault selected at startup. Restart after changing server source:
+whichever vault the page opened in. The server starts without a vault and
+serves every vault that a call names, so a running server needs no restart to
+read this vault. Restart it after you change server source:
 
 ```bash
 ./bin/dogfood stop
 ./bin/dogfood start
 ```
 
-On another machine, register the checkout with `./bin/dogfood repo add` to resolve
-the boards' `github.com/miklschmidt/archboard` code bindings. Build the frontend
+On another machine, the first command in the checkout registers it, or run
+`./bin/dogfood repo add`, to resolve the boards'
+`github.com/miklschmidt/archboard` code bindings. Build the frontend
 with `bun run build` when setting up a fresh checkout, as described in
 [TESTING.md](../TESTING.md).
 

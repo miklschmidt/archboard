@@ -122,18 +122,40 @@ recipe names.
   attempt needs new evidence, not a retry. When no supported command can do
   what was asked, leave the board valid as it is and report the requirement
   you could not meet.
-- **Environment.** The repository's `AGENTS.md`/`CLAUDE.md` setup block names
-  `ARCHBOARD_VAULT` (and `ARCHBOARD_URL` when the Archboard server is not on the
-  default port). Every `archboard` command reads them; the server starts itself
-  when nothing answers. Inside the archboard checkout, `./bin/archboard` stands in
-  for `archboard`.
+- **Environment.** `ARCHBOARD_URL` names the Archboard server, which defaults
+  to port 3000. Every `archboard` command reads it. If nothing
+  answers, the server starts itself. The server needs no vault to start. Inside
+  the archboard checkout, `./bin/archboard` stands in for `archboard`.
+- **Which vault a command uses.** A command finds its vault from the directory
+  it runs in, as git finds a repository. Inside a git checkout, it uses the
+  `.archboard/vault` at the checkout root, from any directory in the checkout.
+  If the checkout has no such vault, the command refuses with `VAULT_NOT_FOUND`
+  (exit 2). It never uses a vault above the root. Outside any checkout, it
+  uses the `.archboard/vault` of the nearest enclosing directory. If there is
+  none, it refuses. `-C <dir>` starts the search at `<dir>` and applies the same
+  rule. The commands that call a vault take it: `semantic`, `check`, `claim`,
+  `release`, `browser open` and `browser show`. Write
+  `archboard -C <dir> semantic show x` or `archboard semantic show x -C <dir>`.
+  `-C` changes only where the vault is found. `--input` and `--out` still
+  resolve against the working directory. These commands take no `-C` and need
+  no vault: `start`, `stop`, `status`, `repo`, `install-skill`,
+  `browser panes`, `browser close` and `semantic replay`. A JSON answer of a
+  command that takes `-C` carries `vault: {path, origin}`. The origin is `-C`,
+  `environment` or `working-directory`. Read it to make sure that you wrote the
+  vault you meant. If this machine does not know the checkout or untracked
+  vault, the first command in it registers it. That answer carries
+  `vault.registered`, and one line goes to stderr. If no `-C` is given, a set
+  `ARCHBOARD_VAULT` decides, and it never registers anything. It is going away,
+  so give `-C` instead. A thread of the Archboard workbench receives each
+  board's vault directory in its board context. Pass it as `-C`.
 - **Where the user reads.** One Archboard server serves every vault on the
   machine, and the user reads them all in one browser app at its address. The
   navigator lists every repository that has a vault, each with the boards of
   its chosen checkout. A link to one board is `/?paneA=<board>&repoA=<repository>`.
   The repository is its identity, such as `github.com/acme/shop`, or an
   untracked vault's registry name, and never a path.
-- **Vocabulary.** Read `$ARCHBOARD_VAULT/.archboard/config.yaml` once: it
+- **Vocabulary.** Read the `configurationFile` that `archboard semantic config`
+  names (`<vault>/.archboard/config.yaml`) once: it
   defines the board `levels`, the `nodeKinds`, the `relationshipKinds` and the
   `groups`. Use those keys; a new unknown key is refused. Extend the file only
   when the request is about vocabulary ([schemas](references/schemas.md)

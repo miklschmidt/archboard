@@ -12,14 +12,14 @@ against, and which comparisons work.
   the vault states. It shows in every pane and, when Git tracks the vault, in
   the vault's history. No command deletes a board, except `semantic record
 --discard` after a recording.
-- A command reaches the server at `ARCHBOARD_URL` and names its
-  `ARCHBOARD_VAULT` on every call, so it reads and writes the vault it names,
-  whichever server answers. The browser of a server, and the page that
-  `semantic record` draws in, show the vault that the server started with. With
-  `ARCHBOARD_URL` left at the repository's server, an ephemeral board is
-  written to the temporary vault, but no pane can show it and no recording can
-  draw it. So an ephemeral board needs both variables and its own server, and
-  `semantic config` proves which vault the commands name.
+- A command reaches the server at `ARCHBOARD_URL` and names its vault on every
+  call. It finds that vault from `-C <dir>`, or else from its working
+  directory (see "Make it"). So it reads and writes the vault it names,
+  whichever server answers. With `ARCHBOARD_URL` left at the repository's
+  server, that server holds the claims, panes and disk watch of the
+  ephemeral vault in its memory. So an ephemeral board needs `-C` on every
+  command and a server of its own, and `semantic config` proves which vault the
+  commands name.
 - A copy of the vault's `config.yaml` gives the ephemeral vault the same kinds,
   levels, groups and evidence rules, so the board draws as the vault's boards
   do.
@@ -28,18 +28,30 @@ against, and which comparisons work.
 
 ```bash
 tmp=$(mktemp -d)
-real_vault=$ARCHBOARD_VAULT real_url=${ARCHBOARD_URL:-}
-mkdir -p "$tmp/vault/.archboard"
-cp "$real_vault/.archboard/config.yaml" "$tmp/vault/.archboard/"
+config=$(archboard semantic config | jq -r .configurationFile)
+mkdir -p "$tmp/.archboard/vault/.archboard"
+cp "$config" "$tmp/.archboard/vault/.archboard/"
 port=$(bun -e 'const s = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } }); console.log(s.port); s.stop(true)')
-export ARCHBOARD_VAULT="$tmp/vault" ARCHBOARD_URL="http://127.0.0.1:$port"
+real_url=${ARCHBOARD_URL:-}
+export ARCHBOARD_URL="http://127.0.0.1:$port"
 archboard start
-archboard semantic config | jq -r .configurationFile   # must print "$tmp/vault/.archboard/config.yaml"
+archboard -C "$tmp" semantic config | jq -r '.configurationFile, .vault'   # must name a file inside "$tmp/.archboard/vault"
 ```
 
-- If your shell does not keep variables from one command to the next, put
-  `ARCHBOARD_VAULT=… ARCHBOARD_URL=…` in front of every `archboard` command
-  until the teardown. One command without them reaches the repository's server.
+- A vault is the `.archboard/vault` directory of a directory. `-C "$tmp"`
+  makes a command find `$tmp/.archboard/vault`. `$tmp` is outside any git
+  checkout, so the nearest enclosing vault counts. Make sure that `TMPDIR` is
+  not inside a checkout. Inside a checkout, only the vault at the checkout root
+  counts, and the command refuses.
+- Give `-C "$tmp"` to every `archboard` command that reads or writes the
+  ephemeral board, until the teardown. A command without it reaches the vault of
+  your working directory on the ephemeral server. `-C` changes only where the
+  vault is found. A relative `--input` or `--out` still resolves against the
+  working directory.
+- The first command with `-C "$tmp"` registers the vault as an untracked vault
+  and prints one line about it to stderr. The answer's `vault.registered` says
+  so. The registry is machine-wide, so the navigator of every server lists the
+  vault until the teardown forgets it.
 - `start` returned in under two seconds. The server draws and checks without a
   Codex sign-in. Recording needs one, and a server that is already running
   sees a sign-in made elsewhere only after a restart. Section 0 of the skill
@@ -50,10 +62,10 @@ archboard semantic config | jq -r .configurationFile   # must print "$tmp/vault/
 
 ## Draw it
 
-The `archboard` skill's recipes apply unchanged: the sequence recipe for a
-flow, the architecture recipe for parts and relationships. Read the base
-branch's code with `git show <base>:<path>` and the head branch's code in the
-checkout.
+The `archboard` skill's recipes apply unchanged, with `-C "$tmp"` on each
+command: the sequence recipe for a flow, the architecture recipe for parts and
+relationships. Read the base branch's code with `git show <base>:<path>` and
+the head branch's code in the checkout.
 
 1. **The base as the current variant.** `semantic new "<board>" --input base.json --doing "…"`
    with what the base branch does. Name each part as the vault's boards name
@@ -95,8 +107,8 @@ vault needs it.
 ## Render and record
 
 Draw the renders with [renders](renders.md) while the server runs: the
-commands are the same, with the ephemeral board's name, its view and the
-draft. Record a walkthrough with [walkthrough](walkthrough.md) the same way.
+commands are the same, with `-C "$tmp"`, the ephemeral board's name, its view
+and the draft. Record a walkthrough with [walkthrough](walkthrough.md) the same way.
 A recording on the ephemeral server worked: two beats, 51 s of talk, 3.9 MB,
 about 80 s in all. Leave out `--discard`, because the whole vault is deleted
 next, and do not remove the walkthrough after the recording. Keep the talk
@@ -109,10 +121,10 @@ Once the renders, the video, its chapters and its transcript are in `$tmp`:
 ```bash
 archboard stop
 ARCHBOARD_NO_AUTOSTART=1 archboard status   # exit 3, "running": false
-rm -rf "$tmp/vault"
-export ARCHBOARD_VAULT="$real_vault"
+archboard repo forget "$tmp"
+rm -rf "$tmp/.archboard"
 if [ -n "$real_url" ]; then export ARCHBOARD_URL="$real_url"; else unset ARCHBOARD_URL; fi
-git -C "$real_vault" status --short -- .     # when Git tracks the vault: nothing from this work
+git status --short -- "$(archboard semantic config | jq -r .vault.path)"   # when Git tracks the vault: nothing from this work
 ```
 
 - `ARCHBOARD_NO_AUTOSTART=1` keeps `status` from starting a new server over a
@@ -123,8 +135,9 @@ git -C "$real_vault" status --short -- .     # when Git tracks the vault: nothin
 - Keep the rest of `$tmp` until the pull request is posted: the body and the
   files that section 5 attaches are there.
 
-Done: the ephemeral server is stopped, its vault is deleted, both variables
-name what they named before, and the repository's vault is unchanged.
+Done: the ephemeral server is stopped, its vault is forgotten and deleted,
+`ARCHBOARD_URL` names what it named before, and the repository's vault is
+unchanged.
 
 ## What the explainer says about it
 

@@ -67,18 +67,33 @@ rules that will not stop you:
   field in its body, and `?vault=` on the pane socket's URL, which names it once
   for that socket. A call that names none is refused with `VAULT_REQUIRED`
   (400). A vault the server cannot read is refused with `VAULT_UNREADABLE` (404),
-  and nothing is created. There is no default vault. The server's process memory
+  and nothing is created. There is no default vault, and the server starts with
+  none. The server's process memory
   is keyed by vault and board together (`boardMemoryKey`): claims, revocations,
   announced lock state, doing lines, agent activity and the disk watch. Each
   change on the change feed and each remembered code finding names its vault.
-  News of a write goes only to the panes of that vault. The one exception is
-  agent activity, which names its vault and goes to every pane, because the
-  navigator marks the boards of every repository (ADR 0022). The CLI names
-  `ARCHBOARD_VAULT` on every call. Each browser pane names the vault the server
-  put it in (ADR 0050), and a pane opens in the vault the server reports at
-  `/api/served-vault`. The server
-  still starts with `ARCHBOARD_VAULT` for the Codex workbench, which stays bound
-  to that vault until TASK-472.10.
+  News of a write goes only to the panes of that vault. Agent activity is the one
+  exception. It names its vault and goes to every pane, because the navigator
+  marks the boards of every repository (ADR 0022). Each browser pane
+  names the vault the server put it in (ADR 0050). A pane opens in the vault the
+  server reports at `/api/served-vault`: a set `ARCHBOARD_VAULT`, else the first
+  ready repository by name, else none, and then the page says how to make a
+  repository known.
+- **The CLI finds its vault from the directory it runs in** (ADR 0049), as git
+  finds its repository: from `-C <dir>`, else a set `ARCHBOARD_VAULT` (used as
+  it is, until TASK-472.09 refuses it), else the working directory. Inside a git
+  checkout only `<root>/.archboard/vault` counts. A checkout without one is
+  refused with `VAULT_NOT_FOUND` (exit 2), and nothing above the root is used.
+  Outside any checkout the nearest enclosing `<dir>/.archboard/vault` counts.
+  `-C` is a shared option of the commands that call a vault. It stands before
+  or after the command name. It changes only where the vault is found:
+  `--input`, `--out` and other paths resolve against the working directory.
+  Every JSON answer of those commands names `vault: {path, origin}` (`-C`,
+  `environment` or `working-directory`). The registry can lack the checkout or untracked vault that a command finds.
+  That command then registers it, says so in `vault.registered` and writes one
+  line to stderr. A vault from
+  `ARCHBOARD_VAULT` never registers. The Codex child holds no `ARCHBOARD_VAULT`: a thread's board
+  context names each board's vault, and a thread passes it as `-C`.
 - **One writer at a time per board** (ADR 0016), a lease file taken by one
   write-boundary middleware, deny by default. Claim before substantial work.
 - **A claim is visible, and the one control is taking it back** (ADR 0022).
