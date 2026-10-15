@@ -8,6 +8,9 @@ import { semanticBoardKeys } from "@/ui/semantic-board-canvas";
 import { DEFAULT_SEMANTIC_POLICY, type VaultCheck } from "@/shared/semantic-policy";
 import { useVaultCheck, useVaultPolicyRefresh } from "@/ui/vault-diagnostics";
 
+/** The vault the check reads. */
+const VAULT = "/work/archboard/.archboard/vault";
+
 beforeAll(() => {
 	GlobalRegistrator.register();
 	Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
@@ -46,9 +49,9 @@ test("check failure preserves issues; recovery clears only checked issues and re
 	 * @returns No rendered content.
 	 */
 	function Observer() {
-		const check = useVaultCheck();
+		const check = useVaultCheck(VAULT);
 		useQuery({
-			queryKey: [...semanticBoardKeys.renders, "observed-board"],
+			queryKey: [...semanticBoardKeys.rendersIn(VAULT), "observed-board"],
 			staleTime: Number.POSITIVE_INFINITY,
 			/**
 			 * Count requests for pictures under the checked policy.
@@ -60,7 +63,7 @@ test("check failure preserves issues; recovery clears only checked issues and re
 		useEffect(() => {
 			current = check;
 		}, [check]);
-		useVaultPolicyRefresh();
+		useVaultPolicyRefresh(VAULT);
 		return createElement("output", null, isError ? "failed" : data?.diagnostics.length);
 	}
 	globalThis.fetch = Object.assign(
@@ -132,9 +135,9 @@ test.each([false, true])(
 		 * @returns The policy used to draw it.
 		 */
 		function Picture() {
-			useVaultPolicyRefresh();
+			useVaultPolicyRefresh(VAULT);
 			const drawing = useQuery({
-				queryKey: [...semanticBoardKeys.renders, "test-board"],
+				queryKey: [...semanticBoardKeys.rendersIn(VAULT), "test-board"],
 				staleTime: Number.POSITIVE_INFINITY,
 				/**
 				 * Draw from the policy in force when this request reaches the renderer.

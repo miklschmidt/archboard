@@ -45,13 +45,16 @@ interface SessionState {
 	setHeldBy: (holder: LockHolder | null) => void;
 	doing: DoingEntry[];
 	setDoing: (entries: DoingEntry[]) => void;
+	vault: string;
+	setVault: (vault: string) => void;
 }
 
 /**
  * The React state a session renders from.
+ * @param openingVault The vault the pane opens in.
  * @returns The state cells and their setters.
  */
-function useSessionState(): SessionState {
+function useSessionState(openingVault: string): SessionState {
 	const { contact, setConnected } = usePaneContact();
 	const [board, setBoard] = useState<BoardIdentity | null>(null);
 	const [openedKey, setOpened] = useState<string | null>(null);
@@ -61,6 +64,7 @@ function useSessionState(): SessionState {
 	// has not been told does not read the board as free (ADR 0016).
 	const [heldBy, setHeldBy] = useState<LockHolder | null>(UNKNOWN_HOLDER);
 	const [doing, setDoing] = useState<DoingEntry[]>([]);
+	const [vault, setVault] = useState(openingVault);
 	return {
 		contact,
 		setConnected,
@@ -74,6 +78,8 @@ function useSessionState(): SessionState {
 		setHeldBy,
 		doing,
 		setDoing,
+		vault,
+		setVault,
 	};
 }
 
@@ -140,7 +146,7 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 ): PaneSession<Transport> {
 	const { paneId } = options;
 	const [clientId] = useState(() => mintClientId(paneId));
-	const state = useSessionState();
+	const state = useSessionState(options.openingVault);
 	const [box] = useState(() => new PaneBox<Transport>(options));
 	const [core] = useState<PaneCore<Transport>>(() =>
 		createPaneCore<Transport>({
@@ -151,6 +157,7 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 			workbenchSockets: box.options().createWorkbenchSockets?.() ?? null,
 			setConnected: state.setConnected,
 			setBoard: state.setBoard,
+			setVault: state.setVault,
 			setOpened: state.setOpened,
 			arrived: state.arrived,
 			setHeldBy: state.setHeldBy,
@@ -195,6 +202,7 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		clientId,
 		attachPaneElement,
 		openedKey: state.openedKey,
+		vault: state.vault,
 		arrivals: state.arrivals,
 		board: state.board,
 		connected: state.contact.connected,

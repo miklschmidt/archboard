@@ -13,7 +13,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { SURFACE, pick, press, shownBoard, stageState, textOf } from "./support/drilling.ts";
-import { serverPath } from "./support/navigator-support.ts";
+import { serverPath, servedRepository } from "./support/navigator-support.ts";
 import { partSearchState, pictureAtRest, sidebarTab } from "./support/semantic-page.ts";
 
 test("browser keyboard input keeps trusted keys, modifiers, and native focus", async () => {
@@ -177,6 +177,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
+	const repo = await servedRepository(server.base);
 	const request = createJsonRequester(server);
 
 	// The board one level down, with a variant named for the state it describes.
@@ -341,7 +342,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 	// address that said otherwise would restore somebody somewhere they left.
 	await pollUntil(
 		() => browser.eval<string>("window.location.search"),
-		(search) => search === "?paneA=engine",
+		(search) => search === `?paneA=engine&repoA=${repo}`,
 		"the address to name the board the reader followed into",
 		WAIT,
 	);
@@ -357,7 +358,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 	// And the address comes back with it, for the same reason it followed down.
 	await pollUntil(
 		() => browser.eval<string>("window.location.search"),
-		(search) => search === "?paneA=pipeline",
+		(search) => search === `?paneA=pipeline&repoA=${repo}`,
 		"the address to follow the reader back out",
 		WAIT,
 	);

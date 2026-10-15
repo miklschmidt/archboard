@@ -40,6 +40,7 @@ import {
 	semanticBoardDocumentQuery,
 	vaultCheckQuery,
 } from "@/ui/semantic-board-canvas/lib/queries";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /** Inputs for one way to go deeper. */
 interface GoProps {
@@ -196,7 +197,8 @@ function standingOf(props: OpenBoardProps, levels: readonly string[] | undefined
  */
 function OpenBoard(props: OpenBoardProps): JSX.Element {
 	const { target, board, variant, kind, here, onOpen } = props;
-	const levels = useQuery(vaultCheckQuery()).data?.policy.levels;
+	const vault = usePaneVault();
+	const levels = useQuery(vaultCheckQuery(vault)).data?.policy.levels;
 	const way = drillWay(kind, here, levels);
 	const open = useCallback((): void => {
 		onOpen(board.name, variant.id);
@@ -242,15 +244,16 @@ interface WayDownProps {
  */
 function WayDown(props: WayDownProps): JSX.Element {
 	const { target, onOpen, kind, here } = props;
+	const vault = usePaneVault();
 	// A board of another repository is not the board of this vault that shares its name.
 	const document = useQuery({
-		...semanticBoardDocumentQuery(target.board),
+		...semanticBoardDocumentQuery(vault, target.board),
 		enabled: target.repo === undefined,
 	});
 	const name = drillTargetName(target, document.data);
 	// Heard under the name the board goes by now, so a state superseded since the
 	// link was written is never opened as though it were current.
-	useSemanticBoardChanges(target.board, name);
+	useSemanticBoardChanges(vault, target.board, name);
 	if (target.repo !== undefined) {
 		return <p className="text-body">{refusalWords(resolveDrillDown(target, undefined), target)}</p>;
 	}

@@ -14,12 +14,16 @@ interface LivePaneStatus {
 	lastChangeAt: string | null;
 	doing: DoingEntry[];
 	version: number | null;
+	vault: string;
+	repository: string | null;
 }
 
 /** What the status needs to publish itself. */
 interface PaneStatusParts {
 	readonly paneId: string;
 	readonly clientId: string;
+	/** The vault the pane opens in, until the server says otherwise. */
+	readonly vault: string;
 	readonly onStatus: (status: PaneStatus) => void;
 }
 
@@ -46,6 +50,8 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 		lastChangeAt: null,
 		doing: [],
 		version: null,
+		vault: parts.vault,
+		repository: null,
 	};
 
 	/** Tell the shell what this pane is, now. */
@@ -62,6 +68,8 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 			lastChangeAt: live.lastChangeAt,
 			doing: live.doing,
 			version: live.version,
+			vault: live.vault,
+			repository: live.repository,
 		});
 	}
 

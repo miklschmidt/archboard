@@ -24,6 +24,7 @@ import {
 	type TipAnchor,
 	type TipTarget,
 } from "@/ui/semantic-board-canvas/lib/subject-tips";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /**
  * What the picture has to add about the part under the pointer, placed against it.
@@ -39,7 +40,7 @@ function SemanticSubjectTip(props: {
 	readonly far: boolean;
 }): JSX.Element | null {
 	const { target } = props;
-	const levels = useQuery(vaultCheckQuery()).data?.policy.levels;
+	const levels = useQuery(vaultCheckQuery(usePaneVault())).data?.policy.levels;
 	const tip = target === null ? null : tipOver(target, props.reading, props.far, levels);
 	const anchor = useTipAnchor(target);
 	if (tip === null || anchor === null) {

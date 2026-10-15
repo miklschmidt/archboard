@@ -1,10 +1,12 @@
-// The rows the navigator draws and what they are derived from: a folder, a
-// board, one variant of a board, and the Earlier row that gathers a board's
-// historical and shelved variants. Every row carries its depth, and nothing
-// else places it.
+// The rows the navigator draws and what they are derived from: a repository,
+// a folder, a board, one variant of a board, and the Earlier row that gathers a
+// board's historical and shelved variants. Every row carries its depth and the
+// repository it is in, and nothing else places it.
 
+import type { RepositoryEntry } from "@/shared/repositories/index";
 import type { OutlineNode } from "@/ui/board-catalog";
 import type { TextRange } from "@/ui/shell/lib/text-match";
+import type { ShellRepository } from "@/ui/shell/types/contracts";
 import type { AgentActivityEntry, CatalogBoard, ListedVariant } from "@/ui/types";
 
 /** What every row carries. */
@@ -23,6 +25,28 @@ interface RowBase {
 	readonly position: number;
 	/** How many siblings it has, itself included. */
 	readonly siblings: number;
+	/** The repository the row is in, by name (ADR 0050). */
+	readonly repository: string;
+	/** The vault of that repository's chosen checkout, or null while it has none. */
+	readonly vault: string | null;
+}
+
+/**
+ * A repository at the top of the tree, with the boards of its chosen checkout
+ * under it and a menu of its checkouts (ADR 0050).
+ */
+interface RepositoryRow extends RowBase {
+	readonly kind: "repository";
+	readonly entry: RepositoryEntry;
+	/** How many boards it holds. */
+	readonly count: number;
+	readonly expanded: boolean;
+	/** An agent works on a board inside it while it is closed. */
+	readonly innerActivity: boolean;
+	/** Why its boards could not be read, or null. */
+	readonly error: string | null;
+	/** Its vault has not answered yet. */
+	readonly loading: boolean;
 }
 
 /** What a row a pane can show carries: the pane letters and the selection. */
@@ -83,11 +107,13 @@ interface EarlierRow extends RowBase {
 }
 
 /** One row the navigator draws. */
-type NavigatorRow = FolderRow | BoardRow | VariantRow | EarlierRow;
+type NavigatorRow = RepositoryRow | FolderRow | BoardRow | VariantRow | EarlierRow;
 
 /** One pane as the rows read it. */
 interface PaneMark {
 	readonly letter: string;
+	/** The repository the pane is in, by name, or null when no listed one reads its vault. */
+	readonly repository: string | null;
 	/** The board's name the pane shows, or null. */
 	readonly board: string | null;
 	/** The listed key of the variant it shows, or null. */
@@ -97,6 +123,18 @@ interface PaneMark {
 }
 
 /** Everything the rows are derived from. */
+interface NavigatorInputs {
+	/** Every repository, with its boards and what agents do in it. */
+	readonly repositories: readonly ShellRepository[];
+	/** Whether a row is open, by its id, when no filter is on. */
+	readonly expanded: (id: string) => boolean;
+	/** The filter, folded; empty when none. */
+	readonly query: string;
+	/** Every pane, lettered; letters are drawn only when there are two. */
+	readonly panes: readonly PaneMark[];
+}
+
+/** What the rows of one repository are derived from, with ids as its outline spells them. */
 interface NavigatorRowInputs {
 	readonly outline: readonly OutlineNode<CatalogBoard>[];
 	/** Whether a folder, board or Earlier row is open, when no filter is on. */
@@ -114,6 +152,11 @@ type Unplaced<Row extends NavigatorRow> = Row extends NavigatorRow
 	? Omit<Row, "position" | "siblings" | keyof ShownRow>
 	: never;
 
+/** A row of one repository's outline, before it is placed in that repository. */
+type Unscoped<Row extends NavigatorRow> = Row extends NavigatorRow
+	? Omit<Unplaced<Row>, "repository" | "vault">
+	: never;
+
 /** Where a row goes: its depth and the row it sits under. */
 interface RowPlace {
 	readonly depth: number;
@@ -124,11 +167,14 @@ export type {
 	BoardRow,
 	EarlierRow,
 	FolderRow,
+	NavigatorInputs,
 	NavigatorRow,
 	NavigatorRowInputs,
 	PaneMark,
+	RepositoryRow,
 	RowPlace,
 	ShownRow,
 	Unplaced,
+	Unscoped,
 	VariantRow,
 };

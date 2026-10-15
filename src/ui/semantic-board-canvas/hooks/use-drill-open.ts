@@ -12,9 +12,24 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 
+import type { DrillDown } from "@/shared/semantic-board/index";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import { resolveDrillDown } from "@/ui/semantic-board-canvas/lib/drill-target";
 import { semanticBoardDocumentQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
+
+/**
+ * The drill-down of a subject, when it opens a board of this pane's own vault.
+ * A board of another repository is not the board of this vault that shares its
+ * name, so nothing here reads it (TASK-472.13 dives into it).
+ * @param reading The variant on screen.
+ * @param id The subject's semantic id.
+ * @returns The drill-down, or undefined.
+ */
+function localDrillDown(reading: VariantReading | null, id: string | null): DrillDown | undefined {
+	const target = reading?.variant?.content.nodes.find((node) => node.id === id)?.drillDown;
+	return target?.repo === undefined ? target : undefined;
+}
 
 /**
  * Open the board one level down from a card, when it has one to open.
@@ -27,6 +42,7 @@ function useDrillOpen(
 	onOpenDown: ((board: string, variant: string) => void) | undefined,
 ): (id: string | null) => void {
 	const queryClient = useQueryClient();
+	const vault = usePaneVault();
 	// A read answers for the latest request, made from the reading still on
 	// screen, while the picture is: a newer request, another reading or the
 	// picture going away leaves it answering for nothing.
@@ -43,7 +59,7 @@ function useDrillOpen(
 	);
 	return useCallback(
 		(id: string | null): void => {
-			const target = reading?.variant?.content.nodes.find((node) => node.id === id)?.drillDown;
+			const target = localDrillDown(reading, id);
 			if (target === undefined || onOpenDown === undefined) {
 				return;
 			}
@@ -51,7 +67,9 @@ function useDrillOpen(
 			const asked = latest.current;
 			/** Read the target board, and open the variant the link names when it is there. */
 			const follow = async (): Promise<void> => {
-				const document = await queryClient.fetchQuery(semanticBoardDocumentQuery(target.board));
+				const document = await queryClient.fetchQuery(
+					semanticBoardDocumentQuery(vault, target.board),
+				);
 				const resolved = resolveDrillDown(target, document);
 				const current =
 					asked === latest.current &&
@@ -65,7 +83,7 @@ function useDrillOpen(
 			// same board and says why.
 			follow().catch(() => undefined);
 		},
-		[reading, onOpenDown, queryClient],
+		[reading, onOpenDown, queryClient, vault],
 	);
 }
 

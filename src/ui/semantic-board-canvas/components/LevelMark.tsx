@@ -61,6 +61,8 @@ function iconOf(
 interface LevelMarkProps {
 	/** The level, as a board states it; undefined for a board that states none. */
 	readonly level: string | undefined;
+	/** The vault whose policy names the level's icon, or null for the plain mark. */
+	readonly vault: string | null;
 	/** Its size and colour; muted and 14 px unless said otherwise. */
 	readonly className?: string | undefined;
 }
@@ -72,7 +74,10 @@ interface LevelMarkProps {
  */
 function LevelMark(props: LevelMarkProps): JSX.Element {
 	const { level } = props;
-	const kinds = useQuery(vaultCheckQuery()).data?.policy.nodeKinds;
+	const kinds = useQuery({
+		...vaultCheckQuery(props.vault ?? ""),
+		enabled: props.vault !== null,
+	}).data?.policy.nodeKinds;
 	const name = iconOf(kinds, level);
 	const paths = useQuery({ ...iconQuery(name ?? ""), enabled: name !== undefined }).data;
 	const className = cn("text-muted-foreground size-3.5 shrink-0", props.className);

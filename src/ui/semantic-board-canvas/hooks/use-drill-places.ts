@@ -22,6 +22,7 @@ import type { BoardPlace } from "@/ui/semantic-board-canvas/components/PaneHeade
 import type { DrillNavigation } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
 import { readBoard } from "@/ui/semantic-board-canvas/lib/board-document";
 import { semanticBoardDocumentQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /** What a board calls itself, and its level. */
 interface Named {
@@ -54,8 +55,9 @@ function useDrillPlaces(
 	onBackTo: (depth: number) => void,
 ): readonly BoardPlace[] {
 	const { board, trail } = drill;
+	const vault = usePaneVault();
 	const names = useQueries({
-		queries: trail.map((stop) => semanticBoardDocumentQuery(stop.board)),
+		queries: trail.map((stop) => semanticBoardDocumentQuery(vault, stop.board)),
 		combine: namesOf,
 	});
 	return useMemo(() => {

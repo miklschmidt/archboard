@@ -36,6 +36,11 @@ function watched(replies: Array<{ kept?: boolean }> = []) {
 		paneId: "pane-A",
 		clientId: "client-1",
 		/**
+		 * The vault the pane is in.
+		 * @returns The vault.
+		 */
+		vault: () => "/work/archboard/.archboard/vault",
+		/**
 		 * Capture one report and answer it.
 		 * @param body The report.
 		 * @returns The answer this report was given.
@@ -109,6 +114,11 @@ describe("a pane's reading publisher", () => {
 		const publisher = createReadingPublisher({
 			paneId: "pane-A",
 			clientId: "client-1",
+			/**
+			 * The vault the pane is in.
+			 * @returns The vault.
+			 */
+			vault: () => "/work/archboard/.archboard/vault",
 			/**
 			 * Fail to send one report.
 			 * @param body The report.

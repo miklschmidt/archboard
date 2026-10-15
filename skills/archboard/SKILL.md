@@ -127,6 +127,12 @@ recipe names.
   default port). Every `archboard` command reads them; the server starts itself
   when nothing answers. Inside the archboard checkout, `./bin/archboard` stands in
   for `archboard`.
+- **Where the user reads.** One Archboard server serves every vault on the
+  machine, and the user reads them all in one browser app at its address. The
+  navigator lists every repository that has a vault, each with the boards of
+  its chosen checkout. A link to one board is `/?paneA=<board>&repoA=<repository>`.
+  The repository is its identity, such as `github.com/acme/shop`, or an
+  untracked vault's registry name, and never a path.
 - **Vocabulary.** Read `$ARCHBOARD_VAULT/.archboard/config.yaml` once: it
   defines the board `levels`, the `nodeKinds`, the `relationshipKinds` and the
   `groups`. Use those keys; a new unknown key is refused. Extend the file only

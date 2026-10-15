@@ -12,6 +12,7 @@ import {
 } from "@/ui/semantic-board-canvas/lib/kind-look";
 import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
 import { vaultCheckQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /**
  * How the vault's kinds look.
@@ -19,7 +20,7 @@ import { vaultCheckQuery } from "@/ui/semantic-board-canvas/lib/queries";
  * @returns The look.
  */
 function useKindLook(appearances: ReadonlyMap<string, AppliedAppearance>): KindLook {
-	const policy = useQuery(vaultCheckQuery()).data?.policy ?? DEFAULT_LOOK_POLICY;
+	const policy = useQuery(vaultCheckQuery(usePaneVault())).data?.policy ?? DEFAULT_LOOK_POLICY;
 	return useMemo(() => kindLookOf(policy, appearances), [policy, appearances]);
 }
 

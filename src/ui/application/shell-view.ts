@@ -4,46 +4,79 @@
 
 import type { ReactNode } from "react";
 
+import type { AgentActivityByVault } from "@/ui/application/hooks/use-agent-activity";
+import { NO_AGENT_ACTIVITY } from "@/ui/application/agent-activity";
 import type { PaneList } from "@/ui/application/pane-list";
 import { recordFor, type PaneRecords } from "@/ui/application/pane-records";
-import { listedBoard } from "@/ui/board-catalog";
+import {
+	boardsIn,
+	listedBoard,
+	outlineOf,
+	type BoardCatalog,
+	type RepositoryBoards,
+} from "@/ui/board-catalog";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
-import type { ShellNotice, ShellPane, ShellPresentation, ShellView, ThemeChoice } from "@/ui/shell";
-import type { AgentActivityEntry, BoardListing } from "@/ui/types";
+import type {
+	ShellNotice,
+	ShellPane,
+	ShellPresentation,
+	ShellRepository,
+	ShellView,
+	ThemeChoice,
+} from "@/ui/shell";
 
-/** Everything the assembly reads. */
+/** What the view is assembled from. */
 interface ShellViewInputs {
 	readonly theme: ThemeChoice;
 	readonly list: PaneList;
 	readonly records: PaneRecords;
 	/** The mounted pane per pane id. */
 	readonly panes: Readonly<Record<string, ReactNode>>;
-	readonly boards: BoardListing;
-	readonly boardsError: string | null;
-	/** The vault has not answered yet and nothing of it is in hand. */
-	readonly boardsLoading: boolean;
+	readonly catalog: Pick<BoardCatalog, "repositories" | "error" | "loading">;
 	readonly presentation: ShellPresentation | null;
 	readonly notices: readonly ShellNotice[];
-	/** Which boards an agent is working on, by board key (ADR 0022). */
-	readonly agentActivity: Readonly<Record<string, AgentActivityEntry>>;
+	readonly agentActivity: AgentActivityByVault;
 }
 
 /**
- * The name the vault lists a pane's board under, which a key typed into a link
- * may not spell the same way.
- * @param boards The listing.
- * @param boardKey The key the pane is showing, or null.
- * @returns The listed name, or null when no board is listed under that key.
+ * One repository as the shell lists it.
+ * @param entry The repository and its boards.
+ * @param activity What agents are doing, by vault.
+ * @returns The shell's repository.
  */
-function listedName(boards: BoardListing, boardKey: string | null): string | null {
-	const board = boardAddressOf(boardKey)?.board;
-	return board === undefined ? null : (listedBoard(boards, board)?.name ?? null);
+function shellRepository(entry: RepositoryBoards, activity: AgentActivityByVault): ShellRepository {
+	const { vault } = entry.repository;
+	return {
+		repository: entry.repository,
+		boards: entry.listing,
+		outline: outlineOf(entry.listing),
+		error: entry.error,
+		loading: entry.loading,
+		activity: vault === null ? NO_AGENT_ACTIVITY : (activity[vault] ?? NO_AGENT_ACTIVITY),
+	};
 }
 
 /**
- * The shell panes, in reading order.
- * @param inputs The assembly inputs.
- * @returns One shell pane per listed pane.
+ * The name a pane's board is listed under in the pane's own repository.
+ * @param inputs The view's inputs.
+ * @param vault The pane's vault.
+ * @param boardKey The pane's board key.
+ * @returns The listed name, or null when it is not listed.
+ */
+function listedName(
+	inputs: ShellViewInputs,
+	vault: string | null,
+	boardKey: string | null,
+): string | null {
+	const board = boardAddressOf(boardKey)?.board;
+	if (board === undefined) return null;
+	return listedBoard(boardsIn(inputs.catalog, vault), board)?.name ?? null;
+}
+
+/**
+ * Each pane as the shell draws it.
+ * @param inputs The view's inputs.
+ * @returns The panes, in reading order.
  */
 function shellPanes(inputs: ShellViewInputs): ShellPane[] {
 	return inputs.list.panes.map((entry) => {
@@ -53,29 +86,30 @@ function shellPanes(inputs: ShellViewInputs): ShellPane[] {
 			stage: inputs.panes[entry.paneId] ?? null,
 			holder: record.holder,
 			takeBack: record.takeBack,
-			boardName: listedName(inputs.boards, record.status.boardKey),
+			boardName: listedName(inputs, record.status.vault, record.status.boardKey),
 		};
 	});
 }
 
 /**
- * Assemble the shell view.
- * @param inputs What the application holds.
+ * The shell's view.
+ * @param inputs What it is assembled from.
  * @returns The view.
  */
 function assembleShellView(inputs: ShellViewInputs): ShellView {
 	const active = recordFor(inputs.records, inputs.list.activePaneId);
 	return {
 		theme: inputs.theme,
-		boards: inputs.boards,
-		boardsError: inputs.boardsError,
-		boardsLoading: inputs.boardsLoading,
+		repositories: inputs.catalog.repositories.map((entry) =>
+			shellRepository(entry, inputs.agentActivity),
+		),
+		boardsError: inputs.catalog.error,
+		boardsLoading: inputs.catalog.loading,
 		selectedBoardKey: active.status.boardKey,
 		panes: shellPanes(inputs),
 		activePaneId: inputs.list.activePaneId,
 		presentation: inputs.presentation,
 		notices: inputs.notices,
-		agentActivity: inputs.agentActivity,
 	};
 }
 

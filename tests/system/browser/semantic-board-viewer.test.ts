@@ -12,7 +12,7 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { serverPath } from "./support/navigator-support.ts";
+import { serverPath, servedRepository } from "./support/navigator-support.ts";
 import { emulateMedia } from "./support/shell-render-matrix.ts";
 
 /**
@@ -78,6 +78,7 @@ test("a semantic board opens in a real pane, and the vault gets no note for it",
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
+	const repo = await servedRepository(server.base);
 	const request = createJsonRequester(server);
 
 	// An agent authors the meaning. Nothing about geometry is stated anywhere.
@@ -113,7 +114,7 @@ test("a semantic board opens in a real pane, and the vault gets no note for it",
 		"the semantic board to be drawn in its pane",
 		WAIT,
 	);
-	expect(await addressSearch(browser)).toBe("paneA=pipeline");
+	expect(await addressSearch(browser)).toBe(`paneA=pipeline&repoA=${repo}`);
 	const subjects = await browser.eval<number>(
 		`document.querySelectorAll("${SURFACE} [data-semantic-id]").length`,
 	);

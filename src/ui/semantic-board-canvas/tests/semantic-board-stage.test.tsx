@@ -7,6 +7,7 @@ import { act, cleanup, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import {
+	PANE_VAULT,
 	NOTHING_DRAWN,
 	NO_SUCH_BOARD,
 	UNREADABLE,
@@ -125,7 +126,7 @@ test("the camera moves with the keyboard and survives the board changing under i
 	const asked = server.calls.length;
 	const transform = surface().style.transform;
 	server.reply = { status: 200, body: drawing(2) };
-	act(() => announceSemanticBoardChange("pipeline", 2));
+	act(() => announceSemanticBoardChange(PANE_VAULT, "pipeline", 2));
 	await settle();
 	expect(server.calls.length).toBeGreaterThan(asked);
 	expect(part("semantic-board-stage").getAttribute("data-version")).toBe("2");
@@ -312,7 +313,7 @@ test("a refresh that fails keeps the diagram, says the picture is old, and retri
 	// The board stops being readable after it had been readable. The picture
 	// stays: showing nothing would be worse than showing something old.
 	server.reply = UNREADABLE;
-	act(() => announceSemanticBoardChange("pipeline", 2));
+	act(() => announceSemanticBoardChange(PANE_VAULT, "pipeline", 2));
 	await settle();
 	expect(stageState()).toBe("stale");
 	expect(surface().querySelector("svg")).not.toBeNull();
@@ -350,7 +351,7 @@ test("an empty board whose refresh fails says so rather than looking current", a
 	// said — and the read failed. Nothing on screen may go on implying that
 	// this board is still the empty one it was.
 	server.reply = UNREADABLE;
-	act(() => announceSemanticBoardChange("pipeline", 4));
+	act(() => announceSemanticBoardChange(PANE_VAULT, "pipeline", 4));
 	await settle();
 	expect(stageState()).toBe("stale");
 	const disclosure = part("semantic-board-refresh-failure");

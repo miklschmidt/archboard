@@ -9,9 +9,16 @@ import type { Fullscreen } from "@/ui/application/hooks/use-fullscreen";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { Panes } from "@/ui/application/hooks/use-panes";
 import { userMoves, type UserMove } from "@/ui/application/lib/user-moves";
-import type { BoardCatalog } from "@/ui/board-catalog";
+import { chooseCheckout, type BoardCatalog } from "@/ui/board-catalog";
 import { showBoard } from "@/ui/pane-session";
-import type { SettingsSurface, ShellActions, ShellPresentation, ThemeChoice } from "@/ui/shell";
+import type {
+	SettingsSurface,
+	ShellActions,
+	ShellNotice,
+	ShellPresentation,
+	ThemeChoice,
+} from "@/ui/shell";
+import type { PaneStatus } from "@/ui/types";
 
 /** What the actions act on. */
 interface ShellActionDeps {
@@ -27,9 +34,10 @@ interface ShellActionDeps {
 	 * Point a pane at a board, injectable for checks.
 	 * @param board The board key.
 	 * @param pane The pane's identity to the server.
+	 * @param vault The vault the board is in, which the pane moves into.
 	 * @returns What the server says the pane is showing.
 	 */
-	readonly show?: (board: string, pane: string) => Promise<{ board: string }>;
+	readonly show?: (board: string, pane: string, vault: string) => Promise<{ board: string }>;
 	/**
 	 * Say that the user asked for a pane to move (ADR 0034). Supplied by a test; the pane's own
 	 * session otherwise.
@@ -40,7 +48,7 @@ interface ShellActionDeps {
 }
 
 /** The board actions. */
-type BoardActions = Pick<ShellActions, "selectBoard" | "refreshBoards">;
+type BoardActions = Pick<ShellActions, "selectBoard" | "refreshBoards" | "chooseCheckout">;
 
 /** Every shell action but opening beside, which waits on the panes and is composed over these. */
 type ComposedShellActions = Omit<ShellActions, "openBeside">;
@@ -55,35 +63,30 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 	const moving = deps.userMoves ?? ((paneId: string): UserMove => userMoves(panes.handles, paneId));
 	const show =
 		deps.show ??
-		((board: string, pane: string): Promise<{ board: string }> => showBoard({ board, pane }));
+		((board: string, pane: string, vault: string): Promise<{ board: string }> =>
+			showBoard({ vault, board, pane }));
 	/**
 	 * Show a listed board in one pane.
 	 * @param key The board key.
 	 * @param inPane Which pane shows it; the active one when none is named.
+	 * @param repository The repository the board is in; the pane's own when none is named.
 	 */
-	async function selectBoard(key: string, inPane?: string): Promise<void> {
+	async function selectBoard(key: string, inPane?: string, repository?: string): Promise<void> {
 		const paneId = inPane ?? panes.active.status.paneId;
 		const { status } = recordFor(panes.records, paneId);
 		const { clientId, boardKey } = status;
-		// A socket can be open before the server has accepted its pane. The
-		// picker must honor the same readiness boundary as URL restoration.
-		if (!paneReady(status)) {
-			deps.notices.raise({
-				...failureNotice(
-					"board-command",
-					"Show board",
-					"This pane is reconnecting. Try again once it is connected, or reload the page.",
-				),
-				actions: [{ kind: "select", id: NOTICE_ACTIONS.reloadFrontend, label: "Reload" }],
-			});
+		const place = placeFor(deps.catalog, status, repository);
+		if (typeof place !== "string") {
+			deps.notices.raise(place);
 			return;
 		}
+		const vault = place;
 		// The command waits for the address bar's one slot, so what the person
 		// just asked for is the last thing the server is given.
 		const permission = await deps.addressing.claim({ kind: "board", paneId, from: boardKey });
 		const move = moving(paneId);
 		try {
-			const opened = await show(key, clientId);
+			const opened = await show(key, clientId, vault);
 			permission.move.done(opened.board);
 			deps.notices.dismiss("board-command");
 			// The listing says which pane holds what, and this just moved one.
@@ -105,15 +108,94 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 		 * Show a listed board; the outcome is the pane moving, or a notice.
 		 * @param key The board key.
 		 * @param inPane Which pane shows it; the active one when none is named.
+		 * @param repository The repository the board is in; the pane's own when none is named.
 		 */
-		selectBoard: (key: string, inPane?: string): void => {
-			void selectBoard(key, inPane);
+		selectBoard: (key: string, inPane?: string, repository?: string): void => {
+			void selectBoard(key, inPane, repository);
 		},
 		/** Read the listing and every drawing again. */
 		refreshBoards: (): void => {
 			deps.catalog.reload();
 		},
+		/**
+		 * Choose the checkout of a repository this machine reads.
+		 * @param repository The repository identity.
+		 * @param root One of its known checkouts.
+		 */
+		chooseCheckout: (repository: string, root: string): void => {
+			void choose(deps, repository, root);
+		},
 	};
+}
+
+/**
+ * Choose a checkout, and say so when the server refuses. Every tab hears the
+ * choice from the server, this one included, and reads its repositories again.
+ * @param deps The owners.
+ * @param repository The repository identity.
+ * @param root One of its known checkouts.
+ */
+async function choose(deps: ShellActionDeps, repository: string, root: string): Promise<void> {
+	try {
+		await chooseCheckout({ repository, root });
+		deps.notices.dismiss("checkout-choice");
+	} catch (error) {
+		deps.notices.raise(
+			failureNotice(
+				"checkout-choice",
+				"Choose checkout",
+				error instanceof Error ? error.message : String(error),
+			),
+		);
+	}
+}
+
+/**
+ * The vault a pane reads a board of a repository from, or why it cannot now.
+ * @param catalog The catalog.
+ * @param status The pane.
+ * @param repository The repository the board is in; the pane's own when none is named.
+ * @returns The vault, or the notice that says why there is none.
+ */
+function placeFor(
+	catalog: BoardCatalog,
+	status: PaneStatus,
+	repository: string | undefined,
+): string | ShellNotice {
+	// A socket can be open before the server has accepted its pane. The
+	// picker must honor the same readiness boundary as URL restoration.
+	if (!paneReady(status)) {
+		return {
+			...failureNotice(
+				"board-command",
+				"Show board",
+				"This pane is reconnecting. Try again once it is connected, or reload the page.",
+			),
+			actions: [{ kind: "select", id: NOTICE_ACTIONS.reloadFrontend, label: "Reload" }],
+		};
+	}
+	const vault = repository === undefined ? status.vault : vaultOf(catalog, repository);
+	return (
+		vault ??
+		failureNotice(
+			"board-command",
+			"Show board",
+			`${repository ?? "This repository"} has no checkout with a vault to read. Choose another checkout in its menu.`,
+		)
+	);
+}
+
+/**
+ * The vault a repository's boards are read from.
+ * @param catalog The catalog.
+ * @param repository The repository's name.
+ * @returns Its chosen checkout's vault, or null when it has none to read.
+ */
+function vaultOf(catalog: BoardCatalog, repository: string): string | null {
+	return (
+		catalog.repositories.find((each) => each.repository.name === repository)?.repository.vault ??
+		null
+	);
 }
 
 /** The pane actions. */

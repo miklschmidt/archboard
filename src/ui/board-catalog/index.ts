@@ -24,9 +24,18 @@ export {
 	type OutlineLink,
 	type OutlineNode,
 } from "@/ui/board-catalog/lib/outline";
-export { boardCatalogKeys, paneInventoryQuery } from "@/ui/board-catalog/lib/queries";
 export {
+	boardCatalogKeys,
+	paneInventoryQuery,
+	repositoriesQuery,
+} from "@/ui/board-catalog/lib/queries";
+export { chooseCheckout, type CheckoutChoice } from "@/ui/board-catalog/api/repositories";
+export { outlineOf } from "@/ui/board-catalog/lib/vault-boards";
+export { useVaultBoards, type VaultBoards } from "@/ui/board-catalog/hooks/use-vault-boards";
+export {
+	boardsIn,
 	catalogCommandsFor,
 	useBoardCatalog,
 	type BoardCatalog,
+	type RepositoryBoards,
 } from "@/ui/board-catalog/hooks/use-board-catalog";

@@ -17,6 +17,7 @@ import {
 	type SemanticPaneContext,
 } from "@/shared/semantic-pane-context";
 import {
+	SERVED,
 	FakeSocket,
 	act,
 	answer,
@@ -136,7 +137,12 @@ afterEach(() => {
  */
 function point(board: string): void {
 	act(() => {
-		asked.pane?.say({ type: "pane_board", board, identity: { board, variant: "current" } });
+		asked.pane?.say({
+			type: "pane_board",
+			board,
+			identity: { board, variant: "current" },
+			...SERVED,
+		});
 	});
 }
 

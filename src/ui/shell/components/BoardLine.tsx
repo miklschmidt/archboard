@@ -102,7 +102,7 @@ function BoardLine(
 		<TreeRow {...props} label={boardRowName(row)}>
 			<TreeRowDisclosure row={row} name={row.label} onExpand={props.onExpand} />
 			<TreeRowMarker title={row.board.level}>
-				<LevelMark level={row.board.level} />
+				<LevelMark level={row.board.level} vault={row.vault} />
 				<BoardLamp row={row} />
 			</TreeRowMarker>
 			<TreeRowName

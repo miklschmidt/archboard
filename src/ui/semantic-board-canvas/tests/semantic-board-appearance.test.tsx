@@ -6,6 +6,7 @@ import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import { pressKey } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import { sidebarSettled } from "@/ui/semantic-board-canvas/tests/sidebar-probes";
 import {
+	PANE_VAULT,
 	drawing,
 	mountStage,
 	openSidebarTab,
@@ -76,7 +77,7 @@ test("the legend explains the picture and survives a policy-only restyle", async
 	expect(document.querySelector('[data-slot="semantic-legend"]')).toBeNull();
 
 	server.reply = { status: 200, body: styledDrawing("blue") };
-	act(() => announceSemanticBoardChange("pipeline", 2));
+	act(() => announceSemanticBoardChange(PANE_VAULT, "pipeline", 2));
 	await settle();
 	expect(surface().style.transform).toBe(camera);
 	expect(

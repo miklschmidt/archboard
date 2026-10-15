@@ -10,30 +10,31 @@ import { semanticBoardKeys, vaultCheckQuery } from "@/ui/semantic-board-canvas";
  * The query itself is owned by the semantic canvas, which draws under the same
  * policy and names groups out of it; this is the diagnostics bell's reader of
  * that one cache entry.
+ * @param vault The vault.
  * @returns The shared vault check query.
  */
-function useVaultCheck(): UseQueryResult<VaultCheck> {
-	return useQuery(vaultCheckQuery());
+function useVaultCheck(vault: string): UseQueryResult<VaultCheck> {
+	return useQuery(vaultCheckQuery(vault));
 }
 
 /**
- * Synchronize pictures with the first checked policy, then with policy changes.
+ * Synchronize one vault's pictures with its first checked policy, then with policy changes.
+ * @param vault The vault.
  */
-function useVaultPolicyRefresh(): void {
+function useVaultPolicyRefresh(vault: string): void {
 	const client = useQueryClient();
-	const { data } = useVaultCheck();
+	const { data } = useVaultCheck(vault);
 	const previous = useRef<string | undefined>(undefined);
 	useEffect(() => {
 		if (data === undefined) return;
 		// A picture may have loaded before this first check, using an older policy.
 		if (previous.current !== data.fingerprint) {
 			// An initial request has no cached data, so invalidation alone reuses it.
-			void client
-				.cancelQueries({ queryKey: semanticBoardKeys.renders })
-				.then(() => client.invalidateQueries({ queryKey: semanticBoardKeys.renders }));
+			const queryKey = semanticBoardKeys.rendersIn(vault);
+			void client.cancelQueries({ queryKey }).then(() => client.invalidateQueries({ queryKey }));
 		}
 		previous.current = data.fingerprint;
-	}, [data, client]);
+	}, [data, client, vault]);
 }
 
 export { useVaultCheck, useVaultPolicyRefresh };

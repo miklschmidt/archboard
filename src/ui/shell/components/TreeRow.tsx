@@ -71,6 +71,7 @@ const HELD_PADDING = 6;
 const LANDMARK_METRICS = rowMetrics(20, 8);
 const HELD_METRICS = rowMetrics(HELD_LINE, HELD_PADDING);
 const ROW_METRICS: Readonly<Record<NavigatorRow["kind"], CSSProperties>> = {
+	repository: LANDMARK_METRICS,
 	board: LANDMARK_METRICS,
 	folder: LANDMARK_METRICS,
 	variant: HELD_METRICS,
@@ -103,6 +104,8 @@ interface RowHandlers {
 	readonly onOpen: (row: NavigatorRow, beside: boolean) => void;
 	/** Open or close a row. */
 	readonly onExpand: (id: string, open: boolean) => void;
+	/** Choose a repository's checkout for the whole machine (ADR 0050). */
+	readonly onChooseCheckout: (repository: string, root: string) => void;
 	/** A key pressed on a row: the tree decides what it does. */
 	readonly onRowKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void;
 }

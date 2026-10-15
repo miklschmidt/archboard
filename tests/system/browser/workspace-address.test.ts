@@ -1,9 +1,13 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdirSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 
+import { packageBin } from "../cli/support/package-cli.ts";
+import { createRepositoryFixture } from "../cli/support/repository-fixture.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -14,7 +18,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { seedSemanticBoard } from "./support/semantic-page.ts";
-import { serverPath, type PanesBody } from "./support/navigator-support.ts";
+import { serverPath, servedRepository, type PanesBody } from "./support/navigator-support.ts";
 import { PANE_SECTIONS, clickNavigatorRow, shellNotices } from "./support/shell-dom.ts";
 
 /**
@@ -64,6 +68,7 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
+	const repo = await servedRepository(server.base);
 	const request = createJsonRequester(server);
 	const cli = (...args: string[]): string => runServerCli(server.base, vault, args);
 
@@ -87,7 +92,9 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 			state.panes.some((pane) => pane.board === "billing"),
 		"both panes to restore the boards the address named",
 	);
-	expect(await addressSearch(browser)).toBe("paneA=payments&paneB=billing&pane=B");
+	expect(await addressSearch(browser)).toBe(
+		`paneA=payments&repoA=${repo}&paneB=billing&repoB=${repo}&pane=B`,
+	);
 	const paneA = restored.panes.find((pane) => pane.board === "payments")!;
 	const paneB = restored.panes.find((pane) => pane.board === "billing")!;
 
@@ -96,7 +103,7 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 	await clickNavigatorRow(browser, "ledger");
 	await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === "paneA=payments&paneB=ledger&pane=B",
+		(search) => search === `paneA=payments&repoA=${repo}&paneB=ledger&repoB=${repo}&pane=B`,
 		"the address to record the board the person opened",
 	);
 	expect(await historyLength(browser)).toBe(before + 1);
@@ -106,12 +113,12 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 	cli("browser", "show", "payments", "--pane", `${paneB.clientId}`);
 	await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === "paneA=payments&paneB=payments&pane=B",
+		(search) => search === `paneA=payments&repoA=${repo}&paneB=payments&repoB=${repo}&pane=B`,
 		"the address to follow the board an agent opened",
 	);
 	expect(await historyLength(browser)).toBe(before + 1);
 
-	await goBack(browser, "paneA=payments&paneB=billing&pane=B");
+	await goBack(browser, `paneA=payments&repoA=${repo}&paneB=billing&repoB=${repo}&pane=B`);
 	await pollUntil(
 		panes,
 		(state) => state.panes.find((pane) => pane.clientId === paneB.clientId)?.board === "billing",
@@ -136,6 +143,7 @@ test("an address naming a board that is not there says so and settles on what is
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
+	const repo = await servedRepository(server.base);
 	const request = createJsonRequester(server);
 	await seedSemanticBoard(request, "payments");
 
@@ -163,7 +171,7 @@ test("an address naming a board that is not there says so and settles on what is
 	expect(board).not.toBe("nowhere");
 	await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === `paneA=${board!}`,
+		(search) => search === `paneA=${board!}&repoA=${repo}`,
 		"the address to settle on the workspace that is shown",
 	);
 	await server.assertRunning();
@@ -227,3 +235,111 @@ test("choosing a variant in the navigator moves the pane it was chosen for, and 
 	expect(after.panes.map((pane) => pane.board)).toEqual(["payments", `payments@${proposal.id}`]);
 	await server.assertRunning();
 }, 30_000);
+
+/** The repository identity whose two checkouts the next owner chooses between. */
+const ORDERS = "github.com/acme/orders";
+
+/**
+ * A checkout's vault, made and configured.
+ * @param checkout The checkout.
+ * @returns The vault's real path.
+ */
+function vaultIn(checkout: string): string {
+	const vault = join(checkout, ".archboard", "vault");
+	mkdirSync(vault, { recursive: true });
+	ensureSemanticVaultConfiguration(vault);
+	return realpathSync(vault);
+}
+
+/**
+ * Whether one pane's picture says a word: which vault's board it drew.
+ * @param browser The page.
+ * @param letter The pane's letter.
+ * @param word What the picture should say.
+ * @returns True when the pane's picture says it.
+ */
+function paneSays(browser: AgentBrowserSession, letter: string, word: string): Promise<boolean> {
+	return browser.eval<boolean>(
+		`document.querySelector(${JSON.stringify(`${PANE_SECTIONS}[aria-label^="Pane ${letter}"] [data-slot="semantic-board-surface"]`)})?.textContent?.includes(${JSON.stringify(word)}) ?? false`,
+	);
+}
+
+test("two panes show boards of two repositories, and choosing another checkout in the navigator moves the pane that read the old one", async () => {
+	await using resources = new AsyncDisposableStack();
+	const fixture = createRepositoryFixture();
+	resources.defer(() => fixture.dispose());
+	const main = fixture.repository("orders", ORDERS);
+	const target = join(fixture.root, "orders-feature");
+	execFileSync("git", ["worktree", "add", "-q", "-b", "feature", target], {
+		cwd: main,
+		stdio: "ignore",
+	});
+	const worktree = realpathSync.native(target);
+	const added = spawnSync(packageBin, ["repo", "add", main], {
+		cwd: fixture.nowhere,
+		env: fixture.serverEnvironment,
+		encoding: "utf8",
+	});
+	expect(added.status).toBe(0);
+	const server = await startOwnedServer({
+		serverPath,
+		vault: fixture.vault,
+		env: serverTestEnvironment({ ARCHBOARD_REPOS: fixture.registry }),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const served = await servedRepository(server.base);
+	await seedSemanticBoard(createJsonRequester(server), "ledger");
+	// One board of one name in both checkouts, each saying which checkout it is in.
+	for (const [checkout, word] of [
+		[main, "Main checkout"],
+		[worktree, "Feature checkout"],
+	] as const) {
+		const request = createJsonRequester({ ...server, vault: vaultIn(checkout) });
+		await seedSemanticBoard(request, "payments", {
+			nodes: [{ name: word, kind: "service", responsibility: "Says where it is" }],
+		});
+	}
+
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${server.base}/?paneA=ledger&paneB=payments&repoB=${ORDERS}&pane=A`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	// Each pane reads its own repository, and the address names both.
+	await pollUntil(
+		() => addressSearch(browser),
+		(search) => search === `paneA=ledger&repoA=${served}&paneB=payments&repoB=${ORDERS}`,
+		"the address to name each pane's repository",
+	);
+	await pollUntil(
+		() => paneSays(browser, "B", "Main checkout"),
+		Boolean,
+		"the right-hand pane to draw the board of the chosen checkout",
+	);
+
+	// The repository's menu lists its checkouts; choosing the worktree moves
+	// the pane that read the main checkout, and it keeps its board.
+	await browser.run(["click", `button[aria-label="Checkouts of ${ORDERS}"]`]);
+	const chose = await pollUntil(
+		() =>
+			browser.eval<boolean>(`(() => {
+				const item = [...document.querySelectorAll('[role="menuitemradio"]')]
+					.find((one) => one.textContent.includes(${JSON.stringify(worktree)}));
+				if (!item) return false;
+				item.click();
+				return true;
+			})()`),
+		Boolean,
+		"the menu to list the worktree",
+	);
+	expect(chose).toBe(true);
+	await pollUntil(
+		() => paneSays(browser, "B", "Feature checkout"),
+		Boolean,
+		"the right-hand pane to read the chosen checkout",
+	);
+	expect(await paneSays(browser, "A", "Ingest")).toBe(true);
+	expect(await addressSearch(browser)).toBe(
+		`paneA=ledger&repoA=${served}&paneB=payments&repoB=${ORDERS}`,
+	);
+	await server.assertRunning();
+}, 45_000);

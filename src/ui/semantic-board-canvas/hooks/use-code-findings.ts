@@ -12,20 +12,24 @@ import { useCallback } from "react";
 
 import type { RememberedFindings, RememberedReading } from "@/shared/code-check/index";
 import { codeFindingsQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /** One board as it is on screen: its name, the variant drawn, by id, and the version drawn. */
 interface ReadingOnScreen {
+	/** The vault the board is in. */
+	readonly vault: string;
 	readonly board: string;
 	readonly variant: string;
 	readonly version: number;
 }
 
 /**
- * The reading of the last pass over the board, variant and version on screen.
+ * The reading of the last pass over the board, variant and version on screen,
+ * in the pane's own vault.
  * @param on What is on screen, or null when nothing is.
  * @returns The reading, or null when no pass read exactly that.
  */
-function useCodeFindings(on: ReadingOnScreen | null): RememberedReading | null {
+function useCodeFindings(on: Omit<ReadingOnScreen, "vault"> | null): RememberedReading | null {
 	const board = on?.board;
 	const variant = on?.variant;
 	const version = on?.version;
@@ -37,7 +41,11 @@ function useCodeFindings(on: ReadingOnScreen | null): RememberedReading | null {
 			) ?? null,
 		[board, variant, version],
 	);
-	const { data } = useQuery({ ...codeFindingsQuery(), select, enabled: on !== null });
+	const { data } = useQuery({
+		...codeFindingsQuery(usePaneVault()),
+		select,
+		enabled: on !== null,
+	});
 	return data ?? null;
 }
 

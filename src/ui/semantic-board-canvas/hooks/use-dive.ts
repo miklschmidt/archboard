@@ -46,7 +46,7 @@ interface DiveInputs {
 	/** The picture on screen, or null. */
 	readonly drawn: SemanticDrawing | null;
 	/** How the pane asks for a picture, besides which board. */
-	readonly reading: Pick<SemanticRenderRequest, "comparison" | "layout">;
+	readonly reading: Pick<SemanticRenderRequest, "vault" | "comparison" | "layout">;
 	/** Whether the person asked for no motion, which makes every move a cut. */
 	readonly reducedMotion: boolean;
 	/** Whether a walkthrough is presented: its step says what the picture is about, and nothing flies over it. */

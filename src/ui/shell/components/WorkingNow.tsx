@@ -53,6 +53,8 @@ interface WorkingEntry {
 	readonly activity: AgentActivityEntry;
 	/** The board's name as the vault lists it, or its key while unlisted. */
 	readonly name: string;
+	/** The repository the board is in (ADR 0050). */
+	readonly repository: string;
 	/** The letters of the panes showing it, when there are two. */
 	readonly onScreen: readonly string[];
 }
@@ -60,8 +62,17 @@ interface WorkingEntry {
 /** Inputs for the block. */
 interface WorkingNowProps {
 	readonly entries: readonly WorkingEntry[];
-	/** Open a board, in the active pane or beside it. */
-	readonly onOpen: (board: string, beside: boolean) => void;
+	/** Open a board of a repository, in the active pane or beside it. */
+	readonly onOpen: (board: string, beside: boolean, repository: string) => void;
+}
+
+/**
+ * The key an entry is kept by: two repositories can each have a board of one name.
+ * @param entry The entry.
+ * @returns The key.
+ */
+function entryKey(entry: WorkingEntry): string {
+	return `${entry.repository}|${entry.activity.board}`;
 }
 
 /**
@@ -71,13 +82,13 @@ interface WorkingNowProps {
  */
 function useArrivalOrder(entries: readonly WorkingEntry[]): WorkingEntry[] {
 	const [order, setOrder] = useState<readonly string[]>([]);
-	const keys = entries.map((entry) => entry.activity.board);
+	const keys = entries.map(entryKey);
 	const kept = order.filter((key) => keys.includes(key));
 	const next = [...kept, ...keys.filter((key) => !kept.includes(key))];
 	if (next.length !== order.length || next.some((key, index) => key !== order[index])) {
 		setOrder(next);
 	}
-	return next.flatMap((key) => entries.filter((entry) => entry.activity.board === key));
+	return next.flatMap((key) => entries.filter((entry) => entryKey(entry) === key));
 }
 
 /**
@@ -104,7 +115,7 @@ function WorkingNow(props: WorkingNowProps): JSX.Element | null {
 			</h2>
 			<ul style={LIST_STYLE} className="flex min-h-0 flex-col overflow-y-auto pb-2">
 				{ordered.map((entry) => (
-					<WorkingItem key={entry.activity.board} entry={entry} now={now} onOpen={props.onOpen} />
+					<WorkingItem key={entryKey(entry)} entry={entry} now={now} onOpen={props.onOpen} />
 				))}
 			</ul>
 		</section>
@@ -115,7 +126,7 @@ function WorkingNow(props: WorkingNowProps): JSX.Element | null {
 interface WorkingItemProps {
 	readonly entry: WorkingEntry;
 	readonly now: number;
-	readonly onOpen: (board: string, beside: boolean) => void;
+	readonly onOpen: (board: string, beside: boolean, repository: string) => void;
 }
 
 /**
@@ -142,10 +153,11 @@ function lastWords(activity: AgentActivityEntry): {
 function WorkingItem(props: WorkingItemProps): JSX.Element {
 	const { entry, now, onOpen } = props;
 	const { claim, board } = entry.activity;
+	const { repository } = entry;
 	const { said, at } = lastWords(entry.activity);
 	const handleClick = useCallback(
-		(event: MouseEvent<HTMLButtonElement>) => onOpen(board, event.altKey),
-		[onOpen, board],
+		(event: MouseEvent<HTMLButtonElement>) => onOpen(board, event.altKey, repository),
+		[onOpen, board, repository],
 	);
 	return (
 		<li>

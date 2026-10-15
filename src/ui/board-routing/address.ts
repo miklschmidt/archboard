@@ -9,6 +9,12 @@ interface AddressedPane {
 	/** The board key, or null while the pane has not said what it holds. */
 	readonly boardKey: string | null;
 	/**
+	 * The repository the board is in (ADR 0050), by identity or by an untracked
+	 * vault's registry name, never by a path; or null when the address does not
+	 * say, which means the repository the pane is in.
+	 */
+	readonly repository: string | null;
+	/**
 	 * The view a semantic board is being read through, or null for the whole
 	 * variant. Which explanation is on screen is part of what the pane is
 	 * showing, not a preference about how to show it: a person who lands on a
@@ -29,6 +35,8 @@ interface WorkspaceAddress {
 interface AddressOpen {
 	readonly paneId: string;
 	readonly boardKey: string;
+	/** The repository the board is in, or null for the one the pane is in. */
+	readonly repository: string | null;
 }
 
 /** One pane already on the right board, being read the wrong way. */
@@ -92,6 +100,16 @@ function viewIn(address: WorkspaceAddress, paneId: string): string | null {
 }
 
 /**
+ * The repository one pane of an address is in.
+ * @param address The address.
+ * @param paneId The pane.
+ * @returns Its repository, or null when the address does not say.
+ */
+function repositoryIn(address: WorkspaceAddress, paneId: string): string | null {
+	return address.panes.find((pane) => pane.paneId === paneId)?.repository ?? null;
+}
+
+/**
  * Whether an address has a pane.
  * @param address The address.
  * @param paneId The pane.
@@ -116,6 +134,7 @@ function sameAddress(one: WorkspaceAddress, other: WorkspaceAddress): boolean {
 			return (
 				against?.paneId === pane.paneId &&
 				against.boardKey === pane.boardKey &&
+				against.repository === pane.repository &&
 				against.view === pane.view
 			);
 		})
@@ -134,6 +153,19 @@ function settledAddress(address: WorkspaceAddress): WorkspaceAddress {
 			? address.activePaneId
 			: (address.panes[0]?.paneId ?? null);
 	return Object.freeze({ panes: address.panes, activePaneId: active });
+}
+
+/**
+ * Whether a wanted pane is on another board than the displayed one: another
+ * key, or the same key in another repository. An address that names no
+ * repository asks for the board in whichever repository the pane is in.
+ * @param displayed What is on screen.
+ * @param pane The wanted pane.
+ * @returns True when the pane has to be pointed somewhere.
+ */
+function elsewhere(displayed: WorkspaceAddress, pane: AddressedPane): boolean {
+	if (pane.boardKey !== boardIn(displayed, pane.paneId)) return true;
+	return pane.repository !== null && pane.repository !== repositoryIn(displayed, pane.paneId);
 }
 
 /**
@@ -167,8 +199,8 @@ function planFor(
 		.map((pane) => pane.paneId);
 	const wantedOpen = asked.panes.filter((pane) => hasAddressedPane(displayed, pane.paneId));
 	const opens = wantedOpen.flatMap((pane) =>
-		pane.boardKey !== null && pane.boardKey !== boardIn(displayed, pane.paneId)
-			? [{ paneId: pane.paneId, boardKey: pane.boardKey }]
+		pane.boardKey !== null && elsewhere(displayed, pane)
+			? [{ paneId: pane.paneId, boardKey: pane.boardKey, repository: pane.repository }]
 			: [],
 	);
 	// A pane the address is about to point at another board is not read here as
@@ -208,6 +240,7 @@ function planIsEmpty(plan: AddressPlan): boolean {
 export {
 	EMPTY_ADDRESS,
 	boardIn,
+	repositoryIn,
 	viewIn,
 	hasAddressedPane,
 	planFor,

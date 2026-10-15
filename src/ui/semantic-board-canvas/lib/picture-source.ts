@@ -29,11 +29,16 @@ interface PictureSource {
 		signal: AbortSignal,
 	) => Promise<SemanticRender>;
 	/**
-	 * Told the boards the server lists, whenever it lists them.
+	 * Told the boards the server lists in one vault, whenever it lists them.
+	 * @param vault The vault.
 	 * @param boards The boards, with their versions.
 	 * @param client The tab's cache, for drawing listed boards ahead.
 	 */
-	readonly listed?: (boards: readonly SemanticBoardEntry[], client: QueryClient) => void;
+	readonly listed?: (
+		vault: string,
+		boards: readonly SemanticBoardEntry[],
+		client: QueryClient,
+	) => void;
 }
 
 const fromServer: PictureSource = {

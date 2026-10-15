@@ -113,12 +113,18 @@ interface WorkspacePortDeps {
 	/** What each pane is reading; nothing when the caller has no readings. */
 	readonly readings?: PaneReadings;
 	/**
+	 * The vault a repository's boards are read from (ADR 0050), or null before
+	 * the page has read the repositories.
+	 */
+	readonly vaultOf: ((repository: string) => string | null) | null;
+	/**
 	 * Point a pane at a board, injectable for checks.
 	 * @param clientId The pane's identity to the server.
 	 * @param boardKey The board.
+	 * @param vault The vault the board is in.
 	 * @returns The board the server says the pane is on now.
 	 */
-	readonly show?: (clientId: string, boardKey: string) => Promise<string>;
+	readonly show?: (clientId: string, boardKey: string, vault: string) => Promise<string>;
 }
 
 /**
@@ -126,10 +132,15 @@ interface WorkspacePortDeps {
  * pane holds what.
  * @param clientId The pane's identity to the server.
  * @param boardKey The board.
+ * @param vault The vault the board is in.
  * @returns The board key the server says the pane is on.
  */
-async function showThroughServer(clientId: string, boardKey: string): Promise<string> {
-	const reply = await showBoard({ board: boardKey, pane: clientId });
+async function showThroughServer(
+	clientId: string,
+	boardKey: string,
+	vault: string,
+): Promise<string> {
+	const reply = await showBoard({ vault, board: boardKey, pane: clientId });
 	return reply.board;
 }
 
@@ -158,6 +169,7 @@ function displayedAddress(panes: Panes, _readings: PaneReadings = NO_READINGS): 
 				// it, so the address records what is actually on screen rather than
 				// what somebody asked for.
 				boardKey: status.boardKey,
+				repository: status.repository,
 				view: status.view,
 			});
 		}),
@@ -189,21 +201,32 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		 * @returns True once the server knows this pane.
 		 */
 		ready: (paneId: string): boolean => {
-			return paneReady(recordFor(panes.records, paneId).status);
+			// And the repositories have been read: an address names a repository, and
+			// until the page knows its vault there is nothing to point the pane at.
+			return paneReady(recordFor(panes.records, paneId).status) && deps.vaultOf !== null;
 		},
 		/**
 		 * Point one pane at one board.
 		 * @param paneId The pane.
 		 * @param boardKey The board.
+		 * @param repository The repository the board is in, or null for the pane's own.
 		 * @returns Whether the board was reached.
 		 */
-		open: async (paneId: string, boardKey: string): Promise<OpenOutcome> => {
-			const { clientId } = recordFor(panes.records, paneId).status;
+		open: async (
+			paneId: string,
+			boardKey: string,
+			repository: string | null,
+		): Promise<OpenOutcome> => {
+			const { clientId, vault: own } = recordFor(panes.records, paneId).status;
+			const vault = repository === null ? own : (deps.vaultOf?.(repository) ?? null);
+			if (vault === null) {
+				return { kind: "unreachable" };
+			}
 			// An address is opened, and Back and Forward are pressed, by the user and by nobody
 			// else, so what the address bar asks for is theirs.
 			const move = userMoves(panes.handles, paneId);
 			try {
-				return { kind: "opened", boardKey: await show(clientId, boardKey) };
+				return { kind: "opened", boardKey: await show(clientId, boardKey, vault) };
 			} catch {
 				move.failed();
 				return { kind: "unreachable" };

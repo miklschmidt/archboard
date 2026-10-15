@@ -1,285 +1,21 @@
-import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, createElement } from "react";
-import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import { createRoot, type Root } from "react-dom/client";
-import { buildOutline } from "@/ui/board-catalog";
-import { Shell, type ShellActions, type ShellPane, type ShellView } from "@/ui/shell";
-import type { AgentActivityEntry, CatalogBoard, ListedVariant } from "@/ui/types";
+import { expect, test } from "bun:test";
 
-let root: Root;
-beforeAll(() => {
-	GlobalRegistrator.register();
-	Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
-});
-afterEach(() => {
-	act(() => root.unmount());
-	document.body.replaceChildren();
-	window.localStorage.clear();
-});
-afterAll(async () => {
-	await GlobalRegistrator.unregister();
-});
-
-/**
- * A listed variant.
- * @param boardKey The board's key.
- * @param id The variant id.
- * @param parentId Its predecessor, or null.
- * @param lifecycle Its standing.
- * @param opens Whether the board's bare name opens it.
- * @returns The variant.
- */
-function variant(
-	boardKey: string,
-	id: string,
-	parentId: string | null,
-	lifecycle: ListedVariant["lifecycle"],
-	opens = false,
-): ListedVariant {
-	return {
-		id,
-		name: `${boardKey} ${id}`,
-		parentId,
-		lifecycle,
-		key: opens ? boardKey : `${boardKey}@${id}`,
-	};
-}
-
-/**
- * A listed board with one current variant unless given more.
- * @param name Its name.
- * @param level Its level.
- * @param links The boards it drills down to.
- * @param variants Its variants; one current one when omitted.
- * @returns The board.
- */
-function board(
-	name: string,
-	level: string,
-	links: readonly string[] = [],
-	variants?: readonly ListedVariant[],
-): CatalogBoard {
-	const key = name.toLowerCase();
-	const listed = variants ?? [variant(key, "now", null, "current", true)];
-	return {
-		name,
-		key,
-		level,
-		opens: listed.find((entry) => entry.key === key)?.id ?? null,
-		variants: [...listed],
-		links: links.map((target) => ({
-			board: target,
-			variant: null,
-			node: target,
-			container: false,
-		})),
-		description: null,
-	};
-}
-
-/** A system that drills into a service, with a module under it, and a loose board. */
-const BOARDS: readonly CatalogBoard[] = [
-	board("Checkout", "system", ["Payments"]),
-	board(
-		"Payments",
-		"service",
-		["Ledger"],
-		[
-			variant("payments", "now", null, "current", true),
-			variant("payments", "queued", "now", "draft"),
-			variant("payments", "old", null, "historical"),
-		],
-	),
-	board("Ledger", "module"),
-	board("Audit", "service"),
-];
-
-/** No unrelated shell behaviour is exercised here. */
-function ignore(): void {
-	return;
-}
-
-/** What the navigator asked the shell to do. */
-interface Asked {
-	readonly selected: string[];
-	readonly beside: string[];
-}
-
-/** What a mounted navigator asked for, and how to show it news. */
-interface Mounted extends Asked {
-	/**
-	 * Draw the shell again with the same actions over a changed workspace.
-	 * @param changes What changed.
-	 */
-	readonly show: (changes: Partial<ShellView>) => void;
-}
-
-/**
- * Mount the real shell over a fixed listing.
- * @param overrides Workspace state for the behaviour under test.
- * @returns What the navigator asked for, and how to show it news.
- */
-function mountNavigator(overrides: Partial<ShellView> = {}): Mounted {
-	const asked: Asked = { selected: [], beside: [] };
-	const actions: ShellActions = {
-		setTheme: ignore,
-		/**
-		 * Record a board opened in the active pane.
-		 * @param key The board key.
-		 */
-		selectBoard: (key) => {
-			asked.selected.push(key);
-		},
-		/**
-		 * Record a board opened beside.
-		 * @param key The board key.
-		 */
-		openBeside: (key) => {
-			asked.beside.push(key);
-		},
-		refreshBoards: ignore,
-		selectPane: ignore,
-		addPane: ignore,
-		closePane: ignore,
-		present: ignore,
-		takeBackControl: ignore,
-		openSettings: ignore,
-		selectNoticeAction: ignore,
-		dismissNotice: ignore,
-	};
-	const view: ShellView = {
-		theme: "light",
-		boards: { boards: [...BOARDS], levels: ["system", "service", "module"], onScreen: [] },
-		boardsError: null,
-		boardsLoading: false,
-		selectedBoardKey: "payments",
-		panes: [pane("A", "payments")],
-		activePaneId: "A",
-		presentation: null,
-		notices: [],
-		agentActivity: {},
-		...overrides,
-	};
-	// Built once, as the application builds it once per listing: the news a test shows keeps the listing.
-	const outline = buildOutline(view.boards.boards, view.boards.levels);
-	const container = document.createElement("div");
-	document.body.append(container);
-	root = createRoot(container);
-	// A board's mark is its level's, drawn from the vault vocabulary the shell reads through its query cache.
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	/**
-	 * Draw the shell over a view.
-	 * @param shown The view.
-	 */
-	const draw = (shown: ShellView): void => {
-		act(() =>
-			root.render(
-				createElement(
-					QueryClientProvider,
-					{ client },
-					createElement(Shell, { view: shown, outline, actions }),
-				),
-			),
-		);
-	};
-	draw(view);
-	return {
-		...asked,
-		/**
-		 * Draw the shell again with the same actions over a changed workspace.
-		 * @param changes What changed.
-		 */
-		show: (changes) => {
-			draw({ ...view, ...changes });
-		},
-	};
-}
-
-/**
- * One local pane.
- * @param paneId The pane.
- * @param boardKey What it shows, or null.
- * @returns The pane.
- */
-function pane(paneId: string, boardKey: string | null): ShellPane {
-	return {
-		status: {
-			paneId,
-			clientId: `${paneId}-client`,
-			connected: true,
-			registered: true,
-			boardKey,
-			opened: boardKey,
-			board: null,
-			view: null,
-			lastChangeAt: null,
-			doing: [],
-			version: null,
-		},
-		stage: null,
-		holder: null,
-		takeBack: { kind: "idle" },
-		boardName: null,
-	};
-}
-
-/**
- * The tree's rows as `kind:id@level`, in order.
- * @returns The rows.
- */
-function rows(): string[] {
-	return [...document.querySelectorAll<HTMLElement>('[role="treeitem"]')].map(
-		(item) =>
-			`${item.dataset["rowKind"]}:${item.dataset["rowId"]}@${item.getAttribute("aria-level")}`,
-	);
-}
-
-/**
- * A rendered row by its id.
- * @param id The row id.
- * @returns The row.
- */
-function row(id: string): HTMLElement {
-	const found = document.querySelector<HTMLElement>(`[data-row-id="${id}"]`);
-	if (found === null) throw new Error(`Missing row ${id}`);
-	return found;
-}
-
-/**
- * The lines a row draws to join it to what it sits under, as `shape` or `shape:lit`.
- * @param id The row id.
- * @returns One entry for each line drawn, outermost first.
- */
-function guides(id: string): string[] {
-	return [...row(id).querySelectorAll<HTMLElement>('[data-slot="tree-guide"]')].map(
-		(line) => `${line.dataset["guide"]}${line.dataset["lit"] ? `:${line.dataset["lit"]}` : ""}`,
-	);
-}
-
-/**
- * The rows carrying a pane's letter.
- * @param letter The letter.
- * @returns Their ids.
- */
-function carrying(letter: string): string[] {
-	return [...document.querySelectorAll(`[data-pane-letter="${letter}"]`)].map(
-		(chip) => chip.closest<HTMLElement>('[role="treeitem"]')?.dataset["rowId"] ?? "",
-	);
-}
-
-/**
- * Press a key on the focused element.
- * @param key The key.
- * @param altKey Whether Alt is held.
- */
-function press(key: string, altKey = false): void {
-	act(() => {
-		document.activeElement?.dispatchEvent(
-			new KeyboardEvent("keydown", { key, altKey, bubbles: true }),
-		);
-	});
-}
+import {
+	SHOP,
+	act,
+	board,
+	carrying,
+	guides,
+	inShop,
+	mountNavigator,
+	pane,
+	press,
+	row,
+	rows,
+	unmount,
+	variant,
+} from "@/ui/shell/tests/navigator-fixture";
+import type { AgentActivityEntry } from "@/ui/types";
 
 test("each board is one row under the board it drills down from, with the variants of the board on screen one depth in", () => {
 	mountNavigator();
@@ -326,8 +62,10 @@ test("a board with a history has a disclosure with no pane on it, and opens to i
 
 test("the tree turns a line to each row, ends it at the last sibling, and lights the way to the selected row", () => {
 	mountNavigator();
-	// A top row hangs from nothing.
-	expect(guides("board:checkout")).toEqual([]);
+	// The repository's row hangs from nothing.
+	expect(guides(`repository:${SHOP}`)).toEqual([]);
+	// A top board hangs from its repository, and the last one, on the way to the selected variant, ends the line lit.
+	expect(guides("board:checkout")).toEqual(["last:branch"]);
 	// The only board under Checkout, on the way to the selected variant: its line ends here, lit.
 	expect(guides("board:payments")).toEqual(["last:branch"]);
 	// The selected variant is not the last under its board, so its line goes on past it.
@@ -344,8 +82,9 @@ test("every row at one depth has one indent, and each depth moves one step", () 
 		indents.set(level, (indents.get(level) ?? new Set()).add(item.style.paddingLeft));
 	}
 	// Folders are absent here; boards, variants, the Earlier row and what it holds are all drawn.
-	expect([...indents.keys()].toSorted((a, b) => a - b)).toEqual([1, 2, 3, 4]);
-	const steps = [1, 2, 3].map((level) => {
+	// The repository's row is at the top, and every row of its outline under it.
+	expect([...indents.keys()].toSorted((a, b) => a - b)).toEqual([1, 2, 3, 4, 5]);
+	const steps = [1, 2, 3, 4].map((level) => {
 		const [here] = indents.get(level) ?? [];
 		const [next] = indents.get(level + 1) ?? [];
 		return Number.parseFloat(next ?? "") - Number.parseFloat(here ?? "");
@@ -425,7 +164,7 @@ test("agent work is gathered in one block and never reorders or resizes the tree
 	mountNavigator();
 	const before = rows();
 	expect(document.querySelector('[data-slot="working-now"]')).toBeNull();
-	act(() => root.unmount());
+	unmount();
 	const activity: AgentActivityEntry = {
 		board: "ledger",
 		claim: null,
@@ -450,7 +189,10 @@ function drawnRows(): Map<string, unknown> {
 	return new Map(
 		[...document.querySelectorAll<HTMLElement>('[role="treeitem"]')].map((item) => {
 			const key = Object.keys(item).find((name) => name.startsWith("__reactProps$"));
-			return [item.dataset["rowId"] ?? "", key === undefined ? undefined : Reflect.get(item, key)];
+			return [
+				inShop(item.dataset["rowId"] ?? ""),
+				key === undefined ? undefined : Reflect.get(item, key),
+			];
 		}),
 	);
 }

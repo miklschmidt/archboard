@@ -8,6 +8,7 @@
 import { afterEach, expect, test } from "bun:test";
 
 import {
+	SERVED,
 	act,
 	answer,
 	notFaked,
@@ -165,6 +166,7 @@ test("a claim, an agent's doing, its activity and a pane status reach the shell 
 			type: "pane_board",
 			board: "pipeline",
 			identity: { board: "pipeline", variant: "current" },
+			...SERVED,
 		}),
 	);
 	await settle();

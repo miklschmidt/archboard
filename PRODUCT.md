@@ -65,6 +65,12 @@ board is narrated by a voice and recorded to video.
 - The shell has a navigator of boards, up to two panes side by side, a sidebar
   for each pane, and an agent dock at the foot of the navigator. Talk and Narrate start the
   voice.
+- One Archboard server serves every vault on the machine. The navigator lists
+  every repository that has a vault, each with the boards of its chosen
+  checkout. A repository is named by its identity, or an untracked vault by its
+  registry name. The menu on a repository's row chooses its checkout for the
+  whole machine. The two panes of one tab can show boards of two repositories,
+  and the address names the repository of each pane beside its board.
 - Code bindings open a part's file in VS Code, Cursor, Zed or on GitHub.
 - Boards also leave the app: as SVG or PNG for docs, ADRs and pull requests,
   and as a narrated MP4 attached to a pull request.
@@ -84,6 +90,8 @@ Shipped capabilities:
 - walkthroughs, narration by the Codex voice, and recording to video
 - an agent dock and conversation that read the board and the selection
 - claims, the doing of each write, and the control that takes a board back
+- every repository's boards in one browser app, and a choice of checkout for
+  each repository
 - groups, code bindings, illustrated traffic, and SVG and PNG renders
 
 Constraints that every surface keeps:

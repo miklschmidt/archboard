@@ -9,6 +9,7 @@
 import type { SemanticPanePart } from "@/shared/semantic-pane-context";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import { takeBoardBack } from "@/ui/pane-session/api";
+import { createPaneArrival } from "@/ui/pane-session/lib/pane-arrival";
 import { createPaneReportDeadline } from "@/ui/pane-session/lib/pane-deadline";
 import {
 	createReadingPublisher,
@@ -51,6 +52,8 @@ interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
 	readonly workbenchSockets: PaneWorkbenchSocketOwner<Transport> | null;
 	readonly setConnected: (connected: boolean) => void;
 	readonly setBoard: (board: BoardIdentity | null) => void;
+	/** The server put the pane in another vault (ADR 0050). */
+	readonly setVault: (vault: string) => void;
 	/** Where the server pointed the pane; a drill-down does not move it. */
 	readonly setOpened: (key: string | null) => void;
 	/** The server pointed the pane somewhere other than the board on screen. */
@@ -97,18 +100,6 @@ interface PaneCore<Transport extends WorkbenchTransportPort> {
 }
 
 /**
- * Whether the server named a board at all.
- *
- * It says so with a board key or with nothing, and nothing is a real answer:
- * a vault that holds no board yet leaves every pane showing none.
- * @param key What the server sent.
- * @returns True when there is a board to adopt.
- */
-function named(key: string | null | undefined): key is string {
-	return key !== undefined && key !== null && key !== "";
-}
-
-/**
  * Wire one pane.
  * @param ports What the core reads from React and writes back to it.
  * @returns The core.
@@ -129,7 +120,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		return !disposed;
 	}
 	const paneReportDeadline = createPaneReportDeadline();
-	const reading = createReadingPublisher({ paneId, clientId });
+	const reading = createReadingPublisher({ paneId, clientId, vault: paneVault });
 
 	/**
 	 * Tell the shell what this pane is, now.
@@ -139,7 +130,20 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		ports.options().onStatus(snapshot);
 	}
 
-	const { live: status, publish: publishStatus } = createPaneStatus({ paneId, clientId, onStatus });
+	const { live: status, publish: publishStatus } = createPaneStatus({
+		paneId,
+		clientId,
+		vault: ports.options().openingVault,
+		onStatus,
+	});
+
+	/**
+	 * The vault this pane is in now.
+	 * @returns The vault.
+	 */
+	function paneVault(): string {
+		return status.vault;
+	}
 
 	/**
 	 * The board this pane holds.
@@ -226,49 +230,34 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		}
 	}
 
-	/**
-	 * This pane is on a board: the one the server addressed to it.
-	 *
-	 * A server that names no board is telling this pane there is nothing to
-	 * show yet, which is news worth sending and nothing to adopt.
-	 * @param key The board key, or null when the server named none.
-	 * @param identity Its identity, when the server sent one.
-	 */
-	function adoptBoard(
-		key: string | null | undefined,
-		identity: BoardIdentity | null | undefined,
-	): void {
-		if (!named(key)) {
-			return;
-		}
-		const previousKey = status.opened;
-		// The board on screen moves, even when the pane is pointed back at the board
-		// it was opened on: a drill-down had put another board there.
-		const moved = previousKey !== key || status.boardKey !== key;
-		// Arriving sets both: the pane is showing the board it was pointed at,
-		// and that is also where any later drill starts from.
-		status.opened = key;
-		status.boardKey = key;
-		status.board = identity ?? { board: key, variant: "current" };
-		ports.setOpened(key);
-		ports.setBoard(status.board);
-		if (moved) {
-			// A different board is a different version and a different writer, and
-			// what an agent said about the last one is not news about this one.
-			status.version = null;
-			status.doing = [];
-			ports.setDoing([]);
+	const adoptBoard = createPaneArrival({
+		status,
+		setVault: ports.setVault,
+		setOpened: ports.setOpened,
+		setBoard: ports.setBoard,
+		setDoing: ports.setDoing,
+		/** Forget who holds the board on screen and what was reported of it. */
+		forgetBoard: (): void => {
 			// The board we are arriving at is somebody else's until we are told it
 			// is not; the server sends that immediately behind the board (ADR 0016).
 			setHolder(UNKNOWN_HOLDER);
 			reading.reset();
+		},
+		/**
+		 * Tell the shell the pane arrived at another board.
+		 * @param key The board it shows now.
+		 * @param previousKey The board it was pointed at before, or null.
+		 */
+		arrived: (key: string, previousKey: string | null): void => {
 			ports.options().onBoardAdopted?.(paneId, key, previousKey);
 			ports.arrived();
-		}
-		publishStatus();
-		// Immediately, not on the debounce: `browser panes` is read every turn.
-		schedulePaneReport(true);
-	}
+		},
+		publish: publishStatus,
+		/** Report the pane now. */
+		report: (): void => {
+			schedulePaneReport(true);
+		},
+	});
 
 	/**
 	 * The board this pane is showing has a new version.
@@ -292,6 +281,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	const messageContext: MessageContext = {
 		clientId,
 		boardKey,
+		vault: paneVault,
 		adoptBoard,
 		noteChange,
 		publishStatus,
@@ -324,6 +314,13 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		 */
 		get onAgentActivity() {
 			return ports.options().onAgentActivity;
+		},
+		/**
+		 * Where news of a chosen checkout goes; read live.
+		 * @returns The listener, or undefined when the shell wants none.
+		 */
+		get onRepositoriesChanged() {
+			return ports.options().onRepositoriesChanged;
 		},
 	};
 
@@ -389,7 +386,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		handleSocketMessage(messageContext, data);
 	}
 
-	const connector = createPaneSocketConnector(clientId, {
+	const connector = createPaneSocketConnector(clientId, paneVault, {
 		opened: socketOpened,
 		message: onSocketMessage,
 		closed: socketLost,
@@ -401,6 +398,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		paneId,
 		clientId,
 		boardKey,
+		vault: paneVault,
 		paneElement: ports.paneElement,
 		primary: isPrimary,
 		focused: isFocused,
@@ -420,7 +418,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	async function takeBack(): Promise<TakeBackResult> {
 		const target = status.boardKey;
 		try {
-			await takeBoardBack(target, clientId);
+			await takeBoardBack(status.vault, target, clientId);
 			if (status.boardKey !== target) {
 				return { outcome: "failure" };
 			}
@@ -459,6 +457,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 */
 	function openCode(subjectId: string): void {
 		activateCodeTarget({
+			vault: status.vault,
 			boardKey: status.boardKey,
 			elementId: subjectId,
 			onSuccess: opened,

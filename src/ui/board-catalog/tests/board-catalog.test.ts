@@ -223,11 +223,13 @@ test("reloading reads every cached board resource again, documents included", as
 	 */
 	const willReadAgain = (key: readonly unknown[]): boolean =>
 		client.getQueryState(key)?.isInvalidated === true;
-	const render = semanticBoardKeys.render({ board: "payments" });
-	const document = semanticBoardKeys.document("payments");
+	const shop = "/work/shop/.archboard/vault";
+	const render = semanticBoardKeys.render({ vault: shop, board: "payments" });
+	const document = semanticBoardKeys.document(shop, "payments");
+	const boards = semanticBoardKeys.boards(shop);
 	await seed(render);
 	await seed(document);
-	await seed(semanticBoardKeys.boards);
+	await seed(boards);
 	await seed(boardCatalogKeys.panes);
 
 	// Reload is the one control a person has when what the shell is showing has
@@ -243,7 +245,7 @@ test("reloading reads every cached board resource again, documents included", as
 	expect({
 		document: willReadAgain(document),
 		render: willReadAgain(render),
-		boards: willReadAgain(semanticBoardKeys.boards),
+		boards: willReadAgain(boards),
 		panes: willReadAgain(boardCatalogKeys.panes),
 	}).toEqual({ document: true, render: true, boards: true, panes: true });
 	client.clear();

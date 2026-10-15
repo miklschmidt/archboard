@@ -96,11 +96,14 @@ not add imports or a second state path before that work.
   represents browser display intent, and the board file remains the board
   authority. Selection, pending edits and live voice remain session state.
 - `src/ui/board-routing` delivers that contract (TASK-166) and owns it. The
-  workspace lives in search parameters on the one route at `/`: `paneA`, `paneB`
-  and `pane`. It uses search parameters because the Archboard server serves the
+  workspace lives in search parameters on the one route at `/`: `paneA`, `paneB`,
+  `repoA`, `repoB`, `viewA`, `viewB` and `pane`. It uses search parameters because the Archboard server serves the
   page only at `/`. With a path scheme, every direct load gets a 404 answer.
-  Each parameter carries the
-  board key exactly as the pane reports it.
+  Each `paneX` parameter carries the
+  board key exactly as the pane reports it. Each `repoX` parameter names the
+  repository of that pane's board (ADR 0050): its identity, or an untracked
+  vault's registry name, and never a path. An address without `repoX` opens the
+  board in the repository the pane is in.
 
   The address follows the note, which is the persisted content of the board.
   When a person opens a board, the open runs the command of the shell. Then the
@@ -115,8 +118,9 @@ not add imports or a second state path before that work.
   A pane holds no work of its own, because the browser writes nothing (ADR
   0023). Thus nothing guards a board that leaves a pane. A restore moves or
   closes panes without a question first. There is no route loader. A restore
-  addresses the server by board key and reads nothing. Thus routing shares no
-  cache.
+  addresses the server by board key and by the vault of the repository's chosen
+  checkout, so it waits until the repositories are listed. It reads nothing
+  else, and routing shares no cache.
 
 - Where TanStack Query replaces manual loading, error, cache and refresh state,
   use it for request/response resources. Start with board listings and server

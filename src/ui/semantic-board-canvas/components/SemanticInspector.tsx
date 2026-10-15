@@ -59,6 +59,7 @@ import {
 	type StepSubject,
 	type Subject,
 } from "@/ui/semantic-board-canvas/lib/board-document";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /**
  * What a part is called, or the id the board names it by when the variant no
@@ -370,6 +371,7 @@ function comparedSubject(
  * acts on the wrong one of those goes looking for the wrong thing — and the
  * worst of the five to get wrong is a failure shown as waiting, because waiting
  * for something that is never coming looks exactly like a panel that is slow.
+ * @param vault The vault the board is in.
  * @param read How the board's own read went.
  * @param read.data The board document, when it has arrived.
  * @param read.error Why the read failed, when it did.
@@ -378,6 +380,7 @@ function comparedSubject(
  * @returns The subject, or the words that stand in for it.
  */
 function explain(
+	vault: string,
 	read: { readonly data: unknown; readonly error: Error | null },
 	variant: string,
 	selection: string,
@@ -409,7 +412,12 @@ function explain(
 		...comparedSubject(reading.board, shown, selection),
 		level: reading.board.level,
 		open: openOn(shown, selection),
-		on: { board: reading.board.name, variant: shown.id, version: reading.board.version },
+		on: {
+			vault,
+			board: reading.board.name,
+			variant: shown.id,
+			version: reading.board.version,
+		},
 		notice: "This is not on the board any more. It may have gone since the picture was drawn.",
 	};
 }
@@ -480,14 +488,15 @@ interface SemanticInspectorProps {
  * @returns The inspector, as the sidebar's selection panel.
  */
 function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
-	const document = useQuery(semanticBoardDocumentQuery(props.board));
+	const vault = usePaneVault();
+	const document = useQuery(semanticBoardDocumentQuery(vault, props.board));
 	// Read on the same terms as the picture — no timer, fresh when the board
 	// announces a new version — and subscribed here rather than relied on from
 	// above, under the same spelling of the board name that the read used. A
 	// subscription that does not cover the thing being read is an
 	// infinitely-fresh answer to a question whose answer has moved.
-	useSemanticBoardChanges(props.board);
-	const explained = explain(document, props.variant, props.selection);
+	useSemanticBoardChanges(vault, props.board);
+	const explained = explain(vault, document, props.variant, props.selection);
 	const { subject } = explained;
 	const code = codeOn(useCodeFindings(explained.on), props.selection);
 

@@ -77,4 +77,6 @@ export {
 	type PictureSource,
 } from "@/ui/semantic-board-canvas/lib/picture-source";
 export { readBoardsFrom, type BoardReads } from "@/ui/semantic-board-canvas/lib/board-reads";
+export { PaneVaultContext } from "@/ui/semantic-board-canvas/lib/pane-vault";
+export { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 export { chooseLayoutEngine } from "@/ui/semantic-board-canvas/lib/layout-engine";

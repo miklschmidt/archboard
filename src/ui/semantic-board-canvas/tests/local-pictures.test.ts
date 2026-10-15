@@ -33,6 +33,9 @@ interface Draw {
 	readonly view?: string | undefined;
 }
 
+/** The vault every request names. */
+const VAULT = "/work/archboard/.archboard/vault";
+
 /** What the fake server holds: the board's version, and whether it lists the board at all. */
 const server = { version: 1, listed: true };
 
@@ -253,13 +256,13 @@ async function until(holds: () => boolean): Promise<void> {
 test("an announced change draws the board's states ahead, one at a time, as this page reads them", async () => {
 	const { client, draws, most } = page(memoryStorage());
 	// The page has been reading the board whole and through one view.
-	await client.fetchQuery(semanticRenderQuery({ board: "pipeline" }));
-	await client.fetchQuery(semanticRenderQuery({ board: "pipeline", view: "scope1" }));
+	await client.fetchQuery(semanticRenderQuery({ vault: VAULT, board: "pipeline" }));
+	await client.fetchQuery(semanticRenderQuery({ vault: VAULT, board: "pipeline", view: "scope1" }));
 	draws.length = 0;
 
 	server.version = 2;
-	announceSemanticBoardChange("pipeline", 2);
-	const proposal = { board: "pipeline", variant: "v2" } as const;
+	announceSemanticBoardChange(VAULT, "pipeline", 2);
+	const proposal = { vault: VAULT, board: "pipeline", variant: "v2" } as const;
 	await until(() => draws.length === 4);
 
 	// Every state, in every way it was read, from the version announced; the
@@ -279,9 +282,9 @@ test("an announced change draws the board's states ahead, one at a time, as this
 test("reading a board again draws every picture a pane holds from the new document, however it names its variant", async () => {
 	const { client } = page(memoryStorage());
 	const asked = [
-		{ board: "pipeline" },
-		{ board: "pipeline", variant: "v2" },
-		{ board: "pipeline", variant: "Semantic boards" },
+		{ vault: VAULT, board: "pipeline" },
+		{ vault: VAULT, board: "pipeline", variant: "v2" },
+		{ vault: VAULT, board: "pipeline", variant: "Semantic boards" },
 	] as const;
 	// Panes on the current variant, on a variant by id and on one by name.
 	const observers = asked.map((request) => {
@@ -302,7 +305,7 @@ test("reading a board again draws every picture a pane holds from the new docume
 
 test("a page loading against a moved board forgets the kept picture and never shows it", async () => {
 	const storage = memoryStorage();
-	const request = { board: "pipeline" } as const;
+	const request = { vault: VAULT, board: "pipeline" } as const;
 	// A previous page load drew the board at version 1 and kept it.
 	const before = page(storage);
 	await before.client.fetchQuery(semanticRenderQuery(request));
@@ -310,14 +313,14 @@ test("a page loading against a moved board forgets the kept picture and never sh
 
 	// Loaded again with nothing moved: the kept picture is shown, not drawn.
 	const same = page(storage);
-	await same.client.fetchQuery(semanticBoardListQuery());
+	await same.client.fetchQuery(semanticBoardListQuery(VAULT));
 	expect(await same.client.fetchQuery(semanticRenderQuery(request))).toMatchObject({ version: 1 });
 	expect(same.draws).toHaveLength(0);
 
 	// Loaded after the board moved on: listing the boards forgets the old picture…
 	server.version = 2;
 	const moved = page(storage);
-	await moved.client.fetchQuery(semanticBoardListQuery());
+	await moved.client.fetchQuery(semanticBoardListQuery(VAULT));
 	await until(() => storage.size() === 0);
 	// …and the pane is shown the board as it is now.
 	expect(await moved.client.fetchQuery(semanticRenderQuery(request))).toMatchObject({ version: 2 });
@@ -334,18 +337,18 @@ test("a page loading against a moved board forgets the kept picture and never sh
 	// Kept under its own version's key, beside the older one until a listing forgets that.
 	await until(() => storage.size() === 2);
 	server.listed = false;
-	await page(storage).client.fetchQuery(semanticBoardListQuery());
+	await page(storage).client.fetchQuery(semanticBoardListQuery(VAULT));
 	await until(() => storage.size() === 0);
 });
 
 test("a page that loads draws every listed board ahead once, for both themes, and never one it has kept", async () => {
 	const storage = memoryStorage();
-	const request = { board: "pipeline" } as const;
+	const request = { vault: VAULT, board: "pipeline" } as const;
 	// Nothing kept yet, as after a new renderer build: listing the boards draws
 	// each one ahead, whole, before anybody opens it. Once: a picture takes the
 	// page's theme, so a render names none and none is drawn twice.
 	const first = page(storage);
-	await first.client.fetchQuery(semanticBoardListQuery());
+	await first.client.fetchQuery(semanticBoardListQuery(VAULT));
 	await until(() => first.draws.length === 1);
 	expect(first.draws[0]).toMatchObject({ version: 1 });
 	expect(first.draws[0]).not.toHaveProperty("theme");
@@ -359,7 +362,7 @@ test("a page that loads draws every listed board ahead once, for both themes, an
 	// Loaded again: the kept picture comes out of storage and nothing is laid out.
 	await until(() => storage.size() === 1);
 	const again = page(storage);
-	await again.client.fetchQuery(semanticBoardListQuery());
+	await again.client.fetchQuery(semanticBoardListQuery(VAULT));
 	await until(() => again.client.getQueryData(semanticBoardKeys.render(request)) !== undefined);
 	expect(again.draws).toHaveLength(0);
 });
@@ -367,8 +370,8 @@ test("a page that loads draws every listed board ahead once, for both themes, an
 test("a picture drawn ahead is still in the tab when somebody opens its board, however long after", async () => {
 	// A cache that lets go of whatever nobody observes almost at once.
 	const shortLived = page(memoryStorage(), { gcTime: 1 });
-	const request = { board: "pipeline" } as const;
-	await shortLived.client.fetchQuery(semanticBoardListQuery());
+	const request = { vault: VAULT, board: "pipeline" } as const;
+	await shortLived.client.fetchQuery(semanticBoardListQuery(VAULT));
 	await until(
 		() => shortLived.client.getQueryData(semanticBoardKeys.render(request)) !== undefined,
 	);

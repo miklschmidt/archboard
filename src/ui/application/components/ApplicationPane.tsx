@@ -9,8 +9,8 @@
 
 import { memo, useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
-import { boardAncestors, type OutlineNode } from "@/ui/board-catalog";
-import type { CatalogBoard } from "@/ui/types";
+import { boardAncestors, useVaultBoards } from "@/ui/board-catalog";
+import { useVaultPolicyRefresh } from "@/ui/vault-diagnostics";
 
 import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
 import { PartSearchHost } from "@/ui/application/components/PartSearchHost";
@@ -31,7 +31,9 @@ import {
 import {
 	boardAddressOf,
 	NoBoardHeader,
+	PaneVaultContext,
 	SemanticBoardStage,
+	usePaneVault,
 	type SelectedSubject,
 	type SemanticBoardStageProps,
 	type SemanticPaneReading,
@@ -76,10 +78,8 @@ interface ApplicationPaneProps {
 	overlay?: ReactNode;
 	/** Whether the person asked for reduced motion. */
 	reducedMotion: boolean;
-	/** The vault's boards, which the pane's search for a part reads. */
-	boards: readonly CatalogBoard[];
-	/** The vault's boards as the navigator places them: where a board sits, for the breadcrumb. */
-	outline: readonly OutlineNode<CatalogBoard>[];
+	/** The vault the pane opens in, until the server moves it (ADR 0050). */
+	openingVault: string;
 	/**
 	 * Show a board in this pane: where a part its search found is.
 	 * @param key The board key.
@@ -120,6 +120,7 @@ function optionsFor(
 		focused: props.focused,
 		recording: props.recording === true,
 		theme: props.theme,
+		openingVault: props.openingVault,
 		onStatus: callbacks.onStatus,
 		onHolder: callbacks.onHolder,
 		onPaneStateAccepted: callbacks.onPaneStateAccepted,
@@ -128,6 +129,7 @@ function optionsFor(
 		onStaleFrontend: callbacks.onStaleFrontend,
 		onCodeTargetNotice: callbacks.onCodeTargetNotice,
 		onAgentActivity: callbacks.onAgentActivity,
+		onRepositoriesChanged: callbacks.onRepositoriesChanged,
 		onBoardAdopted: callbacks.onBoardAdopted,
 		onBoardError: bound.onBoardError,
 		onLayoutRequest: bound.onLayoutRequest,
@@ -190,7 +192,9 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 		[props, bound],
 	);
 	const session = usePaneSession(options);
-	const { attachPaneElement, openedKey, readingChanged } = session;
+	const { attachPaneElement, openedKey, readingChanged, vault } = session;
+	// The pictures of the vault this pane is in follow that vault's policy.
+	useVaultPolicyRefresh(vault);
 	// Registration and departure are two different events, and they are two
 	// effects for that reason. `usePaneSession` hands back a fresh object every
 	// render — its board, its holder and what an agent is doing all change under
@@ -234,16 +238,19 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 			{address === null ? (
 				<NoBoard />
 			) : (
-				<PaneDiagram
-					address={address}
-					arrival={session.arrivals}
-					openCode={session.openCode}
-					onReading={showReading}
-					onUserChanged={session.userChanged}
-					driven={props.step ?? asked}
-					shown={onScreen?.board ?? null}
-					{...props}
-				/>
+				// Every read the picture makes names the vault this pane is in (ADR 0050).
+				<PaneVaultContext value={vault}>
+					<PaneDiagram
+						address={address}
+						arrival={session.arrivals}
+						openCode={session.openCode}
+						onReading={showReading}
+						onUserChanged={session.userChanged}
+						driven={props.step ?? asked}
+						shown={onScreen?.board ?? null}
+						{...props}
+					/>
+				</PaneVaultContext>
 			)}
 		</div>
 	);
@@ -306,7 +313,8 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  */
 const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
-	const { boards, outline, onOpenBoard, shown } = props;
+	const { onOpenBoard, shown } = props;
+	const { boards, outline } = useVaultBoards(usePaneVault());
 	// Where a board sits, as the navigator places it: each board above, a way to it here.
 	const placeOf = useCallback(
 		(board: string) =>

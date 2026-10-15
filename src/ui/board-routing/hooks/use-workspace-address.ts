@@ -267,8 +267,9 @@ function commandsOver(state: Reconciliation) {
 		 * Take the slot and point a pane at a board.
 		 * @param paneId The pane.
 		 * @param boardKey The board.
+		 * @param repository The repository the board is in, or null for the pane's own.
 		 */
-		open: (paneId: string, boardKey: string): void => {
+		open: (paneId: string, boardKey: string, repository: string | null): void => {
 			const operation = startOperation(
 				{ kind: "restore", target: state.restore.target },
 				paneId,
@@ -276,7 +277,7 @@ function commandsOver(state: Reconciliation) {
 				state.displayed,
 			);
 			state.operation = operation;
-			void state.port.open(paneId, boardKey).then((outcome) => {
+			void state.port.open(paneId, boardKey, repository).then((outcome) => {
 				if (outcome.kind === "opened") {
 					answerOperation(state, operation, "opened", outcome.boardKey);
 				} else {

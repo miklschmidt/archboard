@@ -19,6 +19,8 @@ import { useVaultRepair } from "@/ui/vault-diagnostics/hooks/use-vault-repair";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 interface VaultDiagnosticsProps {
+	/** The focused pane's vault: the bell speaks for the repository in front of the person. */
+	vault: string;
 	/** The focused pane's transport, to check again when the agent's turn ends. */
 	transport: BrowserWorkbenchTransport | null;
 	/** Send the agent a message; the agent sets itself up if it needs to. */
@@ -27,12 +29,12 @@ interface VaultDiagnosticsProps {
 
 /**
  * Vault-wide warnings and errors with ordinary agent repair.
- * @param props The focused pane's transport and the way to ask the agent.
+ * @param props The focused pane's vault and transport, and the way to ask the agent.
  * @returns The header bell and diagnostics dialog.
  */
 function VaultDiagnostics(props: VaultDiagnosticsProps): JSX.Element {
 	const { transport, ask } = props;
-	const check = useVaultCheck();
+	const check = useVaultCheck(props.vault);
 	const [open, setOpen] = useState(false);
 	const { refetch } = check;
 	const recheck = useCallback(() => {

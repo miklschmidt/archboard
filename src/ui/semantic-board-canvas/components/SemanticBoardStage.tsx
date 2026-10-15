@@ -49,6 +49,7 @@ import type { SemanticPaneReading } from "@/ui/semantic-board-canvas/lib/address
 import type { SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
 import { semanticRenderQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /** Inputs for a semantic pane. */
 interface SemanticBoardStageProps {
@@ -234,8 +235,10 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	// narrative decides the reading while somebody is following it, and what the
 	// person chose is what they come back to.
 	const layout = useLayoutEngine();
+	const vault = usePaneVault();
 	const render = useQuery(
 		semanticRenderQuery({
+			vault,
 			board: drill.board,
 			variant: level.variant,
 			view: viewToRead(narrative.beat, level.view),
@@ -245,7 +248,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	);
 	// The board on screen, not the pane's own: a change to the board somebody is
 	// actually reading is the one that has to reach them.
-	useSemanticBoardChanges(drill.board);
+	useSemanticBoardChanges(vault, drill.board);
 
 	const drawn = drawingIn(render.data);
 	const presented = usePresentationPosition(
@@ -270,7 +273,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		camera,
 		area: picture,
 		drawn,
-		reading: { comparison, layout },
+		reading: { vault, comparison, layout },
 		reducedMotion,
 		presenting: narrative.open !== null,
 	});

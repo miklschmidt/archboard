@@ -51,6 +51,8 @@ function emptyPaneStatus(paneId: string): PaneStatus {
 		lastChangeAt: null,
 		doing: [],
 		version: null,
+		vault: null,
+		repository: null,
 	};
 }
 
@@ -112,21 +114,38 @@ function dropRecord(records: PaneRecords, paneId: string): PaneRecords {
 	return dropped === undefined ? records : rest;
 }
 
+/** A board one pane holds, and the vault it is a board of. */
+interface HeldBoard {
+	readonly vault: string;
+	readonly key: string;
+}
+
 /**
- * The board keys the panes hold, deduplicated, in pane order.
+ * The boards the panes hold, deduplicated, in pane order. Two repositories can
+ * each have a board of the same name, so a board is held in its vault.
  * @param records The records.
  * @param paneIds The panes, in reading order.
- * @returns The keys.
+ * @returns The boards.
  */
-function heldBoardKeys(records: PaneRecords, paneIds: readonly string[]): readonly string[] {
-	const keys: string[] = [];
+function heldBoards(records: PaneRecords, paneIds: readonly string[]): readonly HeldBoard[] {
+	const held: HeldBoard[] = [];
 	for (const paneId of paneIds) {
-		const key = recordFor(records, paneId).status.boardKey;
-		if (key !== null && !keys.includes(key)) {
-			keys.push(key);
+		const { boardKey: key, vault } = recordFor(records, paneId).status;
+		if (key !== null && vault !== null && !held.some((each) => sameHeld(each, { vault, key }))) {
+			held.push({ vault, key });
 		}
 	}
-	return keys;
+	return held;
+}
+
+/**
+ * Whether two held boards are one.
+ * @param a One.
+ * @param b The other.
+ * @returns True when both name one board of one vault.
+ */
+function sameHeld(a: HeldBoard, b: HeldBoard): boolean {
+	return a.vault === b.vault && a.key === b.key;
 }
 
 /**
@@ -135,24 +154,27 @@ function heldBoardKeys(records: PaneRecords, paneIds: readonly string[]): readon
  * Letting go of a board is the moment what the server holds for it matters
  * again: a board no pane is showing may have been written since anybody
  * looked, and nothing announces a change to a board this tab is not on.
- * @param before The keys held at the last check.
- * @param now The keys held now.
- * @returns The released keys, in the order they were held.
+ * @param before The boards held at the last check.
+ * @param now The boards held now.
+ * @returns The released boards, in the order they were held.
  */
-function releasedBoardKeys(before: readonly string[], now: readonly string[]): readonly string[] {
-	const holding = new Set(now);
-	return before.filter((key) => !holding.has(key));
+function releasedBoards(
+	before: readonly HeldBoard[],
+	now: readonly HeldBoard[],
+): readonly HeldBoard[] {
+	return before.filter((held) => !now.some((each) => sameHeld(each, held)));
 }
 
 export {
 	dropRecord,
 	emptyPaneStatus,
-	heldBoardKeys,
+	heldBoards,
 	initialPaneRecord,
 	patchRecord,
 	paneReady,
 	recordFor,
-	releasedBoardKeys,
+	releasedBoards,
+	type HeldBoard,
 	type PaneRecord,
 	type PaneRecords,
 };

@@ -9,22 +9,22 @@
 
 import { useEffect, useRef } from "react";
 
-import { releasedBoardKeys } from "@/ui/application/pane-records";
+import { releasedBoards, type HeldBoard } from "@/ui/application/pane-records";
 import type { BoardCatalog } from "@/ui/board-catalog";
 
 /**
  * Read a board again once no pane is showing it.
- * @param held The board keys the panes show, in pane order.
+ * @param held The boards the panes show, in pane order.
  * @param catalog The board cache.
  */
-function useReleasedBoards(held: readonly string[], catalog: BoardCatalog): void {
-	const previous = useRef<readonly string[]>([]);
+function useReleasedBoards(held: readonly HeldBoard[], catalog: BoardCatalog): void {
+	const previous = useRef<readonly HeldBoard[]>([]);
 	const { boardsChanged } = catalog;
 	useEffect(() => {
-		const released = releasedBoardKeys(previous.current, held);
+		const released = releasedBoards(previous.current, held);
 		previous.current = held;
-		if (released.length > 0) {
-			boardsChanged(released);
+		for (const board of released) {
+			boardsChanged(board.vault, [board.key]);
 		}
 	}, [held, boardsChanged]);
 }

@@ -23,7 +23,7 @@ import {
 	stageState,
 	textOf,
 } from "./support/drilling.ts";
-import { serverPath, type PanesBody } from "./support/navigator-support.ts";
+import { serverPath, servedRepository, type PanesBody } from "./support/navigator-support.ts";
 
 // Which board a pane is on, once somebody has followed a link down.
 //
@@ -136,6 +136,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 	});
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
+	const repo = await servedRepository(server.base);
 	const request = createJsonRequester(server);
 
 	// The board one level down, and the one a reader starts on. Each binds a
@@ -252,7 +253,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 	// The address says the same, because there is only one answer to give.
 	await pollUntil(
 		() => browser.eval<string>("window.location.search"),
-		(search) => search === `?paneA=engine@${proposal?.id ?? ""}`,
+		(search) => search === `?paneA=engine@${proposal?.id ?? ""}&repoA=${repo}`,
 		"the address to name the board and the reading on screen",
 		WAIT,
 	);

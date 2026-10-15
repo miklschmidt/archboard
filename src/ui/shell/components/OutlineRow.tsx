@@ -1,4 +1,4 @@
-// One row of the navigator's tree, by what it names: a folder, a board, one
+// One row of the navigator's tree, by what it names: a repository, a folder, a board, one
 // variant of a board, or the Earlier row that gathers a board's historical
 // and shelved variants. Every kind is drawn from the same parts on the same
 // grid (TreeRow).
@@ -8,6 +8,7 @@ import { memo, type JSX } from "react";
 import { BoardLine } from "@/ui/shell/components/BoardLine";
 import { EarlierLine } from "@/ui/shell/components/EarlierLine";
 import { FolderLine } from "@/ui/shell/components/FolderLine";
+import { RepositoryLine } from "@/ui/shell/components/RepositoryLine";
 import type { RowHandlers } from "@/ui/shell/components/TreeRow";
 import { VariantLine } from "@/ui/shell/components/VariantLine";
 import { sameData } from "@/ui/shell/lib/same-data";
@@ -33,6 +34,7 @@ interface OutlineRowProps extends RowHandlers {
  */
 const OutlineRow = memo(function OutlineRow(props: OutlineRowProps): JSX.Element {
 	const { row } = props;
+	if (row.kind === "repository") return <RepositoryLine {...props} row={row} />;
 	if (row.kind === "folder") return <FolderLine {...props} row={row} />;
 	if (row.kind === "board") return <BoardLine {...props} row={row} />;
 	if (row.kind === "earlier") return <EarlierLine {...props} row={row} />;

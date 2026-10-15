@@ -2,71 +2,110 @@
 // One subscription to each half, one composition, and the named invalidations
 // the application calls when something it heard could have changed a board.
 
-import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import {
+	useQueries,
+	useQuery,
+	useQueryClient,
+	type QueryClient,
+	type UseQueryResult,
+} from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 
-import { composeListing, listingError, vaultHalf } from "@/ui/board-catalog/listing";
-import { boardCatalogKeys, paneInventoryQuery } from "@/ui/board-catalog/lib/queries";
+import type { RepositoryEntry } from "@/shared/repositories/index";
+import {
+	composeListing,
+	EMPTY_LISTING,
+	listingError,
+	type VaultHalf,
+} from "@/ui/board-catalog/listing";
+import { halfOf } from "@/ui/board-catalog/lib/vault-boards";
+import {
+	boardCatalogKeys,
+	paneInventoryQuery,
+	repositoriesQuery,
+} from "@/ui/board-catalog/lib/queries";
 import {
 	onSemanticBoardChange,
 	readAgain,
 	semanticBoardKeys,
 	semanticBoardListQuery,
+	type SemanticBoardListing,
 } from "@/ui/semantic-board-canvas";
-import type { BoardListing } from "@/ui/types";
+import type { BoardListing, BrowserPaneListing } from "@/ui/types";
 
-/** The listing, why it may be missing, and the ways it is made stale. */
-interface BoardCatalog {
+/** One repository, and the boards of its chosen checkout's vault. */
+interface RepositoryBoards {
+	readonly repository: RepositoryEntry;
 	readonly listing: BoardListing;
+	/** Why its boards cannot be shown, or null. */
+	readonly error: string | null;
+	/** Its vault has not answered yet and nothing of it is in hand. */
+	readonly loading: boolean;
+}
+
+/** The repositories and their listings, why they may be missing, and the ways they go stale. */
+interface BoardCatalog {
+	/** Every repository the navigator lists, in the server's order. */
+	readonly repositories: readonly RepositoryBoards[];
+	/** The vault the server was started with, where a page opens; null until read. */
+	readonly served: string | null;
 	/** Why the navigator cannot show what it should, or null. */
 	readonly error: string | null;
-	/** The vault has not answered yet and nothing of it is in hand. */
+	/** The repositories have not answered yet and nothing of them is in hand. */
 	readonly loading: boolean;
-	/** Read the listing again: what a board command or a pane report asks for. */
+	/** Read the listings again: what a board command or a pane report asks for. */
 	readonly refresh: () => void;
 	/**
-	 * Read the listing and every drawing of every board again: the navigator's
+	 * Read the listings and every drawing of every board again: the navigator's
 	 * refresh, and the one control a person has when something the shell reads
 	 * has gone wrong.
 	 */
 	readonly reload: () => void;
 	/**
-	 * These boards have been written, or stopped being worked on: their pictures,
-	 * and anything the vault says about them, are worth reading again. The
-	 * listing is read again either way, so naming no board means just the listing.
+	 * These boards of one vault have been written, or stopped being worked on:
+	 * their pictures, and anything the vault says about them, are worth reading
+	 * again. The listing is read again either way, so naming no board means just
+	 * the listing.
+	 * @param vault The vault the boards are in.
 	 * @param boards The board keys, which may be none.
 	 */
-	readonly boardsChanged: (boards: readonly string[]) => void;
+	readonly boardsChanged: (vault: string, boards: readonly string[]) => void;
 	/**
 	 * A pane's socket came back. Whatever moved while it was down moved without
 	 * this tab hearing it, so everything the navigator shows is read again.
 	 */
 	readonly reconnected: () => void;
+	/** A checkout was chosen somewhere: the repositories are read again, and with them their boards. */
+	readonly repositoriesChanged: () => void;
 }
 
 /**
- * Read both halves of the listing again.
+ * Read the repositories, every listing and the panes again.
  * @param client The cache.
  */
 function invalidateListing(client: QueryClient): void {
-	void readAgain(client, [semanticBoardKeys.boards]);
+	void readAgain(client, [boardCatalogKeys.repositories]);
+	void readAgain(client, [semanticBoardKeys.allBoards]);
 	void readAgain(client, [boardCatalogKeys.panes]);
 }
 
 /**
  * The invalidations, bound to one cache.
  * @param client The cache.
- * @returns The four commands, stable for that cache.
+ * @returns The commands, stable for that cache.
  */
 function catalogCommands(
 	client: QueryClient,
-): Pick<BoardCatalog, "refresh" | "reload" | "boardsChanged" | "reconnected"> {
-	/** Read the listing again. */
+): Pick<
+	BoardCatalog,
+	"refresh" | "reload" | "boardsChanged" | "reconnected" | "repositoriesChanged"
+> {
+	/** Read the listings again. */
 	function refresh(): void {
 		invalidateListing(client);
 	}
 	/**
-	 * Read the listing, every drawing, and every board document again. This is
+	 * Read the listings, every drawing, and every board document again. This is
 	 * the one control a person has when something the shell reads has gone
 	 * wrong, so it must reach every resource, not only the ones that failed
 	 * loudly.
@@ -83,17 +122,19 @@ function catalogCommands(
 		void readAgain(client, [semanticBoardKeys.documents, semanticBoardKeys.renders]);
 	}
 	/**
-	 * These boards have been written, or stopped being worked on. The listing
-	 * may have moved whether or not any board is named, so it is read again
-	 * either way.
+	 * These boards of one vault have been written, or stopped being worked on.
+	 * The listing may have moved whether or not any board is named, so it is
+	 * read again either way.
+	 * @param vault The vault the boards are in.
 	 * @param boards The board keys, which may be none.
 	 */
-	function boardsChanged(boards: readonly string[]): void {
-		invalidateListing(client);
+	function boardsChanged(vault: string, boards: readonly string[]): void {
+		void readAgain(client, [semanticBoardKeys.boards(vault)]);
+		void readAgain(client, [boardCatalogKeys.panes]);
 		for (const board of boards) {
 			void readAgain(client, [
-				semanticBoardKeys.document(board),
-				semanticBoardKeys.boardRenders(board),
+				semanticBoardKeys.document(vault, board),
+				semanticBoardKeys.boardRenders(vault, board),
 			]);
 		}
 	}
@@ -101,35 +142,123 @@ function catalogCommands(
 	function reconnected(): void {
 		reload();
 	}
-	return { refresh, reload, boardsChanged, reconnected };
+	/** A checkout was chosen. */
+	function repositoriesChanged(): void {
+		void readAgain(client, [boardCatalogKeys.repositories]);
+	}
+	return { refresh, reload, boardsChanged, reconnected, repositoriesChanged };
 }
 
 /**
- * The board listing and the ways it goes stale.
+ * What each vault's listing query holds. A function of its own, so the cache
+ * runs it again only when an answer changes rather than on every render.
+ * @param results The listing queries, in the order of the repositories.
+ * @returns Each vault's half, failure and whether it is still unread.
+ */
+function readVaults(
+	results: readonly UseQueryResult<SemanticBoardListing>[],
+): { half: VaultHalf | undefined; error: unknown; pending: boolean }[] {
+	return results.map((result) => ({
+		half: result.data === undefined ? undefined : halfOf(result.data),
+		error: result.error,
+		pending: result.isPending,
+	}));
+}
+
+/** Stands for a pane inventory that is not read yet, as a key. */
+const UNREAD_PANES = {};
+
+/** Each listing, made once for each pair of halves, so a pane moving keeps the boards. */
+const listings = new WeakMap<object, WeakMap<object, BoardListing>>();
+
+/**
+ * The listing of one vault's half and the panes, the same one for the same pair.
+ * @param half The vault's half, or undefined while unread.
+ * @param panes The live panes, or undefined while unread.
+ * @returns The listing.
+ */
+function listingOf(
+	half: VaultHalf | undefined,
+	panes: BrowserPaneListing | undefined,
+): BoardListing {
+	if (half === undefined) return composeListing(undefined, panes);
+	const byPanes = listings.get(half) ?? new WeakMap<object, BoardListing>();
+	listings.set(half, byPanes);
+	const key = panes ?? UNREAD_PANES;
+	const kept = byPanes.get(key);
+	if (kept !== undefined) return kept;
+	const made = composeListing(half, panes);
+	byPanes.set(key, made);
+	return made;
+}
+
+/**
+ * The repositories, the boards of each, and the ways they go stale.
  * @returns The catalog.
  */
 function useBoardCatalog(): BoardCatalog {
 	const client = useQueryClient();
-	const vault = useQuery(semanticBoardListQuery());
+	const listed = useQuery(repositoriesQuery());
 	const panes = useQuery(paneInventoryQuery());
 	const commands = useMemo(() => catalogCommands(client), [client]);
 	// A board on screen moved to a new version — a state branched or accepted
-	// under a claim that has not ended — so its states and standing in the
-	// navigator are read again with it.
-	useEffect(() => onSemanticBoardChange(() => invalidateListing(client)), [client]);
-	// The vault's half is made again only when the vault's answer is new, so a
-	// pane moving keeps the boards every pane reads (the cache keeps an answer
-	// that reads the same as the one it replaces).
-	const boards = useMemo(
-		() => (vault.data === undefined ? undefined : vaultHalf(vault.data)),
-		[vault.data],
+	// under a claim that has not ended — so its vault's listing and which pane
+	// holds what are read again with it.
+	useEffect(
+		() =>
+			onSemanticBoardChange((vault) => {
+				void readAgain(client, [semanticBoardKeys.boards(vault), boardCatalogKeys.panes]);
+			}),
+		[client],
 	);
-	const listing = useMemo(() => composeListing(boards, panes.data), [boards, panes.data]);
-	const error = listingError(vault.error, panes.error, panes.data !== undefined);
+	const entries = listed.data?.repositories;
+	const vaults = useQueries({
+		queries: (entries ?? []).map((entry) => ({
+			...semanticBoardListQuery(entry.vault ?? ""),
+			enabled: entry.vault !== null,
+		})),
+		combine: readVaults,
+	});
+	const repositories = useMemo(
+		() =>
+			(entries ?? []).map((repository, index): RepositoryBoards => {
+				const vault = vaults[index];
+				return {
+					repository,
+					listing: listingOf(vault?.half, panes.data),
+					error: listingError(vault?.error ?? null, panes.error, panes.data !== undefined),
+					loading: repository.vault !== null && vault?.pending === true,
+				};
+			}),
+		[entries, vaults, panes.data, panes.error],
+	);
+	const error =
+		listed.error === null ? null : `The repositories could not be read: ${listed.error.message}`;
+	const served = listed.data?.served ?? null;
 	return useMemo(
-		() => ({ listing, error, loading: vault.isPending, ...commands }),
-		[listing, error, vault.isPending, commands],
+		() => ({ repositories, served, error, loading: listed.isPending, ...commands }),
+		[repositories, served, error, listed.isPending, commands],
 	);
 }
 
-export { catalogCommands as catalogCommandsFor, useBoardCatalog, type BoardCatalog };
+/**
+ * The boards of one vault's repository, or none when no listed repository
+ * reads that vault.
+ * @param catalog The catalog.
+ * @param vault The vault, or null for a pane the server has not placed yet.
+ * @returns Its listing.
+ */
+function boardsIn(catalog: Pick<BoardCatalog, "repositories">, vault: string | null): BoardListing {
+	const found = catalog.repositories.find(
+		(each) => vault !== null && each.repository.vault === vault,
+	);
+	return found?.listing ?? EMPTY_LISTING;
+}
+
+export {
+	boardsIn,
+	catalogCommands as catalogCommandsFor,
+	useBoardCatalog,
+	type BoardCatalog,
+	type RepositoryBoards,
+};

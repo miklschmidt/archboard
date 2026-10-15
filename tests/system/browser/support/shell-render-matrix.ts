@@ -228,11 +228,12 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		// state when the board's states are listed; the board's name is a human
 		// label beside the header's.
 		const selectedKey = nav?.querySelector('[role="treeitem"][aria-selected="true"] [data-board-key]')?.getAttribute('data-board-key') ?? null;
-		const readRow = selectedKey === null ? null : \`[role="treeitem"][data-row-id="board:\${CSS.escape(selectedKey.split('@')[0].toLowerCase())}"]\`;
+		// A board's row is named within its repository: \`repository:<name>|board:<key>\`.
+		const readRow = selectedKey === null ? null : \`[role="treeitem"][data-row-id$="|board:\${CSS.escape(selectedKey.split('@')[0].toLowerCase())}"]\`;
 		const selectedBoard = readRow === null ? null : nav?.querySelector(\`\${readRow} [data-board-key]\`);
 		// Body type: a row label that is neither selected nor the board being read.
 		const rowLabel = [...(nav?.querySelectorAll('[role="treeitem"][aria-selected="false"]') ?? [])]
-			.find(node => readRow === null || !node.matches(readRow))?.querySelector('[data-board-key]');
+			.find(node => node.querySelector('[data-board-key]') !== null && (readRow === null || !node.matches(readRow)))?.querySelector('[data-board-key]');
 		// A section heading in the pane's sidebar.
 		const sectionHeading = pane?.querySelector('[data-slot] > h2');
 		// The pane's window on the picture: the room the camera fits a drawing into.

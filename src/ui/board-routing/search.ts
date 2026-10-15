@@ -1,9 +1,12 @@
 // The workspace as search parameters, and back. One parameter per open pane,
 // named for the pane and carrying the board key exactly as the pane reports it
-// (`payments`, `payments@proposed`), plus `pane` for the active one when it is
-// not the first, plus `viewA` for a semantic board being read through one of its
-// named views. Nothing else of the workspace is addressable: selection, the
-// camera, pending edits and live voice are session state and stay out of here.
+// (`payments`, `payments@proposed`), plus `repoA` for the repository the board
+// is in (ADR 0050), plus `pane` for the active one when it is not the first,
+// plus `viewA` for a semantic board being read through one of its named views.
+// A repository is named by its identity or by an untracked vault's registry
+// name, never by a path. Nothing else of the workspace is addressable:
+// selection, the camera, pending edits and live voice are session state and
+// stay out of here.
 //
 // The view is in the address rather than in the board key because it is not
 // part of the board's identity: `semantic:pipeline` is one board however it is
@@ -12,8 +15,8 @@
 // Forward have to come back to the explanation the person was looking at, and a
 // link somebody sends has to open on the one they meant.
 //
-//     /?paneA=payments
-//     /?paneA=payments&paneB=payments@proposed&pane=B
+//     /?paneA=payments&repoA=github.com/acme/shop
+//     /?paneA=payments&repoA=github.com/acme/shop&paneB=ledger&repoB=github.com/acme/billing&pane=B
 //     /?paneA=semantic:pipeline&viewA=k3f9
 //
 // Search parameters rather than path segments because the Archboard server serves
@@ -79,6 +82,9 @@ const PANE_PARAM = /^pane([A-Za-z0-9]+)$/;
 /** `viewA`: the view one pane reads its semantic board through. */
 const VIEW_PARAM = /^view([A-Za-z0-9]+)$/;
 
+/** The repository of one pane's board: `repoA`, `repoB`. */
+const REPO_PARAM = /^repo([A-Za-z0-9]+)$/;
+
 /**
  * The parameter name for one pane.
  * @param paneId The pane.
@@ -95,6 +101,15 @@ function paneParam(paneId: string): string {
  */
 function viewParam(paneId: string): string {
 	return `view${paneId}`;
+}
+
+/**
+ * The parameter naming the repository of one pane's board.
+ * @param paneId The pane.
+ * @returns `repo` and the pane's letter.
+ */
+function repoParam(paneId: string): string {
+	return `repo${paneId}`;
 }
 
 /**
@@ -122,14 +137,23 @@ function validateWorkspaceSearch(input: Record<string, unknown>): WorkspaceSearc
 	const search: Record<string, string> = {};
 	for (const [key, raw] of Object.entries(input)) {
 		const value = stringValue(raw);
-		if (value === null) {
-			continue;
-		}
-		if (key === ACTIVE_PANE_PARAM || PANE_PARAM.test(key) || VIEW_PARAM.test(key)) {
+		if (value !== null && ownedParam(key)) {
 			search[key] = value;
 		}
 	}
 	return search;
+}
+
+/** The parameters each pane owns: its board, its view and its board's repository. */
+const PANE_PARAMS: readonly RegExp[] = [PANE_PARAM, VIEW_PARAM, REPO_PARAM];
+
+/**
+ * Whether a search parameter is one the workspace owns.
+ * @param key The parameter's name.
+ * @returns True for the active pane and every pane's own parameters.
+ */
+function ownedParam(key: string): boolean {
+	return key === ACTIVE_PANE_PARAM || PANE_PARAMS.some((param) => param.test(key));
 }
 
 /**
@@ -142,14 +166,28 @@ function panesFromSearch(search: WorkspaceSearch): readonly AddressedPane[] {
 	for (const [key, value] of Object.entries(search)) {
 		const paneId = PANE_PARAM.exec(key)?.[1];
 		if (paneId !== undefined && !panes.some((pane) => pane.paneId === paneId)) {
-			// A view named for a pane that is not open names nothing; a pane on an
-			// ordinary board has no views, and its stated one is ignored the same way.
-			panes.push(
-				Object.freeze({ paneId, boardKey: value, view: search[viewParam(paneId)] ?? null }),
-			);
+			panes.push(paneFromSearch(search, paneId, value));
 		}
 	}
 	return panes.toSorted((one, other) => one.paneId.localeCompare(other.paneId));
+}
+
+/**
+ * One pane a search names. A view or a repository named for a pane that is not
+ * open names nothing; a pane on an ordinary board has no views, and its stated
+ * one is ignored the same way.
+ * @param search The search.
+ * @param paneId The pane.
+ * @param boardKey The board it names for the pane.
+ * @returns The pane.
+ */
+function paneFromSearch(search: WorkspaceSearch, paneId: string, boardKey: string): AddressedPane {
+	return Object.freeze({
+		paneId,
+		boardKey,
+		repository: search[repoParam(paneId)] ?? null,
+		view: search[viewParam(paneId)] ?? null,
+	});
 }
 
 /**
@@ -178,6 +216,21 @@ function writtenActivePane(address: WorkspaceAddress): string | null {
 }
 
 /**
+ * The parameters one pane writes: its board, its board's repository and its
+ * view, or nothing while it has not said what it holds.
+ * @param pane The pane.
+ * @returns Its parameters.
+ */
+function paneSearch(pane: AddressedPane): Record<string, string> {
+	if (pane.boardKey === null) return {};
+	return {
+		[paneParam(pane.paneId)]: pane.boardKey,
+		...(pane.repository === null ? {} : { [repoParam(pane.paneId)]: pane.repository }),
+		...(pane.view === null ? {} : { [viewParam(pane.paneId)]: pane.view }),
+	};
+}
+
+/**
  * The search that writes an address down. A pane that has not said what it
  * holds is left out: the address is only written once every open pane has a
  * board, so that half a workspace is never published.
@@ -185,15 +238,7 @@ function writtenActivePane(address: WorkspaceAddress): string | null {
  * @returns The search.
  */
 function searchFromAddress(address: WorkspaceAddress): WorkspaceSearch {
-	const search: Record<string, string> = {};
-	for (const pane of address.panes) {
-		if (pane.boardKey !== null) {
-			search[paneParam(pane.paneId)] = pane.boardKey;
-		}
-		if (pane.boardKey !== null && pane.view !== null) {
-			search[viewParam(pane.paneId)] = pane.view;
-		}
-	}
+	const search: Record<string, string> = Object.assign({}, ...address.panes.map(paneSearch));
 	const active = writtenActivePane(address);
 	if (active !== null) {
 		search[ACTIVE_PANE_PARAM] = active;
@@ -206,6 +251,7 @@ export {
 	addressFromSearch,
 	paneParam,
 	parseWorkspaceSearchString,
+	repoParam,
 	searchFromAddress,
 	stringifyWorkspaceSearch,
 	viewParam,

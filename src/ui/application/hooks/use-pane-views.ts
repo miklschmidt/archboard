@@ -14,10 +14,9 @@ import {
 import type { Narration } from "@/ui/application/hooks/use-narration";
 import type { PaneReadings, PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import type { Panes } from "@/ui/application/hooks/use-panes";
-import type { OutlineNode } from "@/ui/board-catalog";
 import type { PaneTheme } from "@/ui/pane-session";
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
-import type { CatalogBoard } from "@/ui/types";
+import { servedVault } from "@/ui/server-requests";
 import type { RecordedStep } from "@/ui/walkthrough-recording";
 
 /** Something the shell lays over one pane's picture. */
@@ -50,10 +49,6 @@ interface PaneViewSources {
 	readonly overlay: PaneOverlay | null;
 	/** The page records its one pane (TASK-304), or null. */
 	readonly recording: PaneRecording | null;
-	/** The vault's boards, which a pane's search for a part reads. */
-	readonly boards: readonly CatalogBoard[];
-	/** The vault's boards as the navigator places them, for the boards above a pane's own. */
-	readonly outline: readonly OutlineNode<CatalogBoard>[];
 	/**
 	 * Show a board in one pane: where a part its search found is.
 	 * @param key The board key.
@@ -125,8 +120,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		narration: sources.narration?.forPane(paneId),
 		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
 		reducedMotion: sources.reducedMotion,
-		boards: sources.boards,
-		outline: sources.outline,
+		openingVault: servedVault(),
 		onOpenBoard: openBoardHere,
 	});
 }
@@ -183,8 +177,6 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		narration,
 		overlay,
 		recording,
-		boards,
-		outline,
 		openBoard,
 	} = sources;
 	const { list, callbacks, handles } = panes;
@@ -201,8 +193,6 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					narration,
 					overlay,
 					recording,
-					boards,
-					outline,
 					openBoard,
 				},
 				entry.paneId,
@@ -221,8 +211,6 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		narration,
 		overlay,
 		recording,
-		boards,
-		outline,
 		openBoard,
 	]);
 }

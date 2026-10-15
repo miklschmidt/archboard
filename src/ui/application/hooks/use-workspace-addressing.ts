@@ -19,10 +19,10 @@ function useWorkspaceAddressing(
 	deps: WorkspacePortDeps,
 	binding: LiveBinding<WorkspaceAddressing>,
 ): void {
-	const { panes, notices, readings } = deps;
+	const { panes, notices, readings, vaultOf } = deps;
 	const port = useMemo(
-		() => createWorkspacePort({ panes, notices, ...(readings ? { readings } : {}) }),
-		[panes, notices, readings],
+		() => createWorkspacePort({ panes, notices, vaultOf, ...(readings ? { readings } : {}) }),
+		[panes, notices, readings, vaultOf],
 	);
 	binding.bind(useWorkspaceAddress(port));
 }

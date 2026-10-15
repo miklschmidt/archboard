@@ -19,8 +19,17 @@ interface WorkspacePort {
 	readonly displayed: WorkspaceAddress;
 	/** Whether a pane can be addressed yet: it has reached the server. */
 	readonly ready: (paneId: string) => boolean;
-	/** Point one pane at one board, through the application's open command. */
-	readonly open: (paneId: string, boardKey: string) => Promise<OpenOutcome>;
+	/**
+	 * Point one pane at one board, through the application's open command.
+	 * @param paneId The pane.
+	 * @param boardKey The board.
+	 * @param repository The repository the board is in, or null for the one the pane is in.
+	 */
+	readonly open: (
+		paneId: string,
+		boardKey: string,
+		repository: string | null,
+	) => Promise<OpenOutcome>;
 	/**
 	 * Read the board one pane is already showing through one of its views, or
 	 * through none for the whole variant. Nothing is opened and nothing is taken

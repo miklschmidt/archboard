@@ -18,6 +18,8 @@ import {
 
 /** What an activation needs. */
 interface CodeTargetActivationOptions {
+	/** The vault of the pane the subject is in. */
+	vault: string;
 	/** The board key the subject is on, or null when the pane is on no board. */
 	boardKey: string | null;
 	/** The stable semantic id whose binding to open. */
@@ -62,7 +64,7 @@ function openedNotice(reply: CodeTargetOpenSuccess): CodeTargetNotice | null {
  * @param options The board, the subject and where outcomes go.
  */
 function activateCodeTarget(options: CodeTargetActivationOptions): void {
-	const { boardKey, elementId, onSuccess, onFailure } = options;
+	const { vault, boardKey, elementId, onSuccess, onFailure } = options;
 	if (boardKey === null || boardKey === "") {
 		onFailure({
 			kind: "error",
@@ -71,7 +73,7 @@ function activateCodeTarget(options: CodeTargetActivationOptions): void {
 		});
 		return;
 	}
-	void openCodeTarget({ board: boardKey, element: elementId }).then((reply) => {
+	void openCodeTarget(vault, { board: boardKey, element: elementId }).then((reply) => {
 		if (reply.success) {
 			onSuccess(reply);
 		} else {

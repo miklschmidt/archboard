@@ -30,6 +30,7 @@ import {
 	type GroupSelection,
 } from "@/ui/semantic-board-canvas/lib/groups";
 import { vaultCheckQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /** Where a group was chosen: which board, and which state of it. */
 interface GroupPlace {
@@ -115,7 +116,7 @@ function useGroupSelection(
 	presenting: boolean,
 ): GroupSelectionState {
 	const shown = variant === null ? null : variant.id;
-	const policy = useQuery(vaultCheckQuery());
+	const policy = useQuery(vaultCheckQuery(usePaneVault()));
 	const names = policy.data === undefined ? NO_GROUP_NAMES : policy.data.policy.groups;
 	const [place, setPlace] = useState<GroupPlace | null>(null);
 	if (choiceOver(place, board, variant, presenting)) {
