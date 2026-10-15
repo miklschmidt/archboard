@@ -448,12 +448,17 @@ test(
 		);
 		expect((await conversationList(browser)).find(({ shown }) => shown)?.checkout).toBe(orders);
 
-		// A pick by keyboard shows the shop conversation again. The orders checkout has no workhorse
-		// and is no longer shown, so the list then has nothing left to offer.
+		// A pick by keyboard shows the shop conversation again: an arrow moves from the shown one to
+		// the other, and Enter picks it. The orders checkout has no workhorse and is no longer shown,
+		// so the list then has nothing left to offer.
 		await browser.run([
 			"focus",
-			`${AGENT_DOCK} [aria-label="Conversations"] button[title="${shop}"]`,
+			`${AGENT_DOCK} [aria-label="Conversations"] button[title="${orders}"]`,
 		]);
+		await browser.run(["press", "ArrowDown"]);
+		expect(
+			await browser.eval<string | null>("document.activeElement?.getAttribute('title') ?? null"),
+		).toBe(shop);
 		await browser.run(["press", "Enter"]);
 		await pollUntil(
 			async () => ({ list: await conversationList(browser), surface: await agentSurface(browser) }),
