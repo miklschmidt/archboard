@@ -68,4 +68,11 @@ test("a delegation starts the workhorse of the checkout it names, and nothing el
 	expect(
 		await readyDelegatedWorkhorse(call("delegate_to_workhorse", { checkout: repository }), failing),
 	).toBeUndefined();
+	// So does a tab session that can build no workhorse any more, because its tab has gone.
+	const ended = () => {
+		throw new Error("The tab session is not live, so it can start no workhorse.");
+	};
+	expect(
+		await readyDelegatedWorkhorse(call("delegate_to_workhorse", { checkout: repository }), ended),
+	).toBeUndefined();
 });
