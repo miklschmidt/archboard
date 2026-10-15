@@ -30,10 +30,12 @@ import {
 	writeSemanticBoard,
 } from "@/runtime/semantic-board-store/index";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
-import { ARCHBOARD_VAULT, noVaultMessage } from "@/runtime/engine/config";
+import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
 
 if (!ARCHBOARD_VAULT) {
-	throw new Error(noVaultMessage());
+	throw new Error(
+		"ARCHBOARD_VAULT is not set. Set it to the vault directory to build the example into, then run this again.",
+	);
 }
 
 /** The vault the example is built into. */
