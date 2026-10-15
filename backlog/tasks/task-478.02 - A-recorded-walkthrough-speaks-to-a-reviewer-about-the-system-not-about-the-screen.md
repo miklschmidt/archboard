@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-15 15:39'
-updated_date: '2026-10-15 15:51'
+updated_date: '2026-10-15 17:12'
 labels: []
 dependencies: []
 parent_task_id: TASK-478
@@ -24,10 +24,10 @@ Recorded walkthroughs in pull requests narrate the screen and joke. Transcripts 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A recording gives its voice session narrator instructions of its own, without the live persona: speak about the system in the board's names, never about the screen, the step or the walkthrough itself, no jokes, and no closing line; live narration and conversation keep their persona
-- [ ] #2 What the voice receives for each recorded beat invites no screen narration; the source of the "On screen now" and "This step" openings is found and named in the task notes
+- [x] #1 A recording gives its voice session narrator instructions of its own, without the live persona: speak about the system in the board's names, never about the screen, the step or the walkthrough itself, no jokes, and no closing line; live narration and conversation keep their persona
+- [x] #2 What the voice receives for each recorded beat invites no screen narration; the source of the "On screen now" and "This step" openings is found and named in the task notes
 - [ ] #3 A recording made after the change, of a walkthrough in the dogfood vault, is read by a person, and its transcript in the task notes shows no screen talk, joke or closing formula
-- [ ] #4 A test owner proves that a recording session receives the narrator instructions and a live narration session the persona, without matching their wording
+- [x] #4 A test owner proves that a recording session receives the narrator instructions and a live narration session the persona, without matching their wording
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -75,4 +75,6 @@ Real recording (AC3), after the change, on this worktree's server restarted on t
 No screen talk, no step talk, no joke and no closing formula. Each beat is a reworded explanation of its body in the board's names, not a reading of it. Not exercised live: subjects with an added or changed standing, because this walkthrough is on a current variant. A person still has to listen to the video for AC3.
 
 Outside this task's write scope, for the parent: docs/adr/0041-a-recording-is-a-talk-rendered-frame-by-frame.md (Decision: the voice model gets the voice's persona and a recording section) and docs/design/codex-workbench-authored-contracts.md (the start that records a walkthrough: prompt is the voice's persona with a recording section) are now false. A recording's prompt is its narrator instructions alone, with no persona.
+
+Gate: bun run check passed at e92b4f82f plus the skill commits (exit 0, no failing test in any lane, serial browser lane included). AC 3 stays open: the transcripts of this recording and of the three trial recordings (TASK-478.04) show no screen talk, joke or closing line, but no person has listened to a video yet. Listen to /tmp/t47802-rec/codex-session.mp4 or /tmp/pr-audit/trial-out/607/walkthrough.mp4, then check AC 3.
 <!-- SECTION:NOTES:END -->

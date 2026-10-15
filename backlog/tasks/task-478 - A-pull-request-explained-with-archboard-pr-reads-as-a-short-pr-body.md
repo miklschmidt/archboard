@@ -1,10 +1,11 @@
 ---
 id: TASK-478
 title: A pull request explained with archboard-pr reads as a short /pr body
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-15 15:38'
+updated_date: '2026-10-15 17:12'
 labels: []
 dependencies: []
 priority: high
@@ -20,7 +21,13 @@ An audit of 15 pull request descriptions written with archboard-pr (Admin-By-Req
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 archboard-pr writes a body with exactly the sections Summary, Evidence and Merge Danger, and its picture and walkthrough sit in the Summary
-- [ ] #2 A picture of a stacked PR marks only what that PR adds over the PR below, and carries no planned frame
-- [ ] #3 Three PRs of the device trust stack (#599, #607, #610) are re-explained with the new skill into files, without posting, for the user to read
+- [x] #1 archboard-pr writes a body with exactly the sections Summary, Evidence and Merge Danger, and its picture and walkthrough sit in the Summary
+- [x] #2 A picture of a stacked PR marks only what that PR adds over the PR below, and carries no planned frame
+- [x] #3 Three PRs of the device trust stack (#599, #607, #610) are re-explained with the new skill into files, without posting, for the user to read
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+All three criteria hold (TASK-478.01, .03 and .04 are Done). TASK-478 stays In Progress until TASK-478.02 AC 3, a person listening to a recording, is checked.
+<!-- SECTION:NOTES:END -->
