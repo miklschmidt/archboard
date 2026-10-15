@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 05:41'
+updated_date: '2026-10-15 06:11'
 labels: []
 dependencies:
   - TASK-472.05
@@ -71,6 +71,8 @@ Decisions (TASK-472.14):
 Validation: `ARCHBOARD_REPOS=/tmp/t14-gate-repos.json bun run check` exits 0. Lint and fmt pass. test:modules: 4641 pass, 1 skip, 0 fail. test:system: 226 pass, 0 fail. test:repository: 27 pass, 0 fail. test:serial-browser: 19 of 19 owners finish, and the lane exits 0. After the gate, /tmp/t14-gate-repos.json does not exist, so no test wrote that registry.
 Proof owners: tests/system/server-state/browser-show-checkout.test.ts (AC1, AC2, AC3, AC4, comments 1 to 3). src/ui/pane-session/tests/pane-connection.test.ts, "a pane told only where it is takes its repository's new name and keeps its board" (comment 2, page side).
 Open for the parent: in an archboard worktree, `browser show` against the worktree's own server chooses the worktree in the registry that every server shares. The main server on port 3000 is not told, so its panes move only at its next registry notice. This follows ADR 0050 ("the last show wins"), but it works against the reason that ADR 0049 gives worktrees their own ports.
+
+Review (2026-10-15): the CLI's notice to one server (POST /api/repositories/changed, announceRegistryChange) is replaced by a watch: every server watches the registry file it reads and follows each change it has not followed (0af1b7465). This resolves the open note that the main server on 3000 is not told of a worktree's show or repo command, and the --url question for the repo commands, which now call no server. A pane moved to another vault forgets its last reading (a6f4c5ed6). The command audit lists the new show and panes answers (06457fa70).
 <!-- SECTION:NOTES:END -->
 
 ## Comments
