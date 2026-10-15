@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 34,
+	"version": 35,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T06:17:04.784Z",
+	"updatedAt": "2026-10-15T06:19:48.282Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -5041,7 +5041,7 @@
 		{
 			"id": "Cyq736we",
 			"name": "TASK-472.15",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "G3kDfojO",
 			"summary": "Live pane connections, presentation state and board announcements, with the vault each pane is in",
 			"content": {
@@ -6436,7 +6436,7 @@
 		{
 			"id": "J6AUliSi",
 			"name": "TASK-472.14",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Cyq736we",
 			"summary": "Live pane connections, presentation state and board announcements, with the vault each pane is in and the checkout registry every pane follows",
 			"content": {
@@ -7942,7 +7942,7 @@
 			}
 		}
 	],
-	"current": "Cyq736we",
+	"current": "J6AUliSi",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -7972,6 +7972,12 @@
 			"from": "G3kDfojO",
 			"at": "2026-10-15T06:05:04.342Z",
 			"reason": "A moved board takes its panes to the target vault"
+		},
+		{
+			"variant": "J6AUliSi",
+			"from": "Cyq736we",
+			"at": "2026-10-15T06:19:48.282Z",
+			"reason": "TASK-472.14: every pane follows the registry file the server watches, a pane whose vault is gone is put in a readable one, a moved pane forgets its reading, and the panes report names each pane's repository and checkout"
 		}
 	]
 }

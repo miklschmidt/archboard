@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 41,
+	"version": 42,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-15T06:17:49.561Z",
+	"updatedAt": "2026-10-15T06:19:48.517Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -9487,7 +9487,7 @@
 		{
 			"id": "rCXbD4vW",
 			"name": "TASK-472.15",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "C3V6dUPI",
 			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches.",
 			"content": {
@@ -10961,7 +10961,7 @@
 		{
 			"id": "vuIqmjLY",
 			"name": "TASK-472.14",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "rCXbD4vW",
 			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches.",
 			"content": {
@@ -12517,7 +12517,7 @@
 			}
 		}
 	],
-	"current": "rCXbD4vW",
+	"current": "vuIqmjLY",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -12560,6 +12560,12 @@
 			"from": "C3V6dUPI",
 			"at": "2026-10-15T06:05:03.675Z",
 			"reason": "semantic move: the move route moves a board into another repository's vault, announces every board it wrote and where the board went, and takes the board's panes along"
+		},
+		{
+			"variant": "vuIqmjLY",
+			"from": "rCXbD4vW",
+			"at": "2026-10-15T06:19:48.517Z",
+			"reason": "TASK-472.14: the repository routes watch the registry file and every pane follows it; an agent's show and a finished move choose their checkout through the registry"
 		}
 	],
 	"shelvings": [

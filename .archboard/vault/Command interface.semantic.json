@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 75,
+	"version": 76,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-15T06:18:10.485Z",
+	"updatedAt": "2026-10-15T06:19:48.752Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -18236,7 +18236,7 @@
 		{
 			"id": "NHmGAMZ9",
 			"name": "TASK-472.15",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "n4WqEuEW",
 			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
@@ -19804,7 +19804,7 @@
 		{
 			"id": "qzAh1L27",
 			"name": "TASK-472.14",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "NHmGAMZ9",
 			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
@@ -21371,7 +21371,7 @@
 			}
 		}
 	],
-	"current": "NHmGAMZ9",
+	"current": "qzAh1L27",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -21456,6 +21456,12 @@
 			"from": "n4WqEuEW",
 			"at": "2026-10-15T06:05:03.887Z",
 			"reason": "semantic move: the move command finds its --to vault through command routing and moves the board through the board client"
+		},
+		{
+			"variant": "qzAh1L27",
+			"from": "NHmGAMZ9",
+			"at": "2026-10-15T06:19:48.752Z",
+			"reason": "TASK-472.14: browser show chooses the caller's checkout and browser panes names each pane's repository, checkout and own; the repo commands call no server"
 		}
 	],
 	"shelvings": [

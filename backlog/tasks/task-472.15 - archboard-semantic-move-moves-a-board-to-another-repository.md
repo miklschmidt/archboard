@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 06:11'
+updated_date: '2026-10-15 06:21'
 labels: []
 dependencies:
   - TASK-472.12
@@ -97,4 +97,6 @@ behind (archboard check --code after adoption): all five adopted boards read 0 c
 Correction to the Board store line above: within the store, outside move*.ts, this task changed only index.ts (exports), lib/outcome.ts (refusal codes) and lib/write.ts (Write under lease, named). accepted.ts did not change.
 
 Decision revised (2026-10-15, from the TASK-472.14 boundary review): a finished move chooses its target checkout when it is a known checkout that is not chosen, as an agent's browser show does, and says so in chose; otherwise a later registry change would move the board's panes to the chosen checkout's vault, which lacks the board. This brings the CLI form in line with ADR 0051's 'the vault of the chosen checkout'.
+
+Boards for 197f68f39 (a finished move chooses its target checkout through chooseShownCheckout, exported from pane-show-route.ts, and then calls followRegistry): the TASK-472.14 proposal on Archboard server routes draws them, and it was adopted at version 42. It adds Move route -> Live panes (a finished move chooses its target's checkout, anchored at semantic-board-move.ts chooseShownCheckout) and Move route -> Repository routes (every pane follows the choice, anchored at followRegistry). This clears that board's RELATIONSHIP_UNDRAWN Move route -> Repository routes. On Live panes, the move stays drawn through the Archboard server container, as 55zluwBL draws it.
 <!-- SECTION:NOTES:END -->
