@@ -18,8 +18,8 @@
 //     after any write.
 //   nothing else. A directory a nested name created is left, because another
 //     board's create may be about to write into it, and the listing never reads
-//     an empty one as a board. Semantic writes leave no commit handoff beside
-//     the lease, and a semantic board keeps no images outside its note.
+//     an empty one as a board. A semantic board keeps no images outside its
+//     note.
 
 import { unlinkDurably } from "@/runtime/engine/atomic-write";
 import { claimWriterId, releaseClaim } from "@/runtime/engine/board-lock";
