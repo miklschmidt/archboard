@@ -62,6 +62,7 @@ interface CoordinatorTurnHome {
 interface GivenWorkEvent {
 	readonly operation: WorkhorseOperationEvent["operation"];
 	readonly queueOperation: WorkhorseOperationEvent["queueOperation"];
+	readonly outcome: WorkhorseOperationEvent["outcome"];
 	readonly correlation: Pick<WorkhorseOperationCorrelation, "coordinatorTurnId">;
 }
 
@@ -88,11 +89,15 @@ function homeOf(homes: Map<TurnId, CoordinatorTurnHome>, turnId: TurnId): Coordi
 
 /**
  * Whether an operation event gave a workhorse work: a delegation, a steer, or a queued prompt added
- * or started.
+ * or started, that reached the workhorse or may have. An operation is accepted before it is
+ * delivered, and one refused then gave nothing.
  * @param event The event.
  * @returns True when it did.
  */
 function givesWork(event: GivenWorkEvent): boolean {
+	if (event.outcome === "pending" || event.outcome === "not_delivered") {
+		return false;
+	}
 	// Every operation but the queue's is a delegation or a steer.
 	return (
 		event.operation !== "manage_workhorse_queue" ||

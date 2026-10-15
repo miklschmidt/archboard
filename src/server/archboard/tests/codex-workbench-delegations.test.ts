@@ -63,13 +63,20 @@ test("a coordinator turn shows where it gave work, else where the tab was when i
 			decoder,
 			() => shown,
 		);
-	const work = (checkout: string, operation: string, queueOperation: string | null, turn: TurnId) =>
+	const work = (
+		checkout: string,
+		operation: string,
+		queueOperation: string | null,
+		turn: TurnId,
+		outcome = "delivered",
+	) =>
 		recordGivenWork(
 			homes,
 			checkout,
 		)({
 			operation,
 			queueOperation,
+			outcome,
 			correlation: { coordinatorTurnId: turn },
 		} as never);
 
@@ -77,8 +84,11 @@ test("a coordinator turn shows where it gave work, else where the tab was when i
 	work(PAYMENTS, "delegate_to_workhorse", null, gave);
 	work(DOCS, "manage_workhorse_queue", "add", gave);
 	started("spoke", SHOP);
-	// Deleting what waits gives nobody work.
+	// Deleting what waits gives nobody work, and neither does a delegation that never reached its
+	// workhorse.
 	work(PAYMENTS, "manage_workhorse_queue", "delete", spoke);
+	work(DOCS, "delegate_to_workhorse", null, spoke, "pending");
+	work(DOCS, "delegate_to_workhorse", null, spoke, "not_delivered");
 	started("idle", null);
 
 	const shownIn = (checkout: string) =>
@@ -99,6 +109,7 @@ test("a session remembers where its newest coordinator turns show only", () => {
 		record({
 			operation: "steer_workhorse",
 			queueOperation: null,
+			outcome: "delivered",
 			correlation: { coordinatorTurnId },
 		} as never);
 	}
