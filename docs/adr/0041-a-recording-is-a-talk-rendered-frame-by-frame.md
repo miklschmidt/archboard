@@ -83,8 +83,9 @@ Five parts of ADR 0035 stand:
   - The voice stops.
 
 - A recording start differs from a narration start in four ways:
-  - The voice model gets narrator instructions of its own, and neither the
-    voice's persona nor the conversation rules (TASK-478.02).
+  - The voice model gets the voice's persona with a recording section, and
+    none of the conversation rules. The section turns the humour down by a
+    quarter (TASK-478.02).
   - The coordinator writes only quiet commentary.
   - The Realtime API's delegation filler is off.
   - The server opens no step itself.

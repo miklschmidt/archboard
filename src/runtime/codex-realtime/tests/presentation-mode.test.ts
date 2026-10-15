@@ -70,13 +70,16 @@ test("a narration or recording start names the walkthrough to the voice model an
 		const [plain] = ordinary.session.starts;
 		const base = plain?.prompt ?? "\0";
 		expect(plain?.prompt).not.toContain("For the board");
-		// A narration adds to the ordinary prompt, persona included. A recording gets narrator
-		// instructions of its own: no paragraph of the persona or the conversation, since nobody is
-		// there to talk to and a reviewer hears it once (TASK-478.02).
+		// A narration adds to the ordinary prompt. A recording keeps who the voice is, the
+		// ordinary prompt's leading paragraphs, and none of how it converses, since nobody is there
+		// to talk to (TASK-352, TASK-478.02).
 		expect(presented?.prompt?.startsWith(base)).toBe(true);
+		const live = paragraphs(base);
 		const recordedParagraphs = new Set(paragraphs(recorded?.prompt));
-		expect(recordedParagraphs.size).toBeGreaterThan(0);
-		expect(paragraphs(base).filter((one) => recordedParagraphs.has(one))).toEqual([]);
+		const kept = live.filter((one) => recordedParagraphs.has(one));
+		expect(kept.length).toBeGreaterThan(0);
+		expect(kept.length).toBeLessThan(live.length);
+		expect(kept).toEqual(live.slice(0, kept.length));
 		for (const start of [presented, recorded]) {
 			expect(start?.prompt).toContain("For the board");
 			// The session opens with nothing said as the user: the first step is handed over by
