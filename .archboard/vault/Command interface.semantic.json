@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 81,
+	"version": 83,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-15T08:13:28.181Z",
+	"updatedAt": "2026-10-15T08:29:03.943Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -21373,7 +21373,7 @@
 		{
 			"id": "6BYrHjuX",
 			"name": "TASK-472.10",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "qzAh1L27",
 			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
@@ -22942,9 +22942,9 @@
 		{
 			"id": "8CbpQfsv",
 			"name": "TASK-472.09",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "6BYrHjuX",
-			"summary": "A set ARCHBOARD_VAULT is refused; install-skill writes no setup block",
+			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -23134,7 +23134,7 @@
 						"name": "Panes",
 						"kind": "module",
 						"responsibility": "browser: the live session, its panes with the repository and checkout of each, and pointing one at a board, which makes the caller's checkout the chosen one",
-						"description": "browser show from a known checkout that is not the chosen one of its repository makes it the chosen one for the whole machine, and its answer's chose names the checkout it replaced. browser panes reports each pane's vault, repository and checkout, and own: whether the pane shows the vault a command run here finds. It finds that vault without refusing or registering, so it still needs no vault.",
+						"description": "browser show from a known checkout that is not the chosen one of its repository makes it the chosen one for the whole machine, and its answer's chose names the checkout it replaced. browser panes reports each pane's vault, repository and checkout, and own: whether the pane shows the vault a command run here finds. The checkout of a pane or of a shown board is always the directory that holds its vault: the checkout root, or the holder of an untracked vault. It finds that vault without refusing or registering, so it still needs no vault.",
 						"parent": "bLpk2XKU",
 						"groups": [
 							"panes"
@@ -23286,7 +23286,7 @@
 						"name": "Install skill",
 						"kind": "module",
 						"responsibility": "install-skill: copies the bundled skills into a skills root and makes this repository's vault, writing nothing into its CLAUDE.md or AGENTS.md",
-						"description": "TASK-471.03. A command finds the vault from the repository it runs in (ADR 0049), so nothing about it is written down. The receipt's setup names the repository, its vault, whether the vault was made, whether git ignores it and the documents an earlier block was removed from. --vault, --doc and --yes are gone, and --no-setup, once --no-doc, leaves the repository alone.",
+						"description": "TASK-471.03. A command finds the vault from the repository it runs in (ADR 0049), so nothing about it is written down. --repo, else the working directory, names a directory, and the vault is made at the root of the git checkout that holds it, where a command run anywhere in the checkout finds it. The receipt's setup names the repository, its vault, whether the vault was made, whether git ignores it and the documents an earlier block was removed from. --vault, --doc and --yes are gone, and --no-setup, once --no-doc, leaves the repository alone.",
 						"parent": "bLpk2XKU",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -23474,7 +23474,8 @@
 						"order": 39000,
 						"name": "Repository setup",
 						"kind": "function",
-						"responsibility": "Makes the repository's .archboard/vault when it has none, and takes the block an earlier version wrote out of CLAUDE.md and AGENTS.md, changing nothing else in the file",
+						"responsibility": "Makes the .archboard/vault of the git checkout that holds the directory when it has none, and takes the block an earlier version wrote out of CLAUDE.md and AGENTS.md, changing nothing else in the file",
+						"description": "Only a begin marker and an end marker that each stand on a line of their own bound a block, across CRLF line endings and never past another begin marker. A marker quoted inside a line is prose and stays, and so does a begin marker whose end marker is gone.",
 						"parent": "bLpk2XKU",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -24564,7 +24565,7 @@
 			}
 		}
 	],
-	"current": "6BYrHjuX",
+	"current": "8CbpQfsv",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -24661,6 +24662,12 @@
 			"from": "qzAh1L27",
 			"at": "2026-10-15T07:38:48.706Z",
 			"reason": "A command whose environment sets ARCHBOARD_URL hands off to no checkout, so a Codex thread in another archboard checkout runs the server's own source"
+		},
+		{
+			"variant": "8CbpQfsv",
+			"from": "6BYrHjuX",
+			"at": "2026-10-15T08:29:03.943Z",
+			"reason": "A set ARCHBOARD_VAULT is refused with the other removed variables, and install-skill makes the vault at the root of the git checkout and writes no setup block into CLAUDE.md or AGENTS.md (TASK-471.03)"
 		}
 	],
 	"shelvings": [

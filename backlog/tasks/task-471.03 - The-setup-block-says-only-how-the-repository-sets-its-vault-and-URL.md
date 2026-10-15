@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 14:40'
-updated_date: '2026-10-15 07:38'
+updated_date: '2026-10-15 08:31'
 labels: []
 dependencies:
   - TASK-472.09
@@ -39,4 +39,6 @@ The block that `install-skill` writes into a repository's CLAUDE.md or AGENTS.md
 
 <!-- SECTION:NOTES:BEGIN -->
 Decisions: install-skill options --vault, --doc and --yes are removed (the vault is always <repo>/.archboard/vault and nothing is asked or written into a document), --no-doc is --no-setup. The receipt's setup is {repo, vault, vaultCreated, vaultIgnored, removedBlocks}; removedBlocks lists the CLAUDE.md/AGENTS.md files a block was cut from, and a diagnostic line per file says so. Removal deletes the markers, what is between them and the newline after the end marker; every other byte stays, and only CLAUDE.md and AGENTS.md at the repository root are looked at. The guard for the archboard checkout itself is gone (nothing is written there now). The skill-evaluation harness installs with --repo only and no longer reads or records the block. Left for TASK-471.02: resolveInvocation in skill-destination.ts has no caller now; 471.02's PATH warning will use it.
+
+Board closing: Skill evaluation@TASK-471.03 corrected (summary is the board's scope; Skill install description says the run's vault is the .archboard/vault the checkout already holds) and adopted. The install-skill parts of this task are on Command interface@TASK-472.09 (Install skill: vault made at the root of the git checkout that holds --repo or the working directory, checkoutRootOf in repo-setup.ts; Repository setup: line-anchored block removal, CRLF safe, never past another begin marker), adopted with that task. Code check with and without --variant TASK-471.03: no difference. Footprint on Skill evaluation read against base f57fab66c (parent of the first code commit 10f827af3): Skill install named and changed; Evaluation harness (container) changed only by install.ts, which is named; Evaluation inputs (evals) changed only by wording in evals/README.md, so the board stays true. skill-destination.ts (resolveAgent return type, 10f827af3) and the withoutOldBlock re-export from install-skill.ts (4ca78b0ff) changed how Commands works inside, not what it draws.
 <!-- SECTION:NOTES:END -->
