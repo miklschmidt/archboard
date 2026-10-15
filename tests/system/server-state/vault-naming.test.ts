@@ -111,6 +111,16 @@ describe.serial("every call names its vault", () => {
 			primary: true,
 		});
 		resources.defer(() => paneB.close());
+		// A pane belongs to the vault its socket named: it cannot report a board of another.
+		const crossed = await inB<{ code: string }>("/api/panes", {
+			method: "POST",
+			doing: false,
+			body: { ...paneA.registration, board: "payments" },
+		});
+		expect({ status: crossed.status, code: crossed.body.code }).toEqual({
+			status: 409,
+			code: "VAULT_MISMATCH",
+		});
 		const startA = paneA.mark();
 		const startB = paneB.mark();
 
