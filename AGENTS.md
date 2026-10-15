@@ -69,10 +69,11 @@ rules that will not stop you:
   (400). A vault the server cannot read is refused with `VAULT_UNREADABLE` (404),
   and nothing is created. There is no default vault. The server's process memory
   is keyed by vault and board together (`boardMemoryKey`): claims, revocations,
-  announced lock state, doing lines, agent activity, the change feed and the
-  disk watch. News of a write goes only to the panes of that vault. The CLI
-  names `ARCHBOARD_VAULT` on every call. The browser learns the one vault the
-  server reports at `/api/served-vault` and names it on every call. The server
+  announced lock state, doing lines, agent activity and the disk watch. Each
+  change on the change feed and each remembered code finding names its vault.
+  News of a write goes only to the panes of that vault. The CLI names
+  `ARCHBOARD_VAULT` on every call. The browser learns the one vault the server
+  reports at `/api/served-vault` and names it on every call. The server
   still starts with `ARCHBOARD_VAULT` for the Codex workbench, which stays bound
   to that vault until TASK-472.10.
 - **One writer at a time per board** (ADR 0016), a lease file taken by one
