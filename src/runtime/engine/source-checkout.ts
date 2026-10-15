@@ -150,6 +150,16 @@ async function handOff(argv: readonly string[]): Promise<number | null> {
 	if (target === null) {
 		return null;
 	}
+	// Every checkout installs its own packages (TESTING.md). Bun would otherwise
+	// fail on the first import, with a message that names no checkout.
+	const root = path.dirname(path.dirname(target));
+	if (!fs.existsSync(path.join(root, "node_modules"))) {
+		process.stderr.write(
+			`Error: archboard runs the source of ${root}, the archboard checkout you are in, ` +
+				`and that checkout has no node_modules. Run \`bun install\` in ${root}, then run the command again.\n`,
+		);
+		return 1;
+	}
 	return runInstead(target, argv);
 }
 

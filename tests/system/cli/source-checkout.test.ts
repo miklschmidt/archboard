@@ -72,13 +72,18 @@ async function archboard(
  * Make a stand-in archboard checkout below the scratch directory.
  * @param name Its directory name.
  * @param script What its `bin/archboard` runs, a bash script.
+ * @param options What it holds.
+ * @param options.packages Whether it has a node_modules for its source.
  * @returns Its root.
  */
-function standIn(name: string, script: string): string {
+function standIn(name: string, script: string, { packages = true } = {}): string {
 	const root = join(scratch, name);
 	mkdirSync(join(root, ".git"), { recursive: true });
 	mkdirSync(join(root, "bin"));
 	mkdirSync(join(root, "docs"));
+	if (packages) {
+		mkdirSync(join(root, "node_modules"));
+	}
 	writeFileSync(join(root, "package.json"), JSON.stringify({ name: "archboard" }));
 	const bin = join(root, "bin", "archboard");
 	writeFileSync(bin, `#!/usr/bin/env bash\n${script}`);
@@ -133,6 +138,17 @@ test("a signal sent to the command reaches the bin/archboard it handed off to", 
 
 	expect(await child.exited).toBe(143);
 	expect(readFileSync(mark, "utf8")).toBe("TERM\n");
+});
+
+test("a checkout without its packages is refused with what to run", async () => {
+	const standing = standIn("unpackaged", "exit 0\n", { packages: false });
+
+	const ran = await archboard(["status"], standing);
+
+	expect(ran.status).toBe(1);
+	expect(ran.stdout).toBe("");
+	expect(ran.stderr).toContain(standing);
+	expect(ran.stderr).toContain("bun install");
 });
 
 test("a command that finds a server of another checkout's source refuses and names both checkouts", async () => {
