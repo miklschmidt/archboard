@@ -228,8 +228,9 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 	};
 
 	/**
-	 * Whether the pane's link still stands after a command that did not change
-	 * it. A link that moved under a command makes its outcome unknown.
+	 * Whether the link a command ran on still stands after a command that did not change
+	 * it. A link that moved under a command makes its outcome unknown; the tab showing another
+	 * checkout's conversation meanwhile does not, since the command's workhorse is the same.
 	 * @param state The connection.
 	 * @param command The command.
 	 * @param record The lease it ran under.
@@ -244,7 +245,7 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 			return true;
 		}
 		try {
-			leases.of(state.tabSessionId).ensureLeaseBinding(state, record);
+			leases.of(state.tabSessionId).ensureLinkStands(state, record);
 			return true;
 		} catch (error) {
 			if (error instanceof CodexWorkbenchGatewayError && error.code === "link_changed") {
