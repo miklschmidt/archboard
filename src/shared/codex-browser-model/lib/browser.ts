@@ -169,6 +169,8 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 			voiceContext: voice.BrowserVoiceContextSchema.nullable().optional(),
 			/** The voice coordinator's own turns (TASK-319); absent from a server that predates them. */
 			coordinatorTimeline: thread.BrowserTimelineSchema.nullable().optional(),
+			/** The tab session's workhorses and the shown one (TASK-472.11); absent from a server that predates them. */
+			workhorses: session.BrowserWorkhorsesSchema.optional(),
 			lease: commands.BrowserCommandLeaseSchema.nullable(),
 			operation: commands.BrowserOperationOutcomeSchema.nullable(),
 		})
@@ -211,6 +213,7 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 		BrowserTimelineSchema: thread.BrowserTimelineSchema,
 		BrowserQueueSchema: thread.BrowserQueueSchema,
 		BrowserSettingsSchema: session.BrowserSettingsSchema,
+		BrowserWorkhorsesSchema: session.BrowserWorkhorsesSchema,
 		BrowserApprovalSchema,
 		BrowserTextCommandSchema: commands.BrowserTextCommandSchema,
 		BrowserSemanticDeliverySchema: voice.BrowserSemanticDeliverySchema,
@@ -238,6 +241,7 @@ type BrowserThreadLink = z.infer<BrowserSchemas["BrowserThreadLinkSchema"]>;
 type BrowserTimeline = z.infer<BrowserSchemas["BrowserTimelineSchema"]>;
 type BrowserQueue = z.infer<BrowserSchemas["BrowserQueueSchema"]>;
 type BrowserSettings = z.infer<BrowserSchemas["BrowserSettingsSchema"]>;
+type BrowserWorkhorses = z.infer<BrowserSchemas["BrowserWorkhorsesSchema"]>;
 type BrowserApproval = z.infer<BrowserSchemas["BrowserApprovalSchema"]>;
 type BrowserTextCommand = z.infer<BrowserSchemas["BrowserTextCommandSchema"]>;
 type BrowserSemanticDelivery = z.infer<BrowserSchemas["BrowserSemanticDeliverySchema"]>;
@@ -278,6 +282,7 @@ export {
 	type BrowserTimeline,
 	type BrowserQueue,
 	type BrowserSettings,
+	type BrowserWorkhorses,
 	type BrowserApproval,
 	type BrowserTextCommand,
 	type BrowserSemanticDelivery,

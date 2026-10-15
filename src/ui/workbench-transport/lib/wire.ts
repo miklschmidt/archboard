@@ -279,6 +279,7 @@ const DELTA_PARSERS: DeltaParsers = {
 	spokenApproval: parserFor(browserModel.BrowserSpokenApprovalSchema),
 	voiceContext: parserFor(browserModel.BrowserVoiceContextSchema.nullable()),
 	coordinatorTimeline: parserFor(browserModel.BrowserTimelineSchema.nullable()),
+	workhorses: parserFor(browserModel.BrowserWorkhorsesSchema),
 	lease: parserFor(browserModel.BrowserCommandLeaseSchema.nullable()),
 	operation: parserFor(browserModel.BrowserOperationOutcomeSchema.nullable()),
 };
