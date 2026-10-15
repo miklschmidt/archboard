@@ -308,6 +308,9 @@ has these steps:
   `vaultOfRequest`. Server memory about a board is keyed with `boardMemoryKey`
   (vault and board together), never by the board name alone. The system test
   requesters add `?vault=` for you, and `openObservedPane` takes a `vault`.
+  A system test makes its vault with `vaultIn(<dir>)` and runs a command in
+  that directory. It never sets `ARCHBOARD_VAULT`. The "Isolated servers and
+  vaults" section of `docs/agents/test-suite.md` has the rules.
 - An optional field is a promise to every reader of its object. Adding one means
   finding every path that reads the object and making each honour it: a
   binding's `branch` and `commit` were accepted and stored while the local
@@ -367,8 +370,9 @@ only at this point: nothing states a version that nobody re-read.
    where it no longer holds. A measurement names the version that it was measured on.
    Done: the grep finds only history.
 6. Run the gate as `.claude/rules/agent-work.md` describes. Then smoke a signed-in server.
-   Start one on a free port against a scratch copy of `examples/web-shop`. Use the default
-   state directory, so that the server uses the Archboard Codex sign-in of the machine.
+   Start one on a free port, and copy `examples/web-shop` to `<scratch>/.archboard/vault`.
+   Name the scratch directory with `-C <scratch>` on each command that uses a vault. Use the
+   default state directory, so that the server uses the Archboard Codex sign-in of the machine.
    If the workbench of a server is not ready, the server exits with "The production Codex
    workbench did not become ready". Open the server in a browser and send one message.
    The first message starts the coordinator and then the workhorse. A server that found
