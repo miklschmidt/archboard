@@ -7,7 +7,12 @@ import type { AnsweredVault, RegisteredVault } from "@/cli/command-contract/sche
 import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
 import { declareIfUnknown, type Declared } from "@/runtime/engine/repo-registry";
 import { setRequestedVault } from "@/runtime/engine/server-client";
-import { findVault, type FoundVault, type VaultNotFound } from "@/runtime/engine/vault-finder";
+import {
+	findVault,
+	type FoundVault,
+	type VaultNotFound,
+	type VaultSearch,
+} from "@/runtime/engine/vault-finder";
 
 /** A command found no vault; nothing was started and nothing was written. */
 class VaultNotFoundError extends Error {
@@ -83,7 +88,7 @@ async function register(found: FoundVault): Promise<RegisteredVault | undefined>
  * @throws {VaultNotFoundError} When there is no vault to address.
  */
 async function addressVault(directory: string | null): Promise<AnsweredVault> {
-	const vault = await foundAndRegistered(directory, ARCHBOARD_VAULT);
+	const vault = await foundAndRegistered({ directory, environment: ARCHBOARD_VAULT });
 	setRequestedVault(vault.path);
 	return vault;
 }
@@ -94,25 +99,23 @@ async function addressVault(directory: string | null): Promise<AnsweredVault> {
  * know it: the vault a board moves to, for instance. Every server call still
  * names the vault this invocation addresses.
  * @param directory - The directory, relative to the working directory or absolute.
+ * @param option - The option that named it, which a refusal names back, such as `--to`.
  * @returns The vault, as an answer names it.
  * @throws {VaultNotFoundError} When the directory has no vault.
  */
-async function findVaultOf(directory: string): Promise<AnsweredVault> {
-	return foundAndRegistered(directory, undefined);
+async function findVaultOf(directory: string, option: string): Promise<AnsweredVault> {
+	return foundAndRegistered({ directory, environment: undefined, option });
 }
 
 /**
  * Find a vault, and register what holds it when the registry does not know it.
- * @param directory - What `-C` named, or null when it was not given.
- * @param environment - The vault the environment names, or undefined.
+ * @param search - What named the directory, or null when nothing did, and the
+ *   vault the environment names, or undefined.
  * @returns The vault and how it was found, as the answer names it.
  * @throws {VaultNotFoundError} When there is no vault to address.
  */
-async function foundAndRegistered(
-	directory: string | null,
-	environment: string | undefined,
-): Promise<AnsweredVault> {
-	const finding = await findVault({ directory, environment, cwd: process.cwd() });
+async function foundAndRegistered(search: Omit<VaultSearch, "cwd">): Promise<AnsweredVault> {
+	const finding = await findVault({ ...search, cwd: process.cwd() });
 	if (!finding.ok) {
 		throw new VaultNotFoundError(finding.message);
 	}
