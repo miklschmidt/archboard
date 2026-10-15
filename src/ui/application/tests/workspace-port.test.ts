@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { initialPaneList } from "@/ui/application/pane-list";
 import { initialPaneRecord } from "@/ui/application/pane-records";
 import { createWorkspacePort, type WorkspacePortDeps } from "@/ui/application/workspace-port";
+import type { ShellNotice } from "@/ui/shell";
 
 // The address names a repository (ADR 0050), and the port turns that name into
 // the vault a show is sent to. A name the page does not list with a vault opens
@@ -62,13 +63,24 @@ function placedPane(): WorkspacePortDeps["panes"] {
 /**
  * The port over that pane, with a repository list and a server that records each show.
  * @param vaultOf The repositories as the page has read them, or null before it has.
- * @returns The port and the vaults each show was sent to.
+ * @returns The port, the vaults each show was sent to, and the notices it raised.
  */
 function portOver(vaultOf: ((repository: string) => string | null) | null) {
 	const shownIn: string[] = [];
+	const raised: ShellNotice[] = [];
 	const port = createWorkspacePort({
 		panes: placedPane(),
-		notices: { notices: [], raise: unrelated, dismiss: unrelated },
+		notices: {
+			notices: [],
+			/**
+			 * Record a notice the port raised.
+			 * @param notice The notice.
+			 */
+			raise: (notice: ShellNotice) => {
+				raised.push(notice);
+			},
+			dismiss: unrelated,
+		},
 		vaultOf,
 		/**
 		 * Record a show the port sent.
@@ -82,7 +94,7 @@ function portOver(vaultOf: ((repository: string) => string | null) | null) {
 			return { boardKey, repository: null };
 		},
 	});
-	return { port, shownIn };
+	return { port, shownIn, raised };
 }
 
 /**
@@ -104,4 +116,19 @@ test("a repository the page does not list with a vault is unreachable, and nothi
 		kind: "unreachable",
 	});
 	expect(shownIn).toEqual([]);
+});
+
+test("a board the address asked of a repository with no vault is reported by its repository", () => {
+	const { port, raised } = portOver(listed);
+	port.reportUnreachable([
+		{ boardKey: "ledger", repository: "github.com/acme/elsewhere" },
+		{ boardKey: "audit", repository: "github.com/acme/elsewhere" },
+		{ boardKey: "nowhere", repository: null },
+	]);
+	expect(raised.map((notice) => notice.id)).toEqual([
+		"unreachable-repository:github.com/acme/elsewhere",
+		"unreachable-boards",
+	]);
+	expect(raised[0]?.title).toContain("github.com/acme/elsewhere");
+	expect(raised[1]?.title).toContain("nowhere");
 });

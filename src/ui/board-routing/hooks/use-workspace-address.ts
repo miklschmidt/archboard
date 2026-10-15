@@ -191,8 +191,8 @@ function finishOperation(state: Reconciliation, operation: Operation): void {
  * @returns The restore.
  */
 function restoreAnswered(restore: Restore, target: number, operation: Operation): Restore {
-	if (operation.answer === "unreachable" && operation.boardKey !== null) {
-		return boardUnreachable(restore, target, operation.boardKey);
+	if (operation.answer === "unreachable" && operation.asked !== null) {
+		return boardUnreachable(restore, target, operation.asked);
 	}
 	return operation.openedKey === null
 		? restore
@@ -275,7 +275,7 @@ function commandsOver(state: Reconciliation) {
 			const operation = startOperation(
 				{ kind: "restore", target: state.restore.target },
 				paneId,
-				boardKey,
+				{ boardKey, repository },
 				state.displayed,
 			);
 			state.operation = operation;

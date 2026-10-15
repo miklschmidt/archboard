@@ -27,7 +27,7 @@ import {
 	type AddressPlan,
 	type WorkspaceAddress,
 } from "@/ui/board-routing/address";
-import type { WorkspacePort } from "@/ui/board-routing/contracts";
+import type { AskedBoard, WorkspacePort } from "@/ui/board-routing/contracts";
 
 /** One thing a restore does next. */
 type RestoreStep =
@@ -51,7 +51,7 @@ interface Restore {
 	/** The steps applied for this target. */
 	readonly attempted: Set<string>;
 	/** The boards this target asked for and could not reach. */
-	readonly unreachable: readonly string[];
+	readonly unreachable: readonly AskedBoard[];
 	/** Whether this target has settled. */
 	readonly done: boolean;
 }
@@ -99,12 +99,12 @@ function abandonRestore(restore: Restore): Restore {
  * the person is now, so it is not recorded.
  * @param restore The restore.
  * @param target The target that asked.
- * @param boardKey The board that could not be reached.
+ * @param asked The board that could not be reached, and the repository the address named.
  * @returns The restore, with that board named when it is still this target's.
  */
-function boardUnreachable(restore: Restore, target: number, boardKey: string): Restore {
+function boardUnreachable(restore: Restore, target: number, asked: AskedBoard): Restore {
 	return target === restore.target
-		? { ...restore, unreachable: [...restore.unreachable, boardKey] }
+		? { ...restore, unreachable: [...restore.unreachable, asked] }
 		: restore;
 }
 

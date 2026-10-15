@@ -17,7 +17,7 @@
 // between them has moved.
 
 import { boardIn, repositoryIn, type WorkspaceAddress } from "@/ui/board-routing/address";
-import type { OpenedBoard } from "@/ui/board-routing/contracts";
+import type { AskedBoard, OpenedBoard } from "@/ui/board-routing/contracts";
 import type { NavigationIntent } from "@/ui/board-routing/intent";
 
 /** Who asked for an operation. */
@@ -31,7 +31,7 @@ interface Operation {
 	readonly operator: Operator;
 	readonly paneId: string;
 	/** The board a restore asked for, so one it cannot reach can be named. */
-	readonly boardKey: string | null;
+	readonly asked: AskedBoard | null;
 	/** What that pane was showing when it was asked, so its move is observable. */
 	readonly from: string | null;
 	/** The repository of that board, when it was asked. */
@@ -58,7 +58,7 @@ interface Operation {
  * Begin an operation.
  * @param operator Who asked.
  * @param paneId The pane to move.
- * @param boardKey The board it is being pointed at.
+ * @param asked The board it is being pointed at, when a restore asked for one.
  * @param displayed What is on screen, for what that pane shows now.
  * @param intent What the user asked for, when this is theirs.
  * @returns The operation.
@@ -66,14 +66,14 @@ interface Operation {
 function startOperation(
 	operator: Operator,
 	paneId: string,
-	boardKey: string | null,
+	asked: AskedBoard | null,
 	displayed: WorkspaceAddress,
 	intent: NavigationIntent | null = null,
 ): Operation {
 	return {
 		operator,
 		paneId,
-		boardKey,
+		asked,
 		from: boardIn(displayed, paneId),
 		fromRepository: repositoryIn(displayed, paneId),
 		answer: null,
