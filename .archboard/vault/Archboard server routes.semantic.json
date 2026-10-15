@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 31,
+	"version": 33,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-15T04:08:51.843Z",
+	"updatedAt": "2026-10-15T05:02:49.470Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -7348,6 +7348,1339 @@
 						"to": "3ld7pYE2",
 						"kind": "http",
 						"label": "health: is this the Archboard server",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/service-routes.ts",
+							"symbol": "healthRoute"
+						}
+					},
+					{
+						"id": "5j3tGRoW",
+						"order": 13000,
+						"from": "wQ63dmRZ",
+						"to": "kFQJkivd",
+						"kind": "http",
+						"label": "rename a board or a variant",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "renameRoute"
+						}
+					},
+					{
+						"id": "z4OClFMn",
+						"order": 14000,
+						"from": "wQ63dmRZ",
+						"to": "GXtY3Xsd",
+						"kind": "http",
+						"label": "discard a recorded board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts",
+							"symbol": "discardRoute"
+						}
+					},
+					{
+						"id": "TpA1RJLU",
+						"order": 15000,
+						"from": "kFQJkivd",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "rename under the board's lease",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "writeSemanticBoard"
+						}
+					},
+					{
+						"id": "hIT2B3b7",
+						"order": 16000,
+						"from": "kFQJkivd",
+						"to": "iwrhchml",
+						"kind": "call",
+						"label": "the write envelope and answer",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "statedWrite"
+						}
+					},
+					{
+						"id": "GluCUThW",
+						"order": 17000,
+						"from": "kFQJkivd",
+						"to": "S3kIYHon",
+						"kind": "call",
+						"label": "point its panes at the new name",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "sendToPane"
+						}
+					},
+					{
+						"id": "HAEts0QI",
+						"order": 18000,
+						"from": "kFQJkivd",
+						"to": "kHACcD1X",
+						"kind": "call",
+						"label": "carry the claim to the new name",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "claimBoard"
+						}
+					},
+					{
+						"id": "VuqFhb4g",
+						"order": 19000,
+						"from": "GXtY3Xsd",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "discard under the board's lease",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts",
+							"symbol": "discardSemanticBoard"
+						}
+					},
+					{
+						"id": "C0qksVg8",
+						"order": 20000,
+						"from": "GXtY3Xsd",
+						"to": "iwrhchml",
+						"kind": "call",
+						"label": "the write envelope and refusal",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts",
+							"symbol": "answerRefusal"
+						}
+					},
+					{
+						"id": "4XnSzjXx",
+						"order": 21000,
+						"from": "GXtY3Xsd",
+						"to": "S3kIYHon",
+						"kind": "event",
+						"label": "the board is gone",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts",
+							"symbol": "broadcast"
+						}
+					},
+					{
+						"id": "pGjd62O0",
+						"order": 22000,
+						"from": "iwrhchml",
+						"to": "S3kIYHon",
+						"kind": "call",
+						"label": "what the writer said it was doing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"symbol": "announceDoing"
+						}
+					},
+					{
+						"id": "trvs8oQv",
+						"order": 23000,
+						"from": "wQ63dmRZ",
+						"to": "3bPZg9a5",
+						"kind": "http",
+						"label": "check --code",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "answerCodeCheck"
+						}
+					},
+					{
+						"id": "WPeZchzr",
+						"order": 24000,
+						"from": "3bPZg9a5",
+						"to": "radK8osF",
+						"kind": "call",
+						"label": "how far each board is behind",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "createBehindReading"
+						}
+					},
+					{
+						"id": "Ay6WqVtR",
+						"order": 25000,
+						"from": "wQ63dmRZ",
+						"to": "k9h1zv1s",
+						"kind": "http",
+						"label": "semantic locality",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts",
+							"symbol": "answerLocality"
+						}
+					},
+					{
+						"id": "OpcD3JsV",
+						"order": 26000,
+						"from": "k9h1zv1s",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "the board and its variant",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "IndUemKN",
+						"order": 27000,
+						"from": "k9h1zv1s",
+						"to": "radK8osF",
+						"kind": "call",
+						"label": "the hotspots of the variant over a period",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts",
+							"symbol": "createLocalityReading"
+						}
+					},
+					{
+						"id": "FgzRwXWp",
+						"order": 28000,
+						"from": "wQ63dmRZ",
+						"to": "Z57AabPn",
+						"kind": "http",
+						"label": "semantic footprint",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/footprint-route.ts",
+							"symbol": "answerFootprint"
+						}
+					},
+					{
+						"id": "3PjkOHSv",
+						"order": 29000,
+						"from": "Z57AabPn",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "the board and its proposal",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/footprint-route.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "9dxhTOHc",
+						"order": 30000,
+						"from": "Z57AabPn",
+						"to": "radK8osF",
+						"kind": "call",
+						"label": "the commits of a branch, mapped onto parts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/footprint-route.ts",
+							"symbol": "readFootprint"
+						}
+					},
+					{
+						"id": "9g0Uli0a",
+						"order": 31000,
+						"from": "3bPZg9a5",
+						"to": "5SMX69gS",
+						"kind": "call",
+						"label": "the boards to read, then their findings",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "checkCode"
+						}
+					},
+					{
+						"id": "T6lWsdFm",
+						"order": 32000,
+						"from": "3bPZg9a5",
+						"to": "yYQ3AHkf",
+						"kind": "call",
+						"label": "keep what a finished pass found",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "createCodeFindingsMemory"
+						}
+					},
+					{
+						"id": "poDLrJ2M",
+						"order": 33000,
+						"from": "sVYH3JhL",
+						"to": "3bPZg9a5",
+						"kind": "http",
+						"label": "what the last code pass found",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "mountCodeCheckRoute"
+						}
+					},
+					{
+						"id": "bXoqKhzO",
+						"order": 34000,
+						"from": "sVYH3JhL",
+						"to": "TW3uG9Uh",
+						"kind": "http",
+						"label": "take the board back",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts",
+							"symbol": "takeBackRoute"
+						}
+					},
+					{
+						"id": "5khoDp0e",
+						"order": 35000,
+						"from": "sVYH3JhL",
+						"to": "k9h1zv1s",
+						"kind": "http",
+						"label": "the hotspots of the shown variant",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts",
+							"symbol": "answerLocality"
+						}
+					},
+					{
+						"id": "tw3GPstl",
+						"order": 36000,
+						"from": "GXtY3Xsd",
+						"to": "S3kIYHon",
+						"kind": "call",
+						"label": "what the discarder said it was doing",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts",
+							"symbol": "announceDoing"
+						}
+					},
+					{
+						"id": "59jbxyYa",
+						"order": 37000,
+						"from": "kFQJkivd",
+						"to": "3LoKNA2g",
+						"kind": "call",
+						"label": "the moved pane's focus, for its agent",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "publishPaneContext"
+						}
+					},
+					{
+						"id": "YDToFZl3",
+						"order": 38000,
+						"from": "TW3uG9Uh",
+						"to": "S3kIYHon",
+						"kind": "call",
+						"label": "the board family of the pane's address",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts",
+							"symbol": "aggregateOf"
+						}
+					},
+					{
+						"id": "D62cZNEq",
+						"order": 39000,
+						"from": "3ld7pYE2",
+						"to": "8vCjLQ0W",
+						"kind": "call",
+						"label": "the phase it is in",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/service-routes.ts",
+							"symbol": "serverPhase"
+						}
+					},
+					{
+						"id": "wzL4gP8d",
+						"order": 41000,
+						"from": "3ld7pYE2",
+						"to": "S3kIYHon",
+						"kind": "call",
+						"label": "how many sockets",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/service-routes.ts",
+							"symbol": "clients"
+						}
+					},
+					{
+						"id": "Dk5UKVkb",
+						"order": 42000,
+						"from": "bB2IRV9I",
+						"to": "kHACcD1X",
+						"kind": "call",
+						"label": "hold the board for each write",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/write.ts",
+							"symbol": "withBoardLock"
+						}
+					},
+					{
+						"id": "3hokVf0H",
+						"order": 43000,
+						"from": "5SMX69gS",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "every board at its variant, and the relationship kinds",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/code-check/lib/boards.ts",
+							"symbol": "readSemanticBoardAt"
+						}
+					},
+					{
+						"id": "FqPWGmDd",
+						"order": 44000,
+						"from": "radK8osF",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "decodes historical board bytes without writes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/history-lens/lib/last-change.ts",
+							"symbol": "decodeSemanticBoardDocument"
+						}
+					},
+					{
+						"id": "OpAf66WU",
+						"order": 45000,
+						"from": "r6IpmadI",
+						"to": "iwrhchml",
+						"kind": "dependency",
+						"label": "mounts",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "editRoute"
+						}
+					},
+					{
+						"id": "yweNampu",
+						"order": 46000,
+						"from": "r6IpmadI",
+						"to": "kFQJkivd",
+						"kind": "dependency",
+						"label": "mounts",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "renameRoute"
+						}
+					},
+					{
+						"id": "NU8PzC2x",
+						"order": 47000,
+						"from": "r6IpmadI",
+						"to": "GXtY3Xsd",
+						"kind": "dependency",
+						"label": "mounts",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "discardRoute"
+						}
+					},
+					{
+						"id": "mlX2qRub",
+						"order": 48000,
+						"from": "r6IpmadI",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "requires a vault",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Q6obhUnE",
+						"order": 49000,
+						"from": "iwrhchml",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "requires a vault",
+						"emphasis": "normal"
+					},
+					{
+						"id": "tMJduLTB",
+						"order": 50000,
+						"from": "TW3uG9Uh",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "requires a vault",
+						"emphasis": "normal"
+					},
+					{
+						"id": "nQhWWvFA",
+						"order": 52000,
+						"from": "GXtY3Xsd",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "requires a vault",
+						"emphasis": "normal"
+					},
+					{
+						"id": "hYCgIdBo",
+						"order": 53000,
+						"from": "3bPZg9a5",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "requires a vault",
+						"emphasis": "normal"
+					},
+					{
+						"id": "PCWk4dD9",
+						"order": 54000,
+						"from": "k9h1zv1s",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "requires a vault",
+						"emphasis": "normal"
+					},
+					{
+						"id": "VLxmcHk5",
+						"order": 55000,
+						"from": "Z57AabPn",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "requires a vault",
+						"emphasis": "normal"
+					},
+					{
+						"id": "8CZtCKx4",
+						"order": 56000,
+						"from": "r6IpmadI",
+						"to": "QNCwmrh5",
+						"kind": "call",
+						"label": "the vault's own repository identity, for the listing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "vaultIdentity"
+						}
+					},
+					{
+						"id": "ThwotCTt",
+						"order": 57000,
+						"from": "bB2IRV9I",
+						"to": "QNCwmrh5",
+						"kind": "call",
+						"label": "the checkout of a repository a link or a binding names",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/drill-down.ts",
+							"symbol": "checkoutsReadFrom"
+						}
+					},
+					{
+						"id": "dCeje2WJ",
+						"order": 58000,
+						"from": "sVYH3JhL",
+						"to": "FHvFFjFn",
+						"kind": "http",
+						"label": "the repositories to list",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/repository-routes.ts",
+							"symbol": "repositoriesRoute"
+						}
+					},
+					{
+						"id": "kdyz93y5",
+						"order": 59000,
+						"from": "sVYH3JhL",
+						"to": "FHvFFjFn",
+						"kind": "http",
+						"label": "choose a repository's checkout",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/repository-routes.ts",
+							"symbol": "chooseCheckoutRoute"
+						}
+					},
+					{
+						"id": "HbR02k8Z",
+						"order": 60000,
+						"from": "FHvFFjFn",
+						"to": "KLt72lWa",
+						"kind": "call",
+						"label": "list the repositories",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/repository-routes.ts",
+							"symbol": "listRepositories"
+						}
+					},
+					{
+						"id": "yqfoZW5w",
+						"order": 61000,
+						"from": "FHvFFjFn",
+						"to": "nLp2hILd",
+						"kind": "call",
+						"label": "is it a known checkout, then choose it",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/repository-routes.ts",
+							"symbol": "declareDirectory"
+						}
+					},
+					{
+						"id": "SvY26YAN",
+						"order": 62000,
+						"from": "KLt72lWa",
+						"to": "nLp2hILd",
+						"kind": "call",
+						"label": "every checkout and untracked vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/repositories.ts",
+							"symbol": "listRegistry"
+						}
+					},
+					{
+						"id": "pBu0Et3y",
+						"order": 63000,
+						"from": "FHvFFjFn",
+						"to": "S3kIYHon",
+						"kind": "call",
+						"label": "move the old vault's panes, each keeping its board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/repository-routes.ts",
+							"symbol": "movePaneVault"
+						}
+					},
+					{
+						"id": "e5ud8ccd",
+						"order": 64000,
+						"from": "FHvFFjFn",
+						"to": "S3kIYHon",
+						"kind": "event",
+						"label": "repositories_changed to every tab",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/repository-routes.ts",
+							"symbol": "broadcastEverywhere"
+						}
+					},
+					{
+						"id": "57KDyakx",
+						"order": 65000,
+						"from": "S3kIYHon",
+						"to": "KLt72lWa",
+						"kind": "call",
+						"label": "name the repository a shown board moves a pane into",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-show-route.ts",
+							"symbol": "repositoryOfVault"
+						}
+					},
+					{
+						"id": "qwdogTBE",
+						"order": 66000,
+						"from": "QNCwmrh5",
+						"to": "nLp2hILd",
+						"kind": "call",
+						"label": "the checkouts the registry knows",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/code-target/lib/vault-checkout.ts",
+							"symbol": "listRegistry"
+						}
+					},
+					{
+						"id": "KWmrBUXU",
+						"order": 67000,
+						"from": "3ld7pYE2",
+						"to": "KLt72lWa",
+						"kind": "call",
+						"label": "the vault a page opens in",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/service-routes.ts",
+							"symbol": "openingVault"
+						}
+					},
+					{
+						"id": "pl5FRb2T",
+						"order": 68000,
+						"from": "KLt72lWa",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "the vault ARCHBOARD_VAULT names, canonical",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/repositories.ts",
+							"symbol": "canonicalConfiguredVault"
+						}
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "zZhkZpW5",
+						"name": "How the routes answer",
+						"beats": [
+							{
+								"id": "RZiKbNgt",
+								"heading": "A read answers from the board family or a drawing made here",
+								"body": "Board routes reads the family from the store and draws a selected view with the renderer. The browser holds board content only as a read-only cache of what this answered.",
+								"subjects": [
+									"r6IpmadI",
+									"bB2IRV9I",
+									"FB409nLS"
+								],
+								"view": "5aioywlz"
+							},
+							{
+								"id": "Q1QA0WLJ",
+								"heading": "Every change passes the write routes and the board's lease",
+								"body": "Board write routes states the version it read, writes through the store under the board's lease, and announces the accepted write to the panes. Rename and discard hand their writes to it, and the file is committed before any of them answers.",
+								"subjects": [
+									"iwrhchml",
+									"kFQJkivd",
+									"GXtY3Xsd",
+									"bB2IRV9I",
+									"kHACcD1X"
+								],
+								"view": "RbnCUnpJ"
+							},
+							{
+								"id": "JiAqaGC2",
+								"heading": "A claim, a rename and a discard move more than the board",
+								"body": "Claim routes takes, releases or takes back the claim in the lease, rename carries the claim and the panes to the new name, and discard tells every pane the board is gone.",
+								"subjects": [
+									"TW3uG9Uh",
+									"kFQJkivd",
+									"GXtY3Xsd",
+									"kHACcD1X",
+									"S3kIYHon"
+								],
+								"view": "RbnCUnpJ"
+							},
+							{
+								"id": "cKR3H3sm",
+								"heading": "A check runs on request, as work on the checkout",
+								"body": "The code check route keeps what a finished pass found. The locality route keeps each answer until a board version or a checkout HEAD moves. The footprint route keeps none.",
+								"subjects": [
+									"3bPZg9a5",
+									"k9h1zv1s",
+									"Z57AabPn",
+									"radK8osF",
+									"5SMX69gS",
+									"yYQ3AHkf"
+								],
+								"view": "5aioywlz"
+							},
+							{
+								"id": "JbOveV9h",
+								"heading": "A person chooses a checkout, and every pane reading the old one follows",
+								"body": "Repository routes accepts only a checkout the registry already knows, makes it the chosen one, moves each pane of the old chosen vault to the new one with its board, and tells every tab to read the repositories again. A board the new checkout has not got is a pane that says so, not a board made on the way.",
+								"subjects": [
+									"FHvFFjFn",
+									"nLp2hILd",
+									"KLt72lWa",
+									"S3kIYHon"
+								],
+								"view": "jg5HuhiA"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "C3V6dUPI",
+			"name": "TASK-472.08",
+			"lifecycle": "draft",
+			"parent": "OhAsaop7",
+			"summary": "archboard runs the source of the archboard checkout it stands in, and each worktree has its own port",
+			"content": {
+				"nodes": [
+					{
+						"id": "r6IpmadI",
+						"order": 2000,
+						"name": "Board routes",
+						"kind": "route",
+						"responsibility": "Mounts every board route and answers the reads: the family, the catalogue, one drawn view, the vault check",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts"
+						}
+					},
+					{
+						"id": "iwrhchml",
+						"order": 3000,
+						"name": "Board write routes",
+						"kind": "route",
+						"responsibility": "The one write boundary: every route that changes a board goes through here",
+						"description": "ADR 0023: the file is the board and nothing holds a copy of it. A write states the version it read, takes the board's lease, and is committed before it is answered.",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts"
+						}
+					},
+					{
+						"id": "TW3uG9Uh",
+						"order": 4000,
+						"name": "Claim routes",
+						"kind": "route",
+						"responsibility": "An agent's claim on a board, its release, and the person's override",
+						"description": "ADR 0016 and ADR 0022: one writer at a time, visible in every pane showing the board, and the one control a person has over it is taking it back.",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts"
+						}
+					},
+					{
+						"id": "kFQJkivd",
+						"order": 5000,
+						"name": "Rename route",
+						"kind": "route",
+						"responsibility": "Renames a board or a variant as a write, and moves what the server keyed by the old name: its panes, its claim, what the agent said",
+						"description": "TASK-281, ADR 0036. The old name stays a former name, so a pane or a command that still uses it reaches the board.",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts"
+						}
+					},
+					{
+						"id": "GXtY3Xsd",
+						"order": 6000,
+						"name": "Discard route",
+						"kind": "route",
+						"responsibility": "Lets a whole board go under the write's admission and lease, and tells every pane on it the board is gone",
+						"description": "TASK-304.02: a board made only to be recorded, discarded by semantic record --discard.",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts"
+						}
+					},
+					{
+						"id": "3ld7pYE2",
+						"order": 7000,
+						"name": "Service routes",
+						"kind": "route",
+						"responsibility": "Serves the page, the health answer (the archboard-server service, its pid, the checkout whose source it runs and whether that is the source on disk) and the vault a page opens in",
+						"description": "The CLI signals a process for stop only when it both identifies as archboard-server and reports its own pid. A CLI refuses a server whose health names another checkout's source than its own, and names both checkouts. The vault a page opens in is the one call that names no vault.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/service-routes.ts"
+						}
+					},
+					{
+						"id": "3bPZg9a5",
+						"order": 8000,
+						"name": "Code check route",
+						"kind": "route",
+						"responsibility": "Runs the code check on request as checkout work, apart from the polled check",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts"
+						}
+					},
+					{
+						"id": "k9h1zv1s",
+						"order": 9000,
+						"name": "Locality route",
+						"kind": "route",
+						"responsibility": "Answers one board's hotspots and change coupling over a period on request as checkout work; keeps each answer in memory until a board version or a checkout HEAD moves",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts"
+						}
+					},
+					{
+						"id": "Z57AabPn",
+						"order": 10000,
+						"name": "Footprint route",
+						"kind": "route",
+						"responsibility": "Answers one board's footprint on request as checkout work: reads the board and the proposal named, then asks the history lens for the parts a branch changed; keeps no answer",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/footprint-route.ts"
+						}
+					},
+					{
+						"id": "S3kIYHon",
+						"order": 11000,
+						"name": "Live panes",
+						"kind": "module",
+						"responsibility": "Keeps the panes on screen, their sockets and tabs, and board announcements live",
+						"description": "Pane routes, Pane socket, Pane registry, Board announcements, Change feed, Tab session presence and Disk change watcher form this server subsystem. Board content stays on disk; the subsystem holds only screen and session state.",
+						"groups": [
+							"panes"
+						],
+						"drillDown": {
+							"board": "Live panes",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8vCjLQ0W",
+						"order": 12000,
+						"name": "Application lifetime",
+						"kind": "module",
+						"responsibility": "Boots and stops the server, which needs no vault: the loopback refusal, the pidfile, the ordered shutdown",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/server-startup.ts"
+						}
+					},
+					{
+						"id": "yYQ3AHkf",
+						"order": 13000,
+						"name": "Code findings memory",
+						"kind": "module",
+						"responsibility": "What the last code pass found on each board and variant of each vault, in memory only",
+						"description": "Each finished pass replaces the readings of the boards it read, with the version it read and when it ran; a cancelled pass changes nothing. GET /api/vault/code-findings answers from it alone, so a pane never starts a pass (ADR 0046).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-findings-memory.ts",
+							"symbol": "createCodeFindingsMemory"
+						}
+					},
+					{
+						"id": "3LoKNA2g",
+						"order": 14000,
+						"name": "Codex workbench",
+						"kind": "service",
+						"responsibility": "Owns the private Codex child and bridges it to the panes",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-wiring.ts"
+						},
+						"drillDown": {
+							"board": "Agent workbench",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "wQ63dmRZ",
+						"order": 15000,
+						"name": "Agent CLI",
+						"kind": "service",
+						"responsibility": "Sends every board operation over HTTP and never writes a vault file itself",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/bin.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "sVYH3JhL",
+						"order": 16000,
+						"name": "Browser",
+						"kind": "service",
+						"responsibility": "Reads boards, says what each pane is showing, and writes nothing",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "bB2IRV9I",
+						"order": 17000,
+						"name": "Semantic board store",
+						"kind": "module",
+						"responsibility": "The one place a board is read or written",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store"
+						},
+						"drillDown": {
+							"board": "Board persistence",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "FB409nLS",
+						"order": 18000,
+						"name": "Semantic renderer",
+						"kind": "module",
+						"responsibility": "Draws one variant, view and theme as a self-contained document",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "kHACcD1X",
+						"order": 19000,
+						"name": "Board lease",
+						"kind": "module",
+						"responsibility": "One writer at a time per board: the lease file in the vault, an agent's claim, and news when the holder changes",
+						"description": "ADR 0016. The lease lives beside the board, so every server on the vault sees the same exclusion.",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/board-lock.ts"
+						}
+					},
+					{
+						"id": "radK8osF",
+						"order": 20000,
+						"name": "History lens",
+						"kind": "module",
+						"responsibility": "Maps checkout commits onto bound paths for behind and onto bound declarations for locality and footprint; labels path-wide fallback when a symbol cannot be resolved",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/history-lens"
+						}
+					},
+					{
+						"id": "5SMX69gS",
+						"order": 21000,
+						"name": "Code check",
+						"kind": "module",
+						"responsibility": "Holds each board's anchors, bound symbols, relationships between bound parts and container interfaces to the code facts of the files on disk, at its current variant or the named draft",
+						"description": "ADR 0046's code pass over the files Git does not ignore in the vault's own checkout and the chosen ones, through code facts: a bound symbol must be a definition, an anchor's symbol a definition or a use that supports its relationship (in the bound code of an end, of an evidence kind the relationship's kind accepts), and on a named draft a bound path must be in its checkout. Evidence between a board's bound parts comes from the code facts of every bound file, owned by the narrowest binding (a C, C++ or Objective-C file's part owns its pair): a run-time use through an import or include is a call, a type-only use an import. It joins an environment value that bound code reads with the compose service, Kubernetes workload or Terraform resource that runs that code (by its build, or a part drawn inside the part bound to it) and sets the value to another part's address: configured-path evidence. It reports the part code reaches with no relationship, and as information a relationship with no anchor whose accepted evidence runs only backwards or is missing (across a network hop, the side without evidence). For a container bound to a module it holds ADR 0044's interface to what the module exposes, and reads a Terraform module's pass-through variables and whether it is shallow. A binding to a Terraform root module names an address there; references join resource-bound parts, and --plan names plan JSON files. Kubernetes Service selectors and NetworkPolicies join workload-bound parts by labels, and a reference to a Service no part binds reaches the workloads it picks. A language server resolves the uses no import resolves, and a C use an include leads only to a declaration; the servers each checkout's registration holds decide which one runs there. It lists what it skipped and why. The header of src/shared/code-check/index.ts names each finding code and the task that added it, and skills/archboard/references/authoring.md says what each one asks of an author.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/code-check"
+						}
+					},
+					{
+						"id": "fs2ehN0i",
+						"order": 22000,
+						"name": "Vault requirement",
+						"kind": "module",
+						"responsibility": "Refuses a call that names no vault, or a vault the server cannot read, before any handler runs",
+						"description": "ADR 0049: every call names its vault as ?vault=<directory> or a vault field in its body. The refusal says how to name one (VAULT_REQUIRED, 400; VAULT_UNREADABLE, 404) and creates nothing. A handler reads the canonical vault with vaultOfRequest.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/request-vault.ts"
+						}
+					},
+					{
+						"id": "QNCwmrh5",
+						"order": 23000,
+						"name": "Vault checkouts",
+						"kind": "module",
+						"responsibility": "Which repository identity the vault's own checkout holds, and which checkout holds any other",
+						"description": "The board listing needs it: a drill-down that names the vault's own repository is a link within the vault, not a link out of it (ADR 0049).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/code-target/lib/vault-checkout.ts"
+						}
+					},
+					{
+						"id": "FHvFFjFn",
+						"order": 24000,
+						"name": "Repository routes",
+						"kind": "route",
+						"responsibility": "Lists the repositories the navigator shows, and chooses one repository's checkout for the whole machine, moving the panes that read the old one",
+						"description": "GET /api/repositories answers under the settings-read browser-origin guard; PUT /api/repositories/chosen {repository, root} answers under the mutation guard, as the opener settings do. Neither names a vault, because the list and the choice belong to the machine. A root that is not a known checkout of the repository is refused (CHECKOUT_UNKNOWN, 404): the page offers nothing else, and the route never registers one. After the choice every pane of the old chosen vault moves to the new one, keeping its board, and every tab hears repositories_changed.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/repository-routes.ts"
+						}
+					},
+					{
+						"id": "KLt72lWa",
+						"order": 25000,
+						"name": "Repository listing",
+						"kind": "module",
+						"responsibility": "Turns the checkout registry into the repositories the navigator lists: each identity's chosen checkout, its vault and its state, and the names of the vaults",
+						"description": "An identity is listed when any known checkout has a vault; its state is ready, no-vault, gone or unchosen. A vault that a set ARCHBOARD_VAULT names is listed under its directory's name until TASK-472.09 refuses the variable. The vault a page opens in is that one, else the first ready repository by name, else none. repositoryOfVault is how a show names the repository a pane moved into.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/repositories.ts"
+						}
+					},
+					{
+						"id": "nLp2hILd",
+						"order": 26000,
+						"name": "Checkout registry",
+						"kind": "module",
+						"responsibility": "Which checkouts of each repository this machine knows, which one is chosen, and the untracked vaults",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/repo-registry.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "jxxcFkHs",
+						"order": 1000,
+						"from": "r6IpmadI",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "read the board family",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "1yVGMFKT",
+						"order": 2000,
+						"from": "r6IpmadI",
+						"to": "FB409nLS",
+						"kind": "render",
+						"label": "render selected view",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "renderBoard"
+						}
+					},
+					{
+						"id": "JdGbavCR",
+						"order": 3000,
+						"from": "wQ63dmRZ",
+						"to": "r6IpmadI",
+						"kind": "http",
+						"label": "read a board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "readRoute"
+						}
+					},
+					{
+						"id": "I4TF2ANT",
+						"order": 4000,
+						"from": "wQ63dmRZ",
+						"to": "iwrhchml",
+						"kind": "http",
+						"label": "one stated batch",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"symbol": "editRoute"
+						}
+					},
+					{
+						"id": "sUwTQnzU",
+						"order": 5000,
+						"from": "wQ63dmRZ",
+						"to": "TW3uG9Uh",
+						"kind": "http",
+						"label": "claim and release",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts",
+							"symbol": "claimRoute"
+						}
+					},
+					{
+						"id": "e7BVB9LR",
+						"order": 6000,
+						"from": "sVYH3JhL",
+						"to": "r6IpmadI",
+						"kind": "http",
+						"label": "a board and its picture",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "renderRoute"
+						}
+					},
+					{
+						"id": "23r2JYWL",
+						"order": 7000,
+						"from": "iwrhchml",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "one batch under the board's lease",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"symbol": "writeSemanticBoard"
+						}
+					},
+					{
+						"id": "xHu4Vgbq",
+						"order": 8000,
+						"from": "iwrhchml",
+						"to": "S3kIYHon",
+						"kind": "event",
+						"label": "announce the accepted write",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"symbol": "broadcast"
+						}
+					},
+					{
+						"id": "pTXsEFlF",
+						"order": 9000,
+						"from": "TW3uG9Uh",
+						"to": "kHACcD1X",
+						"kind": "call",
+						"label": "take, release or take back the claim",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts",
+							"symbol": "claimBoard"
+						}
+					},
+					{
+						"id": "8vOEjDKu",
+						"order": 10000,
+						"from": "TW3uG9Uh",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "is there such a board",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "k5pgt4eX",
+						"order": 11000,
+						"from": "sVYH3JhL",
+						"to": "3ld7pYE2",
+						"kind": "http",
+						"label": "the page",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/service-routes.ts",
+							"symbol": "frontendRoute"
+						}
+					},
+					{
+						"id": "4GkwbIhi",
+						"order": 12000,
+						"from": "wQ63dmRZ",
+						"to": "3ld7pYE2",
+						"kind": "http",
+						"label": "health: is this the server of this checkout",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
