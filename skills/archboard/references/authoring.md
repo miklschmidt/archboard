@@ -381,7 +381,10 @@ the board had before a rename and a name in other letters open it too, and the
 kind is the level that board declares. An identity that names this vault's own
 repository stays in this vault. A vault in no repository has no identity, so
 nothing can link into one. List the boards of that repository's own vault
-before you write the link, and write the name the board goes by there.
+before you write the link
+(`ARCHBOARD_VAULT=<checkout>/.archboard/vault archboard semantic`, with the
+chosen checkout that `archboard repo list` shows), and write the name the board
+goes by there.
 
 ```json
 {
@@ -401,9 +404,10 @@ part in a flow), `DRILL_DOWN_UNKNOWN_BOARD` (no such board, in this vault or,
 when `repo` is named, in the chosen checkout's vault, so the link opens
 nothing), `DRILL_DOWN_LEVEL_MISMATCH` (the kind disagrees with the level of
 the board it opens) and `DRILL_DOWN_UNKNOWN_REPOSITORY` (`repo` names a
-repository with no checkout on this machine, a chosen checkout that is gone, or
-one with no vault; unlike a binding, which draws no warning, a link that opens
-nothing is reported, and `archboard repo add <directory>` clears it).
+repository with no chosen checkout on this machine, a chosen checkout that is
+gone, or one with no vault; a binding into such a repository draws no warning,
+but a link that opens nothing does. `archboard repo add <directory>` or
+`archboard repo use <directory>` clears it).
 
 Those check a variant's content, so they run only over the variants a
 write can still change: no accepted write could clear a warning on a frozen
