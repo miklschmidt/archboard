@@ -38,8 +38,22 @@ const MovedDrillDownSchema = z.object({
 type MovedDrillDown = z.infer<typeof MovedDrillDownSchema>;
 
 /**
+ * The choice of checkout a finished move made: a target in a known checkout
+ * that was not the chosen one of its repository becomes the chosen one, as an
+ * agent's show makes it (ADR 0050), so the app reads the board where it is now.
+ */
+const MoveChoiceSchema = z.object({
+	repository: z.string(),
+	/** The checkout chosen now: the target's. */
+	checkout: z.string(),
+	/** The checkout chosen before, or null when the repository had none chosen. */
+	replaced: z.string().nullable(),
+});
+
+/**
  * What a move answers with: the board as it now stands in the target vault,
- * both ends of the move, and every drill-down it rewrote.
+ * both ends of the move, every drill-down it rewrote, and the choice of
+ * checkout it made, only when it changed one.
  */
 const BoardMoveAnswerSchema = z.object({
 	success: z.literal(true),
@@ -48,6 +62,7 @@ const BoardMoveAnswerSchema = z.object({
 	from: MoveEndSchema,
 	to: MoveEndSchema,
 	rewritten: z.array(MovedDrillDownSchema),
+	chose: MoveChoiceSchema.optional(),
 });
 type BoardMoveAnswer = z.infer<typeof BoardMoveAnswerSchema>;
 

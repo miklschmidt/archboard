@@ -1647,9 +1647,16 @@
 			"exits": [0, 1, 2, 3, 5],
 			"prerequisites": ["server", "doing"],
 			"relationships": ["POST /api/semantic-boards/move"],
-			"semantics": "moves the whole note, every variant, former name and id unchanged, into the vault found from --to as -C finds one, registering what holds it when the registry does not know it; drill-downs in the source vault into the board are rewritten to name the target's identity and the board's own into the source vault to name the source's; panes on the board follow it into the target vault and the mover's claim ends; two checkouts of one identity, a name or former name the target has, a drill-down into an untracked vault and a holder of the board or of its name in the target are refused",
+			"semantics": "moves the whole note, every variant, former name and id unchanged, into the vault found from --to as -C finds one, registering what holds it when the registry does not know it; drill-downs in the source vault into the board are rewritten to name the target's identity and the board's own into the source vault to name the source's; panes on the board follow it into the target vault, a target checkout that is not the chosen one of its repository becomes the chosen one, and the mover's claim ends; two checkouts of one identity, a name or former name the target has, a drill-down into an untracked vault and a holder of the board or of its name in the target are refused",
 			"ordering": "version stated, target vault found and registered, then on the server: the name's lease in the target and the board's lease in the source, expected-version check, refusals, the target note, each rewritten source board under its own lease without waiting, and the source note deleted last; a stopped move leaves the board in both vaults and the same move run again finishes it",
-			"nextFields": ["version", "to.vault", "to.repository", "to.registered", "rewritten[]"],
+			"nextFields": [
+				"version",
+				"to.vault",
+				"to.repository",
+				"to.registered",
+				"rewritten[]",
+				"chose"
+			],
 			"workflow": "necessary composition",
 			"effects": ["local-read", "server-state-write"],
 			"refusals": [

@@ -4,9 +4,11 @@
 // owner (`src/runtime/semantic-board-store/tests/move.test.ts`) holds what the
 // move writes and refuses; this owner holds the command around it: its answer,
 // the files it leaves in both vaults, what the panes of the source vault are
-// told, and the exit status of a refusal.
+// told, the checkout a move into a worktree chooses, and the exit status of a
+// refusal.
 
-import { existsSync, mkdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
@@ -202,4 +204,60 @@ test("a refused move exits with the status its refusal declares and moves nothin
 	]);
 	expect(unversioned.status).toBe(2);
 	expect([holds(metaVault, "Refunds"), holds(productVault, "Refunds")]).toEqual([true, false]);
+}, 120_000);
+
+test("a move into a checkout that is not chosen chooses it, and a pane on the board stays there", async () => {
+	made("Audit", [{ name: "Trail", kind: "module" }]);
+	const added = join(fixture.root, "product-audit");
+	execFileSync("git", ["worktree", "add", "-q", "-b", "audit", added], {
+		cwd: product,
+		stdio: "ignore",
+	});
+	const worktree = realpathSync.native(added);
+	const worktreeVault = join(worktree, ".archboard", "vault");
+	mkdirSync(worktreeVault, { recursive: true });
+	const pane = await openPaneSession(
+		server.base,
+		createRequester({ ...server, vault: metaVault }),
+		{
+			clientId: "on-audit",
+			board: "audit",
+		},
+	);
+	try {
+		const mark = pane.mark();
+		const moved = cli(metaVault, [
+			"semantic",
+			"move",
+			"Audit",
+			"--to",
+			worktree,
+			"--expect-version",
+			"1",
+			"--doing",
+			"moving the audit board into the worktree that builds it",
+		]);
+		expect(moved.status, moved.stderr).toBe(0);
+		const answer = JSON.parse(moved.stdout) as { chose?: unknown };
+		expect(answer.chose).toEqual({ repository: PRODUCT, checkout: worktree, replaced: product });
+		await pane.sync();
+		expect(
+			pane.events.slice(mark).some((e) => e.type === "pane_board" && e["vault"] === worktreeVault),
+		).toBe(true);
+
+		// Another change to the registry, which every server follows, leaves the
+		// pane in the checkout the move chose rather than in one without the board.
+		const before = pane.mark();
+		const other = fixture.repository("other", "github.com/acme/other");
+		expect(cli(metaVault, ["repo", "add", other]).status).toBe(0);
+		expect(await pane.waitFor("repositories_changed", before)).toBeDefined();
+		const told = pane.events
+			.slice(mark)
+			.filter((event) => event.type === "pane_board")
+			.map((event) => event["vault"]);
+		expect(told.at(-1)).toBe(worktreeVault);
+		expect(told).not.toContain(productVault);
+	} finally {
+		await pane.close();
+	}
 }, 120_000);
