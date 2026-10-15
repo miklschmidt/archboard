@@ -81,7 +81,7 @@ const PaneOpenResultSchema = z.looseObject({
 type PaneOpenResult = z.infer<typeof PaneOpenResultSchema>;
 const paneOpenContract = defineCommand({
 	path: ["browser", "open"],
-	shared: ["url", "directory"],
+	shared: ["url"],
 	summary: "Open a second browser pane",
 	description: "Splits the connected browser canvas; the new pane inherits the displayed board.",
 	examples: ["archboard browser open"],

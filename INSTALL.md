@@ -140,10 +140,10 @@ directory, or in the directory that `-C <dir>` names:
   `-C` changes only where the vault is found. A relative `--input` or `--out`
   still resolves against the working directory.
 - The commands that call a vault take `-C`: `semantic`, `check`, `claim`,
-  `release`, `browser open`, `browser show`. If a command takes `-C`, the
-  output of `archboard <command> --help` lists it. `start`, `stop`, `status`, `repo`,
-  `install-skill`, `browser panes`, `browser close` and `semantic replay` take
-  none, because they need no vault.
+  `release`, `browser show`. If a command takes `-C`, the output of
+  `archboard <command> --help` lists it. `start`, `stop`, `status`, `repo`,
+  `install-skill`, `browser open`, `browser panes`, `browser close` and
+  `semantic replay` take none, because they need no vault.
 
 A JSON answer of a command that takes `-C` names the vault it used, as
 `vault: {path, origin}`. The origin is `-C`, `environment` or
