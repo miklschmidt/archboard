@@ -196,7 +196,7 @@ test("a failed pane read does not report the listing as unreadable", () => {
 	expect(listingError(null, null, true)).toBeNull();
 });
 
-test("reloading reads every cached board resource again, documents included", async () => {
+test("a refresh reads the listings again, and a reload every cached board resource, documents and repositories included", async () => {
 	const { QueryClient } = await import("@tanstack/react-query");
 	const { semanticBoardKeys } = await import("@/ui/semantic-board-canvas");
 	const { boardCatalogKeys } = await import("@/ui/board-catalog");
@@ -231,6 +231,16 @@ test("reloading reads every cached board resource again, documents included", as
 	await seed(document);
 	await seed(boards);
 	await seed(boardCatalogKeys.panes);
+	await seed(boardCatalogKeys.repositories);
+
+	// A board command or a pane report reads the listings again, not the
+	// repositories: only a chosen checkout moves those, and it is announced.
+	catalogCommandsFor(client).refresh();
+	await new Promise((settle) => setTimeout(settle, 0));
+	expect({
+		boards: willReadAgain(boards),
+		repositories: willReadAgain(boardCatalogKeys.repositories),
+	}).toEqual({ boards: true, repositories: false });
 
 	// Reload is the one control a person has when what the shell is showing has
 	// gone wrong, and a board's document is the half that is easy to forget: it
@@ -247,6 +257,7 @@ test("reloading reads every cached board resource again, documents included", as
 		render: willReadAgain(render),
 		boards: willReadAgain(boards),
 		panes: willReadAgain(boardCatalogKeys.panes),
-	}).toEqual({ document: true, render: true, boards: true, panes: true });
+		repositories: willReadAgain(boardCatalogKeys.repositories),
+	}).toEqual({ document: true, render: true, boards: true, panes: true, repositories: true });
 	client.clear();
 });

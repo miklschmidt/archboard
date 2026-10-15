@@ -25,6 +25,7 @@ import {
 	repositoriesQuery,
 } from "@/ui/board-catalog/lib/queries";
 import {
+	boardAddressOf,
 	onSemanticBoardChange,
 	readAgain,
 	semanticBoardKeys,
@@ -56,9 +57,9 @@ interface BoardCatalog {
 	/** Read the listings again: what a board command or a pane report asks for. */
 	readonly refresh: () => void;
 	/**
-	 * Read the listings and every drawing of every board again: the navigator's
-	 * refresh, and the one control a person has when something the shell reads
-	 * has gone wrong.
+	 * Read the repositories, the listings and every drawing of every board
+	 * again: the navigator's refresh, and the one control a person has when
+	 * something the shell reads has gone wrong.
 	 */
 	readonly reload: () => void;
 	/**
@@ -80,11 +81,10 @@ interface BoardCatalog {
 }
 
 /**
- * Read the repositories, every listing and the panes again.
+ * Read every vault's listing and the panes again.
  * @param client The cache.
  */
 function invalidateListing(client: QueryClient): void {
-	void readAgain(client, [boardCatalogKeys.repositories]);
 	void readAgain(client, [semanticBoardKeys.allBoards]);
 	void readAgain(client, [boardCatalogKeys.panes]);
 }
@@ -100,15 +100,18 @@ function catalogCommands(
 	BoardCatalog,
 	"refresh" | "reload" | "boardsChanged" | "reconnected" | "repositoriesChanged"
 > {
-	/** Read the listings again. */
+	/**
+	 * Read the listings again. The repositories are not read: a chosen checkout
+	 * is announced, and nothing a board command or a pane report does moves one.
+	 */
 	function refresh(): void {
 		invalidateListing(client);
 	}
 	/**
-	 * Read the listings, every drawing, and every board document again. This is
-	 * the one control a person has when something the shell reads has gone
-	 * wrong, so it must reach every resource, not only the ones that failed
-	 * loudly.
+	 * Read the repositories, the listings, every drawing, and every board
+	 * document again. This is the one control a person has when something the
+	 * shell reads has gone wrong, so it must reach every resource, not only the
+	 * ones that failed loudly.
 	 *
 	 * The documents matter as much as the pictures and are easier to forget: a
 	 * board's own document is what the inspector reads and what the variant and
@@ -118,6 +121,7 @@ function catalogCommands(
 	 * a fresh picture beside an inspector describing the board as it used to be.
 	 */
 	function reload(): void {
+		void readAgain(client, [boardCatalogKeys.repositories]);
 		invalidateListing(client);
 		void readAgain(client, [semanticBoardKeys.documents, semanticBoardKeys.renders]);
 	}
@@ -126,12 +130,14 @@ function catalogCommands(
 	 * The listing may have moved whether or not any board is named, so it is
 	 * read again either way.
 	 * @param vault The vault the boards are in.
-	 * @param boards The board keys, which may be none.
+	 * @param boards The board keys, which may be none. A key that names a
+	 *   variant is of the whole board: the canvas caches a board by its name.
 	 */
 	function boardsChanged(vault: string, boards: readonly string[]): void {
 		void readAgain(client, [semanticBoardKeys.boards(vault)]);
 		void readAgain(client, [boardCatalogKeys.panes]);
-		for (const board of boards) {
+		for (const key of boards) {
+			const board = boardAddressOf(key)?.board ?? key;
 			void readAgain(client, [
 				semanticBoardKeys.document(vault, board),
 				semanticBoardKeys.boardRenders(vault, board),
@@ -212,25 +218,29 @@ function useBoardCatalog(): BoardCatalog {
 		[client],
 	);
 	const entries = listed.data?.repositories;
+	// One listing for each repository with a vault to read. A repository with
+	// none reads nothing: it has no query, so two of them never share one entry.
+	const readable = useMemo(
+		() => (entries ?? []).flatMap((entry) => (entry.vault === null ? [] : [entry.vault])),
+		[entries],
+	);
 	const vaults = useQueries({
-		queries: (entries ?? []).map((entry) => ({
-			...semanticBoardListQuery(entry.vault ?? ""),
-			enabled: entry.vault !== null,
-		})),
+		queries: readable.map((vault) => semanticBoardListQuery(vault)),
 		combine: readVaults,
 	});
 	const repositories = useMemo(
 		() =>
-			(entries ?? []).map((repository, index): RepositoryBoards => {
-				const vault = vaults[index];
+			(entries ?? []).map((repository): RepositoryBoards => {
+				const vault =
+					repository.vault === null ? undefined : vaults[readable.indexOf(repository.vault)];
 				return {
 					repository,
 					listing: listingOf(vault?.half, panes.data),
 					error: listingError(vault?.error ?? null, panes.error, panes.data !== undefined),
-					loading: repository.vault !== null && vault?.pending === true,
+					loading: vault?.pending === true,
 				};
 			}),
-		[entries, vaults, panes.data, panes.error],
+		[entries, readable, vaults, panes.data, panes.error],
 	);
 	const error =
 		listed.error === null ? null : `The repositories could not be read: ${listed.error.message}`;
