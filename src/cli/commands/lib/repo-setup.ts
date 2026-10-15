@@ -39,21 +39,22 @@ interface SetupOptions {
 }
 
 /**
- * The git repository containing `from`, or `from` itself when there is none.
+ * The root of the git checkout a directory is in, as git itself says, or the directory when it is
+ * in none. The vault finder asks git the same question, so the vault made here is the one a command
+ * run anywhere in the checkout finds, also when `--repo` names a directory inside the checkout.
  * @param from - The directory to start from.
- * @returns The nearest ancestor holding a .git entry, else the resolved start directory.
+ * @returns The checkout root, else the resolved directory.
  */
-function findRepoRoot(from: string): string {
-	let dir = path.resolve(from);
-	for (;;) {
-		if (fs.existsSync(path.join(dir, ".git"))) {
-			return dir;
-		}
-		const parent = path.dirname(dir);
-		if (parent === dir) {
-			return path.resolve(from);
-		}
-		dir = parent;
+function checkoutRootOf(from: string): string {
+	const directory = path.resolve(from);
+	try {
+		const root = execFileSync("git", ["-C", directory, "rev-parse", "--show-toplevel"], {
+			encoding: "utf8",
+			stdio: ["ignore", "pipe", "ignore"],
+		}).trim();
+		return root === "" ? directory : root;
+	} catch {
+		return directory;
 	}
 }
 
@@ -110,9 +111,7 @@ function removeOldBlocks(repo: string): string[] {
  */
 function setUpRepository(options: SetupOptions): SetupResult {
 	const { context } = options;
-	const repo = options.repoSpec
-		? path.resolve(expandHome(options.repoSpec))
-		: findRepoRoot(process.cwd());
+	const repo = checkoutRootOf(options.repoSpec ? expandHome(options.repoSpec) : process.cwd());
 	const vault = path.join(repo, VAULT_DIRECTORY);
 	const vaultCreated = !fs.existsSync(vault);
 	fs.mkdirSync(vault, { recursive: true });

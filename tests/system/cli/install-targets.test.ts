@@ -5,9 +5,11 @@ import {
 	mkdirSync,
 	readFileSync,
 	readdirSync,
+	realpathSync,
 	symlinkSync,
 	writeFileSync,
 } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import path from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
@@ -209,6 +211,20 @@ describe("install targets", () => {
 				expect(bytes.includes(Buffer.from(held)), `${file} holds ${held}`).toBe(false);
 			}
 		}
+	});
+
+	test("a directory inside a checkout sets the checkout up, where a command finds its vault", () => {
+		using fixture = createInstallFixture();
+		const repo = fixture.repo("nested");
+		const initialized = spawnSync("git", ["init", "-q", repo]);
+		expect(initialized.status).toBe(0);
+		const inside = join(repo, "src", "app");
+		mkdirSync(inside, { recursive: true });
+		const result = fixture.install(inside);
+		expect(result.setup?.vault, installFailure(result.spawn)).toBe(
+			join(realpathSync(repo), ".archboard", "vault"),
+		);
+		expect(existsSync(join(inside, ".archboard")), installFailure(result.spawn)).toBe(false);
 	});
 
 	test("honors a named repository and no-setup", () => {
