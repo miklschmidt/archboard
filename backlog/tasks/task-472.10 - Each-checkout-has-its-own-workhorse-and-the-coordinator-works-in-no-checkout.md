@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 05:17'
+updated_date: '2026-10-15 06:52'
 labels: []
 dependencies:
   - TASK-472.04
@@ -69,6 +69,21 @@ Steps:
 
 <!-- SECTION:NOTES:BEGIN -->
 Decision (hand-off vs workhorse checkouts, raised in the TASK-472.08 review): a command whose environment sets ARCHBOARD_URL hands off to no checkout (src/runtime/engine/source-checkout.ts handOffTarget). The URL already names the server, and the source that matters is the one that server runs. That alone is not enough: a thread's `archboard` on PATH links to one checkout, so with a worktree server a thread in another checkout would run the main source and the identity probe would refuse it (OtherSourceError). So the Codex child environment also puts the server's own bin directory first on PATH (src/runtime/codex-process/lib/environment.ts, archboardServer.binDirectory). Every thread's archboard then runs the server's source in whichever checkout it works. Owners: src/runtime/engine/tests/source-checkout.test.ts 'a command whose environment names its server runs where it is, as a workhorse in a worktree does', and src/runtime/codex-process/tests/storage.test.ts (PATH leads with the server bin). AGENTS.md and TESTING.md say so.
+
+Built (implementer, 2026-10-15). Decisions and their reasons:
+
+- Workhorse key: workhorseLinkKey(tabSessionId, checkout) = JSON [tab, checkout] in src/server/codex-workbench/lib/tab-session.ts, parsed by parseWorkhorseLinkKey. It is the thread-link key, so each workhorse has its own link. The checkout of a vault is checkoutOfVault (src/runtime/engine/vault-finder.ts): the holder of <x>/.archboard/vault, else the vault itself. The generic gateway asks checkoutOf(browserId) on every read and command, because a pane can move to another vault while it stays open.
+- Sessions store (codex-workbench-sessions.ts, with its types in codex-workbench-session-contract.ts and the per-workhorse parts in codex-workbench-session-workhorses.ts): a tab keeps coordinator, voice, spoken approval, coordinator tools, callbacks and its own semantic publisher; a map checkout -> workhorse holds starter, publisher, delivery, queue, operations and link actions. A workhorse is built on first use by a create, a delegation or a queue mutation; a projection read never builds one and shows an unavailable queue and no board news.
+- Approvals: links tab:<id> (the coordinator's, shown to every pane of the tab) and workhorse:<link key> (shown to the panes of that checkout). The end of a tab session settles both forms.
+- New conversation: it replaces the workhorse of the pane's checkout and keeps the coordinator (coordinator.ensure, not replace), because the coordinator speaks for every workhorse of the tab. The old workhorse thread is retired once idle.
+- Voice: voice binds to the workhorse of the pane it started from (state.voiceCheckout). A voice stop is accepted from any pane of the tab, whatever checkout it shows; appendText still needs the same socket and link.
+- Stop: session.stopWork(checkout | null) interrupts the active turn of one workhorse or of every workhorse, tracked from turn/started and turn/completed. The browser interrupt refuses a thread that is not the pane's link thread, so it stops only its checkout's workhorse. stopWork has no production caller yet: TASK-446 adds the spoken stop and calls stopWork(null).
+- Delegation: the coordinator call owner runs readyDelegatedWorkhorse (codex-checkouts.ts) before dispatch, which starts the named checkout's workhorse when its link cannot run turns; a failed start leaves the delegation to refuse. A tool's checkout is canonicalized by checkoutNamedBy: the real path of a directory that holds a vault, or of a vault.
+- Board news: one publisher per workhorse, filtered to the vaults of its checkout that its tab hears; the tab publisher feeds voice and callbacks as the voice-bound workhorse.
+- Coordinator directory: <state>/codex-workbench/canvases/<port>/coordinator, with .agents/skills/archboard linking to the server's skills/archboard. The app-server child, config/read and the epoch_start workspaceRoot use it.
+- Fix with Codex: no change needed. It asks through the focused pane, whose vault is the diagnosed one, so the repair goes to the workhorse of the diagnosed checkout (gateway-checkouts.test.ts proves a pane's message reaches its own checkout's workhorse).
+- System test codex-outside-change: the reload segment now moves the pane back to the first checkout before the reload, because the other vault is another checkout whose workhorse nothing started.
+- Lint limits: codex-wiring.ts pane helpers moved to codex-session-panes.ts; the session types moved to codex-workbench-session-contract.ts; the thread-link tests moved to codex-workbench-thread-links.test.ts.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
