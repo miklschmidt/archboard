@@ -20,6 +20,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import type { SemanticPanePart } from "@/shared/semantic-pane-context";
 import type { DrillNavigation } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /** What the shell says about the pane's own board. */
 interface OwnReading {
@@ -55,6 +56,11 @@ interface LevelPlace {
 	readonly depth: number;
 	/** The board at that level. */
 	readonly board: string;
+	/**
+	 * The vault it is in: two repositories can each hold a board of one name,
+	 * and the ids of one mean nothing in the other.
+	 */
+	readonly vault: string;
 	/** The view chosen there, or null for the whole variant. */
 	readonly view: string | null;
 	/** The variant chosen there, or null for whichever is current. */
@@ -66,13 +72,19 @@ interface LevelPlace {
  * @param place What was last chosen, or null when nothing has been.
  * @param depth How deep the trail is now.
  * @param board The board on screen now.
+ * @param vault The vault it is in.
  * @returns The place, or null when it belongs to a level the pane has left.
  */
-function placeAt(place: LevelPlace | null, depth: number, board: string): LevelPlace | null {
+function placeAt(
+	place: LevelPlace | null,
+	depth: number,
+	board: string,
+	vault: string,
+): LevelPlace | null {
 	if (place === null) {
 		return null;
 	}
-	return place.depth === depth && place.board === board ? place : null;
+	return place.depth === depth && place.board === board && place.vault === vault ? place : null;
 }
 
 /**
@@ -84,8 +96,9 @@ function placeAt(place: LevelPlace | null, depth: number, board: string): LevelP
 function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 	const depth = drill.trail.length;
 	const board = drill.board;
+	const vault = usePaneVault();
 	const [place, setPlace] = useState<LevelPlace | null>(null);
-	const here = placeAt(place, depth, board);
+	const here = placeAt(place, depth, board, vault);
 
 	// Choosing a way of reading says nothing about which state to read. Falling
 	// back to null here would answer that question too, with "whichever is
@@ -104,11 +117,11 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 				// to the link's variant would undo a choice somebody has just made,
 				// so the place itself decides — absent means nobody has said, and
 				// present means they have, whatever they said.
-				const held = placeAt(current, depth, board);
-				return { depth, board, view, variant: held === null ? asked : held.variant };
+				const held = placeAt(current, depth, board, vault);
+				return { depth, board, vault, view, variant: held === null ? asked : held.variant };
 			});
 		},
-		[asked, board, depth, onUserChanged],
+		[asked, board, depth, vault, onUserChanged],
 	);
 	// A board owns its views, so changing its state keeps the question being read.
 	const onVariant = useCallback(
@@ -117,11 +130,12 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 			setPlace((current) => ({
 				depth,
 				board,
-				view: placeAt(current, depth, board)?.view ?? null,
+				vault,
+				view: placeAt(current, depth, board, vault)?.view ?? null,
 				variant,
 			}));
 		},
-		[board, depth, onUserChanged],
+		[board, depth, vault, onUserChanged],
 	);
 
 	// The pane's own board is read as the shell says; a trail kept across a dive
