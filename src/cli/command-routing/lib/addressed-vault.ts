@@ -6,7 +6,7 @@
 import type { AnsweredVault, RegisteredVault } from "@/cli/command-contract/schemas";
 import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
 import { declareIfUnknown, type Declared } from "@/runtime/engine/repo-registry";
-import { announceRegistryChange, setRequestedVault } from "@/runtime/engine/server-client";
+import { setRequestedVault } from "@/runtime/engine/server-client";
 import {
 	findVault,
 	type FoundVault,
@@ -62,17 +62,6 @@ function registrationLine(registration: RegisteredVault): string {
 }
 
 /**
- * Say that a command registered what it found, and tell a running server, so
- * that every tab lists the new entry at once.
- * @param registration - The registration.
- */
-async function announceRegistration(registration: RegisteredVault): Promise<void> {
-	process.stderr.write(`${registrationLine(registration)}\n`);
-	const warning = await announceRegistryChange();
-	if (warning !== undefined) process.stderr.write(`${warning}\n`);
-}
-
-/**
  * Register the checkout or untracked vault a command found, unless the
  * registry knows it already. A vault the environment names is used as it is
  * and never registers. A registry that cannot be written is a warning: the
@@ -86,7 +75,7 @@ async function register(found: FoundVault): Promise<RegisteredVault | undefined>
 		const declared = await declareIfUnknown(found.holder);
 		if (declared === undefined || !declared.added) return undefined;
 		const answer = registrationOf(declared);
-		await announceRegistration(answer);
+		process.stderr.write(`${registrationLine(answer)}\n`);
 		return answer;
 	} catch (error) {
 		const reason = error instanceof Error ? error.message : String(error);

@@ -10,11 +10,15 @@
 // A pane whose board the new checkout has not got says so, because the board it
 // asks for is not there.
 //
-// The registry changes three ways that the server sees: the navigator's menu,
-// `browser show` from a checkout that is not chosen, and a command that wrote
-// the registry itself and says so here (`repo use`, `repo add`, `repo forget`,
-// and the first command in a checkout).
+// The registry is one file that every server on the machine reads. This server
+// changes it from the navigator's menu and from `browser show` in a checkout
+// that is not chosen, and follows that change at once. A command changes it
+// without any server (`repo use`, `repo add`, `repo forget`, and the first
+// command in a checkout), and another checkout's server changes it when a show
+// there chooses. So the server watches the file and follows every change it
+// did not follow already, whoever made it.
 
+import fs from "fs";
 import path from "path";
 import type { Express, Request, Response } from "express";
 
@@ -37,7 +41,6 @@ import {
 	vaultIn,
 	VAULT_DIRECTORY,
 } from "@/server/archboard/lib/repositories";
-import { bodyOf } from "@/server/archboard/lib/request-board";
 import { CheckoutChoiceSchema, type CheckoutChoice } from "@/shared/repositories/index";
 
 /**
@@ -126,6 +129,25 @@ function statedChoice(req: Request, res: Response): CheckoutChoice | null {
 	return { repository, root };
 }
 
+/** What the registry file held when the panes last followed it, or null when there was none. */
+let followedRegistry: string | null = null;
+
+/** The watch of the registry file's directory, while there is one. */
+let registryWatcher: fs.FSWatcher | null = null;
+
+/**
+ * The registry file as it is now, compared and never parsed: the panes follow
+ * what `listRegistry` reads from it.
+ * @returns Its text, or null when there is no file.
+ */
+function registryText(): string | null {
+	try {
+		return fs.readFileSync(registryPath(), "utf-8");
+	} catch {
+		return null;
+	}
+}
+
 /**
  * Bring every pane in line with the registry as it is now (ADR 0050). A pane in
  * the vault of a checkout that is not chosen, including one that is gone, moves
@@ -135,6 +157,7 @@ function statedChoice(req: Request, res: Response): CheckoutChoice | null {
  * vault changes. Then every tab is told to read the list of repositories again.
  */
 function followRegistry(): void {
+	followedRegistry = registryText();
 	// A move sets the entry of a pane it has visited already, which adds no entry to visit.
 	for (const [clientId, vault] of paneVaults) {
 		const { home, repository } = placeOfVault(vault);
@@ -175,36 +198,53 @@ function movePane(clientId: string, to: string, repository: string | null): void
 }
 
 /**
- * A command wrote the registry and says so: follow it. A command that wrote
- * another registry file than this server reads changes nothing here, so a
- * command with a registry of its own, such as a test's, moves no pane of a
- * server that reads the machine's.
- * @param req The request, whose body names the registry file the command wrote.
- * @param res Its response.
+ * Follow the registry file whenever it changes and the panes have not followed
+ * what it holds now. The directory is watched, because a write replaces the
+ * file with a new one. A change this server made and followed already reads
+ * the same as what the panes followed, so it is not followed twice.
  */
-function registryChangedRoute(req: Request, res: Response): void {
-	const written = bodyOf(req)["registry"];
-	const ours =
-		typeof written === "string" && path.resolve(written) === path.resolve(registryPath());
-	if (ours) {
-		followRegistry();
+function watchRegistry(): void {
+	if (registryWatcher !== null) {
+		return;
 	}
-	res.json({ success: true, followed: ours });
+	const file = path.resolve(registryPath());
+	followedRegistry = registryText();
+	try {
+		fs.mkdirSync(path.dirname(file), { recursive: true });
+		registryWatcher = fs.watch(path.dirname(file), { persistent: false }, (_event, name) => {
+			if ((name !== null && name !== path.basename(file)) || registryText() === followedRegistry) {
+				return;
+			}
+			logger.info(`The checkout registry ${file} changed, and the panes follow it`);
+			followRegistry();
+		});
+		registryWatcher.on("error", (error) => {
+			logger.warn(`Stopped watching the checkout registry ${file}`, { error });
+		});
+	} catch (error) {
+		logger.warn(
+			`Cannot watch the checkout registry ${file}, so the panes follow only the changes this server makes`,
+			{ error },
+		);
+	}
+}
+
+/** Stop watching the registry file, because the server is stopping. */
+function unwatchRegistry(): void {
+	registryWatcher?.close();
+	registryWatcher = null;
 }
 
 /**
- * Mount the repository list, the choice of a checkout and the news that a
- * command changed the registry. The list and the choice are the page's own:
- * the list names directories on this machine, and the choice changes what every
- * tab and every agent reads, so each is held to the browser origin the opener
- * settings are held to. The news changes nothing but what the panes are told,
- * which they are told from the registry, so any local process may send it.
+ * Mount the repository list and the choice of a checkout. Both are the page's
+ * own: the list names directories on this machine, and the choice changes what
+ * every tab and every agent reads, so each is held to the browser origin the
+ * opener settings are held to.
  * @param app The application.
  */
 function mountRepositoryRoutes(app: Express): void {
 	app.get("/api/repositories", createBrowserOriginGuard("settings-read"), repositoriesRoute);
 	app.put("/api/repositories/chosen", createBrowserOriginGuard("mutation"), chooseCheckoutRoute);
-	app.post("/api/repositories/changed", registryChangedRoute);
 }
 
-export { followRegistry, mountRepositoryRoutes };
+export { followRegistry, mountRepositoryRoutes, unwatchRegistry, watchRegistry };

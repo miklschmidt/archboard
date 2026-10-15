@@ -35,13 +35,11 @@ import {
 import {
 	ARCHBOARD_SERVICE_NAME,
 	foreignServiceError,
-	isConnectionFailure,
 	markServerIdentityVerified,
 	OtherSourceError,
 	requestJson,
 	responseError,
 } from "@/runtime/engine/lib/server-client-transport";
-import { registryPath } from "@/runtime/engine/repo-registry";
 import { isRecord } from "@/runtime/engine/lib/unknown-record";
 
 /**
@@ -149,25 +147,6 @@ function getPanes(caller: string | null): Promise<Record<string, unknown>> {
 }
 
 /**
- * Tell a running server that this command changed the checkout registry, so
- * that its panes follow it and every tab lists the repositories again (ADR
- * 0050). It never starts a server: with none running, nobody is reading, and a
- * server that starts later reads the registry as it is. The change is on disk
- * already, so a server that cannot be told never fails the command.
- * @returns A warning when a server answered and was not told, else undefined.
- */
-async function announceRegistryChange(): Promise<string | undefined> {
-	try {
-		await requestJson("/api/repositories/changed", posting({ registry: registryPath() }));
-		return undefined;
-	} catch (error) {
-		if (isConnectionFailure(error)) return undefined;
-		const reason = error instanceof Error ? error.message : String(error);
-		return `Warning: the Archboard server was not told that the registry changed, so its panes follow the change only after its next restart. ${reason}`;
-	}
-}
-
-/**
  * Split the canvas: one more pane beside what is already there.
  * @returns Where the new pane landed.
  */
@@ -271,7 +250,6 @@ export {
 	BOARD_REFUSAL_CODES,
 	ARCHBOARD_SERVICE_NAME,
 	addQuery,
-	announceRegistryChange,
 	boardRefusalOf,
 	claimBoard,
 	closePane,
