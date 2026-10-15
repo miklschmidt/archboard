@@ -72,8 +72,9 @@ rules that will not stop you:
   announced lock state, doing lines, agent activity and the disk watch. Each
   change on the change feed and each remembered code finding names its vault.
   News of a write goes only to the panes of that vault. The CLI names
-  `ARCHBOARD_VAULT` on every call. The browser learns the one vault the server
-  reports at `/api/served-vault` and names it on every call. The server
+  `ARCHBOARD_VAULT` on every call. Each browser pane names the vault the server
+  put it in (ADR 0050), and a pane opens in the vault the server reports at
+  `/api/served-vault`. The server
   still starts with `ARCHBOARD_VAULT` for the Codex workbench, which stays bound
   to that vault until TASK-472.10.
 - **One writer at a time per board** (ADR 0016), a lease file taken by one
