@@ -9,12 +9,12 @@
 // What it announces is the news every board it wrote makes, in the vault of
 // each: the board in the target vault, each board whose drill-down it
 // rewrote, and the board gone from the source vault, as a discard announces
-// it. The line the mover wrote goes up on every board it wrote and on the
-// board in the source vault. Every pane that showed the board in the source
-// vault moves with it into the target vault and shows it there (ADR 0051), as a
-// show of another repository's board moves a pane. A move that stopped part way
-// announces what it did write, moves no pane, and is answered as a refusal that
-// says to run it again.
+// it but naming where it went. The line the mover wrote goes up on every
+// board it wrote and on the board in the source vault. Every pane that showed
+// the board in the source vault moves with it into the target vault and shows
+// it there (ADR 0051), as a show of another repository's board moves a pane.
+// A move that stopped part way announces what it did write, moves no pane,
+// and is answered as a refusal that says to run it again.
 
 import type { NextFunction, Request, Response } from "express";
 import type { z } from "zod";
@@ -109,7 +109,11 @@ function announceMove(result: Wrote, doing: string, by: string | null): void {
 	if (result.outcome !== "moved") return;
 	followMovedBoard(from.vault, to.vault, key);
 	broadcast(
-		{ type: "board_note", board: key, ...settledChangeFields({ by, heldAs, discarded: true }) },
+		{
+			type: "board_note",
+			board: key,
+			...settledChangeFields({ by, heldAs, discarded: true, movedTo: to }),
+		},
 		from.vault,
 		key,
 	);
