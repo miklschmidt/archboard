@@ -96,10 +96,32 @@ function keysAnsweredAt(location: SemanticBoardLocation, board: SemanticBoard | 
 }
 
 /**
+ * Whether a board of the target vault is the copy an earlier run of this same
+ * move wrote, which the move writes again: the moved board's id under its name,
+ * at no later version than the move writes. A copy at a later version was
+ * written since, and writing over it would lose that.
+ * @param location Where the target's board is.
+ * @param other The board it holds, or null.
+ * @param board The board that moves.
+ * @returns True for the earlier run's copy.
+ */
+function isEarlierHalf(
+	location: SemanticBoardLocation,
+	other: SemanticBoard | null,
+	board: SemanticBoard,
+): boolean {
+	return (
+		other?.id === board.id &&
+		location.key === normalizeBoardKey(board.name) &&
+		other.version <= board.version + 1
+	);
+}
+
+/**
  * Refuse a target vault that has a board, or a former name, that the moved
  * board's name or one of its former names would answer to. Two boards
- * answering to one name would leave the name opening either. A board with the
- * moved board's id is the earlier half of this same move, and is no obstacle.
+ * answering to one name would leave the name opening either. The copy an
+ * earlier run of this same move wrote is no obstacle.
  * @param target The target vault.
  * @param board The board that moves.
  * @param address Where it is in the source vault.
@@ -111,18 +133,27 @@ function takenInTarget(
 	address: SemanticBoardLocation,
 ): SemanticWriteRejection | null {
 	const keys = new Set([board.name, ...(board.formerNames ?? [])].map(normalizeBoardKey));
-	const taken = listSemanticBoards(target).find((location) => {
-		const other = boardAt(location.file);
-		return other?.id !== board.id && keysAnsweredAt(location, other).some((key) => keys.has(key));
-	});
+	const taken = listSemanticBoards(target)
+		.map((location) => ({ location, other: boardAt(location.file) }))
+		.find(
+			({ location, other }) =>
+				!isEarlierHalf(location, other, board) &&
+				keysAnsweredAt(location, other).some((key) => keys.has(key)),
+		);
 	if (taken === undefined) return null;
+	const { location, other } = taken;
 	return rejected(
 		address,
 		board.version,
 		"BOARD_EXISTS",
-		`The vault ${target} already has the board "${taken.name}", which answers to "${board.name}" ` +
-			"or to a name the board had before. A name opens one board, so the move would leave it " +
-			"opening either. Rename one of the two boards first. Nothing was written.",
+		other?.id === board.id
+			? `The vault ${target} already has a copy of this board as "${location.name}" at version ` +
+					`${other.version}, which was written or renamed after it came there, and the move would ` +
+					"write over it or leave two copies. Discard the copy you do not want first. Nothing " +
+					"was written."
+			: `The vault ${target} already has the board "${location.name}", which answers to ` +
+					`"${board.name}" or to a name the board had before. A name opens one board, so the move ` +
+					"would leave it opening either. Rename one of the two boards first. Nothing was written.",
 	);
 }
 
