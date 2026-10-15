@@ -56,7 +56,7 @@ interface VaultNotFound {
 	readonly reason: VaultNotFoundReason;
 	/** The directory the search started from, absolute. */
 	readonly directory: string;
-	readonly origin: Exclude<VaultOrigin, "environment">;
+	readonly origin: VaultOrigin;
 	/** The root of the checkout the directory is in, when it is in one. */
 	readonly checkoutRoot?: string;
 	readonly message: string;
@@ -84,7 +84,7 @@ function vaultHolder(dir: string): string | undefined {
  * @param directory The start directory.
  * @returns The phrase.
  */
-function startPhrase(origin: VaultNotFound["origin"], directory: string): string {
+function startPhrase(origin: Exclude<VaultOrigin, "environment">, directory: string): string {
 	return origin === "-C"
 		? `The directory -C names, ${directory},`
 		: `The working directory, ${directory},`;
@@ -106,6 +106,13 @@ function notFound(refusal: Omit<VaultNotFound, "code" | "message">): VaultFindin
  */
 function notFoundMessage(refusal: Omit<VaultNotFound, "code" | "message">): string {
 	const { directory, origin, checkoutRoot } = refusal;
+	if (origin === "environment") {
+		return (
+			`ARCHBOARD_VAULT names ${directory}, which is not a directory. A set ARCHBOARD_VAULT decides the vault ` +
+			`of every command that names no -C. Unset it, so a command finds its vault from the directory it runs in, ` +
+			`or set it to a vault directory. Nothing was done.`
+		);
+	}
 	if (refusal.reason === "directory-missing") {
 		return `-C names ${directory}, which is not a directory. Nothing was done.`;
 	}
@@ -146,7 +153,10 @@ function realPath(directory: string): string {
  * @param origin How it was given.
  * @returns The finding.
  */
-async function vaultFrom(start: string, origin: VaultNotFound["origin"]): Promise<VaultFinding> {
+async function vaultFrom(
+	start: string,
+	origin: Exclude<VaultOrigin, "environment">,
+): Promise<VaultFinding> {
 	const directory = realPath(start);
 	const root = await repoRootOf(directory);
 	if (root !== undefined) {
@@ -170,7 +180,8 @@ async function vaultFrom(start: string, origin: VaultNotFound["origin"]): Promis
 
 /**
  * Find the vault a command addresses: from `-C` when it is given, else the
- * vault `ARCHBOARD_VAULT` names, used as it is, else from the working directory.
+ * vault `ARCHBOARD_VAULT` names, used as it is when it is a directory, else
+ * from the working directory.
  * @param search What the command was given, and where it runs.
  * @returns The vault, or why there is none.
  */
@@ -183,10 +194,9 @@ async function findVault(search: VaultSearch): Promise<VaultFinding> {
 	}
 	if (search.environment !== undefined && search.environment !== "") {
 		const named = path.resolve(search.cwd, search.environment);
-		return {
-			ok: true,
-			found: { path: realPath(named), origin: "environment", holder: null },
-		};
+		return isDirectory(named)
+			? { ok: true, found: { path: realPath(named), origin: "environment", holder: null } }
+			: notFound({ reason: "directory-missing", directory: named, origin: "environment" });
 	}
 	return vaultFrom(search.cwd, "working-directory");
 }
