@@ -169,6 +169,8 @@ type ServerError = Error & {
 	code?: unknown;
 	available?: unknown;
 	refusal?: unknown;
+	/** The whole body the server answered with, for a route whose refusal says more than its reason. */
+	answer?: Record<string, unknown>;
 };
 
 /**
@@ -188,6 +190,7 @@ function responseError(data: unknown, response: Response): Error {
 		stringAt(body, "error") ?? `HTTP server error: ${response.status} ${response.statusText}`,
 	);
 	describeFailure(error, body);
+	error.answer = body;
 	if (isBoardRefusal(data)) {
 		error.refusal = data;
 	}

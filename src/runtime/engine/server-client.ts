@@ -38,6 +38,7 @@ import {
 	markServerIdentityVerified,
 	OtherSourceError,
 	requestJson,
+	responseError,
 } from "@/runtime/engine/lib/server-client-transport";
 import { isRecord } from "@/runtime/engine/lib/unknown-record";
 
@@ -258,6 +259,7 @@ export {
 	openPane,
 	releaseBoardClaim,
 	requestJson,
+	responseError,
 	setExpectedVersion,
 	setRequestedBoard,
 	setRequestedVault,
