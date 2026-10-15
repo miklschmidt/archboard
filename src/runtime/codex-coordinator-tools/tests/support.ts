@@ -150,8 +150,16 @@ function bindingFor(
 /** The checkout the fixture's one workhorse works in (ADR 0050). */
 const CHECKOUT = "/work/payments";
 
+/**
+ * A coordinator-tools dispatcher over one workhorse.
+ * @param authorities - The identity authorities.
+ * @param checkouts - The checkouts the workhorse answers in: its own, and more when a test needs a
+ * second checkout that a call can name and that has a workhorse.
+ * @returns The fixture.
+ */
 function fixture(
 	authorities: IdentityAuthorities = createIdentityAuthorities(),
+	checkouts: readonly string[] = [CHECKOUT],
 ): CoordinatorToolsFixture {
 	const identity = authorities.identity;
 	const coordinatorThreadId = identity.decoder.adoptThreadId("coordinator");
@@ -389,12 +397,12 @@ function fixture(
 		authority,
 		operation,
 		/**
-		 * The fixture's one workhorse, which works in its one checkout.
+		 * The fixture's workhorse, in the checkouts it answers in.
 		 * @param checkout - The checkout a call names.
 		 * @returns The workhorse, or null for another checkout.
 		 */
 		workhorseFor: (checkout) =>
-			checkout === CHECKOUT ? { binding: () => currentBinding, operations } : null,
+			checkouts.includes(checkout) ? { binding: () => currentBinding, operations } : null,
 		spokenApproval,
 		transport,
 	});

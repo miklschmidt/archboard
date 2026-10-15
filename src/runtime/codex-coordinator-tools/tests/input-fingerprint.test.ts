@@ -18,6 +18,8 @@ interface FingerprintCase {
 
 /** The checkout every workhorse case names: the fixture's one workhorse works in it (ADR 0050). */
 const CHECKOUT = "/work/payments";
+/** Another checkout with a workhorse, which a replay of a workhorse call can name instead. */
+const OTHER_CHECKOUT = "/work/shop";
 
 /**
  * A workhorse tool's arguments as the coordinator sends them, naming the fixture's checkout.
@@ -30,6 +32,21 @@ function named(tool: CoordinatorToolName, value: ToolArguments): ToolArguments {
 		return value;
 	}
 	return Array.isArray(value) ? value : { checkout: CHECKOUT, ...value };
+}
+
+/**
+ * The replays of a case that must not count as the call they replay: its own mismatches, and for
+ * a workhorse tool the same arguments naming another checkout, whose workhorse is another one.
+ * @param fingerprintCase - The case.
+ * @returns The mismatching arguments, as the coordinator sends them.
+ */
+function mismatchesOf(fingerprintCase: FingerprintCase): readonly ToolArguments[] {
+	const { tool, owner } = fingerprintCase;
+	const own = fingerprintCase.mismatches.map((mismatch) => named(tool, mismatch));
+	if (tool === "resolve_spoken_approval" || owner === null || typeof owner !== "object") {
+		return own;
+	}
+	return [...own, { ...owner, checkout: OTHER_CHECKOUT }];
 }
 
 const CASES: readonly FingerprintCase[] = [
@@ -202,7 +219,7 @@ async function dispatch(
 describe("coordinator canonical input fingerprint boundary", () => {
 	for (const fingerprintCase of CASES) {
 		test(fingerprintCase.name, async () => {
-			const h = fixture();
+			const h = fixture(undefined, [CHECKOUT, OTHER_CHECKOUT]);
 			const ownerRequest = h.request(fingerprintCase.tool, {
 				arguments: named(fingerprintCase.tool, fingerprintCase.owner),
 			});
@@ -222,12 +239,12 @@ describe("coordinator canonical input fingerprint boundary", () => {
 			);
 			expect(effectCount(h, fingerprintCase.tool)).toBe(1);
 
-			for (const [index, mismatch] of fingerprintCase.mismatches.entries()) {
+			for (const [index, mismatch] of mismatchesOf(fingerprintCase).entries()) {
 				const request = replayRequest(
 					h,
 					ownerRequest,
 					`${fingerprintCase.name}-mismatch-${index}`,
-					named(fingerprintCase.tool, mismatch),
+					mismatch,
 				);
 				const result = await dispatch(h, request);
 				expect(result.response.success).toBe(false);
