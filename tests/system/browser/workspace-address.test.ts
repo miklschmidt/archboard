@@ -65,7 +65,6 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = vaultIn(join(ownerRoot, "vault"));
-	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
@@ -145,7 +144,6 @@ test("an address naming a board that is not there says so and settles on what is
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = vaultIn(join(ownerRoot, "missing-vault"));
-	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
@@ -187,7 +185,6 @@ test("choosing a variant in the navigator moves the pane it was chosen for, and 
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = vaultIn(join(ownerRoot, "variant-vault"));
-	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);

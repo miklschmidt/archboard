@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -107,7 +106,6 @@ test(
 		await using resources = new AsyncDisposableStack();
 		const { ownerRoot } = browserTestRoots();
 		const vault = vaultIn(join(ownerRoot, "vault"));
-		mkdirSync(vault, { recursive: true });
 		const server = await startOwnedServer({
 			serverPath,
 			vault,

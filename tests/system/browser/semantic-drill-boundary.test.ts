@@ -127,7 +127,6 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 	const { ownerRoot } = browserTestRoots();
 	const root = join(ownerRoot, "drill-boundary");
 	const vault = vaultIn(join(root, "vault"));
-	mkdirSync(vault, { recursive: true });
 	const { registry } = aCheckout(root, vault);
 	const opener = aRecordingOpener(root);
 	const server = await startOwnedServer({

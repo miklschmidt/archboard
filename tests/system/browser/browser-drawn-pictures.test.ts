@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
@@ -84,7 +83,6 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = vaultIn(join(ownerRoot, "drawn-here-vault"));
-	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);

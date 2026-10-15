@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
@@ -152,7 +152,6 @@ test("a second pane arriving does not swallow the news for the pane already ther
 	const root = mkdtempSync(join(tmpdir(), "archboard-arrival-write-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = vaultIn(join(root, "vault"));
-	mkdirSync(vault, { recursive: true });
 	const file = join(vault, "payments.semantic.json");
 	writeFileSync(file, `${JSON.stringify(boardDocument([node("Gateway")]), null, "\t")}\n`);
 
@@ -201,7 +200,6 @@ test("a board that was already in the vault is watched from the moment it is sho
 	const root = mkdtempSync(join(tmpdir(), "archboard-existing-write-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = vaultIn(join(root, "vault"));
-	mkdirSync(vault, { recursive: true });
 
 	// Written before the server starts, the way a vault that has been used
 	// before arrives: nothing in this process ever wrote it, so nothing in this
