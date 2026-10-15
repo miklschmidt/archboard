@@ -402,12 +402,27 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	}
 
 	/**
-	 * The terminals every open connection of their own tab session has been
-	 * shown, which are the ones the approval owner may stop presenting. A
-	 * terminal is shown only to its tab session, so a connection of another
-	 * tab never holds it back; with no connection of its tab session open there
-	 * is nobody left to show it to.
-	 * @param candidates The terminals still being presented, with their tab session.
+	 * Whether a connection's pane is in a checkout now. A pane whose vault the server no longer
+	 * knows is in none, so it is shown no workhorse's approval.
+	 * @param state The connection.
+	 * @param checkout The checkout.
+	 * @returns True when it is.
+	 */
+	function inCheckout(state: ConnectionState, checkout: string): boolean {
+		try {
+			return options.checkoutOf(state.browserId) === checkout;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
+	 * The terminals every open connection they are shown to has been shown,
+	 * which are the ones the approval owner may stop presenting. A terminal is
+	 * shown only to its tab session, and a workhorse's only to the panes of its
+	 * checkout now, so a connection of another tab or another checkout never
+	 * holds it back; with none of those open there is nobody left to show it to.
+	 * @param candidates The terminals still being presented, with the panes they are shown to.
 	 * @returns The terminals that may be acknowledged.
 	 */
 	function terminalsEverySessionBrowserHasSeen(
@@ -415,9 +430,13 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	): readonly JsonRpcRequestId[] {
 		const open = Array.from(states.values());
 		return candidates
-			.filter(({ requestId, tabSessionId }) =>
+			.filter(({ requestId, tabSessionId, checkout }) =>
 				open
-					.filter((state) => state.tabSessionId === tabSessionId)
+					.filter(
+						(state) =>
+							state.tabSessionId === tabSessionId &&
+							(checkout === null || inCheckout(state, checkout)),
+					)
 					.every((state) => !state.closed && state.publishedTerminals.has(requestId)),
 			)
 			.map(({ requestId }) => requestId);
