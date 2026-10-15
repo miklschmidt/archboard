@@ -44,7 +44,7 @@ function useDrillRepositories(
 		},
 		[listed, openBoard],
 	);
-	return useMemo(() => ({ places, dive }), [places, dive]);
+	return { places, dive };
 }
 
 export { useDrillRepositories };
