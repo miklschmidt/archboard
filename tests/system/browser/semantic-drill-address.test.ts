@@ -322,3 +322,118 @@ test("a drill-down into another repository moves the pane there, and the breadcr
 	expect(await crumbRepositories(browser)).toEqual([]);
 	await server.assertRunning();
 }, 45_000);
+
+const ARCHIVE = "github.com/acme/archive";
+
+/** The dialog that moves a board, once it is open. */
+const MOVE_DIALOG = `[role='dialog']`;
+
+/**
+ * Whether the move dialog shows a refusal, and how many drill-downs it lists.
+ * @param browser The page.
+ * @returns What the dialog shows, or null while it is closed.
+ */
+const moveDialog = (
+	browser: AgentBrowserSession,
+): Promise<{ refused: boolean; rewrites: string[]; movable: boolean } | null> =>
+	browser.eval(`(() => {
+		const dialog = document.querySelector("${MOVE_DIALOG}");
+		if (!dialog) return null;
+		const move = [...dialog.querySelectorAll("button")].find((one) => one.textContent.trim() === "Move");
+		return {
+			refused: !!dialog.querySelector("[role='alert']"),
+			rewrites: [...dialog.querySelectorAll("section li")].map((one) => one.textContent),
+			movable: !!move && !move.disabled,
+		};
+	})()`);
+
+// A person moves a board to another repository (ADR 0051): a target that
+// already has the board says why it refuses, the one chosen instead lists the
+// drill-down it rewrites, and the pane follows the board to where it is now.
+test("a person moves a board by keyboard to another repository, and the pane follows it", async () => {
+	await using resources = new AsyncDisposableStack();
+	const fixture = createRepositoryFixture();
+	resources.defer(() => fixture.dispose());
+	const shopCheckout = fixture.repository("shop", SHOP);
+	const archiveCheckout = fixture.repository("archive", ARCHIVE);
+	for (const checkout of [shopCheckout, fixture.repository("orders", ORDERS), archiveCheckout]) {
+		configuredVaultIn(checkout);
+		const added = spawnSync(packageBin, ["repo", "add", checkout], {
+			cwd: fixture.nowhere,
+			env: fixture.serverEnvironment,
+			encoding: "utf8",
+		});
+		expect(added.status).toBe(0);
+	}
+	const server = await startOwnedServer({
+		serverPath,
+		vault: fixture.vault,
+		env: serverTestEnvironment({ ARCHBOARD_REPOS: fixture.registry }),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const inShop = createJsonRequester({ ...server, vault: configuredVaultIn(shopCheckout) });
+	await seedSemanticBoard(inShop, "ledger", { nodes: [{ name: "Posting", kind: "service" }] });
+	await seedSemanticBoard(inShop, "storefront", {
+		nodes: [
+			{
+				name: "Checkout",
+				kind: "service",
+				drillDown: { board: "ledger", variant: { kind: "current" } },
+			},
+		],
+	});
+	await seedSemanticBoard(
+		createJsonRequester({ ...server, vault: configuredVaultIn(archiveCheckout) }),
+		"ledger",
+		{
+			nodes: [{ name: "Kept", kind: "service" }],
+		},
+	);
+
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${server.base}/?paneA=ledger&repoA=${SHOP}`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await drawnId(browser, "Posting");
+
+	// The control opens from the keyboard, and the dialog starts on the first target.
+	await browser.run(["focus", `button[aria-label='Move ledger to another repository']`]);
+	await browser.run(["press", "Enter"]);
+	await pollUntil(() => moveDialog(browser), Boolean, "the move dialog to open", WAIT);
+	await browser.run(["press", "Space"]);
+	await pollUntil(
+		() => moveDialog(browser),
+		(dialog) => dialog?.refused === true && !dialog.movable,
+		"a target that already has the board to say the move would be refused",
+		WAIT,
+	);
+
+	await browser.run(["press", "ArrowDown"]);
+	const ready = await pollUntil(
+		() => moveDialog(browser),
+		(dialog) => dialog?.refused === false && dialog.movable,
+		"the other target to list what the move rewrites",
+		WAIT,
+	);
+	expect(ready?.rewrites).toHaveLength(1);
+	expect(ready?.rewrites[0]).toContain("storefront");
+
+	// Tab past Cancel to Move.
+	await browser.run(["press", "Tab"]);
+	await browser.run(["press", "Tab"]);
+	await browser.run(["press", "Enter"]);
+	await pollUntil(
+		() => addressSearch(browser),
+		(search) => search === `paneA=ledger&repoA=${ORDERS}`,
+		"the pane to show the board in the repository it moved to",
+		WAIT,
+	);
+	await pollUntil(
+		() => moveDialog(browser),
+		(dialog) => dialog === null,
+		"the dialog to close",
+		WAIT,
+	);
+	await drawnId(browser, "Posting");
+	await server.assertRunning();
+}, 45_000);
