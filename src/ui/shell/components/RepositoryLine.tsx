@@ -62,7 +62,8 @@ function repositoryFacts(row: RepositoryRow): string {
  * @returns The label.
  */
 function repositoryLabel(row: RepositoryRow, facts: string): string {
-	const holds = row.entry.state === "ready" ? `${facts} boards` : facts;
+	const holds =
+		row.entry.state !== "ready" ? facts : row.loading ? "reading its boards" : `${facts} boards`;
 	return [row.entry.name, "repository", holds, row.error].filter(Boolean).join(", ");
 }
 
@@ -98,8 +99,14 @@ function RepositoryLine(
 		[onRowKeyDown, row.entry.checkouts.length],
 	);
 	const facts = repositoryFacts(row);
+	const hasMenu = row.entry.checkouts.length > 0;
 	return (
-		<TreeRow {...props} onRowKeyDown={handleKeyDown} label={repositoryLabel(row, facts)}>
+		<TreeRow
+			{...props}
+			onRowKeyDown={handleKeyDown}
+			label={repositoryLabel(row, facts)}
+			hasMenu={hasMenu}
+		>
 			<TreeRowDisclosure row={row} name={name} onExpand={props.onExpand} />
 			<TreeRowMarker icon={RiGitRepositoryLine} title="Repository">
 				{row.innerActivity && <InsideLamp />}
@@ -116,7 +123,7 @@ function RepositoryLine(
 					</span>
 				)}
 				{facts}
-				{row.entry.checkouts.length > 0 && (
+				{hasMenu && (
 					<CheckoutMenu
 						entry={row.entry}
 						open={menuOpen}
@@ -197,9 +204,8 @@ function CheckoutMenu(props: CheckoutMenuProps): JSX.Element {
 								disabled={!checkout.exists || !checkout.hasVault}
 								className="font-mono"
 							>
-								<span className="min-w-0 truncate" title={checkout.root}>
-									{checkout.root}
-								</span>
+								{/* Worktrees share a long prefix, so a path wraps rather than losing its end. */}
+								<span className="min-w-0 flex-1 break-all">{checkout.root}</span>
 								{checkoutNote(checkout)}
 							</DropdownMenuRadioItem>
 						))}

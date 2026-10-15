@@ -3,9 +3,9 @@
 // opens a closed row, then steps into it; left closes an open row, then steps
 // out to the row it sits under. While a filter is on, which opens everything
 // it reaches, right and left only walk. Enter opens a board or a variant where
-// the person is reading and Alt+Enter opens it beside; on a folder or an
-// Earlier row, Enter opens or closes it. Pure: the component carries the
-// answer out.
+// the person is reading and Alt+Enter opens it beside; on a repository, a
+// folder or an Earlier row, Enter opens or closes it, and on a repository that
+// holds nothing it does nothing. Pure: the component carries the answer out.
 
 import { paneCanShow, rowOpen } from "@/ui/shell/lib/navigator-rows";
 import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
@@ -84,8 +84,8 @@ function leftAction(
 }
 
 /**
- * What Enter or Space does: a folder or an Earlier row opens or closes, a
- * board or a variant opens.
+ * What Enter or Space does: a repository, a folder or an Earlier row opens or
+ * closes, a board or a variant opens.
  * @param rows The rows.
  * @param index The focused row's index.
  * @param event The key and whether Alt was held: open in the other pane.
@@ -99,7 +99,8 @@ function enterAction(
 	const row = rows[index];
 	if (row === undefined) return null;
 	if (paneCanShow(row)) return { kind: "open", row, beside: event.altKey };
-	return { kind: "expand", id: row.id, open: !row.expanded };
+	const open = rowOpen(row);
+	return open === undefined ? null : { kind: "expand", id: row.id, open: !open };
 }
 
 /** A key with what it is pressed with. */
