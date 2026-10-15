@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -9,7 +9,7 @@ import {
 import { createJsonRequester } from "../support/http.ts";
 import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
-import { vaultIn } from "../support/test-vault.ts";
+import { holderOf, vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -336,6 +336,132 @@ test(
 		expect(all.filter(({ kind }) => kind === "app_server_spawn")).toHaveLength(1);
 		expect(all.some(({ kind }) => kind === "fixture_error")).toBe(false);
 		expect(await browser.run(["console"])).toBe("");
+		expect(await browser.run(["errors"])).toBe("");
+	},
+	TEST_BROWSER_COMMAND_TIMEOUT_MS,
+);
+
+/** The dock's list of the tab's workhorses: each checkout, and whether it is the one shown. */
+function conversationList(browser: Browser): Promise<{ checkout: string; shown: boolean }[]> {
+	return browser.eval(`[...document.querySelectorAll('${AGENT_DOCK} [aria-label="Conversations"] button')]
+		.map(node => ({ checkout: node.title, shown: node.getAttribute('aria-pressed') === 'true' }))`);
+}
+
+/** Type a message into the open conversation and send it with Enter. */
+async function sendMessage(browser: Browser, text: string): Promise<void> {
+	await openConversation(browser);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`(() => { const input = document.querySelector('${COMPOSER}'); input?.focus(); return document.activeElement === input; })()`,
+			),
+		Boolean,
+		"the composer to take the keyboard",
+	);
+	await browser.eval<boolean>(
+		"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
+	);
+	await browser.run(["keyboard", "type", text]);
+	await browser.run(["press", "Enter"]);
+}
+
+// The shown conversation (ADR 0050, TASK-472.11), as a person meets it: the dock shows the
+// conversation of the checkout whose pane they last focused, an agent's show of that pane changes
+// nothing, and the dock's list picks another conversation by keyboard.
+test(
+	"the dock follows the pane the person focuses, not an agent's show, and its list picks a conversation",
+	async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = prepareProductionFixture(resources, executableSource);
+		const { ownerRoot } = browserTestRoots();
+		const shopVault = vaultIn(join(ownerRoot, "shop"));
+		const ordersVault = vaultIn(join(ownerRoot, "orders"));
+		const shop = realpathSync(holderOf(shopVault));
+		const orders = realpathSync(holderOf(ordersVault));
+		const server = await startOwnedServer({
+			serverPath,
+			vault: shopVault,
+			env: serverTestEnvironment({
+				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+			}),
+		});
+		resources.defer(() => server.dispose());
+		registerServerBase(server.base);
+		await seedSemanticBoard(createJsonRequester(server), "storefront");
+		await seedSemanticBoard(createJsonRequester({ ...server, vault: ordersVault }), "ledger");
+		const browser = resources.use(await createAgentBrowser());
+		await browser.run(["open", server.base]);
+		await browser.run(["set", "viewport", "1920", "1080", "1"]);
+		runServerCli(server, ["browser", "show", "storefront", "--pane", "primary"]);
+		expect(
+			await browser.eval<boolean>(
+				`(() => { const add = document.querySelector('button[aria-label="Open a second pane"]'); add?.click(); return add !== null; })()`,
+			),
+		).toBe(true);
+		await pollUntil(
+			() => browser.eval<number>(`document.querySelectorAll('${PANE_SECTIONS}').length`),
+			(count) => count === 2,
+			"the second pane to open",
+		);
+		runServerCli(server, [
+			"-C",
+			holderOf(ordersVault),
+			"browser",
+			"show",
+			"ledger",
+			"--pane",
+			"right",
+		]);
+
+		// The tab shows the first pane's checkout, so a message goes to the shop's workhorse.
+		await sendMessage(browser, MESSAGE);
+		await pollUntil(
+			() => agentSurface(browser),
+			(surface) => surface.prompts.some((text) => text.includes(MESSAGE)),
+			"the message to become the shop conversation's prompt",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+
+		// Opening the second pane focused it without activating it. Focusing the shop pane and then
+		// the orders pane shows the orders conversation, and the list offers both.
+		await browser.run(["click", `${PANE_SECTIONS}:first-of-type ${SEMANTIC_STAGE}`]);
+		await browser.run(["click", `${PANE_SECTIONS}:last-of-type ${SEMANTIC_STAGE}`]);
+		await pollUntil(
+			() => conversationList(browser),
+			(list) =>
+				list.some(({ checkout, shown }) => checkout === orders && shown) && list.length === 2,
+			"the dock to show the orders conversation and list both",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect((await agentSurface(browser)).prompts.some((text) => text.includes(MESSAGE))).toBe(
+			false,
+		);
+
+		// An agent's show moves the focused pane into the shop, and the dock stays where the person put it.
+		runServerCli(server, ["browser", "show", "storefront", "--pane", "focused"]);
+		await pollUntil(
+			() => browser.eval<string | null>(BOARD_NAME_EXPRESSION),
+			(name) => name === "storefront",
+			"the agent's show to reach the focused pane",
+		);
+		expect((await conversationList(browser)).find(({ shown }) => shown)?.checkout).toBe(orders);
+
+		// A pick by keyboard shows the shop conversation again. The orders checkout has no workhorse
+		// and is no longer shown, so the list then has nothing left to offer.
+		await browser.run([
+			"focus",
+			`${AGENT_DOCK} [aria-label="Conversations"] button[title="${shop}"]`,
+		]);
+		await browser.run(["press", "Enter"]);
+		await pollUntil(
+			async () => ({ list: await conversationList(browser), surface: await agentSurface(browser) }),
+			({ list, surface }) =>
+				list.length === 0 && surface.prompts.some((text) => text.includes(MESSAGE)),
+			"the pick to show the shop conversation",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
 		expect(await browser.run(["errors"])).toBe("");
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,

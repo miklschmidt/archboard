@@ -63,7 +63,8 @@ function ConversationList(props: ConversationListProps): JSX.Element | null {
 }
 
 /**
- * One workhorse: its repository, the directory of its checkout, and what it waits on.
+ * One workhorse: its repository, then what tells it apart and what it waits on. The directory of
+ * its checkout tells two checkouts of one repository apart; it is left out where it is the name.
  * @param props The workhorse.
  * @param props.workhorse The workhorse, as the server lists it.
  * @returns Its words.
@@ -71,15 +72,16 @@ function ConversationList(props: ConversationListProps): JSX.Element | null {
 function WorkhorseLabel(props: { readonly workhorse: Workhorse }): JSX.Element {
 	const { workhorse } = props;
 	const place = directoryName(workhorse.checkout);
-	const state = stateOf(workhorse);
+	const name = workhorse.repository ?? place;
+	const detail = [name === place ? null : place, stateOf(workhorse)].filter(
+		(part) => part !== null,
+	);
 	return (
 		<span className="flex min-w-0 flex-col">
-			<span className="truncate">{workhorse.repository ?? place}</span>
-			<span className="text-muted-foreground text-technical truncate">
-				{workhorse.repository === null ? null : place}
-				{workhorse.repository !== null && state !== null ? " · " : null}
-				{state}
-			</span>
+			<span className="truncate">{name}</span>
+			{detail.length > 0 && (
+				<span className="text-muted-foreground text-technical truncate">{detail.join(" · ")}</span>
+			)}
 		</span>
 	);
 }
