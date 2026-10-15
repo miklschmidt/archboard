@@ -17,7 +17,7 @@ import {
 	repositoryOf,
 	row,
 } from "@/ui/shell/tests/navigator-fixture";
-import type { BoardListing } from "@/ui/types";
+import type { AgentActivityEntry, BoardListing } from "@/ui/types";
 
 /** A second repository, with a board of the same name as one of the shop's. */
 const BILLING = "github.com/acme/billing";
@@ -48,6 +48,37 @@ test("every repository is a row with its own boards, and a board of one name in 
 	// A repository row opens and closes what it holds, as a folder's does.
 	act(() => row(`repository:${BILLING}`).click());
 	expect(document.querySelector(`[data-row-id="${CSS.escape(inBilling)}"]`)).toBeNull();
+});
+
+/**
+ * An agent's unclaimed write to the payments board.
+ * @param said What it said it was doing.
+ * @returns The activity.
+ */
+function writing(said: string): AgentActivityEntry {
+	return {
+		board: "payments",
+		claim: null,
+		doing: { doing: said, at: new Date().toISOString(), by: "agent", kind: "agent" },
+	};
+}
+
+test("agent work on a board of one name in two repositories is two entries, each naming its repository", () => {
+	const asked = mountNavigator({
+		repositories: [
+			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_BOARDS, { payments: writing("adding a queue") }),
+			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_BOARDS, {
+				payments: writing("adding a ledger"),
+			}),
+		],
+	});
+	const entries = [
+		...document.querySelectorAll<HTMLButtonElement>('[data-slot="working-now"] button'),
+	];
+	expect(entries.map((entry) => entry.textContent.includes(BILLING))).toEqual([false, true]);
+	expect(entries.map((entry) => entry.textContent.includes(SHOP))).toEqual([true, false]);
+	act(() => entries[1]?.click());
+	expect(asked.opened).toEqual([`${BILLING}|payments`]);
 });
 
 test("a repository whose chosen checkout has no vault says so, and its menu chooses another checkout from the keyboard", async () => {
