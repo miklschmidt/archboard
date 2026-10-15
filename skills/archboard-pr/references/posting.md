@@ -34,5 +34,10 @@ of the text between the markers with the new section, then post the whole
 body with `gh pr edit`. Never add a paragraph to the old section: a body that
 grows with each update reads as its history.
 
+An earlier version of this skill wrote a `## Summary` heading above the begin
+marker, and an Evidence or Merge Danger section below the end marker. Those
+are part of the old body, not the author's text: replace them with the new
+section too, so that the body has one set of sections.
+
 News about the pull request, such as a CI fix or a rebase, goes in a comment
 with `gh pr comment <number>`, never in the body.
