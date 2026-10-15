@@ -55,6 +55,8 @@ interface WorkingEntry {
 	readonly name: string;
 	/** The repository the board is in (ADR 0050). */
 	readonly repository: string;
+	/** Whether the entry names its repository: the navigator lists more than one. */
+	readonly named: boolean;
 	/** The letters of the panes showing it, when there are two. */
 	readonly onScreen: readonly string[];
 }
@@ -171,8 +173,13 @@ function WorkingItem(props: WorkingItemProps): JSX.Element {
 					<span style={LAMP_STYLE} className="flex shrink-0 justify-center">
 						<ActivityLamp state={claim === null ? "wrote" : "claimed"} />
 					</span>
-					<span style={NAME_GAP_STYLE} className="text-control min-w-0 flex-1 truncate font-medium">
-						{entry.name}
+					<span style={NAME_GAP_STYLE} className="text-control min-w-0 flex-1 truncate">
+						<span className="font-medium">{entry.name}</span>
+						{entry.named ? (
+							<span className="text-muted-foreground">
+								<span className="sr-only">, in</span> {repository}
+							</span>
+						) : null}
 					</span>
 					<span style={FACTS_STYLE} className="flex shrink-0 items-center gap-1.5">
 						<PaneChips letters={entry.onScreen} />

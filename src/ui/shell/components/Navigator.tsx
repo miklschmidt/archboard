@@ -84,6 +84,7 @@ function paneMarks(view: ShellView): PaneMark[] {
  * @returns The entries.
  */
 function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEntry[] {
+	const named = view.repositories.length > 1;
 	return view.repositories.flatMap((shell) => {
 		const repository = shell.repository.name;
 		return Object.values(shell.activity).map((activity) => {
@@ -98,7 +99,7 @@ function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEnt
 									pane.board?.toLowerCase() === name.toLowerCase(),
 							)
 							.map((pane) => pane.letter);
-			return { activity, name, repository, onScreen: letters };
+			return { activity, name, repository, named, onScreen: letters };
 		});
 	});
 }
