@@ -160,8 +160,9 @@ recipe names.
   board. Every pane of that repository then reads your checkout. The answer
   then has `chose: {repository, checkout, replaced}`. `replaced` is the
   checkout that the user read before. Tell the user that the app reads your
-  checkout now. A show from the chosen checkout has no `chose`, and no board
-  command changes the choice. `archboard browser panes` gives each pane its
+  checkout now. A show from the chosen checkout has no `chose`. The only other
+  board command that changes the choice is a finished `semantic move` into a
+  checkout that is not chosen, and its answer has `chose` too. `archboard browser panes` gives each pane its
   `repository`, its `checkout` and `own`. `own` is true for a pane that shows
   the vault of the directory that you run the command in.
 - **Vocabulary.** Read the `configurationFile` that `archboard semantic config`
