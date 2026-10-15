@@ -273,8 +273,7 @@ has these steps:
    root documents (`README.md`, `INSTALL.md`, `TESTING.md`, `AGENTS.md`). Look in the
    `CONTEXT.md` entries and their `_Avoid_` lines, and in both skills. Look in the help
    text, the refusal descriptions and the exit-code help under `src/cli`. Look
-   in what `install-skill` writes into other repositories
-   (`src/cli/commands/lib/repo-setup.ts`), in code comments and in test names.
+   in code comments and in test names.
    Done: every hit is still true or is history. Backlog tasks, ADR bodies
    and `docs/design/skill-evals/baseline` stay as written.
 2. Delete what only served it.
@@ -290,8 +289,8 @@ has these steps:
 4. Say which copies stay stale.
    `bun run generate:skill-artifacts` carries INSTALL.md and the schemas into the skill.
    The skill in `~/.agents/skills` or `~/.claude/skills` changes only after
-   `archboard install-skill` runs there again. The same is true for the block in each
-   repository. So the report must tell the reader to run that command.
+   `archboard install-skill` runs there again. So the report must tell the reader
+   to run that command.
 
 ## Stating a fact where it cannot drift
 
