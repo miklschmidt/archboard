@@ -27,7 +27,6 @@ import {
 	readRecord,
 	releaseHold,
 	stamp,
-	takeHandoff,
 	writeRecord,
 } from "@/runtime/engine/lib/board-lock-state";
 
@@ -379,7 +378,7 @@ async function holdBoard(request: LockRequest): Promise<LockHold> {
 		// oxlint-disable-next-line no-await-in-loop -- one attempt at a time is the mutex
 		const result = await attemptOnce(board, request, plan.leaseMs);
 		if (result.ok) {
-			return holdFrom(result, request.vault, board, wait.blocker);
+			return { holder: holderOf(result.record), created: result.created };
 		}
 		const verdict = nextStep(result, request, wait, plan.deadline);
 		if (verdict === "stop") {
@@ -407,7 +406,7 @@ interface WaitPlan {
 
 /** What the wait has learnt so far. */
 interface WaitState {
-	/** The last concrete blocker, for the refusal text and predecessor proof. */
+	/** The last concrete blocker, for the refusal text. */
 	blocker: LockRecord | null;
 	attemptsPastDeadline: number;
 }
@@ -480,32 +479,6 @@ function givesUp(wait: WaitState): boolean {
 	}
 	wait.attemptsPastDeadline += 1;
 	return false;
-}
-
-/**
- * The hold a proven acquisition becomes.
- *
- * A commit receipt is useful only when this newly-created acquirer observed
- * its exact predecessor; the state owner consumes and validates it once.
- * @param result The proven acquisition.
- * @param vault The vault root the board lives in.
- * @param board The board key.
- * @param blocker The last concrete blocker this wait saw.
- * @returns The hold.
- */
-function holdFrom(
-	result: Extract<Attempt, { ok: true }>,
-	vault: string,
-	board: string,
-	blocker: LockRecord | null,
-): LockHold {
-	const predecessorHash = result.created ? takeHandoff(vault, board, blocker) : undefined;
-	return {
-		holder: holderOf(result.record),
-		leaseToken: result.record.token,
-		created: result.created,
-		...(predecessorHash !== undefined ? { predecessorHash } : {}),
-	};
 }
 
 /**

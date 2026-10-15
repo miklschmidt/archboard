@@ -7,12 +7,7 @@ import path from "node:path";
 import { LOCK_WATCH_MS } from "@/shared/timing/timing";
 import { VAULT_STATE_DIR, boardMemoryKey, normalizeBoardKey } from "@/runtime/engine/board";
 import { logger } from "@/runtime/engine/logger";
-import type {
-	LockHandoff,
-	LockHolder,
-	LockRecord,
-	LockSink,
-} from "@/runtime/engine/lib/board-lock-contracts";
+import type { LockHolder, LockRecord, LockSink } from "@/runtime/engine/lib/board-lock-contracts";
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
 
 const processAnnounced = new Map<string, string>();
@@ -74,78 +69,6 @@ function lockPathFor(vault: string, board: string): string {
 }
 
 /**
- * Where a released writer leaves its commit receipt for the next one.
- * @param vault The vault root the board lives in.
- * @param board The board key.
- * @returns The receipt's path.
- */
-function handoffPathFor(vault: string, board: string): string {
-	return `${lockPathFor(vault, board)}.handoff`;
-}
-
-/**
- * Read one commit receipt.
- *
- * A malformed receipt proves nothing. Unlike a lease, it is optional evidence
- * about the previous note commit and may safely be discarded.
- * @param file The receipt's path.
- * @returns The receipt, or null when there is none worth trusting.
- */
-function readHandoff(file: string): LockHandoff | null {
-	const parsed = readJsonRecord(file);
-	if (!parsed) {
-		return null;
-	}
-	const fields = textFields(parsed, ["id", "process", "since", "token", "hash"]);
-	if (!fields) {
-		return null;
-	}
-	return {
-		id: fields["id"]!,
-		process: fields["process"]!,
-		since: fields["since"]!,
-		token: fields["token"]!,
-		hash: fields["hash"]!,
-	};
-}
-
-/**
- * The named fields of a record, when every one of them is text with something
- * in it.
- * @param record The record.
- * @param keys The fields the caller needs.
- * @returns The fields, or null when any is missing or empty.
- */
-function textFields(
-	record: Record<string, unknown>,
-	keys: readonly string[],
-): Record<string, string> | null {
-	const found: Record<string, string> = {};
-	for (const key of keys) {
-		const value = stringAt(record, key);
-		if (!value) {
-			return null;
-		}
-		found[key] = value;
-	}
-	return found;
-}
-
-/**
- * The JSON one lock file holds, when it holds readable JSON at all.
- * @param file The file's path.
- * @returns The record, or null when the file is missing or unreadable.
- */
-function readJsonRecord(file: string): Record<string, unknown> | null {
-	try {
-		const parsed: unknown = JSON.parse(fs.readFileSync(file, "utf-8"));
-		return isRecord(parsed) ? parsed : null;
-	} catch {
-		return null;
-	}
-}
-
-/**
  * Read one lease.
  *
  * Missing, truncated, invalid JSON, or a record without its lease or token
@@ -155,8 +78,13 @@ function readJsonRecord(file: string): Record<string, unknown> | null {
  * @returns The lease, or null when the board is free.
  */
 function readRecord(file: string): LockRecord | null {
-	const parsed = readJsonRecord(file);
-	if (!parsed) {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(fs.readFileSync(file, "utf-8"));
+	} catch {
+		return null;
+	}
+	if (!isRecord(parsed)) {
 		return null;
 	}
 	const id = stringAt(parsed, "id");
@@ -172,21 +100,21 @@ function readRecord(file: string): LockRecord | null {
 }
 
 /**
- * Write one JSON record so a reader never sees a torn one.
+ * Write one lease so a reader never sees a torn one.
  *
  * Rename ensures readers see the complete old record or the complete new one,
  * never a torn lease that could admit a second writer. No fsync is required:
  * after power loss the holder process is gone too, so persistence buys no
- * safety. The token, not the pid, distinguishes concurrent attempts.
- * @param file Where to write it.
- * @param record What to write.
- * @param token Names the temp file this is written through.
+ * safety. The acquisition token, not the pid, distinguishes concurrent
+ * attempts and names the temp file this is written through.
+ * @param file The lease file's path.
+ * @param record The lease.
  * @throws {Error} When the write or the rename fails.
  */
-function writeJsonRecord(file: string, record: object, token = newToken()): void {
+function writeRecord(file: string, record: LockRecord): void {
 	const dir = path.dirname(file);
 	fs.mkdirSync(dir, { recursive: true });
-	const tmp = path.join(dir, `.${path.basename(file)}.${token}.tmp`);
+	const tmp = path.join(dir, `.${path.basename(file)}.${record.token}.tmp`);
 	try {
 		fs.writeFileSync(tmp, JSON.stringify(record));
 		fs.renameSync(tmp, file);
@@ -198,82 +126,6 @@ function writeJsonRecord(file: string, record: object, token = newToken()): void
 		}
 		throw error;
 	}
-}
-
-/**
- * Write one lease, through its own acquisition token.
- * @param file The lease file's path.
- * @param record The lease.
- */
-function writeRecord(file: string, record: LockRecord): void {
-	writeJsonRecord(file, record, record.token);
-}
-
-/**
- * Leave the commit receipt a released writer owes its successor.
- *
- * The handoff is written before lease removal. Failure loses optional proof,
- * but must never keep every future writer behind an already committed lease.
- * @param vault The vault root the board lives in.
- * @param board The board key.
- * @param record The lease being released.
- */
-function writeHandoff(vault: string, board: string, record: LockRecord): void {
-	if (!record.committedHash) {
-		return;
-	}
-	writeJsonRecord(handoffPathFor(vault, board), {
-		id: record.id,
-		process: record.process,
-		since: record.since,
-		token: record.token,
-		hash: record.committedHash,
-	});
-}
-
-/**
- * Take the commit receipt the previous writer left.
- *
- * Every receipt is consumed, valid or not, so it is one-use. It is trusted
- * only when id, process, original since time and token exactly match the
- * blocker this waiter actually observed; an unobserved or intervening writer
- * proves nothing about the successor's conflict baseline.
- * @param vault The vault root the board lives in.
- * @param board The board key.
- * @param predecessor The lease this waiter watched, when it saw one.
- * @returns The committed note hash, or undefined when nothing proves one.
- */
-function takeHandoff(
-	vault: string,
-	board: string,
-	predecessor: LockRecord | null,
-): string | undefined {
-	const file = handoffPathFor(vault, board);
-	const handoff = readHandoff(file);
-	try {
-		fs.unlinkSync(file);
-	} catch {
-		/* absent, malformed, or already consumed */
-	}
-	return matchesPredecessor(handoff, predecessor) ? handoff?.hash : undefined;
-}
-
-/**
- * Whether a receipt was left by exactly the lease this waiter watched.
- * @param handoff The receipt.
- * @param predecessor The lease this waiter watched.
- * @returns True when the two are the same acquisition.
- */
-function matchesPredecessor(handoff: LockHandoff | null, predecessor: LockRecord | null): boolean {
-	if (!handoff || !predecessor) {
-		return false;
-	}
-	return (
-		handoff.id === predecessor.id &&
-		handoff.process === predecessor.process &&
-		handoff.since === predecessor.since &&
-		handoff.token === predecessor.token
-	);
 }
 
 /**
@@ -291,13 +143,12 @@ function liveRecord(record: LockRecord | null): LockRecord | null {
 
 /**
  * The lease as a caller is told about it: who has the board and until when,
- * without the acquisition token or the committed hash, which are the lease's
- * own bookkeeping.
+ * without the acquisition token, which is the lease's own bookkeeping.
  * @param record The lease.
  * @returns The holder.
  */
 function holderOf(record: LockRecord): LockHolder {
-	const { token: _token, committedHash: _committedHash, ...holder } = record;
+	const { token: _token, ...holder } = record;
 	return holder;
 }
 
@@ -360,39 +211,11 @@ function announceFree(vault: string, board: string): void {
 }
 
 /**
- * Record which note this lease committed, as proof for its successor.
- *
- * Attached only when the exact enclosing lease still owns the file. This is
- * best-effort proof; persistence has already succeeded.
- * @param vault The vault root the board lives in.
- * @param board The board key.
- * @param leaseToken The acquisition this commit happened inside.
- * @param hash The note's hash.
- * @returns True when the proof was stamped.
- */
-function recordLockCommit(vault: string, board: string, leaseToken: string, hash: string): boolean {
-	let key = board;
-	try {
-		key = normalizeBoardKey(board);
-		const file = lockPathFor(vault, key);
-		const current = readRecord(file);
-		if (!current || current.token !== leaseToken || hash.length === 0) {
-			return false;
-		}
-		writeRecord(file, { ...current, committedHash: hash });
-		return true;
-	} catch (error) {
-		logger.warn(`Could not stamp the committed-note handoff for "${key}".`, { error });
-		return false;
-	}
-}
-
-/**
  * Give one board back.
  *
  * Released only if the lease is still ours: a lapsed one may already belong to
  * a successor, and unlinking that record would admit a third writer. The
- * ordering is deliberate — optional handoff, immediate unlink, then the news.
+ * ordering is deliberate — immediate unlink, then the news.
  * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param holderId Who is releasing it.
@@ -404,13 +227,6 @@ function releaseHold(vault: string, board: string, holderId: string): boolean {
 	const current = readRecord(file);
 	if (!current || current.id !== holderId) {
 		return false;
-	}
-	if (current.committedHash) {
-		try {
-			writeHandoff(vault, key, current);
-		} catch (error) {
-			logger.warn(`Could not record the released-writer handoff for "${key}".`, { error });
-		}
 	}
 	try {
 		fs.unlinkSync(file);
@@ -537,11 +353,9 @@ export {
 	onBoardLockChanged,
 	onBoardSweep,
 	readRecord,
-	recordLockCommit,
 	releaseHold,
 	renewRecord,
 	stamp,
-	takeHandoff,
 	watchBoardLocks,
 	writeRecord,
 };
