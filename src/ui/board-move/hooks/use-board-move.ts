@@ -6,7 +6,13 @@
 // drill-down another board gained since is still rewritten: the move checks
 // and rewrites everything again under its leases.
 
-import { queryOptions, skipToken, useMutation, useQuery } from "@tanstack/react-query";
+import {
+	queryOptions,
+	skipToken,
+	useIsMutating,
+	useMutation,
+	useQuery,
+} from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 
 import type { RepositoryEntry } from "@/shared/repositories";
@@ -87,7 +93,11 @@ function useMoveTarget(board: MovingBoard) {
 function useBoardMove(board: MovingBoard, onMoved: () => void) {
 	const { asked, ...target } = useMoveTarget(board);
 	const preview = useQuery(movePreviewQuery(asked, board.version));
-	const move = useMutation({ mutationFn: moveTo, onSuccess: onMoved });
+	const move = useMutation({
+		mutationKey: moveKey(board.board),
+		mutationFn: moveTo,
+		onSuccess: onMoved,
+	});
 	const { mutate } = move;
 	const version = preview.data?.version;
 	const confirm = useCallback(() => {
@@ -96,6 +106,25 @@ function useBoardMove(board: MovingBoard, onMoved: () => void) {
 	// A refusal answers the target it was asked for, not one chosen since.
 	const refused = move.variables?.asked === asked ? move.error : null;
 	return { ...target, preview, moving: move.isPending, refused, confirm };
+}
+
+/**
+ * The key of a board's move while it is under way.
+ * @param board The board's name.
+ * @returns The mutation key.
+ */
+function moveKey(board: string) {
+	return ["board-move", board] as const;
+}
+
+/**
+ * Whether a move of the board is under way. The dialog stays open until it has
+ * answered, so a refusal is read where the person asked for the move.
+ * @param board The board's name.
+ * @returns True while the move is in flight.
+ */
+function useMoveInFlight(board: string): boolean {
+	return useIsMutating({ mutationKey: moveKey(board) }) > 0;
 }
 
 /**
@@ -109,4 +138,4 @@ function moveTo(request: { readonly asked: MoveAsked; readonly version: number }
 	return moveBoard(request.asked, request.version);
 }
 
-export { useBoardMove, type MovingBoard };
+export { useBoardMove, useMoveInFlight, type MovingBoard };
