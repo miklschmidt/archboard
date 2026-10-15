@@ -2,7 +2,7 @@
 // implements this over the panes it already owns; the router knows nothing
 // about pane sessions, notices or dialogs.
 
-import type { WorkspaceAddress } from "@/ui/board-routing/address";
+import type { AddressOpen, WorkspaceAddress } from "@/ui/board-routing/address";
 
 /**
  * Where the server says it put a pane: the key it resolved the board to, which
@@ -16,10 +16,7 @@ interface OpenedBoard {
 }
 
 /** A board an address asked for, and the repository it named, or null for the pane's own. */
-interface AskedBoard {
-	readonly boardKey: string;
-	readonly repository: string | null;
-}
+type AskedBoard = Pick<AddressOpen, "boardKey" | "repository">;
 
 /** How pointing one pane at one board ended. */
 type OpenOutcome = ({ readonly kind: "opened" } & OpenedBoard) | { readonly kind: "unreachable" };
