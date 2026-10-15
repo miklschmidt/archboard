@@ -295,6 +295,18 @@ function createCodexWorkbenchSessions(
 		 */
 		const voiceWorkhorse = (): CodexWorkbenchWorkhorse | null =>
 			state.voiceCheckout === null ? null : (workhorses.get(state.voiceCheckout) ?? null);
+		/**
+		 * Stop the workhorse of one checkout, or every one of the tab.
+		 * @param checkout The checkout, or null for every workhorse.
+		 * @returns What each stopped workhorse did.
+		 */
+		const stopWork = (checkout: string | null): Promise<readonly WorkhorseStop[]> =>
+			stopWorkhorses(
+				[...workhorses.values()].filter(
+					(candidate) => checkout === null || candidate.checkout === checkout,
+				),
+				options.session,
+			);
 		const built = options.build({
 			id,
 			state,
@@ -320,6 +332,7 @@ function createCodexWorkbenchSessions(
 			workhorses: () => [...workhorses.values()],
 			workhorse,
 			voiceWorkhorse,
+			stopWork,
 			workhorseOperations: {
 				/**
 				 * Hear every workhorse's operation reports.
@@ -342,17 +355,7 @@ function createCodexWorkbenchSessions(
 			workhorses,
 			workhorse,
 			voiceWorkhorse,
-			/**
-			 * Stop the workhorse of one checkout, or every one of the tab.
-			 * @param checkout The checkout, or null for every workhorse.
-			 * @returns What each stopped workhorse did.
-			 */
-			stopWork: (checkout: string | null) => {
-				const targets = [...workhorses.values()].filter(
-					(candidate) => checkout === null || candidate.checkout === checkout,
-				);
-				return stopWorkhorses(targets, options.session);
-			},
+			stopWork,
 		});
 		return session;
 	};
