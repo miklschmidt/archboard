@@ -52,7 +52,7 @@ test("a recording page's pane is nobody's to address but by its client id, count
 	const report = buildPanesReport([recording, user], {
 		identity: (key) => parseBoardKey(key),
 		reading: () => null,
-		whereabouts: () => ({ repository: null, checkout: null }),
+		whereabouts: () => ({ repository: null, checkout: "/checkout" }),
 		caller: null,
 	});
 	expect(report.paneCount).toBe(1);

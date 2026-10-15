@@ -28,7 +28,7 @@ const COMMIT = ["-c", "user.email=t@t", "-c", "user.name=t", "-c", "commit.gpgsi
 
 const ShownSchema = z.object({
 	repository: z.string().nullable(),
-	checkout: z.string().nullable(),
+	checkout: z.string(),
 	chose: z
 		.object({ repository: z.string(), checkout: z.string(), replaced: z.string().nullable() })
 		.optional(),
@@ -37,7 +37,7 @@ const PaneSchema = z.object({
 	paneId: z.string(),
 	vault: z.string(),
 	repository: z.string().nullable(),
-	checkout: z.string().nullable(),
+	checkout: z.string(),
 	own: z.boolean(),
 	reading: z.object({ selection: z.array(z.object({ id: z.string() })) }),
 });

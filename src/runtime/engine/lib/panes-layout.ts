@@ -104,7 +104,7 @@ interface PaneReport {
 	 */
 	repository: string | null;
 	/** The checkout that holds the vault, or the directory of an untracked vault. */
-	checkout: string | null;
+	checkout: string;
 	/** Whether the vault is the one the caller's own command finds. */
 	own: boolean;
 	rect: Rect;
@@ -116,7 +116,7 @@ interface PaneReport {
 /** Where a vault is: its repository and its checkout. */
 interface VaultWhereabouts {
 	readonly repository: string | null;
-	readonly checkout: string | null;
+	readonly checkout: string;
 }
 
 type Arrangement =
