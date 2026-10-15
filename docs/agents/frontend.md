@@ -191,8 +191,9 @@ use.
 lifelines of a sequence. It is separate from `--muted-foreground`.
 `--diagram-glow` is the light that a traffic pulse mixes into its line. The
 `--slab-*` colors paint the faces, front edges and shadows of the picture's
-cards and of a container's header slab, and the `--tray-*` colors a
-container's neutral well. A group region has no token of
+cards and the shade of a container's header slab, and the `--tray-*` colors a
+container's neutral well. A header's face is `--background`, or the floor of
+the tray around it. A group region has no token of
 its own: it is drawn in tones of its group's `--semantic-<name>` (ADR 0044).
 `src/ui/theme/app.css` imports the file and holds every value that is not a
 color.

@@ -384,3 +384,25 @@ in `lib/design.ts`.
   on main (TASK-421): a wash took the place of the group's tint, and a pale
   wash was hard to see. The border of main came back, on the edge of the face
   rather than five units inside it.
+
+## Amendment of 2026-10-15: a container's header is made of the ground
+
+The owner found on 2026-10-15 that a container's header looked too much like a
+card, and asked for it to have the color of the background (TASK-474). Two
+passages of this record no longer hold.
+
+Rule 4 said that "the header slab is a card's slab (rule 1), with a 4-unit
+front edge and a card's shadow". The slab keeps its 4-unit front edge, its
+shadow, its place and its words. Its face is now the color of what the tray is
+cut into: the page, or the floor of the tray around a nested one. Its front
+edge is that color in shade, as far toward `--slab-deep` as the tray's top
+wall is from its floor, and no light falls off down its face. So the header
+reads as the head of the well, level with the page, and not as one more card.
+
+Rule 5, "A container's header takes its group's color, as a card does", is
+withdrawn, and so is "and so does a container's header slab" under What stays.
+No group tints the header. The region of the group that places the container
+already stands round it and says the group. A part that a view draws as a card,
+with none of its children inside it, is a card and keeps its group's color.
+Grouping tests own the rule: a container's header face is the page's color, a
+nested one's is the floor around it, and no group's hue reaches it.

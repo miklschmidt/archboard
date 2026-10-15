@@ -86,9 +86,9 @@ function paintMeasuredCard(
 /**
  * Paint a containing frame below its children and all connections: a neutral
  * well its children stand in, with a header slab standing on its floor that
- * its heading is printed on, in the colour of the group that places it. What
- * the frame itself relates to leaves from the foot of the slab's front edge,
- * so such a line has a visible origin inside the frame.
+ * its heading is printed on, made of what the well is cut into (`trayLook`).
+ * What the frame itself relates to leaves from the foot of the slab's front
+ * edge, so such a line has a visible origin inside the frame.
  * @param placed Final frame geometry.
  * @param palette The selected theme.
  * @param standing Its architectural change.
@@ -103,11 +103,7 @@ function paintMeasuredFrame(
 ): string {
 	const { measured, box, depth } = placed;
 	const styles = stylesFor(palette);
-	const look = trayLook(
-		{ box: headerOf(box, measured.headerHeight), look: cardLook(appearance, palette) },
-		palette,
-		depth,
-	);
+	const look = trayLook(headerOf(box, measured.headerHeight), palette, depth);
 	return wrap(
 		"g",
 		{

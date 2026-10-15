@@ -268,12 +268,15 @@ light falls from above. A card is a slab: a lit top face, a front edge along
 its foot and a soft shadow below it. A container is a neutral well cut into
 the page, its floor only just darker than the page, with its top wall in
 shade, two quieter side walls as thick as it and a lit lip along its bottom.
-Its header is a card's slab friction fit in the well, a 2-unit gap inside the
-walls and as far from the outer edge on the top as on either side. The first
-row of cards stands as far under it
-as from the sides and the bottom of the well. The header takes the
-color of the group that places the container, as a card does, and the
-container's kind shows on its icon chip alone.
+Its header is a slab friction fit in the well, a 2-unit gap inside the walls
+and as far from the outer edge on the top as on either side. It rises to the
+level of what the well is cut into and is made of it: its face is the color of
+the page, or of the floor of the container around it, and its front edge is
+that color in shade. So it reads as the head of the well and not as one more
+card. The first row of cards stands as far under it as from the sides and the
+bottom of the well. No group tints the header: the region of the group that
+places the container says the group, and the container's kind shows on its
+icon chip alone.
 The region of a group has no fill: a thin frame in a faded tone of the
 group's color, thick corner brackets and a caption tab in its full color. Each
 shadow uses eight adjoining rectangles with shared gradients, with no filter, blur or mask. The colors

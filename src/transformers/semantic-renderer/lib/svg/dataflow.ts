@@ -62,7 +62,7 @@ import {
 	type PlacedStep,
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 import { endsFor, selfStart, travelOf } from "@/transformers/semantic-renderer/lib/layout/messages";
-import { cardLook, trayLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
+import { trayLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import {
 	halo,
 	headerAnchor,
@@ -332,7 +332,7 @@ function paintFrame(
 	const { frame, header, slab } = layout;
 	const styles = stylesFor(palette);
 	const ghosted = standing === "removed" ? standing : undefined;
-	const look = trayLook({ box: slab, look: cardLook({}, palette) }, palette, 0);
+	const look = trayLook(slab, palette, 0);
 	// The header slab's face across the heading, which its far words stand on.
 	const plate = { ...header, y: slab.y, height: slab.height - CARD_THICKNESS };
 	return wrap(

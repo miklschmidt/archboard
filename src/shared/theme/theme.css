@@ -55,8 +55,9 @@
    a neutral well: a floor (--tray-floor) only just darker than the page,
    inside a top wall in shade, two quieter side walls and a lit lip (--tray-lip)
    at its bottom. The walls are shades of the floor, and nothing about the well
-   has a colour of its own. Its header is a slab like a card's, standing on the
-   floor, coloured by the group that places the container. A container nested
+   has a colour of its own. Its header is a slab standing on the floor, made of
+   what the tray is cut into: the page's colour (--background), or the floor of
+   the tray around it, with its front edge that colour in shade. A container nested
    in another is cut a step deeper, its floor sinking toward --tray-sink. A
    group's region has no face and no token of its own: its frame, its corners,
    its caption tab and a grouped card's face are tones of the group's colour

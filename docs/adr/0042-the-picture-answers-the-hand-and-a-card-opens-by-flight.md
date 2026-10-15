@@ -357,3 +357,15 @@ the faint words of both views are counted at once. The ink itself stays steady.
 Owners: the module owner `far-view-swap` also holds that both views fade over
 one span with one easing and no delay, that a coming view is drawn at once and
 a leaving view hidden only after its fade.
+
+## Amendment of 2026-10-15: the far tile stands at the top
+
+The far place of a card's chip was centred down the card's start. On a tall
+card the chip dropped to the middle of the card when the picture was seen from
+far away, while near it stands at the top left. The owner asked for the far
+chip to stand at the top, as it does near (TASK-474). The tile now stands 12
+units from the top of the face, and the far words start level with it, or
+centred on it when they are shorter than the tile. A short card draws as
+before, because its tile already filled its height. The module owner
+`far-view-swap` holds that a tall card's far tile stands no lower than its near
+chip.
