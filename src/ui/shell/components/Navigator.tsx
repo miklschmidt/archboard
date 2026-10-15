@@ -150,6 +150,17 @@ function openKey(actions: ShellActions, key: string, beside: boolean, repository
 }
 
 /**
+ * Whether a repository's boards are read from its chosen checkout's vault. One
+ * that is not says why in its own row, and the empty listing's advice would
+ * not help it.
+ * @param shell The repository.
+ * @returns True when its vault has answered.
+ */
+function readyAndRead(shell: ShellRepository): boolean {
+	return shell.repository.state === "ready" && !shell.loading;
+}
+
+/**
  * How many boards every repository lists.
  * @param view The shell view.
  * @returns The count.
@@ -246,7 +257,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					<ListingState
 						loading={view.boardsLoading}
 						error={view.boardsError}
-						empty={total === 0 && view.repositories.every((shell) => !shell.loading)}
+						empty={total === 0 && view.repositories.every(readyAndRead)}
 						noMatch={folded.length > 0 && rows.length === 0}
 						query={query}
 						actions={actions}

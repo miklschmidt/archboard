@@ -115,6 +115,8 @@ interface TreeRowProps extends RowHandlers {
 	readonly row: NavigatorRow;
 	/** Everything the row shows, for assistive technology. */
 	readonly label: string;
+	/** The row opens a menu from the keyboard (Shift+F10), so it says it has one. */
+	readonly hasMenu?: boolean | undefined;
 	/** Its place on its board's timeline, for a variant or an Earlier row. */
 	readonly lane?: Lane | undefined;
 	/** The lines that join it to the rows it sits under (tree-guides). */
@@ -147,9 +149,9 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 	const handleClick = useCallback(
 		(event: MouseEvent<HTMLDivElement>) => {
 			if (paneCanShow(row)) onOpen(row, event.altKey);
-			else onExpand(row.id, !row.expanded);
+			else if (expanded !== undefined) onExpand(row.id, !expanded);
 		},
-		[row, onOpen, onExpand],
+		[row, expanded, onOpen, onExpand],
 	);
 	return (
 		<div
@@ -160,6 +162,7 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			aria-expanded={expanded}
 			aria-selected={selected}
 			aria-label={props.label}
+			aria-haspopup={props.hasMenu === true ? "menu" : undefined}
 			tabIndex={props.focusable ? 0 : -1}
 			data-row-id={row.id}
 			data-row-kind={row.kind}

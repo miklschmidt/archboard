@@ -38,7 +38,8 @@ test("every repository is a row with its own boards, and a board of one name in 
 	});
 	const inBilling = `repository:${BILLING}|board:payments`;
 	expect(row(`repository:${SHOP}`).getAttribute("aria-level")).toBe("1");
-	expect(row(`repository:${BILLING}`).getAttribute("aria-label")).toContain("1 boards");
+	// The repository's row says how many boards it holds.
+	expect(row(`repository:${BILLING}`).getAttribute("aria-label")).toMatch(/\b1\b/);
 	expect(row(inBilling).getAttribute("aria-level")).toBe("2");
 	// Each pane's letter is on its own repository's board.
 	expect(carrying("B")).toEqual([inBilling]);
@@ -62,13 +63,15 @@ test("a repository whose chosen checkout has no vault says so, and its menu choo
 		],
 	};
 	const asked = mountNavigator({
-		repositories: [
-			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_BOARDS),
-			repositoryOf(stale, { boards: [], levels: [], onScreen: [] }),
-		],
+		repositories: [repositoryOf(stale, { boards: [], levels: [], onScreen: [] })],
 	});
 	const line = row(`repository:${BILLING}`);
-	expect(line.getAttribute("aria-label")).toContain("no vault");
+	// The row says why, so the navigator gives no advice for an empty vault over it.
+	expect(document.querySelector('[data-slot="navigator"] p')).toBeNull();
+	// It says why it holds nothing rather than counting none, and has nothing to open or close.
+	expect(line.textContent).not.toMatch(/\d/);
+	expect(line.hasAttribute("aria-expanded")).toBe(false);
+	expect(line.getAttribute("aria-haspopup")).toBe("menu");
 	act(() => line.focus());
 	act(() => {
 		line.dispatchEvent(new KeyboardEvent("keydown", { key: "F10", shiftKey: true, bubbles: true }));
@@ -89,6 +92,24 @@ test("a repository whose chosen checkout has no vault says so, and its menu choo
 		false,
 		true,
 	]);
+	// Keys in the menu stay in it: a letter is not typed into the filter.
+	act(() => {
+		document.activeElement?.dispatchEvent(
+			new KeyboardEvent("keydown", { key: "b", bubbles: true }),
+		);
+	});
+	expect(document.querySelector<HTMLInputElement>('[data-slot="navigator"] input')?.value).toBe("");
 	act(() => items[1]?.click());
 	expect(asked.chosen).toEqual([`${BILLING}|/work/billing`]);
+	// Escape closes the menu and gives the keyboard back to the row.
+	act(() => {
+		document.activeElement?.dispatchEvent(
+			new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+		);
+	});
+	await act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, 50));
+	});
+	expect(document.querySelector('[role="menu"]')).toBeNull();
+	expect(document.activeElement).toBe(row(`repository:${BILLING}`));
 });

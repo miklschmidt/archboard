@@ -40,6 +40,8 @@ interface RepositoryRow extends RowBase {
 	readonly entry: RepositoryEntry;
 	/** How many boards it holds. */
 	readonly count: number;
+	/** Whether it has rows to list: no disclosure while it holds nothing. */
+	readonly expandable: boolean;
 	readonly expanded: boolean;
 	/** An agent works on a board inside it while it is closed. */
 	readonly innerActivity: boolean;

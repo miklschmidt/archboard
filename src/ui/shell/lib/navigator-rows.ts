@@ -350,7 +350,9 @@ function repositoryRows(inputs: NavigatorInputs, shell: ShellRepository): Unplac
 	const inner = open
 		? nodeRows(within, shell.outline, { depth: 1, parentId: null }).map((row) => scoped(row, shell))
 		: [];
-	const row = repositoryRow(inputs, shell, open, within);
+	// A repository that holds nothing, or whose boards the filter all leaves out, has no disclosure.
+	const expandable = inputs.query.length > 0 ? inner.length > 0 : shell.outline.length > 0;
+	const row = repositoryRow(inputs, shell, { open, expandable }, within);
 	return leftOut(row, inner, inputs.query) ? [] : [row, ...inner];
 }
 
@@ -380,16 +382,19 @@ function rowInputsWithin(inputs: NavigatorInputs, shell: ShellRepository): Navig
  * A repository's own row.
  * @param inputs The navigator's inputs.
  * @param shell The repository.
- * @param open Whether its rows are listed.
+ * @param disclosure Whether its rows are listed, and whether it has any to list.
+ * @param disclosure.open Whether its rows are listed.
+ * @param disclosure.expandable Whether it has rows to list.
  * @param within What its outline rows are derived from.
  * @returns The row.
  */
 function repositoryRow(
 	inputs: NavigatorInputs,
 	shell: ShellRepository,
-	open: boolean,
+	disclosure: { readonly open: boolean; readonly expandable: boolean },
 	within: NavigatorRowInputs,
 ): Unplaced<RepositoryRow> {
+	const { open, expandable } = disclosure;
 	const name = shell.repository.name;
 	const match = inputs.query.length > 0 ? matchIn(name, inputs.query) : null;
 	return {
@@ -401,7 +406,8 @@ function repositoryRow(
 		vault: shell.repository.vault,
 		entry: shell.repository,
 		count: shell.boards.boards.length,
-		expanded: open,
+		expandable,
+		expanded: open && expandable,
 		innerActivity: !open && anyActivity(within, shell.outline),
 		error: shell.error,
 		loading: shell.loading,
@@ -446,13 +452,14 @@ function scoped(row: Unscoped<NavigatorRow>, shell: ShellRepository): Unplaced<N
 
 /**
  * Whether what is under a row is listed, or undefined for a row that does not
- * open: a variant, or a board with nothing to list.
+ * open: a variant, or a board or a repository with nothing to list.
  * @param row The row.
  * @returns True while open, false while closed, undefined for a row that does not open.
  */
 function rowOpen(row: NavigatorRow): boolean | undefined {
 	if (row.kind === "variant") return undefined;
-	return row.kind === "board" && !row.expandable ? undefined : row.expanded;
+	const listsNothing = (row.kind === "board" || row.kind === "repository") && !row.expandable;
+	return listsNothing ? undefined : row.expanded;
 }
 
 /**
