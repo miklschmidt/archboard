@@ -1,35 +1,43 @@
-// The repositories the browser lists, and the one choice a person makes there:
-// which checkout of a repository this machine reads (ADR 0050).
+// The repositories the browser lists, and the choice of which checkout of a
+// repository this machine reads (ADR 0050).
 //
 // The navigator lists every repository identity with a known checkout that has a
 // vault, and every untracked vault, each with the boards of its chosen
-// checkout's vault. Choosing a checkout is `repo use` from the page: it changes
-// the choice for the whole machine, so every pane that showed a vault of
-// another checkout of that repository is moved to the new one, keeping its
-// board, and every tab is told to read the list again. A pane whose board the
-// new checkout has not got says so, because the board it asks for is not there.
+// checkout's vault. The registry is the one account of that, and every pane
+// follows it: when it changes, a pane in the vault of a checkout that is not
+// chosen moves to the chosen one, keeping its board, every other pane hears the
+// name its repository goes by now, and every tab is told to read the list again.
+// A pane whose board the new checkout has not got says so, because the board it
+// asks for is not there.
+//
+// The registry changes three ways that the server sees: the navigator's menu,
+// `browser show` from a checkout that is not chosen, and a command that wrote
+// the registry itself and says so here (`repo use`, `repo add`, `repo forget`,
+// and the first command in a checkout).
 
 import path from "path";
 import type { Express, Request, Response } from "express";
 
 import { logger } from "@/runtime/engine/logger";
 import { parseBoardKey } from "@/runtime/engine/board";
-import { declareDirectory, listRegistry, RepoRegistryError } from "@/runtime/engine/repo-registry";
+import { chooseKnownCheckout, listRegistry, registryPath } from "@/runtime/engine/repo-registry";
 import { createBrowserOriginGuard } from "@/server/browser-origin";
-import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";
-import { paneBoardOf, sendBoardlessToPane, sendToPane } from "@/server/archboard/lib/pane-registry";
 import {
-	broadcastEverywhere,
-	movePaneVault,
-	paneClientsOfVault,
-} from "@/server/archboard/lib/pane-vaults";
+	paneBoardOf,
+	paneVaults,
+	sendBoardlessToPane,
+	sendToPane,
+} from "@/server/archboard/lib/pane-registry";
+import { broadcastEverywhere, movePaneVault } from "@/server/archboard/lib/pane-vaults";
 import { arrivedOnBoard } from "@/server/archboard/lib/pane-routes";
 import {
 	listRepositories,
 	openingVault,
+	placeOfVault,
 	vaultIn,
 	VAULT_DIRECTORY,
 } from "@/server/archboard/lib/repositories";
+import { bodyOf } from "@/server/archboard/lib/request-board";
 import { CheckoutChoiceSchema, type CheckoutChoice } from "@/shared/repositories/index";
 
 /**
@@ -46,19 +54,36 @@ function repositoriesRoute(_req: Request, res: Response): void {
  * @param req The request.
  * @param res Its response.
  */
-async function chooseCheckoutRoute(req: Request, res: Response): Promise<void> {
+function chooseCheckoutRoute(req: Request, res: Response): void {
 	const choice = statedChoice(req, res);
 	if (choice === null) {
 		return;
 	}
-	const { repository, root, vault } = choice;
-	if (!(await chose(root, res))) {
+	const { repository, root } = choice;
+	if (chooseKnownCheckout(root) === undefined) {
+		refuseUnknownCheckout(res, repository, root);
 		return;
 	}
-	movePanesToVault(repository, vault);
-	broadcastEverywhere({ type: "repositories_changed" });
 	logger.info(`The chosen checkout of ${repository} is ${root}`);
+	// Followed even when the checkout was chosen already: a person who chooses
+	// it again from the menu is asking for what it reads, and a pane that a
+	// change the server never heard of left in another checkout follows too.
+	followRegistry();
 	res.json({ success: true, repository, root });
+}
+
+/**
+ * Refuse a choice of a root that is not a known checkout of the repository.
+ * @param res The response.
+ * @param repository The repository the choice named.
+ * @param root The root it named.
+ */
+function refuseUnknownCheckout(res: Response, repository: string, root: string): void {
+	res.status(404).json({
+		success: false,
+		code: "CHECKOUT_UNKNOWN",
+		error: `${root} is not a known checkout of ${repository}. Register it with \`archboard repo add ${root}\`.`,
+	});
 }
 
 /**
@@ -69,9 +94,9 @@ async function chooseCheckoutRoute(req: Request, res: Response): Promise<void> {
  * and name no vault the server accepts.
  * @param req The request.
  * @param res Its response, which carries the refusal when there is one.
- * @returns The repository, the checkout and its vault, or null once refused.
+ * @returns The repository and the checkout, or null once refused.
  */
-function statedChoice(req: Request, res: Response): (CheckoutChoice & { vault: string }) | null {
+function statedChoice(req: Request, res: Response): CheckoutChoice | null {
 	const parsed = CheckoutChoiceSchema.safeParse(req.body);
 	if (!parsed.success) {
 		res.status(400).json({
@@ -85,15 +110,10 @@ function statedChoice(req: Request, res: Response): (CheckoutChoice & { vault: s
 		(each) => each.repo === repository && each.root === root,
 	);
 	if (checkout === undefined) {
-		res.status(404).json({
-			success: false,
-			code: "CHECKOUT_UNKNOWN",
-			error: `${root} is not a known checkout of ${repository}. Register it with \`archboard repo add ${root}\`.`,
-		});
+		refuseUnknownCheckout(res, repository, root);
 		return null;
 	}
-	const vault = checkout.exists ? vaultIn(root) : null;
-	if (vault === null) {
+	if (!checkout.exists || vaultIn(root) === null) {
 		res.status(422).json({
 			success: false,
 			code: "CHECKOUT_UNUSABLE",
@@ -103,87 +123,88 @@ function statedChoice(req: Request, res: Response): (CheckoutChoice & { vault: s
 		});
 		return null;
 	}
-	return { repository, root, vault };
+	return { repository, root };
 }
 
 /**
- * Make a checkout the chosen one of its identity.
- * @param root The checkout.
- * @param res The response, which carries the refusal when the registry refuses.
- * @returns Whether it is chosen now.
+ * Bring every pane in line with the registry as it is now (ADR 0050). A pane in
+ * the vault of a checkout that is not chosen, including one that is gone, moves
+ * to the vault of the chosen checkout, keeping its board, and its board is read
+ * again there. Every other pane is told where it is again, with the name its
+ * repository goes by now, which a forgotten checkout or a renamed untracked
+ * vault changes. Then every tab is told to read the list of repositories again.
  */
-async function chose(root: string, res: Response): Promise<boolean> {
-	try {
-		await declareDirectory(root, { choose: true });
-		return true;
-	} catch (error) {
-		if (!(error instanceof RepoRegistryError)) {
-			throw error;
-		}
-		res.status(422).json({ success: false, code: "CHECKOUT_UNUSABLE", error: error.message });
-		return false;
-	}
-}
-
-/**
- * The vaults of a repository's known checkouts, other than one. A checkout that
- * is gone is named by where its vault was, so a pane left in it moves too.
- * @param repository The repository identity.
- * @param except The vault to leave out.
- * @returns The vaults.
- */
-function otherCheckoutVaults(repository: string, except: string): Set<string> {
-	const vaults = listRegistry()
-		.checkouts.filter((each) => each.repo === repository)
-		.map((each) => vaultIn(each.root) ?? path.join(each.root, VAULT_DIRECTORY));
-	return new Set(vaults.filter((vault) => vault !== except));
-}
-
-/**
- * Move every pane that shows a board of a repository to the vault of its chosen
- * checkout, each keeping its board (ADR 0050). Every pane in a vault of any other
- * checkout of it moves, not only those of the checkout chosen before, so a
- * pane left behind by `repo use` or by a choice that raced this one follows
- * too. The board is read again from the new vault, and where it is not there
- * the pane says so, because what it asks for is missing.
- * @param repository The repository identity.
- * @param to The vault of the checkout chosen now.
- */
-function movePanesToVault(repository: string, to: string): void {
-	const from = otherCheckoutVaults(repository, to);
-	for (const clientId of [...from].flatMap(paneClientsOfVault)) {
-		movePaneVault(clientId, to);
-		const key = paneBoardOf(clientId);
-		if (key === null) {
-			sendBoardlessToPane(clientId, {
-				type: "pane_board",
-				board: null,
-				identity: null,
-				vault: to,
-				repository,
-			});
+function followRegistry(): void {
+	// A move sets the entry of a pane it has visited already, which adds no entry to visit.
+	for (const [clientId, vault] of paneVaults) {
+		const { home, repository } = placeOfVault(vault);
+		if (home === vault) {
+			sendBoardlessToPane(clientId, { type: "pane_board", vault, repository });
 		} else {
-			const identity = parseBoardKey(key);
-			sendToPane(clientId, { type: "pane_board", identity, vault: to, repository }, key);
-			arrivedOnBoard(clientId, key);
+			movePane(clientId, home, repository);
 		}
 	}
+	broadcastEverywhere({ type: "repositories_changed" });
 }
 
 /**
- * Mount the repository list and the choice of a checkout. Both are the page's
- * own: the list names directories on this machine, and the choice changes what
- * every tab and every agent reads, so each is held to the browser origin the
- * opener settings are held to.
+ * Move one pane into another checkout's vault, keeping its board.
+ * @param clientId The pane.
+ * @param to The vault it moves into.
+ * @param repository The name of the repository it is in.
+ */
+function movePane(clientId: string, to: string, repository: string | null): void {
+	movePaneVault(clientId, to);
+	const key = paneBoardOf(clientId);
+	if (key === null) {
+		sendBoardlessToPane(clientId, {
+			type: "pane_board",
+			board: null,
+			identity: null,
+			vault: to,
+			repository,
+		});
+		return;
+	}
+	sendToPane(
+		clientId,
+		{ type: "pane_board", identity: parseBoardKey(key), vault: to, repository },
+		key,
+	);
+	arrivedOnBoard(clientId, key);
+}
+
+/**
+ * A command wrote the registry and says so: follow it. A command that wrote
+ * another registry file than this server reads changes nothing here, so a
+ * command with a registry of its own, such as a test's, moves no pane of a
+ * server that reads the machine's.
+ * @param req The request, whose body names the registry file the command wrote.
+ * @param res Its response.
+ */
+function registryChangedRoute(req: Request, res: Response): void {
+	const written = bodyOf(req)["registry"];
+	const ours =
+		typeof written === "string" && path.resolve(written) === path.resolve(registryPath());
+	if (ours) {
+		followRegistry();
+	}
+	res.json({ success: true, followed: ours });
+}
+
+/**
+ * Mount the repository list, the choice of a checkout and the news that a
+ * command changed the registry. The list and the choice are the page's own:
+ * the list names directories on this machine, and the choice changes what every
+ * tab and every agent reads, so each is held to the browser origin the opener
+ * settings are held to. The news changes nothing but what the panes are told,
+ * which they are told from the registry, so any local process may send it.
  * @param app The application.
  */
 function mountRepositoryRoutes(app: Express): void {
 	app.get("/api/repositories", createBrowserOriginGuard("settings-read"), repositoriesRoute);
-	app.put(
-		"/api/repositories/chosen",
-		createBrowserOriginGuard("mutation"),
-		asyncEndpoint((req, res) => chooseCheckoutRoute(req, res)),
-	);
+	app.put("/api/repositories/chosen", createBrowserOriginGuard("mutation"), chooseCheckoutRoute);
+	app.post("/api/repositories/changed", registryChangedRoute);
 }
 
-export { mountRepositoryRoutes };
+export { followRegistry, mountRepositoryRoutes };

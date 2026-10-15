@@ -35,10 +35,12 @@ import {
 import {
 	ARCHBOARD_SERVICE_NAME,
 	foreignServiceError,
+	isConnectionFailure,
 	markServerIdentityVerified,
 	OtherSourceError,
 	requestJson,
 } from "@/runtime/engine/lib/server-client-transport";
+import { registryPath } from "@/runtime/engine/repo-registry";
 import { isRecord } from "@/runtime/engine/lib/unknown-record";
 
 /**
@@ -108,6 +110,12 @@ interface ShowBoardResponse {
 	success: true;
 	board: string;
 	identity: BoardIdentity;
+	/** The repository the board is in, or null when no registered directory holds its vault. */
+	repository: string | null;
+	/** The checkout that holds the board's vault, or null when it is not known. */
+	checkout: string | null;
+	/** The choice of checkout the show made, when it made one (ADR 0050). */
+	chose?: { repository: string; checkout: string; replaced: string | null };
 	paneId: string;
 	pane?: PaneRef | null;
 }
@@ -131,10 +139,31 @@ function getSyncStatus(): Promise<Record<string, unknown>> {
 
 /**
  * What every pane on screen is showing and reading.
+ * @param caller The vault the caller's command finds, so each pane says whether it shows that
+ * vault, or null when it finds none.
  * @returns The panes report.
  */
-function getPanes(): Promise<Record<string, unknown>> {
-	return requestJson("/api/panes");
+function getPanes(caller: string | null): Promise<Record<string, unknown>> {
+	return requestJson(caller === null ? "/api/panes" : addQuery("/api/panes", "vault", caller));
+}
+
+/**
+ * Tell a running server that this command changed the checkout registry, so
+ * that its panes follow it and every tab lists the repositories again (ADR
+ * 0050). It never starts a server: with none running, nobody is reading, and a
+ * server that starts later reads the registry as it is. The change is on disk
+ * already, so a server that cannot be told never fails the command.
+ * @returns A warning when a server answered and was not told, else undefined.
+ */
+async function announceRegistryChange(): Promise<string | undefined> {
+	try {
+		await requestJson("/api/repositories/changed", posting({ registry: registryPath() }));
+		return undefined;
+	} catch (error) {
+		if (isConnectionFailure(error)) return undefined;
+		const reason = error instanceof Error ? error.message : String(error);
+		return `Warning: the Archboard server was not told that the registry changed, so its panes follow the change only after its next restart. ${reason}`;
+	}
 }
 
 /**
@@ -241,6 +270,7 @@ export {
 	BOARD_REFUSAL_CODES,
 	ARCHBOARD_SERVICE_NAME,
 	addQuery,
+	announceRegistryChange,
 	boardRefusalOf,
 	claimBoard,
 	closePane,

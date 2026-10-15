@@ -302,6 +302,27 @@ test("a pane moved into another checkout's vault reports there, and the answer f
 	}
 });
 
+test("a pane told only where it is takes its repository's new name and keeps its board", async () => {
+	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
+	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
+	const pane = await paneOnPayments();
+	try {
+		const calls = pane.calls.length;
+		// The registry changed, and the name the repository goes by with it.
+		deliver(pane.socket, { type: "pane_board", vault: LEFT_VAULT, repository: "r-2" });
+		expect(pane.statuses.at(-1)).toMatchObject({
+			vault: LEFT_VAULT,
+			repository: "r-2",
+			boardKey: "payments",
+		});
+		// Nothing moved, so the pane has nothing new to report.
+		expect(pane.calls).toHaveLength(calls);
+	} finally {
+		pane.restore();
+		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
+	}
+});
+
 test("an answer from the vault a pane left that comes back before the move leaves the pane connected", async () => {
 	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
 	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });

@@ -2,14 +2,7 @@ import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "@/runtime/engine/logger";
-import { parseBoardKey } from "@/runtime/engine/board";
-import {
-	addressablePanes,
-	buildPanesReport,
-	MAX_PANES,
-	panesInOrder,
-	resolvePaneSpec,
-} from "@/runtime/engine/panes";
+import { addressablePanes, MAX_PANES, panesInOrder, resolvePaneSpec } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { frontendState } from "@/runtime/engine/staleness";
 import { PANE_LAYOUT_TIMEOUT_MS } from "@/shared/timing/timing";
@@ -36,8 +29,7 @@ import {
 import { tellPaneAboutLock } from "@/server/archboard/lib/board-announcements";
 import { noteBoardShown } from "@/server/archboard/lib/semantic-disk-watch";
 import { showPaneRoute } from "@/server/archboard/lib/pane-show-route";
-import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
-import type { SemanticPaneContext } from "@/shared/semantic-pane-context";
+import { getPanesRoute } from "@/server/archboard/lib/pane-report-route";
 import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
 import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
@@ -178,73 +170,6 @@ function postPaneRoute(req: Request, res: Response): void {
 		paneCount: addressablePanes([...panes.values()]).length,
 		staleFrontend,
 	});
-}
-
-/**
- * What one pane last said it was reading, when that is still about the board
- * it is now showing.
- *
- * A move and a report cross: the server points a pane at B and the pane's last
- * report still names A, which arrived while it was there and was true then.
- * Reported under B it would say that somebody has picked out subjects of B — by
- * ids that belong to A, and which may name something else entirely on B. The
- * board's own answer stands; what the person picked out does not, until the
- * pane says what it is reading now, which it does on its next render.
- * @param clientId The pane's client id.
- * @returns The reading, or null when it is about another board.
- */
-function readingAboutBoard(clientId: string): SemanticPaneContext | null {
-	const context = semanticPaneContextFor(clientId);
-	if (context === null) {
-		return null;
-	}
-	const pane = panes.get(clientId);
-	const showing = pane === undefined ? null : boardForPane(pane);
-	if (showing === null) {
-		return null;
-	}
-	return context.board?.key === showing ? context : null;
-}
-
-/**
- * Report every pane on screen.
- * @param _req The request.
- * @param res Its response.
- */
-function getPanesRoute(_req: Request, res: Response): void {
-	const report = buildPanesReport(Array.from(panes.values()), {
-		/**
-		 * The identity a board key spells.
-		 * @param key The board key.
-		 * @returns The identity.
-		 */
-		identity: (key) => parseBoardKey(key),
-		/**
-		 * What one pane last reported reading: its variant, its view and what the
-		 * person picked out (ADR 0023).
-		 * @param clientId The pane's client id.
-		 * @returns The reading, or null when the pane has said nothing.
-		 */
-		reading: (clientId) => {
-			const context = readingAboutBoard(clientId);
-			if (context === null) {
-				return null;
-			}
-			return {
-				variant: context.variant,
-				view: context.view,
-				selection: context.selection.map((subject) => ({
-					id: subject.id,
-					...(subject.kind === undefined ? {} : { kind: subject.kind }),
-					...(subject.name === undefined ? {} : { name: subject.name }),
-				})),
-				version: context.version,
-				at: context.at,
-			};
-		},
-		serverUrl: serverUrl(),
-	});
-	res.json({ success: true, ...report });
 }
 
 // ─── Pane layout ──────────────────────────────────────────────

@@ -11,9 +11,10 @@
 //
 // ADR 0049 widens it. It holds every checkout known here, each with its
 // identity, and every untracked vault, each with a registry name. For each
-// identity it keeps one chosen checkout: the one this machine reads. Only a
-// person's choice changes it (`repo use`). Registering a checkout never does,
-// except that the first known checkout of an identity becomes its chosen one.
+// identity it keeps one chosen checkout: the one this machine reads. Only
+// `repo use`, the navigator's menu and an agent's `browser show` from another
+// checkout change it (ADR 0050). Registering a checkout never does, except
+// that the first known checkout of an identity becomes its chosen one.
 // Readers that turn an identity into a directory ask for `chosenCheckouts()`
 // and so never see the others.
 //
@@ -63,6 +64,13 @@ interface DeclareOptions {
 	choose?: boolean;
 }
 
+/** An untracked vault that took a new registry name, because a repository identity now has its old one. */
+interface RenamedVault {
+	readonly root: string;
+	readonly from: string;
+	readonly to: string;
+}
+
 /** What a declaration of a directory recorded. */
 type Declared =
 	| {
@@ -74,6 +82,8 @@ type Declared =
 			replaced?: RegisteredRepo;
 			/** The worktrees of the checkout that were not known under its identity before. */
 			worktrees: RegisteredRepo[];
+			/** The untracked vault whose name the checkout's identity took, when one had it. */
+			renamed?: RenamedVault;
 	  }
 	| { kind: "vault"; vault: UntrackedVault; added: boolean };
 
@@ -132,6 +142,25 @@ function uniqueName(base: string, registry: Registry): string {
 	let name = base;
 	for (let n = 2; taken.has(name); n++) name = `${base}-${n}`;
 	return name;
+}
+
+/**
+ * Give an untracked vault a name of its own when a repository identity has its
+ * name. A remoteless repository is named by its directory, as an untracked
+ * vault is, so the two can meet. The identity keeps its name, because
+ * drill-downs and bindings name it, and the vault takes the next free one. So
+ * the registry never lists two entries under one name, and the browser never
+ * opens one for the other.
+ * @param registry The registry the identity was recorded in.
+ * @param identity The identity.
+ * @returns The rename, or undefined when no vault had that name.
+ */
+function renameClashingVault(registry: Registry, identity: string): RenamedVault | undefined {
+	const clash = registry.vaults.find((vault) => vault.name === identity);
+	if (clash === undefined) return undefined;
+	const name = uniqueName(path.basename(clash.root), registry);
+	registry.vaults = registry.vaults.map((vault) => (vault === clash ? { ...clash, name } : vault));
+	return { root: clash.root, from: clash.name, to: name };
 }
 
 /**
@@ -247,6 +276,7 @@ async function declareCheckout(
 		const recorded = worktrees
 			.filter((each) => !known.has(each.root))
 			.map((each) => recordCheckout(registry, each, false).entry);
+		const renamed = renameClashingVault(registry, entry.repo);
 		return {
 			kind: "checkout" as const,
 			checkout: entry,
@@ -255,6 +285,7 @@ async function declareCheckout(
 				? { replaced: before }
 				: {}),
 			worktrees: recorded,
+			...(renamed === undefined ? {} : { renamed }),
 		};
 	});
 }
@@ -323,6 +354,41 @@ async function declareDirectory(dir: string, options: DeclareOptions = {}): Prom
 	return declareUntrackedVault(holder);
 }
 
+/** What choosing a known checkout did. */
+interface Chosen {
+	/** The checkout, chosen now. */
+	readonly checkout: RegisteredRepo;
+	/** Whether it was not the chosen one before. */
+	readonly changed: boolean;
+	/** The root of the checkout it replaced, or null when its identity had none chosen or nothing changed. */
+	readonly replaced: string | null;
+}
+
+/**
+ * Make a known checkout the chosen one of its identity, as `repo use` does, in
+ * the registry alone: the checkout is known, so Git has nothing to add. The
+ * navigator's menu and `browser show` choose through here (ADR 0050).
+ * @param root The checkout's root, as the registry holds it.
+ * @returns What the choice did, or undefined when the root is not a known checkout.
+ * @throws {RegistryWriteError} When the registry cannot be written.
+ */
+function chooseKnownCheckout(root: string): Chosen | undefined {
+	return changeRegistry((registry): Chosen | undefined => {
+		const checkout = registry.checkouts.find((each) => each.root === root);
+		if (checkout === undefined) return undefined;
+		if (checkout.chosen) return { checkout, changed: false, replaced: null };
+		const before = registry.checkouts.find((each) => each.repo === checkout.repo && each.chosen);
+		registry.checkouts = registry.checkouts.map((each) =>
+			each.repo === checkout.repo ? { ...each, chosen: each === checkout } : each,
+		);
+		return {
+			checkout: { ...checkout, chosen: true },
+			changed: true,
+			replaced: before?.root ?? null,
+		};
+	});
+}
+
 /**
  * Register the checkout or the untracked vault a command found its vault in,
  * unless the registry already knows that directory (ADR 0049).
@@ -376,15 +442,18 @@ function repositoryOfVault(vault: string): VaultRepository | undefined {
 	/**
 	 * Whether a registered directory holds the vault. Its `.archboard/vault` is
 	 * compared by real path, as a command names a vault and the server lists one,
-	 * so a vault that is a symbolic link is still the vault of its checkout.
+	 * so a vault that is a symbolic link is still the vault of its checkout. A
+	 * directory that is gone, such as a deleted worktree, is compared by where its
+	 * vault was, so a pane still in that vault is known to be of its repository.
 	 * @param root The directory.
 	 * @returns True when its `.archboard/vault` is the vault.
 	 */
 	const holds = (root: string): boolean => {
+		const held = path.join(root, VAULT_DIRECTORY);
 		try {
-			return fs.realpathSync.native(path.join(root, VAULT_DIRECTORY)) === vault;
+			return fs.realpathSync.native(held) === vault;
 		} catch {
-			return false;
+			return held === vault;
 		}
 	};
 	const checkout = checkouts.find((entry) => holds(entry.root));
@@ -484,8 +553,10 @@ export {
 	type RegisteredRepoStatus,
 	type UntrackedVault,
 	type UntrackedVaultStatus,
+	type Chosen,
 	type Declared,
 	type Forgotten,
+	type RenamedVault,
 	type RegistryListing,
 	type VaultRepository,
 	RepoRegistryError,
@@ -494,6 +565,7 @@ export {
 	readRegistry,
 	listRegistry,
 	chosenCheckouts,
+	chooseKnownCheckout,
 	declareDirectory,
 	declareIfUnknown,
 	forgetDirectory,

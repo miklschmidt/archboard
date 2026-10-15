@@ -1,6 +1,14 @@
 import { z } from "zod";
-import { closePane, getPanes, openPane, showBoardInPane } from "@/runtime/engine/server-client";
+import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
+import {
+	closePane,
+	getPanes,
+	openPane,
+	showBoardInPane,
+	type ShowBoardResponse,
+} from "@/runtime/engine/server-client";
 import { paneWords } from "@/runtime/engine/panes";
+import { findVault } from "@/runtime/engine/vault-finder";
 import { CliUsageError, defineCommand, type TokenParameter } from "@/cli/command-contract/contract";
 import { PaneRefSchema } from "@/cli/command-contract/schemas";
 import { serverBrowserRefusals } from "@/cli/command-contract/common";
@@ -244,7 +252,18 @@ const PanesResultSchema = z.looseObject({
 	success: z.literal(true),
 	paneCount: z.number().int().nonnegative(),
 	panes: z.array(
-		z.looseObject({ paneId: z.string(), place: z.string(), board: z.string().nullable() }),
+		z.looseObject({
+			paneId: z.string(),
+			place: z.string(),
+			board: z.string().nullable(),
+			vault: z.string(),
+			/** The repository identity, or an untracked vault's registry name; null when unregistered. */
+			repository: z.string().nullable(),
+			/** The checkout that holds the vault, or the directory of an untracked vault. */
+			checkout: z.string().nullable(),
+			/** Whether the pane shows the vault a command run here finds: your own checkout. */
+			own: z.boolean(),
+		}),
 	),
 	summary: z.string(),
 	text: z.string(),
@@ -256,7 +275,9 @@ const panesContract = defineCommand({
 	summary: "What every pane is showing and reading",
 	description:
 		"Reports where each pane sits, which board and variant it shows, which view it is read " +
-		"through, and what the user has picked out. View state only: never board content.",
+		"through, and what the user has picked out. View state only: never board content. Each " +
+		"pane names its repository and checkout, and own says whether it shows the vault that a " +
+		"command run in this directory finds. It needs no vault: where none is found, no pane is own.",
 	examples: ["archboard browser panes", "archboard browser panes --text"],
 	parameters: [
 		{
@@ -320,10 +341,39 @@ const panesContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "Reading the panes");
 		context.parse(stagedNoFlags, input.tokens);
-		const report = PanesResultSchema.parse(await getPanes());
+		const report = PanesResultSchema.parse(await getPanes(await callerVault()));
 		return { result: input.text ? report.text : report };
 	},
 });
+
+/**
+ * The vault a command run here finds, as every command that calls a vault
+ * finds it, without refusing and without registering anything: `browser panes`
+ * reports the screen, and only says which pane shows the caller's own vault.
+ * @returns The vault, or null when none is found here.
+ */
+async function callerVault(): Promise<string | null> {
+	const finding = await findVault({
+		directory: null,
+		environment: ARCHBOARD_VAULT,
+		cwd: process.cwd(),
+	});
+	return finding.ok ? finding.found.path : null;
+}
+
+/**
+ * The line that says a show chose another checkout, which the agent tells the user.
+ * @param result The show's answer.
+ * @returns The line, or none when the show changed no choice.
+ */
+function choiceLine(result: Pick<ShowBoardResponse, "chose">): string[] {
+	const { chose } = result;
+	if (chose === undefined) return [];
+	const instead = chose.replaced === null ? "" : ` in place of ${chose.replaced}`;
+	return [
+		`This machine now reads ${chose.checkout} for ${chose.repository}${instead}: every pane of it reads this checkout. Tell the user.`,
+	];
+}
 
 const ShowInputSchema = z.object({ tokens });
 type ShowInput = z.infer<typeof ShowInputSchema>;
@@ -378,6 +428,17 @@ const ShowResultSchema = z.looseObject({
 	success: z.literal(true),
 	board: z.string(),
 	identity: z.looseObject({ board: z.string(), variant: z.string() }),
+	/** The repository the board is in, or null when no registered directory holds its vault. */
+	repository: z.string().nullable(),
+	/** The checkout that holds the board's vault. */
+	checkout: z.string().nullable(),
+	/**
+	 * Present only when the show made this checkout the chosen one of its
+	 * repository; `replaced` is the checkout chosen before, or null when none was.
+	 */
+	chose: z
+		.object({ repository: z.string(), checkout: z.string(), replaced: z.string().nullable() })
+		.optional(),
 	paneId: z.string(),
 });
 type ShowResult = z.infer<typeof ShowResultSchema>;
@@ -386,8 +447,11 @@ const browserShowContract = defineCommand({
 	shared: ["url", "directory", "as-session"],
 	summary: "Show a board in one pane",
 	description:
-		"Points one pane at one board. Nothing is written: a board is shown, not created, and a " +
-		"name the vault does not hold is refused rather than made.",
+		"Points one pane at one board. No board is written: a board is shown, not created, and a " +
+		"name the vault does not hold is refused rather than made. From a checkout that is not the " +
+		"chosen one of its repository, the show makes it the chosen one for the whole machine first, " +
+		"so every pane of that repository reads this checkout, and the answer's chose names the " +
+		"checkout it replaced.",
 	examples: [
 		"archboard browser show pipeline --pane left",
 		"archboard browser show pipeline@proposed --pane right",
@@ -449,7 +513,7 @@ const browserShowContract = defineCommand({
 		const result = await showBoardInPane(request.board, request.pane);
 		return {
 			result: ShowResultSchema.parse(result),
-			diagnostics: [`Pane ${result.paneId} is showing "${result.board}".`],
+			diagnostics: [`Pane ${result.paneId} is showing "${result.board}".`, ...choiceLine(result)],
 		};
 	},
 });
