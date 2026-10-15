@@ -101,11 +101,11 @@ your own.
    instead.
 4. Pick the picture from the first row that fits:
 
-| The change                                                                                                                                          | The picture                                                                                                                                                                                                                       |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Adds, removes, renames or rewires something that a vault board draws, changes what a part is for, or adds durable architecture                      | A proposal on that board (section 2). When no board draws the code, first draw the board from the base branch with the `archboard` skill's create recipe, or start it with an empty base draft when the base has none of the code |
-| Changes a request or data flow, an order, a process or state progression, or infrastructure, ownership or dependencies that the vault need not keep | An ephemeral board (section 3)                                                                                                                                                                                                    |
-| Formatting, a rename inside one part, a dependency bump, generated files, a fix whose diff explains itself                                          | No board. The Summary uses the smallest text view that makes the point: pseudocode, a call tree, a file tree, or a diff of one of them, in a fenced block                                                                         |
+| The change                                                                                                                                          | The picture                                                                                                                                                                                                                |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Adds, removes, renames or rewires something that a vault board draws, changes what a part is for, or adds durable architecture                      | A proposal on that board (section 2). When no board draws the code, first draw the board from the base branch with the `archboard` skill's create recipe, or start it with a base draft when the base has none of the code |
+| Changes a request or data flow, an order, a process or state progression, or infrastructure, ownership or dependencies that the vault need not keep | An ephemeral board (section 3)                                                                                                                                                                                             |
+| Formatting, a rename inside one part, a dependency bump, generated files, a fix whose diff explains itself                                          | No board. The Summary uses the smallest text view that makes the point: pseudocode, a call tree, a file tree, or a diff of one of them, in a fenced block                                                                  |
 
 Draw on a vault board only what the vault should keep: parts, boundaries and
 relationships that stay true after the merge, at the level that the vault's
@@ -130,7 +130,11 @@ Do this for each vault board that section 1 chose.
      ([reconcile](references/reconcile.md)).
 
    A found proposal keeps its name for life, so never rename it after the
-   head branch. Below, `<proposal>` is its name.
+   head branch. Below, `<proposal>` is its name. A found chain that was cut
+   down from a design breaks the stack rules below and cannot be repaired,
+   because its first proposal's parent is the cut design. Start a new chain
+   on a board of its own, leave the old drafts as they are, and say so in
+   your final report.
 
 3. Claim the board: `archboard claim --board <board> --reason "explaining <head branch> for its reviewers"`.
 4. If no proposal was found, branch one named after the head branch:
@@ -139,7 +143,7 @@ Do this for each vault board that section 1 chose.
    - In a stack, the proposal of the nearest pull request below that has one
      on this board.
    - The current variant.
-   - The empty base draft of a board that nobody has built (below).
+   - The base draft of a board that nobody has built (below).
 
    For a found proposal, `<below>` is the variant it came from: its `parent`
    in `semantic show`. Every picture and recording of the proposal is drawn
@@ -156,9 +160,12 @@ Do this for each vault board that section 1 chose.
      nothing else.
    - `archboard semantic footprint <board> --base <base> --variant "<proposal>"`:
      each part in `changedNotNamed` and `namedNotChanged` is drawn, or you can
-     say why its change needs no picture.
+     say why its change needs no picture. On a board that nobody has built,
+     footprint refuses: read the diff instead.
    - `archboard check --code --variant "<proposal>"` reports no warning that
-     the same run without `--variant` lacks.
+     the same run without `--variant` lacks. It reads the draft of that name
+     on every board, and it skips a part whose binding names a branch that is
+     not checked out, such as a part of a lower pull request in a stack.
 7. Release the claim: `archboard release --board <board>`.
 
 When the vault is inside this repository and Git tracks it, commit the changed
@@ -169,27 +176,32 @@ change in the same diff as the code.
 
 When the base branch has none of the code that a board draws, the board has
 no current variant. A proposal must still be drawn against something, so the
-board starts with an empty first draft that states the base:
+board starts with a first draft that states the base:
 `archboard semantic new <board> --input base.json --doing "..."`, where
-`base.json` holds the board's `level`, `"lifecycle": "draft"` and a `summary`
-that names the base branch, and no parts. A proposal branched from it reads
-as all added.
+`base.json` holds the board's `level`, `"lifecycle": "draft"`, a `summary`
+that names the base branch, and only the parts that already exist and that
+the change connects to, such as an API it calls. A proposal branched from it
+reads as added, except for those existing parts.
 
 ### A stack of pull requests
 
-A stack explains one design in steps. The reader of each pull request must
-see where its step sits in that design.
+A stack explains one design across several pull requests. The reader of each
+pull request must see where its change sits in that design.
 
-- One board carries the stack. Name every part as the design names it.
-- Each proposal holds what is built up to and including its pull request. It
-  is branched from the proposal below and drawn against it, so it marks only
-  its own step.
+- Each board that the stack changes carries one chain of proposals. A pull
+  request's proposal is branched from the proposal of the nearest pull
+  request below that has one on that board, and it is drawn against it, so it
+  marks only its own change.
+- Each proposal holds what is built up to and including its pull request.
+- Name every part as the design names it. When two design boards name the
+  same thing, use the names of the board at the level you draw.
 - Draw a finer part inside the design part it belongs to, on the same board.
-  A drill-down board would need a base draft of its own.
+  A finer part that serves two design parts sits beside them. A drill-down
+  board would need a base draft of its own.
 - A design drawn before the code, which several pull requests build, stays a
   draft. Never cut it down into the first proposal: the cut parts read as
   removed. If the design's board has nothing built, draw the stack on a board
-  of its own that starts with an empty base draft.
+  of its own that starts with a base draft.
 
 ## 3. Draw an ephemeral board
 
@@ -211,11 +223,14 @@ and the repository's vault is unchanged.
 
 Draw it with [renders](references/renders.md). In short:
 
-1. Draw one picture. Add a second only when the change moves both structure
-   and a flow: then one architecture picture and one sequence.
+1. Draw one picture. Add a second when the change moves both structure and a
+   flow (one architecture picture and one sequence), or when one picture of
+   every added part cannot be read at the size it will show (one picture for
+   each design part).
 2. Draw it through a view of the changed parts and their direct neighbours.
-   In a stack, use the view of the design part that the step builds, named
-   `Inside <design part>`, and share it with the other steps inside that part.
+   In a stack, use the view of the design parts that the pull request builds,
+   named `Inside <design part>` or `Inside <part> and <part>`, and share it
+   with the other pull requests that build inside those parts.
 3. Draw it `--against "<below>"`. The picture then marks only this pull
    request's change, and it has no planned frame.
 4. Give it a title that names where it sits and what it adds, such as
@@ -231,8 +246,8 @@ when the user asks, or when the change crosses three or more parts, or when an
 order or a protocol matters. A change of one or two parts gets no video: the
 picture already shows it.
 
-Follow [walkthrough](references/walkthrough.md): three or four beats, about 90
-seconds, drawn like the picture and against the same proposal. The first beat
+Follow [walkthrough](references/walkthrough.md): three beats, about 75
+seconds, drawn like the picture and against the same variant. The first beat
 says why the change exists and where it sits. The last says where to look
 closely.
 
@@ -285,7 +300,8 @@ Every exported picture now passes through the export frame. Without a title it m
 
 **The state comment** is the second line. It names the board, the proposal
 and `against="<below>"`. When the vault is in another repository, it also
-names `vault="<that repository>"`. An ephemeral board
+names that repository as bindings name it, such as
+`vault="github.com/<owner>/<name>"`. An ephemeral board
 writes `<!-- archboard-pr ephemeral -->`, because an update draws it again
 from the code. The comment is for the next agent that updates the body. The
 reader never sees it.
@@ -293,7 +309,9 @@ reader never sees it.
 **Summary.**
 
 - In a stack, the first line gives the position, the design and the
-  neighbours: `Part 4 of 15 of device trust (#589). Below: #604. Next: #606.`
+  neighbours: `Part 10 of 18 of device trust (#589). Below: #606. Next: #608.`
+  Count every pull request of the stack from the bottom, the design's pull
+  request included.
 - Then one to three sentences: the problem or need, and what the change does
   about it. Use the repository's domain words: its glossary (`CONTEXT.md`,
   `GLOSSARY.md` or similar) and the names that the picture carries.
@@ -307,7 +325,8 @@ reader never sees it.
 **Evidence.** One before and one after. A test that fails before and passes
 after is best: name the test and what it checks. For new code with no before,
 show the test or the output that covers it. In a stack, the pull request's own
-CI run is evidence. A visible change gets a screenshot.
+CI run is evidence. Name the one or two tests that show the change best, not
+every test that covers it. A visible change gets a screenshot.
 
 **Merge Danger.** The door is one-way when the merge does something that a
 revert cannot undo, such as a migration, a deletion or a key rotation, and
@@ -337,8 +356,8 @@ Check before you post. Done: every line holds.
 - [ ] No sentence breaks the never-list.
 - [ ] The picture is drawn with Blocks, `--theme auto`, a title and a
       horizontal legend, against `<below>`, and it has alt text.
-- [ ] A video has three or four beats, is under 10 MB, and has its
-      transcript collapsed under it.
+- [ ] A video has three beats, or four for a small view, is under 10 MB,
+      and has its transcript collapsed under it.
 
 ## 7. Put it in the pull request
 

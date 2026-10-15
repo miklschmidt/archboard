@@ -9,10 +9,11 @@ skill says how to post it.
 1. Use a board view that holds the changed parts and their direct neighbours.
    About 4 to 12 cards reads well (**judgement**). Views belong to every
    variant, so prefer a view the board already has.
-2. In a stack, use the view of the design part that the step builds, named
-   `Inside <design part>`: a node-region selection of that part. Every step
-   inside that part shares it, so the reader sees the same frame grow from one
-   pull request to the next.
+2. In a stack, use the view of the design parts that the pull request builds,
+   named `Inside <design part>` or `Inside <part> and <part>`: a node-region
+   selection of those parts. Every pull request that builds inside them shares
+   it, so the reader sees the same frame grow from one pull request to the
+   next.
 3. If no view fits, add one: a node-region selection of the changed parts and
    their neighbours. The `archboard` skill's views section says how. If the
    whole variant passes the size check below, draw it instead.
@@ -41,7 +42,7 @@ archboard semantic render <board> --view "<view>" --variant "<proposal>" --again
 
 - `--against "<below>"` names the variant that the proposal came from (section
   2 of the skill): the proposal of the pull request below in a stack, the
-  current variant, or the empty base draft of a board that nobody has built.
+  current variant, or the base draft of a board that nobody has built.
   On an ephemeral board, it is the current variant, which states the base
   branch. The picture marks only this pull request's change, and it carries no
   planned frame, because it reads relative to the variant it names.
@@ -51,7 +52,7 @@ already say what changed, and each variant is laid out afresh, so cards move
 between two pictures and do not line up.
 
 Done: one SVG file, and a second only for a change that moves both structure
-and a flow.
+and a flow, or that needs one picture for each design part to be read.
 
 ## Look at it
 
@@ -70,8 +71,9 @@ archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --ag
    document that width (**unverified**). If the receipt's `width` is over 900,
    rasterize again with `--scale 0.5` and open it. That is about how small it
    will show (**judgement**).
-3. If the labels at half size cannot be read, choose or add a narrower view
-   and draw again. Never drop parts from the proposal to make a picture fit.
+3. If the labels at half size cannot be read, split the view: one view for
+   each design part that the change builds, each drawn as its own picture.
+   Never drop parts from the proposal to make a picture fit.
 
 Done: you looked at the PNG, and the picture is readable at the size it will
 show.

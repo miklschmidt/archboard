@@ -30,8 +30,9 @@ material whose parts interact a lot, and it disappears with simple material
   `archboard repo use <checkout>`.
 - Time: about twice the length of the talk.
 - Size: GitHub takes a video of up to 10 MB on a free plan and 100 MB on a paid
-  plan [GitHub, attaching files]. Three archboard recordings measured 3.2 to
-  4.3 MB a minute. So a talk under about two minutes fits every plan.
+  plan [GitHub, attaching files]. Archboard recordings measured 3.2 to 6.7 MB a
+  minute, and a dense view costs the most. A talk of about 75 seconds fits
+  every plan.
 
 `archboard semantic record --help` lists the options.
 
@@ -41,12 +42,16 @@ On a vault board, claim it first. Add one walkthrough to the proposal, or on an
 ephemeral board to the head branch's draft, in one edit with
 `--variant "<proposal>"`. Name it `Review: <head branch>`. The `archboard`
 skill's walkthroughs section gives the payload rules for beats, subjects and
-views. Write three or four beats, in this order:
+views. In a stack, every proposal branched from this one takes the walkthrough
+too, and its removal: record it and remove it before you work on the
+proposal above. Write three beats, in this order, and a fourth only for a
+small view:
 
 1. **Why, and where.** Why the change exists, and where it sits: the design
-   part it builds, and in a stack the step before it. No subjects: a beat with
-   no subjects is about the whole picture.
-2. **One beat for each change, the most important first.** At most two. The
+   part it builds, and in a stack the pull request before it. No subjects: a
+   beat with no subjects is about the whole picture.
+2. **The change.** One beat, or two for a small view, the most important
+   first. The
    heading states what the pull request does ("The ledger now takes the
    lease"), not what is drawn ("The ledger"). The subjects are the two or
    three parts the beat is about, so the highlight lands while the voice
@@ -62,20 +67,20 @@ Rules for every beat:
   [Mayer and Moreno: segmenting].
 - Its body is two or three sentences about the system, in the board's names.
   The voice explains them in its own words. Never write about the screen, the
-  step or the walkthrough itself.
+  beat or the walkthrough itself.
 - It gives the one number that matters, such as a limit or a timeout.
 - It sets `view` to the view of the picture, so the video shows what the
   Summary shows.
 - It leaves out the history of the pull request and how anything was made
   [Mayer and Moreno: coherence].
 
-Keep the talk to about 90 seconds. A beat of three sentences is about 20 to 30
-seconds of speech. Viewers stay with a tutorial video for about 2 to 3 minutes,
-whatever its length [Guo et al.], and a reviewer has less patience than a
-student.
+Keep the talk to about 75 seconds. The voice speaks 20 to 25 seconds for each
+beat, whatever the length of its body, so the number of beats sets the length.
+Viewers stay with a tutorial video for about 2 to 3 minutes, whatever its
+length [Guo et al.], and a reviewer has less patience than a student.
 
-Done: three or four beats. Each beat has a `view`, the first has no subjects,
-and the last says where to look.
+Done: three beats, or four for a small view. Each beat has a `view`, the first
+has no subjects, and the last says where to look.
 
 ## Record
 
@@ -103,8 +108,8 @@ with `semantic replay`, without the board.
 
 Done: the receipt names the video and its `talk`, its `bytes` is under 10 MB
 (10,000,000), and on a vault board `semantic compare` no longer lists the
-walkthrough. If the video is too large, cut a beat or shorten the bodies, and
-record again.
+walkthrough. If the video is too large, cut a beat and record again: a
+shorter body barely shortens the talk.
 
 ## Check the video
 
@@ -117,9 +122,12 @@ place of `ffmpeg`:
 ffmpeg -loglevel error -ss <seconds> -i "$tmp/walkthrough.mp4" -frames:v 1 "$tmp/frame-<beat>.png"
 ```
 
-Then read the transcript (below) once. Done: on each frame, the beat's
-subjects are highlighted and the caption shows the beat's heading, and the
-transcript says nothing about the screen.
+Then read the transcript (below) against the diff. The voice explains in its
+own words, so it can state something that the code does not do. Rewrite the
+body of such a beat to say it plainly, and record again. Done: on each frame,
+the beat's subjects are highlighted and the caption shows the beat's heading,
+and the transcript says nothing about the screen and nothing that the code
+does not do.
 
 ## Chapters and transcript
 
@@ -134,6 +142,9 @@ jq -r '.board as $b | ([.document.variants[] | select(.id == $b.variant) | .cont
 # Transcript: each line the voice said, in order.
 jq -r '.events[] | select(.kind == "said" and .final) | .text' "$tmp/talk/talk.json"
 ```
+
+Copy the voice's words as they are. Correct only spacing, such as a missing
+space between two sentences.
 
 ## In the pull request
 
