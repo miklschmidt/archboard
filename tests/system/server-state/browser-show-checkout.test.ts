@@ -16,6 +16,7 @@ import {
 	createRepositoryFixture,
 	type RepositoryFixture,
 } from "../cli/support/repository-fixture.ts";
+import { openObservedPane } from "../support/observed-pane.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
 import { createRequester } from "./support/http.ts";
@@ -289,6 +290,54 @@ describe.serial("browser show and the chosen checkout", () => {
 			repository: null,
 		});
 		expect(panesFrom(fixture.nowhere)["pane-follow"]).toMatchObject({ repository: null });
+	});
+
+	test("a pane that comes back naming the vault of a removed checkout is put in the chosen checkout's vault", async () => {
+		await using resources = new AsyncDisposableStack();
+		const target = join(fixture.root, "orders-gone");
+		execFileSync("git", ["worktree", "add", "-q", "-b", "gone", target], {
+			cwd: main,
+			stdio: "ignore",
+		});
+		const gone = realpathSync.native(target);
+		const goneVault = vaultOf(gone);
+		await createBoard(goneVault, "payments");
+		archboard(fixture.nowhere, ["repo", "use", gone]);
+		const before = await paneIn(goneVault, "pane-gone");
+		await before.close();
+
+		// The chosen worktree is removed, and the main checkout is chosen in its place.
+		execFileSync("git", ["worktree", "remove", "--force", gone], { cwd: main, stdio: "ignore" });
+		archboard(fixture.nowhere, ["repo", "use", main]);
+
+		// The page reconnects naming the vault it was in, which the server cannot read now.
+		const back = await openObservedPane<{ type: string; board?: string; vault?: unknown }>({
+			base: server.base,
+			clientId: "pane-gone",
+			vault: goneVault,
+			register: (board, signal) =>
+				createRequester({ ...server, vault: mainVault })("/api/panes", {
+					method: "POST",
+					doing: false,
+					signal,
+					body: {
+						clientId: "pane-gone",
+						paneId: "pane-gone",
+						primary: true,
+						focused: false,
+						rect: { x: 0, y: 0, width: 640, height: 800 },
+						board,
+					},
+				}),
+			readPanes: (signal) =>
+				createRequester({ ...server, vault: mainVault })("/api/panes", { signal }),
+		});
+		resources.defer(() => back.close());
+		expect(back.events.find((event) => event.type === "pane_board")).toMatchObject({
+			board: "payments",
+			vault: mainVault,
+			repository: ORDERS,
+		});
 	});
 
 	test("a repository named like an untracked vault keeps its name, and the vault and its pane take another", async () => {
