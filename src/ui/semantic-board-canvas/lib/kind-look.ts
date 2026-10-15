@@ -1,11 +1,11 @@
-// How the vault's kinds look where the pages and the details panel name them:
-// what a kind is called, the icon the picture draws it with, and the colour of
-// a relationship's line.
+// How the vault's kinds look where the About page and the details panel name
+// them: what a kind is called, the icon the picture draws it with, and the
+// colour of a relationship's line.
 //
 // The names and colours come from the vault's policy. The icons come from the
 // picture on screen, which already holds each drawn kind's icon as markup: the
-// page fetches no icon of its own, and a kind the picture does not draw has no
-// icon here and is drawn with a plain mark.
+// About page fetches no icon of its own, and a kind the picture does not draw
+// has no icon here and is drawn with a plain mark.
 
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
