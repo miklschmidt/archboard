@@ -114,10 +114,10 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 				snapshot,
 			);
 			owners.activity.replace(vault, snapshot);
-			if (change.settled.length > 0) {
+			// A board put down is worth reading again, and one picked up may be one
+			// its vault has not listed yet: either way only that vault is read.
+			if (change.settled.length > 0 || change.started.length > 0) {
 				catalog.boardsChanged(vault, change.settled);
-			} else if (change.started.length > 0) {
-				catalog.refresh();
 			}
 		},
 		/** A checkout was chosen somewhere: the repositories are read again. */
