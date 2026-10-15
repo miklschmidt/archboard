@@ -352,7 +352,7 @@ function TreeRowName(props: {
 	readonly match: TextRange | null;
 	readonly className: string;
 	readonly boardKey?: string;
-	readonly title?: string;
+	readonly title?: string | undefined;
 }): JSX.Element {
 	return (
 		<span

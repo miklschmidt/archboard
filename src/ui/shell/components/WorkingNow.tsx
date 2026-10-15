@@ -12,6 +12,7 @@ import { SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
 import { ActivityLamp } from "@/ui/shell/components/ActivityLamp";
 import { PaneChips } from "@/ui/shell/components/PaneChips";
 import { useClock } from "@/ui/components/use-clock";
+import { RepositoryName } from "@/ui/repository-name";
 import { shortAge } from "@/ui/components/age";
 import {
 	FACTS_GAP,
@@ -177,7 +178,7 @@ function WorkingItem(props: WorkingItemProps): JSX.Element {
 						<span className="font-medium">{entry.name}</span>
 						{entry.named ? (
 							<span className="text-muted-foreground">
-								<span className="sr-only">, in</span> {repository}
+								<span className="sr-only">, in</span> <RepositoryName identity={repository} />
 							</span>
 						) : null}
 					</span>

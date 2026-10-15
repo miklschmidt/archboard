@@ -38,6 +38,7 @@ import {
 } from "@/ui/components/dropdown-menu";
 import { usePaneChrome } from "@/ui/components/PaneChrome";
 import { Tabs, TabsList, TabsTrigger } from "@/ui/components/tabs";
+import { RepositoryName } from "@/ui/repository-name";
 import { LevelMark } from "@/ui/semantic-board-canvas/components/LevelMark";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 import { SidebarToggle } from "@/ui/semantic-board-canvas/components/SidebarToggle";
@@ -73,8 +74,9 @@ interface BoardPlace {
 
 /**
  * The repository a crumb names, muted, where a trail across repositories enters
- * it. It gives way before the board's name does, its whole name shows on hover,
- * and assistive technology hears it apart from the board's name.
+ * it: on GitHub by its owner and name beside GitHub's mark. It gives way before
+ * the board's name does, its whole name shows on hover, and assistive
+ * technology hears it whole and apart from the board's name.
  * @param props The repository.
  * @param props.repository Its name, or undefined when the crumb names none.
  * @returns The name, or nothing.
@@ -83,13 +85,11 @@ function RepositoryOf(props: { readonly repository: string | undefined }): JSX.E
 	if (props.repository === undefined) return null;
 	return (
 		<>
-			<span
+			<RepositoryName
+				identity={props.repository}
 				data-slot="pane-crumb-repository"
-				title={props.repository}
-				className="text-muted-foreground/80 text-control max-w-48 min-w-0 shrink-[8] truncate font-normal"
-			>
-				{props.repository}
-			</span>
+				className="text-muted-foreground/80 text-control max-w-48 min-w-0 shrink-[8] font-normal"
+			/>
 			<span className="sr-only">, </span>
 		</>
 	);

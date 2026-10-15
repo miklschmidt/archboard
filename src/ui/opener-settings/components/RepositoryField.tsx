@@ -1,6 +1,7 @@
-// The registered checkout an opener test opens.
+// The registered checkout an opener test opens, named as the navigator names
+// its repository (TASK-477).
 
-import { useCallback, useId, type JSX } from "react";
+import { useCallback, useId, type JSX, type ReactNode } from "react";
 
 import type { OpenerSettingsReply } from "@/shared/code-target";
 import { Badge } from "@/ui/components/badge";
@@ -13,8 +14,12 @@ import {
 	SelectValue,
 } from "@/ui/components/select";
 import { Technical } from "@/ui/dialog-parts";
+import { RepositoryName } from "@/ui/repository-name";
 
 type CheckoutChoice = OpenerSettingsReply["repositories"][number];
+
+/** What the closed field says while no checkout is chosen. */
+const NO_CHOICE = "No registered checkout";
 
 /** Inputs for the repository field. */
 interface RepositoryFieldProps {
@@ -39,7 +44,7 @@ function RepositoryField(props: RepositoryFieldProps): JSX.Element {
 			<FieldLabel htmlFor={id}>Test with repository</FieldLabel>
 			<Select value={props.value} onValueChange={handleChange} disabled={props.disabled}>
 				<SelectTrigger id={id} className="w-full">
-					<SelectValue placeholder="No registered checkout" />
+					<SelectValue>{chosenName}</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
 					{props.repositories.map((checkout) => (
@@ -58,6 +63,15 @@ function RepositoryField(props: RepositoryFieldProps): JSX.Element {
 	);
 }
 
+/**
+ * The chosen checkout in the closed field, named as its entry in the list names it.
+ * @param value The repository, or null while none is chosen.
+ * @returns The name, or the words for no choice.
+ */
+function chosenName(value: string | null): ReactNode {
+	return value === null ? NO_CHOICE : <RepositoryName identity={value} className="font-mono" />;
+}
+
 /** Inputs for one repository entry. */
 interface RepositoryItemProps {
 	checkout: CheckoutChoice;
@@ -72,7 +86,7 @@ function RepositoryItem(props: RepositoryItemProps): JSX.Element {
 	const { checkout } = props;
 	return (
 		<SelectItem value={checkout.repository}>
-			<span className="font-mono">{checkout.repository}</span>
+			<RepositoryName identity={checkout.repository} className="font-mono" />
 			{!checkout.exists && (
 				<Badge variant="outline" className="border-warning/60 text-warning-foreground">
 					missing

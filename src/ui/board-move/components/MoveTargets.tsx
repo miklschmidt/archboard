@@ -7,6 +7,7 @@ import { useCallback, useId, type JSX } from "react";
 import type { RepositoryEntry } from "@/shared/repositories";
 import { Field, FieldLabel, FieldLegend, FieldSet } from "@/ui/components/field";
 import { RadioGroup, RadioGroupItem } from "@/ui/components/radio-group";
+import { RepositoryName } from "@/ui/repository-name";
 
 /** Inputs for the target choice. */
 interface MoveTargetsProps {
@@ -56,7 +57,7 @@ function MoveTarget(props: { readonly target: RepositoryEntry }): JSX.Element {
 		<Field orientation="horizontal">
 			<RadioGroupItem id={id} value={target.name} />
 			<FieldLabel htmlFor={id} className="items-center gap-2">
-				{target.name}
+				<RepositoryName identity={target.name} />
 				{target.untracked && <span className="text-muted-foreground">untracked vault</span>}
 			</FieldLabel>
 		</Field>

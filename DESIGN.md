@@ -388,7 +388,7 @@ the Rule tone.
 
 ### Navigation
 
-- **Style:** a tree on Chrome Chalk. A board or folder row is 36px and a variant or Earlier row 30px, for one line of name. Rails and elbows draw its levels, and the line from the root to the chosen row is lit in Gold Mark. The chosen row is a plate in Reading Tone with `shadow-raised`. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
+- **Style:** a tree on Chrome Chalk. A board or folder row is 36px and a variant or Earlier row 30px, for one line of name. Rails and elbows draw its levels, and the line from the root to the chosen row is lit in Gold Mark. The chosen row is a plate in Reading Tone with `shadow-raised`. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
 
 ### Pane sidebar
 

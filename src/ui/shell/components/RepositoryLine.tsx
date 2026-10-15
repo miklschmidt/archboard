@@ -1,12 +1,19 @@
 // A repository's row: the repository identity, or an untracked vault's
 // registry name, with the boards of its chosen checkout under it (ADR 0050).
+// A repository on GitHub shows its owner and name beside GitHub's mark, and
+// its whole identity on hover and to assistive technology (TASK-477).
 // A click opens or closes it, as a folder's does. Its facts say how many
 // boards it holds, or why it holds none: its chosen checkout has no vault, is
 // gone, or none is chosen. Its menu lists the repository's known checkouts,
 // and choosing one chooses it for the whole machine. Shift+F10 or the
 // context-menu key opens the menu from the row.
 
-import { RiErrorWarningLine, RiGitRepositoryLine, RiMoreLine } from "@remixicon/react";
+import {
+	RiErrorWarningLine,
+	RiGitRepositoryLine,
+	RiMoreLine,
+	type RemixiconComponentType,
+} from "@remixicon/react";
 import {
 	useCallback,
 	useRef,
@@ -17,6 +24,8 @@ import {
 } from "react";
 
 import type { RepositoryEntry } from "@/shared/repositories/index";
+import { GitHubMark } from "@/ui/repository-name";
+import { shownRepository } from "@/ui/repository-name/shown-name";
 import { InsideLamp } from "@/ui/shell/components/ActivityLamp";
 import {
 	DropdownMenu,
@@ -67,6 +76,28 @@ function repositoryLabel(row: RepositoryRow, facts: string): string {
 	return [row.entry.name, "repository", holds, row.error].filter(Boolean).join(", ");
 }
 
+/** How a repository's row shows it: its marker, the marker's tooltip, and its name. */
+interface RowLook {
+	readonly icon: RemixiconComponentType;
+	readonly marker: string;
+	readonly text: string;
+	/** The whole identity on hover, where the row shows less of it. */
+	readonly whole: string | undefined;
+}
+
+/**
+ * How a repository's row shows it: a repository on GitHub by GitHub's mark and
+ * its owner and name, any other by the repository mark and its whole name.
+ * @param name The repository identity, or an untracked vault's registry name.
+ * @returns The marker, its tooltip and the name.
+ */
+function rowLook(name: string): RowLook {
+	const shown = shownRepository(name);
+	if (!shown.onGitHub)
+		return { icon: RiGitRepositoryLine, marker: "Repository", text: name, whole: undefined };
+	return { icon: GitHubMark, marker: "GitHub repository", text: shown.name, whole: name };
+}
+
 /**
  * Whether a key asks for a row's menu: Shift+F10 or the context-menu key.
  * @param event The key.
@@ -100,6 +131,7 @@ function RepositoryLine(
 	);
 	const facts = repositoryFacts(row);
 	const hasMenu = row.entry.checkouts.length > 0;
+	const look = rowLook(name);
 	return (
 		<TreeRow
 			{...props}
@@ -108,12 +140,13 @@ function RepositoryLine(
 			hasMenu={hasMenu}
 		>
 			<TreeRowDisclosure row={row} name={name} onExpand={props.onExpand} />
-			<TreeRowMarker icon={RiGitRepositoryLine} title="Repository">
+			<TreeRowMarker icon={look.icon} title={look.marker}>
 				{row.innerActivity && <InsideLamp />}
 			</TreeRowMarker>
 			<TreeRowName
-				text={name}
+				text={look.text}
 				match={row.match}
+				title={look.whole}
 				className={`text-nav font-medium ${row.dimmed ? "text-muted-foreground" : ""}`}
 			/>
 			<TreeRowFacts>

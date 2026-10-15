@@ -80,7 +80,8 @@ board is narrated by a voice and recorded to video.
 - One Archboard server serves every vault on the machine, and it starts without
   one. The navigator lists
   every repository that has a vault, each with the boards of its chosen
-  checkout. A repository is named by its identity, or an untracked vault by its
+  checkout. A repository is named by its identity, and a repository on GitHub
+  by its owner and name beside GitHub's mark. An untracked vault is named by its
   registry name. The menu on a repository's row chooses its checkout for the
   whole machine. An agent's `browser show` from another checkout of it chooses
   that checkout, and the agent says so. The two panes of one tab can show boards of two repositories,
