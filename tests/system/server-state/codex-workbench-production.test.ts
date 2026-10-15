@@ -124,7 +124,7 @@ describe.serial("actual production Codex composition", () => {
 				(entry) => entry.kind === "frame" && entry.method === "thread/start",
 			);
 			const coordinatorDirectory = String(coordinatorStart?.params?.["cwd"]);
-			const spawned = records(logPath).filter((entry) => entry.kind === "app_server_spawn");
+			const spawned = records(logPath).filter((entry) => entry.kind === "app_server_cwd");
 			expect(spawned.map((entry) => entry.cwd)).toEqual([coordinatorDirectory]);
 			expect(basename(coordinatorDirectory)).toBe("coordinator");
 			expect(existsSync(join(coordinatorDirectory, ".archboard"))).toBe(false);

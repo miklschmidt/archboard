@@ -61,8 +61,8 @@ if (
 
 const archboardKeys = ["ARCHBOARD_URL", "ARCHBOARD_NO_AUTOSTART"];
 const archboard = Object.fromEntries(archboardKeys.map((key) => [key, process.env[key] ?? null]));
-const spawned = { pid: process.pid, args: process.argv.slice(2), cwd: process.cwd() };
-record({ kind: "app_server_spawn", ...spawned, archboard });
+record({ kind: "app_server_spawn", pid: process.pid, args: process.argv.slice(2), archboard });
+record({ kind: "app_server_cwd", cwd: process.cwd() });
 
 type WireFrame = {
 	readonly id?: unknown;
