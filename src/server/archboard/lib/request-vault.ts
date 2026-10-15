@@ -159,5 +159,4 @@ export {
 	requireVault,
 	vaultOfRequest,
 	type NamedVault,
-	type VaultRefusal,
 };
