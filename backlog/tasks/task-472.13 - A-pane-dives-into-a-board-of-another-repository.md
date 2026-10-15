@@ -1,11 +1,11 @@
 ---
 id: TASK-472.13
 title: A pane dives into a board of another repository
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 04:58'
+updated_date: '2026-10-15 05:05'
 labels:
   - frontend
 dependencies:
@@ -31,11 +31,11 @@ Once a drill-down can name another repository and a pane can show any repository
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Activating a drill-down into another repository dives into that board in the same pane
-- [ ] #2 The breadcrumb leads back across repositories
-- [ ] #3 A drill-down into an identity with no known checkout opens nothing, and the inspector says that the repository is not registered and how to register it
-- [ ] #4 PRODUCT.md and the archboard skill describe drill-down across repositories as built
-- [ ] #5 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 Activating a drill-down into another repository dives into that board in the same pane
+- [x] #2 The breadcrumb leads back across repositories
+- [x] #3 A drill-down into an identity with no known checkout opens nothing, and the inspector says that the repository is not registered and how to register it
+- [x] #4 PRODUCT.md and the archboard skill describe drill-down across repositories as built
+- [x] #5 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,4 +61,12 @@ From the TASK-472.12 boundary review (2026-10-15): resolveDrillDown in src/ui/se
 Boards (2026-10-15): Board viewer@TASK-472.13 (Keep the drill trail, Repository places, Follow drill-downs and Open a card's board restated, five relationships added, one label changed) and Browser application@TASK-472.13 (Semantic viewer -> Application composition: move the pane into the repository a drill-down names; the stage relationship names each repository's vault). check --code with and without --variant TASK-472.13: no line differs. The existing EXPOSED_UNUSED information on Semantic viewer lists the test entrypoint src/ui/semantic-board-canvas/drilling.ts names (drillPlace, the trail reducer, useDrillDown, useLevelReading), the same pattern as lighting.ts. Footprint against base 23a435cb3: Board viewer namedAndChanged Follow drill-downs, Viewer entry point, Open or leave a board, Open a card's board, Keep the drill trail, Repository places; changedNotNamed Semantic viewer (container; its changed files are named parts and tests), Fetch semantic reads (the listing gains the vault's repository, which the board's 'the listing' relationship covers), Render stage states (the breadcrumb and Go deeper read where a link leads through Follow drill-downs, already drawn); namedNotChanged Semantic queries (only a relabelled relationship). Browser application namedAndChanged Application composition; changedNotNamed Shell (selectBoard now answers whether the pane shows the board; no relationship changes). Review: five reviewers (drill model, breadcrumb and inspector, shell, and the canvas/shell and trail/crumb boundaries) committed fixes 813540ac3, f660cf6a1, 2a2829898, 582662003, c8114fe24, 194700d19, 7f2069aa3, dd40b0a10, 99df3e83d, f16de902f, ea71d301e, 325663f48, 5647947b1, c03fa9729. Left as they are: a link reads 'not registered' while the repositories listing is still loading; a late card flight in an A-to-B-to-A trail still clears the selection (use-dive runs its last step after the picture changed); a refused dive leaves the departure state that the next move replaces.
 
 Adopted Board viewer at v100 and Browser application at v61; archboard check: no diagnostics. check --code behind: of this task's commits only 3570b093c reaches another board, Board routes on Archboard server routes and the Archboard server container on Archboard server (the listing route now names the vault's repository). Both stay right: Board routes 'answers the reads: ... the catalogue' covers the listing, and the container draws no listing field. The other behind counts come from the TASK-472.07 and TASK-472.08 merges and older work.
+
+Gate: bun run check on b2082a96c (main with the TASK-472.07 and TASK-472.08 merges), ARCHBOARD_REPOS=/tmp/gate-repos.json, exit 0: modules 4640 pass 1 skip 0 fail, system 222 pass, repository 27 pass, serial browser every owner pass. The registry file was never created.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A drill-down that names another repository identity is read in the vault of that repository's chosen checkout, and following it moves the pane there through the shell's show, so the pane, its address and the inventory name that repository. The drill trail is a pure reducer kept across the arrival the dive asked for; the breadcrumb names the repository where the trail crosses into one, and its crumbs lead back. A link into an unlisted repository opens nothing and the inspector says to run archboard repo add; one into a repository with no readable checkout says to choose or add one. The board listing names the vault's own repository identity. Verified by the browser owner in tests/system/browser/semantic-drill-address.test.ts (dive, address, labels, back, unregistered refusal), the reducer and place owners in src/ui/semantic-board-canvas/tests/drill-across-repositories.test.ts and level-reading.test.tsx, five reviewers' fixes, and the full gate. Boards: Board viewer v100 and Browser application v61 adopted.
+<!-- SECTION:FINAL_SUMMARY:END -->
