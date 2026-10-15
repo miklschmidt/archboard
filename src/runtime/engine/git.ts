@@ -110,33 +110,26 @@ function repoIdentityFor(
 	if (remote) {
 		return repoIdentityFromRemote(remote);
 	}
-	const entries = worktreeEntries(worktreeListing);
-	const main = entries[0];
+	const main = worktreeEntries(worktreeListing)[0];
 	if (main === undefined) {
 		return path.basename(root);
 	}
-	// A main checkout whose git directory lives elsewhere (`git init
-	// --separate-git-dir`) is listed by that directory and not by its own, so it
-	// is in the listing nowhere: its own directory names it.
-	const self = canonicalPath(root);
-	if (!entries.some((entry) => canonicalPath(entry.path) === self)) {
-		return path.basename(root);
-	}
-	return path.basename(main.bare ? main.path.replace(/\.git$/u, "") : main.path);
+	// Git lists a bare repository, and a main checkout whose git directory lives
+	// elsewhere (`git init --separate-git-dir`), by that git directory. Nothing in
+	// Git leads from a linked worktree back to such a main checkout, so every
+	// checkout of the repository is named by the git directory, without `.git`.
+	const named =
+		main.bare || isGitDirectory(main.path) ? main.path.replace(/\.git$/u, "") : main.path;
+	return path.basename(named);
 }
 
 /**
- * A path with its symbolic links resolved, so that Git's spelling of a
- * worktree and the caller's spelling of a root compare equal.
- * @param target An absolute path.
- * @returns The resolved path, or the path as given when it cannot be resolved.
+ * Whether a path is a git directory rather than a working tree.
+ * @param target A path that Git listed as a worktree.
+ * @returns True when it holds `HEAD` and no `.git` of its own.
  */
-function canonicalPath(target: string): string {
-	try {
-		return fs.realpathSync.native(target);
-	} catch {
-		return path.resolve(target);
-	}
+function isGitDirectory(target: string): boolean {
+	return fs.existsSync(path.join(target, "HEAD")) && !fs.existsSync(path.join(target, ".git"));
 }
 
 interface CheckoutGitInspection {
