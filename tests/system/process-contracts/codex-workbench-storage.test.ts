@@ -245,13 +245,11 @@ describe.serial("composed Codex process lifecycle", () => {
 			const childPids = spawns.map((spawn) => spawn?.pid);
 			expect(childPids.every((pid) => typeof pid === "number")).toBeTrue();
 			expect(new Set(childPids).size).toBe(2);
-			// A thread's CLI reads these, so each child must name the server that started it. It
-			// names no vault, though its server was started with one: a thread's command finds its
-			// vault from its directory or -C (ADR 0050).
+			// A thread's CLI reads these, so each child must name the server that started it. A
+			// thread's command finds its vault from its directory or -C (ADR 0050).
 			for (const [index, spawn] of spawns.entries()) {
 				expect(spawn?.archboard).toEqual({
 					ARCHBOARD_URL: servers[index]!.base,
-					ARCHBOARD_VAULT: null,
 					ARCHBOARD_NO_AUTOSTART: "1",
 				});
 			}

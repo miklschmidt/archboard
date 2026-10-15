@@ -7,6 +7,7 @@ import { request, type IncomingMessage } from "node:http";
 import { WebSocket } from "ws";
 
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 
@@ -14,7 +15,7 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-browser-origin-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const vault = join(root, "vault");
+	const vault = vaultIn(join(root, "vault"));
 	const server = await startOwnedServer({ serverPath: join(repoRoot, "src/server.ts"), vault });
 	resources.defer(() => server.dispose());
 	const boardFile = join(vault, "payments.semantic.json");

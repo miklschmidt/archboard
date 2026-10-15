@@ -125,8 +125,8 @@ describe("install targets", () => {
 		expect(first.setup, firstDiagnostic).toMatchObject({
 			doc,
 			docCreated: true,
-			vault: fixture.vault,
-			vaultCreated: false,
+			vault: join(repo, ".archboard", "vault"),
+			vaultCreated: true,
 		});
 		if (!first.setup) {
 			throw new Error(firstDiagnostic);
@@ -176,7 +176,7 @@ describe("install targets", () => {
 		expect(readFileSync(join(both, "AGENTS.md"), "utf8"), diagnostic).not.toContain(begin);
 	});
 
-	test("honors named answers, no-doc, and an existing vault answer", () => {
+	test("honors named answers and no-doc", () => {
 		using fixture = createInstallFixture();
 		const named = fixture.repo("named");
 		const vault = join(fixture.root, "shared-vault");
@@ -194,9 +194,6 @@ describe("install targets", () => {
 		expect(noDoc.setup, noDocDiagnostic).toBeUndefined();
 		expect(readdirSync(untouched), noDocDiagnostic).toEqual([]);
 		expect(existsSync(join(noDocRoot, "archboard", "SKILL.md")), noDocDiagnostic).toBe(true);
-		const envRepo = fixture.repo("env");
-		const fromEnv = fixture.install(envRepo);
-		expect(fromEnv.setup?.vault, installFailure(fromEnv.spawn)).toBe(fixture.vault);
 	});
 });
 

@@ -9,6 +9,7 @@ import {
 } from "../../server-state/support/codex-production.ts";
 import { waitFor } from "../../server-state/support/http.ts";
 import { buildOwnedServerEnvironment } from "../../support/owned-server.ts";
+import { listOnlyVault } from "../../support/test-vault.ts";
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
 const serverEntry = join(repoRoot, "src/server.ts");
@@ -127,6 +128,7 @@ export async function startServer(options: {
 	};
 	for (const directory of Object.values(paths))
 		mkdirSync(directory, { recursive: true, mode: 0o700 });
+	const registry = listOnlyVault(join(options.root, "repos.json"), options.vault);
 	writeFileSync(
 		wrapper,
 		`import { mock } from "bun:test";\n` +
@@ -141,7 +143,7 @@ export async function startServer(options: {
 		env: buildOwnedServerEnvironment({
 			paths,
 			port,
-			vault: options.vault,
+			registry,
 			env: {
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: options.executablePath,
 				ARCHBOARD_TEST_CODEX_LOG: options.logPath,

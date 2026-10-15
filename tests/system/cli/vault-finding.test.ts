@@ -1,10 +1,9 @@
 // How a command finds its vault, as the shipped bin does it (ADR 0049,
 // TASK-472.06): from the working directory or -C, at the checkout root inside a
-// git checkout and at the nearest enclosing vault outside one, or the vault a
-// set ARCHBOARD_VAULT names. Every answer names the vault and how it was found,
-// and the first command in a checkout or untracked vault the registry does not
-// know registers it. The commands run with ARCHBOARD_VAULT unset against an
-// owned server, with a registry, home and state directory of their own.
+// git checkout and at the nearest enclosing vault outside one. Every answer
+// names the vault and how it was found, and the first command in a checkout or
+// untracked vault the registry does not know registers it. The commands run
+// against an owned server, with a registry, home and state directory of their own.
 
 import { spawnSync } from "node:child_process";
 import {
@@ -49,7 +48,7 @@ function holdingVault(holder: string): string {
 }
 
 /**
- * Run the shipped bin with ARCHBOARD_VAULT unset, against the owned server.
+ * Run the shipped bin against the owned server.
  * @param args The command line.
  * @param cwd Where it runs.
  * @param env What this invocation's environment changes.
@@ -68,7 +67,6 @@ function archboard(
 		encoding: "utf8",
 		env: {
 			...fixture.serverEnvironment,
-			ARCHBOARD_VAULT: undefined,
 			ARCHBOARD_URL: server.base,
 			...env,
 		},
@@ -177,16 +175,6 @@ test("the server lists a vault a command registered under the path and name that
 	expect(repositories.filter((each) => each.vault === vault.path).map((each) => each.name)).toEqual(
 		[name],
 	);
-});
-
-test("a vault ARCHBOARD_VAULT names is used as it is and never registers", () => {
-	const loose = holdingVault(join(fixture.root, "loose"));
-	const named = listed(fixture.nowhere, [], {
-		ARCHBOARD_VAULT: join(loose, ".archboard", "vault"),
-	});
-	expect(named.vault).toEqual({ path: join(loose, ".archboard", "vault"), origin: "environment" });
-	expect(named.stderr).toBe("");
-	expect(registeredRoots()).not.toContain(loose);
 });
 
 test("a registry that cannot be written is a warning, and the command still answers", () => {

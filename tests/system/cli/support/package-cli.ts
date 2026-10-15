@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { vaultIn } from "../../support/test-vault.ts";
 
 const packageSchema = z.object({
 	version: z.string(),
@@ -67,6 +68,7 @@ interface PackageCliOwner {
 	readonly state: string;
 	readonly log: string;
 	readonly registry: string;
+	/** The vault of `outside`, which a command run there finds. */
 	readonly vault: string;
 	run(args: readonly string[], options?: PackageRunOptions): Promise<PackageRunResult>;
 	runMerged(
@@ -92,8 +94,8 @@ function createPackageCliOwner(): PackageCliOwner {
 	const state = join(outside, "state");
 	const log = join(outside, "logs", "archboard.log");
 	const registry = join(outside, "repos.json");
-	const vault = join(outside, "vault");
-	for (const directory of [home, state, dirname(log), vault]) {
+	const vault = vaultIn(outside);
+	for (const directory of [home, state, dirname(log)]) {
 		mkdirSync(directory, { recursive: true });
 	}
 	const children = new Set<ChildProcess>();
@@ -105,7 +107,6 @@ function createPackageCliOwner(): PackageCliOwner {
 		XDG_STATE_HOME: state,
 		LOG_FILE_PATH: log,
 		ARCHBOARD_REPOS: registry,
-		ARCHBOARD_VAULT: vault,
 		ARCHBOARD_NO_AUTOSTART: "1",
 		...(url ? { ARCHBOARD_URL: url } : {}),
 	});

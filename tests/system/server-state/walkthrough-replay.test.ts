@@ -22,6 +22,7 @@ import type { LayoutEngineName } from "@/shared/semantic-board/index";
 import { TalkSchema, type Talk } from "@/shared/walkthrough-recording/talk";
 
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { TEST_RECORDING_CASE_MS, TEST_RECORDING_CLI_MS } from "../support/timing.ts";
 import { frameManifest, prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
 import { createRequester } from "./support/http.ts";
@@ -107,7 +108,7 @@ function talkOf(document: unknown, policy: unknown, layout: LayoutEngineName): T
 
 beforeAll(async () => {
 	root = mkdtempSync(join(tmpdir(), "archboard-replay-"));
-	const vault = join(root, "vault");
+	const vault = vaultIn(join(root, "vault"));
 	server = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,

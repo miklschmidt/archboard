@@ -11,6 +11,7 @@ import {
 	prepareProductionFixture,
 } from "../server-state/support/codex-production.ts";
 import { waitFor } from "../server-state/support/http.ts";
+import { listOnlyVault } from "../support/test-vault.ts";
 import { records, startServer } from "./support/codex-workbench-lifecycle.ts";
 import {
 	buildOwnedServerEnvironment,
@@ -80,7 +81,7 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 			env: buildOwnedServerEnvironment({
 				paths,
 				port,
-				vault: fixture.vault,
+				registry: listOnlyVault(join(fixture.root, "first-repos.json"), fixture.vault),
 				env: {
 					ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
 					ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,

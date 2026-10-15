@@ -4,13 +4,15 @@ import os from "node:os";
 import path from "node:path";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { vaultIn } from "../support/test-vault.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-edge-identity-"));
+const holder = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-edge-identity-"));
+const vault = vaultIn(holder);
 let server: OwnedServer;
 
 const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: server.base, args, input });
+	runServerCli({ repoRoot, server, args, input });
 
 beforeAll(async () => {
 	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
@@ -18,7 +20,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await server?.dispose();
-	fs.rmSync(vault, { recursive: true, force: true });
+	fs.rmSync(holder, { recursive: true, force: true });
 });
 
 test("a proposal keeps a stated relationship id across multiple edits and distinguishes an explicit replacement", () => {

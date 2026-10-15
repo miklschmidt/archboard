@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { startOwnedServer } from "../support/owned-server.ts";
+import { holderOf, vaultIn } from "../support/test-vault.ts";
 import { createRequester } from "./support/http.ts";
 
 // Every agent write to a board says what it is doing, or it does not happen
@@ -34,7 +35,7 @@ describe.serial("doing write boundary", () => {
 		await using resources = new AsyncDisposableStack();
 		const root = mkdtempSync(join(tmpdir(), "archboard-doing-boundary-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
-		const vault = join(root, "vault");
+		const vault = vaultIn(join(root, "vault"));
 		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
@@ -139,13 +140,14 @@ describe.serial("doing write boundary", () => {
 		// And the same boundary from the command line, where the line is typed.
 		const cli = (args: string[], input = "") =>
 			spawnSync(executable, args, {
+				cwd: holderOf(vault),
 				encoding: "utf8",
 				input,
 				env: {
 					...process.env,
 					ARCHBOARD_URL: server.base,
 					ARCHBOARD_NO_AUTOSTART: "1",
-					ARCHBOARD_VAULT: vault,
+					ARCHBOARD_REPOS: server.registry,
 					LOG_LEVEL: "error",
 				},
 			});

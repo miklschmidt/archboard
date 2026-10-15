@@ -33,7 +33,7 @@ async function registerResourceSet(
 	},
 ): Promise<z.infer<typeof ResourceReadySchema>> {
 	mkdirSync(input.vault, { recursive: true });
-	const env = sanitizedEnvironment(input.root, input.vault);
+	const env = sanitizedEnvironment(input.root);
 	const acquired = new AsyncDisposableStack();
 	try {
 		const upstream = await startOwnedPeer({
@@ -48,6 +48,7 @@ async function registerResourceSet(
 				...env,
 				ARCHBOARD_TEST_RESOURCE_MODE: "lock",
 				ARCHBOARD_TEST_REPO_ROOT: input.repoRoot,
+				ARCHBOARD_TEST_LOCK_VAULT: input.vault,
 			},
 			readySchema: RawLockReadySchema,
 		});
@@ -83,7 +84,10 @@ async function lockMode(): Promise<void> {
 	const { holdBoard, releaseHold } = await import(
 		join(repoRoot, "src/runtime/engine/board-lock.ts")
 	);
-	const vault = process.env["ARCHBOARD_VAULT"]!;
+	const vault = process.env["ARCHBOARD_TEST_LOCK_VAULT"];
+	if (!vault) {
+		throw new Error("ARCHBOARD_TEST_LOCK_VAULT is required.");
+	}
 	const board = process.env["ARCHBOARD_TEST_LOCK_BOARD"] ?? "resource-cleanup";
 	const holderId = process.env["ARCHBOARD_TEST_LOCK_HOLDER"] ?? "resource-owner";
 	const hold = await holdBoard({

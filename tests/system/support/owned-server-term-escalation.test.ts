@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { stateDir } from "../../../src/runtime/engine/state-dir.ts";
 import { processExists, startOwnedServer } from "./owned-server.ts";
+import { holderOf, vaultIn } from "./test-vault.ts";
 
 const thisFile = import.meta.path;
 
@@ -45,7 +46,7 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "term-escalation") {
 }
 
 test("ordinary TERM escalation completes forced server cleanup", async () => {
-	const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
+	const vault = vaultIn(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-")));
 	const server = await startOwnedServer({
 		serverPath: thisFile,
 		vault,
@@ -61,6 +62,7 @@ test("ordinary TERM escalation completes forced server cleanup", async () => {
 	} catch (error) {
 		disposalFailure = error;
 	} finally {
+		fs.rmSync(holderOf(vault), { recursive: true, force: true });
 		if (processExists(state.descendant)) {
 			try {
 				process.kill(-state.descendant, "SIGKILL");

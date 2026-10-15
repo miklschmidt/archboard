@@ -21,6 +21,7 @@ import { readTalk } from "@/runtime/walkthrough-recorder";
 
 import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { holderOf } from "../support/test-vault.ts";
 import { TEST_RECORDING_CASE_MS, TEST_RECORDING_CLI_MS } from "../support/timing.ts";
 import {
 	prepareProductionFixture,
@@ -114,14 +115,14 @@ test(
 			 */
 			const cli = (args: readonly string[]) =>
 				spawnSync(join(repoRoot, "bin/archboard"), args, {
-					cwd: repoRoot,
+					cwd: holderOf(fixture.vault),
 					encoding: "utf8",
 					timeout: TEST_RECORDING_CLI_MS,
 					// A hung CLI tears its browser down on SIGTERM, which SIGKILL would leave running.
 					killSignal: "SIGTERM",
 					env: {
 						...process.env,
-						ARCHBOARD_VAULT: fixture.vault,
+						ARCHBOARD_REPOS: server.registry,
 						ARCHBOARD_URL: server.base,
 						ARCHBOARD_NO_AUTOSTART: "1",
 						ARCHBOARD_FFMPEG: ffmpeg.executablePath,

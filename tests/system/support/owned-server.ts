@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 
@@ -31,6 +32,7 @@ import type {
 	StoppableGeneration,
 } from "./owned-server-lifecycle-types.ts";
 import { ensureSemanticVaultConfiguration } from "./semantic-vault.ts";
+import { listOnlyVault } from "./test-vault.ts";
 
 type Environment = Readonly<Record<string, string | undefined>>;
 interface StartOwnedServerOptions {
@@ -46,6 +48,12 @@ interface RestartOwnedServerOptions {
 interface OwnedServer {
 	readonly base: string;
 	readonly vault: string;
+	/**
+	 * The registry the server lists repositories from. Unless the caller named
+	 * one with `ARCHBOARD_REPOS`, it is the server's own and lists only its vault,
+	 * so the page opens there. A command run against the server uses it too.
+	 */
+	readonly registry: string;
 	readonly paths: OwnedServerPaths;
 	readonly pid: number | null;
 	readonly stderr: string;
@@ -123,6 +131,16 @@ async function startOwnedServer({
 }: Readonly<StartOwnedServerOptions>): Promise<OwnedServer> {
 	ensureSemanticVaultConfiguration(vault);
 	const paths = createOwnedServerPaths();
+	const named = env["ARCHBOARD_REPOS"];
+	const registry = named ?? path.join(paths.root, "repos.json");
+	if (named === undefined) {
+		try {
+			listOnlyVault(registry, vault);
+		} catch (error) {
+			fs.rmSync(paths.root, { recursive: true, force: true });
+			throw error;
+		}
+	}
 	const pathsDiagnostic = `\nOwned server paths: ${JSON.stringify(paths)}`;
 	let currentGeneration: Generation | null = null;
 	let visibleBase = explicitPort === undefined ? "" : `http://127.0.0.1:${explicitPort}`;
@@ -220,7 +238,7 @@ async function startOwnedServer({
 	};
 	const startAttempt = async (candidate: number): Promise<Generation> => {
 		const child = spawn(process.execPath, [serverPath], {
-			env: buildOwnedServerEnvironment({ paths, port: candidate, vault, env }),
+			env: buildOwnedServerEnvironment({ paths, port: candidate, registry, env }),
 			stdio: ["ignore", "ignore", "pipe"],
 		});
 		if (child.pid === undefined) {
@@ -398,6 +416,7 @@ async function startOwnedServer({
 			return visibleBase;
 		},
 		vault,
+		registry,
 		paths,
 		get pid() {
 			return currentGeneration?.pid ?? null;

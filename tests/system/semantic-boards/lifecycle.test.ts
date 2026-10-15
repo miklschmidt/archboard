@@ -6,6 +6,7 @@ import type { SemanticBoard } from "@/shared/semantic-board/index";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { vaultUrl } from "../support/http.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { vaultIn } from "../support/test-vault.ts";
 
 // The whole path a person and an agent actually use: a command makes a board,
 // a command changes it, a command reads it back, the Archboard server is restarted, and
@@ -14,7 +15,8 @@ import { runServerCli } from "../support/run-cli.ts";
 // join up; the store's own contract tests own the guarantees inside them.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-lifecycle-"));
+const holder = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-lifecycle-"));
+const vault = vaultIn(holder);
 let server: OwnedServer;
 
 /**
@@ -24,7 +26,7 @@ let server: OwnedServer;
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: server.base, args, input });
+	runServerCli({ repoRoot, server, args, input });
 
 /** The variant ancestry fields exposed by the board listing. */
 function listedVariants(board: Pick<SemanticBoard, "variants">) {
@@ -42,7 +44,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await server?.dispose();
-	fs.rmSync(vault, { recursive: true, force: true });
+	fs.rmSync(holder, { recursive: true, force: true });
 });
 
 describe("settling a proposal and adopting an architecture", () => {
@@ -424,8 +426,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		const before = heard.length;
 		const bound = runServerCli({
 			repoRoot,
-			vault,
-			base: server.base,
+			server,
 			args: [
 				"semantic",
 				"edit",
