@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 48,
+	"version": 50,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-15T09:18:41.117Z",
+	"updatedAt": "2026-10-15T09:31:26.105Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -8423,7 +8423,7 @@
 		{
 			"id": "2ViCX7fm",
 			"name": "TASK-472.10",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "TSfh8JQ7",
 			"summary": "The coordinator thread, callbacks and prompt and call routing",
 			"content": {
@@ -9372,9 +9372,9 @@
 		{
 			"id": "aDaTAAsy",
 			"name": "TASK-472.11",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "2ViCX7fm",
-			"summary": "The agent dock shows the conversation of the checkout the user last activated",
+			"summary": "The coordinator thread, callbacks and prompt and call routing",
 			"content": {
 				"nodes": [
 					{
@@ -9654,7 +9654,7 @@
 						"name": "Coordinator turn homes",
 						"kind": "module",
 						"responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the dock shows the turn in the right conversation",
-						"description": "A turn that delegated, steered or queued work shows in the conversation of each workhorse it gave work to. A turn that gave none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown.",
+						"description": "A turn that delivered, steered or queued work, or whose delivery may have reached the workhorse, shows in the conversation of each workhorse it reached. A delegation the workhorse refused as busy or with an invalid body gave it nothing, and moves the turn nowhere. A turn that gave work to none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/codex-workbench-delegations.ts"
@@ -10359,7 +10359,7 @@
 			}
 		}
 	],
-	"current": "2ViCX7fm",
+	"current": "aDaTAAsy",
 	"adoptions": [
 		{
 			"variant": "H3TW6CJC",
@@ -10414,6 +10414,12 @@
 			"from": "TSfh8JQ7",
 			"at": "2026-10-15T07:33:59.689Z",
 			"reason": "The coordinator works in a directory of its own that is no checkout; each workhorse tool names the checkout whose workhorse it works with, and workhorse news names it"
+		},
+		{
+			"variant": "aDaTAAsy",
+			"from": "2ViCX7fm",
+			"at": "2026-10-15T09:31:26.105Z",
+			"reason": "A coordinator turn shows in the conversation of the workhorse it gave work to, or in the one shown while it ran, and the coordinator stops every running workhorse of its tab with stop_workhorses"
 		}
 	]
 }

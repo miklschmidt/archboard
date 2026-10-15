@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 35,
+	"version": 37,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-15T09:19:25.784Z",
+	"updatedAt": "2026-10-15T09:31:25.919Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -4450,7 +4450,7 @@
 		{
 			"id": "KPEusQcT",
 			"name": "TASK-472.10",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "bXgW7XNp",
 			"summary": "Module level: the workhorse thread, its queue, and the coordinator's door; each module is drawn whole except the coordinator callbacks, whose tool is the entry point the workhorse start names. Follow linked subjects for related levels.",
 			"content": {
@@ -5216,9 +5216,9 @@
 		{
 			"id": "i56n6rES",
 			"name": "TASK-472.11",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "KPEusQcT",
-			"summary": "The agent dock shows the conversation of the checkout the user last activated",
+			"summary": "Module level: the workhorse thread of each checkout, its queue, and the coordinator's door and stop; each module is drawn whole except the coordinator callbacks, whose tool is the entry point the workhorse start names. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -5227,7 +5227,7 @@
 						"name": "Browser gateway",
 						"kind": "module",
 						"responsibility": "Where a pane's command arrives, already admitted under its tab session's lease, and is carried out by the workhorse of the checkout the pane's tab shows",
-						"description": "The gateway asks which checkout the pane's tab shows on every read and command, because the person can activate another one at any time: it hears the change and presents every pane of the tab again, with the workhorse of the new checkout. It dispatches each browser command to one action of that checkout's workhorse: a typed message or an interrupt (Stop) to the text actions (src/server/archboard/lib/codex-workbench-text-actions.ts), a queue edit to its queue, a new workhorse to its create action (codex-workbench-thread-links.ts), which makes the tab's coordinator ready first. A command that names a thread is admitted only when that thread is the link of the shown checkout. None of them passes through the workhorse operations.",
+						"description": "The gateway asks which checkout the pane's tab shows on every read and command, because the person can activate another one at any time: it hears the change and presents every pane of the tab again, with the workhorse of the new checkout. It dispatches each browser command to one action of that checkout's workhorse: a typed message or an interrupt (Stop) to the text actions (src/server/archboard/lib/codex-workbench-text-actions.ts), a queue edit to its queue, a new workhorse to its create action (codex-workbench-thread-links.ts), which makes the tab's coordinator ready first. A command that names a thread is admitted only when that thread is the link of the shown checkout, and a lease taken before a switch is refused as link_changed. A command runs on the workhorse its lease was claimed for: once it has run, only that workhorse's own link is asked whether it still stands, so a switch meanwhile does not make its outcome unknown. None of them passes through the workhorse operations.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/codex-workbench"
@@ -5994,7 +5994,7 @@
 			}
 		}
 	],
-	"current": "KPEusQcT",
+	"current": "i56n6rES",
 	"adoptions": [
 		{
 			"variant": "7MQ3CPWJ",
@@ -6031,6 +6031,12 @@
 			"from": "bXgW7XNp",
 			"at": "2026-10-15T07:34:09.052Z",
 			"reason": "Each checkout of a tab session has its own workhorse, working in that checkout; the coordinator's tools name the checkout whose workhorse they work with"
+		},
+		{
+			"variant": "i56n6rES",
+			"from": "KPEusQcT",
+			"at": "2026-10-15T09:31:25.919Z",
+			"reason": "The dock shows the conversation of the checkout the person last activated, so the gateway carries a command out on the workhorse of that shown checkout and keeps its outcome when the tab shows another meanwhile, and the coordinator can stop every workhorse of its tab by voice"
 		}
 	]
 }

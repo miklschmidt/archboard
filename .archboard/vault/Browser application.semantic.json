@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 68,
+	"version": 70,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-15T09:19:20.356Z",
+	"updatedAt": "2026-10-15T09:31:26.807Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -10481,7 +10481,7 @@
 		{
 			"id": "YxjGNtA1",
 			"name": "TASK-472.16",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "L7BQsaGv",
 			"summary": "Browser application modules, with a person moving a pane's board to another repository after a look at what the move rewrites",
 			"content": {
@@ -11780,9 +11780,9 @@
 		{
 			"id": "kgEzJYfh",
 			"name": "TASK-472.11",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "YxjGNtA1",
-			"summary": "The agent dock shows the conversation of the checkout the user last activated",
+			"summary": "Browser application modules, with a person moving a pane's board to another repository after a look at what the move rewrites, and the dock showing the conversation of the checkout the person last activated",
 			"content": {
 				"nodes": [
 					{
@@ -11809,7 +11809,7 @@
 						"name": "Application composition",
 						"kind": "module",
 						"responsibility": "Connects pane and feature owners",
-						"description": "Mounts one pane per pane id (its session and its stage together, ApplicationPane), composes the agent's owners over the focused pane's transport, keeps voice on the pane it was started for, lays its subtitles or voice box over that pane (over the presented pane in a fullscreen presentation, and then tells the dock and the box that no dock is on screen), and connects routing, the catalog, notices, settings, narration, subtitles and a recording page. Both panes carry the tab's session, so the agent is the same whichever pane has focus. A pane opens in the vault the server was started with and then follows the vault its session reports, and its stage is given that vault. A board the person opens in the navigator is shown in the vault of the repository it was listed under, and a checkout the person chooses there is chosen through the catalog. The person's own acts decide which workhorse's conversation the dock shows: focusing a pane, opening a board in one and Fix with Codex tell the server, and what an agent does to a pane never does. It holds no board content.",
+						"description": "Mounts one pane per pane id (its session and its stage together, ApplicationPane), composes the agent's owners over the focused pane's transport, keeps voice on the pane it was started for, lays its subtitles or voice box over that pane (over the presented pane in a fullscreen presentation, and then tells the dock and the box that no dock is on screen), and connects routing, the catalog, notices, settings, narration, subtitles and a recording page. Both panes carry the tab's session, so the agent is the same whichever pane has focus. A pane opens in the vault the server was started with and then follows the vault its session reports, and its stage is given that vault. A board the person opens in the navigator is shown in the vault of the repository it was listed under, and a checkout the person chooses there is chosen through the catalog. The person's own acts decide which workhorse's conversation the dock shows: focusing a pane, opening a board in one, picking a workhorse from the dock's list and Fix with Codex tell the server through the one activation the application builds, and what an agent does to a pane never does. Fix with Codex activates the pane in front, reads the workbench again, and only then asks, so the repair goes to the workhorse of the repository diagnosed. It holds no board content.",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -11889,7 +11889,7 @@
 						"name": "Workbench client",
 						"kind": "service",
 						"responsibility": "The agent dock, the conversation beside the navigator and the voice box over a pane: the agent's state, Talk, the composer, the tab's workhorses to pick from, and its conversation with its work",
-						"description": "The dock lists the tab's workhorses by repository and checkout, once there are two, with the shown one picked and a word for each that runs or waits for the person; a pick shows that workhorse's conversation in every pane. It reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's controllers and the voice session. While the person wants subtitles, and always in a fullscreen presentation, where no dock is on screen, it also draws the voice box, a capsule round the orb with mute and the subtitles control as two keys at its end, which carries the voice the dock otherwise shows. The box is free over the voice's pane, or in the pill at the foot of a presented walkthrough's box, where the pill is its skin. The dock hands the voice over only to a box that the orb's stage says is on the page, and places the orb after its own motion so the orb leaves from where it was seen. The bar of a fullscreen presentation holds one key of the client: Talk, which reads End voice while the voice is live.",
+						"description": "The dock lists the tab's workhorses by repository and checkout, once there are two, with the shown one picked and a word for each that runs, waits for your approval or waits for your answer, in text and not in colour alone; a pick shows that workhorse's conversation in every pane. The list is one named group of buttons that the Up and Down arrows move through. It reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's controllers and the voice session. While the person wants subtitles, and always in a fullscreen presentation, where no dock is on screen, it also draws the voice box, a capsule round the orb with mute and the subtitles control as two keys at its end, which carries the voice the dock otherwise shows. The box is free over the voice's pane, or in the pill at the foot of a presented walkthrough's box, where the pill is its skin. The dock hands the voice over only to a box that the orb's stage says is on the page, and places the orb after its own motion so the orb leaves from where it was seen. The bar of a fullscreen presentation holds one key of the client: Talk, which reads End voice while the voice is live.",
 						"parent": "yAFyqal3",
 						"groups": [
 							"agent"
@@ -12168,7 +12168,7 @@
 						"name": "Shown conversation",
 						"kind": "function",
 						"responsibility": "Tells the server which checkout the person activated, by a pointer focus change, a board they opened or a pick from the dock's list; an agent's show activates nothing",
-						"description": "Each place where the person acts calls it with the pane they acted in, and the server keeps the one answer: every pane of the tab shows the conversation of that checkout. A refusal leaves the dock showing what it showed, which the server still says. Fix with Codex activates the pane in front before the repair is asked.",
+						"description": "Each place where the person acts calls the one activation, which the application builds and the shell actions, a pane's pointer focus, the dock's list and Fix with Codex share, with the pane they acted in. The server keeps the one answer: every pane of the tab shows the conversation of that checkout. A refusal leaves the dock showing what it showed, which the server still says. Going back or forward activates nothing.",
 						"parent": "yAFyqal3",
 						"groups": [
 							"agent"
@@ -13136,7 +13136,7 @@
 			}
 		}
 	],
-	"current": "YxjGNtA1",
+	"current": "kgEzJYfh",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -13197,6 +13197,12 @@
 			"from": "L7BQsaGv",
 			"at": "2026-10-15T07:01:56.223Z",
 			"reason": "A person moves a pane's board to another repository from its header, after a look at what the move rewrites"
+		},
+		{
+			"variant": "kgEzJYfh",
+			"from": "YxjGNtA1",
+			"at": "2026-10-15T09:31:26.807Z",
+			"reason": "The browser tells the server which checkout the person activated, by focusing a pane, opening a board, Fix with Codex or a pick from the dock's list of the tab's workhorses, and never on an agent's show or on going back or forward"
 		}
 	]
 }
