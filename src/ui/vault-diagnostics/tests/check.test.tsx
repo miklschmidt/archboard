@@ -184,3 +184,71 @@ test.each([false, true])(
 		}
 	},
 );
+
+test("a pane moved into another vault refreshes that vault's pictures, even under a policy of the same fingerprint", async () => {
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const root = createRoot(document.createElement("div"));
+	const originalFetch = globalThis.fetch;
+	const other = "/work/archboard-worktree/.archboard/vault";
+	const drawings = new Map<string, number>();
+	/**
+	 * A pane's picture under its vault's policy.
+	 * @param props The pane.
+	 * @param props.vault The vault the pane is in.
+	 * @returns No rendered content.
+	 */
+	function Picture(props: { vault: string }) {
+		useVaultPolicyRefresh(props.vault);
+		useQuery({
+			queryKey: [...semanticBoardKeys.rendersIn(props.vault), "test-board"],
+			staleTime: Number.POSITIVE_INFINITY,
+			/**
+			 * Count the drawings of this vault's picture.
+			 * @returns The drawing number.
+			 */
+			queryFn: () => {
+				const count = (drawings.get(props.vault) ?? 0) + 1;
+				drawings.set(props.vault, count);
+				return count;
+			},
+		});
+		return null;
+	}
+	// Two checkouts of one repository, each checked under the same policy.
+	globalThis.fetch = Object.assign(
+		async () =>
+			new Response(
+				JSON.stringify({
+					policy: DEFAULT_SEMANTIC_POLICY,
+					configurationValid: true,
+					configurationFile: "archboard.yaml",
+					fingerprint: "same",
+					diagnostics: [],
+				} satisfies VaultCheck),
+			),
+		{ preconnect: originalFetch.preconnect },
+	);
+	/**
+	 * Draw the pane in a vault and let its reads settle.
+	 * @param vault The vault.
+	 */
+	async function showIn(vault: string): Promise<void> {
+		await act(async () => {
+			root.render(
+				createElement(QueryClientProvider, { client }, createElement(Picture, { vault })),
+			);
+		});
+		await act(() => new Promise((settle) => setTimeout(settle, 5)));
+	}
+	try {
+		await showIn(VAULT);
+		expect(drawings.get(VAULT)).toBe(2);
+		// The picture drawn on arrival may be from before this vault's first check.
+		await showIn(other);
+		expect(drawings.get(other)).toBe(2);
+	} finally {
+		await act(async () => root.unmount());
+		client.clear();
+		globalThis.fetch = originalFetch;
+	}
+});
