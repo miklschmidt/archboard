@@ -4,9 +4,9 @@
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 21,
+	"version": 23,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-10-15T07:15:53.755Z",
+	"updatedAt": "2026-10-15T07:31:56.213Z",
 	"views": [],
 	"variants": [
 		{
@@ -1377,7 +1377,7 @@
 		{
 			"id": "DTYLMGcv",
 			"name": "TASK-436.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "nMbRpuPH",
 			"summary": "The package-local Codex session and its stdio request paths",
 			"content": {
@@ -1888,9 +1888,9 @@
 		{
 			"id": "czWsPLxf",
 			"name": "TASK-472.10",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "DTYLMGcv",
-			"summary": "Per-checkout workhorses: each checkout of a tab session has its own workhorse; the coordinator works in no checkout",
+			"summary": "The package-local Codex session and its stdio request paths",
 			"content": {
 				"nodes": [
 					{
@@ -2059,7 +2059,7 @@
 						"order": 13000,
 						"name": "Generation hooks",
 						"kind": "module",
-						"responsibility": "Takes the child's epoch, then initializes the session and reads the account before a generation is ready",
+						"responsibility": "Takes the child's epoch, with the coordinator's own directory as its workspace root, then initializes the session and reads the account before a generation is ready",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/codex-workbench-hooks.ts"
@@ -2397,7 +2397,7 @@
 			}
 		}
 	],
-	"current": "DTYLMGcv",
+	"current": "czWsPLxf",
 	"adoptions": [
 		{
 			"variant": "QfFFXHyU",
@@ -2416,6 +2416,12 @@
 			"from": "nMbRpuPH",
 			"at": "2026-10-07T01:08:52.031Z",
 			"reason": "Recorded the public session methods and reverse-request subscription behind their implementation files"
+		},
+		{
+			"variant": "czWsPLxf",
+			"from": "DTYLMGcv",
+			"at": "2026-10-15T07:31:56.213Z",
+			"reason": "The app-server child and the config it reads work in the coordinator's own directory, which is no checkout; the epoch starts there"
 		}
 	]
 }

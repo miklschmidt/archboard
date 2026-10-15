@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 42,
+	"version": 45,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-15T07:15:40.151Z",
+	"updatedAt": "2026-10-15T07:33:59.689Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -7505,7 +7505,7 @@
 		{
 			"id": "TSfh8JQ7",
 			"name": "TASK-472.06",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "5MRuMNhh",
 			"summary": "The coordinator thread, callbacks and prompt and call routing",
 			"content": {
@@ -8423,9 +8423,9 @@
 		{
 			"id": "2ViCX7fm",
 			"name": "TASK-472.10",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "TSfh8JQ7",
-			"summary": "Per-checkout workhorses: each checkout of a tab session has its own workhorse; the coordinator works in no checkout",
+			"summary": "The coordinator thread, callbacks and prompt and call routing",
 			"content": {
 				"nodes": [
 					{
@@ -8475,6 +8475,7 @@
 						"name": "Coordinator tools",
 						"kind": "module",
 						"responsibility": "Runs the tool calls the coordinator makes, once each, against a replay ledger; each workhorse tool names the checkout whose workhorse it works with",
+						"description": "A replay of one logical call is the same call only when it names the same checkout: the same arguments in another checkout are work for another workhorse. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three tools refuse a checkout with no ready workhorse, and say what a checkout is.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator-tools"
@@ -8485,7 +8486,7 @@
 						"order": 5000,
 						"name": "Tool contract",
 						"kind": "module",
-						"responsibility": "The frozen tool manifests and their digests: what the coordinator is allowed to ask for",
+						"responsibility": "The frozen tool manifests and their digests: what the coordinator is allowed to ask for, where each workhorse tool takes the checkout it works with",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator-tool-contract"
@@ -8807,7 +8808,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/codex-workbench-sessions.ts",
-							"symbol": "routeCoordinatorTool"
+							"symbol": "onServerRequest"
 						}
 					},
 					{
@@ -8925,7 +8926,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/codex-workbench-sessions.ts",
-							"symbol": "routeCallback"
+							"symbol": "onServerRequest"
 						}
 					},
 					{
@@ -9369,7 +9370,7 @@
 			}
 		}
 	],
-	"current": "TSfh8JQ7",
+	"current": "2ViCX7fm",
 	"adoptions": [
 		{
 			"variant": "H3TW6CJC",
@@ -9418,6 +9419,12 @@
 			"from": "5MRuMNhh",
 			"at": "2026-10-15T04:08:50.182Z",
 			"reason": "The voice catalogue comes from the vault of the presenting pane"
+		},
+		{
+			"variant": "2ViCX7fm",
+			"from": "TSfh8JQ7",
+			"at": "2026-10-15T07:33:59.689Z",
+			"reason": "The coordinator works in a directory of its own that is no checkout; each workhorse tool names the checkout whose workhorse it works with, and workhorse news names it"
 		}
 	]
 }
