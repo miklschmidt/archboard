@@ -289,8 +289,10 @@ const RENDER_CASE_TIMEOUT_MS = process.env["CI"] === "true" ? HOSTED_RENDER_TIME
 
 /**
  * The outer bound of the two vault boards whose Blocks layout is genuinely
- * heavy on hosted CI, past the preload's 60 s ceiling: about two and a half
- * times the 47.85 s Browser application took on the last green run.
+ * heavy, past the preload's 60 s ceiling: about two and a half times the
+ * 47.85 s Browser application took on the last green hosted run. It holds
+ * locally too: Browser application took 52.9 s alone on a loaded machine
+ * once it drew the pane vault (TASK-472.05), 18.5 s before.
  */
 const TEST_HEAVY_BLOCKS_CASE_MS = 120_000;
 /** The cases that get it, by name: every other case keeps the bounds above. */
@@ -323,7 +325,7 @@ for (const board of cases) {
 						outerBoundMs: TEST_HEAVY_BLOCKS_CASE_MS,
 						task: "TASK-451",
 						evidence:
-							"Browser application 47.85 s and Board viewer 26.6 s on GitHub Actions run 37921029421 (commit 4dcd39b54), Browser application past 60 s on the run of 68e7f0e13; 46.8 s locally with one layout worker, 17.6 s with all",
+							"Browser application 47.85 s and Board viewer 26.6 s on GitHub Actions run 37921029421 (commit 4dcd39b54), Browser application past 60 s on the run of 68e7f0e13; 46.8 s locally with one layout worker, 17.6 s with all; Browser application 52.9 s locally at load 6 after b032fd31b, against 18.5 s before it",
 					});
 				const content = orderedFixture(board.content);
 				// Each case draws content nothing drew before, so this is a first layout.
@@ -345,7 +347,7 @@ for (const board of cases) {
 					expect(wallHugs(drawing), "lines along a container's wall").toEqual([]);
 				}
 			},
-			heavy && process.env["CI"] === "true" ? TEST_HEAVY_BLOCKS_CASE_MS : RENDER_CASE_TIMEOUT_MS,
+			heavy ? TEST_HEAVY_BLOCKS_CASE_MS : RENDER_CASE_TIMEOUT_MS,
 		);
 	}
 }

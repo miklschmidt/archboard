@@ -102,8 +102,9 @@ uses a 60-second case deadline when `CI=true`. Its default engine also gets
 3-second first-render limit. Both engines keep all picture correctness assertions.
 The preload still applies its 60-second wall-clock ceiling. Only the Blocks
 cases of Browser application and Board viewer declare a real-time exception,
-with their own `TEST_HEAVY_BLOCKS_CASE_MS` case deadline on CI: their layout
-alone took 47.85 seconds there, and past 60 on a slower runner.
+with their own `TEST_HEAVY_BLOCKS_CASE_MS` case deadline on CI and locally:
+their layout alone took 47.85 seconds on CI, past 60 on a slower runner, and
+52.9 seconds locally on a loaded machine (TASK-377 owns the cause).
 
 Keep a real-time exception inside its exact test callback. Its first statement calls
 `declareTestWallClockBudget` with the exact test name, a concrete reason, a `TEST_*`
