@@ -1,11 +1,11 @@
 ---
 id: TASK-472.04
 title: Every server call names its vault
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 00:27'
+updated_date: '2026-10-15 00:31'
 labels: []
 dependencies:
   - TASK-472.01
@@ -29,14 +29,14 @@ The server resolves every board call against the one vault it started with. ADR 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every board route (list, read, render, the writes, claim, release, take-back, locality, footprint, vault check, code check, code findings, pane show, semantic context and code target open) refuses a call that names no vault, and the refusal says how to name one
-- [ ] #2 The CLI names its vault on every server call
-- [ ] #3 With two vaults served by one server, a write to a board in one vault is announced only to panes that show that board in that vault, even when the other vault has a board of the same name
-- [ ] #4 Leases, claims, doing lines, the agent activity list, the settled change feed, the lock sweep and the disk watch are keyed by vault and board together
-- [ ] #5 The browser names the vault of each pane on every call and socket message
-- [ ] #6 The opt-in topology lane still passes
-- [ ] #7 AGENTS.md's invariants, the archboard-dev skill and TESTING.md describe vault naming as built
-- [ ] #8 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 Every board route (list, read, render, the writes, claim, release, take-back, locality, footprint, vault check, code check, code findings, pane show, semantic context and code target open) refuses a call that names no vault, and the refusal says how to name one
+- [x] #2 The CLI names its vault on every server call
+- [x] #3 With two vaults served by one server, a write to a board in one vault is announced only to panes that show that board in that vault, even when the other vault has a board of the same name
+- [x] #4 Leases, claims, doing lines, the agent activity list, the settled change feed, the lock sweep and the disk watch are keyed by vault and board together
+- [x] #5 The browser names the vault of each pane on every call and socket message
+- [x] #6 The opt-in topology lane still passes
+- [x] #7 AGENTS.md's invariants, the archboard-dev skill and TESTING.md describe vault naming as built
+- [x] #8 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -63,4 +63,12 @@ Step 3, footprint, base 62bf2525e (the parent of 9a17d28dc, the first TASK-472.0
 Step 4, adopted: Live panes at version 15, Archboard server routes at version 14, Archboard server at version 243.
 Step 6: ./bin/dogfood check reports no diagnostics.
 Step 7, behind: boards that 9a17d28dc and the other TASK-472.04 commits put behind and no proposal names. Browser application was wrong: the viewer's fetch now calls withVault from Server requests, so the code check warned RELATIONSHIP_UNDRAWN Semantic viewer -> Server requests. Corrected in place (version 45): drew Semantic viewer -> Server requests (call, anchor withVault in api/semantic-boards.ts) and Server requests now says it names the vault on every call. Board viewer (version 91): Page start learns the served vault before the application renders; its responsibility says so. Still right and left alone: Command interface and Command dispatch (defineCommand adds the two vault refusals to every server command and exit-codes.ts maps them; Command contract and Failure reporting still do what their words say), Board viewer's Fetch semantic reads, Browser application's Pane session and Code target (they name the vault; their responsibilities hold). Board persistence is behind through board-lock.ts, read.ts, write.ts, discard.ts and History lens, from this task and TASK-472.01/03; it was not touched because TASK-472.12 may draw a proposal there. Its current warnings (Drill-down checks reaches Former names and Decode board bytes) come from TASK-472.12's uncommitted drill-down.ts, and the Board rasterizer's drawRequest anchor is not about any file of this task.
+
+Closing evidence: the complete gate passed at 65c950de5, every lane, exit 0, including tests/system/server-state/vault-naming.test.ts (two vaults, one server, news only to the right vault's pane). The opt-in topology lane passed at 84a025732, which holds this task's code (TASK-473 notes). AGENTS.md:65, TESTING.md:44 and the archboard-dev skill describe vault naming. Proposals adopted in 1fa993226. TASK-472.05 replaces the browser's one named vault with each pane's own vault.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Every board route, the pane show, the semantic context and the code target open now refuse a call that names no vault (VAULT_REQUIRED) or an unreadable one, and say how to name it. The CLI and the browser name the vault on every call and on the pane socket. Leases, claims, doing lines, agent activity, the change feed, the lock sweep and the disk watch are keyed by vault and board, so a write in one vault is announced only to that vault's panes. Verified by the complete gate at 65c950de5 and the topology lane at 84a025732. AGENTS.md, TESTING.md and the archboard-dev skill describe it, and the proposals of five boards are adopted.
+<!-- SECTION:FINAL_SUMMARY:END -->
