@@ -13,21 +13,14 @@ import {
 	type PaneHeaderProps,
 } from "@/ui/semantic-board-canvas/components/PaneHeader";
 import type { DrillNavigation } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
-import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { useDrillPlaces } from "@/ui/semantic-board-canvas/hooks/use-drill-places";
 import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 
 /** What the stage hands its header. */
 interface StageHeaderView {
-	/** The camera that brings a warned subject into view. */
-	readonly camera: BoardCamera;
-	/** Pick a subject out and show its findings in the sidebar. */
-	readonly onPick: (id: string | null) => void;
-	/** Open the whole board when a view hides the warned subject. */
-	readonly onChooseView: (view: string | null) => void;
-	/** Whether the reader asks for no camera animation. */
-	readonly reducedMotion?: boolean | undefined;
+	/** Pick a warned subject out and show it on the diagram, opening the whole board when a view hides it. */
+	readonly onShow: (id: string) => void;
 	/** What the board says about itself, or null while it has not arrived. */
 	readonly reading: VariantReading | null;
 	/** The query's answer for the board on screen. */
@@ -93,14 +86,7 @@ function StageHeader(props: { readonly view: StageHeaderView }): JSX.Element {
 			onTab={view.onTab}
 			sidebar={view.sidebar}
 		>
-			<CodeWarnings
-				drawing={view.render.data}
-				camera={view.camera}
-				onPick={view.onPick}
-				onDiagram={view.onTab}
-				onView={view.onChooseView}
-				reducedMotion={view.reducedMotion ?? false}
-			/>
+			<CodeWarnings drawing={view.render.data} onDiagram={view.onTab} onShow={view.onShow} />
 		</PaneHeader>
 	);
 }

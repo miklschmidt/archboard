@@ -360,9 +360,9 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		},
 		[choose, goTo],
 	);
-	// The stage fits the subject, not the About page that asks: the page goes as
-	// the diagram comes back, and a subject the view on screen does not draw is
-	// fitted only once the whole board's picture arrives.
+	// The stage fits the subject, not the About page or the code warning that
+	// asks: the page goes as the diagram comes back, and a subject the view on
+	// screen does not draw is fitted only once the whole board's picture arrives.
 	const fitSubject = useSubjectFocus(render.data, camera, reducedMotion, onChooseView);
 	const onShow = useCallback(
 		(id: string): void => {
