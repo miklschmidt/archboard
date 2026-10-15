@@ -118,21 +118,6 @@ function batchPlaces(batchRoot: string, loaded: LoadedSuite): BatchPlaces {
 }
 
 /**
- * Where a run's vault was. A batch made before the vault moved into the Flask
- * checkout kept it beside the checkout, in the world; a batch since keeps it in
- * the checkout. The run recorded neither, so the path that exists decides, and a
- * batch whose world is gone gets the current place.
- * @param world The run's world as the commands name it.
- * @param exists Whether a path the commands name exists in the batch as it sits now.
- * @returns The vault as the commands name it.
- */
-function vaultOf(world: string, exists: (file: string) => boolean): string {
-	const beside = path.join(world, "vault");
-	const inCheckout = path.join(world, "flask", ".archboard", "vault");
-	return exists(beside) && !exists(inCheckout) ? beside : inCheckout;
-}
-
-/**
  * What the classifier knew of the run: the places its commands name, with
  * existence asked of the batch where it sits now.
  * @param batchRoot The batch as it sits now.
@@ -160,7 +145,9 @@ function recordedContext(
 		skillRoot: path.join(world, "home", ".agents", "skills", "archboard"),
 		checkoutRoot: path.join(world, "flask"),
 		archboardRoot: checkout,
-		vault: vaultOf(world, exists),
+		// Exposure never reads the vault, so a batch from before the vault moved
+		// into the Flask checkout is audited the same with the current place.
+		vault: path.join(world, "flask", ".archboard", "vault"),
 		exposure: {
 			evaluationInputs: path.join(checkout, "evals"),
 			harnessSource: path.join(checkout, "src", "runtime", "skill-evaluation"),

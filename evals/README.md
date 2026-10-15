@@ -252,7 +252,7 @@ vault used to sit beside the checkout. Now it sits in the checkout, where the
 author sees it, for example in `git status`.
 The vault was found from `ARCHBOARD_VAULT` then, and it is found from the
 checkout now. Read an old batch against an old one, and a new batch against a
-new one. Re-auditing an old batch still reads its vault from `world/vault`.
+new one.
 
 The baseline is `docs/design/skill-evals/baseline/archboard`, a copy of
 `skills/archboard` frozen at the revision `pins.json` names (the last accepted
