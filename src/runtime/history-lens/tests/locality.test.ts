@@ -360,7 +360,7 @@ test("a board with no part in a registered repository answers an empty ranking, 
 	expect(answer.skipped.map((one) => one.reason)).toEqual(["unbound"]);
 });
 
-test("an answer is kept until the board's version, the start of the period or a checkout's HEAD moves", async () => {
+test("an answer is kept until the board's version, the start of the period or a checkout's HEAD moves, and is no other vault's", async () => {
 	const reading = lens.createLocalityReading();
 	const small = (version: number): SemanticBoard =>
 		SemanticBoardSchema.parse({
@@ -380,6 +380,10 @@ test("an answer is kept until the board's version, the start of the period or a 
 	const first = small(1);
 	const answer = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
 	expect(await reading.read(scratch, first, variantOf(first, "v1"), undefined)).toBe(answer);
+	// Two worktrees of one repository hold copies of a board with one id and version, which
+	// each may have changed since (ADR 0049): what one vault's board is read as is not the other's.
+	const elsewhere = join(scratch, "another-vault");
+	expect(await reading.read(elsewhere, first, variantOf(first, "v1"), undefined)).not.toBe(answer);
 	const next = small(2);
 	expect(await reading.read(scratch, next, variantOf(next, "v1"), undefined)).not.toBe(answer);
 	expect(
