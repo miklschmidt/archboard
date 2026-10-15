@@ -2,13 +2,16 @@
 // TASK-472.03): a binding into the vault's own repository reads the worktree's
 // files while the main checkout is the chosen one, and a binding into another
 // repository reads that repository's chosen checkout. An owned server, with a
-// registry, home and state directory of its own, serves the worktree's vault.
+// registry, home and state directory of its own, was started with a vault in no
+// checkout, and the command names the worktree's (ADR 0049): what is read is the
+// checkout of the vault the call names, not of the one the server started with.
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { appendFileSync, mkdirSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { packageBin } from "./support/package-cli.ts";
 import { createRepositoryFixture, type RepositoryFixture } from "./support/repository-fixture.ts";
@@ -73,9 +76,10 @@ beforeAll(async () => {
 	}
 	vault = join(worktree, ".archboard", "vault");
 	mkdirSync(vault, { recursive: true });
+	ensureSemanticVaultConfiguration(vault);
 	server = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
-		vault,
+		vault: fixture.vault,
 		env: fixture.serverEnvironment,
 	});
 });
