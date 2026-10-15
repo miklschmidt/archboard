@@ -37,7 +37,7 @@ import {
 	withBoardLockIfFreeSync,
 } from "@/runtime/engine/board-lock";
 import { vaultIdentity } from "@/runtime/code-target/index";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { MoveEnd, MovedDrillDown, SemanticBoard } from "@/shared/semantic-board/index";
 import { acceptedBoard } from "@/runtime/semantic-board-store/lib/accepted";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
 import { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";
@@ -57,7 +57,6 @@ import {
 	outboundRewrite,
 	rewriteDrillDowns,
 	type DrillRewrite,
-	type MovedDrillDown,
 	type MoveIdentities,
 } from "@/runtime/semantic-board-store/lib/move-drill-downs";
 import type { SemanticRefusalCode } from "@/runtime/semantic-board-store/lib/outcome";
@@ -79,13 +78,6 @@ type SemanticMoveCommand = BoardLeaseAsk &
 		/** The root of the vault the board moves to. */
 		readonly to: string;
 	};
-
-/** One end of a move: a vault, and the repository identity of its checkout. */
-interface MoveEnd {
-	readonly vault: string;
-	/** The identity of the vault's checkout, or null for an untracked vault. */
-	readonly repository: string | null;
-}
 
 /** One board the move wrote, at the version it wrote. */
 interface MoveWrite {
@@ -426,11 +418,4 @@ async function moveSemanticBoard(command: SemanticMoveCommand): Promise<Semantic
 	return result;
 }
 
-export {
-	type MoveEnd,
-	type MovedDrillDown,
-	type MoveWrite,
-	type SemanticMoveCommand,
-	type SemanticMoveResult,
-	moveSemanticBoard,
-};
+export { type MoveWrite, type SemanticMoveCommand, type SemanticMoveResult, moveSemanticBoard };

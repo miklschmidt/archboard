@@ -35,6 +35,7 @@ import { vaultIdentity } from "@/runtime/code-target/index";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
 import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";
 import { discardRoute } from "@/server/archboard/lib/semantic-board-discard";
+import { moveRoute } from "@/server/archboard/lib/semantic-board-move";
 import { renameRoute } from "@/server/archboard/lib/semantic-board-rename";
 import {
 	adoptRoute,
@@ -466,6 +467,7 @@ function mountSemanticBoardRoutes(app: Express): void {
 	app.post("/api/semantic-boards/shelve", requireVault, asyncEndpoint(shelveRoute));
 	app.post("/api/semantic-boards/rename", requireVault, asyncEndpoint(renameRoute));
 	app.post("/api/semantic-boards/discard", requireVault, asyncEndpoint(discardRoute));
+	app.post("/api/semantic-boards/move", requireVault, asyncEndpoint(moveRoute));
 }
 
 export { mountSemanticBoardRoutes };

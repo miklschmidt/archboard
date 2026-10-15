@@ -68,8 +68,6 @@ export {
 	discardSemanticBoard,
 } from "@/runtime/semantic-board-store/lib/discard";
 export {
-	type MoveEnd,
-	type MovedDrillDown,
 	type MoveWrite,
 	type SemanticMoveCommand,
 	type SemanticMoveResult,

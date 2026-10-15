@@ -17,21 +17,12 @@
 // This half is pure: it reads no file. Which board a name opens is a question
 // about the source vault, answered by the caller (`move.ts`).
 
-import type { DrillDown, SemanticBoard, SemanticNode } from "@/shared/semantic-board/index";
-
-/** One drill-down a move rewrote, where it is and what it now says. */
-interface MovedDrillDown {
-	/** The vault of the board that carries it, as the move found it. */
-	readonly vault: string;
-	/** The name of the board that carries it. */
-	readonly board: string;
-	/** The id of the variant that carries it. */
-	readonly variant: string;
-	/** The id of the node that carries it. */
-	readonly node: string;
-	/** The drill-down as it now reads. */
-	readonly drillDown: DrillDown;
-}
+import type {
+	DrillDown,
+	MovedDrillDown,
+	SemanticBoard,
+	SemanticNode,
+} from "@/shared/semantic-board/index";
 
 /** The two repository identities of a move, when the vault has one. */
 interface MoveIdentities {
@@ -111,7 +102,6 @@ function outboundRewrite(
 
 export {
 	type DrillRewrite,
-	type MovedDrillDown,
 	type MoveIdentities,
 	inboundRewrite,
 	outboundRewrite,
