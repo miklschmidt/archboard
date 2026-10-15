@@ -41,10 +41,11 @@ function checkoutNamedBy(named: string): string | null {
 	} catch {
 		return null;
 	}
-	if (isDirectory(path.join(real, VAULT_DIRECTORY))) {
-		return real;
-	}
-	return isVaultLayout(real) && isDirectory(real) ? checkoutOfVault(real) : null;
+	// A directory names the checkout of the vault it holds, as the server serves that vault: through
+	// a link, the vault's own real path decides, so a pane in it and a call naming it agree.
+	const held = path.join(real, VAULT_DIRECTORY);
+	const vault = isDirectory(held) ? fs.realpathSync.native(held) : real;
+	return isVaultLayout(vault) && isDirectory(vault) ? checkoutOfVault(vault) : null;
 }
 
 /**
