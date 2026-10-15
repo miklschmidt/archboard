@@ -1,11 +1,11 @@
 ---
 id: TASK-472.03
 title: A binding into the vault's own repository resolves in the vault's own checkout
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 00:30'
+updated_date: '2026-10-15 00:31'
 labels: []
 dependencies:
   - TASK-472.01
@@ -30,13 +30,13 @@ The code check resolves every binding through the registry, so a proposal in a w
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 In a worktree whose vault binds to its own repository identity, `check --code` reads the worktree's files while another checkout of that identity is chosen
-- [ ] #2 A binding or anchor that names another identity resolves in that identity's chosen checkout
-- [ ] #3 Opening the code of a part on a board of a worktree's vault opens the worktree's file
-- [ ] #4 `behind`, footprint and locality follow the same rule
-- [ ] #5 One function owns the rule, and every reader calls it
-- [ ] #6 The archboard skill and the archboard-dev skill describe where a binding resolves as built
-- [ ] #7 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 In a worktree whose vault binds to its own repository identity, `check --code` reads the worktree's files while another checkout of that identity is chosen
+- [x] #2 A binding or anchor that names another identity resolves in that identity's chosen checkout
+- [x] #3 Opening the code of a part on a board of a worktree's vault opens the worktree's file
+- [x] #4 `behind`, footprint and locality follow the same rule
+- [x] #5 One function owns the rule, and every reader calls it
+- [x] #6 The archboard skill and the archboard-dev skill describe where a binding resolves as built
+- [x] #7 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -70,4 +70,12 @@ Step 6: ./bin/dogfood check reports no diagnostics.
 Step 7, behind: the boards 2f5595c1f and its siblings put behind and no proposal names are Command interface (Vault check, Locality and Footprint changed only help text: 57b179932, f6e658fc8; their responsibilities hold) and Board persistence (Binding checks and Vault diagnostics now resolve through checkoutsReadFrom; "a node whose binding names a file the repository no longer has" is still what they do, and Board persistence was not edited because TASK-472.12 may hold a proposal there). No board is wrong. Remaining warnings in the vault are not from this task: Board rasterizer's drawRequest anchor, Board persistence's two undrawn Drill-down checks relationships (TASK-472.12's uncommitted drill-down.ts) and Live panes' Browser origin guard (another task's uncommitted server files).
 
 Correction to the closing note above: the old Archboard server and Archboard server routes proposals were not tried for adoption; they were restated and shelved because TASK-472.04 had already been adopted over their parent, which would have refused them as PARENT_SUPERSEDED.
+
+Closing evidence: the complete gate (bun run check) passed in a clean worktree at 65c950de5, every lane, exit 0. It holds the tests the notes name: tests/system/cli/vault-checkout.test.ts, tests/system/code-targets/vault-checkout.test.ts, src/runtime/code-target/tests/vault-checkout.test.ts, src/runtime/history-lens/tests/own-checkout.test.ts and semantic-board-store/tests/bindings.test.ts. skills/archboard/references/authoring.md:98 and skills/archboard-dev/SKILL.md state where a binding resolves. Proposals adopted in 841631559.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+One function, checkoutsReadFrom(vault), now decides which checkout a vault reads: the vault's own checkout for its own repository identity, the chosen checkout for any other. The code check, the opener, behind, footprint, locality and the vault check all call it, so a worktree's vault reads the worktree's code while another checkout is chosen. Verified by the system and module tests named in the notes and by the complete gate at 65c950de5. The skills say where a binding resolves, and the Archboard, Archboard server and Archboard server routes proposals are adopted.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,11 +1,11 @@
 ---
 id: TASK-472.17
 title: Every worktree of a repository has the identity of its main checkout
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 22:52'
-updated_date: '2026-10-15 00:02'
+updated_date: '2026-10-15 00:31'
 labels: []
 dependencies: []
 references:
@@ -24,11 +24,11 @@ A repository identity falls back to the name of the checkout's directory when th
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 In a repository with no remote, a linked worktree has the same identity as its main checkout: the name of the main checkout directory
-- [ ] #2 `repo add` or `repo use` of a checkout of a repository with no remote makes its linked worktrees known under that one identity, and choosing one of them changes the chosen checkout of that identity
-- [ ] #3 A repository with an origin remote keeps the identity of its remote, in its main checkout and every worktree
-- [ ] #4 INSTALL.md, the archboard skill and the help of the `repo` commands state the identity rule wherever they state where an identity comes from
-- [ ] #5 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 In a repository with no remote, a linked worktree has the same identity as its main checkout: the name of the main checkout directory
+- [x] #2 `repo add` or `repo use` of a checkout of a repository with no remote makes its linked worktrees known under that one identity, and choosing one of them changes the chosen checkout of that identity
+- [x] #3 A repository with an origin remote keeps the identity of its remote, in its main checkout and every worktree
+- [x] #4 INSTALL.md, the archboard skill and the help of the `repo` commands state the identity rule wherever they state where an identity comes from
+- [x] #5 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -47,4 +47,12 @@ A repository identity falls back to the name of the checkout's directory when th
 Identity rule is repoIdentityFor(root, remote, worktreeListing?) in git.ts; repoIdentityAt asks git for the listing only when there is no remote. Bare repo: named by its directory without .git. worktreesOf keeps its identity filter (extensions.worktreeConfig can override origin per worktree). No dogfood board changes: the Repository checkout part already says worktrees of its identity. Cross-scope: src/runtime/code-target/lib/vault-checkout.ts calls repoIdentityFor(top, remote) without the listing, so a vault in a linked worktree of a remoteless repo still gets the worktree directory name until it passes gitAnswer(top, ['worktree','list','--porcelain']) as the third argument (TASK-472.03).
 
 Parent, 2026-10-15: 03011270e names a main checkout with a separate git directory by its own directory, since git worktree list names it by the git directory. Known limit: a linked worktree of such a repository with no remote still gets the git directory name, because nothing in git points back to the main checkout. The review fixes are e6cac4e3b (an old entry under a worktree name is recorded again under the main identity) and the removal of a duplicate system test. The help of repo add and repo forget now matches.
+
+Correction, 2026-10-15: 65c950de5 replaced the rule of 03011270e. A bare repository and a repository whose git directory lives apart from its main checkout are now named by the git directory without .git, in the main checkout and every worktree, because git leads a linked worktree only to that directory. So the known limit above is gone, and ADR 0011's amendment says the same. vault-checkout.ts:92 passes the worktree listing, so a vault in a linked worktree of a remoteless repository gets the main identity too. Closing evidence: the complete gate passed at 65c950de5, exit 0, with src/runtime/engine/tests/repo-registry.test.ts and the repo CLI system test.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A repository with no remote is now named by the directory of its main checkout, read from the first entry of git worktree list, so every linked worktree shares the main checkout's identity. A bare repository or a separate git directory is named by the git directory without .git. A repository with an origin remote keeps the remote's identity everywhere. repo add and repo use make the worktrees known under that one identity, and choosing one moves the chosen checkout. Verified by the registry module tests and the repo CLI system test in the complete gate at 65c950de5. INSTALL.md, the archboard skill and the repo help state the rule. No board changed.
+<!-- SECTION:FINAL_SUMMARY:END -->
