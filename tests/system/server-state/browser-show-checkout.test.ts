@@ -10,6 +10,7 @@ import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { z } from "zod";
 
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@/shared/semantic-pane-context";
 import { packageBin } from "../cli/support/package-cli.ts";
 import {
 	createRepositoryFixture,
@@ -37,6 +38,7 @@ const PaneSchema = z.object({
 	repository: z.string().nullable(),
 	checkout: z.string().nullable(),
 	own: z.boolean(),
+	reading: z.object({ selection: z.array(z.object({ id: z.string() })) }),
 });
 const RegistrySchema = z.object({
 	repos: z.array(z.object({ repo: z.string(), root: z.string(), chosen: z.boolean() })),
@@ -190,6 +192,27 @@ describe.serial("browser show and the chosen checkout", () => {
 			own: false,
 		});
 		expect(panesFrom(main)["pane-left"]?.own).toBe(true);
+		// What the person picked out on the main checkout's board.
+		const picked = await createRequester({ ...server, vault: mainVault })(
+			SEMANTIC_PANE_CONTEXT_ROUTE,
+			{
+				method: "POST",
+				doing: false,
+				body: {
+					paneId: "pane-left",
+					clientId: "pane-left",
+					board: { name: "payments", key: "payments" },
+					variant: null,
+					view: null,
+					selection: [{ id: "ab12" }],
+					version: null,
+					at: new Date().toISOString(),
+					sequence: 0,
+				},
+			},
+		);
+		expect(picked.status).toBe(200);
+		expect(panesFrom(main)["pane-left"]?.reading.selection).toEqual([{ id: "ab12" }]);
 
 		const mark = left.mark();
 		expect(show(worktree, "pane-right")).toEqual({
@@ -209,6 +232,8 @@ describe.serial("browser show and the chosen checkout", () => {
 		for (const paneId of ["pane-left", "pane-right"]) {
 			expect(after[paneId]).toMatchObject({ vault: worktreeVault, checkout: worktree, own: true });
 		}
+		// The pick was of the main checkout's board, so it is not reported as one of the worktree's.
+		expect(after["pane-left"]?.reading.selection).toEqual([]);
 
 		// A show from the chosen checkout changes no choice and says nothing of one.
 		expect(show(worktree, "pane-left").chose).toBeUndefined();
