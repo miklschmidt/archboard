@@ -340,9 +340,11 @@ async function drawListedAhead(
  */
 function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 	const warmed = new WeakSet<QueryClient>();
-	// One sweep at a time for each vault of each cache: a sweep of one repository
-	// does not hold up the listing of another.
-	const sweeping = new WeakMap<QueryClient, Set<string>>();
+	// Each cache sweeps one vault at a time, so drawing ahead never takes more
+	// than one of the renderer's workers however many repositories the page
+	// lists. A vault whose sweep is already waiting or under way is not queued
+	// again.
+	const sweeps = new WeakMap<QueryClient, { queued: Set<string>; last: Promise<void> }>();
 	const drawing = new Map<string, Promise<SemanticRenderReply>>();
 	return {
 		/**
@@ -362,7 +364,8 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 		},
 		/**
 		 * Forget kept pictures of boards that moved or went away, and draw the
-		 * listed boards ahead unless a sweep is already under way.
+		 * listed boards ahead after any other vault's sweep, unless this vault's
+		 * is already waiting or under way.
 		 * @param vault The vault the boards are in.
 		 * @param boards The boards the server lists.
 		 * @param client The tab's cache.
@@ -372,15 +375,16 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 				setup.storage === undefined
 					? Promise.resolve()
 					: forgetStalePictures(setup.storage, vault, boards, setup.renderer);
-			const vaults = sweeping.get(client) ?? new Set<string>();
-			sweeping.set(client, vaults);
-			if (vaults.has(vault)) return;
-			vaults.add(vault);
+			const sweep = sweeps.get(client) ?? { queued: new Set<string>(), last: Promise.resolve() };
+			sweeps.set(client, sweep);
+			if (sweep.queued.has(vault)) return;
+			sweep.queued.add(vault);
 			// Stale pictures go first, so the sweep never reads one it is about to forget.
-			void forgotten
+			sweep.last = sweep.last
+				.then(() => forgotten)
 				.then(() => drawListedAhead(client, vault, boards))
 				.catch(() => undefined)
-				.finally(() => vaults.delete(vault));
+				.finally(() => sweep.queued.delete(vault));
 		},
 	};
 }

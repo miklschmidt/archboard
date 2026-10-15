@@ -380,3 +380,37 @@ test("a picture drawn ahead is still in the tab when somebody opens its board, h
 		version: 1,
 	});
 });
+
+test("two vaults with a board of one name are drawn ahead one board at a time, and kept apart", async () => {
+	const other = "/work/payments/.archboard/vault";
+	const storage = memoryStorage();
+	/**
+	 * The vault and version of every kept picture.
+	 * @returns One `vault@version` for each.
+	 */
+	const kept = async (): Promise<string[]> =>
+		(await storage.keys()).map((key) => {
+			const parts: unknown = typeof key === "string" ? JSON.parse(key) : null;
+			return Array.isArray(parts) ? `${String(parts[0])}@${String(parts[6])}` : "";
+		});
+	// The navigator lists every repository at once as the page loads.
+	const first = page(storage);
+	await Promise.all([
+		first.client.fetchQuery(semanticBoardListQuery(VAULT)),
+		first.client.fetchQuery(semanticBoardListQuery(other)),
+	]);
+	await until(() => first.draws.length === 2);
+	// The sweeps share the renderer's one worker for drawing ahead, so a pane's
+	// own drawing never waits behind them.
+	expect(first.most()).toBe(1);
+	await until(() => storage.size() === 2);
+
+	// One vault's board moves on: its listing forgets its own old picture and
+	// leaves the other vault's, which is of a board of the same name.
+	server.version = 2;
+	const moved = page(storage);
+	await moved.client.fetchQuery(semanticBoardListQuery(VAULT));
+	await until(() => moved.draws.length === 1);
+	await until(() => storage.size() === 2);
+	expect((await kept()).toSorted()).toEqual([`${other}@1`, `${VAULT}@2`].toSorted());
+});
