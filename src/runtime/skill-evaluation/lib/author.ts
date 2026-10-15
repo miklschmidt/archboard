@@ -64,6 +64,7 @@ import { writeRunManifest } from "@/runtime/skill-evaluation/lib/run-manifest";
 import type { Fixture } from "@/runtime/skill-evaluation/lib/fixture";
 import type { Pins, Scenario } from "@/runtime/skill-evaluation/lib/suite";
 import {
+	forgetCheckout,
 	inspectGroup,
 	layFixture,
 	readConfigurationText,
@@ -310,6 +311,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 		await layFixture(world.cli, job.fixture, world.paths.flask, world.paths.home);
 		const snapshot = await readVault(world.cli);
 		writeBoards(snapshot, world.paths.snapshot);
+		if (!job.fixture.registerRepo) await forgetCheckout(world.cli, world.paths.flask);
 		const configBefore = readConfigurationText(world.paths.vault);
 		const { result, argv } = await runAuthorProcess(job, world);
 		const trace = parseTrace(fs.readFileSync(world.paths.authorEvents, "utf8"));

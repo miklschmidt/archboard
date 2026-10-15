@@ -74,7 +74,14 @@ test("what the author is given is in its world; what the harness keeps of the ru
 		}
 		// The world is laid before the author starts; the records are not in it.
 		expect(fs.existsSync(paths.world)).toBe(true);
-		expect(fs.existsSync(paths.vault)).toBe(true);
+	});
+});
+
+test("the run's vault is the .archboard/vault of its checkout, made after the clone", () => {
+	withRun((paths) => {
+		expect(paths.vault).toBe(path.join(paths.flask, ".archboard", "vault"));
+		// The clone refuses a destination that holds anything, so nothing is laid there first.
+		expect(fs.existsSync(paths.flask)).toBe(false);
 	});
 });
 
@@ -95,9 +102,11 @@ test("every place the author's own tools write is inside its world", () => {
 		for (const name of ["HOME", "XDG_STATE_HOME", "XDG_CONFIG_HOME", "TMPDIR"] as const) {
 			expect(inside(paths.world, environment[name] ?? ""), name).toBe(true);
 		}
-		for (const name of ["ARCHBOARD_VAULT", "ARCHBOARD_REPOS", "LOG_FILE_PATH"] as const) {
+		for (const name of ["ARCHBOARD_REPOS", "LOG_FILE_PATH"] as const) {
 			expect(inside(paths.world, environment[name] ?? ""), name).toBe(true);
 		}
+		// A command finds the vault from the checkout it runs in, never from the environment.
+		expect(environment).not.toHaveProperty("ARCHBOARD_VAULT");
 		expect(inside(paths.world, environment["CODEX_HOME"] ?? "")).toBe(false);
 	});
 });

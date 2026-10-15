@@ -456,7 +456,10 @@ async function layTalk(cli: CliContext, talk: TalkFixture, home: string): Promis
 
 /**
  * Lays one fixture: the registered checkout, then each step in order, each
- * against the version the previous one left, then the talk it keeps.
+ * against the version the previous one left, then the talk it keeps. Every
+ * step finds the vault from the checkout it runs in, and the first command in
+ * a checkout registers it, so a fixture that registers none is made
+ * unregistered again by the caller once it has read the laid vault.
  * @param cli How to reach the CLI.
  * @param fixture The fixture.
  * @param flask The checkout to register.
@@ -478,6 +481,18 @@ async function layFixture(
 }
 
 /**
+ * Makes the registry forget the run's checkout. The first command in a checkout
+ * registers it, so every fixture is laid into a registered checkout. A fixture
+ * that says it registers none is then returned to what it says, and the author's
+ * own first command registers the checkout, as it would for anybody.
+ * @param cli How to reach the CLI.
+ * @param flask The checkout.
+ */
+async function forgetCheckout(cli: CliContext, flask: string): Promise<void> {
+	await archboardOk(cli, ["repo", "forget", flask]);
+}
+
+/**
  * Writes every board of a vault reading to a directory, one file per board.
  * @param boards The boards.
  * @param directory Where.
@@ -493,6 +508,7 @@ function writeBoards(boards: ReadonlyMap<string, SemanticBoard>, directory: stri
 }
 
 export {
+	forgetCheckout,
 	inspectGroup,
 	layFixture,
 	readBoard,
