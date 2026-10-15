@@ -4,6 +4,7 @@ title: A set ARCHBOARD_VAULT is refused
 status: To Do
 assignee: []
 created_date: '2026-10-14 21:49'
+updated_date: '2026-10-15 03:38'
 labels: []
 dependencies:
   - TASK-472.07
@@ -34,3 +35,12 @@ After the tests, the evaluations and `bin/dogfood` stop using it, `ARCHBOARD_VAU
 - [ ] #4 README.md, INSTALL.md, TESTING.md, AGENTS.md, PRODUCT.md and the archboard, archboard-pr and archboard-dev skills hold no instruction that sets `ARCHBOARD_VAULT`, and `bun run generate:skill-artifacts` output matches
 - [ ] #5 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-15 03:38
+---
+From TASK-472.06: README.md's quick start still runs `ARCHBOARD_VAULT="$PWD/examples/web-shop" ./bin/archboard start`. Refusing the variable breaks it, and examples/web-shop is not in the <dir>/.archboard/vault layout, so the example needs a new home or a -C form before this task lands. The archboard-pr skill's description also still triggers on a repository whose agent doc names ARCHBOARD_VAULT (TASK-471.03).
+---
+<!-- COMMENTS:END -->
