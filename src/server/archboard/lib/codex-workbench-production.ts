@@ -67,7 +67,7 @@ export function createServerCodexWorkbenchInstallation(
 			executablePath,
 			checkoutRoot: server.checkoutRoot,
 			storage: { rootDirectory: storage.root, ownerDirectory: storage.ownerDirectory },
-			archboardServer: { url: serverUrl() },
+			archboardServer: { url: serverUrl(), binDirectory: path.join(server.checkoutRoot, "bin") },
 			onGroupOwned: server.onCodexProcessGroupOwned,
 		},
 		/**

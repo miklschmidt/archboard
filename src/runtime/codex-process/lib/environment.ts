@@ -49,6 +49,12 @@ type CodexChildEnvironment = Readonly<Record<string, string>>;
 interface CodexArchboardServer {
 	/** The URL the server listens at. */
 	readonly url: string;
+	/**
+	 * The `bin` directory of the checkout whose source the server runs. It leads the child's PATH,
+	 * so a thread's `archboard` runs the server's own source in whichever checkout the thread
+	 * works in, and the server's identity probe accepts it.
+	 */
+	readonly binDirectory: string;
 }
 
 interface CodexChildEnvironmentInput {
@@ -125,6 +131,8 @@ function retainedValue(ambient: CodexAmbientEnvironment, key: string): string | 
  * the server's address are assigned last so ambient values can never win by
  * insertion order or precedence.
  *
+ * The server's own `bin` leads PATH, so `archboard` in a thread is the server's source.
+ *
  * Auto-start is off in the child. It lives only as long as its server, so a thread's CLI that
  * finds no server has outlived it, and starting one would put a second server nobody asked for
  * beside it. An explicit `archboard start` still overrides it.
@@ -143,6 +151,12 @@ function buildCodexChildEnvironment(input: CodexChildEnvironmentInput): CodexChi
 		if (value !== undefined) child[key] = value;
 	}
 
+	const binDirectory = requirePath(
+		input.archboardServer.binDirectory,
+		"The Archboard bin directory",
+	);
+	child["PATH"] =
+		child["PATH"] === undefined ? binDirectory : `${binDirectory}${path.delimiter}${child["PATH"]}`;
 	child["CODEX_HOME"] = codexHome;
 	child["CODEX_SQLITE_HOME"] = sqliteHome;
 	child["ARCHBOARD_URL"] = input.archboardServer.url;
