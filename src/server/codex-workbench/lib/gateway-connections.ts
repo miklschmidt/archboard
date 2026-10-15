@@ -71,6 +71,11 @@ interface BrowserConnections {
 	readonly readBinding: (
 		state: Pick<ConnectionState, "tabSessionId" | "browserId">,
 	) => ReturnType<CodexWorkbenchGatewayOptions["threadLink"]["read"]>;
+	/** The thread link of the workhorse of one named checkout of a connection's tab. */
+	readonly readBindingIn: (
+		state: Pick<ConnectionState, "tabSessionId">,
+		checkout: string,
+	) => ReturnType<CodexWorkbenchGatewayOptions["threadLink"]["read"]>;
 	readonly stateFor: (
 		browserId: string,
 		paneId: string,
@@ -112,30 +117,21 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		/**
 		 * The thread link of the workhorse a connection's pane shows: the one of its tab session
 		 * for the checkout the pane's tab shows now (ADR 0050), refusing a binding that does not
-		 * describe that workhorse. The link port keys a link by the workhorse (its `paneId`).
+		 * describe that workhorse.
 		 * @param state The connection.
 		 * @returns Its binding.
 		 */
-		readBinding: (state) => {
-			try {
-				const key = workhorseLinkKey(state.tabSessionId, options.checkoutOf(state.browserId));
-				const binding = options.threadLink.read(key);
-				if (
-					binding.paneId !== key ||
-					!Number.isSafeInteger(binding.revision) ||
-					binding.revision < 0
-				)
-					throw new Error("the thread-link owner returned an invalid pane binding");
-				return binding;
-			} catch (error) {
-				if (error instanceof CodexWorkbenchGatewayError) throw error;
-				throw new CodexWorkbenchGatewayError(
-					"invalid_projection",
-					"The thread-link owner returned an invalid pane binding.",
-					{ cause: error },
-				);
-			}
-		},
+		readBinding: (state) =>
+			readWorkhorseBinding(options, state.tabSessionId, () => options.checkoutOf(state.browserId)),
+
+		/**
+		 * The thread link of the workhorse of one named checkout of a connection's tab.
+		 * @param state The connection.
+		 * @param checkout The checkout.
+		 * @returns Its binding.
+		 */
+		readBindingIn: (state, checkout) =>
+			readWorkhorseBinding(options, state.tabSessionId, () => checkout),
 
 		/**
 		 * The open connection a request names, refusing a closed one and a socket
@@ -461,6 +457,35 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	}
 
 	return connections;
+}
+
+/**
+ * The thread link of one workhorse of a tab, refusing a binding that does not describe that
+ * workhorse. The link port keys a link by the workhorse (its `paneId`).
+ * @param options The gateway's owners.
+ * @param tabSessionId The tab.
+ * @param checkoutOf The checkout of the workhorse; what it throws is an invalid projection too.
+ * @returns Its binding.
+ */
+function readWorkhorseBinding(
+	options: Pick<CodexWorkbenchGatewayOptions, "threadLink">,
+	tabSessionId: ConnectionState["tabSessionId"],
+	checkoutOf: () => string,
+): ReturnType<CodexWorkbenchGatewayOptions["threadLink"]["read"]> {
+	try {
+		const key = workhorseLinkKey(tabSessionId, checkoutOf());
+		const binding = options.threadLink.read(key);
+		if (binding.paneId !== key || !Number.isSafeInteger(binding.revision) || binding.revision < 0)
+			throw new Error("the thread-link owner returned an invalid pane binding");
+		return binding;
+	} catch (error) {
+		if (error instanceof CodexWorkbenchGatewayError) throw error;
+		throw new CodexWorkbenchGatewayError(
+			"invalid_projection",
+			"The thread-link owner returned an invalid pane binding.",
+			{ cause: error },
+		);
+	}
 }
 
 /**

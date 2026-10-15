@@ -94,3 +94,30 @@ test("a lease taken before the shown conversation switched is refused, and a new
 		}),
 	]);
 });
+
+// What is guarded: the person activates another checkout while a command runs on the workhorse
+// that was shown when it was sent, such as a voice start, which takes seconds. That workhorse's
+// link did not move, so the command's outcome is still known and is answered as it is; a voice
+// start answered as unknown would leave a session running that the browser never connected.
+test("a command running when the shown conversation switches keeps its outcome", async () => {
+	const shown = { checkout: PAYMENTS };
+	const value = createGatewayHarness(undefined, undefined, undefined, {
+		checkoutOf: () => shown.checkout,
+		linkFor: () => null,
+	});
+	openHarnesses.push(value);
+	const pane = value.open();
+	let settle: (() => void) | undefined;
+	value.setActionGate(
+		new Promise((resolve) => {
+			settle = () => resolve(undefined);
+		}),
+	);
+	const running = pane.command(startCommand(value, pane.claimLease()));
+	await Promise.resolve();
+
+	shown.checkout = SHOP;
+	settle?.();
+	expect(await running).toMatchObject({ outcome: "delivered", code: null });
+	expect(value.actionContexts).toEqual([expect.objectContaining({ checkout: PAYMENTS })]);
+});

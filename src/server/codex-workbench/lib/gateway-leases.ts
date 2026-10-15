@@ -47,6 +47,11 @@ interface LeaseOwner {
 	readonly expireIfDue: () => void;
 	readonly leaseForSnapshot: (state: ConnectionState) => BrowserCommandLease | null;
 	readonly ensureLeaseBinding: (state: ConnectionState, record: BrowserLeaseRecord) => void;
+	/**
+	 * Refuse, as link_changed, once the link of the workhorse a lease was claimed for has moved,
+	 * whichever checkout the tab shows now: a command that ran there still knows its outcome.
+	 */
+	readonly ensureLinkStands: (state: ConnectionState, record: BrowserLeaseRecord) => void;
 	readonly claim: (
 		browserId: string,
 		paneId: string,
@@ -243,27 +248,47 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 	};
 
 	/**
-	 * Refuse a command whose pane link has changed since its lease was claimed,
-	 * releasing that lease: the browser must claim a new one against the link
-	 * that now stands.
+	 * Whether the link of the workhorse a lease was claimed for still stands.
 	 * @param state The connection.
 	 * @param record The lease it holds.
+	 * @returns True while that workhorse's link is the one the lease was claimed against.
 	 */
-	const ensureLeaseBinding = (state: ConnectionState, record: BrowserLeaseRecord): void => {
-		const binding = connections.readBinding(state);
-		if (
-			owners.options.checkoutOf(state.browserId) === record.binding.checkout &&
+	const linkStands = (state: ConnectionState, record: BrowserLeaseRecord): boolean => {
+		const binding = connections.readBindingIn(state, record.binding.checkout);
+		return (
 			binding.revision === record.binding.linkRevision &&
 			sameWireValue(binding.link, record.binding.link)
-		) {
-			return;
-		}
+		);
+	};
+
+	/**
+	 * Release a lease whose link changed, and refuse what was asked under it.
+	 * @param record The lease.
+	 * @throws {CodexWorkbenchGatewayError} Always, as link_changed.
+	 */
+	const refuseChangedLink = (record: BrowserLeaseRecord): never => {
 		finish(record, "released", "link_changed");
 		throw new CodexWorkbenchGatewayError(
 			"link_changed",
 			"The pane link changed during lease ownership.",
 			{ commandId: record.lease.commandId },
 		);
+	};
+
+	/**
+	 * Refuse a command whose pane link has changed since its lease was claimed, or whose tab
+	 * shows another checkout's conversation now, releasing that lease: the browser must claim a
+	 * new one against the link that now stands.
+	 * @param state The connection.
+	 * @param record The lease it holds.
+	 */
+	const ensureLeaseBinding = (state: ConnectionState, record: BrowserLeaseRecord): void => {
+		if (
+			owners.options.checkoutOf(state.browserId) !== record.binding.checkout ||
+			!linkStands(state, record)
+		) {
+			refuseChangedLink(record);
+		}
 	};
 
 	return {
@@ -296,6 +321,17 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 		},
 
 		ensureLeaseBinding,
+
+		/**
+		 * Refuse once the link of the workhorse a lease was claimed for has moved.
+		 * @param state The connection.
+		 * @param record The lease it holds.
+		 */
+		ensureLinkStands: (state, record) => {
+			if (!linkStands(state, record)) {
+				refuseChangedLink(record);
+			}
+		},
 
 		/**
 		 * Take the command lease for one browser pane, releasing whoever in its tab
