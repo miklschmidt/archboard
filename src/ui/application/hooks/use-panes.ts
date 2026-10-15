@@ -25,8 +25,10 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 /** What other owners hear from the panes; bound live each render. */
 interface PaneEvents {
 	readonly onBoardError: (paneId: string, error: string) => void;
-	/** Which boards an agent is working on, across the server (ADR 0022). */
-	readonly onAgentActivity: (activity: readonly AgentActivityEntry[]) => void;
+	/** Which boards an agent is working on in one vault (ADR 0022). */
+	readonly onAgentActivity: (vault: string, activity: readonly AgentActivityEntry[]) => void;
+	/** A checkout was chosen somewhere, so the repositories are read again (ADR 0050). */
+	readonly onRepositoriesChanged: () => void;
 	readonly onStaleFrontend: (message: string) => void;
 	readonly onCodeTargetNotice: (notice: CodeTargetNotice) => void;
 	readonly onPaneStateAccepted: () => void;
@@ -56,6 +58,7 @@ type PaneCallbacks = Required<
 		| "onStaleFrontend"
 		| "onCodeTargetNotice"
 		| "onAgentActivity"
+		| "onRepositoriesChanged"
 		| "onBoardAdopted"
 	>
 > & {
@@ -194,11 +197,16 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 			events.read().onCodeTargetNotice(notice);
 		},
 		/**
-		 * Which boards an agent is working on.
+		 * Which boards an agent is working on in one vault.
+		 * @param vault The vault.
 		 * @param activity The whole snapshot.
 		 */
-		onAgentActivity: (activity: readonly AgentActivityEntry[]): void => {
-			events.read().onAgentActivity(activity);
+		onAgentActivity: (vault: string, activity: readonly AgentActivityEntry[]): void => {
+			events.read().onAgentActivity(vault, activity);
+		},
+		/** A checkout was chosen somewhere. */
+		onRepositoriesChanged: (): void => {
+			events.read().onRepositoriesChanged();
 		},
 		/**
 		 * The server moved a pane onto a board.

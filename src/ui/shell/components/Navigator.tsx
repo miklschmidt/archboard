@@ -1,6 +1,7 @@
-// The left column: the brand bar at its top, a filter, the vault's boards as
-// an outline (folders, then the boards each board drills down to, then
-// names), where agents are working, and the agent itself at its foot. Each
+// The left column: the brand bar at its top, a filter, every repository with
+// the boards of its chosen checkout under it as an outline (folders, then the
+// boards each board drills down to, then names), where agents are working, and
+// the agent itself at its foot (ADR 0050). Each
 // board is one row; a board with more than one variant lists them under it
 // when it is open. The way to what every pane shows is open, and nothing an
 // agent does reorders the tree.
@@ -20,7 +21,7 @@ import {
 	type RefObject,
 } from "react";
 
-import { listedBoard, listedBoardKey, type OutlineNode } from "@/ui/board-catalog";
+import { listedBoard, listedBoardKey } from "@/ui/board-catalog";
 import { Skeleton } from "@/ui/components/skeleton";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import { BoardOutline } from "@/ui/shell/components/BoardOutline";
@@ -30,20 +31,17 @@ import { useFindShortcut } from "@/ui/shell/hooks/use-find-shortcut";
 import { useKept } from "@/ui/shell/hooks/use-kept";
 import { useNavigatorExpansion } from "@/ui/shell/hooks/use-navigator-expansion";
 import { filterCount, navigatorRows, rowSelected } from "@/ui/shell/lib/navigator-rows";
-import { boardRowId } from "@/ui/shell/lib/row-ids";
+import { boardRowId, scopedRowId } from "@/ui/shell/lib/row-ids";
 import { paneLetter } from "@/ui/shell/lib/pane-letters";
 import { foldQuery } from "@/ui/shell/lib/text-match";
 import { sameData } from "@/ui/shell/lib/same-data";
 import { nameX } from "@/ui/shell/lib/tree-grid";
-import type { ShellActions, ShellView } from "@/ui/shell/types/contracts";
+import type { ShellActions, ShellRepository, ShellView } from "@/ui/shell/types/contracts";
 import type { NavigatorRow, PaneMark } from "@/ui/shell/types/navigator-rows";
-import type { CatalogBoard } from "@/ui/types";
 
 /** Inputs for the navigator. */
 interface NavigatorProps {
 	view: ShellView;
-	/** The vault's outline, derived once for the shell. */
-	outline: readonly OutlineNode<CatalogBoard>[];
 	actions: ShellActions;
 	/** The column's top row: the brand and the application's own controls. */
 	head: ReactNode;
@@ -55,35 +53,62 @@ interface NavigatorProps {
 const MESSAGE_STYLE = { paddingLeft: nameX(0) } as const;
 
 /**
- * Every pane as the rows mark it: its letter, its board, its variant and whether it is active.
+ * The repository whose chosen checkout is the vault a pane is in.
+ * @param view The shell view.
+ * @param vault The pane's vault, or null before the server placed it.
+ * @returns The repository, or undefined.
+ */
+function repositoryOfVault(view: ShellView, vault: string | null): ShellRepository | undefined {
+	return vault === null
+		? undefined
+		: view.repositories.find((shell) => shell.repository.vault === vault);
+}
+
+/**
+ * Every pane as the rows mark it: its letter, its repository, its board, its
+ * variant and whether it is active.
  * @param view The shell view.
  * @returns The marks, in reading order.
  */
 function paneMarks(view: ShellView): PaneMark[] {
-	return view.panes.map((pane, index) => ({
-		letter: paneLetter(index),
-		board: boardAddressOf(pane.status.boardKey)?.board ?? null,
-		key: listedBoardKey(view.boards, pane.status.boardKey),
-		active: pane.status.paneId === view.activePaneId,
-	}));
+	return view.panes.map((pane, index) => {
+		const shell = repositoryOfVault(view, pane.status.vault);
+		return {
+			letter: paneLetter(index),
+			repository: shell?.repository.name ?? null,
+			board: boardAddressOf(pane.status.boardKey)?.board ?? null,
+			key:
+				shell === undefined
+					? pane.status.boardKey
+					: listedBoardKey(shell.boards, pane.status.boardKey),
+			active: pane.status.paneId === view.activePaneId,
+		};
+	});
 }
 
 /**
- * The boards agents are working on, named as the vault lists them.
+ * The boards agents are working on, in every repository, named as its vault lists them.
  * @param view The shell view.
  * @param panes The panes, marked.
  * @returns The entries.
  */
 function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEntry[] {
-	return Object.values(view.agentActivity).map((activity) => {
-		const name = listedBoard(view.boards, activity.board)?.name ?? activity.board;
-		const letters =
-			panes.length < 2
-				? []
-				: panes
-						.filter((pane) => pane.board?.toLowerCase() === name.toLowerCase())
-						.map((pane) => pane.letter);
-		return { activity, name, onScreen: letters };
+	return view.repositories.flatMap((shell) => {
+		const repository = shell.repository.name;
+		return Object.values(shell.activity).map((activity) => {
+			const name = listedBoard(shell.boards, activity.board)?.name ?? activity.board;
+			const letters =
+				panes.length < 2
+					? []
+					: panes
+							.filter(
+								(pane) =>
+									pane.repository === repository &&
+									pane.board?.toLowerCase() === name.toLowerCase(),
+							)
+							.map((pane) => pane.letter);
+			return { activity, name, repository, onScreen: letters };
+		});
 	});
 }
 
@@ -107,19 +132,30 @@ function rowKey(row: NavigatorRow): string | null {
 function homeRowId(rows: readonly NavigatorRow[], panes: readonly PaneMark[]): string | null {
 	const selected = rows.find(rowSelected);
 	if (selected !== undefined) return selected.id;
-	const board = panes.find((pane) => pane.active)?.board ?? null;
-	return board === null ? null : boardRowId(board);
+	const active = panes.find((pane) => pane.active);
+	if (active?.board == null || active.repository === null) return null;
+	return scopedRowId(active.repository, boardRowId(active.board));
 }
 
 /**
- * Open a key where the person asked: the active pane, or beside it.
+ * Open a key of a repository where the person asked: the active pane, or beside it.
  * @param actions The shell actions.
  * @param key The board key.
  * @param beside Whether it opens beside.
+ * @param repository The repository the board is in.
  */
-function openKey(actions: ShellActions, key: string, beside: boolean): void {
-	if (beside) actions.openBeside(key);
-	else actions.selectBoard(key);
+function openKey(actions: ShellActions, key: string, beside: boolean, repository: string): void {
+	if (beside) actions.openBeside(key, repository);
+	else actions.selectBoard(key, undefined, repository);
+}
+
+/**
+ * How many boards every repository lists.
+ * @param view The shell view.
+ * @returns The count.
+ */
+function boardTotal(view: ShellView): number {
+	return view.repositories.reduce((total, shell) => total + shell.boards.boards.length, 0);
 }
 
 /**
@@ -128,8 +164,7 @@ function openKey(actions: ShellActions, key: string, beside: boolean): void {
  * @returns The navigator column.
  */
 function Navigator(props: NavigatorProps): JSX.Element {
-	const { view, actions, outline } = props;
-	const listing = view.boards;
+	const { view, actions } = props;
 	const input = useRef<HTMLInputElement>(null);
 	const column = useRef<HTMLElement>(null);
 	useFindShortcut(input);
@@ -137,28 +172,32 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	// Which pane shows which board, kept while that is so: pane news that changes
 	// nothing here leaves the rows, their expansion and their handlers as they were.
 	const panes = useKept(paneMarks(view), sameData);
-	const expansion = useNavigatorExpansion(outline, listing, panes);
+	const expansion = useNavigatorExpansion(view.repositories, panes);
 	const folded = foldQuery(query);
 	const rows = useMemo(
 		() =>
 			navigatorRows({
-				outline,
+				repositories: view.repositories,
 				expanded: expansion.expanded,
 				query: folded,
 				panes,
-				activity: view.agentActivity,
 			}),
-		[outline, expansion, folded, panes, view.agentActivity],
+		[view.repositories, expansion, folded, panes],
 	);
 	const open = useCallback(
 		(row: NavigatorRow, beside: boolean): void => {
 			const key = rowKey(row);
-			if (key !== null) openKey(actions, key, beside);
+			if (key !== null) openKey(actions, key, beside, row.repository);
 		},
 		[actions],
 	);
 	const openBoard = useCallback(
-		(board: string, beside: boolean): void => openKey(actions, board, beside),
+		(board: string, beside: boolean, repository: string): void =>
+			openKey(actions, board, beside, repository),
+		[actions],
+	);
+	const onChooseCheckout = useCallback(
+		(repository: string, root: string): void => actions.chooseCheckout(repository, root),
 		[actions],
 	);
 	const onTypeAhead = useCallback((text: string): void => {
@@ -176,6 +215,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		column.current?.querySelector<HTMLElement>('[role="tree"] [tabindex="0"]')?.focus();
 	}, []);
 	const homeId = homeRowId(rows, panes);
+	const total = boardTotal(view);
 	useRevealActive(
 		column,
 		homeId,
@@ -198,7 +238,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					input={input}
 					query={query}
 					onQuery={setQuery}
-					count={filterCount(rows, listing.boards.length)}
+					count={filterCount(rows, total)}
 					onOpenFirst={onOpenFirst}
 					onEnterTree={onEnterTree}
 				/>
@@ -206,7 +246,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					<ListingState
 						loading={view.boardsLoading}
 						error={view.boardsError}
-						empty={listing.boards.length === 0}
+						empty={total === 0 && view.repositories.every((shell) => !shell.loading)}
 						noMatch={folded.length > 0 && rows.length === 0}
 						query={query}
 						actions={actions}
@@ -217,6 +257,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 						homeId={homeId}
 						onOpen={open}
 						onExpand={expansion.setExpanded}
+						onChooseCheckout={onChooseCheckout}
 						onTypeAhead={onTypeAhead}
 						filtering={folded.length > 0}
 					/>
@@ -320,7 +361,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 	if (props.loading) return <ListingSkeleton />;
 	return (
 		<p style={MESSAGE_STYLE} className="text-body text-muted-foreground py-3 pr-4">
-			No boards in this vault yet. An agent makes one with{" "}
+			No boards yet. An agent makes one with{" "}
 			<code className="text-foreground font-mono">archboard semantic new</code>.
 		</p>
 	);

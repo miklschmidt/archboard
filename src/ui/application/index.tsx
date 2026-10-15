@@ -3,7 +3,7 @@
 // transport, the runtime and the controllers are the state; this file only
 // connects them.
 
-import { VaultDiagnostics, useVaultPolicyRefresh } from "@/ui/vault-diagnostics";
+import { VaultDiagnostics } from "@/ui/vault-diagnostics";
 import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
@@ -12,7 +12,7 @@ import { livePanesOver } from "@/ui/application/lib/live-panes";
 import { codeTargetShellNotice, infoNotice, presentationNotice } from "@/ui/application/notices";
 import { OpenerSettings } from "@/ui/application/components/OpenerSettings";
 import { paneEvents } from "@/ui/application/lib/pane-events";
-import { heldBoardKeys, recordFor, type PaneRecords } from "@/ui/application/pane-records";
+import { heldBoards, recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import { createShellActions } from "@/ui/application/actions";
 import {
 	addressingOver,
@@ -48,7 +48,7 @@ import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-add
 import { useBesideOpening } from "@/ui/application/hooks/use-beside-opening";
 import {
 	BoardCatalogProvider,
-	buildOutline,
+	boardsIn,
 	listedBoard,
 	listedBoardKey,
 	useBoardCatalog,
@@ -57,6 +57,7 @@ import {
 import { useOpeningAddress, type WorkspaceAddressing } from "@/ui/board-routing";
 import { TooltipProvider } from "@/ui/components/tooltip";
 import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
+import { servedVault } from "@/ui/server-requests";
 import type { BoardListing } from "@/ui/types";
 import { RecordingStage } from "@/ui/walkthrough-recording";
 import { OrbStageProvider } from "@/ui/voice-orb";
@@ -116,7 +117,7 @@ function usePresentationTransfer(panes: Panes, fullscreen: Fullscreen): void {
  * What the agent reads with the next message: the board in the focused pane,
  * by the name the vault lists it under, and the state shown when it is not
  * the one the board's name opens.
- * @param listing The listing.
+ * @param listing The listing of the focused pane's repository.
  * @param boardKey The focused pane's board key, or null.
  * @returns The context.
  */
@@ -208,12 +209,10 @@ function useShellView(sources: ShellViewSources): ShellView {
 				list: panes.list,
 				records: panes.records,
 				panes: mounted,
-				boards: catalog.listing,
-				boardsError: catalog.error,
-				boardsLoading: catalog.loading,
+				catalog,
 				presentation: shellPresentationOf(fullscreen.snapshot, presentedConnected),
 				notices: notices.notices,
-				agentActivity: activity.map,
+				agentActivity: activity.byVault,
 			}),
 		[
 			theme,
@@ -223,7 +222,7 @@ function useShellView(sources: ShellViewSources): ShellView {
 			fullscreen.snapshot,
 			presentedConnected,
 			notices.notices,
-			activity.map,
+			activity.byVault,
 		],
 	);
 }
@@ -263,11 +262,29 @@ function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
 }
 
 /**
+ * The vault each repository is read from, for the address bar; null until the
+ * page has read the repositories, so a restore waits for them.
+ * @param catalog The catalog.
+ * @returns The lookup, or null.
+ */
+function useVaultOf(catalog: BoardCatalog): ((repository: string) => string | null) | null {
+	const { repositories, loading } = catalog;
+	return useMemo(
+		() =>
+			loading
+				? null
+				: (repository: string): string | null =>
+						repositories.find((each) => each.repository.name === repository)?.repository.vault ??
+						null,
+		[repositories, loading],
+	);
+}
+
+/**
  * The root component's body, inside the providers it needs.
  * @returns The shell, the settings dialogs and the workbench.
  */
 function ApplicationBody(): JSX.Element {
-	useVaultPolicyRefresh();
 	const [theme, setTheme] = useTheme();
 	const reducedMotion = useReducedMotion();
 	const notices = useNotices();
@@ -291,21 +308,22 @@ function ApplicationBody(): JSX.Element {
 		() => announcingViews(paneReadings, addressing),
 		[paneReadings, addressing],
 	);
-	const heldKeys = useMemo(
+	const held = useMemo(
 		() =>
-			heldBoardKeys(
+			heldBoards(
 				panes.records,
 				panes.list.panes.map((entry) => entry.paneId),
 			),
 		[panes.records, panes.list],
 	);
 	const catalog = useBoardCatalog();
-	useReleasedBoards(heldKeys, catalog);
+	useReleasedBoards(held, catalog);
 	const agentActivity = useAgentActivity();
 	const workbench = useWorkbench(panes.handles, panes.list.activePaneId);
+	const { vault: activeVault, boardKey: activeKey } = panes.active.status;
 	const context = useMemo(
-		() => agentContextOf(catalog.listing, panes.active.status.boardKey),
-		[catalog.listing, panes.active.status.boardKey],
+		() => agentContextOf(boardsIn(catalog, activeVault), activeKey),
+		[catalog, activeVault, activeKey],
 	);
 	const agent = useAgentSurfaces(workbench);
 	const { raise } = notices;
@@ -325,7 +343,8 @@ function ApplicationBody(): JSX.Element {
 	const slots = useAgentSlots({ agent, workbench, context, reducedMotion, dockless });
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
-	useWorkspaceAddressing({ panes, notices, readings }, addressBinding);
+	const vaultOf = useVaultOf(catalog);
+	useWorkspaceAddressing({ panes, notices, readings, vaultOf }, addressBinding);
 	usePresentationTransfer(panes, fullscreen);
 	// Bound each render, after the owners the events reach exist.
 	panes.bindEvents(paneEvents({ notices, catalog, readings, workbench, activity: agentActivity }));
@@ -394,18 +413,12 @@ function ApplicationBody(): JSX.Element {
 		presentedPaneId: fullscreen.snapshot.paneId,
 	});
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
-	const outline = useMemo(
-		() => buildOutline(catalog.listing.boards, catalog.listing.levels),
-		[catalog.listing.boards, catalog.listing.levels],
-	);
 	const mounted = usePaneViews({
 		panes,
 		theme,
 		readings,
 		reducedMotion,
 		onVariantChange,
-		boards: catalog.listing.boards,
-		outline,
 		openBoard: selectBoard,
 		...recorded,
 	});
@@ -440,9 +453,11 @@ function ApplicationBody(): JSX.Element {
 	);
 	useStageEvents(fullscreen.stage, stageEvents);
 	const transport = workbench.owners?.transport ?? null;
+	// The bell speaks for the repository in front of the person.
+	const diagnosed = activeVault ?? servedVault();
 	const diagnostics = useMemo(
-		() => <VaultDiagnostics transport={transport} ask={agent.ask} />,
-		[transport, agent.ask],
+		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={agent.ask} />,
+		[diagnosed, transport, agent.ask],
 	);
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
 	if (recordedPane !== null) {
@@ -459,7 +474,6 @@ function ApplicationBody(): JSX.Element {
 				<TooltipProvider>
 					<Shell
 						view={view}
-						outline={outline}
 						actions={actions}
 						diagnostics={diagnostics}
 						voiceControls={slots.voiceControls}

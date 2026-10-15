@@ -39,6 +39,7 @@ import {
 	semanticBoardDocumentQuery,
 	vaultCheckQuery,
 } from "@/ui/semantic-board-canvas/lib/queries";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /** A board the search reads. */
 interface SearchedBoard {
@@ -298,10 +299,11 @@ function answersOf(results: readonly { readonly data: unknown }[]): unknown[] {
  * @returns The results and the kinds.
  */
 function useFoundParts(boards: readonly SearchedBoard[], query: string, reading: boolean) {
-	const kinds = useQuery(vaultCheckQuery()).data?.policy.nodeKinds;
+	const vault = usePaneVault();
+	const kinds = useQuery(vaultCheckQuery(vault)).data?.policy.nodeKinds;
 	const answers = useQueries({
 		queries: boards.map((board) => ({
-			...semanticBoardDocumentQuery(board.name),
+			...semanticBoardDocumentQuery(vault, board.name),
 			enabled: reading,
 		})),
 		combine: answersOf,

@@ -36,6 +36,7 @@ import {
 	type Partner,
 } from "@/ui/semantic-board-canvas/lib/part-locality";
 import { localityQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /** How many of a part's commits show before the person asks for the rest. */
 const FIRST_COMMITS = 5;
@@ -107,7 +108,8 @@ function PartHistory(props: PartHistoryProps): JSX.Element | null {
  */
 function LocalityReading(props: PartHistoryProps): JSX.Element {
 	const { board, version, variant } = props;
-	const read = useQuery(localityQuery({ board, variant: variant.id, version }));
+	const vault = usePaneVault();
+	const read = useQuery(localityQuery({ vault, board, variant: variant.id, version }));
 	const { refetch } = read;
 	const again = useCallback((): void => {
 		void refetch();

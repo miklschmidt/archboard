@@ -17,7 +17,7 @@ import { z } from "zod";
 import { RememberedFindingsSchema, type RememberedFindings } from "@/shared/code-check/index";
 import { LocalityReplySchema, type LocalityAnswer } from "@/shared/locality/index";
 import { VaultCheckSchema, type VaultCheck } from "@/shared/semantic-policy/index";
-import { withVault } from "@/ui/server-requests";
+import { inVault } from "@/ui/server-requests";
 import {
 	BoardListingSchema,
 	SemanticRenderReplySchema,
@@ -75,6 +75,8 @@ type SemanticRender = SemanticDrawing | SemanticNothingDrawn;
 
 /** What a render request names. */
 interface SemanticRenderRequest {
+	/** The vault the board is in, as the server names it (ADR 0049). */
+	readonly vault: string;
 	readonly board: string;
 	/** A variant id or name; the board's current variant when absent. */
 	readonly variant?: string | undefined;
@@ -171,12 +173,13 @@ function refusalFrom(body: unknown, status: number): SemanticBoardError {
  * A cancelled read is rethrown as it was: the cache stops such a read on
  * purpose and must see its own abort rather than a failure a person is shown.
  * @param url The endpoint, query and all.
+ * @param vault The vault the read is about.
  * @param signal Cancels the read, when the caller has a signal.
  * @returns The response.
  */
-async function requestRoute(url: string, signal?: AbortSignal): Promise<Response> {
+async function requestRoute(url: string, vault: string, signal?: AbortSignal): Promise<Response> {
 	try {
-		return await fetch(withVault(url), signal === undefined ? {} : { signal });
+		return await fetch(inVault(url, vault), signal === undefined ? {} : { signal });
 	} catch (error) {
 		if (signal?.aborted === true) {
 			throw error;
@@ -188,11 +191,12 @@ async function requestRoute(url: string, signal?: AbortSignal): Promise<Response
 /**
  * Read a semantic route and hand back its decoded body, or throw the failure.
  * @param url The endpoint, query and all.
+ * @param vault The vault the read is about.
  * @param signal Cancels the read, when the caller has a signal.
  * @returns The decoded success body, before its shape has been checked.
  */
-async function readRoute(url: string, signal?: AbortSignal): Promise<unknown> {
-	const response = await requestRoute(url, signal);
+async function readRoute(url: string, vault: string, signal?: AbortSignal): Promise<unknown> {
+	const response = await requestRoute(url, vault, signal);
 	const body: unknown = await response.json().catch(() => null);
 	if (!response.ok || (isRecord(body) && body["success"] === false)) {
 		throw refusalFrom(body, response.status);
@@ -202,11 +206,15 @@ async function readRoute(url: string, signal?: AbortSignal): Promise<unknown> {
 
 /**
  * Every semantic board the vault holds, and the levels the vault orders them by.
+ * @param vault The vault.
  * @param signal Cancels the read.
  * @returns The listing, its boards in the order the server listed them.
  */
-async function fetchSemanticBoards(signal?: AbortSignal): Promise<SemanticBoardListing> {
-	const parsed = BoardListingSchema.safeParse(await readRoute(LIST_URL, signal));
+async function fetchSemanticBoards(
+	vault: string,
+	signal?: AbortSignal,
+): Promise<SemanticBoardListing> {
+	const parsed = BoardListingSchema.safeParse(await readRoute(LIST_URL, vault, signal));
 	if (!parsed.success) {
 		throw new SemanticBoardError("REPLY_INVALID", "The Archboard server listed no boards.");
 	}
@@ -249,7 +257,7 @@ async function fetchSemanticRender(
 	request: SemanticRenderRequest,
 	signal?: AbortSignal,
 ): Promise<SemanticRender> {
-	const body = await readRoute(`${RENDER_URL}${renderQuery(request)}`, signal);
+	const body = await readRoute(`${RENDER_URL}${renderQuery(request)}`, request.vault, signal);
 	const parsed = SemanticRenderReplySchema.safeParse(body);
 	if (!parsed.success) {
 		throw new SemanticBoardError(
@@ -265,12 +273,17 @@ async function fetchSemanticRender(
 /**
  * One board's whole aggregate, as it is on disk. Read-only: nothing in the
  * browser writes a semantic board (ADR 0023).
+ * @param vault The vault the board is in.
  * @param board The board name.
  * @param signal Cancels the read.
  * @returns The aggregate, as the server holds it.
  */
-async function fetchSemanticBoardDocument(board: string, signal?: AbortSignal): Promise<unknown> {
-	const body = await readRoute(`${BOARD_URL}?board=${encodeURIComponent(board)}`, signal);
+async function fetchSemanticBoardDocument(
+	vault: string,
+	board: string,
+	signal?: AbortSignal,
+): Promise<unknown> {
+	const body = await readRoute(`${BOARD_URL}?board=${encodeURIComponent(board)}`, vault, signal);
 	const parsed = z.object({ board: z.unknown() }).safeParse(body);
 	if (!parsed.success) {
 		throw new SemanticBoardError("REPLY_INVALID", "The Archboard server sent no board.");
@@ -283,11 +296,12 @@ const VAULT_CHECK_URL = "/api/vault/check";
 
 /**
  * The vault's policy and diagnostics, as the shared checker reports them.
+ * @param vault The vault.
  * @param signal Cancels the read.
  * @returns The checked policy and diagnostics.
  */
-async function fetchVaultCheck(signal?: AbortSignal): Promise<VaultCheck> {
-	const response = await requestRoute(VAULT_CHECK_URL, signal);
+async function fetchVaultCheck(vault: string, signal?: AbortSignal): Promise<VaultCheck> {
+	const response = await requestRoute(VAULT_CHECK_URL, vault, signal);
 	if (!response.ok) {
 		throw new Error("The vault check failed. Check the server connection and try again.");
 	}
@@ -301,11 +315,14 @@ const CODE_FINDINGS_URL = "/api/vault/code-findings";
  * What the last code pass found on each board it read, as the server remembers
  * it. The route reads the server's memory and never starts a pass (ADR 0046),
  * so asking it costs a read of memory however often a pane asks.
+ * @param vault The vault.
  * @param signal Cancels the read.
  * @returns The remembered readings.
  */
-async function fetchCodeFindings(signal?: AbortSignal): Promise<RememberedFindings> {
-	const parsed = RememberedFindingsSchema.safeParse(await readRoute(CODE_FINDINGS_URL, signal));
+async function fetchCodeFindings(vault: string, signal?: AbortSignal): Promise<RememberedFindings> {
+	const parsed = RememberedFindingsSchema.safeParse(
+		await readRoute(CODE_FINDINGS_URL, vault, signal),
+	);
 	if (!parsed.success) {
 		throw new SemanticBoardError(
 			"REPLY_INVALID",
@@ -323,14 +340,19 @@ const LOCALITY_URL = "/api/semantic-boards/locality";
  * in the period, and the parts that change together. The server walks Git for
  * the first request at a HEAD and answers later ones from its memory, so a pane
  * asks only when somebody picks a part out (ADR 0045).
+ * @param vault The vault the board is in.
  * @param board The board's name.
  * @param variant The variant's id: the current one or a draft.
  * @returns The answer, about every part of the variant.
  */
-async function fetchLocality(board: string, variant: string): Promise<LocalityAnswer> {
+async function fetchLocality(
+	vault: string,
+	board: string,
+	variant: string,
+): Promise<LocalityAnswer> {
 	const search = new URLSearchParams({ board, variant });
 	const parsed = LocalityReplySchema.safeParse(
-		await readRoute(`${LOCALITY_URL}?${search.toString()}`),
+		await readRoute(`${LOCALITY_URL}?${search.toString()}`, vault),
 	);
 	if (!parsed.success) {
 		throw new SemanticBoardError(

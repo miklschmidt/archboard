@@ -27,7 +27,7 @@ function address(
 	activePaneId: string | null = null,
 ): WorkspaceAddress {
 	return settledAddress({
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, view: null })),
+		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, repository: null, view: null })),
 		activePaneId,
 	});
 }
@@ -97,12 +97,31 @@ test("a plan opens the boards that differ, adds and closes panes, and moves the 
 		),
 		PANES,
 	);
-	expect(plan.opens).toEqual([{ paneId: "A", boardKey: "billing" }]);
+	expect(plan.opens).toEqual([{ paneId: "A", boardKey: "billing", repository: null }]);
 	expect(plan.adds).toBe(1);
 	expect(plan.closes).toEqual([]);
 	// Pane B is not open yet, so there is nothing to focus until it is.
 	expect(plan.focus).toBeNull();
 	expect(planIsEmpty(plan)).toBe(false);
+});
+
+/**
+ * One pane on payments, in a repository.
+ * @param repository The repository, or null for the pane's own.
+ * @returns The address.
+ */
+function shown(repository: string | null): WorkspaceAddress {
+	return settledAddress({
+		panes: [{ paneId: "A", boardKey: "payments", repository, view: null }],
+		activePaneId: "A",
+	});
+}
+
+test("the same board in another repository is another board to open, and an address naming no repository keeps the pane's own", () => {
+	expect(planFor(shown("github.com/acme/shop"), shown("scratch"), PANES).opens).toEqual([
+		{ paneId: "A", boardKey: "payments", repository: "scratch" },
+	]);
+	expect(planIsEmpty(planFor(shown("github.com/acme/shop"), shown(null), PANES))).toBe(true);
 });
 
 test("an address that matches what is displayed asks for nothing", () => {

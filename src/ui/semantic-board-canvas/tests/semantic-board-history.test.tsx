@@ -15,6 +15,7 @@ import { expect, test } from "bun:test";
 
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import {
+	PANE_VAULT,
 	openSidebarTab,
 	renderCalls,
 	server,
@@ -324,7 +325,7 @@ test("a write to the board reads the picked part again, and its last answer stay
 	server.locality.reply = undefined;
 	server.documents["pipeline"] = boundBoard([["v1", "current"]], 2);
 	await act(async () => {
-		announceSemanticBoardChange("pipeline", 2);
+		announceSemanticBoardChange(PANE_VAULT, "pipeline", 2);
 	});
 	await settle();
 

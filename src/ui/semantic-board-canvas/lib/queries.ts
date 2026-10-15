@@ -22,10 +22,18 @@ const SEMANTIC_KEY = "semantic-board";
 const semanticBoardKeys = {
 	/** Everything this module caches. */
 	all: [SEMANTIC_KEY] as const,
-	/** The vault's checked policy and diagnostics, which every picture is drawn under. */
-	vaultCheck: ["vault-check"] as const,
-	/** What the last code pass found on each board it read, as the server remembers it. */
-	codeFindings: ["code-findings"] as const,
+	/**
+	 * A vault's checked policy and diagnostics, which every picture of it is drawn under.
+	 * @param vault The vault.
+	 * @returns Its cache key.
+	 */
+	vaultCheck: (vault: string) => ["vault-check", vault] as const,
+	/**
+	 * What the last code pass found on each board of a vault it read, as the server remembers it.
+	 * @param vault The vault.
+	 * @returns Its cache key.
+	 */
+	codeFindings: (vault: string) => ["code-findings", vault] as const,
 	/**
 	 * Where one variant of one board changes in code, at one version of the
 	 * board. Under a root of its own, so no sweep of the board's pictures or
@@ -33,31 +41,46 @@ const semanticBoardKeys = {
 	 * @param on The board, the variant by id and the version on screen.
 	 * @returns Its cache key.
 	 */
-	locality: (on: ReadingOnScreen) => ["locality", on.board, on.variant, on.version] as const,
-	/** The vault's semantic boards. */
-	boards: [SEMANTIC_KEY, "boards"] as const,
-	/** Every drawing of every board. */
+	locality: (on: ReadingOnScreen) =>
+		["locality", on.vault, on.board, on.variant, on.version] as const,
+	/** Every vault's semantic boards. */
+	allBoards: [SEMANTIC_KEY, "boards"] as const,
+	/**
+	 * One vault's semantic boards.
+	 * @param vault The vault.
+	 * @returns Its cache key.
+	 */
+	boards: (vault: string) => [SEMANTIC_KEY, "boards", vault] as const,
+	/** Every drawing of every board of every vault. */
 	renders: [SEMANTIC_KEY, "render"] as const,
-	/** Every board's own document. */
+	/**
+	 * Every drawing of one vault: what its policy changing makes stale.
+	 * @param vault The vault.
+	 * @returns Its render prefix.
+	 */
+	rendersIn: (vault: string) => [SEMANTIC_KEY, "render", vault] as const,
+	/** Every board's own document, in every vault. */
 	documents: [SEMANTIC_KEY, "document"] as const,
 	/**
 	 * Every drawing of one board, whichever variant and view it was asked in.
 	 * This is the prefix a board's own change invalidates: the version moved for
 	 * the whole board, so no picture of it is current any more.
+	 * @param vault The vault the board is in.
 	 * @param board The board name.
 	 * @returns Its render prefix.
 	 */
-	boardRenders: (board: string) => [SEMANTIC_KEY, "render", board] as const,
+	boardRenders: (vault: string, board: string) => [SEMANTIC_KEY, "render", vault, board] as const,
 	/**
 	 * One board's own document, which inspection reads for what a picture does
 	 * not carry. It is the same versioned board the drawing is of, so a change
 	 * announcement makes both stale and has to invalidate both.
+	 * @param vault The vault the board is in.
 	 * @param board The board name.
 	 * @returns Its cache key.
 	 */
-	document: (board: string) => [SEMANTIC_KEY, "document", board] as const,
+	document: (vault: string, board: string) => [SEMANTIC_KEY, "document", vault, board] as const,
 	/**
-	 * One drawing: a board, a variant and a view. Not a theme: a picture
+	 * One drawing: a vault, a board, a variant and a view. Not a theme: a picture
 	 * paints with the page's colour tokens, so one picture serves both themes and
 	 * a theme switch asks for nothing.
 	 * @param request What was asked for.
@@ -67,6 +90,7 @@ const semanticBoardKeys = {
 		[
 			SEMANTIC_KEY,
 			"render",
+			request.vault,
 			request.board,
 			request.variant ?? "",
 			request.view ?? "",
@@ -76,15 +100,16 @@ const semanticBoardKeys = {
 };
 
 /**
- * The vault's semantic boards.
+ * One vault's semantic boards.
  *
  * Read again when the tab comes back: nothing announces that the vault gained
  * a board, and an agent may have created one while somebody was reading code.
+ * @param vault The vault.
  * @returns The query options.
  */
-function semanticBoardListQuery() {
+function semanticBoardListQuery(vault: string) {
 	return queryOptions({
-		queryKey: semanticBoardKeys.boards,
+		queryKey: semanticBoardKeys.boards(vault),
 		/**
 		 * Read the vault's semantic boards, and tell the picture source which
 		 * versions they are at, so it can forget pictures of older ones and draw
@@ -93,8 +118,8 @@ function semanticBoardListQuery() {
 		 * @returns The listing.
 		 */
 		queryFn: async (context) => {
-			const listing = await fetchSemanticBoards(context.signal);
-			pictureSource().listed?.(listing.boards, context.client);
+			const listing = await fetchSemanticBoards(vault, context.signal);
+			pictureSource().listed?.(vault, listing.boards, context.client);
 			return listing;
 		},
 		refetchOnWindowFocus: true,
@@ -153,7 +178,9 @@ function semanticRenderQuery(request: SemanticRenderRequest) {
 		 * @returns That, when it was of this board.
 		 */
 		placeholderData: (previous, previousQuery) =>
-			previousQuery?.queryKey[2] === request.board ? previous : undefined,
+			previousQuery?.queryKey[2] === request.vault && previousQuery.queryKey[3] === request.board
+				? previous
+				: undefined,
 		staleTime: Number.POSITIVE_INFINITY,
 		gcTime: Number.POSITIVE_INFINITY,
 		refetchOnWindowFocus: false,
@@ -172,18 +199,19 @@ function semanticRenderQuery(request: SemanticRenderRequest) {
  * Its freshness contract is the drawing's, for the same reason: both are
  * derived from one versioned board, so both stay fresh until that board
  * announces a new version, and neither is re-read on a timer.
+ * @param vault The vault the board is in.
  * @param board The board name.
  * @returns The query options.
  */
-function semanticBoardDocumentQuery(board: string) {
+function semanticBoardDocumentQuery(vault: string, board: string) {
 	return queryOptions({
-		queryKey: semanticBoardKeys.document(board),
+		queryKey: semanticBoardKeys.document(vault, board),
 		/**
 		 * Read the board, from the server or wherever the page reads boards from.
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The document, as the server holds it.
 		 */
-		queryFn: (context) => boardReads().document(board, context.signal),
+		queryFn: (context) => boardReads().document(vault, board, context.signal),
 		staleTime: Number.POSITIVE_INFINITY,
 		refetchOnWindowFocus: false,
 		refetchOnReconnect: "always" as const,
@@ -198,17 +226,18 @@ function semanticBoardDocumentQuery(board: string) {
  * resource with two readers, and one cache entry serves both. It is re-read on
  * a timer, because the file it comes from is edited on disk by a person and
  * nothing announces that.
+ * @param vault The vault.
  * @returns The query options.
  */
-function vaultCheckQuery() {
+function vaultCheckQuery(vault: string) {
 	return queryOptions({
-		queryKey: semanticBoardKeys.vaultCheck,
+		queryKey: semanticBoardKeys.vaultCheck(vault),
 		/**
 		 * Read and validate the checker's answer.
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The checked policy and diagnostics.
 		 */
-		queryFn: (context) => boardReads().vaultCheck(context.signal),
+		queryFn: (context) => boardReads().vaultCheck(vault, context.signal),
 		staleTime: VAULT_CHECK_POLL_MS,
 		refetchInterval: VAULT_CHECK_POLL_MS,
 		refetchOnWindowFocus: true,
@@ -230,17 +259,18 @@ function vaultCheckQuery() {
  * A failed read leaves the marks as they were and is tried again on the next
  * tick: the findings are a hint beside the board, and a pane that cannot read
  * them still shows the board.
+ * @param vault The vault.
  * @returns The query options.
  */
-function codeFindingsQuery() {
+function codeFindingsQuery(vault: string) {
 	return queryOptions({
-		queryKey: semanticBoardKeys.codeFindings,
+		queryKey: semanticBoardKeys.codeFindings(vault),
 		/**
 		 * Read the remembered findings.
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The readings.
 		 */
-		queryFn: (context) => boardReads().codeFindings(context.signal),
+		queryFn: (context) => boardReads().codeFindings(vault, context.signal),
 		staleTime: VAULT_CHECK_POLL_MS,
 		refetchInterval: VAULT_CHECK_POLL_MS,
 		refetchOnWindowFocus: true,
@@ -282,7 +312,7 @@ function localityQuery(on: ReadingOnScreen) {
 		 * Ask the server for the board's locality.
 		 * @returns The answer.
 		 */
-		queryFn: () => boardReads().locality(on.board, on.variant),
+		queryFn: () => boardReads().locality(on.vault, on.board, on.variant),
 		placeholderData: keepPreviousData,
 		staleTime: 0,
 		refetchOnMount: true,

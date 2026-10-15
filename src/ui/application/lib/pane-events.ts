@@ -3,7 +3,7 @@
 // nothing here diffs rendered state.
 
 import type { CodeTargetNotice } from "@/shared/code-target";
-import { agentBoardChange } from "@/ui/application/agent-activity";
+import { agentBoardChange, NO_AGENT_ACTIVITY } from "@/ui/application/agent-activity";
 import {
 	boardErrorNotice,
 	codeTargetShellNotice,
@@ -104,17 +104,25 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 			catalog.refresh();
 		},
 		/**
-		 * Which boards an agent is working on.
+		 * Which boards an agent is working on in one vault.
+		 * @param vault The vault.
 		 * @param snapshot The whole snapshot.
 		 */
-		onAgentActivity: (snapshot: readonly AgentActivityEntry[]): void => {
-			const change = agentBoardChange(owners.activity.map, snapshot);
-			owners.activity.replace(snapshot);
+		onAgentActivity: (vault: string, snapshot: readonly AgentActivityEntry[]): void => {
+			const change = agentBoardChange(
+				owners.activity.byVault[vault] ?? NO_AGENT_ACTIVITY,
+				snapshot,
+			);
+			owners.activity.replace(vault, snapshot);
 			if (change.settled.length > 0) {
-				catalog.boardsChanged(change.settled);
+				catalog.boardsChanged(vault, change.settled);
 			} else if (change.started.length > 0) {
 				catalog.refresh();
 			}
+		},
+		/** A checkout was chosen somewhere: the repositories are read again. */
+		onRepositoriesChanged: (): void => {
+			catalog.repositoriesChanged();
 		},
 	};
 }

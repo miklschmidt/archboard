@@ -11,6 +11,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { BOARD_LISTING_STALE_MS } from "@/shared/timing/timing";
+import { fetchRepositories } from "@/ui/board-catalog/api/repositories";
 import { fetchPaneInventory } from "@/ui/pane-session";
 
 /** The one root every catalog resource hangs under, so invalidation can sweep it. */
@@ -22,6 +23,8 @@ const boardCatalogKeys = {
 	all: [CATALOG_KEY] as const,
 	/** What the live panes hold, across every tab. */
 	panes: [CATALOG_KEY, "pane-inventory"] as const,
+	/** The repositories of this machine, each with the vault of its chosen checkout. */
+	repositories: [CATALOG_KEY, "repositories"] as const,
 };
 
 /**
@@ -51,4 +54,26 @@ function paneInventoryQuery() {
 	});
 }
 
-export { boardCatalogKeys, paneInventoryQuery };
+/**
+ * The repositories of this machine.
+ *
+ * Read again when the tab comes back, because a command in a terminal can
+ * register a checkout and nothing announces that. A checkout chosen from any
+ * page is announced to every tab, which reads this again (ADR 0050).
+ * @returns The query options.
+ */
+function repositoriesQuery() {
+	return queryOptions({
+		queryKey: boardCatalogKeys.repositories,
+		/**
+		 * Read the repositories.
+		 * @param context The query's context, whose signal ends the read.
+		 * @returns The listing.
+		 */
+		queryFn: (context) => fetchRepositories(context.signal),
+		staleTime: BOARD_LISTING_STALE_MS,
+		refetchOnWindowFocus: "always",
+	});
+}
+
+export { boardCatalogKeys, paneInventoryQuery, repositoriesQuery };

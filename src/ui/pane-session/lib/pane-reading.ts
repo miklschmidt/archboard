@@ -21,7 +21,7 @@ import {
 } from "@/shared/semantic-pane-context";
 import { SELECTION_DEBOUNCE_MS } from "@/shared/timing/timing";
 import { createUserMarks } from "@/ui/pane-session/lib/user-marks";
-import { post } from "@/ui/server-requests";
+import { inVault, post } from "@/ui/server-requests";
 
 /** What one pane is reading, before its identity, count and moment are stamped on. */
 type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence" | "byUser">;
@@ -66,6 +66,11 @@ interface ReadingPublisherParts {
 	readonly paneId: string;
 	readonly clientId: string;
 	/**
+	 * The vault the pane is in now, which a reading is reported in.
+	 * @returns The vault.
+	 */
+	readonly vault: () => string;
+	/**
 	 * Send one reading. Supplied by a test; the route otherwise.
 	 * @param body The report.
 	 * @returns The server's answer, which says whether it kept the report.
@@ -87,11 +92,12 @@ interface ReadingReply {
 
 /**
  * Send one reading to the server.
+ * @param vault The vault the pane is in.
  * @param body The report.
  * @returns The server's answer.
  */
-function sendReading(body: SemanticPaneContext): Promise<ReadingReply> {
-	return post<ReadingReply>(SEMANTIC_PANE_CONTEXT_ROUTE, body);
+function sendReading(vault: string, body: SemanticPaneContext): Promise<ReadingReply> {
+	return post<ReadingReply>(inVault(SEMANTIC_PANE_CONTEXT_ROUTE, vault), body);
 }
 
 /**
@@ -100,7 +106,7 @@ function sendReading(body: SemanticPaneContext): Promise<ReadingReply> {
  * @returns The publisher.
  */
 function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher {
-	const send = parts.send ?? sendReading;
+	const send = parts.send ?? ((body: SemanticPaneContext) => sendReading(parts.vault(), body));
 	const warn = parts.warn ?? ((message: string): void => console.warn(message));
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	let published = "";

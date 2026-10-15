@@ -15,7 +15,13 @@ import {
 	takePicturesFrom,
 	type DrawBoard,
 } from "@/ui/semantic-board-canvas/index";
-import { mountStage, part, server, settle } from "@/ui/semantic-board-canvas/tests/stage-harness";
+import {
+	PANE_VAULT,
+	mountStage,
+	part,
+	server,
+	settle,
+} from "@/ui/semantic-board-canvas/tests/stage-harness";
 
 /**
  * Draw a blank picture of the board's version, of the variant asked for by id or by name.
@@ -104,7 +110,7 @@ async function versionsAcrossAnEdit(
 	await settle();
 	const before = versionShown();
 	server.documents["pipeline"] = boardAt(2);
-	act(() => announceSemanticBoardChange("pipeline", 2));
+	act(() => announceSemanticBoardChange(PANE_VAULT, "pipeline", 2));
 	await settle();
 	await settle();
 	return [before, versionShown()];

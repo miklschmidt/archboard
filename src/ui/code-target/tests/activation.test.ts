@@ -58,12 +58,16 @@ const SUCCESS = {
 	kind: "file",
 } as const;
 
+/** The vault of the pane the subject is in. */
+const VAULT = "/work/archboard/.archboard/vault";
+
 describe("code-target activation", () => {
 	test("posts the board and the subject's identity, and nothing else", async () => {
 		const fetchMock = answering(SUCCESS);
 		const { onSuccess, onFailure } = outcomes();
 
 		activateCodeTarget({
+			vault: VAULT,
 			boardKey: "system/payments",
 			elementId: "7c40IV7N",
 			onSuccess,
@@ -74,7 +78,7 @@ describe("code-target activation", () => {
 		expect(fetchMock).toHaveBeenCalledWith("/api/code-targets/open", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ board: "system/payments", element: "7c40IV7N" }),
+			body: JSON.stringify({ board: "system/payments", element: "7c40IV7N", vault: VAULT }),
 		});
 		await settle();
 		expect(onSuccess).toHaveBeenCalledWith(SUCCESS);
@@ -86,6 +90,7 @@ describe("code-target activation", () => {
 		const { onSuccess, onFailure } = outcomes();
 
 		activateCodeTarget({
+			vault: VAULT,
 			boardKey: "system/payments@proposed",
 			elementId: "7c40IV7N",
 			onSuccess,
@@ -93,7 +98,11 @@ describe("code-target activation", () => {
 		});
 
 		expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
-			body: JSON.stringify({ board: "system/payments@proposed", element: "7c40IV7N" }),
+			body: JSON.stringify({
+				board: "system/payments@proposed",
+				element: "7c40IV7N",
+				vault: VAULT,
+			}),
 		});
 	});
 
@@ -101,7 +110,13 @@ describe("code-target activation", () => {
 		const fetchMock = answering({});
 		const { onSuccess, onFailure } = outcomes();
 
-		activateCodeTarget({ boardKey: null, elementId: "7c40IV7N", onSuccess, onFailure });
+		activateCodeTarget({
+			vault: VAULT,
+			boardKey: null,
+			elementId: "7c40IV7N",
+			onSuccess,
+			onFailure,
+		});
 
 		expect(fetchMock).not.toHaveBeenCalled();
 		expect(onFailure.mock.calls[0]?.[0]).toMatchObject({
@@ -121,7 +136,13 @@ describe("code-target activation", () => {
 		);
 		const { onSuccess, onFailure } = outcomes();
 
-		activateCodeTarget({ boardKey: "board-a", elementId: "7c40IV7N", onSuccess, onFailure });
+		activateCodeTarget({
+			vault: VAULT,
+			boardKey: "board-a",
+			elementId: "7c40IV7N",
+			onSuccess,
+			onFailure,
+		});
 		await settle();
 
 		expect(onSuccess).not.toHaveBeenCalled();
@@ -141,7 +162,13 @@ describe("code-target activation", () => {
 		});
 		const { onSuccess, onFailure } = outcomes();
 
-		activateCodeTarget({ boardKey: "board-a", elementId: "7c40IV7N", onSuccess, onFailure });
+		activateCodeTarget({
+			vault: VAULT,
+			boardKey: "board-a",
+			elementId: "7c40IV7N",
+			onSuccess,
+			onFailure,
+		});
 		await settle();
 
 		expect(onSuccess).not.toHaveBeenCalled();
@@ -158,7 +185,13 @@ describe("code-target activation", () => {
 		answering({ success: true, path: "/tmp/private" }, status);
 		const { onSuccess, onFailure } = outcomes();
 
-		activateCodeTarget({ boardKey: "board-a", elementId: "7c40IV7N", onSuccess, onFailure });
+		activateCodeTarget({
+			vault: VAULT,
+			boardKey: "board-a",
+			elementId: "7c40IV7N",
+			onSuccess,
+			onFailure,
+		});
 		await settle();
 
 		expect(onSuccess).not.toHaveBeenCalled();
@@ -195,6 +228,7 @@ describe("code on another ref than the binding names", () => {
 		);
 		const { onSuccess, onFailure } = outcomes();
 		activateCodeTarget({
+			vault: VAULT,
 			boardKey: "system/payments",
 			elementId: "7c40IV7N",
 			onSuccess,

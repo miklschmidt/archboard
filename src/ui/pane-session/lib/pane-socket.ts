@@ -8,7 +8,6 @@ import {
 	type PaneRegistrationLatch,
 } from "@/ui/pane-session/workbench-socket";
 import { tabSessionId } from "@/ui/pane-session/lib/tab-session";
-import { vaultNamed } from "@/ui/server-requests";
 import type { WebSocketMessage } from "@/ui/types";
 
 /** A socket generation: the socket and its registration latch. */
@@ -47,19 +46,15 @@ interface PaneSocketConnector {
 
 /**
  * The socket URL for this pane: its own identity, the tab session every pane of the tab shares,
- * and the vault the pane shows boards of. A socket belongs to one pane and one vault for its whole
- * life, so everything it carries is about that vault (ADR 0049).
+ * and the vault the pane is in now (ADR 0049). The server moves a pane between vaults and says so
+ * on the socket (ADR 0050), so a socket that comes back names the vault the pane was last put in.
  * @param clientId The pane's identity to the server.
+ * @param vault The vault the pane is in.
  * @returns The URL.
  */
-function socketUrl(clientId: string): string {
+function socketUrl(clientId: string, vault: string): string {
 	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-	const vault = vaultNamed();
-	const query = new URLSearchParams({
-		clientId,
-		tabSession: tabSessionId(),
-		...(vault === null ? {} : { vault }),
-	});
+	const query = new URLSearchParams({ clientId, tabSession: tabSessionId(), vault });
 	return `${protocol}//${window.location.host}/?${query.toString()}`;
 }
 
@@ -96,11 +91,13 @@ function isLive(socket: WebSocket | null): boolean {
 /**
  * Create the connector for one pane.
  * @param clientId The pane's identity to the server.
+ * @param vault The vault the pane is in, read at each connect.
  * @param listener What the pane hears.
  * @returns The connector.
  */
 function createPaneSocketConnector(
 	clientId: string,
+	vault: () => string,
 	listener: PaneSocketListener,
 ): PaneSocketConnector {
 	let current: PaneSocketGeneration | null = null;
@@ -160,7 +157,7 @@ function createPaneSocketConnector(
 		if (closed || isLive(current?.socket ?? null)) {
 			return;
 		}
-		const socket = new WebSocket(socketUrl(clientId));
+		const socket = new WebSocket(socketUrl(clientId, vault()));
 		const generation = ++generationCounter;
 		const next: PaneSocketGeneration = {
 			socket,

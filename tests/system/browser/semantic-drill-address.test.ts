@@ -22,7 +22,7 @@ import {
 	shownBoard,
 	stageState,
 } from "./support/drilling.ts";
-import { serverPath } from "./support/navigator-support.ts";
+import { serverPath, servedRepository } from "./support/navigator-support.ts";
 
 // The address of a board read a level down.
 //
@@ -52,6 +52,7 @@ test("the address names the view of the board on screen, down a level and back",
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
+	const repo = await servedRepository(server.base);
 	const request = createJsonRequester(server);
 
 	for (const [board, create] of [
@@ -96,7 +97,7 @@ test("the address names the view of the board on screen, down a level and back",
 	const above = await readThrough(browser, "Where writes go");
 	await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === `paneA=pipeline&viewA=${above}`,
+		(search) => search === `paneA=pipeline&repoA=${repo}&viewA=${above}`,
 		"the address to name the way the opened board is being read",
 		WAIT,
 	);
@@ -108,7 +109,7 @@ test("the address names the view of the board on screen, down a level and back",
 	await press(browser, DRILL_OPEN);
 	await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === "paneA=engine",
+		(search) => search === `paneA=engine&repoA=${repo}`,
 		"the address to name the board below, read whole",
 		WAIT,
 	);
@@ -119,7 +120,7 @@ test("the address names the view of the board on screen, down a level and back",
 	expect(below).not.toBe(above);
 	await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === `paneA=engine&viewA=${below}`,
+		(search) => search === `paneA=engine&repoA=${repo}&viewA=${below}`,
 		"the address to name the way the board below is being read",
 		WAIT,
 	);
@@ -146,7 +147,7 @@ test("the address names the view of the board on screen, down a level and back",
 	await browser.run(["open", `${server.base}/?paneA=Engine&viewA=${below}`]);
 	await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === `paneA=engine&viewA=${below}`,
+		(search) => search === `paneA=engine&repoA=${repo}&viewA=${below}`,
 		"the address to keep naming the view when the board was spelled in another case",
 		WAIT,
 	);

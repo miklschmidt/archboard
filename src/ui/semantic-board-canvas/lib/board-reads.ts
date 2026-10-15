@@ -20,31 +20,35 @@ import {
 interface BoardReads {
 	/**
 	 * One board's whole document.
+	 * @param vault The vault the board is in.
 	 * @param board The board, by name.
 	 * @param signal Cancels the read.
 	 * @returns The document, not yet checked.
 	 */
-	readonly document: (board: string, signal?: AbortSignal) => Promise<unknown>;
+	readonly document: (vault: string, board: string, signal?: AbortSignal) => Promise<unknown>;
 	/**
 	 * The vault's checked policy and diagnostics.
+	 * @param vault The vault.
 	 * @param signal Cancels the read.
 	 * @returns The check.
 	 */
-	readonly vaultCheck: (signal?: AbortSignal) => Promise<VaultCheck>;
+	readonly vaultCheck: (vault: string, signal?: AbortSignal) => Promise<VaultCheck>;
 	/**
 	 * What the last code pass found on each board it read. Never a pass.
+	 * @param vault The vault.
 	 * @param signal Cancels the read.
 	 * @returns The remembered readings.
 	 */
-	readonly codeFindings: (signal?: AbortSignal) => Promise<RememberedFindings>;
+	readonly codeFindings: (vault: string, signal?: AbortSignal) => Promise<RememberedFindings>;
 	/**
 	 * Where change concentrates in one variant of one board, read from Git. It
 	 * takes no cancellation: a pick made while it runs waits for it.
+	 * @param vault The vault the board is in.
 	 * @param board The board, by name.
 	 * @param variant The variant, by id: the current one or a draft.
 	 * @returns The answer.
 	 */
-	readonly locality: (board: string, variant: string) => Promise<LocalityAnswer>;
+	readonly locality: (vault: string, board: string, variant: string) => Promise<LocalityAnswer>;
 }
 
 const fromServer: BoardReads = {

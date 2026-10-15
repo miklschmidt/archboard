@@ -16,6 +16,7 @@ import { useMemo } from "react";
 
 import { readVariant, type VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import { semanticBoardDocumentQuery } from "@/ui/semantic-board-canvas/lib/queries";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 
 /**
  * The board behind one pane's picture.
@@ -25,7 +26,7 @@ import { semanticBoardDocumentQuery } from "@/ui/semantic-board-canvas/lib/queri
  * @returns The reading, or null while the board has not arrived or cannot be read.
  */
 function useVariantReading(board: string, variant: string | undefined): VariantReading | null {
-	const held = useQuery(semanticBoardDocumentQuery(board));
+	const held = useQuery(semanticBoardDocumentQuery(usePaneVault(), board));
 	const answer = held.data;
 	return useMemo(() => readVariant(answer, variant), [answer, variant]);
 }

@@ -172,4 +172,5 @@ export {
 	listedBoardKey,
 	nothingBuiltOn,
 	vaultHalf,
+	type VaultHalf,
 };

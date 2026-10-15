@@ -9,35 +9,10 @@ import path from "path";
 
 import { listRegistry, type RegisteredRepoStatus } from "@/runtime/engine/repo-registry";
 import { serverVault } from "@/server/archboard/lib/server-vault";
+import type { RepositoryEntry, RepositoryState } from "@/shared/repositories/index";
 
 /** Where a checkout keeps its vault (ADR 0049). */
 const VAULT_DIRECTORY = path.join(".archboard", "vault");
-
-/** One known checkout of a repository, as its menu lists it. */
-interface CheckoutEntry {
-	root: string;
-	chosen: boolean;
-	exists: boolean;
-	hasVault: boolean;
-}
-
-/**
- * Why a repository shows no boards, when it shows none: its chosen checkout is
- * gone, or has no vault, or the repository has no chosen checkout at all.
- */
-type RepositoryState = "ready" | "gone" | "no-vault" | "unchosen";
-
-/** One repository as the navigator lists it. */
-interface RepositoryEntry {
-	/** The repository identity, or the registry name of an untracked vault. */
-	name: string;
-	untracked: boolean;
-	/** The canonical vault of the chosen checkout, or null when it has none to read. */
-	vault: string | null;
-	state: RepositoryState;
-	/** The known checkouts, for the menu that chooses one. An untracked vault has none. */
-	checkouts: CheckoutEntry[];
-}
 
 /**
  * The canonical vault of a directory, when it holds one.

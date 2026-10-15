@@ -42,6 +42,11 @@ function watched() {
 		paneId: "pane-A",
 		clientId: "client-1",
 		/**
+		 * The vault the pane is in.
+		 * @returns The vault.
+		 */
+		vault: () => "/work/archboard/.archboard/vault",
+		/**
 		 * Capture one report.
 		 * @param body The report.
 		 * @returns That it was kept.

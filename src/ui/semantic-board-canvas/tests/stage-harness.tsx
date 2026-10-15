@@ -10,7 +10,11 @@ import { createElement, useEffect, useState, type JSX, type ReactNode } from "re
 
 import type { CodeBinding } from "@/shared/code-target";
 import { PaneChromeContext, usePaneChrome, type PaneChrome } from "@/ui/components/PaneChrome";
-import { SemanticBoardStage, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
+import {
+	PaneVaultContext,
+	SemanticBoardStage,
+	type SemanticPaneReading,
+} from "@/ui/semantic-board-canvas";
 import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
 
 /** The window on the diagram every measured element reports in these tests. */
@@ -239,14 +243,21 @@ interface Mounted {
 	readonly picks: (string | null)[];
 }
 
+/** The vault every mounted pane is in. */
+const PANE_VAULT = "/work/archboard/.archboard/vault";
+
 /**
- * The stage inside a cache with this product's read defaults.
+ * The stage inside a cache with this product's read defaults, in one vault.
  * @param children The stage.
- * @returns The provider around it.
+ * @returns The providers around it.
  */
 function Cache(children: ReactNode): JSX.Element {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	return createElement(QueryClientProvider, { client }, children);
+	return createElement(
+		QueryClientProvider,
+		{ client },
+		createElement(PaneVaultContext, { value: PANE_VAULT }, children),
+	);
 }
 
 /**
@@ -520,60 +531,9 @@ function mountStage(selection: string | null = null, options: MountOptions = {})
 	return { picks };
 }
 
-/**
- * What state the stage is in.
- * @returns The `data-state` of the stage, or null when nothing is mounted.
- */
-function stageState(): string | null {
-	return (
-		document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-state") ?? null
-	);
-}
-
-/**
- * One element of the mounted stage.
- * @param slot The `data-slot` wanted.
- * @returns The element.
- */
-function part(slot: string): HTMLElement {
-	const element = document.querySelector<HTMLElement>(`[data-slot='${slot}']`);
-	if (element === null) {
-		throw new Error(`The stage drew no ${slot}.`);
-	}
-	return element;
-}
-
-/**
- * The element the camera moves.
- * @returns The surface.
- */
-function surface(): HTMLElement {
-	return part("semantic-board-surface");
-}
-
-/**
- * The stage's tab stop: the element that hears the keys and the wheel.
- * @returns The viewport.
- */
-function viewport(): HTMLElement {
-	return part("semantic-board-viewport");
-}
-
-/**
- * The element inside the picture with this id.
- * @param id The id in the fake drawing's markup.
- * @returns The element.
- */
-function inPicture(id: string): Element {
-	const element = surface().querySelector(`#${id}`);
-	if (element === null) {
-		throw new Error(`The picture has no ${id}.`);
-	}
-	return element;
-}
-
 export {
 	VIEWPORT,
+	PANE_VAULT,
 	room,
 	type MountOptions,
 	settle,
@@ -584,13 +544,16 @@ export {
 	driveInShell,
 	mountStage,
 	openSidebarTab,
-	stageState,
-	part,
-	surface,
-	viewport,
-	inPicture,
 	type Mounted,
 };
+
+export {
+	inPicture,
+	part,
+	stageState,
+	surface,
+	viewport,
+} from "@/ui/semantic-board-canvas/tests/stage-queries";
 
 export {
 	NOTHING_DRAWN,

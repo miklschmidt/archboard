@@ -41,6 +41,7 @@ import {
 import { usePaneChrome } from "@/ui/components/PaneChrome";
 import { Tabs, TabsList, TabsTrigger } from "@/ui/components/tabs";
 import { LevelMark } from "@/ui/semantic-board-canvas/components/LevelMark";
+import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 import { SidebarToggle } from "@/ui/semantic-board-canvas/components/SidebarToggle";
 import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { OfferedVariant } from "@/ui/semantic-board-canvas/lib/board-document";
@@ -140,6 +141,7 @@ function Step(): JSX.Element {
  */
 function Ancestor(props: { readonly place: BoardPlace; readonly middle: boolean }): JSX.Element {
 	const { place } = props;
+	const vault = usePaneVault();
 	return (
 		<li
 			className={cn(
@@ -154,7 +156,7 @@ function Ancestor(props: { readonly place: BoardPlace; readonly middle: boolean 
 				title={place.level === undefined ? place.name : `${place.name} · ${place.level}`}
 				className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent text-control rounded-control -mx-1 flex h-7 max-w-44 min-w-0 items-center gap-1.5 px-1 font-medium"
 			>
-				<LevelMark level={place.level} />
+				<LevelMark level={place.level} vault={vault} />
 				<span className="truncate">{place.name}</span>
 			</button>
 			<Step />
@@ -169,6 +171,7 @@ function Ancestor(props: { readonly place: BoardPlace; readonly middle: boolean 
  * @returns The fold, or nothing when there is nothing to fold.
  */
 function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element | null {
+	const vault = usePaneVault();
 	if (props.places.length === 0) return null;
 	return (
 		<li className="flex shrink-0 items-center gap-1 @min-[880px]/pane-header:hidden">
@@ -182,7 +185,7 @@ function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element 
 				<DropdownMenuContent align="start" sideOffset={6} className="w-56">
 					{props.places.map(({ place, key }) => (
 						<DropdownMenuItem key={key} onClick={place.open} className="gap-2">
-							<LevelMark level={place.level} />
+							<LevelMark level={place.level} vault={vault} />
 							{place.name}
 						</DropdownMenuItem>
 					))}
@@ -204,6 +207,7 @@ function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element 
  */
 function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 	const { name, level, variant } = props;
+	const vault = usePaneVault();
 	const ancestors = keyed(props.ancestors);
 	const middle = ancestors.slice(0, -1);
 	return (
@@ -214,7 +218,7 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 					<Ancestor key={key} place={place} middle={index < ancestors.length - 1} />
 				))}
 				<li className="flex min-w-24 shrink items-center gap-1.5" aria-current="page">
-					<LevelMark level={level} />
+					<LevelMark level={level} vault={vault} />
 					<h2
 						data-slot="pane-board-name"
 						title={level === undefined ? name : `${name} · ${level}`}

@@ -18,7 +18,7 @@ import type {
 	NavigatorRowInputs,
 	PaneMark,
 	RowPlace,
-	Unplaced,
+	Unscoped,
 	VariantRow,
 } from "@/ui/shell/types/navigator-rows";
 import type { BoardListing, CatalogBoard, ListedVariant } from "@/ui/types";
@@ -88,7 +88,7 @@ function variantRow(
 	board: CatalogBoard,
 	variant: ListedVariant,
 	place: VariantPlace,
-): Unplaced<VariantRow> {
+): Unscoped<VariantRow> {
 	const id = variantRowId(variant.key);
 	return { kind: "variant", id, ...place, board, variant, dimmed: false, match: null };
 }
@@ -104,9 +104,9 @@ function nestedVariants(
 	board: CatalogBoard,
 	variants: readonly ListedVariant[],
 	at: VariantPlace,
-): Unplaced<VariantRow>[] {
+): Unscoped<VariantRow>[] {
 	const listed = new Set(variants.map((variant) => variant.id));
-	const rows: Unplaced<VariantRow>[] = [];
+	const rows: Unscoped<VariantRow>[] = [];
 	/**
 	 * List the variants under one parent and, after each, those derived from it.
 	 * @param parent The parent variant's id, or null for the first level.
@@ -136,11 +136,11 @@ function earlierRows(
 	board: CatalogBoard,
 	earlier: readonly ListedVariant[],
 	at: VariantPlace,
-): Unplaced<NavigatorRow>[] {
+): Unscoped<NavigatorRow>[] {
 	if (earlier.length === 0) return [];
 	const id = earlierRowId(board);
 	const expanded = inputs.expanded(id);
-	const row: Unplaced<EarlierRow> = {
+	const row: Unscoped<EarlierRow> = {
 		kind: "earlier",
 		id,
 		...at,
@@ -165,7 +165,7 @@ function foundVariantRows(
 	inputs: NavigatorRowInputs,
 	board: CatalogBoard,
 	at: VariantPlace,
-): Unplaced<NavigatorRow>[] {
+): Unscoped<NavigatorRow>[] {
 	const found = board.variants.filter((variant) => matchIn(variant.name, inputs.query) !== null);
 	return nestedVariants(board, variantOrder(found, board.opens), at).map((row) => ({
 		...row,
@@ -185,7 +185,7 @@ function variantRows(
 	inputs: NavigatorRowInputs,
 	board: CatalogBoard,
 	at: VariantPlace,
-): Unplaced<NavigatorRow>[] {
+): Unscoped<NavigatorRow>[] {
 	if (inputs.query.length > 0) return foundVariantRows(inputs, board, at);
 	if (!listsVariants(board)) return [];
 	const ordered = variantOrder(board.variants, board.opens);

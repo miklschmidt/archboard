@@ -17,6 +17,28 @@ const { act, cleanup, fireEvent, render, within } = await import("@testing-libra
 const { createElement } = await import("react");
 const { Application } = await import("@/ui/application");
 const { createBoardRoutingHost } = await import("@/ui/board-routing");
+const { learnServedVault } = await import("@/ui/server-requests");
+
+/** The vault the faked server was started with, and the repository it is the chosen checkout of. */
+const SERVED = Object.freeze({
+	vault: "/work/pipeline/.archboard/vault",
+	repository: "github.com/acme/pipeline",
+});
+
+/** The repositories the faked server lists: the served vault's, ready. */
+const REPOSITORIES = Object.freeze({
+	success: true,
+	served: SERVED.vault,
+	repositories: [
+		{
+			name: SERVED.repository,
+			untracked: false,
+			vault: SERVED.vault,
+			state: "ready",
+			checkouts: [{ root: "/work/pipeline", chosen: true, exists: true, hasVault: true }],
+		},
+	],
+});
 
 /** A socket the test opens and speaks on, in place of the server's. */
 class FakeSocket extends EventTarget {
@@ -105,7 +127,12 @@ const server: { answering: Answering } = { answering: notFaked };
  */
 function fakeFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
 	const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-	return server.answering(new URL(url, "http://127.0.0.1:3000/"), init);
+	const asked = new URL(url, "http://127.0.0.1:3000/");
+	// Every page asks which vault the server serves and which repositories it
+	// lists before it shows a board; a test file fakes only what it is about.
+	if (asked.pathname === "/api/served-vault") return answer({ vault: SERVED.vault });
+	if (asked.pathname === "/api/repositories") return answer(REPOSITORIES);
+	return server.answering(asked, init);
 }
 
 const realFetch = globalThis.fetch;
@@ -153,28 +180,43 @@ function stageState(): string | null {
 	);
 }
 
+/** Mount the application as the page does: once it has learned the vault the server serves. */
+async function mountPage(): Promise<void> {
+	await learnServedVault();
+	render(createElement(createBoardRoutingHost(Application)));
+}
+
 /**
  * Mount the application, register its pane and point it at a board.
  * @param board The board the server points the pane at.
  * @returns The pane's socket, once the board is drawn.
  */
 async function paneShowing(board: string): Promise<FakeSocket> {
-	render(createElement(createBoardRoutingHost(Application)));
+	await mountPage();
 	await settle();
 	const socket = FakeSocket.made.at(-1)!;
 	act(() => socket.open());
 	await settle();
 	await settle();
-	act(() => socket.say({ type: "pane_board", board, identity: { board, variant: "current" } }));
+	act(() =>
+		socket.say({
+			type: "pane_board",
+			board,
+			identity: { board, variant: "current" },
+			...SERVED,
+		}),
+	);
 	await settleUntil(() => stageState() === "drawn");
 	return socket;
 }
 
 export {
+	SERVED,
 	FakeSocket,
 	act,
 	answer,
 	fireEvent,
+	mountPage,
 	notFaked,
 	paneShowing,
 	server,

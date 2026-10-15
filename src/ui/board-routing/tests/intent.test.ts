@@ -10,7 +10,7 @@ import { createDeliberateNavigation } from "@/ui/board-routing/intent";
  */
 function address(panes: readonly (readonly [string, string])[]): WorkspaceAddress {
 	return settledAddress({
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, view: null })),
+		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, repository: null, view: null })),
 		activePaneId: null,
 	});
 }
@@ -67,7 +67,7 @@ test("an expectation lives no longer than the next change, met or not", () => {
  */
 function reading(view: string | null): WorkspaceAddress {
 	return settledAddress({
-		panes: [{ paneId: "A", boardKey: "semantic:pipeline", view }],
+		panes: [{ paneId: "A", boardKey: "semantic:pipeline", repository: null, view }],
 		activePaneId: "A",
 	});
 }
@@ -87,8 +87,8 @@ test("a view that changed in another pane is not the move this user asked for", 
 		navigation.settle(
 			settledAddress({
 				panes: [
-					{ paneId: "A", boardKey: "semantic:pipeline", view: "k3f9" },
-					{ paneId: "B", boardKey: "semantic:pipeline", view: null },
+					{ paneId: "A", boardKey: "semantic:pipeline", repository: null, view: "k3f9" },
+					{ paneId: "B", boardKey: "semantic:pipeline", repository: null, view: null },
 				],
 				activePaneId: "A",
 			}),

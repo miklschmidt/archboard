@@ -60,7 +60,7 @@ function address(
 	activePaneId: string | null = null,
 ): WorkspaceAddress {
 	return settledAddress({
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, view: null })),
+		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, repository: null, view: null })),
 		activePaneId,
 	});
 }
@@ -75,6 +75,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 	const start = options.panes.map(([paneId, boardKey]) => ({
 		paneId,
 		boardKey,
+		repository: null,
 		view: null as string | null,
 	}));
 	const pending = {
@@ -144,7 +145,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 			if (free === undefined || pending.panes.some((pane) => pane.paneId === free)) {
 				return false;
 			}
-			pending.panes.push({ paneId: free, boardKey: "scratch", view: null });
+			pending.panes.push({ paneId: free, boardKey: "scratch", repository: null, view: null });
 			pending.activePaneId = free;
 			return true;
 		},
@@ -217,9 +218,10 @@ function fakeShell(options: FakeOptions): FakeShell {
 				 * a restore asks for, and in which order.
 				 * @param paneId The pane.
 				 * @param boardKey The board.
+				 * @param repository The repository the board is in, or null for the pane's own.
 				 */
-				open: (paneId: string, boardKey: string): void => {
-					void port.open(paneId, boardKey);
+				open: (paneId: string, boardKey: string, repository: string | null): void => {
+					void port.open(paneId, boardKey, repository);
 				},
 			};
 			shell.restore = advanceRestore(shell.restore, port.displayed, port, commands).restore;
@@ -289,7 +291,9 @@ test("a restore going back to one pane closes the other", () => {
 	shell.render();
 	expect(shell.applied).toEqual(["close:A"]);
 	expect(shell.restore.done).toBe(true);
-	expect(shell.port.displayed.panes).toEqual([{ paneId: "B", boardKey: "billing", view: null }]);
+	expect(shell.port.displayed.panes).toEqual([
+		{ paneId: "B", boardKey: "billing", repository: null, view: null },
+	]);
 });
 
 test("a command the shell refuses is taken off the plan without waiting for a render", () => {
@@ -330,7 +334,7 @@ test("an address that asks for another view reads the board again without reopen
 	const shell = fakeShell({
 		panes: [["A", "pipeline"]],
 		wanted: settledAddress({
-			panes: [{ paneId: "A", boardKey: "pipeline", view: "k3f9" }],
+			panes: [{ paneId: "A", boardKey: "pipeline", repository: null, view: "k3f9" }],
 			activePaneId: "A",
 		}),
 	});
@@ -348,7 +352,7 @@ test("a pane being pointed at another board is not read on the way there", () =>
 	const shell = fakeShell({
 		panes: [["A", "payments"]],
 		wanted: settledAddress({
-			panes: [{ paneId: "A", boardKey: "semantic:pipeline", view: "k3f9" }],
+			panes: [{ paneId: "A", boardKey: "semantic:pipeline", repository: null, view: "k3f9" }],
 			activePaneId: "A",
 		}),
 	});

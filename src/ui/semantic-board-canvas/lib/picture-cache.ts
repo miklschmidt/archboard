@@ -83,14 +83,19 @@ function browserPictureStorage(): PictureStorage | undefined {
 	};
 }
 
+/** How many fields a key of this module has: a key of any other length is of an older page. */
+const KEY_FIELDS = 9;
+
 /**
- * The key one render request is kept under, stamped.
- * @param request The board, variant and view asked for.
+ * The key one render request is kept under, stamped. A picture is of a board of
+ * one vault: two repositories can each have a board of the same name.
+ * @param request The vault, board, variant and view asked for.
  * @param stamp The version, policy and renderer it was drawn from.
  * @returns The key.
  */
 function pictureKey(request: SemanticRenderRequest, stamp: PictureStamp): string {
 	return JSON.stringify([
+		request.vault,
 		request.board,
 		request.variant ?? "",
 		request.view ?? "",
@@ -145,14 +150,18 @@ async function writeCachedPicture(
 }
 
 /**
- * Forget every picture of a board that moved or went away, or that another
- * build of the renderer drew, reading only the keys.
+ * Forget every picture of a board of one vault that moved or went away, or that
+ * another build of the renderer drew, reading only the keys. A picture of
+ * another vault is that vault's listing's to judge, and a key an older page
+ * wrote is forgotten, because nothing asks for it again.
  * @param storage The storage.
- * @param boards The boards the server lists, with their versions.
+ * @param vault The vault the boards are in.
+ * @param boards The boards the server lists there, with their versions.
  * @param renderer The renderer build in force now.
  */
 async function forgetStalePictures(
 	storage: PictureStorage,
+	vault: string,
 	boards: readonly {
 		readonly name: string;
 		readonly key: string;
@@ -163,7 +172,10 @@ async function forgetStalePictures(
 	try {
 		const stale = (await storage.keys()).filter((key): key is string => {
 			if (typeof key !== "string") return false;
-			const [board, , , , , version, , drawnBy] = keyParts(key);
+			const parts = keyParts(key);
+			if (parts.length !== KEY_FIELDS) return true;
+			const [ofVault, board, , , , , version, , drawnBy] = parts;
+			if (ofVault !== vault) return false;
 			const listed = boards.find(
 				({ name, key: listedKey }) =>
 					typeof board === "string" &&
@@ -180,7 +192,7 @@ async function forgetStalePictures(
 /**
  * The fields of a kept key, or none for a key this module did not write.
  * @param key A stored key.
- * @returns Board, variant, view, comparison, engine, version, fingerprint, renderer.
+ * @returns Vault, board, variant, view, comparison, engine, version, fingerprint, renderer.
  */
 function keyParts(key: string): unknown[] {
 	try {

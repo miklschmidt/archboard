@@ -53,6 +53,11 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	recording?: boolean;
 	theme: PaneTheme;
 	/**
+	 * The vault the pane opens in: what its socket names until the server moves
+	 * it (ADR 0050). Read once, when the pane mounts.
+	 */
+	openingVault: string;
+	/**
 	 * The pane said what it is.
 	 * @param status The pane's status.
 	 */
@@ -105,10 +110,13 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 */
 	onCodeTargetNotice?: (notice: CodeTargetNotice) => void;
 	/**
-	 * Which boards an agent is working on, across this whole server (ADR 0022).
+	 * Which boards an agent is working on in the vault this pane is in (ADR 0022).
+	 * @param vault The vault the snapshot is of.
 	 * @param activity The snapshot.
 	 */
-	onAgentActivity?: (activity: readonly AgentActivityEntry[]) => void;
+	onAgentActivity?: (vault: string, activity: readonly AgentActivityEntry[]) => void;
+	/** A checkout was chosen somewhere, so the repositories are worth reading again. */
+	onRepositoriesChanged?: () => void;
 	/**
 	 * The board the server says this pane is showing, which is how a pane learns
 	 * that `browser show` moved it.
@@ -143,6 +151,8 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	 * reports from what is actually drawn.
 	 */
 	readonly openedKey: string | null;
+	/** The vault the pane is in now, which every read its canvas makes names. */
+	readonly vault: string;
 	/**
 	 * How many times the server has pointed this pane somewhere other than the
 	 * board on screen. It counts the one move `openedKey` cannot show: the pane

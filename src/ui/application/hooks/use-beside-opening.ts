@@ -12,6 +12,8 @@ import type { ShellActions } from "@/ui/shell";
 /** A board waiting for the pane being added for it. */
 interface PendingBeside {
 	readonly key: string;
+	/** The repository the board is in, or undefined for the active pane's. */
+	readonly repository: string | undefined;
 	/** The pane that was active when it was asked for: the new pane is the other one. */
 	readonly from: string;
 	/** The new pane has appeared: should it go again before it is ready, the board is not wanted any more. */
@@ -55,7 +57,7 @@ function useBesideOpening(
 	panes: Panes,
 	livePanes: Panes,
 	actions: Pick<ShellActions, "selectBoard" | "addPane" | "selectPane">,
-): (key: string) => void {
+): (key: string, repository?: string) => void {
 	const pending = useRef<PendingBeside | null>(null);
 	useEffect(() => {
 		const wanted = pending.current;
@@ -67,19 +69,19 @@ function useBesideOpening(
 		const paneId = readyTarget(panes, wanted);
 		if (paneId === null) return;
 		pending.current = null;
-		actions.selectBoard(wanted.key, paneId);
+		actions.selectBoard(wanted.key, paneId, wanted.repository);
 		// Beside means the person stays where they were reading, as with two panes.
 		actions.selectPane(wanted.from);
 	}, [panes, actions]);
 	return useCallback(
-		(key: string): void => {
+		(key: string, repository?: string): void => {
 			const { list } = livePanes;
 			const other = list.panes.find((pane) => pane.paneId !== list.activePaneId);
 			if (other !== undefined) {
-				actions.selectBoard(key, other.paneId);
+				actions.selectBoard(key, other.paneId, repository);
 				return;
 			}
-			pending.current = { key, from: list.activePaneId, seen: false };
+			pending.current = { key, repository, from: list.activePaneId, seen: false };
 			actions.addPane();
 		},
 		[livePanes, actions],

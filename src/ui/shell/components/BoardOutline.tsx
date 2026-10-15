@@ -111,7 +111,7 @@ function typesCharacter(event: KeyboardEvent<HTMLElement>): boolean {
  * @returns The tree.
  */
 function BoardOutline(props: BoardOutlineProps): JSX.Element {
-	const { rows, homeId, onOpen, onExpand, onTypeAhead, filtering } = props;
+	const { rows, homeId, onOpen, onExpand, onChooseCheckout, onTypeAhead, filtering } = props;
 	const lanes = useMemo(() => variantLanes(rows), [rows]);
 	const guides = useMemo(() => treeGuides(rows, rowSelected, timelineDepths(rows)), [rows]);
 	const tree = useRef<HTMLDivElement>(null);
@@ -177,6 +177,7 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 					onFocusRow={setFocusedId}
 					onOpen={onOpen}
 					onExpand={onExpand}
+					onChooseCheckout={onChooseCheckout}
 					onRowKeyDown={handleKeyDown}
 				/>
 			))}

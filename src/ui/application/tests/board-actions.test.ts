@@ -104,7 +104,14 @@ function picker() {
 			 * Read the fixture state.
 			 * @returns Never; the catalog contents are outside this test.
 			 */
-			get listing() {
+			get repositories() {
+				return unrelated();
+			},
+			/**
+			 * Read the fixture state.
+			 * @returns Never; the served vault is outside this test.
+			 */
+			get served() {
 				return unrelated();
 			},
 			error: null,
@@ -114,6 +121,7 @@ function picker() {
 			reload: unrelated,
 			boardsChanged: unrelated,
 			reconnected: unrelated,
+			repositoriesChanged: unrelated,
 		},
 		notices: {
 			notices,
@@ -165,7 +173,13 @@ function picker() {
 		connected: (registered: boolean): void => {
 			record = {
 				...record,
-				status: { ...record.status, clientId: "A-qz99fo", connected: true, registered },
+				status: {
+					...record.status,
+					clientId: "A-qz99fo",
+					vault: "/work/shop/.archboard/vault",
+					connected: true,
+					registered,
+				},
 			};
 		},
 		/**

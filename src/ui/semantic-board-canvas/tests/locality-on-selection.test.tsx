@@ -33,6 +33,9 @@ afterAll(async () => {
 	await GlobalRegistrator.unregister();
 });
 
+/** The vault the pane is in. */
+const VAULT = "/work/archboard/.archboard/vault";
+
 /** The answer: one part read, which no commit changed. */
 const ANSWER: LocalityAnswer = {
 	board: "pipeline",
@@ -94,7 +97,7 @@ readBoardsFrom({
  * @returns Nothing visible.
  */
 function Poll(): null {
-	useQuery(vaultCheckQuery());
+	useQuery(vaultCheckQuery(VAULT));
 	return null;
 }
 
@@ -103,7 +106,7 @@ function Poll(): null {
  * @returns Nothing visible.
  */
 function Picked(): null {
-	useQuery(localityQuery({ board: "pipeline", variant: "v1", version: 1 }));
+	useQuery(localityQuery({ vault: VAULT, board: "pipeline", variant: "v1", version: 1 }));
 	return null;
 }
 

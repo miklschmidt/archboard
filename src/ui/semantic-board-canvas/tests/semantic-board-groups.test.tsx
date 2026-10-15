@@ -8,6 +8,7 @@ import { expect, test } from "bun:test";
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import {
+	PANE_VAULT,
 	chooseVariantInShell,
 	driveInShell,
 	mountStage,
@@ -371,7 +372,7 @@ test("a board change refreshes who the selected group selects", async () => {
 		NODES.map((node) => (node.id === "w" ? { ...node, groups: ["fulfillment"] } : node)),
 	);
 	await act(async () => {
-		announceSemanticBoardChange("pipeline", 2);
+		announceSemanticBoardChange(PANE_VAULT, "pipeline", 2);
 	});
 	await settled();
 	expect(listed()).toBe("billing");
@@ -383,14 +384,14 @@ test("a board change refreshes who the selected group selects", async () => {
 		NODES.map((node) => (node.id === "w" || node.id === "l" ? { ...node, groups: [] } : node)),
 	);
 	await act(async () => {
-		announceSemanticBoardChange("pipeline", 3);
+		announceSemanticBoardChange(PANE_VAULT, "pipeline", 3);
 	});
 	await settled();
 	expect(listed()).toBeNull();
 	expect(selected()).toEqual([]);
 	server.documents["pipeline"] = boardOf();
 	await act(async () => {
-		announceSemanticBoardChange("pipeline", 4);
+		announceSemanticBoardChange(PANE_VAULT, "pipeline", 4);
 	});
 	await settled();
 	expect(listed()).toBeNull();

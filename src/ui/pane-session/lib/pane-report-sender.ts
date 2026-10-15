@@ -28,6 +28,8 @@ interface PaneReportSenderParts {
 	readonly paneId: string;
 	readonly clientId: string;
 	readonly boardKey: () => string | null;
+	/** The vault the pane is in now, which its report names. */
+	readonly vault: () => string;
 	readonly paneElement: () => HTMLElement | null;
 	readonly primary: () => boolean;
 	readonly focused: () => boolean;
@@ -205,7 +207,7 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 			socket: now.socket,
 			registration: now.registration,
 		};
-		reportPane(report)
+		reportPane(parts.vault(), report)
 			.then((result) => {
 				const outcome = { settled: true, registered: result.registered } as const;
 				apply(sequencer.settle(dispatch, current(), outcome), dispatch, report, result);

@@ -6,7 +6,7 @@
 // semantic board (ADR 0023); `takeBoardBack` is not a write to a board, it is
 // the release of somebody else's lease.
 
-import { boardQuery, json, post, cancellable } from "@/ui/server-requests";
+import { boardQuery, cancellable, inVault, json, post } from "@/ui/server-requests";
 import type { BoardIdentity, BrowserPaneListing, LockHolder } from "@/ui/types";
 
 /** What one pane tells the server it has in front of the human. */
@@ -48,11 +48,12 @@ interface PaneReply {
 /**
  * Tell the server what this pane currently shows: which board, and where the
  * pane sits on the display. Registration lives exactly as long as the socket.
+ * @param vault The vault the pane is in.
  * @param pane The report.
  * @returns Whether the pane is registered, and whether the tab is stale.
  */
-function reportPane(pane: PaneReport): Promise<PaneReply> {
-	return post("/api/panes", pane);
+function reportPane(vault: string, pane: PaneReport): Promise<PaneReply> {
+	return post(inVault("/api/panes", vault), pane);
 }
 
 /**
@@ -74,8 +75,10 @@ function fetchPaneInventory(signal?: AbortSignal): Promise<BrowserPaneListing> {
 	return json("/api/panes", cancellable(signal));
 }
 
-/** What `showBoard` asks for: which board, in which pane. */
+/** What `showBoard` asks for: which board of which vault, in which pane. */
 interface ShowBoardRequest {
+	/** The vault the board is in: a pane shown a board of another vault moves into it. */
+	vault: string;
 	/** The board key: `pipeline`, or `pipeline@variant`. */
 	board: string;
 	/** Which pane shows it. Required once more than one is open. */
@@ -87,6 +90,8 @@ interface ShowBoardReply {
 	success: true;
 	board: string;
 	identity: BoardIdentity;
+	/** The repository the vault is listed under, or null when no listed one reads it. */
+	repository: string | null;
 	paneId: string;
 }
 
@@ -100,7 +105,8 @@ interface ShowBoardReply {
  * @returns What the pane is showing now.
  */
 function showBoard(request: ShowBoardRequest): Promise<ShowBoardReply> {
-	return post("/api/panes/show", request);
+	const { vault, ...shown } = request;
+	return post(inVault("/api/panes/show", vault), shown);
 }
 
 /** The answer to a take-back: whether a claim was released, and which. */
@@ -114,12 +120,17 @@ interface TakeBackReply {
  * Release an agent's claim on a board: the one explicit control a person has
  * over a claimed board (ADR 0022). The board goes to nobody, the agent is told
  * once that it lost the board, and nothing already written is undone.
+ * @param vault The vault the board is in.
  * @param board The board key.
  * @param clientId This pane.
  * @returns Whether a claim was released.
  */
-function takeBoardBack(board: string | null, clientId: string): Promise<TakeBackReply> {
-	return post(`/api/semantic-boards/take-back${boardQuery(board)}`, { clientId });
+function takeBoardBack(
+	vault: string,
+	board: string | null,
+	clientId: string,
+): Promise<TakeBackReply> {
+	return post(inVault(`/api/semantic-boards/take-back${boardQuery(board)}`, vault), { clientId });
 }
 
 export {

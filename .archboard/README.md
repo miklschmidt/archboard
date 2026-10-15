@@ -22,6 +22,11 @@ From the checkout root:
 ```
 
 Open <http://127.0.0.1:3000/?paneA=Archboard> before the browser command.
+The navigator lists every repository on the machine that has a vault. Once this
+checkout is registered (`./bin/dogfood repo add`), it lists this vault under
+`github.com/miklschmidt/archboard`, and
+`?paneA=Archboard&repoA=github.com/miklschmidt/archboard` opens the board
+whichever vault the server was started with.
 The launcher explicitly selects this checkout's `.archboard/vault`, even when
 the shell exports another project's vault. If a server is already running for
 another vault, run `./bin/dogfood stop` before starting; the server retains the

@@ -69,6 +69,7 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 		options: () => ({
 			paneId: "A",
 			theme: "dark",
+			openingVault: "/work/archboard/.archboard/vault",
 			primary: true,
 			focused: true,
 			/**
@@ -102,6 +103,8 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 		setHeldBy: (): void => {},
 		/** No agent activity is involved. */
 		setDoing: (): void => {},
+		/** The server never moves this pane to another vault. */
+		setVault: (): void => {},
 	});
 	try {
 		core.connect();
@@ -152,6 +155,7 @@ function dialledTabSession(paneId: string): string | null {
 		options: () => ({
 			paneId,
 			theme: "dark",
+			openingVault: "/work/archboard/.archboard/vault",
 			primary: paneId === "A",
 			focused: false,
 			/** Nothing here reads the pane's status. */
@@ -175,6 +179,8 @@ function dialledTabSession(paneId: string): string | null {
 		setHeldBy: (): void => {},
 		/** No agent activity is involved. */
 		setDoing: (): void => {},
+		/** The server never moves this pane to another vault. */
+		setVault: (): void => {},
 	});
 	core.connect();
 	const url = new URL(ControlledSocket.created.at(-1)!.url);

@@ -1,22 +1,28 @@
-// The rows the navigator draws, in order, from the vault's outline: which
-// folders and boards are open, what the filter found, the variants of the
-// boards on screen, which panes show what, and where an agent is working. One
-// flat list, each row carrying its depth, so the tree is drawn and walked by
-// the keyboard the same way. A board's variants come directly under it, one
-// depth in, before the boards it drills down to (variant-rows). Pure: no React.
+// The rows the navigator draws, in order: each repository (ADR 0050), and
+// under it its outline: which folders and boards are open, what the filter
+// found, the variants of the boards on screen, which panes show what, and
+// where an agent is working. One flat list, each row carrying its depth, so the
+// tree is drawn and walked by the keyboard the same way. A board's variants come
+// directly under it, one depth in, before the boards it drills down to
+// (variant-rows). Pure: no React.
 
 import type { OutlineBoardNode, OutlineFolder, OutlineNode } from "@/ui/board-catalog";
+import { repositoryRowId, scopedRowId } from "@/ui/shell/lib/row-ids";
 import { matchIn, type TextRange } from "@/ui/shell/lib/text-match";
 import { listsVariants, paneOnBoard, variantRows } from "@/ui/shell/lib/variant-rows";
+import type { ShellRepository } from "@/ui/shell/types/contracts";
 import type {
 	BoardRow,
 	FolderRow,
+	NavigatorInputs,
 	NavigatorRow,
 	NavigatorRowInputs,
 	PaneMark,
+	RepositoryRow,
 	RowPlace,
 	ShownRow,
 	Unplaced,
+	Unscoped,
 } from "@/ui/shell/types/navigator-rows";
 import type { AgentActivityEntry, CatalogBoard } from "@/ui/types";
 
@@ -138,7 +144,7 @@ function boardRow(
 	node: BoardNode,
 	at: RowPlace,
 	listed: number,
-): Unplaced<BoardRow> {
+): Unscoped<BoardRow> {
 	const { board } = node;
 	const open = isOpen(inputs, node);
 	const match = inputs.query.length > 0 ? boardMatch(node, inputs.query) : null;
@@ -172,7 +178,7 @@ function boardRows(
 	inputs: NavigatorRowInputs,
 	node: BoardNode,
 	at: RowPlace,
-): Unplaced<NavigatorRow>[] {
+): Unscoped<NavigatorRow>[] {
 	const inside = { depth: at.depth + 1, parentId: node.id };
 	const open = isOpen(inputs, node);
 	const variants = open ? variantRows(inputs, node.board, inside) : [];
@@ -191,10 +197,10 @@ function folderRows(
 	inputs: NavigatorRowInputs,
 	node: OutlineFolder<CatalogBoard>,
 	at: RowPlace,
-): Unplaced<NavigatorRow>[] {
+): Unscoped<NavigatorRow>[] {
 	const open = isOpen(inputs, node);
 	const match = inputs.query.length > 0 ? matchIn(node.name, inputs.query) : null;
-	const row: Unplaced<FolderRow> = {
+	const row: Unscoped<FolderRow> = {
 		kind: "folder",
 		id: node.id,
 		...at,
@@ -220,7 +226,7 @@ function nodeRows(
 	inputs: NavigatorRowInputs,
 	nodes: readonly OutlineNode<CatalogBoard>[],
 	at: RowPlace,
-): Unplaced<NavigatorRow>[] {
+): Unscoped<NavigatorRow>[] {
 	return nodes
 		.filter((node) => inputs.query.length === 0 || reaches(node, inputs.query))
 		.flatMap((node) =>
@@ -249,7 +255,7 @@ function paneCanShow<Row extends Pick<NavigatorRow, "kind">>(
  * @returns The row's id, or null when neither is drawn.
  */
 function paneRowId(rows: readonly Unplaced<NavigatorRow>[], pane: PaneMark): string | null {
-	const shown = rows.filter(paneCanShow);
+	const shown = rows.filter(paneCanShow).filter((row) => row.repository === pane.repository);
 	const variant = shown.find((row) => row.kind === "variant" && row.variant.key === pane.key);
 	const board = shown.find((row) => row.kind === "board" && paneOnBoard(pane, row.board));
 	return (variant ?? board)?.id ?? null;
@@ -320,8 +326,122 @@ function placeRows(
  * @param inputs The outline, what is open, the filter, the panes and the activity.
  * @returns The rows.
  */
-function navigatorRows(inputs: NavigatorRowInputs): NavigatorRow[] {
-	return placeRows(nodeRows(inputs, inputs.outline, { depth: 0, parentId: null }), inputs.panes);
+function navigatorRows(inputs: NavigatorInputs): NavigatorRow[] {
+	return placeRows(
+		inputs.repositories.flatMap((shell) => repositoryRows(inputs, shell)),
+		inputs.panes,
+	);
+}
+
+/**
+ * One repository's row and, while it is open, the rows of its outline, each
+ * named within the repository.
+ *
+ * While a filter is on, a repository is open and shows what it reaches, and a
+ * repository that reaches nothing and whose name does not match is left out,
+ * as a folder is.
+ * @param inputs The navigator's inputs.
+ * @param shell The repository.
+ * @returns Its rows.
+ */
+function repositoryRows(inputs: NavigatorInputs, shell: ShellRepository): Unplaced<NavigatorRow>[] {
+	const within = rowInputsWithin(inputs, shell);
+	const open = inputs.query.length > 0 || inputs.expanded(repositoryRowId(shell.repository.name));
+	const inner = open
+		? nodeRows(within, shell.outline, { depth: 1, parentId: null }).map((row) => scoped(row, shell))
+		: [];
+	const row = repositoryRow(inputs, shell, open, within);
+	return leftOut(row, inner, inputs.query) ? [] : [row, ...inner];
+}
+
+/**
+ * What one repository's outline rows are derived from, with ids as its outline spells them.
+ * @param inputs The navigator's inputs.
+ * @param shell The repository.
+ * @returns The inputs within it.
+ */
+function rowInputsWithin(inputs: NavigatorInputs, shell: ShellRepository): NavigatorRowInputs {
+	const name = shell.repository.name;
+	return {
+		outline: shell.outline,
+		/**
+		 * Whether a row of the repository's outline is open.
+		 * @param inner The row's id as the outline spells it.
+		 * @returns True while it is open.
+		 */
+		expanded: (inner) => inputs.expanded(scopedRowId(name, inner)),
+		query: inputs.query,
+		panes: inputs.panes.filter((pane) => pane.repository === name),
+		activity: shell.activity,
+	};
+}
+
+/**
+ * A repository's own row.
+ * @param inputs The navigator's inputs.
+ * @param shell The repository.
+ * @param open Whether its rows are listed.
+ * @param within What its outline rows are derived from.
+ * @returns The row.
+ */
+function repositoryRow(
+	inputs: NavigatorInputs,
+	shell: ShellRepository,
+	open: boolean,
+	within: NavigatorRowInputs,
+): Unplaced<RepositoryRow> {
+	const name = shell.repository.name;
+	const match = inputs.query.length > 0 ? matchIn(name, inputs.query) : null;
+	return {
+		kind: "repository",
+		id: repositoryRowId(name),
+		depth: 0,
+		parentId: null,
+		repository: name,
+		vault: shell.repository.vault,
+		entry: shell.repository,
+		count: shell.boards.boards.length,
+		expanded: open,
+		innerActivity: !open && anyActivity(within, shell.outline),
+		error: shell.error,
+		loading: shell.loading,
+		dimmed: inputs.query.length > 0 && match === null,
+		match,
+	};
+}
+
+/**
+ * Whether a filter leaves a repository out: its name does not match and it
+ * reaches no board that does, as a folder is left out.
+ * @param row The repository's row.
+ * @param inner The rows under it.
+ * @param query The filter, folded.
+ * @returns True when the repository is not drawn.
+ */
+function leftOut(
+	row: Unplaced<RepositoryRow>,
+	inner: readonly Unplaced<NavigatorRow>[],
+	query: string,
+): boolean {
+	return query.length > 0 && row.match === null && inner.length === 0;
+}
+
+/**
+ * A row of a repository's outline, named within the repository and placed under it.
+ * @param row The row as the outline names it.
+ * @param shell The repository.
+ * @returns The row in the whole tree.
+ */
+function scoped(row: Unscoped<NavigatorRow>, shell: ShellRepository): Unplaced<NavigatorRow> {
+	const repository = shell.repository.name;
+	return {
+		...row,
+		id: scopedRowId(repository, row.id),
+		parentId:
+			row.parentId === null ? repositoryRowId(repository) : scopedRowId(repository, row.parentId),
+		repository,
+		vault: shell.repository.vault,
+	};
 }
 
 /**
@@ -357,8 +477,8 @@ function filterCount(
 ): { readonly found: number; readonly total: number } {
 	const found = new Set(
 		rows.flatMap((row) => {
-			if (row.kind === "variant") return [row.board.key];
-			return row.kind === "board" && !row.dimmed ? [row.board.key] : [];
+			if (row.kind === "variant") return [`${row.repository}|${row.board.key}`];
+			return row.kind === "board" && !row.dimmed ? [`${row.repository}|${row.board.key}`] : [];
 		}),
 	);
 	return { found: found.size, total };

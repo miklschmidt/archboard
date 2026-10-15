@@ -5,7 +5,15 @@
 import type { ReactNode } from "react";
 
 import type { CodeTargetNoticeAction } from "@/shared/code-target";
-import type { AgentActivityEntry, BoardListing, LockHolder, PaneStatus } from "@/ui/types";
+import type { RepositoryEntry } from "@/shared/repositories/index";
+import type { OutlineNode } from "@/ui/board-catalog";
+import type {
+	AgentActivityEntry,
+	BoardListing,
+	CatalogBoard,
+	LockHolder,
+	PaneStatus,
+} from "@/ui/types";
 
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
@@ -76,13 +84,31 @@ type ShellPresentation = LivePresentation | RecoveryPresentation;
 /** The settings surfaces the header's menu reaches. */
 type SettingsSurface = "opener";
 
+/** One repository as the navigator lists it, with the boards of its chosen checkout (ADR 0050). */
+interface ShellRepository {
+	readonly repository: RepositoryEntry;
+	readonly boards: BoardListing;
+	/** Its boards as the navigator places them, built once by the caller. */
+	readonly outline: readonly OutlineNode<CatalogBoard>[];
+	/** Why its boards could not be read, or null. */
+	readonly error: string | null;
+	/** Its vault has not answered yet and nothing of it is in hand. */
+	readonly loading: boolean;
+	/**
+	 * Which of its boards an agent is working on right now, by board key,
+	 * including boards no pane has open (ADR 0022). The navigator marks each one.
+	 */
+	readonly activity: Readonly<Record<string, AgentActivityEntry>>;
+}
+
 /** Everything the shell renders. */
 interface ShellView {
 	theme: ThemeChoice;
-	boards: BoardListing;
-	/** Why the listing could not be refreshed, or null while it is current. */
+	/** Every repository the navigator lists, in the server's order. */
+	repositories: readonly ShellRepository[];
+	/** Why the repositories could not be read, or null while they are current. */
 	boardsError: string | null;
-	/** The vault has not answered yet and nothing of it is in hand. */
+	/** The repositories have not answered yet and nothing of them is in hand. */
 	boardsLoading: boolean;
 	selectedBoardKey: string | null;
 	/** One or two panes, in reading order. */
@@ -90,11 +116,6 @@ interface ShellView {
 	activePaneId: string;
 	presentation: ShellPresentation | null;
 	notices: readonly ShellNotice[];
-	/**
-	 * Which boards an agent is working on right now, by board key, including
-	 * boards no pane has open (ADR 0022). The navigator marks each one.
-	 */
-	agentActivity: Readonly<Record<string, AgentActivityEntry>>;
 }
 
 /** Everything a person can do from the shell. */
@@ -109,14 +130,23 @@ interface ShellActions {
 	 * were reading and leave the one they clicked alone.
 	 * @param key The board key.
 	 * @param paneId Which pane shows it; the active one when none is named.
+	 * @param repository The repository the board is in; the pane's own when none is named.
 	 */
-	selectBoard(key: string, paneId?: string): void;
+	selectBoard(key: string, paneId?: string, repository?: string): void;
 	/**
 	 * Show a board beside the one being read: in the pane that is not active,
 	 * adding the second pane when there is only one.
 	 * @param key The board key.
+	 * @param repository The repository the board is in; the active pane's when none is named.
 	 */
-	openBeside(key: string): void;
+	openBeside(key: string, repository?: string): void;
+	/**
+	 * Choose which checkout of a repository this machine reads, for every tab
+	 * and every agent (ADR 0050).
+	 * @param repository The repository identity.
+	 * @param root One of its known checkouts.
+	 */
+	chooseCheckout(repository: string, root: string): void;
 	refreshBoards(): void;
 	selectPane(paneId: string): void;
 	addPane(): void;
@@ -140,6 +170,7 @@ export type {
 	RecoveryPresentation,
 	ShellPresentation,
 	SettingsSurface,
+	ShellRepository,
 	ShellView,
 	ShellActions,
 };

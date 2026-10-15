@@ -15,6 +15,7 @@ import { act, fireEvent } from "@testing-library/react";
 import type { CodeBinding } from "@/shared/code-target";
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import {
+	PANE_VAULT,
 	drawing,
 	mountStage,
 	NOTHING_DRAWN,
@@ -420,7 +421,7 @@ test("a drill-down asking for the current variant follows it when it moves", asy
 		],
 	};
 	await act(async () => {
-		announceSemanticBoardChange("engine", 2);
+		announceSemanticBoardChange(PANE_VAULT, "engine", 2);
 	});
 	await settled();
 

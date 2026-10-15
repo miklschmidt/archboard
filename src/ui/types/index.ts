@@ -57,6 +57,10 @@ export interface WebSocketMessage {
 	/** The board a message is about, as a pane board key. */
 	board?: string;
 	identity?: BoardIdentity;
+	/** On `pane_board`: the vault the pane is in now (ADR 0050). */
+	vault?: string;
+	/** On `pane_board`: the repository that vault is listed under, or null. */
+	repository?: string | null;
 	/**
 	 * On `board_note`: a semantic board changed. The panes showing that board
 	 * ask the server for a new picture; nothing about a pane's own state follows
@@ -196,4 +200,16 @@ export interface PaneStatus {
 	doing: DoingEntry[];
 	/** The board version this pane last heard about, or null before any news. */
 	version: number | null;
+	/**
+	 * The vault the pane is in, as the server last said (ADR 0050), or null
+	 * before the pane is known. Opaque: what the pane names on its calls, never
+	 * shown and never in an address.
+	 */
+	vault: string | null;
+	/**
+	 * The repository the pane shows, by identity or by an untracked vault's
+	 * registry name, or null when no listed repository reads its vault. This is
+	 * what the address and the navigator name.
+	 */
+	repository: string | null;
 }

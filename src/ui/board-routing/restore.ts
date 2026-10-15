@@ -33,7 +33,12 @@ import type { WorkspacePort } from "@/ui/board-routing/contracts";
 type RestoreStep =
 	| { readonly kind: "close"; readonly paneId: string }
 	| { readonly kind: "add" }
-	| { readonly kind: "open"; readonly paneId: string; readonly boardKey: string }
+	| {
+			readonly kind: "open";
+			readonly paneId: string;
+			readonly boardKey: string;
+			readonly repository: string | null;
+	  }
 	| { readonly kind: "read"; readonly paneId: string; readonly view: string | null }
 	| { readonly kind: "focus"; readonly paneId: string };
 
@@ -142,7 +147,7 @@ function stepKey(step: RestoreStep, displayed: WorkspaceAddress): string {
 		case "add":
 			return `add:${displayed.panes.length}`;
 		case "open":
-			return `open:${step.paneId}:${step.boardKey}`;
+			return `open:${step.paneId}:${String(step.repository)}:${step.boardKey}`;
 		case "read":
 			return `read:${step.paneId}:${step.view ?? ""}`;
 		default:
@@ -240,8 +245,8 @@ interface RestoreCommands {
 	 * @returns Whether the workspace changed.
 	 */
 	readonly apply: (step: RestoreStep) => boolean;
-	/** Take the command slot and point a pane at a board. */
-	readonly open: (paneId: string, boardKey: string) => void;
+	/** Take the command slot and point a pane at a board of a repository, or of its own. */
+	readonly open: (paneId: string, boardKey: string, repository: string | null) => void;
 }
 
 /** Where a restore got to, and whether anything more can be done right now. */
@@ -282,7 +287,7 @@ function advanceRestore(
 		}
 		current = { ...current, attempted: new Set(current.attempted).add(outcome.key) };
 		if (outcome.step.kind === "open") {
-			commands.open(outcome.step.paneId, outcome.step.boardKey);
+			commands.open(outcome.step.paneId, outcome.step.boardKey, outcome.step.repository);
 			return { restore: current, waiting: true };
 		}
 		if (commands.apply(outcome.step)) {

@@ -159,7 +159,9 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 	// Laid out here and kept again, as a picture of the new version.
 	const keptAfter = await pollUntil(
 		() => keptPictures(browser),
-		(kept) => Object.keys(kept).some((key) => JSON.parse(key)[5] === 2),
+		// A kept picture's key starts with its vault, board, variant, view,
+		// comparison and layout; its version comes next.
+		(kept) => Object.keys(kept).some((key) => JSON.parse(key)[6] === 2),
 		"the new version's picture to be kept",
 		WAIT,
 	);

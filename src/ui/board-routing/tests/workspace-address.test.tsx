@@ -26,6 +26,8 @@ function noop(): void {
 interface FakePane {
 	paneId: string;
 	boardKey: string | null;
+	/** The repository the board is in, or null for the pane's own. */
+	repository: string | null;
 	/** The view a semantic board is being read through, or null. */
 	view: string | null;
 }
@@ -94,7 +96,7 @@ function fakeShell(
 				notify = noop;
 			};
 		},
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, view: null })),
+		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, repository: null, view: null })),
 		opens: [] as HeldOpen[],
 		unreachable: [] as string[],
 		addressing: null,
@@ -180,7 +182,7 @@ function fakeShell(
 				if (shell.panes.length > 1) {
 					return false;
 				}
-				shell.panes.push({ paneId: "B", boardKey: "scratch", view: null });
+				shell.panes.push({ paneId: "B", boardKey: "scratch", repository: null, view: null });
 				active = "B";
 				return true;
 			},
