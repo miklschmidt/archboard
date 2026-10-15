@@ -12,6 +12,7 @@
 // it can say it has read up to.
 
 import { mintId } from "@/shared/ids/ids";
+import { MoveEndSchema, type MoveEnd } from "@/shared/semantic-board/index";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { onBoardBroadcast } from "@/server/archboard/lib/pane-registry";
 
@@ -90,8 +91,13 @@ type SettledAnnouncement = {
 			readonly renamedFrom?: string;
 	  }
 	| {
-			/** The board is gone: it was discarded, and has no version to land at. */
+			/** The board is gone from this vault, and has no version to land at here. */
 			readonly discarded: true;
+			/**
+			 * Where it went, when a move took it to another repository's vault
+			 * (ADR 0051) rather than a discard deleting it.
+			 */
+			readonly movedTo?: MoveEnd;
 	  }
 );
 
@@ -104,7 +110,8 @@ type SettledAnnouncement = {
  * right on its own. A shape with one author cannot drift from itself.
  *
  * A discarded board carries no version, as a board removed by somebody else
- * carries none: a pane told either reads the board again and finds it gone.
+ * carries none: a pane told either reads the board again and finds it gone. A
+ * board moved away is gone from its vault the same way, and says where it went.
  * @param announcement What the write says about itself.
  * @returns The fields the `board_note` message carries.
  */
@@ -112,10 +119,11 @@ function settledChangeFields(announcement: SettledAnnouncement): {
 	semantic: true;
 	by: string | null;
 	heldAs: string;
-} & ({ version: number; renamedFrom?: string } | { discarded: true }) {
+} & ({ version: number; renamedFrom?: string } | { discarded: true; movedTo?: MoveEnd }) {
 	const settled = { semantic: true as const, by: announcement.by, heldAs: announcement.heldAs };
 	if (!("version" in announcement)) {
-		return { ...settled, discarded: true };
+		const { movedTo } = announcement;
+		return { ...settled, discarded: true, ...(movedTo === undefined ? {} : { movedTo }) };
 	}
 	const { version, renamedFrom } = announcement;
 	return { ...settled, version, ...(renamedFrom === undefined ? {} : { renamedFrom }) };
@@ -128,6 +136,10 @@ function settledChangeFields(announcement: SettledAnnouncement): {
  * @returns The line a context reader is given.
  */
 function changeText(message: WebSocketMessage, board: string): string {
+	const moved = MoveEndSchema.safeParse(message["movedTo"]);
+	if (moved.success) {
+		return `${board} moved to ${moved.data.repository ?? `the untracked vault ${moved.data.vault}`}`;
+	}
 	if (message["discarded"] === true) {
 		return `${board} was discarded`;
 	}

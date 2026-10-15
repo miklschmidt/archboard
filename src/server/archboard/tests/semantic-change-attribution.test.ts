@@ -76,3 +76,14 @@ test("a change carries the session that wrote it, or nothing at all", () => {
 	expect(outside[0]?.by).toBeNull();
 	expect(outside[0]?.board).toBe("payments");
 });
+
+test("a board moved to another repository is gone from its vault, and the feed says where it went", () => {
+	// A move announces the board gone from the source vault as a discard does,
+	// so a thread told about it there would read that it was deleted.
+	const to = { vault: "/product/.archboard/vault", repository: "github.com/acme/product" };
+	const moved = announced({ discarded: true, movedTo: to, by: null, heldAs: "claim-7c40IV7N" });
+	const discarded = announced({ discarded: true, by: null, heldAs: "claim-7c40IV7N" });
+
+	expect(moved[0]?.text).toContain(to.repository);
+	expect(moved[0]?.text).not.toBe(discarded[0]?.text);
+});
