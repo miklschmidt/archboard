@@ -1631,6 +1631,66 @@
 			"classification": "board"
 		},
 		{
+			"path": "semantic move",
+			"introducedBy": "TASK-472.15",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic-move.ts",
+			"stdout": "json object",
+			"result": "the board as it now stands in the target vault, both ends of the move (vault and repository identity, and what the command registered for the target), and every drill-down it rewrote",
+			"diagnostics": "where the board went and at what version, and one line for each rewritten drill-down; a stopped move names the drill-downs it rewrote before it stopped",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "doing"],
+			"relationships": ["POST /api/semantic-boards/move"],
+			"semantics": "moves the whole note, every variant, former name and id unchanged, into the vault found from --to as -C finds one, registering what holds it when the registry does not know it; drill-downs in the source vault into the board are rewritten to name the target's identity and the board's own into the source vault to name the source's; panes on the board follow it into the target vault and the mover's claim ends; two checkouts of one identity, a name or former name the target has, a drill-down into an untracked vault and a holder of the board or of its name in the target are refused",
+			"ordering": "version stated, target vault found and registered, then on the server: the name's lease in the target and the board's lease in the source, expected-version check, refusals, the target note, each rewritten source board under its own lease without waiting, and the source note deleted last; a stopped move leaves the board in both vaults and the same move run again finishes it",
+			"nextFields": ["version", "to.vault", "to.repository", "to.registered", "rewritten[]"],
+			"workflow": "necessary composition",
+			"effects": ["local-read", "server-state-write"],
+			"refusals": [
+				{
+					"code": "SERVER_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "EXPECT_VERSION_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				},
+				{
+					"code": "MOVE_SAME_REPOSITORY",
+					"exit": 2
+				},
+				{
+					"code": "MOVE_NEEDS_IDENTITY",
+					"exit": 2
+				},
+				{
+					"code": "BOARD_EXISTS",
+					"exit": 5
+				},
+				{
+					"code": "MOVE_STOPPED",
+					"exit": 5
+				}
+			],
+			"classification": "board"
+		},
+		{
 			"path": "semantic show",
 			"introducedBy": "TASK-171",
 			"parserOwner": "CommandContract concrete Commander parser",

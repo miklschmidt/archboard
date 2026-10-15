@@ -311,6 +311,13 @@
 					"owner": "src/runtime/semantic-board-store/tests/drill-down-repository.test.ts (the link without repo stays local, the chosen checkout's vault, the target's level, a former or recased name, the vault's own identity, an unknown or gone repository, no write to the other vault); tests/system/cli/drill-down-repository.test.ts (archboard check over two checkouts with a registry of their own); src/shared/semantic-board/tests/listing.test.ts (the schema refuses a path; the listed link carries repo) and comparison.test.ts (a changed repo is a changed drill-down). Mechanical validation: no Flask scenario links to a board of another repository"
 				},
 				{
+					"path": "archboard semantic move <board> --to <dir> --expect-version <n> --doing <line>: the whole board, with every variant, former name and id, into the vault found from --to; the drill-downs whose meaning the move changes rewritten to name a repository identity and listed in rewritten; MOVE_SAME_REPOSITORY, BOARD_EXISTS, MOVE_NEEDS_IDENTITY, BOARD_HELD, MOVE_STOPPED (the board in both vaults until the same move runs again)",
+					"expectedUse": "only when the user asks to move a board to the repository it belongs in; a stopped move is run again, never repaired by hand, and each repository commits its own half",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests/move.test.ts (the whole note, both rewrite directions, each refusal, the stopped move and its re-run); tests/system/cli/semantic-move.test.ts (the command through an owned server: the answer, the files in both vaults, the target registered, the panes of the source vault, a refusal's exit status). Mechanical validation: no Flask scenario has a second repository to move a board to"
+				},
+				{
 					"path": "detail boards separate from proposals",
 					"expectedUse": "the existing detail board is reused, not recreated",
 					"scenarios": ["S04"],
