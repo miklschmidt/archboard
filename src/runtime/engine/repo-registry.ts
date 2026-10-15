@@ -49,14 +49,12 @@ import {
 	type UntrackedVault,
 	type UntrackedVaultStatus,
 } from "@/runtime/engine/lib/registry-file";
+import { VAULT_DIRECTORY, vaultHolder } from "@/runtime/engine/vault-finder";
 import type {
 	ConfigurableLanguage,
 	ConfiguredServer,
 	LanguageServers,
 } from "@/shared/language-servers/index";
-
-/** A vault is the `.archboard/vault` of a directory (ADR 0049). */
-const VAULT_DIRECTORY = path.join(".archboard", "vault");
 
 /** How a caller cancels the git calls a declaration has to make. */
 interface DeclareOptions {
@@ -116,18 +114,6 @@ function listRegistry(): RegistryListing {
  */
 function chosenCheckouts(): RegisteredRepoStatus[] {
 	return listRegistry().checkouts.filter((entry) => entry.chosen);
-}
-
-/**
- * The nearest directory at or above this one that holds a vault.
- * @param dir The directory to start from.
- * @returns The directory that holds `.archboard/vault`, or undefined.
- */
-function vaultHolder(dir: string): string | undefined {
-	for (let holder = dir; ; holder = path.dirname(holder)) {
-		if (isDirectory(path.join(holder, VAULT_DIRECTORY))) return holder;
-		if (path.dirname(holder) === holder) return undefined;
-	}
 }
 
 /**
