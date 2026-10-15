@@ -12,7 +12,9 @@
 // A drill-down that already names a repository keeps it, unless it names the
 // source vault's own identity and opens the moved board, which leaves that
 // vault. A drill-down on the moved board that opens the moved board itself
-// opens it in its new vault as it did in the old one, and is left alone.
+// opens it in its new vault as it did in the old one, and is left alone; one
+// that opens it through the source vault's identity names no repository from
+// now on, and so opens it in its new vault too.
 //
 // This half is pure: it reads no file. Which board a name opens is a question
 // about the source vault, answered by the caller (`move.ts`).
@@ -84,7 +86,8 @@ function inboundRewrite(
 
 /**
  * What a drill-down on the moved board becomes: one that opens another board
- * of the source vault names the source's identity.
+ * of the source vault names the source's identity, and one that opens the
+ * moved board itself through the source's identity names none.
  * @param identities The two identities of the move.
  * @param opensMoved Whether a board name, read in the source vault, opens the moved board.
  * @returns The rewrite, answering a drill-down that needs an identity the
@@ -95,7 +98,12 @@ function outboundRewrite(
 	opensMoved: (name: string) => boolean,
 ): DrillRewrite {
 	return (drill) => {
-		if (drill.repo !== undefined || opensMoved(drill.board)) return null;
+		if (drill.repo !== undefined) {
+			if (drill.repo !== identities.source || !opensMoved(drill.board)) return null;
+			const { repo: _left, ...local } = drill;
+			return local;
+		}
+		if (opensMoved(drill.board)) return null;
 		return identities.source === undefined ? drill : { ...drill, repo: identities.source };
 	};
 }

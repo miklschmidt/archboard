@@ -343,6 +343,20 @@ test("a copy in the target that changed since the move stopped is not overwritte
 	expect(holds(vaults.meta, "Tickets")).toBe(true);
 });
 
+test("a link on the moved board to itself through the source repository opens it where it went", async () => {
+	await create(vaults.meta, "Loop", [
+		{ name: "Web", kind: "app" },
+		{
+			...opening("Again", "Loop"),
+			drillDown: { board: "Loop", variant: { kind: "current" }, repo: META },
+		},
+	]);
+
+	expect((await move("Loop", vaults.meta, vaults.product)).outcome).toBe("moved");
+
+	expect(drillOf(vaults.product, "Loop", "Again")?.repo).toBeUndefined();
+});
+
 test("a lease that a stopped writer left on a board the move rewrites does not stop the move", async () => {
 	await create(vaults.meta, "Stock");
 	await create(vaults.meta, "Shelf", [{ name: "Web", kind: "app" }, opening("Open", "Stock")]);
