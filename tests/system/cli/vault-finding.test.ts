@@ -174,6 +174,18 @@ test("a registry that cannot be written is a warning, and the command still answ
 	expect(answered.stderr).not.toBe("");
 });
 
+test("semantic record refuses in a checkout that is not the chosen one of its repository", () => {
+	// The page names the repository and reads its chosen checkout, which is shop.
+	const clone = fixture.repository("shop-clone", `https://${SHOP}.git`);
+	holdingVault(clone);
+	expect(listed(clone).vault.registered).toMatchObject({ root: clone, chosen: false });
+	const out = join(fixture.nowhere, "tour.mp4");
+	const refused = archboard(["semantic", "record", "Tour", "--out", out], clone);
+	expect(refused.status, refused.failure).toBe(2);
+	expect(refused.stdout).toBe("");
+	expect(existsSync(out)).toBe(false);
+});
+
 test("inside a checkout without a vault a command refuses, and creates and registers nothing", () => {
 	const before = existsSync(fixture.registry) ? readFileSync(fixture.registry) : null;
 	const refused = archboard(["semantic"], join(billing, "src"));
