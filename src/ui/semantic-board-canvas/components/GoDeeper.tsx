@@ -257,7 +257,7 @@ function placeRefusal(
 	}
 	return {
 		slot: "semantic-drill-unreachable",
-		words: `${board} is a board of ${place.repo}, ${UNREACHABLE_WORDS[place.state]}. Choose another checkout in its menu in Board navigation.`,
+		words: `${board} is a board of ${place.repo}, ${UNREACHABLE_WORDS[place.state]}. Choose a checkout with a vault in its menu in Board navigation, or add one with archboard repo add <directory>.`,
 	};
 }
 
