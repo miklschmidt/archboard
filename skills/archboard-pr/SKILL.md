@@ -18,7 +18,7 @@ A reviewer reads a pull request to learn what changes, why, and what the merge
 can break. The body answers that in three sections, and in nothing else:
 
 - **Summary**: the picture of the change, a few sentences, and for a change
-  across several parts a short narrated walkthrough.
+  across several parts a narrated walkthrough.
 - **Evidence**: a before and an after that show that the change works.
 - **Merge Danger**: whether the merge can be walked back, and what it can
   break.
@@ -246,10 +246,10 @@ when the user asks, or when the change crosses three or more parts, or when an
 order or a protocol matters. A change of one or two parts gets no video: the
 picture already shows it.
 
-Follow [walkthrough](references/walkthrough.md): three beats, about 75
-seconds, drawn like the picture and against the same variant. The first beat
-says why the change exists and where it sits. The last says where to look
-closely.
+Follow [walkthrough](references/walkthrough.md): one beat for each point the
+reviewer needs, drawn like the picture and against the same variant. The
+first beat says why the change exists and where it sits. The last says where
+to look closely.
 
 Done: the video, its chapters and its transcript are in `$tmp`, or you can
 name why there is none.
@@ -356,8 +356,8 @@ Check before you post. Done: every line holds.
 - [ ] No sentence breaks the never-list.
 - [ ] The picture is drawn with Blocks, `--theme auto`, a title and a
       horizontal legend, against `<below>`, and it has alt text.
-- [ ] A video has three beats, or four for a small view, is under 10 MB,
-      and has its transcript collapsed under it.
+- [ ] Each beat of a video makes one point, and the transcript is collapsed
+      under the video.
 
 ## 7. Put it in the pull request
 
