@@ -28,6 +28,11 @@ type VaultOrigin = (typeof VAULT_ORIGINS)[number];
 interface VaultSearch {
 	/** What `-C` named, as the person wrote it, or null when it was not given. */
 	readonly directory: string | null;
+	/**
+	 * The option that named the directory, as a refusal names it back: `-C`
+	 * unless said, or `--to` for the vault a board moves to.
+	 */
+	readonly option?: string;
 	/** The value of `ARCHBOARD_VAULT`, or undefined when it is not set. */
 	readonly environment: string | undefined;
 	/** The working directory, which a relative `-C` or `ARCHBOARD_VAULT` resolves against. */
@@ -82,30 +87,49 @@ function vaultHolder(dir: string): string | undefined {
  * Where a search started, in words.
  * @param origin How the start directory was given.
  * @param directory The start directory.
+ * @param option The option that named it, when one did.
  * @returns The phrase.
  */
-function startPhrase(origin: Exclude<VaultOrigin, "environment">, directory: string): string {
+function startPhrase(
+	origin: Exclude<VaultOrigin, "environment">,
+	directory: string,
+	option: string,
+): string {
 	return origin === "-C"
-		? `The directory -C names, ${directory},`
+		? `The directory ${option} names, ${directory},`
 		: `The working directory, ${directory},`;
 }
 
 /**
  * A refusal for a search that found nothing.
  * @param refusal What the search found instead.
+ * @param option The option that named the directory, when it was not `-C`.
  * @returns The finding.
  */
-function notFound(refusal: Omit<VaultNotFound, "code" | "message">): VaultFinding {
-	return { ok: false, code: "VAULT_NOT_FOUND", ...refusal, message: notFoundMessage(refusal) };
+function notFound(
+	refusal: Omit<VaultNotFound, "code" | "message">,
+	option: string | undefined,
+): VaultFinding {
+	return {
+		ok: false,
+		code: "VAULT_NOT_FOUND",
+		...refusal,
+		message: notFoundMessage(refusal, option),
+	};
 }
 
 /**
  * What a refusal says: what happened, the rule, and the ways out.
  * @param refusal The refusal.
+ * @param named The option that named the directory, and the one that names another, when it was not `-C`.
  * @returns The message.
  */
-function notFoundMessage(refusal: Omit<VaultNotFound, "code" | "message">): string {
+function notFoundMessage(
+	refusal: Omit<VaultNotFound, "code" | "message">,
+	named: string | undefined,
+): string {
 	const { directory, origin, checkoutRoot } = refusal;
+	const option = named ?? "-C";
 	if (origin === "environment") {
 		return (
 			`ARCHBOARD_VAULT names ${directory}, which is not a directory. A set ARCHBOARD_VAULT decides the vault ` +
@@ -114,23 +138,23 @@ function notFoundMessage(refusal: Omit<VaultNotFound, "code" | "message">): stri
 		);
 	}
 	if (refusal.reason === "directory-missing") {
-		return `-C names ${directory}, which is not a directory. Nothing was done.`;
+		return `${option} names ${directory}, which is not a directory. Nothing was done.`;
 	}
-	const start = startPhrase(origin, directory);
+	const start = startPhrase(origin, directory, option);
 	if (refusal.reason === "checkout-without-vault") {
 		const root = checkoutRoot ?? directory;
 		return (
 			`${start} is inside the git checkout ${root}, which has no ${VAULT_DIRECTORY} at its root. ` +
 			`Inside a checkout a command uses only the vault at the checkout root, and a vault above the checkout is never used. ` +
 			`Set the repository up with \`archboard install-skill\` in ${root}, or create ${path.join(root, VAULT_DIRECTORY)}, ` +
-			`or name another directory with -C <dir>. Nothing was done.`
+			`or name another directory with ${option} <dir>. Nothing was done.`
 		);
 	}
 	return (
 		`${start} is not inside a git checkout, and neither it nor any directory above it holds ${VAULT_DIRECTORY}. ` +
 		`Inside a checkout a command uses the vault at the checkout root; outside any checkout it uses the ${VAULT_DIRECTORY} ` +
 		`of the nearest enclosing directory. Run the command inside a checkout that has a vault, create ` +
-		`<dir>/${VAULT_DIRECTORY} in the directory that should hold the boards, or name one with -C <dir>. Nothing was done.`
+		`<dir>/${VAULT_DIRECTORY} in the directory that should hold the boards, or name one with ${option} <dir>. Nothing was done.`
 	);
 }
 
@@ -151,11 +175,13 @@ function realPath(directory: string): string {
  * The vault of the directory a search starts from.
  * @param start The start directory, absolute and existing.
  * @param origin How it was given.
+ * @param option The option that named it, when it was not `-C`.
  * @returns The finding.
  */
 async function vaultFrom(
 	start: string,
 	origin: Exclude<VaultOrigin, "environment">,
+	option: string | undefined,
 ): Promise<VaultFinding> {
 	const directory = realPath(start);
 	const root = await repoRootOf(directory);
@@ -163,11 +189,14 @@ async function vaultFrom(
 		const vault = path.join(root, VAULT_DIRECTORY);
 		return isDirectory(vault)
 			? { ok: true, found: { path: realPath(vault), origin, holder: root } }
-			: notFound({ reason: "checkout-without-vault", directory, origin, checkoutRoot: root });
+			: notFound(
+					{ reason: "checkout-without-vault", directory, origin, checkoutRoot: root },
+					option,
+				);
 	}
 	const holder = vaultHolder(directory);
 	return holder === undefined
-		? notFound({ reason: "none-enclosing", directory, origin })
+		? notFound({ reason: "none-enclosing", directory, origin }, option)
 		: {
 				ok: true,
 				found: {
@@ -186,19 +215,20 @@ async function vaultFrom(
  * @returns The vault, or why there is none.
  */
 async function findVault(search: VaultSearch): Promise<VaultFinding> {
+	const { option } = search;
 	if (search.directory !== null) {
 		const start = path.resolve(search.cwd, search.directory);
 		return isDirectory(start)
-			? vaultFrom(start, "-C")
-			: notFound({ reason: "directory-missing", directory: start, origin: "-C" });
+			? vaultFrom(start, "-C", option)
+			: notFound({ reason: "directory-missing", directory: start, origin: "-C" }, option);
 	}
 	if (search.environment !== undefined && search.environment !== "") {
 		const named = path.resolve(search.cwd, search.environment);
 		return isDirectory(named)
 			? { ok: true, found: { path: realPath(named), origin: "environment", holder: null } }
-			: notFound({ reason: "directory-missing", directory: named, origin: "environment" });
+			: notFound({ reason: "directory-missing", directory: named, origin: "environment" }, option);
 	}
-	return vaultFrom(search.cwd, "working-directory");
+	return vaultFrom(search.cwd, "working-directory", option);
 }
 
 export {

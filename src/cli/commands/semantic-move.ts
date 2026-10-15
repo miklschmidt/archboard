@@ -167,7 +167,7 @@ const semanticMoveContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic move");
-		const target = await findVaultOf(input.to);
+		const target = await findVaultOf(input.to, "--to");
 		const moved = await moveSemanticBoardOnServer(input.name, target.path);
 		const result: MoveResult = {
 			...moved,
