@@ -26,6 +26,7 @@ import { forgetDoing } from "@/runtime/engine/board-doing";
 import { BoardMoveInputSchema } from "@/shared/semantic-board/index";
 import {
 	moveSemanticBoard,
+	previewSemanticMove,
 	semanticBoardAddress,
 	type SemanticMoveResult,
 } from "@/runtime/semantic-board-store/index";
@@ -237,4 +238,52 @@ async function moveRoute(
 	res.json({ success: true, ...moveFields(result), ...(chose === undefined ? {} : { chose }) });
 }
 
-export { moveRoute };
+/**
+ * The board and the target vault a move preview names, or nothing when the
+ * refusal has already been sent.
+ * @param req The request.
+ * @param res Its response.
+ * @returns The board, and the target's canonical directory.
+ */
+function previewTarget(req: Request, res: Response): { board: string; to: string } | null {
+	const board = req.query["board"];
+	if (typeof board !== "string" || board === "") {
+		res.status(400).json({ success: false, error: "A move preview names its board in ?board=." });
+		return null;
+	}
+	const target = namedVault(req.query["to"]);
+	if (target.ok) return { board, to: target.vault };
+	const { status, code, error } = target.refusal;
+	res.status(status).json({ success: false, code, error });
+	return null;
+}
+
+/**
+ * What a move would do now: every drill-down it rewrites, or why it would be
+ * refused, in the refusal's own terms (ADR 0051). The browser asks before a
+ * person moves a board, so it names the target vault as a move does, in `?to=`.
+ * Nothing is held or written.
+ * @param req The request.
+ * @param res Its response.
+ */
+function movePreviewRoute(req: Request, res: Response): void {
+	const asked = previewTarget(req, res);
+	if (asked === null) return;
+	let preview: ReturnType<typeof previewSemanticMove>;
+	try {
+		preview = previewSemanticMove({ vault: vaultOfRequest(req), ...asked });
+	} catch (error) {
+		res
+			.status(400)
+			.json({ success: false, error: error instanceof Error ? error.message : String(error) });
+		return;
+	}
+	if (preview.outcome === "rejected") {
+		answerRefusal(res, preview);
+		return;
+	}
+	const { from, to, rewritten } = preview;
+	res.json({ success: true, version: preview.board.version, from, to, rewritten });
+}
+
+export { movePreviewRoute, moveRoute };

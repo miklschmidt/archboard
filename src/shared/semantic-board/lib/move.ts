@@ -66,10 +66,26 @@ const BoardMoveAnswerSchema = z.object({
 });
 type BoardMoveAnswer = z.infer<typeof BoardMoveAnswerSchema>;
 
+/**
+ * What a move would do now, asked before a person moves a board: the version
+ * the move is to state, both ends, and every drill-down it would rewrite, each
+ * as it would read. Nothing is held or written to answer it.
+ */
+const BoardMovePreviewSchema = z.object({
+	success: z.literal(true),
+	version: z.int(),
+	from: MoveEndSchema,
+	to: MoveEndSchema,
+	rewritten: z.array(MovedDrillDownSchema),
+});
+type BoardMovePreview = z.infer<typeof BoardMovePreviewSchema>;
+
 export {
 	BoardMoveAnswerSchema,
 	type BoardMoveAnswer,
 	BoardMoveInputSchema,
+	BoardMovePreviewSchema,
+	type BoardMovePreview,
 	MoveEndSchema,
 	type MoveEnd,
 	MovedDrillDownSchema,

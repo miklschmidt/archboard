@@ -274,6 +274,8 @@ export {
 	BoardMoveAnswerSchema,
 	type BoardMoveAnswer,
 	BoardMoveInputSchema,
+	BoardMovePreviewSchema,
+	type BoardMovePreview,
 	MoveEndSchema,
 	type MoveEnd,
 	MovedDrillDownSchema,
