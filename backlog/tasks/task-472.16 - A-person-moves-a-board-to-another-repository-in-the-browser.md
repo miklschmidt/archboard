@@ -1,9 +1,11 @@
 ---
 id: TASK-472.16
 title: A person moves a board to another repository in the browser
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-14 21:49'
+updated_date: '2026-10-15 06:33'
 labels:
   - frontend
 dependencies:
@@ -37,3 +39,14 @@ The owner wants a person to move a board without an agent. ADR 0051 makes this t
 - [ ] #6 PRODUCT.md's constraints and AGENTS.md's invariants name the move as the second browser write beside a take-back, and the archboard skill mentions it
 - [ ] #7 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Preview: previewSemanticMove in the store runs the move's own checks and rewrites against both vaults on disk, holding and writing nothing, and GET /api/semantic-boards/move-preview?vault=&board=&to= answers {version, from, to, rewritten} or the refusal in the move's codes and statuses. Owner: move.test.ts (the preview lists exactly what the move then rewrites, and changes nothing).
+2. The move: the browser posts the existing POST /api/semantic-boards/move with origin human (no doing line, ADR 0051 and ADR 0016), the board, the preview's version as expectedVersion and move.to; the browser origin guard already holds every route to the page's own origin, as for a take-back. The server already moves every pane on the board into the target vault, chooses a non-chosen target checkout, and announces.
+3. UI module src/ui/board-move: a Move board control beside the pane's present and close controls (PaneControls) that opens a dialog: a radio list of the repositories the board can move to (every ready repository and untracked vault except the pane's own identity), the preview for the one chosen (each drill-down it rewrites: board, part and what it will open), a refusal in the move's terms, and Move and Cancel. Keyboard: the dialog primitive traps focus, the radio group moves with arrows, Escape cancels; the control's accessible name is 'Move <board> to another repository'.
+4. Owners: the store test for the preview; a browser owner (in an existing drill or address owner) that moves a board by keyboard, sees the rewrite listed, and finds the pane on the board in its new repository; a refused move (a target that already has the board) says why.
+5. Docs: PRODUCT.md's constraints and AGENTS.md's invariants name the move as the second browser write beside a take-back; the archboard skill mentions it; docs/agents/frontend.md if the module needs a line.
+6. Boards: proposals named TASK-472.16 on Browser application (the board-move module and its calls) and Archboard server routes (the preview route), drawn after the code lands.
+<!-- SECTION:PLAN:END -->

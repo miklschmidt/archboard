@@ -387,3 +387,44 @@ test("a link in the target vault into the moved board through the source reposit
 		[vaults.product, "Billing desk"],
 	]);
 });
+
+/**
+ * Rewritten drill-downs in an order that does not depend on the walk.
+ * @param all The drill-downs.
+ * @returns Each as one line, sorted.
+ */
+function lines(all: readonly ContractModule.MovedDrillDown[]): string[] {
+	return all.map((one) => JSON.stringify(one)).toSorted();
+}
+
+test("a preview lists every drill-down the move then rewrites, and holds and writes nothing", async () => {
+	await create(vaults.meta, "Invoicing", [
+		{ name: "Invoices", kind: "app" },
+		opening("Books", "Ledger"),
+	]);
+	await create(vaults.meta, "Market", [
+		{ name: "Till", kind: "app" },
+		opening("Bill", "Invoicing"),
+	]);
+	const versions = () => [
+		board(vaults.meta, "Invoicing").version,
+		board(vaults.meta, "Market").version,
+	];
+	const before = versions();
+
+	const preview = store.previewSemanticMove({
+		vault: vaults.meta,
+		board: "Invoicing",
+		to: vaults.product,
+	});
+
+	expect(preview.outcome).toBe("ready");
+	expect(versions()).toEqual(before);
+	expect(holds(vaults.product, "Invoicing")).toBe(false);
+	expect(boardLockState(vaults.meta, "invoicing")).toBeNull();
+	const moved = await move("Invoicing", vaults.meta, vaults.product);
+	if (preview.outcome !== "ready" || moved.outcome !== "moved") throw new Error("not moved");
+	expect(preview.rewritten.map((one) => one.board)).toContain("Market");
+	expect(lines(preview.rewritten)).toEqual(lines(moved.rewritten));
+	expect(preview.board.version).toBe(before[0]);
+});

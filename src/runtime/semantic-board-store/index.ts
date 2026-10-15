@@ -73,6 +73,10 @@ export {
 	moveSemanticBoard,
 } from "@/runtime/semantic-board-store/lib/move";
 export {
+	type SemanticMovePreview,
+	previewSemanticMove,
+} from "@/runtime/semantic-board-store/lib/move-preview";
+export {
 	unsettledAncestor,
 	type DescendantOutcome,
 	type Propagation,

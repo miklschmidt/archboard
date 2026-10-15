@@ -121,6 +121,12 @@ interface MovePlan {
 	readonly at: string;
 }
 
+/** What the checks read of a move: its two vaults, the version stated and both identities. */
+interface MoveCheck {
+	readonly command: Pick<SemanticMoveCommand, "vault" | "to" | "expectedVersion">;
+	readonly identities: MoveIdentities;
+}
+
 /**
  * Write one board under a lease this pass holds, checked as every write is.
  * @param vault The vault it is in.
@@ -166,7 +172,7 @@ interface Relink {
  * @param key The moved board's key.
  * @returns The boards.
  */
-function relinks(plan: MovePlan, key: string): Relink[] {
+function relinks(plan: MoveCheck, key: string): Relink[] {
 	const { command, identities } = plan;
 	const opensMoved = opensBoard(command.vault, key);
 	const landing = landingRewrite(identities, opensMoved);
@@ -243,7 +249,7 @@ interface CheckedMove {
  * @returns What moves, or why nothing does.
  */
 function checkedMove(
-	plan: MovePlan,
+	plan: MoveCheck,
 	location: SemanticBoardLocation,
 ): CheckedMove | SemanticWriteRejection {
 	const { command, identities } = plan;
@@ -510,4 +516,12 @@ async function moveSemanticBoard(command: SemanticMoveCommand): Promise<Semantic
 	return result;
 }
 
-export { type MoveWrite, type SemanticMoveCommand, type SemanticMoveResult, moveSemanticBoard };
+export {
+	checkedMove,
+	moveSemanticBoard,
+	type CheckedMove,
+	type MoveCheck,
+	type MoveWrite,
+	type SemanticMoveCommand,
+	type SemanticMoveResult,
+};
