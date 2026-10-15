@@ -85,6 +85,8 @@ function freshWorkhorseState(): CodexWorkbenchWorkhorseState {
 
 /**
  * Keep the turn running on a workhorse's thread from the turn notifications Codex sends about it.
+ * A turn starts on the thread the workhorse runs on now, and ends on the thread it started on,
+ * which New conversation may have left meanwhile.
  * @param workhorse The workhorse.
  * @param event A notification.
  * @param decoder Names threads and turns as Codex spells them.
@@ -95,20 +97,29 @@ function noteActiveTurn(
 	decoder: Pick<TrustedIdentityDecoder, "serializeCodexIdentity" | "adoptTurnId">,
 ): void {
 	const { notification } = event;
-	if (notification.method !== "turn/started" && notification.method !== "turn/completed") {
+	if (notification.method === "turn/completed") {
+		const running = workhorse.state.activeTurn;
+		if (
+			running !== null &&
+			decoder.serializeCodexIdentity(running.threadId) === notification.params.threadId
+		) {
+			workhorse.state.activeTurn = null;
+		}
+		return;
+	}
+	if (notification.method !== "turn/started") {
 		return;
 	}
 	const threadId = workhorse.components.workhorse.snapshot().threadId;
 	if (
-		threadId === null ||
-		decoder.serializeCodexIdentity(threadId) !== notification.params.threadId
+		threadId !== null &&
+		decoder.serializeCodexIdentity(threadId) === notification.params.threadId
 	) {
-		return;
+		workhorse.state.activeTurn = {
+			threadId,
+			turnId: decoder.adoptTurnId(notification.params.turn.id),
+		};
 	}
-	workhorse.state.activeTurn =
-		notification.method === "turn/started"
-			? { threadId, turnId: decoder.adoptTurnId(notification.params.turn.id) }
-			: null;
 }
 
 /**

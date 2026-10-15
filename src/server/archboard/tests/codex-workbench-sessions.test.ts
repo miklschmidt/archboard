@@ -256,6 +256,20 @@ test("a stop for one checkout interrupts only its workhorse's turn, and a stop f
 	expect(interrupts).toEqual([{ threadId: shopThread, turnId: decoder.adoptTurnId("turn-s") }]);
 });
 
+test("a turn that ends after New conversation left its thread leaves its workhorse with nothing to stop", async () => {
+	const { sessions, a, interrupts, startWorkhorseThread } = twoSessions();
+	const payments = a.workhorse(PAYMENTS);
+	startWorkhorseThread(payments.key, "thread-old");
+	sessions.onNotification(notification("thread-old", "turn/started", "turn-old"));
+
+	// New conversation moves the workhorse to a fresh thread while the old turn still runs.
+	startWorkhorseThread(payments.key, "thread-new");
+	sessions.onNotification(notification("thread-old", "turn/completed", "turn-old"));
+
+	expect(await a.stopWork(PAYMENTS)).toEqual([{ checkout: PAYMENTS, outcome: "idle" }]);
+	expect(interrupts).toEqual([]);
+});
+
 test("a workhorse stays linked when its tab's panes move to another checkout of its repository", () => {
 	const { sessions, a, cleared, startWorkhorseThread } = twoSessions();
 	const before = a.workhorse(PAYMENTS);
