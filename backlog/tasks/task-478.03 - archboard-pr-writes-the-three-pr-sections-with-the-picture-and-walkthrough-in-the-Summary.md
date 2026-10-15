@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-15 15:39'
-updated_date: '2026-10-15 17:12'
+updated_date: '2026-10-15 17:38'
 labels: []
 dependencies:
   - TASK-478.01
@@ -27,8 +27,8 @@ archboard-pr asks for ten explainer parts (SKILL.md section 4) and the user's /p
 <!-- AC:BEGIN -->
 - [x] #1 The skill writes one body with exactly Summary, Evidence and Merge Danger, credits the pr skill it follows, and no longer asks for What changed, Changed but not drawn, What it can reach, Reading order, Where to look closely, Proposed and built, Open it or a before render
 - [x] #2 The body carries no tool vocabulary and no account of the agent's process; the board, the proposal and what it is drawn against live in one HTML comment inside the markers, which an update reads
-- [x] #3 For a stack, the skill keeps one design board, puts each PR's proposal on it or on the drill-down board of one of its parts, branched from the proposal of the PR below, draws each picture `--against` that proposal with a title naming the design part, and opens the Summary with a line that gives the position and the neighbours
-- [x] #4 A narrated walkthrough of three or four beats and about 90 seconds sits under the picture, with chapters and transcript collapsed, and the Summary prose does not repeat it
+- [x] #3 For a stack, each board the stack changes carries one chain of proposals, each branched from the proposal of the nearest PR below on that board and drawn `--against` it, with parts named as the design names them and a title that names the design part; a board that nobody has built starts with a base draft; the Summary opens with a line that gives the position and the neighbours
+- [x] #4 A narrated walkthrough, with one beat for each point the reviewer needs and no limit on the number of beats, sits under the picture, with chapters and transcript collapsed, and the Summary prose does not repeat it
 - [x] #5 Evidence is one before and after; status news goes in a PR comment; an update replaces the whole section; no paragraph is copied from another PR's body
 - [x] #6 The skill carries one worked example body and points the agent at the repository's glossary; references/explainer.md is removed, and every remaining reference holds only what the skill still uses
 <!-- AC:END -->
@@ -48,10 +48,12 @@ archboard-pr asks for ten explainer parts (SKILL.md section 4) and the user's /p
 
 <!-- SECTION:NOTES:BEGIN -->
 Gate: bun run check passed at e92b4f82f plus the skill commits (exit 0, no failing test in any lane, serial browser lane included). Evidence for the criteria: the skill text at c5dbef837, and the three bodies a fresh agent wrote with it in TASK-478.04 (exactly three sections, the state comment the only archboard word, a stack line, pictures drawn against the proposal below, three-beat walkthroughs with chapters in the collapsed transcript, CI evidence). The trial notes led to the fixes in c5dbef837. tests/system/repository-policy skill-frontmatter and skill-links: 7 pass.
+
+The user decided that a walkthrough has no limit on its beats. The skill now asks for one beat for each point the reviewer needs. A video too large for the upload limit of the repository plan is handed to the user instead of being cut. Criteria 3 and 4 are restated to match the skill as built. Evidence: the skill text after the beat-limit commit, and skill-frontmatter and skill-links tests, 7 pass.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-archboard-pr now writes one body with Summary, Evidence and Merge Danger, after the MIT pr skill by Matt Pocock. The Summary holds a stack line, one to three sentences, one picture drawn --against the variant its proposal came from, and a three-beat narrated walkthrough with chapters inside the collapsed transcript. Board, proposal and against live in one hidden HTML comment. A never-list keeps tool words, process, negative-scope lists, copied paragraphs and status news out of the body. A stack keeps one chain per board, branched from the proposal below, names parts as the design does, and starts a board that nobody built with a base draft. references/explainer.md is gone, and the references were cut to what the skill uses (1,079 lines before, 964 after). A fresh agent followed it on Platform #599, #607 and #610 (TASK-478.04), and its notes led to c5dbef837. Commits a75db4380, c5dbef837.
+archboard-pr now writes one body with Summary, Evidence and Merge Danger, after the MIT pr skill by Matt Pocock. The Summary holds a stack line, one to three sentences, one picture drawn --against the variant its proposal came from, and a narrated walkthrough with one beat for each point the reviewer needs, its chapters inside the collapsed transcript. Board, proposal and against live in one hidden HTML comment. A never-list keeps tool words, process, negative-scope lists, copied paragraphs and status news out of the body. Each board of a stack keeps one chain, branched from the proposal below. Parts carry the design names, and a board that nobody built starts with a base draft. references/explainer.md is gone, and the references were cut to what the skill uses. A fresh agent followed it on Platform #599, #607 and #610 (TASK-478.04), and its notes led to c5dbef837.
 <!-- SECTION:FINAL_SUMMARY:END -->

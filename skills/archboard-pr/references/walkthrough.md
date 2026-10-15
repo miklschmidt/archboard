@@ -31,8 +31,8 @@ material whose parts interact a lot, and it disappears with simple material
 - Time: about twice the length of the talk.
 - Size: GitHub takes a video of up to 10 MB on a free plan and 100 MB on a paid
   plan [GitHub, attaching files]. Archboard recordings measured 3.2 to 6.7 MB a
-  minute, and a dense view costs the most. A talk of about 75 seconds fits
-  every plan.
+  minute, and a dense view costs the most. The voice speaks 20 to 25 seconds
+  for each beat, whatever the length of its body.
 
 `archboard semantic record --help` lists the options.
 
@@ -44,14 +44,13 @@ ephemeral board to the head branch's draft, in one edit with
 skill's walkthroughs section gives the payload rules for beats, subjects and
 views. In a stack, every proposal branched from this one takes the walkthrough
 too, and its removal: record it and remove it before you work on the
-proposal above. Write three beats, in this order, and a fourth only for a
-small view:
+proposal above. Write the beats in this order:
 
 1. **Why, and where.** Why the change exists, and where it sits: the design
    part it builds, and in a stack the pull request before it. No subjects: a
    beat with no subjects is about the whole picture.
-2. **The change.** One beat, or two for a small view, the most important
-   first. The
+2. **The changes.** One beat for each change that the reviewer must
+   understand, the most important first. The
    heading states what the pull request does ("The ledger now takes the
    lease"), not what is drawn ("The ledger"). The subjects are the two or
    three parts the beat is about, so the highlight lands while the voice
@@ -74,13 +73,8 @@ Rules for every beat:
 - It leaves out the history of the pull request and how anything was made
   [Mayer and Moreno: coherence].
 
-Keep the talk to about 75 seconds. The voice speaks 20 to 25 seconds for each
-beat, whatever the length of its body, so the number of beats sets the length.
-Viewers stay with a tutorial video for about 2 to 3 minutes, whatever its
-length [Guo et al.], and a reviewer has less patience than a student.
-
-Done: three beats, or four for a small view. Each beat has a `view`, the first
-has no subjects, and the last says where to look.
+Done: each beat makes one point and has a `view`, the first has no subjects,
+and the last says where to look.
 
 ## Record
 
@@ -106,10 +100,10 @@ Its beats speak of the change, and after the merge the proposal becomes the
 current architecture. The kept talk in `$tmp/talk` can render the video again
 with `semantic replay`, without the board.
 
-Done: the receipt names the video and its `talk`, its `bytes` is under 10 MB
-(10,000,000), and on a vault board `semantic compare` no longer lists the
-walkthrough. If the video is too large, cut a beat and record again: a
-shorter body barely shortens the talk.
+Done: the receipt names the video and its `talk`, and on a vault board
+`semantic compare` no longer lists the walkthrough. If gh refuses the upload
+for its size, post the body without the video, and give the user the video's
+path and size.
 
 ## Check the video
 
@@ -185,9 +179,6 @@ stays short.
   <https://www.uky.edu/~gmswan3/544/9_ways_to_reduce_CL.pdf>
 - Sweller: J. Sweller, "Visualisation and Instructional Design", 2002.
   <https://nielsolson.us/STLHE020409/SwellerVisualizationAndInstructionalDesign.pdf>
-- Guo et al.: P. Guo, J. Kim, R. Rubin, "How Video Production Affects Student
-  Engagement", Learning at Scale 2014.
-  <https://www.cs.rochester.edu/hci/pubs/pdfs/edX-MOOC-video-production-and-engagement_LAS-2014.pdf>
 - Brame: C. Brame, "Effective Educational Videos", CBE Life Sciences
   Education 2016 (a review).
   <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5132380/fullTextXML>
