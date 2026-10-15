@@ -11,22 +11,16 @@
 import { vaultIdentity } from "@/runtime/code-target/index";
 import type { MoveEnd, MovedDrillDown, SemanticBoard } from "@/shared/semantic-board/index";
 import { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";
-import {
-	locateSemanticBoard,
-	type SemanticBoardLocation,
-} from "@/runtime/semantic-board-store/lib/location";
-import {
-	checkedMove,
-	type CheckedMove,
-	type MoveCheck,
-} from "@/runtime/semantic-board-store/lib/move";
+import { locateSemanticBoard } from "@/runtime/semantic-board-store/lib/location";
+import { checkedMove, type CheckedMove } from "@/runtime/semantic-board-store/lib/move";
 import {
 	boardAt,
 	sameRepositoryRefusal,
 	type MoveVaults,
 } from "@/runtime/semantic-board-store/lib/move-checks";
 import { rewriteDrillDowns } from "@/runtime/semantic-board-store/lib/move-drill-downs";
-import { rejected, type SemanticWriteRejection } from "@/runtime/semantic-board-store/lib/write";
+import { readSemanticBoardAtAsLeased } from "@/runtime/semantic-board-store/lib/read";
+import type { SemanticWriteRejection } from "@/runtime/semantic-board-store/lib/write";
 
 /** Which board to move, and where. */
 type SemanticMovePreviewCommand = MoveVaults & { readonly board: string };
@@ -60,33 +54,6 @@ function rewritesOf(to: string, checked: CheckedMove): MovedDrillDown[] {
 }
 
 /**
- * The move's own checks, run on the two vaults as they are on disk.
- * @param check The two vaults, and their identities.
- * @param location Where the board is in the source vault.
- * @returns What would move, or why nothing would.
- */
-function checkedNow(
-	check: Pick<MoveCheck, "identities"> & { readonly command: MoveVaults },
-	location: SemanticBoardLocation,
-): CheckedMove | SemanticWriteRejection {
-	try {
-		return checkedMove(
-			{ ...check, command: { ...check.command, expectedVersion: undefined } },
-			location,
-		);
-	} catch (error) {
-		// A board that only its own write can bring up to date is read by the move, not here.
-		const why = error instanceof Error ? error.message : String(error);
-		return rejected(
-			location,
-			null,
-			"BOARD_UNREADABLE",
-			`${location.name} cannot be read before the move: ${why}`,
-		);
-	}
-}
-
-/**
  * What moving one board into another repository's vault would do now, or why
  * the move would be refused.
  * @param command Which board, and where to.
@@ -100,9 +67,12 @@ function previewSemanticMove(
 	const identities = { source: vaultIdentity(command.vault), target: vaultIdentity(command.to) };
 	const same = sameRepositoryRefusal(command, identities, address);
 	if (same !== null) return same;
-	const checked = checkedNow(
+	// Read as the move's lease would read it: a board that awaits its migration
+	// is answered at the version the move then finds, and nothing is persisted.
+	const checked = checkedMove(
 		{ command, identities },
 		locateSemanticBoard(address.name, command.vault),
+		readSemanticBoardAtAsLeased,
 	);
 	if ("outcome" in checked) return checked;
 	return {

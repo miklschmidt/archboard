@@ -8,7 +8,15 @@
 // registry of their own.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	realpathSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { boardLockState, holdBoard, releaseHold } from "@/runtime/engine/board-lock";
@@ -388,15 +396,6 @@ test("a link in the target vault into the moved board through the source reposit
 	]);
 });
 
-/**
- * Rewritten drill-downs in an order that does not depend on the walk.
- * @param all The drill-downs.
- * @returns Each as one line, sorted.
- */
-function lines(all: readonly ContractModule.MovedDrillDown[]): string[] {
-	return all.map((one) => JSON.stringify(one)).toSorted();
-}
-
 test("a preview lists every drill-down the move then rewrites, and holds and writes nothing", async () => {
 	await create(vaults.meta, "Invoicing", [
 		{ name: "Invoices", kind: "app" },
@@ -406,9 +405,17 @@ test("a preview lists every drill-down the move then rewrites, and holds and wri
 		{ name: "Till", kind: "app" },
 		opening("Bill", "Invoicing"),
 	]);
+	await create(vaults.product, "Counter", [
+		{ name: "Till", kind: "app" },
+		{
+			...opening("Bill", "Invoicing"),
+			drillDown: { board: "Invoicing", variant: { kind: "current" }, repo: META },
+		},
+	]);
 	const versions = () => [
 		board(vaults.meta, "Invoicing").version,
 		board(vaults.meta, "Market").version,
+		board(vaults.product, "Counter").version,
 	];
 	const before = versions();
 
@@ -422,9 +429,60 @@ test("a preview lists every drill-down the move then rewrites, and holds and wri
 	expect(versions()).toEqual(before);
 	expect(holds(vaults.product, "Invoicing")).toBe(false);
 	expect(boardLockState(vaults.meta, "invoicing")).toBeNull();
-	const moved = await move("Invoicing", vaults.meta, vaults.product);
-	if (preview.outcome !== "ready" || moved.outcome !== "moved") throw new Error("not moved");
-	expect(preview.rewritten.map((one) => one.board)).toContain("Market");
-	expect(lines(preview.rewritten)).toEqual(lines(moved.rewritten));
-	expect(preview.board.version).toBe(before[0]);
+	if (preview.outcome !== "ready") throw new Error(preview.code);
+	const moved = await store.moveSemanticBoard({
+		vault: vaults.meta,
+		board: "Invoicing",
+		to: vaults.product,
+		writer,
+		expectedVersion: preview.board.version,
+	});
+	if (moved.outcome !== "moved") throw new Error(moved.outcome);
+	// The moved board's own link, the target vault's and the source vault's, in the move's order.
+	expect(preview.rewritten.map((one) => one.board)).toEqual(["Invoicing", "Counter", "Market"]);
+	expect(preview.rewritten).toEqual(moved.rewritten);
+});
+
+test("a preview of a board that awaits a migration writes nothing, and answers the version the move then states", async () => {
+	const file = store.locateSemanticBoard("Archive", vaults.meta).file;
+	// From before nodes carried their order: the next read under its lease migrates it.
+	const legacy = {
+		schemaVersion: "2.2.0",
+		kind: "semantic-board",
+		id: "archive1",
+		name: "Archive",
+		level: "service",
+		version: 3,
+		createdAt: "2026-09-11T00:00:00.000Z",
+		updatedAt: "2026-09-12T00:00:00.000Z",
+		views: [],
+		current: "v1",
+		variants: [
+			{
+				id: "v1",
+				name: "Initial",
+				lifecycle: "current",
+				content: { nodes: [{ id: "n1", name: "Store", kind: "module" }], edges: [] },
+			},
+		],
+	};
+	writeFileSync(file, `${JSON.stringify(legacy)}\n`);
+	const bytes = readFileSync(file, "utf8");
+
+	const preview = store.previewSemanticMove({
+		vault: vaults.meta,
+		board: "Archive",
+		to: vaults.product,
+	});
+
+	expect(readFileSync(file, "utf8")).toBe(bytes);
+	if (preview.outcome !== "ready") throw new Error(preview.code);
+	const moved = await store.moveSemanticBoard({
+		vault: vaults.meta,
+		board: "Archive",
+		to: vaults.product,
+		writer,
+		expectedVersion: preview.board.version,
+	});
+	expect(moved.outcome).toBe("moved");
 });
