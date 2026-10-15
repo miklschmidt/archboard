@@ -3,7 +3,9 @@
 // The one owner of which pane holds what: the navigator, the address bar and
 // `browser show` all come through here, so the server's answer is the single
 // account of what is on screen (ADR 0009). Nothing here writes a board — a
-// board is shown, not opened into existence.
+// board is shown, not opened into existence. An agent's show from a checkout
+// that is not the chosen one of its repository chooses it, because the app
+// reads the chosen checkout and the agent shows what it works on (ADR 0050).
 
 import type { Request, Response } from "express";
 
@@ -36,7 +38,12 @@ import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
 import { arrivedOnBoard, noBrowserBody } from "@/server/archboard/lib/pane-routes";
 import { vaultOfRequest } from "@/server/archboard/lib/request-vault";
 import { movePaneVault } from "@/server/archboard/lib/pane-vaults";
-import { repositoryOfVault } from "@/server/archboard/lib/repositories";
+import { placeOfVault, type VaultPlace } from "@/server/archboard/lib/repositories";
+import { followRegistry } from "@/server/archboard/lib/repository-routes";
+import {
+	chooseKnownCheckout,
+	repositoryOfVault as registeredRepositoryOf,
+} from "@/runtime/engine/repo-registry";
 
 /**
  * Point one pane at one board.
@@ -73,12 +80,9 @@ function showPaneRoute(req: Request, res: Response): void {
 	}
 	const key = paneBoardAddress(identity);
 	const moved = agentSwitch(body, pane, key);
-	// A pane named by a show of another repository's board moves into that
-	// repository's vault first, so the board's news reaches it from here on.
-	movePaneVault(pane.clientId, vault);
-	const repository = repositoryOfVault(vault);
-	sendToPane(pane.clientId, { type: "pane_board", identity, vault, repository }, key);
-	arrivedOnBoard(pane.clientId, key);
+	// An agent shows the board of its own checkout, so the app reads that
+	// checkout from now on (ADR 0050).
+	const shown = pointPane(pane, identity, vault, body["agent"] === true);
 	// A pane on a different board is a different context, and the workbench has
 	// to hear it from here: the pane's own registration will say the same thing a
 	// moment later, and until it does an agent would answer about the old board.
@@ -90,10 +94,71 @@ function showPaneRoute(req: Request, res: Response): void {
 		success: true,
 		board: key,
 		identity,
-		repository,
+		...shown,
 		paneId: pane.paneId,
 		...paneResponse(pane),
 	});
+}
+
+/** A choice of checkout that a show made, as its answer names it. */
+interface ShowChoice {
+	readonly repository: string;
+	/** The checkout chosen now. */
+	readonly checkout: string;
+	/** The checkout that was chosen before, or null when the repository had none chosen. */
+	readonly replaced: string | null;
+}
+
+/**
+ * Make the checkout of a shown vault the chosen one of its repository, when it
+ * is a known checkout that is not chosen. An untracked vault is always read, and
+ * a vault no registered directory holds has no repository to choose for.
+ * @param vault The vault of the board shown.
+ * @returns The choice, or undefined when the show changed no choice.
+ */
+function chooseShownCheckout(vault: string): ShowChoice | undefined {
+	const shown = registeredRepositoryOf(vault);
+	if (shown === undefined || shown.chosen) {
+		return undefined;
+	}
+	const chosen = chooseKnownCheckout(shown.root);
+	if (chosen?.changed !== true) {
+		return undefined;
+	}
+	logger.info(`A show made ${shown.root} the chosen checkout of ${shown.name}`);
+	return { repository: shown.name, checkout: shown.root, replaced: chosen.replaced };
+}
+
+/**
+ * Point a pane at a board, in the vault the board is in. A choice of checkout
+ * the show made is followed by every other pane after this one has arrived, so
+ * the shown pane is never sent to its old board in the new checkout first.
+ * @param pane The pane.
+ * @param identity The board it is pointed at.
+ * @param vault The vault the board is in.
+ * @param byAgent Whether an agent asked, whose show chooses the checkout it shows.
+ * @returns The repository and the checkout the board is in, and the choice the show made.
+ */
+function pointPane(
+	pane: PaneRegistration,
+	identity: BoardIdentity,
+	vault: string,
+	byAgent: boolean,
+): Pick<VaultPlace, "repository" | "checkout"> & { chose?: ShowChoice } {
+	const key = paneBoardAddress(identity);
+	// Chosen only here, once nothing can refuse the show (ADR 0050).
+	const chose = byAgent ? chooseShownCheckout(vault) : undefined;
+	// A pane named by a show of another repository's board moves into that
+	// repository's vault first, so the board's news reaches it from here on.
+	movePaneVault(pane.clientId, vault);
+	const { repository, checkout } = placeOfVault(vault);
+	sendToPane(pane.clientId, { type: "pane_board", identity, vault, repository }, key);
+	arrivedOnBoard(pane.clientId, key);
+	if (chose === undefined) {
+		return { repository, checkout };
+	}
+	followRegistry();
+	return { repository, checkout, chose };
 }
 
 /**

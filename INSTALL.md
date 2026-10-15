@@ -256,6 +256,14 @@ exists. It also names each repository that has no chosen checkout. `archboard re
 If it was the chosen checkout, the repository has no chosen checkout until you
 run `repo use`, and its bindings resolve as unregistered meanwhile.
 
+An agent's `archboard browser show` from a checkout that is not chosen, such as
+a worktree, makes that checkout the chosen one before it shows the board. Its
+answer names the checkout that it replaced. Only `browser show`, `repo use` and
+the menu in the navigator change the choice. A board command never does.
+`repo add`, `repo use`, `repo forget` and the first command in a new checkout
+tell a running server. So every pane of the repository moves to the chosen
+checkout with its board, and every tab lists the change at once.
+
 One rule overrides the choice. A binding or anchor into the repository whose
 checkout holds the vault resolves in that checkout, whether or not it is
 registered or chosen. So a board in a worktree is checked against that
@@ -265,7 +273,11 @@ its own, so all its bindings use chosen checkouts.
 
 A directory outside any git checkout that holds `.archboard/vault` is an
 untracked vault. `repo add <dir>` registers it under its base name, made unique
-on this machine, and `repo list` shows it. `repo forget <dir>` removes it.
+on this machine, and `repo list` shows it. `repo forget <dir>` removes it. A
+repository without a remote is named by the directory of its main checkout. If
+that name is the name of an untracked vault, the repository keeps the name. The
+vault gets the next free name, and the command that registered the repository
+says so.
 
 The registry is `repos.json` in the state directory, or the file that
 `ARCHBOARD_REPOS` names. A `repos.json` from an earlier version reads as it is:

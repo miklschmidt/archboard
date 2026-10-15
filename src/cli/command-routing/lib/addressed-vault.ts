@@ -6,7 +6,7 @@
 import type { AnsweredVault, RegisteredVault } from "@/cli/command-contract/schemas";
 import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
 import { declareIfUnknown, type Declared } from "@/runtime/engine/repo-registry";
-import { setRequestedVault } from "@/runtime/engine/server-client";
+import { announceRegistryChange, setRequestedVault } from "@/runtime/engine/server-client";
 import {
 	findVault,
 	type FoundVault,
@@ -32,6 +32,7 @@ function registrationOf(declared: Declared): RegisteredVault {
 				root: declared.checkout.root,
 				chosen: declared.checkout.chosen,
 				worktrees: declared.worktrees.map((each) => each.root),
+				...(declared.renamed === undefined ? {} : { renamed: declared.renamed }),
 			}
 		: { kind: "untracked", name: declared.vault.name, root: declared.vault.root };
 }
@@ -52,7 +53,23 @@ function registrationLine(registration: RegisteredVault): string {
 		registration.worktrees.length === 0
 			? ""
 			: `, with ${String(registration.worktrees.length)} of its worktrees`;
-	return `Registered ${registration.root} as ${chosen}${worktrees}.`;
+	const { renamed } = registration;
+	const rename =
+		renamed === undefined
+			? ""
+			: ` The untracked vault at ${renamed.root} is called "${renamed.to}" now, because "${renamed.from}" is the name of this repository.`;
+	return `Registered ${registration.root} as ${chosen}${worktrees}.${rename}`;
+}
+
+/**
+ * Say that a command registered what it found, and tell a running server, so
+ * that every tab lists the new entry at once.
+ * @param registration - The registration.
+ */
+async function announceRegistration(registration: RegisteredVault): Promise<void> {
+	process.stderr.write(`${registrationLine(registration)}\n`);
+	const warning = await announceRegistryChange();
+	if (warning !== undefined) process.stderr.write(`${warning}\n`);
 }
 
 /**
@@ -69,7 +86,7 @@ async function register(found: FoundVault): Promise<RegisteredVault | undefined>
 		const declared = await declareIfUnknown(found.holder);
 		if (declared === undefined || !declared.added) return undefined;
 		const answer = registrationOf(declared);
-		process.stderr.write(`${registrationLine(answer)}\n`);
+		await announceRegistration(answer);
 		return answer;
 	} catch (error) {
 		const reason = error instanceof Error ? error.message : String(error);

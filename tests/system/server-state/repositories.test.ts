@@ -255,8 +255,8 @@ describe.serial("the repositories of the navigator", () => {
 			},
 		);
 		resources.defer(() => pane.close());
-		// `repo use` tells the server nothing, so the pane stays in the main checkout
-		// while the worktree is the chosen one.
+		// This `repo use` runs without this server's URL, so this server never hears
+		// of it, and the pane stays in the main checkout while the worktree is chosen.
 		cli("repo", "use", worktree);
 
 		// The fix worktree has no vault yet: choosing it is refused, and no pane moves.

@@ -23,6 +23,13 @@ interacting parts, or a request from the user.
   `Codex is not signed in on this Archboard server` (exit 4, measured with a
   server that had no sign-in), or `ENCODER_UNAVAILABLE` (exit 4) for ffmpeg.
   Then post the explainer without a video, and say why in your final report.
+- The chosen checkout. The recording's page reads the chosen checkout of the
+  repository. In another checkout, such as a worktree, `semantic record`
+  refuses with `CHECKOUT_NOT_CHOSEN` (exit 2). If the user has the app open,
+  `archboard browser show "<board>@<proposal>"` from your checkout makes it the
+  chosen one. Its answer's `chose.replaced` names the checkout that the user
+  read before: tell the user. If no app is open, ask the user before you run
+  `archboard repo use <checkout>`.
 - Time: about twice the length of the talk.
 - Size: GitHub takes a video of up to 10 MB on a free plan and 100 MB on a paid
   plan [GitHub, attaching files]. Three archboard recordings measured 3.2 to

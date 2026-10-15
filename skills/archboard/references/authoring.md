@@ -98,7 +98,8 @@ checkout. A repository with several known checkouts, such as a worktree,
 resolves in its chosen checkout, except that a binding or anchor into the
 repository whose checkout holds the vault resolves in that checkout, so a board
 in a worktree is read against the worktree. `repo add` never changes the choice,
-and `archboard repo use <dir>` does, on the user's request only. `branch`, `commit` and `confirmedAt` record what you
+and `archboard repo use <dir>` does, on the user's request only. `browser show`
+from your checkout also makes it the chosen one, as the Essentials say. `branch`, `commit` and `confirmedAt` record what you
 actually confirmed; restating the node keeps them only if you restate them.
 
 `symbol` names the one definition at `path` that the node stands for, spelled

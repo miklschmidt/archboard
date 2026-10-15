@@ -8,6 +8,7 @@ import {
 	RepoRegistryError,
 	type RegistryListing,
 } from "@/runtime/engine/repo-registry";
+import { announceRegistryChange } from "@/runtime/engine/server-client";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { commandLine } from "@/cli/commands/lib/command-line";
 import { LanguageServersSchema } from "@/shared/language-servers/index";
@@ -220,6 +221,8 @@ const CheckoutDeclaredSchema = z.object({
 	replaced: z.string().optional(),
 	/** The worktrees of the checkout that became known with it. */
 	worktrees: z.array(z.string()),
+	/** The untracked vault that took a new registry name, because this repository's identity is its old one. */
+	renamed: z.object({ root: z.string(), from: z.string(), to: z.string() }).optional(),
 	registry: z.string(),
 });
 const VaultDeclaredSchema = z.object({
@@ -266,6 +269,15 @@ const registryOutput = {
 	 */
 	select: () => "json",
 } as const;
+/** A command that changes the registry tells a running server, and starts none. */
+const registryRelationships = [
+	{
+		method: "POST",
+		path: "/api/repositories/changed",
+		cardinality: "conditional",
+		description: "Tell a running server, so its panes and tabs follow the registry",
+	},
+] as const;
 
 /**
  * Declare a directory, turning a registry refusal into a usage error.
@@ -315,15 +327,7 @@ function vaultReceipt(declared: Extract<Declared, { kind: "vault" }>) {
  * @returns The result and its diagnostics.
  */
 function checkoutReceipt(declared: Extract<Declared, { kind: "checkout" }>) {
-	const { checkout, added, replaced, worktrees } = declared;
-	const chosenRoot = chosenCheckouts().find((each) => each.repo === checkout.repo)?.root;
-	const reading = checkout.chosen
-		? `"${checkout.repo}" is now read at ${checkout.root}: a node bound to ${checkout.repo} opens the file it names there.`
-		: `${checkout.root} is known, and ${chosenRoot ?? "no checkout"} stays the one read for "${checkout.repo}". Run archboard repo use ${checkout.root} to read this one instead.`;
-	const worktreeNote =
-		worktrees.length === 0
-			? []
-			: [`${worktrees.length} of its worktrees became known too; repo list shows them.`];
+	const { checkout, added, replaced, worktrees, renamed } = declared;
 	return {
 		result: {
 			success: true as const,
@@ -336,10 +340,52 @@ function checkoutReceipt(declared: Extract<Declared, { kind: "checkout" }>) {
 			added,
 			...(replaced === undefined ? {} : { replaced: replaced.root }),
 			worktrees: worktrees.map((each) => each.root),
+			...(renamed === undefined ? {} : { renamed }),
 			registry: registryPath(),
 		},
-		diagnostics: [reading, ...worktreeNote],
+		diagnostics: checkoutLines(declared),
 	};
+}
+
+/**
+ * What a person needs to know after a checkout was declared: which checkout is
+ * read for its repository, which worktrees became known, and which untracked
+ * vault took a new name, which a link or a bookmark with the old one no longer reaches.
+ * @param declared What was recorded.
+ * @returns The lines.
+ */
+function checkoutLines(declared: Extract<Declared, { kind: "checkout" }>): string[] {
+	const { checkout, worktrees, renamed } = declared;
+	const chosenRoot = chosenCheckouts().find((each) => each.repo === checkout.repo)?.root;
+	const reading = checkout.chosen
+		? `"${checkout.repo}" is now read at ${checkout.root}: a node bound to ${checkout.repo} opens the file it names there.`
+		: `${checkout.root} is known, and ${chosenRoot ?? "no checkout"} stays the one read for "${checkout.repo}". Run archboard repo use ${checkout.root} to read this one instead.`;
+	const worktreeNote =
+		worktrees.length === 0
+			? []
+			: [`${worktrees.length} of its worktrees became known too; repo list shows them.`];
+	const renameNote =
+		renamed === undefined
+			? []
+			: [
+					`The untracked vault at ${renamed.root} is called "${renamed.to}" now, because "${renamed.from}" is the name of this repository.`,
+				];
+	return [reading, ...worktreeNote, ...renameNote];
+}
+
+/**
+ * A registry receipt, once a running server has been told of the change so
+ * that its panes and tabs follow it. A server that could not be told adds a warning.
+ * @param receipt The receipt: what the command answers, and what it says beside the answer.
+ * @returns The same receipt, with the warning when there is one.
+ */
+async function announced<Receipt extends { diagnostics: string[] }>(
+	receipt: Receipt,
+): Promise<Receipt> {
+	const warning = await announceRegistryChange();
+	return warning === undefined
+		? receipt
+		: { ...receipt, diagnostics: [...receipt.diagnostics, warning] };
 }
 
 const repoAddContract = defineCommand({
@@ -347,7 +393,7 @@ const repoAddContract = defineCommand({
 	shared: [],
 	summary: "Register a repository checkout or an untracked vault",
 	description:
-		"Derives a checkout's identity from git (its origin remote, or with none the directory name of its main checkout; every worktree has the identity of its main checkout) and records its local root, with the worktrees that git lists for it. The first known checkout of a repository becomes the one read for it; adding another never changes that, and repo use does. Outside any git checkout, a directory that holds .archboard/vault is registered as an untracked vault under its base name, made unique on this machine. Registering the same root again keeps its language servers, unless its identity changed.",
+		"Derives a checkout's identity from git (its origin remote, or with none the directory name of its main checkout; every worktree has the identity of its main checkout) and records its local root, with the worktrees that git lists for it. The first known checkout of a repository becomes the one read for it; adding another never changes that, and repo use does. Outside any git checkout, a directory that holds .archboard/vault is registered as an untracked vault under its base name, made unique on this machine. A repository whose identity is the name of an untracked vault keeps it, and the vault gets the next free name, which the answer's renamed gives. Registering the same root again keeps its language servers, unless its identity changed. A running server is told, so every tab lists the change; none is started.",
 	examples: ["archboard repo add ."],
 	parameters: dirParameters,
 	input: { ingress: RepoAddInputSchema },
@@ -356,7 +402,7 @@ const repoAddContract = defineCommand({
 	prerequisites: [],
 	effects: ["local-read", "local-write"],
 	refusals: [],
-	relationships: [],
+	relationships: registryRelationships,
 	/**
 	 * Registers the checkout or vault at the given directory, or the working directory.
 	 * @param input - The parsed add options.
@@ -369,7 +415,9 @@ const repoAddContract = defineCommand({
 			false,
 			context.signal,
 		);
-		return declared.kind === "vault" ? vaultReceipt(declared) : checkoutReceipt(declared);
+		return announced(
+			declared.kind === "vault" ? vaultReceipt(declared) : checkoutReceipt(declared),
+		);
 	},
 });
 
@@ -382,7 +430,7 @@ const repoUseContract = defineCommand({
 	shared: [],
 	summary: "Choose the checkout that this machine reads for its repository",
 	description:
-		"Makes the checkout the chosen one of its repository identity: the browser reads its vault, and a binding that another vault makes into that identity resolves there. Registers the checkout, with its worktrees, when it is unknown. An untracked vault has no repository identity and is refused.",
+		"Makes the checkout the chosen one of its repository identity: the browser reads its vault, and a binding that another vault makes into that identity resolves there. Registers the checkout, with its worktrees, when it is unknown. An untracked vault has no repository identity and is refused. A running server is told, so every pane that shows a board of the repository moves to this checkout with its board, and every tab lists the change; none is started.",
 	examples: ["archboard repo use ../payments-worktree"],
 	parameters: dirParameters,
 	input: { ingress: RepoUseInputSchema },
@@ -391,7 +439,7 @@ const repoUseContract = defineCommand({
 	prerequisites: [],
 	effects: ["local-read", "local-write"],
 	refusals: [],
-	relationships: [],
+	relationships: registryRelationships,
 	/**
 	 * Chooses the checkout at the given directory, or the working directory.
 	 * @param input - The parsed use options.
@@ -407,7 +455,7 @@ const repoUseContract = defineCommand({
 		if (declared.kind !== "checkout") {
 			throw new CliUsageError("repo use chooses a checkout, and an untracked vault is not one");
 		}
-		return checkoutReceipt(declared);
+		return announced(checkoutReceipt(declared));
 	},
 });
 
@@ -436,7 +484,7 @@ const repoForgetContract = defineCommand({
 	shared: [],
 	summary: "Forget a known checkout or untracked vault",
 	description:
-		"Removes the checkout or untracked vault at a directory, and the language servers configured for it, from the machine-local registry. The directory need not exist. Forgetting the chosen checkout of a repository that has other known checkouts leaves it with no chosen checkout until repo use, and meanwhile its bindings resolve as unregistered, except from a vault inside one of its checkouts, which reads its own checkout.",
+		"Removes the checkout or untracked vault at a directory, and the language servers configured for it, from the machine-local registry. The directory need not exist. Forgetting the chosen checkout of a repository that has other known checkouts leaves it with no chosen checkout until repo use, and meanwhile its bindings resolve as unregistered, except from a vault inside one of its checkouts, which reads its own checkout. A running server is told, so every tab lists the change; none is started.",
 	examples: ["archboard repo forget ../payments-worktree"],
 	parameters: [
 		{
@@ -462,7 +510,7 @@ const repoForgetContract = defineCommand({
 	prerequisites: [],
 	effects: ["local-read", "local-write"],
 	refusals: [],
-	relationships: [],
+	relationships: registryRelationships,
 	/**
 	 * Forgets one known checkout or untracked vault, explaining what that does
 	 * and does not change for bindings that already name it.
@@ -488,7 +536,7 @@ const repoForgetContract = defineCommand({
 			};
 		}
 		if (gone.kind === "vault") {
-			return {
+			return announced({
 				result: {
 					...base,
 					forgotten: true,
@@ -497,10 +545,10 @@ const repoForgetContract = defineCommand({
 					unchosen: false,
 				},
 				diagnostics: [`Forgot the untracked vault "${gone.vault.name}" at ${gone.vault.root}.`],
-			};
+			});
 		}
 		const { repo } = gone.checkout;
-		return {
+		return announced({
 			result: {
 				...base,
 				forgotten: true,
@@ -513,7 +561,7 @@ const repoForgetContract = defineCommand({
 					? `Forgot ${gone.checkout.root}, the chosen checkout of "${repo}". No checkout of it is chosen now, so its bindings resolve as unregistered, except from a vault inside one of its checkouts, until archboard repo use <dir> chooses one of: ${gone.others.join(", ")}.`
 					: `Forgot ${gone.checkout.root}. Bindings that already name "${repo}" keep their address; they have nothing to resolve to until a checkout of it is registered again.`,
 			],
-		};
+		});
 	},
 });
 
