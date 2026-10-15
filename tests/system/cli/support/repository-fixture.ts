@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { vaultIn } from "../../support/test-vault.ts";
+import { clearedEnvironment } from "./package-cli.ts";
 
 type RepositoryServerEnvironment = Readonly<NodeJS.ProcessEnv>;
 
@@ -35,11 +36,7 @@ function createRepositoryFixture(): RepositoryFixture {
 	const vault = vaultIn(join(root, "boards"));
 	const serverEnvironment: RepositoryServerEnvironment = {
 		...process.env,
-		CODEX_HOME: undefined,
-		LOCALAPPDATA: undefined,
-		ARCHBOARD_URL: undefined,
-		ARCHBOARD_SETTLE_MS: undefined,
-		ARCHBOARD_SETTLE_MAX_MS: undefined,
+		...clearedEnvironment,
 		HOME: home,
 		XDG_STATE_HOME: state,
 		LOG_FILE_PATH: log,

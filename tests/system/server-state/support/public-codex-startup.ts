@@ -3,7 +3,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
 import { listProcessObservations } from "@/shared/process-observation";
-import { listOnlyVault, vaultIn } from "../../support/test-vault.ts";
+import { callerVaultCleared, listOnlyVault, vaultIn } from "../../support/test-vault.ts";
 
 const repositoryRoot = join(import.meta.dir, "../../../..");
 const publicPreload = join(import.meta.dir, "../fixtures/public-codex-startup-preload.ts");
@@ -30,6 +30,7 @@ function publicStartEnvironment(
 	writeFileSync(join(persistent, "pre-existing-sentinel"), "preserve me");
 	return {
 		...process.env,
+		...callerVaultCleared,
 		HOME: join(root, "home"),
 		XDG_CONFIG_HOME: join(root, "config"),
 		XDG_CACHE_HOME: join(root, "cache"),

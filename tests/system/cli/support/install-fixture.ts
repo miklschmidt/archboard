@@ -11,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { z } from "zod";
-import { checkoutRoot, packageBin } from "./package-cli.ts";
+import { checkoutRoot, clearedEnvironment, packageBin } from "./package-cli.ts";
 
 const setupSchema = z.object({
 	doc: z.string(),
@@ -116,11 +116,7 @@ function createInstallFixture(): InstallFixture {
 			encoding: "utf8",
 			env: {
 				...process.env,
-				CODEX_HOME: undefined,
-				LOCALAPPDATA: undefined,
-				ARCHBOARD_URL: undefined,
-				ARCHBOARD_SETTLE_MS: undefined,
-				ARCHBOARD_SETTLE_MAX_MS: undefined,
+				...clearedEnvironment,
 				HOME: home,
 				XDG_STATE_HOME: state,
 				LOG_FILE_PATH: log,

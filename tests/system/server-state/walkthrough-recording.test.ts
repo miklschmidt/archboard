@@ -21,7 +21,7 @@ import { readTalk } from "@/runtime/walkthrough-recorder";
 
 import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
-import { holderOf } from "../support/test-vault.ts";
+import { callerVaultCleared, holderOf } from "../support/test-vault.ts";
 import { TEST_RECORDING_CASE_MS, TEST_RECORDING_CLI_MS } from "../support/timing.ts";
 import {
 	prepareProductionFixture,
@@ -122,6 +122,7 @@ test(
 					killSignal: "SIGTERM",
 					env: {
 						...process.env,
+						...callerVaultCleared,
 						ARCHBOARD_REPOS: server.registry,
 						ARCHBOARD_URL: server.base,
 						ARCHBOARD_NO_AUTOSTART: "1",
