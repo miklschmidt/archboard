@@ -167,6 +167,12 @@ recording need a Codex sign-in. Sign in from the agent dock, with ChatGPT or wit
 an OpenAI API key. The sign-in is kept apart from your own `~/.codex`, in
 `codex-workbench/codex-home` in the state directory.
 
+The navigator in the browser lists the vault that the server started with. It
+also lists each repository that this machine registered with `archboard repo add`
+and that has a vault. Each repository row has a menu of its checkouts, for
+example a worktree. The checkout that you choose there is the one that the
+whole machine reads, in every tab and for `archboard repo use`.
+
 ## 6. Make sure that it works
 
 Run these commands in the repository:
@@ -202,19 +208,19 @@ archboard repo add ~/Projects/payments-api
 
 The identity of the repository comes from its `origin` remote. If the repository
 has no remote, the identity is the directory name of its main checkout. Every
-worktree of a repository has the identity of its main checkout, so a worktree
-of a repository with no remote is named by the main checkout's directory, not
-its own. Archboard also knows the worktrees that `git worktree list` reports
+worktree of a repository has the identity of its main checkout. Thus the main
+checkout's directory names a worktree of a repository with no remote, and the
+worktree's own directory does not. Archboard also knows the worktrees that `git worktree list` reports
 for a checkout that you register.
 
 One repository can have several known checkouts here: clones and worktrees.
 This machine reads one of them for each repository, the chosen checkout. The first
 checkout that you register is chosen. `archboard repo add` never changes the
 choice, so adding a worktree does not move what the browser and the code check read.
-`archboard repo use <dir>` chooses a checkout and registers it first if it is
-unknown. `archboard repo list` shows each known checkout with its repository,
-whether it is chosen and whether its directory exists, and it names a repository
-that has no chosen checkout. `archboard repo forget <dir>` removes a checkout.
+`archboard repo use <dir>` chooses a checkout. If the checkout is unknown, the
+command registers it first. `archboard repo list` shows each known checkout with
+its repository. It says whether the checkout is chosen and whether its directory
+exists. It also names each repository that has no chosen checkout. `archboard repo forget <dir>` removes a checkout.
 If it was the chosen checkout, the repository has no chosen checkout until you
 run `repo use`, and its bindings resolve as unregistered meanwhile.
 
@@ -290,7 +296,7 @@ The language is `python`, `csharp`, `swift` or `c`. The language `c` covers C, C
 
 `--repo <identity>` names another repository, and the command then configures its chosen checkout. Without it, the command configures the known checkout that holds the working directory. `--remove` removes the server of the language. `archboard repo list` shows the configured servers of each checkout. `archboard repo forget` removes them with the checkout.
 
-The configuration stays on your machine. It is in `repos.json` with the checkout. If you register the same directory again, the configuration stays. Another checkout of the same repository has its own configuration. The check reads the configuration of the checkout it reads: the chosen checkout, or the checkout that holds the vault for its own repository, which has a configuration only if it is registered.
+The configuration stays on your machine. It is in `repos.json` with the checkout. If you register the same directory again, the configuration stays. Another checkout of the same repository has its own configuration. The check reads the configuration of the checkout it reads. That is the chosen checkout, or for the vault's own repository the checkout that holds the vault. That checkout has a configuration only if it is registered.
 
 The Archboard server reads `repos.json` again each time that the check runs. So a running Archboard server uses a configuration that you wrote after it started. The Archboard server looks up a command that is a name on its own `PATH`. That `PATH` is the `PATH` of the command that started it. If that `PATH` lacks the command, give the absolute path of the command. Or run `archboard stop` and run a command again.
 
@@ -361,8 +367,8 @@ If no `Package.swift` holds the file, the check says `language-server-unready` o
 `archboard semantic render <board> --out <file.svg>` writes an SVG with its
 fonts in it, and needs no browser. `archboard semantic rasterize <board> --out
 <file.png>` draws the same picture to a PNG in a private headless Chromium.
-Both take `--variant`, `--view` and `--theme`. Add `--no-comparison` to hide
-comparison marks and removed subjects when exporting a variant. `semantic
+Both take `--variant`, `--view` and `--theme`. To export a variant
+without comparison marks and removed subjects, add `--no-comparison`. `semantic
 render --theme auto` draws one SVG that shows the ground of the reader's colour
 scheme. Both commands take `--title` and `--legend horizontal|vertical` to draw
 a title and the key into the picture, and `--legend-only` to draw the key alone.
@@ -398,7 +404,7 @@ The clipboard package installs with Archboard. No clipboard manager is required.
 Archboard offers PNG and HTML together. The HTML embeds the PNG and includes
 the image description as alt text. The receiving app chooses which format to paste.
 On Linux, a background helper keeps the copy available after the command exits.
-It exits when another copy replaces the image or the desktop disconnects.
+If another copy replaces the image or the desktop disconnects, the helper exits.
 On macOS, the system keeps the copy.
 The command prints a JSON receipt after the native clipboard accepts both formats.
 Use either `--clipboard` or `--out` for one command.
