@@ -76,7 +76,7 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly onOpenDown: OpenDown;
 	/**
 	 * Go back to one of the boards the reader came down through, clearing the selection made below it.
-	 * @param depth Where it is in the trail: 0 is the board the pane was opened on.
+	 * @param depth Where it is in the trail: 0 is its first board.
 	 */
 	readonly onBackTo: (depth: number) => void;
 	/** The picture on screen is the board a flight arrived at: it took over from the board inside its card with no entrance. */
