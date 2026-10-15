@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 06:06'
+updated_date: '2026-10-15 06:11'
 labels: []
 dependencies:
   - TASK-472.12
@@ -95,4 +95,6 @@ behind (archboard check --code after adoption): all five adopted boards read 0 c
 - Skill evaluation: part Evaluation inputs (evals) through 614ba2bed, which adds a coverage entry for semantic move to evals/coverage.json. This is data and changes nothing the board draws, so it is still right.
 
 Correction to the Board store line above: within the store, outside move*.ts, this task changed only index.ts (exports), lib/outcome.ts (refusal codes) and lib/write.ts (Write under lease, named). accepted.ts did not change.
+
+Decision revised (2026-10-15, from the TASK-472.14 boundary review): a finished move chooses its target checkout when it is a known checkout that is not chosen, as an agent's browser show does, and says so in chose; otherwise a later registry change would move the board's panes to the chosen checkout's vault, which lacks the board. This brings the CLI form in line with ADR 0051's 'the vault of the chosen checkout'.
 <!-- SECTION:NOTES:END -->
