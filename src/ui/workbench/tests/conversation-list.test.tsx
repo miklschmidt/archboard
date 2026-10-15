@@ -104,6 +104,15 @@ test("the list marks the shown checkout, says what one waits on, and a pick name
 	view.unmount();
 });
 
+/**
+ * Two workhorses at rest but for what the second waits on.
+ * @param wait What the second waits on.
+ * @returns The list.
+ */
+function secondWaiting(wait: Partial<BrowserWorkhorses["entries"][number]>): BrowserWorkhorses {
+	return { ...TWO, entries: [idle(SHOP), { ...idle(WORKTREE), ...wait }] };
+}
+
 test("the list says in words, not in colour alone, what a workhorse waits on", () => {
 	/**
 	 * The words of the second workhorse while it waits on something, or on nothing.
@@ -111,8 +120,7 @@ test("the list says in words, not in colour alone, what a workhorse waits on", (
 	 * @returns Its words.
 	 */
 	function wordsWhile(wait: Partial<BrowserWorkhorses["entries"][number]>): string | null {
-		const entries = [idle(SHOP), { ...idle(WORKTREE), ...wait }];
-		const view = render(<ConversationList workhorses={{ ...TWO, entries }} onPick={keepPick} />);
+		const view = render(<ConversationList workhorses={secondWaiting(wait)} onPick={keepPick} />);
 		const [, other] = twoOf(view.getAllByRole("button"));
 		const words = other.textContent;
 		view.unmount();
