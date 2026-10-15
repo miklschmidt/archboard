@@ -236,7 +236,9 @@ pans or zooms. With two panes it is away, so that each picture keeps its room,
 until somebody asks for it. The control then lays its panel over the edge of the
 picture, and a pin at the end of the tab row docks it. A pick lays an away
 sidebar over the picture in the same way, and letting go puts it away again, so
-neither refits the picture under the pointer that made it. A float the person
+neither refits the picture under the pointer that made it. A pick made on the
+About page lays no panel over the page, because the panel would cover the
+page's own controls. Its panel comes when the diagram does. A float the person
 asked for stays until they put it away, or press Escape inside it, which gives
 the keyboard back to the control. Hiding a docked sidebar and showing it again
 docks it again. A sidebar that is away is nowhere: it leaves no strip, no row of
@@ -373,14 +375,16 @@ to show is absent from the page and from the outline.
 
 Choosing a row or a chip picks its subject in the pane, and the page stays. The
 sidebar explains the subject, and the picture marks it when the diagram comes
-back. The control at the end of a part's or a relationship's row picks the
-subject and opens the diagram. Then it fits the camera to the subject, as a code
-warning does. If the view on screen does not draw the subject, the pane opens
-Everything first.
+back. In a pane that shares the centre, the sidebar stays away until the diagram
+comes back or the person shows it. The control at the end of a part's or a
+relationship's row picks the subject and opens the diagram. Then it fits the
+camera to the subject, as a code warning does. If the view on screen does not
+draw the subject, the pane opens Everything first.
 
 A walkthrough is presented over the picture, so presenting from the page opens
 the diagram. Leaving the walkthrough brings the page back. Choosing About while a
-walkthrough is presented leaves the walkthrough.
+walkthrough is presented leaves the walkthrough. The page keeps its place on each
+board: after a walkthrough or the diagram, it opens where the reader left it.
 
 While the content of the page is narrower than 860 px, as in a pane that shares
 the centre, the view and the subjects of a step stand under its words. The

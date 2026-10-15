@@ -412,7 +412,9 @@ nothing else. With reduced motion the sidebar appears and goes at once.
 
 A presented walkthrough steps the sidebar aside, as it does the rest of the pane's
 chrome. While it lasts the control is held and says so, and nothing, the search
-shortcut included, shows or hides the sidebar.
+shortcut included, shows or hides the sidebar. A pick made on the About page lays
+no panel over the page, where it would cover the page's controls. Its panel comes
+with the diagram.
 
 A walkthrough's row begins with a play mark, never a bare triangle, because a
 triangle is the mark of a row that folds open. Narrate is in every walkthrough's

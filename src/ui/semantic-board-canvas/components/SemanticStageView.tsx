@@ -36,6 +36,7 @@ import type { DrillNavigation } from "@/ui/semantic-board-canvas/hooks/use-drill
 import type { PaneReading } from "@/ui/semantic-board-canvas/hooks/use-level-reading";
 import type { PresentationPosition } from "@/ui/semantic-board-canvas/hooks/use-presentation-position";
 import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
+import type { PagePlace } from "@/ui/semantic-board-canvas/hooks/use-stage-tab";
 import type { WalkthroughReading } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
 import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
@@ -118,12 +119,14 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly sidebar: Sidebar;
 	/** What the picture on screen draws each kind with, for the key and the inspector. */
 	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
-	/** How the vault's kinds look, for the pages and the details panel. */
+	/** How the vault's kinds look, for the About page and the details panel. */
 	readonly look: KindLook;
 	/** The tab of the pane's header that is open: the picture, or the About page. */
 	readonly tab: BoardTab;
 	/** Open a tab. */
 	readonly onTab: (tab: BoardTab) => void;
+	/** Where the About page was scrolled to on this board, which it comes back to. */
+	readonly place: PagePlace;
 	/** Read one beat of a walkthrough: the diagram comes back, presenting it. */
 	readonly onReadBeat: (walkthrough: string, beat: number) => void;
 	/** Pick a subject out and show it: the diagram comes back, and the camera fits the subject. */
@@ -295,6 +298,7 @@ function PaneAboutPage(props: { readonly view: RenderView }): JSX.Element {
 			onPresent={view.onReadBeat}
 			narration={view.narration}
 			reducedMotion={view.reducedMotion ?? false}
+			place={view.place}
 		/>
 	);
 }
