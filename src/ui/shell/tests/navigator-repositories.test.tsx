@@ -113,3 +113,19 @@ test("a repository whose chosen checkout has no vault says so, and its menu choo
 	expect(document.querySelector('[role="menu"]')).toBeNull();
 	expect(document.activeElement).toBe(row(`repository:${BILLING}`));
 });
+
+test("a repository whose boards cannot be read offers to read them again, and the navigator does not call it empty", () => {
+	const empty: BoardListing = { boards: [], levels: [], onScreen: [] };
+	const failed = {
+		...repositoryOf(ready(BILLING, BILLING_VAULT), empty),
+		error: "The board listing could not be read: offline",
+	};
+	const { show } = mountNavigator({ repositories: [failed], panes: [] });
+	const alert = document.querySelector('[data-slot="navigator"] [role="alert"]');
+	expect(alert?.querySelector("button")).not.toBeNull();
+	expect(document.querySelector('[data-slot="navigator-empty"]')).toBeNull();
+	// Read again and empty, it says so and offers nothing to retry.
+	show({ repositories: [repositoryOf(ready(BILLING, BILLING_VAULT), empty)], panes: [] });
+	expect(document.querySelector('[data-slot="navigator"] [role="alert"]')).toBeNull();
+	expect(document.querySelector('[data-slot="navigator-empty"]')).not.toBeNull();
+});

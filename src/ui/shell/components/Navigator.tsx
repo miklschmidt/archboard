@@ -154,10 +154,23 @@ function openKey(actions: ShellActions, key: string, beside: boolean, repository
  * that is not says why in its own row, and the empty listing's advice would
  * not help it.
  * @param shell The repository.
- * @returns True when its vault has answered.
+ * @returns True when its vault has answered with its boards.
  */
 function readyAndRead(shell: ShellRepository): boolean {
-	return shell.repository.state === "ready" && !shell.loading;
+	return shell.repository.state === "ready" && !shell.loading && shell.error === null;
+}
+
+/**
+ * Why the navigator cannot show what it should: the repositories or the panes
+ * could not be read, or else the first repository whose boards could not be,
+ * named. Its row marks it too; this is where the way to read it again is.
+ * @param view The shell view.
+ * @returns The reason, or null.
+ */
+function listingFailure(view: ShellView): string | null {
+	if (view.boardsError !== null) return view.boardsError;
+	const failed = view.repositories.find((shell) => shell.error !== null);
+	return failed === undefined ? null : `${failed.repository.name}: ${failed.error}`;
 }
 
 /**
@@ -256,7 +269,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 				<div className="min-h-0 flex-1 overflow-y-auto">
 					<ListingState
 						loading={view.boardsLoading}
-						error={view.boardsError}
+						error={listingFailure(view)}
 						empty={total === 0 && view.repositories.every(readyAndRead)}
 						noMatch={folded.length > 0 && rows.length === 0}
 						query={query}
@@ -371,7 +384,11 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 	if (!props.empty) return null;
 	if (props.loading) return <ListingSkeleton />;
 	return (
-		<p style={MESSAGE_STYLE} className="text-body text-muted-foreground py-3 pr-4">
+		<p
+			data-slot="navigator-empty"
+			style={MESSAGE_STYLE}
+			className="text-body text-muted-foreground py-3 pr-4"
+		>
 			No boards yet. An agent makes one with{" "}
 			<code className="text-foreground font-mono">archboard semantic new</code>.
 		</p>

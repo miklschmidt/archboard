@@ -86,10 +86,23 @@ function listingOf(asked: URL): Response {
 		: answer({ success: false, error: "The vault could not be read." }, 500);
 }
 
+/** Whether the server refuses to say which pane holds what. */
+let panesRefused = false;
+
+/**
+ * Which pane holds what: nothing, or a refusal.
+ * @returns The answer.
+ */
+function panesOf(): Response {
+	return panesRefused
+		? answer({ success: false, error: "The panes could not be read." }, 500)
+		: answer({ panes: [] });
+}
+
 /** The faked routes, by path. */
 const ROUTES: Readonly<Record<string, (asked: URL) => Response>> = {
 	"/api/repositories": answer.bind(null, REPOSITORIES, 200),
-	"/api/panes": answer.bind(null, { panes: [] }, 200),
+	"/api/panes": panesOf,
 	"/api/semantic-boards": listingOf,
 };
 
@@ -153,4 +166,23 @@ test("each repository with a vault lists its own boards or its own failure, and 
 	// Two repositories with no vault are not one query asked twice.
 	expect(warned.mock.calls.flat().some((said) => String(said).includes("Duplicate"))).toBe(false);
 	warned.mockRestore();
+});
+
+test("a failed read of which pane holds what is the navigator's failure, not each repository's", async () => {
+	panesRefused = true;
+	const { result } = renderHook(() => useBoardCatalog(), { wrapper: Provided });
+	await waitFor(() => expect(result.current.error).not.toBeNull());
+	await waitFor(() =>
+		expect(result.current.repositories.map((each) => each.listing.boards.length)).toEqual([
+			1, 0, 0, 0,
+		]),
+	);
+	// Only the billing vault's own failure is a repository's.
+	expect(result.current.repositories.map((each) => each.error !== null)).toEqual([
+		false,
+		true,
+		false,
+		false,
+	]);
+	panesRefused = false;
 });
