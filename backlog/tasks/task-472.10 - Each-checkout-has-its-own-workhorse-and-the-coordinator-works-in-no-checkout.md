@@ -4,7 +4,7 @@ title: 'Each checkout has its own workhorse, and the coordinator works in no che
 status: To Do
 assignee: []
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 02:09'
+updated_date: '2026-10-15 03:38'
 labels: []
 dependencies:
   - TASK-472.04
@@ -46,5 +46,10 @@ A tab session has one workhorse and one coordinator, both running in the archboa
 created: 2026-10-15 02:09
 ---
 Found in the TASK-472.05 review: Fix with Codex now names the diagnosed vault as ARCHBOARD_VAULT on every command (72dc8511c), but the workhorse still runs in the served vault's checkout, so a repair that edits files directly may be outside its sandbox. Make sure that the repair runs in the workhorse of the diagnosed checkout.
+---
+
+created: 2026-10-15 03:38
+---
+Found in the TASK-472.06 boundary review: until this task lands, every Codex thread runs in the archboard checkout the server runs from, and that checkout tracks .archboard/vault. A thread command that omits -C therefore reads and writes archboard's own dogfood boards, and its first such command registers the archboard checkout and all its worktrees in the user's registry, so the navigator lists archboard for every user (confirmed with an isolated ARCHBOARD_REPOS: 'Registered /home/msc/Projects/archboard as the chosen checkout of github.com/miklschmidt/archboard, with 20 of its worktrees'). TASK-472.06 relies on the instructions telling each thread to pass -C and adds no guard, because this task removes the cause: a workhorse runs in its own checkout and the coordinator in a state directory with no vault, where an omitted -C is refused. Add an owner here that a coordinator command without -C is refused with VAULT_NOT_FOUND, and that no thread runs in the archboard checkout unless that is the checkout it works in.
 ---
 <!-- COMMENTS:END -->
