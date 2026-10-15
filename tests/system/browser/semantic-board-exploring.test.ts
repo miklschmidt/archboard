@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
@@ -277,7 +276,6 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = vaultIn(join(ownerRoot, "exploring", "vault"));
-	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({
 		serverPath,
 		vault,

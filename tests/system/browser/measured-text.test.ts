@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { diagramTextWidth } from "@/runtime/semantic-renderer/index";
@@ -147,7 +146,6 @@ test("the server's text measurement is what a real browser draws", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = vaultIn(join(ownerRoot, "measured-vault"));
-	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);

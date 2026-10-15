@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -143,7 +143,6 @@ test(
 		writeFileSync(fixture.controlPath, JSON.stringify({ signedOut: true }));
 		const { ownerRoot } = browserTestRoots();
 		const vault = vaultIn(join(ownerRoot, "vault"));
-		mkdirSync(vault, { recursive: true });
 
 		const server = await startOwnedServer({
 			serverPath,

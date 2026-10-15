@@ -4,7 +4,6 @@
 // peer connection and audio are stand-ins, and a press of Talk. The fake's model says a scripted
 // line a word at a time, and its output is a steady tone, which the voice hears as speaking.
 
-import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -48,7 +47,6 @@ export async function startVoiceServer(
 ): Promise<VoiceServer> {
 	const fixture = prepareProductionFixture(resources, FAKE_CODEX);
 	const vault = vaultIn(join(browserTestRoots().ownerRoot, vaultName));
-	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({
 		serverPath: VOICE_SERVER,
 		vault,
