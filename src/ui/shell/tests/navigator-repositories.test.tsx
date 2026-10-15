@@ -190,15 +190,20 @@ function filterBy(text: string): void {
 	});
 }
 
-test("a GitHub repository is named by its owner and name beside GitHub's mark, and the filter finds it by its whole identity", () => {
+test("a GitHub repository is named by its owner and name beside GitHub's mark, another keeps the repository mark, and the filter finds it by its whole identity", () => {
+	const scratch: RepositoryEntry = {
+		...ready("scratch", "/work/scratch/.archboard/vault"),
+		untracked: true,
+	};
 	mountNavigator({
 		repositories: [
-			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_BOARDS),
+			repositoryOf(scratch, SHOP_BOARDS),
 			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_BOARDS),
 		],
 	});
 	const billing = `[data-row-id="${CSS.escape(`repository:${BILLING}`)}"]`;
-	const shop = `[data-row-id="${CSS.escape(`repository:${SHOP}`)}"]`;
+	const other = '[data-row-id="repository:scratch"]';
+	expect(document.querySelector(`${other} [title="Repository"]`)).not.toBeNull();
 	expect(document.querySelector(`${billing} [title="GitHub repository"]`)).not.toBeNull();
 	expect(document.querySelector(`${billing} [title="${BILLING}"]`)?.textContent).toBe(
 		"acme/billing",
@@ -207,10 +212,10 @@ test("a GitHub repository is named by its owner and name beside GitHub's mark, a
 	// A match in the words the row shows is marked there.
 	filterBy("acme/bill");
 	expect(document.querySelector(`${billing} mark`)?.textContent).toBe("acme/bill");
-	expect(document.querySelector(shop)).toBeNull();
+	expect(document.querySelector(other)).toBeNull();
 	// A match that reaches into the host keeps the row, with nothing marked.
 	filterBy("github.com/acme/billing");
 	expect(document.querySelector(billing)).not.toBeNull();
 	expect(document.querySelector(`${billing} mark`)).toBeNull();
-	expect(document.querySelector(shop)).toBeNull();
+	expect(document.querySelector(other)).toBeNull();
 });
