@@ -137,9 +137,9 @@ interface ShellActions {
 	 * Show a board beside the one being read: in the pane that is not active,
 	 * adding the second pane when there is only one.
 	 * @param key The board key.
-	 * @param repository The repository the board is in; the active pane's when none is named.
+	 * @param repository The repository the board is in.
 	 */
-	openBeside(key: string, repository?: string): void;
+	openBeside(key: string, repository: string): void;
 	/**
 	 * Choose which checkout of a repository this machine reads, for every tab
 	 * and every agent (ADR 0050).
