@@ -25,7 +25,11 @@ import {
 } from "@/cli/command-contract/common";
 import { AnsweredVaultSchema } from "@/cli/command-contract/schemas";
 import { findVaultOf } from "@/cli/command-routing/index";
-import { SelectorSchema } from "@/cli/commands/lib/semantic-input";
+import {
+	editedVersion,
+	expectVersionRefusal,
+	SelectorSchema,
+} from "@/cli/commands/lib/semantic-input";
 
 const MoveInputSchema = z.object({ name: z.string(), to: SelectorSchema });
 
@@ -108,9 +112,11 @@ const semanticMoveContract = defineCommand({
 		"commits its own half. It is refused between two checkouts of one repository, while somebody " +
 		"else holds the board or its name in the target vault, when the target vault has a board or a " +
 		"former name that the board's names answer to, and when it needs a drill-down into an " +
-		"untracked vault, which has no identity to name. A stated --expect-version is checked.",
+		"untracked vault, which has no identity to name. A pane that showed the board shows it in " +
+		"its new repository. The move ends this writer's claim on the board; claim it again in the " +
+		"target vault to go on.",
 	examples: [
-		'archboard semantic move Payments --to ../payments --doing "moving the board into the repository it describes"',
+		'archboard semantic move Payments --to ../payments --expect-version 14 --doing "moving the board into the repository it describes"',
 		'archboard -C ~/meta semantic move Payments --to ~/payments --expect-version 14 --doing "moving the board into the repository it describes"',
 	],
 	parameters: [
@@ -155,6 +161,7 @@ const semanticMoveContract = defineCommand({
 	refusals: [
 		serverRefusal,
 		doingRefusal,
+		expectVersionRefusal,
 		boardHeldRefusal,
 		boardVersionRefusal,
 		claimRevokedRefusal,
@@ -175,7 +182,8 @@ const semanticMoveContract = defineCommand({
 			exit: 5,
 			stream: "stderr",
 			description:
-				"The target vault has a board or a former name that the board's names answer to.",
+				"The target vault has a board or a former name that the board's names answer to, or a " +
+				"copy of the board written there since an earlier run of the move.",
 		},
 		{
 			code: "MOVE_STOPPED",
@@ -201,6 +209,7 @@ const semanticMoveContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic move");
+		editedVersion(input.name);
 		const target = await findVaultOf(input.to, "--to");
 		const moved = await moveSemanticBoardOnServer(input.name, target.path).catch(
 			(error: unknown) => {
