@@ -104,10 +104,10 @@ function statedEnvelope(req: Request, res: Response): z.infer<typeof WriteEnvelo
  * @param res The response to refuse on.
  * @returns The envelope, or null when the refusal has already been sent.
  */
-function usableBoard(
-	envelope: z.infer<typeof WriteEnvelopeSchema>,
+function usableBoard<Stated extends { readonly board: string }>(
+	envelope: Stated,
 	res: Response,
-): z.infer<typeof WriteEnvelopeSchema> | null {
+): Stated | null {
 	try {
 		semanticBoardAddress(envelope.board);
 		return envelope;
@@ -281,5 +281,6 @@ export {
 	statedContent,
 	statedEnvelope,
 	statesNoVersion,
+	usableBoard,
 	WriteEnvelopeSchema,
 };

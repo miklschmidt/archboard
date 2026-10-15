@@ -33,6 +33,7 @@ const READ_ROUTES = [
 	"/api/semantic-boards/render?board=payments",
 	"/api/semantic-boards/locality?board=payments",
 	"/api/semantic-boards/footprint?board=payments",
+	"/api/semantic-boards/move-preview?board=payments&to=/tmp",
 	"/api/vault/check",
 	"/api/vault/code-check",
 	"/api/vault/code-findings",
