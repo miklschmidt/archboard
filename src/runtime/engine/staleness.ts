@@ -20,6 +20,7 @@
 
 import fs from "fs";
 import path from "path";
+import { SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
 
 // When this server process loaded its module graph. A guarded restart moves it
 // forward; editing source in a running process does not.
@@ -33,6 +34,8 @@ const srcDir = path.join(__dirname, "..", "..");
 const repoRoot = path.join(__dirname, "..", "..", "..");
 
 interface SourceState {
+	/** The real path of the checkout whose source this process runs (ADR 0049). */
+	checkout: string;
 	/** When the server last read its source: process start, or the last reload. */
 	evaluatedAt: string;
 	/** The file that has been written most recently, relative to the repo root. */
@@ -73,6 +76,7 @@ function sourceState(): SourceState {
 		}
 	}
 	return {
+		checkout: SOURCE_CHECKOUT,
 		evaluatedAt: new Date(evaluatedAt).toISOString(),
 		newestFile: newestFile === null ? null : path.relative(repoRoot, newestFile),
 		newestAt: newestFile === null ? null : new Date(newestMs).toISOString(),
