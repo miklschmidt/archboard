@@ -33,7 +33,7 @@ const RenameInputSchema = z.object({
 
 const semanticRenameContract = defineCommand({
 	path: ["semantic", "rename"],
-	shared: ["url", "doing", "expect-version", "as-session"],
+	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Give a board, or one of its variants, another name",
 	description:
 		"Renames the board, or with --variant one variant of it, and changes nothing else: every id, " +

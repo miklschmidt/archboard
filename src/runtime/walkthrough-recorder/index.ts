@@ -77,6 +77,12 @@ interface WalkthroughRecordingRequest {
 	readonly policy: VaultCheck;
 	/** The variant asked for, by id, or null for the one that is current. */
 	readonly variant: string | null;
+	/**
+	 * The repository the board is in, as the browser names it (ADR 0050): an
+	 * identity or an untracked vault's registry name. Null opens the page in the
+	 * vault the server opens a page in.
+	 */
+	readonly repository: string | null;
 	/** The walkthrough. */
 	readonly walkthrough: { readonly id: string; readonly name: string };
 	/** The language the voice narrates it in, as a BCP 47 tag. */
@@ -130,6 +136,7 @@ function pageUrl(request: WalkthroughRecordingRequest): string {
 	const url = new URL("/", request.serverUrl);
 	const { board, variant } = request;
 	url.searchParams.set("paneA", variant === null ? board.name : `${board.name}@${variant}`);
+	if (request.repository !== null) url.searchParams.set("repoA", request.repository);
 	url.searchParams.set(RECORDING_SEARCH_PARAM, request.walkthrough.id);
 	url.searchParams.set(RECORDING_LANGUAGE_SEARCH_PARAM, request.language);
 	return url.toString();

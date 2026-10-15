@@ -5,9 +5,13 @@
 // found through the command's own contract, so its spelling and default are the contract's. That
 // the value reaches the voice start is the end-to-end recording owner's.
 
-import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
+import { nameStandInVault } from "./stand-in-vault.ts";
 
-import { cliContractRegistry, runCli } from "@/cli/commands/run";
+// Named before the CLI loads, which reads its vault as it loads.
+const vault = nameStandInVault();
+afterAll(() => vault.restore());
+const { cliContractRegistry, runCli } = await import("@/cli/commands/run");
 
 const record = cliContractRegistry().find(
 	(entry) => entry.contract.path.join(" ") === "semantic record",

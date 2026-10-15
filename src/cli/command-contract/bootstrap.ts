@@ -3,6 +3,8 @@
 // environment as they load. So the flag is taken out of the arguments first,
 // in either spelling, and put into the environment — except for a help
 // request, which contacts nothing and must leave the environment alone.
+// A `-C <dir>` written before the command name is moved behind it here too,
+// before anything reads the command name.
 
 /** What the bootstrap took out of the arguments. */
 interface CliBootstrap {
@@ -63,6 +65,20 @@ function usableUrlValue(value: string | undefined): value is string {
 }
 
 /**
+ * Moves a leading `-C <dir>` behind the command name, in place, so that
+ * `archboard -C <dir> <command>` reads as git's own `-C` does. Routing takes
+ * the flag from there like any other shared option.
+ * @param argv - The arguments, edited in place.
+ */
+function moveLeadingDirectory(argv: string[]): void {
+	const [flag, directory, command] = argv;
+	if (flag !== "-C" || directory === undefined || command === undefined) {
+		return;
+	}
+	argv.splice(0, 3, command, flag, directory);
+}
+
+/**
  * Moves a `--url` out of the arguments and, for anything but a help request,
  * into the environment. It must run before anything reads runtime
  * configuration, which is why it is a separate step from ordinary argument
@@ -75,6 +91,7 @@ function applyCliBootstrap(
 	argv: string[],
 	environment: Record<string, string | undefined> = process.env,
 ): CliBootstrap {
+	moveLeadingDirectory(argv);
 	const help = isHelpInvocation(argv);
 	const url = takeUrl(argv);
 	if (url !== null && !help) {

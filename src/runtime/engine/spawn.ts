@@ -2,12 +2,7 @@ import { spawn, type ChildProcess } from "child_process";
 import { Readable } from "node:stream";
 import { fileURLToPath } from "url";
 import { logger } from "@/runtime/engine/logger";
-import {
-	ARCHBOARD_VAULT,
-	ARCHBOARD_URL,
-	ARCHBOARD_NO_AUTOSTART,
-	noVaultMessage,
-} from "@/runtime/engine/config";
+import { ARCHBOARD_URL, ARCHBOARD_NO_AUTOSTART } from "@/runtime/engine/config";
 import {
 	foreignServiceError,
 	markServerIdentityVerified,
@@ -42,7 +37,7 @@ import {
 	failedServerCleanupTiming,
 	type ServerStartupProtocolReader,
 } from "@/runtime/engine/server-startup-cleanup";
-import { codedError, errorCode, errorMessage } from "@/runtime/engine/lib/thrown-error";
+import { errorCode, errorMessage } from "@/runtime/engine/lib/thrown-error";
 import {
 	serverPort,
 	healthOrNull,
@@ -128,19 +123,17 @@ function refuseDisabledAutoStart(): void {
 /**
  * Refuse a start the machine could not carry out.
  *
- * The Archboard server refuses to start without a vault (ADR 0015), and it is spawned
- * detached with its stdio thrown away, so its refusal would land nowhere and
- * the caller would wait eight seconds to be told the server "did not become
- * healthy". Ask the same questions here, where somebody is reading.
- * @throws {Error} When the URL is not loopback, there is no vault, or the
- * package-local Codex runtime cannot be verified.
+ * The Archboard server is spawned detached with its stdio thrown away, so a
+ * refusal of its own would land nowhere and the caller would wait eight
+ * seconds to be told the server "did not become healthy". Ask the questions it
+ * would ask here, where somebody is reading. A vault is not one of them: the
+ * server serves every vault, and each call names its own (ADR 0049).
+ * @throws {Error} When the URL is not loopback, or the package-local Codex
+ * runtime cannot be verified.
  */
 function refuseUnstartableServer(): void {
 	if (!isLoopbackUrl()) {
 		throw unreachableError("refusing to auto-start a non-loopback server URL");
-	}
-	if (!ARCHBOARD_VAULT) {
-		throw codedError(noVaultMessage(), "SERVER_UNREACHABLE");
 	}
 	try {
 		verifyCodexExecutable(resolveProjectCodexExecutable());

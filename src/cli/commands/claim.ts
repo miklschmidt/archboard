@@ -62,7 +62,7 @@ const ClaimResultSchema = z.looseObject({
 type ClaimResult = z.infer<typeof ClaimResultSchema>;
 const claimContract = defineCommand({
 	path: ["claim"],
-	shared: ["url", "board"],
+	shared: ["url", "directory", "board"],
 	summary: "Take a board for a stretch of work, so twenty writes are one uninterrupted act",
 	description:
 		"Takes or extends a board lease for work you know in advance is substantial. An ordinary " +
@@ -168,7 +168,7 @@ const ReleaseResultSchema = z.looseObject({
 type ReleaseResult = z.infer<typeof ReleaseResultSchema>;
 const releaseContract = defineCommand({
 	path: ["release"],
-	shared: ["url", "board"],
+	shared: ["url", "directory", "board"],
 	summary: "Give back a board you claimed",
 	description:
 		"Ends this caller's claim on the board. The board goes back to being taken one write at a " +

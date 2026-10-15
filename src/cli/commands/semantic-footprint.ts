@@ -129,7 +129,7 @@ function described(answer: FootprintAnswer): string[] {
 
 const semanticFootprintContract = defineCommand({
 	path: ["semantic", "footprint"],
-	shared: ["url"],
+	shared: ["url", "directory"],
 	summary: "Map a branch onto a board and set it against a proposal",
 	description:
 		"A bound symbol narrows commits to its declaration through the language adapters. " +
