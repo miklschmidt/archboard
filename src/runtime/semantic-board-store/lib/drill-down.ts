@@ -117,29 +117,38 @@ function createDrillPlaces(vault: string): (repo: string | undefined) => DrillPl
 	};
 }
 
+/** What a drill-down opens, as far as the checker can tell. */
+type DrillAnswer =
+	| { readonly kind: "found"; readonly target: DrillDownTarget }
+	| { readonly kind: "missing" }
+	| { readonly kind: "unreadable"; readonly file: string; readonly problem: string }
+	| ({ readonly kind: "unreachable" } & Unreachable);
+
+const MISSING: DrillAnswer = { kind: "missing" };
+
 /**
  * The board a name answers to in another vault, read as it is on disk and
  * never migrated or written: its own name, else one it had (ADR 0036).
  * @param vault The other vault.
  * @param board The name the drill-down spells.
- * @returns What the checker knows of the board, or undefined when it holds none.
+ * @returns The board, none, or why the file that holds it cannot be read. The
+ * other vault's own check reports that file; this one only says why the link
+ * cannot be followed.
  */
-function targetIn(vault: string, board: string): DrillDownTarget | undefined {
+function targetIn(vault: string, board: string): DrillAnswer {
+	let file: string;
+	let text: string;
 	try {
-		const decoded = decodeSemanticBoardDocument(
-			fs.readFileSync(resolveSemanticBoard(board, vault).file, "utf-8"),
-		);
-		return decoded.ok ? { name: decoded.board.name, level: decoded.board.level } : undefined;
+		file = resolveSemanticBoard(board, vault).file;
+		text = fs.readFileSync(file, "utf-8");
 	} catch {
-		return undefined;
+		return MISSING;
 	}
+	const decoded = decodeSemanticBoardDocument(text);
+	return decoded.ok
+		? { kind: "found", target: { name: decoded.board.name, level: decoded.board.level } }
+		: { kind: "unreadable", file, problem: decoded.problem };
 }
-
-/** What a drill-down opens, as far as the checker can tell. */
-type DrillAnswer =
-	| { readonly kind: "found"; readonly target: DrillDownTarget }
-	| { readonly kind: "missing" }
-	| ({ readonly kind: "unreachable" } & Unreachable);
 
 /** Answers where a drill-down leads, for the boards of one vault. */
 type DrillLookup = (drill: DrillDown) => DrillAnswer;
@@ -158,14 +167,10 @@ function createDrillLookup(
 	return (drill) => {
 		const place = places(drill.repo);
 		if (place.kind === "unreachable") return place;
+		if (place.kind === "elsewhere") return targetIn(place.vault, drill.board);
 		const key = targetKey(drill.board);
-		const target =
-			place.kind === "here"
-				? key === null
-					? undefined
-					: local.get(key)
-				: targetIn(place.vault, drill.board);
-		return target === undefined ? { kind: "missing" } : { kind: "found", target };
+		const target = key === null ? undefined : local.get(key);
+		return target === undefined ? MISSING : { kind: "found", target };
 	};
 }
 
@@ -243,18 +248,90 @@ function unreachableWords(drill: DrillDown, answer: Unreachable): string {
 	const repo = drill.repo ?? "";
 	if (answer.why === "unknown")
 		return (
-			`this machine has no checkout of repository ${repo}, so the link opens nothing here. ` +
+			`this machine has no chosen checkout of repository ${repo}, so the link opens nothing here. ` +
 			"Register a checkout with `archboard repo add <directory>` (the first one known is the one " +
-			"read, `archboard repo use <directory>` chooses another), or name the repository that " +
-			"holds the board."
+			"read), choose a known one with `archboard repo use <directory>`, or name the repository " +
+			"that holds the board."
 		);
 	return answer.why === "gone"
 		? `the chosen checkout of repository ${repo} (${answer.root}) is gone, so the link opens ` +
 				"nothing. Choose another with `archboard repo use <directory>`, or remove this one with " +
-				"`archboard repo forget`."
+				`\`archboard repo forget ${answer.root}\`.`
 		: `the chosen checkout of repository ${repo} (${answer.root}) holds no .archboard/vault, so ` +
 				"the link opens nothing. Choose a checkout that has one with `archboard repo use " +
 				"<directory>`, or name the repository that holds the board.";
+}
+
+/** One problem with a link, before it is placed on the link. */
+type LinkProblem = Pick<VaultDiagnostic, "code" | "message">;
+
+/**
+ * What is wrong with where a link leads, when anything is.
+ * @param node The node carrying it.
+ * @param drill The drill-down it carries.
+ * @param answer Where it leads.
+ * @returns The problem, or null when it opens a board of the node's level.
+ */
+function answerProblem(
+	node: SemanticNode,
+	drill: DrillDown,
+	answer: DrillAnswer,
+): LinkProblem | null {
+	const named = JSON.stringify(node.name);
+	switch (answer.kind) {
+		case "unreachable":
+			return {
+				code: "DRILL_DOWN_UNKNOWN_REPOSITORY",
+				message: `Node ${named} opens ${whereItOpens(drill)}, but ${unreachableWords(drill, answer)}`,
+			};
+		case "unreadable":
+			return {
+				code: "DRILL_DOWN_UNKNOWN_BOARD",
+				message:
+					`Node ${named} opens ${whereItOpens(drill)}, which the vault of its chosen checkout ` +
+					`holds in ${answer.file}, and that file cannot be read: ${answer.problem}. The link ` +
+					"opens nothing until the board is repaired in its own repository, where " +
+					"`archboard check` names the repair.",
+			};
+		case "missing":
+			return {
+				code: "DRILL_DOWN_UNKNOWN_BOARD",
+				message:
+					`Node ${named} opens ${whereItOpens(drill)}, which ` +
+					`${drill.repo === undefined ? "this vault" : "the vault of its chosen checkout"} ` +
+					"does not hold, so the link opens nothing. Create that board, name the board that does " +
+					"describe these internals, or remove the drill-down.",
+			};
+		case "found":
+			break;
+	}
+	return levelProblem(node, drill, answer.target);
+}
+
+/**
+ * Whether a node's kind disagrees with the level of the board it opens.
+ * @param node The node carrying the link.
+ * @param drill The drill-down it carries.
+ * @param target The board it opens.
+ * @returns The problem, or null when they agree.
+ */
+function levelProblem(
+	node: SemanticNode,
+	drill: DrillDown,
+	target: DrillDownTarget,
+): LinkProblem | null {
+	if (node.kind === target.level) return null;
+	return {
+		code: "DRILL_DOWN_LEVEL_MISMATCH",
+		message:
+			`Node ${JSON.stringify(node.name)} is of kind ${JSON.stringify(node.kind)} and opens ` +
+			`${whereItOpens({ ...drill, board: target.name })}, which is at level ` +
+			`${JSON.stringify(target.level)}. A node standing for what another board ` +
+			"describes carries that board's level as its kind: use " +
+			`kind ${JSON.stringify(target.level)} (defining it under nodeKinds in ` +
+			".archboard/config.yaml when the vault has no such kind yet), or point the drill-down at " +
+			"the board this part really is.",
+	};
 }
 
 /**
@@ -273,54 +350,20 @@ function linkDiagnostics(
 	lookup: DrillLookup,
 	where: DiagnosticSite,
 ): VaultDiagnostic[] {
-	const diagnostics: VaultDiagnostic[] = [];
-	const opens = JSON.stringify(drill.board);
-	if (!participates(node, content))
-		diagnostics.push({
-			...where,
-			severity: "warning",
-			code: "DRILL_DOWN_ONLY_NODE",
-			message:
-				`Node ${JSON.stringify(node.name)} carries a drill-down to ${opens} and ` +
-				"nothing else: it has no relationship, no children and no part in a flow, so it is on " +
-				"the board only to be opened. A drill-down is an affordance on a part that is really " +
-				"there. Draw the actual participant this board reaches and put the link on it, or move " +
-				"an upward link onto the container the board describes, and remove this node.",
-		});
-	const answer = lookup(drill);
-	if (answer.kind === "unreachable")
-		diagnostics.push({
-			...where,
-			severity: "warning",
-			code: "DRILL_DOWN_UNKNOWN_REPOSITORY",
-			message: `Node ${JSON.stringify(node.name)} opens ${whereItOpens(drill)}, but ${unreachableWords(drill, answer)}`,
-		});
-	else if (answer.kind === "missing")
-		diagnostics.push({
-			...where,
-			severity: "warning",
-			code: "DRILL_DOWN_UNKNOWN_BOARD",
-			message:
-				`Node ${JSON.stringify(node.name)} opens ${whereItOpens(drill)}, which ` +
-				`${drill.repo === undefined ? "this vault" : "the vault of its chosen checkout"} ` +
-				"does not hold, so the link opens nothing. Create that board, name the board that does " +
-				"describe these internals, or remove the drill-down.",
-		});
-	else if (node.kind !== answer.target.level)
-		diagnostics.push({
-			...where,
-			severity: "warning",
-			code: "DRILL_DOWN_LEVEL_MISMATCH",
-			message:
-				`Node ${JSON.stringify(node.name)} is of kind ${JSON.stringify(node.kind)} and opens ` +
-				`${whereItOpens({ ...drill, board: answer.target.name })}, which is at level ` +
-				`${JSON.stringify(answer.target.level)}. A node standing for what another board ` +
-				"describes carries that board's level as its kind: use " +
-				`kind ${JSON.stringify(answer.target.level)} (defining it under nodeKinds in ` +
-				".archboard/config.yaml when the vault has no such kind yet), or point the drill-down at " +
-				"the board this part really is.",
-		});
-	return diagnostics;
+	const onlyNode: LinkProblem | null = participates(node, content)
+		? null
+		: {
+				code: "DRILL_DOWN_ONLY_NODE",
+				message:
+					`Node ${JSON.stringify(node.name)} carries a drill-down to ${JSON.stringify(drill.board)} ` +
+					"and nothing else: it has no relationship, no children and no part in a flow, so it is " +
+					"on the board only to be opened. A drill-down is an affordance on a part that is really " +
+					"there. Draw the actual participant this board reaches and put the link on it, or move " +
+					"an upward link onto the container the board describes, and remove this node.",
+			};
+	return [onlyNode, answerProblem(node, drill, lookup(drill))].flatMap((problem) =>
+		problem === null ? [] : [{ ...where, severity: "warning" as const, ...problem }],
+	);
 }
 
 export { type DrillDownTarget, createDrillLookup, semanticDrillDownDiagnostics };
