@@ -69,7 +69,7 @@ function useBesideOpening(
 		const paneId = readyTarget(panes, wanted);
 		if (paneId === null) return;
 		pending.current = null;
-		actions.selectBoard(wanted.key, paneId, wanted.repository);
+		void actions.selectBoard(wanted.key, paneId, wanted.repository);
 		// Beside means the person stays where they were reading, as with two panes.
 		actions.selectPane(wanted.from);
 	}, [panes, actions]);
@@ -78,7 +78,7 @@ function useBesideOpening(
 			const { list } = livePanes;
 			const other = list.panes.find((pane) => pane.paneId !== list.activePaneId);
 			if (other !== undefined) {
-				actions.selectBoard(key, other.paneId, repository);
+				void actions.selectBoard(key, other.paneId, repository);
 				return;
 			}
 			pending.current = { key, repository, from: list.activePaneId, seen: false };

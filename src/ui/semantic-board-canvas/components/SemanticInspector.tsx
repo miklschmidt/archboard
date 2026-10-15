@@ -60,6 +60,7 @@ import {
 	type Subject,
 } from "@/ui/semantic-board-canvas/lib/board-document";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
+import type { OpenDown } from "@/ui/semantic-board-canvas/lib/drill-target";
 
 /**
  * What a part is called, or the id the board names it by when the variant no
@@ -243,7 +244,7 @@ interface BodyProps {
 	 * @param board The target board.
 	 * @param variant The variant to open, by id.
 	 */
-	onOpen: (board: string, variant: string) => void;
+	onOpen: OpenDown;
 	/** How to name the groups a node belongs to, and select one. */
 	groups: GroupControls;
 	/** The state that holds the subject: its relationships are read there. */
@@ -470,7 +471,7 @@ interface SemanticInspectorProps {
 	 * @param board The target board.
 	 * @param variant The variant to open, by id.
 	 */
-	onOpen: (board: string, variant: string) => void;
+	onOpen: OpenDown;
 	/** How to name the groups a node belongs to, and select one. */
 	groups: GroupControls;
 	/** How the vault's kinds look. */

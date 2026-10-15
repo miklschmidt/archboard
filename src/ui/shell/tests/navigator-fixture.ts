@@ -225,10 +225,12 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 		 * @param key The board key.
 		 * @param _paneId The pane, which the navigator never names.
 		 * @param repository The repository the board is in.
+		 * @returns That the pane shows it.
 		 */
 		selectBoard: (key, _paneId, repository) => {
 			asked.selected.push(key);
 			asked.opened.push(`${repository}|${key}`);
+			return Promise.resolve(true);
 		},
 		/**
 		 * Record a board opened beside.

@@ -57,6 +57,7 @@ import {
 import { NO_FOCUS, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
 import { surfaceMarks } from "@/ui/semantic-board-canvas/lib/subjects";
+import type { OpenDown } from "@/ui/semantic-board-canvas/lib/drill-target";
 
 /** Which way each arrow key moves the diagram under the viewport. */
 const PAN_KEYS: Readonly<Record<string, readonly [number, number]>> = {
@@ -185,7 +186,7 @@ interface SemanticDiagramProps {
 	 * @param board The target board.
 	 * @param variant The variant to open, by id.
 	 */
-	onOpenDown?: ((board: string, variant: string) => void) | undefined;
+	onOpenDown?: OpenDown | undefined;
 	/**
 	 * What is on screen is the last picture that loaded, and a read since then
 	 * has failed. The diagram stays; the stage says so.

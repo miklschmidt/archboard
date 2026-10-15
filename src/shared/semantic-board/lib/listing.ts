@@ -73,6 +73,12 @@ const BoardListingSchema = z.object({
 	/** The vault's configured levels, coarsest first. */
 	levels: z.array(SemanticBoardLevelSchema),
 	boards: z.array(ListedBoardSchema),
+	/**
+	 * The repository identity of the checkout that holds the vault, so a reader
+	 * can tell a drill-down naming it from one into another repository (ADR
+	 * 0050). Absent for an untracked vault.
+	 */
+	repository: z.string().optional(),
 });
 type BoardListing = z.infer<typeof BoardListingSchema>;
 

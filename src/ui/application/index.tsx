@@ -385,7 +385,7 @@ function ApplicationBody(): JSX.Element {
 			if (address !== null) {
 				// This pane, not whichever has focus: the person chose a variant of
 				// the board in front of them, and focus follows the pointer.
-				shell.selectBoard(boardKeyFor(address.board, variant), paneId);
+				void shell.selectBoard(boardKeyFor(address.board, variant), paneId);
 			}
 		},
 		[variantSources],
@@ -395,7 +395,8 @@ function ApplicationBody(): JSX.Element {
 	const [actionsNow] = useState(() => new LiveBinding<ShellActions>());
 	actionsNow.bind(actions);
 	const selectBoard = useCallback(
-		(key: string, paneId: string): void => actionsNow.read().selectBoard(key, paneId),
+		(key: string, paneId: string, repository?: string): Promise<boolean> =>
+			actionsNow.read().selectBoard(key, paneId, repository),
 		[actionsNow],
 	);
 	const selectPane = useCallback(

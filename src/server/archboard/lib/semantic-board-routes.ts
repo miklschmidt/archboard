@@ -123,6 +123,7 @@ function listRoute(req: Request, res: Response): void {
 			success: true,
 			levels: configured.configuration.levels,
 			boards: read.map(([location, one]) => listedBoard(location, one, accepted, vaultRepo)),
+			...(vaultRepo === undefined ? {} : { repository: vaultRepo }),
 		};
 		res.json(listing);
 	} catch (error) {

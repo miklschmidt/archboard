@@ -73,15 +73,16 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 	 * @param key The board key.
 	 * @param inPane Which pane shows it; the active one when none is named.
 	 * @param repository The repository the board is in; the pane's own when none is named.
+	 * @returns Whether the pane shows it now.
 	 */
-	async function selectBoard(key: string, inPane?: string, repository?: string): Promise<void> {
+	async function selectBoard(key: string, inPane?: string, repository?: string): Promise<boolean> {
 		const paneId = inPane ?? panes.active.status.paneId;
 		const { status } = recordFor(panes.records, paneId);
 		const { clientId, boardKey, repository: from } = status;
 		const place = placeFor(deps.catalog, status, repository);
 		if (typeof place !== "string") {
 			deps.notices.raise(place);
-			return;
+			return false;
 		}
 		const vault = place;
 		// The command waits for the address bar's one slot, so what the person
@@ -99,6 +100,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 			deps.notices.dismiss("board-command");
 			// The listing says which pane holds what, and this just moved one.
 			deps.catalog.refresh();
+			return true;
 		} catch (error) {
 			permission.move.failed();
 			move.failed();
@@ -109,6 +111,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 					error instanceof Error ? error.message : String(error),
 				),
 			);
+			return false;
 		}
 	}
 	return {
@@ -117,10 +120,10 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 		 * @param key The board key.
 		 * @param inPane Which pane shows it; the active one when none is named.
 		 * @param repository The repository the board is in; the pane's own when none is named.
+		 * @returns Whether the pane shows it now.
 		 */
-		selectBoard: (key: string, inPane?: string, repository?: string): void => {
-			void selectBoard(key, inPane, repository);
-		},
+		selectBoard: (key: string, inPane?: string, repository?: string): Promise<boolean> =>
+			selectBoard(key, inPane, repository),
 		/** Read the listing and every drawing again. */
 		refreshBoards: (): void => {
 			deps.catalog.reload();

@@ -50,11 +50,13 @@ interface PaneViewSources {
 	/** The page records its one pane (TASK-304), or null. */
 	readonly recording: PaneRecording | null;
 	/**
-	 * Show a board in one pane: where a part its search found is.
+	 * Show a board in one pane: where a part its search found is, or where a drill-down leads.
 	 * @param key The board key.
 	 * @param paneId The pane.
+	 * @param repository The repository the board is in; the pane's own when none is named.
+	 * @returns Whether the pane shows it now.
 	 */
-	readonly openBoard: (key: string, paneId: string) => void;
+	readonly openBoard: (key: string, paneId: string, repository?: string) => Promise<boolean>;
 }
 
 /** What a recording page gives its pane. */
@@ -99,11 +101,13 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		sources.onVariantChange(paneId, variant);
 	}
 	/**
-	 * The pane showed a board: where a part its search found is.
+	 * Show a board in this pane: where a part its search found is, or where a drill-down leads.
 	 * @param key The board key.
+	 * @param repository The repository the board is in; the pane's own when none is named.
+	 * @returns Whether the pane shows it now.
 	 */
-	function openBoardHere(key: string): void {
-		sources.openBoard(key, paneId);
+	function openBoardHere(key: string, repository?: string): Promise<boolean> {
+		return sources.openBoard(key, paneId, repository);
 	}
 	return createElement(ApplicationPane, {
 		key: paneId,

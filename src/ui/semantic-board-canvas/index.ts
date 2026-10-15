@@ -78,5 +78,8 @@ export {
 } from "@/ui/semantic-board-canvas/lib/picture-source";
 export { readBoardsFrom, type BoardReads } from "@/ui/semantic-board-canvas/lib/board-reads";
 export { PaneVaultContext } from "@/ui/semantic-board-canvas/lib/pane-vault";
+export { RepositoryPlacesContext } from "@/ui/semantic-board-canvas/lib/repository-places";
+export type { Dive } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
+export type { RepositoryPlaces } from "@/ui/semantic-board-canvas/lib/drill-target";
 export { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 export { chooseLayoutEngine } from "@/ui/semantic-board-canvas/lib/layout-engine";

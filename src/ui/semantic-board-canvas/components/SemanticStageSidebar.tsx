@@ -24,6 +24,7 @@ import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
 import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
+import type { OpenDown } from "@/ui/semantic-board-canvas/lib/drill-target";
 
 /** What the stage hands the sidebar. */
 interface StageSidebarView extends Omit<
@@ -53,7 +54,7 @@ interface StageSidebarView extends Omit<
 	 */
 	readonly onPick: (id: string | null) => void;
 	/** Follow a drill-down, clearing the selection it was made from. */
-	readonly onOpenDown: (board: string, variant: string) => void;
+	readonly onOpenDown: OpenDown;
 	/** Open the code a node is bound to, when the shell can. */
 	readonly onOpenCode?: ((binding: CodeBinding) => void) | undefined;
 	/** How the inspector names memberships and selects one. */

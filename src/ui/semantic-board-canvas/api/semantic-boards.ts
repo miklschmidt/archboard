@@ -58,7 +58,7 @@ type SemanticOfferedView = OfferedView;
 type SemanticBoardEntry = ListedBoard;
 
 /** What the listing says: the configured levels, coarsest first, and every board. */
-type SemanticBoardListing = Pick<BoardListing, "levels" | "boards">;
+type SemanticBoardListing = Pick<BoardListing, "levels" | "boards" | "repository">;
 
 /** A variant with something on it, drawn, as the viewer carries it. */
 type SemanticDrawing = DrawnBoard & { readonly kind: "drawn" };
@@ -218,7 +218,8 @@ async function fetchSemanticBoards(
 	if (!parsed.success) {
 		throw new SemanticBoardError("REPLY_INVALID", "The Archboard server listed no boards.");
 	}
-	return { levels: parsed.data.levels, boards: parsed.data.boards };
+	const { levels, boards, repository } = parsed.data;
+	return repository === undefined ? { levels, boards } : { levels, boards, repository };
 }
 
 /**

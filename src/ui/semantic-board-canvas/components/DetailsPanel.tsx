@@ -38,6 +38,7 @@ import type { NodeSubject } from "@/ui/semantic-board-canvas/lib/board-document"
 import { connectionsOf, type Link } from "@/ui/semantic-board-canvas/lib/connections";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 import { reachOf, type Way } from "@/ui/semantic-board-canvas/lib/reach";
+import type { OpenDown } from "@/ui/semantic-board-canvas/lib/drill-target";
 
 /** Inputs for the title. */
 interface PartTitleProps {
@@ -282,7 +283,7 @@ interface DetailsPanelProps {
 	 * @param id The part.
 	 */
 	readonly onPick: (id: string) => void;
-	readonly onOpen: (board: string, variant: string) => void;
+	readonly onOpen: OpenDown;
 	readonly onOpenCode: ((binding: CodeBinding) => void) | undefined;
 	/** The level of the board the part is drawn on, which places the board it opens. */
 	readonly level: string | undefined;

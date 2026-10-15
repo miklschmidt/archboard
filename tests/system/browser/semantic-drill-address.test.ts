@@ -1,7 +1,10 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 
+import { packageBin } from "../cli/support/package-cli.ts";
+import { createRepositoryFixture } from "../cli/support/repository-fixture.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
@@ -10,6 +13,7 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerServerBase,
+	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import {
 	DRILL_OPEN,
@@ -23,6 +27,8 @@ import {
 	stageState,
 } from "./support/drilling.ts";
 import { serverPath, servedRepository } from "./support/navigator-support.ts";
+import { seedSemanticBoard } from "./support/semantic-page.ts";
+import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
 
 // The address of a board read a level down.
 //
@@ -160,3 +166,155 @@ test("the address names the view of the board on screen, down a level and back",
 
 	await server.assertRunning();
 }, 90_000);
+
+// A drill-down into another repository (ADR 0050, TASK-472.13).
+//
+// A link that names another repository's identity is read in the vault of that
+// repository's chosen checkout on this machine. Following it moves the pane
+// into that repository, so the address, the inventory and every later read
+// name the vault the board is in. The breadcrumb keeps the way back, and says
+// which repository each run of it is in. A link into a repository this machine
+// does not list says how to register one, and opens nothing.
+
+const SHOP = "github.com/acme/shop";
+const ORDERS = "github.com/acme/orders";
+
+/**
+ * A checkout's vault, made and configured.
+ * @param checkout The checkout.
+ * @returns The vault's real path.
+ */
+function vaultIn(checkout: string): string {
+	const vault = join(checkout, ".archboard", "vault");
+	mkdirSync(vault, { recursive: true });
+	ensureSemanticVaultConfiguration(vault);
+	return realpathSync(vault);
+}
+
+/**
+ * The repository labels the breadcrumb shows, first to last.
+ * @param browser The page.
+ * @returns Their texts.
+ */
+const crumbRepositories = (browser: AgentBrowserSession): Promise<string[]> =>
+	browser.eval<string[]>(
+		`[...document.querySelectorAll("[data-slot='pane-crumb-repository']")].map((one) => one.textContent.trim())`,
+	);
+
+test("a drill-down into another repository moves the pane there, and the breadcrumb leads back", async () => {
+	await using resources = new AsyncDisposableStack();
+	const fixture = createRepositoryFixture();
+	resources.defer(() => fixture.dispose());
+	const shop = fixture.repository("shop", SHOP);
+	const orders = fixture.repository("orders", ORDERS);
+	for (const checkout of [shop, orders]) {
+		vaultIn(checkout);
+		const added = spawnSync(packageBin, ["repo", "add", checkout], {
+			cwd: fixture.nowhere,
+			env: fixture.serverEnvironment,
+			encoding: "utf8",
+		});
+		expect(added.status).toBe(0);
+	}
+	const server = await startOwnedServer({
+		serverPath,
+		vault: fixture.vault,
+		env: serverTestEnvironment({ ARCHBOARD_REPOS: fixture.registry }),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	await seedSemanticBoard(createJsonRequester({ ...server, vault: vaultIn(orders) }), "ledger", {
+		nodes: [{ name: "Posting", kind: "service" }],
+	});
+	const created = await createJsonRequester({ ...server, vault: vaultIn(shop) })<{
+		success: boolean;
+	}>("/api/semantic-boards/create", {
+		method: "POST",
+		doing: "drawing the storefront",
+		body: {
+			board: "storefront",
+			origin: "agent",
+			create: {
+				level: "system",
+				nodes: [
+					{
+						name: "Checkout",
+						kind: "service",
+						drillDown: { board: "ledger", variant: { kind: "current" }, repo: ORDERS },
+					},
+					{
+						name: "Elsewhere",
+						kind: "service",
+						drillDown: {
+							board: "anything",
+							variant: { kind: "current" },
+							repo: "github.com/acme/unlisted",
+						},
+					},
+				],
+				edges: [],
+			},
+		},
+	});
+	expect(created.status).toBe(200);
+
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${server.base}/?paneA=storefront&repoA=${SHOP}`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+
+	// A repository this machine does not list opens nothing, and says how to register one.
+	await pick(browser, await drawnId(browser, "Elsewhere"));
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`!!document.querySelector("[data-slot='semantic-drill-unregistered']")`,
+			),
+		Boolean,
+		"the link into an unlisted repository to say it cannot be read",
+		WAIT,
+	);
+	expect(await browser.eval<boolean>(`!!document.querySelector("${DRILL_OPEN}")`)).toBe(false);
+
+	// A listed one is followed into its vault: the pane moves there.
+	await pick(browser, await drawnId(browser, "Checkout"));
+	await pollUntil(
+		() => browser.eval<boolean>(`!!document.querySelector("${DRILL_OPEN}")`),
+		Boolean,
+		"the link into the other repository to offer the way down",
+		WAIT,
+	);
+	await press(browser, DRILL_OPEN);
+	await pollUntil(
+		() => addressSearch(browser),
+		(search) => search === `paneA=ledger&repoA=${ORDERS}`,
+		"the address to name the board and the repository the pane moved into",
+		WAIT,
+	);
+	await drawnId(browser, "Posting");
+	// Each run of the trail names its repository: the board left, and the board on screen.
+	expect(await crumbRepositories(browser)).toEqual([SHOP, ORDERS]);
+
+	// The crumb of the board the reader came from takes the pane back into its repository.
+	const back = await browser.eval<boolean>(`(() => {
+		const crumb = [...document.querySelectorAll("[data-slot='pane-crumb']")]
+			.find((one) => one.textContent.includes("storefront"));
+		if (!crumb) return false;
+		crumb.click();
+		return true;
+	})()`);
+	expect(back).toBe(true);
+	await pollUntil(
+		() => addressSearch(browser),
+		(search) => search === `paneA=storefront&repoA=${SHOP}`,
+		"the address to name the board and repository the pane went back to",
+		WAIT,
+	);
+	await pollUntil(
+		() => shownBoard(browser),
+		(board) => board === "storefront",
+		"the pane to draw the board it went back to",
+		WAIT,
+	);
+	expect(await crumbRepositories(browser)).toEqual([]);
+	await server.assertRunning();
+}, 45_000);
