@@ -155,19 +155,16 @@ function createDrillLookup(
 	local: ReadonlyMap<string, DrillDownTarget>,
 ): DrillLookup {
 	const places = createDrillPlaces(vault);
-	const read = new Map<string, DrillDownTarget | undefined>();
 	return (drill) => {
 		const place = places(drill.repo);
 		if (place.kind === "unreachable") return place;
-		let target: DrillDownTarget | undefined;
-		if (place.kind === "here") {
-			const key = targetKey(drill.board);
-			target = key === null ? undefined : local.get(key);
-		} else {
-			const asked = JSON.stringify([place.vault, drill.board]);
-			if (!read.has(asked)) read.set(asked, targetIn(place.vault, drill.board));
-			target = read.get(asked);
-		}
+		const key = targetKey(drill.board);
+		const target =
+			place.kind === "here"
+				? key === null
+					? undefined
+					: local.get(key)
+				: targetIn(place.vault, drill.board);
 		return target === undefined ? { kind: "missing" } : { kind: "found", target };
 	};
 }
