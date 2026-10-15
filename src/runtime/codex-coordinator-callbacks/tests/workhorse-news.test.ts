@@ -15,6 +15,7 @@ import type {
 	DynamicServerRequest,
 	TransportServerNotification,
 } from "../../codex-transport/server-requests.js";
+import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
 import { TELL_COORDINATOR_OWNER } from "../index.js";
 import { close, harness } from "./support.js";
 
@@ -234,5 +235,70 @@ describe("workhorse news", () => {
 		expect(unheard.response).toMatchObject({ result: { success: true } });
 		expect(unheard.response).not.toEqual(heard.response);
 		close(quiet);
+	});
+});
+
+/**
+ * A thread as Codex spells it.
+ * @param h - The harness.
+ * @param threadId - The thread, or null.
+ * @returns Its wire spelling, or null.
+ */
+function wireOf(h: Harness, threadId: ThreadId | null): string | null {
+	return threadId === null
+		? null
+		: h.ids.authorities.identity.decoder.serializeCodexIdentity(threadId);
+}
+
+/**
+ * Give the harness's tab session a second workhorse, in another checkout (ADR 0050).
+ * @param h - The harness.
+ * @param wire - Its thread as Codex spells it.
+ * @param checkout - The checkout it works in.
+ */
+function secondWorkhorse(h: Harness, wire: string, checkout: string): void {
+	const first = h.state.link;
+	if (first === null || first.binding.link.state !== "executable") {
+		throw new Error("harness has no executable workhorse link");
+	}
+	const threadId = h.ids.authorities.identity.decoder.adoptThreadId(wire);
+	h.state.others.push({
+		binding: {
+			...first.binding,
+			paneId: `tab\u0000${checkout}`,
+			link: { ...first.binding.link, threadId },
+			cas: { ...first.binding.cas, paneId: `tab\u0000${checkout}`, threadId },
+		},
+		target: { ...first.target, threadId },
+		checkout,
+	});
+}
+
+describe("workhorse news of a tab with a workhorse in each checkout", () => {
+	test("news of the second checkout's workhorse is about that workhorse and names its checkout", async () => {
+		const h = harness(true);
+		secondWorkhorse(h, "workhorse-shop", "/work/shop");
+		h.callbacks.onNotification(turnCompleted(h, "completed", "workhorse-shop"));
+		h.callbacks.onNotification(turnCompleted(h, "failed"));
+		await h.callbacks.flush();
+		const delivered = h.callbacks.inspect().map((delivery) => ({
+			path: delivery.path,
+			type: delivery.callback?.type,
+			checkout: delivery.callback?.correlation.workhorseLink.checkout,
+			thread: wireOf(h, delivery.callback?.correlation.workhorseThreadId ?? null),
+		}));
+		expect(delivered).toEqual([
+			{
+				path: "coordinator_turn",
+				type: "completed",
+				checkout: "/work/shop",
+				thread: "workhorse-shop",
+			},
+			{ path: "coordinator_turn", type: "failed", checkout: "/work/payments", thread: "workhorse" },
+		]);
+		// The coordinator learns which checkout's workhorse it was, which every workhorse tool takes.
+		expect(h.reports[0]?.news).toContain("/work/shop");
+		expect(h.reports[1]?.news).toContain("/work/payments");
+		close(h);
 	});
 });

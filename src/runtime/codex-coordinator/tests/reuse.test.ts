@@ -9,7 +9,7 @@ import type {
 } from "../index.js";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import { createCodexCoordinator } from "../index.js";
-import { CHECKOUT_ROOT, fixture, type Fixture } from "./support.js";
+import { WORKING_DIRECTORY, fixture, type Fixture } from "./support.js";
 
 function persistence(snapshot: CoordinatorSnapshot): CoordinatorPersistedState {
 	if (snapshot.persistence === null) {
@@ -157,7 +157,7 @@ describe("coordinator candidate reuse and replacement", () => {
 			threadLink: fixtureValue.link,
 			epoch: fixtureValue.epoch,
 			identity: fixtureValue.authority,
-			checkoutRoot: CHECKOUT_ROOT,
+			workingDirectory: WORKING_DIRECTORY,
 		});
 		const first = fixtureValue.coordinator;
 		fixtureValue.session.notify = (event) => {

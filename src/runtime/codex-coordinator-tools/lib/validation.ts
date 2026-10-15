@@ -335,7 +335,12 @@ function validateCoordinatorToolRequest(
 			expectedTurnId: null,
 		});
 	}
-	return workhorseCall(options, evidence, parsed, workhorseBinding(options, call, coordinator));
+	return workhorseCall(
+		options,
+		evidence,
+		parsed,
+		workhorseBinding(options, call, coordinator, parsed.input.checkout),
+	);
 }
 
 /**

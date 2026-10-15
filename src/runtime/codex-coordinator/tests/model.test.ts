@@ -18,7 +18,7 @@ import {
 import type { CodexCoordinatorError } from "../index.js";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 
-const CHECKOUT_ROOT = "/workspace/archboard";
+const WORKING_DIRECTORY = "/state/codex-workbench/coordinator";
 
 async function expectCoordinatorCode(
 	promise: Promise<unknown>,
@@ -132,14 +132,14 @@ describe("coordinator model and literal profile", () => {
 	});
 
 	test("omits serviceTier when priority is not advertised", () => {
-		const params = createCoordinatorThreadStartParams(CHECKOUT_ROOT, null);
+		const params = createCoordinatorThreadStartParams(WORKING_DIRECTORY, null);
 
 		expect(JSON.stringify(params)).toBe(
 			JSON.stringify({
 				model: COORDINATOR_MODEL,
 				allowProviderModelFallback: false,
-				cwd: CHECKOUT_ROOT,
-				runtimeWorkspaceRoots: [CHECKOUT_ROOT],
+				cwd: WORKING_DIRECTORY,
+				runtimeWorkspaceRoots: [WORKING_DIRECTORY],
 				// Project docs are off: AGENTS.md is for the workhorse, never the coordinator.
 				config: { features: { realtime_conversation: true }, project_doc_max_bytes: 0 },
 				serviceName: "archboard",
@@ -172,7 +172,7 @@ describe("coordinator model and literal profile", () => {
 	});
 
 	test("includes only the advertised priority tier and sends the exact one-update body", () => {
-		const priority = createCoordinatorThreadStartParams(CHECKOUT_ROOT, "priority");
+		const priority = createCoordinatorThreadStartParams(WORKING_DIRECTORY, "priority");
 		expect(priority.serviceTier).toBe("priority");
 		expect(Object.keys(priority)).toEqual([
 			"model",

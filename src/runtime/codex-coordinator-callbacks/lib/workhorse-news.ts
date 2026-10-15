@@ -1,11 +1,13 @@
-// Workhorse news: what the coordinator is told about the linked workhorse thread itself (TASK-321).
+// Workhorse news: what the coordinator is told about the workhorse threads themselves (TASK-321).
 //
 // The coordinator decides what the voice model says, so it hears when a workhorse turn ends or
 // starts waiting on the user, whoever started the turn: work the coordinator gave it, and a turn
-// the user started from the conversation alike. That comes from the workhorse thread's own
+// the user started from the conversation alike. That comes from each workhorse thread's own
 // notifications, one source for every turn, so the coordinator's delegations are not reported
-// twice. It also hears what the workhorse tells it through tell_coordinator. What reaches the
-// coordinator is one plain sentence; it reads the rest through inspect_workhorse.
+// twice. It also hears what a workhorse tells it through tell_coordinator. A tab session has one
+// workhorse for each checkout (ADR 0050), so each piece of news names the checkout of the
+// workhorse it is about. What reaches the coordinator is one plain sentence; it reads the rest
+// through inspect_workhorse.
 
 import type { DynamicServerRequest, TransportServerNotification } from "@/runtime/codex-transport";
 import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
@@ -33,10 +35,10 @@ interface WorkhorseNewsContext {
 	readonly identity: Pick<IdentityAuthority, "decoder" | "validator">;
 	readonly currentChild: () => CoordinatorCallbackCurrentChild | null;
 	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
-	readonly currentWorkhorseLink: () => CoordinatorCallbackLinkCorrelation | null;
+	readonly workhorseLinks: () => readonly CoordinatorCallbackLinkCorrelation[];
 }
 
-/** The identities of the current child, coordinator and linked workhorse thread. */
+/** The identities of the current child, the coordinator and one linked workhorse thread. */
 interface NewsScope {
 	readonly child: CoordinatorCallbackCurrentChild;
 	readonly coordinatorThreadId: CoordinatorCallbackReadyCoordinator["threadId"];
@@ -44,48 +46,63 @@ interface NewsScope {
 	readonly wire: string;
 }
 
+/** Why a scope could not be found: nobody to tell, or no workhorse on that thread. */
+type NoScope = "nobody" | "other_thread";
+
 /**
- * The child, coordinator and workhorse thread a notification must belong to, or null when there is
- * no coordinator or no executable workhorse link to tell.
+ * The child, coordinator and workhorse a thread's event belongs to.
  * @param context - What the observer reads.
- * @returns The scope, or null.
+ * @param wireThreadId - The thread the event names, as Codex spells it.
+ * @returns The scope; "nobody" when there is no coordinator to tell, and "other_thread" when no
+ * workhorse of the tab session has an executable link on that thread.
  */
-function newsScope(context: WorkhorseNewsContext): NewsScope | null {
+function newsScope(context: WorkhorseNewsContext, wireThreadId: string): NewsScope | NoScope {
 	const child = context.currentChild();
 	const coordinator = context.currentCoordinator();
-	const link = context.currentWorkhorseLink()?.binding.link;
-	if (child === null || coordinator === null || link?.state !== "executable") {
-		return null;
+	if (child === null || coordinator === null) {
+		return "nobody";
 	}
-	return {
-		child,
-		coordinatorThreadId: coordinator.threadId,
-		workhorseThreadId: link.threadId,
-		wire: context.identity.decoder.serializeCodexIdentity(link.threadId),
-	};
+	for (const correlation of context.workhorseLinks()) {
+		const link = correlation.binding.link;
+		if (link.state !== "executable") continue;
+		const wire = context.identity.decoder.serializeCodexIdentity(link.threadId);
+		if (wire === wireThreadId) {
+			return {
+				child,
+				coordinatorThreadId: coordinator.threadId,
+				workhorseThreadId: link.threadId,
+				wire,
+			};
+		}
+	}
+	return "other_thread";
 }
 
 /**
- * The scope of a notification from the current epoch, or null for one from another epoch or when
- * nobody is there to tell.
+ * The scope of a notification from the current epoch about a workhorse thread, or null for one
+ * from another epoch or another thread, or when nobody is there to tell.
  * @param context - What the observer reads.
  * @param event - The notification.
+ * @param wireThreadId - The thread it names.
  * @returns The scope, or null.
  */
 function scopeOf(
 	context: WorkhorseNewsContext,
 	event: TransportServerNotification,
+	wireThreadId: string,
 ): NewsScope | null {
 	const { child, epoch } = event.correlation;
-	return context.identity.validator.isCurrentEpoch(child, epoch) ? newsScope(context) : null;
+	if (!context.identity.validator.isCurrentEpoch(child, epoch)) return null;
+	const scope = newsScope(context, wireThreadId);
+	return typeof scope === "string" ? null : scope;
 }
 
 /** What the observer answers: news for each notification, and news for a workhorse's message. */
 interface WorkhorseNewsObserver {
 	readonly observe: (event: TransportServerNotification) => WorkhorseNewsSource | null;
 	/**
-	 * The news a tell_coordinator call carries, or why there is none: another thread called it, or
-	 * nobody is there to tell.
+	 * The news a tell_coordinator call carries, or why there is none: a thread that is no workhorse
+	 * of the tab session called it, or nobody is there to tell.
 	 */
 	readonly message: (
 		request: DynamicServerRequest,
@@ -106,15 +123,16 @@ function endingOf(status: string): WorkhorseNewsSource["type"] | null {
 }
 
 /**
- * Build the observer that turns the linked workhorse thread's notifications into workhorse news.
- * A wait is reported when it begins, not on every status change while it lasts.
+ * Build the observer that turns the notifications of every linked workhorse thread into
+ * workhorse news. A wait is reported when it begins, not on every status change while it lasts.
  * @param context - What the observer reads of the Archboard server.
  * @returns A function that answers each notification with news, or null.
  */
 function createWorkhorseNewsObserver(context: WorkhorseNewsContext): WorkhorseNewsObserver {
-	// The coordinator and wire thread a wait on the user was news to, so a wait is news once to each
-	// coordinator: a new link starts clean, and so does the fresh coordinator of a new voice session.
-	let waitingOn: string | null = null;
+	// The waits on the user that were news, each to one coordinator about one workhorse thread, so
+	// a wait is news once to each coordinator: a new link starts clean, and so does the fresh
+	// coordinator of a new voice session.
+	const waiting = new Set<string>();
 	let sequence = 0;
 	/**
 	 * One piece of news in the scope it was observed in.
@@ -149,6 +167,13 @@ function createWorkhorseNewsObserver(context: WorkhorseNewsContext): WorkhorseNe
 		});
 	};
 	/**
+	 * The key one wait is news under: the coordinator it was told to and the workhorse thread.
+	 * @param scope - The current identities.
+	 * @returns The key.
+	 */
+	const waitKey = (scope: NewsScope): string =>
+		`${String(scope.coordinatorThreadId)} ${scope.wire}`;
+	/**
 	 * News that the thread began waiting on the user, or null while a wait lasts or none began.
 	 * @param scope - The current identities.
 	 * @param status - The thread's new status.
@@ -157,9 +182,10 @@ function createWorkhorseNewsObserver(context: WorkhorseNewsContext): WorkhorseNe
 	const waitNews = (scope: NewsScope, status: ThreadStatus): WorkhorseNewsSource | null => {
 		const nowWaiting =
 			status.type === "active" && status.activeFlags.some((flag) => WAITING_FLAGS.has(flag));
-		const wait = `${String(scope.coordinatorThreadId)} ${scope.wire}`;
-		const began = nowWaiting && waitingOn !== wait;
-		waitingOn = nowWaiting ? wait : null;
+		const wait = waitKey(scope);
+		const began = nowWaiting && !waiting.has(wait);
+		if (nowWaiting) waiting.add(wait);
+		else waiting.delete(wait);
 		return began ? news(scope, "waiting", null, null) : null;
 	};
 	/**
@@ -169,29 +195,25 @@ function createWorkhorseNewsObserver(context: WorkhorseNewsContext): WorkhorseNe
 	 * @returns The news, or null.
 	 */
 	const endNews = (scope: NewsScope, turn: CompletedTurn): WorkhorseNewsSource | null => {
-		waitingOn = null;
+		waiting.delete(waitKey(scope));
 		const type = endingOf(turn.status);
 		return type === null ? null : news(scope, type, turn.id, turn.error?.message ?? null);
 	};
 	const observer: WorkhorseNewsObserver = {
 		/**
-		 * The news one notification carries about the linked workhorse thread, or null.
+		 * The news one notification carries about a linked workhorse thread, or null.
 		 * @param event - The notification.
 		 * @returns The news, or null.
 		 */
 		observe: (event) => {
-			const scope = scopeOf(context, event);
-			if (scope === null) return null;
 			const notification: RawNotification = event.notification;
 			if (notification.method === "thread/status/changed") {
-				return notification.params.threadId === scope.wire
-					? waitNews(scope, notification.params.status)
-					: null;
+				const scope = scopeOf(context, event, notification.params.threadId);
+				return scope === null ? null : waitNews(scope, notification.params.status);
 			}
 			if (notification.method === "turn/completed") {
-				return notification.params.threadId === scope.wire
-					? endNews(scope, notification.params.turn)
-					: null;
+				const scope = scopeOf(context, event, notification.params.threadId);
+				return scope === null ? null : endNews(scope, notification.params.turn);
 			}
 			return null;
 		},
@@ -202,11 +224,13 @@ function createWorkhorseNewsObserver(context: WorkhorseNewsContext): WorkhorseNe
 		 * @returns The news, or who is missing.
 		 */
 		message: (request, text) => {
-			const current = context.identity.validator.isCurrentEpoch(request.child, request.epoch);
-			const scope = current ? newsScope(context) : null;
-			if (scope === null) return "nobody";
-			if (request.params.threadId !== scope.wire) return "other_thread";
-			return news(scope, "message", request.params.turnId, text);
+			if (!context.identity.validator.isCurrentEpoch(request.child, request.epoch)) {
+				return "nobody";
+			}
+			const scope = newsScope(context, request.params.threadId);
+			return typeof scope === "string"
+				? scope
+				: news(scope, "message", request.params.turnId, text);
 		},
 	};
 	return Object.freeze(observer);
@@ -216,39 +240,41 @@ function createWorkhorseNewsObserver(context: WorkhorseNewsContext): WorkhorseNe
 const PLAIN_NEWS: Readonly<
 	Record<Exclude<WorkhorseNewsSource["type"], "failed" | "message">, string>
 > = Object.freeze({
-	completed: "The workhorse finished a turn.",
-	stopped: "A workhorse turn was stopped before it finished.",
+	completed: "finished a turn.",
+	stopped: "had a turn stopped before it finished.",
 	waiting:
-		"The workhorse is waiting for the user to answer an approval or a question on the workbench, and its work has not finished.",
+		"is waiting for the user to answer an approval or a question on the workbench, and its work has not finished.",
 });
 
 /**
- * The sentence for one piece of workhorse news.
+ * The sentence for one piece of workhorse news. It names the checkout the workhorse works in,
+ * which is the checkout every workhorse tool takes.
  * @param callback - The news.
  * @returns The sentence.
  */
 function newsSentence(callback: CoordinatorWorkhorseNewsCallback): string {
+	const checkout = callback.correlation.workhorseLink.checkout;
 	if (callback.type === "message") {
-		return `While it works, the workhorse tells you: ${JSON.stringify(callback.detail ?? "")}`;
+		return `While it works, the workhorse in ${checkout} tells you: ${JSON.stringify(callback.detail ?? "")}`;
 	}
 	if (callback.type === "failed") {
 		return callback.detail === null
-			? "A workhorse turn failed."
-			: `A workhorse turn failed: ${callback.detail}`;
+			? `A turn of the workhorse in ${checkout} failed.`
+			: `A turn of the workhorse in ${checkout} failed: ${callback.detail}`;
 	}
-	return PLAIN_NEWS[callback.type];
+	return `The workhorse in ${checkout} ${PLAIN_NEWS[callback.type]}`;
 }
 
 /**
  * The one sentence the coordinator is given for a piece of workhorse news or an operation
- * outcome, in words it can act on and with no identities in it.
+ * outcome, in words it can act on: it names the checkout of the workhorse and no identity.
  * @param callback - The callback the news is about.
  * @returns The sentence.
  */
 function workhorseNewsSentence(callback: CoordinatorCallback): string {
 	return callback.kind === "workhorse_news"
 		? newsSentence(callback)
-		: "Something you gave the workhorse may or may not have reached it. Read the workhorse before you act on it or tell the user it happened.";
+		: `Something you gave the workhorse in ${callback.correlation.workhorseLink.checkout} may or may not have reached it. Read that workhorse before you act on it or tell the user it happened.`;
 }
 
 export {

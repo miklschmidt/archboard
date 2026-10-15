@@ -241,7 +241,7 @@ function correlation(value: CoordinatorCallbackCorrelation) {
 	const call = value.coordinatorCall;
 	const captured = value.workhorseLink;
 	const generation = value.realtimeGeneration;
-	requireExactKeys(captured, ["binding", "target"]);
+	requireExactKeys(captured, ["binding", "target", "checkout"]);
 	requireExactKeys(captured.binding, ["paneId", "revision", "link", "cas"]);
 	requireAllowedKeys(captured.target, [
 		"threadId",
@@ -297,6 +297,7 @@ function correlation(value: CoordinatorCallbackCorrelation) {
 						manifestHash: requireString(call.manifestHash),
 					},
 		workhorseLink: {
+			checkout: requireString(captured.checkout),
 			paneId: requireString(captured.binding.paneId),
 			revision: captured.binding.revision,
 			state: captured.binding.link.state,

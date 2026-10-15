@@ -15,7 +15,7 @@ import {
 } from "../index.js";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
-import { CHECKOUT_ROOT, coordinatorModel, fixture, type Fixture } from "./support.js";
+import { WORKING_DIRECTORY, coordinatorModel, fixture, type Fixture } from "./support.js";
 
 async function flushMicrotasks(): Promise<void> {
 	for (let turn = 0; turn < 8; turn += 1) {
@@ -78,7 +78,7 @@ describe("coordinator lifecycle", () => {
 		const coordinatorPersistence = persistence(snapshot);
 
 		expect(fixtureValue.session.startParams).toEqual([
-			createCoordinatorThreadStartParams(CHECKOUT_ROOT, "priority"),
+			createCoordinatorThreadStartParams(WORKING_DIRECTORY, "priority"),
 		]);
 		expect(fixtureValue.session.updateParams).toEqual([
 			createCoordinatorSettingsUpdateParams(coordinatorPersistence.threadId, "priority"),

@@ -252,12 +252,12 @@ function coordinatorDynamicTools(): NonNullable<CoordinatorThreadStartParams["dy
 /**
  * The authored coordinator thread/start body. The priority service tier is only named when the
  * account advertises it, because naming a tier the account does not have is refused by Codex.
- * @param checkoutRoot - The canonical checkout root the coordinator works in.
+ * @param workingDirectory - The directory of its own the coordinator works in, which is no checkout.
  * @param serviceTier - The advertised priority tier, or null.
  * @returns The thread/start parameters.
  */
 function createCoordinatorThreadStartParams(
-	checkoutRoot: string,
+	workingDirectory: string,
 	serviceTier: "priority" | null,
 ): CoordinatorThreadStartParams {
 	if (serviceTier === "priority") {
@@ -265,8 +265,8 @@ function createCoordinatorThreadStartParams(
 			model: COORDINATOR_MODEL,
 			allowProviderModelFallback: false,
 			serviceTier: "priority",
-			cwd: checkoutRoot,
-			runtimeWorkspaceRoots: [checkoutRoot],
+			cwd: workingDirectory,
+			runtimeWorkspaceRoots: [workingDirectory],
 			config: COORDINATOR_THREAD_CONFIG,
 			serviceName: "archboard",
 			developerInstructions: COORDINATOR_DEVELOPER_INSTRUCTIONS,
@@ -281,8 +281,8 @@ function createCoordinatorThreadStartParams(
 	return {
 		model: COORDINATOR_MODEL,
 		allowProviderModelFallback: false,
-		cwd: checkoutRoot,
-		runtimeWorkspaceRoots: [checkoutRoot],
+		cwd: workingDirectory,
+		runtimeWorkspaceRoots: [workingDirectory],
 		config: COORDINATOR_THREAD_CONFIG,
 		serviceName: "archboard",
 		developerInstructions: COORDINATOR_DEVELOPER_INSTRUCTIONS,
