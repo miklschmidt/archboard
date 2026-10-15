@@ -69,7 +69,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 		((board: string, pane: string, vault: string): Promise<ShownBoard> =>
 			showBoard({ vault, board, pane }));
 	/**
-	 * Show a listed board in one pane.
+	 * Show a listed board in one pane; the outcome is the pane moving, or a notice.
 	 * @param key The board key.
 	 * @param inPane Which pane shows it; the active one when none is named.
 	 * @param repository The repository the board is in; the pane's own when none is named.
@@ -115,15 +115,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 		}
 	}
 	return {
-		/**
-		 * Show a listed board; the outcome is the pane moving, or a notice.
-		 * @param key The board key.
-		 * @param inPane Which pane shows it; the active one when none is named.
-		 * @param repository The repository the board is in; the pane's own when none is named.
-		 * @returns Whether the pane shows it now.
-		 */
-		selectBoard: (key: string, inPane?: string, repository?: string): Promise<boolean> =>
-			selectBoard(key, inPane, repository),
+		selectBoard,
 		/** Read the listing and every drawing again. */
 		refreshBoards: (): void => {
 			deps.catalog.reload();

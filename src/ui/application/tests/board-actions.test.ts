@@ -193,9 +193,7 @@ function picker() {
 test("the board picker does not address a reconnecting pane before registration", async () => {
 	const fixture = picker();
 	fixture.connected(false);
-	void fixture.actions.selectBoard("Payments");
-	await Promise.resolve();
-	await Promise.resolve();
+	expect(await fixture.actions.selectBoard("Payments")).toBe(false);
 
 	expect(fixture.shown).toEqual([]);
 	expect(fixture.moved).toEqual([]);
@@ -203,9 +201,7 @@ test("the board picker does not address a reconnecting pane before registration"
 	expect(fixture.notices[0]?.actions).toHaveLength(1);
 
 	fixture.connected(true);
-	void fixture.actions.selectBoard("Payments");
-	await Promise.resolve();
-	await Promise.resolve();
+	expect(await fixture.actions.selectBoard("Payments")).toBe(true);
 
 	expect(fixture.shown).toEqual(["A-qz99fo"]);
 	expect(fixture.moved).toEqual(["Payments"]);
