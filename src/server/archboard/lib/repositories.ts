@@ -70,10 +70,13 @@ function stateOf(chosen: RegisteredRepoStatus | undefined, vault: string | null)
  * The vault a set `ARCHBOARD_VAULT` names, canonical. The server needs no vault (ADR 0049), and
  * the variable still decides where a page opens until the test migration retires it
  * (TASK-472.07, TASK-472.09).
- * @returns The vault, or null when the variable is not set.
+ * @returns The vault, or null when the variable is not set or names no directory.
  */
 function environmentVault(): string | null {
-	return ARCHBOARD_VAULT ? canonicalConfiguredVault(ARCHBOARD_VAULT) : null;
+	if (!ARCHBOARD_VAULT) return null;
+	const vault = canonicalConfiguredVault(ARCHBOARD_VAULT);
+	// A variable that names no directory opens no page: every call there would be refused.
+	return fs.statSync(vault, { throwIfNoEntry: false })?.isDirectory() === true ? vault : null;
 }
 
 /**
