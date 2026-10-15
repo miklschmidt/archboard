@@ -29,7 +29,6 @@ import type { CodeCheckOutcome } from "@/runtime/code-check/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
 
 const caller = {
-	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
 	PATH: process.env["PATH"],
 };
@@ -37,7 +36,6 @@ const scratch = mkdtempSync(join(tmpdir(), "archboard-code-terraform-"));
 const shop = join(scratch, "shop");
 const vault = join(scratch, "vault");
 const ran = join(scratch, "ran");
-process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const SHOP = "github.com/test/shop";
 const SECRETS = [
