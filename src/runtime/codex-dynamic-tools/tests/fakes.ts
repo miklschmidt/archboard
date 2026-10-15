@@ -35,7 +35,6 @@ import type { ThreadLinkTarget } from "../../codex-thread-link/index.js";
 import type { CodexWaitGraph } from "../../codex-wait-graph/index.js";
 import {
 	CALLER_WIRE_ID,
-	CHECKOUT_ROOT,
 	authorityToken,
 	callerAuthority,
 	contextFor,
@@ -362,7 +361,6 @@ export function optionsFor(
 		context,
 		operationId: operationIds,
 		lifecycle,
-		checkoutRoot: CHECKOUT_ROOT,
 		now: () => 100,
 		...overrides,
 	};
