@@ -55,6 +55,7 @@ export {
 	browserSnapshotRelationshipIssues,
 	DeliveryOutcomeSchema,
 } from "@/shared/codex-browser-model/lib/browser";
+export { BROWSER_WORKHORSE_LIMIT } from "@/shared/codex-browser-model/lib/browser-session";
 export {
 	createDynamicApprovalSchemas,
 	canonicalDynamicApprovalJson,

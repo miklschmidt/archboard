@@ -5,8 +5,12 @@ export {
 export type { ServerBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
 export {
 	cancelTabSessionApprovals,
+	tabSessionLink,
 	visibleApprovalViews,
+	workhorseApprovalLink,
 } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
+export { readWorkhorseList } from "@/server/archboard/lib/codex-workbench-workhorse-list";
+export type { WorkhorseListInput } from "@/server/archboard/lib/codex-workbench-workhorse-list";
 export { projectServerBrowserReadiness } from "@/server/archboard/lib/codex-workbench-readiness";
 export type {
 	ServerReadinessInput,
@@ -41,9 +45,13 @@ export type {
 	TimelineTarget,
 } from "@/server/archboard/lib/codex-workbench-timeline";
 export {
+	coordinatorTurnsShownIn,
 	MAX_DELEGATIONS,
+	noteCoordinatorTurnStart,
 	recordDelegations,
+	recordGivenWork,
 } from "@/server/archboard/lib/codex-workbench-delegations";
+export type { CoordinatorTurnHome } from "@/server/archboard/lib/codex-workbench-delegations";
 export { createServerCanonicalTextActions } from "@/server/archboard/lib/codex-workbench-text-actions";
 export { createServerRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
 export { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-pane";

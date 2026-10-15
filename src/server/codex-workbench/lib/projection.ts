@@ -312,6 +312,17 @@ function projectVoice(input: CodexVoiceProjectionInput) {
 }
 
 /**
+ * The tab session's workhorse list, when the owners read one.
+ * @param input The owners' state for one pane.
+ * @returns The field, or nothing.
+ */
+function projectWorkhorses(
+	input: BrowserProjectionInput,
+): Pick<BrowserProjectionInput, "workhorses"> {
+	return input.workhorses === undefined ? {} : { workhorses: input.workhorses };
+}
+
+/**
  * Project the owners' state into one validated browser snapshot, refusing
  * input that carries a secret or that the browser contract cannot represent.
  * @param model The browser schema owner.
@@ -358,6 +369,7 @@ export function projectCodexBrowserState(
 				input.voice,
 			),
 			voiceContext: input.voiceContext ?? null,
+			...projectWorkhorses(input),
 			lease: input.lease,
 			operation: input.operation,
 		});

@@ -91,17 +91,18 @@ function createGatewayBinding(
 					operation,
 				);
 			},
+			repositoryOf: server.repositoryOfCheckout,
 			/**
-			 * Watch what the browser is shown, which a pane's move into another vault changes too:
-			 * the pane shows the workhorse of its checkout (ADR 0050).
+			 * Watch what the browser is shown, which a change of a tab's shown conversation changes
+			 * too: every pane of the tab shows that checkout's workhorse (ADR 0050).
 			 * @param listener What to tell.
 			 * @returns Unsubscribes.
 			 */
 			onChange: (listener) => {
 				owners.projectionListeners.add(listener);
-				const stopHearingMoves = server.onPaneVaultMove(listener);
+				const stopHearingShown = server.onShownChange(listener);
 				return () => {
-					stopHearingMoves();
+					stopHearingShown();
 					owners.projectionListeners.delete(listener);
 				};
 			},
@@ -119,7 +120,7 @@ function createGatewayBinding(
 		});
 		return {
 			...options,
-			checkoutOf: server.checkoutOfBrowser,
+			checkoutOf: server.shownCheckoutOf,
 			lifecycle: {
 				/**
 				 * The owned process is the gateway's change source.
