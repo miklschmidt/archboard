@@ -46,7 +46,11 @@ interface FoundVault {
 }
 
 /** Why no vault was found. */
-type VaultNotFoundReason = "directory-missing" | "checkout-without-vault" | "none-enclosing";
+type VaultNotFoundReason =
+	| "directory-missing"
+	| "checkout-without-vault"
+	| "none-enclosing"
+	| "vault-outside-layout";
 
 /** A search that found no vault, and what the person can do next. */
 interface VaultNotFound {
@@ -57,6 +61,11 @@ interface VaultNotFound {
 	readonly origin: VaultOrigin;
 	/** The root of the checkout the directory is in, when it is in one. */
 	readonly checkoutRoot?: string;
+	/**
+	 * The vault a link leads out of the layout: its `.archboard/vault` and the real directory it
+	 * leads to, which the server does not serve (`isVaultLayout`).
+	 */
+	readonly link?: { readonly vault: string; readonly target: string };
 	readonly message: string;
 }
 
@@ -123,8 +132,24 @@ function notFound(
 		ok: false,
 		code: "VAULT_NOT_FOUND",
 		...refusal,
-		message: notFoundMessage(refusal, option),
+		message:
+			refusal.link === undefined
+				? notFoundMessage(refusal, option)
+				: linkedOutMessage(refusal.link),
 	};
+}
+
+/**
+ * What a refusal of a vault that a link leads out of the layout says.
+ * @param link The vault and where its link leads.
+ * @returns The message.
+ */
+function linkedOutMessage(link: NonNullable<VaultNotFound["link"]>): string {
+	return (
+		`${link.vault} leads through a link to ${link.target}, which is not the ${VAULT_DIRECTORY} of a directory. ` +
+		`The server serves only a vault whose real directory is <dir>/${VAULT_DIRECTORY}, because its agents work in <dir>. ` +
+		`Move the boards from ${link.target} to ${link.vault} in place of the link. Nothing was done.`
+	);
 }
 
 /**
@@ -174,6 +199,28 @@ function realPath(directory: string): string {
 }
 
 /**
+ * The vault a directory holds, as its real path, when the server serves it.
+ * @param holder The directory that holds `.archboard/vault`.
+ * @param start Where the search started, and how, for a refusal.
+ * @param start.directory The start directory, as its real path.
+ * @param start.origin How it was given.
+ * @param start.checkoutRoot The root of the checkout it is in, when it is in one.
+ * @param option The option that named it, when it was not `-C`.
+ * @returns The finding: a link out of the layout is refused here, not by every server call.
+ */
+function heldVault(
+	holder: string,
+	start: { directory: string; origin: VaultOrigin; checkoutRoot?: string },
+	option: string | undefined,
+): VaultFinding {
+	const vault = path.join(holder, VAULT_DIRECTORY);
+	const target = realPath(vault);
+	return isVaultLayout(target)
+		? { ok: true, found: { path: target, origin: start.origin, holder } }
+		: notFound({ reason: "vault-outside-layout", ...start, link: { vault, target } }, option);
+}
+
+/**
  * The vault of the directory a search starts from.
  * @param start The start directory, absolute and existing.
  * @param origin How it was given.
@@ -188,9 +235,8 @@ async function vaultFrom(
 	const directory = realPath(start);
 	const root = await repoRootOf(directory);
 	if (root !== undefined) {
-		const vault = path.join(root, VAULT_DIRECTORY);
-		return isDirectory(vault)
-			? { ok: true, found: { path: realPath(vault), origin, holder: root } }
+		return isDirectory(path.join(root, VAULT_DIRECTORY))
+			? heldVault(root, { directory, origin, checkoutRoot: root }, option)
 			: notFound(
 					{ reason: "checkout-without-vault", directory, origin, checkoutRoot: root },
 					option,
@@ -199,14 +245,7 @@ async function vaultFrom(
 	const holder = vaultHolder(directory);
 	return holder === undefined
 		? notFound({ reason: "none-enclosing", directory, origin }, option)
-		: {
-				ok: true,
-				found: {
-					path: realPath(path.join(holder, VAULT_DIRECTORY)),
-					origin,
-					holder,
-				},
-			};
+		: heldVault(holder, { directory, origin }, option);
 }
 
 /**

@@ -4,7 +4,7 @@
 // checkout, and read what it found or why it found nothing.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { findVault, type VaultFinding } from "@/runtime/engine/vault-finder";
@@ -137,6 +137,28 @@ test("-C starts the same search from the directory it names, relative to the wor
 	expect(await findVault({ directory: looseVault, cwd: elsewhere })).toEqual({
 		ok: true,
 		found: { path: looseVault, origin: "-C", holder: untracked },
+	});
+});
+
+test("a vault that a link leads out of the layout is refused, because the server would refuse every call", async () => {
+	const elsewhere = directory("kept-elsewhere");
+	const root = checkout("linked");
+	mkdirSync(join(root, ".archboard"));
+	symlinkSync(elsewhere, join(root, ".archboard", "vault"));
+	expect(await fromWorkingDirectory(root)).toMatchObject({
+		ok: false,
+		code: "VAULT_NOT_FOUND",
+		reason: "vault-outside-layout",
+		link: { vault: join(root, ".archboard", "vault"), target: elsewhere },
+	});
+	// A link to the vault of another directory is in the layout, and is that vault.
+	const loose = directory("linked-loose");
+	const target = vaultIn(directory("real-holder"));
+	mkdirSync(join(loose, ".archboard"));
+	symlinkSync(target, join(loose, ".archboard", "vault"));
+	expect(await fromWorkingDirectory(loose)).toEqual({
+		ok: true,
+		found: { path: target, origin: "working-directory", holder: loose },
 	});
 });
 
