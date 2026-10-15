@@ -389,7 +389,7 @@
 				},
 				{
 					"feature": "binding.repo-registration",
-					"requirement": "the checkout is registered with `repo add` and the binding uses its identity",
+					"requirement": "the binding uses the checkout's registered repository identity, which `repo add` or the first command that finds the vault from the checkout registers",
 					"skill": ["SKILL.md#evidence-before-a-write", "references/authoring.md#bindings"]
 				},
 				{

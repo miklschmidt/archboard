@@ -1,6 +1,7 @@
-// An Archboard server the harness owns for one run: started on a free port against the
-// run's vault, known by its own pid through /health, and stopped by the run
-// that started it. Every accepted write is on disk before it is answered, so
+// An Archboard server the harness owns for one run: started on a free port with
+// no vault, as every server starts, and named the run's vault by each call it
+// gets (ADR 0049). It is known by its own pid through /health, and stopped by
+// the run that started it. Every accepted write is on disk before it is answered, so
 // stopping is never a loss.
 
 import fs from "node:fs";

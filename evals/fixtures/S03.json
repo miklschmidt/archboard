@@ -1,5 +1,5 @@
 {
-	"$comment": "Three containers with functions inside them and one module beside them, and three configured groups nobody belongs to yet. The checkout is deliberately not registered, which is why no part carries a binding: the author registers it before it can bind one. Every call lands on the function the source calls: flask run loads the app through ScriptInfo and hands it to werkzeug's run_simple, which serves it back into wsgi_app.",
+	"$comment": "Three containers with functions inside them and one module beside them, and three configured groups nobody belongs to yet. The fixture names no registered checkout, which is why no part carries a binding, and the harness forgets the registration that laying it made, so the author starts with the checkout unknown. The first command that finds the vault from the checkout registers it again, as `repo add` would, before the author binds a part. Every call lands on the function the source calls: flask run loads the app through ScriptInfo and hands it to werkzeug's run_simple, which serves it back into wsgi_app.",
 	"registerRepo": false,
 	"policy": {
 		"groups": {
