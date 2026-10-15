@@ -283,3 +283,32 @@ test("a section with nothing to show is absent from the page and from the outlin
 	expect(sections).toEqual(["parts", "variants"]);
 	expect(listed("about-outline-entry", "section")).toEqual(sections);
 });
+
+// An address can name a variant the board no longer has, as one written before
+// the variant was renamed does. The page then has none of that variant's
+// walkthroughs, parts or relationships to list, and a page that listed nothing
+// at all would leave the reader no way to the variants the board does have.
+test("a board with no such variant still lists its variants, and choosing one reads it", async () => {
+	serving();
+	const asked: (string | null)[] = [];
+	/**
+	 * Keep what the pane asked the shell to show.
+	 * @param variant The variant's id, or null for whichever is current.
+	 */
+	function record(variant: string | null): void {
+		asked.push(variant);
+	}
+	mountStage(null, { variant: "gone", onVariantChange: record, reducedMotion: true });
+	await settle();
+	openAboutPage();
+	await settle();
+	expect(
+		[...document.querySelectorAll<HTMLElement>("[data-about-section]")].map(
+			(section) => section.dataset["aboutSection"],
+		),
+	).toEqual(["variants"]);
+	expect(listed("variant-entry", "variant")).toEqual(["v1"]);
+
+	await click(document.querySelector("[data-slot='variant-entry'][data-variant='v1']")!);
+	expect(asked).toEqual([null]);
+});
