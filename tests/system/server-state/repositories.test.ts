@@ -17,6 +17,7 @@ import {
 import { packageBin } from "../cli/support/package-cli.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
+import { holderOf } from "../support/test-vault.ts";
 import { createRequester } from "./support/http.ts";
 import { openPaneSession } from "./support/pane-session.ts";
 
@@ -78,9 +79,8 @@ beforeAll(async () => {
 		encoding: "utf8",
 	});
 	if (added.status !== 0) throw new Error(`repo add ${main}: ${added.stderr}`);
-	// An untracked vault registered under the name the environment's vault would take.
-	const holder = join(fixture.root, "elsewhere", "vault");
-	mkdirSync(join(holder, ".archboard", "vault"), { recursive: true });
+	// The fixture's untracked vault, a repository of its own beside the checkouts.
+	const holder = holderOf(fixture.vault);
 	const untracked = spawnSync(packageBin, ["repo", "add", holder], {
 		cwd: fixture.nowhere,
 		env: fixture.serverEnvironment,
@@ -121,7 +121,7 @@ describe.serial("the repositories of the navigator", () => {
 		}
 
 		// The repository is listed once, read from its chosen main checkout, beside the
-		// vault ARCHBOARD_VAULT names, which is in no registered checkout.
+		// untracked vault, which is in no checkout.
 		const before = await listed();
 		const orders = before.find((each) => each.name === ORDERS);
 		expect(orders).toMatchObject({ vault: mainVault, state: "ready" });
@@ -129,11 +129,6 @@ describe.serial("the repositories of the navigator", () => {
 			[main, true, true],
 			[worktree, false, true],
 		]);
-		// An address names a repository by these names, so no two are the same: the
-		// environment's vault is named for its own directory, past the untracked vault
-		// that has that name already.
-		expect(new Set(before.map((each) => each.name)).size).toBe(before.length);
-		expect(before.find((each) => each.vault === realpathSync(fixture.vault))?.name).toBe("vault-2");
 
 		const pane = await openPaneSession(server.base, inMain, {
 			clientId: "pane-orders",

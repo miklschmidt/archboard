@@ -10,6 +10,7 @@ import {
 import { createJsonRequester } from "../support/http.ts";
 import { openTestPane } from "../support/pane-websocket.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { sanitizedEnvironment } from "./support/process-http.ts";
 
 // ADR 0016: the lock is a file, and a file calls nobody. A claim taken through
@@ -26,8 +27,8 @@ test("a claim taken through another server excludes writes here and reaches the 
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-cross-process-lock-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const vault = join(root, "vault");
-	const env = sanitizedEnvironment(root, vault);
+	const vault = vaultIn(join(root, "boards"));
+	const env = sanitizedEnvironment(root);
 	const first = await startOwnedServer({ serverPath, vault, env });
 	resources.defer(() => first.dispose());
 	const second = await startOwnedServer({

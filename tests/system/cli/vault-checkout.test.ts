@@ -49,7 +49,7 @@ function binding(repo: string, symbol: string) {
  * @returns What the command printed and how it exited.
  */
 function cli(args: readonly string[], input?: string) {
-	return runServerCli({ repoRoot, vault, base: server.base, args, input });
+	return runServerCli({ repoRoot, server, vault, args, input });
 }
 
 beforeAll(async () => {

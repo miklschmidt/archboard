@@ -13,10 +13,6 @@ switch (environment["ARCHBOARD_TEST_BIND_MODE"]) {
 		environment["HOST"] = "::";
 		break;
 	}
-	case "no-vault": {
-		delete environment["ARCHBOARD_VAULT"];
-		break;
-	}
 	case undefined: {
 		break;
 	}

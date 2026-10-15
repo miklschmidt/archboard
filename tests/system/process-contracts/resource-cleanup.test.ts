@@ -95,14 +95,13 @@ test("outer SIGTERM serializes setup and cleans its retained resources", async (
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-outer-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const vault = join(root, "vault");
 	const upstreamPort = await availablePort();
 	const proxyPort = await availablePort();
 	try {
 		const owner = await startOwnedPeer({
 			argv: [process.execPath, fixture],
 			env: {
-				...sanitizedEnvironment(root, vault),
+				...sanitizedEnvironment(root),
 				ARCHBOARD_TEST_ROOT: root,
 				ARCHBOARD_TEST_UPSTREAM_PORT: String(upstreamPort),
 				ARCHBOARD_TEST_PROXY_PORT: String(proxyPort),
@@ -134,7 +133,7 @@ test("outer pre-readiness failure and peer startup failure retain diagnostics an
 		const failed = await runOwnedPeerToExit({
 			argv: [process.execPath, fixture],
 			env: {
-				...sanitizedEnvironment(root, vault),
+				...sanitizedEnvironment(root),
 				ARCHBOARD_TEST_ROOT: root,
 				ARCHBOARD_TEST_UPSTREAM_PORT: String(upstreamPort),
 				ARCHBOARD_TEST_PROXY_PORT: String(proxyPort),
@@ -152,7 +151,7 @@ test("outer pre-readiness failure and peer startup failure retain diagnostics an
 		try {
 			await startOwnedPeer({
 				argv: [process.execPath, join(root, "missing-peer.ts")],
-				env: sanitizedEnvironment(root, vault),
+				env: sanitizedEnvironment(root),
 				readySchema: ResourceReadySchema,
 			});
 		} catch (error) {
@@ -168,7 +167,7 @@ test("outer pre-readiness failure and peer startup failure retain diagnostics an
 }, 20_000);
 
 test("sanitized child environments retain only approved state", () => {
-	const env = sanitizedEnvironment("/owned/root", "/owned/vault", {
+	const env = sanitizedEnvironment("/owned/root", {
 		PATH: "/owned/bin",
 		CODEX_HOME: "/ambient/codex-home",
 		CODEX_SQLITE_HOME: "/ambient/sqlite-home",
@@ -179,7 +178,6 @@ test("sanitized child environments retain only approved state", () => {
 	expect(env["PATH"]).toBe("/owned/bin");
 	expect(env["HOME"]).toBe("/owned/root/home");
 	expect(env["XDG_STATE_HOME"]).toBe("/owned/root/state");
-	expect(env["ARCHBOARD_VAULT"]).toBe("/owned/vault");
 	expect(env["CODEX_HOME"]).toBeUndefined();
 	expect(env["CODEX_SQLITE_HOME"]).toBeUndefined();
 	expect(env["ARCHBOARD_SETTLE_MS"]).toBeUndefined();
@@ -232,13 +230,14 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = join(root, "vault");
 		port = await availablePort();
-		const env = sanitizedEnvironment(root, vault);
+		const env = sanitizedEnvironment(root);
 		const stubborn = await startOwnedPeer({
 			argv: [process.execPath, fixture],
 			env: {
 				...env,
 				ARCHBOARD_TEST_RESOURCE_MODE: "lock",
 				ARCHBOARD_TEST_REPO_ROOT: repoRoot,
+				ARCHBOARD_TEST_LOCK_VAULT: vault,
 				ARCHBOARD_TEST_LOCK_BOARD: "stubborn-resource",
 				ARCHBOARD_TEST_LOCK_HOLDER: "stubborn-owner",
 				ARCHBOARD_TEST_IGNORE_TERM: "1",
@@ -267,6 +266,7 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 				...env,
 				ARCHBOARD_TEST_RESOURCE_MODE: "lock",
 				ARCHBOARD_TEST_REPO_ROOT: repoRoot,
+				ARCHBOARD_TEST_LOCK_VAULT: vault,
 				ARCHBOARD_TEST_LOCK_BOARD: "stubborn-resource",
 				ARCHBOARD_TEST_LOCK_HOLDER: "recovery-owner",
 			},

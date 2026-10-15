@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent } from "./support/pane-session.ts";
 
@@ -23,7 +24,7 @@ test("a discarded board leaves the vault, the listing and the pane showing it", 
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-board-discard-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const vault = join(root, "vault");
+	const vault = vaultIn(join(root, "vault"));
 	const server = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,

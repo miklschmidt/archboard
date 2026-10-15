@@ -23,10 +23,12 @@ import { join, resolve } from "node:path";
 
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const vault = mkdtempSync(join(tmpdir(), "archboard-recording-refusals-"));
+const holder = mkdtempSync(join(tmpdir(), "archboard-recording-refusals-"));
+const vault = vaultIn(holder);
 const BOARD = "tour";
 const boardFile = join(vault, `${BOARD}.semantic.json`);
 const out = join(vault, "tour.mp4");
@@ -45,8 +47,7 @@ const record = (args: readonly string[], env: Readonly<Record<string, string>> =
 	rmSync(started, { force: true });
 	return runServerCli({
 		repoRoot,
-		vault,
-		base: server.base,
+		server,
 		args: ["semantic", "record", BOARD, ...args],
 		input: undefined,
 		env: { ARCHBOARD_RENDERER_CHROMIUM: browser, ARCHBOARD_FFMPEG: ffmpeg, ...env },
@@ -67,8 +68,7 @@ beforeAll(async () => {
 	server = await startOwnedServer({ serverPath: join(repoRoot, "src/server.ts"), vault });
 	const created = runServerCli({
 		repoRoot,
-		vault,
-		base: server.base,
+		server,
 		args: ["semantic", "new", BOARD, "--doing", "making a board to record"],
 		input: JSON.stringify({
 			level: "system",
@@ -83,7 +83,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await server?.dispose();
-	rmSync(vault, { recursive: true, force: true });
+	rmSync(holder, { recursive: true, force: true });
 });
 
 test("a recorder that cannot start is RECORDER_UNAVAILABLE and keeps the board --discard named", () => {
@@ -97,12 +97,12 @@ test("a recorder that cannot start is RECORDER_UNAVAILABLE and keeps the board -
 });
 
 test("no ffmpeg and no nix is ENCODER_UNAVAILABLE before a browser is started", () => {
-	// A PATH with only what bin/archboard runs on, so the CLI starts and there is neither ffmpeg
-	// nor nix.
+	// A PATH with only what bin/archboard runs on and the git that finds the vault, so the
+	// CLI starts and there is neither ffmpeg nor nix.
 	const bin = join(vault, "only-bun");
 	mkdirSync(bin);
 	symlinkSync(process.execPath, join(bin, "bun"));
-	for (const tool of ["bash", "realpath", "dirname"]) {
+	for (const tool of ["bash", "realpath", "dirname", "git"]) {
 		symlinkSync(Bun.which(tool) ?? `/usr/bin/${tool}`, join(bin, tool));
 	}
 	const refused = record(["--out", out, "--discard", "--doing", "recording the tour"], {
@@ -151,8 +151,7 @@ const replay = (talk: string) => {
 	rmSync(started, { force: true });
 	return runServerCli({
 		repoRoot,
-		vault,
-		base: server.base,
+		server,
 		args: ["semantic", "replay", talk, "--out", out],
 		input: undefined,
 		env: { ARCHBOARD_RENDERER_CHROMIUM: browser, ARCHBOARD_FFMPEG: ffmpeg },

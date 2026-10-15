@@ -1,5 +1,7 @@
-// One run's private world: its own HOME, vault, repository registry, CLI log
-// and an `archboard` on PATH that runs this checkout. Nothing here is shared
+// One run's private world: its own HOME, repository registry, CLI log and an
+// `archboard` on PATH that runs this checkout. The run's vault is the
+// `.archboard/vault` of its Flask checkout, where a command finds it from the
+// checkout's directory, as it does for any repository (ADR 0049). Nothing here is shared
 // between runs, so parallel authors cannot see each other, and nothing the
 // operator has in their own ~/.codex — AGENTS.md, skills, MCP servers, model
 // choice — reaches an author.
@@ -24,6 +26,7 @@ interface RunPaths {
 	readonly home: string;
 	readonly codexHome: string;
 	readonly flask: string;
+	/** `.archboard/vault` in the Flask checkout. The clone needs an empty destination, so the vault is made after it. */
 	readonly vault: string;
 	readonly bin: string;
 	readonly repos: string;
@@ -66,7 +69,7 @@ function prepareRunDirectory(root: string): RunPaths {
 		home: path.join(world, "home"),
 		codexHome: path.join(root, "codex-home"),
 		flask: path.join(world, "flask"),
-		vault: path.join(world, "vault"),
+		vault: path.join(world, "flask", ".archboard", "vault"),
 		bin: path.join(world, "bin"),
 		repos: path.join(world, "repos.json"),
 		xdgState: path.join(world, "state"),
@@ -90,7 +93,6 @@ function prepareRunDirectory(root: string): RunPaths {
 	for (const directory of [
 		paths.home,
 		paths.codexHome,
-		paths.vault,
 		paths.bin,
 		paths.xdgState,
 		paths.xdgConfig,
@@ -193,9 +195,10 @@ function fillCodexHome(
 const FORWARDED_TOOLS = ["ARCHBOARD_RENDERER_CHROMIUM", "ARCHBOARD_FFMPEG"] as const;
 
 /**
- * The environment every process of a run gets: the archboard variables the
- * setup block names, the private homes, PATH with the run's bin first, and the
- * tools the operator named.
+ * The environment every process of a run gets: the run's registry and server,
+ * the private homes, PATH with the run's bin first, and the tools the operator
+ * named. It names no vault: a command finds the run's vault from the Flask
+ * checkout it runs in.
  * @param paths The run.
  * @param serverUrl The run's own server.
  * @returns The environment.
@@ -208,7 +211,6 @@ function runEnvironment(paths: RunPaths, serverUrl: string): Record<string, stri
 		XDG_STATE_HOME: paths.xdgState,
 		XDG_CONFIG_HOME: paths.xdgConfig,
 		TMPDIR: paths.temporary,
-		ARCHBOARD_VAULT: paths.vault,
 		ARCHBOARD_REPOS: paths.repos,
 		ARCHBOARD_URL: serverUrl,
 		ARCHBOARD_NO_AUTOSTART: "1",

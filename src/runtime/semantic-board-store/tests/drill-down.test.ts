@@ -4,27 +4,17 @@
 // interesting once two real boards are in one vault: the level a node must
 // carry is the other board's, and no single board can check it.
 
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
+import * as store from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as contract from "@/shared/semantic-board/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = createConfiguredTestVault("archboard-drill-down-");
-process.env["ARCHBOARD_VAULT"] = vault;
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-});
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	rmSync(vault, { recursive: true, force: true });
 });
 
@@ -326,7 +316,7 @@ test("a link a proposal introduces is reported, because a proposal can still be 
  * @param board Its name.
  * @returns The saved family.
  */
-function read(board: string): ContractModule.SemanticBoard {
+function read(board: string): contract.SemanticBoard {
 	const result = store.readSemanticBoard(vault, board);
 	if (!result.ok) throw new Error(result.problem);
 	return result.board;

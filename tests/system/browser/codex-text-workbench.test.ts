@@ -9,6 +9,7 @@ import {
 import { createJsonRequester } from "../support/http.ts";
 import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -141,7 +142,7 @@ test(
 		const fixture = prepareProductionFixture(resources, executableSource);
 		writeFileSync(fixture.controlPath, JSON.stringify({ signedOut: true }));
 		const { ownerRoot } = browserTestRoots();
-		const vault = join(ownerRoot, "vault");
+		const vault = vaultIn(join(ownerRoot, "vault"));
 		mkdirSync(vault, { recursive: true });
 
 		const server = await startOwnedServer({
@@ -163,7 +164,7 @@ test(
 		await browser.run(["open", server.base]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<[number, number]>("[innerWidth, innerHeight]")).toEqual([1920, 1080]);
-		runServerCli(server.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
+		runServerCli(server, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() => paneCanvas(browser),
 			(value) => value.panes === 1 && value.board === "workbench" && value.drawn,

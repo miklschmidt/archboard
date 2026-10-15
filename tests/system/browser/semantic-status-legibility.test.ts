@@ -5,6 +5,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -146,7 +147,7 @@ const overThePill = (
 test("a reader sees what changed, what belongs together and what is unsettled", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "semantic-legibility-vault");
+	const vault = vaultIn(join(ownerRoot, "semantic-legibility-vault"));
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
 	const policy = structuredClone(DEFAULT_SEMANTIC_POLICY);
 	policy.nodeKinds["route"]!.color = "blue";

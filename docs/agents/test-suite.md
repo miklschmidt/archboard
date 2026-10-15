@@ -52,6 +52,31 @@ the macOS job repeats its selected native owners on that platform.
 The whole chain's duration is machine-dependent. Browser owners run one at a
 time. Re-measure before making a timing claim.
 
+## Isolated servers and vaults
+
+A test never reaches the server, the vault or the registry of the person who
+runs it. The registry is the file that lists the repositories and vaults that
+the browser shows.
+
+- A system test keeps each vault at `<dir>/.archboard/vault`, where a command
+  finds it (ADR 0049). `vaultIn(<dir>)` in `tests/system/support/test-vault.ts`
+  makes one.
+- `startOwnedServer` gives each server its own port, home, XDG directories,
+  temporary directory and registry. That registry lists only the server's
+  vault, so a page opens in that vault. A test about the registry names its
+  own with `ARCHBOARD_REPOS`, and the server then lists only what that file
+  holds.
+- A command runs in the directory that holds its vault, with the registry of
+  the server it talks to: `runServerCli` in `tests/system/support/run-cli.ts`
+  and in the browser support. It never runs in this checkout, because there it
+  finds the boards of this repository.
+- No test sets `ARCHBOARD_VAULT`. A command test under `src/` runs the CLI in
+  its own process. It names a temporary vault with `-C <dir>` and sets
+  `ARCHBOARD_REPOS` to a temporary file.
+- To check that no test writes your registry, set `ARCHBOARD_REPOS` to a path
+  that does not exist before a lane. After the lane, the file must still be
+  absent.
+
 ## Focused commands
 
 Run one module, system, or repository file with:
@@ -252,7 +277,7 @@ for named-board runtime operations. The lane:
 - bounds retained browser and build children with `TEST_BROWSER_COMMAND_TIMEOUT_MS`,
   polls cleanup with `TEST_BROWSER_POLL_MS`, and treats spawn errors, signals,
   prerequisite failures, and nonzero preflight statuses as could-not-run exit 2;
-- gives every owner an isolated home, vault, temporary directory, browser
+- gives every owner an isolated home, vault, registry, temporary directory, browser
   namespace, socket, session, server listener, and headless allowlisted
   environment, and audits all of them during cleanup. The code-target system
   owners also reap controlled fake processes and capture/release files.

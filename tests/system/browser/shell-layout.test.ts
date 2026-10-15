@@ -19,6 +19,7 @@ import {
 } from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -105,7 +106,7 @@ test(
 	async () => {
 		await using resources = new AsyncDisposableStack();
 		const { ownerRoot } = browserTestRoots();
-		const vault = join(ownerRoot, "vault");
+		const vault = vaultIn(join(ownerRoot, "vault"));
 		mkdirSync(vault, { recursive: true });
 		const server = await startOwnedServer({
 			serverPath,

@@ -1,15 +1,11 @@
-import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
+import { afterAll, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as store from "@/runtime/semantic-board-store/index";
+import * as contract from "@/shared/semantic-board/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-handles-"));
-process.env["ARCHBOARD_VAULT"] = vault;
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 
 // Every test gets its own board, made fresh before it runs, so that running one
@@ -27,10 +23,6 @@ const SEED = {
 	],
 };
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-});
 beforeEach(async () => {
 	boards += 1;
 	board = `handled-${boards}`;
@@ -44,8 +36,6 @@ beforeEach(async () => {
 	});
 });
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	rmSync(vault, { recursive: true, force: true });
 });
 
@@ -53,7 +43,7 @@ afterAll(() => {
  * The board as it now stands, read back off disk.
  * @returns The board.
  */
-const readBack = (): ContractModule.SemanticBoard => {
+const readBack = (): contract.SemanticBoard => {
 	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error(read.problem);
 	return read.board;
@@ -63,7 +53,7 @@ const readBack = (): ContractModule.SemanticBoard => {
  * The one variant's content as it now stands, read back off disk.
  * @returns The content.
  */
-const held = (): ContractModule.VariantContent => readBack().variants[0]!.content;
+const held = (): contract.VariantContent => readBack().variants[0]!.content;
 
 /**
  * Apply one batch to the board as it now stands.

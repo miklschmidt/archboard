@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -49,7 +50,7 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 	const testRoot = join(ownerRoot, "opener-settings");
 	resources.defer(() => rmSync(testRoot, { recursive: true, force: true }));
 	mkdirSync(testRoot, { recursive: true });
-	const vault = join(testRoot, "vault");
+	const vault = vaultIn(join(testRoot, "vault"));
 	const logPath = join(testRoot, "server.log");
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({

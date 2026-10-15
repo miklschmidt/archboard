@@ -11,7 +11,7 @@ import {
 	type DiagnosticSubject,
 	type VaultCheck,
 } from "@/shared/semantic-policy/index";
-import { nameStandInVault } from "./stand-in-vault.ts";
+import { makeStandInVault } from "./stand-in-vault.ts";
 
 const ledger: DiagnosticSubject = { kind: "node", id: "AbCd", name: "Ledger" };
 const check: VaultCheck = {
@@ -39,7 +39,7 @@ const check: VaultCheck = {
 	],
 };
 
-const vault = nameStandInVault();
+const vault = makeStandInVault();
 let service = "";
 const server = Bun.serve({
 	hostname: "127.0.0.1",
@@ -58,7 +58,7 @@ const environment = {
 };
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
-// Imported only now, because the CLI reads where its server and its vault are as it loads.
+// Imported only now, because the CLI reads where its server is as it loads.
 const [config, client, { runCli }] = await Promise.all([
 	import("@/runtime/engine/config"),
 	import("@/runtime/engine/server-client"),
@@ -94,7 +94,7 @@ test("check names the subject beside its message, and its JSON answer carries th
 	});
 	let exited: typeof process.exitCode;
 	try {
-		await runCli(["check"]);
+		await runCli(vault.argv(["check"]));
 		exited = process.exitCode;
 	} finally {
 		out.mockRestore();

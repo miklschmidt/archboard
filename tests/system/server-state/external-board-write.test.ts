@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent } from "./support/pane-session.ts";
 
@@ -77,7 +78,7 @@ test("a board replaced by another writer reaches the pane showing it", async () 
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-external-write-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const vault = join(root, "vault");
+	const vault = vaultIn(join(root, "vault"));
 	const server = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
@@ -150,7 +151,7 @@ test("a second pane arriving does not swallow the news for the pane already ther
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-arrival-write-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const vault = join(root, "vault");
+	const vault = vaultIn(join(root, "vault"));
 	mkdirSync(vault, { recursive: true });
 	const file = join(vault, "payments.semantic.json");
 	writeFileSync(file, `${JSON.stringify(boardDocument([node("Gateway")]), null, "\t")}\n`);
@@ -199,7 +200,7 @@ test("a board that was already in the vault is watched from the moment it is sho
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-existing-write-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const vault = join(root, "vault");
+	const vault = vaultIn(join(root, "vault"));
 	mkdirSync(vault, { recursive: true });
 
 	// Written before the server starts, the way a vault that has been used

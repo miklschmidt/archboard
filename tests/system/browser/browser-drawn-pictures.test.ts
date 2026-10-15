@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -82,7 +83,7 @@ const drawn = (browser: AgentBrowserSession, what: string): Promise<boolean> =>
 test("the page draws a board itself, keeps the picture, recolours it for a theme, and draws it again when the board changes", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "drawn-here-vault");
+	const vault = vaultIn(join(ownerRoot, "drawn-here-vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());

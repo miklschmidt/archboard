@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { waitFor } from "./support/http.ts";
 import { reversibleCheckoutEdit } from "./support/reversible-checkout-edit.ts";
 
@@ -27,7 +28,7 @@ describe.serial("source staleness", () => {
 		await using resources = new AsyncDisposableStack();
 		const root = mkdtempSync(join(tmpdir(), "archboard-staleness-source-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
-		const vault = join(root, "vault");
+		const vault = vaultIn(join(root, "vault"));
 		const state = join(root, "state");
 		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
@@ -48,7 +49,6 @@ describe.serial("source staleness", () => {
 					...process.env,
 					ARCHBOARD_URL: server.base,
 					ARCHBOARD_NO_AUTOSTART: "1",
-					ARCHBOARD_VAULT: vault,
 					XDG_STATE_HOME: state,
 					LOG_LEVEL: "error",
 				},

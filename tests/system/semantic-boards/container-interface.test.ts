@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { vaultIn } from "../support/test-vault.ts";
 
 // The public path to a container's interface: state a board with a container
 // in it, and ask the command line what its interface is. The pure derivation
@@ -12,7 +13,8 @@ import { runServerCli } from "../support/run-cli.ts";
 // schema accepts, and refuses what names no container.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-container-interface-"));
+const holder = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-container-interface-"));
+const vault = vaultIn(holder);
 let server: OwnedServer;
 
 /**
@@ -22,7 +24,7 @@ let server: OwnedServer;
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: server.base, args, input });
+	runServerCli({ repoRoot, server, args, input });
 
 /** Server calls into the store's index; Cron depends on the whole store. */
 const ARCHITECTURE = {
@@ -52,7 +54,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await server?.dispose();
-	fs.rmSync(vault, { recursive: true, force: true });
+	fs.rmSync(holder, { recursive: true, force: true });
 });
 
 /**

@@ -8,29 +8,20 @@
 // A stand-in pass counts how often it runs, so "a read starts no pass" is
 // observed rather than assumed.
 
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, expect, test } from "bun:test";
 import type { Server } from "node:http";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import express from "express";
-import type * as RouteModule from "@/server/archboard/code-check";
+import * as route from "@/server/archboard/code-check";
 import { RememberedFindingsSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-findings-route-"));
-const caller = process.env["ARCHBOARD_VAULT"];
-process.env["ARCHBOARD_VAULT"] = scratch;
-let route: typeof RouteModule;
 const listening: Server[] = [];
-
-beforeAll(async () => {
-	route = await import("@/server/archboard/code-check");
-});
 
 afterAll(() => {
 	for (const http of listening) http.close();
-	if (caller === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = caller;
 	rmSync(scratch, { recursive: true, force: true });
 });
 

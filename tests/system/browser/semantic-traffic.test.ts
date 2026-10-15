@@ -12,6 +12,7 @@ import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	createAgentBrowser,
@@ -133,7 +134,7 @@ async function compareTraffic(browser: AgentBrowserSession): Promise<Comparison>
 test("the page runs a picture's traffic where SMIL would, without SMIL, and runs it on across versions", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "vault");
+	const vault = vaultIn(join(ownerRoot, "vault"));
 	cpSync(EXAMPLE, vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());

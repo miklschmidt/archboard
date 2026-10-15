@@ -2,14 +2,16 @@ import { expect, jest, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import * as lock from "@/runtime/engine/board-lock";
+import { logger } from "@/runtime/engine/logger";
+import {
+	CLAIM_LEASE_MS,
+	LOCK_LEASE_MS,
+	LOCK_POLL_MS,
+	LOCK_STEAL_GUARD_MS,
+} from "@/shared/timing/timing";
 
-const previousVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-board-claim-"));
-process.env["ARCHBOARD_VAULT"] = vault;
-const lock = await import("../board-lock.ts");
-const logger = (await import("../logger.ts")).logger;
-const { CLAIM_LEASE_MS, LOCK_LEASE_MS, LOCK_POLL_MS, LOCK_STEAL_GUARD_MS } =
-	await import("../../../shared/timing/timing.ts");
 const originalWarn = logger.warn;
 const boards = new Set<string>();
 const agent = (id: string) => ({ id, kind: "agent" as const });
@@ -176,11 +178,6 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		lock.forgetLockAnnouncements();
 		jest.useRealTimers();
 		logger.warn = originalWarn;
-		if (previousVault === undefined) {
-			delete process.env["ARCHBOARD_VAULT"];
-		} else {
-			process.env["ARCHBOARD_VAULT"] = previousVault;
-		}
 		rmSync(vault, { recursive: true, force: true });
 	}
 }, 45_000);

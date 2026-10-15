@@ -1,11 +1,18 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import type { OwnedServer } from "./owned-server.ts";
+import { holderOf } from "./test-vault.ts";
 import { TEST_VAULT_CLI_TIMEOUT_MS } from "./timing.ts";
 
 interface ServerCliInput {
 	readonly repoRoot: string;
-	readonly vault: string;
-	readonly base: string;
+	/** The server the command talks to. The command uses its registry. */
+	readonly server: Pick<OwnedServer, "base" | "vault" | "registry">;
+	/**
+	 * The vault the command finds, because it runs in the directory that holds
+	 * it. The server's own vault, unless a test addresses another one.
+	 */
+	readonly vault?: string | undefined;
 	readonly args: readonly string[];
 	readonly input: string | undefined;
 	/**
@@ -27,14 +34,14 @@ interface ServerCliResult {
 
 export function runServerCli(options: ServerCliInput): ServerCliResult {
 	const result = spawnSync(join(options.repoRoot, "bin/archboard"), options.args, {
-		cwd: options.repoRoot,
+		cwd: holderOf(options.vault ?? options.server.vault),
 		input: options.input,
 		timeout: TEST_VAULT_CLI_TIMEOUT_MS,
 		killSignal: "SIGKILL",
 		env: {
 			...process.env,
-			ARCHBOARD_VAULT: options.vault,
-			ARCHBOARD_URL: options.base,
+			ARCHBOARD_REPOS: options.server.registry,
+			ARCHBOARD_URL: options.server.base,
 			ARCHBOARD_NO_AUTOSTART: "1",
 			...options.env,
 		},

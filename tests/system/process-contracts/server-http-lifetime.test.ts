@@ -10,6 +10,7 @@ import {
 	type ProductionFixture,
 } from "../server-state/support/codex-production.ts";
 import { waitFor } from "../server-state/support/http.ts";
+import { listOnlyVault } from "../support/test-vault.ts";
 import {
 	TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 	TEST_SERVER_STARTUP_TIMEOUT_MS,
@@ -172,7 +173,7 @@ async function spawnServer(
 		env: buildOwnedServerEnvironment({
 			paths,
 			port,
-			vault: fixture.vault,
+			registry: listOnlyVault(join(fixture.root, `${mode}-repos.json`), fixture.vault),
 			env: {
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
 				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,

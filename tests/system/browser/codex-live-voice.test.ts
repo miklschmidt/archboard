@@ -55,7 +55,7 @@ test(
 	"Talk starts a live voice in the dock, and the voice box and the presentation bar carry it",
 	async () => {
 		await using resources = new AsyncDisposableStack();
-		const { server, fixture, vault } = await startVoiceServer(resources, "vault");
+		const { server, fixture } = await startVoiceServer(resources, "vault");
 		const browser = resources.use(await createAgentBrowser());
 		const api = createJsonRequester(server);
 		const records = () => productionFixtureRecords<FixtureRecord>(fixture);
@@ -102,7 +102,7 @@ test(
 			Boolean,
 			"the production shell and its one canvas pane to mount",
 		);
-		runServerCli(server.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
+		runServerCli(server, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`(() => {

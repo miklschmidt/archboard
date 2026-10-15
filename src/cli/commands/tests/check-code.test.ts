@@ -18,7 +18,7 @@ import {
 	VaultCheckSchema,
 	type VaultCheck,
 } from "@/shared/semantic-policy/index";
-import { nameStandInVault } from "./stand-in-vault.ts";
+import { makeStandInVault } from "./stand-in-vault.ts";
 
 const clean: VaultCheck = {
 	policy: DEFAULT_SEMANTIC_POLICY,
@@ -85,7 +85,7 @@ const codeCheck: CodeCheckAnswer = {
 	],
 };
 
-const vault = nameStandInVault();
+const vault = makeStandInVault();
 let service = "";
 let plain = clean;
 let answered = codeCheck;
@@ -117,7 +117,7 @@ const environment = {
 };
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
-// Imported only now, because the CLI reads where its server and its vault are as it loads.
+// Imported only now, because the CLI reads where its server is as it loads.
 const [config, client, { runCli }] = await Promise.all([
 	import("@/runtime/engine/config"),
 	import("@/runtime/engine/server-client"),
@@ -160,7 +160,7 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 	// A run that succeeds leaves the exit code as it found it, so each run starts from 0.
 	process.exitCode = 0;
 	try {
-		await runCli(argv);
+		await runCli(vault.argv(argv));
 		exited = process.exitCode;
 	} finally {
 		out.mockRestore();
@@ -188,7 +188,11 @@ test("check --code asks the plain check, then the code check, and a board behind
 		"language-server",
 		"history",
 	]);
-	const timed = stderr.split("\n").slice(0, result.timings.length);
+	// The first command in a directory the registry does not know also says it registered it.
+	const timed = stderr
+		.split("\n")
+		.filter((line) => line.endsWith(" ms"))
+		.slice(0, result.timings.length);
 	expect(timed.map((line) => Number(/: ([\d.]+) ms$/u.exec(line)?.[1]))).toEqual(
 		result.timings.map((timing) => Number(timing.elapsedMs.toFixed(1))),
 	);
