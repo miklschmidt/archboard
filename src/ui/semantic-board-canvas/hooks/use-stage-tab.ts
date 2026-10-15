@@ -5,12 +5,30 @@
 // the picture. The page is a way of reading the board, so choosing it leaves a
 // presented walkthrough, and leaving a walkthrough presented from it brings
 // the page back.
+//
+// The page goes while the diagram is read, and it comes back where the reader
+// left it: how far down it was is kept with the board too. It is kept outside
+// React's state, since a page that scrolls has no reason to draw again.
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { BoardTab } from "@/ui/semantic-board-canvas/components/PaneHeader";
 
-/** The tab that is open, and the way to open another. */
+/** Where the About page was scrolled to on the board on screen, kept while the page is gone. */
+interface PagePlace {
+	/**
+	 * How far down the page was when it went.
+	 * @returns The scroll offset, in pixels: 0 for a page not read yet on this board.
+	 */
+	readonly recall: () => number;
+	/**
+	 * Keep how far down the page is.
+	 * @param top The scroll offset, in pixels.
+	 */
+	readonly keep: (top: number) => void;
+}
+
+/** The tab that is open, the way to open another, and where the page was. */
 interface StageTab {
 	/** The tab that is open. */
 	readonly tab: BoardTab;
@@ -19,6 +37,7 @@ interface StageTab {
 	 * @param tab The tab.
 	 */
 	readonly onTab: (tab: BoardTab) => void;
+	readonly place: PagePlace;
 }
 
 /**
@@ -26,26 +45,38 @@ interface StageTab {
  * @param board The board on screen.
  * @param presenting Whether a walkthrough is being read.
  * @param choose Choose the walkthrough to read, or null to leave the one being read.
- * @returns The open tab, and the way to open another.
+ * @returns The open tab, the way to open another, and where the page was.
  */
 function useStageTab(
 	board: string,
 	presenting: boolean,
 	choose: (walkthrough: string | null) => void,
 ): StageTab {
-	const [place, setPlace] = useState<{ readonly board: string; readonly tab: BoardTab }>({
+	const [chosen, setChosen] = useState<{ readonly board: string; readonly tab: BoardTab }>({
 		board,
 		tab: "diagram",
 	});
-	const tab: BoardTab = presenting || place.board !== board ? "diagram" : place.tab;
+	const scrolled = useRef<{ readonly board: string; readonly top: number }>({ board, top: 0 });
+	const tab: BoardTab = presenting || chosen.board !== board ? "diagram" : chosen.tab;
 	const onTab = useCallback(
 		(next: BoardTab): void => {
 			if (next !== "diagram") choose(null);
-			setPlace({ board, tab: next });
+			setChosen({ board, tab: next });
 		},
 		[choose, board],
 	);
-	return { tab, onTab };
+	const recall = useCallback(
+		(): number => (scrolled.current.board === board ? scrolled.current.top : 0),
+		[board],
+	);
+	const keep = useCallback(
+		(top: number): void => {
+			scrolled.current = { board, top };
+		},
+		[board],
+	);
+	const place = useMemo(() => ({ recall, keep }), [recall, keep]);
+	return { tab, onTab, place };
 }
 
-export { useStageTab };
+export { useStageTab, type PagePlace };

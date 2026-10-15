@@ -4,7 +4,8 @@
 // What these catch: a header that offers more ways to read a board than the
 // picture and this page; a walkthrough step that loses its words, its view or
 // its subjects on the page; a step that names no view and so shows none; a
-// step's control that presents from another step; parts listed flat instead of
+// step's control that presents from another step; a page that comes back at
+// its top rather than where the reader left it; parts listed flat instead of
 // in their containment; a row that picks nothing, or shows the diagram without
 // the pick; a subject the view on screen does not draw that is never fitted,
 // because what waits for the whole board's picture went with the page; an
@@ -133,6 +134,14 @@ function middleOfView(): { readonly x: number; readonly y: number } {
 }
 
 /**
+ * The About page on screen.
+ * @returns The page, or null while the diagram is read.
+ */
+function aboutPage(): HTMLElement | null {
+	return document.querySelector<HTMLElement>("[data-slot='board-page']");
+}
+
+/**
  * Click an element the way a person does, and let the pane answer.
  * @param element The element.
  */
@@ -184,20 +193,25 @@ test("each step shows its heading, its words, the view it is told through and th
 	expect(whole.querySelectorAll("[data-slot='about-step-subject']")).toHaveLength(0);
 });
 
-test("a step presents its walkthrough from there over the picture, and leaving it brings the page back", async () => {
+test("a step presents its walkthrough from there over the picture, and leaving it brings the page back where it was", async () => {
 	serving();
 	mountStage(null, { reducedMotion: true });
 	await settle();
 	openAboutPage();
 	await settle();
+	const page = aboutPage()!;
+	act(() => {
+		page.scrollTop = 640;
+		fireEvent.scroll(page);
+	});
 
 	await click(step("b2").querySelector("[data-slot='about-present-step']")!);
 	expect(current()).toBe("One write");
-	expect(document.querySelector("[data-slot='board-page']")).toBeNull();
+	expect(aboutPage()).toBeNull();
 
 	await click(document.querySelector("[aria-label='Leave the walkthrough']")!);
 	expect(current()).toBeNull();
-	expect(document.querySelector("[data-slot='board-page']")).not.toBeNull();
+	expect(aboutPage()?.scrollTop).toBe(640);
 });
 
 test("the parts stand in their containment: each container, then the parts it holds, a step in", async () => {

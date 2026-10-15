@@ -337,8 +337,9 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	// Which way the reader went is said first, so the picture being left knows
 	// how to leave: into the card that was picked, or back out.
 	const departure = useDeparture(drawn, drill.board, render);
+	const { tab, onTab, place } = useStageTab(drill.board, narrative.open !== null, choose);
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
-	const sidebar = useSidebar(props.selection, resting, narrative.open !== null);
+	const sidebar = useSidebar(props.selection, resting, narrative.open !== null, tab === "about");
 	useClearOfPanel(picture, sidebar.floating, props.selection, camera, reducedMotion);
 	const onPickInPicture = useReveal({
 		camera,
@@ -351,7 +352,6 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	});
 	const appearances = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
-	const { tab, onTab } = useStageTab(drill.board, narrative.open !== null, choose);
 	const { goTo } = narrative;
 	const onReadBeat = useCallback(
 		(walkthrough: string, beat: number): void => {
@@ -402,6 +402,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			look={look}
 			tab={tab}
 			onTab={onTab}
+			place={place}
 			onReadBeat={onReadBeat}
 			onShow={onShow}
 			attachPicture={attachPicture}

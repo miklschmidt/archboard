@@ -35,6 +35,7 @@ import { AboutWalkthroughs } from "@/ui/semantic-board-canvas/components/AboutWa
 import { LevelMark } from "@/ui/semantic-board-canvas/components/LevelMark";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 import { useSectionSpy } from "@/ui/semantic-board-canvas/hooks/use-section-spy";
+import type { PagePlace } from "@/ui/semantic-board-canvas/hooks/use-stage-tab";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
@@ -78,6 +79,8 @@ interface AboutPageProps {
 	readonly narration: WalkthroughNarration | undefined;
 	/** Whether the reader asked for no motion, which lands a jump to a section at once. */
 	readonly reducedMotion: boolean;
+	/** Where the page was scrolled to on this board, which it opens at and keeps. */
+	readonly place: PagePlace;
 }
 
 /** The sections of the page. */
@@ -98,8 +101,20 @@ interface AboutSection {
  * @returns The page.
  */
 function AboutPage(props: AboutPageProps): JSX.Element {
-	const { reading, reducedMotion } = props;
+	const { reading, reducedMotion, place } = props;
 	const [page, setPage] = useState<HTMLElement | null>(null);
+	// The page goes while the diagram is read, and opens again where the reader
+	// left it, before it is painted.
+	const attach = useCallback(
+		(element: HTMLElement | null): void => {
+			if (element !== null) element.scrollTop = place.recall();
+			setPage(element);
+		},
+		[place],
+	);
+	const keep = useCallback((): void => {
+		if (page !== null) place.keep(page.scrollTop);
+	}, [page, place]);
 	const sections = useMemo(() => sectionsOf(reading), [reading]);
 	const keys = useMemo(() => sections.map((section) => section.key), [sections]);
 	const current = useSectionSpy(page, keys);
@@ -118,12 +133,13 @@ function AboutPage(props: AboutPageProps): JSX.Element {
 	);
 	return (
 		<section
-			ref={setPage}
+			ref={attach}
 			role="tabpanel"
 			aria-label={`About ${props.board}`}
 			aria-busy={reading === null || undefined}
 			data-slot="board-page"
 			data-tab="about"
+			onScroll={keep}
 			className="bg-background absolute inset-0 z-20 overflow-x-hidden overflow-y-auto [container:about/size]"
 		>
 			<div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-x-12 px-6 pt-8 pb-16 wrap-break-word @min-[1040px]/about:grid-cols-[176px_minmax(0,1fr)] @min-[1040px]/about:px-10">
