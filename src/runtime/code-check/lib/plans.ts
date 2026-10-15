@@ -2,10 +2,10 @@
 // (ADR 0046, TASK-367.17).
 //
 // The server takes a path from any request on this machine, so it reads a plan
-// only inside a checkout the pass reads, the chosen checkout of its repository
-// (ADR 0049): the path must stay inside the checkout
-// before and after its symbolic links resolve, as the code opener's rules
-// hold a bound path. A plan is usually a file Git ignores, written by
+// only inside a checkout the pass reads: the checkout that holds the vault, or
+// the chosen checkout of another repository (ADR 0049). The path must stay
+// inside the checkout before and after its symbolic links resolve, as the code
+// opener's rules hold a bound path. A plan is usually a file Git ignores, written by
 // `terraform show -json` or `tofu show -json`, so Git need not list it. It is
 // never Terraform state, a variable file or a file under `.terraform`, which
 // the check never reads. A plan describes the root module of the directory
