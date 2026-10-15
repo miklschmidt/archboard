@@ -243,4 +243,69 @@ describe.serial("the repositories of the navigator", () => {
 			repository: ORDERS,
 		});
 	});
+
+	test("a choice moves the panes of every other checkout, and refuses a checkout with no vault", async () => {
+		await using resources = new AsyncDisposableStack();
+		const mainVault = vaultOf(main);
+		const target = join(fixture.root, "orders-fix");
+		execFileSync("git", ["worktree", "add", "-q", "-b", "fix", target], {
+			cwd: main,
+			stdio: "ignore",
+		});
+		const fix = realpathSync.native(target);
+		cli("repo", "add", fix);
+		const pane = await openPaneSession(
+			server.base,
+			createRequester({ ...server, vault: mainVault }),
+			{
+				clientId: "pane-left-behind",
+				board: "payments",
+			},
+		);
+		resources.defer(() => pane.close());
+		// `repo use` tells the server nothing, so the pane stays in the main checkout
+		// while the worktree is the chosen one.
+		cli("repo", "use", worktree);
+
+		// The fix worktree has no vault yet: choosing it is refused, and no pane moves.
+		const mark = pane.mark();
+		const refused = await choose(fix);
+		expect(refused.status).toBe(422);
+		expect(((await refused.json()) as { code: string }).code).toBe("CHECKOUT_UNUSABLE");
+		await pane.sync();
+		expect(pane.events.slice(mark).filter((event) => event.type === "pane_board")).toEqual([]);
+
+		// With a vault it is chosen, and the pane the main checkout still showed moves
+		// there too, although the worktree was the chosen checkout before.
+		const fixVault = vaultOf(fix);
+		expect((await choose(fix)).status).toBe(200);
+		const moved = await pane.waitFor("pane_board", mark);
+		expect(moved).toMatchObject({ board: "payments", vault: fixVault, repository: ORDERS });
+	});
 });
+
+/**
+ * Run the CLI against this server's registry.
+ * @param args Its arguments.
+ */
+function cli(...args: string[]): void {
+	const ran = spawnSync(packageBin, args, {
+		cwd: fixture.nowhere,
+		env: fixture.serverEnvironment,
+		encoding: "utf8",
+	});
+	if (ran.status !== 0) throw new Error(`${args.join(" ")}: ${ran.stderr}`);
+}
+
+/**
+ * Choose a checkout of the repository from the page.
+ * @param root The checkout.
+ * @returns The answer.
+ */
+function choose(root: string): Promise<globalThis.Response> {
+	return fetch(`${server.base}/api/repositories/chosen`, {
+		method: "PUT",
+		headers: { ...pageHeaders(), "Content-Type": "application/json" },
+		body: JSON.stringify({ repository: ORDERS, root }),
+	});
+}
