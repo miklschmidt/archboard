@@ -28,8 +28,10 @@ beforeAll(() => {
 		stdio: "ignore",
 	});
 	worktree = realpathSync.native(target);
-	plans = join(fixture.root, "meta", "plans");
-	mkdirSync(join(plans, ".archboard", "vault"), { recursive: true });
+	const holder = join(fixture.root, "meta", "plans");
+	mkdirSync(join(holder, ".archboard", "vault"), { recursive: true });
+	// The registry records an untracked vault by its real path, as Git reports a checkout's.
+	plans = realpathSync.native(holder);
 });
 
 afterAll(() => fixture.dispose());

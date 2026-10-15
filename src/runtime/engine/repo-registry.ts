@@ -296,10 +296,14 @@ function declareUntrackedVault(holder: string): Declared {
  * @throws {RegistryWriteError} When the registry cannot be written.
  */
 async function declareDirectory(dir: string, options: DeclareOptions = {}): Promise<Declared> {
-	const target = path.resolve(dir);
-	if (!isDirectory(target)) {
-		throw new RepoRegistryError(`${target} is not a directory on this machine.`);
+	const named = path.resolve(dir);
+	if (!isDirectory(named)) {
+		throw new RepoRegistryError(`${named} is not a directory on this machine.`);
 	}
+	// A checkout root is the real path Git reports, and an untracked vault is
+	// recorded the same way, so the directory a command finds a vault in is
+	// the one the registry holds.
+	const target = fs.realpathSync.native(named);
 	const checkout = await inspectCheckout(target, options);
 	if (checkout) {
 		return declareCheckout(checkout, options);
@@ -317,6 +321,57 @@ async function declareDirectory(dir: string, options: DeclareOptions = {}): Prom
 		);
 	}
 	return declareUntrackedVault(holder);
+}
+
+/**
+ * Register the checkout or the untracked vault a command found its vault in,
+ * unless the registry already knows that directory (ADR 0049).
+ * @param holder The checkout root, or the directory that holds an untracked vault.
+ * @param options How to cancel the git calls.
+ * @returns What was recorded, or undefined when the registry knew the directory.
+ * @throws {RepoRegistryError} When the directory is neither a checkout nor holds a vault.
+ * @throws {RegistryWriteError} When the registry cannot be written.
+ */
+async function declareIfUnknown(
+	holder: string,
+	options: Pick<DeclareOptions, "signal"> = {},
+): Promise<Declared | undefined> {
+	const { checkouts, vaults } = readRegistry();
+	const known = [...checkouts, ...vaults].some((entry) => entry.root === holder);
+	return known ? undefined : declareDirectory(holder, options);
+}
+
+/** The repository a vault is in, as the browser names it. */
+interface VaultRepository {
+	/** The repository identity, or the registry name of an untracked vault. */
+	readonly name: string;
+	/** The checkout root, or the directory that holds the untracked vault. */
+	readonly root: string;
+	/** Whether the browser reads this checkout for its identity; an untracked vault always is. */
+	readonly chosen: boolean;
+}
+
+/**
+ * The registered repository whose `.archboard/vault` a vault is.
+ * @param vault The vault directory, as its real path.
+ * @returns The repository, or undefined when no registered directory holds that vault.
+ */
+function repositoryOfVault(vault: string): VaultRepository | undefined {
+	const { checkouts, vaults } = readRegistry();
+	/**
+	 * Whether a registered directory holds the vault.
+	 * @param root The directory.
+	 * @returns True when its `.archboard/vault` is the vault.
+	 */
+	const holds = (root: string): boolean => path.join(root, VAULT_DIRECTORY) === vault;
+	const checkout = checkouts.find((entry) => holds(entry.root));
+	if (checkout !== undefined) {
+		return { name: checkout.repo, root: checkout.root, chosen: checkout.chosen };
+	}
+	const untracked = vaults.find((entry) => holds(entry.root));
+	return untracked === undefined
+		? undefined
+		: { name: untracked.name, root: untracked.root, chosen: true };
 }
 
 /**
@@ -409,6 +464,7 @@ export {
 	type Declared,
 	type Forgotten,
 	type RegistryListing,
+	type VaultRepository,
 	RepoRegistryError,
 	RegistryWriteError,
 	registryPath,
@@ -416,6 +472,8 @@ export {
 	listRegistry,
 	chosenCheckouts,
 	declareDirectory,
+	declareIfUnknown,
 	forgetDirectory,
+	repositoryOfVault,
 	setLanguageServer,
 };
