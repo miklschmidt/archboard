@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 27,
+	"version": 29,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-15T06:03:15.686Z",
+	"updatedAt": "2026-10-15T06:05:04.138Z",
 	"views": [],
 	"variants": [
 		{
@@ -1394,7 +1394,7 @@
 		{
 			"id": "SgXh1GWP",
 			"name": "TASK-472.06",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "DCKlehd5",
 			"summary": "How one CLI invocation is routed: help, shared flags, the vault it addresses, dispatch and the run",
 			"content": {
@@ -1880,9 +1880,9 @@
 		{
 			"id": "4LP6XwaN",
 			"name": "TASK-472.15",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "SgXh1GWP",
-			"summary": "archboard semantic move moves a board to another repository",
+			"summary": "How one CLI invocation is routed: help, shared flags, the vault it addresses, dispatch and the run",
 			"content": {
 				"nodes": [
 					{
@@ -2390,7 +2390,7 @@
 			}
 		}
 	],
-	"current": "SgXh1GWP",
+	"current": "4LP6XwaN",
 	"adoptions": [
 		{
 			"variant": "eLxlFOKI",
@@ -2415,6 +2415,12 @@
 			"from": "DCKlehd5",
 			"at": "2026-10-15T04:08:49.771Z",
 			"reason": "An invocation finds its vault from -C, the environment or the working directory, registers it on first use and names it on every request"
+		},
+		{
+			"variant": "4LP6XwaN",
+			"from": "SgXh1GWP",
+			"at": "2026-10-15T06:05:04.138Z",
+			"reason": "semantic move finds its --to vault through Addressed vault, as -C finds the command's own"
 		}
 	]
 }

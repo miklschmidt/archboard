@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 47,
+	"version": 49,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-15T06:01:58.845Z",
+	"updatedAt": "2026-10-15T06:05:03.467Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -6497,7 +6497,7 @@
 		{
 			"id": "mK3EsXXB",
 			"name": "TASK-472.12",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "30kb8Nuk",
 			"summary": "The semantic board store: board reads, transitions, vault checks and durable writes",
 			"content": {
@@ -7785,9 +7785,9 @@
 		{
 			"id": "MPiVvKed",
 			"name": "TASK-472.15",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "mK3EsXXB",
-			"summary": "archboard semantic move moves a board to another repository",
+			"summary": "The semantic board store: board reads, transitions, vault checks, durable writes and a board's move to another vault",
 			"content": {
 				"nodes": [
 					{
@@ -9227,7 +9227,7 @@
 			}
 		}
 	],
-	"current": "mK3EsXXB",
+	"current": "MPiVvKed",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -9270,6 +9270,12 @@
 			"from": "30kb8Nuk",
 			"at": "2026-10-15T00:50:26.061Z",
 			"reason": "A drill-down can name the repository of the board it opens: the drill-down checks read the vault of that repository's chosen checkout, a link naming the vault's own repository stays in the vault, and the vault checkouts say which identity a vault's own checkout holds"
+		},
+		{
+			"variant": "MPiVvKed",
+			"from": "mK3EsXXB",
+			"at": "2026-10-15T06:05:03.467Z",
+			"reason": "semantic move: the store's Move writes the whole board into another repository's vault under both leases, rewrites the drill-downs the move changes, and deletes the source note last"
 		}
 	],
 	"shelvings": [
