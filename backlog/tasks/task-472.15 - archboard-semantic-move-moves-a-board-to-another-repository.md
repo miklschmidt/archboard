@@ -1,11 +1,11 @@
 ---
 id: TASK-472.15
 title: archboard semantic move moves a board to another repository
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 06:21'
+updated_date: '2026-10-15 06:27'
 labels: []
 dependencies:
   - TASK-472.12
@@ -30,13 +30,13 @@ A board sometimes lives in the wrong repository, for example a board that a meta
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `archboard semantic move <board> --to <dir> --doing <line>` moves the whole note into the vault found from `<dir>`, with every variant, former name and subject id unchanged
-- [ ] #2 Drill-downs in the source vault into the moved board, and drill-downs on the moved board into the source vault, are rewritten to name repository identities
-- [ ] #3 The move refuses between two checkouts of one identity, while another holder claims the board or its name in the target, when the target vault has a board or former name of that name, and when it needs a drill-down into an untracked vault
-- [ ] #4 The move holds the lease in both vaults, writes the target note first, rewrites the drill-downs, and deletes the source note last; a move that stopped part way leaves the board in both vaults, and running it again finishes it
-- [ ] #5 The answer lists every rewritten drill-down
-- [ ] #6 The archboard skill and the help of `semantic move` describe the move and its refusals
-- [ ] #7 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 `archboard semantic move <board> --to <dir> --doing <line>` moves the whole note into the vault found from `<dir>`, with every variant, former name and subject id unchanged
+- [x] #2 Drill-downs in the source vault into the moved board, and drill-downs on the moved board into the source vault, are rewritten to name repository identities
+- [x] #3 The move refuses between two checkouts of one identity, while another holder claims the board or its name in the target, when the target vault has a board or former name of that name, and when it needs a drill-down into an untracked vault
+- [x] #4 The move holds the lease in both vaults, writes the target note first, rewrites the drill-downs, and deletes the source note last; a move that stopped part way leaves the board in both vaults, and running it again finishes it
+- [x] #5 The answer lists every rewritten drill-down
+- [x] #6 The archboard skill and the help of `semantic move` describe the move and its refusals
+- [x] #7 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -99,4 +99,12 @@ Correction to the Board store line above: within the store, outside move*.ts, th
 Decision revised (2026-10-15, from the TASK-472.14 boundary review): a finished move chooses its target checkout when it is a known checkout that is not chosen, as an agent's browser show does, and says so in chose; otherwise a later registry change would move the board's panes to the chosen checkout's vault, which lacks the board. This brings the CLI form in line with ADR 0051's 'the vault of the chosen checkout'.
 
 Boards for 197f68f39 (a finished move chooses its target checkout through chooseShownCheckout, exported from pane-show-route.ts, and then calls followRegistry): the TASK-472.14 proposal on Archboard server routes draws them, and it was adopted at version 42. It adds Move route -> Live panes (a finished move chooses its target's checkout, anchored at semantic-board-move.ts chooseShownCheckout) and Move route -> Repository routes (every pane follows the choice, anchored at followRegistry). This clears that board's RELATIONSHIP_UNDRAWN Move route -> Repository routes. On Live panes, the move stays drawn through the Archboard server container, as 55zluwBL draws it.
+
+Gate: bun run check on 197f68f39 (main with TASK-472.14 and TASK-472.15 and their review fixes), ARCHBOARD_REPOS=/tmp/gate-repos.json, exit 0: modules 4657 pass 1 skip, system 233 pass, repository 27 pass, serial browser 19/19 owners; the registry file was never created. Proofs: src/runtime/semantic-board-store/tests/move.test.ts (the whole note, rewrites in the source vault, on the moved board and in the target vault, every refusal, the stopped and repeated move, the lease order, a lapsed lease, a changed target copy), tests/system/cli/semantic-move.test.ts (the CLI move and its rewritten list, refusal exit statuses, the target registered, the pane following the board, the choice of a non-chosen target), src/cli/commands/tests/semantic-move.test.ts (a stopped move lists what it rewrote), src/server/archboard/tests/semantic-change-attribution.test.ts (agents hear that the board moved).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard semantic move <board> --to <dir> --doing <line> --expect-version <n> moves the whole note, with every variant, former name and subject id, into the vault found from --to. Under the source lease and the target name's lease it writes the target note first, rewrites the drill-downs the move changes (in the source vault, on the moved board, and in the target vault) to name repository identities or none, and deletes the source note last, so a stopped move leaves the board in both vaults and a second run finishes it. It refuses a move within one repository, a held board or target name, a target name or former name in use, and a needed link into an untracked vault. The answer lists every rewrite; panes on the board follow it, agents hear it moved, and a non-chosen target checkout becomes the chosen one. Verified by the store, CLI, route and system owners in the notes and the full gate; boards Board persistence v49, Archboard server routes v39 (and v42 with TASK-472.14), Command interface v73, Command dispatch v29, Live panes v32.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -3,11 +3,11 @@ id: TASK-472.14
 title: >-
   browser show chooses the agent's checkout, and browser panes reports each
   pane's repository
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 06:21'
+updated_date: '2026-10-15 06:27'
 labels: []
 dependencies:
   - TASK-472.05
@@ -32,12 +32,12 @@ An agent in a worktree that runs `browser show` would show a board that the app 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `browser show` from a checkout that is not chosen makes it the chosen checkout of its identity before it shows the board, and the answer names the checkout it replaced
-- [ ] #2 `browser show` from the chosen checkout changes no choice
-- [ ] #3 Only `browser show`, `repo use` and the navigator's menu change a chosen checkout, and no board command does
-- [ ] #4 `browser panes` reports every pane with its repository identity, its checkout and whether it shows the caller's own checkout
-- [ ] #5 The archboard and archboard-pr skills and the help of the `browser` commands describe the new answers as built
-- [ ] #6 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 `browser show` from a checkout that is not chosen makes it the chosen checkout of its identity before it shows the board, and the answer names the checkout it replaced
+- [x] #2 `browser show` from the chosen checkout changes no choice
+- [x] #3 `browser panes` reports every pane with its repository identity, its checkout and whether it shows the caller's own checkout
+- [x] #4 The archboard and archboard-pr skills and the help of the `browser` commands describe the new answers as built
+- [x] #5 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #6 Only `browser show`, `repo use`, the navigator's menu and a finished `semantic move` into a checkout that is not chosen (TASK-472.15, decided in this task's review) change a chosen checkout, and no other board command does
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -89,6 +89,8 @@ Footprint base: 2814b6805 (the parent of the first commit with a Refs: TASK-472.
 namedNotChanged: Live panes, Pane registry, named only by relationships, which is normal.
 archboard check: exit 0, no diagnostics. check --code: the three remaining ANCHOR_SYMBOL_MISSING (pageUrl on Archboard and Command interface, drawRequest on Board rasterizer) and the EXPOSED_UNUSED information are older than this task.
 behind: the four adopted boards read clean. TASK-472.14 commits put three other boards behind, and each was read and is still right. Archboard, Repository checkout (13c87172f): the CLI and the server both still draw data edges to the registry, and the watch and unique names are drawn on the module boards. Archboard server, Application lifetime (0af1b7465), Vault requirement (13c87172f) and the container: the registry watch is one more lifetime resource, which "the ordered shutdown" covers, and Route handlers already name the checkout choice. Vault requirement still refuses as it says, because the socket's fallback placement is in websocket-connection.ts. Browser application, Pane session (13c87172f): a test only.
+
+Gate: bun run check on 197f68f39 (main with TASK-472.14 and TASK-472.15 and their review fixes), ARCHBOARD_REPOS=/tmp/gate-repos.json, exit 0: modules 4657 pass 1 skip, system 233 pass, repository 27 pass, serial browser 19/19 owners; the registry file was never created. Criterion 3 was reworded as #6 to name the finished semantic move that chooses its target checkout (decided in this review, built in 197f68f39); CONTEXT.md and skills/archboard/SKILL.md say the same. Proofs: tests/system/server-state/browser-show-checkout.test.ts (#1, #2, #3, #6 and comments 1-3, the removed-worktree reconnect), tests/system/server-state/repositories.test.ts (a repo use with no server reached still moves the pane, through the registry watch), tests/system/cli/semantic-move.test.ts (the move's choice), src/ui/pane-session/tests/pane-connection.test.ts (the page takes a new name).
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -109,3 +111,9 @@ created: 2026-10-15 03:46
 From the TASK-472.06 boundary review: the registry makes an untracked vault's name unique (-2, -3) only against identities known when it registers. A repository with no remote registered later under the same directory name gives two navigator entries with one name, and the page resolves repoA and pane names by the first match, so it can open the wrong vault. Decide whether the untracked vault is renamed (and the user told) when a colliding identity arrives, or whether names are made unique when the list is built.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+An agent's browser show from a checkout that is not chosen makes it the chosen checkout of its identity, after nothing can refuse the show, and the answer names the checkout it replaced; a show from the chosen checkout changes nothing. browser panes gives each pane its vault, repository, checkout and own. Every server watches the registry file it reads, so repo use, repo forget, a registration or another server's choice moves the panes of an unchosen checkout to the chosen one and refreshes every pane's repository name. The registry keeps names unique by renaming an untracked vault when a repository of its name registers. A returning pane socket that names an unreadable vault goes to its repository's chosen checkout, else to where a page opens. Verified by the system and page owners named in the notes and the full gate; boards Live panes v35, Archboard server routes v42, Command interface v76 and Command dispatch v32.
+<!-- SECTION:FINAL_SUMMARY:END -->
