@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -51,7 +52,7 @@ const takeBackControl = (browser: AgentBrowserSession): Promise<boolean> =>
 test("a claimed board says who has it, keeps drawing, and gives the person one way back", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "claim-vault");
+	const vault = vaultIn(join(ownerRoot, "claim-vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());

@@ -12,6 +12,7 @@ import {
 	type ProductionFixture,
 } from "../../server-state/support/codex-production.ts";
 import { startOwnedServer, type OwnedServer } from "../../support/owned-server.ts";
+import { vaultIn } from "../../support/test-vault.ts";
 import {
 	browserTestRoots,
 	registerServerBase,
@@ -46,7 +47,7 @@ export async function startVoiceServer(
 	vaultName: string,
 ): Promise<VoiceServer> {
 	const fixture = prepareProductionFixture(resources, FAKE_CODEX);
-	const vault = join(browserTestRoots().ownerRoot, vaultName);
+	const vault = vaultIn(join(browserTestRoots().ownerRoot, vaultName));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({
 		serverPath: VOICE_SERVER,

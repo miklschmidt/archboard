@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -46,7 +47,7 @@ const ringed = (browser: AgentBrowserSession, ids: readonly string[]): Promise<s
 test("a person selects a group from its colour and name, sees its members ringed, and writes nothing", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "semantic-groups-vault");
+	const vault = vaultIn(join(ownerRoot, "semantic-groups-vault"));
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
 	writeFileSync(
 		join(vault, ".archboard/config.yaml"),

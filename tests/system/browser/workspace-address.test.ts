@@ -7,6 +7,7 @@ import { packageBin } from "../cli/support/package-cli.ts";
 import { createRepositoryFixture } from "../cli/support/repository-fixture.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { holderOf, vaultIn } from "../support/test-vault.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
 import {
 	browserTestRoots,
@@ -63,14 +64,14 @@ function panesOf(request: <T>(path: string) => Promise<{ body: T }>): () => Prom
 test("a workspace opens from its address, and Back retraces the boards a person moved between", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "vault");
+	const vault = vaultIn(join(ownerRoot, "vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
 	const repo = await servedRepository(server.base);
 	const request = createJsonRequester(server);
-	const cli = (...args: string[]): string => runServerCli(server.base, vault, args);
+	const cli = (...args: string[]): string => runServerCli(server, args);
 
 	await Promise.all(
 		["payments", "billing", "ledger"].map((board) => seedSemanticBoard(request, board)),
@@ -143,7 +144,7 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 test("an address naming a board that is not there says so and settles on what is shown", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "missing-vault");
+	const vault = vaultIn(join(ownerRoot, "missing-vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
@@ -185,7 +186,7 @@ test("an address naming a board that is not there says so and settles on what is
 test("choosing a variant in the navigator moves the pane it was chosen for, and only that one", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "variant-vault");
+	const vault = vaultIn(join(ownerRoot, "variant-vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
@@ -249,7 +250,7 @@ const ORDERS = "github.com/acme/orders";
  * @param checkout The checkout.
  * @returns The vault's real path.
  */
-function vaultIn(checkout: string): string {
+function checkoutVault(checkout: string): string {
 	const vault = join(checkout, ".archboard", "vault");
 	mkdirSync(vault, { recursive: true });
 	ensureSemanticVaultConfiguration(vault);
@@ -280,12 +281,15 @@ test("two panes show boards of two repositories, and choosing another checkout i
 		stdio: "ignore",
 	});
 	const worktree = realpathSync.native(target);
-	const added = spawnSync(packageBin, ["repo", "add", main], {
-		cwd: fixture.nowhere,
-		env: fixture.serverEnvironment,
-		encoding: "utf8",
-	});
-	expect(added.status).toBe(0);
+	// The orders checkout, and the untracked vault the page opens in: it is first by name.
+	for (const directory of [main, holderOf(fixture.vault)]) {
+		const added = spawnSync(packageBin, ["repo", "add", directory], {
+			cwd: fixture.nowhere,
+			env: fixture.serverEnvironment,
+			encoding: "utf8",
+		});
+		expect(added.status, added.stderr).toBe(0);
+	}
 	const server = await startOwnedServer({
 		serverPath,
 		vault: fixture.vault,
@@ -300,7 +304,7 @@ test("two panes show boards of two repositories, and choosing another checkout i
 		[main, "Main checkout"],
 		[worktree, "Feature checkout"],
 	] as const) {
-		const request = createJsonRequester({ ...server, vault: vaultIn(checkout) });
+		const request = createJsonRequester({ ...server, vault: checkoutVault(checkout) });
 		await seedSemanticBoard(request, "payments", {
 			nodes: [{ name: word, kind: "service", responsibility: "Says where it is" }],
 		});

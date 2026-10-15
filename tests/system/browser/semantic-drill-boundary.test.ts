@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { holderOf, vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -42,11 +43,13 @@ const REPOSITORY = "github.com/acme/drill";
 
 /**
  * A checkout the two boards can bind code into, registered so the server can
- * find it on this machine (ADR 0004, ADR 0011).
+ * find it on this machine (ADR 0004, ADR 0011), beside the untracked vault
+ * that holds the boards, where the page opens.
  * @param root Where to build it.
+ * @param vault The vault of the boards.
  * @returns The checkout root and the registry file naming it.
  */
-function aCheckout(root: string): { checkout: string; registry: string } {
+function aCheckout(root: string, vault: string): { checkout: string; registry: string } {
 	const checkout = join(root, "checkout");
 	mkdirSync(join(checkout, "src"), { recursive: true });
 	writeFileSync(join(checkout, "src", "pipeline.ts"), "export {};\n");
@@ -65,6 +68,7 @@ function aCheckout(root: string): { checkout: string; registry: string } {
 		registry,
 		JSON.stringify([
 			{ repo: REPOSITORY, root: checkout, source: "declared", addedAt: "2026-01-01" },
+			{ name: "boards", root: holderOf(vault), addedAt: "2026-01-01" },
 		]),
 	);
 	return { checkout, registry };
@@ -122,9 +126,9 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const root = join(ownerRoot, "drill-boundary");
-	const vault = join(root, "vault");
+	const vault = vaultIn(join(root, "vault"));
 	mkdirSync(vault, { recursive: true });
-	const { registry } = aCheckout(root);
+	const { registry } = aCheckout(root, vault);
 	const opener = aRecordingOpener(root);
 	const server = await startOwnedServer({
 		serverPath,
