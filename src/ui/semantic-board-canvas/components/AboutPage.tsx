@@ -126,7 +126,7 @@ function AboutPage(props: AboutPageProps): JSX.Element {
 			data-tab="about"
 			className="bg-background absolute inset-0 z-20 overflow-x-hidden overflow-y-auto [container:about/size]"
 		>
-			<div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-x-12 px-6 pt-8 pb-16 @min-[1040px]/about:grid-cols-[176px_minmax(0,1fr)] @min-[1040px]/about:px-10">
+			<div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-x-12 px-6 pt-8 pb-16 wrap-break-word @min-[1040px]/about:grid-cols-[176px_minmax(0,1fr)] @min-[1040px]/about:px-10">
 				<AboutTitle board={props.board} reading={reading} timeline={timeline} />
 				<AboutOutline sections={sections} current={current} onGo={goTo} />
 				{reading !== null && timeline !== null && (
@@ -289,7 +289,8 @@ function levelWords(level: string): string {
 /**
  * The outline: each section with its count, which goes to it, and the mark on
  * the one being read. Beside the sections while the page is wide, and in a bar
- * that stays over them while it is narrow.
+ * that stays over them while it is narrow. A bar too narrow for every entry
+ * scrolls sideways rather than grow taller, so a jump still lands clear of it.
  * @param props The sections, the one being read and the way to go to one.
  * @param props.sections The sections.
  * @param props.current The key of the one being read, or null.
@@ -306,9 +307,9 @@ function AboutOutline(props: {
 		<nav
 			aria-label="Sections of this page"
 			data-slot="about-outline"
-			className="bg-background border-border sticky top-0 z-10 -mx-6 mb-8 border-b px-5 py-1.5 @min-[1040px]/about:top-8 @min-[1040px]/about:col-start-1 @min-[1040px]/about:row-span-2 @min-[1040px]/about:row-start-1 @min-[1040px]/about:mx-0 @min-[1040px]/about:mb-0 @min-[1040px]/about:self-start @min-[1040px]/about:border-0 @min-[1040px]/about:p-0"
+			className="bg-background border-border sticky top-0 z-10 -mx-6 mb-8 border-b @min-[1040px]/about:top-8 @min-[1040px]/about:col-start-1 @min-[1040px]/about:row-span-2 @min-[1040px]/about:row-start-1 @min-[1040px]/about:mx-0 @min-[1040px]/about:mb-0 @min-[1040px]/about:self-start @min-[1040px]/about:border-0"
 		>
-			<ol className="flex gap-1 @min-[1040px]/about:flex-col">
+			<ol className="flex [scrollbar-width:thin] gap-1 overflow-x-auto px-5 py-1.5 @min-[1040px]/about:flex-col @min-[1040px]/about:overflow-visible @min-[1040px]/about:p-0">
 				{props.sections.map((section) => (
 					<OutlineEntry
 						key={section.key}
