@@ -152,8 +152,10 @@ rules that will not stop you:
   vault, so a coordinator command without `-C` is refused. A tab session has
   one workhorse for each checkout it works in, built on first use. Each
   workhorse works in its checkout (the directory that holds the vault) and
-  has its own thread link, queue and approvals. A pane shows the workhorse of
-  the checkout of its vault (ADR 0050). [ADR
+  has its own thread link, queue and approvals. Every pane of a tab shows the
+  tab's shown conversation: the workhorse of the checkout that the person last
+  activated in the page. Only the browser's activation call changes it, never
+  an agent's `browser show` and never a new chosen checkout (ADR 0050). [ADR
   0019](docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md)
   records the app-server session.
 - The shell is desktop-only at 1920×1080. Do not add phone or narrow layouts.

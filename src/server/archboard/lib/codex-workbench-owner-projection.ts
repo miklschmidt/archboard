@@ -48,12 +48,12 @@ type SemanticBinding = NonNullable<
 
 /**
  * Everything a projection read needs: the pane's tab session, whose coordinator, voice and
- * approvals it is shown, the workhorse of the pane's checkout, and what the generation shares.
+ * approvals it is shown, the workhorse of the shown checkout, and what the generation shares.
  */
 interface ServerOwnerProjectionInput {
 	readonly approvals: CodexWorkbenchComponents["approvals"];
 	readonly session: Pick<CodexWorkbenchTabSession, "components" | "state" | "workhorses">;
-	/** The workhorse of the pane's checkout, or null while that checkout has none. */
+	/** The workhorse of the shown checkout, or null while that checkout has none. */
 	readonly workhorse: Pick<CodexWorkbenchWorkhorse, "components" | "state"> | null;
 	readonly dynamicApprovals: ServerDynamicApprovalOwner;
 	readonly state: ServerBrowserBindingState;

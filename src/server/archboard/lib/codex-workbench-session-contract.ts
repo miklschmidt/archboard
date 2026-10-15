@@ -67,7 +67,7 @@ interface CodexWorkbenchTabSessionState {
 	 */
 	presenting: { readonly paneId: string; readonly vault: string } | null;
 	/**
-	 * The checkout of the pane voice last started from. Voice speaks for the whole tab, and its
+	 * The checkout the tab showed when voice last started. Voice speaks for the whole tab, and its
 	 * session is bound to that checkout's workhorse for as long as it runs; null before any start.
 	 */
 	voiceCheckout: string | null;
