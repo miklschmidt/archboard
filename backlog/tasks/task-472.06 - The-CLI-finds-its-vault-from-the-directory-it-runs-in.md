@@ -1,10 +1,11 @@
 ---
 id: TASK-472.06
 title: The CLI finds its vault from the directory it runs in
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 02:12'
+updated_date: '2026-10-15 02:48'
 labels: []
 dependencies:
   - TASK-472.02
@@ -41,6 +42,21 @@ Plain `archboard` needs `ARCHBOARD_VAULT` exported. ADR 0049 makes the CLI find 
 - [ ] #9 INSTALL.md, AGENTS.md, PRODUCT.md, .archboard/README.md, the archboard skill and the archboard-pr skill describe how a command finds its vault and what `-C` does
 - [ ] #10 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Vault finder (src/runtime/engine/vault-finder.ts): `findVault({directory, environment, cwd})`. Order: `-C <dir>`, then a set ARCHBOARD_VAULT (expand step), then the working directory. In a git checkout only `<root>/.archboard/vault` counts, and a missing one is refused without walking above the root. Outside a checkout the nearest enclosing `<dir>/.archboard/vault` counts. Refusal `VAULT_NOT_FOUND` (exit 2) names the directory, the origin and the way out. Module owner with real temporary git repositories.
+2. Codex workbench reads no served vault: the child environment loses ARCHBOARD_VAULT, a change's context uses the change's own vault, each tab session hears only the vaults its panes are in, the voice catalogue reads the presenting pane's vault, and the board brief names the board's vault so a thread can pass `-C`. Instruction files say so.
+3. Server needs no vault: no start refusal. `/api/served-vault` answers the opening vault or null: a set ARCHBOARD_VAULT, else the first ready repository by name, else null. `served` becomes nullable, `/health` and sync status drop the board count. The page opens in the opening vault, or says that no repository with a vault is known and how to get one.
+4. CLI finds its vault: a shared option `-C <dir>` (also accepted before the command name) on every command whose calls need a vault. The found vault rides on every call. Every JSON answer of those commands carries `vault: {path, origin}`. The spawn-time vault check and noVaultMessage go. `-C` changes only where the vault is found, not how other relative paths resolve.
+5. First use registers: a found checkout or untracked vault that the registry does not know is declared, and the answer carries `vault.registered`, with one stderr line. A vault from the environment never registers. A registry that cannot be written is a warning.
+6. `semantic record` names `repoA` for a found vault, and refuses in a checkout that is not the chosen one. Fix with Codex uses `archboard -C <vault>`.
+7. Docs and skills: INSTALL.md, AGENTS.md, PRODUCT.md, .archboard/README.md, TESTING.md, README.md, the archboard skill (then generate:skill-artifacts) and the archboard-pr skill.
+8. Boards: proposals named TASK-472.06, drawn after the code lands and checked with check --code --variant: Archboard, Command interface, Command dispatch, Archboard server routes, Live panes, Browser application, Archboard server, Agent workbench, Voice coordinator and Board rasterizer, as the code check and footprint show.
+
+Decisions taken where the ADRs are silent: -C wins over ARCHBOARD_VAULT. Only commands that call vault routes find a vault (not start, stop, status, browser panes, browser close, replay, repo, install-skill). Text and raw outputs carry no vault field. Until TASK-472.10 a thread that omits -C reaches the archboard checkout's own vault.
+<!-- SECTION:PLAN:END -->
 
 ## Comments
 
