@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 29,
+	"version": 31,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-15T07:17:32.815Z",
+	"updatedAt": "2026-10-15T07:34:09.052Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -2376,7 +2376,7 @@
 		{
 			"id": "bXgW7XNp",
 			"name": "TASK-367.28",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "A6Hybsm9",
 			"summary": "Module level: the workhorse thread, its queue, and the coordinator's door; each module is drawn whole except the coordinator callbacks, whose tool is the entry point the workhorse start names. Follow linked subjects for related levels.",
 			"content": {
@@ -4450,9 +4450,9 @@
 		{
 			"id": "KPEusQcT",
 			"name": "TASK-472.10",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "bXgW7XNp",
-			"summary": "Per-checkout workhorses: each checkout of a tab session has its own workhorse; the coordinator works in no checkout",
+			"summary": "Module level: the workhorse thread, its queue, and the coordinator's door; each module is drawn whole except the coordinator callbacks, whose tool is the entry point the workhorse start names. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -4461,7 +4461,7 @@
 						"name": "Browser gateway",
 						"kind": "module",
 						"responsibility": "Where a pane's command arrives, already admitted under its tab session's lease, and is carried out by the workhorse of the pane's checkout",
-						"description": "The gateway asks which checkout a pane is in on every read and command, because a pane can move to another vault while it stays open. It dispatches each browser command to one action of that checkout's workhorse: a typed message to the text actions (src/server/archboard/lib/codex-workbench-text-actions.ts), a queue edit to its queue, a new workhorse to its create action (codex-workbench-thread-links.ts), which makes the tab's coordinator ready first. None of them passes through the workhorse operations.",
+						"description": "The gateway asks which checkout a pane is in on every read and command, because a pane can move to another vault while it stays open: it hears the move and presents the pane again, with the workhorse of its new checkout. It dispatches each browser command to one action of that checkout's workhorse: a typed message to the text actions (src/server/archboard/lib/codex-workbench-text-actions.ts), a queue edit to its queue, a new workhorse to its create action (codex-workbench-thread-links.ts), which makes the tab's coordinator ready first. A command that names a thread is admitted only when that thread is the link of the pane's checkout. None of them passes through the workhorse operations.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/codex-workbench"
@@ -4473,6 +4473,7 @@
 						"name": "Coordinator tools",
 						"kind": "module",
 						"responsibility": "The coordinator's tool calls: each becomes one of the four operations of the workhorse of the checkout the call names",
+						"description": "Each tool takes a required checkout, the directory that holds a board's vault, and the replay ledger counts the same arguments in another checkout as another call. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three tools refuse a checkout with no ready workhorse and say so.",
 						"groups": [
 							"voice"
 						],
@@ -4576,7 +4577,7 @@
 						"name": "Thread tool calls",
 						"kind": "module",
 						"responsibility": "Runs the archboard_app calls a thread makes on the server's other threads: list, read, create, fork, message, and the waits",
-						"description": "A creation, fork or message runs only once the user approves it, under the generation that may act; a wait registers its edges first.",
+						"description": "A creation, fork or message runs only once the user approves it, under the generation that may act; a wait registers its edges first. A thread it creates or forks works in the checkout of its caller, as the epoch ledger recorded it when the caller started.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-dynamic-tools"
@@ -5213,7 +5214,7 @@
 			}
 		}
 	],
-	"current": "bXgW7XNp",
+	"current": "KPEusQcT",
 	"adoptions": [
 		{
 			"variant": "7MQ3CPWJ",
@@ -5244,6 +5245,12 @@
 			"from": "A6Hybsm9",
 			"at": "2026-10-06T21:59:04.396Z",
 			"reason": "Draws the authored instructions that the thread link, the thread tools, the operations and the queue use"
+		},
+		{
+			"variant": "KPEusQcT",
+			"from": "bXgW7XNp",
+			"at": "2026-10-15T07:34:09.052Z",
+			"reason": "Each checkout of a tab session has its own workhorse, working in that checkout; the coordinator's tools name the checkout whose workhorse they work with"
 		}
 	]
 }
