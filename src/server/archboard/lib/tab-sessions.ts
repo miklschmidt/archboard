@@ -11,7 +11,7 @@
 // that was present before a restart is still present after it.
 //
 // Each tab also shows one checkout's conversation in its agent dock, the shown conversation (ADR
-// 0050). It is pinned to the checkout of the first pane the workbench reads it for, and after that
+// 0050). The first read pins it to the checkout of the tab's focused pane, and after that
 // only the person's own act in the browser changes it, through the activation route. What an
 // agent does to a pane never does, so it never changes while somebody types. It ends with the tab.
 
@@ -34,7 +34,7 @@ interface TabSessions {
 	readonly onEnded: (listener: (tabSessionId: TabSessionId) => void) => () => void;
 	/**
 	 * The checkout whose conversation a tab shows. A tab that shows none yet is pinned to the
-	 * checkout the asker names, which is the asking pane's own.
+	 * checkout the asker names.
 	 */
 	readonly shown: (tabSessionId: TabSessionId, pin: () => string) => string;
 	/** The checkout whose conversation a tab shows, or null before anything read it. */

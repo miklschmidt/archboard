@@ -730,10 +730,10 @@ _Avoid_: steer, pause, end voice
 **Shown conversation**:
 The workhorse conversation that the agent dock of every pane of a tab shows:
 the one of the checkout that the user last activated. Focusing a pane, opening
-a board, drilling down, going back or forward and picking a workhorse from the
-dock's list activate a checkout. Until the first activation it is the checkout
-of the first pane that the server read. Nothing that an agent does to a pane
-changes it, so it never changes while somebody types. A typed message, New
+a board, drilling down and picking a workhorse from the dock's list activate a
+checkout. Until the first activation it is the checkout of the pane that was
+focused when the server first read the tab. Nothing that an agent does to a
+pane changes it, so it never changes while somebody types. A typed message, New
 conversation, the Stop control and approvals all act on it. A coordinator turn
 shows in the conversations of the workhorses that it gave work to, and a turn
 that gave none in the conversation that was shown when it started.
