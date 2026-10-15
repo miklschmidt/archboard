@@ -6,7 +6,7 @@ the semantic one it has — as boards a person can open rather than as prose abo
 boards.
 
 It is here rather than in a vault because it is source: the statements are
-tracked, the boards are built from them by `bun scripts/build-pipeline-example.ts`,
+tracked, the boards are built from them by `bun scripts/build-pipeline-example.ts <vault>`,
 and building twice from the same statements produces the same boards. Nothing in
 a person's vault is read or written by that script beyond the two boards it
 builds (ADR 0023).
