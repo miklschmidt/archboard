@@ -1,7 +1,8 @@
 # Reconcile a proposal drawn before the code
 
 Section 2 of the skill sends you here when the user drew a proposal for
-exactly this pull request before the code existed. The proposal says what was
+exactly this pull request before the code existed. The [split](split.md)
+sends you here for a design of the whole branch. The proposal says what was
 intended, and the head branch's code says what was built. Compare them in both
 directions:
 
