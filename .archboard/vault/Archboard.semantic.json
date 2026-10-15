@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 52,
+	"version": 54,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-15T05:01:50.071Z",
+	"updatedAt": "2026-10-15T05:06:53.647Z",
 	"views": [],
 	"variants": [
 		{
@@ -3835,7 +3835,7 @@
 		{
 			"id": "z4FZoZj7",
 			"name": "TASK-472.06",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "mEA8E0cU",
 			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
@@ -4333,9 +4333,9 @@
 		{
 			"id": "RKUtms6z",
 			"name": "TASK-472.08",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "z4FZoZj7",
-			"summary": "archboard runs the source of the archboard checkout it stands in, and each worktree has its own port",
+			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
 				"nodes": [
 					{
@@ -4829,7 +4829,7 @@
 			}
 		}
 	],
-	"current": "z4FZoZj7",
+	"current": "RKUtms6z",
 	"adoptions": [
 		{
 			"variant": "RSCDIXvS",
@@ -4884,6 +4884,12 @@
 			"from": "mEA8E0cU",
 			"at": "2026-10-15T04:08:49.975Z",
 			"reason": "The CLI finds, registers and names the vault of the checkout it runs in, and the Codex child names no vault"
+		},
+		{
+			"variant": "RKUtms6z",
+			"from": "z4FZoZj7",
+			"at": "2026-10-15T05:06:53.647Z",
+			"reason": "The CLI runs the source of the archboard checkout it stands in, and each checkout has its own server on its own port (TASK-472.08)"
 		}
 	]
 }
