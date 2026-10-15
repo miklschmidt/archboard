@@ -47,6 +47,7 @@ const WRITE_ROUTES = [
 	"/api/semantic-boards/shelve",
 	"/api/semantic-boards/rename",
 	"/api/semantic-boards/discard",
+	"/api/semantic-boards/move",
 	"/api/semantic-boards/claim",
 	"/api/semantic-boards/claim/release",
 	"/api/semantic-boards/take-back",

@@ -6,6 +6,8 @@
 // advance and atomic fsync write. `discardSemanticBoard` removes a whole board
 // under the same lease and admission. A read of an older contract runs a registered
 // schema migration under the same board lease and persists it before answering.
+// `moveSemanticBoard` moves a whole board into another repository's vault, in a
+// fixed order under the lease in both vaults (ADR 0051).
 // Historical bytes use `decodeSemanticBoardDocument`: the same checks and
 // migrations in memory, without vault access or a migration write.
 
@@ -65,6 +67,11 @@ export {
 	type SemanticDiscardResult,
 	discardSemanticBoard,
 } from "@/runtime/semantic-board-store/lib/discard";
+export {
+	type SemanticMoveCommand,
+	type SemanticMoveResult,
+	moveSemanticBoard,
+} from "@/runtime/semantic-board-store/lib/move";
 export {
 	unsettledAncestor,
 	type DescendantOutcome,

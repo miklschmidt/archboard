@@ -517,7 +517,9 @@ function isRejection(result: { readonly outcome: string }): result is SemanticWr
  * @returns What the pass did and the identity it held the board under, or why it did nothing.
  * @throws {Error} When the board name is not usable or would escape the vault.
  */
-async function underBoardLease<Done extends { readonly outcome: "applied" | "discarded" }>(
+async function underBoardLease<
+	Done extends { readonly outcome: "applied" | "discarded" | "moved" | "stopped" },
+>(
 	ask: BoardLeaseAsk,
 	pass: (location: SemanticBoardLocation, heldAs: string) => Done | SemanticWriteRejection,
 ): Promise<(Done & { readonly heldAs: string }) | SemanticWriteRejection> {
@@ -575,12 +577,15 @@ async function writeSemanticBoard(command: SemanticWriteCommand): Promise<Semant
 }
 
 export {
+	type Admission,
 	type BoardLeaseAsk,
 	type SemanticWriter,
 	type SemanticWriteCommand,
 	type SemanticWriteRejection,
 	type SemanticWriteResult,
+	admit,
 	boardBefore,
+	leaseRequest,
 	rejected,
 	underBoardLease,
 	writeSemanticBoard,

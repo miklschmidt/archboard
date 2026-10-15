@@ -1,0 +1,136 @@
+// `archboard semantic move` (ADR 0051, TASK-472.15): the real command moves a
+// board from the vault it finds into the vault found from `--to`, through an
+// owned server with a registry, home and state directory of its own. The store
+// owner (`src/runtime/semantic-board-store/tests/move.test.ts`) holds what the
+// move writes and refuses; this owner holds the command around it: its answer,
+// the files it leaves in both vaults and the exit status of a refusal.
+
+import { existsSync, mkdirSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { afterAll, beforeAll, expect, test } from "bun:test";
+import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { runServerCli } from "../support/run-cli.ts";
+import { createRepositoryFixture, type RepositoryFixture } from "./support/repository-fixture.ts";
+
+const repoRoot = resolve(import.meta.dir, "../../..");
+const META = "github.com/acme/meta";
+const PRODUCT = "github.com/acme/product";
+let fixture: RepositoryFixture;
+let server: OwnedServer;
+let product = "";
+let metaVault = "";
+let productVault = "";
+
+/**
+ * Run the archboard command of this package in the directory that holds a vault.
+ * @param vault The vault the command finds.
+ * @param args The command line.
+ * @param input What to put on standard input.
+ * @returns What the command printed and how it exited.
+ */
+function cli(vault: string, args: readonly string[], input?: string) {
+	return runServerCli({ repoRoot, server, vault, args, input });
+}
+
+/**
+ * Make a board in the meta project's vault.
+ * @param name The board's name.
+ * @param nodes Its parts; every part after the first is wired to the first.
+ */
+function made(name: string, nodes: readonly Record<string, unknown>[]): void {
+	const [first, ...rest] = nodes;
+	const payload = {
+		level: "service",
+		nodes,
+		edges: rest.map((node) => ({ from: first?.["name"], to: node["name"], kind: "http" })),
+	};
+	const result = cli(
+		metaVault,
+		["semantic", "new", name, "--doing", "drawing a board to move"],
+		JSON.stringify(payload),
+	);
+	expect(result.status, result.stderr).toBe(0);
+}
+
+/**
+ * A part that opens a board of its own vault.
+ * @param name The part's name.
+ * @param board The board it opens.
+ * @returns The node.
+ */
+function opening(name: string, board: string) {
+	return { name, kind: "service", drillDown: { board, variant: { kind: "current" } } };
+}
+
+/**
+ * Whether a vault holds a board's file.
+ * @param vault The vault.
+ * @param name The board's name.
+ * @returns True when the file is there.
+ */
+function holds(vault: string, name: string): boolean {
+	return existsSync(join(vault, `${name}.semantic.json`));
+}
+
+beforeAll(async () => {
+	fixture = createRepositoryFixture();
+	const meta = fixture.repository("meta", META);
+	product = fixture.repository("product", PRODUCT);
+	metaVault = join(meta, ".archboard", "vault");
+	productVault = join(product, ".archboard", "vault");
+	mkdirSync(metaVault, { recursive: true });
+	mkdirSync(productVault, { recursive: true });
+	server = await startOwnedServer({
+		serverPath: join(repoRoot, "src/server.ts"),
+		vault: metaVault,
+		env: fixture.serverEnvironment,
+	});
+});
+
+afterAll(async () => {
+	await server?.dispose();
+	fixture?.dispose();
+});
+
+test("semantic move moves the board to the vault --to finds and lists every rewritten drill-down", () => {
+	made("Ledger", [{ name: "Books", kind: "module" }]);
+	made("Payments", [{ name: "API", kind: "app" }, opening("Books", "Ledger")]);
+	made("Platform", [{ name: "Web", kind: "app" }, opening("Pay", "Payments")]);
+
+	const moved = cli(metaVault, [
+		"semantic",
+		"move",
+		"Payments",
+		"--to",
+		product,
+		"--doing",
+		"moving the board into the repository it describes",
+	]);
+
+	expect(moved.status, moved.stderr).toBe(0);
+	const answer = JSON.parse(moved.stdout) as {
+		to: { repository: string | null };
+		rewritten: { board: string; drillDown: { repo?: string } }[];
+	};
+	expect(answer.to.repository).toBe(PRODUCT);
+	expect(answer.rewritten.map((one) => `${one.board} ${one.drillDown.repo}`).toSorted()).toEqual([
+		`Payments ${META}`,
+		`Platform ${PRODUCT}`,
+	]);
+	expect([holds(metaVault, "Payments"), holds(productVault, "Payments")]).toEqual([false, true]);
+}, 120_000);
+
+test("a refused move exits with the status its refusal declares and moves nothing", () => {
+	made("Refunds", [{ name: "Store", kind: "module" }]);
+	const refused = cli(metaVault, [
+		"semantic",
+		"move",
+		"Refunds",
+		"--to",
+		join(metaVault, ".."),
+		"--doing",
+		"moving the board into its own repository",
+	]);
+	expect(refused.status).toBe(2);
+	expect(holds(metaVault, "Refunds")).toBe(true);
+}, 120_000);

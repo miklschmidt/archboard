@@ -18,3 +18,5 @@ export { registryOf } from "@/cli/command-routing/lib/registry";
 export { commanderTree, helpText, usageLine } from "@/cli/command-routing/lib/help";
 
 export { runCliWith, type CliBootstrap } from "@/cli/command-routing/lib/session";
+
+export { findVaultOf } from "@/cli/command-routing/lib/addressed-vault";

@@ -21,6 +21,8 @@ import {
 	requestJson,
 } from "@/runtime/engine/server-client";
 import {
+	BoardMoveAnswerSchema,
+	type BoardMoveAnswer,
 	SemanticBoardSchema,
 	SemanticBoardLevelSchema,
 	ReconciliationIssueSchema,
@@ -319,6 +321,24 @@ async function branchSemanticBoardOnServer(
 	return postSemantic("/api/semantic-boards/branch", { board, branch });
 }
 
+/**
+ * Move a board, every variant of it, into another repository's vault (ADR 0051).
+ * It states what it is doing, which session asked and the version it read, as
+ * every write does.
+ * @param board The board name, as it is now or as it was.
+ * @param to The target vault's directory, as its real path.
+ * @returns The board as it now stands in the target vault, both ends of the
+ *   move and every drill-down the move rewrote.
+ */
+async function moveSemanticBoardOnServer(board: string, to: string): Promise<BoardMoveAnswer> {
+	const reply = await requestJson<unknown>(withWriterClaims("/api/semantic-boards/move"), {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ board, move: { to }, ...statedSession() }),
+	});
+	return BoardMoveAnswerSchema.parse(reply);
+}
+
 const DiscardReplySchema = z.object({
 	success: z.literal(true),
 	discarded: z.object({ board: z.string(), version: z.int() }),
@@ -366,6 +386,7 @@ export {
 	editSemanticBoardOnServer,
 	branchSemanticBoardOnServer,
 	discardSemanticBoardOnServer,
+	moveSemanticBoardOnServer,
 };
 
 /**
