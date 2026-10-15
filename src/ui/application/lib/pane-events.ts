@@ -91,9 +91,12 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		},
 		/**
 		 * A pane's socket came back: everything this tab caches about the server
-		 * may have moved while it was down, and nothing said so.
+		 * may have moved while it was down, and nothing said so. The agent work it
+		 * heard is forgotten before the socket's first message, which is the
+		 * server's account of every vault where an agent is at work now.
 		 */
 		onPaneReconnected: (): void => {
+			owners.activity.forget();
 			catalog.reconnected();
 		},
 		/**
