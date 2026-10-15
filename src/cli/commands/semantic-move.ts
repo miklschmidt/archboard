@@ -8,7 +8,12 @@
 // move that stopped part way is finished by running it again.
 
 import { z } from "zod";
-import { BoardMoveAnswerSchema, MoveEndSchema } from "@/shared/semantic-board/index";
+import {
+	BoardMoveAnswerSchema,
+	MoveEndSchema,
+	MovedDrillDownSchema,
+	type MovedDrillDown,
+} from "@/shared/semantic-board/index";
 import { moveSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import { defineCommand } from "@/cli/command-contract/contract";
 import {
@@ -40,6 +45,18 @@ function endWords(end: MoveResult["from"]): string {
 }
 
 /**
+ * One rewritten drill-down, in words.
+ * @param one The drill-down.
+ * @returns The line.
+ */
+function rewrittenLine(one: MovedDrillDown): string {
+	return (
+		`  rewrote node ${one.node} of "${one.board}" (variant ${one.variant}): it opens ` +
+		`"${one.drillDown.board}" of ${one.drillDown.repo ?? "its own vault"}`
+	);
+}
+
+/**
  * What a move is worth saying out loud: where the board went, and every
  * drill-down it rewrote.
  * @param moved The answer.
@@ -49,12 +66,29 @@ function movedLines(moved: MoveResult): string[] {
 	return [
 		`Semantic board "${moved.board.name}" moved from ${endWords(moved.from)} to ${endWords(moved.to)}, ` +
 			`and is now at version ${moved.version} in ${moved.to.vault}.`,
-		...moved.rewritten.map(
-			(one) =>
-				`  rewrote node ${one.node} of "${one.board}" (variant ${one.variant}): it opens ` +
-				`"${one.drillDown.board}" of ${one.drillDown.repo ?? "its own vault"}`,
-		),
+		...moved.rewritten.map(rewrittenLine),
 	];
+}
+
+/** What a move that stopped part way answers with, beside its reason. */
+const StoppedMoveSchema = z.object({
+	code: z.literal("MOVE_STOPPED"),
+	rewritten: z.array(MovedDrillDownSchema),
+});
+
+/**
+ * A move that stopped part way, with every drill-down it rewrote before it
+ * stopped named after its reason. Run again, the move rewrites only what is
+ * left, so its answer cannot name these.
+ * @param error What the move threw.
+ * @returns The same error, saying what was rewritten when the move stopped.
+ */
+function sayingWhatWasRewritten(error: unknown): unknown {
+	if (!(error instanceof Error) || !("answer" in error)) return error;
+	const stopped = StoppedMoveSchema.safeParse(error.answer);
+	if (!stopped.success) return error;
+	error.message = [error.message, ...stopped.data.rewritten.map(rewrittenLine)].join("\n");
+	return error;
 }
 
 const semanticMoveContract = defineCommand({
@@ -168,7 +202,11 @@ const semanticMoveContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "semantic move");
 		const target = await findVaultOf(input.to, "--to");
-		const moved = await moveSemanticBoardOnServer(input.name, target.path);
+		const moved = await moveSemanticBoardOnServer(input.name, target.path).catch(
+			(error: unknown) => {
+				throw sayingWhatWasRewritten(error);
+			},
+		);
 		const result: MoveResult = {
 			...moved,
 			to: {
@@ -180,4 +218,4 @@ const semanticMoveContract = defineCommand({
 	},
 });
 
-export { semanticMoveContract };
+export { sayingWhatWasRewritten, semanticMoveContract };
