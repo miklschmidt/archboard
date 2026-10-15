@@ -19,6 +19,7 @@ import {
 	broadcast,
 	broadcastBoardless,
 	paneVaults,
+	sendBoardlessToPane,
 	sendToPane,
 	syncLockWatch,
 } from "@/server/archboard/lib/pane-registry";
@@ -155,4 +156,22 @@ function tellPaneAboutLock(clientId: string, board: string): void {
 	}
 }
 
-export { agentActivity, announceDoing, lockMessage, refuseUndescribedWrite, tellPaneAboutLock };
+/**
+ * Tell a pane that has just moved into another vault which boards an agent has
+ * there (ADR 0022). Activity is told per vault, so what it heard before was
+ * about the vault it left.
+ * @param clientId The pane's client id.
+ * @param vault The vault it is in now.
+ */
+function tellPaneAboutVault(clientId: string, vault: string): void {
+	sendBoardlessToPane(clientId, agentActivity.snapshot(vault));
+}
+
+export {
+	agentActivity,
+	announceDoing,
+	lockMessage,
+	refuseUndescribedWrite,
+	tellPaneAboutLock,
+	tellPaneAboutVault,
+};

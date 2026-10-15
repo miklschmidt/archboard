@@ -29,6 +29,7 @@ import {
 import { forgetTabSession, noteTabSession } from "@/server/archboard/lib/tab-sessions";
 import { isRecord } from "@/server/archboard/lib/request-board";
 import { namedVault, VAULT_PARAMETER, type NamedVault } from "@/server/archboard/lib/request-vault";
+import { repositoryOfVault } from "@/server/archboard/lib/repositories";
 
 /**
  * Retire the client-id keyed state of a socket that owned its pane identity:
@@ -97,11 +98,18 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
  * live one it replaced.
  * @param ws The socket.
  * @param startingKey The board key, or null when the vault holds no board.
+ * @param vault The vault the pane is in, with the name the navigator lists it under.
  * @returns Resolves once the socket has taken the message.
  */
-function sendStartingBoard(ws: WebSocket, startingKey: string | null): Promise<void> {
+function sendStartingBoard(
+	ws: WebSocket,
+	startingKey: string | null,
+	vault: string,
+): Promise<void> {
 	const message: WebSocketMessage = {
 		type: "pane_board",
+		vault,
+		repository: repositoryOfVault(vault),
 		...(startingKey === null
 			? { board: null, identity: null }
 			: { board: startingKey, identity: parseBoardKey(startingKey) }),
@@ -359,7 +367,7 @@ async function acceptWebSocketConnection(
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
 	const startingKey = socket.clientId === null ? null : boardForNewPane(socket.clientId, vault);
-	await sendStartingBoard(ws, startingKey);
+	await sendStartingBoard(ws, startingKey, vault);
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
 	}

@@ -203,15 +203,15 @@ function sendToPane(clientId: string, message: WebSocketMessage, board: string):
 
 /**
  * Send one pane something about the pane itself rather than about a board:
- * open another one, close this one. Layout is not board news — the receiving
- * pane keeps whatever board it is holding — so stamping a board key on it
+ * open another one, close this one, or which boards an agent has in the vault
+ * it just moved into. None of it is board news, so stamping a board key on it
  * would be inventing one. Kept separate from `sendToPane` so that omitting the
  * board stays a deliberate act rather than a missing argument.
  * @param clientId The pane's client id.
- * @param message The layout message to send.
+ * @param message The boardless message to send.
  * @returns Whether the pane received it.
  */
-function sendLayoutToPane(clientId: string, message: WebSocketMessage): boolean {
+function sendBoardlessToPane(clientId: string, message: WebSocketMessage): boolean {
 	return deliverToPane(clientId, JSON.stringify(message));
 }
 
@@ -340,18 +340,18 @@ function copyableBoards(clientId: string, vault: string): string[] {
  * cannot be wrong: one pane on screen means that pane, no pane on screen means
  * the board is loaded without being shown, and two panes means say which
  * (src/runtime/engine/panes.ts). The response always names where the board landed.
- * Only the panes of the board's own vault are candidates: a board of one vault
- * is never put in front of a pane that shows another.
+ * A named pane may show another repository's board now, and the show moves it
+ * into the board's vault (ADR 0050). An unnamed one is only one of the board's
+ * own vault, so a board is never put in front of a pane nobody pointed at it.
  * @param vault The vault the board lives in.
  * @param spec The pane spec the caller sent, if any.
  * @returns The pane, or null when the board is loaded without being shown.
  */
 function paneFromRequest(vault: string, spec: unknown): PaneRegistration | null {
-	const registrations = panesOfVault(vault);
 	if (typeof spec === "string" && spec.trim()) {
-		return resolvePaneSpec(registrations, spec);
+		return resolvePaneSpec([...panes.values()], spec);
 	}
-	return soloPane(registrations);
+	return soloPane(panesOfVault(vault));
 }
 
 /**
@@ -565,7 +565,7 @@ export {
 	pendingPaneOpens,
 	primaryPane,
 	rejectPendingLayouts,
-	sendLayoutToPane,
+	sendBoardlessToPane,
 	sendToPane,
 	settleAfterLayout,
 	socketVaults,

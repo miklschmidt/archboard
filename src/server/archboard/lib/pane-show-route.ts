@@ -24,6 +24,7 @@ import {
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
 import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
+import { tellPaneAboutVault } from "@/server/archboard/lib/board-announcements";
 import {
 	boardForPane,
 	paneFromRequest,
@@ -35,6 +36,8 @@ import type { SemanticAgentSwitch } from "@/runtime/codex-semantic-context";
 import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
 import { arrivedOnBoard, noBrowserBody } from "@/server/archboard/lib/pane-routes";
 import { vaultOfRequest } from "@/server/archboard/lib/request-vault";
+import { movePaneVault } from "@/server/archboard/lib/pane-vaults";
+import { repositoryOfVault } from "@/server/archboard/lib/repositories";
 
 /**
  * Point one pane at one board.
@@ -71,8 +74,15 @@ function showPaneRoute(req: Request, res: Response): void {
 	}
 	const key = paneBoardAddress(identity);
 	const moved = agentSwitch(body, pane, key);
-	sendToPane(pane.clientId, { type: "pane_board", identity }, key);
+	// A pane named by a show of another repository's board moves into that
+	// repository's vault first, so the board's news reaches it from here on.
+	const changedVault = movePaneVault(pane.clientId, vault);
+	const repository = repositoryOfVault(vault);
+	sendToPane(pane.clientId, { type: "pane_board", identity, vault, repository }, key);
 	arrivedOnBoard(pane.clientId, key);
+	if (changedVault) {
+		tellPaneAboutVault(pane.clientId, vault);
+	}
 	// A pane on a different board is a different context, and the workbench has
 	// to hear it from here: the pane's own registration will say the same thing a
 	// moment later, and until it does an agent would answer about the old board.
@@ -80,7 +90,14 @@ function showPaneRoute(req: Request, res: Response): void {
 	// an agent's show is news (TASK-293.06).
 	publishPaneContext(pane.clientId, "focus", [], moved);
 	logger.info(`Pane ${pane.paneId} (${pane.clientId}) shows ${key}`);
-	res.json({ success: true, board: key, identity, paneId: pane.paneId, ...paneResponse(pane) });
+	res.json({
+		success: true,
+		board: key,
+		identity,
+		repository,
+		paneId: pane.paneId,
+		...paneResponse(pane),
+	});
 }
 
 /**
@@ -188,7 +205,7 @@ function acceptedIdentity(
 
 /**
  * The pane a show is addressed to, or nothing once the refusal has been sent.
- * @param vault The vault the board is in: only the panes of that vault can show it.
+ * @param vault The vault the board is in: an unnamed pane must be one of that vault's.
  * @param spec The pane spec the caller stated, if any.
  * @param res The response.
  * @returns The pane, or null.

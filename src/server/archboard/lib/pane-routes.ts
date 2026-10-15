@@ -28,7 +28,7 @@ import {
 	pendingPaneCloses,
 	pendingPaneOpens,
 	primaryPane,
-	sendLayoutToPane,
+	sendBoardlessToPane,
 	settleAfterLayout,
 	type PendingPaneClose,
 	type PendingPaneOpen,
@@ -158,13 +158,15 @@ function postPaneRoute(req: Request, res: Response): void {
 		});
 		return;
 	}
+	// A pane is in the vault the server last put it in (ADR 0050). A report that
+	// names another one was sent before the pane heard it had moved, and is no
+	// account of the pane now: the pane reports again as soon as it hears.
 	if (paneVaults.get(registration.clientId) !== vault) {
-		res.status(409).json({
-			success: false,
-			code: "VAULT_MISMATCH",
-			error:
-				`Pane ${registration.clientId} connected for another vault than "${vault}", ` +
-				"and a pane belongs to one vault for as long as its socket lasts. Open a new pane for this vault.",
+		res.json({
+			success: true,
+			registered: false,
+			paneCount: addressablePanes([...panes.values()]).length,
+			staleFrontend,
 		});
 		return;
 	}
@@ -322,7 +324,7 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 	}
 	const askedAt = new Date().toISOString();
 	const { pending, opened } = awaitPaneOpen();
-	if (!sendLayoutToPane(answering.clientId, { type: "pane_open" })) {
+	if (!sendBoardlessToPane(answering.clientId, { type: "pane_open" })) {
 		pendingPaneOpens.delete(pending);
 		clearTimeout(pending.timeout);
 		res.status(503).json(noBrowserBody("Opening a pane"));
@@ -454,7 +456,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 	}
 	const askedAt = new Date().toISOString();
 	const { pending, closed } = awaitPaneClose(target.clientId, place);
-	if (!sendLayoutToPane(target.clientId, { type: "pane_close" })) {
+	if (!sendBoardlessToPane(target.clientId, { type: "pane_close" })) {
 		pendingPaneCloses.delete(pending);
 		clearTimeout(pending.timeout);
 		res.status(503).json(noBrowserBody("Closing a pane"));
