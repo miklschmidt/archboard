@@ -19,8 +19,8 @@ own, with its own conversation and voice session (TASK-373).
 
 ```bash
 bun run build:frontend
-./bin/dogfood stop; ./bin/dogfood start
-./bin/dogfood semantic record Archboard --walkthrough "Read this board" --out /tmp/archboard.mp4 > /tmp/archboard.json
+archboard stop; archboard start
+archboard semantic record Archboard --walkthrough "Read this board" --out /tmp/archboard.mp4 > /tmp/archboard.json
 ```
 
 The command prints these lines on stderr:
@@ -100,7 +100,7 @@ Count today's files, render, and count again:
 ```bash
 sessions=~/.local/state/archboard/codex-workbench/codex-home/sessions/$(date +%Y/%m/%d)
 ls "$sessions" | wc -l
-./bin/dogfood semantic replay "$(jq -r .talk /tmp/archboard.json)" --theme dark --out /tmp/archboard-dark.mp4
+archboard semantic replay "$(jq -r .talk /tmp/archboard.json)" --theme dark --out /tmp/archboard-dark.mp4
 ls "$sessions" | wc -l
 ```
 
@@ -118,7 +118,7 @@ On macOS the state directory is `~/Library/Application Support/archboard`.
 Record the same walkthrough again with `--language da`:
 
 ```bash
-./bin/dogfood semantic record Archboard --walkthrough "Read this board" --language da --out /tmp/archboard-da.mp4
+archboard semantic record Archboard --walkthrough "Read this board" --language da --out /tmp/archboard-da.mp4
 ```
 
 The voice speaks only Danish from its first word to its last, although the
@@ -132,10 +132,10 @@ directory. It holds each thing that the voice said as a `realtime_item` of type
 ## 6. Discard a board made for the video, and render it again
 
 ```bash
-./bin/dogfood semantic new recording-check --input <a board with one walkthrough>.json --doing "checking a recording"
-./bin/dogfood semantic record recording-check --out /tmp/check.mp4 --talk /tmp/check-talk --discard --doing "recording the check"
-./bin/dogfood semantic show recording-check   # refused: the board is gone
-./bin/dogfood semantic replay /tmp/check-talk --out /tmp/check-again.mp4
+archboard semantic new recording-check --input <a board with one walkthrough>.json --doing "checking a recording"
+archboard semantic record recording-check --out /tmp/check.mp4 --talk /tmp/check-talk --discard --doing "recording the check"
+archboard semantic show recording-check   # refused: the board is gone
+archboard semantic replay /tmp/check-talk --out /tmp/check-again.mp4
 ```
 
 Recording writes nothing to the vault. Only `--discard` removes the board that
@@ -147,7 +147,7 @@ gone.
 ## 7. Refuse without an encoder
 
 ```bash
-ARCHBOARD_FFMPEG=/nonexistent/ffmpeg ./bin/dogfood semantic record Archboard --walkthrough "Read this board" --out /tmp/refused.mp4
+ARCHBOARD_FFMPEG=/nonexistent/ffmpeg archboard semantic record Archboard --walkthrough "Read this board" --out /tmp/refused.mp4
 echo $?
 ```
 
