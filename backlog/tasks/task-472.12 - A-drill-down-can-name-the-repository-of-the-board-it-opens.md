@@ -1,11 +1,11 @@
 ---
 id: TASK-472.12
 title: A drill-down can name the repository of the board it opens
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 00:51'
+updated_date: '2026-10-15 00:55'
 labels: []
 dependencies:
   - TASK-472.02
@@ -30,12 +30,12 @@ A drill-down names only a board and variant in its own vault, so a meta project'
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A drill-down accepts an optional repository identity, and a drill-down without one keeps its meaning
-- [ ] #2 Reading or rendering a board resolves a drill-down with an identity in the vault of that identity's chosen checkout, with former names and case-insensitive names as in its own vault
-- [ ] #3 `archboard check` reports a drill-down whose identity has no known checkout, and one whose target board is not in the chosen checkout's vault
-- [ ] #4 The generated board schema carries the field, and the evaluation inputs cover it as the archboard-dev skill requires
-- [ ] #5 The archboard skill's recipes and references teach a drill-down into another repository, and CONTEXT.md's Drill-down matches
-- [ ] #6 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 A drill-down accepts an optional repository identity, and a drill-down without one keeps its meaning
+- [x] #2 Reading or rendering a board resolves a drill-down with an identity in the vault of that identity's chosen checkout, with former names and case-insensitive names as in its own vault
+- [x] #3 `archboard check` reports a drill-down whose identity has no known checkout, and one whose target board is not in the chosen checkout's vault
+- [x] #4 The generated board schema carries the field, and the evaluation inputs cover it as the archboard-dev skill requires
+- [x] #5 The archboard skill's recipes and references teach a drill-down into another repository, and CONTEXT.md's Drill-down matches
+- [x] #6 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -76,4 +76,12 @@ Footprint read against base 9046e17f4 (the parent of the first code commit 266f5
 Step 7 (behind): Board persistence and Archboard server routes read clean after adoption. Board viewer and Browser application read 0 commits behind, because TASK-472.04 adopted them (1fa993226) after the UI commit 266f5a7ec. Board viewer part Follow drill-downs (drill-target.ts) gained the resolution other-repository in 266f5a7ec; its description (resolves a link against the target board's document, reports a named variant that is gone) is still true for a link without a repo, and the dive across repositories is TASK-472.13, which restates that part. No board binds src/shared/semantic-board, the renderer's drill mark or src/runtime/code-target other than the two above. Command interface and Live panes are behind only for commits of other tasks.
 
 Correction to the step 7 line above: Archboard server (service board) is also behind by 47388b8d6 (and 4307a826c of TASK-472.05), on the container Archboard server (src/server/archboard) and HTTP application. It stays right: it draws the server's modules and its Route handlers part is unbound, so the listing route's one read of the vault's identity is drawn in the Archboard server routes proposal above, and the board has no finding. Board viewer/Browser application, Command interface and Live panes are behind only for other tasks' commits or not at all.
+
+Closing evidence: the complete gate (bun run check) passed in a clean worktree at 299fde5a8, every lane, exit 0. It holds src/runtime/semantic-board-store/tests/drill-down-repository.test.ts (chosen checkout, level, former and recased names, own identity, unreadable target, checkout without a vault, no write to the other vault), src/shared/semantic-board/tests/listing.test.ts, comparison.test.ts and tests/system/cli/drill-down-repository.test.ts. The generated schemas under skills/archboard/references/generated carry repo, and evals/coverage.json has node.drillDown.repo. Reviews: d6764e682, 4c1159442, 41b44e798 (change review), 47388b8d6 and 299fde5a8 (boundary review: the check and the listing treat the vault's own identity as local). Proposals adopted in 3ff98faeb. The pane dive across repositories, and the browser's own-identity case, are TASK-472.13.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A drill-down can now name the repository identity of the board it opens. The check resolves it in the vault of that identity's chosen checkout, with former and recased names, and reports DRILL_DOWN_UNKNOWN_REPOSITORY or DRILL_DOWN_UNKNOWN_BOARD with what to do. A drill-down naming the vault's own identity stays in the vault, in the check and in the listing alike. The schema, the generated references, the eval coverage, the archboard skill and CONTEXT.md carry the field. Verified by the module and system tests in the complete gate at 299fde5a8. Board persistence and Archboard server routes proposals are adopted.
+<!-- SECTION:FINAL_SUMMARY:END -->
