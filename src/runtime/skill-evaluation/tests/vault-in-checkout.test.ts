@@ -48,6 +48,9 @@ test.each([
 	[`bash -lc "jq empty .archboard/vault/Flask\\ JSON.semantic.json"`, 0],
 	[`bash -lc "cd .archboard/vault && jq empty 'Flask JSON.semantic.json'"`, 0],
 	[`bash -lc "cd src && rm 'Flask JSON.semantic.json'"`, 0],
+	[`bash -lc "cd src && rm ../.archboard/vault/Flask\\ JSON.semantic.json"`, 1],
+	[`bash -lc "cd .archboard && jq . x.json > vault/Flask\\ JSON.semantic.json"`, 1],
+	[`bash -lc "rm 'Flask JSON.semantic.json' && cd .archboard/vault"`, 0],
 ])("%s makes %i direct board writes", (command, writes) => {
 	expect(directWrites(command)).toBe(writes);
 });

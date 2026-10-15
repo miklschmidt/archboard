@@ -186,44 +186,63 @@ function redirectTargets(script: string): string[] {
  * Whether a shell command writes a board file of the vault: it redirects
  * into one, or a writing command names one. A read that names a board file
  * — `sed -n`, `jq`, `python -m json.tool ... >/dev/null`, `2>&1` — is a read,
- * whatever else is on the line.
+ * whatever else is on the line. A relative path is read from where the
+ * script's `cd`s have moved it by then, starting in the checkout.
  * @param command The recorded command, possibly wrapped by the shell.
  * @param vault The run's vault.
  * @returns True when the command changes a board file.
  */
 function mutatesBoardFile(command: string, vault: string): boolean {
 	const script = unwrapped(command);
-	const from = startsInVault(script, vault) ? vault : checkoutOf(vault);
-	if (redirectTargets(script).some((target) => isBoardFile(unquoted(target), vault, from)))
-		return true;
-	if (!namesVault(script, vault) || !script.includes(".semantic.json")) return false;
-	// A script that opens a file for writing, however it is spelled, and names
-	// a board file somewhere: a heredoc handed to python or node is one script.
-	if (
-		/\b(?:writeFileSync|writeFile)\b|\bopen\([^)]*,\s*['"][wax]|\bjson\.dump\(|\bsed\s+-i\b/u.test(
-			script,
-		)
-	)
-		return true;
-	return simpleCommands(script).some((simple) => writesNamedFile(simple, vault, from));
+	let from = checkoutOf(vault);
+	for (const simple of simpleCommands(script)) {
+		const moved = movedTo(simple, from);
+		if (moved !== undefined) from = moved;
+		else if (writesBoardFile(simple, vault, from)) return true;
+	}
+	return opensBoardFileForWriting(script, vault);
 }
 
 /**
- * Whether a script moves into the vault before it names a file, so that the
- * bare name of a board is read from there.
+ * Where a `cd` moves a script.
+ * @param simple The simple command.
+ * @param from Where the script is before it.
+ * @returns The directory it moves to, or undefined when it is no `cd` to a directory it names.
+ */
+function movedTo(simple: string, from: string): string | undefined {
+	const [verb, target] = wordsOf(simple);
+	return verb === "cd" && target !== undefined ? path.resolve(from, target) : undefined;
+}
+
+/**
+ * Whether one simple command redirects into a board file or names one as what it writes.
+ * @param simple The simple command.
+ * @param vault The run's vault.
+ * @param from Where a relative path starts.
+ * @returns True when it writes a board file.
+ */
+function writesBoardFile(simple: string, vault: string, from: string): boolean {
+	return (
+		redirectTargets(simple).some((file) => isBoardFile(unquoted(file), vault, from)) ||
+		writesNamedFile(simple, vault, from)
+	);
+}
+
+/**
+ * Whether a script opens a file for writing, however it is spelled, and names
+ * a board file somewhere: a heredoc handed to python or node is one script.
  * @param script The unwrapped script.
  * @param vault The run's vault.
- * @returns True for a `cd` into the vault, by its whole path or relative to the checkout.
+ * @returns True when it does.
  */
-function startsInVault(script: string, vault: string): boolean {
-	return simpleCommands(script).some((simple) => {
-		const [verb, target] = wordsOf(simple);
-		return (
-			verb === "cd" &&
-			target !== undefined &&
-			path.resolve(checkoutOf(vault), target) === path.resolve(vault)
-		);
-	});
+function opensBoardFileForWriting(script: string, vault: string): boolean {
+	return (
+		namesVault(script, vault) &&
+		script.includes(".semantic.json") &&
+		/\b(?:writeFileSync|writeFile)\b|\bopen\([^)]*,\s*['"][wax]|\bjson\.dump\(|\bsed\s+-i\b/u.test(
+			script,
+		)
+	);
 }
 
 /**
