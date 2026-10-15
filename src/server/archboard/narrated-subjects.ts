@@ -2,9 +2,10 @@
 //
 // A beat names its subjects by id; the voice hears them by name: a part or a sequence by its
 // name, a relationship or a step by its two ends and its label. On a variant read against another
-// — the board's current one, or on a board with none the one it came from — each also says how it
-// stands against that one, as the picture marks it, and a changed one says what moved, so the
-// voice can explain the difference the viewer is looking at.
+// — the board's current one, or on a board with none the one it came from, or for a recording
+// made with `--against` the variant it names (TASK-478.01) — each also says how it stands
+// against that one, as the picture marks it, and a changed one says what moved, so the voice can
+// explain the difference the viewer is looking at.
 
 import type { StepSubject } from "@/runtime/codex-realtime";
 import {
@@ -102,6 +103,8 @@ function standingSpoken(id: string, against: Against | null): Omit<StepSubject, 
  * @param board The board.
  * @param variant The variant the walkthrough belongs to.
  * @param beat The step.
+ * @param named The id of the variant a recording's frames are drawn against, or null for the
+ * usual comparison. A variant the board no longer has leaves nothing to read against.
  * @returns Each subject the step names, in its order, with how it stands against the variant this
  * one is read against when there is one.
  */
@@ -109,9 +112,11 @@ function narratedSubjects(
 	board: SemanticBoard,
 	variant: SemanticVariant,
 	beat: WalkthroughBeat,
+	named: string | null = null,
 ): StepSubject[] {
 	const names = namesOf(variant.content);
-	const base = comparedWith(board, variant);
+	const base =
+		named === null ? comparedWith(board, variant) : board.variants.find((one) => one.id === named);
 	const against =
 		base === undefined
 			? null

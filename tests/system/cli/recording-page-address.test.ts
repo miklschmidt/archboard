@@ -6,6 +6,7 @@
 
 import { expect, test } from "bun:test";
 import { recordingPageUrl } from "@/runtime/walkthrough-recorder";
+import { recordingAskedOf } from "@/shared/walkthrough-recording";
 import { addressFromSearch, parseWorkspaceSearchString } from "@/ui/board-routing/search";
 
 /**
@@ -23,6 +24,7 @@ function panesOpenedFor(repository: string | null, variant: string | null) {
 			repository,
 			walkthrough: { id: "w1" },
 			language: "en",
+			against: null,
 		}),
 	);
 	return addressFromSearch(parseWorkspaceSearchString(url.search)).panes;
@@ -35,4 +37,32 @@ test("the recording page shows the board in pane A, in the repository of the vau
 	expect(panesOpenedFor(null, "v2")).toMatchObject([
 		{ paneId: "A", boardKey: "Checkout@v2", repository: null },
 	]);
+});
+
+/**
+ * The search string of the recording page's address.
+ * @param against The variant the recording is read against, or null.
+ * @returns The search string.
+ */
+function addressSearch(against: string | null): string {
+	return new URL(
+		recordingPageUrl({
+			serverUrl: "http://127.0.0.1:3000",
+			board: { name: "Checkout" },
+			variant: "v3",
+			repository: null,
+			walkthrough: { id: "w1" },
+			language: "da",
+			against,
+		}),
+	).search;
+}
+
+test("the recording page is asked for the variant the recording is read against, when there is one", () => {
+	expect(recordingAskedOf(addressSearch("v2"))).toEqual({
+		walkthrough: "w1",
+		language: "da",
+		against: "v2",
+	});
+	expect(recordingAskedOf(addressSearch(null))?.against).toBeNull();
 });
