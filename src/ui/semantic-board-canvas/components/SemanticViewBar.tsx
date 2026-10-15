@@ -6,11 +6,11 @@
 // server to draw and nothing else. No board is written, no version moves, and
 // the other pane showing the other view is unaffected (ADR 0023).
 //
-// Two readings come first on every board, because nobody authors them (ADR
-// 0052). The overview is what a board opens on, and it is first: the parts
-// that work together, with the rest closed. Everything is second: without it a
-// board whose views are all narrow would have no way back to every part at
-// once.
+// Two readings are on every board, because nobody authors them (ADR 0052).
+// The overview is what a board opens on, and it is first: the parts that work
+// together, with the rest closed. Everything is last and dimmed: it is the way
+// back to every part at once, which no narrow view gives, but it is the
+// reading a person should reach for least.
 //
 // A choice says the view's name and nothing else. The grammar a view is drawn
 // in used to be written under it, and a person naming their views the obvious
@@ -64,6 +64,8 @@ const EVERYTHING: SemanticOfferedView = Object.freeze({
 interface ViewChoiceProps {
 	view: SemanticOfferedView;
 	showing: boolean;
+	/** Whether its name is dimmed, as the reading to reach for least. */
+	quiet: boolean;
 	/**
 	 * The person chose this view.
 	 * @param view The view's id, or null for the overview.
@@ -77,7 +79,7 @@ interface ViewChoiceProps {
  * @returns The choice.
  */
 function ViewChoice(props: ViewChoiceProps): JSX.Element {
-	const { view, showing, onChoose } = props;
+	const { view, showing, quiet, onChoose } = props;
 	const choose = useCallback((): void => {
 		// The overview is a choice with no view behind it, so it says so with the
 		// absence the rest of the contract already spells as null.
@@ -90,7 +92,9 @@ function ViewChoice(props: ViewChoiceProps): JSX.Element {
 			data-semantic-view={view.id}
 			onClick={choose}
 		>
-			<SidebarLabel>{view.name}</SidebarLabel>
+			<SidebarLabel>
+				{quiet ? <span className="text-muted-foreground">{view.name}</span> : view.name}
+			</SidebarLabel>
 		</SidebarChoice>
 	);
 }
@@ -104,11 +108,11 @@ function SemanticViewBar(props: SemanticViewBarProps): JSX.Element {
 	const { views, showing, summary, onChoose } = props;
 	return (
 		<SidebarChoices slot="semantic-view-bar" label="Ways of reading this board">
-			{[OVERVIEW, EVERYTHING, ...views].map((view) => {
+			{[OVERVIEW, ...views, EVERYTHING].map((view) => {
 				const on = view.id === "" ? showing === null : showing?.id === view.id;
 				return (
 					<div key={view.id} className="flex flex-col">
-						<ViewChoice view={view} showing={on} onChoose={onChoose} />
+						<ViewChoice view={view} showing={on} quiet={view === EVERYTHING} onChoose={onChoose} />
 						{on && summary !== undefined && (
 							<p
 								data-slot="semantic-view-summary"

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-15 21:05'
-updated_date: '2026-10-15 21:27'
+updated_date: '2026-10-15 22:07'
 labels:
   - renderer
   - semantic-model
@@ -32,9 +32,9 @@ A board opened on its whole variant, which on most dogfood boards is too many li
 - [x] #3 The overview draws no flows, and it shows comparison marks on a proposal
 - [x] #4 The view `Everything` draws every part and relationship, from the CLI, the HTTP route and the browser
 - [x] #5 A write that names a view `Overview` or `Everything` is refused
-- [x] #6 The browser opens a board on the overview, and the view list offers Overview, Everything and then the authored views
-- [x] #7 The archboard skill and CONTEXT.md say what the overview and Everything are
-- [x] #8 A walkthrough step that names no view is told through what the pane shows, and a step whose subject the overview hides says so
+- [x] #6 The archboard skill and CONTEXT.md say what the overview and Everything are
+- [x] #7 A walkthrough step that names no view is told through what the pane shows, and a step whose subject the overview hides says so
+- [x] #8 The browser opens a board on the overview, and the view list offers Overview, the authored views, and Everything last and dimmed
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -57,6 +57,8 @@ Dropped the planned rule that a step with no view is told through Everything whe
 The S09 and S16 skill-eval fixtures and evals.json named a view Overview, which is now reserved; it is renamed Request path with the same selection, so the eval asks the same question.
 
 Validation: bun run check passed lint, fmt and the module (4726 pass), system, and repository lanes; the browser lane failed only semantic-board-inspection, which opened a nested board expecting every level. It now opens with viewA=Everything and expects the restored view in the address; bun run test:serial-browser then passed 19/19. CLI smoke after restarting the server: semantic render "Live panes" draws the overview (25 parts, 69 lines; the board is flat), and --view Everything draws 25 parts and 71 lines.
+
+Owner request 2026-10-16: the view list offers Everything last and dimmed, after the authored views, instead of second. AC #6 now reads with that order.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
