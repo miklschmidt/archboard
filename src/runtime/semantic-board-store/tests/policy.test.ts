@@ -10,9 +10,7 @@ import {
 import type * as Store from "@/runtime/semantic-board-store/index";
 import type * as Contract from "@/shared/semantic-board/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-policy-"));
-process.env["ARCHBOARD_VAULT"] = vault;
 let store: typeof Store;
 let contract: typeof Contract;
 const writer = { kind: "agent" as const };
@@ -37,8 +35,6 @@ beforeEach(() => {
 	save(policy);
 });
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	rmSync(vault, { recursive: true, force: true });
 });
 function save(value: SemanticPolicy) {

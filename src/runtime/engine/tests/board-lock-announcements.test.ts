@@ -2,13 +2,11 @@ import { expect, jest, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import * as lock from "@/runtime/engine/board-lock";
+import { logger } from "@/runtime/engine/logger";
+import { LOCK_WATCH_MS } from "@/shared/timing/timing";
 
-const previousVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-news-"));
-process.env["ARCHBOARD_VAULT"] = vault;
-const lock = await import("../board-lock.ts");
-const logger = (await import("../logger.ts")).logger;
-const { LOCK_WATCH_MS } = await import("../../../shared/timing/timing.ts");
 const originalWarn = logger.warn;
 
 test("announcements isolate passenger failure and report release at once", async () => {
@@ -73,11 +71,6 @@ test("announcements isolate passenger failure and report release at once", async
 		lock.forgetLockAnnouncements();
 		jest.useRealTimers();
 		logger.warn = originalWarn;
-		if (previousVault === undefined) {
-			delete process.env["ARCHBOARD_VAULT"];
-		} else {
-			process.env["ARCHBOARD_VAULT"] = previousVault;
-		}
 		rmSync(vault, { recursive: true, force: true });
 	}
 }, 30_000);

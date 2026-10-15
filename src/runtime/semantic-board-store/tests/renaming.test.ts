@@ -1,35 +1,23 @@
-import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
+import { afterAll, beforeEach, expect, test } from "bun:test";
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { basename, dirname } from "node:path";
-import type * as LockModule from "@/runtime/engine/board-lock";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
+import * as lock from "@/runtime/engine/board-lock";
+import * as store from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as contract from "@/shared/semantic-board/index";
 
 // Renaming a board or a variant through the write boundary (TASK-281, ADR
 // 0036): only the name moves, the old name keeps opening what it named, and a
 // rename that cannot land leaves the vault exactly as it was.
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = createConfiguredTestVault("archboard-renaming-");
-process.env["ARCHBOARD_VAULT"] = vault;
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
-let lock: typeof LockModule;
 const writer = { kind: "agent" as const };
 
 let serial = 0;
 /** The board every case starts from: a slug-like name, as the vaults have them. */
 let board = "";
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-	lock = await import("@/runtime/engine/board-lock");
-});
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	rmSync(vault, { recursive: true, force: true });
 });
 
@@ -89,7 +77,7 @@ function read(name = board) {
  * @param result What the write did.
  * @returns The same result, narrowed.
  */
-function applied(result: StoreModule.SemanticWriteResult) {
+function applied(result: store.SemanticWriteResult) {
 	if (result.outcome !== "applied") throw new Error(`${result.code}: ${result.problem}`);
 	return result;
 }
@@ -100,7 +88,7 @@ function applied(result: StoreModule.SemanticWriteResult) {
  * @param name The name the write addresses the board by.
  * @returns What the write did.
  */
-async function write(transition: StoreModule.SemanticTransition, name = board) {
+async function write(transition: store.SemanticTransition, name = board) {
 	return store.writeSemanticBoard({
 		vault,
 		board: name,
@@ -127,7 +115,7 @@ function rename(to: string, variant?: string) {
  * @param one The board.
  * @returns It, without its name, its former names and its edit stamp.
  */
-function identity(one: ContractModule.SemanticBoard) {
+function identity(one: contract.SemanticBoard) {
 	const { name: _name, formerNames: _formerNames, version: _v, updatedAt: _at, ...rest } = one;
 	return {
 		...rest,
