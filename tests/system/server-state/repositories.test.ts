@@ -8,6 +8,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { WebSocket, type RawData } from "ws";
 
 import {
 	createRepositoryFixture,
@@ -126,10 +127,17 @@ describe.serial("the repositories of the navigator", () => {
 			board: "payments",
 		});
 		resources.defer(() => pane.close());
+		// A pane of another tab, in a vault the choice does not touch.
+		const elsewhere = await openPaneSession(server.base, inServed, {
+			clientId: "pane-elsewhere",
+			board: "notes",
+		});
+		resources.defer(() => elsewhere.close());
 
 		// Choosing the worktree moves the pane into its vault and keeps its board,
 		// which the worktree has not got, and every tab is told to list again.
 		const mark = pane.mark();
+		const elsewhereMark = elsewhere.mark();
 		const chose = await fetch(`${server.base}/api/repositories/chosen`, {
 			method: "PUT",
 			headers: { ...pageHeaders(), "Content-Type": "application/json" },
@@ -138,13 +146,21 @@ describe.serial("the repositories of the navigator", () => {
 		expect(chose.status).toBe(200);
 		const moved = await pane.waitFor("pane_board", mark);
 		expect(moved).toMatchObject({ board: "payments", vault: worktreeVault, repository: ORDERS });
+		// The pane reads who holds its board and what an agent has in the vault as
+		// news of the vault it is in, so both come after the move that put it there.
+		const movedAt = pane.events.indexOf(moved!);
+		for (const type of ["board_lock", "agent_activity"]) {
+			const told = await pane.waitFor(type, mark);
+			expect(pane.events.indexOf(told!)).toBeGreaterThan(movedAt);
+		}
 		await pane.waitFor("repositories_changed", mark);
+		expect(await elsewhere.waitFor("repositories_changed", elsewhereMark)).toBeDefined();
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);
 
 		// A show names the pane and the vault of another repository's board, and the
 		// pane moves into that vault.
 		const beforeShow = pane.mark();
-		const shown = await inServed<{ board: string }>("/api/panes/show", {
+		const shown = await inServed<{ board: string; repository: string | null }>("/api/panes/show", {
 			method: "POST",
 			doing: false,
 			body: { board: "notes", pane: pane.clientId },
@@ -152,6 +168,11 @@ describe.serial("the repositories of the navigator", () => {
 		expect(shown.status).toBe(200);
 		const arrived = await pane.waitFor("pane_board", beforeShow);
 		expect(arrived).toMatchObject({ board: "notes", vault: realpathSync(fixture.vault) });
+		// The answer and the pane name the repository the navigator lists the vault under.
+		const servedName = (await listed()).find(
+			(each) => each.vault === realpathSync(fixture.vault),
+		)?.name;
+		expect([shown.body.repository, arrived?.["repository"]]).toEqual([servedName, servedName]);
 
 		// A checkout the repository has not got is refused, and nothing changes.
 		const refused = await fetch(`${server.base}/api/repositories/chosen`, {
@@ -161,5 +182,52 @@ describe.serial("the repositories of the navigator", () => {
 		});
 		expect(refused.status).toBe(404);
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);
+	});
+
+	test("a pane whose socket was down when its checkout was chosen comes back in the chosen checkout", async () => {
+		await using resources = new AsyncDisposableStack();
+		const mainVault = vaultOf(main);
+		const inMain = createRequester({ ...server, vault: mainVault });
+		const inWorktree = createRequester({ ...server, vault: vaultOf(worktree) });
+		const made = await inMain("/api/semantic-boards/create", {
+			method: "POST",
+			doing: "starting a board",
+			body: { board: "ledger", create: { level: "system", nodes: [] } },
+		});
+		expect(made.status).toBe(200);
+		const away = await openPaneSession(server.base, inWorktree, {
+			clientId: "pane-away",
+			board: "ledger",
+		});
+		await away.close();
+
+		const chose = await fetch(`${server.base}/api/repositories/chosen`, {
+			method: "PUT",
+			headers: { ...pageHeaders(), "Content-Type": "application/json" },
+			body: JSON.stringify({ repository: ORDERS, root: main }),
+		});
+		expect(chose.status).toBe(200);
+
+		// The page never heard of the move, so its socket comes back naming the vault
+		// it was in. The server puts it where it moved it, on the board it held.
+		const endpoint = new URL(server.base);
+		endpoint.protocol = "ws:";
+		endpoint.search = new URLSearchParams({
+			clientId: "pane-away",
+			tabSession: "system-tab",
+			vault: inWorktree.vault!,
+		}).toString();
+		const back = new WebSocket(endpoint);
+		resources.defer(() => back.close());
+		const first = await new Promise<unknown>((answer, fail) => {
+			back.once("message", (data: RawData) => answer(JSON.parse(String(data))));
+			back.once("error", fail);
+		});
+		expect(first).toMatchObject({
+			type: "pane_board",
+			board: "ledger",
+			vault: mainVault,
+			repository: ORDERS,
+		});
 	});
 });

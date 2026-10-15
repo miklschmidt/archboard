@@ -354,13 +354,14 @@ function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: strin
  * @param ws The accepted socket.
  * @param req The upgrade request, whose `?clientId=` names the pane, `?tabSession=` its tab and
  *   `?vault=` its vault.
- * @param vault The vault the upgrade named, already checked.
+ * @param named The vault the upgrade named, already checked.
  */
 async function acceptWebSocketConnection(
 	ws: WebSocket,
 	req: IncomingMessage,
-	vault: string,
+	named: string,
 ): Promise<void> {
+	const vault = vaultOfReturningPane(req, named);
 	const socket = registerSocket(ws, req, vault);
 	// Which board this pane gets, and it is a board *for this pane* — not "the"
 	// board, which no longer exists as a single thing. A pane that has been here
@@ -379,6 +380,26 @@ async function acceptWebSocketConnection(
 	);
 	announceToNewPane(ws, socket.clientId, startingKey, vault);
 	listenForCodexRequests(ws, socket);
+}
+
+/**
+ * The vault a pane's socket is in. The server moves a pane between vaults
+ * (ADR 0050), and a pane whose socket was down when it was moved never heard,
+ * so it comes back naming the vault it was in before. It goes back where the
+ * server last put it, while that vault can still be read, and its first
+ * message says so.
+ * @param req The upgrade request, whose `?clientId=` names the pane.
+ * @param named The vault the upgrade named, already checked.
+ * @returns The vault the socket is in.
+ */
+function vaultOfReturningPane(req: IncomingMessage, named: string): string {
+	const clientId = new URL(req.url ?? "/", "http://localhost").searchParams.get("clientId");
+	const held = clientId === null ? undefined : paneVaults.get(clientId);
+	if (held === undefined || held === named) {
+		return named;
+	}
+	const readable = namedVault(held);
+	return readable.ok ? readable.vault : named;
 }
 
 let wss: WebSocketServer | null = null;
