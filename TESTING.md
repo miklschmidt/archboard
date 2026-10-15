@@ -24,7 +24,7 @@ A new worktree needs its own `bun install` and `bun run build`. A
 ## 2. Run a server of your own
 
 Your everyday Archboard server probably runs on `http://127.0.0.1:3000`, the
-default address. Every command talks to the server at
+default address of the main checkout. Every command talks to the server at
 `ARCHBOARD_URL`. If nothing answers there, the command starts a server. Give a
 test session its own port, its own registry and a copy of the example vault.
 The registry is the file that lists the repositories and vaults the browser

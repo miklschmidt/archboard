@@ -27,7 +27,8 @@ archboard stop; archboard start
 archboard browser show Archboard --pane primary
 ```
 
-Open <http://127.0.0.1:3000/?paneA=Archboard>. Do not start voice with Talk.
+Open `<url>/?paneA=Archboard`, with the URL that `start` printed: port 3000 in
+the main checkout, the worktree's own port in a worktree. Do not start voice with Talk.
 Narrate starts it. If the tab holds no conversation yet, Narrate first signs
 in to Codex as needed and starts the conversation of the tab.
 
