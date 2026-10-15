@@ -372,3 +372,20 @@ test("cancelling a pending sign-in reads the account again and offers sign-in", 
 	for (let turn = 0; turn < 10; turn += 1) await Promise.resolve();
 	expect(readinessNow()).toBe("login_capable");
 });
+
+test("a pane of a checkout with no workhorse is shown none, and its first conversation starts that checkout's", async () => {
+	const harness = projectionHarness();
+	const shop = "/work/shop";
+
+	// Reading what a pane shows starts nothing: the checkout has no queue or board news to show.
+	const read = harness.options.projection.read({ ...harness.context, checkout: shop });
+	expect(read.queue).toEqual({ kind: "codex_queue", submissions: null });
+	expect([...harness.session.workhorses.keys()]).toEqual(["/work/payments"]);
+
+	const created = await harness.options.actions.threadLinks.create(
+		{ command: "threadLinkCreate" } as never,
+		{ ...harness.actionContext, checkout: shop },
+	);
+	expect(created).toEqual({ outcome: "delivered" });
+	expect([...harness.session.workhorses.keys()]).toEqual(["/work/payments", shop]);
+});

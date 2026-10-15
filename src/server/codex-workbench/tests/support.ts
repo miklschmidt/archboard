@@ -59,6 +59,8 @@ export interface GatewayHarness {
 	readonly threadId: ThreadId;
 	readonly turnId: TurnId;
 	readonly calls: string[];
+	/** The context each action that ran was handed, in order. */
+	readonly actionContexts: unknown[];
 	/** Why each browser that went told voice it had gone, in order. */
 	readonly disconnectReasons: BrowserDisconnectReason[];
 	/** How many of those voice settlements finished. */
@@ -93,6 +95,10 @@ export interface GatewayHarnessOptions {
 	readonly project?: (projection: BrowserOwnerProjection) => BrowserOwnerProjection;
 	/** The lease ledger the server keeps across generations. */
 	readonly leaseLedger?: BrowserLeaseLedger;
+	/** The checkout of each browser's pane; one checkout for every pane by default. */
+	readonly checkoutOf?: (browserId: string) => string;
+	/** The link under one workhorse's link key; the harness's own link by default. */
+	readonly linkFor?: (key: string) => ThreadLinkSnapshot | null;
 }
 
 export function createGatewayHarness(
@@ -134,6 +140,7 @@ export function createGatewayHarness(
 	let disconnectGate: Promise<void> | null = null;
 	let disconnectError: unknown = null;
 	const calls: string[] = [];
+	const actionContexts: unknown[] = [];
 	const disconnectReasons: BrowserDisconnectReason[] = [];
 	const disconnectSettled: string[] = [];
 	const publishedAcknowledgements: string[] = [];
@@ -148,8 +155,10 @@ export function createGatewayHarness(
 	};
 	const action =
 		(name: string) =>
-		async (..._args: readonly unknown[]): Promise<BrowserActionResult> =>
-			run(name);
+		async (...args: readonly unknown[]): Promise<BrowserActionResult> => {
+			actionContexts.push(args.at(-1));
+			return run(name);
+		};
 	const settleDisconnect = async (): Promise<void> => {
 		if (disconnectGate !== null) await disconnectGate;
 		if (disconnectError !== null) throw disconnectError;
@@ -276,13 +285,15 @@ export function createGatewayHarness(
 		},
 		...(onProjectionDisconnect ? { onBrowserDisconnect: onProjectionDisconnect } : {}),
 	};
-	const threadLink = { read: (pane: string) => bindingFor(pane, revision, link) };
+	const threadLink = {
+		read: (key: string) => bindingFor(key, revision, options.linkFor?.(key) ?? link),
+	};
 	const gateway = createCodexWorkbenchGateway({
 		identity: authorities,
 		projection,
 		threadLink,
 		// Every pane of the fixture is in one checkout, so it has one workhorse link.
-		checkoutOf: () => "/work/checkout",
+		checkoutOf: options.checkoutOf ?? (() => "/work/checkout"),
 		actions,
 		...(lifecycle ? { lifecycle } : {}),
 		...(options.snapshotMaxBytes === undefined
@@ -375,6 +386,7 @@ export function createGatewayHarness(
 		threadId,
 		turnId,
 		calls,
+		actionContexts,
 		disconnectReasons,
 		disconnectSettled,
 		publishedAcknowledgements,
