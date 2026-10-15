@@ -149,7 +149,14 @@ export {
 	checkVariantContent,
 	describeIntegrityIssues,
 } from "@/shared/semantic-board/lib/integrity";
-export { scopedContent, findView } from "@/shared/semantic-board/lib/scope";
+export {
+	EVERYTHING_VIEW,
+	RESERVED_VIEW_NAMES,
+	findView,
+	overviewContent,
+	scopedContent,
+	type ReadingScope,
+} from "@/shared/semantic-board/lib/scope";
 export {
 	drawingOf,
 	comparedWith,

@@ -230,7 +230,8 @@ const semanticRasterizeContract = defineCommand({
 			spellings: ["--view"],
 			value: "required",
 			placeholder: "view",
-			description: "Which shared board view to draw, by id or name; the whole variant when absent",
+			description:
+				"Which shared board view to draw, by id or name, or Everything for every part; the overview when absent",
 		},
 		{
 			kind: "option",

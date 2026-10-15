@@ -299,6 +299,14 @@ describe("what a reader can address by name", () => {
 		).toContain('two views are called "The parts"');
 	});
 
+	test("a view cannot take the name of a reading every board has", () => {
+		for (const name of ["Overview", "Everything"]) {
+			expect(refusal(explaining({}, [{ id: "w1", name, grammar: "architecture" }]))).toContain(
+				`"${name}"`,
+			);
+		}
+	});
+
 	test("two nodes may share a name; which one is meant is settled where it is used", () => {
 		expect(
 			parseSemanticBoard(

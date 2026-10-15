@@ -39,6 +39,18 @@ every variant. The view stays the same while the selected variant supplies the
 architectural content.
 _Avoid_: board, pane, variant
 
+**Overview**:
+The reading a board opens on, which nobody authors (ADR 0052). It draws the
+root parts and the parts directly inside each root container. Every deeper
+container is closed. All relationships from one drawn part to another are one
+line.
+_Avoid_: whole board, summary view, default view
+
+**Everything**:
+The reading of every part and every relationship, asked for as the view of
+that name. No authored view can be called Overview or Everything.
+_Avoid_: whole variant (in a reader's words), all view
+
 **Pane**:
 One of several side-by-side slots, each holding its own canvas, so that two
 boards can be worked on at once.

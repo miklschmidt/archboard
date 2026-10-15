@@ -48,10 +48,10 @@ author:
 No authored view can be named `Overview` or `Everything`. A write that names one
 is refused.
 
-When the pane shows the overview, a walkthrough step that names no view is told
-through Everything. Its subjects were written against the whole variant, and
-the overview can hide them. A step that names no view keeps the view that the
-person chose in every other case.
+A walkthrough step that names no view is told through what the pane shows, as
+before. If the overview hides a subject of the step, the step says so, as it
+does for any reading that hides one. Agents give every step a view, as
+`WALKTHROUGH_VIEW_MISSING` already asks.
 
 A board's overview has a budget. If the overview of the current variant draws
 more than 15 parts or more than 25 lines, `archboard check` warns with
