@@ -18,6 +18,7 @@ import { startServer } from "@/server/archboard/lib/server-startup";
 import { moduleDir } from "@/server/archboard/lib/module-paths";
 import { mountMutationAdmission, trackMutationWork } from "@/server/archboard/lib/mutation-work";
 import { mountPaneRoutes } from "@/server/archboard/lib/pane-routes";
+import { mountRepositoryRoutes } from "@/server/archboard/lib/repository-routes";
 import { mountSemanticLockRoutes } from "@/server/archboard/lib/semantic-lock-routes";
 import { mountSemanticBoardRoutes } from "@/server/archboard/lib/semantic-board-routes";
 import { mountLocalityRoute } from "@/server/archboard/lib/locality-route";
@@ -111,6 +112,7 @@ app.use(
 
 mountSemanticLockRoutes(app);
 mountPaneRoutes(app);
+mountRepositoryRoutes(app);
 mountSemanticBoardRoutes(app);
 mountLocalityRoute(app);
 mountCodeCheckRoute(app);

@@ -25,10 +25,14 @@ interface WebSocketMessage {
 }
 
 type WebSocketMessageType =
-	// Which board this pane is showing: on connect, and whenever a show moves
-	// it. It carries no picture — the board is a file the server draws, and the
-	// pane asks for the drawing itself (ADR 0023).
+	// Which board this pane is showing, and in which repository's vault: on
+	// connect, whenever a show moves it, and when the repository's chosen checkout
+	// changes. It carries no picture — the board is a file the server draws, and
+	// the pane asks for the drawing itself (ADR 0023).
 	| "pane_board"
+	// The repositories of this machine changed: a checkout was chosen. Boardless
+	// and sent to every tab, because the navigator of each lists every one.
+	| "repositories_changed"
 	// Who is writing this board, if anybody (ADR 0016). Board-scoped like every
 	// other board message, because a pane holding the other board is not
 	// affected by this one changing hands. Carries the holder rather than a bare
