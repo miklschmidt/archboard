@@ -1,17 +1,12 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as LockModule from "@/runtime/engine/board-lock";
+import * as store from "@/runtime/semantic-board-store/index";
+import * as lock from "@/runtime/engine/board-lock";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-read-migration-"));
-process.env["ARCHBOARD_VAULT"] = vault;
-
-let store: typeof StoreModule;
-let lock: typeof LockModule;
 
 function legacyBoard(name: string) {
 	return {
@@ -62,14 +57,7 @@ function put(name: string, board: Record<string, unknown>): string {
 	return file;
 }
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	lock = await import("@/runtime/engine/board-lock");
-});
-
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	rmSync(vault, { recursive: true, force: true });
 });
 

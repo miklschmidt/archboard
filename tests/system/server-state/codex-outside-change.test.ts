@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, realpathSync } from "node:fs";
+import { realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
@@ -134,8 +135,7 @@ test("live voice and its coordinator are told what another agent did to a board 
 			versions.set(board, written.body.board.version);
 		};
 		// A board of the same name in a vault no pane of this tab is in is not its news either.
-		const elsewhere = join(fixture.root, "elsewhere");
-		mkdirSync(elsewhere);
+		const elsewhere = vaultIn(join(fixture.root, "elsewhere"));
 		const other = await request("/api/semantic-boards/create", {
 			method: "POST",
 			vault: elsewhere,
@@ -211,8 +211,8 @@ test("live voice and its coordinator are told what another agent did to a board 
 		const show = (board: string, session: string | null, vault = fixture.vault) =>
 			runServerCli({
 				repoRoot,
+				server,
 				vault,
-				base: server.base,
 				args: [
 					"browser",
 					"show",

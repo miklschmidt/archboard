@@ -40,7 +40,6 @@ describe("Codex child environment", () => {
 			AWS_PROFILE: "poisoned-aws",
 			ELECTRON_RUN_AS_NODE: "poisoned-electron",
 			ARCHBOARD_URL: "http://127.0.0.1:3000",
-			ARCHBOARD_VAULT: "/poisoned/vault",
 		});
 
 		const child = buildCodexChildEnvironment({
@@ -63,7 +62,6 @@ describe("Codex child environment", () => {
 		expect(child["CODEX_HOME"]).not.toBe("poisoned-home");
 		expect(child["PATH"]).toBe("value:PATH");
 		expect(child["ARCHBOARD_URL"]).toBe(archboardServer.url);
-		expect(child["ARCHBOARD_VAULT"]).toBeUndefined();
 
 		const optional = buildCodexChildEnvironment({
 			ambient: { HOME: "home", PATH: undefined },

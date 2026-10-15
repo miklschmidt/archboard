@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { diagramTextWidth } from "@/runtime/semantic-renderer/index";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -145,7 +146,7 @@ const measureIn = (faces: readonly Face[]): string => `(async () => {
 test("the server's text measurement is what a real browser draws", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "measured-vault");
+	const vault = vaultIn(join(ownerRoot, "measured-vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());

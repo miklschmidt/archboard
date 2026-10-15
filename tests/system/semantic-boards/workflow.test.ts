@@ -5,12 +5,14 @@ import path from "node:path";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { vaultUrl } from "../support/http.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { vaultIn } from "../support/test-vault.ts";
 
 // The public path a person and an agent use: commands create, change, read and
 // draw a board across an Archboard server restart. Store tests own the guarantees inside.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-workflow-"));
+const holder = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-workflow-"));
+const vault = vaultIn(holder);
 let server: OwnedServer;
 /** Draw a board through the route the viewer reads, naming the vault as every call does. */
 const render = (query: string): Promise<Response> =>
@@ -23,7 +25,7 @@ const render = (query: string): Promise<Response> =>
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: server.base, args, input });
+	runServerCli({ repoRoot, server, args, input });
 
 /** The architecture this feature's own pipeline has today. */
 const currentPipeline = {
@@ -62,7 +64,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await server?.dispose();
-	fs.rmSync(vault, { recursive: true, force: true });
+	fs.rmSync(holder, { recursive: true, force: true });
 });
 
 describe("authoring and opening a semantic board", () => {

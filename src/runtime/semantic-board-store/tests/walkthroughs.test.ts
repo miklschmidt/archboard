@@ -1,21 +1,17 @@
-import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
+import { afterAll, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as store from "@/runtime/semantic-board-store/index";
+import * as contract from "@/shared/semantic-board/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-walkthroughs-"));
-process.env["ARCHBOARD_VAULT"] = vault;
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 
 // Every test gets its own board, made fresh before it runs, so that running one
 // of them by name proves the same thing as running all of them.
 let board = "";
-let seeded: Awaited<ReturnType<typeof StoreModule.writeSemanticBoard>>;
+let seeded: Awaited<ReturnType<typeof store.writeSemanticBoard>>;
 let boards = 0;
 
 /** The architecture and the explanation every test in this file starts from. */
@@ -58,10 +54,6 @@ const SEED = {
 	],
 };
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-});
 beforeEach(async () => {
 	boards += 1;
 	board = `narrated-${boards}`;
@@ -75,8 +67,6 @@ beforeEach(async () => {
 	});
 });
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	rmSync(vault, { recursive: true, force: true });
 });
 
@@ -84,7 +74,7 @@ afterAll(() => {
  * The board as it now stands, or a failure naming what went wrong.
  * @returns The one variant's content.
  */
-const held = (): ContractModule.VariantContent => {
+const held = (): contract.VariantContent => {
 	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error(read.problem);
 	return read.board.variants[0]!.content;

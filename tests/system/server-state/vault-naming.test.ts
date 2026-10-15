@@ -18,6 +18,7 @@ import { createRepositoryFixture } from "../cli/support/repository-fixture.ts";
 import { packageBin } from "../cli/support/package-cli.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent } from "./support/pane-session.ts";
 
@@ -72,9 +73,8 @@ describe.serial("every call names its vault", () => {
 		await using resources = new AsyncDisposableStack();
 		const root = mkdtempSync(join(tmpdir(), "archboard-vault-naming-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
-		const vaultA = join(root, "vault-a");
-		const vaultB = join(root, "vault-b");
-		mkdirSync(vaultB, { recursive: true });
+		const vaultA = vaultIn(join(root, "vault-a"));
+		const vaultB = vaultIn(join(root, "vault-b"));
 		ensureSemanticVaultConfiguration(vaultB);
 		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
@@ -215,7 +215,7 @@ describe.serial("every call names its vault", () => {
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
-			vault: join(root, "vault"),
+			vault: vaultIn(join(root, "vault")),
 			env: { LOG_FILE_PATH: join(root, "server.log") },
 		});
 		resources.defer(() => server.dispose());
@@ -269,27 +269,17 @@ describe.serial("every call names its vault", () => {
 			socket.once("unexpected-response", () => settle("refused"));
 		});
 		expect(outcome).toBe("refused");
-
-		// A page opens in the vault a set ARCHBOARD_VAULT names.
-		const served = await request<{ vault: string | null }>("/api/served-vault", { vault: false });
-		expect(served.body.vault).toBe(realpathSync(join(root, "vault")));
 	}, 60_000);
 
 	test("a server started without a vault opens a page in the first ready repository by name, or in none", async () => {
 		await using resources = new AsyncDisposableStack();
 		const fixture = createRepositoryFixture();
 		resources.defer(() => fixture.dispose());
+		// The fixture's registry lists nothing, and its vault is not in it.
 		const server = await startOwnedServer({
-			serverPath: join(
-				repoRoot,
-				"tests/system/process-contracts/fixtures/server-start-environment.ts",
-			),
+			serverPath: join(repoRoot, "src/server.ts"),
 			vault: fixture.vault,
-			env: {
-				...fixture.serverEnvironment,
-				ARCHBOARD_TEST_SERVER_ENTRY: join(repoRoot, "src/server.ts"),
-				ARCHBOARD_TEST_BIND_MODE: "no-vault",
-			},
+			env: fixture.serverEnvironment,
 		});
 		resources.defer(() => server.dispose());
 		const opening = async () => {

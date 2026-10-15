@@ -1,14 +1,10 @@
-import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
+import { afterAll, beforeEach, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
+import * as store from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as contract from "@/shared/semantic-board/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = createConfiguredTestVault("archboard-shelving-");
-process.env["ARCHBOARD_VAULT"] = vault;
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 
 // The family every case here is about: a baseline S, a draft A off it, and a
@@ -21,10 +17,6 @@ let boards = 0;
 let baseline = "";
 let apiId = "";
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-});
 beforeEach(async () => {
 	boards += 1;
 	board = `shelving-${boards}`;
@@ -50,8 +42,6 @@ beforeEach(async () => {
 	await branch(A, B);
 });
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	rmSync(vault, { recursive: true, force: true });
 });
 

@@ -12,6 +12,7 @@ import {
 	TEST_SERVER_SHUTDOWN_TIMEOUT_MS,
 } from "./timing.ts";
 import { processExists, startOwnedServer, type OwnedServer } from "./owned-server.ts";
+import { holderOf, vaultIn } from "./test-vault.ts";
 import {
 	createLifecycleChildRunner,
 	listenerAnswers,
@@ -68,7 +69,7 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "early-death") {
 
 const childMode = process.env["ARCHBOARD_LIFECYCLE_CHILD"];
 if (childMode) {
-	const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
+	const vault = vaultIn(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-")));
 	let owned: OwnedServer | undefined;
 	try {
 		owned = await startOwnedServer({
@@ -199,12 +200,11 @@ if (childMode) {
 			console.log(JSON.stringify({ marker: "early-death", reported }));
 		}
 		await owned.dispose();
+		fs.rmSync(holderOf(vault), { recursive: true, force: true });
 		process.exit(0);
 	} catch (error) {
 		await owned?.dispose();
-		if (!owned) {
-			fs.rmSync(vault, { recursive: true, force: true });
-		}
+		fs.rmSync(holderOf(vault), { recursive: true, force: true });
 		// oxlint-disable-next-line no-console -- the parent retains child diagnostics.
 		console.error(error instanceof Error ? error.stack : String(error));
 		process.exit(1);
@@ -266,7 +266,7 @@ describe("owned server lifecycle", () => {
 				expect(result.code).toBe(mode === "interrupt" ? 130 : 0);
 				expect(result.owned).toBeDefined();
 				const owned = result.owned!;
-				emergencyVaults.add(owned.vault);
+				emergencyVaults.add(holderOf(owned.vault));
 				expect(processExists(owned.pid)).toBeFalse();
 				expect(await listenerAnswers(owned.base)).toBeFalse();
 				expect(fs.existsSync(owned.vault)).toBeFalse();
@@ -320,7 +320,7 @@ describe("owned server lifecycle", () => {
 		expect(failure?.replacement).toBeDefined();
 		const owned = failure!.owned!;
 		const replacement = failure!.replacement!;
-		emergencyVaults.add(owned.vault);
+		emergencyVaults.add(holderOf(owned.vault));
 		expect(replacement.pid).not.toBe(owned.pid);
 		expect(failure!.signals).toEqual(["harness:SIGTERM", "group:SIGKILL"]);
 		expect(failure!.signals.some((target) => target.includes(String(owned.pid)))).toBeFalse();

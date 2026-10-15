@@ -18,13 +18,11 @@ import type * as CheckModule from "@/runtime/code-check/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
 
 const caller = {
-	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
 };
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-facts-check-"));
 const mart = join(scratch, "mart");
 const vault = join(scratch, "vault");
-process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const MART = "github.com/test/mart";
 let check: typeof CheckModule;

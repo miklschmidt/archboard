@@ -6,7 +6,7 @@
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
 import { LocalityReplySchema, type LocalityAnswer } from "@/shared/locality/index";
-import { nameStandInVault } from "./stand-in-vault.ts";
+import { makeStandInVault } from "./stand-in-vault.ts";
 
 const answer: LocalityAnswer = {
 	board: "Orders",
@@ -63,7 +63,7 @@ const answer: LocalityAnswer = {
 	skipped: [{ subject: { kind: "node", id: "pU", name: "Customer" }, reason: "unbound" }],
 };
 
-const vault = nameStandInVault();
+const vault = makeStandInVault();
 let service = "";
 let refuse = false;
 const asked: string[] = [];
@@ -94,7 +94,7 @@ const environment = {
 };
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
-// Imported only now, because the CLI reads where its server and its vault are as it loads.
+// Imported only now, because the CLI reads where its server is as it loads.
 const [config, client, { runCli }] = await Promise.all([
 	import("@/runtime/engine/config"),
 	import("@/runtime/engine/server-client"),
@@ -137,7 +137,7 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 	// A run that succeeds leaves the exit code as it found it, so each run starts from 0.
 	process.exitCode = 0;
 	try {
-		await runCli(argv);
+		await runCli(vault.argv(argv));
 		exited = process.exitCode;
 	} finally {
 		out.mockRestore();
@@ -168,7 +168,7 @@ test("it asks the locality route for the board, the draft and the start it was g
 		since: "2026-01-31",
 	});
 	const { vault: named, ...printed } = z.record(z.string(), z.unknown()).parse(JSON.parse(stdout));
-	expect(named).toEqual({ path: vault.path, origin: "environment" });
+	expect(named).toMatchObject({ path: vault.path, origin: "-C" });
 	expect(LocalityReplySchema.parse(printed)).toEqual({ success: true, ...answer });
 	const lines = stderr.split("\n");
 	expect(lines.some((line) => line.includes("Ledger") && line.includes("1"))).toBe(true);

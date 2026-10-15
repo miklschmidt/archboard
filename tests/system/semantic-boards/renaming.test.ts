@@ -6,6 +6,7 @@ import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { openTestPane, waitForPaneMessageWhere } from "../support/pane-websocket.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { vaultIn } from "../support/test-vault.ts";
 
 // Renaming through the public surface (TASK-281): the command renames, the
 // old names go on opening what they named — a drill-down on another board, a
@@ -14,7 +15,8 @@ import { runServerCli } from "../support/run-cli.ts";
 // the write; this one proves the pieces around it join up.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-renaming-"));
+const holder = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-renaming-"));
+const vault = vaultIn(holder);
 let server: OwnedServer;
 
 /**
@@ -24,7 +26,7 @@ let server: OwnedServer;
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: server.base, args, input });
+	runServerCli({ repoRoot, server, args, input });
 
 /**
  * The version a board is at, read the way an agent reads it.
@@ -41,7 +43,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await server?.dispose();
-	fs.rmSync(vault, { recursive: true, force: true });
+	fs.rmSync(holder, { recursive: true, force: true });
 });
 
 test("a renamed board keeps its links, its pane and its old address", async () => {

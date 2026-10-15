@@ -26,14 +26,17 @@ A new worktree needs its own `bun install` and `bun run build`. A
 Your everyday Archboard server probably runs on `http://127.0.0.1:3000`, the
 default address. Every command talks to the server at
 `ARCHBOARD_URL`. If nothing answers there, the command starts a server. Give a
-test session its own port and a copy of the example vault. A set
-`ARCHBOARD_VAULT` still decides which vault a command uses, until TASK-472.09
-refuses it:
+test session its own port, its own registry and a copy of the example vault.
+The registry is the file that lists the repositories and vaults the browser
+shows. A vault is the `.archboard/vault` directory of a directory, so copy the
+example there:
 
 ```bash
 export ARCHBOARD_URL=http://127.0.0.1:3414
-export ARCHBOARD_VAULT=$(mktemp -d)/vault
-cp -r examples/web-shop "$ARCHBOARD_VAULT"
+export ARCHBOARD_REPOS=$(mktemp -d)/repos.json
+session=$(mktemp -d)
+mkdir -p "$session/.archboard"
+cp -r examples/web-shop "$session/.archboard/vault"
 ./bin/archboard start
 ./bin/archboard status
 ```
@@ -42,6 +45,11 @@ cp -r examples/web-shop "$ARCHBOARD_VAULT"
 groups. Its `config.yaml` defines the kinds that the examples below use. `start`
 prints the URL and the process id of the server. `status` says whether the
 server runs and how many browser pages are open.
+
+The commands below name the session with `-C "$session"`. Without it, a command
+in this checkout uses the boards of this repository. The first command that
+names the session registers it in your own registry, and a browser page then
+opens in its vault.
 
 Every call to the server names its vault (ADR 0049). The CLI finds its vault
 from `-C <dir>`, else from a set `ARCHBOARD_VAULT`, else from the working
@@ -94,11 +102,11 @@ echo '{"level": "system",
             {"name": "Orders", "kind": "service"}],
   "edges": [{"from": "API Gateway", "to": "Orders", "kind": "http",
              "label": "place an order"}]}' |
-  ./bin/archboard semantic new payments --doing "drawing the payment path"
+  ./bin/archboard -C "$session" semantic new payments --doing "drawing the payment path"
 
-./bin/archboard semantic show payments
+./bin/archboard -C "$session" semantic show payments
 
-./bin/archboard semantic branch payments --as "Queued ingest" \
+./bin/archboard -C "$session" semantic branch payments --as "Queued ingest" \
   --summary "Orders arrive through a queue" \
   --expect-version 1 --doing "proposing a queue"
 
@@ -107,11 +115,11 @@ echo '{"nodes": [{"name": "Order queue", "kind": "queue"}],
              "label": "enqueue the order"},
             {"from": "Order queue", "to": "Orders", "kind": "queue",
              "label": "deliver"}]}' |
-  ./bin/archboard semantic edit payments --variant "Queued ingest" \
+  ./bin/archboard -C "$session" semantic edit payments --variant "Queued ingest" \
   --expect-version 2 --doing "routing orders through a queue"
 
-./bin/archboard semantic compare payments --variant "Queued ingest"
-./bin/archboard check
+./bin/archboard -C "$session" semantic compare payments --variant "Queued ingest"
+./bin/archboard -C "$session" check
 ```
 
 Each command prints its answer as JSON on stdout and one sentence on stderr.
@@ -126,10 +134,10 @@ current variant and every proposal. Write it only through the CLI.
 
 ```bash
 out=$(mktemp -d)
-./bin/archboard semantic render payments --out "$out/payments.svg"
-./bin/archboard semantic render payments --variant "Queued ingest" \
+./bin/archboard -C "$session" semantic render payments --out "$out/payments.svg"
+./bin/archboard -C "$session" semantic render payments --variant "Queued ingest" \
   --out "$out/proposal.svg"
-./bin/archboard semantic rasterize payments --out "$out/payments.png"
+./bin/archboard -C "$session" semantic rasterize payments --out "$out/payments.png"
 ```
 
 Write pictures outside the checkout, because git does not ignore them there.
@@ -147,10 +155,10 @@ to open.
 
 ```bash
 ./bin/archboard browser panes
-./bin/archboard browser show "payments@Queued ingest"
+./bin/archboard -C "$session" browser show "payments@Queued ingest"
 ./bin/archboard browser open
-./bin/archboard browser show payments --pane left
-./bin/archboard browser show "payments@Queued ingest" --pane right
+./bin/archboard -C "$session" browser show payments --pane left
+./bin/archboard -C "$session" browser show "payments@Queued ingest" --pane right
 ```
 
 `browser panes` reports the board, the variant and the version of each pane.

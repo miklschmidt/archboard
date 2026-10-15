@@ -5,6 +5,7 @@ import path from "node:path";
 import { BoardListingSchema } from "@/shared/semantic-board/index";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { vaultIn } from "../support/test-vault.ts";
 
 // Which variant a write lands on can be said on the command line, as it is for
 // every other variant command, or inside the stated change. The rule itself is
@@ -16,7 +17,8 @@ import { runServerCli } from "../support/run-cli.ts";
 // a proposal whose base another adoption superseded (ADR 0037).
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-variant-targeting-"));
+const holder = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-variant-targeting-"));
+const vault = vaultIn(holder);
 let server: OwnedServer;
 
 /**
@@ -26,7 +28,7 @@ let server: OwnedServer;
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: server.base, args, input });
+	runServerCli({ repoRoot, server, args, input });
 
 /**
  * The board as it stands.
@@ -117,7 +119,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await server?.dispose();
-	fs.rmSync(vault, { recursive: true, force: true });
+	fs.rmSync(holder, { recursive: true, force: true });
 });
 
 describe("saying which variant an edit lands on", () => {

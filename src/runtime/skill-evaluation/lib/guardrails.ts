@@ -6,11 +6,13 @@
 import path from "node:path";
 import type { SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
 import {
+	checkoutOf,
+	namesVault,
 	simpleCommands,
 	unwrapped,
 	type ClassifiedCommand,
-	type FileChange,
-} from "@/runtime/skill-evaluation/lib/events";
+} from "@/runtime/skill-evaluation/lib/classify";
+import type { FileChange } from "@/runtime/skill-evaluation/lib/events";
 import type { CheckVerdict } from "@/runtime/skill-evaluation/lib/reading";
 
 /** What the guardrails are judged from. */
@@ -149,13 +151,16 @@ function countDirectBoardWrites(
 
 /**
  * Whether a path is a board document of the vault. Configuration changes have
- * their own guardrail and are allowed in vocabulary scenarios.
+ * their own guardrail and are allowed in vocabulary scenarios. The vault sits
+ * in the checkout the author works in, so a relative path is read from the
+ * checkout, or from the vault when the command moved into it.
  * @param file The path.
  * @param vault The run's vault.
+ * @param from Where a relative path starts; the checkout when absent.
  * @returns True for a `.semantic.json` under the vault.
  */
-function isBoardFile(file: string, vault: string): boolean {
-	const relative = path.relative(vault, file);
+function isBoardFile(file: string, vault: string, from = checkoutOf(vault)): boolean {
+	const relative = path.relative(vault, path.resolve(from, file));
 	return (
 		relative !== "" &&
 		!relative.startsWith("..") &&
@@ -171,7 +176,9 @@ function isBoardFile(file: string, vault: string): boolean {
  */
 function redirectTargets(script: string): string[] {
 	return [
-		...script.matchAll(/(?:^|[^\d&<>])\d?>{1,2}\s*(?!&)(?:'([^']*)'|"([^"]*)"|([^\s'"|;&]+))/gu),
+		...script.matchAll(
+			/(?:^|[^\d&<>])\d?>{1,2}\s*(?!&)(?:'([^']*)'|"([^"]*)"|((?:\\.|[^\s'"|;&\\])+))/gu,
+		),
 	].map((match) => match[1] ?? match[2] ?? match[3] ?? "");
 }
 
@@ -186,8 +193,10 @@ function redirectTargets(script: string): string[] {
  */
 function mutatesBoardFile(command: string, vault: string): boolean {
 	const script = unwrapped(command);
-	if (redirectTargets(script).some((target) => isBoardFile(unquoted(target), vault))) return true;
-	if (!script.includes(vault) || !script.includes(".semantic.json")) return false;
+	const from = startsInVault(script, vault) ? vault : checkoutOf(vault);
+	if (redirectTargets(script).some((target) => isBoardFile(unquoted(target), vault, from)))
+		return true;
+	if (!namesVault(script, vault) || !script.includes(".semantic.json")) return false;
 	// A script that opens a file for writing, however it is spelled, and names
 	// a board file somewhere: a heredoc handed to python or node is one script.
 	if (
@@ -196,16 +205,36 @@ function mutatesBoardFile(command: string, vault: string): boolean {
 		)
 	)
 		return true;
-	return simpleCommands(script).some((simple) => writesNamedFile(simple, vault));
+	return simpleCommands(script).some((simple) => writesNamedFile(simple, vault, from));
 }
 
 /**
- * A shell word without the quotes around it.
+ * Whether a script moves into the vault before it names a file, so that the
+ * bare name of a board is read from there.
+ * @param script The unwrapped script.
+ * @param vault The run's vault.
+ * @returns True for a `cd` into the vault, by its whole path or relative to the checkout.
+ */
+function startsInVault(script: string, vault: string): boolean {
+	return simpleCommands(script).some((simple) => {
+		const [verb, target] = wordsOf(simple);
+		return (
+			verb === "cd" &&
+			target !== undefined &&
+			path.resolve(checkoutOf(vault), target) === path.resolve(vault)
+		);
+	});
+}
+
+/**
+ * A shell word as the shell reads it: without the quotes around it, or with
+ * each escaped character (a backslash and a space) taken as itself.
  * @param word The word as written.
  * @returns The word's text.
  */
 function unquoted(word: string): string {
-	return word.replace(/^(['"])(.*)\1$/su, "$2");
+	const quoted = /^(['"])(.*)\1$/su.exec(word);
+	return quoted?.[2] ?? word.replaceAll(/\\(.)/gsu, "$1");
 }
 
 /**
@@ -214,7 +243,7 @@ function unquoted(word: string): string {
  * @returns Its words, unquoted.
  */
 function wordsOf(simple: string): string[] {
-	return [...simple.matchAll(/'[^']*'|"[^"]*"|\S+/gu)].map((match) => unquoted(match[0]));
+	return [...simple.matchAll(/'[^']*'|"[^"]*"|(?:\\.|\S)+/gu)].map((match) => unquoted(match[0]));
 }
 
 /**
@@ -222,14 +251,15 @@ function wordsOf(simple: string): string[] {
  * command whose target is one, or a copy or move that lands on one.
  * @param simple The simple command.
  * @param vault The run's vault.
+ * @param from Where a relative path starts.
  * @returns True for a writer whose target is a board file.
  */
-function writesNamedFile(simple: string, vault: string): boolean {
+function writesNamedFile(simple: string, vault: string, from: string): boolean {
 	const words = wordsOf(simple);
-	if (!words.some((word) => isBoardFile(word, vault))) return false;
+	if (!words.some((word) => isBoardFile(word, vault, from))) return false;
 	const verb = words[0] ?? "";
 	if (/^(?:rm|unlink|truncate|touch|tee|rmdir)$/u.test(verb)) return true;
-	return /^(?:cp|mv)$/u.test(verb) && isBoardFile(words.at(-1) ?? "", vault);
+	return /^(?:cp|mv)$/u.test(verb) && isBoardFile(words.at(-1) ?? "", vault, from);
 }
 
 /**

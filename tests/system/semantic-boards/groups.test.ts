@@ -5,13 +5,15 @@ import path from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { vaultIn } from "../support/test-vault.ts";
 
 // The public path to a group: configure it, put parts of two containers in it,
 // and ask the command line what it is. The pure inspection owns the semantics;
 // this owner is for the claim that a command with no browser answers them.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-groups-"));
+const holder = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-groups-"));
+const vault = vaultIn(holder);
 let server: OwnedServer;
 
 /**
@@ -21,7 +23,7 @@ let server: OwnedServer;
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: server.base, args, input });
+	runServerCli({ repoRoot, server, args, input });
 
 /** Fulfillment across Orders and Shipping; the worker is also Billing's. */
 const ARCHITECTURE = {
@@ -61,7 +63,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await server?.dispose();
-	fs.rmSync(vault, { recursive: true, force: true });
+	fs.rmSync(holder, { recursive: true, force: true });
 });
 
 describe("inspecting a configured group from the command line", () => {

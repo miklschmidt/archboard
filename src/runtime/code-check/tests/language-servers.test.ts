@@ -30,13 +30,11 @@ import { board, git, register, write } from "@/runtime/code-check/tests/fixture"
 import { languageServerOf } from "@/runtime/language-servers/index";
 
 const caller = {
-	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
 };
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-language-servers-"));
 const shop = join(scratch, "shop");
 const vault = join(scratch, "vault");
-process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const SHOP = "github.com/test/shop";
 const native = languageServerOf("typescript", scratch, {}).status === "command";

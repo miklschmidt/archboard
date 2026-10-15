@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import {
 	mkdtempSync,
 	readFileSync,
@@ -9,17 +9,10 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as store from "@/runtime/semantic-board-store/index";
+import * as contract from "@/shared/semantic-board/index";
 
-// config.ts snapshots the environment at import time, so this owner takes its
-// own vault before any module that resolves a vault path is evaluated.
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-semantic-store-"));
-process.env["ARCHBOARD_VAULT"] = vault;
-
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 
 const writer = { id: "test-agent", kind: "agent" as const };
 
@@ -59,20 +52,10 @@ async function edit(name: string, stated: Record<string, unknown>, expectedVersi
 }
 
 /** The nodes on a board's first variant, by name. */
-const namesOn = (board: ContractModule.SemanticBoard) =>
+const namesOn = (board: contract.SemanticBoard) =>
 	board.variants[0]!.content.nodes.map((node) => node.name).toSorted();
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-});
-
 afterAll(() => {
-	if (callerVault === undefined) {
-		delete process.env["ARCHBOARD_VAULT"];
-	} else {
-		process.env["ARCHBOARD_VAULT"] = callerVault;
-	}
 	rmSync(vault, { recursive: true, force: true });
 });
 
@@ -129,7 +112,7 @@ describe("the semantic board aggregate", () => {
 		// store keeps nothing in memory, so what a new process sees is the file.
 		const fresh = (await import(
 			`@/runtime/semantic-board-store/index?restart=${Date.now()}`
-		)) as typeof StoreModule;
+		)) as typeof store;
 		const read = fresh.readSemanticBoard(vault, "restart");
 		expect(read.ok && namesOn(read.board)).toEqual(["Vault"]);
 	});

@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -120,7 +121,7 @@ interface HandOverFrame {
 test("a person presents a walkthrough step by step, and leaving gives the pane back", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "semantic-presentation-vault");
+	const vault = vaultIn(join(ownerRoot, "semantic-presentation-vault"));
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());

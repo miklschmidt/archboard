@@ -20,7 +20,6 @@ const NEVER = "/nonexistent/clangd";
 const cwd = process.cwd();
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
-	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
 };
 let scratch = "";
 let checkout = "";
@@ -64,7 +63,6 @@ beforeAll(async () => {
 	registry = join(scratch, "repos.json");
 	vault = join(scratch, "vault");
 	process.env["ARCHBOARD_REPOS"] = registry;
-	process.env["ARCHBOARD_VAULT"] = vault;
 	mkdirSync(join(checkout, "src"), { recursive: true });
 	mkdirSync(vault);
 	git(checkout, "init", "-q");
@@ -112,8 +110,6 @@ afterAll(() => {
 	process.chdir(cwd);
 	if (caller.ARCHBOARD_REPOS === undefined) delete process.env["ARCHBOARD_REPOS"];
 	else process.env["ARCHBOARD_REPOS"] = caller.ARCHBOARD_REPOS;
-	if (caller.ARCHBOARD_VAULT === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = caller.ARCHBOARD_VAULT;
 	rmSync(scratch, { recursive: true, force: true });
 });
 

@@ -1,9 +1,9 @@
-import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
+import { afterAll, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as store from "@/runtime/semantic-board-store/index";
+import * as contract from "@/shared/semantic-board/index";
 
 // Settling a disagreement about order rather than about a field.
 //
@@ -12,11 +12,7 @@ import type * as ContractModule from "@/shared/semantic-board/index";
 // something. So an answered order has to move the base by reordering it, and it
 // has to be answered for a whole exchange at once.
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-settle-order-"));
-process.env["ARCHBOARD_VAULT"] = vault;
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 
 const A = "Queued ingest";
@@ -25,10 +21,6 @@ let boards = 0;
 let apiId = "";
 let baseline = "";
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-});
 beforeEach(async () => {
 	boards += 1;
 	board = `ordering-${boards}`;
@@ -57,8 +49,6 @@ beforeEach(async () => {
 	});
 });
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	rmSync(vault, { recursive: true, force: true });
 });
 

@@ -3,6 +3,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
 import { listProcessObservations } from "@/shared/process-observation";
+import { listOnlyVault, vaultIn } from "../../support/test-vault.ts";
 
 const repositoryRoot = join(import.meta.dir, "../../../..");
 const publicPreload = join(import.meta.dir, "../fixtures/public-codex-startup-preload.ts");
@@ -20,10 +21,12 @@ function publicStartEnvironment(
 ): NodeJS.ProcessEnv {
 	const state = join(root, "state");
 	const persistent = publicWorkbenchRoot(root);
-	for (const directory of ["home", "config", "cache", "tmp", "vault", "state"]) {
+	for (const directory of ["home", "config", "cache", "tmp", "state"]) {
 		mkdirSync(join(root, directory), { recursive: true, mode: 0o700 });
 	}
 	mkdirSync(persistent, { recursive: true, mode: 0o700 });
+	// The server's own registry lists one vault, so a page opens there.
+	const registry = listOnlyVault(join(root, "repos.json"), vaultIn(join(root, "boards")));
 	writeFileSync(join(persistent, "pre-existing-sentinel"), "preserve me");
 	return {
 		...process.env,
@@ -32,7 +35,7 @@ function publicStartEnvironment(
 		XDG_CACHE_HOME: join(root, "cache"),
 		XDG_STATE_HOME: state,
 		TMPDIR: join(root, "tmp"),
-		ARCHBOARD_VAULT: join(root, "vault"),
+		ARCHBOARD_REPOS: registry,
 		ARCHBOARD_URL: base,
 		BUN_OPTIONS: `--preload=${publicPreload}`,
 		...(executable === undefined ? {} : { ARCHBOARD_TEST_PUBLIC_CODEX_EXECUTABLE: executable }),

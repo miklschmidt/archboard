@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	createAgentBrowser,
@@ -275,7 +276,7 @@ function pressKey(browser: AgentBrowserSession, key: string, times = 1): Promise
 test("a board opens by flying into its card, a poke lights what it is wired to, and every label stays", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "exploring", "vault");
+	const vault = vaultIn(join(ownerRoot, "exploring", "vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({
 		serverPath,

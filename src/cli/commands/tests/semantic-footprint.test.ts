@@ -7,7 +7,7 @@
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
 import { FootprintReplySchema, type FootprintReply } from "@/shared/footprint/index";
-import { nameStandInVault } from "./stand-in-vault.ts";
+import { makeStandInVault } from "./stand-in-vault.ts";
 
 const subject = (id: string, name: string) => ({ kind: "node" as const, id, name });
 const reply: FootprintReply = {
@@ -59,7 +59,7 @@ const reply: FootprintReply = {
 	skipped: [{ subject: subject("pU", "Customer"), reason: "unbound", named: [] }],
 };
 
-const vault = nameStandInVault();
+const vault = makeStandInVault();
 let service = "";
 const asked: URL[] = [];
 let refusal: { status: number; code: string } | undefined;
@@ -92,7 +92,7 @@ const environment = {
 };
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
-// Imported only now, because the CLI reads where its server and its vault are as it loads.
+// Imported only now, because the CLI reads where its server is as it loads.
 const [config, client, { runCli }] = await Promise.all([
 	import("@/runtime/engine/config"),
 	import("@/runtime/engine/server-client"),
@@ -135,7 +135,7 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 	// A run that succeeds leaves the exit code as it found it, so each run starts from 0.
 	process.exitCode = 0;
 	try {
-		await runCli(argv);
+		await runCli(vault.argv(argv));
 		exited = process.exitCode;
 	} finally {
 		out.mockRestore();
@@ -162,7 +162,7 @@ test("the command asks the footprint route with the board, the base and the prop
 		{ board: "Orders", base: "origin/main", variant: "TASK-1" },
 	]);
 	const { vault: named, ...printed } = z.record(z.string(), z.unknown()).parse(JSON.parse(stdout));
-	expect(named).toEqual({ path: vault.path, origin: "environment" });
+	expect(named).toMatchObject({ path: vault.path, origin: "-C" });
 	expect(FootprintReplySchema.parse(printed)).toEqual(reply);
 	const lines = stderr.split("\n");
 	expect(lines.some((line) => line.includes("Ledger") && line.includes("src/ledger.ts"))).toBe(

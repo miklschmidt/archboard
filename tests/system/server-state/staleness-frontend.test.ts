@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import { createRequester } from "./support/http.ts";
 import { openPaneSession } from "./support/pane-session.ts";
 
@@ -54,7 +55,7 @@ describe.serial("frontend staleness", () => {
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
-			vault: join(root, "vault"),
+			vault: vaultIn(join(root, "vault")),
 			env: { XDG_STATE_HOME: join(root, "state"), LOG_FILE_PATH: join(root, "server.log") },
 		});
 		resources.defer(() => server.dispose());

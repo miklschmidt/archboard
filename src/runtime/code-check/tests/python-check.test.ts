@@ -15,13 +15,11 @@ import type { CodeCheckOutcome } from "@/runtime/code-check/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
 
 const caller = {
-	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
 };
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-python-"));
 const orders = join(scratch, "orders");
 const vault = join(scratch, "vault");
-process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const ORDERS = "github.com/test/orders";
 let outcome: CodeCheckOutcome;
