@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 04:22'
+updated_date: '2026-10-15 04:58'
 labels:
   - frontend
 dependencies:
@@ -57,4 +57,8 @@ Decisions: the dive goes through the address slot and pushes a history entry, so
 
 <!-- SECTION:NOTES:BEGIN -->
 From the TASK-472.12 boundary review (2026-10-15): resolveDrillDown in src/ui/semantic-board-canvas/lib/drill-target.ts treats every drill-down with a repo as another repository, but the check and the listing now treat a repo equal to the vault's own identity as a local drill-down (vaultIdentity in src/runtime/code-target/lib/vault-checkout.ts, 47388b8d6 and 299fde5a8). Fix here: add the vault's identity to the board listing (listRoute already computes it), give resolveDrillDown and drillTargetName that identity, and treat target.repo equal to it as local in GoDeeper and use-drill-open.
+
+Boards (2026-10-15): Board viewer@TASK-472.13 (Keep the drill trail, Repository places, Follow drill-downs and Open a card's board restated, five relationships added, one label changed) and Browser application@TASK-472.13 (Semantic viewer -> Application composition: move the pane into the repository a drill-down names; the stage relationship names each repository's vault). check --code with and without --variant TASK-472.13: no line differs. The existing EXPOSED_UNUSED information on Semantic viewer lists the test entrypoint src/ui/semantic-board-canvas/drilling.ts names (drillPlace, the trail reducer, useDrillDown, useLevelReading), the same pattern as lighting.ts. Footprint against base 23a435cb3: Board viewer namedAndChanged Follow drill-downs, Viewer entry point, Open or leave a board, Open a card's board, Keep the drill trail, Repository places; changedNotNamed Semantic viewer (container; its changed files are named parts and tests), Fetch semantic reads (the listing gains the vault's repository, which the board's 'the listing' relationship covers), Render stage states (the breadcrumb and Go deeper read where a link leads through Follow drill-downs, already drawn); namedNotChanged Semantic queries (only a relabelled relationship). Browser application namedAndChanged Application composition; changedNotNamed Shell (selectBoard now answers whether the pane shows the board; no relationship changes). Review: five reviewers (drill model, breadcrumb and inspector, shell, and the canvas/shell and trail/crumb boundaries) committed fixes 813540ac3, f660cf6a1, 2a2829898, 582662003, c8114fe24, 194700d19, 7f2069aa3, dd40b0a10, 99df3e83d, f16de902f, ea71d301e, 325663f48, 5647947b1, c03fa9729. Left as they are: a link reads 'not registered' while the repositories listing is still loading; a late card flight in an A-to-B-to-A trail still clears the selection (use-dive runs its last step after the picture changed); a refused dive leaves the departure state that the next move replaces.
+
+Adopted Board viewer at v100 and Browser application at v61; archboard check: no diagnostics. check --code behind: of this task's commits only 3570b093c reaches another board, Board routes on Archboard server routes and the Archboard server container on Archboard server (the listing route now names the vault's repository). Both stay right: Board routes 'answers the reads: ... the catalogue' covers the listing, and the container draws no listing field. The other behind counts come from the TASK-472.07 and TASK-472.08 merges and older work.
 <!-- SECTION:NOTES:END -->
