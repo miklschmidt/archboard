@@ -365,7 +365,9 @@ What the source shows for each row, and what you author for it:
 - `drillDown`. _Shows:_ a part whose internals already have a board
   (`archboard semantic` lists them; check first). _Author:_ `drillDown` on that
   part instead of drawing its parts again, its `kind` the level of the board it
-  opens (`system`, `service`, `module`) ([keep it true](#keep-it-true)).
+  opens (`system`, `service`, `module`) ([keep it true](#keep-it-true)). A board
+  in another repository adds `repo`, the identity a binding names
+  ([drill-down](references/authoring.md#drill-down)).
 - `description`. _Shows:_ a mechanism a one-line responsibility cannot hold.
   _Author:_ `description` on the node or relationship.
 
