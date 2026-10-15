@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 51,
+	"version": 52,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-15T12:30:29.106Z",
+	"updatedAt": "2026-10-15T14:26:27.436Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -8830,7 +8830,7 @@
 		{
 			"id": "wRhU4Sgu",
 			"name": "TASK-468",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "qe35sHIi",
 			"summary": "Meaning to SVG and interaction geometry",
 			"content": {
@@ -10180,7 +10180,7 @@
 		{
 			"id": "4iTpE5Wx",
 			"name": "TASK-474",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "wRhU4Sgu",
 			"summary": "Meaning to SVG and interaction geometry",
 			"content": {
@@ -11528,7 +11528,7 @@
 			}
 		}
 	],
-	"current": "wRhU4Sgu",
+	"current": "4iTpE5Wx",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
@@ -11583,6 +11583,12 @@
 			"from": "qe35sHIi",
 			"at": "2026-10-12T01:29:36.433Z",
 			"reason": "An exported picture can carry its legend, or be the legend alone: the export legend draws what the picture key reads, the reader the page's legend shares (TASK-468)"
+		},
+		{
+			"variant": "4iTpE5Wx",
+			"from": "wRhU4Sgu",
+			"at": "2026-10-15T14:26:27.436Z",
+			"reason": "A container's header is made of the ground its well is cut into, with no group tint, and a far card's chip stands at the top of its face as it does near"
 		}
 	],
 	"shelvings": [
