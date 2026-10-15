@@ -5,9 +5,11 @@
 
 import {
 	chmodSync,
+	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	readdirSync,
+	readFileSync,
 	realpathSync,
 	rmSync,
 	writeFileSync,
@@ -66,18 +68,29 @@ async function archboard(
 	return { status, stdout, stderr };
 }
 
-test("a command in another archboard checkout runs its bin/archboard with the same arguments and environment", async () => {
-	const standing = join(scratch, "standing");
-	mkdirSync(join(standing, ".git"), { recursive: true });
-	mkdirSync(join(standing, "bin"));
-	mkdirSync(join(standing, "docs"));
-	writeFileSync(join(standing, "package.json"), JSON.stringify({ name: "archboard" }));
-	const bin = join(standing, "bin", "archboard");
-	writeFileSync(
-		bin,
-		'#!/usr/bin/env bash\nprintf "%s\\n" "$@" "$ARCHBOARD_PROBE" "${NO_COLOR-unset}" "$PWD"\nexit 7\n',
-	);
+/**
+ * Make a stand-in archboard checkout below the scratch directory.
+ * @param name Its directory name.
+ * @param script What its `bin/archboard` runs, a bash script.
+ * @returns Its root.
+ */
+function standIn(name: string, script: string): string {
+	const root = join(scratch, name);
+	mkdirSync(join(root, ".git"), { recursive: true });
+	mkdirSync(join(root, "bin"));
+	mkdirSync(join(root, "docs"));
+	writeFileSync(join(root, "package.json"), JSON.stringify({ name: "archboard" }));
+	const bin = join(root, "bin", "archboard");
+	writeFileSync(bin, `#!/usr/bin/env bash\n${script}`);
 	chmodSync(bin, 0o755);
+	return root;
+}
+
+test("a command in another archboard checkout runs its bin/archboard with the same arguments and environment", async () => {
+	const standing = standIn(
+		"standing",
+		'printf "%s\\n" "$@" "$ARCHBOARD_PROBE" "${NO_COLOR-unset}" "$PWD"\nexit 7\n',
+	);
 
 	const ran = await archboard(
 		["semantic", "show", "two words", "--url=http://x"],
@@ -98,10 +111,34 @@ test("a command in another archboard checkout runs its bin/archboard with the sa
 	]);
 });
 
+test("a signal sent to the command reaches the bin/archboard it handed off to", async () => {
+	const mark = join(scratch, "signalled.mark");
+	const standing = standIn(
+		"signalled",
+		`trap 'kill $!; echo TERM > "${mark}"; exit 143' TERM\necho started > "${mark}"\nsleep 30 & wait\n`,
+	);
+	const child = Bun.spawn([packageBin, "status"], {
+		cwd: standing,
+		stdin: "ignore",
+		stdout: "ignore",
+		stderr: "ignore",
+		env: { PATH: process.env["PATH"], HOME: join(scratch, "home") },
+	});
+	const deadline = Date.now() + 10_000;
+	while (!existsSync(mark) && Date.now() < deadline) {
+		await Bun.sleep(20);
+	}
+
+	child.kill("SIGTERM");
+
+	expect(await child.exited).toBe(143);
+	expect(readFileSync(mark, "utf8")).toBe("TERM\n");
+});
+
 test("a command that finds a server of another checkout's source refuses and names both checkouts", async () => {
 	const elsewhere = "/elsewhere/archboard";
 	const contacts: string[] = [];
-	await using double = Bun.serve({
+	using double = Bun.serve({
 		hostname: "127.0.0.1",
 		port: 0,
 		fetch(request) {
