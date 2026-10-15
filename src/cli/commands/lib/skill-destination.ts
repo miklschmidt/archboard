@@ -90,15 +90,14 @@ function resolveTarget(target: string): SkillDestination {
 /**
  * The install destination for a skills.sh-compatible --agent spelling, mapped onto a target.
  * @param agent - The agent spelling.
- * @returns The destination plus the target spelling it mapped to, which the doc choice reuses.
+ * @returns The destination.
  */
-function resolveAgent(agent: string): SkillDestination & { targetSpec: string } {
+function resolveAgent(agent: string): SkillDestination {
 	const targetSpec = agent === "codex" ? "agents" : agent === "claude-code" ? "claude" : undefined;
 	if (!targetSpec) {
 		throw new CliUsageError(`Unknown --agent ${agent}. Supported agents: codex, claude-code.`);
 	}
-	const resolved = resolveTarget(targetSpec);
-	return { ...resolved, mode: `agent:${agent}`, targetSpec };
+	return { ...resolveTarget(targetSpec), mode: `agent:${agent}` };
 }
 
 /**

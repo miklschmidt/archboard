@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 
 import { startOwnedServer } from "../support/owned-server.ts";
-import { callerVaultCleared, holderOf, vaultIn } from "../support/test-vault.ts";
+import { holderOf, vaultIn } from "../support/test-vault.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent, type PaneSession } from "./support/pane-session.ts";
 
@@ -70,7 +70,6 @@ describe.serial("side-by-side proposal workflow", () => {
 						cwd: holderOf(vault),
 						env: {
 							...process.env,
-							...callerVaultCleared,
 							ARCHBOARD_URL: server.base,
 							ARCHBOARD_NO_AUTOSTART: "1",
 							ARCHBOARD_REPOS: server.registry,

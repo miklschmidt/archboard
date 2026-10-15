@@ -1,0 +1,135 @@
+// Installing the skills is only half of setting a repository up. The other half
+// is its vault: `<root>/.archboard/vault`, where a command run in the repository
+// finds it (ADR 0049). Nothing else is written into the repository. Earlier
+// versions also wrote a block into the repository's CLAUDE.md or AGENTS.md,
+// between markers, that held paths of the machine that ran the installer. A
+// rerun removes that block and touches nothing else in the file.
+import fs from "node:fs";
+import path from "node:path";
+import { execFileSync } from "node:child_process";
+import { VAULT_DIRECTORY } from "@/runtime/engine/vault-finder";
+import { initializeSemanticBoardConfiguration } from "@/runtime/semantic-board-store/index";
+import type { CommandContext } from "@/cli/command-contract/contract";
+import { expandHome } from "@/cli/commands/lib/skill-destination";
+
+/** The agent documents an earlier version wrote its block into. */
+const AGENT_DOCUMENTS = ["CLAUDE.md", "AGENTS.md"] as const;
+
+/** A block an earlier version wrote, markers included, with the one newline that ended it. */
+const OLD_BLOCK = /<!-- archboard:begin -->[\s\S]*?<!-- archboard:end -->\n?/gu;
+
+interface SetupResult {
+	repo: string;
+	vault: string;
+	vaultCreated: boolean;
+	vaultIgnored: boolean;
+	/** The agent documents that held a block of an earlier version, which was removed. */
+	removedBlocks: string[];
+}
+
+interface SetupOptions {
+	repoSpec?: string;
+	context: CommandContext;
+}
+
+/**
+ * The git repository containing `from`, or `from` itself when there is none.
+ * @param from - The directory to start from.
+ * @returns The nearest ancestor holding a .git entry, else the resolved start directory.
+ */
+function findRepoRoot(from: string): string {
+	let dir = path.resolve(from);
+	for (;;) {
+		if (fs.existsSync(path.join(dir, ".git"))) {
+			return dir;
+		}
+		const parent = path.dirname(dir);
+		if (parent === dir) {
+			return path.resolve(from);
+		}
+		dir = parent;
+	}
+}
+
+/**
+ * Whether git ignores a path inside the repository.
+ * @param repo - The repository root.
+ * @param target - The path to check.
+ * @returns True when `git check-ignore` matches; false when it does not or git is unavailable.
+ */
+function gitIgnores(repo: string, target: string): boolean {
+	try {
+		execFileSync("git", ["-C", repo, "check-ignore", "-q", target], { stdio: "ignore" });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Take the block of an earlier version out of a document: the text from its first marker through
+ * its last marker and the newline after it. Every other byte stays.
+ * @param text - The document.
+ * @returns The document without the block, or undefined when it holds none.
+ */
+function withoutOldBlock(text: string): string | undefined {
+	const removed = text.replace(OLD_BLOCK, "");
+	return removed === text ? undefined : removed;
+}
+
+/**
+ * Remove the block of an earlier version from the repository's agent documents.
+ * @param repo - The repository root.
+ * @returns The documents it was removed from.
+ */
+function removeOldBlocks(repo: string): string[] {
+	const removedFrom: string[] = [];
+	for (const name of AGENT_DOCUMENTS) {
+		const file = path.join(repo, name);
+		if (!fs.existsSync(file)) continue;
+		const without = withoutOldBlock(fs.readFileSync(file, "utf-8"));
+		if (without === undefined) continue;
+		fs.writeFileSync(file, without, "utf-8");
+		removedFrom.push(file);
+	}
+	return removedFrom;
+}
+
+/**
+ * Set a repository up: make its vault when it has none, and remove the block an earlier version
+ * wrote into its agent documents. A repository's vault is where `archboard` finds it from the
+ * repository, so nothing about it is written down.
+ * @param options - Which repository, and the context.
+ * @returns What was done.
+ */
+function setUpRepository(options: SetupOptions): SetupResult {
+	const { context } = options;
+	const repo = options.repoSpec
+		? path.resolve(expandHome(options.repoSpec))
+		: findRepoRoot(process.cwd());
+	const vault = path.join(repo, VAULT_DIRECTORY);
+	const vaultCreated = !fs.existsSync(vault);
+	fs.mkdirSync(vault, { recursive: true });
+	if (vaultCreated) {
+		initializeSemanticBoardConfiguration(vault);
+	}
+	const removedBlocks = removeOldBlocks(repo);
+	const vaultIgnored = gitIgnores(repo, vault);
+
+	context.diagnostic(
+		`${vaultCreated ? "Made" : "Found"} the boards of this repository in ${vault}`,
+	);
+	for (const file of removedBlocks) {
+		context.diagnostic(
+			`Removed the setup block an earlier version wrote into ${file}, and changed nothing else in it. Commit that change.`,
+		);
+	}
+	if (vaultIgnored) {
+		context.diagnostic(
+			`Git ignores ${VAULT_DIRECTORY}, so the boards stay on this machine. Remove that rule to commit them with your code.`,
+		);
+	}
+	return { repo, vault, vaultCreated, vaultIgnored, removedBlocks };
+}
+
+export { type SetupResult, type SetupOptions, setUpRepository };

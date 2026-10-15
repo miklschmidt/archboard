@@ -4,7 +4,6 @@
 // registry does not know registers it, and that answer says so.
 
 import type { AnsweredVault, RegisteredVault } from "@/cli/command-contract/schemas";
-import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
 import { declareIfUnknown, type Declared } from "@/runtime/engine/repo-registry";
 import { setRequestedVault } from "@/runtime/engine/server-client";
 import {
@@ -63,14 +62,12 @@ function registrationLine(registration: RegisteredVault): string {
 
 /**
  * Register the checkout or untracked vault a command found, unless the
- * registry knows it already. A vault the environment names is used as it is
- * and never registers. A registry that cannot be written is a warning: the
+ * registry knows it already. A registry that cannot be written is a warning: the
  * command still has its vault.
  * @param found - The vault the command found.
  * @returns What was registered, or undefined when nothing was.
  */
 async function register(found: FoundVault): Promise<RegisteredVault | undefined> {
-	if (found.holder === null) return undefined;
 	try {
 		const declared = await declareIfUnknown(found.holder);
 		if (declared === undefined || !declared.added) return undefined;
@@ -94,7 +91,7 @@ async function register(found: FoundVault): Promise<RegisteredVault | undefined>
  * @throws {VaultNotFoundError} When there is no vault to address.
  */
 async function addressVault(directory: string | null): Promise<AnsweredVault> {
-	const vault = await foundAndRegistered({ directory, environment: ARCHBOARD_VAULT });
+	const vault = await foundAndRegistered({ directory });
 	setRequestedVault(vault.path);
 	return vault;
 }
@@ -110,13 +107,12 @@ async function addressVault(directory: string | null): Promise<AnsweredVault> {
  * @throws {VaultNotFoundError} When the directory has no vault.
  */
 async function findVaultOf(directory: string, option: string): Promise<AnsweredVault> {
-	return foundAndRegistered({ directory, environment: undefined, option });
+	return foundAndRegistered({ directory, option });
 }
 
 /**
  * Find a vault, and register what holds it when the registry does not know it.
- * @param search - What named the directory, or null when nothing did, and the
- *   vault the environment names, or undefined.
+ * @param search - What named the directory, or null when nothing did.
  * @returns The vault and how it was found, as the answer names it.
  * @throws {VaultNotFoundError} When there is no vault to address.
  */

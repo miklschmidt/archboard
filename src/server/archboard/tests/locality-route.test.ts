@@ -20,7 +20,7 @@ const caller = {
 };
 const scratch = mkdtempSync(join(tmpdir(), "archboard-locality-route-"));
 const checkout = join(scratch, "checkout");
-const vault = join(checkout, "vault");
+const vault = join(checkout, ".archboard", "vault");
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 let server: typeof ServerModule;
 let route: typeof RouteModule;

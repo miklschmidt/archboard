@@ -201,8 +201,8 @@ Let agents work on the map without wondering what they touched. When an agent **
 Put the same drawing in a design doc, an ADR or the description of a pull request. A board renders to a self-contained SVG or PNG from the command line. With `--theme auto`, one SVG shows the ground of the reader's colour scheme. `--title` and `--legend` draw a title and the key into the picture. The same board always gives the same bytes. A regenerated picture shows up in a diff only after the architecture changes.
 
 ```bash
-archboard semantic render "Web shop" --theme auto --title --legend horizontal --out web-shop.svg
-archboard semantic rasterize "Web shop" --scale 2 --out web-shop.png
+archboard -C ~/archboard-example semantic render "Web shop" --theme auto --title --legend horizontal --out web-shop.svg
+archboard -C ~/archboard-example semantic rasterize "Web shop" --scale 2 --out web-shop.png
 ```
 
 <picture>
@@ -275,21 +275,22 @@ You need Linux or macOS, Bun 1.4.3 or newer, and Git. Chromium or Google Chrome 
 ```bash
 git clone https://github.com/miklschmidt/archboard.git && cd archboard
 bun install && bun run build
-ARCHBOARD_VAULT="$PWD/examples/web-shop" ./bin/archboard start
+mkdir -p ~/archboard-example/.archboard && cp -r examples/web-shop ~/archboard-example/.archboard/vault
+./bin/archboard -C ~/archboard-example semantic
+./bin/archboard start
 ```
 
-Then open <http://127.0.0.1:3000/?paneA=Web%20shop>. The history, the proposals, the drill-down and the walkthroughs are all there.
+The copy is the vault of `~/archboard-example`, which is where a command finds it, and the `semantic` command registers it so that the browser lists it. Then open <http://127.0.0.1:3000/?paneA=Web%20shop>. The history, the proposals, the drill-down and the walkthroughs are all there.
 
-**Use it on your own code**. Stop the example server first: it opens pages in the example vault. Then put the CLI on your `PATH` and set up the repository you want mapped:
+**Use it on your own code**. Put the CLI on your `PATH` and set up the repository you want mapped:
 
 ```bash
-./bin/archboard stop
 mkdir -p ~/.local/bin && ln -s "$PWD/bin/archboard" ~/.local/bin/archboard   # ~/.local/bin must be on your PATH
 cd ~/code/your-project
 archboard install-skill --agent claude-code     # omit --agent for Codex
 ```
 
-The installer copies the `archboard` and `archboard-pr` skills to `~/.claude/skills` (`~/.agents/skills` for Codex). It asks where the repository keeps its boards (Enter takes `.archboard/vault` inside it). Then it writes the vault path and the command into the repository's `CLAUDE.md` or `AGENTS.md`. Commit the vault with your code. A command finds that vault from the directory it runs in, the way git finds a repository, or from `-C <dir>`. Then ask your agent:
+The installer copies the `archboard` and `archboard-pr` skills to `~/.claude/skills` (`~/.agents/skills` for Codex). It makes `.archboard/vault` in the repository and writes nothing else into it. Commit the vault with your code. A command finds that vault from the directory it runs in, the way git finds a repository, or from `-C <dir>`. Then ask your agent:
 
 ```text
 Map this repository's architecture onto a board named "Overview", bind every part to its code,

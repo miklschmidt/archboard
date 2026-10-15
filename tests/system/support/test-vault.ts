@@ -52,12 +52,4 @@ function listOnlyVault(registry: string, vault: string): string {
 	return registry;
 }
 
-/**
- * Spread into the environment of a command or server that a test starts from
- * its own. A vault that the person who runs the tests exported decides a
- * command's vault ahead of the directory it runs in, and the vault a page opens
- * in, so the test would read and write that person's boards (ADR 0049).
- */
-const callerVaultCleared = { ARCHBOARD_VAULT: undefined } as const;
-
-export { callerVaultCleared, holderOf, listOnlyVault, vaultIn };
+export { holderOf, listOnlyVault, vaultIn };

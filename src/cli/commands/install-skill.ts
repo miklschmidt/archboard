@@ -13,10 +13,9 @@ import {
 	packageRoot,
 	resolveAgent,
 	resolveExplicitDir,
-	resolveInvocation,
 	resolveTarget,
 } from "@/cli/commands/lib/skill-destination";
-import { applyBlock, chooseDoc, writeSetup } from "@/cli/commands/lib/repo-setup-block";
+import { setUpRepository } from "@/cli/commands/lib/repo-setup";
 import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
 
 const INSTALL_TARGETS = ["agents", "claude"] as const;
@@ -28,17 +27,14 @@ const InstallSkillInputSchema = z.object({
 	agent: z.enum(INSTALL_AGENTS).optional(),
 	printSource: z.boolean().default(false),
 	repo: z.string().optional(),
-	vault: z.string().optional(),
-	doc: z.string().optional(),
-	noDoc: z.boolean().default(false),
-	yes: z.boolean().default(false),
+	noSetup: z.boolean().default(false),
 	tail: z.array(z.string()).default([]),
 });
 type InstallSkillInput = z.infer<typeof InstallSkillInputSchema>;
 
 /**
  * The request problems the input schema cannot express field by field: at most one destination
- * spelling and --doc and --no-doc being exclusive.
+ * spelling.
  * @param input - The parsed install input.
  * @returns One message per problem found, in check order.
  */
@@ -49,9 +45,6 @@ function installRequestIssues(input: InstallSkillInput): string[] {
 	);
 	if (destinations.length > 1) {
 		issues.push("Use only one of --dir <skills-root>, --agent <agent>, or --target claude");
-	}
-	if (input.noDoc && input.doc !== undefined) {
-		issues.push("Use either --doc <file> or --no-doc, not both");
 	}
 	return issues;
 }
@@ -68,11 +61,7 @@ const InstallSkillSetupResultSchema = z.object({
 	vault: z.string(),
 	vaultCreated: z.boolean(),
 	vaultIgnored: z.boolean(),
-	doc: z.string(),
-	docCreated: z.boolean(),
-	blockUpdated: z.boolean(),
-	command: z.string(),
-	onPath: z.boolean(),
+	removedBlocks: z.array(z.string()),
 });
 type InstallSkillSetupResult = z.infer<typeof InstallSkillSetupResultSchema>;
 
@@ -97,27 +86,20 @@ const InstallSkillResultSchema = z.union([
 ]);
 type InstallSkillResult = z.infer<typeof InstallSkillResultSchema>;
 
-interface ResolvedDestination extends SkillDestination {
-	/** The target spelling the repo doc choice keys on: "dir" for an explicit root. */
-	docTargetSpec: string;
-}
-
 /**
  * Resolves where the skills go from whichever destination spelling was used: --dir wins,
  * then --agent, then --target (defaulting to the agents root).
  * @param input - The validated install request.
- * @returns The destination and the target spelling the doc choice reuses.
+ * @returns The destination.
  */
-function resolveDestination(input: InstallSkillRequest): ResolvedDestination {
+function resolveDestination(input: InstallSkillRequest): SkillDestination {
 	if (input.dir) {
-		return { ...resolveExplicitDir(input.dir), docTargetSpec: "dir" };
+		return resolveExplicitDir(input.dir);
 	}
 	if (input.agent) {
-		const agent = resolveAgent(input.agent);
-		return { ...agent, docTargetSpec: agent.targetSpec };
+		return resolveAgent(input.agent);
 	}
-	const targetSpec = input.target ?? "agents";
-	return { ...resolveTarget(targetSpec), docTargetSpec: targetSpec };
+	return resolveTarget(input.target ?? "agents");
 }
 
 /**
@@ -215,42 +197,16 @@ function installSkillFiles(
 }
 
 /**
- * Writes the repo setup block unless --no-doc asked for the skill files alone.
- * @param input - The validated install request.
- * @param destination - Where the skills were installed.
- * @param context - The command context.
- * @returns The setup written, or undefined when skipped or refused for this checkout.
- */
-async function writeRequestedSetup(
-	input: InstallSkillRequest,
-	destination: ResolvedDestination,
-	context: CommandContext,
-): Promise<InstallSkillSetupResult | undefined> {
-	if (input.noDoc) {
-		return undefined;
-	}
-	return await writeSetup({
-		...(input.repo === undefined ? {} : { repoSpec: input.repo }),
-		...(input.vault === undefined ? {} : { vaultSpec: input.vault }),
-		...(input.doc === undefined ? {} : { docSpec: input.doc }),
-		targetSpec: destination.docTargetSpec,
-		skill: path.join(destination.root, BOARD_SKILL),
-		assumeYes: input.yes,
-		context,
-	});
-}
-
-/**
  * Runs the install: reports the bundled source under --print-source, otherwise validates
- * the request, installs the skill files and writes the repo setup.
+ * the request, installs the skill files and sets the repository up.
  * @param input - The parsed install input.
  * @param context - The command context.
  * @returns The source report or the install receipt.
  */
-async function executeInstallSkill(
+function executeInstallSkill(
 	input: InstallSkillInput,
 	context: CommandContext,
-): Promise<InstallSkillResult> {
+): InstallSkillResult {
 	if (input.printSource) {
 		return {
 			success: true,
@@ -263,7 +219,12 @@ async function executeInstallSkill(
 	const request = context.parse(InstallSkillRequestSchema, input);
 	const destination = resolveDestination(request);
 	const skills = installSkillFiles(destination.root, context);
-	const setup = await writeRequestedSetup(request, destination, context);
+	const setup = request.noSetup
+		? undefined
+		: setUpRepository({
+				...(request.repo === undefined ? {} : { repoSpec: request.repo }),
+				context,
+			});
 	return {
 		success: true,
 		mode: destination.mode,
@@ -276,13 +237,14 @@ async function executeInstallSkill(
 const installSkillContract = defineCommand({
 	path: ["install-skill"],
 	shared: [],
-	summary: "Install the bundled agent skills and write the setup into this repo",
+	summary: "Install the bundled agent skills and set this repository up",
 	description:
-		"Copies the bundled skills into a skills root (~/.agents/skills by default), then writes the " +
-		"setup an agent cannot know — the vault path and how to invoke this binary — into the " +
-		"repository's CLAUDE.md or AGENTS.md between markers, replacing the block on a re-run. On a " +
-		"terminal the vault is offered and asked for; --yes takes the offer.",
-	examples: ["archboard install-skill --yes", "archboard install-skill --print-source"],
+		"Copies the bundled skills into a skills root (~/.agents/skills by default), then makes the " +
+		"repository's vault, <repo>/.archboard/vault, when it has none. A command run in the " +
+		"repository finds that vault without any setting, so nothing is written into CLAUDE.md or " +
+		"AGENTS.md. A block that an earlier version wrote there is removed, and nothing else in the " +
+		"file changes.",
+	examples: ["archboard install-skill", "archboard install-skill --print-source"],
 	parameters: [
 		{
 			kind: "option",
@@ -325,41 +287,15 @@ const installSkillContract = defineCommand({
 			spellings: ["--repo"],
 			value: "required",
 			placeholder: "dir",
-			description: "The repository whose agent instructions receive the setup block",
+			description: "The repository to make a vault in",
 			default: "the working directory",
 		},
 		{
 			kind: "option",
-			key: "vault",
-			spellings: ["--vault"],
-			value: "required",
-			placeholder: "path",
-			description:
-				"The vault to record; <repo>/.archboard/vault or ARCHBOARD_VAULT is offered when absent",
-		},
-		{
-			kind: "option",
-			key: "doc",
-			spellings: ["--doc"],
-			value: "required",
-			placeholder: "file",
-			description:
-				"The agent document to write the setup block into; an existing CLAUDE.md, then AGENTS.md, " +
-				"when absent",
-		},
-		{
-			kind: "option",
-			key: "noDoc",
-			spellings: ["--no-doc"],
+			key: "noSetup",
+			spellings: ["--no-setup"],
 			value: "none",
-			description: "Install the skill files and write no repository setup",
-		},
-		{
-			kind: "option",
-			key: "yes",
-			spellings: ["--yes"],
-			value: "none",
-			description: "Take the offered vault without asking",
+			description: "Install the skill files and leave the repository alone",
 		},
 		{
 			kind: "positional",
@@ -377,11 +313,10 @@ const installSkillContract = defineCommand({
 			{
 				name: "install-request",
 				when: "before-server",
-				description: "Exclusive destination, supported agent/target, and document policy",
+				description: "Exclusive destination and supported agent/target",
 				rules: [
 					"Validate only after --print-source's fixed-base early return",
 					"Choose at most one destination spelling",
-					"Reject --doc with --no-doc",
 				],
 				schema: InstallSkillRequestSchema,
 			},
@@ -408,21 +343,18 @@ const installSkillContract = defineCommand({
 	refusals: [],
 	relationships: [],
 	/**
-	 * Installs the skills and, unless told not to, writes the repo setup block.
+	 * Installs the skills and, unless told not to, sets the repository up.
 	 * @param input - The parsed install input.
 	 * @param context - The command execution context.
 	 * @returns The install result.
 	 */
 	async handler(input, context) {
-		return { result: await executeInstallSkill(input, context) };
+		return { result: executeInstallSkill(input, context) };
 	},
 });
 
 export {
 	BUNDLED_SKILLS,
-	resolveInvocation,
-	chooseDoc,
-	applyBlock,
 	InstallSkillInputSchema,
 	type InstallSkillInput,
 	InstallSkillRequestSchema,

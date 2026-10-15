@@ -209,7 +209,7 @@ describe("write attempts", () => {
 			).write,
 		).toBe(true);
 		expect(
-			classified("bash -lc 'ARCHBOARD_VAULT=/v archboard semantic branch \"Flask\" --as X'").write,
+			classified("bash -lc 'VAULT_DIR=/v archboard semantic branch \"Flask\" --as X'").write,
 		).toBe(true);
 		expect(
 			classified("bash -lc 'cd /flask && archboard semantic adopt \"Flask\" --variant X'").write,
@@ -300,8 +300,7 @@ describe("evaluation-material exposure", () => {
 		).toBeNull();
 		expect(classified(`bash -lc 'cat ${VAULT}/.archboard/config.yaml'`).exposure).toBeNull();
 		expect(
-			classified(`bash -lc 'ARCHBOARD_VAULT=${VAULT} archboard semantic show "Flask JSON"'`)
-				.exposure,
+			classified(`bash -lc 'VAULT_DIR=${VAULT} archboard semantic show "Flask JSON"'`).exposure,
 		).toBeNull();
 		expect(classified("bash -lc 'rg wsgi_app src/flask/app.py'").exposure).toBeNull();
 		expect(

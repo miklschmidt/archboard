@@ -260,8 +260,8 @@ that removes the code removes the description too. The drawing workflow went awa
 write command listed a refusal that no route was able to send. INSTALL.md named
 a directory
 that did not exist, and the environment still used the names of the fork. The block that
-`install-skill` writes into other repositories told agents that `status` prints the vault
-(TASK-310).
+`install-skill` wrote into other repositories told agents that `status` prints the vault
+(TASK-310), and it held paths of the installing machine (TASK-471.03).
 
 So a change that removes, renames or redefines anything that people or agents can see must
 end with a sweep in the same change. Such a thing is a command, option,
@@ -273,9 +273,8 @@ has these steps:
    root documents (`README.md`, `INSTALL.md`, `TESTING.md`, `AGENTS.md`). Look in the
    `CONTEXT.md` entries and their `_Avoid_` lines, and in both skills. Look in the help
    text, the refusal descriptions and the exit-code help under `src/cli`. Look
-   in the setup
-   block in `src/cli/commands/lib/repo-setup-block.ts`, in code comments and in
-   test names.
+   in what `install-skill` writes into other repositories
+   (`src/cli/commands/lib/repo-setup.ts`), in code comments and in test names.
    Done: every hit is still true or is history. Backlog tasks, ADR bodies
    and `docs/design/skill-evals/baseline` stay as written.
 2. Delete what only served it.
@@ -300,16 +299,18 @@ has these steps:
   `requiresShared`, `excludesShared`), and help derives it from there. The
   same condition written into a description drifts from the check:
   `semantic record` said `--doing` was always required.
-- Every environment variable is named `ARCHBOARD_*`. Renaming one refuses the
-  old name by name, as `renamedUrlMessage` does. A silent fallback to the
-  default URL starts a second Archboard server over the same vault.
+- Every environment variable is named `ARCHBOARD_*`. Renaming or removing one
+  refuses the old name by name, as `removedEnvironmentMessage` does, also when
+  it comes from `.env`. A silent fallback to the default URL starts a second
+  Archboard server over the same vault, and an ignored vault setting
+  addresses another vault than the person means.
 - Every server call names its vault (ADR 0049), and the server has no default.
   A new board route mounts `requireVault` and reads the vault with
   `vaultOfRequest`. Server memory about a board is keyed with `boardMemoryKey`
   (vault and board together), never by the board name alone. The system test
   requesters add `?vault=` for you, and `openObservedPane` takes a `vault`.
   A system test makes its vault with `vaultIn(<dir>)` and runs a command in
-  that directory. It never sets `ARCHBOARD_VAULT`. The "Isolated servers and
+  that directory. It sets no environment variable that names a vault. The "Isolated servers and
   vaults" section of `docs/agents/test-suite.md` has the rules.
 - A tab session has one coordinator and one workhorse for each checkout
   (ADR 0050). A workhorse is keyed by its tab session and its checkout

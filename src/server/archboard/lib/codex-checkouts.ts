@@ -9,7 +9,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
-import { checkoutOfVault, VAULT_DIRECTORY } from "@/runtime/engine/vault-finder";
+import { checkoutOfVault, isVaultLayout, VAULT_DIRECTORY } from "@/runtime/engine/vault-finder";
 import type { CodexWorkbenchWorkhorseActions } from "@/server/archboard/lib/codex-workbench-session-workhorses";
 
 /**
@@ -44,8 +44,7 @@ function checkoutNamedBy(named: string): string | null {
 	if (isDirectory(path.join(real, VAULT_DIRECTORY))) {
 		return real;
 	}
-	const holder = checkoutOfVault(real);
-	return holder !== real && isDirectory(real) ? holder : null;
+	return isVaultLayout(real) && isDirectory(real) ? checkoutOfVault(real) : null;
 }
 
 /**

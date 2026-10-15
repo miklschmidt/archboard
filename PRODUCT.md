@@ -65,9 +65,11 @@ board is narrated by a voice and recorded to video.
   of one directory. A command finds its vault from the directory it runs in, as
   git finds a repository: at the checkout root inside a git checkout, or in the
   nearest enclosing directory outside any checkout. `-C <dir>` starts the
-  search elsewhere, and every answer names the vault that it used. The first
-  command in a checkout that the machine does not know registers it, and the
-  answer says so.
+  search elsewhere, and every answer names the vault that it used. No
+  environment variable names a vault. The server serves only vaults in that
+  layout. Setting a repository up makes the directory and writes nothing into
+  its `CLAUDE.md` or `AGENTS.md`. The first command in a checkout that the
+  machine does not know registers it, and the answer says so.
 - The shell has a navigator of boards, up to two panes side by side, a sidebar
   for each pane, and an agent dock at the foot of the navigator. Talk and Narrate start the
   voice.

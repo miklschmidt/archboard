@@ -47,12 +47,12 @@ function checkout(...segments: string[]): string {
 }
 
 /**
- * Find the vault from a working directory, with neither -C nor the environment.
+ * Find the vault from a working directory, without -C.
  * @param cwd The working directory.
  * @returns The finding.
  */
 function fromWorkingDirectory(cwd: string): Promise<VaultFinding> {
-	return findVault({ directory: null, environment: undefined, cwd });
+	return findVault({ directory: null, cwd });
 }
 
 beforeAll(() => {
@@ -123,19 +123,18 @@ test("-C starts the same search from the directory it names, relative to the wor
 	const root = checkout("named");
 	const vault = vaultIn(root);
 	const elsewhere = directory("elsewhere");
-	expect(
-		await findVault({ directory: "../named", environment: "/somewhere/else", cwd: elsewhere }),
-	).toEqual({ ok: true, found: { path: vault, origin: "-C", holder: root } });
+	expect(await findVault({ directory: "../named", cwd: elsewhere })).toEqual({
+		ok: true,
+		found: { path: vault, origin: "-C", holder: root },
+	});
 	// A vault directory names its own vault, in a checkout and outside one.
-	expect(await findVault({ directory: vault, environment: undefined, cwd: elsewhere })).toEqual({
+	expect(await findVault({ directory: vault, cwd: elsewhere })).toEqual({
 		ok: true,
 		found: { path: vault, origin: "-C", holder: root },
 	});
 	const untracked = directory("loose");
 	const looseVault = vaultIn(untracked);
-	expect(
-		await findVault({ directory: looseVault, environment: undefined, cwd: elsewhere }),
-	).toEqual({
+	expect(await findVault({ directory: looseVault, cwd: elsewhere })).toEqual({
 		ok: true,
 		found: { path: looseVault, origin: "-C", holder: untracked },
 	});
@@ -143,9 +142,7 @@ test("-C starts the same search from the directory it names, relative to the wor
 
 test("-C naming no directory is refused", async () => {
 	const elsewhere = directory("elsewhere");
-	expect(
-		await findVault({ directory: "gone", environment: undefined, cwd: elsewhere }),
-	).toMatchObject({
+	expect(await findVault({ directory: "gone", cwd: elsewhere })).toMatchObject({
 		ok: false,
 		reason: "directory-missing",
 		directory: join(elsewhere, "gone"),

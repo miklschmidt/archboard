@@ -1,7 +1,9 @@
 // One Archboard server for one take, over a fresh copy of a tracked vault.
 //
 // The copy holds the vault's tracked files and nothing else, so a take shows what the checkout
-// holds and its writes never reach the repository. The server listens on a free port. A take that
+// holds and its writes never reach the repository. The copy is the `.archboard/vault` of a
+// directory of its own, which the take's commands run in and which a registry of its own lists,
+// so the machine's registry never sees a take. The server listens on a free port. A take that
 // needs no Codex gets a state directory of its own in the scratch directory (on Linux, through
 // XDG_STATE_HOME), so it starts without a Codex sign-in and leaves the machine's state alone. A
 // take that needs Codex uses the machine's state directory and its Archboard Codex sign-in, which
@@ -81,16 +83,17 @@ async function copyTracked(vault: TrackedVault, into: string): Promise<void> {
  */
 async function startServer(name: string, vault: TrackedVault, codex: boolean): Promise<TakeServer> {
 	const home = scratch("takes", name);
-	const copy = join(home, "vault");
-	await copyTracked(vault, copy);
+	const holder = join(home, "repository");
+	await copyTracked(vault, join(holder, ".archboard", "vault"));
 	const url = `http://127.0.0.1:${freePort()}`;
 	const env: Record<string, string> = {
 		ARCHBOARD_URL: url,
-		ARCHBOARD_VAULT: copy,
+		ARCHBOARD_REPOS: join(home, "repos.json"),
 		ARCHBOARD_NO_AUTOSTART: "1",
 		...(codex ? {} : { XDG_STATE_HOME: join(home, "state") }),
 	};
 	const cli = join(ROOT, "bin/archboard");
+	await run([cli, "repo", "add", holder], { env });
 	await run([cli, "start"], { env });
 	return {
 		url,
@@ -100,16 +103,17 @@ async function startServer(name: string, vault: TrackedVault, codex: boolean): P
 		 * @param args The CLI's arguments.
 		 * @returns The answer.
 		 */
-		cli: async (args) => JSON.parse((await run([cli, ...args], { env })).stdout) as unknown,
+		cli: async (args) =>
+			JSON.parse((await run([cli, ...args], { env, cwd: holder })).stdout) as unknown,
 		/**
 		 * Run the CLI against the server, keeping its exit status.
 		 * @param args The CLI's arguments.
 		 * @returns What it printed and its exit status.
 		 */
-		attempt: async (args) => attempt([cli, ...args], { env }),
+		attempt: async (args) => attempt([cli, ...args], { env, cwd: holder }),
 		/** Stop the server. */
 		stop: async () => {
-			await run([cli, "stop"], { env });
+			await run([cli, "stop"], { env, cwd: holder });
 		},
 	};
 }

@@ -3,10 +3,11 @@ id: TASK-471.03
 title: >-
   install-skill writes no setup block, and archboard-pr triggers on the vault
   directory
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-14 14:40'
-updated_date: '2026-10-14 21:49'
+updated_date: '2026-10-15 07:38'
 labels: []
 dependencies:
   - TASK-472.09
@@ -27,3 +28,15 @@ The block that `install-skill` writes into a repository's CLAUDE.md or AGENTS.md
 - [ ] #3 The archboard-pr skill triggers on a repository that has `.archboard/vault`, and no shipped skill names `ARCHBOARD_VAULT`
 - [ ] #4 A test holds that no file that `install-skill` writes into a repository contains a path of the machine that ran it
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. install-skill stops writing the CLAUDE.md/AGENTS.md block; setUpRepository (lib/repo-setup.ts) makes <repo>/.archboard/vault and removes an earlier block from CLAUDE.md and AGENTS.md, leaving every other byte, and reports removedBlocks plus a diagnostic. 2. Options --vault, --doc, --yes go (the vault is always <repo>/.archboard/vault, nothing is asked); --no-doc becomes --no-setup. 3. archboard-pr description triggers on a repository with .archboard/vault. 4. Tests: install-targets.test.ts (no block, removal byte-for-byte, no machine path in any written file). 5. Eval harness install stops reading the block.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Decisions: install-skill options --vault, --doc and --yes are removed (the vault is always <repo>/.archboard/vault and nothing is asked or written into a document), --no-doc is --no-setup. The receipt's setup is {repo, vault, vaultCreated, vaultIgnored, removedBlocks}; removedBlocks lists the CLAUDE.md/AGENTS.md files a block was cut from, and a diagnostic line per file says so. Removal deletes the markers, what is between them and the newline after the end marker; every other byte stays, and only CLAUDE.md and AGENTS.md at the repository root are looked at. The guard for the archboard checkout itself is gone (nothing is written there now). The skill-evaluation harness installs with --repo only and no longer reads or records the block. Left for TASK-471.02: resolveInvocation in skill-destination.ts has no caller now; 471.02's PATH warning will use it.
+<!-- SECTION:NOTES:END -->

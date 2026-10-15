@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
 import {
 	closePane,
 	getPanes,
@@ -355,7 +354,6 @@ const panesContract = defineCommand({
 async function callerVault(): Promise<string | null> {
 	const finding = await findVault({
 		directory: null,
-		environment: ARCHBOARD_VAULT,
 		cwd: process.cwd(),
 	});
 	return finding.ok ? finding.found.path : null;
