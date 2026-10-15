@@ -240,9 +240,7 @@ test("a namespace menu includes options accepted by its bare default", async () 
 test("a shared option the command does not read is refused before anything runs", async () => {
 	for (const entry of registry) {
 		const unread = sharedOptionsFor(
-			(["url", "board", "doing", "expect-version", "as-session"] as const).filter(
-				(key) => !entry.contract.shared.includes(key),
-			),
+			SHARED_OPTION_KEYS.filter((key) => !entry.contract.shared.includes(key)),
 		);
 		for (const option of unread) {
 			stdout.mockClear();
