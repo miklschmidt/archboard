@@ -8,25 +8,21 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
+import * as store from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as contract from "@/shared/semantic-board/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const vault = createConfiguredTestVault("archboard-bindings-");
 const checkout = mkdtempSync(join(tmpdir(), "archboard-bound-checkout-"));
 const registry = join(mkdtempSync(join(tmpdir(), "archboard-bound-registry-")), "repos.json");
-process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = registry;
 const REPO = "github.com/test/bound";
 const PRESENT = "src/present.ts";
 const GONE = "src/gone.ts";
 /** A link inside the checkout to a file beside it, which the code opener refuses to open. */
 const LEAVES = "src/leaves.ts";
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 
 beforeAll(async () => {
@@ -41,12 +37,8 @@ beforeAll(async () => {
 			{ repo: REPO, root: checkout, source: "declared", addedAt: new Date().toISOString() },
 		]),
 	);
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
 });
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	if (callerRepos === undefined) delete process.env["ARCHBOARD_REPOS"];
 	else process.env["ARCHBOARD_REPOS"] = callerRepos;
 	for (const directory of [vault, checkout, join(registry, "..")])
@@ -73,7 +65,7 @@ async function create(input: Record<string, unknown>, into: string = vault): Pro
  * @param board Its name.
  * @returns The saved family.
  */
-function read(board: string): ContractModule.SemanticBoard {
+function read(board: string): contract.SemanticBoard {
 	const result = store.readSemanticBoard(vault, board);
 	if (!result.ok) throw new Error(result.problem);
 	return result.board;

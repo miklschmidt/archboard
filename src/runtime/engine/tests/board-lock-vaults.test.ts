@@ -2,20 +2,13 @@ import { afterAll, expect, jest, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import * as lock from "@/runtime/engine/board-lock";
+import { forgetDoing, recentDoing, recordDoing } from "@/runtime/engine/board-doing";
+import { LOCK_WATCH_MS } from "@/shared/timing/timing";
 
 const home = mkdtempSync(join(tmpdir(), "archboard-lock-vaults-"));
-const previousVault = process.env["ARCHBOARD_VAULT"];
-process.env["ARCHBOARD_VAULT"] = join(home, "unused");
-const lock = await import("../board-lock.ts");
-const { recentDoing, recordDoing, forgetDoing } = await import("../board-doing.ts");
-const { LOCK_WATCH_MS } = await import("../../../shared/timing/timing.ts");
 
 afterAll(() => {
-	if (previousVault === undefined) {
-		delete process.env["ARCHBOARD_VAULT"];
-	} else {
-		process.env["ARCHBOARD_VAULT"] = previousVault;
-	}
 	rmSync(home, { recursive: true, force: true });
 });
 

@@ -1,29 +1,21 @@
-import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
+import { afterAll, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as store from "@/runtime/semantic-board-store/index";
+import * as contract from "@/shared/semantic-board/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-branching-"));
-process.env["ARCHBOARD_VAULT"] = vault;
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 
 // Every test gets its own board, made fresh before it runs — the baseline and
 // one proposal off it — so that running one of them by name proves the same
 // thing as running all of them.
 let board = "";
-let branched: Awaited<ReturnType<typeof StoreModule.writeSemanticBoard>>;
+let branched: Awaited<ReturnType<typeof store.writeSemanticBoard>>;
 let boards = 0;
 const PROPOSAL = "Queue in front";
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-});
 beforeEach(async () => {
 	boards += 1;
 	board = `ancestry-${boards}`;
@@ -46,8 +38,6 @@ beforeEach(async () => {
 	branched = await branch(board, read(board).variants[0]!.name, PROPOSAL);
 });
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	rmSync(vault, { recursive: true, force: true });
 });
 
@@ -187,7 +177,7 @@ test("an edit restates the summary of the variant it lands on, and a record refu
 	 * @param transition The transition.
 	 * @returns What the write did.
 	 */
-	const write = async (transition: StoreModule.SemanticTransition) =>
+	const write = async (transition: store.SemanticTransition) =>
 		store.writeSemanticBoard({
 			vault,
 			board,

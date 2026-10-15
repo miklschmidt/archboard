@@ -1,20 +1,12 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as LockModule from "@/runtime/engine/board-lock";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as lock from "@/runtime/engine/board-lock";
+import * as store from "@/runtime/semantic-board-store/index";
+import * as contract from "@/shared/semantic-board/index";
 
-// config.ts snapshots the environment at import time, so this owner takes its
-// own vault before any module that resolves a vault path is evaluated.
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-discard-"));
-process.env["ARCHBOARD_VAULT"] = vault;
-
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
-let lock: typeof LockModule;
 
 const writer = { kind: "agent" as const, reason: "recording the walkthrough" };
 
@@ -38,18 +30,7 @@ async function create(name: string): Promise<void> {
 	expect(created.outcome).toBe("applied");
 }
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-	lock = await import("@/runtime/engine/board-lock");
-});
-
 afterAll(() => {
-	if (callerVault === undefined) {
-		delete process.env["ARCHBOARD_VAULT"];
-	} else {
-		process.env["ARCHBOARD_VAULT"] = callerVault;
-	}
 	rmSync(vault, { recursive: true, force: true });
 });
 

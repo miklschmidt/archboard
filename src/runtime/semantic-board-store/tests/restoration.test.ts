@@ -7,18 +7,14 @@
 // removes; the predecessor then touches the same three nodes; a partial
 // `resolve` settles two of the three; the restoration settles the last.
 
-import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
+import { afterAll, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as store from "@/runtime/semantic-board-store/index";
+import * as contract from "@/shared/semantic-board/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-restoration-"));
-process.env["ARCHBOARD_VAULT"] = vault;
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 
 const DRAFT = "Provider rewrite";
@@ -26,10 +22,6 @@ let board = "";
 let boards = 0;
 let ids: { app: string; helpers: string; tagged: string } = { app: "", helpers: "", tagged: "" };
 
-beforeAll(async () => {
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-});
 beforeEach(async () => {
 	boards += 1;
 	board = `restoring-${boards}`;
@@ -109,8 +101,6 @@ beforeEach(async () => {
 	});
 });
 afterAll(() => {
-	if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = callerVault;
 	rmSync(vault, { recursive: true, force: true });
 });
 
@@ -140,7 +130,7 @@ function variant(name: string) {
  * @param transition The command.
  * @returns What the write did.
  */
-async function write(transition: StoreModule.SemanticTransition) {
+async function write(transition: store.SemanticTransition) {
 	return store.writeSemanticBoard({
 		vault,
 		board,
