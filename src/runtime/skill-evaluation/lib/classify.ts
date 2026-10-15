@@ -175,6 +175,30 @@ function asksHelp(script: string): boolean {
 	return HELP_RE.test(script);
 }
 
+/** Where a vault sits in its checkout (ADR 0049), as a command in the checkout spells it. */
+const VAULT_IN_CHECKOUT = ".archboard/vault";
+
+/**
+ * The checkout a run's vault is the `.archboard/vault` of, where a command
+ * that spells a path relatively finds it.
+ * @param vault The run's vault.
+ * @returns The checkout.
+ */
+function checkoutOf(vault: string): string {
+	return path.dirname(path.dirname(vault));
+}
+
+/**
+ * Whether a script names the run's vault: by its whole path, or relative to
+ * the checkout the author works in, which is where the vault now sits.
+ * @param script The command.
+ * @param vault The run's vault.
+ * @returns True when it names the vault.
+ */
+function namesVault(script: string, vault: string): boolean {
+	return script.includes(vault) || script.includes(VAULT_IN_CHECKOUT);
+}
+
 /**
  * Whether a command reads the vault vocabulary.
  * @param script The command.
@@ -185,7 +209,7 @@ function readsVocabulary(script: string, context: ClassificationContext): boolea
 	return (
 		/\barchboard\s+semantic\s+config\b/u.test(script) ||
 		(INVESTIGATION_RE.test(script) &&
-			script.includes(context.vault) &&
+			namesVault(script, context.vault) &&
 			/\bconfig\.ya?ml\b/u.test(script))
 	);
 }
@@ -209,7 +233,8 @@ function mentionsArchboard(script: string): boolean {
 }
 
 /**
- * Whether a command reads the checkout.
+ * Whether a command reads the checkout. The run's vault sits inside it, and a
+ * read of a board is not a read of the code.
  * @param script The command.
  * @param context Where the run happened.
  * @returns True when it does.
@@ -217,7 +242,7 @@ function mentionsArchboard(script: string): boolean {
 function readsCheckout(script: string, context: ClassificationContext): boolean {
 	return (
 		INVESTIGATION_RE.test(script) &&
-		(script.includes(context.checkoutRoot) || SOURCE_RE.test(script))
+		(script.replaceAll(context.vault, "").includes(context.checkoutRoot) || SOURCE_RE.test(script))
 	);
 }
 
@@ -477,11 +502,13 @@ function guidanceStanding(
 }
 
 export {
+	checkoutOf,
 	classCounts,
 	classifyCommands,
 	exposureCounts,
 	guidanceFilesRead,
 	guidanceStanding,
+	namesVault,
 	simpleCommands,
 	unwrapped,
 	type ClassificationContext,
