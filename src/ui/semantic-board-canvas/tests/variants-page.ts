@@ -1,17 +1,16 @@
-// The Variants page of a pane's header, as a person uses it: opened from its
-// tab, it lists every variant of the board on screen, and each entry reads that
-// variant in the pane. The sidebar offers no variants, so this is where a test
-// finds the states of a board, whether it is the pane's own or one a level down.
+// The variants on the About page of a pane's header, as a person uses them:
+// the page, opened from its tab, lists every variant of the board on screen,
+// and each entry reads that variant in the pane. The sidebar offers no
+// variants, so this is where a test finds the states of a board, whether it is
+// the pane's own or one a level down.
 
 import { act } from "@testing-library/react";
 
-/** Open the pane's Variants page. */
-function openVariantsPage(): void {
-	const trigger = document.querySelector<HTMLElement>(
-		"[data-slot='board-tab'][data-tab='variants']",
-	);
+/** Open the pane's About page. */
+function openAboutPage(): void {
+	const trigger = document.querySelector<HTMLElement>("[data-slot='board-tab'][data-tab='about']");
 	if (trigger === null) {
-		throw new Error("The pane header has no Variants tab.");
+		throw new Error("The pane header has no About tab.");
 	}
 	act(() => {
 		trigger.click();
@@ -19,7 +18,7 @@ function openVariantsPage(): void {
 }
 
 /**
- * One variant's entry on the Variants page, by its id.
+ * One variant's entry on the About page, by its id.
  * @param id The variant's id.
  * @returns The entry.
  */
@@ -28,7 +27,7 @@ function variantEntry(id: string): HTMLElement {
 }
 
 /**
- * Each variant's id and lifecycle, in the order the Variants page lists them.
+ * Each variant's id and lifecycle, in the order the About page lists them.
  * @returns The pairs.
  */
 function listedVariants(): (string | undefined)[][] {
@@ -38,4 +37,4 @@ function listedVariants(): (string | undefined)[][] {
 	]);
 }
 
-export { listedVariants, openVariantsPage, variantEntry };
+export { listedVariants, openAboutPage, variantEntry };

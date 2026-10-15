@@ -2,7 +2,7 @@
 // architecture, and the states that used to be current.
 //
 // A proposal nobody can reach is a proposal nobody reviews. The navigator offers
-// every state of every board, and so does the Variants page of the pane's header,
+// every state of every board, and so does the About page of the pane's header,
 // which opens one in the pane; the sidebar offers none. These check what the pane
 // still owns: the state it is told to show is the one it asks the server for, a
 // state chosen on the page is asked of the shell the way the navigator asks for
@@ -26,7 +26,7 @@ import {
 import { cameraNow, pressKey } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import {
 	listedVariants,
-	openVariantsPage,
+	openAboutPage,
 	variantEntry,
 } from "@/ui/semantic-board-canvas/tests/variants-page";
 
@@ -188,7 +188,7 @@ test.each([false, true])(
 	},
 );
 
-test("the Variants page asks the shell for a state by its id, and for the current one as no state", async () => {
+test("the About page asks the shell for a state by its id, and for the current one as no state", async () => {
 	server.documents["pipeline"] = boardOf([AS_IT_IS, PROPOSED]);
 	server.reply = { status: 200, body: drawing(1) };
 	const asked: (string | null)[] = [];
@@ -201,7 +201,7 @@ test("the Variants page asks the shell for a state by its id, and for the curren
 	}
 	mountStage(null, { onVariantChange: record });
 	await settle();
-	openVariantsPage();
+	openAboutPage();
 
 	// A state is named by its id, so the pane stays on it. The current one is
 	// asked for by no name, the way the navigator asks, so the pane follows it
@@ -214,30 +214,30 @@ test("the Variants page asks the shell for a state by its id, and for the curren
 });
 
 /**
- * The Variants page, while it is open.
+ * The About page, while it is open.
  * @returns The page, or null.
  */
-function variantsPageNow(): HTMLElement | null {
-	return document.querySelector<HTMLElement>("[data-slot='board-page'][data-tab='variants']");
+function aboutPageNow(): HTMLElement | null {
+	return document.querySelector<HTMLElement>("[data-slot='board-page'][data-tab='about']");
 }
 
-test("the Variants page waits for the board before it lists anything", async () => {
+test("the About page waits for the board before it lists anything", async () => {
 	serving([AS_IT_IS, PROPOSED]);
 	const read = Promise.withResolvers<void>();
 	server.held["pipeline"] = read.promise;
 	mountStage();
 	await settle();
-	openVariantsPage();
+	openAboutPage();
 	// A page that read an absent board as a board with no variants would say
 	// that nothing it describes is built.
-	expect(variantsPageNow()?.getAttribute("aria-busy")).toBe("true");
+	expect(aboutPageNow()?.getAttribute("aria-busy")).toBe("true");
 	expect(listedVariants()).toEqual([]);
 
 	await act(async () => {
 		read.resolve();
 	});
 	await settle();
-	expect(variantsPageNow()?.getAttribute("aria-busy")).toBeNull();
+	expect(aboutPageNow()?.getAttribute("aria-busy")).toBeNull();
 	expect(listedVariants()).toEqual([
 		["v1", "current"],
 		["v2", "draft"],

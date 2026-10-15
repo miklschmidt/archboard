@@ -13,7 +13,7 @@ import { useCallback, type JSX, type ReactNode } from "react";
 
 import { Button } from "@/ui/components/button";
 import { cn } from "@/ui/components/class-names";
-import { KindIcon } from "@/ui/semantic-board-canvas/components/BoardPageParts";
+import { KindIcon } from "@/ui/semantic-board-canvas/components/KindMarks";
 import { SemanticGroupChip } from "@/ui/semantic-board-canvas/components/SemanticGroupChip";
 import { groupLabel, type GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";

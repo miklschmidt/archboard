@@ -1,13 +1,12 @@
 import { RiErrorWarningLine } from "@remixicon/react";
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { useCallback, useState, type JSX } from "react";
 
 import type { RememberedReading } from "@/shared/code-check/index";
-import { EXPLORING_MS } from "@/shared/timing/timing";
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BoardTab } from "@/ui/semantic-board-canvas/components/PaneHeader";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { useCodeFindings } from "@/ui/semantic-board-canvas/hooks/use-code-findings";
-import { subjectBox } from "@/ui/semantic-board-canvas/lib/subjects";
+import { useSubjectFocus } from "@/ui/semantic-board-canvas/hooks/use-subject-focus";
 
 /** The existing pane controls that a warning can use. */
 interface CodeWarningsProps {
@@ -52,20 +51,7 @@ function WarningSteps(
 	const { drawing, camera, onPick, onDiagram, onView, reducedMotion } = props;
 	const warnings = props.reading.findings.filter((finding) => finding.severity === "warning");
 	const [position, setPosition] = useState(-1);
-	const pending = useRef<string | null>(null);
-	const focus = useCallback(
-		(id: string): boolean => {
-			const box = drawing?.kind === "drawn" ? subjectBox(drawing.atlas, id) : null;
-			return (
-				box !== null &&
-				camera.glide({ kind: "focus", rect: box }, reducedMotion ? 0 : EXPLORING_MS.reveal, true)
-			);
-		},
-		[drawing, camera, reducedMotion],
-	);
-	useEffect(() => {
-		if (pending.current !== null && focus(pending.current)) pending.current = null;
-	}, [focus]);
+	const focus = useSubjectFocus(drawing, camera, reducedMotion, onView);
 	const onNext = useCallback((): void => {
 		const next = (position + 1) % warnings.length;
 		const id = warnings[next]?.subject?.id;
@@ -73,9 +59,8 @@ function WarningSteps(
 		onDiagram("diagram");
 		if (id === undefined) return;
 		onPick(id);
-		pending.current = focus(id) ? null : id;
-		if (pending.current !== null) onView(null);
-	}, [position, warnings, onDiagram, onPick, focus, onView]);
+		focus(id);
+	}, [position, warnings, onDiagram, onPick, focus]);
 	const current = warnings[position];
 	return (
 		<WarningCount

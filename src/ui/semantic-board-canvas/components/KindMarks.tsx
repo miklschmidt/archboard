@@ -1,4 +1,4 @@
-// The small marks the board's pages and the details panel share: a part kind's
+// The small marks the About page and the details panel share: a part kind's
 // icon and a relationship kind's chip.
 
 import { RiPuzzleLine } from "@remixicon/react";

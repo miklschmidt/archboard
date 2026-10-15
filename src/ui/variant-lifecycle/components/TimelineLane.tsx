@@ -2,7 +2,7 @@
 // that pass it, the line into and out of its own mark, and the elbow by which
 // a branch leaves the line it comes off. Laid behind the row, leaving a gap
 // round each mark, so the marks read as stations on the line. The navigator
-// draws it compactly and the variants page roomily, from one geometry.
+// draws it compactly and the About page roomily, from one geometry.
 
 import type { CSSProperties, JSX } from "react";
 

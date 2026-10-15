@@ -48,7 +48,7 @@ interface PresentationView {
 function presentationOver(view: PresentationView): ReactNode {
 	const { narrative } = view;
 	if (narrative.open === null) {
-		// Low in the frame, over the picture and over a page of the board, taking no pointer input from
+		// Low in the frame, over the picture and over the About page, taking no pointer input from
 		// the canvas under it, and clear of a sidebar that floats over its right edge.
 		return view.overlay === null || view.overlay === undefined ? null : (
 			<div

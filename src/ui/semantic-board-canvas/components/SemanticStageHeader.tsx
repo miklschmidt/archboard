@@ -55,23 +55,22 @@ interface StageHeaderView {
 
 /**
  * What the header says of the board from its own document: its level, the
- * variant on screen when the board's name opens another, whether anything it
- * describes is built, and how many variants and walkthroughs the tabs count.
+ * variant on screen when the board's name opens another, and whether anything
+ * it describes is built.
  * @param reading What the board says about itself, or null before it arrives.
  * @returns The header's facts.
  */
 function headerFacts(
 	reading: VariantReading | null,
-): Pick<PaneHeaderProps, "level" | "variant" | "unbuilt" | "counts"> {
+): Pick<PaneHeaderProps, "level" | "variant" | "unbuilt"> {
 	if (reading === null) {
-		return { level: undefined, variant: null, unbuilt: false, counts: {} };
+		return { level: undefined, variant: null, unbuilt: false };
 	}
 	const { showing } = reading;
 	return {
 		level: reading.level,
 		variant: showing !== null && showing.id !== reading.opens ? showing : null,
 		unbuilt: !reading.variants.some((variant) => variant.lifecycle === "current"),
-		counts: { variants: reading.variants.length, walkthroughs: reading.walkthroughs.length },
 	};
 }
 

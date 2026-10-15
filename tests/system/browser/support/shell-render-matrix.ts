@@ -216,12 +216,12 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		// Which variant is on screen, named after the board: the fact that
 		// changes while somebody watches (ADR 0023).
 		const variant = breadcrumb?.querySelector('[data-slot="board-state"] > span:last-child');
-		// A technical token in the mono face: how many a tab lists.
-		const technical = paneHeader?.querySelector('[data-slot="board-tab"] .font-mono');
 		const present = paneHeader?.querySelector('button[aria-label^="Present"]');
 		const column = document.querySelector('${NAVIGATOR_COLUMN}');
 		const nav = document.querySelector('${NAVIGATOR}');
 		const filter = nav?.querySelector('input');
+		// A technical token in the mono face: the key that finds a board.
+		const technical = nav?.querySelector('kbd');
 		const stages = document.querySelector('${STAGE_ROOT}');
 		const bar = document.querySelector('${AGENT_DOCK}');
 		// The navigator selects what the focused pane reads — the board, or its

@@ -110,7 +110,7 @@ components:
     backgroundColor: "{colors.card-white}"
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.panel}"
-    padding: "12px"
+    padding: "20px"
 ---
 
 # Design System: archboard
@@ -165,7 +165,7 @@ every role and changes the values. The file theme.css holds both themes.
 
 ### Neutral
 
-- **Ground Chalk** (oklch(0.99 0.0025 90), dark oklch(0.2 0.006 75)): the ground of the picture, and of the pages that replace it.
+- **Ground Chalk** (oklch(0.99 0.0025 90), dark oklch(0.2 0.006 75)): the ground of the picture, and of the About page that lies over it.
 - **Chrome Chalk** (oklch(0.973 0.004 88), dark oklch(0.165 0.005 75)): the navigator, the pane header and the sidebar.
 - **Tray Chalk** (oklch(0.986 0.003 88), dark oklch(0.205 0.007 75)): a tray at the foot of a column, raised over the chrome. The agent dock and the foot of the selection tab use it.
 - **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list, raised as a plate.
@@ -206,9 +206,9 @@ paths, versions, counts and times.
 - **Control** (500, 13px, 18px): buttons, tabs and fields.
 - **Body** (400, 12px, 16px): prose and row labels. A section heading uses it in semibold.
 - **Presentation** (600, 28px, 34px): the heading of a presented step.
-- **Reading** (400, 16px, 24px): the words of a presented step, in a column 64rem wide at most.
-- **Figure** (650, 44px, 44px, display face): the number of a presented step.
-- **Subtitle** (500, 20px, 28px): the words the voice says.
+- **Reading** (400, 16px, 24px): the words of a presented step, in a column 64rem wide at most, and the summary under a board's name on its About page.
+- **Figure** (650, 44px, 44px, display face): the number of a presented step, and a board's name, in capitals, at the head of its About page.
+- **Subtitle** (500, 20px, 28px): the words the voice says. A section heading of the About page uses it in semibold.
 - **Technical** (400, 11px, 14px, mono): identifiers, paths, versions, counts and times.
 
 ### Named Rules
@@ -376,9 +376,9 @@ the Rule tone.
 
 - **Corner Style:** 4px.
 - **Background:** Card White.
-- **Shadow Strategy:** `shadow-card`. A card on a page rises to `shadow-float` on hover.
+- **Shadow Strategy:** `shadow-card`. A card holds controls and is not one itself, so it does not rise on hover.
 - **Border:** a one-pixel Rule.
-- **Internal Padding:** 12px to 16px.
+- **Internal Padding:** 20px.
 
 ### Inputs / Fields
 
@@ -419,6 +419,54 @@ triangle is the mark of a row that folds open. Narrate is in every walkthrough's
 row in every pane, whichever pane is active and whatever voice is doing, so the
 row never changes size. While a narration cannot start the control is dimmed and
 its tooltip says why.
+
+### About page
+
+The pane's header has two tabs, Diagram and About, and the mark of the open tab is
+Gold Mark. The About page lies over the picture on Ground Chalk and scrolls, and the
+sidebar stays beside it. Its content is 1320px wide at most and centred, with 40px of
+room at each side, or 24px on a page narrower than 1040px.
+
+The head of the page names the board in the Figure role, in capitals. Under the
+name, one Control line gives the board's level with its mark, then the variant on
+screen with its lifecycle mark, its name and where it stands in muted ink. The
+variant's summary follows in the Reading role, 68 characters wide at most. 40px
+separate the head from the first section.
+
+The outline is a column 176px wide, 48px to the left of the sections, and it stays
+32px below the top of the page while the page scrolls. Each entry is a 32px row
+with the section's 16px mark, its name in Control and its count in Technical. The
+section being read has full ink and a 2px piece of Gold Mark on its left edge. On a
+page narrower than 1040px, the outline is a bar on Ground Chalk at the top of the
+page with a Rule under it, and the gold piece lies under the entry. A jump to a
+section scrolls the page smoothly, or at once with reduced motion.
+
+A section heading is Subtitle in semibold, and 56px separate one section from the
+next. A walkthrough is a Page Card, 24px from the next one. Its head has the name
+in the Display role, the number of steps in Body in muted ink, the summary in
+Control in muted ink, the outline button Present and Narrate. Each step is a row
+under a Rule, with 16px of padding above and below and 20px at each side. The
+step's number is Display in muted ink, right aligned in a column 48px wide with a
+Rule on its right, as the sheet number of a drawing is set. Its heading is Title,
+and its words are Control at 85% ink, 72 characters wide at most. Beside them, the
+labels View and Focus are Body in muted ink. A subject is a chip 24px high on Ground
+Chalk with a Rule edge and its kind's icon in its kind's colour. A picked chip
+takes Gold Tint and a Gold Mark edge.
+
+The parts and the relationships are lists on the page's own plane, not cards.
+A Rule divides one row from the next, and the names of the columns stand over the
+rows in Body semibold in muted ink. A part's chip is 24px, in its kind's colour at
+14% with an edge at 45%. Each step of containment moves a part 20px in, and a rail
+in the Rule tone runs down under the middle of its container's chip. A row answers
+the pointer with a change of tone and nothing else. A picked row takes Reading Tone
+and a 2px piece of Gold Mark on its left edge. A relationship with a picked part at either end takes
+Gold Tint. The control at the end of a row is an icon button in muted ink.
+
+The variants are the navigator's timeline at the page's room: the lanes are 28px
+apart. A variant's name is Display, where it stands is Body and its reason is
+Control in muted ink. The row of the variant on screen is a plate in Reading Tone
+with `shadow-raised` and a 2px piece of Gold Mark on its left edge, and the words
+On screen stand at its end in accent text.
 
 ### Agent dock
 
@@ -567,7 +615,7 @@ the voice is doing in a word, at 13px, in the accent text while the voice is lit
 muted ink while it is muted or ending. The words are 20px and two lines at most. A warm
 wash blooms from the orb and breathes with the voice, as it does in the dock, on the
 box's own layer. The box takes no pointer input from the picture except at its two keys.
-It is over a page of the board as well as the diagram, it is clear of a sidebar that
+It is over the About page as well as the diagram, it is clear of a sidebar that
 floats over the picture, and in a pane too narrow for it the words give way and the orb
 and the keys stay. While it leaves it takes no input at all.
 

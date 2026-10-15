@@ -87,8 +87,10 @@
 	--text-name--font-weight: 650;
 	/* presentation: a presented walkthrough's step heading, part of the picture's
 	   frame rather than of the chrome. reading: the step's words under it, read
-	   at the length of a paragraph. figure: the step's number, in the display
-	   face (the `title-figure` utility), set as a drawing's sheet number is. */
+	   at the length of a paragraph, and the summary under the board's name on its
+	   About page. figure: the step's number, in the display face (the
+	   `title-figure` utility), set as a drawing's sheet number is, and the
+	   board's name at the head of its About page. */
 	--text-presentation: 28px;
 	--text-presentation--line-height: 34px;
 	--text-presentation--letter-spacing: -0.01em;
@@ -102,7 +104,8 @@
 	--text-figure--font-weight: 650;
 	/* subtitle (TASK-292): what the voice is saying, laid over the picture. Like
 	   the presentation heading it belongs to the picture's frame, not the chrome,
-	   and is read at a glance while the eyes are on the diagram. */
+	   and is read at a glance while the eyes are on the diagram. A section heading
+	   of the About page uses it in semibold. */
 	--text-subtitle: 20px;
 	--text-subtitle--line-height: 28px;
 	--text-subtitle--font-weight: 500;
@@ -172,7 +175,7 @@
 	/* Depth: the elevation scale below (`--elevation-*`), one shadow utility
 	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest).
 	   The chrome that casts an edge shadow onto the picture is `relative z-30`, so
-	   its shadow lies over the picture and a board's pages (z-20) and under
+	   its shadow lies over the picture and the About page (z-20) and under
 	   menus and dialogs (z-50). */
 	--shadow-well: var(--elevation-well);
 	--shadow-edge-down: var(--elevation-edge-down);
