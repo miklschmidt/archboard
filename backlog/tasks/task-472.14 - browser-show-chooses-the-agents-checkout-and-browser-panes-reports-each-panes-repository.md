@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 02:12'
+updated_date: '2026-10-15 03:46'
 labels: []
 dependencies:
   - TASK-472.05
@@ -50,5 +50,10 @@ Found in the TASK-472.05 review: `archboard repo use` and `repo forget` change t
 created: 2026-10-15 02:12
 ---
 Also found in the TASK-472.05 review: a pane's repository name comes from `pane_board` and is not sent again when the repository list changes (a forgotten repository, or a second checkout that makes a name unique with -2). Make sure that the name a pane reports stays current.
+---
+
+created: 2026-10-15 03:46
+---
+From the TASK-472.06 boundary review: the registry makes an untracked vault's name unique (-2, -3) only against identities known when it registers. A repository with no remote registered later under the same directory name gives two navigator entries with one name, and the page resolves repoA and pane names by the first match, so it can open the wrong vault. Decide whether the untracked vault is renamed (and the user told) when a colliding identity arrives, or whether names are made unique when the list is built.
 ---
 <!-- COMMENTS:END -->
