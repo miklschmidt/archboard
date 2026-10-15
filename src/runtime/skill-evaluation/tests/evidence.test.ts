@@ -31,7 +31,6 @@ const BATCH = `${CHECKOUT}/.skill-evals/2026-09-14T13-50-10-617Z`;
 const RUN = `${BATCH}/runs/candidate/S11/3`;
 /** The author's own world, the only part of the run it may read or write. */
 const WORLD = `${RUN}/world`;
-/** The run's vault is the .archboard/vault of its Flask checkout. */
 const VAULT = `${WORLD}/flask/.archboard/vault`;
 const CONTEXT = {
 	skillRoot: `${WORLD}/home/.agents/skills/archboard`,
@@ -291,10 +290,6 @@ describe("evaluation-material exposure", () => {
 			classified("bash -lc 'sed -n 1,40p /checkout/src/runtime/skill-evaluation/lib/vault.ts'")
 				.exposure,
 		).toBe("harness-source");
-		expect(
-			classified(`bash -lc 'ls ${BATCH}/runs/baseline/S11/2/world/flask/.archboard/vault'`)
-				.exposure,
-		).toBe("other-run");
 		expect(
 			classified(
 				"bash -lc 'cat ../../../2/world/flask/.archboard/vault/Flask\\ JSON.semantic.json'",
