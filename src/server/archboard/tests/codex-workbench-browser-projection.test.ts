@@ -38,6 +38,7 @@ test("the real gateway delivers the pending ChatGPT authorization URL to the bro
 		...harness.options,
 		identity: harness.authorities,
 		threadLink: { read: () => harness.context.binding },
+		checkoutOf: () => harness.context.checkout,
 	});
 	try {
 		const connection = gateway.connect(
@@ -253,7 +254,7 @@ test("the production browser projection reads spoken approval from its runtime o
 test("cached queue submissions are presented only for the thread they were read for", () => {
 	const harness = projectionHarness();
 	const { options, context } = harness;
-	const state = harness.session.state;
+	const state = harness.workhorse.state;
 	const decoder = createIdentityAuthorities().identity.decoder;
 	state.queue = {
 		kind: "codex_queue",

@@ -22,7 +22,10 @@ import {
 } from "@/shared/codex-workbench-identity";
 import { createCodexWorkbenchGateway } from "@/server/codex-workbench";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
-import { buildProductionTabSession } from "@/server/archboard/lib/codex-workbench-session-factories";
+import {
+	buildProductionTabSession,
+	buildProductionWorkhorse,
+} from "@/server/archboard/lib/codex-workbench-session-factories";
 import { createCodexWorkbenchSessions } from "@/server/archboard/lib/codex-workbench-sessions";
 import type {
 	CodexWorkbenchComponents,
@@ -223,11 +226,18 @@ function createProductionCodexWorkbenchFactories(
 				session: shared.session,
 				threadLink: shared.threadLink,
 				/**
-				 * Build one tab session over this generation's shared components.
-				 * @param scope The session's id, state and thread claim.
+				 * Build one tab session's coordinator and voice over this generation's shared
+				 * components.
+				 * @param scope The session's id, state, workhorses and thread claim.
 				 * @returns Its owners and actions.
 				 */
 				build: (scope) => buildProductionTabSession(bindings.tabSession, shared, scope),
+				/**
+				 * Build one workhorse of a tab session over this generation's shared components.
+				 * @param scope The workhorse's session, checkout, link key and thread claim.
+				 * @returns Its owners and actions.
+				 */
+				buildWorkhorse: (scope) => buildProductionWorkhorse(bindings.workhorse, shared, scope),
 			});
 		},
 		/**

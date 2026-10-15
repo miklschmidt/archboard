@@ -28,6 +28,7 @@ function harness(overrides: HarnessOverrides = {}) {
 		...value.options,
 		identity: value.authorities,
 		threadLink: { read: () => value.context.binding },
+		checkoutOf: () => value.context.checkout,
 	});
 	const connection = gateway.connect(
 		value.context.browserId,

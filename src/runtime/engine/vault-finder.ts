@@ -79,6 +79,20 @@ function vaultHolder(dir: string): string | undefined {
 }
 
 /**
+ * The directory a vault's agents work in (ADR 0050): the one that holds the vault as its
+ * `.archboard/vault`, which is a checkout root or the holder of an untracked vault. A vault that
+ * is not the `.archboard/vault` of a directory, as `ARCHBOARD_VAULT` can name one, is its own.
+ * @param vault The vault directory, absolute.
+ * @returns The directory.
+ */
+function checkoutOfVault(vault: string): string {
+	const resolved = path.resolve(vault);
+	return resolved.endsWith(`${path.sep}${VAULT_DIRECTORY}`)
+		? path.dirname(path.dirname(resolved))
+		: resolved;
+}
+
+/**
  * Where a search started, in words.
  * @param origin How the start directory was given.
  * @param directory The start directory.
@@ -210,6 +224,7 @@ export {
 	type VaultNotFound,
 	type VaultNotFoundReason,
 	type VaultFinding,
+	checkoutOfVault,
 	findVault,
 	vaultHolder,
 };

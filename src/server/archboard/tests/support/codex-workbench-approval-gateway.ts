@@ -118,19 +118,21 @@ export function createApprovalGateway(
 		identity,
 		projection,
 		threadLink: {
-			read: () => ({
-				paneId: tabSessionId,
+			read: (key: string) => ({
+				paneId: key,
 				revision: 1,
 				link,
 				cas: {
 					revision: 1,
-					paneId: tabSessionId,
+					paneId: key,
 					childId: link.childId,
 					epoch: link.epoch,
 					threadId: link.threadId,
 				},
 			}),
 		},
+		// Every pane of the fixture is in one checkout.
+		checkoutOf: () => "/work/payments",
 		actions,
 	});
 	return { approvals, gateway, responses };

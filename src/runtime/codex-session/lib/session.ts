@@ -408,7 +408,7 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 			);
 			const config = await requestDecoded(
 				"config/read",
-				{ includeLayers: true, cwd: options.checkoutRoot },
+				{ includeLayers: true, cwd: options.workingDirectory },
 				READ_OPTIONS,
 				false,
 			);

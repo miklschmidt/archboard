@@ -34,6 +34,9 @@ interface PublicSocketClient {
 	) => Promise<Record<string, unknown>>;
 }
 
+/** The checkout every pane of this test is in. */
+const CHECKOUT = "/work/payments";
+
 test("the live server socket crosses the real gateway and approval broker exactly once", async () => {
 	const identity = createIdentityAuthorities();
 	const model = createCodexBrowserModel(identity);
@@ -139,7 +142,6 @@ test("the live server socket crosses the real gateway and approval broker exactl
 						epoch,
 					}),
 				},
-				workhorse: { snapshot: () => ({ state: "ready", threadId }) },
 				realtime: {
 					createOffer: async (input: { sessionId: string; correlationId: string; sdp: string }) => {
 						realtimeCalls.push({ name: "start", input });
@@ -150,7 +152,18 @@ test("the live server socket crosses the real gateway and approval broker exactl
 					onSemanticEvent: () => () => undefined,
 				},
 			} as never,
-			{ claimThread: () => undefined, releaseThread: () => undefined },
+			{
+				claimThread: () => undefined,
+				releaseThread: () => undefined,
+				// The tab's one workhorse, in the checkout every pane of this test is in.
+				workhorses: () => [
+					{
+						checkout: CHECKOUT,
+						components: { workhorse: { snapshot: () => ({ state: "ready", threadId }) } },
+					},
+				],
+				state: { voiceCheckout: null },
+			} as never,
 		);
 		const actions: BrowserWorkbenchActions = {
 			account: {
@@ -254,6 +267,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 			},
 
 			actions,
+			checkoutOf: () => CHECKOUT,
 			now: () => 1_787_682_840_000,
 		});
 		gateway = activeGateway;

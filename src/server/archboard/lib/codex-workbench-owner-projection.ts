@@ -7,7 +7,9 @@ import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-work
 import type {
 	CodexWorkbenchSessionComponents,
 	CodexWorkbenchTabSession,
-	CodexWorkbenchTabSessionState,
+	CodexWorkbenchWorkhorse,
+	CodexWorkbenchWorkhorseComponents,
+	CodexWorkbenchWorkhorseState,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
 import type {
@@ -28,24 +30,29 @@ import {
 /** The tab session owners one projection read is taken from. */
 type ProjectionComponents = CodexWorkbenchSessionComponents;
 
+/** The owners of the workhorse a pane shows. */
+type WorkhorseComponents = CodexWorkbenchWorkhorseComponents;
+
 /** What the gateway hands a projection read: the pane, its binding, its lease. */
 type ProjectionContext = Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0];
 
 /** One record of a semantic context delivery, as the controller kept it. */
-type SemanticDelivery = ReturnType<ProjectionComponents["semanticDelivery"]["inspect"]>[number];
+type SemanticDelivery = ReturnType<WorkhorseComponents["semanticDelivery"]["inspect"]>[number];
 
 /** The binding a semantic delivery was made under. */
 type SemanticBinding = NonNullable<
-	ReturnType<ProjectionComponents["semanticDelivery"]["snapshot"]>["binding"]
+	ReturnType<WorkhorseComponents["semanticDelivery"]["snapshot"]>["binding"]
 >;
 
 /**
- * Everything a projection read needs: the pane's tab session, whose conversation, voice and
- * approvals it is shown, and what the generation shares.
+ * Everything a projection read needs: the pane's tab session, whose coordinator, voice and
+ * approvals it is shown, the workhorse of the pane's checkout, and what the generation shares.
  */
 interface ServerOwnerProjectionInput {
 	readonly approvals: CodexWorkbenchComponents["approvals"];
 	readonly session: Pick<CodexWorkbenchTabSession, "components" | "state">;
+	/** The workhorse of the pane's checkout, or null while that checkout has none. */
+	readonly workhorse: Pick<CodexWorkbenchWorkhorse, "components" | "state"> | null;
 	readonly dynamicApprovals: ServerDynamicApprovalOwner;
 	readonly state: ServerBrowserBindingState;
 	readonly timeline: ServerTimelineOwner;
@@ -58,7 +65,7 @@ interface ServerOwnerProjectionInput {
 /**
  * Whether the controller's current binding is the link this pane shows: the
  * same link revision and the same target. Which pane created it does not
- * matter, since every pane of a tab shows its session's one link.
+ * matter, since every pane of a checkout shows its workhorse's one link.
  * @param binding The controller's binding.
  * @param context The pane being read.
  * @returns True when they are the same binding.
@@ -98,12 +105,12 @@ function deliveryIsForBinding(
  * Delivery history is process-wide; only the exact current binding may publish
  * its result and freshness into a pane's snapshot, and every pane showing that
  * binding's link is shown the same one.
- * @param components The runtime owners.
+ * @param components The owners of the pane's workhorse.
  * @param context The pane being read.
  * @returns The delivery, or undefined when none of it is this pane's.
  */
 function presentedSemantic(
-	components: ProjectionComponents,
+	components: WorkhorseComponents,
 	context: ProjectionContext,
 ): SemanticDelivery | undefined {
 	const binding = components.semanticDelivery.snapshot().binding;
@@ -123,7 +130,7 @@ function presentedSemantic(
  */
 function semanticPanel(
 	delivery: SemanticDelivery | undefined,
-	publisher: ProjectionComponents["semanticPublisher"],
+	publisher: WorkhorseComponents["semanticPublisher"],
 ): BrowserOwnerProjection["semantic"] {
 	if (delivery === undefined) {
 		return { kind: "codex_semantic", outcome: null, freshness: null };
@@ -145,7 +152,7 @@ function semanticPanel(
  * @returns The one settings panel, or none.
  */
 function workhorseSettings(
-	workhorse: ReturnType<ProjectionComponents["workhorse"]["snapshot"]>,
+	workhorse: ReturnType<WorkhorseComponents["workhorse"]["snapshot"]>,
 ): BrowserOwnerProjection["settings"] {
 	const start = workhorse.start;
 	if (start === null) {
@@ -208,18 +215,44 @@ function coordinatorSettings(
  *
  * Cached submissions belong to one workhorse thread; a pane looking at another
  * link is told the queue is unavailable, never shown the wrong one.
- * @param state The session's cached queue facts.
+ * @param state The cached queue facts of the pane's workhorse.
  * @param context The pane being read.
  * @returns The queue, or the unavailable queue.
  */
 function presentedQueue(
-	state: Pick<CodexWorkbenchTabSessionState, "queue" | "queueThreadId">,
+	state: Pick<CodexWorkbenchWorkhorseState, "queue" | "queueThreadId">,
 	context: ProjectionContext,
 ): CodexQueueProjectionInput {
 	if (state.queueThreadId === null || state.queueThreadId !== context.binding.link.threadId) {
 		return UNAVAILABLE_QUEUE;
 	}
 	return state.queue;
+}
+
+/**
+ * What a pane is shown of the workhorse of its checkout: its settings, its queue and its board
+ * news. A checkout no workhorse was started for yet shows none of them.
+ * @param workhorse The workhorse, or null while the checkout has none.
+ * @param context The pane being read.
+ * @returns The workhorse's parts of the projection.
+ */
+function workhorsePanels(
+	workhorse: ServerOwnerProjectionInput["workhorse"],
+	context: ProjectionContext,
+): Pick<BrowserOwnerProjection, "settings" | "queue" | "semantic"> {
+	if (workhorse === null) {
+		return {
+			settings: [],
+			queue: UNAVAILABLE_QUEUE,
+			semantic: { kind: "codex_semantic", outcome: null, freshness: null },
+		};
+	}
+	const { components, state } = workhorse;
+	return {
+		settings: workhorseSettings(components.workhorse.snapshot()),
+		queue: presentedQueue(state, context),
+		semantic: semanticPanel(presentedSemantic(components, context), components.semanticPublisher),
+	};
 }
 
 /**
@@ -261,7 +294,7 @@ function readBrowserOwnerProjection(
 		dynamicApprovals.bindLease(context.tabSessionId, context.paneId, context.lease.commandId);
 	}
 	const coordinator = components.coordinator.snapshot();
-	const workhorse = components.workhorse.snapshot();
+	const owned = workhorsePanels(input.workhorse, context);
 	const realtimeGeneration = components.realtime.generation();
 	const readiness = projectServerBrowserReadiness({
 		process: input.process(),
@@ -287,11 +320,11 @@ function readBrowserOwnerProjection(
 			context.connection,
 		),
 		delegations: input.session.state.delegations,
-		queue: presentedQueue(input.session.state, context),
-		settings: [...workhorseSettings(workhorse), ...coordinatorSettings(coordinator)],
-		approvals: visibleApprovalViews(input.approvals, context.tabSessionId),
+		queue: owned.queue,
+		settings: [...owned.settings, ...coordinatorSettings(coordinator)],
+		approvals: visibleApprovalViews(input.approvals, context.tabSessionId, context.checkout),
 		dynamicApprovals: dynamicApprovals.pending(context.tabSessionId),
-		semantic: semanticPanel(presentedSemantic(components, context), components.semanticPublisher),
+		semantic: owned.semantic,
 		coordinator: {
 			kind: "codex_coordinator",
 			state: coordinator.state,

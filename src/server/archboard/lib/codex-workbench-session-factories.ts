@@ -1,9 +1,10 @@
-// How one tab session's owners are built over the generation they run on.
+// How one tab session's owners, and those of each of its workhorses, are built over the
+// generation they run on.
 //
 // The same factory pattern as the generation's own (codex-workbench-factories.ts): one factory per
-// component, each built from the session's bindings, the generation's shared components and the
-// session components built before it, in dependency order. A component that fails to build unwinds
-// the ones built before it, so a half-built session leaves nothing running.
+// component, each built from its bindings, the generation's shared components and the components
+// built before it, in dependency order. A component that fails to build unwinds the ones built
+// before it, so a half-built session or workhorse leaves nothing running.
 
 import { createCodexCoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
 import {
@@ -22,8 +23,10 @@ import { createCodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
 import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";
 import type {
 	CodexWorkbenchSessionBindings,
+	CodexWorkbenchWorkhorseBindings,
 	ProductionCodexWorkbenchBindings,
 	SessionComponentName,
+	WorkhorseComponentName,
 } from "@/server/archboard/lib/codex-workbench-contract";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import { recordDelegations } from "@/server/archboard/lib/codex-workbench-delegations";
@@ -31,8 +34,11 @@ import { appendFailure } from "@/server/archboard/lib/codex-workbench-failures";
 import { createServerRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
 import type {
 	BuiltTabSession,
+	BuiltWorkhorse,
 	CodexWorkbenchSessionComponents,
 	CodexWorkbenchTabSessionScope,
+	CodexWorkbenchWorkhorseComponents,
+	CodexWorkbenchWorkhorseScope,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 import { createServerThreadLinkActions } from "@/server/archboard/lib/codex-workbench-thread-links";
 
@@ -41,11 +47,23 @@ type CreatedSessionComponents = {
 	-readonly [Name in SessionComponentName]?: CodexWorkbenchSessionComponents[Name];
 };
 
+/** The workhorse components built so far, each filled in as it is made. */
+type CreatedWorkhorseComponents = {
+	-readonly [Name in WorkhorseComponentName]?: CodexWorkbenchWorkhorseComponents[Name];
+};
+
 /** One factory per session component, each reading the ones built before it. */
 type SessionComponentFactories = {
 	readonly [Name in SessionComponentName]: (
 		created: Readonly<CreatedSessionComponents>,
 	) => CodexWorkbenchSessionComponents[Name];
+};
+
+/** One factory per workhorse component, each reading the ones built before it. */
+type WorkhorseComponentFactories = {
+	readonly [Name in WorkhorseComponentName]: (
+		created: Readonly<CreatedWorkhorseComponents>,
+	) => CodexWorkbenchWorkhorseComponents[Name];
 };
 
 /**
@@ -61,18 +79,17 @@ function isCoordinatorToolRequest(
 }
 
 /**
- * One session component the next one is built on, refused when the session reached it out of
- * order.
- * @param created What the session has built so far.
+ * One component the next one is built on, refused when it was reached out of order.
+ * @param created What has been built so far.
  * @param name The component.
  * @returns The component.
  */
-function requireSessionComponent<Name extends SessionComponentName>(
-	created: Readonly<CreatedSessionComponents>,
+function requireBuilt<Created extends object, Name extends keyof Created & string>(
+	created: Readonly<Created>,
 	name: Name,
-): CodexWorkbenchSessionComponents[Name] {
+): NonNullable<Created[Name]> {
 	const value = created[name];
-	if (value === undefined) {
+	if (value === undefined || value === null) {
 		throw new CodexWorkbenchCompositionError(
 			"startup_failed",
 			`A Codex tab session tried to create ${name} before its dependency was ready.`,
@@ -82,7 +99,7 @@ function requireSessionComponent<Name extends SessionComponentName>(
 }
 
 /**
- * One factory per component of one tab session.
+ * One factory per component of one tab session's coordinator and voice.
  * @param bindings What each component is configured with.
  * @param shared The generation's components the session runs over.
  * @returns The factories.
@@ -94,21 +111,7 @@ function createSessionFactories(
 	const { identity, epoch, session, threadLink, transport } = shared;
 	return Object.freeze({
 		/**
-		 * What starts this conversation's workhorse thread.
-		 * @param created What the session has built so far.
-		 * @returns The starter.
-		 */
-		workhorse: (created) =>
-			createCodexWorkhorseStart({
-				...bindings.workhorse(created),
-				session,
-				threadLink,
-				epoch,
-				identity: identity.identity,
-				operation: identity.operation,
-			}),
-		/**
-		 * What publishes the board's semantic context for this conversation's threads to read.
+		 * What publishes what the tab's panes show and change, for voice and its coordinator.
 		 * @param created What the session has built so far.
 		 * @returns The publisher.
 		 */
@@ -126,20 +129,8 @@ function createSessionFactories(
 				identity: identity.identity,
 			}),
 		/**
-		 * What delivers the published context into this conversation's workhorse.
-		 * @param created What the session has built so far.
-		 * @returns The controller.
-		 */
-		semanticDelivery: (created) =>
-			createCodexThreadContextController({
-				...bindings.semanticDelivery(created),
-				session,
-				threadLink,
-				identity: identity.identity,
-				epoch,
-			}),
-		/**
-		 * The coordinator, the voice half of the conversation.
+		 * The coordinator, which voice speaks for and which gives each checkout's work to that
+		 * checkout's workhorse.
 		 * @param created What the session has built so far.
 		 * @returns The coordinator.
 		 */
@@ -152,36 +143,6 @@ function createSessionFactories(
 				identity: identity.identity,
 			}),
 		/**
-		 * The queue that runs one workhorse turn at a time, keyed by operation.
-		 * @param created What the session has built so far.
-		 * @returns The queue.
-		 */
-		queue: (created) =>
-			createCodexWorkhorseQueue({
-				...bindings.queue(created),
-				session,
-				identity: identity.identity,
-				operationIds: {
-					assertCurrent: identity.operation.validator.assertCurrentOperationId,
-					serialize: identity.operation.decoder.serializeOperationId,
-				},
-			}),
-		/**
-		 * The operations the coordinator can ask the workhorse to run.
-		 * @param created What the session has built so far.
-		 * @returns The operations.
-		 */
-		operations: (created) =>
-			createCodexWorkhorseOperations({
-				...bindings.operations(created),
-				session,
-				threadLink,
-				queue: requireSessionComponent(created, "queue"),
-				epoch,
-				identity: identity.identity,
-				operation: identity.operation,
-			}),
-		/**
 		 * The gate that lets an approval be answered out loud.
 		 * @param created What the session has built so far.
 		 * @returns The gate.
@@ -190,8 +151,8 @@ function createSessionFactories(
 			createCodexSpokenApprovalGate({
 				...bindings.spokenApproval(created),
 				approvalBroker: shared.approvals,
-				coordinator: requireSessionComponent(created, "coordinator"),
-				realtime: requireSessionComponent(created, "realtime"),
+				coordinator: requireBuilt(created, "coordinator"),
+				realtime: requireBuilt(created, "realtime"),
 				session,
 				identity: identity.identity,
 			}),
@@ -206,8 +167,7 @@ function createSessionFactories(
 				...bindings.coordinatorTools(created),
 				identity: identity.identity,
 				operation: identity.operation,
-				operations: requireSessionComponent(created, "operations"),
-				spokenApproval: requireSessionComponent(created, "spokenApproval"),
+				spokenApproval: requireBuilt(created, "spokenApproval"),
 				transport,
 			});
 			/**
@@ -235,14 +195,13 @@ function createSessionFactories(
 			});
 		},
 		/**
-		 * The callbacks that tell the coordinator what became of the workhorse's turns.
+		 * The callbacks that tell the coordinator what became of every workhorse's turns.
 		 * @param created What the session has built so far.
 		 * @returns The callbacks.
 		 */
 		callbacks: (created) =>
 			createCodexCoordinatorCallbacks({
 				...bindings.callbacks(created),
-				operations: requireSessionComponent(created, "operations"),
 				identity: identity.identity,
 				threadLink,
 				transport,
@@ -251,7 +210,87 @@ function createSessionFactories(
 }
 
 /**
- * Undo a half-built session: dispose what was built, newest first, and say what to throw.
+ * One factory per component of one workhorse.
+ * @param bindings What each component is configured with.
+ * @param shared The generation's components the workhorse runs over.
+ * @returns The factories.
+ */
+function createWorkhorseFactories(
+	bindings: CodexWorkbenchWorkhorseBindings,
+	shared: CodexWorkbenchSharedComponents,
+): WorkhorseComponentFactories {
+	const { identity, epoch, session, threadLink } = shared;
+	return Object.freeze({
+		/**
+		 * What starts this workhorse's thread, in its checkout.
+		 * @param created What the workhorse has built so far.
+		 * @returns The starter.
+		 */
+		workhorse: (created) =>
+			createCodexWorkhorseStart({
+				...bindings.workhorse(created),
+				session,
+				threadLink,
+				epoch,
+				identity: identity.identity,
+				operation: identity.operation,
+			}),
+		/**
+		 * What publishes the changes of the boards of this workhorse's checkout.
+		 * @param created What the workhorse has built so far.
+		 * @returns The publisher.
+		 */
+		semanticPublisher: (created) =>
+			createSemanticContextPublisher(bindings.semanticPublisher(created)),
+		/**
+		 * What delivers the published context into this workhorse.
+		 * @param created What the workhorse has built so far.
+		 * @returns The controller.
+		 */
+		semanticDelivery: (created) =>
+			createCodexThreadContextController({
+				...bindings.semanticDelivery(created),
+				session,
+				threadLink,
+				identity: identity.identity,
+				epoch,
+			}),
+		/**
+		 * The queue that runs one turn of this workhorse at a time, keyed by operation.
+		 * @param created What the workhorse has built so far.
+		 * @returns The queue.
+		 */
+		queue: (created) =>
+			createCodexWorkhorseQueue({
+				...bindings.queue(created),
+				session,
+				identity: identity.identity,
+				operationIds: {
+					assertCurrent: identity.operation.validator.assertCurrentOperationId,
+					serialize: identity.operation.decoder.serializeOperationId,
+				},
+			}),
+		/**
+		 * The operations the coordinator can ask this workhorse to run.
+		 * @param created What the workhorse has built so far.
+		 * @returns The operations.
+		 */
+		operations: (created) =>
+			createCodexWorkhorseOperations({
+				...bindings.operations(created),
+				session,
+				threadLink,
+				queue: requireBuilt(created, "queue"),
+				epoch,
+				identity: identity.identity,
+				operation: identity.operation,
+			}),
+	});
+}
+
+/**
+ * Undo a half-built session or workhorse: dispose what was built, newest first, and say what to
+ * throw.
  * @param cleanups What each built component needs undone, in build order.
  * @param error What construction failed with.
  * @returns The error to throw.
@@ -269,8 +308,8 @@ function unwound(cleanups: readonly (() => unknown)[], error: unknown): Error {
 }
 
 /**
- * Build every component of one tab session in dependency order: the order here is the session's
- * graph, and each factory reads the components built before it.
+ * Build every component of one tab session's coordinator and voice in dependency order: the order
+ * here is the session's graph, and each factory reads the components built before it.
  * @param factories One factory per component.
  * @returns Every component, frozen.
  */
@@ -280,29 +319,20 @@ function constructSessionComponents(
 	const created: CreatedSessionComponents = {};
 	const cleanups: (() => unknown)[] = [];
 	try {
-		const workhorse = (created.workhorse = factories.workhorse(created));
 		const semanticPublisher = (created.semanticPublisher = factories.semanticPublisher(created));
 		cleanups.push(() => semanticPublisher.dispose());
 		const realtime = (created.realtime = factories.realtime(created));
 		cleanups.push(() => realtime.dispose());
-		const semanticDelivery = (created.semanticDelivery = factories.semanticDelivery(created));
-		cleanups.push(() => semanticDelivery.dispose());
 		const coordinator = (created.coordinator = factories.coordinator(created));
-		const queue = (created.queue = factories.queue(created));
-		const operations = (created.operations = factories.operations(created));
 		const spokenApproval = (created.spokenApproval = factories.spokenApproval(created));
 		cleanups.push(() => spokenApproval.dispose());
 		const coordinatorTools = (created.coordinatorTools = factories.coordinatorTools(created));
 		cleanups.push(() => coordinatorTools.dispose());
 		const callbacks = factories.callbacks(created);
 		return Object.freeze({
-			workhorse,
 			semanticPublisher,
 			realtime,
-			semanticDelivery,
 			coordinator,
-			queue,
-			operations,
 			spokenApproval,
 			coordinatorTools,
 			callbacks,
@@ -313,11 +343,41 @@ function constructSessionComponents(
 }
 
 /**
- * Build one production tab session: its owners over the generation's shared components, and the
- * browser actions that start its conversation and its voice.
+ * Build every component of one workhorse in dependency order.
+ * @param factories One factory per component.
+ * @returns Every component, frozen.
+ */
+function constructWorkhorseComponents(
+	factories: WorkhorseComponentFactories,
+): CodexWorkbenchWorkhorseComponents {
+	const created: CreatedWorkhorseComponents = {};
+	const cleanups: (() => unknown)[] = [];
+	try {
+		const workhorse = (created.workhorse = factories.workhorse(created));
+		const semanticPublisher = (created.semanticPublisher = factories.semanticPublisher(created));
+		cleanups.push(() => semanticPublisher.dispose());
+		const semanticDelivery = (created.semanticDelivery = factories.semanticDelivery(created));
+		cleanups.push(() => semanticDelivery.dispose());
+		const queue = (created.queue = factories.queue(created));
+		const operations = factories.operations(created);
+		return Object.freeze({
+			workhorse,
+			semanticPublisher,
+			semanticDelivery,
+			queue,
+			operations,
+		} satisfies CodexWorkbenchWorkhorseComponents);
+	} catch (error) {
+		throw unwound(cleanups, error);
+	}
+}
+
+/**
+ * Build one production tab session: its coordinator and voice over the generation's shared
+ * components, and the browser actions that start its voice.
  * @param bindingsFor What each of a session's components is configured with.
  * @param shared The generation's components.
- * @param scope The session's id, its state, and how it claims the threads it starts.
+ * @param scope The session's id, its state, its workhorses and how it claims the threads it starts.
  * @returns The session's owners and actions.
  */
 function buildProductionTabSession(
@@ -326,28 +386,17 @@ function buildProductionTabSession(
 	scope: CodexWorkbenchTabSessionScope,
 ): BuiltTabSession {
 	const components = constructSessionComponents(
-		createSessionFactories(bindingsFor(scope.id, shared, scope.state), shared),
+		createSessionFactories(bindingsFor(scope, shared), shared),
 	);
-	components.operations.subscribe(recordDelegations(scope.state.delegations));
+	scope.workhorseOperations.subscribe(recordDelegations(scope.state.delegations));
 	return {
 		components,
 		actions: {
-			threadLinks: createServerThreadLinkActions({
-				coordinator: components.coordinator,
-				identity: shared.identity,
-				workhorse: components.workhorse,
-				threadLink: shared.threadLink,
-				semanticDelivery: components.semanticDelivery,
-				claimThread: scope.claimThread,
-				retireThread: scope.retireThread,
-				releaseThread: scope.releaseThread,
-			}),
 			realtime: createServerRealtimeActions(
 				{
 					coordinator: components.coordinator,
 					identity: shared.identity,
 					realtime: components.realtime,
-					workhorse: components.workhorse,
 				},
 				scope,
 				scope.state.voiceTrace,
@@ -356,4 +405,36 @@ function buildProductionTabSession(
 	};
 }
 
-export { buildProductionTabSession };
+/**
+ * Build one production workhorse: its owners over the generation's shared components, and the
+ * actions that start its conversation.
+ * @param bindingsFor What each of a workhorse's components is configured with.
+ * @param shared The generation's components.
+ * @param scope The workhorse's session, checkout, link key and how it claims its threads.
+ * @returns The workhorse's owners and actions.
+ */
+function buildProductionWorkhorse(
+	bindingsFor: ProductionCodexWorkbenchBindings["workhorse"],
+	shared: CodexWorkbenchSharedComponents,
+	scope: CodexWorkbenchWorkhorseScope,
+): BuiltWorkhorse {
+	const components = constructWorkhorseComponents(
+		createWorkhorseFactories(bindingsFor(scope, shared), shared),
+	);
+	return {
+		components,
+		actions: createServerThreadLinkActions({
+			coordinator: scope.session.components.coordinator,
+			identity: shared.identity,
+			workhorse: components.workhorse,
+			threadLink: shared.threadLink,
+			semanticDelivery: components.semanticDelivery,
+			key: scope.key,
+			claimThread: scope.claimThread,
+			claimCoordinatorThread: scope.claimCoordinatorThread,
+			retireThread: scope.retireThread,
+		}),
+	};
+}
+
+export { buildProductionTabSession, buildProductionWorkhorse };

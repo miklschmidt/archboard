@@ -19,7 +19,10 @@ import {
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { parseTabSessionId } from "../../codex-workbench/index.js";
-import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
+import {
+	createServerDynamicApprovalOwner,
+	visibleApprovalViews,
+} from "../codex-workbench-adapters.js";
 import { createServerCodexWorkbenchInstallation } from "../codex-workbench-production.js";
 import type { CodexWorkbenchGenerationInput } from "../codex-workbench-owner.js";
 
@@ -31,7 +34,7 @@ function productionBindings() {
 	const root = mkdtempSync(join(tmpdir(), "archboard-approval-sessions-"));
 	return withProductionState(root, () => {
 		const installation = createServerCodexWorkbenchInstallation({
-			checkoutRoot: "/repo",
+			sourceRoot: "/repo",
 			onFatal: () => undefined,
 		} as never);
 		const bindings = installation.bindings({
@@ -42,10 +45,15 @@ function productionBindings() {
 	});
 }
 
-test("an approval is linked to the tab session whose thread asked, and one no tab session holds is cancelled on receipt", async () => {
+test("an approval is linked to the workhorse or coordinator whose thread asked, and one no tab session holds is cancelled on receipt", async () => {
 	const authorities = createIdentityAuthorities();
 	const { identity } = authorities;
-	const holders: Record<string, string> = { "thread-held": "tab-one" };
+	const holders: Record<string, string> = {
+		"thread-held": "tab-one",
+		"thread-workhorse": "tab-one",
+	};
+	// The checkout of the workhorse that started a thread; the coordinator's is none.
+	const workhorses: Record<string, string> = { "thread-workhorse": "/work/payments" };
 	const { bindings, cleanup } = productionBindings();
 	const responses: unknown[] = [];
 	const created: Record<string, unknown> = {
@@ -54,6 +62,12 @@ test("an approval is linked to the tab session whose thread asked, and one no ta
 			forThread: (threadId: Parameters<typeof identity.decoder.serializeCodexIdentity>[0]) => {
 				const holder = holders[identity.decoder.serializeCodexIdentity(threadId)];
 				return holder === undefined ? null : { id: parseTabSessionId(holder)! };
+			},
+			workhorseForThread: (
+				threadId: Parameters<typeof identity.decoder.serializeCodexIdentity>[0],
+			) => {
+				const checkout = workhorses[identity.decoder.serializeCodexIdentity(threadId)];
+				return checkout === undefined ? null : { checkout };
 			},
 		},
 	};
@@ -94,9 +108,20 @@ test("an approval is linked to the tab session whose thread asked, and one no ta
 	};
 	try {
 		const held = ask("thread-held");
+		const fromWorkhorse = ask("thread-workhorse");
 		const unheld = ask("thread-nobody-holds");
-		expect(held.binding.link).toBe("tab:tab-one");
 		expect(unheld.binding.link).toBeNull();
+		// Every pane of the tab is shown its coordinator's; only the panes of the workhorse's
+		// checkout are shown the workhorse's.
+		const shown = (checkout: string) =>
+			visibleApprovalViews(broker, parseTabSessionId("tab-one")!, checkout).map(
+				(view) => view.snapshot.requestId,
+			);
+		expect(shown("/work/payments")).toEqual([held.requestId, fromWorkhorse.requestId]);
+		expect(shown("/work/shop")).toEqual([held.requestId]);
+		expect(visibleApprovalViews(broker, parseTabSessionId("tab-two")!, "/work/payments")).toEqual(
+			[],
+		);
 
 		// The cancellation runs once the broker has finished taking the approval in.
 		await new Promise((resolve) => setTimeout(resolve, 0));
