@@ -55,7 +55,6 @@ describe("Codex process owner", () => {
 				"CODEX_HOME",
 				"CODEX_SQLITE_HOME",
 				"ARCHBOARD_URL",
-				"ARCHBOARD_VAULT",
 				"ARCHBOARD_NO_AUTOSTART",
 			]);
 			expect(observed["home"]).toBe(path.join(root, "storage", "codex-home"));

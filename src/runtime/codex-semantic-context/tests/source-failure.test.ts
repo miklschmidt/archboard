@@ -33,6 +33,7 @@ describe("semantic context source failures", () => {
 		expect(() =>
 			feedListener?.({
 				cursor: 1,
+				vault: "/work/.archboard/vault",
 				board: "scratch",
 				at: new Date().toISOString(),
 				origin: "human",

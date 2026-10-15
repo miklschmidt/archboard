@@ -14,11 +14,11 @@ const CATALOGUE_MAX_BYTES = 8192;
 
 /**
  * Compact address catalogue; board contents stay behind the normal read commands.
- * @param root The vault to list.
- * @returns The byte-bounded JSON inventory, including its omitted count.
+ * @param root The vault to list, or null when there is none to list.
+ * @returns The byte-bounded JSON inventory, naming its vault and its omitted count.
  */
-function readBoardCatalogue(root: string): string {
-	const entries = listSemanticBoards(root)
+function readBoardCatalogue(root: string | null): string {
+	const entries = (root === null ? [] : listSemanticBoards(root))
 		.map(({ key, name }) => ({ key, board: name }))
 		.toSorted((left, right) => (left.key < right.key ? -1 : left.key > right.key ? 1 : 0));
 	const boards: typeof entries = [];
@@ -28,7 +28,7 @@ function readBoardCatalogue(root: string): string {
 	 * @returns The current catalogue JSON.
 	 */
 	const encode = (): string =>
-		JSON.stringify({ type: "archboard_board_catalogue", boards, omitted });
+		JSON.stringify({ type: "archboard_board_catalogue", vault: root, boards, omitted });
 	for (const entry of entries) {
 		boards.push(entry);
 		omitted -= 1;

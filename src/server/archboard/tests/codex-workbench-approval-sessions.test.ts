@@ -9,7 +9,6 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PRODUCTION_VAULT } from "@/server/archboard/tests/support/production-vault";
 import { withProductionState } from "@/server/archboard/tests/support/production-state";
 
 import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
@@ -35,7 +34,6 @@ function productionBindings() {
 			checkoutRoot: "/repo",
 			onFatal: () => undefined,
 		} as never);
-		expect(installation.process.archboardServer?.vault).toBe(PRODUCTION_VAULT);
 		const bindings = installation.bindings({
 			generation: 1,
 			process: { stop: async () => undefined },

@@ -368,6 +368,7 @@ function createHarness(options: HarnessOptions = {}): Harness {
 			board: {
 				key: "payments",
 				name: "Payments",
+				vault: "/work/.archboard/vault",
 				file: "boards/payments.semantic.json",
 			},
 			pane: { paneId: PANE_ID, focused },

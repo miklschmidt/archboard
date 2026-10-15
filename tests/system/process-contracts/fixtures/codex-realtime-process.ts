@@ -213,7 +213,7 @@ async function createHarness(
 		),
 		checkoutRoot: repoRoot,
 		storage: { rootDirectory: join(root, "storage") },
-		archboardServer: { url: "http://127.0.0.1:3000", vault: join(root, "vault") },
+		archboardServer: { url: "http://127.0.0.1:3000" },
 	});
 	const generations: Generation[] = [];
 	const events: RealtimeSemanticEvent[] = [];

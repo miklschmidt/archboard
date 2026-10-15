@@ -494,6 +494,7 @@ function semanticInputFor(
 		board: {
 			key: contextBoard,
 			name: read.name,
+			vault,
 			file: read.file,
 			version: read.version,
 		},
@@ -511,5 +512,36 @@ function semanticInputFor(
 	};
 }
 
+/**
+ * The board a pane is showing, for a context that has to name one.
+ *
+ * A pane exists whether or not it is showing a board, but a thread is bound to
+ * a pane *and its board*: a context built for a pane showing nothing would be a
+ * brief about no architecture at all.
+ * @param pane The pane.
+ * @returns The board key.
+ * @throws {Error} When the pane is showing no board.
+ */
+function shownBoard(pane: PaneRegistration): string {
+	const board = boardForPane(pane);
+	if (board === null) {
+		throw new Error(`Pane ${pane.paneId} is showing no board, so there is no context to read.`);
+	}
+	return board;
+}
+
+/**
+ * The semantic input for the board a pane shows, read fresh in the pane's vault.
+ * @param owners The active components.
+ * @param pane The pane.
+ * @returns The input.
+ */
+function fullInputFor(
+	owners: Parameters<typeof semanticInputFor>[0],
+	pane: PaneRegistration,
+): ReturnType<typeof semanticInputFor> {
+	return semanticInputFor(owners, pane.vault, shownBoard(pane), null, pane);
+}
+
 export type { SemanticInputOwners };
-export { canonicalContextFromBrief, semanticInputFor, type ContextPane };
+export { canonicalContextFromBrief, fullInputFor, semanticInputFor, type ContextPane };
