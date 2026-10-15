@@ -339,7 +339,10 @@ function validateCoordinatorToolRequest(
 		options,
 		evidence,
 		parsed,
-		workhorseBinding(options, call, coordinator, parsed.input.checkout),
+		workhorseBinding(options, call, coordinator, {
+			checkout: parsed.input.checkout,
+			delegation: parsed.tool === "delegate_to_workhorse",
+		}),
 	);
 }
 
