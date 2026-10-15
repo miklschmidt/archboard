@@ -92,8 +92,13 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 			state.panes.some((pane) => pane.board === "billing"),
 		"both panes to restore the boards the address named",
 	);
-	expect(await addressSearch(browser)).toBe(
-		`paneA=payments&repoA=${repo}&paneB=billing&repoB=${repo}&pane=B`,
+	// The address names each pane's repository once that pane reports it, which
+	// can come a moment after the server holds both boards.
+	const settled = `paneA=payments&repoA=${repo}&paneB=billing&repoB=${repo}&pane=B`;
+	await pollUntil(
+		() => addressSearch(browser),
+		(search) => search === settled,
+		"the address to name the repository of each restored pane",
 	);
 	const paneA = restored.panes.find((pane) => pane.board === "payments")!;
 	const paneB = restored.panes.find((pane) => pane.board === "billing")!;
