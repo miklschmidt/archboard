@@ -137,4 +137,15 @@ function checkoutsReadFrom(vault: string | null): RegisteredRepoStatus[] {
 	return [...chosen.filter((entry) => entry.repo !== own.identity), read];
 }
 
-export { checkoutsReadFrom };
+/**
+ * The repository identity of the checkout that holds a vault: the identity
+ * `checkoutsReadFrom` reads in the vault's own checkout. A drill-down that
+ * names it opens a board of the vault itself (ADR 0049).
+ * @param vault The vault directory.
+ * @returns The identity, or undefined for an untracked vault or a Git that did not answer.
+ */
+function vaultIdentity(vault: string): string | undefined {
+	return vaultCheckoutOf(vault)?.identity;
+}
+
+export { checkoutsReadFrom, vaultIdentity };

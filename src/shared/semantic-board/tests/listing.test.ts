@@ -161,6 +161,34 @@ describe("a listed board's links", () => {
 		]);
 	});
 
+	test("into the vault's own repository are links within the vault", () => {
+		const own = "github.com/acme/archboard";
+		const listed = listedBoard(
+			LOCATION,
+			{
+				ok: true,
+				board: board(
+					[
+						{
+							id: "v1",
+							lifecycle: "current",
+							nodes: [
+								drilling("n1", "Former", ["old name"], undefined, own),
+								drilling("n2", "Itself", ["Archboard server"], undefined, own),
+							],
+						},
+					],
+					"v1",
+				),
+			},
+			(name) => (name === "old name" ? "new name" : name),
+			own,
+		);
+		expect(listed.links).toEqual([
+			{ board: "new name", variant: null, node: "Former", container: false },
+		]);
+	});
+
 	test("on a board nobody has built are its root draft's, and none when no single variant opens", () => {
 		const draft: Variant = {
 			id: "v1",

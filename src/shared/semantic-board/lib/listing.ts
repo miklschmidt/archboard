@@ -27,7 +27,8 @@ const LISTED_DESCRIPTION_LIMIT = 160;
  * (ADR 0049). Such a link is not to a board of this vault: its `board` is the
  * name as the link spells it, because only the other vault can say what the
  * board goes by now, and a reader that places boards by their links (the
- * navigator) leaves it out. A link without one is in this vault.
+ * navigator) leaves it out. A link without one is in this vault, and so is a
+ * drill-down that names the vault's own identity: it is listed without one.
  *
  * `container` says whether the linking node contains other nodes: a link on a
  * container points up, to the board this one is a part of, and one on a card
@@ -118,19 +119,21 @@ function acceptedBoardNames(reads: readonly ListedRead[]): AcceptedName {
  * @param board The board the variant is on.
  * @param variant The variant.
  * @param accepted The name a board goes by now, for a name a link spells it with.
+ * @param vaultRepo The repository identity of the vault's own checkout, if it has one.
  * @returns The links, in node order.
  */
 function linksOf(
 	board: SemanticBoard,
 	variant: SemanticVariant,
 	accepted: AcceptedName,
+	vaultRepo: string | undefined,
 ): BoardLink[] {
 	const { nodes } = variant.content;
 	const containers = new Set(nodes.map((node) => node.parent));
 	const seen = new Set<string>();
 	const links: BoardLink[] = [];
 	for (const node of nodes) {
-		const link = linkOn(node, containers, accepted);
+		const link = linkOn(node, containers, accepted, vaultRepo);
 		// A link back to the board's own name is no link, unless it names a
 		// repository: then the board it opens is another one that shares the name.
 		if (
@@ -153,21 +156,26 @@ function linksOf(
  * @param node The node.
  * @param containers The ids of the nodes that contain others.
  * @param accepted The name a board goes by now, for a name a link spells it with.
+ * @param vaultRepo The repository identity of the vault's own checkout, if it has one.
  * @returns The link, or null when the node carries none.
  */
 function linkOn(
 	node: SemanticVariant["content"]["nodes"][number],
 	containers: ReadonlySet<string | undefined>,
 	accepted: AcceptedName,
+	vaultRepo: string | undefined,
 ): BoardLink | null {
 	const drill = node.drillDown;
 	if (drill === undefined) {
 		return null;
 	}
+	// A drill-down that names the vault's own repository opens a board of this
+	// vault, as the vault check reads it (ADR 0049).
+	const elsewhere = drill.repo === vaultRepo ? undefined : drill.repo;
 	return {
-		board: drill.repo === undefined ? accepted(drill.board) : drill.board,
+		board: elsewhere === undefined ? accepted(drill.board) : drill.board,
 		variant: drill.variant.kind === "named" ? drill.variant.name : null,
-		...(drill.repo === undefined ? {} : { repo: drill.repo }),
+		...(elsewhere === undefined ? {} : { repo: elsewhere }),
 		node: node.name,
 		container: containers.has(node.id),
 	};
@@ -219,12 +227,15 @@ function bounded(line: string): string {
  * @param read What reading it answered.
  * @param accepted The name a board goes by now, for a name a link spells it
  *   with; each name as it is spelled when absent.
+ * @param vaultRepo The repository identity of the vault's own checkout, if it
+ *   has one: a drill-down that names it is a link within the vault.
  * @returns The listed board.
  */
 function listedBoard(
 	{ name, key }: { readonly name: string; readonly key: string },
 	read: ListedRead,
 	accepted: AcceptedName = asSpelled,
+	vaultRepo?: string,
 ): ListedBoard {
 	if (!read.ok) {
 		return {
@@ -254,7 +265,7 @@ function listedBoard(
 			lifecycle,
 			parentId: parent ?? null,
 		})),
-		links: opened.ok ? linksOf(board, opened.variant, accepted) : [],
+		links: opened.ok ? linksOf(board, opened.variant, accepted, vaultRepo) : [],
 		description: opened.ok ? descriptionOf(opened.variant.summary) : null,
 	};
 }
