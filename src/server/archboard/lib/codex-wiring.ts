@@ -39,6 +39,7 @@ import {
 	paneVaults,
 	panes,
 } from "@/server/archboard/lib/pane-registry";
+import { onPaneVaultMove } from "@/server/archboard/lib/pane-vaults";
 import { endTabSessionsOnceGone, tabSessionOf } from "@/server/archboard/lib/tab-sessions";
 import {
 	boundSessionOf,
@@ -326,6 +327,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			}
 			return checkoutOfVault(vault);
 		},
+		onPaneVaultMove,
 		narrationChangesFor: narrationChangesOf,
 		canvasFor: canvasOf,
 		/**

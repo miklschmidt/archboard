@@ -92,13 +92,16 @@ function createGatewayBinding(
 				);
 			},
 			/**
-			 * Watch what the browser is shown.
+			 * Watch what the browser is shown, which a pane's move into another vault changes too:
+			 * the pane shows the workhorse of its checkout (ADR 0050).
 			 * @param listener What to tell.
 			 * @returns Unsubscribes.
 			 */
 			onChange: (listener) => {
 				owners.projectionListeners.add(listener);
+				const stopHearingMoves = server.onPaneVaultMove(listener);
 				return () => {
+					stopHearingMoves();
 					owners.projectionListeners.delete(listener);
 				};
 			},

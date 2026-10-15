@@ -283,21 +283,21 @@ describe("production Codex generation ownership", () => {
 		}
 	});
 
-	test("retiring a generation releases its owned-process readiness subscription", async () => {
+	test("retiring a generation releases its owned-process readiness and pane-move subscriptions", async () => {
 		const subscribers = new Set<() => void>();
-		const owned = installation({ browserLeaseLedger: createBrowserLeaseLedger() });
+		const subscribe = (listener: () => void) => {
+			subscribers.add(listener);
+			return () => void subscribers.delete(listener);
+		};
+		const owned = installation({
+			browserLeaseLedger: createBrowserLeaseLedger(),
+			onPaneVaultMove: subscribe,
+		});
 		try {
 			const fixture = createCodexWorkbenchGenerationFixture([]);
 			const input = {
 				generation: 1,
-				process: {
-					stop: async () => undefined,
-					snapshot: () => runningProcessFacts(),
-					subscribe: (listener: () => void) => {
-						subscribers.add(listener);
-						return () => void subscribers.delete(listener);
-					},
-				},
+				process: { stop: async () => undefined, snapshot: () => runningProcessFacts(), subscribe },
 			} as unknown as CodexWorkbenchGenerationInput;
 			const options = owned.value.bindings(input).gateway(fixture.components);
 			const gateway = createCodexWorkbenchGateway({
@@ -305,9 +305,10 @@ describe("production Codex generation ownership", () => {
 				identity: fixture.components.identity,
 				threadLink: fixture.components.threadLink,
 			});
-			// Readiness deltas publish without a browser command, so the gateway
-			// holds one subscription on the owned process for this generation.
-			expect(subscribers.size).toBe(1);
+			// Readiness deltas publish without a browser command, so the gateway holds one
+			// subscription on the owned process for this generation. It holds one on pane moves
+			// too: a moved pane keeps its socket and shows its new checkout's workhorse (ADR 0050).
+			expect(subscribers.size).toBe(2);
 			// stopBrowser disposes the gateway before the generation settles.
 			await gateway.dispose();
 			expect(subscribers.size).toBe(0);
