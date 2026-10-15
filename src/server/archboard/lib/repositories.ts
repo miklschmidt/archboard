@@ -13,20 +13,23 @@ import {
 	repositoryOfVault as registeredRepositoryOf,
 	type RegisteredRepoStatus,
 } from "@/runtime/engine/repo-registry";
+import { checkoutOfVault } from "@/runtime/engine/vault-finder";
+import { isVaultLayout } from "@/runtime/engine/vault-finder";
 import type { RepositoryEntry, RepositoryState } from "@/shared/repositories/index";
 
 /** Where a checkout keeps its vault (ADR 0049). */
 const VAULT_DIRECTORY = path.join(".archboard", "vault");
 
 /**
- * The canonical vault of a directory, when it holds one.
+ * The canonical vault of a directory, when it holds one the server serves: a `.archboard/vault`
+ * that a link leads elsewhere is refused by every call (`namedVault`), so no page opens in it.
  * @param root The checkout or the directory that holds an untracked vault.
  * @returns The vault's real path, or null when there is none.
  */
 function vaultIn(root: string): string | null {
 	try {
 		const real = fs.realpathSync(path.join(root, VAULT_DIRECTORY));
-		return fs.statSync(real).isDirectory() ? real : null;
+		return isVaultLayout(real) && fs.statSync(real).isDirectory() ? real : null;
 	} catch {
 		return null;
 	}
@@ -104,31 +107,22 @@ interface VaultPlace {
 	 * that no registered directory holds and the navigator does not list.
 	 */
 	readonly repository: string | null;
-	/** The checkout, or the directory that holds an untracked vault; null when neither is known. */
-	readonly checkout: string | null;
-}
-
-/**
- * The directory that holds a vault in the `<dir>/.archboard/vault` layout.
- * @param vault A canonical vault.
- * @returns The directory, or null when the vault is not in that layout.
- */
-function layoutHolder(vault: string): string | null {
-	return vault.endsWith(`${path.sep}${VAULT_DIRECTORY}`) ? path.dirname(path.dirname(vault)) : null;
+	/** The checkout, or the directory that holds an untracked vault. */
+	readonly checkout: string;
 }
 
 /**
  * Where a vault is, read from the registry as it is now. Every pane reports its
  * repository from here, so the name is the same in a pane, its address and
  * `browser panes`, and it changes when the registry does.
- * @param vault A canonical vault.
+ * @param vault A canonical vault in the `<dir>/.archboard/vault` layout, as the server serves one.
  * @returns Its place.
  */
 function placeOfVault(vault: string): VaultPlace {
 	const registered = registeredRepositoryOf(vault);
 	if (registered === undefined) {
 		// A vault no registry entry holds is listed nowhere, so it has no repository's name.
-		return { home: vault, repository: null, checkout: layoutHolder(vault) };
+		return { home: vault, repository: null, checkout: checkoutOfVault(vault) };
 	}
 	const { name, root, chosen } = registered;
 	return {

@@ -315,8 +315,7 @@ function boardPhrase(identity: BoardIdentity | null): string {
  * @returns The phrase.
  */
 function repositoryPhrase(pane: PaneReport): string {
-	const where = pane.checkout ?? pane.vault;
-	const named = pane.repository === null ? where : `${pane.repository} at ${where}`;
+	const named = pane.repository === null ? pane.checkout : `${pane.repository} at ${pane.checkout}`;
 	return pane.own ? `${named} (your checkout)` : named;
 }
 

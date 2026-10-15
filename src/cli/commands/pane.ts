@@ -259,7 +259,7 @@ const PanesResultSchema = z.looseObject({
 			/** The repository identity, or an untracked vault's registry name; null when unregistered. */
 			repository: z.string().nullable(),
 			/** The checkout that holds the vault, or the directory of an untracked vault. */
-			checkout: z.string().nullable(),
+			checkout: z.string(),
 			/** Whether the pane shows the vault a command run here finds: your own checkout. */
 			own: z.boolean(),
 		}),
@@ -429,7 +429,7 @@ const ShowResultSchema = z.looseObject({
 	/** The repository the board is in, or null when no registered directory holds its vault. */
 	repository: z.string().nullable(),
 	/** The checkout that holds the board's vault. */
-	checkout: z.string().nullable(),
+	checkout: z.string(),
 	/**
 	 * Present only when the show made this checkout the chosen one of its
 	 * repository; `replaced` is the checkout chosen before, or null when none was.
