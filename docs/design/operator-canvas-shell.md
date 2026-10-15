@@ -122,7 +122,7 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      foot.
 
   A section with nothing to show is absent. The tab lists no variants. The
-  navigator lists the variants of every board, the Variants page of the pane's
+  navigator lists the variants of every board, the About page of the pane's
   header lists them with the record of each and opens one in the pane, and the
   breadcrumb in the header names the one on screen (TASK-388). Views live here
   and not in a switcher on the picture, because a switcher over the picture can
@@ -311,8 +311,79 @@ the control that shows and hides the sidebar, filled because the sidebar is
 shown, then the sidebar and the edge of the picture. From the left: the board tab on the
 current variant of `Archboard server` in the light theme, the board tab on its
 historical variant `Current architecture` in the dark theme, where it is read
-against the current variant, and the selection tab on `Board routes` in the
+against the current variant, and the selection tab on `Route handlers` in the
 light theme.
+
+## The About page
+
+Added 2026-10-15 (TASK-475). The pane's header offers two ways to read a board:
+Diagram, the picture, and About, one page about the board. The About page
+replaced four pages of the header: Parts, Relationships, Variants and
+Walkthroughs. Each of them answered one question and hid the others, so a reader
+had to know which page held an answer before they looked for it.
+
+![The About page of Archboard server in a lone pane](assets/about-page.png)
+
+The image is a rendered capture of the dogfood vault at 1920×1080, not a
+mockup: the About page of `Archboard server` in a lone pane, in the light theme,
+at the top of the page.
+
+The page lies over the picture and scrolls, and the sidebar stays beside it. It
+reads the board document that the pane already holds and writes nothing (ADR
+0023). The tab is kept with the board it was chosen on, so a drill-down opens
+the board below as a diagram.
+
+The head of the page names the board in the display face, in capitals. One line
+under the name gives the board's level, and then the variant on screen, with its
+lifecycle mark and where it stands. The summary of the variant follows. A board
+with no such variant says so, and the timeline below lists its variants.
+
+An outline lists the sections, each with its mark and its count. On a page
+1040 px wide or more, the outline is a column to the left of the sections, and
+it stays in place while the page scrolls. On a narrower page, as in a pane that
+shares the centre, the outline is a bar at the top of the page. A piece of gold
+marks the section being read. Choosing an entry brings its section to the top
+and gives the heading of the section the keyboard. The last section is at least
+as tall as the page, so every section can come to the top.
+
+The sections come in the order a reader asks
+([the study of that order](pane-sidebar-hierarchy.md)). A section with nothing
+to show is absent from the page and from the outline.
+
+1. The walkthroughs, each a card set as a script. The head of the card has the
+   name, the number of steps, the summary, Present and Narrate. Each step is a
+   row with its number, its heading and its words. Beside them stand the view
+   that the step is told through and the subjects that it focuses, each subject
+   a chip with the icon of its kind. A step that names no view says that it uses
+   the view on screen, because a presentation keeps that view for the step. The
+   control at the end of a step presents the walkthrough from that step.
+2. The parts, in their containment: a container, then the parts that it holds,
+   one rail in, as the navigator lists boards. A row gives the kind, the name,
+   how many parts the part holds, its responsibility, its groups and the board
+   that it opens. The column for groups and the column for the board are there
+   only when some part has one.
+3. The relationships, as a table of where each one starts, where it ends, what
+   it carries and its kind. A row lights while a part at either end is picked
+   out.
+4. The variants, on one timeline with branches, as the navigator draws them.
+   Each variant has its mark, its name, where it stands and the reason in its
+   record, or the summary of a proposal. The one on screen is marked, and
+   choosing another reads it in the pane.
+
+Choosing a row or a chip picks its subject in the pane, and the page stays. The
+sidebar explains the subject, and the picture marks it when the diagram comes
+back. The control at the end of a part's or a relationship's row picks the
+subject, opens the diagram and fits the camera to the subject, as a code warning
+does. If the view on screen does not draw the subject, the pane opens
+Everything first.
+
+A walkthrough is presented over the picture, so presenting from the page opens
+the diagram. Leaving the walkthrough brings the page back. Choosing About while a
+walkthrough is presented leaves the walkthrough.
+
+While the content of the page is narrower than 860 px, as in a pane that shares
+the centre, the view and the subjects of a step stand under its words. The
+groups of a part and the board that it opens stand under its responsibility.
 
 ## The navigator
 

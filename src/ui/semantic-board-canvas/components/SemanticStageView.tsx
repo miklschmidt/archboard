@@ -1,17 +1,16 @@
 // What one semantic pane draws, from what its stage knows: the header with the
 // way back and the ways of reading, the standing of the variant on screen,
-// whichever of the four states is true or the page of the open tab, and the
-// sidebar beside the reading.
+// whichever of the four states is true with the About page over it while its
+// tab is open, and the sidebar beside the reading.
 
 import type { UseQueryResult } from "@tanstack/react-query";
-import { useMemo, type JSX, type ReactNode } from "react";
+import type { JSX, ReactNode } from "react";
 
 import type {
 	SemanticRender,
 	SemanticWaiting,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
-import type { VariantsPageProps } from "@/ui/semantic-board-canvas/components/BoardHistoryPages";
-import { BoardPage } from "@/ui/semantic-board-canvas/components/BoardPage";
+import { AboutPage } from "@/ui/semantic-board-canvas/components/AboutPage";
 import type { BoardTab } from "@/ui/semantic-board-canvas/components/PaneHeader";
 import { PeekProvider } from "@/ui/semantic-board-canvas/components/Peek";
 import type { SemanticBoardStageProps } from "@/ui/semantic-board-canvas/components/SemanticBoardStage";
@@ -121,12 +120,14 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
 	/** How the vault's kinds look, for the pages and the details panel. */
 	readonly look: KindLook;
-	/** The tab of the featured header that is open. */
+	/** The tab of the pane's header that is open: the picture, or the About page. */
 	readonly tab: BoardTab;
 	/** Open a tab. */
 	readonly onTab: (tab: BoardTab) => void;
 	/** Read one beat of a walkthrough: the diagram comes back, presenting it. */
 	readonly onReadBeat: (walkthrough: string, beat: number) => void;
+	/** Pick a subject out and show it: the diagram comes back, and the camera fits the subject. */
+	readonly onShow: (id: string) => void;
 	/** Attach the picture's area, which a panel laid over its edge keeps a pick clear of. */
 	readonly attachPicture: (element: HTMLDivElement | null) => void;
 }
@@ -264,9 +265,7 @@ function SemanticStageView(view: RenderView): JSX.Element {
 					<div ref={attachPicture} className="relative flex min-h-0 min-w-0 flex-1">
 						{stageBody(view)}
 						{presentationOver(view)}
-						{view.tab !== "diagram" && view.narrative.open === null && (
-							<PaneBoardPage view={view} tab={view.tab} />
-						)}
+						{view.tab === "about" && <PaneAboutPage view={view} />}
 					</div>
 					<SemanticStageSidebar view={view} appearances={view.appearances} />
 				</ReadingArea>
@@ -276,57 +275,26 @@ function SemanticStageView(view: RenderView): JSX.Element {
 }
 
 /**
- * What the Variants page lists, from what the board says about itself.
- * @param reading What the board says about itself, or null before it arrives.
- * @param onChoose Read another state of the board, when the pane can.
- * @returns The page's inputs, or null while the board has not arrived.
- */
-function variantsPage(
-	reading: VariantReading | null,
-	onChoose: VariantsPageProps["onChoose"],
-): VariantsPageProps | null {
-	if (reading === null) {
-		return null;
-	}
-	return {
-		variants: reading.variants,
-		adoptions: reading.adoptions,
-		shelvings: reading.shelvings,
-		showing: reading.showing?.id ?? null,
-		onChoose,
-	};
-}
-
-/**
- * The page of the open tab, over the picture.
- * @param props What the stage knows, and the tab that is open.
+ * The About page, over the picture.
+ * @param props What the stage knows.
  * @param props.view What the stage knows.
- * @param props.tab The tab that is open: one of the board's pages.
  * @returns The page.
  */
-function PaneBoardPage(props: {
-	readonly view: RenderView;
-	readonly tab: Exclude<BoardTab, "diagram">;
-}): JSX.Element {
+function PaneAboutPage(props: { readonly view: RenderView }): JSX.Element {
 	const { view } = props;
-	const { reading, onReadBeat } = view;
-	const { onVariant } = view.level;
-	const { offered } = view.narrative;
-	const variants = useMemo(() => variantsPage(reading, onVariant), [reading, onVariant]);
-	const walkthroughs = useMemo(
-		() => ({ walkthroughs: offered, onChoose: onReadBeat }),
-		[offered, onReadBeat],
-	);
 	return (
-		<BoardPage
-			tab={props.tab}
-			content={reading?.variant?.content ?? null}
+		<AboutPage
+			board={view.render.data?.board ?? view.drill.board}
+			reading={view.reading}
 			look={view.look}
 			groups={view.groupControls.names}
 			selection={view.selection}
 			onPick={view.onPick}
-			variants={variants}
-			walkthroughs={walkthroughs}
+			onShow={view.onShow}
+			onVariant={view.level.onVariant}
+			onPresent={view.onReadBeat}
+			narration={view.narration}
+			reducedMotion={view.reducedMotion ?? false}
 		/>
 	);
 }

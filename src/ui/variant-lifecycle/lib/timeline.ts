@@ -5,7 +5,7 @@
 // the one above it at the shallower depth, as a draft branches off the variant
 // it was derived from; and a line keeps running past whatever sits between two
 // variants it joins. The navigator draws these lanes compactly beside its rows,
-// and the variants page draws the same lanes roomily. Pure.
+// and the About page draws the same lanes roomily. Pure.
 
 /** The lines one variant's row draws, by depth: each depth's line runs through one column. */
 interface Lane {

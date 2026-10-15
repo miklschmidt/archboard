@@ -22,7 +22,7 @@ import {
 	type SemanticNode,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
-import { RelationshipChip } from "@/ui/semantic-board-canvas/components/BoardPageParts";
+import { RelationshipChip } from "@/ui/semantic-board-canvas/components/KindMarks";
 import { DetailsPanel } from "@/ui/semantic-board-canvas/components/DetailsPanel";
 import type { RememberedReading } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target";

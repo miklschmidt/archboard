@@ -17,7 +17,7 @@ import {
 	type SemanticNode,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
-import { KindIcon } from "@/ui/semantic-board-canvas/components/BoardPageParts";
+import { KindIcon } from "@/ui/semantic-board-canvas/components/KindMarks";
 import {
 	SidebarChoice,
 	SidebarChoices,

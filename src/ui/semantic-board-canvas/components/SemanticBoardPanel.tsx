@@ -17,7 +17,7 @@
 // with nothing in it is not drawn.
 //
 // No board's variants are offered here. The navigator lists the variants of
-// every board, the Variants page of the pane's header lists them with the record
+// every board, the About page of the pane's header lists them with the record
 // of each and opens one in this pane, and the header's breadcrumb names the one
 // on screen: a fourth place to make one choice is one too many (TASK-388).
 

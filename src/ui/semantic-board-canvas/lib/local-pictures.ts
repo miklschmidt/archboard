@@ -273,7 +273,7 @@ async function picturesToDrawAhead(
 		await client.invalidateQueries({ queryKey, refetchType: "none" });
 	}
 	const document = await boardFor(client, vault, reading.name);
-	// The Variants page asks for the variant the board's name opens by no name, and any other by
+	// The About page asks for the variant the board's name opens by no name, and any other by
 	// id. A board whose name opens nothing, because it has several drafts and no current variant,
 	// is asked for by id throughout.
 	const opened = addressedVariant(document);

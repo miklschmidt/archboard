@@ -2,7 +2,7 @@
 // screen sits at the start, and at the end the ways to read it and the shell's
 // controls, a rule between them.
 //
-//   [A] ◇ Archboard › ▣ Archboard server › ◷ TASK-373      Diagram Parts … Walkthroughs 1 | [▯] [⛶] [×]
+//   [A] ◇ Archboard › ▣ Archboard server › ◷ TASK-373          Diagram About | [▯] [⛶] [×]
 //
 // The pane's letter (while two panes share the centre) and its controls are
 // the shell's (`usePaneChrome`); the rest is the board's. Where the board sits
@@ -11,22 +11,20 @@
 // when it is not the one the name opens. The boards above are the navigator's
 // own placing of the board, and after a drill-down they end with the boards the
 // reader came down through, each a way back (`use-drill-places.ts`).
-// The tabs switch what the area under the row shows: the picture, or one of
-// the board's pages. While the row is narrow (two panes), the tabs that are not
-// open keep only their marks and the middle of the breadcrumb folds behind one
+// The two tabs switch what the area under the row shows: the picture, or the
+// About page, which is everything the board says about itself on one page
+// (TASK-475). While the row is narrow (two panes), the tab that is not open
+// keeps only its mark and the middle of the breadcrumb folds behind one
 // control, never the board itself. The first of the controls at the end is the
 // pane's: it shows and hides the sidebar, which is the pane's too. A pane the
 // server has pointed at no board keeps the same row: it says so, and keeps the
 // shell's letter, controls and notice.
 
 import {
-	RiArrowLeftRightLine,
 	RiArrowRightSLine,
-	RiBox3Line,
+	RiFileTextLine,
 	RiFlowChart,
-	RiGitBranchLine,
 	RiMoreLine,
-	RiPlayCircleLine,
 	type RemixiconComponentType,
 } from "@remixicon/react";
 import { useCallback, type JSX, type ReactNode } from "react";
@@ -47,20 +45,17 @@ import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { OfferedVariant } from "@/ui/semantic-board-canvas/lib/board-document";
 import { VariantMark } from "@/ui/variant-lifecycle";
 
-/** What the pane is read as. */
-type BoardTab = "diagram" | "parts" | "relationships" | "variants" | "walkthroughs";
+/** What the pane is read as: the picture, or the About page. */
+type BoardTab = "diagram" | "about";
 
-/** What each tab is called and drawn with: the navigator's own marks where it has one. */
+/** What each tab is called and drawn with. */
 const TABS: readonly {
 	readonly tab: BoardTab;
 	readonly label: string;
 	readonly icon: RemixiconComponentType;
 }[] = [
 	{ tab: "diagram", label: "Diagram", icon: RiFlowChart },
-	{ tab: "parts", label: "Parts", icon: RiBox3Line },
-	{ tab: "relationships", label: "Relationships", icon: RiArrowLeftRightLine },
-	{ tab: "variants", label: "Variants", icon: RiGitBranchLine },
-	{ tab: "walkthroughs", label: "Walkthroughs", icon: RiPlayCircleLine },
+	{ tab: "about", label: "About", icon: RiFileTextLine },
 ];
 
 /** A board above the one on screen, as the navigator places it or as the reader came down from it. */
@@ -123,8 +118,6 @@ interface PaneHeaderProps {
 	 * @param tab The tab.
 	 */
 	readonly onTab: (tab: BoardTab) => void;
-	/** How many of the things a tab lists, where a number says something. */
-	readonly counts: Readonly<Partial<Record<BoardTab, number | undefined>>>;
 	/** The pane's sidebar, which the first of the controls at the end shows and hides. */
 	readonly sidebar: Sidebar;
 }
@@ -287,10 +280,10 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 
 /**
  * The tabs: what the area under the row shows.
- * @param props The open tab, the counts and the choice.
+ * @param props The open tab and the choice.
  * @returns The tab list.
  */
-function PageTabs(props: Pick<PaneHeaderProps, "tab" | "onTab" | "counts">): JSX.Element {
+function PageTabs(props: Pick<PaneHeaderProps, "tab" | "onTab">): JSX.Element {
 	const { onTab } = props;
 	const choose = useCallback(
 		(value: unknown): void => {
@@ -307,12 +300,7 @@ function PageTabs(props: Pick<PaneHeaderProps, "tab" | "onTab" | "counts">): JSX
 				className="h-full! border-b-0"
 			>
 				{TABS.map((entry) => (
-					<PageTab
-						key={entry.tab}
-						entry={entry}
-						open={props.tab === entry.tab}
-						count={props.counts[entry.tab]}
-					/>
+					<PageTab key={entry.tab} entry={entry} open={props.tab === entry.tab} />
 				))}
 			</TabsList>
 		</Tabs>
@@ -320,47 +308,32 @@ function PageTabs(props: Pick<PaneHeaderProps, "tab" | "onTab" | "counts">): JSX
 }
 
 /**
- * One tab: its mark, its name and how many it lists. While the header is
- * narrow, a tab that is not open keeps only its mark, named by its tooltip
- * and to assistive technology, so the breadcrumb keeps the board's name whole.
- * @param props The tab, whether it is open and its count.
+ * One tab: its mark and its name. While the header is narrow, a tab that is
+ * not open keeps only its mark, named by its tooltip and to assistive
+ * technology, so the breadcrumb keeps the board's name whole.
+ * @param props The tab, and whether it is open.
  * @param props.entry The tab.
  * @param props.open Whether it is the one open.
- * @param props.count How many it lists, when a number says something.
  * @returns The tab.
  */
 function PageTab(props: {
 	readonly entry: (typeof TABS)[number];
 	readonly open: boolean;
-	readonly count: number | undefined;
 }): JSX.Element {
-	const { entry, open, count } = props;
+	const { entry, open } = props;
 	const Icon = entry.icon;
-	const folds = open ? "" : "sr-only @min-[880px]/pane-header:not-sr-only";
 	return (
 		<TabsTrigger
 			value={entry.tab}
 			data-slot="board-tab"
 			data-tab={entry.tab}
-			title={count === undefined ? entry.label : `${entry.label} ${count}`}
+			title={entry.label}
 			className="text-control data-active:[&_svg]:text-primary-mark gap-1.5 px-2"
 		>
 			<Icon aria-hidden="true" className="size-4" />
-			<span className={folds}>{entry.label}</span>
-			{count !== undefined && (
-				<span className={folds}>
-					<span
-						className={cn(
-							"rounded-chip flex h-4 min-w-4 items-center justify-center px-1 font-mono text-[11px] leading-none tabular-nums",
-							open
-								? "bg-primary-subtle text-foreground ring-primary-mark ring-1 ring-inset"
-								: "bg-foreground/10 text-foreground/80",
-						)}
-					>
-						{count}
-					</span>
-				</span>
-			)}
+			<span className={open ? "" : "sr-only @min-[880px]/pane-header:not-sr-only"}>
+				{entry.label}
+			</span>
 		</TabsTrigger>
 	);
 }
@@ -428,7 +401,7 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
 			</HeaderStart>
 			<HeaderEnd>
 				{props.children}
-				<PageTabs tab={props.tab} onTab={props.onTab} counts={props.counts} />
+				<PageTabs tab={props.tab} onTab={props.onTab} />
 				<span aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
 				<span className="flex shrink-0 items-center gap-1">
 					<SidebarToggle sidebar={props.sidebar} />

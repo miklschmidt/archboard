@@ -43,6 +43,7 @@ import { useSettledFocus } from "@/ui/semantic-board-canvas/hooks/use-settled-fo
 import { useSidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import { useStageAppearances } from "@/ui/semantic-board-canvas/hooks/use-stage-appearances";
 import { useStageTab } from "@/ui/semantic-board-canvas/hooks/use-stage-tab";
+import { useSubjectFocus } from "@/ui/semantic-board-canvas/hooks/use-subject-focus";
 import { useVariantReading } from "@/ui/semantic-board-canvas/hooks/use-variant-reading";
 import { useWalkthrough, type DrivenPlace } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas/lib/address";
@@ -359,6 +360,18 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		},
 		[choose, goTo],
 	);
+	// The stage fits the subject, not the About page that asks: the page goes as
+	// the diagram comes back, and a subject the view on screen does not draw is
+	// fitted only once the whole board's picture arrives.
+	const fitSubject = useSubjectFocus(render.data, camera, reducedMotion, onChooseView);
+	const onShow = useCallback(
+		(id: string): void => {
+			onPick(id);
+			onTab("diagram");
+			fitSubject(id);
+		},
+		[onPick, onTab, fitSubject],
+	);
 	const { onOpenDown, onBackTo } = useDrillMoves({
 		drill,
 		flier: dive,
@@ -390,6 +403,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			tab={tab}
 			onTab={onTab}
 			onReadBeat={onReadBeat}
+			onShow={onShow}
 			attachPicture={attachPicture}
 			heading={departure.heading}
 			narrative={narrative}

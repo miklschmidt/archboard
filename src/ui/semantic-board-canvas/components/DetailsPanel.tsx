@@ -13,7 +13,7 @@ import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
 import type { SemanticVariant, VariantContent } from "@/shared/semantic-board/index";
-import { KindIcon, RelationshipChip } from "@/ui/semantic-board-canvas/components/BoardPageParts";
+import { KindIcon, RelationshipChip } from "@/ui/semantic-board-canvas/components/KindMarks";
 import { ContainerInterface } from "@/ui/semantic-board-canvas/components/ContainerInterface";
 import { GoDeeper } from "@/ui/semantic-board-canvas/components/GoDeeper";
 import { PartHistory } from "@/ui/semantic-board-canvas/components/PartHistory";

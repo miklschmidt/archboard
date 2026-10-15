@@ -1,9 +1,10 @@
-// Which way a pane is read: the picture, or one of the board's pages.
+// Which way a pane is read: the picture, or the board's About page.
 //
 // The choice is kept with the board it was made on, so following a drill-down
 // reads the board below as a diagram, and a walkthrough being read is always
-// the picture. A page is a way of reading the board, so choosing one leaves a
-// presented walkthrough.
+// the picture. The page is a way of reading the board, so choosing it leaves a
+// presented walkthrough, and leaving a walkthrough presented from it brings
+// the page back.
 
 import { useCallback, useState } from "react";
 
