@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 51,
+	"version": 52,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-15T01:46:21.406Z",
+	"updatedAt": "2026-10-15T02:11:06.127Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -7195,7 +7195,7 @@
 						"name": "Pane vault",
 						"kind": "function",
 						"responsibility": "The vault of the pane around a reader",
-						"description": "The pane provides its vault once, around its stage, and every read the pane draws takes it from here and names it, because two panes of a tab can show two repositories. The pane session is its one source; this only hands the value down.",
+						"description": "The pane provides its vault once, around its stage, and every read the pane draws takes it from here and names it, because two panes of a tab can show two repositories. In the application the pane session is its one source. A replay names the recorded talk instead, whose reads never reach a server. This only hands the value down.",
 						"parent": "yAFyqal3",
 						"groups": [
 							"panes"
@@ -7946,6 +7946,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/application/hooks/use-pane-views.ts",
 							"symbol": "servedVault"
+						}
+					},
+					{
+						"id": "tLxlPuMO",
+						"order": 56000,
+						"from": "aixSjfNe",
+						"to": "p5UCow7F",
+						"kind": "render",
+						"label": "gives the stage the recorded talk as its vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"symbol": "PaneVaultContext"
 						}
 					}
 				],
