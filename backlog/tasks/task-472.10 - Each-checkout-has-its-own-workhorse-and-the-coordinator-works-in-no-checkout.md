@@ -1,11 +1,11 @@
 ---
 id: TASK-472.10
 title: 'Each checkout has its own workhorse, and the coordinator works in no checkout'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 07:39'
+updated_date: '2026-10-15 07:50'
 labels: []
 dependencies:
   - TASK-472.04
@@ -30,15 +30,15 @@ A tab session has one workhorse and one coordinator, both running in the archboa
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A workhorse thread starts with its checkout as its working directory and workspace root, and the workhorse of an untracked vault starts in the directory that holds the vault
-- [ ] #2 A tab session holds at most one workhorse per checkout, each with its own thread link, queue and approvals
-- [ ] #3 The coordinator starts in a directory of its own under the state directory, reads boards with `-C`, and gives work in a checkout to that checkout's workhorse, starting it when there is none
-- [ ] #4 A typed message names its checkout and reaches that checkout's workhorse, starting one when there is none
-- [ ] #5 Pane briefs, board news and workhorse news name the checkout of each board
-- [ ] #6 A workhorse stays linked when the chosen checkout of its identity changes
-- [ ] #7 A workhorse stop requested for a checkout stops only that workhorse, and a stop requested for the whole tab session stops every running workhorse
-- [ ] #8 AGENTS.md's Codex invariant, PRODUCT.md, CONTEXT.md and the archboard-dev skill describe one coordinator and one workhorse per checkout as built
-- [ ] #9 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 A workhorse thread starts with its checkout as its working directory and workspace root, and the workhorse of an untracked vault starts in the directory that holds the vault
+- [x] #2 A tab session holds at most one workhorse per checkout, each with its own thread link, queue and approvals
+- [x] #3 The coordinator starts in a directory of its own under the state directory, reads boards with `-C`, and gives work in a checkout to that checkout's workhorse, starting it when there is none
+- [x] #4 A typed message names its checkout and reaches that checkout's workhorse, starting one when there is none
+- [x] #5 Pane briefs, board news and workhorse news name the checkout of each board
+- [x] #6 A workhorse stays linked when the chosen checkout of its identity changes
+- [x] #7 A workhorse stop requested for a checkout stops only that workhorse, and a stop requested for the whole tab session stops every running workhorse
+- [x] #8 AGENTS.md's Codex invariant, PRODUCT.md, CONTEXT.md and the archboard-dev skill describe one coordinator and one workhorse per checkout as built
+- [x] #9 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -91,6 +91,8 @@ Adopted: Codex session v23, Voice coordinator v45, Codex workhorse v31, Agent wo
 Corrections to what was built: Conversation start no longer readies the coordinator for a delegation (ensureStarted leaves it alone; only New conversation readies it); the gateway hears pane vault moves; a workhorse approval is shown only to the panes of its checkout and its terminal waits only for them; a turn ends on the thread it started on; a delegation from a tab that has gone is refused, not left waiting; the replay fingerprint and the refusal text of the workhorse tools name the checkout; threads an app tool starts work in their caller's checkout; per-workhorse board news is filtered to the vaults of its checkout. The proposals each carry the board's scope as summary.
 Deviations explained: Workhorse start, Workhorse operations, Workhorse queue, Thread link, Board-change delivery, Semantic context and Approvals are `named, not changed` on Agent workbench and Codex workhorse. Their runtime code did not change (the modules already took a checkout root); the task changed how the server instances them, one set per workhorse, and the proposals say so in their descriptions and relationship labels. The walkthrough of Agent workbench got new ids: the editor cannot restore a removed walkthrough id, and its steps need an explicit view.
 changedNotNamed, decided: Authored instructions (codex-instructions) changed the instruction text and digests, which the part's responsibility already covers. Thread tools (codex-thread-tools) changed only a test. Generation hooks (Codex session) is now named: the epoch starts in the coordinator directory. Archboard server board needs no proposal: codex-wiring.ts workhorsePublisherFor and codex-session-panes.ts are inside its Codex workbench part (a drill-down to Agent workbench), the Codex workbench -> Live panes relationships it draws already cover the new reads of the pane registry, and the per-workhorse news selection is drawn on Agent workbench (Semantic context); the check found no RELATIONSHIP_UNDRAWN there. Command dispatch / Vault finder gained the export checkoutOfVault, which only the Codex workbench on the server uses; the board's question, how a command finds its vault, did not change. Behind: all six boards are clean after adoption; Archboard server, Command dispatch, Skill evaluation, Renderer layout and Semantic renderer stay behind for other tasks' commits.
+
+Review: five reviewers (session store, gateway and projection, runtime and docs, store-gateway boundary, store-coordinator boundary). Fixes: e9309ced8 (the gateway publishes when a pane moves vault, so its dock shows the new checkout's workhorse), b6eaab718 (a workhorse approval terminal waits only for the panes of its checkout), 5bcd383dd (the replay fingerprint of a workhorse tool includes its checkout), eda34bccb and 3919a0799 (a delegation from an ending tab is refused, not left waiting), 923f00008 and facb060e4 (a turn ends on the thread it started on), 8927a0cbc (only New conversation readies the coordinator), 9d838eb46 (duplicate Stop check removed), ce96c9b64 (the refusal of a workhorse tool says what a checkout is and what to do next). Kept by decision: a delegation starts its workhorse before the dispatcher validates the call, because readiness is itself part of that validation. A refused call can at most leave a thread that New conversation would start, which does not justify a new pre-check across the runtime and server boundary. Left to TASK-472.09: a vault outside the <dir>/.archboard/vault layout, reachable through ARCHBOARD_VAULT, gets a workhorse key that checkoutNamedBy never names. Observed, unchanged: one command lease per tab across its checkouts. Proposals adopted in fe32e7b0c (Agent workbench v59, Codex workhorse v31, Voice coordinator v45, Codex session v23, Live panes v38, Command interface v79). Gate: bun run check passed on fe32e7b0c (test:modules 4673 pass, test:system 233 pass, test:repository 27 pass, serial browser lane exit 0).
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -106,3 +108,9 @@ created: 2026-10-15 03:38
 Found in the TASK-472.06 boundary review: until this task lands, every Codex thread runs in the archboard checkout the server runs from, and that checkout tracks .archboard/vault. A thread command that omits -C therefore reads and writes archboard's own dogfood boards, and its first such command registers the archboard checkout and all its worktrees in the user's registry, so the navigator lists archboard for every user (confirmed with an isolated ARCHBOARD_REPOS: 'Registered /home/msc/Projects/archboard as the chosen checkout of github.com/miklschmidt/archboard, with 20 of its worktrees'). TASK-472.06 relies on the instructions telling each thread to pass -C and adds no guard, because this task removes the cause: a workhorse runs in its own checkout and the coordinator in a state directory with no vault, where an omitted -C is refused. Add an owner here that a coordinator command without -C is refused with VAULT_NOT_FOUND, and that no thread runs in the archboard checkout unless that is the checkout it works in.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Each checkout of a browser tab session has its own Codex workhorse, keyed by tab and checkout, with its own thread link, queue, operations, board-news delivery and approvals. The tab keeps one coordinator, with voice and its tools, which works in a directory of its own under the state directory, holds no vault and reads boards with -C. A typed message reaches the workhorse of its pane's checkout, and a delegation names a checkout and starts its workhorse. Workhorse news and briefs name the checkout. A pane that moves vault is shown its new checkout's workhorse. Verified by the owners named in the notes (codex-workbench-sessions, -thread-links, -approval-sessions, gateway-checkouts, gateway-publication, codex-checkouts, input-fingerprint, codex-workbench-production(-initialization), codex-outside-change), five reviews, and the full gate on fe32e7b0c.
+<!-- SECTION:FINAL_SUMMARY:END -->
