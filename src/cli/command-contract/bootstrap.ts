@@ -3,8 +3,8 @@
 // environment as they load. So the flag is taken out of the arguments first,
 // in either spelling, and put into the environment — except for a help
 // request, which contacts nothing and must leave the environment alone.
-// A `-C <dir>` written before the command name is moved behind it here too,
-// before anything reads the command name.
+// A `-C <dir>` written before the command name, on either side of a `--url`,
+// is moved behind it here too, before anything reads the command name.
 
 /** What the bootstrap took out of the arguments. */
 interface CliBootstrap {
@@ -91,9 +91,12 @@ function applyCliBootstrap(
 	argv: string[],
 	environment: Record<string, string | undefined> = process.env,
 ): CliBootstrap {
+	// The URL goes first, so that a `-C <dir>` beside it still leads the
+	// arguments: `archboard -C <dir> --url <url> check` and
+	// `archboard --url <url> -C <dir> check` both read as `check -C <dir>`.
+	const url = takeUrl(argv);
 	moveLeadingDirectory(argv);
 	const help = isHelpInvocation(argv);
-	const url = takeUrl(argv);
 	if (url !== null && !help) {
 		environment["ARCHBOARD_URL"] = url;
 	}
