@@ -483,7 +483,8 @@ architectural state, rather than the board's edit counter)
 The `.archboard/vault` directory of one checkout, where its boards are kept. A
 vault is versioned with its repository, so each checkout has its own copy, and
 its boards can describe any repository. A meta project that plans across
-repositories is a repository too.
+repositories is a repository too. A command finds a vault from its working
+directory or `-C`, and the server serves no other directory.
 _Avoid_: library, workspace, store, repository, folder
 
 **Untracked vault**:

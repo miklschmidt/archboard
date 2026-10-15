@@ -8,8 +8,8 @@ description: >-
   with the base branch. Anything else is drawn on an ephemeral board that never
   touches the vault. It names the parts the change can reach and embeds
   board renders in the description. Use it for every pull request that you
-  create or update in a repository whose AGENTS.md or CLAUDE.md names
-  ARCHBOARD_VAULT. Also use it to explain a pull request.
+  create or update in a repository that has an .archboard/vault directory.
+  Also use it to explain a pull request.
 ---
 
 # Archboard pull request explainer
@@ -61,7 +61,7 @@ fi | grep -cE '^ *[VA][A-Z.]{5} +(libx264|aac) '
 ```
 
 `checkout` is the archboard checkout whose pinned Codex every server runs; if
-the setup block names the CLI by an absolute path, take it from that path.
+`archboard` is not on your `PATH`, use the `bin/archboard` of that checkout.
 Every server on the machine shares the sign-in in the state directory. On
 macOS, Chromium is also found as `Google Chrome.app` or `Chromium.app` in
 `/Applications`. The first ffmpeg run through Nix fetches it, which can take

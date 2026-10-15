@@ -1,8 +1,8 @@
 // Installing the skill an author will read, and checking that it is really
-// there. `archboard install-skill` lays the repository block, the vault and
-// the skills root; the arm's own package is then put in place of what it
-// installed and prepared with the same generated files. The baseline's package
-// is the frozen one pins.json names; the candidate's is the copy the batch
+// there. `archboard install-skill` lays the skills root and leaves the
+// repository's vault as it is; the arm's own package is then put in place of
+// what it installed and prepared with the same generated files. The baseline's
+// package is the frozen one pins.json names; the candidate's is the copy the batch
 // kept when it started, never the checkout at the run's own time, so every
 // candidate run and the grader read one text however long the batch runs.
 
@@ -21,7 +21,6 @@ interface InstallRecord {
 	readonly source: string;
 	readonly files: number;
 	readonly digest: string;
-	readonly setupBlock: string;
 }
 
 /**
@@ -68,23 +67,6 @@ function swapInPackage(installed: string, source: string, checkout: string): voi
 }
 
 /**
- * The setup block the installer wrote into the checkout's agent document.
- * @param flask The checkout.
- * @returns The block text.
- */
-function setupBlockIn(flask: string): string {
-	for (const name of ["AGENTS.md", "CLAUDE.md"]) {
-		const file = path.join(flask, name);
-		if (!fs.existsSync(file)) continue;
-		const text = fs.readFileSync(file, "utf8");
-		const begin = text.indexOf("<!-- archboard:begin -->");
-		const end = text.indexOf("<!-- archboard:end -->");
-		if (begin >= 0 && end > begin) return text.slice(begin, end);
-	}
-	throw new Error(`no archboard setup block in ${flask}`);
-}
-
-/**
  * Installs the skill for one arm and verifies the install independently of
  * the installer's own report.
  * @param arm Which skill version.
@@ -99,16 +81,7 @@ async function installSkill(
 	paths: RunPaths,
 	source: string,
 ): Promise<InstallRecord> {
-	await archboardOk(cli, [
-		"install-skill",
-		"--agent",
-		"codex",
-		"--repo",
-		paths.flask,
-		"--vault",
-		paths.vault,
-		"--yes",
-	]);
+	await archboardOk(cli, ["install-skill", "--agent", "codex", "--repo", paths.flask]);
 	const skillsRoot = path.join(paths.home, ".agents", "skills");
 	const skillRoot = path.join(skillsRoot, "archboard");
 	// The world holds the arm's package alone: the other skills the installer ships are read
@@ -125,16 +98,12 @@ async function installSkill(
 		if (!fs.existsSync(path.join(skillRoot, required)))
 			throw new Error(`installed skill lacks ${required}`);
 	}
-	const setupBlock = setupBlockIn(paths.flask);
-	if (!setupBlock.includes(paths.vault))
-		throw new Error("the setup block does not name the run's vault");
 	return {
 		arm,
 		skillRoot,
 		source,
 		files: filesUnder(skillRoot).length,
 		digest: digestOf(skillRoot),
-		setupBlock,
 	};
 }
 

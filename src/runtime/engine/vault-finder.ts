@@ -7,10 +7,6 @@
 // root belongs to another repository, or to none, and using it would put this
 // repository's boards somewhere its clones never see. Outside any checkout the
 // nearest enclosing directory that holds a vault is an untracked vault.
-//
-// A set `ARCHBOARD_VAULT` still decides when `-C` is absent, as it did before
-// the finder: that is the expand step of the migration, and TASK-472.09
-// refuses the variable.
 
 import fs from "fs";
 import path from "path";
@@ -21,7 +17,7 @@ import { isDirectory } from "@/runtime/engine/lib/registry-file";
 const VAULT_DIRECTORY = path.join(".archboard", "vault");
 
 /** How a command came to the vault it addresses. */
-const VAULT_ORIGINS = ["-C", "environment", "working-directory"] as const;
+const VAULT_ORIGINS = ["-C", "working-directory"] as const;
 type VaultOrigin = (typeof VAULT_ORIGINS)[number];
 
 /** Where the search starts, and what a command was given. */
@@ -33,9 +29,7 @@ interface VaultSearch {
 	 * unless said, or `--to` for the vault a board moves to.
 	 */
 	readonly option?: string;
-	/** The value of `ARCHBOARD_VAULT`, or undefined when it is not set. */
-	readonly environment: string | undefined;
-	/** The working directory, which a relative `-C` or `ARCHBOARD_VAULT` resolves against. */
+	/** The working directory, which a relative `-C` resolves against. */
 	readonly cwd: string;
 }
 
@@ -46,10 +40,9 @@ interface FoundVault {
 	readonly origin: VaultOrigin;
 	/**
 	 * The directory whose `.archboard/vault` it is: the checkout root, or the
-	 * directory that holds an untracked vault. Null for a vault the environment
-	 * names, which is used as it is.
+	 * directory that holds an untracked vault.
 	 */
-	readonly holder: string | null;
+	readonly holder: string;
 }
 
 /** Why no vault was found. */
@@ -84,17 +77,23 @@ function vaultHolder(dir: string): string | undefined {
 }
 
 /**
+ * Whether a path is a vault: the `.archboard/vault` of a directory (ADR 0049). The server serves
+ * no other directory, because a vault outside the layout has no checkout for a workhorse to work in.
+ * @param vault A directory, absolute.
+ * @returns True when it is in the layout.
+ */
+function isVaultLayout(vault: string): boolean {
+	return path.resolve(vault).endsWith(`${path.sep}${VAULT_DIRECTORY}`);
+}
+
+/**
  * The directory a vault's agents work in (ADR 0050): the one that holds the vault as its
- * `.archboard/vault`, which is a checkout root or the holder of an untracked vault. A vault that
- * is not the `.archboard/vault` of a directory, as `ARCHBOARD_VAULT` can name one, is its own.
- * @param vault The vault directory, absolute.
+ * `.archboard/vault`, which is a checkout root or the holder of an untracked vault.
+ * @param vault The vault directory, absolute and in the layout (see `isVaultLayout`).
  * @returns The directory.
  */
 function checkoutOfVault(vault: string): string {
-	const resolved = path.resolve(vault);
-	return resolved.endsWith(`${path.sep}${VAULT_DIRECTORY}`)
-		? path.dirname(path.dirname(resolved))
-		: resolved;
+	return path.dirname(path.dirname(path.resolve(vault)));
 }
 
 /**
@@ -104,11 +103,7 @@ function checkoutOfVault(vault: string): string {
  * @param option The option that named it, when one did.
  * @returns The phrase.
  */
-function startPhrase(
-	origin: Exclude<VaultOrigin, "environment">,
-	directory: string,
-	option: string,
-): string {
+function startPhrase(origin: VaultOrigin, directory: string, option: string): string {
 	return origin === "-C"
 		? `The directory ${option} names, ${directory},`
 		: `The working directory, ${directory},`;
@@ -144,13 +139,6 @@ function notFoundMessage(
 ): string {
 	const { directory, origin, checkoutRoot } = refusal;
 	const option = named ?? "-C";
-	if (origin === "environment") {
-		return (
-			`ARCHBOARD_VAULT names ${directory}, which is not a directory. A set ARCHBOARD_VAULT decides the vault ` +
-			`of every command that names no -C. Unset it, so a command finds its vault from the directory it runs in, ` +
-			`or set it to a vault directory. Nothing was done.`
-		);
-	}
 	if (refusal.reason === "directory-missing") {
 		return `${option} names ${directory}, which is not a directory. Nothing was done.`;
 	}
@@ -194,7 +182,7 @@ function realPath(directory: string): string {
  */
 async function vaultFrom(
 	start: string,
-	origin: Exclude<VaultOrigin, "environment">,
+	origin: VaultOrigin,
 	option: string | undefined,
 ): Promise<VaultFinding> {
 	const directory = realPath(start);
@@ -222,9 +210,8 @@ async function vaultFrom(
 }
 
 /**
- * Find the vault a command addresses: from `-C` when it is given, else the
- * vault `ARCHBOARD_VAULT` names, used as it is when it is a directory, else
- * from the working directory.
+ * Find the vault a command addresses: from `-C` when it is given, else from
+ * the working directory.
  * @param search What the command was given, and where it runs.
  * @returns The vault, or why there is none.
  */
@@ -235,12 +222,6 @@ async function findVault(search: VaultSearch): Promise<VaultFinding> {
 		return isDirectory(start)
 			? vaultFrom(start, "-C", option)
 			: notFound({ reason: "directory-missing", directory: start, origin: "-C" }, option);
-	}
-	if (search.environment !== undefined && search.environment !== "") {
-		const named = path.resolve(search.cwd, search.environment);
-		return isDirectory(named)
-			? { ok: true, found: { path: realPath(named), origin: "environment", holder: null } }
-			: notFound({ reason: "directory-missing", directory: named, origin: "environment" }, option);
 	}
 	return vaultFrom(search.cwd, "working-directory", option);
 }
@@ -256,5 +237,6 @@ export {
 	type VaultFinding,
 	checkoutOfVault,
 	findVault,
+	isVaultLayout,
 	vaultHolder,
 };

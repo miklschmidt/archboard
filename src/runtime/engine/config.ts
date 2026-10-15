@@ -11,21 +11,26 @@ const ARCHBOARD_URL = process.env["ARCHBOARD_URL"] || DEFAULT_ARCHBOARD_URL;
 // Opt out of auto-starting the Archboard server from the CLI.
 const ARCHBOARD_NO_AUTOSTART = process.env["ARCHBOARD_NO_AUTOSTART"] === "1";
 
-// The vault a set ARCHBOARD_VAULT names. A command finds its vault from the
-// working directory or -C (ADR 0049); until TASK-472.09 refuses the variable,
-// a set one still decides when -C is absent, and the server opens a page in it.
-const ARCHBOARD_VAULT = process.env["ARCHBOARD_VAULT"] || undefined;
-
 /**
- * The refusal for the server URL's old name, before archboard named its own environment
- * (TASK-310). A shell or `.envrc` that still sets it would otherwise have its server ignored and
- * another started on the default port, over the same vault.
- * @returns The refusal text, or null when the old name is not set.
+ * The refusal for an environment variable archboard no longer reads. A shell or `.envrc` or `.env`
+ * that still sets one would otherwise be ignored without a word: `EXPRESS_SERVER_URL` would start
+ * a second server on the default port, and `ARCHBOARD_VAULT` would address another vault than the
+ * one the person means (TASK-310, ADR 0049).
+ * @returns The refusal text, or null when no removed variable is set.
  */
-function renamedUrlMessage(): string | null {
-	return process.env["EXPRESS_SERVER_URL"] === undefined
-		? null
-		: "EXPRESS_SERVER_URL is now ARCHBOARD_URL. Rename it where it is set (a shell profile, an .envrc or a .env file), then run the command again.";
+function removedEnvironmentMessage(): string | null {
+	if (process.env["EXPRESS_SERVER_URL"] !== undefined) {
+		return "EXPRESS_SERVER_URL is now ARCHBOARD_URL. Rename it where it is set (a shell profile, an .envrc or a .env file), then run the command again.";
+	}
+	if (process.env["ARCHBOARD_VAULT"] !== undefined) {
+		return (
+			"ARCHBOARD_VAULT is no longer read, and a set one is refused so that it never addresses another vault than you mean. " +
+			"A command finds its vault from the directory it runs in, or from -C <dir>. " +
+			"Unset it where it is set (a shell profile, an .envrc or a .env file), then run the command again. " +
+			"A vault outside a git checkout moves to <dir>/.archboard/vault, where a command run in <dir> finds it."
+		);
+	}
+	return null;
 }
 
-export { ARCHBOARD_URL, renamedUrlMessage, ARCHBOARD_NO_AUTOSTART, ARCHBOARD_VAULT };
+export { ARCHBOARD_URL, removedEnvironmentMessage, ARCHBOARD_NO_AUTOSTART };

@@ -42,7 +42,8 @@ test("a workhorse tool names a checkout by its directory or its vault, through a
 	expect(checkoutNamedBy(repository)).toBe(repository);
 	expect(checkoutNamedBy(join(repository, ".archboard", "vault"))).toBe(repository);
 	expect(checkoutNamedBy(linked)).toBe(repository);
-	// A directory with no vault, a path that is not there and a relative path name none.
+	// A directory with no vault, a path that is not there and a relative path name none. A
+	// directory in no vault layout is one the server serves no vault from, so it is no checkout.
 	expect(checkoutNamedBy(root)).toBeNull();
 	expect(checkoutNamedBy(join(root, "missing"))).toBeNull();
 	expect(checkoutNamedBy("payments")).toBeNull();

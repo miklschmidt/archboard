@@ -91,23 +91,25 @@ rules that will not stop you:
   exception. It names its vault and goes to every pane, because the navigator
   marks the boards of every repository (ADR 0022). Each browser pane
   names the vault the server put it in (ADR 0050). A pane opens in the vault the
-  server reports at `/api/served-vault`: a set `ARCHBOARD_VAULT`, else the first
-  ready repository by name, else none, and then the page says how to make a
-  repository known.
+  server reports at `/api/served-vault`: the first ready repository by name, else
+  none, and then the page says how to make a repository known. The server serves
+  only a vault in the `<dir>/.archboard/vault` layout (`isVaultLayout`), because
+  a workhorse works in the directory that holds its vault. A call that names
+  another directory is refused with `VAULT_UNREADABLE`.
 - **The CLI finds its vault from the directory it runs in** (ADR 0049), as git
-  finds its repository: from `-C <dir>`, else a set `ARCHBOARD_VAULT` (used as
-  it is, until TASK-472.09 refuses it), else the working directory. Inside a git
+  finds its repository: from `-C <dir>`, else the working directory. A set
+  `ARCHBOARD_VAULT`, also from `.env`, makes every command refuse (exit 2)
+  instead of being ignored. Inside a git
   checkout only `<root>/.archboard/vault` counts. A checkout without one is
   refused with `VAULT_NOT_FOUND` (exit 2), and nothing above the root is used.
   Outside any checkout the nearest enclosing `<dir>/.archboard/vault` counts.
   `-C` is a shared option of the commands that call a vault. It stands before
   or after the command name. It changes only where the vault is found:
   `--input`, `--out` and other paths resolve against the working directory.
-  Every JSON answer of those commands names `vault: {path, origin}` (`-C`,
-  `environment` or `working-directory`). The registry can lack the checkout or untracked vault that a command finds.
+  Every JSON answer of those commands names `vault: {path, origin}` (`-C` or
+  `working-directory`). The registry can lack the checkout or untracked vault that a command finds.
   That command then registers it, says so in `vault.registered` and writes one
-  line to stderr. A vault from
-  `ARCHBOARD_VAULT` never registers. The Codex child holds no `ARCHBOARD_VAULT`: a thread's board
+  line to stderr. The Codex child holds no vault setting: a thread's board
   context names each board's vault, and a thread passes it as `-C`.
 - **One writer at a time per board** (ADR 0016), a lease file taken by one
   write-boundary middleware, deny by default. Claim before substantial work.

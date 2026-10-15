@@ -58,8 +58,8 @@ relationship.
    carries `repeat`. Examples are a retry limit, a batch of a known size, and a
    literal list of candidates tried in turn. A `self` step carries `repeat` as
    readily as a call to another column. The example below tries two candidate
-   documents in one `self` step with `repeat: 2`, because `chooseDoc` runs
-   inside `Setup block`.
+   documents in one `self` step with `repeat: 2`, because `removeOldBlocks` runs
+   inside `Repository setup`.
 
    A `note` that states the count in prose does not replace the `repeat`. The
    step carries the `repeat`. If needed, add a note beside it. A loop whose
@@ -84,13 +84,13 @@ relationship.
    same payload with `semantic edit` and the version you read.
 
    The evidence comes from archboard's own source. `executeInstallSkill`
-   (`src/cli/commands/install-skill.ts`) calls `writeSetup`
-   (`src/cli/commands/lib/repo-setup-block.ts`). To find the agent document,
-   `chooseDoc` loops over the literal list `["CLAUDE.md", "AGENTS.md"]`. So
-   that step is `repeat: 2`, and the `note` says that it keeps the first that
-   exists. `writeSetup` then writes the block into that document. It asks
-   `git check-ignore` whether git ignores the vault, and returns the result to
-   the command.
+   (`src/cli/commands/install-skill.ts`) calls `setUpRepository`
+   (`src/cli/commands/lib/repo-setup.ts`). To remove the block that earlier
+   versions wrote, `removeOldBlocks` loops over the literal list
+   `["CLAUDE.md", "AGENTS.md"]`. So that step is `repeat: 2`, and the `note`
+   says that it cuts the block from each document that holds one.
+   `setUpRepository` then asks `git check-ignore` whether git ignores the
+   vault, and returns the result to the command.
 
    Each call between two parts is an `edge` as well as a step. Each message
    that a file of the checkout sends carries that file and the name it calls
@@ -98,49 +98,47 @@ relationship.
    from outside the checkout, so they carry none.
 
 ```bash
-archboard semantic new "Skill install" --doing "explaining how install-skill writes the repository setup" <<'JSON'
+archboard semantic new "Skill install" --doing "explaining how install-skill sets a repository up" <<'JSON'
 {
   "level": "module",
   "nodes": [
     { "name": "User", "kind": "external", "responsibility": "Runs archboard install-skill in a repository" },
-    { "name": "install-skill command", "kind": "module", "responsibility": "Installs the skill files, then writes the setup",
+    { "name": "install-skill command", "kind": "module", "responsibility": "Installs the skill files, then sets the repository up",
       "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts" } },
-    { "name": "Setup block", "kind": "module", "responsibility": "Writes the vault and CLI setup into the agent document",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts" } },
+    { "name": "Repository setup", "kind": "module", "responsibility": "Makes the vault and removes the block that earlier versions wrote",
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup.ts" } },
     { "name": "git", "kind": "external", "responsibility": "Answers whether a path is ignored" }
   ],
   "edges": [
     { "from": "User", "to": "install-skill command", "kind": "call", "label": "install-skill" },
-    { "from": "install-skill command", "to": "Setup block", "kind": "call", "label": "writeSetup", "emphasis": "hero",
-      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts", "symbol": "writeSetup" } },
-    { "from": "Setup block", "to": "git", "kind": "call", "label": "check-ignore",
-      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts", "symbol": "execFileSync" } }
+    { "from": "install-skill command", "to": "Repository setup", "kind": "call", "label": "setUpRepository", "emphasis": "hero",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts", "symbol": "setUpRepository" } },
+    { "from": "Repository setup", "to": "git", "kind": "call", "label": "check-ignore",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup.ts", "symbol": "execFileSync" } }
   ],
   "flows": [{
     "name": "Repository setup",
-    "participants": ["User", "install-skill command", "Setup block", "git"],
+    "participants": ["User", "install-skill command", "Repository setup", "git"],
     "steps": [
       { "from": "User", "to": "install-skill command", "label": "install-skill" },
-      { "from": "install-skill command", "to": "Setup block", "label": "writeSetup",
-        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts", "symbol": "writeSetup" } },
-      { "as": "find", "from": "Setup block", "to": "Setup block", "label": "find the agent document", "kind": "self", "repeat": 2, "note": "tries CLAUDE.md then AGENTS.md and keeps the first that exists; when neither does, the skill target names the one to create",
-        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts", "symbol": "chooseDoc" } },
-      { "as": "write", "from": "Setup block", "to": "Setup block", "label": "write the setup block", "kind": "self",
-        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts", "symbol": "applyBlock" } },
-      { "from": "Setup block", "to": "git", "label": "check-ignore the vault",
-        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts", "symbol": "execFileSync" } },
-      { "from": "git", "to": "Setup block", "label": "ignored or not", "kind": "return" },
-      { "from": "Setup block", "to": "install-skill command", "label": "setup result", "kind": "return",
-        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts", "symbol": "writeSetup" } }
+      { "from": "install-skill command", "to": "Repository setup", "label": "setUpRepository",
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts", "symbol": "setUpRepository" } },
+      { "as": "remove", "from": "Repository setup", "to": "Repository setup", "label": "remove the earlier block", "kind": "self", "repeat": 2, "note": "looks in CLAUDE.md, then AGENTS.md, and cuts the block from each that holds one; every other byte of the document stays",
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup.ts", "symbol": "removeOldBlocks" } },
+      { "from": "Repository setup", "to": "git", "label": "check-ignore the vault",
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup.ts", "symbol": "execFileSync" } },
+      { "from": "git", "to": "Repository setup", "label": "ignored or not", "kind": "return" },
+      { "as": "report", "from": "Repository setup", "to": "install-skill command", "label": "setup result", "kind": "return",
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup.ts", "symbol": "setUpRepository" } }
     ]
   }],
   "views": [{ "name": "Setup exchange", "grammar": "data-flow", "scope": { "kind": "selection", "flows": ["Repository setup"] } }],
   "walkthroughs": [{
-    "name": "Why the document is found before the block is written",
+    "name": "Why both documents are searched",
     "beats": [{
-      "heading": "One agent document, never two",
-      "body": "The block is written into whichever of CLAUDE.md and AGENTS.md already exists, so the search has to finish first: writing before it would create the second document the search exists to avoid.",
-      "subjects": ["find", "write"],
+      "heading": "Every document, each cut alone",
+      "body": "An earlier version wrote its block into whichever of CLAUDE.md and AGENTS.md existed, so a repository can hold one in either or both. The removal looks in both, and the result names every document it changed, so the person can commit exactly those.",
+      "subjects": ["remove", "report"],
       "view": "Setup exchange"
     }]
   }]
@@ -161,7 +159,7 @@ archboard semantic rasterize "Skill install" --view "Setup exchange" --out /tmp/
 
    The saved kind is `self` because the ends are equal. So the check is that
    the step exists at all. The saved beat's `subjects` carry the step's minted
-   id. They also carry what relies on that step (`write` above), not only the
+   id. They also carry what relies on that step (`report` above), not only the
    part that the step runs on. A handle that nobody referenced explains nothing.
 
    Open the picture through the `data-flow` view that you made, not the whole

@@ -197,7 +197,7 @@ describe("classifying what an author ran", () => {
 			"bash -lc 'archboard check'",
 			"bash -lc 'rg -n \"class Flask\" src/flask/app.py'",
 			"bash -lc 'sed -n 1,40p /run/flask/src/flask/ctx.py'",
-			"bash -lc 'export ARCHBOARD_VAULT=/run/vault'",
+			"bash -lc 'export VAULT_DIR=/run/vault'",
 			"bash -lc 'archboard frobnicate'",
 			"bash -lc 'python3 -c \"print(1)\"'",
 		].map((command) => ({

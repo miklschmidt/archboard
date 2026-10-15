@@ -14,6 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
+import { isVaultLayout } from "@/runtime/engine/vault-finder";
 import { bodyOf, queryString } from "@/server/archboard/lib/request-board";
 
 /** The query parameter, and the body field, that name the vault. */
@@ -98,20 +99,17 @@ function namedVault(raw: unknown): NamedVault {
 		};
 	}
 	const found = directoryAt(raw);
-	return found.ok
+	if (!found.ok) {
+		return { ok: false, refusal: vaultUnreadableRefusal(raw, found.why) };
+	}
+	// The server serves only a vault in the layout: a workhorse works in the directory that holds
+	// the vault (ADR 0050), and a directory in no layout has none.
+	return isVaultLayout(found.real)
 		? { ok: true, vault: found.real }
-		: { ok: false, refusal: vaultUnreadableRefusal(raw, found.why) };
-}
-
-/**
- * A vault the environment names, canonical: where a page opens while `ARCHBOARD_VAULT` is set.
- * @param configured The configured vault directory.
- * @returns The canonical path, or the resolved one when it is not a directory yet.
- */
-function canonicalConfiguredVault(configured: string): string {
-	const resolved = path.resolve(configured);
-	const found = directoryAt(resolved);
-	return found.ok ? found.real : resolved;
+		: {
+				ok: false,
+				refusal: vaultUnreadableRefusal(raw, "not the .archboard/vault of a directory"),
+			};
 }
 
 /** The vault each request named, once the requirement has run on it. */
@@ -162,12 +160,4 @@ function vaultOfRequest(req: Request): string {
 	return vault;
 }
 
-export {
-	VAULT_PARAMETER,
-	canonicalConfiguredVault,
-	namedVault,
-	requireVault,
-	statedVault,
-	vaultOfRequest,
-	type NamedVault,
-};
+export { VAULT_PARAMETER, namedVault, requireVault, statedVault, vaultOfRequest, type NamedVault };
