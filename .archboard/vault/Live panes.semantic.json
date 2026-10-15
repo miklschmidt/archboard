@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 49,
+	"version": 51,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T22:05:45.586Z",
+	"updatedAt": "2026-10-15T22:13:07.168Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -25,7 +25,8 @@
 					"QqyAf3RP",
 					"UNYvWHmE",
 					"bEBbXPKc",
-					"K385etzX"
+					"K385etzX",
+					"Qyu8T7UT"
 				],
 				"edges": [],
 				"flows": []
@@ -45,7 +46,8 @@
 					"UNYvWHmE",
 					"mStVd7fZ",
 					"hBDu6P2M",
-					"QqyAf3RP"
+					"QqyAf3RP",
+					"Qyu8T7UT"
 				],
 				"edges": [],
 				"flows": []
@@ -80,7 +82,8 @@
 					"nPjqFn3J",
 					"MqTq68P3",
 					"BL7LFThw",
-					"UNYvWHmE"
+					"UNYvWHmE",
+					"Qyu8T7UT"
 				],
 				"edges": [],
 				"flows": []
@@ -11510,6 +11513,20 @@
 						"kind": "module",
 						"responsibility": "Boots and stops the server, mounts every route, and holds each call to the vault it names",
 						"parent": "t1dQivSP"
+					},
+					{
+						"id": "Qyu8T7UT",
+						"order": 30000,
+						"name": "Board routes",
+						"kind": "module",
+						"responsibility": "The routes that write, rename, move and show boards: each tells the panes what it did, and a show or a move takes panes to another vault",
+						"parent": "t1dQivSP",
+						"drillDown": {
+							"board": "Archboard server routes",
+							"variant": {
+								"kind": "current"
+							}
+						}
 					}
 				],
 				"edges": [
@@ -11600,7 +11617,7 @@
 					{
 						"id": "dl8GcVsN",
 						"order": 7000,
-						"from": "t1dQivSP",
+						"from": "Qyu8T7UT",
 						"to": "BL7LFThw",
 						"kind": "event",
 						"label": "announce the accepted write",
@@ -11614,7 +11631,7 @@
 					{
 						"id": "JHTQ2avc",
 						"order": 8000,
-						"from": "t1dQivSP",
+						"from": "Qyu8T7UT",
 						"to": "BL7LFThw",
 						"kind": "call",
 						"label": "point its panes at the new name",
@@ -11656,7 +11673,7 @@
 					{
 						"id": "esNJ3K32",
 						"order": 11000,
-						"from": "t1dQivSP",
+						"from": "Qyu8T7UT",
 						"to": "UNYvWHmE",
 						"kind": "call",
 						"label": "what the writer said it was doing",
@@ -11824,7 +11841,7 @@
 					{
 						"id": "UVtcPHc3",
 						"order": 23000,
-						"from": "t1dQivSP",
+						"from": "Qyu8T7UT",
 						"to": "MqTq68P3",
 						"kind": "call",
 						"label": "the moved pane arrives on the new name",
@@ -11894,7 +11911,7 @@
 					{
 						"id": "ZGGx69Il",
 						"order": 28000,
-						"from": "t1dQivSP",
+						"from": "Qyu8T7UT",
 						"to": "mStVd7fZ",
 						"kind": "call",
 						"description": "the write, as a settled change",
@@ -12192,7 +12209,7 @@
 					{
 						"id": "tqLvLUcA",
 						"order": 51000,
-						"from": "t1dQivSP",
+						"from": "Qyu8T7UT",
 						"to": "nPjqFn3J",
 						"kind": "call",
 						"label": "a show of another repository's board moves the pane",
@@ -12206,7 +12223,7 @@
 					{
 						"id": "6o2ZXOzG",
 						"order": 52000,
-						"from": "t1dQivSP",
+						"from": "Qyu8T7UT",
 						"to": "4smEPsmF",
 						"kind": "call",
 						"label": "the repository and checkout of a shown board's vault",
@@ -12290,7 +12307,7 @@
 					{
 						"id": "55zluwBL",
 						"order": 58000,
-						"from": "t1dQivSP",
+						"from": "Qyu8T7UT",
 						"to": "nPjqFn3J",
 						"kind": "call",
 						"label": "a moved board takes its panes to the target vault",
@@ -12318,7 +12335,7 @@
 					{
 						"id": "gwCn1bx5",
 						"order": 60000,
-						"from": "t1dQivSP",
+						"from": "Qyu8T7UT",
 						"to": "etiWAAKH",
 						"kind": "call",
 						"label": "a show that chose a checkout: every pane follows",
