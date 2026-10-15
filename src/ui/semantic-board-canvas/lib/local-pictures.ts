@@ -45,6 +45,7 @@ import type {
 } from "@/transformers/semantic-renderer/board";
 import {
 	SemanticBoardError,
+	comparisonKey,
 	type SemanticBoardEntry,
 	type SemanticRender,
 	type SemanticRenderRequest,
@@ -136,7 +137,7 @@ async function drawHere(
 		request.board,
 		request.variant,
 		request.view,
-		request.comparison === false ? "plain" : "compared",
+		comparisonKey(request),
 		request.layout,
 		stamp,
 	]);
@@ -202,6 +203,7 @@ async function drawn(
 		{
 			variant: request.variant,
 			view: request.view,
+			against: request.against,
 			comparison: request.comparison,
 			layout: request.layout,
 		},
