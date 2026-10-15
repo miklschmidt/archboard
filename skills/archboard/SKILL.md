@@ -506,7 +506,8 @@ and an explanation for somebody new to the code follows
   parts and the parts directly inside each root container, with deeper
   containers closed. If the subject holds more than about a dozen
   parts, gather them into a few containers. Each container has a
-  responsibility and a binding that the code supports, never a box for layout.
+  responsibility that the code supports, never a box for layout, and binds to
+  the folder that holds its parts when the code has one.
   Add a view that opens each container. `archboard check` warns
   `OVERVIEW_CROWDED` when an overview draws more than 15 parts or 25 lines.
 - Draw one relationship between two parts. It says that one part needs or uses

@@ -135,6 +135,17 @@ describe("the overview a board opens on", () => {
 		expect(overview.flows).toEqual([]);
 	});
 
+	test("draws no relationship between a container and a part it holds", () => {
+		const held = content({
+			nodes: [PLATFORM, GATEWAY, ROUTER, LEDGER],
+			edges: [
+				{ id: "e1", from: "pl", to: "rt", kind: "call", label: "mounts" },
+				{ id: "e2", from: "gw", to: "pl", kind: "call", label: "reports" },
+			],
+		});
+		expect(scopedContent(held, { kind: "overview" }).edges).toEqual([]);
+	});
+
 	test("keeps a lone relationship as it was stated", () => {
 		const lone = content({
 			nodes: [PLATFORM, GATEWAY, ROUTER, LEDGER],

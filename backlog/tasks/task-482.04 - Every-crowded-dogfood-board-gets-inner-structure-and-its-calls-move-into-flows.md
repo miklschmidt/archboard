@@ -4,7 +4,7 @@ title: Every crowded dogfood board gets inner structure and its calls move into 
 status: To Do
 assignee: []
 created_date: '2026-10-15 21:05'
-updated_date: '2026-10-15 21:28'
+updated_date: '2026-10-15 21:51'
 labels:
   - skill
 dependencies:
@@ -26,7 +26,7 @@ After the Live panes pilot of ADR 0052, the other dogfood boards over the overvi
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 `archboard check` reports no `OVERVIEW_CROWDED` for any dogfood board
-- [ ] #2 Every new container has a responsibility and a binding that the code supports
+- [ ] #2 Every new container has a responsibility that the code supports, and binds to a folder where the code has one
 <!-- AC:END -->
 
 ## Implementation Notes

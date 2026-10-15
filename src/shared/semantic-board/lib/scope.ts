@@ -95,17 +95,21 @@ function scopedContent(content: VariantContent, scope: ReadingScope): VariantCon
  * keeps the identity of the first relationship in board order, so a comparison
  * marks it; it says no label, because no one label speaks for all of them, and
  * it takes the kind most of them have. A relationship inside one closed card is
- * the card's own business and is not drawn. Flows are calls in an order, which
+ * the card's own business and is not drawn, and neither is one between a
+ * container and a part it holds, because the nesting already draws that. Flows are calls in an order, which
  * the sequence views draw, so the overview draws none.
  * @param content The variant's whole content.
  * @returns The overview's content.
  */
 function overviewContent(content: VariantContent): VariantContent {
 	const drawnAs = drawnPartOf(content);
+	const parentOf = new Map(content.nodes.map((node) => [node.id, node.parent]));
 	const joined = new Map<string, [SemanticEdge, ...SemanticEdge[]]>();
 	for (const edge of content.edges) {
 		const [from, to] = [drawnAs(edge.from), drawnAs(edge.to)];
-		if (from === to) continue;
+		// A drawn part sits at most one level down, so a container and a part it
+		// holds are a root and its child: the nesting already says that one.
+		if (from === to || parentOf.get(to) === from || parentOf.get(from) === to) continue;
 		const key = `${from}\u0000${to}`;
 		const line = joined.get(key);
 		if (line === undefined) joined.set(key, [{ ...edge, from, to }]);

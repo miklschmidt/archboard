@@ -43,7 +43,7 @@ _Avoid_: board, pane, variant
 The reading a board opens on, which nobody authors (ADR 0052). It draws the
 root parts and the parts directly inside each root container. Every deeper
 container is closed. All relationships from one drawn part to another are one
-line.
+line. It draws no line between a container and a part that it holds.
 _Avoid_: whole board, summary view, default view
 
 **Everything**:
