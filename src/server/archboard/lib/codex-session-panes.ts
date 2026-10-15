@@ -12,8 +12,23 @@ import type {
 import type { TabSessionId } from "@/server/codex-workbench";
 import { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-pane";
 import type { ContextPane, SemanticInputOwners } from "@/server/archboard/lib/codex-semantic-input";
-import { panes } from "@/server/archboard/lib/pane-registry";
+import { checkoutOfVault } from "@/runtime/engine/vault-finder";
+import { panes, paneVaults } from "@/server/archboard/lib/pane-registry";
 import { tabSessionOf } from "@/server/archboard/lib/tab-sessions";
+
+/**
+ * The checkout of the vault a pane is in now: the directory that holds the vault.
+ * @param clientId The pane's client id.
+ * @returns The checkout.
+ * @throws {Error} When the pane is in no vault.
+ */
+function paneCheckoutOf(clientId: string): string {
+	const vault = paneVaults.get(clientId) ?? panes.get(clientId)?.vault;
+	if (vault === undefined) {
+		throw new Error(`The browser pane ${clientId} is in no vault.`);
+	}
+	return checkoutOfVault(vault);
+}
 
 /**
  * The panes of one browser tab on screen, in reading order.
@@ -196,6 +211,8 @@ export {
 	hearsVault,
 	openPaneOf,
 	operationPane,
+	paneCheckoutOf,
+	panesOfTabSession,
 	presentingPaneOf,
 	requireWorkhorse,
 	semanticOwners,

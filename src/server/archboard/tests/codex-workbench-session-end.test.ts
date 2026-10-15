@@ -92,6 +92,7 @@ function endingStore() {
 			},
 		},
 		endApprovals: async (id) => void events.push(`approvals:end:${id}`),
+		shownConversationOf: () => null,
 		build: (scope) => {
 			scopes.push(scope);
 			return { components: recordingOwners(events), actions: {} as never };

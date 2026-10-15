@@ -284,7 +284,7 @@ describe("production Codex generation ownership", () => {
 		}
 	});
 
-	test("retiring a generation releases its owned-process readiness and pane-move subscriptions", async () => {
+	test("retiring a generation releases its owned-process readiness and shown-conversation subscriptions", async () => {
 		const subscribers = new Set<() => void>();
 		const subscribe = (listener: () => void) => {
 			subscribers.add(listener);
@@ -292,7 +292,7 @@ describe("production Codex generation ownership", () => {
 		};
 		const owned = installation({
 			browserLeaseLedger: createBrowserLeaseLedger(),
-			onPaneVaultMove: subscribe,
+			onShownChange: subscribe,
 		});
 		try {
 			const fixture = createCodexWorkbenchGenerationFixture([]);
@@ -307,8 +307,8 @@ describe("production Codex generation ownership", () => {
 				threadLink: fixture.components.threadLink,
 			});
 			// Readiness deltas publish without a browser command, so the gateway holds one
-			// subscription on the owned process for this generation. It holds one on pane moves
-			// too: a moved pane keeps its socket and shows its new checkout's workhorse (ADR 0050).
+			// subscription on the owned process for this generation. It holds one on the tabs' shown
+			// conversations too: every pane of a tab shows the checkout the person activated (ADR 0050).
 			expect(subscribers.size).toBe(2);
 			// stopBrowser disposes the gateway before the generation settles.
 			await gateway.dispose();

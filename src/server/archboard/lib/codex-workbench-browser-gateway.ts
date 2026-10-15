@@ -63,6 +63,8 @@ interface ServerBrowserGatewayInput {
 	) => () => void;
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
 	readonly process: () => ServerReadinessProcessFacts;
+	/** The repository a checkout is listed under, or null when the navigator lists it nowhere. */
+	readonly repositoryOf: (checkout: string) => string | null;
 	/** Injectable clock for the authoritative re-read floor. */
 	readonly now?: () => number;
 	readonly contextForOperation: (
@@ -431,6 +433,7 @@ function createServerBrowserGatewayOptions(
 			readBrowserOwnerProjection(
 				{
 					approvals: components.approvals,
+					repositoryOf: input.repositoryOf,
 					session: sessionOf(context),
 					workhorse: sessionOf(context).workhorses.get(context.checkout) ?? null,
 					dynamicApprovals,

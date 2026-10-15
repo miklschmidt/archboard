@@ -4,7 +4,7 @@
 
 import { afterEach, expect, test } from "bun:test";
 
-import { startCommand } from "./helpers.js";
+import { interruptCommand, startCommand } from "./helpers.js";
 import { createGatewayHarness, type GatewayHarness } from "./support.js";
 import { executableLink } from "./support-values.js";
 
@@ -56,6 +56,41 @@ test("a typed message reaches the workhorse of its pane's checkout, under that w
 		expect.objectContaining({
 			checkout: PAYMENTS,
 			link: expect.objectContaining({ threadId: value.threadId }),
+		}),
+	]);
+});
+
+// The shown conversation (ADR 0050) is the checkout every pane of the tab reads. What is guarded:
+// a Stop pressed under a lease taken before the tab was switched to another checkout is refused,
+// never sent to the conversation the person no longer sees, and the next lease is the new one's.
+test("a lease taken before the shown conversation switched is refused, and a new one runs on the shown workhorse", async () => {
+	const shown = { checkout: PAYMENTS };
+	let shopThread: ReturnType<typeof executableLink> | null = null;
+	const value = createGatewayHarness(undefined, undefined, undefined, {
+		checkoutOf: () => shown.checkout,
+		linkFor: (key) => (key.includes(SHOP) ? shopThread : null),
+	});
+	openHarnesses.push(value);
+	const shopThreadId = value.model.ThreadIdSchema.parse(
+		value.authorities.identity.decoder.adoptThreadId("shop"),
+	);
+	shopThread = executableLink(value.childId, value.epoch, shopThreadId);
+	const pane = value.open();
+	const before = pane.claimLease();
+
+	shown.checkout = SHOP;
+	const raced = await pane.command(interruptCommand(value, before));
+	expect(raced).toMatchObject({ outcome: "not_delivered", code: "link_changed" });
+	expect(() => pane.renewLease()).toThrow();
+	expect(value.calls).toEqual([]);
+
+	expect(pane.snapshot().snapshot.threadLink).toMatchObject({ threadId: shopThreadId });
+	const typed = await pane.command(startCommand(value, pane.claimLease(), shopThreadId));
+	expect(typed.outcome).toBe("delivered");
+	expect(value.actionContexts).toEqual([
+		expect.objectContaining({
+			checkout: SHOP,
+			link: expect.objectContaining({ threadId: shopThreadId }),
 		}),
 	]);
 });

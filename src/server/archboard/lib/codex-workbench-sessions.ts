@@ -43,6 +43,10 @@ import {
 	type WorkhorseStop,
 } from "@/server/archboard/lib/codex-workbench-session-workhorses";
 import { sessionVoiceStartTrace } from "@/server/archboard/lib/voice-start-trace";
+import {
+	noteCoordinatorTurnStart,
+	recordGivenWork,
+} from "@/server/archboard/lib/codex-workbench-delegations";
 import type {
 	BuiltTabSession,
 	BuiltWorkhorse,
@@ -69,6 +73,7 @@ interface ThreadOwner {
 function freshState(): CodexWorkbenchTabSessionState {
 	return {
 		delegations: new Map(),
+		coordinatorTurnHomes: new Map(),
 		currentCoordinatorCall: null,
 		threads: new Set(),
 		voiceTrace: sessionVoiceStartTrace(),
@@ -250,6 +255,9 @@ function createCodexWorkbenchSessions(
 			state,
 		});
 		built.components.operations.subscribe(fanOut);
+		built.components.operations.subscribe(
+			recordGivenWork(session.state.coordinatorTurnHomes, checkout),
+		);
 		workhorses.set(checkout, workhorse);
 		publish();
 		return workhorse;
@@ -423,6 +431,11 @@ function createCodexWorkbenchSessions(
 		onNotification: (event) => {
 			unloads.onNotification(event);
 			const owner = owning(notificationThread(event));
+			if (owner?.workhorse === null) {
+				noteCoordinatorTurnStart(owner.session.state.coordinatorTurnHomes, event, decoder, () =>
+					options.shownConversationOf(owner.session.id),
+				);
+			}
 			for (const session of owner === null ? every() : [owner.session]) {
 				deliver(session, event, decoder);
 			}

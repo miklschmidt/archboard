@@ -177,6 +177,8 @@ function dropOldest(items: readonly SizedItem[], room: number): readonly SizedIt
  * @param approvals Every approval the owner is presenting.
  * @param live What the owner holds from notifications: usage, and each turn's plan.
  * @param budget What the browser may be shown.
+ * @param keepTurn Which turns the reader keeps, when only some are its own; the others are left
+ * out before the budget is spent, so they take none of it.
  * @returns The projected timeline.
  */
 function projectData(
@@ -184,6 +186,7 @@ function projectData(
 	approvals: readonly TimelineApprovalView[],
 	live: TimelineLiveState,
 	budget: ServerBrowserProjectionBudget,
+	keepTurn?: (turnId: TurnId) => boolean,
 ): CodexTimelineProjectionInput {
 	const frame: TimelineFrame = {
 		kind: "codex_timeline",
@@ -191,12 +194,27 @@ function projectData(
 		cursor: data.cursor,
 		usage: live.usage,
 	};
-	const kept = keepNewestTurns(data, frame, approvals, live, budget);
+	const kept = keepNewestTurns(keptTurns(data, keepTurn), frame, approvals, live, budget);
 	const turns = kept.turns.toReversed();
 	if (kept.truncated && turns.length > 0) {
 		trimOldest(turns, frame, budget);
 	}
 	return { ...frame, turns };
+}
+
+/**
+ * A history with only the turns a reader keeps.
+ * @param data The retained history.
+ * @param keepTurn Which turns to keep, or undefined to keep every one.
+ * @returns The history to project.
+ */
+function keptTurns(
+	data: TimelineData,
+	keepTurn: ((turnId: TurnId) => boolean) | undefined,
+): TimelineData {
+	return keepTurn === undefined
+		? data
+		: { ...data, turns: data.turns.filter(({ turn }) => keepTurn(turn.id)) };
 }
 
 /**

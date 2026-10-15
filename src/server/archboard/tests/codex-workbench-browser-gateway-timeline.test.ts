@@ -114,6 +114,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		session: fixture.components.session,
 		threadLink: fixture.components.threadLink,
 		endApprovals: async () => undefined,
+		shownConversationOf: () => null,
 		build: () => ({
 			components: {
 				...fixture.sessionComponents,
@@ -158,6 +159,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	const budget = createServerBrowserProjectionBudget();
 	const options = createServerBrowserGatewayOptions({
 		components: fixture.components,
+		repositoryOf: () => null,
 		sessions,
 		dynamicApprovals,
 		state,
@@ -241,6 +243,7 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 		session: fixture.components.session,
 		threadLink: fixture.components.threadLink,
 		endApprovals: async () => undefined,
+		shownConversationOf: () => null,
 		build: (scope) => ({
 			components: {
 				...fixture.sessionComponents,
@@ -258,6 +261,7 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 	});
 	const options = createServerBrowserGatewayOptions({
 		components: fixture.components,
+		repositoryOf: () => null,
 		sessions,
 		dynamicApprovals: createServerDynamicApprovalOwner({
 			identity: authorities,

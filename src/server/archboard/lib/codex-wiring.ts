@@ -29,6 +29,7 @@ import {
 	semanticInputFor,
 } from "@/server/archboard/lib/codex-semantic-input";
 import { waitForTargetsWith } from "@/server/archboard/lib/codex-target-wait";
+import { liveWorkhorseCheckouts } from "@/server/archboard/lib/codex-workbench-workhorse-list";
 import { checkoutRoot as sourceRoot } from "@/server/archboard/lib/module-paths";
 import { narrationChangesOf } from "@/server/archboard/lib/walkthrough-narration";
 import { canvasOf } from "@/server/archboard/lib/tab-canvas";
@@ -36,11 +37,16 @@ import {
 	browserLeaseLedger,
 	codexSocketInstances,
 	currentSocketsByClient,
-	paneVaults,
 	panes,
 } from "@/server/archboard/lib/pane-registry";
-import { onPaneVaultMove } from "@/server/archboard/lib/pane-vaults";
-import { endTabSessionsOnceGone, tabSessionOf } from "@/server/archboard/lib/tab-sessions";
+import {
+	currentShownCheckout,
+	endTabSessionsOnceGone,
+	onShownChange,
+	shownCheckoutOf,
+	tabSessionOf,
+} from "@/server/archboard/lib/tab-sessions";
+import { repositoryOfVault, vaultIn } from "@/server/archboard/lib/repositories";
 import {
 	boundSessionOf,
 	changePane,
@@ -48,6 +54,7 @@ import {
 	hearsVault,
 	openPaneOf,
 	operationPane,
+	paneCheckoutOf,
 	presentingPaneOf,
 	requireWorkhorse,
 	semanticOwners,
@@ -77,6 +84,8 @@ interface CodexWiring {
 					send: (message: unknown) => Promise<void>,
 			  ) => Promise<void>)
 			| null;
+		/** The checkouts of a tab session's live workhorses, which the dock lists. */
+		liveWorkhorseCheckouts: ((tabSessionId: TabSessionId) => readonly string[]) | null;
 	};
 }
 
@@ -87,6 +96,7 @@ const codexWiring: CodexWiring = {
 		closeBrowser: null,
 		drainBrowsers: null,
 		handleBrowserMessage: null,
+		liveWorkhorseCheckouts: null,
 	},
 };
 
@@ -97,6 +107,7 @@ function resetCodexWorkbenchWiring(): void {
 	codexWiring.codex.closeBrowser = null;
 	codexWiring.codex.drainBrowsers = null;
 	codexWiring.codex.handleBrowserMessage = null;
+	codexWiring.codex.liveWorkhorseCheckouts = null;
 }
 
 type OperationAuthority = Parameters<CodexWorkbenchServer["contextForOperation"]>[0];
@@ -315,19 +326,28 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			},
 		}),
 		/**
-		 * The checkout of the vault a browser's pane is in now.
+		 * The checkout whose conversation a browser pane's tab shows, pinned to the pane's own
+		 * checkout the first time it is read.
 		 * @param browserId The browser's client id.
 		 * @returns The checkout.
-		 * @throws {Error} When the pane is in no vault.
 		 */
-		checkoutOfBrowser: (browserId) => {
-			const vault = paneVaults.get(browserId) ?? panes.get(browserId)?.vault;
-			if (vault === undefined) {
-				throw new Error(`The browser pane ${browserId} is in no vault.`);
-			}
-			return checkoutOfVault(vault);
+		shownCheckoutOf: (browserId) => shownCheckoutOf(browserId, () => paneCheckoutOf(browserId)),
+		shownConversationOf: currentShownCheckout,
+		/**
+		 * Hear every change of a tab's shown conversation.
+		 * @param listener What to tell.
+		 * @returns How to stop listening.
+		 */
+		onShownChange: (listener) => onShownChange(() => listener()),
+		/**
+		 * The repository a checkout is listed under: that of the vault it holds.
+		 * @param checkout The checkout.
+		 * @returns The repository's name, or null when no registered directory holds it.
+		 */
+		repositoryOfCheckout: (checkout) => {
+			const vault = vaultIn(checkout);
+			return vault === null ? null : repositoryOfVault(vault);
 		},
-		onPaneVaultMove,
 		narrationChangesFor: narrationChangesOf,
 		canvasFor: canvasOf,
 		/**
@@ -426,12 +446,22 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 					logger.error(`Cannot publish ${kind} context for pane ${pane.paneId}:`, error);
 				}
 			};
+			/**
+			 * The checkouts of a tab session's live workhorses.
+			 * @param tabSessionId The tab session.
+			 * @returns Them, or none while the session is not live.
+			 */
+			codexWiring.codex.liveWorkhorseCheckouts = (tabSessionId) => {
+				const session = components.sessions.list().find(({ id }) => id === tabSessionId);
+				return session === undefined ? [] : liveWorkhorseCheckouts(session);
+			};
 			const stopEnding = endTabSessionsOnceGone(components);
 			return () => {
 				stopEnding();
 				if (active === components) {
 					active = null;
 					codexWiring.codex.publishPaneContext = null;
+					codexWiring.codex.liveWorkhorseCheckouts = null;
 				}
 			};
 		},

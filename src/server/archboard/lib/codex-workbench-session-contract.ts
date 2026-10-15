@@ -22,6 +22,7 @@ import type {
 } from "@/shared/codex-workbench-identity";
 import type { BrowserRealtimeActions, TabSessionId } from "@/server/codex-workbench";
 import type { TabSessionEnding } from "@/server/archboard/lib/codex-workbench-session-end";
+import type { CoordinatorTurnHome } from "@/server/archboard/lib/codex-workbench-delegations";
 import type {
 	CodexWorkbenchWorkhorse,
 	CodexWorkbenchWorkhorseActions,
@@ -51,6 +52,8 @@ interface CodexWorkbenchTabSessionActions {
 interface CodexWorkbenchTabSessionState {
 	/** Which coordinator turn delegated each workhorse turn, newest last; bounded. */
 	readonly delegations: Map<TurnId, TurnId>;
+	/** Which conversation each coordinator turn shows in, newest last; bounded (ADR 0050). */
+	readonly coordinatorTurnHomes: Map<TurnId, CoordinatorTurnHome>;
 	/** The coordinator tool call running now, which every owner that asks sees the same. */
 	currentCoordinatorCall: LogicalToolCallCorrelation | null;
 	/** Every thread this tab started, its coordinator's and its workhorses', current and replaced. */
@@ -153,6 +156,8 @@ interface CreateCodexWorkbenchSessionsOptions {
 	readonly threadLink: TabSessionEnding["threadLink"];
 	/** Settle every approval an ended session was still to answer. */
 	readonly endApprovals: TabSessionEnding["endApprovals"];
+	/** The checkout whose conversation a tab shows now, or null before any pane of it was read. */
+	readonly shownConversationOf: (id: TabSessionId) => string | null;
 	/** Build one session's coordinator and voice. */
 	readonly build: (scope: CodexWorkbenchTabSessionScope) => BuiltTabSession;
 	/** Build one workhorse of a session. */
