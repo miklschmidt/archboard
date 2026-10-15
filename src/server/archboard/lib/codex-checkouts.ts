@@ -90,8 +90,9 @@ function checkoutArgument(args: unknown): string | null {
 
 /**
  * Give a delegation somewhere to go: start the workhorse of the checkout it names when that
- * workhorse has no thread that can run turns. A start that fails leaves the delegation to say the
- * checkout has no workhorse.
+ * workhorse has no thread that can run turns. A start that fails, or a workhorse that cannot be
+ * built because the tab has gone, leaves the delegation to say the checkout has no workhorse, so
+ * the coordinator's turn is always answered.
  * @param request The coordinator tool call.
  * @param workhorseOf The tab's workhorse of a checkout, built on first use.
  * @returns Resolves once the workhorse can run turns, or its start failed, or the call is no
@@ -104,10 +105,13 @@ async function readyDelegatedWorkhorse(
 	},
 ): Promise<void> {
 	const checkout = delegatedCheckout(request);
-	if (checkout !== null) {
-		await workhorseOf(checkout)
-			.actions.ensureStarted()
-			.catch(() => undefined);
+	if (checkout === null) {
+		return;
+	}
+	try {
+		await workhorseOf(checkout).actions.ensureStarted();
+	} catch {
+		// The delegation itself refuses a checkout with no workhorse that can run turns.
 	}
 }
 
