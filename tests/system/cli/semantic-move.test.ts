@@ -3,13 +3,16 @@
 // owned server with a registry, home and state directory of its own. The store
 // owner (`src/runtime/semantic-board-store/tests/move.test.ts`) holds what the
 // move writes and refuses; this owner holds the command around it: its answer,
-// the files it leaves in both vaults and the exit status of a refusal.
+// the files it leaves in both vaults, what the panes of the source vault are
+// told, and the exit status of a refusal.
 
 import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { createRequester } from "../server-state/support/http.ts";
+import { openPaneSession } from "../server-state/support/pane-session.ts";
 import { createRepositoryFixture, type RepositoryFixture } from "./support/repository-fixture.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
@@ -109,15 +112,64 @@ test("semantic move moves the board to the vault --to finds and lists every rewr
 
 	expect(moved.status, moved.stderr).toBe(0);
 	const answer = JSON.parse(moved.stdout) as {
-		to: { repository: string | null };
+		to: { repository: string | null; registered?: { kind: string; repository?: string } };
 		rewritten: { board: string; drillDown: { repo?: string } }[];
 	};
 	expect(answer.to.repository).toBe(PRODUCT);
+	// The registry did not know the product checkout, so a drill-down that names
+	// its identity could open nothing until the move registered it.
+	expect(answer.to.registered).toMatchObject({ kind: "checkout", repository: PRODUCT });
 	expect(answer.rewritten.map((one) => `${one.board} ${one.drillDown.repo}`).toSorted()).toEqual([
 		`Payments ${META}`,
 		`Platform ${PRODUCT}`,
 	]);
 	expect([holds(metaVault, "Payments"), holds(productVault, "Payments")]).toEqual([false, true]);
+}, 120_000);
+
+test("a pane on the moved board follows it to its new repository, and a pane on a rewritten board is told why it changed", async () => {
+	made("Billing", [{ name: "Invoices", kind: "module" }]);
+	made("Checkout", [{ name: "Cart", kind: "app" }, opening("Bill", "Billing")]);
+	const request = createRequester({ ...server, vault: metaVault });
+	const onMoved = await openPaneSession(server.base, request, {
+		clientId: "on-moved",
+		board: "billing",
+	});
+	const onRewritten = await openPaneSession(server.base, request, {
+		clientId: "on-rewritten",
+		board: "checkout",
+		x: 640,
+	});
+	try {
+		const [movedMark, rewrittenMark] = [onMoved.mark(), onRewritten.mark()];
+		const doing = "moving the billing board into the repository it describes";
+		const moved = cli(metaVault, [
+			"semantic",
+			"move",
+			"Billing",
+			"--to",
+			product,
+			"--doing",
+			doing,
+		]);
+		expect(moved.status, moved.stderr).toBe(0);
+
+		expect(await onMoved.waitFor("pane_board", movedMark)).toMatchObject({
+			board: "billing",
+			vault: productVault,
+			repository: PRODUCT,
+		});
+		// Every message the move made went out before its answer did.
+		await onRewritten.sync();
+		const said = onRewritten.events
+			.slice(rewrittenMark)
+			.filter((event) => event.type === "board_doing" && event.board === "checkout");
+		expect(said.map((event) => (event["doing"] as { doing?: string } | undefined)?.doing)).toEqual([
+			doing,
+		]);
+	} finally {
+		await onMoved.close();
+		await onRewritten.close();
+	}
 }, 120_000);
 
 test("a refused move exits with the status its refusal declares and moves nothing", () => {

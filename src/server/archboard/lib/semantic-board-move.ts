@@ -9,12 +9,16 @@
 // What it announces is the news every board it wrote makes, in the vault of
 // each: the board in the target vault, each board whose drill-down it
 // rewrote, and the board gone from the source vault, as a discard announces
-// it. The line the mover wrote goes up in both vaults. A move that stopped part
-// way announces what it did write, and is answered as a refusal that says to
-// run it again.
+// it. The line the mover wrote goes up on every board it wrote and on the
+// board in the source vault. Every pane that showed the board in the source
+// vault moves with it into the target vault and shows it there (ADR 0051), as a
+// show of another repository's board moves a pane. A move that stopped part way
+// announces what it did write, moves no pane, and is answered as a refusal that
+// says to run it again.
 
 import type { NextFunction, Request, Response } from "express";
 import type { z } from "zod";
+import { parseBoardKey } from "@/runtime/engine/board";
 import { forgetDoing } from "@/runtime/engine/board-doing";
 import { BoardMoveInputSchema } from "@/shared/semantic-board/index";
 import {
@@ -23,7 +27,15 @@ import {
 	type SemanticMoveResult,
 } from "@/runtime/semantic-board-store/index";
 import { announceDoing } from "@/server/archboard/lib/board-announcements";
-import { broadcast } from "@/server/archboard/lib/pane-registry";
+import {
+	aggregateOf,
+	broadcast,
+	paneBoardOf,
+	sendToPane,
+} from "@/server/archboard/lib/pane-registry";
+import { arrivedOnBoard } from "@/server/archboard/lib/pane-routes";
+import { movePaneVault, paneClientsOfVault } from "@/server/archboard/lib/pane-vaults";
+import { repositoryOfVault } from "@/server/archboard/lib/repositories";
 import { namedVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 import { settledChangeFields } from "@/server/archboard/lib/semantic-change-feed";
 import {
@@ -43,9 +55,34 @@ import {
 type Wrote = Exclude<SemanticMoveResult, { outcome: "rejected" }>;
 
 /**
+ * Move every pane that shows the board in the source vault into the target
+ * vault, each keeping the address it shows, so it reads the board where it is
+ * now (ADR 0051).
+ * @param from The source vault.
+ * @param to The target vault.
+ * @param key The board's key.
+ */
+function followMovedBoard(from: string, to: string, key: string): void {
+	const repository = repositoryOfVault(to);
+	for (const clientId of paneClientsOfVault(from)) {
+		const shown = paneBoardOf(clientId);
+		if (shown === null || (aggregateOf(shown) ?? shown) !== key) continue;
+		movePaneVault(clientId, to);
+		sendToPane(
+			clientId,
+			{ type: "pane_board", identity: parseBoardKey(shown), vault: to, repository },
+			shown,
+		);
+		arrivedOnBoard(clientId, shown);
+	}
+}
+
+/**
  * Tell the panes of each vault about every board the move wrote, and say what
- * the mover was doing in both vaults. A finished move then tells the source
- * vault the board is gone from it, and forgets the lines said about it there.
+ * the mover was doing on each of them and on the board in the source vault. A
+ * finished move then moves every pane on the board to the target vault, tells
+ * the source vault the board is gone from it, and forgets the lines said about
+ * it there.
  * @param result What the move did.
  * @param doing The line the mover wrote, or empty for a person.
  * @param by The agent session that asked, or null when it named none.
@@ -56,7 +93,7 @@ function announceMove(result: Wrote, doing: string, by: string | null): void {
 	if (doing !== "") {
 		const entry = { doing, at: new Date().toISOString(), by: "agent", kind: "agent" as const };
 		announceDoing(from.vault, key, entry);
-		announceDoing(to.vault, key, entry);
+		for (const write of result.written) announceDoing(write.vault, write.location.key, entry);
 	}
 	for (const write of result.written) {
 		broadcast(
@@ -70,6 +107,7 @@ function announceMove(result: Wrote, doing: string, by: string | null): void {
 		);
 	}
 	if (result.outcome !== "moved") return;
+	followMovedBoard(from.vault, to.vault, key);
 	broadcast(
 		{ type: "board_note", board: key, ...settledChangeFields({ by, heldAs, discarded: true }) },
 		from.vault,
