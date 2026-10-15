@@ -93,6 +93,12 @@ describe("the drill trail", () => {
 		const arrived = drillArrived(down.trail, { ...LEDGER, board: "Ledger" });
 		expect(stopsOf(arrived, LEDGER)).toEqual([SHOP, CART, LEDGER]);
 
+		// Down a level in place there, and back to the pane's own board, which is no move.
+		const journal = { ...LEDGER, board: "journal" };
+		const up = drillBack(drillInto(arrived, LEDGER, journal).trail, LEDGER, 2);
+		expect(up.dive).toBeNull();
+		expect(stopsOf(up.trail, LEDGER)).toEqual([SHOP, CART, LEDGER]);
+
 		const back = drillBack(arrived, LEDGER, 0);
 		expect(back.dive).toEqual(SHOP);
 		expect(stopsOf(drillArrived(back.trail, SHOP), SHOP)).toEqual([SHOP]);
