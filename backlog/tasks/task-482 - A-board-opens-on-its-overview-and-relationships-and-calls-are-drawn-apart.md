@@ -1,9 +1,11 @@
 ---
 id: TASK-482
 title: 'A board opens on its overview, and relationships and calls are drawn apart'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-15 21:04'
+updated_date: '2026-10-15 21:05'
 labels:
   - renderer
   - semantic-model

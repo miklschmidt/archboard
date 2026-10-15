@@ -170,6 +170,7 @@ test("a board a level down offers its own views and its own states", async () =>
 	// The target's own views, not the ones from the board above: a view id is a
 	// subject of one variant's content and means nothing here.
 	expect(buttons("semantic-view-choice").map((one) => one.textContent)).toEqual([
+		"Overview",
 		"Everything",
 		"The parts",
 		"One write, in order",
@@ -300,7 +301,7 @@ test("choosing at the level below asks for that reading of the board below", asy
 		body: { ...drawing(1, "engine"), view: ENGINE_VIEWS[1], views: [...ENGINE_VIEWS] },
 	};
 	await act(async () => {
-		fireEvent.click(buttons("semantic-view-choice")[2]!);
+		fireEvent.click(buttons("semantic-view-choice")[3]!);
 	});
 	await settle();
 	const asked = renderCalls().at(-1) ?? "";
@@ -321,7 +322,7 @@ test("choosing at the level below asks for that reading of the board below", asy
 	expect(afterwards).toContain("board=engine");
 	expect(afterwards).toContain("view=ev2");
 	expect(variantEntry("e2").getAttribute("aria-pressed")).toBe("true");
-	expect(buttons("semantic-view-choice")[2]?.getAttribute("aria-pressed")).toBe("true");
+	expect(buttons("semantic-view-choice")[3]?.getAttribute("aria-pressed")).toBe("true");
 });
 
 test("coming back up leaves the pane reading its own board as it was", async () => {
@@ -332,7 +333,7 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 	await settle();
 	await openDown();
 	await act(async () => {
-		fireEvent.click(buttons("semantic-view-choice")[2]!);
+		fireEvent.click(buttons("semantic-view-choice")[3]!);
 	});
 	await settle();
 
@@ -349,6 +350,7 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 	const stage = document.querySelector("[data-slot='semantic-board-stage']");
 	expect(stage?.getAttribute("data-board")).toBe("pipeline");
 	expect(buttons("semantic-view-choice").map((one) => one.textContent)).toEqual([
+		"Overview",
 		"Everything",
 		"Where writes go",
 	]);
@@ -457,7 +459,7 @@ test("the pane says which board it is actually reading, not the one it was opene
 	expect(readings.at(-1)?.board).toBe("engine");
 
 	await act(async () => {
-		fireEvent.click(buttons("semantic-view-choice")[2]!);
+		fireEvent.click(buttons("semantic-view-choice")[3]!);
 	});
 	await settle();
 	expect(readings.at(-1)).toMatchObject({ board: "engine", view: "ev2" });
@@ -479,7 +481,7 @@ test("choosing a way of reading a level does not change which state it is", asyn
 	expect(renderCalls().at(-1)).toContain("variant=e1");
 
 	await act(async () => {
-		fireEvent.click(buttons("semantic-view-choice")[1]!);
+		fireEvent.click(buttons("semantic-view-choice")[2]!);
 	});
 	await settle();
 	// Choosing a grammar says nothing about which state to read it in. Losing the
@@ -519,7 +521,7 @@ test("choosing the current state at a level, then a view, stays on the current s
 	// one" are both absences, and treating the second as the first would put the
 	// link's draft back on screen under a choice somebody has just made.
 	await act(async () => {
-		fireEvent.click(buttons("semantic-view-choice")[1]!);
+		fireEvent.click(buttons("semantic-view-choice")[2]!);
 	});
 	await settle();
 	const asked = renderCalls().at(-1) ?? "";

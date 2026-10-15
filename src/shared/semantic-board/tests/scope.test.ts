@@ -95,3 +95,53 @@ describe("a flow a view selects", () => {
 		expect(shown.flows).toEqual([]);
 	});
 });
+
+describe("the overview a board opens on", () => {
+	// A service whose gateway holds a router, and a ledger beside it.
+	const ROUTER = { id: "rt", name: "Router", kind: "function", parent: "gw" };
+	const AUDIT = { id: "au", name: "Audit", kind: "function", parent: "gw" };
+	const DEEP = content({
+		nodes: [PLATFORM, GATEWAY, ROUTER, AUDIT, LEDGER],
+		edges: [
+			{ id: "e1", from: "rt", to: "ld", kind: "call", label: "posts" },
+			{ id: "e2", from: "au", to: "ld", kind: "queue", label: "records" },
+			{ id: "e3", from: "gw", to: "ld", kind: "queue", label: "retries" },
+			{ id: "e4", from: "rt", to: "au", kind: "call", label: "logs" },
+		],
+		flows: [
+			{
+				id: "f1",
+				name: "Posting",
+				participants: ["rt", "ld"],
+				steps: [{ id: "s1", from: "rt", to: "ld", label: "post" }],
+			},
+		],
+	});
+	const overview = scopedContent(DEEP, { kind: "overview" });
+
+	test("closes every container below the root's direct parts", () => {
+		expect(overview.nodes.map((node) => node.id)).toEqual(["pl", "gw", "ld"]);
+	});
+
+	test("joins every relationship between two drawn parts into one unlabelled line of the commonest kind", () => {
+		expect(overview.edges).toHaveLength(1);
+		const [line] = overview.edges;
+		expect(line).toMatchObject({ id: "e1", from: "gw", to: "ld", kind: "queue" });
+		expect(line?.label).toBeUndefined();
+	});
+
+	test("draws no relationship inside a closed card, and no flow", () => {
+		expect(overview.edges.some((edge) => edge.id === "e4")).toBe(false);
+		expect(overview.flows).toEqual([]);
+	});
+
+	test("keeps a lone relationship as it was stated", () => {
+		const lone = content({
+			nodes: [PLATFORM, GATEWAY, ROUTER, LEDGER],
+			edges: [{ id: "e1", from: "rt", to: "ld", kind: "call", label: "posts" }],
+		});
+		expect(scopedContent(lone, { kind: "overview" }).edges).toEqual([
+			{ ...lone.edges[0]!, from: "gw" },
+		]);
+	});
+});

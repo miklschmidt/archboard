@@ -19,6 +19,7 @@
 import { z } from "zod";
 import { DisplayNameSchema, SemanticIdSchema } from "@/shared/semantic-board/lib/primitives";
 import { ToldStandingSchema } from "@/shared/semantic-board/lib/reconcile";
+import { EVERYTHING_VIEW } from "@/shared/semantic-board/lib/scope";
 import {
 	DiagramGrammarSchema,
 	VariantLifecycleSchema,
@@ -100,10 +101,11 @@ type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
 
 /**
  * One of a board's named views, as a reader needs to know it: enough to put
- * it in a switcher and ask for it, and nothing about what is inside it.
+ * it in a switcher and ask for it, and nothing about what is inside it. Every
+ * id is minted, except Everything's, which every board has (ADR 0052).
  */
 const OfferedViewSchema = z.object({
-	id: SemanticIdSchema,
+	id: z.union([SemanticIdSchema, z.literal(EVERYTHING_VIEW.id)]),
 	name: DisplayNameSchema,
 	grammar: DiagramGrammarSchema,
 });
@@ -147,7 +149,7 @@ const RenderIdentitySchema = z.object({
 	board: DisplayNameSchema,
 	version: z.int(),
 	variant: RenderedVariantSchema,
-	/** The view this picture is of, or null when it is of the whole variant. */
+	/** The view this picture is of, or null when it is of the overview. */
 	view: OfferedViewSchema.nullable(),
 	/** Every board view, in its authored order. */
 	views: z.array(OfferedViewSchema),

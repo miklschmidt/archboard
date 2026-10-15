@@ -76,7 +76,7 @@ function announcingViews(readings: PaneReadings, addressing: WorkspaceAddressing
 		/**
 		 * The person chose a way of reading one pane's board.
 		 * @param paneId The pane.
-		 * @param view The view's id, or null for the whole variant.
+		 * @param view The view's id, or null for the overview.
 		 */
 		showView: (paneId: string, view: string | null): void => {
 			addressing.expect({ kind: "view", paneId, from: readings.viewOf(paneId) });
@@ -240,7 +240,7 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		/**
 		 * Read the board a pane already shows through one of its views.
 		 * @param paneId The pane.
-		 * @param view The view's id, or null for the whole variant.
+		 * @param view The view's id, or null for the overview.
 		 * @returns Whether the pane was reading its board some other way.
 		 */
 		read: (paneId: string, view: string | null): boolean => {
