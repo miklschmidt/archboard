@@ -18,6 +18,7 @@ import { useMemo, useSyncExternalStore, type JSX } from "react";
 import type { Talk } from "@/shared/walkthrough-recording/talk";
 import { TooltipProvider } from "@/ui/components/tooltip";
 import {
+	PaneVaultContext,
 	SemanticBoardStage,
 	useOverlayPlace,
 	type SemanticPaneReading,
@@ -43,6 +44,13 @@ interface ReplayStageProps {
 	 */
 	readonly onReading: (reading: SemanticPaneReading) => void;
 }
+
+/**
+ * The vault the talk's pane is in: none on a server. A talk carries its board,
+ * and every read of the pane is answered from the talk (talk-reads), so this
+ * only keeps its cached reads apart from any vault's.
+ */
+const TALK_VAULT = "recorded-talk";
 
 /** Nobody picks anything out of a rendered talk, or presses one of its keys. */
 function ignore(): void {
@@ -124,16 +132,18 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 				<OrbStageProvider>
 					<RecordingStage>
 						<div data-slot="pane-stage" className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-							<SemanticBoardStage
-								board={talk.board.name}
-								variant={talk.board.variant ?? undefined}
-								selection={null}
-								onSelect={ignore}
-								onReading={props.onReading}
-								driven={moment.step}
-								reducedMotion={false}
-								overlay={overlay}
-							/>
+							<PaneVaultContext value={TALK_VAULT}>
+								<SemanticBoardStage
+									board={talk.board.name}
+									variant={talk.board.variant ?? undefined}
+									selection={null}
+									onSelect={ignore}
+									onReading={props.onReading}
+									driven={moment.step}
+									reducedMotion={false}
+									overlay={overlay}
+								/>
+							</PaneVaultContext>
 						</div>
 					</RecordingStage>
 					<ReplayOrb voice={voice} />
