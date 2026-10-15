@@ -72,16 +72,25 @@ function drillInto(trail: DrillTrail, own: DrillStop, stop: DrillStop): TrailSte
 /**
  * Go back to one of the boards the reader came through.
  * @param trail The trail.
+ * @param own The pane's own board.
  * @param depth Where it is among the stops: 0 is the first.
  * @returns The trail, and the board to show when the stop is before the pane's own board.
  */
-function drillBack(trail: DrillTrail, depth: number): TrailStep {
+function drillBack(trail: DrillTrail, own: DrillStop, depth: number): TrailStep {
 	const kept = depth - trail.before.length;
 	if (kept >= 0) {
 		return { trail: { ...trail, above: trail.above.slice(0, kept), pending: null }, dive: null };
 	}
 	const stop = trail.before[depth];
 	if (stop === undefined) return { trail, dive: null };
+	// A trail that came back to the board the pane holds: the shell would not
+	// move the pane, so nothing would arrive. The pane is there already.
+	if (sameBoard(stop, own) && stop.variant === own.variant) {
+		return {
+			trail: { before: trail.before.slice(0, depth), above: [], pending: null },
+			dive: null,
+		};
+	}
 	return {
 		trail: { ...trail, pending: { stop, before: trail.before.slice(0, depth) } },
 		dive: stop,

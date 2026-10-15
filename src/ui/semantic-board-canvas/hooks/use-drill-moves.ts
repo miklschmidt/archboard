@@ -116,9 +116,9 @@ function useDrillMoves(inputs: DrillMovesInputs): DrillMoves {
 			const proceed = (): void => {
 				leave("out");
 				onSelect(null);
-				// Back before the pane's own board is a move the shell makes and announces.
-				if (depth >= drill.own) onUserChanged?.("board");
-				drill.backTo(depth);
+				// A move the shell makes for it is announced by the shell, and a back that
+				// leaves the board on screen where it is changed nothing to report.
+				if (drill.backTo(depth)) onUserChanged?.("board");
 			};
 			if (above === null || depth !== drill.trail.length - 1) {
 				proceed();

@@ -57,8 +57,9 @@ interface DrillNavigation {
 	/**
 	 * Go back to one of the boards of the trail.
 	 * @param depth Where it is in the trail: 0 is the first board.
+	 * @returns Whether the board on screen changed in the pane, rather than by a move the shell makes.
 	 */
-	readonly backTo: (depth: number) => void;
+	readonly backTo: (depth: number) => boolean;
 }
 
 /** The board the shell pointed the pane at, and what counts as being pointed again. */
@@ -151,10 +152,12 @@ function useDrillDown(own: OwnBoard, dive: Dive | undefined): DrillNavigation {
 		[take, trail, ownStop],
 	);
 	const backTo = useCallback(
-		(depth: number): void => {
-			take(drillBack(trail, depth));
+		(depth: number): boolean => {
+			const step = drillBack(trail, ownStop, depth);
+			take(step);
+			return step.dive === null && step.trail.above.length < trail.above.length;
 		},
-		[take, trail],
+		[take, trail, ownStop],
 	);
 	return useMemo(() => {
 		const stops = stopsOf(trail, ownStop);
