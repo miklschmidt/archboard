@@ -77,7 +77,14 @@ type SemanticRefusalCode =
 	/** The name asked for cannot name a board. */
 	| "INVALID_NAME"
 	/** Another variant of the board already answers to the name asked for. */
-	| "VARIANT_EXISTS";
+	| "VARIANT_EXISTS"
+	// Moving a board to another repository's vault (ADR 0051).
+	/** The target is the board's own vault, or another checkout of its repository. */
+	| "MOVE_SAME_REPOSITORY"
+	/** The move needs a drill-down into an untracked vault, which has no identity to name. */
+	| "MOVE_NEEDS_IDENTITY"
+	/** The move wrote the target note and stopped before it deleted the source note. */
+	| "MOVE_STOPPED";
 
 /** A transition either produced a whole new board, or refused. */
 interface SemanticRefusal {
