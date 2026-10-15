@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 05:56'
+updated_date: '2026-10-15 06:06'
 labels: []
 dependencies:
   - TASK-472.12
@@ -65,4 +65,34 @@ Decisions (TASK-472.15):
 - The move contract (BoardMoveInputSchema, MoveEndSchema, MovedDrillDownSchema, BoardMoveAnswerSchema) is in src/shared/semantic-board/lib/move.ts, so the store, the route and the client read one shape.
 
 Decision (2026-10-15): --to finds the target vault as -C finds one, so a move into a worktree's checkout lands in that worktree's vault, with the code of its branch, and the rewritten drill-downs resolve in the chosen checkout as any board of a worktree does. ADR 0051's 'the vault of the chosen checkout' is the browser form, which names a repository. Review: --expect-version is now required, as the help and every sibling write command say (885eff3cf, 3219195b8), which replaces the earlier note that it is optional. Links in the target vault into the moved board are rewritten too (225e493f0).
+
+Board proposals (TASK-472.15), drawn in deadb8e33 and adopted in 8d868ff9f:
+- Board persistence@TASK-472.15, adopted at v49. Adds Move (function in Board store, bound to lib/move.ts; its description names move-checks.ts and move-drill-downs.ts). Anchored calls: Archboard server -> Move (moveSemanticBoard); Move -> Board lease twice (holdBoard: the source's lease, then the target's without waiting; withBoardLockIfFreeSync: each relinked board), Write under lease (boardBefore), Former names (resolveSemanticBoard), Vault checkouts (vaultIdentity), Place the file (writeBoardFile), Atomic file replacement (unlinkDurably), Address and locate (locateSemanticBoard), Vault configuration (readSemanticBoardConfiguration). Summary is now the board's scope, including a board's move to another vault.
+- Archboard server routes@TASK-472.15, adopted at v39. Adds Move route (bound to semantic-board-move.ts). Anchored edges: Agent CLI -http-> Move route (moveRoute); Board routes mounts it (moveRoute); Move route -> Semantic board store (moveSemanticBoard), Board write routes (answerRefusal), Vault requirement (namedVault, for move.to), Live panes (broadcast event: every board written and where the board went; movePaneVault; announceDoing), Repository listing (repositoryOfVault).
+- Command interface@TASK-472.15, adopted at v73. Adds Move (module in Commands, bound to semantic-move.ts). Edges: Contract execution -> Move (handler); Move -> Board client (moveSemanticBoardOnServer); Move -> Command routing (findVaultOf).
+- Command dispatch@TASK-472.15, adopted at v29. This board was not in the plan. The code check gave a CALLER_UNDRAWN warning on Addressed vault: semantic-move.ts:216 calls findVaultOf from outside command-routing. The proposal adds Move command (bound to semantic-move.ts) with an anchored call -> Addressed vault (findVaultOf).
+- Live panes@TASK-472.15, adopted at v32. This board was not in the plan. It draws the pane moves of rename and of a cross-repository show, so the proposal adds one edge: Archboard server -> Pane vaults, "a moved board takes its panes to the target vault" (semantic-board-move.ts#movePaneVault).
+semantic compare on each proposal reported exactly these added parts and relationships and nothing else. Interface changes: Board store gained the entry point Move; Commands gained Move; on Command dispatch, Addressed vault became an entry point of Command routing, with the caller Move command.
+
+check --code comparison, run without --variant and then with --variant TASK-472.15: no '>' lines. The first draw introduced two RELATIONSHIP_UNDRAWN warnings (Move reaches Address and locate, and Vault configuration); both are now drawn. Six '<' lines are cleared: Board persistence RELATIONSHIP_UNDRAWN for Board store reaching Board lease, Atomic file replacement and Vault checkouts, and for Archboard server reaching Board store; Command interface RELATIONSHIP_UNDRAWN for Commands reaching Command routing; Command dispatch CALLER_UNDRAWN on Addressed vault. Findings in both runs that touch this task's parts, left as they are:
+- EXPOSED_UNUSED (information) names SemanticMoveCommand on Board store, as it names SemanticDiscardCommand; nothing outside the store uses either. On Commands it names semanticMoveContract and sayingWhatWasRewritten (used by run.ts and the command's test, both inside the module). These are code and outside this drawing work.
+- Command dispatch RELATIONSHIP_UNDRAWN (Server client reaches Checkout registry, server-client.ts:161) and ANCHOR_SYMBOL_MISSING on routes 57KDyakx and yqfoZW5w and on Live panes 6o2ZXOzG (pane-show-route.ts repositoryOfVault, repository-routes.ts declareDirectory) come from 13c87172f (TASK-472.14). Its proposals settle them.
+
+Footprint base: 934c827a3, the parent of the first TASK-472.15 code commit 66966c190, found through the Refs trailer. On each proposal, current was the proposal's parent. namedAndChanged: Move, Write under lease (Board persistence); Move route, Board routes (routes); Move, Board client (Command interface); Move command, Addressed vault (Command dispatch); Pane vaults (Live panes). changedNotNamed, settled:
+- Board store (directory container): the changes the proposal does not name inside it are move-checks.ts and move-drill-downs.ts (Move's helpers, described on Move), accepted/outcome/index exports and refusal codes, and tests/move.test.ts (66966c190, 08fea3d25, 7dc2810c6, b45225d65, 89d199286, 5fc7f512c, 225e493f0). Their callers are drawn on Move, so they are internal to the store.
+- Command catalogue (run.ts, 08fea3d25): registers the move contract. The drawn edge "a contract per command" already covers it.
+- Commands (directory container): only semantic-move.ts (named as Move) and its test.
+- Server client (2692c760c): a refusal error keeps the server's whole answer, so the CLI can list the drill-downs a stopped move rewrote. This is internal.
+- Command routing (directory container, Command dispatch): index.ts re-exports findVaultOf. Addressed vault is named.
+- Vault finder (c6243ad33): the refusal names the option (--to or -C) that found no vault. This is internal.
+- Change feed (Live panes, e3347b4a1): a moved board's board_note carries movedTo, and the feed's line says where the board went. Its responsibility (every settled board change, filed under its vault) still holds, so this is internal.
+- Not this task's (other tasks' commits in the range): Repository routes, Checkout registry, Pane routes, Vault requirement, Pane session and Repository list (Live panes and routes), and Panes, Repositories and Command contract (Command interface) belong to TASK-472.14 (13c87172f, f124a78d2). Entry point and Source checkout belong to TASK-472.08 (37ae63e73, 098d3e983). TASK-472.14's later proposals settle the first group.
+namedNotChanged: only parts that a new relationship names (Atomic file replacement, Former names, Place the file, Board lease, Vault checkouts, Board write routes, Contract execution). That is normal. Skipped: drill-down parts only. The Command routing drill-down on Command interface opens Command dispatch, which has its own proposal (read above).
+
+archboard check after adoption: exit 0, no diagnostics.
+behind (archboard check --code after adoption): all five adopted boards read 0 commits. Two other boards are behind on this task's commits:
+- Archboard server: part "Archboard server" (src/server/archboard) through e3347b4a1, 885eff3cf, ca2e793a7 and 08fea3d25. This board draws the route handlers as one card that opens Archboard server routes, which now draws the Move route. Its only finding in this run is the module-wide EXPOSED_UNUSED from before, so it is still right.
+- Skill evaluation: part Evaluation inputs (evals) through 614ba2bed, which adds a coverage entry for semantic move to evals/coverage.json. This is data and changes nothing the board draws, so it is still right.
+
+Correction to the Board store line above: within the store, outside move*.ts, this task changed only index.ts (exports), lib/outcome.ts (refusal codes) and lib/write.ts (Write under lease, named). accepted.ts did not change.
 <!-- SECTION:NOTES:END -->
