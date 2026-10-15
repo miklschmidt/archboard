@@ -11,12 +11,13 @@
 //
 // The vault's checkout is found by asking Git, which is also how `behind` finds
 // the commit a vault last changed in. The question is synchronous because the
-// vault check, which every open canvas polls, is: two bounded `git` calls
-// that start no other program.
+// vault check, which every open canvas polls, is: at most three bounded `git`
+// calls that start no other program. A Git that does not answer leaves the
+// vault in no checkout rather than naming it by a directory.
 
 import fs from "node:fs";
 import path from "node:path";
-import { existingDir, repoIdentityFor } from "@/runtime/engine/git";
+import { existingDir, GitCommandError, repoIdentityFor } from "@/runtime/engine/git";
 import {
 	chosenCheckouts,
 	listRegistry,
@@ -31,15 +32,15 @@ interface VaultCheckout {
 }
 
 /**
- * Run one Git command to its end. A failure to answer (no repository, no
- * `origin`, no Git, a timeout) is no answer.
+ * Run Git synchronously.
  * @param cwd Where Git runs.
  * @param args Git's arguments.
- * @returns Trimmed stdout, or undefined when Git did not answer.
+ * @returns What it did.
+ * @throws {GitCommandError} When Git could not start.
  */
-function gitAnswer(cwd: string, args: readonly string[]): string | undefined {
+function startedGit(cwd: string, args: readonly string[]) {
 	try {
-		const run = Bun.spawnSync(["git", ...args], {
+		return Bun.spawnSync(["git", ...args], {
 			cwd,
 			stdin: "ignore",
 			stdout: "pipe",
@@ -48,26 +49,52 @@ function gitAnswer(cwd: string, args: readonly string[]): string | undefined {
 			env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
 			timeout: GIT_COMMAND_TIMEOUT_MS,
 		});
-		return run.exitCode === 0 ? run.stdout.toString().trim() || undefined : undefined;
-	} catch {
-		return undefined;
+	} catch (error) {
+		throw new GitCommandError("spawn", `Could not start Git: ${String(error)}`);
 	}
+}
+
+/**
+ * Run one Git command to its end. A non-zero exit is an answer (no repository,
+ * no `origin`), as it is for the registry's own Git calls.
+ * @param cwd Where Git runs.
+ * @param args Git's arguments.
+ * @returns Trimmed stdout, or undefined when Git exited non-zero or printed nothing.
+ * @throws {GitCommandError} When Git could not start, was killed or timed out:
+ * that is no answer, and reading it as "no `origin`" would name the checkout
+ * by a directory where the registry names it by its remote.
+ */
+function gitAnswer(cwd: string, args: readonly string[]): string | undefined {
+	const run = startedGit(cwd, args);
+	if (run.exitedDueToTimeout === true) {
+		throw new GitCommandError("timeout", "Git did not answer in time.");
+	}
+	if (run.signalCode !== undefined) {
+		throw new GitCommandError("signal", `Git exited from ${run.signalCode}.`);
+	}
+	return run.exitCode === 0 ? run.stdout.toString().trim() || undefined : undefined;
 }
 
 /**
  * The checkout that holds a vault.
  * @param vault The vault directory.
- * @returns Its checkout, or undefined when the vault is in none.
+ * @returns Its checkout, or undefined when the vault is in none or Git did not answer.
  */
 function vaultCheckoutOf(vault: string): VaultCheckout | undefined {
 	const start = existingDir(path.resolve(vault));
-	const top = start === undefined ? undefined : gitAnswer(start, ["rev-parse", "--show-toplevel"]);
-	if (top === undefined) return undefined;
-	const remote = gitAnswer(top, ["remote", "get-url", "origin"]);
-	// A repository with no remote is named by its main checkout, which only Git's listing knows.
-	const listing =
-		remote === undefined ? gitAnswer(top, ["worktree", "list", "--porcelain"]) : undefined;
-	return { root: fs.realpathSync.native(top), identity: repoIdentityFor(top, remote, listing) };
+	if (start === undefined) return undefined;
+	try {
+		const top = gitAnswer(start, ["rev-parse", "--show-toplevel"]);
+		if (top === undefined) return undefined;
+		const remote = gitAnswer(top, ["remote", "get-url", "origin"]);
+		// A repository with no remote is named by its main checkout, which only Git's listing knows.
+		const listing =
+			remote === undefined ? gitAnswer(top, ["worktree", "list", "--porcelain"]) : undefined;
+		return { root: fs.realpathSync.native(top), identity: repoIdentityFor(top, remote, listing) };
+	} catch (error) {
+		if (error instanceof GitCommandError) return undefined;
+		throw error;
+	}
 }
 
 /**

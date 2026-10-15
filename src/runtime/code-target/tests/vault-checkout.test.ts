@@ -4,11 +4,11 @@
 // only the rule can get wrong; the CLI and opener owners prove the readers use it.
 
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { declareDirectory, setLanguageServer } from "@/runtime/engine/repo-registry";
-import { resolveRegisteredCheckout, snapshotCheckoutAccess } from "../index.ts";
+import { checkoutsReadFrom, resolveRegisteredCheckout, snapshotCheckoutAccess } from "../index.ts";
 import { createResolverFixture, type ResolverFixture } from "./support.ts";
 
 const BILLING = "github.com/acme/billing";
@@ -117,4 +117,24 @@ test("a vault in a linked worktree of a repository with no origin has the identi
 	expect(await resolvedFor(join(linked, ".archboard", "vault"), "lonely-main")).toBe(
 		realpathSync.native(linked),
 	);
+});
+
+test("a vault whose Git does not answer for its origin reads the chosen checkouts alone", () => {
+	const vault = join(holder, ".archboard", "vault");
+	const chosen = checkoutsReadFrom(null);
+	// A Git that is killed when asked for the remote, as one that times out is.
+	const bin = join(fixture.root, "bin");
+	mkdirSync(bin);
+	writeFileSync(
+		join(bin, "git"),
+		`#!/bin/sh\n[ "$1" = remote ] && kill -9 $$\nexec ${Bun.which("git")} "$@"\n`,
+	);
+	chmodSync(join(bin, "git"), 0o755);
+	const path = process.env["PATH"];
+	process.env["PATH"] = `${bin}:${path}`;
+	try {
+		expect(checkoutsReadFrom(vault)).toEqual(chosen);
+	} finally {
+		process.env["PATH"] = path;
+	}
 });
