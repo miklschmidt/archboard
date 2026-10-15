@@ -77,7 +77,9 @@ interface BoardPlace {
 }
 
 /**
- * The repository a crumb names, muted, where a trail across repositories enters it.
+ * The repository a crumb names, muted, where a trail across repositories enters
+ * it. It gives way before the board's name does, its whole name shows on hover,
+ * and assistive technology hears it apart from the board's name.
  * @param props The repository.
  * @param props.repository Its name, or undefined when the crumb names none.
  * @returns The name, or nothing.
@@ -85,12 +87,16 @@ interface BoardPlace {
 function RepositoryOf(props: { readonly repository: string | undefined }): JSX.Element | null {
 	if (props.repository === undefined) return null;
 	return (
-		<span
-			data-slot="pane-crumb-repository"
-			className="text-muted-foreground/80 max-w-32 truncate font-normal"
-		>
-			{props.repository}
-		</span>
+		<>
+			<span
+				data-slot="pane-crumb-repository"
+				title={props.repository}
+				className="text-muted-foreground/80 text-control max-w-48 min-w-0 shrink-[8] truncate font-normal"
+			>
+				{props.repository}
+			</span>
+			<span className="sr-only">, </span>
+		</>
 	);
 }
 
@@ -178,7 +184,11 @@ function Ancestor(props: { readonly place: BoardPlace; readonly middle: boolean 
 				data-slot="pane-crumb"
 				onClick={place.open}
 				title={place.level === undefined ? place.name : `${place.name} · ${place.level}`}
-				className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent text-control rounded-control -mx-1 flex h-7 max-w-44 min-w-0 items-center gap-1.5 px-1 font-medium"
+				className={cn(
+					"text-muted-foreground hover:text-foreground hover:bg-sidebar-accent text-control rounded-control -mx-1 flex h-7 min-w-0 items-center gap-1.5 px-1 font-medium",
+					// A crumb that names its repository keeps room for the board's name too.
+					place.repository === undefined ? "max-w-44" : "max-w-96",
+				)}
 			>
 				<RepositoryOf repository={place.repository} />
 				<LevelMark level={place.level} vault={place.vault ?? paneVault} />

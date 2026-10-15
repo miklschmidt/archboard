@@ -36,7 +36,7 @@ interface StageHeaderView {
 	readonly drill: Pick<DrillNavigation, "board" | "trail">;
 	/**
 	 * Go back to one of the boards the reader came down through.
-	 * @param depth Where it is in the trail: 0 is the board the pane was opened on.
+	 * @param depth Where it is in the trail: 0 is its first board.
 	 */
 	readonly onBackTo: (depth: number) => void;
 	/**
