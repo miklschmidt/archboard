@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 05:24'
+updated_date: '2026-10-15 05:56'
 labels: []
 dependencies:
   - TASK-472.12
@@ -63,4 +63,6 @@ Decisions (TASK-472.15):
 - --to is found as -C finds a vault (findVaultOf in command-routing), and a holder the registry does not know is registered; the answer says so in to.registered.
 - The route announces board_note for the target and for each rewritten board, board_note discarded in the source vault, and the doing line in both. It releases this writer's claim on the source board, as discard does; the claim is not carried to the target.
 - The move contract (BoardMoveInputSchema, MoveEndSchema, MovedDrillDownSchema, BoardMoveAnswerSchema) is in src/shared/semantic-board/lib/move.ts, so the store, the route and the client read one shape.
+
+Decision (2026-10-15): --to finds the target vault as -C finds one, so a move into a worktree's checkout lands in that worktree's vault, with the code of its branch, and the rewritten drill-downs resolve in the chosen checkout as any board of a worktree does. ADR 0051's 'the vault of the chosen checkout' is the browser form, which names a repository. Review: --expect-version is now required, as the help and every sibling write command say (885eff3cf, 3219195b8), which replaces the earlier note that it is optional. Links in the target vault into the moved board are rewritten too (225e493f0).
 <!-- SECTION:NOTES:END -->
