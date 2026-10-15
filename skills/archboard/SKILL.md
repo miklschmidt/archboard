@@ -134,12 +134,12 @@ recipe names.
   uses the `.archboard/vault` of the nearest enclosing directory. If there is
   none, it refuses. `-C <dir>` starts the search at `<dir>` and applies the same
   rule. The commands that call a vault take it: `semantic`, `check`, `claim`,
-  `release`, `browser open` and `browser show`. Write
+  `release` and `browser show`. Write
   `archboard -C <dir> semantic show x` or `archboard semantic show x -C <dir>`.
   `-C` changes only where the vault is found. `--input` and `--out` still
   resolve against the working directory. These commands take no `-C` and need
   no vault: `start`, `stop`, `status`, `repo`, `install-skill`,
-  `browser panes`, `browser close` and `semantic replay`. A JSON answer of a
+  `browser open`, `browser panes`, `browser close` and `semantic replay`. A JSON answer of a
   command that takes `-C` carries `vault: {path, origin}`. The origin is `-C`
   or `working-directory`. Read it to make sure that you wrote the
   vault you meant. If this machine does not know the checkout or untracked
