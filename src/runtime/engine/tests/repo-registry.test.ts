@@ -18,6 +18,7 @@ import { join } from "node:path";
 import {
 	chosenCheckouts,
 	declareDirectory,
+	declareIfUnknown,
 	forgetDirectory,
 	listRegistry,
 	RepoRegistryError,
@@ -369,4 +370,15 @@ test("a vault that is a symbolic link is named by the checkout whose .archboard/
 	} finally {
 		rmSync(join(clone, ".archboard"), { recursive: true, force: true });
 	}
+});
+
+test("an untracked vault registered through a link is known by its real path, and is not registered again", async () => {
+	const real = join(scratch, "real-plans");
+	mkdirSync(join(real, ".archboard", "vault"), { recursive: true });
+	const linked = join(scratch, "linked-plans");
+	symlinkSync(real, linked);
+	// An entry from before the registry stored real paths names the holder through the link.
+	writeFileSync(registry, JSON.stringify([{ name: "plans", root: linked, addedAt: "2026-10-01" }]));
+	expect(await declareIfUnknown(realpathSync.native(real))).toBeUndefined();
+	expect(listRegistry().vaults.map((each) => each.name)).toEqual(["plans"]);
 });
