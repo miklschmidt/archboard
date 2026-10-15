@@ -1,5 +1,5 @@
 // What a move checks before it writes anything (ADR 0051), and which boards
-// of the source vault it has to rewrite. Every question here reads the two
+// of the two vaults it has to rewrite. Every question here reads the two
 // vaults as they are on disk, without a lease and never migrating a board:
 // `move.ts` asks them inside the leases it holds, and reads each board it
 // rewrites again under that board's own lease.
@@ -181,10 +181,10 @@ function opensBoard(vault: string, key: string): (name: string) => boolean {
 }
 
 /**
- * The boards of the source vault, other than the moved one, that drill down
- * into it, as they are on disk. Read without a lease and never migrated: each
- * is read again under its own lease before it is rewritten.
- * @param vault The source vault.
+ * The boards of one vault of the move, other than the moved one, that a
+ * rewrite changes, as they are on disk. Read without a lease and never
+ * migrated: each is read again under its own lease before it is rewritten.
+ * @param vault The vault.
  * @param key The moved board's key.
  * @param rewrite What each of their drill-downs becomes.
  * @returns Where each one is.

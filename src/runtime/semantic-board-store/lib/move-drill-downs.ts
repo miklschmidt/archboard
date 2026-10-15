@@ -1,13 +1,15 @@
 // Which drill-downs a move rewrites, and how (ADR 0051).
 //
 // A drill-down without a repository opens a board of the vault that carries
-// it. So when a board moves to another repository's vault, two kinds of link
-// change their meaning, and only those two are rewritten:
+// it. So when a board moves to another repository's vault, three kinds of link
+// change their meaning, and only those three are rewritten:
 //
 //   a drill-down on another board of the source vault that opens the moved
 //     board. It names the target's identity from now on;
 //   a drill-down on the moved board that opens another board of the source
-//     vault. It names the source's identity from now on.
+//     vault. It names the source's identity from now on;
+//   a drill-down on a board of the target vault that opens the moved board
+//     through the source's identity. It names no repository from now on.
 //
 // A drill-down that already names a repository keeps it, unless it names the
 // source vault's own identity and opens the moved board, which leaves that
@@ -85,6 +87,26 @@ function inboundRewrite(
 }
 
 /**
+ * What a drill-down in the vault the board moves to becomes, on the moved
+ * board or on another board there: one that opens the moved board through the
+ * source's identity names no repository, and so opens it within the vault.
+ * @param identities The two identities of the move.
+ * @param opensMoved Whether a board name, read in the source vault, opens the moved board.
+ * @returns The rewrite.
+ */
+function landingRewrite(
+	identities: MoveIdentities,
+	opensMoved: (name: string) => boolean,
+): DrillRewrite {
+	return (drill) => {
+		if (drill.repo === undefined || drill.repo !== identities.source) return null;
+		if (!opensMoved(drill.board)) return null;
+		const { repo: _left, ...local } = drill;
+		return local;
+	};
+}
+
+/**
  * What a drill-down on the moved board becomes: one that opens another board
  * of the source vault names the source's identity, and one that opens the
  * moved board itself through the source's identity names none.
@@ -97,12 +119,9 @@ function outboundRewrite(
 	identities: MoveIdentities,
 	opensMoved: (name: string) => boolean,
 ): DrillRewrite {
+	const landing = landingRewrite(identities, opensMoved);
 	return (drill) => {
-		if (drill.repo !== undefined) {
-			if (drill.repo !== identities.source || !opensMoved(drill.board)) return null;
-			const { repo: _left, ...local } = drill;
-			return local;
-		}
+		if (drill.repo !== undefined) return landing(drill);
 		if (opensMoved(drill.board)) return null;
 		return identities.source === undefined ? drill : { ...drill, repo: identities.source };
 	};
@@ -112,6 +131,7 @@ export {
 	type DrillRewrite,
 	type MoveIdentities,
 	inboundRewrite,
+	landingRewrite,
 	outboundRewrite,
 	rewriteDrillDowns,
 };

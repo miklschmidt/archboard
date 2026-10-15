@@ -13,8 +13,9 @@
 //
 //   1. the target note, which is the source board with its own drill-downs into
 //      the source vault rewritten. Its version advances once, as any write's;
-//   2. every other board of the source vault that drills down into the moved
-//      board, one board write at a time under that board's own lease;
+//   2. every other board that drills down into the moved board through the
+//      source vault, in the target vault and then in the source vault, one
+//      board write at a time under that board's own lease;
 //   3. the source note, deleted last.
 //
 // A move that stops part way leaves the board in both vaults, never in
@@ -57,6 +58,7 @@ import {
 } from "@/runtime/semantic-board-store/lib/move-checks";
 import {
 	inboundRewrite,
+	landingRewrite,
 	outboundRewrite,
 	rewriteDrillDowns,
 	type DrillRewrite,
@@ -147,23 +149,58 @@ function writeChecked(
 	return accepted;
 }
 
+/** A board other than the moved one whose drill-downs the move rewrites. */
+interface Relink {
+	/** The vault it is in: the source vault or the target vault. */
+	readonly vault: string;
+	readonly location: SemanticBoardLocation;
+	/** What each of its drill-downs becomes. */
+	readonly rewrite: DrillRewrite;
+}
+
 /**
- * Rewrite one board of the source vault under its own lease, taken without
- * waiting. It is read again under that lease, so a link somebody changed since
- * the move looked is rewritten as it now stands.
+ * Every board other than the moved one that the move rewrites, as the two
+ * vaults are on disk, in the order it rewrites them: the target vault's, then
+ * the source vault's.
  * @param plan The move.
- * @param location Where the board is.
- * @param rewrite What each of its drill-downs becomes.
+ * @param key The moved board's key.
+ * @returns The boards.
+ */
+function relinks(plan: MovePlan, key: string): Relink[] {
+	const { command, identities } = plan;
+	const opensMoved = opensBoard(command.vault, key);
+	const landing = landingRewrite(identities, opensMoved);
+	const inbound = inboundRewrite(identities, opensMoved);
+	return [
+		...boardsDrillingIn(command.to, key, landing).map((location) => ({
+			vault: command.to,
+			location,
+			rewrite: landing,
+		})),
+		...boardsDrillingIn(command.vault, key, inbound).map((location) => ({
+			vault: command.vault,
+			location,
+			rewrite: inbound,
+		})),
+	];
+}
+
+/**
+ * Rewrite one board under its own lease, taken without waiting. It is read
+ * again under that lease, so a link somebody changed since the move looked is
+ * rewritten as it now stands.
+ * @param plan The move.
+ * @param relink The board, and what each of its drill-downs becomes.
  * @returns What was written, or why the board could not be rewritten now.
  */
 function rewriteOne(
 	plan: MovePlan,
-	location: SemanticBoardLocation,
-	rewrite: DrillRewrite,
+	relink: Relink,
 ):
 	| { readonly write: MoveWrite | null; readonly rewritten: MovedDrillDown[] }
 	| { problem: string } {
-	const { vault, writer } = plan.command;
+	const { writer } = plan.command;
+	const { vault, location, rewrite } = relink;
 	const admission = admit(vault, location.key, writer);
 	if (!admission.ok) return { problem: admission.problem };
 	const held = withBoardLockIfFreeSync(
@@ -193,10 +230,8 @@ interface CheckedMove {
 	readonly source: SemanticBoard;
 	/** The board as it is written to the target, with its own drill-downs rewritten. */
 	readonly own: ReturnType<typeof rewriteDrillDowns>;
-	/** The other boards of the source vault that drill down into it. */
-	readonly drilling: readonly SemanticBoardLocation[];
-	/** What their drill-downs become. */
-	readonly inbound: DrillRewrite;
+	/** The other boards that drill down into it, in the order they are rewritten. */
+	readonly drilling: readonly Relink[];
 }
 
 /**
@@ -224,17 +259,16 @@ function checkedMove(
 		);
 	}
 	const opensMoved = opensBoard(command.vault, location.key);
-	const inbound = inboundRewrite(identities, opensMoved);
-	const drilling = boardsDrillingIn(command.vault, location.key, inbound);
+	const drilling = relinks(plan, location.key);
 	const own = rewriteDrillDowns(source, outboundRewrite(identities, opensMoved));
-	const needs = { target: drilling.length, source: own.rewritten.length };
+	const inbound = drilling.filter((one) => one.vault === command.vault).length;
+	const needs = { target: inbound, source: own.rewritten.length };
 	return (
 		takenInTarget(command.to, source, location) ??
 		untrackedRefusal(command, identities, location, needs, source.version) ?? {
 			source,
 			own,
 			drilling,
-			inbound,
 		}
 	);
 }
@@ -275,8 +309,8 @@ function writeTarget(
 }
 
 /**
- * Rewrite every board of the source vault that drills down into the moved
- * board, one board write at a time.
+ * Rewrite every other board that drills down into the moved board, one board
+ * write at a time.
  * @param plan The move.
  * @param checked What moves, and the boards that drill down into it.
  * @param progress What the move has done, added to as each board is rewritten.
@@ -288,7 +322,7 @@ function rewriteDrilling(
 	progress: Progress,
 ): MovePass | null {
 	for (const other of checked.drilling) {
-		const done = rewriteOne(plan, other, checked.inbound);
+		const done = rewriteOne(plan, other);
 		if ("problem" in done) return stopped(plan, progress, other, done.problem);
 		if (done.write !== null) progress.written.push(done.write);
 		progress.rewritten.push(...done.rewritten);
@@ -326,18 +360,14 @@ function moveUnderLeases(
  * @param why Why not.
  * @returns The stopped move.
  */
-function stopped(
-	plan: MovePlan,
-	progress: MoveProgress,
-	board: SemanticBoardLocation,
-	why: string,
-): MovePass {
+function stopped(plan: MovePlan, progress: MoveProgress, board: Relink, why: string): MovePass {
 	return {
 		outcome: "stopped",
 		code: "MOVE_STOPPED",
 		problem:
 			`The move stopped part way: the board is written in ${plan.command.to} and is still in ` +
-			`${plan.command.vault}, because its drill-down on "${board.name}" could not be rewritten: ` +
+			`${plan.command.vault}, because the drill-down on "${board.location.name}" in ` +
+			`${board.vault} could not be rewritten: ` +
 			`${why}. ${progress.rewritten.length} drill-down(s) were rewritten. Run the same move ` +
 			"again to finish it.",
 		...progress,
@@ -403,10 +433,9 @@ async function holdIn(
  * @returns When every lapsed lease is cleared.
  */
 async function clearLapsedLeases(plan: MovePlan, key: string): Promise<void> {
-	const { vault, writer, signal } = plan.command;
-	const inbound = inboundRewrite(plan.identities, opensBoard(vault, key));
+	const { writer, signal } = plan.command;
 	await Promise.all(
-		boardsDrillingIn(vault, key, inbound).map(async (location) => {
+		relinks(plan, key).map(async ({ vault, location }) => {
 			const holder = { id: `move-${mintId()}`, kind: writer.kind };
 			try {
 				await holdBoard({

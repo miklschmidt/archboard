@@ -368,3 +368,22 @@ test("a lease that a stopped writer left on a board the move rewrites does not s
 	expect((await move("Stock", vaults.meta, vaults.product)).outcome).toBe("moved");
 	expect(drillOf(vaults.meta, "Shelf", "Open")?.repo).toBe(PRODUCT);
 });
+
+test("a link in the target vault into the moved board through the source repository opens it within the vault", async () => {
+	await create(vaults.meta, "Fees");
+	await create(vaults.product, "Billing desk", [
+		{ name: "Web", kind: "app" },
+		{
+			...opening("Charge", "fees"),
+			drillDown: { board: "fees", variant: { kind: "current" }, repo: META },
+		},
+	]);
+
+	const moved = await move("Fees", vaults.meta, vaults.product);
+
+	expect(drillOf(vaults.product, "Billing desk", "Charge")?.repo).toBeUndefined();
+	if (moved.outcome !== "moved") throw new Error(moved.outcome);
+	expect(moved.rewritten.map((one) => [one.vault, one.board])).toEqual([
+		[vaults.product, "Billing desk"],
+	]);
+});
