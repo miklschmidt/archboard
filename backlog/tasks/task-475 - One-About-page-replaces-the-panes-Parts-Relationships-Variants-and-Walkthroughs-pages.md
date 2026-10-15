@@ -3,11 +3,11 @@ id: TASK-475
 title: >-
   One About page replaces the pane's Parts, Relationships, Variants and
   Walkthroughs pages
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-15 11:32'
-updated_date: '2026-10-15 11:49'
+updated_date: '2026-10-15 14:50'
 labels: []
 dependencies: []
 ordinal: 817000
@@ -21,13 +21,13 @@ A pane's header has five tabs: Diagram and four pages that each list one kind of
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The pane header has two tabs, Diagram and About. About lays one scrolling page over the picture in place of the four pages, and the Parts, Relationships, Variants and Walkthroughs tabs are gone.
-- [ ] #2 The page opens with the board's name, its level, the variant on screen with its lifecycle and record, and the variant's summary.
-- [ ] #3 The walkthrough section shows every walkthrough of the variant with its summary, and for each step its number, heading, words, view and the subjects it focuses. A step that names no view says it is shown in the view on screen. A step presents its walkthrough from there, and a walkthrough can be presented or narrated from its head.
-- [ ] #4 The parts section lists every part of the variant in its containment, with its kind, responsibility, groups and the board it opens. The relationships section lists every relationship with its two ends, what it carries and its kind. Choosing a row picks the subject in the pane, and a control on the row shows it on the diagram.
-- [ ] #5 The variants section lists the board's variants as the Variants page did: one timeline with the record of each adoption and shelving, and choosing a variant reads it in the pane. It is there when the variant asked for is not on the board, so the reader can choose another.
-- [ ] #6 An outline beside the sections lists each section with its count, goes to a section, and marks the section being read. A section with nothing to show is absent. The page works from the keyboard, in both themes, and in a pane that shares the centre.
-- [ ] #7 Tests own the page's behaviour, and the shell docs, DESIGN.md and the Board viewer board describe it.
+- [x] #1 The pane header has two tabs, Diagram and About. About lays one scrolling page over the picture in place of the four pages, and the Parts, Relationships, Variants and Walkthroughs tabs are gone.
+- [x] #2 The page opens with the board's name, its level, the variant on screen with its lifecycle and record, and the variant's summary.
+- [x] #3 The walkthrough section shows every walkthrough of the variant with its summary, and for each step its number, heading, words, view and the subjects it focuses. A step that names no view says it is shown in the view on screen. A step presents its walkthrough from there, and a walkthrough can be presented or narrated from its head.
+- [x] #4 The parts section lists every part of the variant in its containment, with its kind, responsibility, groups and the board it opens. The relationships section lists every relationship with its two ends, what it carries and its kind. Choosing a row picks the subject in the pane, and a control on the row shows it on the diagram.
+- [x] #5 The variants section lists the board's variants as the Variants page did: one timeline with the record of each adoption and shelving, and choosing a variant reads it in the pane. It is there when the variant asked for is not on the board, so the reader can choose another.
+- [x] #6 An outline beside the sections lists each section with its count, goes to a section, and marks the section being read. A section with nothing to show is absent. The page works from the keyboard, in both themes, and in a pane that shares the centre.
+- [x] #7 Tests own the page's behaviour, and the shell docs, DESIGN.md and the Board viewer board describe it.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,3 +43,31 @@ A pane's header has five tabs: Diagram and four pages that each list one kind of
 8. Review step: reviewer agents on the page components, on the header, stage wiring and tests, and on the boundary between them; they commit their fixes.
 9. Close: bun run check, code check against the proposal, footprint, adopt, dogfood check, readme:check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Rebase: the branch was first cut from origin/main, and it was rebased onto main 8bbb63584. Main changed two things that the page reads. TASK-472.05 gave the level mark the vault whose policy names its icon, so the page marks the board on screen with the pane's vault, as the pane header does. TASK-472.12 lets a drill-down name a board of another repository. The Opens cell gives such a board the plain mark, because only opening that board finds its vault, and it names the repository under the board. 5b16022f0 adds the test that owns the Opens cell, which no test read before. Main's TASK-472.13 had changed the Board viewer board, so the proposal was drawn again from its current variant d66pQWDQ, with the same two changes.
+
+Review step: four reviewer agents covered the page components, the header with the stage wiring and tests, the documents, and the boundary between page and stage. Their commits: 9be495160 (the design text held to the code), 643356619 (a code warning shows its subject through the stage's one onShow), 5b53b887c (long words wrap, and the narrow outline bar scrolls sideways), 8bcaa1c81 (the relationship chip's unused plate goes), 6ab2ca28c (a test for a board with no such variant) and fba91b847 (the camera fit runs after the pick's own camera moves). The parent fixed what they left open in c3cebce99. The page keeps its place on each board, where before it came back at its top after a presentation or the diagram. A pick's float waits while the About page is open, where before in two panes it covered the page's controls. 5d2063f2b and 55a3af1da fix the last stale comment and a docs line.
+
+Not reproduced: one reviewer saw the pane header's breadcrumb drawn over itself in 439 px panes. At 439 px, with two panes beside the navigator, both headers fold cleanly here.
+
+Looked at on the rebased build at 1920x1080: one pane in the light and the dark theme, and two panes that share the centre, each with its About page open.
+
+Gate: bun run check passed in full on 6aa9accce, with both proposals adopted (lint, format, types, 4714 module tests with 1 skipped, 240 system tests, 27 repository tests, 19 browser files). wide-boards.test.ts, the one test that lays out the dogfood boards, read the adopted boards there.
+
+Code check: with --variant TASK-475 no finding is added, and the proposal clears the ANCHOR_PATH_MISSING of wQBlFEQ3, which cited the deleted BoardHistoryPages.tsx. The anchor now cites AboutPage.tsx, which calls variantTimeline. The EXPOSED_UNUSED on Semantic viewer is in both runs, and the module's root exports did not change.
+
+Footprint against base d7c28961b, the plan commit before c3bb533c7, which is the first commit with Refs: TASK-475. Current is TASK-472.13, the parent of the proposal. Named and changed: Render stage states and Viewer entry point. Changed but not named: Semantic viewer is the directory container. Inside it, the commits changed hooks and lib files that have no part of their own (use-stage-tab.ts, use-sidebar.ts, use-subject-focus.ts, use-section-spy.ts, kind-look.ts, timeline.ts) and tests, and the restated Viewer entry point and Render stage states say what they now do. Local pictures changed only in a comment of c3bb533c7 that names the About page. c3bb533c7 reads as large because it carries the feature's docs, images and tests, and it is not a sweep. Named but not changed: none. 5b16022f0 came after the footprint, and it changes only a test inside Semantic viewer.
+
+Adopted Board viewer@TASK-475 at version 103, and archboard check reports no diagnostics. Behind: no commit of this task puts another board behind.
+
+README: bun run readme:check lists all 16 assets as stale, and a checkout of main 8bbb63584 lists the same 16, so this task made none of them stale. The clips film the real shell, so a refresh shows the new header, and a person attaches them by hand. ask, explainer, pr-walkthrough and newcomer also need a Codex sign-in.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A pane's header now has two tabs, Diagram and About, in place of five. The About page lies over the picture and scrolls. It opens with the board's name, its level, the variant on screen with where it stands, and the variant's summary. An outline lists each section with its count, goes to a section and marks the one being read. The walkthroughs are scripts that show each step's number, heading, words, view (or the view on screen) and subjects, and present from any step. The parts stand in their containment with the board each opens, and with its repository when that board is in another one. The relationships are a table, and the variants keep their timeline. A row picks its subject, and its control shows it on the diagram through the stage's one show, which the code warnings use too. The page keeps its place on each board, and in two panes a pick on it lays no panel over it. Verified by semantic-board-about.test.tsx, the sidebar placement, variants and levels tests, browser checks at 1920x1080 in one and two panes and in both themes, four reviewers, and a full bun run check on the branch rebased onto main. The shell docs, DESIGN.md and Board viewer@TASK-475, now adopted, describe it.
+<!-- SECTION:FINAL_SUMMARY:END -->
