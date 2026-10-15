@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 247,
+	"version": 249,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-15T00:29:53.874Z",
+	"updatedAt": "2026-10-15T02:28:17.756Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -101132,7 +101132,7 @@
 						"order": 4000,
 						"name": "Route handlers",
 						"kind": "module",
-						"responsibility": "Answers every request the server takes: board reads, the one write boundary with its claim, rename and discard, the code checks, the page, health and served vault",
+						"responsibility": "Answers every request: board reads, the one write boundary with its claim, rename and discard, the code checks, the repositories and checkout choice, the page, health and served vault",
 						"description": "Board routes, Board write routes, Claim routes, Rename route, Discard route, Service routes, Code check route, Locality route and Footprint route. Their own board draws each one with the parts it reaches.",
 						"parent": "nmbXuHCg",
 						"groups": [
@@ -101571,7 +101571,7 @@
 						"from": "Eh7icS73",
 						"to": "Y70KOm9C",
 						"kind": "http",
-						"label": "a board and its picture, the claim, the page",
+						"label": "a board, its picture, the claim, repositories, the page",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",

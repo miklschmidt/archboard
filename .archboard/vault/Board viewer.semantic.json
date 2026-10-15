@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 95,
+	"version": 97,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-15T01:43:51.420Z",
+	"updatedAt": "2026-10-15T02:26:53.990Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -28223,7 +28223,7 @@
 		{
 			"id": "KCF7QFb0",
 			"name": "Merge surface-depth/slabs",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "PfpUUQCa",
 			"summary": "The viewer, camera presentation store, host entry points and warning navigation",
 			"content": {
@@ -30433,9 +30433,9 @@
 		{
 			"id": "tybzLnMr",
 			"name": "TASK-472.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "KCF7QFb0",
-			"summary": "The viewer's reads, picture keys and board news all name the pane's vault, which the pane provides",
+			"summary": "The viewer, camera presentation store, host entry points and warning navigation, each reading in the vault of its pane",
 			"content": {
 				"nodes": [
 					{
@@ -32784,7 +32784,7 @@
 			}
 		}
 	],
-	"current": "KCF7QFb0",
+	"current": "tybzLnMr",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
@@ -32911,6 +32911,12 @@
 			"from": "PfpUUQCa",
 			"at": "2026-10-07T02:15:07.926Z",
 			"reason": "Combines the preserved main viewer ownership and code-warning navigation with the merged external camera store, immediate gestures and held near/far flight reading"
+		},
+		{
+			"variant": "tybzLnMr",
+			"from": "KCF7QFb0",
+			"at": "2026-10-15T02:26:53.990Z",
+			"reason": "Every read, query key and picture cache key names the vault of its pane, which the pane provides"
 		}
 	],
 	"shelvings": [

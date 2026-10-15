@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 21,
+	"version": 23,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T02:10:36.514Z",
+	"updatedAt": "2026-10-15T02:26:54.262Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -1162,7 +1162,7 @@
 		{
 			"id": "5CDXeeuu",
 			"name": "TASK-472.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "8dYrGdIf",
 			"summary": "Live pane connections, presentation state and board announcements",
 			"content": {
@@ -2279,9 +2279,9 @@
 		{
 			"id": "7aPQQv25",
 			"name": "TASK-472.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "5CDXeeuu",
-			"summary": "Live pane connections, presentation state and board announcements, with the server moving a pane between vaults and the pane naming the vault it was put in",
+			"summary": "Live pane connections, presentation state and board announcements, with the vault each pane is in",
 			"content": {
 				"nodes": [
 					{
@@ -3658,7 +3658,7 @@
 			}
 		}
 	],
-	"current": "5CDXeeuu",
+	"current": "7aPQQv25",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -3670,6 +3670,12 @@
 			"from": "8dYrGdIf",
 			"at": "2026-10-15T00:25:36.673Z",
 			"reason": "Every call and pane socket names its vault: a Vault requirement refuses a call naming none, and the pane registry, board announcements and change feed keep their news per vault"
+		},
+		{
+			"variant": "7aPQQv25",
+			"from": "5CDXeeuu",
+			"at": "2026-10-15T02:26:54.262Z",
+			"reason": "The server moves a pane between vaults and tells it in pane_board, and agent activity names its vault and reaches every pane"
 		}
 	]
 }
