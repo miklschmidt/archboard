@@ -42,8 +42,18 @@ test("a workhorse tool names a checkout by its directory or its vault, through a
 	expect(checkoutNamedBy(repository)).toBe(repository);
 	expect(checkoutNamedBy(join(repository, ".archboard", "vault"))).toBe(repository);
 	expect(checkoutNamedBy(linked)).toBe(repository);
-	// A directory with no vault, a path that is not there and a relative path name none. A
-	// directory in no vault layout is one the server serves no vault from, so it is no checkout.
+	// A directory whose vault is a link names the checkout the server serves that vault from, and
+	// one whose vault leads out of the layout names none: the server serves no vault there.
+	const borrowing = join(root, "borrowing");
+	mkdirSync(borrowing);
+	symlinkSync(join(repository, ".archboard"), join(borrowing, ".archboard"));
+	expect(checkoutNamedBy(borrowing)).toBe(repository);
+	const outside = join(root, "outside");
+	mkdirSync(join(outside, ".archboard"), { recursive: true });
+	mkdirSync(join(root, "plain"));
+	symlinkSync(join(root, "plain"), join(outside, ".archboard", "vault"));
+	expect(checkoutNamedBy(outside)).toBeNull();
+	// A directory with no vault, a path that is not there and a relative path name none.
 	expect(checkoutNamedBy(root)).toBeNull();
 	expect(checkoutNamedBy(join(root, "missing"))).toBeNull();
 	expect(checkoutNamedBy("payments")).toBeNull();
