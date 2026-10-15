@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 25,
+	"version": 27,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-15T01:42:31.307Z",
+	"updatedAt": "2026-10-15T02:26:53.815Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -4356,7 +4356,7 @@
 		{
 			"id": "i4iQh9Yd",
 			"name": "TASK-472.12",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "BVl0xf4h",
 			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history and checkouts each reaches.",
 			"content": {
@@ -5502,9 +5502,9 @@
 		{
 			"id": "NhIfIArt",
 			"name": "TASK-472.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "i4iQh9Yd",
-			"summary": "The navigator lists every repository, and each pane names its repository",
+			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches.",
 			"content": {
 				"nodes": [
 					{
@@ -6819,7 +6819,7 @@
 			}
 		}
 	],
-	"current": "i4iQh9Yd",
+	"current": "NhIfIArt",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -6838,6 +6838,12 @@
 			"from": "BVl0xf4h",
 			"at": "2026-10-15T00:50:26.220Z",
 			"reason": "The board listing asks the vault's own repository identity, so a drill-down naming it is listed as a link within the vault"
+		},
+		{
+			"variant": "NhIfIArt",
+			"from": "i4iQh9Yd",
+			"at": "2026-10-15T02:26:53.815Z",
+			"reason": "Repository routes list every repository of the machine and choose a checkout, moving every pane of that repository into the chosen vault"
 		}
 	],
 	"shelvings": [

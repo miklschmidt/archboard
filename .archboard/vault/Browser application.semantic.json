@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 52,
+	"version": 54,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-15T02:11:06.127Z",
+	"updatedAt": "2026-10-15T02:26:54.435Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -4603,7 +4603,7 @@
 		{
 			"id": "8HM8SuqH",
 			"name": "TASK-367.27",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "GLrClPna",
 			"summary": "Service level: browser application modules. Follow linked subjects for related levels.",
 			"content": {
@@ -6837,9 +6837,9 @@
 		{
 			"id": "Du6umKm2",
 			"name": "TASK-472.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "8HM8SuqH",
-			"summary": "The navigator lists every repository with a checkout menu, and each pane names its repository's vault",
+			"summary": "Service level: browser application modules. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -8039,7 +8039,7 @@
 			}
 		}
 	],
-	"current": "8HM8SuqH",
+	"current": "Du6umKm2",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -8076,6 +8076,12 @@
 			"from": "GLrClPna",
 			"at": "2026-10-06T15:04:04.737Z",
 			"reason": "TASK-367.27: every relationship is anchored; Browser client binds src/ui and each module part its directory; the replay renders the voice box; shell, replay and workbench uses of the viewer, catalog, orb and clock are drawn"
+		},
+		{
+			"variant": "Du6umKm2",
+			"from": "8HM8SuqH",
+			"at": "2026-10-15T02:26:54.435Z",
+			"reason": "The navigator lists every repository with a checkout menu, each pane names its repository, and the address carries repoA and repoB"
 		}
 	]
 }
