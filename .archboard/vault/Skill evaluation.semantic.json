@@ -4,9 +4,9 @@
 	"id": "IbGtfJE2",
 	"name": "Skill evaluation",
 	"level": "service",
-	"version": 20,
+	"version": 21,
 	"createdAt": "2026-09-17T21:09:15.501Z",
-	"updatedAt": "2026-10-15T05:03:54.838Z",
+	"updatedAt": "2026-10-15T05:14:33.235Z",
 	"views": [
 		{
 			"id": "pth4q0ZY",
@@ -2820,7 +2820,7 @@
 						"name": "Run isolation",
 						"kind": "module",
 						"responsibility": "One run's private world: its own home, its own agent storage, its own CLI on the path",
-						"description": "The run's vault is .archboard/vault in its Flask checkout, made after the clone because a clone needs an empty destination. The run's environment names no vault: every command finds it from the checkout it runs in (ADR 0049).",
+						"description": "The run's vault is .archboard/vault in its Flask checkout, made after the clone because a clone needs an empty destination. The run's environment names no vault: every command finds it from the checkout it runs in (ADR 0049). Git looks no higher than the run's directory, and that directory links .archboard/vault to the run's vault, so a command anywhere in the world finds the run's vault and never the vault of the archboard checkout that holds the batch.",
 						"parent": "CtuYEtaa",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -2882,7 +2882,7 @@
 						"name": "Guardrails",
 						"kind": "function",
 						"responsibility": "The rules every run is held to, including whether a board file was written behind the CLI's back",
-						"description": "A board path is read from the checkout the author works in, or from the vault after a cd into it, so a relative or escaped path to a board file still counts as a direct write.",
+						"description": "Each relative path in a script is read from the directory the script's earlier cd commands moved it to, starting in the checkout the author works in, so a relative or escaped path to a board file still counts as a direct write, and a checkout file is never taken for a board.",
 						"parent": "CtuYEtaa",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -3111,7 +3111,7 @@
 						"name": "Exposure re-audit",
 						"kind": "function",
 						"responsibility": "Reads each saved run's exposure again with today's classifier, so a classifier fix reaches a batch that cannot be run again",
-						"description": "A batch made before the vault moved into the Flask checkout kept it at world/vault. The re-audit reads the vault where the batch's world holds it, and the place in the checkout when the world is gone.",
+						"description": "Exposure is counted from the saved commands alone. No rule reads a run's vault, so an old batch that kept its vault at world/vault re-audits the same way.",
 						"parent": "CtuYEtaa",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",

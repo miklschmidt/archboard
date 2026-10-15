@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 68,
+	"version": 69,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-15T05:06:53.815Z",
+	"updatedAt": "2026-10-15T05:14:33.421Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -17216,7 +17216,7 @@
 						"name": "Source checkout",
 						"kind": "module",
 						"responsibility": "Which archboard checkout this process runs and the port of its server: 3000 for the main checkout, a hash of the path for a worktree; hands a command to the bin/archboard of the checkout it stands in",
-						"description": "The main checkout has a .git directory; a linked worktree has a .git file and takes 10000 + sha256(root path) mod 10000. The default server URL, the --url default and the server's own port all come from here. The hand-off follows the working directory, not -C.",
+						"description": "The main checkout has a .git directory; a linked worktree has a .git file and takes 10000 + sha256(root path) mod 10000. The default server URL, the --url default and the server's own port all come from here. The hand-off follows the working directory, not -C. It waits for the other checkout's command, passes SIGINT, SIGTERM and SIGHUP on to it and answers with its exit status, and it refuses a checkout with no node_modules, naming the bun install to run there.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/source-checkout.ts"
