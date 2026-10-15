@@ -9,30 +9,47 @@
 type JsonRecord = Readonly<Record<string, unknown>>;
 
 /**
- * The vault the server was started with (ADR 0049), learned once before the
- * page draws anything. A pane opens in it until somebody shows it a board of
- * another repository; it is one opaque string here, what the server calls the
- * vault, and nothing the page shows or keeps in an address.
+ * The vault a page opens in (ADR 0049), learned once before the page draws
+ * anything. A pane opens in it until somebody shows it a board of another
+ * repository; it is one opaque string here, what the server calls the vault,
+ * and nothing the page shows or keeps in an address.
  */
 let served: string | null = null;
 
+/** What the page says when the server knows no repository with a vault to open. */
+const NO_OPENING_VAULT =
+	"This machine knows no repository with a vault yet. Run an archboard command in a checkout that has a .archboard/vault, or add one with archboard repo add <directory>, and then reload this page.";
+
 /**
- * Ask the server which vault it was started with.
+ * Ask the server which vault a page opens in.
  * @returns When the vault is known.
- * @throws {Error} When the server does not say.
+ * @throws {Error} When the server does not say, or knows no vault to open.
  */
 async function learnServedVault(): Promise<void> {
 	const response = await fetch("/api/served-vault");
 	const body: unknown = await response.json().catch(() => null);
-	const vault = isRecord(body) ? body["vault"] : undefined;
-	if (!response.ok || typeof vault !== "string" || vault === "") {
-		throw new Error("The Archboard server did not say which vault it serves.");
-	}
-	served = vault;
+	served = openingVaultIn(response.ok ? body : null);
 }
 
 /**
- * The vault the server was started with, where a pane opens by default.
+ * The vault an answer of `/api/served-vault` names.
+ * @param body The answer, or null when the server refused.
+ * @returns The vault.
+ * @throws {Error} When the answer names no vault, or names none to open.
+ */
+function openingVaultIn(body: unknown): string {
+	const vault = isRecord(body) ? body["vault"] : undefined;
+	if (vault === null) {
+		throw new Error(NO_OPENING_VAULT);
+	}
+	if (typeof vault !== "string" || vault === "") {
+		throw new Error("The Archboard server did not say which vault a page opens in.");
+	}
+	return vault;
+}
+
+/**
+ * The vault a page opens in, where a pane opens by default.
  * @returns The vault.
  * @throws {Error} Before the page has learned it, which page start does first.
  */

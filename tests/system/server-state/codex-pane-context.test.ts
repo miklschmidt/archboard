@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { realpathSync } from "node:fs";
 import { join } from "node:path";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
@@ -358,8 +359,13 @@ test("a command's context is its own pane's while another tab also shows pane A"
 		const context = JSON.parse(String(additional?.archboard?.value)) as {
 			readonly paneId: string;
 			readonly board: { readonly name: string };
+			readonly semantic: { readonly brief: string };
 		};
 		expect(context).toMatchObject({ paneId: "A", board: { name: "scratch" } });
+		// The brief names the board's vault, so the thread can pass it as -C (ADR 0050).
+		expect(JSON.parse(context.semantic.brief)).toMatchObject({
+			board: { vault: realpathSync(fixture.vault) },
+		});
 	} finally {
 		await resources.disposeAsync();
 	}

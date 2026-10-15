@@ -38,8 +38,11 @@ const RepositoryEntrySchema = z.object({
 const RepositoryListingSchema = z.object({
 	success: z.literal(true),
 	repositories: z.array(RepositoryEntrySchema),
-	/** The vault the server was started with, where a page opens by default. */
-	served: z.string(),
+	/**
+	 * The vault a page opens in when its address names no repository, or null when no repository
+	 * with a vault is known.
+	 */
+	served: z.string().nullable(),
 });
 
 /** The body of `PUT /api/repositories/chosen`: which checkout of which repository to read from now on. */

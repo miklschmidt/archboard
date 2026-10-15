@@ -1,7 +1,6 @@
 import { logger } from "@/runtime/engine/logger";
 import { semanticChangeFeed } from "@/server/archboard/lib/semantic-change-feed";
-import { serverVault } from "@/server/archboard/lib/server-vault";
-import { workbenchFeed } from "@/server/archboard/lib/codex-workbench-feed";
+import { workbenchFeedFor } from "@/server/archboard/lib/codex-workbench-feed";
 
 import { panesInOrder } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
@@ -28,6 +27,7 @@ import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbenc
 import { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-pane";
 import {
 	canonicalContextFromBrief,
+	fullInputFor,
 	semanticInputFor,
 	type ContextPane,
 	type SemanticInputOwners,
@@ -37,7 +37,6 @@ import { checkoutRoot } from "@/server/archboard/lib/module-paths";
 import { narrationChangesOf } from "@/server/archboard/lib/walkthrough-narration";
 import { canvasOf } from "@/server/archboard/lib/tab-canvas";
 import {
-	boardForPane,
 	browserLeaseLedger,
 	codexSocketInstances,
 	currentSocketsByClient,
@@ -81,37 +80,6 @@ const codexWiring: CodexWiring = {
 		handleBrowserMessage: null,
 	},
 };
-
-/**
- * The board a pane is showing, for a context that has to name one.
- *
- * A pane exists whether or not it is showing a board, but a thread is bound to
- * a pane *and its board*: a context built for a pane showing nothing would be a
- * brief about no architecture at all.
- * @param pane The pane.
- * @returns The board key.
- * @throws {Error} When the pane is showing no board.
- */
-function shownBoard(pane: PaneRegistration): string {
-	const board = boardForPane(pane);
-	if (board === null) {
-		throw new Error(`Pane ${pane.paneId} is showing no board, so there is no context to read.`);
-	}
-	return board;
-}
-
-/**
- * The semantic input for the board a pane shows, read fresh in the pane's vault.
- * @param owners The active components.
- * @param pane The pane.
- * @returns The input.
- */
-function fullInputFor(
-	owners: Parameters<typeof semanticInputFor>[0],
-	pane: PaneRegistration,
-): ReturnType<typeof semanticInputFor> {
-	return semanticInputFor(owners, pane.vault, shownBoard(pane), null, pane);
-}
 
 /** Forget every browser callback the workbench installed. */
 function resetCodexWorkbenchWiring(): void {
@@ -381,7 +349,9 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		 * @returns The publisher options.
 		 */
 		semanticPublisherFor: (tabSessionId) => ({
-			feed: workbenchFeed,
+			feed: workbenchFeedFor((vault) =>
+				panesOfTabSession(tabSessionId).some((pane) => pane.vault === vault),
+			),
 			feedId: semanticChangeFeed.feedId,
 			fresh: {
 				/**
@@ -403,7 +373,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				const { components, session } = liveSession(tabSessionId);
 				return semanticInputFor(
 					semanticOwners(components, session),
-					serverVault(),
+					event.vault,
 					event.board,
 					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
 					changePane(session),
@@ -412,6 +382,13 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		}),
 		narrationChangesFor: narrationChangesOf,
 		canvasFor: canvasOf,
+		/**
+		 * The vault of the pane a tab session presents through.
+		 * @param tabSessionId The tab session.
+		 * @returns The vault's directory, or null while none of its panes is open.
+		 */
+		presentingVaultFor: (tabSessionId) =>
+			presentingPaneOf(liveSession(tabSessionId).session)?.vault ?? null,
 		/**
 		 * The canonical context of a settled event, filed under the pane it presents.
 		 * @param event The settled event.

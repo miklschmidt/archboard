@@ -16,7 +16,6 @@ import type {
 	CodexWorkbenchServer,
 	CodexWorkbenchStorage,
 } from "@/server/archboard/lib/codex-workbench-server";
-import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
  * Create this installation's Codex storage under the server state directory,
@@ -68,7 +67,7 @@ export function createServerCodexWorkbenchInstallation(
 			executablePath,
 			checkoutRoot: server.checkoutRoot,
 			storage: { rootDirectory: storage.root, ownerDirectory: storage.ownerDirectory },
-			archboardServer: { url: serverUrl(), vault: serverVault() },
+			archboardServer: { url: serverUrl() },
 			onGroupOwned: server.onCodexProcessGroupOwned,
 		},
 		/**

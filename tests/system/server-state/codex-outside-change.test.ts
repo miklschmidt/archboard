@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -119,6 +120,26 @@ test("live voice and its coordinator are told what another agent did to a board 
 			expect(written.status).toBe(200);
 			versions.set(board, written.body.board.version);
 		};
+		// A board of the same name in a vault no pane of this tab is in is not its news either.
+		const elsewhere = join(fixture.root, "elsewhere");
+		mkdirSync(elsewhere);
+		const other = await request("/api/semantic-boards/create", {
+			method: "POST",
+			vault: elsewhere,
+			doing: "starting scratch elsewhere",
+			body: {
+				board: "scratch",
+				create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
+			},
+		});
+		expect(other.status).toBe(200);
+		const otherEdit = await request("/api/semantic-boards/edit?expectVersion=1", {
+			method: "POST",
+			vault: elsewhere,
+			doing: "adding Elsewhere",
+			body: { board: "scratch", edit: { nodes: [{ name: "Elsewhere", kind: "service" }] } },
+		});
+		expect(otherEdit.status).toBe(200);
 		// The session's own writes, by either of its threads; a write to a board no pane shows;
 		// then one nobody attributed, which is the one that is news.
 		await edit("Orders", workhorse);
