@@ -78,7 +78,7 @@ beforeAll(async () => {
 		encoding: "utf8",
 	});
 	if (added.status !== 0) throw new Error(`repo add ${main}: ${added.stderr}`);
-	// An untracked vault registered under the name the served vault would take.
+	// An untracked vault registered under the name the environment's vault would take.
 	const holder = join(fixture.root, "elsewhere", "vault");
 	mkdirSync(join(holder, ".archboard", "vault"), { recursive: true });
 	const untracked = spawnSync(packageBin, ["repo", "add", holder], {
@@ -121,7 +121,7 @@ describe.serial("the repositories of the navigator", () => {
 		}
 
 		// The repository is listed once, read from its chosen main checkout, beside the
-		// served vault, which is in no registered checkout.
+		// vault ARCHBOARD_VAULT names, which is in no registered checkout.
 		const before = await listed();
 		const orders = before.find((each) => each.name === ORDERS);
 		expect(orders).toMatchObject({ vault: mainVault, state: "ready" });
@@ -130,8 +130,8 @@ describe.serial("the repositories of the navigator", () => {
 			[worktree, false, true],
 		]);
 		// An address names a repository by these names, so no two are the same: the
-		// served vault is named for its own directory, past the untracked vault that
-		// has that name already.
+		// environment's vault is named for its own directory, past the untracked vault
+		// that has that name already.
 		expect(new Set(before.map((each) => each.name)).size).toBe(before.length);
 		expect(before.find((each) => each.vault === realpathSync(fixture.vault))?.name).toBe("vault-2");
 

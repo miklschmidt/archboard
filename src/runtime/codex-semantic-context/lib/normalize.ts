@@ -207,11 +207,18 @@ function normalizeBoard(
 ): BoundedValue<NormalizedContext["board"]> {
 	const key = textValue(board.key, "board.key", SEMANTIC_CONTEXT_LIMITS.boardKeyBytes);
 	const name = textValue(board.name, "board.name", SEMANTIC_CONTEXT_LIMITS.boardKeyBytes);
+	const vault = textValue(board.vault, "board.vault", SEMANTIC_CONTEXT_LIMITS.fileBytes);
 	const file = textValue(board.file, "board.file", SEMANTIC_CONTEXT_LIMITS.fileBytes);
 	const version = numberValue(board.version, "board.version");
 	return {
-		value: deepFreeze({ key: key.value, name: name.value, file: file.value, version }),
-		truncated: key.truncated || name.truncated || file.truncated,
+		value: deepFreeze({
+			key: key.value,
+			name: name.value,
+			vault: vault.value,
+			file: file.value,
+			version,
+		}),
+		truncated: key.truncated || name.truncated || vault.truncated || file.truncated,
 	};
 }
 

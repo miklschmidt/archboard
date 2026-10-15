@@ -32,7 +32,6 @@ const StatusRunningResultSchema = z.looseObject({
 	running: z.literal(true),
 	url: z.string(),
 	pid: z.number().int().optional(),
-	boards: z.number().int().nonnegative().optional(),
 	browserClients: z.number().int().nonnegative().optional(),
 	stale: StaleSourceSchema.optional(),
 });
@@ -91,10 +90,9 @@ async function bestEffortSyncStatus(): Promise<Record<string, unknown>> {
 }
 
 /**
- * The status of a server that answered: what it is holding, how many browsers
- * are looking at it, and a warning when it is running older code than the
- * files on disk. The pid falls back to the pid file for a server whose health
- * does not report one.
+ * The status of a server that answered: how many browsers are looking at it,
+ * and a warning when it is running older code than the files on disk. The pid
+ * falls back to the pid file for a server whose health does not report one.
  * @param health - The health the server reported.
  * @param sync - The synchronization fields, empty when they could not be read.
  * @returns The running status, with the staleness warning as a diagnostic.
@@ -107,13 +105,11 @@ function runningStatus(
 	return {
 		result: {
 			// Synchronization first, so health stays the authority for what it and
-			// the sync route both answer: the sync route lists the boards it can
-			// see, and `boards` here is how many there are.
+			// the sync route both answer.
 			...sync,
 			running: true as const,
 			url: ARCHBOARD_URL,
 			pid: health.pid ?? readPidFile(serverPort()) ?? undefined,
-			boards: health.boards,
 			browserClients: health.websocket_clients,
 			...(stale ? { stale } : {}),
 		},
@@ -124,7 +120,7 @@ function runningStatus(
 const statusContract = defineCommand({
 	path: ["status"],
 	shared: ["url"],
-	summary: "Archboard server health, board count, browser clients",
+	summary: "Archboard server health and browser clients",
 	description:
 		"Reports Archboard server availability, identity, source freshness, and synchronization state.",
 	examples: ["archboard status"],
@@ -187,7 +183,7 @@ const statusContract = defineCommand({
 	],
 	/**
 	 * Reports what is answering at the configured URL: nothing, something that
-	 * is not this server, or the server with its counts, its source freshness
+	 * is not this server, or the server with its client count, its source freshness
 	 * and whatever synchronization state it can add.
 	 * @returns The status as the command's result, with an outcome when no server answered.
 	 */

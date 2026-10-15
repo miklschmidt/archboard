@@ -32,6 +32,8 @@ type SemanticCursorInput = SemanticCursor;
 /** The settled fields consumed from the existing change feed. */
 interface SettledChangeSourceEvent {
 	readonly cursor: number;
+	/** The directory of the vault the board lives in: a board name alone does not say which. */
+	readonly vault: string;
 	readonly board: string;
 	readonly at: string;
 	readonly origin: SemanticChangeOrigin;
@@ -69,6 +71,11 @@ interface SemanticBoardInput {
 	readonly key: string;
 	/** The name every command spells the board with. */
 	readonly name: string;
+	/**
+	 * The directory of the vault that holds it, which a thread passes as `-C` so that its
+	 * command reads this board and not a board of the same name in another vault.
+	 */
+	readonly vault: string;
 	/** The document that holds it, which is a path and never content. */
 	readonly file: string;
 	readonly version: number | null;
@@ -271,6 +278,7 @@ interface SemanticContextInput {
 interface SemanticBoard {
 	readonly key: string;
 	readonly name: string;
+	readonly vault: string;
 	readonly file: string;
 }
 

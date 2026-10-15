@@ -1,24 +1,27 @@
+import type { SettledChangeSource } from "@/runtime/codex-semantic-context";
 import { semanticChangeFeed } from "@/server/archboard/lib/semantic-change-feed";
-import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /**
- * The changes the Codex workbench hears: those of the vault it works in. One
- * workbench serves the vault the server started with until each checkout has a
- * workhorse of its own, so a change to a board of another vault is not its news,
- * even when that board goes by the same name.
+ * The changes one tab session of the Codex workbench hears: those of the vaults its panes are in.
+ * A tab can show boards of several vaults, and a change to a board of a vault it shows none of
+ * is not its news, even when that board goes by the same name.
+ * @param shows Whether the tab session's panes are in a vault now, asked at each change.
+ * @returns The feed.
  */
-const workbenchFeed = {
-	/**
-	 * Hear every settled change to a board of the workbench's vault.
-	 * @param listener What to tell.
-	 * @returns Stops listening.
-	 */
-	onChange: (listener: Parameters<typeof semanticChangeFeed.onChange>[0]): (() => void) =>
-		semanticChangeFeed.onChange((event) => {
-			if (event.vault === serverVault()) {
-				listener(event);
-			}
-		}),
-};
+function workbenchFeedFor(shows: (vault: string) => boolean): SettledChangeSource {
+	return {
+		/**
+		 * Hear each settled change to a board of a vault the tab session's panes are in.
+		 * @param listener What to tell.
+		 * @returns Stops listening.
+		 */
+		onChange: (listener) =>
+			semanticChangeFeed.onChange((event) => {
+				if (shows(event.vault)) {
+					listener(event);
+				}
+			}),
+	};
+}
 
-export { workbenchFeed };
+export { workbenchFeedFor };

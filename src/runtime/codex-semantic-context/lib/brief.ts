@@ -217,6 +217,7 @@ function buildSemanticBrief(
 		board: {
 			key: context.board.key,
 			name: context.board.name,
+			vault: context.board.vault,
 			file: context.board.file,
 		},
 		pane: context.pane,

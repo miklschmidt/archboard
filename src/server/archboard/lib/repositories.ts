@@ -7,8 +7,9 @@
 import fs from "fs";
 import path from "path";
 
+import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
 import { listRegistry, type RegisteredRepoStatus } from "@/runtime/engine/repo-registry";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import { canonicalConfiguredVault } from "@/server/archboard/lib/request-vault";
 import type { RepositoryEntry, RepositoryState } from "@/shared/repositories/index";
 
 /** Where a checkout keeps its vault (ADR 0049). */
@@ -66,12 +67,22 @@ function stateOf(chosen: RegisteredRepoStatus | undefined, vault: string | null)
 }
 
 /**
- * The name of the served vault when no listed repository reads it: the
+ * The vault a set `ARCHBOARD_VAULT` names, canonical. The server needs no vault (ADR 0049), and
+ * the variable still decides where a page opens until the test migration retires it
+ * (TASK-472.07, TASK-472.09).
+ * @returns The vault, or null when the variable is not set.
+ */
+function environmentVault(): string | null {
+	return ARCHBOARD_VAULT ? canonicalConfiguredVault(ARCHBOARD_VAULT) : null;
+}
+
+/**
+ * The name of the environment's vault when no listed repository reads it: the
  * directory that holds its `.archboard/vault`, or the vault's own directory when
  * it is not in that layout, made unique the way a registry name is. A page
  * resolves an address's repository by this name, so two listed repositories
  * never share one.
- * @param served The served vault.
+ * @param served The environment's vault.
  * @param listed The repositories listed already.
  * @returns The name.
  */
@@ -87,9 +98,9 @@ function servedName(served: string, listed: readonly RepositoryEntry[]): string 
 /**
  * Every repository the navigator lists, by name.
  *
- * Until the first command registers its checkout (TASK-472.06), the vault this
- * server was started with may be in no registered checkout, so it is listed by
- * its directory's name rather than left out of the page that serves it.
+ * A vault a set `ARCHBOARD_VAULT` names may be in no registered checkout, because a vault from
+ * the environment never registers, so it is listed by its directory's name rather than left out
+ * of the page that opens in it.
  * @returns The repositories.
  */
 function listRepositories(): RepositoryEntry[] {
@@ -108,8 +119,8 @@ function listRepositories(): RepositoryEntry[] {
 			: [{ name: each.name, untracked: true, vault, state: "ready" as const, checkouts: [] }];
 	});
 	const listed = [...identities, ...untracked];
-	const served = serverVault();
-	if (!listed.some((each) => each.vault === served) && fs.existsSync(served)) {
+	const served = environmentVault();
+	if (served !== null && !listed.some((each) => each.vault === served) && fs.existsSync(served)) {
 		listed.push({
 			name: servedName(served, listed),
 			untracked: true,
@@ -130,4 +141,22 @@ function repositoryOfVault(vault: string): string | null {
 	return listRepositories().find((each) => each.vault === vault)?.name ?? null;
 }
 
-export { listRepositories, repositoryOfVault, vaultIn, VAULT_DIRECTORY, type RepositoryEntry };
+/**
+ * The vault a page opens in when its address names no repository: the one a set
+ * `ARCHBOARD_VAULT` names, else that of the first ready repository the navigator lists, by name.
+ * @returns The vault, or null when no repository with a vault is known.
+ */
+function openingVault(): string | null {
+	return (
+		environmentVault() ?? listRepositories().find((each) => each.state === "ready")?.vault ?? null
+	);
+}
+
+export {
+	listRepositories,
+	openingVault,
+	repositoryOfVault,
+	vaultIn,
+	VAULT_DIRECTORY,
+	type RepositoryEntry,
+};

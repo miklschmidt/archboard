@@ -27,7 +27,6 @@ import type {
 import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";
 import type { SemanticContextPublisherOptions } from "@/runtime/codex-semantic-context";
 import type { TabSessionId } from "@/server/codex-workbench";
-import { serverVault } from "@/server/archboard/lib/server-vault";
 
 /** A session's binding context with its semantic publisher's options, made once. */
 interface ScopedBindingContext extends SessionBindingContext {
@@ -124,17 +123,21 @@ function currentBindingReaders(
 		realtime: (created) => ({
 			boardCatalogue: {
 				/**
-				 * The catalogue of the vault this server serves.
-				 * @returns The byte-bounded JSON inventory.
+				 * The catalogue of the vault of the pane the session presents through.
+				 * @returns The byte-bounded JSON inventory, which names that vault.
 				 */
-				read: () => readBoardCatalogue(serverVault()),
+				read: () => readBoardCatalogue(server.presentingVaultFor(tabSessionId)),
 				/**
-				 * Watch the vault this server serves for boards appearing and disappearing.
+				 * Watch the vault the session presents through when its voice starts, for boards
+				 * appearing and disappearing.
 				 * @param onChange Receives catalogue invalidations.
 				 * @param onError Receives filesystem watch failures.
 				 * @returns Stops the watcher.
 				 */
-				subscribe: (onChange, onError) => watchBoardCatalogue(onChange, onError, serverVault()),
+				subscribe: (onChange, onError) => {
+					const vault = server.presentingVaultFor(tabSessionId);
+					return vault === null ? () => undefined : watchBoardCatalogue(onChange, onError, vault);
+				},
 			},
 			presentationChanges: { subscribe: server.narrationChangesFor(tabSessionId) },
 			trace: state.voiceTrace.note,

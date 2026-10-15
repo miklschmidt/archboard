@@ -34,6 +34,7 @@ function context(
 		board: {
 			key: "payments",
 			name: "Payments",
+			vault: "/work/.archboard/vault",
 			file: "boards/payments.semantic.json",
 			version: 7,
 		},
@@ -85,6 +86,7 @@ function change(
 ): SettledChangeSourceEvent {
 	return {
 		cursor: 3,
+		vault: "/work/.archboard/vault",
 		board: "payments",
 		at: new Date(now).toISOString(),
 		origin: "human",

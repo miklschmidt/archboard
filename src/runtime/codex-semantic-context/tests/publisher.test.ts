@@ -69,7 +69,12 @@ describe("semantic context publisher", () => {
 			source: "pane_focus",
 			feedId: "feed-1",
 			repository: "archboard",
-			board: { key: "payments", name: "Payments", file: "boards/payments.semantic.json" },
+			board: {
+				key: "payments",
+				name: "Payments",
+				vault: "/work/.archboard/vault",
+				file: "boards/payments.semantic.json",
+			},
 			version: 7,
 			pane: { paneId: "pane-a", focused: true },
 			cursor: { feedId: "feed-1", sequence: 3 },
@@ -131,6 +136,7 @@ describe("semantic context publisher", () => {
 			board: {
 				key: "ledger",
 				name: "Ledger",
+				vault: "/work/.archboard/vault",
 				file: "boards/ledger.semantic.json",
 				version: 11,
 			},
@@ -167,6 +173,7 @@ describe("semantic context publisher", () => {
 			board: {
 				key: "b".repeat(SEMANTIC_CONTEXT_LIMITS.boardKeyBytes),
 				name: "界".repeat(50),
+				vault: "界".repeat(1_365),
 				file: "界".repeat(1_365),
 				version: 7,
 			},
@@ -191,6 +198,7 @@ describe("semantic context publisher", () => {
 		expect(first.repository).not.toBe("");
 		expect(first.board.key).not.toBe("");
 		expect(first.board.file).not.toBe("");
+		expect(first.board.vault).not.toBe("");
 		expect(first.pane.paneId).not.toBe("");
 		expect(
 			first.architecture.selection.subjects.every(

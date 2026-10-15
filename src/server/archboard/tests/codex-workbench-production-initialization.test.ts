@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PRODUCTION_VAULT } from "@/server/archboard/tests/support/production-vault";
 import { withProductionState } from "@/server/archboard/tests/support/production-state";
 
 import {
@@ -80,7 +79,6 @@ describe("production Codex storage", () => {
 				String(Number.parseInt(process.env["PORT"] || "3000", 10)),
 			);
 			expect(value.process.storage).toEqual({ rootDirectory: workbench, ownerDirectory: owner });
-			expect(value.process.archboardServer?.vault).toBe(PRODUCTION_VAULT);
 			expect(statSync(owner).mode & 0o777).toBe(0o700);
 		} finally {
 			rmSync(root, { recursive: true, force: true });
@@ -105,6 +103,7 @@ describe("production Codex generation ownership", () => {
 			board: {
 				key: "architecture",
 				name: "Architecture",
+				vault: "/repo/.archboard/vault",
 				file: "boards/architecture.semantic.json",
 				version: 7,
 			},
@@ -134,6 +133,7 @@ describe("production Codex generation ownership", () => {
 		const owned = installation({
 			semanticPublisherFor: () => semanticPublisherOptions,
 			narrationChangesFor: () => () => () => undefined,
+			presentingVaultFor: () => null,
 		});
 		const publisher = createSemanticContextPublisher(semanticPublisherOptions);
 		const starts: SessionParams<"thread/realtime/start">[] = [];

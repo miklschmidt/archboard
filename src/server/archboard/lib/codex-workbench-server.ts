@@ -68,6 +68,11 @@ export interface CodexWorkbenchServer {
 	 * them is on (TASK-293).
 	 */
 	readonly canvasFor: (tabSessionId: TabSessionId) => CoordinatorCallbackCanvas;
+	/**
+	 * The vault of the pane a tab session presents through, whose boards its voice is told
+	 * about, or null while none of its panes is open.
+	 */
+	readonly presentingVaultFor: (tabSessionId: TabSessionId) => string | null;
 	readonly waitForTargets: Parameters<
 		typeof createServerDynamicLifecycleOwner
 	>[0]["waitForTargets"];

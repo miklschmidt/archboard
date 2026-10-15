@@ -24,8 +24,12 @@ import {
 	paneClientsOfVault,
 } from "@/server/archboard/lib/pane-vaults";
 import { arrivedOnBoard } from "@/server/archboard/lib/pane-routes";
-import { listRepositories, vaultIn, VAULT_DIRECTORY } from "@/server/archboard/lib/repositories";
-import { serverVault } from "@/server/archboard/lib/server-vault";
+import {
+	listRepositories,
+	openingVault,
+	vaultIn,
+	VAULT_DIRECTORY,
+} from "@/server/archboard/lib/repositories";
 import { CheckoutChoiceSchema, type CheckoutChoice } from "@/shared/repositories/index";
 
 /**
@@ -34,7 +38,7 @@ import { CheckoutChoiceSchema, type CheckoutChoice } from "@/shared/repositories
  * @param res Its response.
  */
 function repositoriesRoute(_req: Request, res: Response): void {
-	res.json({ success: true, repositories: listRepositories(), served: serverVault() });
+	res.json({ success: true, repositories: listRepositories(), served: openingVault() });
 }
 
 /**
