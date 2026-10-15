@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 19:57'
-updated_date: '2026-10-07 20:11'
+updated_date: '2026-10-15 03:39'
 labels:
   - voice
   - coordinator
@@ -77,3 +77,17 @@ The user requires actual Archboard environment values and concise commands for p
 
 The board check passes with no diagnostics. semantic compare changes only existing responsibilities. Current content remains unchanged. No proposal is adopted.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-15 03:39
+---
+From the TASK-472.06 boundary review: ADR 0047 is amended by ADR 0050. The implementation brief names the checkout and gives -C with the board's vault in place of ARCHBOARD_VAULT, so acceptance criterion #6 and plan step 6 are out of date. The Codex child environment no longer holds ARCHBOARD_VAULT (TASK-472.06), and the board context gives each board's vault as board.vault. The brief's commands take the form `archboard -C '<board.vault>' semantic show '<board>@<proposal>'`, and ARCHBOARD_URL and ARCHBOARD_NO_AUTOSTART=1 stay as before.
+---
+
+created: 2026-10-15 03:39
+---
+Correction to the comment above: the example command is only an illustration of where -C goes. Take the exact show and compare spellings from `archboard help semantic show` and `archboard help semantic compare`; -C goes before or after the command name, for example `archboard -C '<board.vault>' semantic compare '<board>@<proposal>'`.
+---
+<!-- COMMENTS:END -->
