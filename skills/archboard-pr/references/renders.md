@@ -1,103 +1,101 @@
-# Renders for a pull request
+# The picture in a pull request
 
-The explainer leads with one picture: the after render, which marks the change
-in place. This file says how to draw it, how to make it readable, and how to
-label it. Section 5 of the skill says how to post it.
+The Summary shows one picture: the change marked in place. This file says how
+to draw it, how to make it readable, and how to label it. Section 7 of the
+skill says how to post it.
 
 ## Choose the view
 
 1. Use a board view that holds the changed parts and their direct neighbours.
    About 4 to 12 cards reads well (**judgement**). Views belong to every
    variant, so prefer a view the board already has.
-2. If no view fits, add one: a node-region selection of the changed parts and
-   their neighbours. The `archboard` skill's views section says how. If a later
-   reader does not need the view, draw the whole variant instead. If the whole
-   variant fails the size check below, add the view.
-3. Draw one kind of picture per render: an architecture view, or a sequence
-   through its `data-flow` view. An ephemeral sequence board draws through the
-   `data-flow` view that it was created with. Arrows that mix several kinds of
-   relationship are hard to read [Kruchten]. **Judgement** for the choice of
-   view.
+2. In a stack, use the view of the design part that the step builds, named
+   `Inside <design part>`: a node-region selection of that part. Every step
+   inside that part shares it, so the reader sees the same frame grow from one
+   pull request to the next.
+3. If no view fits, add one: a node-region selection of the changed parts and
+   their neighbours. The `archboard` skill's views section says how. If the
+   whole variant passes the size check below, draw it instead.
+4. Draw one kind of picture per render: an architecture view, or a sequence
+   through its `data-flow` view. Arrows that mix several kinds of relationship
+   are hard to read [Kruchten]. An ephemeral sequence board draws through the
+   `data-flow` view that it was created with.
 
 Done: the view is named, and it holds every part and relationship that
 `compare` reports as added, changed or removed.
 
-## Draw the files
+## Draw the file
 
-Draw every render with Blocks: pass `--layout blocks`, because the default
-layout is Track. Draw SVG for the pull request, because SVG stays sharp at
-every zoom. Pass `--theme auto`: the one file carries the light and the dark
-colours and shows the ground of the reader's colour scheme
+Draw the picture with Blocks: pass `--layout blocks`, because the default
+layout is Track. Draw SVG, because SVG stays sharp at every zoom. Pass
+`--theme auto`: the one file carries the light and the dark colours and shows
+the ground of the reader's colour scheme
 (see [What GitHub supports](#what-github-supports)). Pass `--title` and
 `--legend horizontal`, which draw the title line above the picture and its key
-under it (see [Title, key and alt text](#title-key-and-alt-text)). Write all
-files to a temporary directory, `$tmp`, never into the checkout.
+under it. Write the file to a temporary directory, `$tmp`, never into the
+checkout.
 
 ```bash
-archboard semantic render <board> --view "<view>" --variant "<proposal>" --layout blocks --theme auto --title --legend horizontal --out "$tmp/after.svg"
-archboard semantic render <board> --view "<view>" --layout blocks --theme auto --title --legend horizontal --out "$tmp/before.svg"
+archboard semantic render <board> --view "<view>" --variant "<proposal>" --against "<below>" --layout blocks --theme auto --title "<title>" --legend horizontal --out "$tmp/after.svg"
 ```
 
-Below, `<proposal>` is the proposal, or on an ephemeral board the draft of the
-head branch.
+- `--against "<below>"` names the variant that the proposal came from (section
+  2 of the skill): the proposal of the pull request below in a stack, the
+  current variant, or the empty base draft of a board that nobody has built.
+  On an ephemeral board, it is the current variant, which states the base
+  branch. The picture marks only this pull request's change, and it carries no
+  planned frame, because it reads relative to the variant it names.
 
-- The after render compares the proposal with the current variant. It marks
-  what the proposal added, changed and removed, and keeps removed subjects as
-  ghosts. On an ephemeral board, the current variant is the base branch.
-- The before render, with no `--variant`, draws the current variant.
-- On a board with no current variant, draw only the after render.
-- In a stack, the after render also shows the changes of the pull requests
-  below. Say so in its title line: pass `--title "<text>"`.
+Never draw a before picture beside or under the after picture. The marks
+already say what changed, and each variant is laid out afresh, so cards move
+between two pictures and do not line up.
 
-Done: two SVG files, or one on a board with no current variant.
+Done: one SVG file, and a second only for a change that moves both structure
+and a flow.
 
-## Look at them
+## Look at it
 
 You cannot look at an SVG by reading its text. `semantic rasterize` draws the
 same picture as a PNG in Chromium, so look at that. If there is no Chromium and
-the user chose to go on without it (section 0 of the skill), post the SVG files
+the user chose to go on without it (section 0 of the skill), post the SVG file
 unseen, and say so in your final report.
 
 ```bash
-archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --layout blocks --title --legend horizontal --out "$tmp/look-after.png"
-archboard semantic rasterize <board> --view "<view>" --layout blocks --title --legend horizontal --out "$tmp/look-before.png"
+archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --against "<below>" --layout blocks --title "<title>" --legend horizontal --out "$tmp/look.png"
 ```
 
-1. Open both PNGs. Each change the explainer names is visible and marked, and
+1. Open the PNG. Each change that the Summary names is visible and marked, and
    the title and the key can be read.
 2. GitHub shrinks an image to the width of the text column. GitHub does not
    document that width (**unverified**). If the receipt's `width` is over 900,
-   rasterize the after render again with `--scale 0.5` and open it. That is
-   about how small it will show (**judgement**).
+   rasterize again with `--scale 0.5` and open it. That is about how small it
+   will show (**judgement**).
 3. If the labels at half size cannot be read, choose or add a narrower view
    and draw again. Never drop parts from the proposal to make a picture fit.
 
-Done: you looked at each PNG, and the after render is readable at the size it
-will show.
+Done: you looked at the PNG, and the picture is readable at the size it will
+show.
 
 ## Title, key and alt text
 
 A diagram needs a title and a key that explains every symbol it uses
 [Clements et al., C4 notation]. The renderer draws both into the file.
 
-**Title line**: `--title` draws the board, the view, the variant and what it is
-compared with above the picture. `--title "<text>"` draws your own words in
-its place.
+**Title**: `--title "<text>"` draws your words above the picture. Say where
+the change sits and what it adds, in the design's names:
+`Inside Board store: the lease table replaces lock files`. A bare `--title`
+draws the board, view and variant names, which are archboard's words and stay
+out of the body.
 
-**Key**: `--legend horizontal` draws the key under the picture. It lists what
-the board's legend on the page lists for the same picture: the added, changed
-and removed marks with their counts, the kinds of part and relationship, and
-the line marks. If a card carries a triangle on its top-right corner, the key
-does not explain it. Say under the render that it marks a disagreement with
-the current variant that nobody settled.
+**Key**: `--legend horizontal` draws the key under the picture: the added,
+changed and removed marks with their counts, the kinds of part and
+relationship, and the line marks. If a card carries a triangle on its
+top-right corner, the key does not explain it. Say under the picture that it
+marks a disagreement with the current variant that nobody settled.
 
-**Alt text**, in the image line: what the picture shows, not the file name. For
-example: "Board store, Write path: the proposal adds Lease table and removes
-Lock files". Without alt text, gh uses the file name.
-
-**Before render**: in a collapsed `<details>` under the after render, with its
-own drawn title and key. Never side by side: each variant is laid out
-afresh, so cards move between the two pictures and do not line up.
+**Alt text**, in the image line: what the picture shows, not the file name.
+For example: "Inside Board store: the lease table replaces lock files".
+Without alt text, gh uses the file name.
 
 ## What GitHub supports
 
