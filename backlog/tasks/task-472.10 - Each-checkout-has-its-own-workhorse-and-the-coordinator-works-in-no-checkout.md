@@ -4,6 +4,7 @@ title: 'Each checkout has its own workhorse, and the coordinator works in no che
 status: To Do
 assignee: []
 created_date: '2026-10-14 21:49'
+updated_date: '2026-10-15 02:09'
 labels: []
 dependencies:
   - TASK-472.04
@@ -38,3 +39,12 @@ A tab session has one workhorse and one coordinator, both running in the archboa
 - [ ] #8 AGENTS.md's Codex invariant, PRODUCT.md, CONTEXT.md and the archboard-dev skill describe one coordinator and one workhorse per checkout as built
 - [ ] #9 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-10-15 02:09
+---
+Found in the TASK-472.05 review: Fix with Codex now names the diagnosed vault as ARCHBOARD_VAULT on every command (72dc8511c), but the workhorse still runs in the served vault's checkout, so a repair that edits files directly may be outside its sandbox. Make sure that the repair runs in the workhorse of the diagnosed checkout.
+---
+<!-- COMMENTS:END -->
