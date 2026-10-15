@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 31,
+	"version": 32,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-15T06:18:10.710Z",
+	"updatedAt": "2026-10-15T06:19:48.988Z",
 	"views": [],
 	"variants": [
 		{
@@ -1880,7 +1880,7 @@
 		{
 			"id": "4LP6XwaN",
 			"name": "TASK-472.15",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "SgXh1GWP",
 			"summary": "How one CLI invocation is routed: help, shared flags, the vault it addresses, dispatch and the run",
 			"content": {
@@ -2392,7 +2392,7 @@
 		{
 			"id": "YXFMdMay",
 			"name": "TASK-472.14",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "4LP6XwaN",
 			"summary": "How one CLI invocation is routed: help, shared flags, the vault it addresses, dispatch and the run",
 			"content": {
@@ -2902,7 +2902,7 @@
 			}
 		}
 	],
-	"current": "4LP6XwaN",
+	"current": "YXFMdMay",
 	"adoptions": [
 		{
 			"variant": "eLxlFOKI",
@@ -2933,6 +2933,12 @@
 			"from": "SgXh1GWP",
 			"at": "2026-10-15T06:05:04.138Z",
 			"reason": "semantic move finds its --to vault through Addressed vault, as -C finds the command's own"
+		},
+		{
+			"variant": "YXFMdMay",
+			"from": "4LP6XwaN",
+			"at": "2026-10-15T06:19:48.988Z",
+			"reason": "TASK-472.14: first-use registration says when an untracked vault is renamed, the registry keeps every name unique, and every server watches its file"
 		}
 	]
 }
