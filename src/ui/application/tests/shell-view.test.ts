@@ -181,3 +181,30 @@ test("what an agent does in a vault is shown only while a pane of the tab is in 
 	// is, what the tab heard last is old news.
 	expect(viewWith("/work/blog/.archboard/vault").repositories[0]?.activity).toEqual({});
 });
+
+test("pane news keeps the repositories the navigator lists", () => {
+	const list = addPane(initialPaneList());
+	const records = twoPaneRecords();
+	const inputs = {
+		theme: "dark",
+		list,
+		records,
+		panes: {},
+		catalog: catalogOf(),
+		presentation: null,
+		notices: [],
+		agentActivity: {},
+	} as const;
+	const before = assembleShellView(inputs).repositories;
+	// An agent claims pane A's board: the view is assembled again, and nothing
+	// the navigator lists changed, so it keeps its rows as they were.
+	const claimed = patchRecord(records, "A", {
+		holder: { id: "agent-1", kind: "agent", since: "", until: "", process: "codex" },
+	});
+	expect(assembleShellView({ ...inputs, records: claimed }).repositories).toBe(before);
+	// Pane B arriving in another vault changes which activity the tab hears.
+	const moved = patchRecord(claimed, "B", {
+		status: { ...emptyPaneStatus("B"), vault: "/work/blog/.archboard/vault" },
+	});
+	expect(assembleShellView({ ...inputs, records: moved }).repositories).not.toBe(before);
+});

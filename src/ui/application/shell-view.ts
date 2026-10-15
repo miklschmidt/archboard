@@ -42,18 +42,66 @@ interface ShellViewInputs {
  * One repository as the shell lists it.
  * @param entry The repository and its boards.
  * @param activity What agents are doing, by vault.
+ * @param heard The vaults a pane of this tab is in.
  * @returns The shell's repository.
  */
-function shellRepository(entry: RepositoryBoards, activity: AgentActivityByVault): ShellRepository {
+function shellRepository(
+	entry: RepositoryBoards,
+	activity: AgentActivityByVault,
+	heard: ReadonlySet<string | null>,
+): ShellRepository {
 	const { vault } = entry.repository;
+	// The server tells a vault's activity only to the panes in that vault (ADR
+	// 0022), so what the tab last heard of a vault that none of its panes is in
+	// now is old news.
+	const current = vault !== null && heard.has(vault) ? activity[vault] : undefined;
 	return {
 		repository: entry.repository,
 		boards: entry.listing,
 		outline: outlineOf(entry.listing),
 		error: entry.error,
 		loading: entry.loading,
-		activity: vault === null ? NO_AGENT_ACTIVITY : (activity[vault] ?? NO_AGENT_ACTIVITY),
+		activity: current ?? NO_AGENT_ACTIVITY,
 	};
+}
+
+/** The repositories last made for one catalog answer, and what they were made from. */
+interface MadeRepositories {
+	readonly activity: AgentActivityByVault;
+	/** The vaults the panes were in, spelled as one key. */
+	readonly heard: string;
+	readonly repositories: readonly ShellRepository[];
+}
+
+/**
+ * The repositories last made for each catalog answer. Pane news (a claim, what
+ * an agent says it is doing, a pane status) assembles the view again and
+ * changes none of them, so the navigator keeps the same list and makes no row
+ * again for it (TASK-385.04).
+ */
+const madeRepositories = new WeakMap<readonly RepositoryBoards[], MadeRepositories>();
+
+/**
+ * Every repository as the shell lists it, the same list while nothing it is
+ * made from has changed.
+ * @param inputs The view's inputs.
+ * @returns The repositories.
+ */
+function shellRepositories(inputs: ShellViewInputs): readonly ShellRepository[] {
+	const { catalog, agentActivity: activity } = inputs;
+	const vaults = new Set(
+		inputs.list.panes.map((entry) => recordFor(inputs.records, entry.paneId).status.vault),
+	);
+	const heard = JSON.stringify([...vaults].toSorted((a, b) => (a ?? "").localeCompare(b ?? "")));
+	const kept = madeRepositories.get(catalog.repositories);
+	if (kept?.activity === activity && kept.heard === heard) {
+		return kept.repositories;
+	}
+	const repositories = catalog.repositories.map((entry) =>
+		shellRepository(entry, activity, vaults),
+	);
+	madeRepositories.set(catalog.repositories, { activity, heard, repositories });
+	return repositories;
 }
 
 /**
@@ -92,32 +140,15 @@ function shellPanes(inputs: ShellViewInputs): ShellPane[] {
 }
 
 /**
- * What agents are doing in each vault a pane of this tab is in. The server tells
- * a vault's activity only to the panes in that vault (ADR 0022), so what the tab
- * last heard of a vault that none of its panes is in now is old news.
- * @param inputs The view's inputs.
- * @returns The activity of the vaults the panes are in.
- */
-function currentActivity(inputs: ShellViewInputs): AgentActivityByVault {
-	const vaults = new Set(
-		inputs.list.panes.map((entry) => recordFor(inputs.records, entry.paneId).status.vault),
-	);
-	return Object.fromEntries(
-		Object.entries(inputs.agentActivity).filter(([vault]) => vaults.has(vault)),
-	);
-}
-
-/**
  * The shell's view.
  * @param inputs What it is assembled from.
  * @returns The view.
  */
 function assembleShellView(inputs: ShellViewInputs): ShellView {
 	const active = recordFor(inputs.records, inputs.list.activePaneId);
-	const activity = currentActivity(inputs);
 	return {
 		theme: inputs.theme,
-		repositories: inputs.catalog.repositories.map((entry) => shellRepository(entry, activity)),
+		repositories: shellRepositories(inputs),
 		boardsError: inputs.catalog.error,
 		boardsLoading: inputs.catalog.loading,
 		selectedBoardKey: active.status.boardKey,
