@@ -124,6 +124,35 @@ function sendStartingBoard(
 }
 
 /**
+ * Record the vault and board a pane holds as its socket takes its authority.
+ *
+ * A choice of checkout may have moved the pane while its first message was on
+ * the way (ADR 0050). The socket has carried that move to the page already, so
+ * the pane is in the vault and on the board the move gave it.
+ * @param ws The socket.
+ * @param clientId The pane's client id.
+ * @param startingKey The board the pane was started on.
+ * @param vault The vault it was started in.
+ */
+function holdPaneBoard(
+	ws: WebSocket,
+	clientId: string,
+	startingKey: string | null,
+	vault: string,
+): void {
+	const current = socketVaults.get(ws) ?? vault;
+	// A pane that comes back naming another vault holds none of what it held in
+	// the first: a board key means a board of one vault.
+	if (paneVaults.get(clientId) !== current) {
+		paneBoards.delete(clientId);
+	}
+	paneVaults.set(clientId, current);
+	if (startingKey !== null && current === vault) {
+		paneBoards.set(clientId, startingKey);
+	}
+}
+
+/**
  * Make this socket the one that owns its pane identity, terminating the
  * transport it replaces. A slower predecessor that finished initializing
  * after this one is refused by its stale acceptance token.
@@ -131,7 +160,7 @@ function sendStartingBoard(
  * @param clientId The pane's client id.
  * @param acceptanceToken The token this socket's acceptance was stamped with.
  * @param startingKey The board the pane starts on.
- * @param vault The vault the socket named.
+ * @param vault The vault the pane was started in.
  * @returns False when this socket was superseded and has been terminated.
  */
 function takePaneAuthority(
@@ -146,15 +175,7 @@ function takePaneAuthority(
 		return false;
 	}
 	const previous = currentSocketsByClient.get(clientId);
-	// A pane that comes back naming another vault holds none of what it held in
-	// the first: a board key means a board of one vault.
-	if (paneVaults.get(clientId) !== vault) {
-		paneBoards.delete(clientId);
-	}
-	paneVaults.set(clientId, vault);
-	if (startingKey !== null) {
-		paneBoards.set(clientId, startingKey);
-	}
+	holdPaneBoard(ws, clientId, startingKey, vault);
 	currentSocketsByClient.set(clientId, ws);
 	if (previous !== undefined && previous !== ws) {
 		previous.terminate();
@@ -378,7 +399,7 @@ async function acceptWebSocketConnection(
 	logger.info(
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);
-	announceToNewPane(ws, socket.clientId, startingKey, vault);
+	announceToNewPane(ws, socket.clientId, startingKey, socketVaults.get(ws) ?? vault);
 	listenForCodexRequests(ws, socket);
 }
 
