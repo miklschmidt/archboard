@@ -288,7 +288,7 @@ const installSkillContract = defineCommand({
 			value: "required",
 			placeholder: "dir",
 			description: "The repository to make a vault in",
-			default: "the working directory",
+			default: "the git checkout that holds the working directory, else the working directory",
 		},
 		{
 			kind: "option",
