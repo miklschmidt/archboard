@@ -19,21 +19,23 @@ function useVaultCheck(vault: string): UseQueryResult<VaultCheck> {
 
 /**
  * Synchronize one vault's pictures with its first checked policy, then with policy changes.
+ * A pane the server moves into another vault starts again with that vault's
+ * first check, even when its policy has the fingerprint of the one it left.
  * @param vault The vault.
  */
 function useVaultPolicyRefresh(vault: string): void {
 	const client = useQueryClient();
 	const { data } = useVaultCheck(vault);
-	const previous = useRef<string | undefined>(undefined);
+	const previous = useRef<{ vault: string; fingerprint: string } | undefined>(undefined);
 	useEffect(() => {
 		if (data === undefined) return;
 		// A picture may have loaded before this first check, using an older policy.
-		if (previous.current !== data.fingerprint) {
+		if (previous.current?.vault !== vault || previous.current.fingerprint !== data.fingerprint) {
 			// An initial request has no cached data, so invalidation alone reuses it.
 			const queryKey = semanticBoardKeys.rendersIn(vault);
 			void client.cancelQueries({ queryKey }).then(() => client.invalidateQueries({ queryKey }));
 		}
-		previous.current = data.fingerprint;
+		previous.current = { vault, fingerprint: data.fingerprint };
 	}, [data, client, vault]);
 }
 
