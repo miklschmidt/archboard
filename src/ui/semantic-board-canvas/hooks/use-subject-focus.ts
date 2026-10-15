@@ -3,13 +3,25 @@
 // does the About page's control that shows a row on the diagram. A subject the
 // view on screen does not draw opens the whole board, and is fitted once that
 // picture arrives.
+//
+// Whoever asks picks the subject out in the same moment, and a pick moves the
+// camera in its own right: one made off the picture glides just far enough to
+// show the part (use-reveal.ts), and a panel the pick floats over the picture
+// moves it clear (use-clear-of-panel.ts). Both answer the pick's commit, so the
+// fit is made in an effect after that commit, and the stage calls this after
+// both, so the fit is the last move and not the first.
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { EXPLORING_MS } from "@/shared/timing/timing";
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { subjectBox } from "@/ui/semantic-board-canvas/lib/subjects";
+
+/** One ask to fit a subject: a new one each time, so asking for one subject again fits it again. */
+interface Ask {
+	readonly id: string;
+}
 
 /**
  * Fit the camera to a subject.
@@ -25,8 +37,10 @@ function useSubjectFocus(
 	reducedMotion: boolean,
 	onView: (view: string | null) => void,
 ): (id: string) => void {
-	// The subject asked for while the picture on screen does not draw it.
-	const pending = useRef<string | null>(null);
+	const [ask, setAsk] = useState<Ask | null>(null);
+	// The last ask the camera went to, and the last one the whole board was opened for.
+	const fitted = useRef<Ask | null>(null);
+	const widened = useRef<Ask | null>(null);
 	const focus = useCallback(
 		(id: string): boolean => {
 			const box = drawing?.kind === "drawn" ? subjectBox(drawing.atlas, id) : null;
@@ -38,15 +52,17 @@ function useSubjectFocus(
 		[drawing, camera, reducedMotion],
 	);
 	useEffect(() => {
-		if (pending.current !== null && focus(pending.current)) pending.current = null;
-	}, [focus]);
-	return useCallback(
-		(id: string): void => {
-			pending.current = focus(id) ? null : id;
-			if (pending.current !== null) onView(null);
-		},
-		[focus, onView],
-	);
+		if (ask === null || fitted.current === ask) return;
+		if (focus(ask.id)) {
+			fitted.current = ask;
+		} else if (widened.current !== ask) {
+			widened.current = ask;
+			onView(null);
+		}
+	}, [ask, focus, onView]);
+	return useCallback((id: string): void => {
+		setAsk({ id });
+	}, []);
 }
 
 export { useSubjectFocus };

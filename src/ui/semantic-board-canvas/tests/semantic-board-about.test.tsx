@@ -14,7 +14,12 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { cameraNow } from "@/ui/semantic-board-canvas/tests/camera-probes";
+import {
+	REST_MS,
+	cameraNow,
+	takeFrames,
+	wheelAt,
+} from "@/ui/semantic-board-canvas/tests/camera-probes";
 import { current } from "@/ui/semantic-board-canvas/tests/presentation-probes";
 import {
 	VIEWPORT,
@@ -22,6 +27,7 @@ import {
 	mountStage,
 	server,
 	settle,
+	viewport,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 import { openAboutPage } from "@/ui/semantic-board-canvas/tests/variants-page";
 
@@ -312,3 +318,40 @@ test("a board with no such variant still lists its variants, and choosing one re
 	await click(document.querySelector("[data-slot='variant-entry'][data-variant='v1']")!);
 	expect(asked).toEqual([null]);
 });
+
+// The pick that comes with a show moves the camera in its own right: a pick
+// from off the picture glides just far enough to bring the part into view, and
+// in a pane that shares the centre the panel the pick floats moves the picture
+// clear of itself. Either, made after the fit, left the part at the edge of the
+// view or out of it, at the zoom the reader had.
+test.each([
+	["alone", undefined],
+	[
+		"sharing the centre",
+		{ letter: null, controls: null, notice: null, shared: true, active: true },
+	],
+] as const)(
+	"showing a part fits it in the middle of the view in a pane %s, whatever the pick moves",
+	async (_, chrome) => {
+		serving();
+		mountStage(null, { live: true, chrome });
+		await settle();
+		const frames = takeFrames();
+		try {
+			// Far into the corner opposite the part, so the part is out of view.
+			act(() => {
+				viewport().dispatchEvent(wheelAt(-2000, [VIEWPORT.width - 1, VIEWPORT.height - 1], true));
+			});
+			frames.run(REST_MS);
+			openAboutPage();
+			await settle();
+			await click(showOf(document.querySelector("[data-slot='about-part'][data-part='n1']")!));
+			frames.run(REST_MS);
+		} finally {
+			frames.restore();
+		}
+		// The part is drawn at the board's corner, 80 by 40.
+		const { x, y } = middleOfView();
+		expect(Math.hypot(x - 40, y - 20)).toBeLessThan(1);
+	},
+);
