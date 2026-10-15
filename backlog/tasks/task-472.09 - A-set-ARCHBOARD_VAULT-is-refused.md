@@ -1,11 +1,11 @@
 ---
 id: TASK-472.09
 title: A set ARCHBOARD_VAULT is refused
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 08:31'
+updated_date: '2026-10-15 08:43'
 labels: []
 dependencies:
   - TASK-472.07
@@ -30,11 +30,11 @@ After the tests, the evaluations and `bin/dogfood` stop using it, `ARCHBOARD_VAU
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every command refuses while `ARCHBOARD_VAULT` is set, also when it comes from `.env`, and the refusal says that the vault is found from the working directory or `-C` and that a vault outside a checkout moves to `<dir>/.archboard/vault`
-- [ ] #2 No source file, document or shipped skill names `ARCHBOARD_VAULT` except the refusal, its test and history
-- [ ] #3 The README's examples use `-C` or a working directory
-- [ ] #4 README.md, INSTALL.md, TESTING.md, AGENTS.md, PRODUCT.md and the archboard, archboard-pr and archboard-dev skills hold no instruction that sets `ARCHBOARD_VAULT`, and `bun run generate:skill-artifacts` output matches
-- [ ] #5 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
+- [x] #1 Every command refuses while `ARCHBOARD_VAULT` is set, also when it comes from `.env`, and the refusal says that the vault is found from the working directory or `-C` and that a vault outside a checkout moves to `<dir>/.archboard/vault`
+- [x] #2 No source file, document or shipped skill names `ARCHBOARD_VAULT` except the refusal, its test and history
+- [x] #3 The README's examples use `-C` or a working directory
+- [x] #4 README.md, INSTALL.md, TESTING.md, AGENTS.md, PRODUCT.md and the archboard, archboard-pr and archboard-dev skills hold no instruction that sets `ARCHBOARD_VAULT`, and `bun run generate:skill-artifacts` output matches
+- [x] #5 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -51,6 +51,8 @@ Vault-layout decision (gap two reviewers found): the server now serves only a va
 Removed: ARCHBOARD_VAULT readers in config.ts, vault-finder (environment search, 'environment' origin, holder null), addressed-vault, pane.ts, server-client-session, repositories.ts (environmentVault, servedName), request-vault canonicalConfiguredVault. callerVaultCleared test helper removed (a set variable now fails loudly). scripts/build-pipeline-example.ts takes the vault directory as its argument; scripts/readme-assets/server.ts copies the vault into <take>/repository/.archboard/vault, registers it in a registry of the take's own (ARCHBOARD_REPOS) and runs the CLI with that directory as cwd. README quick start copies examples/web-shop to ~/archboard-example/.archboard/vault (examples/web-shop cannot hold the layout in place: inside the archboard checkout a command finds the checkout's own vault).
 
 Board closing: proposals Command dispatch@TASK-472.09, Command interface@TASK-472.09 (carries TASK-471.03's install-skill parts) and Archboard server routes@TASK-472.09 corrected to what was built and adopted. Code check read with and without the variable's --variant for TASK-472.09: the only difference is a cleared warning (ANCHOR_SYMBOL_MISSING on the removed canonicalConfiguredVault anchor); no finding introduced. Footprint read against base facb060e4 (parent of the first code commit f57fab66c; that commit is large because it sweeps tests, scripts and docs but is the feature itself). Commands named as built: Vault finder (also refuses a vault linked out of the layout, VAULT_NOT_FOUND reason vault-outside-layout), Panes (a pane's and a shown board's checkout is always the directory that holds the vault), Repository listing (a linked-out vault is no vault; no registry entry means no repository name), Vault requirement (the layout refusal tells the caller to move the boards). Not added, decided: Command routing and Addressed vault (only addressed-vault.ts changed inside, and it is named); Checkout registry (89b441d01 changed a comment in repo-registry.ts, a TASK-471.03 commit); Command contract (f57fab66c reworded the VAULT_NOT_FOUND refusal description in command-contract/lib/common.ts); a Vault finder part on the server routes board (the code check then asked for relationships from Checkout registry and Codex workbench; the board's question does not need it, so the layout rule is stated in Vault requirement and Repository listing). Behind boards corrected in place: Agent workbench (Workhorse checkouts: a path names the checkout of the vault it resolves to by real path in the layout, from a79cdac27), Archboard server and Live panes (Vault requirement refuses a directory outside the layout), Live panes (Repository list: no repository name for an unregistered vault, a checkout for every vault, a linked-out vault not listed). Archboard (Repository checkout) is behind only by a comment edit (89b441d01) and stays right; Browser application is behind only by TASK-472.11 commits.
+
+Review: four reviewers (refusal and layout code, install-skill, docs and README quick start, vault producers against the layout rule). Fixes: a79cdac27 (checkoutNamedBy resolves a directory's vault by real path and the layout rule), 2f6f090d7 (a pane's checkout is always the directory that holds its vault; layoutHolder removed), 10bfa0ca6 (the vault finder refuses a vault linked out of the layout before it registers anything), 4ea5feee9 (a linked-out vault is not listed ready), a93feacfe (the layout refusal says to move the boards), 1c64ffd65, 00cdf3949, d7b56b870, 944569b16 (docs and the voice-acceptance cleanup forget the run's registry entry). The README quick start was followed as written in a temporary home with an isolated registry and port. The remaining mentions of the variable outside history are the refusal (config.ts), its tests, run-world.test.ts, and the text in AGENTS.md and INSTALL.md (and so the skill's generated INSTALL.md copy) that describes the refusal, which criterion #2 allows. Proposals adopted in a4496d8d3. Gate: bun run check passed on a4496d8d3 (test:modules 4680 pass, test:system 239 pass, test:repository 27 pass, serial browser lane exit 0).
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -61,3 +63,9 @@ created: 2026-10-15 03:38
 From TASK-472.06: README.md's quick start still runs `ARCHBOARD_VAULT="$PWD/examples/web-shop" ./bin/archboard start`. Refusing the variable breaks it, and examples/web-shop is not in the <dir>/.archboard/vault layout, so the example needs a new home or a -C form before this task lands. The archboard-pr skill's description also still triggers on a repository whose agent doc names ARCHBOARD_VAULT (TASK-471.03).
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Every command except help refuses a set ARCHBOARD_VAULT with exit 2, also from .env, and says that the vault is found from the working directory or -C and that a vault outside a checkout moves to <dir>/.archboard/vault. The variable has no other reader: the vault finder has no environment origin, and the server's served vault and repository listing no longer read it. The server serves only vaults in the <dir>/.archboard/vault layout, the CLI refuses a vault linked out of it before registering it, and a delegation names the same checkout that a pane's vault has. The README quick start copies the example into ~/archboard-example/.archboard/vault and uses -C. Verified by removed-environment.test.ts, vault-finder.test.ts, vault-naming.test.ts, repositories.test.ts, codex-checkouts.test.ts, a hand run of the quick start, four reviews and the full gate on a4496d8d3.
+<!-- SECTION:FINAL_SUMMARY:END -->
