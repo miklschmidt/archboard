@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-15 21:05'
-updated_date: '2026-10-15 21:39'
+updated_date: '2026-10-15 21:55'
 labels:
   - skill
 dependencies:
@@ -28,9 +28,9 @@ The pilot of ADR 0052. Live panes is the board the owner called incomprehensible
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 The Live panes overview stays within the budget, and `archboard check` reports no `OVERVIEW_CROWDED` for it
-- [ ] #2 Every new container has a responsibility and a binding that the code supports
-- [ ] #3 Each container has a view that opens it, and the calls that the board needs are steps of flows drawn through sequence views
-- [ ] #4 The owner has looked at the overview, the views and Everything, and approved the result or named what to change
+- [ ] #2 Each container has a view that opens it, and the calls that the board needs are steps of flows drawn through sequence views
+- [ ] #3 The owner has looked at the overview, the views and Everything, and approved the result or named what to change
+- [ ] #4 Every new container has a responsibility that the code supports, and binds to a folder where the code has one
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -47,4 +47,6 @@ Boards: Live panes (proposal Live panes@TASK-482.03).
 
 <!-- SECTION:NOTES:BEGIN -->
 Draft drawn at version 46: semantic compare reports 4 parts added and 16 parts changed in parent only; every relationship, flow and step is unchanged. Overview: 13 parts and 31 lines (Everything: 29 parts and 71 lines). The board has 71 relationships over 69 pairs, so moving calls into flows does not reduce it.
+
+Owner decisions 2026-10-15: areas bind to a folder only where the code has one (src/server/archboard/lib is flat, so the Live panes areas are unbound; ADR 0052 amended); the overview no longer draws a line between a container and a part it holds. Splitting Pane connections measured 14 parts and 37 lines, so the owner chose to merge Pane places into it instead: the draft now has three areas and its overview draws 12 parts and 22 lines, inside the budget. The empty space in the track drawing is a layout defect under diagnosis, separate from the board.
 <!-- SECTION:NOTES:END -->

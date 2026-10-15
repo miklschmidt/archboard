@@ -40,8 +40,9 @@ author:
   relationships from one drawn part to another become one line. A line that
   joins several relationships has no label. Its kind is the kind that most of
   them have, and the first one in board order breaks a tie. A relationship
-  between two parts inside one closed card is not drawn. The overview draws no
-  flows.
+  between two parts inside one closed card is not drawn. A relationship
+  between a container and a part that it holds is not drawn either, because
+  the nesting already shows it. The overview draws no flows.
 - Everything. It shows every part and every relationship, as the whole variant
   did before. A reader asks for it as the view named `Everything`.
 
@@ -58,7 +59,10 @@ more than 15 parts or more than 25 lines, `archboard check` warns with
 `OVERVIEW_CROWDED`. The fix is structure, which agents author: containers that
 gather the parts of the subject into a few areas, and views that open each
 area. A container needs a responsibility that the code supports, as every part
-does. It is never a box for layout.
+does. It is never a box for layout. If the code has a folder for the area, the
+container binds to it. If the code keeps the area's files beside others in one
+folder, the container has no binding. Moving files to give a picture a box is
+not worth the change to every binding and import.
 
 Relationships and calls are drawn apart:
 
