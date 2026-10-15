@@ -45,8 +45,6 @@ interface FoundVault {
 	 * names, which is used as it is.
 	 */
 	readonly holder: string | null;
-	/** Whether the holder is the root of a git checkout. */
-	readonly checkout: boolean;
 }
 
 /** Why no vault was found. */
@@ -154,7 +152,7 @@ async function vaultFrom(start: string, origin: VaultNotFound["origin"]): Promis
 	if (root !== undefined) {
 		const vault = path.join(root, VAULT_DIRECTORY);
 		return isDirectory(vault)
-			? { ok: true, found: { path: realPath(vault), origin, holder: root, checkout: true } }
+			? { ok: true, found: { path: realPath(vault), origin, holder: root } }
 			: notFound({ reason: "checkout-without-vault", directory, origin, checkoutRoot: root });
 	}
 	const holder = vaultHolder(directory);
@@ -166,7 +164,6 @@ async function vaultFrom(start: string, origin: VaultNotFound["origin"]): Promis
 					path: realPath(path.join(holder, VAULT_DIRECTORY)),
 					origin,
 					holder,
-					checkout: false,
 				},
 			};
 }
@@ -188,7 +185,7 @@ async function findVault(search: VaultSearch): Promise<VaultFinding> {
 		const named = path.resolve(search.cwd, search.environment);
 		return {
 			ok: true,
-			found: { path: realPath(named), origin: "environment", holder: null, checkout: false },
+			found: { path: realPath(named), origin: "environment", holder: null },
 		};
 	}
 	return vaultFrom(search.cwd, "working-directory");

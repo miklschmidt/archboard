@@ -67,7 +67,7 @@ test("anywhere inside a checkout the vault is the one at the checkout root", asy
 	const deep = directory("shop", "src", "orders");
 	expect(await fromWorkingDirectory(deep)).toEqual({
 		ok: true,
-		found: { path: vault, origin: "working-directory", holder: root, checkout: true },
+		found: { path: vault, origin: "working-directory", holder: root },
 	});
 	// The vault directory itself is inside the checkout, and finds itself.
 	expect(await fromWorkingDirectory(vault)).toMatchObject({ ok: true, found: { path: vault } });
@@ -107,7 +107,7 @@ test("outside any checkout the nearest enclosing vault is used, and none is refu
 	const below = directory("plans", "q3", "drafts");
 	expect(await fromWorkingDirectory(below)).toEqual({
 		ok: true,
-		found: { path: nearVault, origin: "working-directory", holder: near, checkout: false },
+		found: { path: nearVault, origin: "working-directory", holder: near },
 	});
 	const lonely = directory("lonely", "deep");
 	expect(await fromWorkingDirectory(lonely)).toMatchObject({
@@ -125,11 +125,11 @@ test("-C starts the same search from the directory it names, relative to the wor
 	const elsewhere = directory("elsewhere");
 	expect(
 		await findVault({ directory: "../named", environment: "/somewhere/else", cwd: elsewhere }),
-	).toEqual({ ok: true, found: { path: vault, origin: "-C", holder: root, checkout: true } });
+	).toEqual({ ok: true, found: { path: vault, origin: "-C", holder: root } });
 	// A vault directory names its own vault, in a checkout and outside one.
 	expect(await findVault({ directory: vault, environment: undefined, cwd: elsewhere })).toEqual({
 		ok: true,
-		found: { path: vault, origin: "-C", holder: root, checkout: true },
+		found: { path: vault, origin: "-C", holder: root },
 	});
 	const untracked = directory("loose");
 	const looseVault = vaultIn(untracked);
@@ -137,7 +137,7 @@ test("-C starts the same search from the directory it names, relative to the wor
 		await findVault({ directory: looseVault, environment: undefined, cwd: elsewhere }),
 	).toEqual({
 		ok: true,
-		found: { path: looseVault, origin: "-C", holder: untracked, checkout: false },
+		found: { path: looseVault, origin: "-C", holder: untracked },
 	});
 });
 
@@ -158,6 +158,6 @@ test("a set ARCHBOARD_VAULT is used as it is, without a search", async () => {
 	const elsewhere = directory("elsewhere");
 	expect(await findVault({ directory: null, environment: "../anything", cwd: elsewhere })).toEqual({
 		ok: true,
-		found: { path: named, origin: "environment", holder: null, checkout: false },
+		found: { path: named, origin: "environment", holder: null },
 	});
 });
