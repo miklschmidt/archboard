@@ -38,6 +38,8 @@ A command finds its vault from the directory it runs in. Run the board
 commands inside the checkout that holds the vault, or give `-C <checkout>`.
 That is usually the checkout of the pull request. When the user keeps the
 architecture in another repository, it is the checkout of that repository.
+If the pull request's checkout has no vault, a board command refuses and names
+each known vault that holds boards of its code. Use that directory as `-C`.
 The `archboard` skill's Essentials say how a command finds its vault.
 
 ## 0. Check the prerequisites
