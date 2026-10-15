@@ -43,6 +43,8 @@ interface RecordingRequest {
 	readonly walkthrough: string;
 	/** The language the voice narrates it in, as a BCP 47 tag. */
 	readonly language: string;
+	/** The id of the variant the recording is read against, or null for the usual one. */
+	readonly against: string | null;
 }
 
 /** A step the page moves its pane to: its own choice, answering no request. */
@@ -220,8 +222,11 @@ class WalkthroughRecorder {
 		}
 		this.#hearAll();
 		this.#talk = { kind: "starting", since: performance.now() };
-		const { walkthrough, language } = this.#request;
-		sources.setup.talk({ walkthrough, recording: { language } });
+		const { walkthrough, language, against } = this.#request;
+		sources.setup.talk({
+			walkthrough,
+			recording: { language, ...(against === null ? {} : { against }) },
+		});
 		this.#timer = setInterval(this.#tick.bind(this), RECORDING_PACE_TICK_MS);
 	}
 

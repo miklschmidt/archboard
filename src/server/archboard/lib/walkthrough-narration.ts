@@ -102,8 +102,14 @@ function walkthroughOnPane(clientId: string, walkthroughId: string): ShownWalkth
 		: { board: read.board, variant: opened.variant, walkthrough };
 }
 
-/** The walkthrough each voice-linked pane is narrating, by the pane's client id. */
-const narrated = new Map<string, string>();
+/**
+ * The walkthrough each voice-linked pane is narrating, by the pane's client id, and for a
+ * recording made with `--against` the id of the variant its frames are drawn against.
+ */
+const narrated = new Map<
+	string,
+	{ readonly walkthrough: string; readonly against: string | null }
+>();
 
 /** What the voice model is to be told of one narrated pane, and which pane, by client id. */
 type NarrationListener = (change: RealtimePresentationChange, clientId: string) => void;
@@ -119,7 +125,7 @@ const listeners = new Set<NarrationListener>();
  * @param clientId The client id of the pane the start came from.
  * @param walkthroughId The walkthrough the user chose.
  * @param recording For a talk recorded rather than listened to live, the language it is narrated
- *   in; null otherwise.
+ *   in and the variant its frames are drawn against, if it names one; null otherwise.
  * @returns The walkthrough, what to call it and, for a recording, its language.
  * @throws {Error} When the pane is not showing a board that states that walkthrough.
  */
@@ -132,8 +138,17 @@ function narrationFor(
 	if (walkthrough === undefined) {
 		throw new Error("The pane is not showing a board that states that walkthrough.");
 	}
-	narrated.set(clientId, walkthrough.id);
+	narrated.set(clientId, { walkthrough: walkthrough.id, against: recording?.against ?? null });
 	return { walkthrough: walkthrough.id, name: walkthrough.name, recording };
+}
+
+/**
+ * The variant a narrated pane's recording is drawn against.
+ * @param clientId The pane's client id.
+ * @returns The variant's id, or null for a narration with none.
+ */
+function againstOf(clientId: string): string | null {
+	return narrated.get(clientId)?.against ?? null;
 }
 
 /**
@@ -165,7 +180,7 @@ function narrationChangeOf(change: UserPresentationChange): RealtimePresentation
 		of: shown.walkthrough.beats.length,
 		heading: beat.heading,
 		body: beat.body,
-		subjects: narratedSubjects(shown.board, shown.variant, beat),
+		subjects: narratedSubjects(shown.board, shown.variant, beat, againstOf(change.clientId)),
 	};
 }
 
@@ -199,7 +214,7 @@ panePresentations.onUserChange(tell);
  * @param clientId The narrated pane's client id.
  */
 async function openNarration(clientId: string): Promise<void> {
-	const walkthrough = narrated.get(clientId);
+	const walkthrough = narrated.get(clientId)?.walkthrough;
 	const pane = panes.get(clientId);
 	if (walkthrough === undefined || pane === undefined) {
 		return;

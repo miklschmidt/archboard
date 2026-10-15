@@ -28,6 +28,7 @@ import type { VaultCheck } from "@/shared/semantic-policy/index";
 import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
 import { RECORDING_CALL_MS } from "@/shared/timing/timing";
 import {
+	RECORDING_AGAINST_SEARCH_PARAM,
 	RECORDING_LANGUAGE_SEARCH_PARAM,
 	RECORDING_SEARCH_PARAM,
 	type RecordingContainer,
@@ -131,12 +132,12 @@ interface RecordedWalkthrough {
 
 /**
  * What the recording page's address names: the board in pane A, the repository
- * it is in, the walkthrough and the language. It is read by the browser's own
+ * it is in, the walkthrough, the language and the variant it is read against. It is read by the browser's own
  * workspace address, so it is the contract between the recorder and the page.
  */
 type RecordingPageAddress = Pick<
 	WalkthroughRecordingRequest,
-	"serverUrl" | "variant" | "repository" | "language"
+	"serverUrl" | "variant" | "repository" | "language" | "against"
 > & {
 	readonly board: Pick<SemanticBoard, "name">;
 	readonly walkthrough: Pick<WalkthroughRecordingRequest["walkthrough"], "id">;
@@ -154,6 +155,9 @@ function recordingPageUrl(request: RecordingPageAddress): string {
 	if (request.repository !== null) url.searchParams.set("repoA", request.repository);
 	url.searchParams.set(RECORDING_SEARCH_PARAM, request.walkthrough.id);
 	url.searchParams.set(RECORDING_LANGUAGE_SEARCH_PARAM, request.language);
+	if (request.against !== null) {
+		url.searchParams.set(RECORDING_AGAINST_SEARCH_PARAM, request.against);
+	}
 	return url.toString();
 }
 

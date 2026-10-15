@@ -26,6 +26,12 @@ const RECORDING_SEARCH_PARAM = "record";
 /** The search parameter that names the language the voice narrates the recording in. */
 const RECORDING_LANGUAGE_SEARCH_PARAM = "language";
 
+/**
+ * The search parameter that names the variant the recording is read against (TASK-478.01), by
+ * id. Absent for a recording read against the usual one.
+ */
+const RECORDING_AGAINST_SEARCH_PARAM = "against";
+
 /** The global the page publishes its recording on. */
 const RECORDING_PAGE_GLOBAL = "archboardRecording";
 
@@ -38,9 +44,18 @@ const DEFAULT_RECORDING_LANGUAGE = "en";
 
 /**
  * What voice is told when it narrates a recording rather than a talk somebody is listening to:
- * the language it speaks. Only a recording carries one. A live narration speaks the user's.
+ * the language it speaks, and the variant every frame is drawn against when the recording was
+ * made with `--against`, so that the voice hears each subject's standing against the same variant
+ * the picture shows it against (TASK-478.01). Only a recording carries these. A live narration
+ * speaks the user's language and hears standings against the usual variant.
  */
-const RecordingNarrationSchema = z.object({ language: RecordingLanguageSchema }).strict();
+const RecordingNarrationSchema = z
+	.object({
+		language: RecordingLanguageSchema,
+		/** The id of the variant the frames are drawn against; absent for the usual one. */
+		against: z.string().min(1).max(64).optional(),
+	})
+	.strict();
 type RecordingNarration = z.infer<typeof RecordingNarrationSchema>;
 
 /**
@@ -105,21 +120,29 @@ function searchValue(params: URLSearchParams, name: string): string | null {
 /**
  * The walkthrough a page's address asks it to record, and the language to narrate it in.
  * @param search The address's search string, with or without its leading `?`.
- * @returns The walkthrough's id or name and the language as the address gives it (English when
- *   it gives none), or null when the page is not a recording.
+ * @returns The walkthrough's id or name, the language as the address gives it (English when it
+ *   gives none) and the variant id it is read against (null when it names none), or null when the
+ *   page is not a recording.
  */
-function recordingAskedOf(
-	search: string,
-): { readonly walkthrough: string; readonly language: string } | null {
+function recordingAskedOf(search: string): {
+	readonly walkthrough: string;
+	readonly language: string;
+	readonly against: string | null;
+} | null {
 	const params = new URLSearchParams(search);
 	const walkthrough = searchValue(params, RECORDING_SEARCH_PARAM);
 	if (walkthrough === null) return null;
 	const language = searchValue(params, RECORDING_LANGUAGE_SEARCH_PARAM);
-	return { walkthrough, language: language ?? DEFAULT_RECORDING_LANGUAGE };
+	return {
+		walkthrough,
+		language: language ?? DEFAULT_RECORDING_LANGUAGE,
+		against: searchValue(params, RECORDING_AGAINST_SEARCH_PARAM),
+	};
 }
 
 export {
 	DEFAULT_RECORDING_LANGUAGE,
+	RECORDING_AGAINST_SEARCH_PARAM,
 	RECORDING_LANGUAGE_SEARCH_PARAM,
 	RECORDING_PAGE_GLOBAL,
 	RECORDING_SEARCH_PARAM,
