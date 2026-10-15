@@ -51,6 +51,18 @@ function tabSessionOfLink(link: string | null): TabSessionId | null {
 }
 
 /**
+ * The checkout whose panes an approval's link is shown to: the workhorse's that asked it.
+ * @param link The link, or null when the approval has none.
+ * @returns The checkout, or null when every pane of its tab session is shown it.
+ */
+function checkoutOfLink(link: string | null): string | null {
+	if (link === null || !link.startsWith(WORKHORSE_LINK_PREFIX)) {
+		return null;
+	}
+	return parseWorkhorseLinkKey(link.slice(WORKHORSE_LINK_PREFIX.length))?.checkout ?? null;
+}
+
+/**
  * The approvals a pane may be shown: those its tab's coordinator asked and those the workhorse of
  * its checkout asked, while they await an answer or their terminal has not yet been delivered.
  * @param approvals The broker.
@@ -156,9 +168,9 @@ function createServerOrdinaryApprovalActions(
 		 */
 		acknowledge: (requestId) => approvals.acknowledge(requestId),
 		/**
-		 * Every settled approval whose terminal no pane has shown yet, and the tab session it is
-		 * shown to.
-		 * @returns Their request ids and tab sessions.
+		 * Every settled approval whose terminal no pane has shown yet, and the panes it is shown
+		 * to: its tab session's, and of a workhorse's only those of its checkout.
+		 * @returns Their request ids, tab sessions and checkouts.
 		 */
 		unpresentedTerminals: () =>
 			approvals
@@ -167,6 +179,7 @@ function createServerOrdinaryApprovalActions(
 				.map((view) => ({
 					requestId: view.request.requestId,
 					tabSessionId: tabSessionOfLink(view.snapshot.binding.link),
+					checkout: checkoutOfLink(view.snapshot.binding.link),
 				})),
 		/**
 		 * Retire the approvals a pane has now shown, ignoring any another pane

@@ -279,10 +279,15 @@ export interface BrowserRealtimeActions {
 	) => Promise<void> | void;
 }
 
-/** A settled approval no browser has been shown yet, and the tab session it is shown to. */
+/** A settled approval no browser has been shown yet, and the panes it is shown to. */
 export interface BrowserUnpresentedTerminal {
 	readonly requestId: JsonRpcRequestId;
 	readonly tabSessionId: TabSessionId | null;
+	/**
+	 * The checkout whose panes of that tab session are shown it, as a workhorse's approval is
+	 * (ADR 0050), or null when every pane of the tab session is.
+	 */
+	readonly checkout: string | null;
 }
 
 export interface BrowserOrdinaryApprovalActions {

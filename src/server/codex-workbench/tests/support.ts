@@ -99,6 +99,8 @@ export interface GatewayHarnessOptions {
 	readonly checkoutOf?: (browserId: string) => string;
 	/** The link under one workhorse's link key; the harness's own link by default. */
 	readonly linkFor?: (key: string) => ThreadLinkSnapshot | null;
+	/** The checkout of the workhorse that asked the approval; the tab's coordinator by default. */
+	readonly approvalCheckout?: string;
 }
 
 export function createGatewayHarness(
@@ -229,7 +231,9 @@ export function createGatewayHarness(
 				if (candidate === requestId) ordinaryApproval = null;
 			},
 			unpresentedTerminals: () =>
-				ordinaryApproval?.terminalDelivery === "after_publish" ? [{ requestId, tabSessionId }] : [],
+				ordinaryApproval?.terminalDelivery === "after_publish"
+					? [{ requestId, tabSessionId, checkout: options.approvalCheckout ?? null }]
+					: [],
 			acknowledgePublished: (candidates) => {
 				publishedAcknowledgements.push(...candidates);
 				if (
@@ -248,7 +252,12 @@ export function createGatewayHarness(
 		},
 	};
 	const projection: BrowserProjectionPort = {
-		read: ({ mediaReady }): BrowserOwnerProjection => {
+		read: ({ mediaReady, checkout }): BrowserOwnerProjection => {
+			// A workhorse's approval is shown only to the panes of its checkout.
+			const shown =
+				options.approvalCheckout === undefined || options.approvalCheckout === checkout
+					? ordinaryApproval
+					: null;
 			const owner: BrowserOwnerProjection = {
 				readiness,
 				account,
@@ -256,7 +265,7 @@ export function createGatewayHarness(
 				timeline: null,
 				queue: { kind: "codex_queue", submissions: [] },
 				settings: [],
-				approvals: ordinaryApproval === null ? [] : [ordinaryApproval],
+				approvals: shown === null ? [] : [shown],
 				dynamicApprovals,
 				semantic: { kind: "codex_semantic", outcome: null, freshness: null },
 				coordinator: {
