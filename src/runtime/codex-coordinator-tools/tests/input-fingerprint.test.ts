@@ -16,6 +16,22 @@ interface FingerprintCase {
 	readonly invalid: readonly ToolArguments[];
 }
 
+/** The checkout every workhorse case names: the fixture's one workhorse works in it (ADR 0050). */
+const CHECKOUT = "/work/payments";
+
+/**
+ * A workhorse tool's arguments as the coordinator sends them, naming the fixture's checkout.
+ * @param tool - The tool.
+ * @param value - The arguments the case is about.
+ * @returns Them, with the checkout when they are an object a workhorse tool takes.
+ */
+function named(tool: CoordinatorToolName, value: ToolArguments): ToolArguments {
+	if (tool === "resolve_spoken_approval" || value === null || typeof value !== "object") {
+		return value;
+	}
+	return Array.isArray(value) ? value : { checkout: CHECKOUT, ...value };
+}
+
 const CASES: readonly FingerprintCase[] = [
 	{
 		name: "inspect empty input",
@@ -188,12 +204,17 @@ describe("coordinator canonical input fingerprint boundary", () => {
 		test(fingerprintCase.name, async () => {
 			const h = fixture();
 			const ownerRequest = h.request(fingerprintCase.tool, {
-				arguments: fingerprintCase.owner,
+				arguments: named(fingerprintCase.tool, fingerprintCase.owner),
 			});
 			const owner = await dispatch(h, ownerRequest);
 			const exact = await dispatch(
 				h,
-				replayRequest(h, ownerRequest, `${fingerprintCase.name}-exact`, fingerprintCase.exact),
+				replayRequest(
+					h,
+					ownerRequest,
+					`${fingerprintCase.name}-exact`,
+					named(fingerprintCase.tool, fingerprintCase.exact),
+				),
 			);
 			expect(exact.response).toEqual(owner.response);
 			expect(responseEnvelope(exact.response)["operationId"]).toBe(
@@ -206,7 +227,7 @@ describe("coordinator canonical input fingerprint boundary", () => {
 					h,
 					ownerRequest,
 					`${fingerprintCase.name}-mismatch-${index}`,
-					mismatch,
+					named(fingerprintCase.tool, mismatch),
 				);
 				const result = await dispatch(h, request);
 				expect(result.response.success).toBe(false);
@@ -226,7 +247,7 @@ describe("coordinator canonical input fingerprint boundary", () => {
 					h,
 					ownerRequest,
 					`${fingerprintCase.name}-invalid-${index}`,
-					invalid,
+					named(fingerprintCase.tool, invalid),
 				);
 				const result = await dispatch(h, request);
 				expect(result.response.success).toBe(false);

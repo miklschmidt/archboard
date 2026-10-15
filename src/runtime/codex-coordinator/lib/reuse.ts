@@ -494,12 +494,12 @@ function effectiveSettingsMatch(
 
 /**
  * Whether the durable record is matching ownership evidence for the retained coordinator: the
- * same operation, on the same child, epoch, thread and checkout, confirmed, and authored from the
+ * same operation, on the same child, epoch, thread and working directory, confirmed, and authored from the
  * reviewed instructions and manifest.
  * @param persistence - The retained coordinator.
  * @param record - Its durable record.
  * @param reviewed - The reviewed hashes.
- * @param options - The coordinator options carrying the checkout root.
+ * @param options - The coordinator options carrying its working directory.
  * @returns True when the record proves ownership.
  */
 function recordProvesOwnership(
@@ -519,7 +519,7 @@ function recordProvesOwnership(
 		record.provenance.threadId === persistence.threadId,
 		record.provenance.threadSource === CODEX_SESSION_THREAD_SOURCE,
 		record.provenance.confirmedAtMs !== null,
-		record.provenance.workspaceRoot === options.checkoutRoot,
+		record.provenance.workspaceRoot === options.workingDirectory,
 		record.provenance.instructionHash === reviewed.instructionHash,
 		record.provenance.manifestHash === reviewed.catalogueHash,
 	];

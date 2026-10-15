@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { COORDINATOR_REPLAY_LIMITS, type CoordinatorToolsServerRequest } from "../index.js";
 import type { DynamicServerRequest } from "../../codex-transport/index.js";
 import {
+	CHECKOUT,
 	copyRequest,
 	fixture,
 	nextMicrotasks,
@@ -40,6 +41,7 @@ describe("coordinator logical replay ownership", () => {
 		const changedDelegate = await dispatch(
 			delegate,
 			replayRequest(delegate, delegateOwner, "changed-delegate", {
+				checkout: CHECKOUT,
 				input: "different delegate text",
 				transcriptDelta: "spoken context",
 			}),
@@ -57,6 +59,7 @@ describe("coordinator logical replay ownership", () => {
 		const changedQueue = await dispatch(
 			queue,
 			replayRequest(queue, queueOwner, "changed-queue", {
+				checkout: CHECKOUT,
 				operation: "add",
 				prompt: "different queue operation",
 			}),
@@ -90,6 +93,7 @@ describe("coordinator logical replay ownership", () => {
 		h.operations.hold();
 		const ownerRequest = h.request("delegate_to_workhorse");
 		const aliasRequest = replayRequest(h, ownerRequest, "normalized-alias", {
+			checkout: CHECKOUT,
 			transcriptDelta: "spoken context",
 			input: "delegate input",
 		});
@@ -150,7 +154,7 @@ describe("coordinator logical replay ownership", () => {
 		const h = fixture();
 		const prompt = "q".repeat(16_384);
 		const ownerRequest = h.request("manage_workhorse_queue", {
-			arguments: { operation: "add", prompt },
+			arguments: { checkout: CHECKOUT, operation: "add", prompt },
 		});
 		await dispatch(h, ownerRequest);
 		for (let index = 0; index <= COORDINATOR_REPLAY_LIMITS.retainedWireCalls; index++) {

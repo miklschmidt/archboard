@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 import { sameThreadLinkIdentity, type ThreadLinkEpochProof } from "@/runtime/codex-thread-link";
 import { sameRealtimeGeneration } from "@/runtime/codex-coordinator-callbacks/lib/realtime";
+import { workhorseLinkOf } from "@/runtime/codex-coordinator-callbacks/lib/workhorse-links";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCorrelation,
@@ -34,6 +35,7 @@ function sameLink(
 	return (
 		left !== null &&
 		left.binding.paneId === right.binding.paneId &&
+		left.checkout === right.checkout &&
 		left.binding.revision === right.binding.revision &&
 		sameThreadLinkIdentity(left.binding.link, right.binding.link) &&
 		sameJson(left.target, right.target)
@@ -181,8 +183,9 @@ function coordinatorAuthorityReason(
 }
 
 /**
- * Why the workhorse link no longer authorizes delivery: the server's current link has moved on, or
- * the captured link is not an executable link on the callback's own thread.
+ * Why the workhorse link no longer authorizes delivery: the current link of that workhorse has
+ * moved on or is gone, or the captured link is not an executable link on the callback's own
+ * thread.
  * @param correlation - The callback's correlation.
  * @param options - The server authorities.
  * @returns The refusal reason, or null when the link still holds.
@@ -191,7 +194,8 @@ function linkAuthorityReason(
 	correlation: CoordinatorCallbackCorrelation,
 	options: CoordinatorCallbackOptions,
 ): CoordinatorCallbackDeliveryReason | null {
-	if (!sameLink(options.currentWorkhorseLink(), correlation.workhorseLink)) {
+	const current = workhorseLinkOf(options, correlation.workhorseLink.target.threadId);
+	if (!sameLink(current, correlation.workhorseLink)) {
 		return "stale_link";
 	}
 	const captured = correlation.workhorseLink.binding.link;

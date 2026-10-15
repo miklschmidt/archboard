@@ -23,7 +23,7 @@ type NamespaceName = "archboard_workhorse" | "archboard_voice";
 type ManifestName = "workhorse" | "voice";
 
 const ARCHBOARD_WORKHORSE_MANIFEST_SHA256 =
-	"ba8e69a7b6fc09441da65d93cf1e00dc96a707f5b37b3965f88a8c8a778a6b17" as const;
+	"c390cc7414541e276f1454a3a846289ad895b28383129be7f1c1ad569a9d510a" as const;
 const ARCHBOARD_VOICE_MANIFEST_SHA256 =
 	"04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b" as const;
 
