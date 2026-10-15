@@ -83,12 +83,40 @@ async function register(found: FoundVault): Promise<RegisteredVault | undefined>
  * @throws {VaultNotFoundError} When there is no vault to address.
  */
 async function addressVault(directory: string | null): Promise<AnsweredVault> {
-	const finding = await findVault({ directory, environment: ARCHBOARD_VAULT, cwd: process.cwd() });
+	const vault = await foundAndRegistered(directory, ARCHBOARD_VAULT);
+	setRequestedVault(vault.path);
+	return vault;
+}
+
+/**
+ * Find the vault of another directory than the one this invocation addresses,
+ * as `-C` finds one, and register what holds it when the registry does not
+ * know it: the vault a board moves to, for instance. Every server call still
+ * names the vault this invocation addresses.
+ * @param directory - The directory, relative to the working directory or absolute.
+ * @returns The vault, as an answer names it.
+ * @throws {VaultNotFoundError} When the directory has no vault.
+ */
+async function findVaultOf(directory: string): Promise<AnsweredVault> {
+	return foundAndRegistered(directory, undefined);
+}
+
+/**
+ * Find a vault, and register what holds it when the registry does not know it.
+ * @param directory - What `-C` named, or null when it was not given.
+ * @param environment - The vault the environment names, or undefined.
+ * @returns The vault and how it was found, as the answer names it.
+ * @throws {VaultNotFoundError} When there is no vault to address.
+ */
+async function foundAndRegistered(
+	directory: string | null,
+	environment: string | undefined,
+): Promise<AnsweredVault> {
+	const finding = await findVault({ directory, environment, cwd: process.cwd() });
 	if (!finding.ok) {
 		throw new VaultNotFoundError(finding.message);
 	}
 	const { found } = finding;
-	setRequestedVault(found.path);
 	const answer = await register(found);
 	return {
 		path: found.path,
@@ -97,4 +125,4 @@ async function addressVault(directory: string | null): Promise<AnsweredVault> {
 	};
 }
 
-export { VaultNotFoundError, addressVault };
+export { VaultNotFoundError, addressVault, findVaultOf };

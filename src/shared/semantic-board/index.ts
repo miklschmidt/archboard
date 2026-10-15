@@ -270,3 +270,12 @@ export {
 	type ReconciliationKind,
 	type ThreeStates,
 } from "@/shared/semantic-board/lib/reconcile";
+export {
+	BoardMoveAnswerSchema,
+	type BoardMoveAnswer,
+	BoardMoveInputSchema,
+	MoveEndSchema,
+	type MoveEnd,
+	MovedDrillDownSchema,
+	type MovedDrillDown,
+} from "@/shared/semantic-board/lib/move";
