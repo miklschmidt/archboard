@@ -9,22 +9,17 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as ServerModule from "@/server/archboard/index";
-import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
+import * as server from "@/server/archboard/index";
+import * as store from "@/runtime/semantic-board-store/index";
+import * as contract from "@/shared/semantic-board/index";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import type {
 	SemanticPaneContext,
 	SemanticPanePresentation,
 } from "@/shared/semantic-pane-context/index";
 
-const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-two-browsers-"));
-process.env["ARCHBOARD_VAULT"] = vault;
 
-let server: typeof ServerModule;
-let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 /** The board Chrome shows, which states the walkthrough. */
 const NARRATED = "Ingest pipeline";
@@ -60,17 +55,6 @@ async function writeBoard(name: string, walkthroughs: readonly { name: string }[
 }
 
 beforeAll(async () => {
-	server = await import("@/server/archboard/index");
-	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
-	const { ARCHBOARD_VAULT } = await import("@/runtime/engine/config");
-	if (ARCHBOARD_VAULT !== vault) {
-		throw new Error(
-			`The server under test reads its vault from the environment, and it read ${ARCHBOARD_VAULT} ` +
-				`rather than ${vault}. Run it in its own process — \`bun test --isolate ${import.meta.file}\` — ` +
-				"rather than alongside a file that resolved the vault first.",
-		);
-	}
 	await writeBoard(NARRATED, [{ name: "How a request lands" }]);
 	await writeBoard(OTHER, []);
 	const read = store.readSemanticBoard(vault, NARRATED);
@@ -83,11 +67,6 @@ beforeAll(async () => {
 afterAll(() => {
 	server.panes.clear();
 	server.forgetSemanticPaneContexts();
-	if (callerVault === undefined) {
-		delete process.env["ARCHBOARD_VAULT"];
-	} else {
-		process.env["ARCHBOARD_VAULT"] = callerVault;
-	}
 	rmSync(vault, { recursive: true, force: true });
 });
 
