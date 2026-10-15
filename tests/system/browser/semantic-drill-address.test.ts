@@ -185,7 +185,7 @@ const ORDERS = "github.com/acme/orders";
  * @param checkout The checkout.
  * @returns The vault's real path.
  */
-function vaultIn(checkout: string): string {
+function configuredVaultIn(checkout: string): string {
 	const vault = join(checkout, ".archboard", "vault");
 	mkdirSync(vault, { recursive: true });
 	ensureSemanticVaultConfiguration(vault);
@@ -209,7 +209,7 @@ test("a drill-down into another repository moves the pane there, and the breadcr
 	const shop = fixture.repository("shop", SHOP);
 	const orders = fixture.repository("orders", ORDERS);
 	for (const checkout of [shop, orders]) {
-		vaultIn(checkout);
+		configuredVaultIn(checkout);
 		const added = spawnSync(packageBin, ["repo", "add", checkout], {
 			cwd: fixture.nowhere,
 			env: fixture.serverEnvironment,
@@ -224,10 +224,14 @@ test("a drill-down into another repository moves the pane there, and the breadcr
 	});
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
-	await seedSemanticBoard(createJsonRequester({ ...server, vault: vaultIn(orders) }), "ledger", {
-		nodes: [{ name: "Posting", kind: "service" }],
-	});
-	const created = await createJsonRequester({ ...server, vault: vaultIn(shop) })<{
+	await seedSemanticBoard(
+		createJsonRequester({ ...server, vault: configuredVaultIn(orders) }),
+		"ledger",
+		{
+			nodes: [{ name: "Posting", kind: "service" }],
+		},
+	);
+	const created = await createJsonRequester({ ...server, vault: configuredVaultIn(shop) })<{
 		success: boolean;
 	}>("/api/semantic-boards/create", {
 		method: "POST",
