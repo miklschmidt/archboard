@@ -23,8 +23,8 @@ it means the first voice start after upgrading takes a moment longer.
 
 ```bash
 bun run build:frontend
-./bin/dogfood stop; ./bin/dogfood start
-./bin/dogfood browser show Archboard --pane primary
+archboard stop; archboard start
+archboard browser show Archboard --pane primary
 ```
 
 Open <http://127.0.0.1:3000/?paneA=Archboard>. Do not start voice with Talk.
@@ -51,8 +51,8 @@ Observe, in order:
 | h   | Narrate again, and press Escape mid-step. The voice acknowledges it in a few words and narrates nothing more.                                                                                                                          | AC 4             |
 | i   | Narrate again. Mid-step, click a part on the board. Once it finishes its sentence the voice names what you picked and asks whether you have a question about it. Answer or say no: it finishes the step if it was cut off, then waits. | TASK-293.05 AC 6 |
 | j   | Mid-step, click empty canvas. The voice goes on: an emptied selection does not stop the talk.                                                                                                                                          | TASK-293.05 AC 6 |
-| k   | Mid-step, from a terminal, make a small edit to the narrated board with `./bin/dogfood semantic edit`, without `--as-session`, as another agent would. The voice says the board changed under the talk and asks how to go on.          | TASK-293.06 AC 4 |
-| l   | Mid-step, from a terminal, run `./bin/dogfood browser show <another board> --pane primary`. The voice says an agent moved the pane, never that you did, and narrates nothing more.                                                     | TASK-293.06 AC 4 |
+| k   | Mid-step, from a terminal, make a small edit to the narrated board with `archboard semantic edit`, without `--as-session`, as another agent would. The voice says the board changed under the talk and asks how to go on.              | TASK-293.06 AC 4 |
+| l   | Mid-step, from a terminal, run `archboard browser show <another board> --pane primary`. The voice says an agent moved the pane, never that you did, and narrates nothing more.                                                         | TASK-293.06 AC 4 |
 
 Every step and leaving reach the voice model as speakable text, the path that a
 coordinator's answer takes. This path is necessary because, in a full-duplex
@@ -62,6 +62,6 @@ note what it did instead.
 
 ## 3. Stop
 
-End voice with its key in the agent dock, then `./bin/dogfood stop`. Presenting and narrating
+End voice with its key in the agent dock, then `archboard stop`. Presenting and narrating
 write nothing: apart from the edit of row k, which `git checkout .archboard/vault` undoes,
 `git status .archboard/vault` is clean.

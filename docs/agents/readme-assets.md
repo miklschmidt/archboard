@@ -73,6 +73,10 @@ uploads it by hand under Social preview in the repository's settings.
 
 The clips are filmed over fresh copies of the tracked files of
 `examples/web-shop` or `.archboard/vault`, never over a vault from elsewhere.
+The kit runs the `bin/archboard` of the checkout that it is in, and it starts
+each server on a free port of its own. So in a worktree, it films the
+worktree's source. It never uses the server that `archboard` reaches: port
+3000 in the main checkout, or the worktree's own port.
 The hero's change is `scripts/readme-assets/hero-change.json`, written as an
 agent writes one.
 

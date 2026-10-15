@@ -8,8 +8,8 @@ regenerate these boards from.
 Their JSON formatting belongs to `semantic-board-store`; the source formatter
 excludes these files so it cannot change a board outside its write boundary.
 The authored `.archboard/config.yaml` inside the vault defines its shared levels,
-node kinds, relationship kinds and appearance. Run `./bin/dogfood semantic config`
-to discover that vocabulary and `./bin/dogfood check` after board work. Rendered
+node kinds, relationship kinds and appearance. Run `archboard semantic config`
+to discover that vocabulary and `archboard check` after board work. Rendered
 legends and generated editor schemas are derived artifacts, not authored boards.
 
 ## Open the vault
@@ -18,20 +18,27 @@ A command finds its vault from the directory it runs in, as git finds its
 repository (ADR 0049). Inside this checkout, from any directory, that is
 `.archboard/vault` at the checkout root. A vault above the root is never used.
 `-C <dir>` starts the search in another directory, so
-`./bin/archboard -C <checkout> check` reads this vault from anywhere.
+`archboard -C <checkout> check` reads this vault from anywhere.
 Every JSON answer names the vault it used, as `vault: {path, origin}`. If no `-C` is given, a set
 `ARCHBOARD_VAULT` decides, until TASK-472.09 refuses it. If the variable is
-unset, plain `./bin/archboard` reads this vault.
-`./bin/dogfood` sets the variable to this vault, and stays until TASK-472.08.
+unset, plain `archboard` reads this vault.
+
+`archboard` runs the source of the archboard checkout that you are in. In a
+worktree, it runs the worktree's own `bin/archboard`, even when `archboard` on
+your PATH links to the main checkout. The server of the main checkout listens
+on port 3000. The server of a worktree listens on its own port, from 10000
+to 19999. The port comes from the worktree's path, so it does not change.
+`archboard status` gives the URL.
 
 From the checkout root:
 
 ```bash
-./bin/dogfood start
-./bin/dogfood browser show Archboard --pane primary
+archboard start
+archboard browser show Archboard --pane primary
 ```
 
-Open <http://127.0.0.1:3000/?paneA=Archboard> before the browser command.
+`start` prints the URL. Open `<url>/?paneA=Archboard` before the browser
+command. In the main checkout, that is <http://127.0.0.1:3000/?paneA=Archboard>.
 The navigator lists every repository on the machine that has a vault. The
 first command that runs in this checkout registers it, and its answer says so
 in `vault.registered`. Then the navigator lists this vault under
@@ -42,12 +49,12 @@ serves every vault that a call names, so a running server needs no restart to
 read this vault. Restart it after you change server source:
 
 ```bash
-./bin/dogfood stop
-./bin/dogfood start
+archboard stop
+archboard start
 ```
 
 On another machine, the first command in the checkout registers it, or run
-`./bin/dogfood repo add`, to resolve the boards'
+`archboard repo add`, to resolve the boards'
 `github.com/miklschmidt/archboard` code bindings. Build the frontend
 with `bun run build` when setting up a fresh checkout, as described in
 [TESTING.md](../TESTING.md).
@@ -114,11 +121,11 @@ task is planned, and the proposal is corrected to what was built and adopted
 when the task closes. The `archboard-dev` skill gives the steps. Edit a current
 variant in place only to correct a board that was already wrong. Preserve
 subject IDs.
-Read with `./bin/dogfood semantic show <board>` and edit with the reported version
+Read with `archboard semantic show <board>` and edit with the reported version
 and `--doing`. The historical migration example in `docs/design/semantic-pipeline`
 is separate from this living vault.
 
-After board work, also run `./bin/dogfood check --code`. When a task closes,
+After board work, also run `archboard check --code`. When a task closes,
 run it as the closing steps of `archboard-dev` say. The code check reads the
 bound code
 ([ADR 0046](../docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md)).
@@ -142,5 +149,5 @@ board is wrong, correct it. If it is still right, leave it.
 For an export, write outside the canonical vault, for example:
 
 ```bash
-./bin/dogfood semantic render Archboard --out /tmp/archboard-system.svg
+archboard semantic render Archboard --out /tmp/archboard-system.svg
 ```

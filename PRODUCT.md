@@ -82,7 +82,11 @@ board is narrated by a voice and recorded to video.
 - Boards also leave the app: as SVG or PNG for docs, ADRs and pull requests,
   and as a narrated MP4 attached to a pull request.
 - Archboard maps itself. Its own architecture is in `.archboard/vault`, and
-  every task changes it through a proposal.
+  every task changes it through a proposal. Inside an archboard checkout,
+  `archboard` runs that checkout's source. The main checkout's server keeps
+  port 3000. A worktree of archboard gets a server of its own on a port from
+  10000 to 19999, so a change to the server is tried without the server
+  that people use every day.
 
 ## Capabilities and Constraints
 
