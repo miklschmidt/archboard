@@ -8,10 +8,7 @@ import { paneReady, recordFor } from "@/ui/application/pane-records";
 import type { Fullscreen } from "@/ui/application/hooks/use-fullscreen";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { Panes } from "@/ui/application/hooks/use-panes";
-import {
-	conversationActivation,
-	type ConversationActivation,
-} from "@/ui/application/lib/shown-conversation";
+import type { ConversationActivation } from "@/ui/application/lib/shown-conversation";
 import { userMoves, type UserMove } from "@/ui/application/lib/user-moves";
 import { chooseCheckout, type BoardCatalog } from "@/ui/board-catalog";
 import { showBoard } from "@/ui/pane-session";
@@ -52,8 +49,8 @@ interface ShellActionDeps {
 	 * @returns The move, to be failed if the server refuses it.
 	 */
 	readonly userMoves?: (paneId: string) => UserMove;
-	/** Say the person activated a pane's checkout (ADR 0050). Supplied by a test; the server otherwise. */
-	readonly activate?: ConversationActivation;
+	/** Say the person activated a pane's checkout (ADR 0050). */
+	readonly activate: ConversationActivation;
 }
 
 /** The board actions. */
@@ -74,7 +71,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 		deps.show ??
 		((board: string, pane: string, vault: string): Promise<ShownBoard> =>
 			showBoard({ vault, board, pane }));
-	const activate = deps.activate ?? conversationActivation(() => panes.records);
+	const { activate } = deps;
 	/**
 	 * Show a listed board in one pane; the outcome is the pane moving, or a notice.
 	 * @param key The board key.

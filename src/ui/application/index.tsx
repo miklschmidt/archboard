@@ -370,8 +370,9 @@ function ApplicationBody(): JSX.Element {
 				notices,
 				fullscreen,
 				openSettings,
+				activate,
 			}),
-		[setTheme, addressing, livePanes, catalog, notices, fullscreen, openSettings],
+		[setTheme, addressing, livePanes, catalog, notices, fullscreen, openSettings, activate],
 	);
 	const openBeside = useBesideOpening(panes, livePanes, composed);
 	const actions = useMemo<ShellActions>(
