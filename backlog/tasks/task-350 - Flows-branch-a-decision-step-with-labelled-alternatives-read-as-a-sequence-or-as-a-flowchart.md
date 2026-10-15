@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-25 00:15'
+updated_date: '2026-10-15 21:05'
 labels:
   - semantic-model
   - renderer
@@ -28,4 +29,11 @@ User request 2026-09-25: better flow-chart semantics, starting with a decision e
 - [ ] #2 A data-flow view draws a decision as labelled alternative frames
 - [ ] #3 A flowchart view draws steps as boxes and decisions as diamonds with labelled branches
 - [ ] #4 The archboard skill teaches when a flow branches and how to author it, and an ADR records decisions as flow meaning
+- [ ] #5 The grammar `data-flow` is renamed `sequence`, with a schema version that migrates every stored view
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+ADR 0052 (2026-10-15): the owner confirmed renaming the grammar `data-flow` to `sequence` as part of this task, because `data-flow` draws a sequence diagram and a flowchart grammar beside it would make the name more misleading.
+<!-- SECTION:NOTES:END -->
