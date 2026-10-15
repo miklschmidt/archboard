@@ -6,12 +6,11 @@
 // the value reaches the voice start is the end-to-end recording owner's.
 
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
-import { nameStandInVault } from "./stand-in-vault.ts";
+import { cliContractRegistry, runCli } from "@/cli/commands/run";
+import { makeStandInVault } from "./stand-in-vault.ts";
 
-// Named before the CLI loads, which reads its vault as it loads.
-const vault = nameStandInVault();
+const vault = makeStandInVault();
 afterAll(() => vault.restore());
-const { cliContractRegistry, runCli } = await import("@/cli/commands/run");
 
 const record = cliContractRegistry().find(
 	(entry) => entry.contract.path.join(" ") === "semantic record",
@@ -48,7 +47,7 @@ afterEach(() => {
  * @returns The language the handler was given, or undefined when it did not run.
  */
 async function languageGiven(args: readonly string[]): Promise<unknown> {
-	await runCli(["semantic", "record", "tour", "--out", "tour.mp4", ...args]);
+	await runCli(vault.argv(["semantic", "record", "tour", "--out", "tour.mp4", ...args]));
 	const input: unknown = handler.mock.calls[0]?.[0];
 	return typeof input === "object" && input !== null && "language" in input
 		? input.language
