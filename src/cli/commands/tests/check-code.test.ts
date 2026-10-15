@@ -188,7 +188,6 @@ test("check --code asks the plain check, then the code check, and a board behind
 		"language-server",
 		"history",
 	]);
-	// The first command in a directory the registry does not know also says it registered it.
 	const timed = stderr
 		.split("\n")
 		.filter((line) => line.endsWith(" ms"))

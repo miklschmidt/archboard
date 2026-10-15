@@ -20,6 +20,8 @@ describe("command-contract schemas", () => {
 			success: true as const,
 			board: "payments@proposed",
 			identity: { board: "payments", variant: "proposed" },
+			repository: "github.com/acme/payments",
+			checkout: "/work/payments",
 			paneId: "pane-2",
 		};
 		expect(ShowResultSchema.parse(shown)).toMatchObject(shown);
