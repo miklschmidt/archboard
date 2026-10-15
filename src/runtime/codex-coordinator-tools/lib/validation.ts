@@ -125,7 +125,11 @@ type ValidatedCoordinatorToolCall = ValidatedWorkhorseCall | ValidatedVoiceCall;
 function canonicalQueueTarget(
 	value: Extract<ManageWorkhorseQueueInput, { readonly operation: "delete" | "start" }>,
 ): string {
-	return JSON.stringify({ operation: value.operation, submissionId: value.submissionId });
+	return JSON.stringify({
+		checkout: value.checkout,
+		operation: value.operation,
+		submissionId: value.submissionId,
+	});
 }
 
 /**
@@ -137,17 +141,23 @@ function canonicalQueueTarget(
 function canonicalQueueInput(value: ManageWorkhorseQueueInput): string {
 	switch (value.operation) {
 		case "list":
-			return JSON.stringify({ operation: value.operation });
+			return JSON.stringify({ checkout: value.checkout, operation: value.operation });
 		case "add":
-			return JSON.stringify({ operation: value.operation, prompt: value.prompt });
+			return JSON.stringify({
+				checkout: value.checkout,
+				operation: value.operation,
+				prompt: value.prompt,
+			});
 		case "update":
 			return JSON.stringify({
+				checkout: value.checkout,
 				operation: value.operation,
 				submissionId: value.submissionId,
 				prompt: value.prompt,
 			});
 		case "reorder":
 			return JSON.stringify({
+				checkout: value.checkout,
 				operation: value.operation,
 				orderedSubmissionIds: value.orderedSubmissionIds,
 			});
@@ -157,23 +167,26 @@ function canonicalQueueInput(value: ManageWorkhorseQueueInput): string {
 }
 
 /**
- * Canonical text for any tool input, so equal arguments always hash equally.
+ * Canonical text for any tool input, so equal arguments always hash equally. A workhorse tool's
+ * text leads with the checkout it names, because the same arguments in another checkout are work
+ * for another workhorse (ADR 0050).
  * @param parsed - The tool and its parsed input.
  * @returns The JSON text to hash.
  */
 function canonicalInput(parsed: ParsedToolInput): string {
 	switch (parsed.tool) {
 		case "inspect_workhorse":
-			return "{}";
+			return JSON.stringify({ checkout: parsed.input.checkout });
 		case "delegate_to_workhorse":
 			return JSON.stringify({
+				checkout: parsed.input.checkout,
 				input: parsed.input.input,
 				transcriptDelta: parsed.input.transcriptDelta,
 			});
 		case "manage_workhorse_queue":
 			return canonicalQueueInput(parsed.input);
 		case "steer_workhorse":
-			return JSON.stringify({ input: parsed.input.input });
+			return JSON.stringify({ checkout: parsed.input.checkout, input: parsed.input.input });
 		default:
 			return JSON.stringify({ verdict: parsed.input.verdict });
 	}
