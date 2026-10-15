@@ -199,6 +199,26 @@ test("a chosen checkout whose directory is gone is reported as an unknown reposi
 	).toEqual(["DRILL_DOWN_UNKNOWN_REPOSITORY"]);
 });
 
+test("a chosen checkout that holds no vault is reported as an unknown repository", async () => {
+	const bare = checkout("bare", "github.com/acme/bare");
+	rmSync(join(bare, ".archboard"), { recursive: true, force: true });
+	await declareDirectory(bare);
+	expect(
+		(await linking("bare-repo", { board: "Anything", repo: "github.com/acme/bare" })).map(
+			(one) => one.code,
+		),
+	).toEqual(["DRILL_DOWN_UNKNOWN_REPOSITORY"]);
+});
+
+test("a board that the other vault holds but cannot read is named by its file", async () => {
+	const broken = join(vaults.product, "broken.semantic.json");
+	writeFileSync(broken, "{ not json");
+	const findings = await linking("opens-broken", { board: "Broken", repo: PRODUCT });
+	expect(findings.map((one) => one.code)).toEqual(["DRILL_DOWN_UNKNOWN_BOARD"]);
+	expect(findings[0]?.message).toContain(broken);
+	rmSync(broken);
+});
+
 test("reading a board of another repository writes nothing in its vault", async () => {
 	const legacy = join(vaults.product, "Old.semantic.json");
 	writeFileSync(
