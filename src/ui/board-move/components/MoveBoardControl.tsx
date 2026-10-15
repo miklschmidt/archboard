@@ -7,6 +7,7 @@ import { useCallback, useMemo, useState, type JSX } from "react";
 
 import { IconButton } from "@/ui/components/IconButton";
 import { MoveBoardDialog } from "@/ui/board-move/components/MoveBoardDialog";
+import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import type { PaneStatus } from "@/ui/types";
 
 /** Inputs for the control. */
@@ -26,7 +27,7 @@ function MoveBoardControl(props: MoveBoardControlProps): JSX.Element | null {
 	const [open, setOpen] = useState(false);
 	const handleOpen = useCallback(() => setOpen(true), []);
 	// The board's name: every variant of it moves, so the key's variant is left off.
-	const board = boardKey?.split("@", 1)[0];
+	const board = boardAddressOf(boardKey)?.board;
 	const moving = useMemo(
 		() => (vault === null || board === undefined ? null : { vault, board, repository, version }),
 		[vault, board, repository, version],
