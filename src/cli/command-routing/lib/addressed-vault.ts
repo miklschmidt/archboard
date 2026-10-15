@@ -1,11 +1,14 @@
 // The vault one invocation addresses (ADR 0049): found before anything starts
 // or reaches a server, named on every server call after that, and named back in
 // the answer. The first command in a checkout or an untracked vault that the
-// registry does not know registers it, and that answer says so.
+// registry does not know registers it, and that answer says so. In a checkout
+// with no vault, the refusal names the known vaults whose boards bind its code
+// (TASK-480).
 
 import type { AnsweredVault, RegisteredVault } from "@/cli/command-contract/schemas";
 import { declareIfUnknown, type Declared } from "@/runtime/engine/repo-registry";
 import { setRequestedVault } from "@/runtime/engine/server-client";
+import { vaultsBoundTo } from "@/runtime/semantic-board-store/index";
 import {
 	findVault,
 	type FoundVault,
@@ -91,7 +94,7 @@ async function register(found: FoundVault): Promise<RegisteredVault | undefined>
  * @throws {VaultNotFoundError} When there is no vault to address.
  */
 async function addressVault(directory: string | null): Promise<AnsweredVault> {
-	const vault = await foundAndRegistered({ directory });
+	const vault = await foundAndRegistered({ directory, vaultsBoundTo });
 	setRequestedVault(vault.path);
 	return vault;
 }
@@ -100,7 +103,8 @@ async function addressVault(directory: string | null): Promise<AnsweredVault> {
  * Find the vault of another directory than the one this invocation addresses,
  * as `-C` finds one, and register what holds it when the registry does not
  * know it: the vault a board moves to, for instance. Every server call still
- * names the vault this invocation addresses.
+ * names the vault this invocation addresses. Its refusal names no vault that
+ * binds the directory's code, because a board moves into the directory's own vault.
  * @param directory - The directory, relative to the working directory or absolute.
  * @param option - The option that named it, which a refusal names back, such as `--to`.
  * @returns The vault, as an answer names it.

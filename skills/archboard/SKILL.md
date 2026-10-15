@@ -130,7 +130,11 @@ recipe names.
   it runs in, as git finds a repository. Inside a git checkout, it uses the
   `.archboard/vault` at the checkout root, from any directory in the checkout.
   If the checkout has no such vault, the command refuses with `VAULT_NOT_FOUND`
-  (exit 2). It never uses a vault above the root. Outside any checkout, it
+  (exit 2). It never uses a vault above the root. Another repository can keep
+  the boards of this checkout's code. If a vault that this machine knows holds
+  such boards, the refusal names its directory and those boards. Run the
+  command again with `-C` and that directory. Do not create a vault in the
+  checkout for this. Outside any checkout, it
   uses the `.archboard/vault` of the nearest enclosing directory. If there is
   none, it refuses. `-C <dir>` starts the search at `<dir>` and applies the same
   rule. The commands that call a vault take it: `semantic`, `check`, `claim`,
