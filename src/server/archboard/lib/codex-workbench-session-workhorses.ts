@@ -84,6 +84,36 @@ function freshWorkhorseState(): CodexWorkbenchWorkhorseState {
 }
 
 /**
+ * Whether a thread is the one Codex names, as Codex spells it.
+ * @param threadId The thread, or null.
+ * @param wire The thread as Codex names it.
+ * @param decoder Names threads as Codex spells them.
+ * @returns True when they are the same thread.
+ */
+function namesThread(
+	threadId: ThreadId | null,
+	wire: string,
+	decoder: Pick<TrustedIdentityDecoder, "serializeCodexIdentity">,
+): threadId is ThreadId {
+	return threadId !== null && decoder.serializeCodexIdentity(threadId) === wire;
+}
+
+/**
+ * The turn still running once a turn ended on a thread.
+ * @param running The turn that was running, or null.
+ * @param wire The thread the turn ended on, as Codex names it.
+ * @param decoder Names threads as Codex spells them.
+ * @returns Null when the running turn was on that thread, else the running turn.
+ */
+function endedOn(
+	running: CodexWorkbenchWorkhorseState["activeTurn"],
+	wire: string,
+	decoder: Pick<TrustedIdentityDecoder, "serializeCodexIdentity">,
+): CodexWorkbenchWorkhorseState["activeTurn"] {
+	return running !== null && namesThread(running.threadId, wire, decoder) ? null : running;
+}
+
+/**
  * Keep the turn running on a workhorse's thread from the turn notifications Codex sends about it.
  * A turn starts on the thread the workhorse runs on now, and ends on the thread it started on,
  * which New conversation may have left meanwhile.
@@ -97,28 +127,17 @@ function noteActiveTurn(
 	decoder: Pick<TrustedIdentityDecoder, "serializeCodexIdentity" | "adoptTurnId">,
 ): void {
 	const { notification } = event;
+	const { state } = workhorse;
 	if (notification.method === "turn/completed") {
-		const running = workhorse.state.activeTurn;
-		if (
-			running !== null &&
-			decoder.serializeCodexIdentity(running.threadId) === notification.params.threadId
-		) {
-			workhorse.state.activeTurn = null;
-		}
+		state.activeTurn = endedOn(state.activeTurn, notification.params.threadId, decoder);
 		return;
 	}
 	if (notification.method !== "turn/started") {
 		return;
 	}
-	const threadId = workhorse.components.workhorse.snapshot().threadId;
-	if (
-		threadId !== null &&
-		decoder.serializeCodexIdentity(threadId) === notification.params.threadId
-	) {
-		workhorse.state.activeTurn = {
-			threadId,
-			turnId: decoder.adoptTurnId(notification.params.turn.id),
-		};
+	const { threadId } = workhorse.components.workhorse.snapshot();
+	if (namesThread(threadId, notification.params.threadId, decoder)) {
+		state.activeTurn = { threadId, turnId: decoder.adoptTurnId(notification.params.turn.id) };
 	}
 }
 
