@@ -74,7 +74,7 @@ const SemanticRenderResultSchema = z.object({
 
 const semanticRenderContract = defineCommand({
 	path: ["semantic", "render"],
-	shared: ["url"],
+	shared: ["url", "directory"],
 	summary: "Draw a semantic board as SVG",
 	description:
 		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +

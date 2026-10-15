@@ -50,7 +50,7 @@ const ResolveInputSchema = z.object({
 
 const semanticResolveContract = defineCommand({
 	path: ["semantic", "resolve"],
-	shared: ["url", "doing", "expect-version", "as-session"],
+	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Settle what a proposal is holding",
 	description:
 		"Answers the disagreements one proposal is holding against the variant it came from. The " +
@@ -180,7 +180,7 @@ const parentSupersededRefusal = {
 
 const semanticAdoptContract = defineCommand({
 	path: ["semantic", "adopt"],
-	shared: ["url", "doing", "expect-version", "as-session"],
+	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Make one variant the architecture that is implemented",
 	description:
 		"Makes a variant of this board the architecture that is implemented. Nothing is renamed and " +
@@ -309,7 +309,7 @@ const ShelveInputSchema = z.object({
 
 const semanticShelveContract = defineCommand({
 	path: ["semantic", "shelve"],
-	shared: ["url", "doing", "expect-version", "as-session"],
+	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Let go of a proposal nobody intends to carry out",
 	description:
 		"Marks one proposal on this board as shelved: kept under its name, with everything it says " +

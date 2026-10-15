@@ -479,7 +479,7 @@ const CompareInputSchema = z.object({
 
 const semanticCompareContract = defineCommand({
 	path: ["semantic", "compare"],
-	shared: ["url"],
+	shared: ["url", "directory"],
 	summary: "Read how one variant differs from the current one",
 	description:
 		"Reports one variant against the variant its picture is drawn against — the board's current " +

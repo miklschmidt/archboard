@@ -15,7 +15,7 @@ import { z } from "zod";
 import { defineCommand } from "../contract.js";
 import type { AnyCommandContract, PendingArtifact } from "../contract.js";
 import { runCommand } from "../runner.js";
-import { PendingArtifactSchema } from "../schemas.js";
+import { PendingArtifactSchema, type AnsweredVault } from "../schemas.js";
 
 const temporaryDirectories: string[] = [];
 
@@ -82,7 +82,11 @@ function proofContract(options: {
 	});
 }
 
-async function executePublic(contract: AnyCommandContract, argv: readonly string[] = []) {
+async function executePublic(
+	contract: AnyCommandContract,
+	argv: readonly string[] = [],
+	vault: AnsweredVault | null = null,
+) {
 	let stdout = "";
 	let stderr = "";
 	let error: unknown;
@@ -95,7 +99,7 @@ async function executePublic(contract: AnyCommandContract, argv: readonly string
 		return true;
 	});
 	try {
-		await runCommand(contract, argv);
+		await runCommand(contract, argv, undefined, vault);
 	} catch (caught) {
 		error = caught;
 	} finally {

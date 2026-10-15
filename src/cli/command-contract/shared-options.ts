@@ -22,6 +22,15 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 		description: "The Archboard server to talk to; overrides ARCHBOARD_URL",
 		default: "http://127.0.0.1:3000",
 	},
+	directory: {
+		key: "directory",
+		spellings: ["-C"],
+		value: "required",
+		placeholder: "dir",
+		description:
+			"Find the vault from this directory instead of the working directory, the way git -C finds a " +
+			"repository; other relative paths still resolve against the working directory",
+	},
 	board: {
 		key: "board",
 		spellings: ["--board"],
@@ -61,6 +70,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 /** Every shared option, in the order help lists them. */
 const SHARED_OPTION_KEYS: readonly SharedOptionKey[] = [
 	"url",
+	"directory",
 	"board",
 	"doing",
 	"expect-version",

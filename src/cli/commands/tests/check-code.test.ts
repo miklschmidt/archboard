@@ -18,6 +18,7 @@ import {
 	VaultCheckSchema,
 	type VaultCheck,
 } from "@/shared/semantic-policy/index";
+import { nameStandInVault } from "./stand-in-vault.ts";
 
 const clean: VaultCheck = {
 	policy: DEFAULT_SEMANTIC_POLICY,
@@ -84,6 +85,7 @@ const codeCheck: CodeCheckAnswer = {
 	],
 };
 
+const vault = nameStandInVault();
 let service = "";
 let plain = clean;
 let answered = codeCheck;
@@ -93,9 +95,10 @@ const server = Bun.serve({
 	hostname: "127.0.0.1",
 	port: 0,
 	fetch(request) {
-		const { pathname, search } = new URL(request.url);
+		const asking = new URL(request.url);
+		const { pathname } = asking;
 		if (pathname === "/health") return Response.json({ service, status: "ok" });
-		asked.push(pathname + search);
+		asked.push(vault.unnamed(asking));
 		if (pathname === "/api/vault/check") return Response.json({ success: true, ...plain });
 		if (pathname === "/api/vault/code-check" && refuseDraft) {
 			return Response.json(
@@ -114,7 +117,7 @@ const environment = {
 };
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
-// Imported only now, because the CLI reads where its server is as it loads.
+// Imported only now, because the CLI reads where its server and its vault are as it loads.
 const [config, client, { runCli }] = await Promise.all([
 	import("@/runtime/engine/config"),
 	import("@/runtime/engine/server-client"),
@@ -133,6 +136,7 @@ afterAll(async () => {
 		else process.env[key] = value;
 	}
 	await server.stop(true);
+	vault.restore();
 });
 
 /**

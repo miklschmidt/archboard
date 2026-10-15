@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { VAULT_ORIGINS } from "@/runtime/engine/vault-finder";
 
 const PaneRefSchema = z.looseObject({
 	paneId: z.string(),
@@ -46,4 +47,46 @@ const PendingArtifactSchema = z.discriminatedUnion("encoding", [
 			}
 		}),
 ]);
-export { PaneRefSchema, PendingArtifactSchema, ServerStateSchema };
+/** What a command registered when it found a checkout or an untracked vault the registry did not know. */
+const RegisteredVaultSchema = z.discriminatedUnion("kind", [
+	z.object({
+		kind: z.literal("checkout"),
+		/** The repository identity. */
+		repository: z.string(),
+		root: z.string(),
+		/** Whether it became the chosen checkout of its identity. */
+		chosen: z.boolean(),
+		/** The worktrees that the checkout lists and that were registered with it. */
+		worktrees: z.array(z.string()),
+	}),
+	z.object({
+		kind: z.literal("untracked"),
+		/** The registry name the browser shows. */
+		name: z.string(),
+		root: z.string(),
+	}),
+]);
+
+/**
+ * The vault a command addressed and how it was found (ADR 0049). Every JSON
+ * answer of a command that reads `-C` carries it as `vault`.
+ */
+const AnsweredVaultSchema = z.object({
+	/** The vault directory, as its real path. */
+	path: z.string(),
+	origin: z.enum(VAULT_ORIGINS),
+	/** Present only on the answer of the command that registered it. */
+	registered: RegisteredVaultSchema.optional(),
+});
+
+type AnsweredVault = z.infer<typeof AnsweredVaultSchema>;
+type RegisteredVault = z.infer<typeof RegisteredVaultSchema>;
+
+export {
+	AnsweredVaultSchema,
+	PaneRefSchema,
+	PendingArtifactSchema,
+	ServerStateSchema,
+	type AnsweredVault,
+	type RegisteredVault,
+};

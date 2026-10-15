@@ -223,7 +223,7 @@ function failureOf(error: unknown): string {
 
 const semanticRecordContract = defineCommand({
 	path: ["semantic", "record"],
-	shared: ["url", "doing", "as-session"],
+	shared: ["url", "directory", "doing", "as-session"],
 	summary: "Record a board's walkthrough to a video file, narrated by the voice",
 	description:
 		"Presents one walkthrough of a semantic board in a private headless Chromium at 1920x1080, " +

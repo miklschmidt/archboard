@@ -174,7 +174,7 @@ async function captureBoard(
 
 const semanticRasterizeContract = defineCommand({
 	path: ["semantic", "rasterize"],
-	shared: ["url"],
+	shared: ["url", "directory"],
 	summary: "Draw a semantic board as PNG, headlessly, at native scale",
 	description:
 		"Draws the same picture `semantic render` draws and rasterizes it in a private headless Chromium: " +

@@ -49,7 +49,8 @@ const WELL_KNOWN_EXIT_CODES: Readonly<Record<string, number>> = {
 	BROWSER_REQUIRED: 4,
 	// A missing board is a mistake at the keyboard, like any other usage error.
 	BOARD_REQUIRED: 2,
-	// The same for a vault: naming one is the caller's to fix (ADR 0049).
+	// The same for a vault: finding and naming one is the caller's to fix (ADR 0049).
+	VAULT_NOT_FOUND: 2,
 	VAULT_REQUIRED: 2,
 	VAULT_UNREADABLE: 2,
 };

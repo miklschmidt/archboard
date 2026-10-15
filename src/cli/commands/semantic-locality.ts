@@ -112,7 +112,7 @@ function locality(answer: LocalityAnswer): string[] {
 
 const semanticLocalityContract = defineCommand({
 	path: ["semantic", "locality"],
-	shared: ["url"],
+	shared: ["url", "directory"],
 	summary:
 		"Rank the parts of a board by how often their bound declarations or paths changed, and pair the parts that change together",
 	description:
