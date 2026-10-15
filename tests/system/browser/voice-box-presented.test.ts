@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -272,7 +273,7 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 test("the key that narrates takes the pointer at the foot of a presented walkthrough's box", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "voice-key-vault");
+	const vault = vaultIn(join(ownerRoot, "voice-key-vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());

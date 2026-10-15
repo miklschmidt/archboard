@@ -3,6 +3,8 @@ import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from "node:chil
 import { randomUUID } from "node:crypto";
 import { isAbsolute, join, relative, resolve } from "node:path";
 
+import type { OwnedServer } from "../../support/owned-server.ts";
+import { holderOf } from "../../support/test-vault.ts";
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS, TEST_BROWSER_POLL_MS } from "../../support/timing.ts";
 import { browserProfileForSession } from "./browser-executable.ts";
 import { agentBrowserCommand } from "./browser-toolchain.ts";
@@ -19,17 +21,27 @@ interface PollOptions {
 }
 type TestEnvironment = Readonly<Record<string, string | undefined>>;
 
-function runServerCli(base: string, vault: string, args: string[]): string {
+/**
+ * Run a command of this checkout against a server, in the directory that holds
+ * the server's vault, with the server's registry.
+ * @param server The server.
+ * @param args The command line.
+ * @returns What the command printed on stdout.
+ */
+function runServerCli(
+	server: Pick<OwnedServer, "base" | "vault" | "registry">,
+	args: string[],
+): string {
 	const repoRoot = resolve(import.meta.dir, "../../../..");
 	const result = spawnSync(join(repoRoot, "bin/archboard"), args, {
-		cwd: repoRoot,
+		cwd: holderOf(server.vault),
 		encoding: "utf8",
 		timeout: TEST_BROWSER_COMMAND_TIMEOUT_MS,
 		killSignal: "SIGKILL",
 		env: {
 			...process.env,
-			ARCHBOARD_VAULT: vault,
-			ARCHBOARD_URL: base,
+			ARCHBOARD_REPOS: server.registry,
+			ARCHBOARD_URL: server.base,
 			ARCHBOARD_NO_AUTOSTART: "1",
 		},
 	});
@@ -52,7 +64,6 @@ const REQUIRED_BROWSER_ENV = [
 	"AGENT_BROWSER_IDLE_TIMEOUT_MS",
 ] as const;
 const CLEARED_SERVER_ENV = [
-	"ARCHBOARD_VAULT",
 	"ARCHBOARD_REPOS",
 	"ARCHBOARD_SETTLE_MS",
 	"ARCHBOARD_SETTLE_MAX_MS",

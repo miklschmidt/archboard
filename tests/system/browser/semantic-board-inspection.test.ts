@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -172,7 +173,7 @@ async function tipOver(browser: AgentBrowserSession, id: string): Promise<Measur
 test("a person reads containment, code and the level below it, and writes nothing", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "semantic-inspection-vault");
+	const vault = vaultIn(join(ownerRoot, "semantic-inspection-vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());

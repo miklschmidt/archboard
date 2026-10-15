@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -73,7 +74,7 @@ const addressSearch = (browser: AgentBrowserSession): Promise<string> =>
 test("a semantic board opens in a real pane, and the vault gets no note for it", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "semantic-vault");
+	const vault = vaultIn(join(ownerRoot, "semantic-vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
@@ -214,7 +215,7 @@ const trafficPathsShown = (browser: AgentBrowserSession): Promise<number> =>
 test("a relationship that carries traffic moves, unless the reader asked it not to", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "semantic-motion-vault");
+	const vault = vaultIn(join(ownerRoot, "semantic-motion-vault"));
 	mkdirSync(vault, { recursive: true });
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
