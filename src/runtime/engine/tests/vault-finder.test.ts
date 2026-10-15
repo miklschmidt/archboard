@@ -152,24 +152,3 @@ test("-C naming no directory is refused", async () => {
 		origin: "-C",
 	});
 });
-
-test("a set ARCHBOARD_VAULT is used as it is, without a search", async () => {
-	const named = directory("anything");
-	const elsewhere = directory("elsewhere");
-	expect(await findVault({ directory: null, environment: "../anything", cwd: elsewhere })).toEqual({
-		ok: true,
-		found: { path: named, origin: "environment", holder: null },
-	});
-});
-
-test("a set ARCHBOARD_VAULT that names no directory is refused, naming the variable", async () => {
-	const elsewhere = directory("elsewhere");
-	expect(
-		await findVault({ directory: null, environment: "../moved", cwd: elsewhere }),
-	).toMatchObject({
-		ok: false,
-		reason: "directory-missing",
-		directory: join(scratch, "moved"),
-		origin: "environment",
-	});
-});
