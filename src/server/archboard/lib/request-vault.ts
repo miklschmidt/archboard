@@ -135,6 +135,17 @@ function requireVault(req: Request, res: Response, next: NextFunction): void {
 }
 
 /**
+ * The vault a request names, when it names one the server can read, for a
+ * route that reads no board and answers either way.
+ * @param req The request.
+ * @returns The canonical vault, or null when the request names none that can be read.
+ */
+function statedVault(req: Request): string | null {
+	const named = namedVault(queryString(req, VAULT_PARAMETER) ?? bodyOf(req)[VAULT_PARAMETER]);
+	return named.ok ? named.vault : null;
+}
+
+/**
  * The vault a request named. Every route that reads or writes a board mounts
  * `requireVault` before its handler, so a request that reaches one has named a vault.
  * @param req The request.
@@ -156,6 +167,7 @@ export {
 	canonicalConfiguredVault,
 	namedVault,
 	requireVault,
+	statedVault,
 	vaultOfRequest,
 	type NamedVault,
 };

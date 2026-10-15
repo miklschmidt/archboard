@@ -61,13 +61,4 @@ function movePaneVault(clientId: string, vault: string): void {
 	syncLockWatch();
 }
 
-/**
- * The panes in one vault, by client id, whether or not their socket is open now.
- * @param vault The vault.
- * @returns Their client ids.
- */
-function paneClientsOfVault(vault: string): string[] {
-	return [...paneVaults].flatMap(([clientId, held]) => (held === vault ? [clientId] : []));
-}
-
-export { broadcastEverywhere, movePaneVault, paneClientsOfVault };
+export { broadcastEverywhere, movePaneVault };
