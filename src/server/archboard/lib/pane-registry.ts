@@ -189,8 +189,8 @@ function sendToPane(clientId: string, message: WebSocketMessage, board: string):
 
 /**
  * Send one pane something about the pane itself rather than about a board:
- * open another one, close this one, or which boards an agent has in the vault
- * it just moved into. None of it is board news, so stamping a board key on it
+ * open another one, close this one, or, for a pane on no board, the vault it
+ * has just been moved into. None of it is board news, so stamping a board key on it
  * would be inventing one. Kept separate from `sendToPane` so that omitting the
  * board stays a deliberate act rather than a missing argument.
  * @param clientId The pane's client id.
