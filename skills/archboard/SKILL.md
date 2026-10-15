@@ -514,6 +514,10 @@ and an explanation for somebody new to the code follows
   the other, and its kind says how. The individual calls between them, in their
   order, are steps of a flow that a `data-flow` view draws. A second
   relationship between the same two parts is a call, not a relationship.
+- Never draw a relationship between a container and a part inside it. The
+  nesting already says that the container holds the part. A call inside a
+  container starts at the part that makes it and ends at the part that runs
+  it. `archboard check` warns `CONTAINER_LINE_TO_OWN_PART` on such a line.
 
 ## When to read more
 

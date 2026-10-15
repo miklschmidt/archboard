@@ -1,5 +1,6 @@
 // What the vault checker says about a board whose overview is too crowded to
-// read (ADR 0052).
+// read, and about a line from a container to a part inside it
+// (ADR 0052).
 
 import { afterAll, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
@@ -68,4 +69,40 @@ test("a flat board over the budget is crowded, and the same parts in areas are n
 	await create("Gathered", 20, 4);
 	await create("Small", 10);
 	expect(crowded()).toEqual(["Flat"]);
+});
+
+test("a relationship between a container and a part inside it is warned, either way round", async () => {
+	const written = await store.writeSemanticBoard({
+		vault,
+		board: "Nested",
+		writer: { kind: "agent" },
+		transition: store.createBoardTransition(
+			contract.BoardCreateInputSchema.parse({
+				name: "Nested",
+				level: "service",
+				nodes: [
+					{ name: "Service", kind: "service" },
+					{ name: "Area", kind: "module", parent: "Service" },
+					{ name: "Inner", kind: "function", parent: "Area" },
+					{ name: "Sibling", kind: "function", parent: "Area" },
+					{ name: "Caller", kind: "service" },
+				],
+				edges: [
+					{ from: "Service", to: "Inner", kind: "call" },
+					{ from: "Inner", to: "Area", kind: "call" },
+					{ from: "Inner", to: "Sibling", kind: "call" },
+					{ from: "Caller", to: "Area", kind: "call" },
+				],
+			}),
+		),
+	});
+	if (written.outcome !== "applied") throw new Error(`seed refused: ${JSON.stringify(written)}`);
+	const warned = store
+		.checkSemanticVault(vault)
+		.diagnostics.filter(
+			(issue) => issue.board === "Nested" && issue.code === "CONTAINER_LINE_TO_OWN_PART",
+		)
+		.map((issue) => issue.subject?.name)
+		.toSorted();
+	expect(warned).toEqual(["Inner -> Area", "Service -> Inner"]);
 });
