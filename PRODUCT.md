@@ -76,7 +76,8 @@ board is narrated by a voice and recorded to video.
   every repository that has a vault, each with the boards of its chosen
   checkout. A repository is named by its identity, or an untracked vault by its
   registry name. The menu on a repository's row chooses its checkout for the
-  whole machine. The two panes of one tab can show boards of two repositories,
+  whole machine. An agent's `browser show` from another checkout of it chooses
+  that checkout, and the agent says so. The two panes of one tab can show boards of two repositories,
   and the address names the repository of each pane beside its board.
 - Code bindings open a part's file in VS Code, Cursor, Zed or on GitHub.
 - Boards also leave the app: as SVG or PNG for docs, ADRs and pull requests,

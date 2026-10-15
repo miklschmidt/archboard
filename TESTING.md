@@ -161,7 +161,8 @@ to open.
 ./bin/archboard -C "$session" browser show "payments@Queued ingest" --pane right
 ```
 
-`browser panes` reports the board, the variant and the version of each pane.
+`browser panes` reports the board, the variant and the version of each pane,
+and the repository and the checkout that the board is in.
 `payments@Queued ingest` names the proposal. A pane shows it with what it adds,
 changes and removes marked against the current variant. `browser open` splits
 the page into two panes, and `--pane left` and `--pane right` then put the

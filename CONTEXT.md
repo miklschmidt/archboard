@@ -211,9 +211,11 @@ _Avoid_: index, cache, catalogue, repo config
 The one checkout of a repository identity that this machine reads for it. The
 browser reads its vault, and a binding or drill-down that another vault makes
 into that identity resolves there. A binding into a vault's own repository
-resolves in the vault's own checkout instead. A person changes the choice, never
+resolves in the vault's own checkout instead. A person changes the choice with
+`repo use` or the navigator's menu, and an agent's `browser show` from another
+checkout of the identity changes it too. A board command never does, nor does
 a command that only registers a checkout. An identity whose chosen checkout was
-forgotten has none until a person chooses again, and its bindings resolve as
+forgotten has none until somebody chooses again, and its bindings resolve as
 unregistered.
 _Avoid_: default checkout, primary checkout, active checkout, project
 
