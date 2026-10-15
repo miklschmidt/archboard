@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 65,
+	"version": 68,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-15T05:04:13.426Z",
+	"updatedAt": "2026-10-15T05:06:53.815Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -15271,7 +15271,7 @@
 		{
 			"id": "BOLvnfpC",
 			"name": "TASK-472.06",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "qcteWMNa",
 			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
@@ -16726,9 +16726,9 @@
 		{
 			"id": "n4WqEuEW",
 			"name": "TASK-472.08",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "BOLvnfpC",
-			"summary": "archboard runs the source of the archboard checkout it stands in, and each worktree has its own port",
+			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -18147,13 +18147,27 @@
 						"order": 64000,
 						"from": "iIJ5MRhi",
 						"to": "NG7OXLv9",
-						"kind": "call",
+						"kind": "dependency",
 						"label": "the running checkout, to refuse another's server",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/lib/server-client-transport.ts",
 							"symbol": "SOURCE_CHECKOUT"
+						}
+					},
+					{
+						"id": "NAzwezpK",
+						"order": 65000,
+						"from": "o5zkAtUT",
+						"to": "NG7OXLv9",
+						"kind": "dependency",
+						"label": "the --url default",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-contract/shared-options.ts",
+							"symbol": "DEFAULT_ARCHBOARD_URL"
 						}
 					}
 				],
@@ -18220,7 +18234,7 @@
 			}
 		}
 	],
-	"current": "BOLvnfpC",
+	"current": "n4WqEuEW",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -18293,6 +18307,12 @@
 			"from": "qcteWMNa",
 			"at": "2026-10-15T04:08:51.384Z",
 			"reason": "Every request names the vault the command found, and the launcher starts a server that needs no vault"
+		},
+		{
+			"variant": "n4WqEuEW",
+			"from": "BOLvnfpC",
+			"at": "2026-10-15T05:06:53.815Z",
+			"reason": "The entry point hands a command to the archboard checkout it stands in; the server client refuses a server of another checkout's source (TASK-472.08)"
 		}
 	],
 	"shelvings": [

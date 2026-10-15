@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 33,
+	"version": 35,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-15T05:02:49.470Z",
+	"updatedAt": "2026-10-15T05:06:54.001Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -6821,7 +6821,7 @@
 		{
 			"id": "OhAsaop7",
 			"name": "TASK-472.06",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "NhIfIArt",
 			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches.",
 			"content": {
@@ -8154,9 +8154,9 @@
 		{
 			"id": "C3V6dUPI",
 			"name": "TASK-472.08",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "OhAsaop7",
-			"summary": "archboard runs the source of the archboard checkout it stands in, and each worktree has its own port",
+			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches.",
 			"content": {
 				"nodes": [
 					{
@@ -9485,7 +9485,7 @@
 			}
 		}
 	],
-	"current": "OhAsaop7",
+	"current": "C3V6dUPI",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -9516,6 +9516,12 @@
 			"from": "NhIfIArt",
 			"at": "2026-10-15T04:08:51.843Z",
 			"reason": "The server starts without a vault, and the service routes answer the vault a page opens in"
+		},
+		{
+			"variant": "C3V6dUPI",
+			"from": "OhAsaop7",
+			"at": "2026-10-15T05:06:54.001Z",
+			"reason": "/health names the checkout whose source the server runs (TASK-472.08)"
 		}
 	],
 	"shelvings": [
