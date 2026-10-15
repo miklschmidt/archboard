@@ -85,9 +85,20 @@ describe("the drill trail", () => {
 		const arrived = drillArrived(down.trail, { ...LEDGER, board: "Ledger" });
 		expect(stopsOf(arrived, LEDGER)).toEqual([SHOP, CART, LEDGER]);
 
-		const back = drillBack(arrived, 0);
+		const back = drillBack(arrived, LEDGER, 0);
 		expect(back.dive).toEqual(SHOP);
 		expect(stopsOf(drillArrived(back.trail, SHOP), SHOP)).toEqual([SHOP]);
+	});
+
+	test("going back to the board the pane holds, from a trail that came back to it, stays in place", () => {
+		// shop, then ledger in another vault, then a link from ledger back to shop.
+		const there = drillArrived(drillInto(NO_TRAIL, SHOP, LEDGER).trail, LEDGER);
+		const home = drillArrived(drillInto(there, LEDGER, SHOP).trail, SHOP);
+		expect(stopsOf(home, SHOP)).toEqual([SHOP, LEDGER, SHOP]);
+		// The shell would not move a pane to the board it holds, so no arrival would answer a dive.
+		const back = drillBack(home, SHOP, 0);
+		expect(back.dive).toBeNull();
+		expect(stopsOf(back.trail, SHOP)).toEqual([SHOP]);
 	});
 
 	test("any other arrival is somebody else's, and ends the trail", () => {
