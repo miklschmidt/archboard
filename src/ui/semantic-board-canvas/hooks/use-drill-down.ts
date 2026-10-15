@@ -99,7 +99,9 @@ function useArrivals(
 	) {
 		return held;
 	}
-	const arrived = drillArrived(held, { board, variant, vault, repository: null });
+	// A trail of its own even when it is empty, so that a move asked for before
+	// the arrival can tell that the trail it was asked from is gone.
+	const arrived = { ...drillArrived(held, { board, variant, vault, repository: null }) };
 	setOpened({ board, variant, arrival, vault });
 	setTrail(arrived);
 	return arrived;
@@ -123,10 +125,15 @@ function useDrillDown(own: OwnBoard, dive: Dive | undefined): DrillNavigation {
 		}),
 		[own.board, own.variant, own.vault, own.repository],
 	);
-	/** Take a step, and ask the shell for the board it leaves for, if any. */
+	/**
+	 * Take a step, and ask the shell for the board it leaves for, if any. A step
+	 * asked for from a trail that is gone leaves the trail as it is now: a flight
+	 * that lands after the pane was pointed elsewhere opens no board over the one
+	 * the pane holds now.
+	 */
 	const take = useCallback(
-		(step: TrailStep): void => {
-			setTrail(step.trail);
+		(from: DrillTrail, step: TrailStep): void => {
+			setTrail((current) => (current === from ? step.trail : current));
 			const stop = step.dive;
 			if (stop === null) return;
 			/** The shell did not show it: the trail no longer waits on it. */
@@ -147,6 +154,7 @@ function useDrillDown(own: OwnBoard, dive: Dive | undefined): DrillNavigation {
 	const open = useCallback(
 		(board: string, variant: string | undefined, there?: OtherRepository): void => {
 			take(
+				trail,
 				drillInto(trail, ownStop, {
 					board,
 					variant,
@@ -160,7 +168,7 @@ function useDrillDown(own: OwnBoard, dive: Dive | undefined): DrillNavigation {
 	const backTo = useCallback(
 		(depth: number): boolean => {
 			const step = drillBack(trail, ownStop, depth);
-			take(step);
+			take(trail, step);
 			return step.dive === null && step.trail.above.length < trail.above.length;
 		},
 		[take, trail, ownStop],
