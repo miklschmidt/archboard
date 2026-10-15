@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { checkoutPort, SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
 import { withProductionState } from "@/server/archboard/tests/support/production-state";
 
 import {
@@ -76,7 +77,7 @@ describe("production Codex storage", () => {
 			const owner = join(
 				workbench,
 				"canvases",
-				String(Number.parseInt(process.env["PORT"] || "3000", 10)),
+				process.env["PORT"] || String(checkoutPort(SOURCE_CHECKOUT)),
 			);
 			expect(value.process.storage).toEqual({ rootDirectory: workbench, ownerDirectory: owner });
 			expect(statSync(owner).mode & 0o777).toBe(0o700);

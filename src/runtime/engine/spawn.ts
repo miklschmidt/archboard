@@ -6,6 +6,7 @@ import { ARCHBOARD_URL, ARCHBOARD_NO_AUTOSTART } from "@/runtime/engine/config";
 import {
 	foreignServiceError,
 	markServerIdentityVerified,
+	OtherSourceError,
 	type HealthStatus,
 } from "@/runtime/engine/server-client";
 
@@ -371,7 +372,14 @@ async function awaitServerReadiness(
 	const deferred: DeferredFailure = { failure: null };
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- readiness is one probe after another until the deadline
-		if (isServerHealth(await healthOrNull())) {
+		const health = await healthOrNull().catch((error: unknown) =>
+			error instanceof OtherSourceError ? error : null,
+		);
+		if (health instanceof OtherSourceError) {
+			// A server of another checkout's source took the port first, so this one cannot listen.
+			return cleanupFailedStart(spawned, health);
+		}
+		if (isServerHealth(health)) {
 			markServerIdentityVerified();
 			spawned.protocol.destroy();
 			spawned.child.unref();

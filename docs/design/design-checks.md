@@ -194,7 +194,7 @@ wait was 14 to 16 ms in the same check. The grammars load once per process. Over
 and TSX files of `src`, parsing took 1,220 ms and reading the facts from the
 trees 1,612 ms.
 
-The real `./bin/dogfood check --code` also runs the plain check and behind. It
+The real `archboard check --code` also runs the plain check and behind. It
 took 1,582 ms on its first run after a server restart, and 1,141 ms on the
 second run.
 
@@ -1370,7 +1370,7 @@ answer can change a finding, the second row:
   through a value that a part holds. On the dogfood vault it found none, and
   it cost 3 to 5 s of every pass.
 
-The first build's real `./bin/dogfood check --code` took 9,083 ms on its first
+The first build's real `archboard check --code` took 9,083 ms on its first
 run after a restart. Five later runs took 4,743 to 7,141 ms. Before
 TASK-367.13, a warm run took about 1,400 ms.
 

@@ -26,7 +26,7 @@ Where things are written down:
 - Working on this repo, including planning and closing a task (each carries a board
   proposal): the [archboard-dev skill](skills/archboard-dev/SKILL.md). Using archboard: the [archboard skill](skills/archboard/SKILL.md)
 - Reading or updating this repo's architecture: [.archboard/README.md](.archboard/README.md). Start at
-  `Archboard` with `./bin/dogfood` and the tracked `.archboard/vault`.
+  `Archboard` with `archboard` and the tracked `.archboard/vault`.
 - Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
 
 ## Environment facts you cannot derive
@@ -35,8 +35,16 @@ Where things are written down:
   `npm run`. `bun install` intermittently fails to extract a tarball. If it
   fails, run it again.
 - A running server read its source at start. Editing source changes the next
-  CLI command, not the running server: `./bin/archboard stop && ./bin/archboard start`.
-  Stop never refuses: every accepted write is on disk before it is answered.
+  CLI command, not the running server: `archboard stop && archboard start`.
+  Stop never waits for work: every accepted write is on disk before it is answered.
+- `archboard` on PATH links to one checkout's `bin/archboard`. Inside another
+  archboard checkout, such as a worktree, it runs that checkout's own
+  `bin/archboard` (ADR 0049). The server of the main checkout listens on
+  port 3000. The server of a linked worktree listens on a port in 10000 to
+  19999, a hash of the worktree's path, so each worktree has its own server.
+  `archboard status` gives the URL. A set `ARCHBOARD_URL` or `--url` still
+  decides. A command that finds a server of another checkout's source on its
+  port refuses and names both checkouts.
 - `bun run check` is the complete gate. Only shippable, repository-authored
   Archboard skills live under `skills/`. Tracked symlinks expose them through
   `.claude/skills/` and `.agents/skills/`. For other skills, use the exact path

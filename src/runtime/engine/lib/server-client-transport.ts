@@ -4,6 +4,7 @@ import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { withBoard, withVault, withWriteClaims } from "@/runtime/engine/lib/server-client-session";
 import { isBoardRefusal } from "@/runtime/engine/lib/server-client-refusal";
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
+import { SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
 
 /** Identity marker the Archboard server puts in /health (v1.1+). */
 const ARCHBOARD_SERVICE_NAME = "archboard-server";
@@ -31,6 +32,27 @@ function foreignServiceError(): Error {
 			`(a pre-1.1 server build or an unrelated service on the port). ` +
 			`Upgrade/stop that service, or point ARCHBOARD_URL elsewhere.`,
 	);
+}
+
+/**
+ * The refusal for an Archboard server that runs the source of another
+ * checkout than this command (ADR 0049). The command does not pick another
+ * port, because the port is how a checkout and its server find each other.
+ */
+class OtherSourceError extends Error {
+	readonly code = "SERVER_UNREACHABLE";
+
+	/**
+	 * The refusal that names both checkouts.
+	 * @param serverCheckout The checkout whose source the server runs.
+	 */
+	constructor(serverCheckout: string) {
+		super(
+			`The Archboard server at ${ARCHBOARD_URL} runs the source of ${serverCheckout}, ` +
+				`and this command runs the source of ${SOURCE_CHECKOUT}. Run the command in ${serverCheckout}, ` +
+				"stop that server there with `archboard stop`, or name another server with --url.",
+		);
+	}
 }
 
 /**
@@ -80,19 +102,32 @@ async function probeHealth(): Promise<Response | null> {
  * only a 200 carrying our identity may pass: a 404 or an HTML page here is a
  * foreign service, not a down server.
  * @param response The answer.
- * @returns True when the server identified itself.
+ * @returns The health body when the server identified itself, else null.
  */
-async function identifiesAsServer(response: Response): Promise<boolean> {
+async function serverHealthOf(response: Response): Promise<Record<string, unknown> | null> {
 	if (!response.ok) {
-		return false;
+		return null;
 	}
 	const health: unknown = await response.json().catch(() => null);
-	return isRecord(health) && stringAt(health, "service") === ARCHBOARD_SERVICE_NAME;
+	return isRecord(health) && stringAt(health, "service") === ARCHBOARD_SERVICE_NAME ? health : null;
+}
+
+/**
+ * The checkout a server says it runs the source of, when it is not this
+ * command's. A server older than ADR 0049 names none and is taken as it is.
+ * @param health The server's health body.
+ * @returns The server's checkout, or undefined when it matches or is not named.
+ */
+function otherSourceOf(health: Record<string, unknown>): string | undefined {
+	const source = health["source"];
+	const checkout = isRecord(source) ? stringAt(source, "checkout") : undefined;
+	return checkout === SOURCE_CHECKOUT ? undefined : checkout;
 }
 
 /**
  * One identity probe, shared by every request that starts while it runs.
- * @throws {Error} When something other than this server answers.
+ * @throws {Error} When something other than this server answers, or a server
+ * that runs another checkout's source.
  */
 async function verifyIdentity(): Promise<void> {
 	try {
@@ -101,8 +136,13 @@ async function verifyIdentity(): Promise<void> {
 			// Deliberately not marked verified, so the next call re-probes.
 			return;
 		}
-		if (!(await identifiesAsServer(response))) {
+		const health = await serverHealthOf(response);
+		if (health === null) {
 			throw foreignServiceError();
+		}
+		const otherSource = otherSourceOf(health);
+		if (otherSource !== undefined) {
+			throw new OtherSourceError(otherSource);
 		}
 		identityVerifiedAt = Date.now();
 	} finally {
@@ -238,6 +278,7 @@ export {
 	foreignServiceError,
 	isConnectionFailure,
 	markServerIdentityVerified,
+	OtherSourceError,
 	requestJson,
 	responseError,
 };

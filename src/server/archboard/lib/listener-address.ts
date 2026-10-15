@@ -1,7 +1,10 @@
 import net from "net";
 import { logger } from "@/runtime/engine/logger";
+import { checkoutPort, SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
 
-const PORT = parseInt(process.env["PORT"] || "3000", 10);
+// The CLI names the port when it starts a server. Started by hand, a server
+// takes its checkout's own port, as the CLI of that checkout expects (ADR 0049).
+const PORT = parseInt(process.env["PORT"] || String(checkoutPort(SOURCE_CHECKOUT)), 10);
 const HOST = process.env["HOST"] || "127.0.0.1";
 const LOOPBACK_GUARD_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0", "::"]);
 const LOOPBACK_ADDRESSES = ["127.0.0.1", "::1"];

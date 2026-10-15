@@ -12,6 +12,7 @@
 // there rather than from every call site.
 
 import type { BoardIdentity } from "@/runtime/engine/board";
+import type { SourceState } from "@/runtime/engine/staleness";
 import {
 	type BoardRefusal,
 	BOARD_REFUSAL_CODES,
@@ -35,6 +36,7 @@ import {
 	ARCHBOARD_SERVICE_NAME,
 	foreignServiceError,
 	markServerIdentityVerified,
+	OtherSourceError,
 	requestJson,
 } from "@/runtime/engine/lib/server-client-transport";
 import { isRecord } from "@/runtime/engine/lib/unknown-record";
@@ -60,14 +62,6 @@ interface PaneRef {
 	position: number;
 }
 
-/** What the source-freshness half of a health answer says (TASK-056). */
-interface SourceFreshness {
-	stale: boolean;
-	evaluatedAt: string;
-	newestFile: string | null;
-	newestAt: string | null;
-}
-
 /** What `/health` answers with. */
 interface HealthStatus {
 	status: string;
@@ -75,8 +69,11 @@ interface HealthStatus {
 	pid?: number;
 	/** How many browsers are looking at this server. */
 	websocket_clients?: number;
-	/** Whether this process is running the source that is on disk now. */
-	source?: SourceFreshness;
+	/**
+	 * Which checkout's source the server runs, and whether it is the source on
+	 * disk now. A server older than ADR 0049 names no checkout.
+	 */
+	source?: Omit<SourceState, "checkout"> & Partial<Pick<SourceState, "checkout">>;
 	[key: string]: unknown;
 }
 
@@ -257,6 +254,7 @@ export {
 	getPanes,
 	getSyncStatus,
 	markServerIdentityVerified,
+	OtherSourceError,
 	openPane,
 	releaseBoardClaim,
 	requestJson,
