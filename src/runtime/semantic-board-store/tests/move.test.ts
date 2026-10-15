@@ -11,7 +11,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { holdBoard, releaseHold } from "@/runtime/engine/board-lock";
+import { boardLockState, holdBoard, releaseHold } from "@/runtime/engine/board-lock";
 import { declareDirectory } from "@/runtime/engine/repo-registry";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import type * as ContractModule from "@/shared/semantic-board/index";
@@ -309,4 +309,30 @@ test("a move that stopped part way leaves the board in both vaults, and running 
 	if (again.outcome !== "moved") return;
 	// The first run's rewrite is done, and the second rewrites only what was left.
 	expect(again.rewritten.map((one) => one.board)).toEqual(["Shipping"]);
+});
+
+test("a move waiting for the board holds nothing in the target vault", async () => {
+	await create(vaults.meta, "Rates");
+	// An agent's write without a claim is waited out, not refused.
+	const writing = { id: "another-write", kind: "agent" as const };
+	await holdBoard({ vault: vaults.meta, board: "rates", holder: writing, leaseMs: 60_000 });
+	const moving = move("Rates", vaults.meta, vaults.product);
+	await Bun.sleep(100);
+	// Holding the target while waiting for the source is how two moves in
+	// opposite directions would each wait for the other.
+	expect(boardLockState(vaults.product, "rates")).toBeNull();
+	releaseHold(vaults.meta, "rates", writing.id);
+	expect((await moving).outcome).toBe("moved");
+});
+
+test("a lease that a stopped writer left on a board the move rewrites does not stop the move", async () => {
+	await create(vaults.meta, "Stock");
+	await create(vaults.meta, "Shelf", [{ name: "Web", kind: "app" }, opening("Open", "Stock")]);
+	// A server stopped while it held a claim leaves the claim's lease behind to lapse.
+	const stopped = { id: "stopped-server", kind: "agent" as const, claimed: true };
+	await holdBoard({ vault: vaults.meta, board: "shelf", holder: stopped, leaseMs: 1 });
+	await Bun.sleep(10);
+
+	expect((await move("Stock", vaults.meta, vaults.product)).outcome).toBe("moved");
+	expect(drillOf(vaults.meta, "Shelf", "Open")?.repo).toBe(PRODUCT);
 });

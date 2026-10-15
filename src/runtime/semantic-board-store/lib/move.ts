@@ -8,7 +8,8 @@
 // One thing somebody asked for is one write (TASK-068), and a move cannot be
 // one, because two vaults are two files, often in two repositories. So it
 // writes in a fixed order, under the lease of the board in the source vault and
-// the lease of its name in the target vault:
+// then the lease of its name in the target vault, which is asked for once so
+// that no move holds one vault while it waits for the other:
 //
 //   1. the target note, which is the source board with its own drill-downs into
 //      the source vault rewritten. Its version advances once, as any write's;
@@ -26,6 +27,7 @@
 // A board that drills down into the moved board is taken without waiting
 // (`withBoardLockIfFreeSync`): a pass cannot wait, and when somebody else holds
 // one, the move stops before it deletes the source note and says to run it again.
+// A lease that a stopped writer left on one of them is cleared before the pass.
 
 import { unlinkDurably } from "@/runtime/engine/atomic-write";
 import {
@@ -37,6 +39,7 @@ import {
 	withBoardLockIfFreeSync,
 } from "@/runtime/engine/board-lock";
 import { vaultIdentity } from "@/runtime/code-target/index";
+import { mintId } from "@/shared/ids/ids";
 import type { MoveEnd, MovedDrillDown, SemanticBoard } from "@/shared/semantic-board/index";
 import { acceptedBoard } from "@/runtime/semantic-board-store/lib/accepted";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
@@ -66,7 +69,6 @@ import {
 	boardBefore,
 	leaseRequest,
 	rejected,
-	underBoardLease,
 	type BoardLeaseAsk,
 	type SemanticWriteCommand,
 	type SemanticWriteRejection,
@@ -342,29 +344,38 @@ function stopped(
 	};
 }
 
+/** A lease the move holds, the identity it holds it under, and how to give it back. */
+interface MoveHold {
+	readonly heldAs: string;
+	readonly release: () => void;
+}
+
 /**
- * Hold the board's name in the target vault, as this writer, so nobody
- * creates a board by that name there while the move writes it.
+ * Hold the board's lease in one vault of the move, as admitted for this writer.
+ * @param vault The vault.
  * @param command The move.
- * @param address Where the board is in the source vault.
- * @returns How to give the name back, or why it cannot be held.
+ * @param address Where the board is in the source vault, whose key the lease is taken on.
+ * @param waitMs How long to wait for a holder to finish, when not the usual cap.
+ * @returns The hold, or why it cannot be taken.
  */
-async function holdTargetName(
+async function holdIn(
+	vault: string,
 	command: SemanticMoveCommand,
 	address: SemanticBoardLocation,
-): Promise<{ readonly release: () => void } | SemanticWriteRejection> {
-	const admission = admit(command.to, address.key, command.writer);
-	if (!admission.ok) {
-		return rejected(address, null, "CLAIM_REVOKED", admission.problem);
-	}
+	waitMs?: number,
+): Promise<MoveHold | SemanticWriteRejection> {
+	const admission = admit(vault, address.key, command.writer);
+	if (!admission.ok) return rejected(address, null, "CLAIM_REVOKED", admission.problem);
 	try {
-		const hold = await holdBoard(
-			leaseRequest(address.key, { ...command, vault: command.to }, admission),
-		);
+		const hold = await holdBoard({
+			...leaseRequest(address.key, { ...command, vault }, admission),
+			...(waitMs === undefined ? {} : { waitMs }),
+		});
 		return {
-			/** Give the name back, when this move took it rather than joining a hold of its own. */
+			heldAs: admission.id,
+			/** Give the lease back, when this move took it rather than joining a hold of its own. */
 			release: () => {
-				if (hold.created) releaseHold(command.to, address.key, admission.id);
+				if (hold.created) releaseHold(vault, address.key, admission.id);
 			},
 		};
 	} catch (error) {
@@ -373,10 +384,77 @@ async function holdTargetName(
 				address,
 				null,
 				"BOARD_HELD",
-				`In ${command.to}: ${error.message} Try the move again once they are done. Nothing was written.`,
+				`In ${vault}: ${error.message} Try the move again once they are done. Nothing was written.`,
 			);
 		}
 		throw error;
+	}
+}
+
+/**
+ * Clear the lease that a writer which stopped left on a board the move
+ * rewrites. The pass takes each of those boards without waiting, and a lease
+ * that lapsed can only be taken over by waiting out the guard against a second
+ * taker, so a lapsed lease left there would stop every run of the move. Each
+ * board is asked for once and given back at once; a live holder is left to
+ * the pass, which stops the move.
+ * @param plan The move.
+ * @param key The moved board's key.
+ * @returns When every lapsed lease is cleared.
+ */
+async function clearLapsedLeases(plan: MovePlan, key: string): Promise<void> {
+	const { vault, writer, signal } = plan.command;
+	const inbound = inboundRewrite(plan.identities, opensBoard(vault, key));
+	await Promise.all(
+		boardsDrillingIn(vault, key, inbound).map(async (location) => {
+			const holder = { id: `move-${mintId()}`, kind: writer.kind };
+			try {
+				await holdBoard({
+					vault,
+					board: location.key,
+					holder,
+					waitMs: 0,
+					...(signal === undefined ? {} : { signal }),
+				});
+				releaseHold(vault, location.key, holder.id);
+			} catch (error) {
+				if (!(error instanceof BoardHeldError)) throw error;
+			}
+		}),
+	);
+}
+
+/**
+ * Run the move under the board's lease in the source vault and its name's
+ * lease in the target vault. The source is waited for, as any write waits for
+ * its board. The target is asked for once, after the source is held: a move
+ * that held one lease while it waited for the other would wait for a move in
+ * the opposite direction that holds them the other way round.
+ * @param plan The move.
+ * @param address Where the board is in the source vault.
+ * @param pass The move, once both are held.
+ * @returns What the pass did and the identity it held the board under, or why it did nothing.
+ */
+async function underBothLeases(
+	plan: MovePlan,
+	address: SemanticBoardLocation,
+	pass: () => MovePass | SemanticWriteRejection,
+): Promise<SemanticMoveResult> {
+	const { command } = plan;
+	const source = await holdIn(command.vault, command, address);
+	if ("outcome" in source) return source;
+	try {
+		const target = await holdIn(command.to, command, address, 0);
+		if ("outcome" in target) return target;
+		try {
+			await clearLapsedLeases(plan, address.key);
+			const result = pass();
+			return result.outcome === "rejected" ? result : { ...result, heldAs: source.heldAs };
+		} finally {
+			target.release();
+		}
+	} finally {
+		source.release();
 	}
 }
 
@@ -391,24 +469,12 @@ async function moveSemanticBoard(command: SemanticMoveCommand): Promise<Semantic
 	const identities = { source: vaultIdentity(command.vault), target: vaultIdentity(command.to) };
 	const same = sameRepositoryRefusal(command, identities, address);
 	if (same !== null) return same;
-	const name = await holdTargetName(command, address);
-	if ("outcome" in name) return name;
 	const plan: MovePlan = { command, identities, at: new Date().toISOString() };
-	let result: SemanticMoveResult;
-	try {
-		result = await underBoardLease(command, (location) =>
-			location.key === address.key
-				? moveUnderLeases(plan, location)
-				: rejected(
-						location,
-						null,
-						"BOARD_VERSION_CONFLICT",
-						`"${command.board}" was renamed as the move began. Run the move again. Nothing was written.`,
-					),
-		);
-	} finally {
-		name.release();
-	}
+	// The file is located again once the lease is held: a rename finished before
+	// it leaves nothing at the name, and the move is refused as missing.
+	const result = await underBothLeases(plan, address, () =>
+		moveUnderLeases(plan, locateSemanticBoard(address.name, command.vault)),
+	);
 	if (result.outcome === "moved" && claimWriterId(command.vault, address.key) === result.heldAs) {
 		releaseClaim(command.vault, address.key);
 	}
