@@ -380,13 +380,19 @@ checkout (`archboard repo list`), by the same rules as in this vault: the name
 the board had before a rename and a name in other letters open it too, and the
 kind is the level that board declares. An identity that names this vault's own
 repository stays in this vault. A vault in no repository has no identity, so
-nothing can link into one. Check `archboard semantic` in that repository before
-you write the link (`archboard -C <directory> semantic`).
+nothing can link into one. List the boards of that repository's own vault
+before you write the link, and write the name the board goes by there.
 
 ```json
-{ "name": "Payments", "kind": "service",
-  "drillDown": { "board": "Payments", "variant": { "kind": "current" },
-                 "repo": "github.com/acme/payments" } }
+{
+	"name": "Payments",
+	"kind": "service",
+	"drillDown": {
+		"board": "Payments",
+		"variant": { "kind": "current" },
+		"repo": "github.com/acme/payments"
+	}
+}
 ```
 
 `archboard check` warns on these mistakes, naming the node:
