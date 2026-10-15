@@ -3,11 +3,11 @@ id: TASK-478.03
 title: >-
   archboard-pr writes the three /pr sections, with the picture and walkthrough
   in the Summary
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-15 15:39'
-updated_date: '2026-10-15 15:43'
+updated_date: '2026-10-15 17:12'
 labels: []
 dependencies:
   - TASK-478.01
@@ -25,12 +25,12 @@ archboard-pr asks for ten explainer parts (SKILL.md section 4) and the user's /p
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The skill writes one body with exactly Summary, Evidence and Merge Danger, credits the pr skill it follows, and no longer asks for What changed, Changed but not drawn, What it can reach, Reading order, Where to look closely, Proposed and built, Open it or a before render
-- [ ] #2 The body carries no tool vocabulary and no account of the agent's process; the board, the proposal and what it is drawn against live in one HTML comment inside the markers, which an update reads
-- [ ] #3 For a stack, the skill keeps one design board, puts each PR's proposal on it or on the drill-down board of one of its parts, branched from the proposal of the PR below, draws each picture `--against` that proposal with a title naming the design part, and opens the Summary with a line that gives the position and the neighbours
-- [ ] #4 A narrated walkthrough of three or four beats and about 90 seconds sits under the picture, with chapters and transcript collapsed, and the Summary prose does not repeat it
-- [ ] #5 Evidence is one before and after; status news goes in a PR comment; an update replaces the whole section; no paragraph is copied from another PR's body
-- [ ] #6 The skill carries one worked example body and points the agent at the repository's glossary; references/explainer.md is removed, and every remaining reference holds only what the skill still uses
+- [x] #1 The skill writes one body with exactly Summary, Evidence and Merge Danger, credits the pr skill it follows, and no longer asks for What changed, Changed but not drawn, What it can reach, Reading order, Where to look closely, Proposed and built, Open it or a before render
+- [x] #2 The body carries no tool vocabulary and no account of the agent's process; the board, the proposal and what it is drawn against live in one HTML comment inside the markers, which an update reads
+- [x] #3 For a stack, the skill keeps one design board, puts each PR's proposal on it or on the drill-down board of one of its parts, branched from the proposal of the PR below, draws each picture `--against` that proposal with a title naming the design part, and opens the Summary with a line that gives the position and the neighbours
+- [x] #4 A narrated walkthrough of three or four beats and about 90 seconds sits under the picture, with chapters and transcript collapsed, and the Summary prose does not repeat it
+- [x] #5 Evidence is one before and after; status news goes in a PR comment; an update replaces the whole section; no paragraph is copied from another PR's body
+- [x] #6 The skill carries one worked example body and points the agent at the repository's glossary; references/explainer.md is removed, and every remaining reference holds only what the skill still uses
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,3 +43,15 @@ archboard-pr asks for ten explainer parts (SKILL.md section 4) and the user's /p
 5. references: delete explainer.md; renders.md drops the before render and adds --against and the title rule; walkthrough.md becomes 3 to 4 beats, about 90 s, chapters inside the collapsed transcript, recorded --against; posting.md wraps the whole body in the markers and moves status news to comments; reconcile.md and ephemeral.md lose Proposed and built, Open it and About the picture.
 6. After TASK-478.01 lands, make sure that the flags the skill names match the CLI help of render, rasterize and record.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Gate: bun run check passed at e92b4f82f plus the skill commits (exit 0, no failing test in any lane, serial browser lane included). Evidence for the criteria: the skill text at c5dbef837, and the three bodies a fresh agent wrote with it in TASK-478.04 (exactly three sections, the state comment the only archboard word, a stack line, pictures drawn against the proposal below, three-beat walkthroughs with chapters in the collapsed transcript, CI evidence). The trial notes led to the fixes in c5dbef837. tests/system/repository-policy skill-frontmatter and skill-links: 7 pass.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard-pr now writes one body with Summary, Evidence and Merge Danger, after the MIT pr skill by Matt Pocock. The Summary holds a stack line, one to three sentences, one picture drawn --against the variant its proposal came from, and a three-beat narrated walkthrough with chapters inside the collapsed transcript. Board, proposal and against live in one hidden HTML comment. A never-list keeps tool words, process, negative-scope lists, copied paragraphs and status news out of the body. A stack keeps one chain per board, branched from the proposal below, names parts as the design does, and starts a board that nobody built with a base draft. references/explainer.md is gone, and the references were cut to what the skill uses (1,079 lines before, 964 after). A fresh agent followed it on Platform #599, #607 and #610 (TASK-478.04), and its notes led to c5dbef837. Commits a75db4380, c5dbef837.
+<!-- SECTION:FINAL_SUMMARY:END -->
