@@ -124,8 +124,9 @@ your claim on the board: claim it again with `-C <dir>` to go on there. When
 worktree, a finished move makes it the chosen one for the whole machine, as
 `browser show` does, and the answer's `chose` names the checkout it replaced.
 Tell the user. A person can make the same move in the browser, from the Move
-board control in the header of the pane that shows the board. The dialog lists
-what the move rewrites before the person moves it, and it writes no doing line.
+board control in the header of the pane that shows the board. Before the move,
+the dialog lists the drill-downs that the move rewrites. A move from the browser
+writes no doing line.
 
 ```bash
 archboard -C ~/meta semantic move Payments --to ~/payments --expect-version 14 --doing "moving the board into the repository it describes"
