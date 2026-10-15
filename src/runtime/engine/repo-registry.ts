@@ -442,7 +442,8 @@ function repositoryOfVault(vault: string): VaultRepository | undefined {
 	/**
 	 * Whether a registered directory holds the vault. Its `.archboard/vault` is
 	 * compared by real path, as a command names a vault and the server lists one,
-	 * so a vault that is a symbolic link is still the vault of its checkout. A
+	 * so a checkout reached through a symbolic link still holds its vault. A vault
+	 * whose own link leads out of the layout is refused before it is listed. A
 	 * directory that is gone, such as a deleted worktree, is compared by where its
 	 * vault was, so a pane still in that vault is known to be of its repository.
 	 * @param root The directory.
