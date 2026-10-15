@@ -75,7 +75,9 @@ rules that will not stop you:
   field in its body, and `?vault=` on the pane socket's URL, which names it once
   for that socket. A call that names none is refused with `VAULT_REQUIRED`
   (400). A vault the server cannot read is refused with `VAULT_UNREADABLE` (404),
-  and nothing is created. There is no default vault, and the server starts with
+  and nothing is created. A pane socket that names one goes to its repository's
+  chosen checkout, else to where a page opens, and is refused only with neither.
+  There is no default vault, and the server starts with
   none. The server's process memory
   is keyed by vault and board together (`boardMemoryKey`): claims, revocations,
   announced lock state, doing lines, agent activity and the disk watch. Each
