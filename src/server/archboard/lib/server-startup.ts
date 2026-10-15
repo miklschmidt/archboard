@@ -29,7 +29,6 @@ import {
 	PORT,
 } from "@/server/archboard/lib/listener-address";
 import { messageOf } from "@/server/archboard/lib/request-board";
-import { serverVault } from "@/server/archboard/lib/server-vault";
 import { serverStartupFailureMessage } from "@/server/archboard/lib/startup-error";
 import {
 	closeWebSocketServer,
@@ -69,29 +68,6 @@ function reportServerStopError(error: unknown): void {
 	} else {
 		process.stderr.write(message + "\n");
 		process.exitCode = 1;
-	}
-}
-
-/**
- * Refuse to start without a vault (ADR 0015). Every board is a note, so a
- * server without a vault has nowhere to put anything, and the failure it used
- * to produce came later and cost more: the canvas opened, somebody drew on it,
- * and the drawing turned out to have been nowhere all along.
- *
- * Straight to stderr as well as the log, because a first run is exactly the
- * run whose LOG_LEVEL nobody has set, and the whole value of this is that the
- * person who started it reads it.
- * @returns The refusal, or null when a vault is configured.
- */
-function vaultRefusal(): string | null {
-	try {
-		serverVault();
-		return null;
-	} catch (error) {
-		const message = messageOf(error);
-		process.stderr.write(message + "\n");
-		logger.error("Refusing to start Archboard server: no vault (ARCHBOARD_VAULT is unset).");
-		return message;
 	}
 }
 
@@ -381,13 +357,13 @@ function cleanupProvenBeforeResourceAcquisition(): boolean {
 }
 
 /**
- * Start the server: refuse without a vault or beside a duplicate listener,
- * then run every resource through the lifetime.
+ * Start the server: refuse beside a duplicate listener, then run every resource
+ * through the lifetime. A server needs no vault, because every call names its own (ADR 0049).
  */
 async function startServer(): Promise<void> {
 	let cleanupProven = cleanupProvenBeforeResourceAcquisition;
 	const terminal = startupTerminal(() => cleanupProven());
-	const refusal = vaultRefusal() ?? (await loopbackRefusal());
+	const refusal = await loopbackRefusal();
 	if (refusal !== null) {
 		terminal.report(refusal);
 		throw new Error(refusal);

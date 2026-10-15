@@ -23,7 +23,10 @@ async function servedRepository(base: string): Promise<string> {
 		headers: { Origin: base, "Sec-Fetch-Site": "same-origin" },
 	});
 	const body = (await response.json()) as RepositoryListing;
-	const served = body.repositories.find((entry) => entry.vault === body.served);
+	const served =
+		body.served === null
+			? undefined
+			: body.repositories.find((entry) => entry.vault === body.served);
 	if (served === undefined) {
 		throw new Error(`The server at ${base} lists no repository for the vault it serves.`);
 	}
