@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 05:09'
+updated_date: '2026-10-15 05:24'
 labels: []
 dependencies:
   - TASK-472.12
@@ -49,3 +49,18 @@ A board sometimes lives in the wrong repository, for example a board that a meta
 5. Docs: archboard skill (references/edit.md and SKILL.md command list), the semantic move help, CONTEXT/AGENTS invariant on one write (the move is the fixed-order exception, ADR 0051), INSTALL.md if it lists board commands.
 6. Boards this task changes (for the parent to draw, .archboard/vault untouched): Board persistence (a Move node on move.ts, using Write under lease, Board lease, Former names, Vault checkouts, Atomic file replacement), Archboard server routes (a Move route node, using Semantic board store and Vault requirement), Command interface (a Move command node on semantic-move.ts using Board client).
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Decisions (TASK-472.15):
+- The store operation is moveSemanticBoard (src/runtime/semantic-board-store/lib/move.ts, with move-checks.ts and move-drill-downs.ts). It takes the board's name lease in the target vault first (async, admitted as write.ts admits), then the source board's lease through underBoardLease, and does all the work in one synchronous pass inside both: checks, target note, rewrites, source unlink. Inside a pass nothing can wait, so each board whose drill-down is rewritten is taken with withBoardLockIfFreeSync; when somebody else holds one the move answers MOVE_STOPPED (exit 5) with the board in both vaults.
+- Running the move again finishes it: a target board with the moved board's id is the earlier half of the same move and is overwritten from the source; a drill-down the first run rewrote no longer opens a board of the source vault, so it is skipped.
+- Every variant's drill-downs are rewritten, frozen history included, because a link on a historical variant would otherwise open nothing (ADR 0051: rewritten wherever the move changes what it means). A self-link on the moved board stays as it is.
+- BOARD_EXISTS covers the board's name and each of its former names against every name and former name in the target (ADR 0036: a former name is not free).
+- The target note is the source board through acceptedBoard(source, candidate): its version advances by one and the target vault's vocabulary is checked only for kinds new against the source (none).
+- --expect-version is optional and checked when given, as for discard. The move does not refuse a target checkout that is not the chosen one of its identity: ADR 0051 moves into the vault found from --to, and drill-downs then resolve to the chosen checkout.
+- --to is found as -C finds a vault (findVaultOf in command-routing), and a holder the registry does not know is registered; the answer says so in to.registered.
+- The route announces board_note for the target and for each rewritten board, board_note discarded in the source vault, and the doing line in both. It releases this writer's claim on the source board, as discard does; the claim is not carried to the target.
+- The move contract (BoardMoveInputSchema, MoveEndSchema, MovedDrillDownSchema, BoardMoveAnswerSchema) is in src/shared/semantic-board/lib/move.ts, so the store, the route and the client read one shape.
+<!-- SECTION:NOTES:END -->
