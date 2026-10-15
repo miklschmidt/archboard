@@ -85,6 +85,54 @@ test("the run's vault is the .archboard/vault of its checkout, made after the cl
 	});
 });
 
+/**
+ * The vault the CLI's finder addresses from each directory, run in a process
+ * of its own with the run's environment, as an author's command would be.
+ * @param environment The run's environment.
+ * @param directories Where the command runs.
+ * @returns The vault each one addresses, or the refusal's code.
+ */
+function vaultsFoundFrom(
+	environment: Record<string, string>,
+	directories: readonly string[],
+): string[] {
+	const finder = path.resolve(import.meta.dir, "../../engine/vault-finder.ts");
+	const script = `const { findVault } = await import(${JSON.stringify(finder)});
+for (const cwd of process.argv.slice(1)) {
+	const found = await findVault({ directory: null, environment: undefined, cwd });
+	console.log(found.ok ? found.found.path : found.code);
+}`;
+	const result = Bun.spawnSync([process.execPath, "-e", script, ...directories], {
+		env: environment,
+	});
+	return result.stdout.toString().trim().split("\n");
+}
+
+test("a command anywhere in the world addresses the run's vault, never one the batch sits under", () => {
+	// Batches sit in the archboard checkout, whose own vault is a git checkout's vault above the world.
+	const above = fs.mkdtempSync(path.join(os.tmpdir(), "run-world-above-"));
+	try {
+		Bun.spawnSync(["git", "init", "-q", above]);
+		fs.mkdirSync(path.join(above, ".archboard", "vault"), { recursive: true });
+		const paths = prepareRunDirectory(path.join(above, ".skill-evals", "batch", "1"));
+		Bun.spawnSync(["git", "init", "-q", paths.flask]);
+		fs.mkdirSync(paths.vault, { recursive: true });
+		const source = path.join(paths.flask, "src");
+		fs.mkdirSync(source);
+		const vault = fs.realpathSync(paths.vault);
+		expect(
+			vaultsFoundFrom(runEnvironment(paths, "http://127.0.0.1:1"), [
+				source,
+				paths.home,
+				paths.temporary,
+				paths.world,
+			]),
+		).toEqual([vault, vault, vault, vault]);
+	} finally {
+		fs.rmSync(above, { recursive: true, force: true });
+	}
+});
+
 test("the author's sandbox may write its world and nothing above it", () => {
 	withRun((paths) => {
 		const config = authorConfigToml(
