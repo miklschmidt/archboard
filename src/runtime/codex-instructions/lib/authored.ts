@@ -9,9 +9,9 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 =
-	"426166c9826fa651e58988ded8ad352e9e3479ca1e75e9dcfc234bab048c0657" as const;
+	"f2d6e464f70a94f95695d8cf32746994f116d46da3dc5a9dbeac2e4b40d50d4e" as const;
 const COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256 =
-	"cda1c31610e7cac6597723e46e1a1da585055f5190a6f698fcd6b3a929f984b9" as const;
+	"3f550c743491c3b4ca6c6fb5bf3f93b6371e3c20f2d7547e7c836171e8627877" as const;
 
 interface AuthoredInstructionIntegrity {
 	readonly workhorseSha256: string;
