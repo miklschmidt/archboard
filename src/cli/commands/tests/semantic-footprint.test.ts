@@ -5,7 +5,9 @@
 // Archboard server is a stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
+import { z } from "zod";
 import { FootprintReplySchema, type FootprintReply } from "@/shared/footprint/index";
+import { nameStandInVault } from "./stand-in-vault.ts";
 
 const subject = (id: string, name: string) => ({ kind: "node" as const, id, name });
 const reply: FootprintReply = {
@@ -57,6 +59,7 @@ const reply: FootprintReply = {
 	skipped: [{ subject: subject("pU", "Customer"), reason: "unbound", named: [] }],
 };
 
+const vault = nameStandInVault();
 let service = "";
 const asked: URL[] = [];
 let refusal: { status: number; code: string } | undefined;
@@ -66,7 +69,7 @@ const server = Bun.serve({
 	fetch(request) {
 		const url = new URL(request.url);
 		if (url.pathname === "/health") return Response.json({ service, status: "ok" });
-		asked.push(url);
+		asked.push(new URL(vault.unnamed(url), url));
 		if (url.pathname !== "/api/semantic-boards/footprint") {
 			return Response.json(
 				{ success: false, error: `unexpected ${url.pathname}` },
@@ -89,7 +92,7 @@ const environment = {
 };
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
-// Imported only now, because the CLI reads where its server is as it loads.
+// Imported only now, because the CLI reads where its server and its vault are as it loads.
 const [config, client, { runCli }] = await Promise.all([
 	import("@/runtime/engine/config"),
 	import("@/runtime/engine/server-client"),
@@ -108,6 +111,7 @@ afterAll(async () => {
 		else process.env[key] = value;
 	}
 	await server.stop(true);
+	vault.restore();
 });
 
 /**
@@ -157,7 +161,9 @@ test("the command asks the footprint route with the board, the base and the prop
 	expect(asked.map((one) => Object.fromEntries(one.searchParams))).toEqual([
 		{ board: "Orders", base: "origin/main", variant: "TASK-1" },
 	]);
-	expect(FootprintReplySchema.parse(JSON.parse(stdout))).toEqual(reply);
+	const { vault: named, ...printed } = z.record(z.string(), z.unknown()).parse(JSON.parse(stdout));
+	expect(named).toEqual({ path: vault.path, origin: "environment" });
+	expect(FootprintReplySchema.parse(printed)).toEqual(reply);
 	const lines = stderr.split("\n");
 	expect(lines.some((line) => line.includes("Ledger") && line.includes("src/ledger.ts"))).toBe(
 		true,

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { AnyCommandContract } from "@/cli/command-contract/contract";
 import { usageOf } from "@/cli/command-contract/commander";
+import { AnsweredVaultSchema } from "@/cli/command-contract/schemas";
 
 interface RegistryContractEntry {
 	name: string;
@@ -64,6 +65,7 @@ function introspectContracts(entries: readonly RegistryContractEntry[]) {
 			description: contract.description,
 			examples: contract.examples,
 			parameters: contract.parameters,
+			shared: contract.shared,
 			input: {
 				schema: jsonSchema(contract.input.ingress, "input"),
 				stages: (contract.input.stages ?? []).map((stage) => ({
@@ -85,4 +87,18 @@ function introspectContracts(entries: readonly RegistryContractEntry[]) {
 	});
 }
 
-export { type RegistryContractEntry, introspectContracts };
+/**
+ * The fields that the runner adds to answers, described once rather than in
+ * every result schema they appear in.
+ * @returns Each field, with when it is present and its JSON Schema.
+ */
+function introspectAnswerFields() {
+	return {
+		vault: {
+			when: "Every JSON object answer of a command whose shared options include directory (-C)",
+			schema: jsonSchema(AnsweredVaultSchema),
+		},
+	};
+}
+
+export { type RegistryContractEntry, introspectAnswerFields, introspectContracts };

@@ -81,7 +81,7 @@ const PaneOpenResultSchema = z.looseObject({
 type PaneOpenResult = z.infer<typeof PaneOpenResultSchema>;
 const paneOpenContract = defineCommand({
 	path: ["browser", "open"],
-	shared: ["url"],
+	shared: ["url", "directory"],
 	summary: "Open a second browser pane",
 	description: "Splits the connected browser canvas; the new pane inherits the displayed board.",
 	examples: ["archboard browser open"],
@@ -383,7 +383,7 @@ const ShowResultSchema = z.looseObject({
 type ShowResult = z.infer<typeof ShowResultSchema>;
 const browserShowContract = defineCommand({
 	path: ["browser", "show"],
-	shared: ["url", "as-session"],
+	shared: ["url", "directory", "as-session"],
 	summary: "Show a board in one pane",
 	description:
 		"Points one pane at one board. Nothing is written: a board is shown, not created, and a " +

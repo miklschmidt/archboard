@@ -330,6 +330,33 @@ describe("command-contract runner", () => {
 		expect(execution.stderr).toBe("contacted local boundary\n");
 	});
 
+	test("an addressed vault reaches the handler and is named beside a JSON object answer only", async () => {
+		const vault = { path: "/work/shop/.archboard/vault", origin: "-C" as const };
+		const seen: unknown[] = [];
+		const answering = (result: unknown, mode: "json" | "text") =>
+			defineCommand({
+				...proofContract({ result }),
+				output: {
+					cases: [{ id: mode, when: {}, mode, description: mode }],
+					select: () => mode,
+				},
+				async handler(_input, context) {
+					seen.push(context.vault);
+					return { result };
+				},
+			});
+		const object = await executePublic(answering({ ok: true }, "json"), [], vault);
+		expect(JSON.parse(object.stdout)).toEqual({ ok: true, vault });
+		expect(seen).toEqual([vault]);
+		const list = await executePublic(answering([1, 2], "json"), [], vault);
+		expect(JSON.parse(list.stdout)).toEqual([1, 2]);
+		const text = await executePublic(answering("plain words", "text"), [], vault);
+		expect(text.stdout).toBe("plain words\n");
+		const unaddressed = await executePublic(answering({ ok: true }, "json"));
+		expect(JSON.parse(unaddressed.stdout)).toEqual({ ok: true });
+		expect(seen.at(-1)).toBeNull();
+	});
+
 	test("a handler's network effect and result are observable through the two-argument runner", async () => {
 		const requests: string[] = [];
 		const server = Bun.serve({

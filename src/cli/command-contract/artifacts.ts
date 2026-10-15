@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import { cliContractRegistry } from "@/cli/commands/run";
-import { introspectContracts } from "@/cli/command-contract/introspection";
+import { introspectAnswerFields, introspectContracts } from "@/cli/command-contract/introspection";
 
 const CLI_CONTRACT_ARTIFACT_NAMES = [
 	"cli-command-audit.md",
@@ -95,6 +95,7 @@ async function renderCliContractArtifacts(root: string) {
 	);
 	const registry = cliContractRegistry();
 	const proof = introspectContracts(registry);
+	const answerFields = introspectAnswerFields();
 	const routes = registry.map(
 		({ name, parent, classification, handlerOwner, parserOwner, bare, childDiscovery }) => ({
 			name,
@@ -141,6 +142,7 @@ async function renderCliContractArtifacts(root: string) {
 			schemaVersion: 7,
 			generatedFrom: "src/cli/commands/run.ts",
 			routes,
+			answerFields,
 			contracts: proof,
 		},
 		null,
@@ -151,6 +153,16 @@ async function renderCliContractArtifacts(root: string) {
 		"<!-- Generated from the run.ts registry and public CommandContract metadata. -->",
 		"# Command contract proof reference",
 		"",
+		"## Answer fields",
+		"",
+		...Object.entries(answerFields).flatMap(([field, { when, schema }]) => [
+			`\`${field}\`: ${when}.`,
+			"",
+			"```json",
+			JSON.stringify(schema, null, 2),
+			"```",
+			"",
+		]),
 	];
 	for (const contract of proof) {
 		proofMarkdown.push(

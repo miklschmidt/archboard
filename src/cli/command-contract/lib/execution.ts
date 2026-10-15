@@ -11,6 +11,7 @@ import { CommanderArgvParser } from "@/cli/command-contract/lib/commander-adapte
 import { processCommandHost } from "@/cli/command-contract/lib/host";
 import { commitArtifact, presentResult } from "@/cli/command-contract/lib/presentation";
 import { requirePrerequisite } from "@/cli/command-contract/lib/prerequisites";
+import type { AnsweredVault } from "@/cli/command-contract/schemas";
 
 const commanderParser = new CommanderArgvParser();
 
@@ -127,12 +128,14 @@ function parseInput<T>(schema: z.ZodType<T>, value: unknown): T {
  * shared parser, and prerequisite checks memoised so a handler that asks
  * twice starts the server once.
  * @param signal - The abort signal the command runs under.
+ * @param vault - The vault the command addressed, when it found one.
  * @returns The context handed to the handler.
  */
-function createCommandContext(signal: AbortSignal): CommandContext {
+function createCommandContext(signal: AbortSignal, vault: AnsweredVault | null): CommandContext {
 	const prerequisiteCache = new Map<string, Promise<void>>();
 	return {
 		signal,
+		vault,
 		/**
 		 * Ensures a prerequisite, at most once per command run.
 		 * @param prerequisite - What the command needs running.
@@ -207,6 +210,30 @@ function validatedArtifact(outputCase: OutputCase, pending: unknown): PendingArt
 	return outputCase.artifact ? outputCase.artifact.parse(pending) : z.undefined().parse(pending);
 }
 
+/** A result that is one JSON object, which can carry one more field. */
+const objectResultSchema = z.record(z.string(), z.unknown());
+
+/**
+ * A validated result with the vault the command addressed beside it. Only a
+ * JSON object answer carries it: text and raw output stay what they are, and
+ * an array has nowhere to put a field.
+ * @param outputCase - The selected output case.
+ * @param result - The validated result.
+ * @param vault - The vault the command addressed, or null when it found none.
+ * @returns The result to publish.
+ */
+function withAnsweredVault(
+	outputCase: OutputCase,
+	result: unknown,
+	vault: AnsweredVault | null,
+): unknown {
+	if (vault === null || (outputCase.mode !== "json" && outputCase.mode !== "file-receipt")) {
+		return result;
+	}
+	const object = objectResultSchema.safeParse(result);
+	return object.success && !Array.isArray(result) ? { ...object.data, vault } : result;
+}
+
 /**
  * Validates and publishes what a handler produced: the result the contract
  * declares, the artifact its output case declares, and the exit code of a
@@ -214,15 +241,17 @@ function validatedArtifact(outputCase: OutputCase, pending: unknown): PendingArt
  * @param contract - The command that ran.
  * @param input - The parsed input, which selects the output case.
  * @param execution - What the handler returned.
+ * @param vault - The vault the command addressed, which a JSON object answer names.
  */
 function publishExecution(
 	contract: AnyCommandContract,
 	input: unknown,
 	execution: Awaited<ReturnType<AnyCommandContract["handler"]>>,
+	vault: AnsweredVault | null,
 ): void {
 	const outcome = selectedOutcome(contract, execution.outcome);
 	const outputCase = selectedCase(contract, input);
-	const result = contract.result.parse(execution.result);
+	const result = withAnsweredVault(outputCase, contract.result.parse(execution.result), vault);
 	commitArtifact(outputCase, validatedArtifact(outputCase, execution.pendingArtifact));
 	const presentation = { outputCase, result, diagnostics: execution.diagnostics ?? [] };
 	if (outcome) {
@@ -240,14 +269,16 @@ function publishExecution(
  * @param contract - The command to run.
  * @param argv - The arguments after the command path.
  * @param signal - The abort signal the command runs under.
+ * @param vault - The vault the command addressed, when it found one.
  */
 export async function executeCommand(
 	contract: AnyCommandContract,
 	argv: readonly string[],
 	signal: AbortSignal = new AbortController().signal,
+	vault: AnsweredVault | null = null,
 ): Promise<void> {
 	const tokens = await commanderParser.parse(contract, argv);
 	const input = parseInput(contract.input.ingress, tokens);
-	const execution = await contract.handler(input, createCommandContext(signal));
-	publishExecution(contract, input, execution);
+	const execution = await contract.handler(input, createCommandContext(signal, vault));
+	publishExecution(contract, input, execution, vault);
 }

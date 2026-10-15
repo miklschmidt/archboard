@@ -18,9 +18,10 @@ let requestedBoard: string | null = null;
 /**
  * The vault this invocation names, which every server call states (ADR 0049):
  * one server serves several vaults and cannot guess which this command means.
- * Today that is the vault the environment configures, or none.
+ * A command that finds its vault (`-C`, the working directory) names the one it
+ * found; until it does, this is the vault the environment configures, or none.
  */
-const requestedVault: string | null = ARCHBOARD_VAULT ? resolve(ARCHBOARD_VAULT) : null;
+let requestedVault: string | null = ARCHBOARD_VAULT ? resolve(ARCHBOARD_VAULT) : null;
 
 /** What this invocation says it is doing, or null when it says nothing. */
 let writeDoing: string | null = null;
@@ -38,6 +39,14 @@ let expectedVersion: number | null | undefined;
  */
 function setRequestedBoard(key: string | null): void {
 	requestedBoard = key;
+}
+
+/**
+ * Name the vault every later request is about.
+ * @param vault The vault directory, absolute, or null to name none.
+ */
+function setRequestedVault(vault: string | null): void {
+	requestedVault = vault;
 }
 
 /**
@@ -203,6 +212,7 @@ function withWriteClaims(path: string, method?: string): string {
 
 export {
 	withVault,
+	setRequestedVault,
 	setWriteSession,
 	currentWriteSession,
 	addQuery,

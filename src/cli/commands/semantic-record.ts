@@ -21,6 +21,7 @@ import {
 } from "@/shared/walkthrough-recording";
 import { currentWriteDoing } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
+import { repositoryOfVault } from "@/runtime/engine/repo-registry";
 import {
 	checkSemanticVaultOnServer,
 	discardSemanticBoardOnServer,
@@ -34,7 +35,7 @@ import {
 	stateTalkPlace,
 	type TalkPlace,
 } from "@/runtime/walkthrough-recorder";
-import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { CliUsageError, defineCommand, type CommandContext } from "@/cli/command-contract/contract";
 import { doingRefusal, serverRefusal } from "@/cli/command-contract/common";
 import {
 	containerOf,
@@ -90,6 +91,39 @@ const recordingFailedRefusal = {
 	description:
 		"The talk showed a step and did not finish, for example the voice said nothing about the next one, or the board changed while it was recorded. Nothing was written and the board was kept.",
 };
+
+const checkoutNotChosenRefusal = {
+	code: "CHECKOUT_NOT_CHOSEN",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"The vault is in a checkout that is not the chosen checkout of its repository, and the recording's page reads the chosen one. Nothing was recorded.",
+};
+
+/**
+ * The repository the recording's page opens the board in: the one whose vault
+ * the command found. The page names a repository and reads its chosen
+ * checkout, so a vault in another checkout of it would record another vault's
+ * board, and is refused. A vault no registered directory holds names none, and
+ * the page opens where the server opens a page.
+ * @param vault The vault the command addressed.
+ * @returns The repository's name, or null.
+ * @throws {Error} With code CHECKOUT_NOT_CHOSEN when the vault's checkout is not the chosen one.
+ */
+function recordedRepository(vault: CommandContext["vault"]): string | null {
+	const repository = vault === null ? undefined : repositoryOfVault(vault.path);
+	if (repository === undefined) return null;
+	if (!repository.chosen) {
+		throw Object.assign(
+			new Error(
+				`${repository.root} is not the chosen checkout of ${repository.name}, and the recording's page reads the chosen one. ` +
+					`Run \`archboard repo use ${repository.root}\` to read this checkout, then record again. Nothing was recorded.`,
+			),
+			{ code: checkoutNotChosenRefusal.code },
+		);
+	}
+	return repository.name;
+}
 
 /**
  * Where the talk is kept: the directory asked for, or a new one in the state directory.
@@ -223,7 +257,7 @@ function failureOf(error: unknown): string {
 
 const semanticRecordContract = defineCommand({
 	path: ["semantic", "record"],
-	shared: ["url", "doing", "as-session"],
+	shared: ["url", "directory", "doing", "as-session"],
 	summary: "Record a board's walkthrough to a video file, narrated by the voice",
 	description:
 		"Presents one walkthrough of a semantic board in a private headless Chromium at 1920x1080, " +
@@ -357,6 +391,7 @@ const semanticRecordContract = defineCommand({
 		recordingRefusedRefusal,
 		recordingFailedRefusal,
 		renderFailedRefusal,
+		checkoutNotChosenRefusal,
 	],
 	relationships: [
 		{
@@ -390,6 +425,7 @@ const semanticRecordContract = defineCommand({
 		requireWritableDirectory(input.out, file);
 		const discard = input.discard === true;
 		requireDoingForDiscard(discard);
+		const repository = recordedRepository(context.vault);
 		await context.require("server", "semantic record");
 		const board = await readSemanticBoardOnServer(input.name);
 		const variant = askedVariant(board, input.variant);
@@ -403,6 +439,7 @@ const semanticRecordContract = defineCommand({
 			board,
 			policy: await checkSemanticVaultOnServer(),
 			variant: input.variant === undefined ? null : variant.id,
+			repository,
 			walkthrough: { id: walkthrough.id, name: walkthrough.name },
 			language: input.language,
 			container,

@@ -58,7 +58,7 @@ const statedArchitectureKeys = BoardCreateInputSchema.keyof().options.filter(
 
 const semanticNewContract = defineCommand({
 	path: ["semantic", "new"],
-	shared: ["url", "doing", "as-session"],
+	shared: ["url", "directory", "doing", "as-session"],
 	summary: "Create a semantic architecture board",
 	description:
 		"Creates one persisted semantic board, empty or populated from a stated architecture. " +
@@ -159,7 +159,7 @@ const EditInputSchema = z.object({
 
 const semanticEditContract = defineCommand({
 	path: ["semantic", "edit"],
-	shared: ["url", "doing", "expect-version", "as-session"],
+	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Change a semantic architecture board",
 	description:
 		"Applies one batch of stated changes to a semantic board in one write. The batch is JSON with " +
@@ -284,7 +284,7 @@ const BranchInputSchema = z.object({
 
 const semanticBranchContract = defineCommand({
 	path: ["semantic", "branch"],
-	shared: ["url", "doing", "expect-version", "as-session"],
+	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Derive a proposal from a variant of a semantic board",
 	description:
 		"Adds a proposal derived from a variant this board already has. The predecessor's architecture " +
@@ -405,7 +405,7 @@ const SemanticListingResultSchema = z.object({
 
 const semanticContract = defineCommand({
 	path: ["semantic"],
-	shared: ["url"],
+	shared: ["url", "directory"],
 	summary: "Every semantic architecture board in the vault",
 	description:
 		"Lists the semantic boards the vault holds: every `.semantic.json` aggregate, and nothing " +
@@ -456,7 +456,7 @@ const ShowInputSchema = z.object({ name: z.string() });
 
 const semanticShowContract = defineCommand({
 	path: ["semantic", "show"],
-	shared: ["url"],
+	shared: ["url", "directory"],
 	summary: "Read one semantic board",
 	description:
 		"Prints one semantic board's whole aggregate: every variant, its lifecycle, its ancestry and " +
