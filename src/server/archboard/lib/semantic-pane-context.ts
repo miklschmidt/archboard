@@ -89,6 +89,17 @@ function semanticPaneContexts(vault: string): readonly SemanticPaneContext[] {
 	return [...reports.values()].filter((report) => paneVaults.get(report.clientId) === vault);
 }
 
+/**
+ * Forget what one pane said it was reading, because the server moved it into
+ * another vault (ADR 0050). What it picked out is of a board of the vault it
+ * left, and stays unsaid until the pane reports from the vault it is in now. A
+ * report it sent from the old vault on the way is refused by its vault.
+ * @param clientId The pane's client id.
+ */
+function forgetSemanticPaneContext(clientId: string): void {
+	reports.delete(clientId);
+}
+
 /** Forget every report, for a server that is starting over. */
 function forgetSemanticPaneContexts(): void {
 	reports.clear();
@@ -158,6 +169,7 @@ function mountSemanticPaneContextRoutes(app: Express): void {
 }
 
 export {
+	forgetSemanticPaneContext,
 	forgetSemanticPaneContexts,
 	mountSemanticPaneContextRoutes,
 	recordSemanticPaneContext,
