@@ -106,6 +106,8 @@ test("semantic move moves the board to the vault --to finds and lists every rewr
 		"Payments",
 		"--to",
 		product,
+		"--expect-version",
+		"1",
 		"--doing",
 		"moving the board into the repository it describes",
 	]);
@@ -148,6 +150,8 @@ test("a pane on the moved board follows it to its new repository, and a pane on 
 			"Billing",
 			"--to",
 			product,
+			"--expect-version",
+			"1",
 			"--doing",
 			doing,
 		]);
@@ -180,9 +184,22 @@ test("a refused move exits with the status its refusal declares and moves nothin
 		"Refunds",
 		"--to",
 		join(metaVault, ".."),
+		"--expect-version",
+		"1",
 		"--doing",
 		"moving the board into its own repository",
 	]);
 	expect(refused.status).toBe(2);
-	expect(holds(metaVault, "Refunds")).toBe(true);
+	// A move states the version it read, as every write to a board does.
+	const unversioned = cli(metaVault, [
+		"semantic",
+		"move",
+		"Refunds",
+		"--to",
+		product,
+		"--doing",
+		"moving the board without saying which version it read",
+	]);
+	expect(unversioned.status).not.toBe(0);
+	expect([holds(metaVault, "Refunds"), holds(productVault, "Refunds")]).toEqual([true, false]);
 }, 120_000);

@@ -116,10 +116,11 @@ source vault that opens the board then names the target's repository, and one
 on the board that opens a board of the source vault then names the source's
 repository. The answer's `rewritten` lists every drill-down that it rewrote,
 and `to.registered` says when the command registered the target checkout.
-`--expect-version` is optional and checked when given.
+`--expect-version` is the version you read, as for every write. The move ends
+your claim on the board: claim it again with `-C <dir>` to go on there.
 
 ```bash
-archboard -C ~/meta semantic move Payments --to ~/payments --doing "moving the board into the repository it describes"
+archboard -C ~/meta semantic move Payments --to ~/payments --expect-version 14 --doing "moving the board into the repository it describes"
 ```
 
 Refused, with nothing written: `--to` in the board's own repository, also in
