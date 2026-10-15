@@ -14,8 +14,8 @@
 // history; they are left out only when each part's commits are listed.
 //
 // The answer is kept in memory, keyed on everything it derives from: the
-// board and its version, the variant, the start of the period, and each
-// checkout with its HEAD. A request that arrives while it is made waits for
+// vault, the board and its version, the variant, the start of the period, and
+// each checkout with its HEAD. A request that arrives while it is made waits for
 // that work. Nothing is written anywhere.
 
 import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@/runtime/code-target/index";
@@ -288,8 +288,8 @@ interface LocalityReading {
 
 /**
  * A reading of locality that keeps its answers while nothing they derive from
- * has moved: the board's version, the variant, the start of the period, and
- * each checkout with its HEAD.
+ * has moved: the vault, the board's version, the variant, the start of the
+ * period, and each checkout with its HEAD.
  * @returns The reading.
  */
 function createLocalityReading(): LocalityReading {
@@ -316,7 +316,10 @@ function createLocalityReading(): LocalityReading {
 			// Only the checkouts the parts are bound into: a commit in another
 			// registered repository changes nothing this answer says.
 			const repos = [...new Set(bindings.map((binding) => binding.repo))].toSorted();
+			// A board's id and version name its content within one vault only: two
+			// worktrees of one repository hold copies that can each have moved on.
 			const key = JSON.stringify({
+				vault,
 				board: board.id,
 				version: board.version,
 				variant: variant.id,
