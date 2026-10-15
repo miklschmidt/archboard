@@ -92,8 +92,6 @@ interface MoveProgress {
 	readonly board: SemanticBoard;
 	readonly from: MoveEnd;
 	readonly to: MoveEnd;
-	/** The version the board was at in the source vault. */
-	readonly previousVersion: number;
 	/** Every board written, in order: the target note first, then each rewritten board. */
 	readonly written: readonly MoveWrite[];
 	/** Every drill-down rewritten, on the moved board and on the boards of the source vault. */
@@ -269,7 +267,6 @@ function writeTarget(
 		board: moved.board,
 		from: { vault: command.vault, repository: identities.source ?? null },
 		to: { vault: command.to, repository: identities.target ?? null },
-		previousVersion: source.version,
 		written: [{ vault: command.to, location: target, version: moved.board.version }],
 		rewritten: own.rewritten.map((one) => ({ ...one, vault: command.to })),
 	};
