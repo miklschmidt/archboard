@@ -13,6 +13,7 @@ import {
 	findView,
 	addressedVariant,
 	nothingBuilt,
+	resolveVariant,
 	scopedContent,
 	type DiagramGrammar,
 	type LayoutEngineName,
@@ -38,6 +39,12 @@ interface BoardRenderChoices {
 	readonly view?: string | undefined;
 	/** Whether the picture includes comparison marks and removed context. Defaults to true. */
 	readonly comparison?: boolean | undefined;
+	/**
+	 * A variant id or name to read the drawn variant against, in place of the one it is
+	 * ordinarily read against (TASK-478.01). The picture then marks what the drawn variant
+	 * adds, changes and removes relative to it, and carries no planned frame.
+	 */
+	readonly against?: string | undefined;
 	/** The theme a document that stands alone is drawn in; absent, it is for a page. */
 	readonly theme?: StandaloneTheme | undefined;
 	readonly fonts: FontSource;
@@ -137,6 +144,7 @@ function titleOf(
  * @param board The board, as read.
  * @param variant The variant to draw.
  * @param view The view to draw, or nothing for the whole variant.
+ * @param against The variant the caller named to read it against, if any.
  * @param how The theme, the faces and the vault policy.
  * @param how.theme The theme a document that stands alone is drawn in, when it is one.
  * @param how.fonts Where the drawn faces come from.
@@ -152,6 +160,7 @@ async function drawnReply(
 	board: SemanticBoard,
 	variant: SemanticVariant,
 	view: SemanticView | undefined,
+	against: SemanticVariant | undefined,
 	how: {
 		theme: StandaloneTheme | undefined;
 		fonts: FontSource;
@@ -168,7 +177,7 @@ async function drawnReply(
 	// A picture without the comparison is laid out from the same content and
 	// draws only what the variant's own reading of the view holds, so the
 	// toggle moves nothing.
-	const proposal = drawingOf(board, variant, reading.scope);
+	const proposal = drawingOf(board, variant, reading.scope, against);
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
 	// looking at the picture rather than the panel still knows not to trust it.
 	const waiting = toldStanding(variant);
@@ -202,7 +211,7 @@ async function drawnReply(
 				legendOnly: how.legendOnly,
 			},
 			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
-			unbuilt: nothingBuilt(board),
+			unbuilt: framedAsPlanned(board, against),
 			level: board.level,
 		});
 		return { ...identity, ...picture };
@@ -212,6 +221,40 @@ async function drawnReply(
 		}
 		throw error;
 	}
+}
+
+/**
+ * Whether a picture is framed as planned: the board has no current variant, and the picture is
+ * not relative to a variant that was named. A picture read against a named variant says nothing of
+ * whether the board is built, because the variant it is read against may be unbuilt too (ADR 0031).
+ * @param board The board, as read.
+ * @param against The variant the render was asked to read against, if any.
+ * @returns True when the frame is drawn.
+ */
+function framedAsPlanned(board: SemanticBoard, against: SemanticVariant | undefined): boolean {
+	return against === undefined && nothingBuilt(board);
+}
+
+/**
+ * The variant a render was asked to read against.
+ * @param board The board, as read.
+ * @param variant The variant to draw.
+ * @param named The id or name the request gave, if any.
+ * @returns The variant, undefined when none was named, or why the name cannot be used.
+ */
+function namedAgainst(
+	board: SemanticBoard,
+	variant: SemanticVariant,
+	named: string | undefined,
+): SemanticVariant | string | undefined {
+	if (named === undefined) return undefined;
+	const found = resolveVariant(board, named);
+	if (found === undefined) {
+		return `board "${board.name}" has no variant "${named}" to read against`;
+	}
+	return found.id === variant.id
+		? `"${variant.name}" cannot be read against itself: name another variant to read it against`
+		: found;
 }
 
 /**
@@ -239,7 +282,11 @@ async function renderBoard(
 			error: `board "${board.name}" has no view called "${choices.view}"`,
 		};
 	}
-	const reply = await drawnReply(board, variant, view, {
+	const against = namedAgainst(board, variant, choices.against);
+	if (typeof against === "string") {
+		return { ok: false, code: "UNKNOWN_VARIANT", error: against };
+	}
+	const reply = await drawnReply(board, variant, view, against, {
 		theme: choices.theme,
 		fonts: choices.fonts,
 		policy,

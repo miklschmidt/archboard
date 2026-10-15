@@ -28,6 +28,14 @@ states a layout, because the talk's schema is strict. Pass 1 keeps the default
 engine: its picture is never captured, so Blocks there would only delay the
 board.
 
+Amended by TASK-478.01 (2026-10-15): `semantic record` takes `--against <variant>`,
+and every frame is drawn relative to that variant, without the Planned frame
+([ADR 0031](0031-existence-is-a-fact-about-a-variant-never-about-a-node.md)).
+`talk.json` gains `board.against`, the variant's id. A talk without it reads
+against the variant the board ordinarily reads it against, so the format version
+stays 1. The replay page draws every picture against it. An older archboard
+refuses a talk that states it, because the talk's schema is strict.
+
 ## Context
 
 ADR 0035 made a recording in one live pass. The page paced the walkthrough on
