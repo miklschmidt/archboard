@@ -49,6 +49,11 @@ export interface CodexWorkbenchServer {
 	) => SemanticContextPublisherOptions;
 	/** The checkout of the vault a browser's pane is in now, whose workhorse the pane shows. */
 	readonly checkoutOfBrowser: (browserId: string) => string;
+	/**
+	 * Hear every move of a pane into another vault, after which `checkoutOfBrowser` may name
+	 * another checkout while the pane's socket stays open.
+	 */
+	readonly onPaneVaultMove: (listener: () => void) => () => void;
 	/** The canonical context of a settled change, filed under the pane the change presents. */
 	readonly contextForEvent: (
 		event: SettledSemanticChangeEvent,
