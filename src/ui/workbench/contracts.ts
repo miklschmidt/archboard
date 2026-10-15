@@ -142,6 +142,11 @@ interface AgentActions {
 	readonly queue: WorkbenchQueueActions;
 	/** Show the conversation panel. */
 	readonly openPanel: () => void;
+	/**
+	 * Show the conversation of one of the tab's workhorses, picked from the dock's list.
+	 * @param checkout The checkout it works in.
+	 */
+	readonly showConversation: (checkout: string) => void;
 }
 
 export type {

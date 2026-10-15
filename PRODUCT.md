@@ -67,12 +67,16 @@ board is narrated by a voice and recorded to video.
   nearest enclosing directory outside any checkout. `-C <dir>` starts the
   search elsewhere, and every answer names the vault that it used. No
   environment variable names a vault. The server serves only vaults in that
-  layout. Setting a repository up makes the directory and writes nothing into
+  layout. Setting a repository up makes the directory and adds nothing to
   its `CLAUDE.md` or `AGENTS.md`. The first command in a checkout that the
   machine does not know registers it, and the answer says so.
 - The shell has a navigator of boards, up to two panes side by side, a sidebar
   for each pane, and an agent dock at the foot of the navigator. Talk and Narrate start the
-  voice.
+  voice. The dock shows the conversation of the checkout that the person last
+  activated: by focusing a pane, opening a board or drilling down. While the tab
+  works in two or more checkouts, the dock lists their workhorses, says which
+  one runs or waits for the person, and a pick shows that conversation. Nothing
+  an agent does to a pane changes the conversation shown.
 - One Archboard server serves every vault on the machine, and it starts without
   one. The navigator lists
   every repository that has a vault, each with the boards of its chosen

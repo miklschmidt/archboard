@@ -25,6 +25,7 @@ interface AgentInputs {
 	readonly draft: DraftStore;
 	readonly context: AgentContext;
 	readonly openPanel: () => void;
+	readonly showConversation: (checkout: string) => void;
 }
 
 /**
@@ -115,13 +116,13 @@ function useAgent(inputs: Omit<AgentInputs, "context">): {
 	readonly voice: AgentVoiceView;
 	readonly actions: AgentActions;
 } {
-	const { workbench, draft, openPanel } = inputs;
+	const { workbench, draft, openPanel, showConversation } = inputs;
 	const { setup, owners, voice, releaseVoice } = workbench;
 	const setupSnapshot = useSyncExternalStore(setup.subscribe, setup.snapshot, setup.snapshot);
 	const voiceView = useVoiceView(voice, setupSnapshot);
 	const actions = useMemo(
-		() => agentActions({ setup, owners, voice, releaseVoice, draft, openPanel }),
-		[setup, owners, voice, releaseVoice, draft, openPanel],
+		() => agentActions({ setup, owners, voice, releaseVoice, draft, openPanel, showConversation }),
+		[setup, owners, voice, releaseVoice, draft, openPanel, showConversation],
 	);
 	return { voice: voiceView, actions };
 }

@@ -32,6 +32,7 @@ import { useClock } from "@/ui/components/use-clock";
 import { useOrbOffered, useOrbPlacement } from "@/ui/voice-orb";
 import { SubtitlesToggle, useVoiceBoxed } from "@/ui/voice-subtitles";
 import { useDockMotion } from "@/ui/workbench/hooks/use-dock-motion";
+import { ConversationList } from "@/ui/workbench/components/ConversationList";
 import { IconAction } from "@/ui/workbench/components/IconAction";
 import { MuteAction } from "@/ui/workbench/components/MuteAction";
 import { PlanSteps } from "@/ui/workbench/components/PlanSteps";
@@ -148,6 +149,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 				compact={live}
 			/>
 			{slots.under}
+			<ConversationList workhorses={view.snapshot?.workhorses} onPick={actions.showConversation} />
 		</section>
 	);
 }

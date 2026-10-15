@@ -44,6 +44,7 @@ import {
 	useRecordedViews,
 } from "@/ui/application/hooks/use-page-recording";
 import { useAgentSurfaces, type AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
+import { conversationActivation } from "@/ui/application/lib/shown-conversation";
 import { useWorkbench, type Workbench } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
 import { useBesideOpening } from "@/ui/application/hooks/use-beside-opening";
@@ -322,7 +323,19 @@ function ApplicationBody(): JSX.Element {
 		() => agentContextOf(boardsIn(catalog, activeVault), activeKey),
 		[catalog, activeVault, activeKey],
 	);
-	const agent = useAgentSurfaces(workbench);
+	// The actions read the panes as they are when somebody acts, so a pane's news
+	// does not make them, and every control holding one, again.
+	const [panesNow] = useState(() => new LiveBinding<Panes>());
+	panesNow.bind(panes);
+	const [livePanes] = useState(() => livePanesOver(panesNow));
+	const [activate] = useState(() => conversationActivation(() => livePanes.records));
+	const showConversation = useCallback(
+		(checkout: string): void => {
+			void activate(livePanes.active.status.paneId, { checkout });
+		},
+		[activate, livePanes],
+	);
+	const agent = useAgentSurfaces(workbench, showConversation);
 	const { raise } = notices;
 	// A refused exit stays with the presentation, where the person is; a
 	// refused entry becomes a notice in the workspace they are still in.
@@ -347,11 +360,6 @@ function ApplicationBody(): JSX.Element {
 	panes.bindEvents(paneEvents({ notices, catalog, readings, workbench, activity: agentActivity }));
 
 	const openSettings = useCallback((surface: SettingsSurface): void => setSettings(surface), []);
-	// The actions read the panes as they are when somebody acts, so a pane's news
-	// does not make them, and every control holding one, again.
-	const [panesNow] = useState(() => new LiveBinding<Panes>());
-	panesNow.bind(panes);
-	const [livePanes] = useState(() => livePanesOver(panesNow));
 	const composed = useMemo(
 		() =>
 			createShellActions({
@@ -444,18 +452,27 @@ function ApplicationBody(): JSX.Element {
 			 * @param paneId The pane.
 			 */
 			onPanePointer: (paneId: string): void => {
-				panes.select(paneId);
+				// Focusing another pane is the person's act, so the dock follows its checkout.
+				if (panes.select(paneId)) void activate(paneId);
 			},
 		}),
-		[actions, panes, fullscreen.snapshot.paneId],
+		[actions, panes, activate, fullscreen.snapshot.paneId],
 	);
 	useStageEvents(fullscreen.stage, stageEvents);
 	const transport = workbench.owners?.transport ?? null;
 	// The bell speaks for the repository in front of the person.
 	const diagnosed = activeVault ?? servedVault();
+	const { ask } = agent;
+	// A repair goes to the workhorse of the repository diagnosed, so its checkout is shown first.
+	const askAboutDiagnosed = useCallback(
+		(text: string): void => {
+			void activate(livePanes.active.status.paneId).then(() => ask(text));
+		},
+		[activate, livePanes, ask],
+	);
 	const diagnostics = useMemo(
-		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={agent.ask} />,
-		[diagnosed, transport, agent.ask],
+		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={askAboutDiagnosed} />,
+		[diagnosed, transport, askAboutDiagnosed],
 	);
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
 	if (recordedPane !== null) {

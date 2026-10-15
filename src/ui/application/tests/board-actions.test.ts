@@ -19,6 +19,7 @@ function picker() {
 	const shown: string[] = [];
 	const moved: string[] = [];
 	const marked: string[] = [];
+	const activated: { readonly paneId: string; readonly vault: string | undefined }[] = [];
 	let failures = 0;
 	let dismissed = 0;
 	const deps: ShellActionDeps = {
@@ -147,6 +148,16 @@ function picker() {
 			return { failed: unrelated };
 		},
 		/**
+		 * Record what the person activated (ADR 0050).
+		 * @param paneId The pane.
+		 * @param target What was activated in it.
+		 * @returns That the server took it.
+		 */
+		activate: async (paneId, target) => {
+			activated.push({ paneId, vault: target?.vault });
+			return true;
+		},
+		/**
 		 * Emulate the server refusing an unknown pane.
 		 * @param board The board to show.
 		 * @param clientId The pane being addressed.
@@ -165,6 +176,7 @@ function picker() {
 		shown,
 		moved,
 		marked,
+		activated,
 		notices,
 		/**
 		 * Record the lifecycle event.
@@ -199,6 +211,7 @@ test("the board picker does not address a reconnecting pane before registration"
 	expect(fixture.moved).toEqual([]);
 	expect(fixture.notices).toHaveLength(1);
 	expect(fixture.notices[0]?.actions).toHaveLength(1);
+	expect(fixture.activated).toEqual([]);
 
 	fixture.connected(true);
 	expect(await fixture.actions.selectBoard("Payments")).toBe(true);
@@ -208,5 +221,7 @@ test("the board picker does not address a reconnecting pane before registration"
 	// The board arrives over the pane's socket looking like one an agent opened, so the picker
 	// says beforehand that this one is the user's.
 	expect(fixture.marked).toEqual(["A"]);
+	// The person opened it, so the dock shows its checkout's conversation, named by the vault it opened in.
+	expect(fixture.activated).toEqual([{ paneId: "A", vault: "/work/shop/.archboard/vault" }]);
 	expect(fixture.outcomes().dismissed).toBe(1);
 });

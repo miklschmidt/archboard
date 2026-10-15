@@ -26,6 +26,7 @@ const IDLE_ACTIONS: AgentActions = {
 	respondToDynamicApproval: nothing,
 	queue: { moveUp: nothing, moveDown: nothing, remove: nothing, sendNow: nothing },
 	openPanel: nothing,
+	showConversation: nothing,
 };
 
 /** A voice that makes no sound. */
