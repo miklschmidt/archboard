@@ -30,6 +30,13 @@ refusals. Read its Essentials before the first command, its propose and
 compare recipe before section 2, and the recipe of the diagram you draw
 (architecture or sequence) before section 3.
 
+A command finds its vault from the directory it runs in. Run the commands of
+sections 1, 2 and 4 inside the checkout of the pull request: they use the
+`.archboard/vault` at its root. A checkout with no such vault refuses, and a
+vault above the checkout is never used. In another directory, give
+`-C <checkout>`. Section 3 names its own directory with `-C`. The
+`archboard` skill's Essentials say how a command finds its vault.
+
 ## 0. Check the prerequisites
 
 Do this first, before anything else. A narrated walkthrough needs three
@@ -187,22 +194,23 @@ An ephemeral board lives in a temporary vault that an Archboard server of its
 own serves, so nothing reaches the repository's vault or its server. Follow
 [ephemeral boards](references/ephemeral.md), which gives every command:
 
-1. Make the temporary vault with a copy of the vault's `config.yaml`, point
-   `ARCHBOARD_VAULT` and `ARCHBOARD_URL` (a free loopback port) at it, and
-   start its server. Before the first write, `archboard semantic config` must
-   name a `configurationFile` inside it, which proves that the commands name the
-   temporary vault.
+1. Make a temporary directory with a `.archboard/vault` inside it that holds a
+   copy of the vault's `config.yaml`. Point `ARCHBOARD_URL` (a free loopback
+   port) at a server of its own, and start it. Give `-C <temporary directory>`
+   to every command after that. Before the first write, the
+   `configurationFile` that `semantic config` names must be inside the
+   temporary vault, which proves that the commands name it.
 2. Draw the base branch's code as the current variant, with the parts named as
    the vault's boards name them. Branch a draft named after the head branch,
    and restate what the head branch does with the ids you were given. A flow
    that the base lacks goes on a board created as a draft, with no before.
 3. Check the draft as section 2 step 6 does.
 4. Keep the server for the renders and the walkthrough (section 4 steps 2 and
-   3), then stop it, delete the vault and restore both variables.
+   3), then stop it, forget and delete the vault and restore `ARCHBOARD_URL`.
 
 Done: `compare` reports every change the diff makes to what the board draws.
-After section 4 step 3, the server is stopped, its vault is deleted, and the
-repository's vault is unchanged.
+After section 4 step 3, the server is stopped, its vault is forgotten and
+deleted, and the repository's vault is unchanged.
 
 ## 4. Write the explainer
 

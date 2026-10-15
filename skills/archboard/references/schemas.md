@@ -76,5 +76,5 @@ listed coarsest first (the navigator nests a board under the closest coarser
 board that drills into it), nonempty node and relationship kind maps, and a
 palette `color` on every group, and its `icon` enum is the exact
 set of RemixIcon names the installed build accepts. For where the vault lives,
-how `ARCHBOARD_VAULT` is set, and how the skill and the repository block are
+how a command finds it, and how the skill and the repository block are
 installed, follow [`generated/INSTALL.md`](generated/INSTALL.md).

@@ -24,9 +24,11 @@ A new worktree needs its own `bun install` and `bun run build`. A
 ## 2. Run a server of your own
 
 Your everyday Archboard server probably runs on `http://127.0.0.1:3000`, the
-default address, with your own vault. Every command talks to the server at
+default address. Every command talks to the server at
 `ARCHBOARD_URL`. If nothing answers there, the command starts a server. Give a
-test session its own port and a copy of the example vault:
+test session its own port and a copy of the example vault. A set
+`ARCHBOARD_VAULT` still decides which vault a command uses, until TASK-472.09
+refuses it:
 
 ```bash
 export ARCHBOARD_URL=http://127.0.0.1:3414
@@ -39,12 +41,14 @@ cp -r examples/web-shop "$ARCHBOARD_VAULT"
 `examples/web-shop` holds three boards with proposals, views, walkthroughs and
 groups. Its `config.yaml` defines the kinds that the examples below use. `start`
 prints the URL and the process id of the server. `status` says whether the
-server runs, how many boards it sees and how many browser pages are open.
+server runs and how many browser pages are open.
 
-Every call to the server names its vault (ADR 0049). The CLI names the vault
-in `ARCHBOARD_VAULT`, and the browser names the one that `/api/served-vault`
-reports. When you call the API by hand, add `?vault=<directory>`. A call that
-names no vault gets `VAULT_REQUIRED` with status 400. A server keeps the source
+Every call to the server names its vault (ADR 0049). The CLI finds its vault
+from `-C <dir>`, else from a set `ARCHBOARD_VAULT`, else from the working
+directory, and names it on every call. The browser names the one that
+`/api/served-vault` reports. When you call the API by hand, add
+`?vault=<directory>`. A call that names no vault gets `VAULT_REQUIRED` with
+status 400. The server starts without a vault. A server keeps the source
 that it read at start:
 
 - After you edit a file under `src/`, run
@@ -60,8 +64,10 @@ from your sign-in: set `XDG_STATE_HOME` to an empty directory before `start`.
 The test server then starts with no sign-in, and it keeps its log in that
 directory.
 
-`./bin/dogfood` runs the CLI against the boards of this repository, in
-`.archboard/vault`. Read them as you like. Change them only through the
+If `ARCHBOARD_VAULT` is unset, `./bin/archboard` in this checkout finds the
+boards of this repository in `.archboard/vault`, from any directory of the
+checkout. `./bin/dogfood` does the same by setting `ARCHBOARD_VAULT`, and stays
+until TASK-472.08. Read the boards as you like. Change them only through the
 proposal of a task, as the `archboard-dev` skill describes.
 
 ## 3. Write and read a board

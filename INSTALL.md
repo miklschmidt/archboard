@@ -116,30 +116,56 @@ These options change what the installer does:
 Use one of `--agent`, `--target` and `--dir` at most. Do not use `--doc` and
 `--no-doc` together.
 
-The installer does not read the block that is already in the repository. If a
-repository uses a shared vault, give `--vault` again when you run the installer
-again. If you use `--yes` without `--vault` and without `ARCHBOARD_VAULT`, the
-repository changes to `<repo>/.archboard/vault`.
+The installer does not read the block that is already in the repository. If
+you use `--yes` without `--vault` and without `ARCHBOARD_VAULT`, the vault
+changes to `<repo>/.archboard/vault`.
 
-## 4. Set the vault before the Archboard server starts
+## 4. How a command finds its vault
 
-The installer writes the `export ARCHBOARD_VAULT=...` line into the block, but
-it does not set the variable in your shell. Set it yourself, or put it in a
-`.env` file in the directory where you run the commands. The server does not
-start without a vault, and its message points to `archboard install-skill`.
+A vault is the `.archboard/vault` directory of one directory. A command finds
+its vault the way git finds its repository. It starts in the working
+directory, or in the directory that `-C <dir>` names:
 
-The Archboard server reads and writes the vault. A running server keeps the vault
-that it started with. To change the vault, run `archboard stop`, set the new
-vault, and run a command again. `archboard semantic config` shows the
-configuration file of the vault in use, which is inside that vault.
+- Inside a git checkout, the vault is `.archboard/vault` at the checkout root,
+  from any directory in the checkout. If the root has no vault, the command
+  refuses with `VAULT_NOT_FOUND` and exit code 2, and it says how to set the
+  repository up. A vault above the root is never used, because it belongs to
+  another repository.
+- Outside any git checkout, the vault is the `.archboard/vault` of the nearest
+  enclosing directory. That is an untracked vault. If there is none, the
+  command refuses.
+- `-C <dir>` starts the search at `<dir>` and uses the same rule, as in
+  `archboard -C ~/Projects/payments-api semantic`. Put it before or after the
+  command name. If `<dir>` is a vault directory, `-C` finds that vault.
+  `-C` changes only where the vault is found. A relative `--input` or `--out`
+  still resolves against the working directory.
+- The commands that call a vault take `-C`: `semantic`, `check`, `claim`,
+  `release`, `browser open`, `browser show`. If a command takes `-C`, the
+  output of `archboard <command> --help` lists it. `start`, `stop`, `status`, `repo`,
+  `install-skill`, `browser panes`, `browser close` and `semantic replay` take
+  none, because they need no vault.
 
-A vault in the repository keeps the boards next to the code. A reviewer can then
-read a board change in the same diff as the code change. When the diagrams
-cover more than one repository, use one shared vault for all of them:
+A JSON answer of a command that takes `-C` names the vault it used, as
+`vault: {path, origin}`. The origin is `-C`, `environment` or
+`working-directory`.
 
-```bash
-archboard install-skill --agent claude-code --vault ~/vaults/architecture
-```
+The first command in a checkout or an untracked vault that this machine does
+not know registers it, as `archboard repo add` does. The answer then carries
+`vault.registered`, and one line goes to stderr.
+
+`ARCHBOARD_VAULT` still works for now. If it is set and no `-C` is given, the
+command uses that vault as it is, and never registers it. `-C` wins over it.
+ADR 0049 removes the variable. In a later version, a set variable makes every
+command refuse. The block that the installer writes still holds the `export` line.
+Give `-C` in place of the variable in new scripts.
+
+A vault in the repository keeps the boards next to the code. A reviewer can
+then read a board change in the same diff as the code change. To diagram
+several repositories together, keep their boards in a directory of their own,
+for example a repository for a meta project. Run `archboard install-skill`
+there, and then run commands there or give `-C <that directory>`. A binding
+names a repository by its identity, so a board in that vault can describe any
+repository (see "Code bindings").
 
 While an agent works on a board, archboard keeps a lock file for it in
 `<vault>/.archboard/locks/`. If you commit the vault, ignore that directory.
@@ -157,8 +183,10 @@ for a loopback address, that is, an address that only this machine can reach.
 The old variable `EXPRESS_SERVER_URL` is refused with a message.
 
 Several Archboard servers can run on one machine at the same time, each on its own port.
-The Codex agents of a server run `archboard` against that server and its vault, and they
-never start another server. They share one Codex sign-in. If you sign out in one server, you sign out of all
+The Codex agents of a server run `archboard` against that server, and they
+never start another server. The Codex child holds no `ARCHBOARD_VAULT`. The
+board context of a thread names the vault of each board, and the instructions
+tell the thread to pass it as `-C`. They share one Codex sign-in. If you sign out in one server, you sign out of all
 of them. A server that is already running shows a sign-in or a sign-out from
 another server only after you restart it.
 
@@ -167,9 +195,13 @@ recording need a Codex sign-in. Sign in from the agent dock, with ChatGPT or wit
 an OpenAI API key. The sign-in is kept apart from your own `~/.codex`, in
 `codex-workbench/codex-home` in the state directory.
 
-The navigator in the browser lists the vault that the server started with. It
-also lists each repository that this machine registered with `archboard repo add`
-and that has a vault. Each repository row has a menu of its checkouts, for
+The server needs no vault to start, and one server serves every vault. The
+navigator in the browser lists each repository that this machine knows and that
+has a vault. A command that runs in a checkout makes its repository known. So
+does `archboard repo add`. A page opens in the vault that a set
+`ARCHBOARD_VAULT` names. Otherwise it opens in the first repository, by name,
+that is ready. If this machine knows no repository with a vault, the page says
+so and tells you how to make one known. Each repository row has a menu of its checkouts, for
 example a worktree. The checkout that you choose there is the one that the
 whole machine reads, in every tab and for `archboard repo use`.
 

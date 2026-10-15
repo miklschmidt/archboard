@@ -280,7 +280,7 @@ ARCHBOARD_VAULT="$PWD/examples/web-shop" ./bin/archboard start
 
 Then open <http://127.0.0.1:3000/?paneA=Web%20shop>. The history, the proposals, the drill-down and the walkthroughs are all there.
 
-**Use it on your own code**. Stop the example server first: a running server keeps the vault it started with. Then put the CLI on your `PATH` and set up the repository you want mapped:
+**Use it on your own code**. Stop the example server first: it opens pages in the example vault. Then put the CLI on your `PATH` and set up the repository you want mapped:
 
 ```bash
 ./bin/archboard stop
@@ -289,14 +289,14 @@ cd ~/code/your-project
 archboard install-skill --agent claude-code     # omit --agent for Codex
 ```
 
-The installer copies the `archboard` and `archboard-pr` skills to `~/.claude/skills` (`~/.agents/skills` for Codex). It asks where the repository keeps its boards (Enter takes `.archboard/vault` inside it). Then it writes the vault path and the command into the repository's `CLAUDE.md` or `AGENTS.md`. Commit the vault with your code. Then ask your agent:
+The installer copies the `archboard` and `archboard-pr` skills to `~/.claude/skills` (`~/.agents/skills` for Codex). It asks where the repository keeps its boards (Enter takes `.archboard/vault` inside it). Then it writes the vault path and the command into the repository's `CLAUDE.md` or `AGENTS.md`. Commit the vault with your code. A command finds that vault from the directory it runs in, the way git finds a repository, or from `-C <dir>`. Then ask your agent:
 
 ```text
 Map this repository's architecture onto a board named "Overview", bind every part to its code,
 and add a short walkthrough for a new team member.
 ```
 
-See [INSTALL.md](INSTALL.md) for shared vaults, code bindings and the configuration.
+See [INSTALL.md](INSTALL.md) for how a command finds its vault, code bindings and the configuration.
 
 ## Prompts to try
 
