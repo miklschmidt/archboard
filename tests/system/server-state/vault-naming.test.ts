@@ -113,14 +113,16 @@ describe.serial("every call names its vault", () => {
 		resources.defer(() => paneB.close());
 		// A pane is in the vault the server put it in: a report naming another one
 		// registers nothing there.
-		const crossed = await inB<{ registered: boolean }>("/api/panes", {
+		const crossed = await inB<{ registered: boolean; code: string }>("/api/panes", {
 			method: "POST",
 			doing: false,
 			body: { ...paneA.registration, board: "payments" },
 		});
-		expect({ status: crossed.status, registered: crossed.body.registered }).toEqual({
+		const { registered, code } = crossed.body;
+		expect({ status: crossed.status, registered, code }).toEqual({
 			status: 200,
 			registered: false,
+			code: "PANE_MOVED",
 		});
 		const startA = paneA.mark();
 		const startB = paneB.mark();

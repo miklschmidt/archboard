@@ -37,6 +37,12 @@ interface PaneReport {
 interface PaneReply {
 	success: true;
 	registered: boolean;
+	/**
+	 * Set when the report named a vault the pane is not in: the server moved it,
+	 * and the pane hears where on its socket (ADR 0050). Nothing about the pane's
+	 * registration follows from such an answer.
+	 */
+	code?: "PANE_MOVED";
 	paneCount: number;
 	/**
 	 * Set when this tab is running a bundle the server no longer serves, i.e.

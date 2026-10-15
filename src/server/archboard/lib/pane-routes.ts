@@ -158,13 +158,14 @@ function postPaneRoute(req: Request, res: Response): void {
 		});
 		return;
 	}
-	// A pane is in the vault the server last put it in (ADR 0050). A report that
-	// names another one was sent before the pane heard it had moved, and is no
-	// account of the pane now: the pane reports again as soon as it hears.
+	// A pane is in the vault the server last put it in (ADR 0050). A report naming
+	// another was sent before the pane heard of its move, which this answer can
+	// overtake, so the code says to wait for the move and report from there.
 	if (paneVaults.get(registration.clientId) !== vault) {
 		res.json({
 			success: true,
 			registered: false,
+			code: "PANE_MOVED",
 			paneCount: addressablePanes([...panes.values()]).length,
 			staleFrontend,
 		});

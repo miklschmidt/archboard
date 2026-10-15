@@ -210,6 +210,12 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 		};
 		reportPane(vault, report)
 			.then((result) => {
+				// The server moved the pane before this report reached it. The move's
+				// pane_board says where, and the report that follows it is the answer
+				// that counts, whichever of the two arrives first.
+				if (result.code === "PANE_MOVED") {
+					return result;
+				}
 				const outcome = { settled: true, registered: result.registered } as const;
 				apply(sequencer.settle(dispatch, current(), outcome), dispatch, report, result);
 				return result;
