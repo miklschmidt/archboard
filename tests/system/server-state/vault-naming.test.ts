@@ -211,7 +211,7 @@ describe.serial("every call names its vault", () => {
 		);
 	}, 60_000);
 
-	test("a call that names no vault, or one the server cannot read, is refused and creates nothing", async () => {
+	test("a call that names no vault, or one the server will not serve, is refused and creates nothing", async () => {
 		await using resources = new AsyncDisposableStack();
 		const root = mkdtempSync(join(tmpdir(), "archboard-vault-refused-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
@@ -223,6 +223,10 @@ describe.serial("every call names its vault", () => {
 		resources.defer(() => server.dispose());
 		const request = createRequester(server);
 		const missing = join(root, "not-a-vault");
+		// A readable directory in no `<dir>/.archboard/vault` layout is not served either: a
+		// workhorse works in the directory that holds a vault, and this one has none (ADR 0050).
+		const plain = join(root, "plain");
+		mkdirSync(plain);
 
 		for (const route of READ_ROUTES) {
 			const refused = await request<{ code: string }>(route, { vault: false });
@@ -247,7 +251,7 @@ describe.serial("every call names its vault", () => {
 			});
 		}
 
-		for (const vault of [missing, "relative/vault"]) {
+		for (const vault of [missing, "relative/vault", plain]) {
 			const unreadable = await request<{ code: string }>("/api/semantic-boards/create", {
 				method: "POST",
 				doing: "starting a board in a vault that is not there",
@@ -258,6 +262,7 @@ describe.serial("every call names its vault", () => {
 			expect(unreadable.body.code).toBe("VAULT_UNREADABLE");
 		}
 		expect(existsSync(missing)).toBe(false);
+		expect(existsSync(join(plain, ".archboard"))).toBe(false);
 
 		// The socket names its vault when it connects, or it is refused.
 		const endpoint = new URL(server.base);

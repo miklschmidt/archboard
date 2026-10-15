@@ -1,10 +1,11 @@
 ---
 id: TASK-472.09
 title: A set ARCHBOARD_VAULT is refused
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-14 21:49'
-updated_date: '2026-10-15 03:38'
+updated_date: '2026-10-15 07:38'
 labels: []
 dependencies:
   - TASK-472.07
@@ -35,6 +36,20 @@ After the tests, the evaluations and `bin/dogfood` stop using it, `ARCHBOARD_VAU
 - [ ] #4 README.md, INSTALL.md, TESTING.md, AGENTS.md, PRODUCT.md and the archboard, archboard-pr and archboard-dev skills hold no instruction that sets `ARCHBOARD_VAULT`, and `bun run generate:skill-artifacts` output matches
 - [ ] #5 Each dogfood board that this task changes has a proposal named by the task id that matches what was built, as the archboard-dev skill says, or the plan says that no board is affected
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. config.ts: removedEnvironmentMessage refuses a set ARCHBOARD_VAULT (env or .env, empty too) next to EXPRESS_SERVER_URL, exit 2, help exempt (src/bin.ts). 2. Remove every reader: vault finder environment search and the environment origin, CLI session default, pane.ts, server environmentVault/opening vault. 3. Vault layout decision: the server serves only <dir>/.archboard/vault (namedVault refuses any other readable directory with VAULT_UNREADABLE) so checkoutOfVault and checkoutNamedBy agree; owner src/server/archboard/tests/request-vault.test.ts. 4. Sweep scripts, tests (callerVaultCleared removed), docs, skills; README quick start copies the example into <dir>/.archboard/vault and registers it with repo add. 5. generate:skill-artifacts; bun run check.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Vault-layout decision (gap two reviewers found): the server now serves only a vault in the <dir>/.archboard/vault layout. namedVault (src/server/archboard/lib/request-vault.ts) is the one entrance for a call's ?vault=, a body vault, the pane socket and a move's --to, and it refuses any other readable directory with VAULT_UNREADABLE (404) before anything is created. Why not make checkoutNamedBy accept a plain vault instead: it would let a coordinator delegation name any directory as a workhorse checkout, and a plain directory has no checkout to hold agent instructions, skills or a Codex configuration (ADR 0050). One rule at one entrance is smaller than two functions agreeing on a second layout. checkoutOfVault is now just dirname(dirname(vault)) with isVaultLayout beside it. Owner: tests/system/server-state/vault-naming.test.ts (plain readable directory is refused, nothing created in it) plus src/server/archboard/tests/codex-checkouts.test.ts (a directory in no layout names no checkout). Known edge: a .archboard/vault that is itself a symlink to a directory elsewhere canonicalizes to a non-layout path and is refused; nothing in the repo or tests links a vault that way.
+
+Removed: ARCHBOARD_VAULT readers in config.ts, vault-finder (environment search, 'environment' origin, holder null), addressed-vault, pane.ts, server-client-session, repositories.ts (environmentVault, servedName), request-vault canonicalConfiguredVault. callerVaultCleared test helper removed (a set variable now fails loudly). scripts/build-pipeline-example.ts takes the vault directory as its argument; scripts/readme-assets/server.ts copies the vault into <take>/repository/.archboard/vault, registers it in a registry of the take's own (ARCHBOARD_REPOS) and runs the CLI with that directory as cwd. README quick start copies examples/web-shop to ~/archboard-example/.archboard/vault (examples/web-shop cannot hold the layout in place: inside the archboard checkout a command finds the checkout's own vault).
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 

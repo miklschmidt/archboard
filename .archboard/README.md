@@ -19,9 +19,8 @@ repository (ADR 0049). Inside this checkout, from any directory, that is
 `.archboard/vault` at the checkout root. A vault above the root is never used.
 `-C <dir>` starts the search in another directory, so
 `archboard -C <checkout> check` reads this vault from anywhere.
-Every JSON answer names the vault it used, as `vault: {path, origin}`. If no `-C` is given, a set
-`ARCHBOARD_VAULT` decides, until TASK-472.09 refuses it. If the variable is
-unset, plain `archboard` reads this vault.
+Every JSON answer names the vault it used, as `vault: {path, origin}`. Plain
+`archboard` in this checkout reads this vault.
 
 `archboard` runs the source of the archboard checkout that you are in. In a
 worktree, it runs the worktree's own `bin/archboard`, even when `archboard` on

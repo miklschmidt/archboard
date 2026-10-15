@@ -5,7 +5,7 @@ was run, what it produced, and what it does not cover.
 
 ## The example builds from tracked source
 
-`bun scripts/build-pipeline-example.ts`, with `ARCHBOARD_VAULT` naming an empty
+`bun scripts/build-pipeline-example.ts <vault>`, with `<vault>` naming an empty
 directory, produces:
 
 | board                  | variants                                                         | views                                              |

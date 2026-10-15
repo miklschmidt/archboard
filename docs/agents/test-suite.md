@@ -75,9 +75,9 @@ the browser shows.
 - A command that reaches a server names it with `ARCHBOARD_URL`. Without it,
   the command reaches the server on the port of the checkout under test:
   3000 in the main checkout, which is probably your everyday server.
-- No test sets `ARCHBOARD_VAULT`. A helper that copies the caller's
-  environment into a child clears the variable with `callerVaultCleared`, so a
-  vault that you export never receives a test's writes. A command test under
+- No test addresses a vault through the environment. A set variable that names a
+  vault is refused by every command, so one that you export fails the tests
+  loudly and never receives a test's writes. A command test under
   `src/` runs the CLI in its own process. It names a temporary vault with `-C <dir>` and sets
   `ARCHBOARD_REPOS` to a temporary file.
 - To check that no test writes your registry, set `ARCHBOARD_REPOS` to a path

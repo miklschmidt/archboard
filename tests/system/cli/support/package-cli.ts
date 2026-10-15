@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { callerVaultCleared, vaultIn } from "../../support/test-vault.ts";
+import { vaultIn } from "../../support/test-vault.ts";
 
 const packageSchema = z.object({
 	version: z.string(),
@@ -82,7 +82,6 @@ interface PackageCliOwner {
 
 /** What a command of a test keeps of the caller's environment: none of these. */
 const clearedEnvironment = {
-	...callerVaultCleared,
 	CODEX_HOME: undefined,
 	LOCALAPPDATA: undefined,
 	ARCHBOARD_URL: undefined,

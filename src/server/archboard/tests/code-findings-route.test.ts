@@ -10,7 +10,7 @@
 
 import { afterAll, expect, test } from "bun:test";
 import type { Server } from "node:http";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import express from "express";
@@ -18,7 +18,19 @@ import * as route from "@/server/archboard/code-check";
 import { RememberedFindingsSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-findings-route-"));
+const ownVault = vaultIn(scratch);
 const listening: Server[] = [];
+
+/**
+ * Make the vault of a directory, where the server serves one from (ADR 0050).
+ * @param holder The directory.
+ * @returns The vault.
+ */
+function vaultIn(holder: string): string {
+	const vault = join(holder, ".archboard", "vault");
+	mkdirSync(vault, { recursive: true });
+	return vault;
+}
 
 afterAll(() => {
 	for (const http of listening) http.close();
@@ -98,7 +110,7 @@ async function serverWith(
  * @param vault The vault, which is the one the test owns unless another is named.
  * @returns The query string.
  */
-function named(vault = scratch): string {
+function named(vault = ownVault): string {
 	return `vault=${encodeURIComponent(vault)}`;
 }
 
@@ -108,7 +120,7 @@ function named(vault = scratch): string {
  * @param vault The vault the pane shows.
  * @returns The remembered readings, by board.
  */
-async function readFindings(base: string, vault = scratch): Promise<Map<string, number>> {
+async function readFindings(base: string, vault = ownVault): Promise<Map<string, number>> {
 	const reply = await fetch(`${base}/api/vault/code-findings?${named(vault)}`);
 	expect(reply.status).toBe(200);
 	const { readings } = RememberedFindingsSchema.parse(await reply.json());
@@ -159,12 +171,13 @@ test("a cancelled pass leaves the memory as it was", async () => {
 
 test("what a pass found in one vault is not shown for a board of the same name in another", async () => {
 	const other = mkdtempSync(join(tmpdir(), "archboard-code-findings-other-"));
+	const otherVault = vaultIn(other);
 	try {
 		const { base } = await serverWith([answerOver(["orders"], ["orders"])]);
 		await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
 
 		expect((await readFindings(base)).get("orders")).toBe(1);
-		expect((await readFindings(base, other)).size).toBe(0);
+		expect((await readFindings(base, otherVault)).size).toBe(0);
 	} finally {
 		rmSync(other, { recursive: true, force: true });
 	}

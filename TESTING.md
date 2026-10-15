@@ -52,8 +52,8 @@ names the session registers it in your own registry, and a browser page then
 opens in its vault.
 
 Every call to the server names its vault (ADR 0049). The CLI finds its vault
-from `-C <dir>`, else from a set `ARCHBOARD_VAULT`, else from the working
-directory, and names it on every call. The browser names the one that
+from `-C <dir>`, else from the working directory, and names it on every
+call. The browser names the one that
 `/api/served-vault` reports. When you call the API by hand, add
 `?vault=<directory>`. A call that names no vault gets `VAULT_REQUIRED` with
 status 400. The server starts without a vault. A server keeps the source
@@ -72,9 +72,8 @@ from your sign-in: set `XDG_STATE_HOME` to an empty directory before `start`.
 The test server then starts with no sign-in, and it keeps its log in that
 directory.
 
-If `ARCHBOARD_VAULT` is unset, `archboard` in this checkout finds the
-boards of this repository in `.archboard/vault`, from any directory of the
-checkout. Read the boards as you like. Change them only through the
+`archboard` in this checkout finds the boards of this repository in
+`.archboard/vault`, from any directory of the checkout. Read the boards as you like. Change them only through the
 proposal of a task, as the `archboard-dev` skill describes.
 
 In an archboard checkout, `archboard` runs that checkout's own `bin/archboard`,
