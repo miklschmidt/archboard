@@ -329,13 +329,19 @@ const ARCHIVE = "github.com/acme/archive";
 const MOVE_DIALOG = `[role='dialog']`;
 
 /**
- * Whether the move dialog shows a refusal, and how many drill-downs it lists.
+ * Whether the move dialog shows a refusal, what drill-downs it lists, whether
+ * Move can be pressed, and the role of the focused element.
  * @param browser The page.
  * @returns What the dialog shows, or null while it is closed.
  */
 const moveDialog = (
 	browser: AgentBrowserSession,
-): Promise<{ refused: boolean; rewrites: string[]; movable: boolean } | null> =>
+): Promise<{
+	refused: boolean;
+	rewrites: string[];
+	movable: boolean;
+	focused: string | null;
+} | null> =>
 	browser.eval(`(() => {
 		const dialog = document.querySelector("${MOVE_DIALOG}");
 		if (!dialog) return null;
@@ -344,6 +350,7 @@ const moveDialog = (
 			refused: !!dialog.querySelector("[role='alert']"),
 			rewrites: [...dialog.querySelectorAll("section li")].map((one) => one.textContent),
 			movable: !!move && !move.disabled,
+			focused: document.activeElement?.getAttribute("role") ?? null,
 		};
 	})()`);
 
@@ -399,7 +406,12 @@ test("a person moves a board by keyboard to another repository, and the pane fol
 	// The control opens from the keyboard, and the dialog starts on the first target.
 	await browser.run(["focus", `button[aria-label='Move ledger to another repository']`]);
 	await browser.run(["press", "Enter"]);
-	await pollUntil(() => moveDialog(browser), Boolean, "the move dialog to open", WAIT);
+	await pollUntil(
+		() => moveDialog(browser),
+		(dialog) => dialog?.focused === "radio",
+		"the move dialog to open on its first target",
+		WAIT,
+	);
 	await browser.run(["press", "Space"]);
 	await pollUntil(
 		() => moveDialog(browser),
