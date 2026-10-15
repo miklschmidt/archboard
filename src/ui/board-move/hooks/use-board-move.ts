@@ -93,10 +93,15 @@ function useMoveTarget(board: MovingBoard) {
 function useBoardMove(board: MovingBoard, onMoved: () => void) {
 	const { asked, ...target } = useMoveTarget(board);
 	const preview = useQuery(movePreviewQuery(asked, board.version));
+	const { refetch } = preview;
+	// A stopped move wrote part of what it lists, and the pane's own board did
+	// not change, so only reading the preview again lists what is left.
+	const readAgain = useCallback(() => void refetch(), [refetch]);
 	const move = useMutation({
 		mutationKey: moveKey(board.board),
 		mutationFn: moveTo,
 		onSuccess: onMoved,
+		onError: readAgain,
 	});
 	const { mutate } = move;
 	const version = preview.data?.version;

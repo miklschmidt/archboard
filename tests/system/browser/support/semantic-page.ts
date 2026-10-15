@@ -5,6 +5,7 @@
 // agent uses and the address the shell restores from — so what a test drives is
 // what a person drives, and no owner reaches into the store to arrange a scene.
 
+import type { DrillDown } from "@/shared/semantic-board/index";
 import type { JsonResponse } from "../../support/http.ts";
 
 /** One node of the architecture a test seeds. */
@@ -14,6 +15,7 @@ interface SeedNode {
 	readonly responsibility?: string;
 	readonly parent?: string;
 	readonly binding?: { readonly repo: string; readonly path: string };
+	readonly drillDown?: DrillDown;
 }
 
 /** One relationship between two of them. */

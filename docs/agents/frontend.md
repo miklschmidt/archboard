@@ -115,7 +115,7 @@ not add imports or a second state path before that work.
   history entry. Every other move replaces one. The gesture decides this, not
   the socket.
 
-  A pane holds no work of its own, because the browser writes nothing (ADR
+  A pane holds no work of its own, because the browser edits no board (ADR
   0023). Thus nothing guards a board that leaves a pane. A restore moves or
   closes panes without a question first. There is no route loader. A restore
   addresses the server by board key and by the vault of the repository's chosen
