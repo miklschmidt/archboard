@@ -17,12 +17,13 @@ import { sameBoardName, type BoardReads } from "@/ui/semantic-board-canvas";
 function talkReads(talk: Talk, foreign: (board: string) => void): BoardReads {
 	return {
 		/**
-		 * The talk's board, and no other.
+		 * The talk's board, and no other, whichever vault the pane names.
+		 * @param _vault The pane's vault, which a talk has no use for.
 		 * @param board The board asked for.
 		 * @returns The talk's document.
 		 * @throws {Error} When another board is asked for.
 		 */
-		document: async (board) => {
+		document: async (_vault, board) => {
 			if (sameBoardName(board, talk.board.name)) return talk.document;
 			foreign(board);
 			throw new Error(`The talk is of ${talk.board.name}; ${board} was read while rendering it.`);
