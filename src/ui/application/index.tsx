@@ -464,11 +464,17 @@ function ApplicationBody(): JSX.Element {
 	const diagnosed = activeVault ?? servedVault();
 	const { ask } = agent;
 	// A repair goes to the workhorse of the repository diagnosed, so its checkout is shown first.
+	// The server tells the workbench socket of the switch before it answers, but that answer can
+	// arrive first. A read on the socket comes after the news, so the repair is composed for the
+	// conversation shown now, not refused because the workbench moved under it.
 	const askAboutDiagnosed = useCallback(
 		(text: string): void => {
-			void activate(livePanes.active.status.paneId).then(() => ask(text));
+			void activate(livePanes.active.status.paneId)
+				.then(() => transport?.refresh())
+				.catch(() => undefined)
+				.then(() => ask(text));
 		},
-		[activate, livePanes, ask],
+		[activate, livePanes, ask, transport],
 	);
 	const diagnostics = useMemo(
 		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={askAboutDiagnosed} />,
