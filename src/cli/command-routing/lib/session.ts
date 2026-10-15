@@ -7,6 +7,7 @@
 // help and exits 0 whatever else the invocation got wrong.
 import { CliUsageError } from "@/cli/command-contract/contract";
 import type { AnyCommandContract, SharedOptionKey } from "@/cli/command-contract/contract";
+import type { AnsweredVault } from "@/cli/command-contract/schemas";
 import type { CliBootstrap } from "@/cli/command-contract/bootstrap";
 import { isHelpInvocation } from "@/cli/command-contract/bootstrap";
 import { runCommand } from "@/cli/command-contract/runner";
@@ -29,20 +30,24 @@ import { dispatchedCommand } from "@/cli/command-routing/lib/dispatch";
 import { exitCodeFor, reportFailure } from "@/cli/command-routing/lib/exit-codes";
 import {
 	takeBoardFlag,
+	takeDirectoryFlag,
 	takeDoingFlag,
 	takeSessionFlag,
 	takeExpectVersionFlag,
 } from "@/cli/command-routing/lib/global-flags";
+import { addressVault } from "@/cli/command-routing/lib/addressed-vault";
 
 /**
  * Runs a command contract while forwarding SIGINT and SIGTERM as an abort, then re-raises
  * the signal once cleanup has finished (or after the cleanup grace period, whichever is first).
  * @param commandContract - The contract to run.
  * @param argv - The contract's own arguments.
+ * @param vault - The vault the invocation addresses, or null when it finds none.
  */
 async function runInterruptibleCommand(
 	commandContract: AnyCommandContract,
 	argv: readonly string[],
+	vault: AnsweredVault | null,
 ): Promise<void> {
 	const controller = new AbortController();
 	let interrupted: NodeJS.Signals | undefined;
@@ -72,7 +77,7 @@ async function runInterruptibleCommand(
 	process.on("SIGINT", interrupt);
 	process.on("SIGTERM", interrupt);
 	try {
-		await runCommand(commandContract, argv, controller.signal);
+		await runCommand(commandContract, argv, controller.signal, vault);
 	} finally {
 		remove();
 		if (forceTimer !== undefined) {
@@ -262,6 +267,7 @@ function refuseRetiredBoardForms(name: string, rest: readonly string[]): void {
 /** The shared options one invocation stated, with their values. */
 interface StatedShared {
 	readonly url: string | null;
+	readonly directory: string | null;
 	readonly board: string | null;
 	readonly doing: string | null;
 	readonly session: string | null;
@@ -277,6 +283,7 @@ interface StatedShared {
 function takeShared(rest: string[], bootstrap: CliBootstrap): StatedShared {
 	return {
 		url: bootstrap.url,
+		directory: takeDirectoryFlag(rest),
 		board: takeBoardFlag(rest),
 		doing: takeDoingFlag(rest),
 		session: takeSessionFlag(rest),
@@ -284,19 +291,50 @@ function takeShared(rest: string[], bootstrap: CliBootstrap): StatedShared {
 	};
 }
 
+/** Which field of what was stated holds each shared option. */
+const STATED_FIELDS: Readonly<Record<SharedOptionKey, keyof StatedShared>> = {
+	url: "url",
+	directory: "directory",
+	board: "board",
+	doing: "doing",
+	"expect-version": "expectVersion",
+	"as-session": "session",
+};
+
 /**
  * The shared options an invocation stated, by key.
  * @param stated - What was stated.
  * @returns The keys with a value.
  */
 function statedKeys(stated: StatedShared): SharedOptionKey[] {
-	const keys: SharedOptionKey[] = [];
-	if (stated.url !== null) keys.push("url");
-	if (stated.board !== null) keys.push("board");
-	if (stated.doing !== null) keys.push("doing");
-	if (stated.expectVersion !== null) keys.push("expect-version");
-	if (stated.session !== null) keys.push("as-session");
-	return keys;
+	return SHARED_OPTION_KEYS.filter((key) => stated[STATED_FIELDS[key]] !== null);
+}
+
+/**
+ * The shared options a command reads in this invocation: those it declares,
+ * less any that a local option present in its arguments excludes.
+ * @param contract - The command that will run.
+ * @param argv - The command's local arguments.
+ * @returns The keys that apply.
+ */
+function applicableShared(
+	contract: AnyCommandContract,
+	argv: readonly string[],
+): SharedOptionKey[] {
+	const excluded = new Set(
+		contract.parameters.flatMap((parameter) => {
+			if (parameter.kind !== "option" || parameter.excludesShared === undefined) {
+				return [];
+			}
+			const present = argv.some((token) =>
+				parameter.spellings.some(
+					(spelling) => token === spelling || token.startsWith(`${spelling}=`),
+				),
+			);
+			return present ? parameter.excludesShared : [];
+		}),
+	);
+	return contract.shared.filter((key) => !excluded.has(key));
 }
 
 /**
@@ -313,20 +351,7 @@ function assertSharedApplies(
 	stated: StatedShared,
 	argv: readonly string[] = [],
 ): void {
-	const excluded = new Set(
-		selected.contract.parameters.flatMap((parameter) => {
-			if (parameter.kind !== "option" || parameter.excludesShared === undefined) {
-				return [];
-			}
-			const present = argv.some((token) =>
-				parameter.spellings.some(
-					(spelling) => token === spelling || token.startsWith(`${spelling}=`),
-				),
-			);
-			return present ? parameter.excludesShared : [];
-		}),
-	);
-	const applicable = selected.contract.shared.filter((key) => !excluded.has(key));
+	const applicable = applicableShared(selected.contract, argv);
 	const refused = inapplicableSharedOptions(applicable, statedKeys(stated));
 	if (refused.length === 0) {
 		return;
@@ -370,6 +395,25 @@ function applyShared(stated: StatedShared): void {
 	setWriteDoing(stated.doing);
 	setWriteSession(stated.session);
 	setExpectedVersion(stated.expectVersion);
+}
+
+/**
+ * The vault the invocation addresses, found before the command starts anything
+ * or reaches a server. A command that does not read `-C` in this invocation
+ * finds none, and its answer names none.
+ * @param contract - The command that will run.
+ * @param argv - The command's local arguments.
+ * @param stated - What the invocation stated.
+ * @returns The vault, or null when the command finds none.
+ */
+async function addressedVault(
+	contract: AnyCommandContract,
+	argv: readonly string[],
+	stated: StatedShared,
+): Promise<AnsweredVault | null> {
+	return applicableShared(contract, argv).includes("directory")
+		? addressVault(stated.directory)
+		: null;
 }
 
 /**
@@ -427,7 +471,8 @@ async function runCliWith(
 		selected = dispatched.selected;
 		assertSharedApplies(selected, stated, dispatched.argv);
 		applyShared(stated);
-		await runInterruptibleCommand(selected.contract, dispatched.argv);
+		const vault = await addressedVault(selected.contract, dispatched.argv, stated);
+		await runInterruptibleCommand(selected.contract, dispatched.argv, vault);
 	} catch (error) {
 		reportFailure(error, usageLine(routes, selected.contract.path));
 		process.exitCode = exitCodeFor(error, selected);

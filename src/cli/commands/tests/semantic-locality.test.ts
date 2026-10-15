@@ -4,7 +4,9 @@
 // stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
+import { z } from "zod";
 import { LocalityReplySchema, type LocalityAnswer } from "@/shared/locality/index";
+import { nameStandInVault } from "./stand-in-vault.ts";
 
 const answer: LocalityAnswer = {
 	board: "Orders",
@@ -61,6 +63,7 @@ const answer: LocalityAnswer = {
 	skipped: [{ subject: { kind: "node", id: "pU", name: "Customer" }, reason: "unbound" }],
 };
 
+const vault = nameStandInVault();
 let service = "";
 let refuse = false;
 const asked: string[] = [];
@@ -68,9 +71,10 @@ const server = Bun.serve({
 	hostname: "127.0.0.1",
 	port: 0,
 	fetch(request) {
-		const { pathname, search } = new URL(request.url);
+		const asking = new URL(request.url);
+		const { pathname } = asking;
 		if (pathname === "/health") return Response.json({ service, status: "ok" });
-		asked.push(pathname + search);
+		asked.push(vault.unnamed(asking));
 		if (pathname !== "/api/semantic-boards/locality") {
 			return Response.json({ success: false, error: `unexpected ${pathname}` }, { status: 404 });
 		}
@@ -90,7 +94,7 @@ const environment = {
 };
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
-// Imported only now, because the CLI reads where its server is as it loads.
+// Imported only now, because the CLI reads where its server and its vault are as it loads.
 const [config, client, { runCli }] = await Promise.all([
 	import("@/runtime/engine/config"),
 	import("@/runtime/engine/server-client"),
@@ -109,6 +113,7 @@ afterAll(async () => {
 		else process.env[key] = value;
 	}
 	await server.stop(true);
+	vault.restore();
 });
 
 /**
@@ -162,7 +167,9 @@ test("it asks the locality route for the board, the draft and the start it was g
 		variant: "Read cache",
 		since: "2026-01-31",
 	});
-	expect(LocalityReplySchema.parse(JSON.parse(stdout))).toEqual({ success: true, ...answer });
+	const { vault: named, ...printed } = z.record(z.string(), z.unknown()).parse(JSON.parse(stdout));
+	expect(named).toEqual({ path: vault.path, origin: "environment" });
+	expect(LocalityReplySchema.parse(printed)).toEqual({ success: true, ...answer });
 	const lines = stderr.split("\n");
 	expect(lines.some((line) => line.includes("Ledger") && line.includes("1"))).toBe(true);
 	expect(lines.some((line) => /Ledger.*Checkout/u.test(line) && line.includes("47"))).toBe(true);

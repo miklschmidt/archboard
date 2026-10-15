@@ -1,30 +1,44 @@
-// The global flags every command shares (--board, --doing, --expect-version,
+// The global flags every command shares (-C, --board, --doing, --expect-version,
 // --as-session), pulled out of argv before a command's own parser sees them.
 import { CliUsageError } from "@/cli/command-contract/contract";
 
 /**
- * Removes `--name value` or `--name=value` from argv, in place, and returns the value.
+ * Removes `<flag> value` or `<flag>=value` from argv, in place, and returns the value.
  * @param argv - The arguments to search; the flag and its value are spliced out.
- * @param name - The flag name without dashes.
+ * @param flag - The flag as it is spelled, dashes included.
  * @returns The flag's value, or null when the flag is absent.
  */
-function takeGlobalFlag(argv: string[], name: string): string | null {
+function takeGlobalFlag(argv: string[], flag: string): string | null {
 	for (let i = 0; i < argv.length; i++) {
 		const token = argv[i]!;
-		if (token === `--${name}`) {
+		if (token === flag) {
 			const value = argv[i + 1];
 			if (value === undefined) {
-				throw new CliUsageError(`Flag --${name} requires a value`);
+				throw new CliUsageError(`Flag ${flag} requires a value`);
 			}
 			argv.splice(i, 2);
 			return value;
 		}
-		if (token.startsWith(`--${name}=`)) {
+		if (token.startsWith(`${flag}=`)) {
 			argv.splice(i, 1);
-			return token.slice(name.length + 3);
+			return token.slice(flag.length + 1);
 		}
 	}
 	return null;
+}
+
+/**
+ * Pull `-C <dir>` out of the arguments before the command sees it.
+ *
+ * Global for the reason `--board` is: every server call a command makes names
+ * the vault, and `-C` says where that vault is found from (ADR 0049). It
+ * changes nothing else; a relative `--input` or `--out` still resolves
+ * against the working directory.
+ * @param argv - The arguments after the command name; the flag is spliced out.
+ * @returns The directory as it was written, or null when none was passed.
+ */
+function takeDirectoryFlag(argv: string[]): string | null {
+	return takeGlobalFlag(argv, "-C");
 }
 
 /**
@@ -39,7 +53,7 @@ function takeGlobalFlag(argv: string[], name: string): string | null {
  * @returns The board key, or null when none was passed.
  */
 function takeBoardFlag(argv: string[]): string | null {
-	return takeGlobalFlag(argv, "board");
+	return takeGlobalFlag(argv, "--board");
 }
 
 /**
@@ -58,7 +72,7 @@ function takeBoardFlag(argv: string[]): string | null {
  * @returns The step being taken, or null when none was passed.
  */
 function takeDoingFlag(argv: string[]): string | null {
-	return takeGlobalFlag(argv, "doing");
+	return takeGlobalFlag(argv, "--doing");
 }
 
 /**
@@ -77,7 +91,7 @@ function takeDoingFlag(argv: string[]): string | null {
  * @returns The session writing, or null when none was passed.
  */
 function takeSessionFlag(argv: string[]): string | null {
-	return takeGlobalFlag(argv, "as-session");
+	return takeGlobalFlag(argv, "--as-session");
 }
 
 /**
@@ -93,7 +107,7 @@ function takeSessionFlag(argv: string[]): string | null {
  * @returns The expected board version, or null when none was passed.
  */
 function takeExpectVersionFlag(argv: string[]): number | null {
-	const raw = takeGlobalFlag(argv, "expect-version");
+	const raw = takeGlobalFlag(argv, "--expect-version");
 	if (raw === null) {
 		return null;
 	}
@@ -106,4 +120,4 @@ function takeExpectVersionFlag(argv: string[]): number | null {
 	return Number(raw.trim());
 }
 
-export { takeBoardFlag, takeDoingFlag, takeExpectVersionFlag, takeSessionFlag };
+export { takeBoardFlag, takeDirectoryFlag, takeDoingFlag, takeExpectVersionFlag, takeSessionFlag };

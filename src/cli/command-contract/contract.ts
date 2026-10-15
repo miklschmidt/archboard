@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { vaultRefusals } from "@/cli/command-contract/lib/common";
+import type { AnsweredVault } from "@/cli/command-contract/schemas";
 
 class CliUsageError extends Error {
 	readonly exitCode = 2;
@@ -67,7 +68,7 @@ interface PositionalParameter {
  * command that does nothing with one would otherwise accept it in silence. A
  * command lists the ones it reads; any other is refused as a usage error.
  */
-type SharedOptionKey = "url" | "board" | "doing" | "expect-version" | "as-session";
+type SharedOptionKey = "url" | "directory" | "board" | "doing" | "expect-version" | "as-session";
 
 interface InputStage {
 	name: string;
@@ -169,6 +170,8 @@ interface CommandContext {
 	readonly parse: <T>(schema: z.ZodType<T>, value: unknown) => T;
 	/** The sole lane that may write a diagnostic before public result validation. */
 	readonly diagnostic: (message: string) => void;
+	/** The vault the command addressed, when it reads `-C` and found one. */
+	readonly vault: AnsweredVault | null;
 }
 
 interface CommandContract<Shape extends z.ZodRawShape, Result> {
@@ -446,18 +449,19 @@ function defineCommand<Shape extends z.ZodRawShape, Result>(
 }
 
 /**
- * Adds the refusals of a call that names no usable vault to a command that
- * calls the server. Every server call states a vault, so the refusal is a fact
- * of the call and not of any one command: derived from the `server`
- * prerequisite, a new command cannot forget it (ADR 0049).
+ * Adds the refusals of a vault that cannot be found or used to a command that
+ * finds one. A command that reads `-C` finds its vault before it does anything
+ * else and names it on every server call, so the refusals are facts of that
+ * search and of the call, not of any one command: derived from the shared
+ * option, a new command cannot forget them (ADR 0049).
  * @param contract - The contract being defined.
- * @returns The same contract, with the vault refusals a command that calls the
- * server can get.
+ * @returns The same contract, with the vault refusals a command that finds its
+ * vault can get.
  */
 function namesItsVault<Shape extends z.ZodRawShape, Result>(
 	contract: CommandContract<Shape, Result>,
 ): CommandContract<Shape, Result> {
-	if (!contract.prerequisites.includes("server")) {
+	if (!contract.shared.includes("directory")) {
 		return contract;
 	}
 	const declared = new Set(contract.refusals.map((refusal) => refusal.code));

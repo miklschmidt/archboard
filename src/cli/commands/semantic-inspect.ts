@@ -210,7 +210,7 @@ function whatWasAsked(input: {
 
 const semanticInspectContract = defineCommand({
 	path: ["semantic", "inspect"],
-	shared: ["url"],
+	shared: ["url", "directory"],
 	summary: "Inspect one group or one container of a semantic board",
 	description:
 		"Reports one group or one container of one variant, over the whole variant before any " +

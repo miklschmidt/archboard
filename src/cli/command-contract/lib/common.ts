@@ -6,19 +6,29 @@ const boardRequiredRefusal = {
 	stream: "stderr" as const,
 	description: "A board-sensitive request did not name a board.",
 };
+const vaultNotFoundRefusal = {
+	code: "VAULT_NOT_FOUND",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"No vault was found from the working directory or the directory -C names. Inside a checkout only " +
+		"<root>/.archboard/vault counts; outside one, the nearest enclosing <dir>/.archboard/vault. Nothing was done.",
+};
 const vaultRequiredRefusal = {
 	code: "VAULT_REQUIRED",
 	exit: 2,
 	stream: "stderr" as const,
-	description: "A server call named no vault. Set ARCHBOARD_VAULT.",
+	description:
+		"A server call named no vault. A command names the vault it finds from the working directory or -C <dir>.",
 };
 const vaultUnreadableRefusal = {
 	code: "VAULT_UNREADABLE",
 	exit: 2,
 	stream: "stderr" as const,
-	description: "The vault the command names is not a directory the server can read.",
+	description:
+		"The vault the command found is not a directory the server can read. Nothing was created.",
 };
-const vaultRefusals = [vaultRequiredRefusal, vaultUnreadableRefusal] as const;
+const vaultRefusals = [vaultNotFoundRefusal, vaultRequiredRefusal, vaultUnreadableRefusal] as const;
 const serverRefusal = {
 	code: "SERVER_UNREACHABLE",
 	exit: 3,

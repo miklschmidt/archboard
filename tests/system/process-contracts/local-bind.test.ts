@@ -11,6 +11,7 @@ import { runOwnedPeerToExit, startOwnedPeer } from "./support/owned-peer-process
 import {
 	availablePort,
 	HealthSchema,
+	portIsReusable,
 	ReadySchema,
 	sanitizedEnvironment,
 } from "./support/process-http.ts";
@@ -125,21 +126,24 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 			expect(`${noVault.stdout}${noVault.stderr}`).toContain(text);
 		}
 
+		// Outside any checkout and any vault, a command finds no vault and refuses
+		// before it starts a server (ADR 0049).
 		const cliEnv = sanitizedEnvironment(root, vault);
 		delete cliEnv["ARCHBOARD_VAULT"];
 		delete cliEnv["ARCHBOARD_NO_AUTOSTART"];
-		cliEnv["ARCHBOARD_URL"] = `http://127.0.0.1:${await availablePort()}`;
+		const cliPort = await availablePort();
+		cliEnv["ARCHBOARD_URL"] = `http://127.0.0.1:${cliPort}`;
 		const cli = spawnSync(
 			process.execPath,
 			[join(repoRoot, "src/bin.ts"), "semantic", "show", "any"],
 			{
-				cwd: repoRoot,
+				cwd: root,
 				env: cliEnv,
 				encoding: "utf8",
 			},
 		);
-		expect(cli.status).toBe(3);
-		expect(cli.stderr).toContain("install-skill");
+		expect(cli.status, cli.stderr).toBe(2);
+		expect(await portIsReusable(cliPort)).toBe(true);
 	} finally {
 		await resources.disposeAsync();
 	}
