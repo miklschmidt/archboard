@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 44,
+	"version": 46,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-14T22:48:23.021Z",
+	"updatedAt": "2026-10-15T00:28:38.305Z",
 	"views": [],
 	"variants": [
 		{
@@ -2839,7 +2839,7 @@
 		{
 			"id": "b30wppUO",
 			"name": "TASK-472.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "hSjwvPjz",
 			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
@@ -3337,9 +3337,9 @@
 		{
 			"id": "mEA8E0cU",
 			"name": "TASK-472.03",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "b30wppUO",
-			"summary": "A binding into the vault's own repository resolves in the vault's own checkout",
+			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
 				"nodes": [
 					{
@@ -3833,7 +3833,7 @@
 			}
 		}
 	],
-	"current": "b30wppUO",
+	"current": "mEA8E0cU",
 	"adoptions": [
 		{
 			"variant": "RSCDIXvS",
@@ -3876,6 +3876,12 @@
 			"from": "hSjwvPjz",
 			"at": "2026-10-14T22:43:17.452Z",
 			"reason": "The checkout registry knows every checkout and one chosen checkout for each repository identity, and readers resolve an identity in its chosen checkout"
+		},
+		{
+			"variant": "mEA8E0cU",
+			"from": "b30wppUO",
+			"at": "2026-10-15T00:28:38.305Z",
+			"reason": "A binding into the vault's own repository resolves in the vault's own checkout, so the registry description names that exception and the server reads the checkout through code-target's vault-checkout"
 		}
 	]
 }
