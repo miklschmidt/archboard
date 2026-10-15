@@ -34,18 +34,22 @@ const PLACES: RepositoryPlaces = (identity) => LISTED.get(identity);
 
 describe("drillPlace", () => {
 	test("a link without a repository, or to the vault's own, is read in that vault", () => {
-		expect(drillPlace({ board: "cart", variant: "current" }, OWN, PLACES)).toEqual({
+		expect(drillPlace({ board: "cart", variant: { kind: "current" } }, OWN, PLACES)).toEqual({
 			kind: "readable",
 			there: undefined,
 		});
-		expect(drillPlace({ board: "cart", variant: "current", repo: OWN }, OWN, PLACES)).toEqual({
+		expect(
+			drillPlace({ board: "cart", variant: { kind: "current" }, repo: OWN }, OWN, PLACES),
+		).toEqual({
 			kind: "readable",
 			there: undefined,
 		});
 	});
 
 	test("another repository is read in its chosen checkout's vault", () => {
-		expect(drillPlace({ board: "ledger", variant: "current", repo: OTHER }, OWN, PLACES)).toEqual({
+		expect(
+			drillPlace({ board: "ledger", variant: { kind: "current" }, repo: OTHER }, OWN, PLACES),
+		).toEqual({
 			kind: "readable",
 			there: { vault: "/payments/.archboard/vault", repository: OTHER },
 		});
@@ -53,11 +57,15 @@ describe("drillPlace", () => {
 
 	test("a repository this machine does not list, or cannot read, opens nothing", () => {
 		const unknown = "github.com/acme/unknown";
-		expect(drillPlace({ board: "x", variant: "current", repo: unknown }, OWN, PLACES).kind).toBe(
-			"unregistered",
-		);
 		expect(
-			drillPlace({ board: "x", variant: "current", repo: "github.com/acme/gone" }, OWN, PLACES),
+			drillPlace({ board: "x", variant: { kind: "current" }, repo: unknown }, OWN, PLACES).kind,
+		).toBe("unregistered");
+		expect(
+			drillPlace(
+				{ board: "x", variant: { kind: "current" }, repo: "github.com/acme/gone" },
+				OWN,
+				PLACES,
+			),
 		).toEqual({ kind: "unreachable", repo: "github.com/acme/gone", state: "gone" });
 	});
 });
