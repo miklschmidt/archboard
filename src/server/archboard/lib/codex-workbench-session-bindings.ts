@@ -30,7 +30,10 @@ import type {
 	CodexWorkbenchWorkhorseScope,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";
-import { delegatedCheckout, workhorseOfCheckout } from "@/server/archboard/lib/codex-checkouts";
+import {
+	readyDelegatedWorkhorse,
+	workhorseOfCheckout,
+} from "@/server/archboard/lib/codex-checkouts";
 import type { SemanticContextPublisherOptions } from "@/runtime/codex-semantic-context";
 
 /** What building one tab session's bindings needs from around it. */
@@ -302,14 +305,7 @@ function coordinatorBindings(
 			 * @returns Whatever the operation produced.
 			 */
 			run: async (request, operation) => {
-				const checkout = delegatedCheckout(request);
-				if (checkout !== null) {
-					// A start that fails leaves the delegation to say the checkout has no workhorse.
-					await scope
-						.workhorse(checkout)
-						.actions.ensureStarted()
-						.catch(() => undefined);
-				}
+				await readyDelegatedWorkhorse(request, scope.workhorse);
 				state.currentCoordinatorCall = request.logicalCall;
 				try {
 					return await operation();

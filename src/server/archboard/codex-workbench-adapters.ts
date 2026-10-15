@@ -47,6 +47,7 @@ export {
 export { createServerCanonicalTextActions } from "@/server/archboard/lib/codex-workbench-text-actions";
 export { createServerRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
 export { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-pane";
+export { checkoutNamedBy, readyDelegatedWorkhorse } from "@/server/archboard/lib/codex-checkouts";
 export {
 	bindThreadContextToReadyWorkhorse,
 	clearServerThreadContextForLease,

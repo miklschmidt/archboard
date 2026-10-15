@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 import { checkoutOfVault, VAULT_DIRECTORY } from "@/runtime/engine/vault-finder";
+import type { CodexWorkbenchWorkhorseActions } from "@/server/archboard/lib/codex-workbench-session-workhorses";
 
 /**
  * Whether a path is a directory now.
@@ -87,4 +88,27 @@ function checkoutArgument(args: unknown): string | null {
 	return typeof args.checkout === "string" ? checkoutNamedBy(args.checkout) : null;
 }
 
-export { checkoutNamedBy, delegatedCheckout, workhorseOfCheckout };
+/**
+ * Give a delegation somewhere to go: start the workhorse of the checkout it names when that
+ * workhorse has no thread that can run turns. A start that fails leaves the delegation to say the
+ * checkout has no workhorse.
+ * @param request The coordinator tool call.
+ * @param workhorseOf The tab's workhorse of a checkout, built on first use.
+ * @returns Resolves once the workhorse can run turns, or its start failed, or the call is no
+ * delegation to a checkout.
+ */
+async function readyDelegatedWorkhorse(
+	request: Pick<DynamicServerRequest, "params">,
+	workhorseOf: (checkout: string) => {
+		readonly actions: Pick<CodexWorkbenchWorkhorseActions, "ensureStarted">;
+	},
+): Promise<void> {
+	const checkout = delegatedCheckout(request);
+	if (checkout !== null) {
+		await workhorseOf(checkout)
+			.actions.ensureStarted()
+			.catch(() => undefined);
+	}
+}
+
+export { checkoutNamedBy, readyDelegatedWorkhorse, workhorseOfCheckout };

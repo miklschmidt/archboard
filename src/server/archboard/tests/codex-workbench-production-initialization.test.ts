@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { checkoutPort, SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
+import { findVault } from "@/runtime/engine/vault-finder";
 import { withProductionState } from "@/server/archboard/tests/support/production-state";
 
 import {
@@ -66,7 +67,7 @@ function installation(server: Record<string, unknown> = {}) {
 }
 
 describe("production Codex storage", () => {
-	test("the servers on a machine share one Codex home, and each port owns its own state", () => {
+	test("the servers on a machine share one Codex home, and each port owns its own state", async () => {
 		const { root, value } = installation();
 		try {
 			const workbench =
@@ -90,6 +91,11 @@ describe("production Codex storage", () => {
 				join("/repo", "skills", "archboard"),
 			);
 			expect(existsSync(join(coordinator, ".archboard"))).toBe(false);
+			// So a command the coordinator runs without -C finds no vault and is refused, rather than
+			// read the boards of a checkout it does not work in.
+			expect(
+				await findVault({ directory: null, environment: undefined, cwd: coordinator }),
+			).toMatchObject({ ok: false, code: "VAULT_NOT_FOUND" });
 		} finally {
 			rmSync(root, { recursive: true, force: true });
 		}
