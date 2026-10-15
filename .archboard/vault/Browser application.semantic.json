@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 64,
+	"version": 66,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-15T06:47:58.030Z",
+	"updatedAt": "2026-10-15T07:01:56.223Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -9263,7 +9263,7 @@
 		{
 			"id": "L7BQsaGv",
 			"name": "TASK-472.13",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "QQyrWqEG",
 			"summary": "A pane dives into a board of another repository",
 			"content": {
@@ -10481,9 +10481,9 @@
 		{
 			"id": "YxjGNtA1",
 			"name": "TASK-472.16",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "L7BQsaGv",
-			"summary": "A person moves a board to another repository from its pane",
+			"summary": "Browser application modules, with a person moving a pane's board to another repository after a look at what the move rewrites",
 			"content": {
 				"nodes": [
 					{
@@ -10856,7 +10856,7 @@
 						"name": "Board move",
 						"kind": "module",
 						"responsibility": "A person moves the pane's board to another repository, with a look at what the move rewrites first",
-						"description": "TASK-472.16, ADR 0051. The control sits in the pane's header while the pane shows a board of a vault the server named. The dialog lists the repositories the board can move to, which Board catalog reads, and for the one chosen what the move would rewrite. That preview is read again whenever the pane hears the board changed. The move states the version its preview read and states a human origin, so a board written since is refused, and its refusal is shown in the move's own words. The move writes no doing line.",
+						"description": "TASK-472.16, ADR 0051. The control sits in the pane's header while the pane shows a board of a vault the server named. The dialog lists the repositories the board can move to, which Board catalog reads, and for the one chosen what the move would rewrite. That preview is read again whenever the pane hears the board changed, and again after a refused move, since a stopped move wrote part of what it lists. The move states the version its preview read and states a human origin, so a board written since is refused, and its refusal is shown in the dialog in the move's own words: the dialog stays open until the move has answered. The board's name comes from the pane's board key through Semantic viewer, so every variant moves. The move writes no doing line.",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -11674,6 +11674,20 @@
 							"path": "src/ui/board-move/api/move.ts",
 							"symbol": "inVault"
 						}
+					},
+					{
+						"id": "LdhhD4lg",
+						"order": 61000,
+						"from": "HQWPLutt",
+						"to": "dtYjWvlf",
+						"kind": "call",
+						"label": "the board's name from the pane's board key",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-move/components/MoveBoardControl.tsx",
+							"symbol": "boardAddressOf"
+						}
 					}
 				],
 				"flows": [],
@@ -11764,7 +11778,7 @@
 			}
 		}
 	],
-	"current": "L7BQsaGv",
+	"current": "YxjGNtA1",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -11819,6 +11833,12 @@
 			"from": "QQyrWqEG",
 			"at": "2026-10-15T04:57:50.126Z",
 			"reason": "A drill-down into another repository moves the pane there through the shell"
+		},
+		{
+			"variant": "YxjGNtA1",
+			"from": "L7BQsaGv",
+			"at": "2026-10-15T07:01:56.223Z",
+			"reason": "A person moves a pane's board to another repository from its header, after a look at what the move rewrites"
 		}
 	]
 }
