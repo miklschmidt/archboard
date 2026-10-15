@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-14 22:52'
-updated_date: '2026-10-14 23:00'
+updated_date: '2026-10-15 00:02'
 labels: []
 dependencies: []
 references:
@@ -45,4 +45,6 @@ A repository identity falls back to the name of the checkout's directory when th
 
 <!-- SECTION:NOTES:BEGIN -->
 Identity rule is repoIdentityFor(root, remote, worktreeListing?) in git.ts; repoIdentityAt asks git for the listing only when there is no remote. Bare repo: named by its directory without .git. worktreesOf keeps its identity filter (extensions.worktreeConfig can override origin per worktree). No dogfood board changes: the Repository checkout part already says worktrees of its identity. Cross-scope: src/runtime/code-target/lib/vault-checkout.ts calls repoIdentityFor(top, remote) without the listing, so a vault in a linked worktree of a remoteless repo still gets the worktree directory name until it passes gitAnswer(top, ['worktree','list','--porcelain']) as the third argument (TASK-472.03).
+
+Parent, 2026-10-15: 03011270e names a main checkout with a separate git directory by its own directory, since git worktree list names it by the git directory. Known limit: a linked worktree of such a repository with no remote still gets the git directory name, because nothing in git points back to the main checkout. The review fixes are e6cac4e3b (an old entry under a worktree name is recorded again under the main identity) and the removal of a duplicate system test. The help of repo add and repo forget now matches.
 <!-- SECTION:NOTES:END -->
