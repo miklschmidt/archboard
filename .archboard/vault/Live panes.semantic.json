@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 20,
+	"version": 21,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T01:45:15.574Z",
+	"updatedAt": "2026-10-15T02:10:36.514Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -3289,20 +3289,6 @@
 						}
 					},
 					{
-						"id": "aPJVVIqe",
-						"order": 49000,
-						"from": "etiWAAKH",
-						"to": "UNYvWHmE",
-						"kind": "call",
-						"label": "what an agent is doing in the new vault",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/repository-routes.ts",
-							"symbol": "tellPaneAboutVault"
-						}
-					},
-					{
 						"id": "rnMTaURu",
 						"order": 50000,
 						"from": "etiWAAKH",
@@ -3398,6 +3384,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/application/components/ApplicationPane.tsx",
 							"symbol": "usePaneSession"
+						}
+					},
+					{
+						"id": "zxnqlgqO",
+						"order": 57000,
+						"from": "UNYvWHmE",
+						"to": "nPjqFn3J",
+						"kind": "call",
+						"label": "tell every pane what agents are doing, by vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/board-announcements.ts",
+							"symbol": "broadcastEverywhere"
 						}
 					}
 				],
