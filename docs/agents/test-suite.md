@@ -70,8 +70,10 @@ the browser shows.
   the server it talks to: `runServerCli` in `tests/system/support/run-cli.ts`
   and in the browser support. It never runs in this checkout, because there it
   finds the boards of this repository.
-- No test sets `ARCHBOARD_VAULT`. A command test under `src/` runs the CLI in
-  its own process. It names a temporary vault with `-C <dir>` and sets
+- No test sets `ARCHBOARD_VAULT`. A helper that copies the caller's
+  environment into a child clears the variable with `callerVaultCleared`, so a
+  vault that you export never receives a test's writes. A command test under
+  `src/` runs the CLI in its own process. It names a temporary vault with `-C <dir>` and sets
   `ARCHBOARD_REPOS` to a temporary file.
 - To check that no test writes your registry, set `ARCHBOARD_REPOS` to a path
   that does not exist before a lane. After the lane, the file must still be
