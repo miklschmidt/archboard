@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 46,
+	"version": 47,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T21:29:45.149Z",
+	"updatedAt": "2026-10-15T21:52:39.772Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -11418,7 +11418,7 @@
 						"name": "Repository routes",
 						"kind": "route",
 						"responsibility": "Lists the repositories and chooses a checkout, and watches the registry file: each pane in an unchosen checkout's vault moves to the chosen one, and every pane hears its repository's name",
-						"parent": "Tfq89ZiN",
+						"parent": "UvFpXmwp",
 						"groups": [
 							"panes"
 						],
@@ -11434,7 +11434,7 @@
 						"kind": "module",
 						"responsibility": "Moves a pane into another vault, re-keying its sockets and registration and forgetting what it said it was reading, and broadcasts machine news to every tab",
 						"description": "It tells nobody that a pane moved: which conversation the tab's agent dock shows stays as it is, because only the person's own act in the page changes that.",
-						"parent": "Tfq89ZiN",
+						"parent": "UvFpXmwp",
 						"groups": [
 							"panes"
 						],
@@ -11450,7 +11450,7 @@
 						"kind": "module",
 						"responsibility": "Names each vault the way the navigator lists it: a repository identity, or an untracked vault's registry name, read from the chosen checkout",
 						"description": "A vault whose real path is not <dir>/.archboard/vault, such as one that a link leads out of the layout, is no vault here: its checkout reads no-vault, and an untracked one is not listed. A vault that no registry entry holds has no repository name. Every vault has a checkout, the directory that holds it, so a pane and a shown board always report one. No environment variable names a vault: the page opens in the first ready repository by name.",
-						"parent": "Tfq89ZiN",
+						"parent": "UvFpXmwp",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/repositories.ts"
@@ -11492,7 +11492,7 @@
 						"order": 26000,
 						"name": "Pane connections",
 						"kind": "module",
-						"responsibility": "Accepts each page's socket and pane, keeps which pane shows what in which tab, and reports what the panes show",
+						"responsibility": "Accepts each page's socket and pane, keeps which pane shows what in which tab, reports what the panes show, and moves a pane to the checkout a person chooses",
 						"parent": "t1dQivSP"
 					},
 					{
@@ -11501,14 +11501,6 @@
 						"name": "Board news",
 						"kind": "module",
 						"responsibility": "Notices that a board changed and tells the panes of its vault, and files each change for the agent's context",
-						"parent": "t1dQivSP"
-					},
-					{
-						"id": "Tfq89ZiN",
-						"order": 28000,
-						"name": "Pane places",
-						"kind": "module",
-						"responsibility": "Names the repositories and moves a pane to the checkout a person chooses",
 						"parent": "t1dQivSP"
 					},
 					{
