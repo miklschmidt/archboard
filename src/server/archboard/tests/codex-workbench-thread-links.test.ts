@@ -413,7 +413,7 @@ test("a new conversation gives up the workhorse thread the old one ran on once t
 	expect(retired).toEqual([left]);
 });
 
-test("work given to a checkout starts its workhorse when its link cannot run turns, and only then", async () => {
+test("work given to a checkout starts its workhorse when its link cannot run turns, and only then, leaving the coordinator that gave it alone", async () => {
 	const authorities = createIdentityAuthorities();
 	const { childId, epoch } = authorities.identity.validator;
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-started");
@@ -425,12 +425,13 @@ test("work given to a checkout starts its workhorse when its link cannot run tur
 		cas: unbound,
 	};
 	const starts: unknown[] = [];
+	const coordinatorStarts: string[] = [];
 	const actions = createServerThreadLinkActions({
 		claimThread: () => undefined,
 		retireThread: async () => unused("retireThread"),
 		key: KEY,
 		claimCoordinatorThread: () => undefined,
-		coordinator: readyCoordinator(),
+		coordinator: readyCoordinator(coordinatorStarts),
 		identity: authorities,
 		workhorse: {
 			start: async (input: unknown) => {
@@ -454,4 +455,7 @@ test("work given to a checkout starts its workhorse when its link cannot run tur
 	await actions.ensureStarted();
 	await actions.ensureStarted();
 	expect(starts).toEqual([{ paneId: KEY, expected: unbound }]);
+	// The coordinator is running the turn that gives the work. Readying it again would show it
+	// unready to that turn's other calls while it re-proved itself.
+	expect(coordinatorStarts).toEqual([]);
 });
