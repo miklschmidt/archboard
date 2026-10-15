@@ -200,6 +200,6 @@ test("a refused move exits with the status its refusal declares and moves nothin
 		"--doing",
 		"moving the board without saying which version it read",
 	]);
-	expect(unversioned.status).not.toBe(0);
+	expect(unversioned.status).toBe(2);
 	expect([holds(metaVault, "Refunds"), holds(productVault, "Refunds")]).toEqual([true, false]);
 }, 120_000);
