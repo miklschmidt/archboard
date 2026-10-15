@@ -66,6 +66,12 @@ container binds to it. If the code keeps the area's files beside others in one
 folder, the container has no binding. Moving files to give a picture a box is
 not worth the change to every binding and import.
 
+A view that opens a container still draws a relationship between the
+container and a part inside it, as a line from the box into itself. A reader
+cannot tell what that line means. `archboard check` warns with
+`CONTAINER_LINE_TO_OWN_PART` on each such relationship of the current variant.
+A call inside a container starts at the part that makes it.
+
 Relationships and calls are drawn apart:
 
 - A relationship says that one part needs or uses another. One relationship

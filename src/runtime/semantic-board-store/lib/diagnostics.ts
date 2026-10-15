@@ -2,7 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { normalizeBoardKey } from "@/runtime/engine/board";
 import { errorMessage } from "@/shared/thrown-error/index";
-import { currentVariant, overviewContent, type SemanticBoard } from "@/shared/semantic-board/index";
+import {
+	currentVariant,
+	overviewContent,
+	type SemanticBoard,
+	type SemanticNode,
+} from "@/shared/semantic-board/index";
 import type { VaultCheck, VaultDiagnostic } from "@/shared/semantic-policy/index";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
 import {
@@ -11,6 +16,7 @@ import {
 	SEMANTIC_BOARD_FILE_SUFFIX,
 } from "@/runtime/semantic-board-store/lib/location";
 import { readSemanticBoardAt } from "@/runtime/semantic-board-store/lib/read";
+import { edgeSubjects } from "@/runtime/semantic-board-store/lib/subject";
 import {
 	createDrillLookup,
 	type DrillDownTarget,
@@ -71,6 +77,65 @@ function semanticOverviewDiagnostics(board: SemanticBoard, file: string): VaultD
 }
 
 /**
+ * A warning for each relationship of a board's current variant that joins a
+ * container and a part inside it, in either direction (ADR 0052).
+ *
+ * The nesting already says that a container holds its parts, so a view that
+ * opens the container draws such a line from the box into itself, and a reader
+ * cannot tell what it means. A call that runs inside a container starts at the
+ * part that makes it.
+ * @param board The board, as read.
+ * @param file The file it was read from.
+ * @returns One warning per such relationship.
+ */
+function semanticContainerLineDiagnostics(board: SemanticBoard, file: string): VaultDiagnostic[] {
+	const variant = currentVariant(board);
+	if (variant === undefined) {
+		return [];
+	}
+	const byId = new Map(variant.content.nodes.map((node) => [node.id, node]));
+	const subjectOf = edgeSubjects(variant.content);
+	return variant.content.edges.flatMap((edge) => {
+		const container = holds(byId, edge.from, edge.to)
+			? edge.from
+			: holds(byId, edge.to, edge.from)
+				? edge.to
+				: undefined;
+		if (container === undefined) {
+			return [];
+		}
+		const holder = JSON.stringify(byId.get(container)?.name ?? container);
+		return [
+			{
+				severity: "warning" as const,
+				code: "CONTAINER_LINE_TO_OWN_PART",
+				file,
+				board: board.name,
+				variant: variant.name,
+				subject: subjectOf(edge),
+				message:
+					`It joins ${holder} and a part inside it, which the nesting already draws. ` +
+					`Start or end it at the part inside ${holder} that makes or answers the call.`,
+			},
+		];
+	});
+}
+
+/**
+ * Whether a container holds a part, at any depth.
+ * @param byId The variant's nodes, by id.
+ * @param container The container.
+ * @param part The part.
+ * @returns True when the part sits inside the container.
+ */
+function holds(byId: ReadonlyMap<string, SemanticNode>, container: string, part: string): boolean {
+	for (let at = byId.get(part)?.parent; at !== undefined; at = byId.get(at)?.parent) {
+		if (at === container) return true;
+	}
+	return false;
+}
+
+/**
  * Check every board family and report traversal/read failures rather than hiding them.
  *
  * Boards are read first and linked afterwards: whether a drill-down opens a
@@ -95,6 +160,7 @@ function checkSemanticVault(root: string): VaultCheck {
 		diagnostics.push(...semanticDrillDownDiagnostics(board, file, lookup));
 		diagnostics.push(...semanticBindingDiagnostics(board, file, checkoutOf));
 		diagnostics.push(...semanticOverviewDiagnostics(board, file));
+		diagnostics.push(...semanticContainerLineDiagnostics(board, file));
 	}
 	return {
 		policy: configured.configuration,
