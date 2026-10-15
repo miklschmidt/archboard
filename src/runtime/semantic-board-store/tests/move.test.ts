@@ -325,6 +325,24 @@ test("a move waiting for the board holds nothing in the target vault", async () 
 	expect((await moving).outcome).toBe("moved");
 });
 
+test("a copy in the target that changed since the move stopped is not overwritten", async () => {
+	await create(vaults.meta, "Tickets");
+	await create(vaults.meta, "Desk", [{ name: "Web", kind: "app" }, opening("Open", "Tickets")]);
+	const elsewhere = { id: "another-server", kind: "agent" as const, claimed: true };
+	await holdBoard({ vault: vaults.meta, board: "desk", holder: elsewhere, leaseMs: 60_000 });
+	const first = await move("Tickets", vaults.meta, vaults.product);
+	releaseHold(vaults.meta, "desk", elsewhere.id);
+	expect(first.outcome).toBe("stopped");
+	await change(vaults.product, "Tickets", store.branchVariantTransition({ name: "Later" }));
+	const written = board(vaults.product, "Tickets");
+
+	const again = await move("Tickets", vaults.meta, vaults.product);
+
+	expect(again.outcome === "rejected" ? again.code : again.outcome).toBe("BOARD_EXISTS");
+	expect(board(vaults.product, "Tickets")).toEqual(written);
+	expect(holds(vaults.meta, "Tickets")).toBe(true);
+});
+
 test("a lease that a stopped writer left on a board the move rewrites does not stop the move", async () => {
 	await create(vaults.meta, "Stock");
 	await create(vaults.meta, "Shelf", [{ name: "Web", kind: "app" }, opening("Open", "Stock")]);
