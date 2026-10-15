@@ -13,7 +13,7 @@ const argv = process.argv.slice(2);
 // Inside another archboard checkout, that checkout's source runs the command
 // (ADR 0049). Decided first, so that it gets the environment as it was given.
 const { handOff } = await import("@/runtime/engine/source-checkout");
-const handedOff = handOff(argv);
+const handedOff = await handOff(argv);
 if (handedOff !== null) {
 	process.exit(handedOff);
 }

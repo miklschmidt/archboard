@@ -13,7 +13,7 @@
 // command in a worktree runs the worktree's source and reaches the worktree's
 // server.
 
-import { spawnSync } from "child_process";
+import { spawn } from "child_process";
 import { createHash } from "crypto";
 import fs from "fs";
 import path from "path";
@@ -126,15 +126,19 @@ function handOffTarget(cwd: string, running: string): string | null {
 	return target;
 }
 
+/** The signals that end a command, which the command that runs instead must get too. */
+const FORWARDED_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
+
 /**
  * Run the command with the source of the archboard checkout the working
  * directory stands in, when that is not this process's source. The arguments,
- * the environment and the terminal are passed on as they are.
+ * the environment and the terminal are passed on as they are, and so is a
+ * signal that this process gets.
  * @param argv The arguments after the executable name.
  * @returns The exit status of the command that ran instead, or null when this
  * process runs the command itself.
  */
-function handOff(argv: readonly string[]): number | null {
+async function handOff(argv: readonly string[]): Promise<number | null> {
 	let cwd: string;
 	try {
 		cwd = process.cwd();
@@ -146,15 +150,48 @@ function handOff(argv: readonly string[]): number | null {
 	if (target === null) {
 		return null;
 	}
-	const ran = spawnSync(target, argv, { stdio: "inherit" });
-	if (ran.error !== undefined) {
-		process.stderr.write(`Error: ${target} could not run: ${ran.error.message}\n`);
+	return runInstead(target, argv);
+}
+
+/**
+ * Run another checkout's `bin/archboard` as this command. A signal that this
+ * process gets meanwhile goes to it, so that it can clean up as it would if it
+ * had been started directly, and how it ends is how this process ends.
+ * @param target The `bin/archboard` to run.
+ * @param argv The arguments after the executable name.
+ * @returns Its exit status.
+ */
+async function runInstead(target: string, argv: readonly string[]): Promise<number> {
+	const child = spawn(target, argv, { stdio: "inherit" });
+	/**
+	 * Pass a signal on to the command that runs instead.
+	 * @param signal The signal this process got.
+	 */
+	const forward = (signal: NodeJS.Signals): void => {
+		child.kill(signal);
+	};
+	for (const signal of FORWARDED_SIGNALS) {
+		process.on(signal, forward);
+	}
+	const ended = await new Promise<Error | { code: number | null; signal: NodeJS.Signals | null }>(
+		(resolve) => {
+			child.once("error", resolve);
+			child.once("exit", (code, signal) => {
+				resolve({ code, signal });
+			});
+		},
+	);
+	for (const signal of FORWARDED_SIGNALS) {
+		process.off(signal, forward);
+	}
+	if (ended instanceof Error) {
+		process.stderr.write(`Error: ${target} could not run: ${ended.message}\n`);
 		return 1;
 	}
-	if (ran.signal !== null) {
-		process.kill(process.pid, ran.signal);
+	if (ended.signal !== null) {
+		process.kill(process.pid, ended.signal);
 	}
-	return ran.status ?? 1;
+	return ended.code ?? 1;
 }
 
 export {
