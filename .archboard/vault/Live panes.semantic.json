@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 12,
+	"version": 15,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T00:00:15.081Z",
+	"updatedAt": "2026-10-15T00:25:36.673Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -69,7 +69,7 @@
 		{
 			"id": "8dYrGdIf",
 			"name": "TASK-436.03",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"summary": "Live pane connections, presentation state and board announcements",
 			"content": {
 				"nodes": [
@@ -1140,9 +1140,9 @@
 		{
 			"id": "5CDXeeuu",
 			"name": "TASK-472.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "8dYrGdIf",
-			"summary": "Every server call names its vault",
+			"summary": "Live pane connections, presentation state and board announcements",
 			"content": {
 				"nodes": [
 					{
@@ -1514,7 +1514,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/pane-registry.ts",
-							"symbol": "sendToAllClients"
+							"symbol": "sendToVaultClients"
 						}
 					},
 					{
@@ -1996,6 +1996,20 @@
 						"kind": "call",
 						"label": "refuses an upgrade naming none",
 						"emphasis": "normal"
+					},
+					{
+						"id": "wfZNifHF",
+						"order": 42000,
+						"from": "r1aZDJtl",
+						"to": "bEBbXPKc",
+						"kind": "call",
+						"label": "requires a vault on the code opener's route",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "requireVault"
+						}
 					}
 				],
 				"flows": [
@@ -2241,12 +2255,18 @@
 			}
 		}
 	],
-	"current": "8dYrGdIf",
+	"current": "5CDXeeuu",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
 			"at": "2026-10-07T01:12:39.208Z",
 			"reason": "The existing seven live-pane implementations and their exchanges now have their own architecture board"
+		},
+		{
+			"variant": "5CDXeeuu",
+			"from": "8dYrGdIf",
+			"at": "2026-10-15T00:25:36.673Z",
+			"reason": "Every call and pane socket names its vault: a Vault requirement refuses a call naming none, and the pane registry, board announcements and change feed keep their news per vault"
 		}
 	]
 }

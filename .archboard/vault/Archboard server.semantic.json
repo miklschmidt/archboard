@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 238,
+	"version": 243,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-14T23:26:57.521Z",
+	"updatedAt": "2026-10-15T00:25:37.075Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -96090,7 +96090,7 @@
 		{
 			"id": "cTrtzvrj",
 			"name": "TASK-345",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "4ulnFRtb",
 			"summary": "The server reads and writes semantic boards, serves the viewer, checks code evidence, and attributes history through bound declarations or paths; its route handlers are one card that opens a board of their own.",
 			"content": {
@@ -99388,9 +99388,9 @@
 		{
 			"id": "LE2uP3wL",
 			"name": "TASK-472.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "cTrtzvrj",
-			"summary": "Every server call names its vault",
+			"summary": "The server reads and writes semantic boards, serves the viewer, checks code evidence, and attributes history through bound declarations or paths; its route handlers are one card that opens a board of their own.",
 			"content": {
 				"nodes": [
 					{
@@ -99437,7 +99437,7 @@
 						"order": 4000,
 						"name": "Route handlers",
 						"kind": "module",
-						"responsibility": "Answers every request the server takes: board reads, the one write boundary with its claim, rename and discard, the code checks, the page and health",
+						"responsibility": "Answers every request the server takes: board reads, the one write boundary with its claim, rename and discard, the code checks, the page, health and served vault",
 						"description": "Board routes, Board write routes, Claim routes, Rename route, Discard route, Service routes, Code check route, Locality route and Footprint route. Their own board draws each one with the parts it reaches.",
 						"parent": "nmbXuHCg",
 						"groups": [
@@ -99611,7 +99611,7 @@
 						"order": 30000,
 						"name": "Code findings memory",
 						"kind": "module",
-						"responsibility": "What the last code pass found on each board and variant, in memory only",
+						"responsibility": "What the last code pass found on each board and variant of each vault, in memory only",
 						"description": "Each finished pass replaces the readings of the boards it read, with the version it read and when it ran; a cancelled pass changes nothing. GET /api/vault/code-findings answers from it alone, so a pane never starts a pass (ADR 0046).",
 						"parent": "nmbXuHCg",
 						"binding": {
@@ -99904,12 +99904,13 @@
 						"from": "tbH9ZyCA",
 						"to": "Eh7icS73",
 						"kind": "event",
+						"label": "board and agent news",
 						"description": "board and agent news",
 						"emphasis": "hero",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/pane-registry.ts",
-							"symbol": "sendToAllClients"
+							"symbol": "sendToVaultClients"
 						}
 					},
 					{
@@ -100506,6 +100507,20 @@
 						"kind": "call",
 						"label": "sockets and pane calls name a vault",
 						"emphasis": "normal"
+					},
+					{
+						"id": "EYz7uJ3g",
+						"order": 119000,
+						"from": "2naazvac",
+						"to": "bqxbYzRT",
+						"kind": "call",
+						"label": "requires a vault on the code opener's route",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "requireVault"
+						}
 					}
 				],
 				"flows": [
@@ -101066,7 +101081,7 @@
 			}
 		}
 	],
-	"current": "cTrtzvrj",
+	"current": "LE2uP3wL",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -101319,6 +101334,12 @@
 			"from": "4ulnFRtb",
 			"at": "2026-10-11T14:08:20.712Z",
 			"reason": "The nine route cards became one card that opens the Archboard server routes board"
+		},
+		{
+			"variant": "LE2uP3wL",
+			"from": "cTrtzvrj",
+			"at": "2026-10-15T00:25:37.075Z",
+			"reason": "Every server call names its vault: route handlers, live panes and the code opener's route require one through the Vault requirement"
 		}
 	],
 	"shelvings": [

@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 89,
+	"version": 91,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-07T02:15:07.926Z",
+	"updatedAt": "2026-10-15T00:27:30.862Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -28804,7 +28804,7 @@
 						"order": 500,
 						"name": "Page start",
 						"kind": "function",
-						"responsibility": "Starts this page's renderer and hands the viewer its picture source and cache once, or replays a recorded talk",
+						"responsibility": "Starts this page's renderer and hands the viewer its picture source and cache once; learns the vault the server serves before the application renders, or replays a recorded talk",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "frontend/main.tsx"

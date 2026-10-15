@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 10,
+	"version": 14,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-14T23:26:07.233Z",
+	"updatedAt": "2026-10-15T00:25:36.911Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -65,7 +65,7 @@
 		{
 			"id": "wYtgja90",
 			"name": "Initial",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer and history each reaches.",
 			"content": {
 				"nodes": [
@@ -2126,9 +2126,9 @@
 		{
 			"id": "OIsBTySc",
 			"name": "TASK-472.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "wYtgja90",
-			"summary": "Every server call names its vault",
+			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer and history each reaches.",
 			"content": {
 				"nodes": [
 					{
@@ -2210,7 +2210,7 @@
 						"order": 7000,
 						"name": "Service routes",
 						"kind": "route",
-						"responsibility": "Serves the page, and the health answer naming the archboard-server service, its pid and whether it runs the source on disk",
+						"responsibility": "Serves the page, the health answer naming the archboard-server service, its pid and whether it runs the source on disk, and the vault that the server serves (the one call that names no vault)",
 						"description": "The CLI signals a process for stop only when it both identifies as archboard-server and reports its own pid.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -2283,7 +2283,7 @@
 						"order": 13000,
 						"name": "Code findings memory",
 						"kind": "module",
-						"responsibility": "What the last code pass found on each board and variant, in memory only",
+						"responsibility": "What the last code pass found on each board and variant of each vault, in memory only",
 						"description": "Each finished pass replaces the readings of the boards it read, with the version it read and when it ran; a cancelled pass changes nothing. GET /api/vault/code-findings answers from it alone, so a pane never starts a pass (ADR 0046).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -3131,15 +3131,6 @@
 						"emphasis": "normal"
 					},
 					{
-						"id": "Pbt37NZh",
-						"order": 51000,
-						"from": "kFQJkivd",
-						"to": "fs2ehN0i",
-						"kind": "call",
-						"label": "requires a vault",
-						"emphasis": "normal"
-					},
-					{
 						"id": "nQhWWvFA",
 						"order": 52000,
 						"from": "GXtY3Xsd",
@@ -3239,5 +3230,13 @@
 			}
 		}
 	],
-	"current": "wYtgja90"
+	"current": "OIsBTySc",
+	"adoptions": [
+		{
+			"variant": "OIsBTySc",
+			"from": "wYtgja90",
+			"at": "2026-10-15T00:25:36.911Z",
+			"reason": "Every board route requires a vault through a Vault requirement; the service routes also answer the vault the server serves, and code findings are remembered per vault"
+		}
+	]
 }
