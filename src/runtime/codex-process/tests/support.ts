@@ -34,7 +34,7 @@ function fixture(
 function processOptions(root: string, executablePath: string): CodexProcessTestOptions {
 	return {
 		executablePath,
-		checkoutRoot: process.cwd(),
+		workingDirectory: process.cwd(),
 		storage: { rootDirectory: path.join(root, "storage") },
 		archboardServer: { url: "http://127.0.0.1:3404", binDirectory: "/opt/archboard/bin" },
 		ambientEnvironment: {

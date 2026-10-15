@@ -211,7 +211,7 @@ async function createHarness(
 			controlPath,
 			options.version ?? CODEX_PROTOCOL_BINARY_VERSION,
 		),
-		checkoutRoot: repoRoot,
+		workingDirectory: repoRoot,
 		storage: { rootDirectory: join(root, "storage") },
 		archboardServer: { url: "http://127.0.0.1:3000", binDirectory: "/opt/archboard/bin" },
 	});
@@ -251,7 +251,7 @@ async function createHarness(
 				sqliteHome: join(root, "storage/sqlite-home"),
 				configPath: join(root, "storage/codex-home/config.toml"),
 			},
-			checkoutRoot: repoRoot,
+			workingDirectory: repoRoot,
 			lifecycle: child.lifecycle,
 			onNotification: (event) => adapter.onNotification(event),
 		});

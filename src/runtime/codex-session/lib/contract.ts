@@ -95,8 +95,8 @@ export interface CodexSessionOptions {
 	readonly transport: CodexTransport;
 	readonly identity: IdentityAuthority;
 	readonly storage: CodexSessionStorage;
-	/** Canonical checkout cwd supplied by the owning Codex process. */
-	readonly checkoutRoot: string;
+	/** The directory the app-server child runs in, which reads its configuration from there. */
+	readonly workingDirectory: string;
 	readonly lifecycle?: CodexProcessLifecycle;
 	readonly onNotification?: SessionNotificationHandler;
 	/** Composition owns the sole listener cohort; standalone consumers keep legacy self-registration. */

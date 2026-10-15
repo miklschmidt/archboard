@@ -224,7 +224,7 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 
 /**
  * Production lifecycle entrypoint. Test seams are available from testing.ts.
- * @param options - The executable, checkout and storage to own.
+ * @param options - The executable, working directory and storage to own.
  * @returns The process owner.
  */
 function createCodexProcess(options: CodexProcessOptions): CodexProcess {

@@ -1,5 +1,6 @@
-// What each owner of one tab session is configured with: where it works, what it is bound to,
-// read at the moment it asks, and the context its operations run under.
+// What each owner of one tab session, and of each of its workhorses, is configured with: where it
+// works, what it is bound to, read at the moment it asks, and the context its operations run
+// under.
 
 import { readBoardCatalogue, watchBoardCatalogue } from "@/runtime/engine/board-catalogue";
 import {
@@ -7,7 +8,10 @@ import {
 	createCoordinatorCallbackRealtimePort,
 } from "@/runtime/codex-coordinator-callbacks";
 import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";
-import type { CodexWorkbenchSessionBindings } from "@/server/archboard/lib/codex-workbench-contract";
+import type {
+	CodexWorkbenchSessionBindings,
+	CodexWorkbenchWorkhorseBindings,
+} from "@/server/archboard/lib/codex-workbench-contract";
 import {
 	allNamed,
 	currentOperationBinding,
@@ -21,100 +25,90 @@ import {
 	workhorseLink,
 } from "@/server/archboard/lib/codex-workbench-binding-readers";
 import type {
-	CodexWorkbenchSessionComponents,
-	CodexWorkbenchTabSessionState,
+	CodexWorkbenchTabSessionScope,
+	CodexWorkbenchWorkhorseComponents,
+	CodexWorkbenchWorkhorseScope,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";
+import { delegatedCheckout, workhorseOfCheckout } from "@/server/archboard/lib/codex-checkouts";
 import type { SemanticContextPublisherOptions } from "@/runtime/codex-semantic-context";
-import type { TabSessionId } from "@/server/codex-workbench";
+
+/** What building one tab session's bindings needs from around it. */
+interface SessionBindingContext {
+	readonly scope: CodexWorkbenchTabSessionScope;
+	readonly server: CodexWorkbenchServer;
+	readonly shared: CodexWorkbenchSharedComponents;
+	/** The directory of its own the coordinator works in, which is no checkout (ADR 0050). */
+	readonly coordinatorDirectory: string;
+	/** Tell every browser projection listener that something it shows has changed. */
+	readonly publishProjection: () => void;
+}
+
+/** What building one workhorse's bindings needs from around it. */
+interface WorkhorseBindingContext {
+	readonly scope: CodexWorkbenchWorkhorseScope;
+	readonly server: CodexWorkbenchServer;
+	readonly shared: CodexWorkbenchSharedComponents;
+}
 
 /** A session's binding context with its semantic publisher's options, made once. */
 interface ScopedBindingContext extends SessionBindingContext {
 	readonly publisher: SemanticContextPublisherOptions;
 }
 
-/** What building one tab session's bindings needs from around it. */
-interface SessionBindingContext {
-	readonly tabSessionId: TabSessionId;
-	readonly server: CodexWorkbenchServer;
-	readonly shared: CodexWorkbenchSharedComponents;
-	readonly state: CodexWorkbenchTabSessionState;
-	/** Tell every browser projection listener that something it shows has changed. */
-	readonly publishProjection: () => void;
+/** Which workhorse an operation belongs to: its tab session, its checkout and its link key. */
+interface WorkhorseOwner {
+	readonly tabSessionId: CodexWorkbenchTabSessionScope["id"];
+	readonly checkout: string;
+	readonly key: string;
 }
 
 /**
- * The tab session, child epoch and thread a workhorse operation is proven to be
+ * The tab session, checkout, child epoch and thread a workhorse operation is proven to be
  * running against, refused when any of them is unnamed.
  *
  * No browser command started it, so it names no exact pane: it presents
  * through a pane of the session that started it.
- * @param tabSessionId The session, whose link the workhorse runs on.
- * @param workhorse The workhorse snapshot.
+ * @param owner The workhorse's tab session, checkout and link key.
+ * @param workhorse What starts the workhorse's thread, which says where it is.
  * @returns The target.
  */
 function provenWorkhorseTarget(
-	tabSessionId: TabSessionId,
-	workhorse: ReturnType<CodexWorkbenchSessionComponents["workhorse"]["snapshot"]>,
+	owner: WorkhorseOwner,
+	workhorse: CodexWorkbenchWorkhorseComponents["workhorse"],
 ): Parameters<CodexWorkbenchServer["contextForOperation"]>[0] {
-	const { childId, epoch, threadId } = workhorse;
+	const snapshot = workhorse.snapshot();
+	const { childId, epoch, threadId } = snapshot;
 	const target = { childId, epoch, threadId };
-	if (workhorse.state !== "ready" || workhorse.paneId !== tabSessionId || !allNamed(target)) {
+	if (snapshot.state !== "ready" || snapshot.paneId !== owner.key || !allNamed(target)) {
 		throw new Error("A workhorse operation has no exact proven pane target.");
 	}
 	return {
 		...target,
-		tabSessionId,
+		tabSessionId: owner.tabSessionId,
+		checkout: owner.checkout,
 		clientId: null,
-		...(workhorse.binding ? { linkRevision: workhorse.binding.revision } : {}),
+		...(snapshot.binding ? { linkRevision: snapshot.binding.revision } : {}),
 	};
 }
 
 /**
- * The bindings that say where the session's workhorse, publisher and coordinator work.
+ * The bindings of a tab session's voice: what it is bound to, what it reads fresh, and what it
+ * follows.
  * @param context What the session provides.
  * @returns Those bindings.
  */
-function placeBindings(
+function voiceBindings(
 	context: ScopedBindingContext,
-): Pick<CodexWorkbenchSessionBindings, "workhorse" | "semanticPublisher" | "coordinator"> {
-	const { server, publisher } = context;
+): Pick<CodexWorkbenchSessionBindings, "semanticPublisher" | "realtime" | "coordinator"> {
+	const { server, scope, publisher } = context;
 	return {
 		/**
-		 * The checkout a workhorse turn runs in.
-		 * @returns The workhorse binding.
-		 */
-		workhorse: () => ({ checkoutRoot: server.checkoutRoot }),
-		/**
-		 * Where this session's semantic context is published from: the server's change feed, read
-		 * for this session's own panes and link.
+		 * Where this session's voice context is published from: the server's change feed, read for
+		 * this session's own panes and the workhorse voice is bound to.
 		 * @returns The publisher options.
 		 */
 		semanticPublisher: () => publisher,
-		/**
-		 * The checkout the coordinator runs in. It inherits nothing: every child
-		 * epoch starts its coordinators afresh (ADR 0019).
-		 * @returns The coordinator binding.
-		 */
-		coordinator: () => ({ checkoutRoot: server.checkoutRoot }),
-	};
-}
-
-/**
- * The bindings that report what the session is currently bound to: the voice
- * session's target, the queue's target, the operation the workhorse is running,
- * and the coordinator call in flight.
- * @param context What the session provides.
- * @returns Those bindings.
- */
-function currentBindingReaders(
-	context: ScopedBindingContext,
-): Pick<
-	CodexWorkbenchSessionBindings,
-	"realtime" | "queue" | "operations" | "spokenApproval" | "coordinatorTools" | "coordinatorCall"
-> {
-	const { server, shared, state, tabSessionId, publisher } = context;
-	return {
 		/**
 		 * What the voice session is bound to, and how it reads a fresh brief.
 		 * @param created What the session has built so far.
@@ -126,7 +120,7 @@ function currentBindingReaders(
 				 * The catalogue of the vault of the pane the session presents through.
 				 * @returns The byte-bounded JSON inventory, which names that vault.
 				 */
-				read: () => readBoardCatalogue(server.presentingVaultFor(tabSessionId)),
+				read: () => readBoardCatalogue(server.presentingVaultFor(scope.id)),
 				/**
 				 * Watch the vault the session presents through for boards appearing and disappearing,
 				 * and follow it when a pane's report moves it into another vault.
@@ -142,7 +136,7 @@ function currentBindingReaders(
 					 * @returns Whether the watched vault changed.
 					 */
 					const follow = (): boolean => {
-						const vault = server.presentingVaultFor(tabSessionId);
+						const vault = server.presentingVaultFor(scope.id);
 						if (vault === watched) return false;
 						unwatch?.();
 						watched = vault;
@@ -165,8 +159,8 @@ function currentBindingReaders(
 					};
 				},
 			},
-			presentationChanges: { subscribe: server.narrationChangesFor(tabSessionId) },
-			trace: state.voiceTrace.note,
+			presentationChanges: { subscribe: server.narrationChangesFor(scope.id) },
+			trace: scope.state.voiceTrace.note,
 			/**
 			 * The semantic brief one voice session opens with, read fresh and
 			 * stated against that session rather than whatever is current.
@@ -184,11 +178,15 @@ function currentBindingReaders(
 				}).brief;
 			},
 			/**
-			 * The child epoch and threads a voice session may be opened against.
+			 * The child epoch and threads a voice session may be opened against: the coordinator's,
+			 * and that of the workhorse of the checkout voice starts from.
 			 * @returns The binding, or null while nothing is ready.
 			 */
 			currentBinding: () => {
-				const pair = readyThreadPair(created);
+				const pair = readyThreadPair(
+					scope.voiceWorkhorse()?.components.workhorse,
+					created.coordinator,
+				);
 				if (pair === null) {
 					return null;
 				}
@@ -201,60 +199,26 @@ function currentBindingReaders(
 			},
 		}),
 		/**
-		 * What the workhorse queue is bound to.
-		 * @param created What the session has built so far.
-		 * @returns The queue binding.
+		 * The directory the coordinator runs in. It is its own and holds no vault, so a command
+		 * the coordinator runs without `-C` is refused rather than reading some checkout's boards.
+		 * It inherits nothing: every child epoch starts its coordinators afresh (ADR 0019).
+		 * @returns The coordinator binding.
 		 */
-		queue: (created) => ({
-			/**
-			 * The child epoch and threads the queue runs turns against.
-			 * @returns The binding, or null while nothing is ready.
-			 */
-			currentBinding: () => {
-				const pair = readyThreadPair(created);
-				if (pair === null) {
-					return null;
-				}
-				return {
-					childId: pair.childId,
-					epoch: pair.epoch,
-					coordinatorThreadId: pair.coordinatorThreadId,
-					workhorseThreadId: pair.workhorseThreadId,
-				};
-			},
-		}),
-		/**
-		 * What a workhorse operation is bound to, and the context it runs under.
-		 * @param created What the session has built so far.
-		 * @returns The operations binding.
-		 */
-		operations: (created) => ({
-			/**
-			 * The operation binding the coordinator and workhorse share.
-			 * @returns The binding, or null while they share none.
-			 */
-			currentBinding: () => currentOperationBinding(created, shared.epoch),
-			/**
-			 * The coordinator call in flight, when one is.
-			 * @returns The call, or null.
-			 */
-			currentCoordinatorCall: () => state.currentCoordinatorCall,
-			/**
-			 * The canonical context one workhorse operation runs under, captured
-			 * against the thread it is proven to run on, through an open pane.
-			 * @param operation The operation.
-			 * @returns The context.
-			 */
-			contextFor: (operation) => {
-				const workhorse = requireCreated(created, "workhorse").snapshot();
-				const target = provenWorkhorseTarget(tabSessionId, workhorse);
-				return server.contextForOperation(target, {
-					id: operation.operationId,
-					kind: operation.kind,
-					rpc: operation.rpc,
-				});
-			},
-		}),
+		coordinator: () => ({ workingDirectory: context.coordinatorDirectory }),
+	};
+}
+
+/**
+ * The bindings of what a coordinator tool call and a spoken approval are answered through.
+ * @param context What the session provides.
+ * @returns Those bindings.
+ */
+function coordinatorBindings(
+	context: ScopedBindingContext,
+): Pick<CodexWorkbenchSessionBindings, "spokenApproval" | "coordinatorTools" | "coordinatorCall"> {
+	const { shared, scope } = context;
+	const { state } = scope;
+	return {
 		/**
 		 * What a spoken approval is answered through.
 		 * @param created What the session has built so far.
@@ -281,7 +245,7 @@ function currentBindingReaders(
 			},
 		}),
 		/**
-		 * What a coordinator tool call may act as.
+		 * What a coordinator tool call may act as, and the workhorse of each checkout it names.
 		 * @param created What the session has built so far.
 		 * @returns The coordinator tools binding.
 		 */
@@ -293,11 +257,6 @@ function currentBindingReaders(
 				 */
 				currentCoordinator: () => created.coordinator?.snapshot() ?? null,
 				/**
-				 * The operation binding a coordinator tool call may act within.
-				 * @returns The binding, or null.
-				 */
-				currentWorkhorseBinding: () => currentOperationBinding(created, shared.epoch),
-				/**
 				 * The coordinator call in flight.
 				 * @returns The call, or null.
 				 */
@@ -308,16 +267,49 @@ function currentBindingReaders(
 				 */
 				expectedTurnId: () => state.currentCoordinatorCall?.turnId ?? null,
 			},
+			/**
+			 * The workhorse of the checkout a call names, and the binding it shares with the
+			 * coordinator. A checkout this tab has no workhorse in has none.
+			 * @param checkout The checkout as the call names it.
+			 * @returns The workhorse, or null.
+			 */
+			workhorseFor: (checkout) => {
+				const workhorse = workhorseOfCheckout(scope.workhorses(), checkout);
+				if (workhorse === null) {
+					return null;
+				}
+				return {
+					/**
+					 * The operation binding the coordinator and this workhorse share now.
+					 * @returns The binding, or null while they share none.
+					 */
+					binding: () =>
+						currentOperationBinding(
+							{ workhorse: workhorse.components.workhorse, coordinator: created.coordinator },
+							shared.epoch,
+						),
+					operations: workhorse.components.operations,
+				};
+			},
 		}),
 		coordinatorCall: {
 			/**
-			 * Run one coordinator call, publishing it as the call in flight for as
-			 * long as it runs so every owner that asks sees the same one.
+			 * Run one coordinator call, publishing it as the call in flight for as long as it runs
+			 * so every owner that asks sees the same one. A delegation to a checkout that has no
+			 * workhorse that can run turns starts it first, so the work has somewhere to go.
 			 * @param request The call.
 			 * @param operation What it does.
 			 * @returns Whatever the operation produced.
 			 */
 			run: async (request, operation) => {
+				const checkout = delegatedCheckout(request);
+				if (checkout !== null) {
+					// A start that fails leaves the delegation to say the checkout has no workhorse.
+					await scope
+						.workhorse(checkout)
+						.actions.ensureStarted()
+						.catch(() => undefined);
+				}
 				state.currentCoordinatorCall = request.logicalCall;
 				try {
 					return await operation();
@@ -332,58 +324,16 @@ function currentBindingReaders(
 }
 
 /**
- * The bindings the session's delivery and callback owners are built from.
+ * The bindings the session's callbacks are built from.
  * @param context What the session provides.
  * @returns Those bindings.
  */
-function deliveryBindings(
+function callbackBindings(
 	context: ScopedBindingContext,
-): Pick<CodexWorkbenchSessionBindings, "semanticDelivery" | "callbacks"> {
-	const { server, shared, tabSessionId, publisher } = context;
+): Pick<CodexWorkbenchSessionBindings, "callbacks"> {
+	const { server, shared, scope } = context;
 	const { identity, epoch, session } = shared;
-	/**
-	 * The child epoch this generation runs under.
-	 * @returns The child and epoch.
-	 */
-	const currentChild = () => ({
-		childId: identity.identity.validator.childId,
-		epoch: identity.identity.validator.epoch,
-	});
 	return {
-		/**
-		 * How semantic context is delivered into this session's workhorse.
-		 * @param created What the session has built so far.
-		 * @returns The delivery binding.
-		 */
-		semanticDelivery: (created) => ({
-			feedId: publisher.feedId,
-			/**
-			 * The coordinator paired with this delivery's workhorse.
-			 * @returns Its thread, or null when none is ready.
-			 */
-			pairedThreadId: () => readyCoordinatorThread(created),
-			/**
-			 * The clock delivery freshness is measured against.
-			 * @returns Now, in milliseconds.
-			 */
-			now: () => Date.now(),
-			publisher: requireCreated(created, "semanticPublisher"),
-			currentExecution: currentChild,
-			hooks: {
-				/**
-				 * The canonical context one settled change is delivered as, filed under the pane of
-				 * this session it presents: the binding's key names the session, not a pane.
-				 * @param event The settled change.
-				 * @returns The context.
-				 */
-				contextForEvent: (event) => server.contextForEvent(event),
-			},
-			/**
-			 * Close the epoch store, which retires the epoch itself.
-			 * @returns Whatever closing it returns.
-			 */
-			retireEpoch: () => epoch.close(),
-		}),
 		/**
 		 * What the coordinator's callbacks are correlated against.
 		 * @param created What the session has built so far.
@@ -391,6 +341,7 @@ function deliveryBindings(
 		 */
 		callbacks: (created) => ({
 			semantic: requireCreated(created, "semanticPublisher"),
+			operations: scope.workhorseOperations,
 			realtime: createCoordinatorCallbackRealtimePort({
 				session,
 				/**
@@ -399,7 +350,14 @@ function deliveryBindings(
 				 */
 				currentGeneration: () => currentRealtimeGeneration(created),
 			}),
-			currentChild,
+			/**
+			 * The child epoch this generation runs under.
+			 * @returns The child and epoch.
+			 */
+			currentChild: () => ({
+				childId: identity.identity.validator.childId,
+				epoch: identity.identity.validator.epoch,
+			}),
 			/**
 			 * The coordinator a callback is delivered to, once it is ready and
 			 * names its own thread and child epoch.
@@ -415,11 +373,15 @@ function deliveryBindings(
 				return allNamed(named) ? { ...snapshot, state: "ready" as const, ...named } : null;
 			},
 			/**
-			 * The workhorse link a callback reports against, once the workhorse is
-			 * ready and bound.
-			 * @returns The link, or null.
+			 * The link of every workhorse of the tab a callback can report against: each one that is
+			 * ready and bound, with the checkout it works in.
+			 * @returns The links.
 			 */
-			currentWorkhorseLink: () => workhorseLink(created, epoch.assertCurrent),
+			workhorseLinks: () =>
+				scope.workhorses().flatMap((workhorse) => {
+					const link = workhorseLink(workhorse, epoch.assertCurrent);
+					return link === null ? [] : [link];
+				}),
 			/**
 			 * The voice generation a callback is correlated against.
 			 * @returns The generation, or null.
@@ -431,7 +393,7 @@ function deliveryBindings(
 			 * @returns The canvas.
 			 */
 			canvas: () => {
-				const canvas = server.canvasFor(tabSessionId);
+				const canvas = server.canvasFor(scope.id);
 				const recording = (created.realtime?.presentation()?.recording ?? null) !== null;
 				return recording ? { ...canvas, narrated: null } : canvas;
 			},
@@ -447,15 +409,24 @@ function deliveryBindings(
 						identity.operation.issuer.mintOperationId(),
 					),
 				/**
-				 * The canonical context of an outcome report, through an open pane of the tab.
+				 * The canonical context of an outcome report, through an open pane of the tab and the
+				 * workhorse voice is bound to.
 				 * @param operationId The minted operation identity.
 				 * @returns The context.
 				 */
-				contextFor: (operationId) =>
-					server.contextForOperation(
-						provenWorkhorseTarget(tabSessionId, requireCreated(created, "workhorse").snapshot()),
+				contextFor: (operationId) => {
+					const voiced = scope.voiceWorkhorse();
+					if (voiced === null) {
+						throw new Error("An outcome report has no workhorse voice is bound to.");
+					}
+					return server.contextForOperation(
+						provenWorkhorseTarget(
+							{ tabSessionId: scope.id, checkout: voiced.checkout, key: voiced.key },
+							voiced.components.workhorse,
+						),
 						{ id: operationId, kind: "workhorse_outcome_report", rpc: "turn/start" },
-					),
+					);
+				},
 				/**
 				 * Whether a recording holds the voice, which nobody hears an outcome through.
 				 * @returns True while the live session is a recording's.
@@ -471,21 +442,160 @@ function deliveryBindings(
 }
 
 /**
- * Compose one tab session's bindings: where it works, what it reads as bound,
- * and how it delivers.
+ * Compose one tab session's bindings: where its coordinator works, what its voice reads as bound,
+ * and how its callbacks deliver.
  * @param context What the session provides.
  * @returns The bindings.
  */
 function createSessionBindings(context: SessionBindingContext): CodexWorkbenchSessionBindings {
 	const scoped = {
 		...context,
-		publisher: context.server.semanticPublisherFor(context.tabSessionId),
+		publisher: context.server.semanticPublisherFor(context.scope.id),
 	};
 	return {
-		...placeBindings(scoped),
-		...currentBindingReaders(scoped),
-		...deliveryBindings(scoped),
+		...voiceBindings(scoped),
+		...coordinatorBindings(scoped),
+		...callbackBindings(scoped),
 	};
 }
 
-export { createSessionBindings, type SessionBindingContext };
+/**
+ * Compose one workhorse's bindings: the checkout it works in, the board changes it is told, and
+ * the binding its queue and operations run under.
+ * @param context What the workhorse provides.
+ * @returns The bindings.
+ */
+function createWorkhorseBindings(
+	context: WorkhorseBindingContext,
+): CodexWorkbenchWorkhorseBindings {
+	const { server, shared, scope } = context;
+	const { identity, epoch } = shared;
+	const tab = scope.session;
+	const publisher = server.workhorsePublisherFor(tab.id, scope.checkout);
+	/**
+	 * The child epoch and threads this workhorse and the tab's coordinator run on together.
+	 * @param created What the workhorse has built so far.
+	 * @returns The pair, or null while either is not ready.
+	 */
+	const pair = (created: Parameters<CodexWorkbenchWorkhorseBindings["queue"]>[0]) =>
+		readyThreadPair(created.workhorse, tab.components.coordinator);
+	return {
+		/**
+		 * The checkout a turn of this workhorse runs in (ADR 0050).
+		 * @returns The workhorse binding.
+		 */
+		workhorse: () => ({ checkoutRoot: scope.checkout }),
+		/**
+		 * Where this workhorse's board news is published from: the changes of its checkout's boards
+		 * that its tab hears.
+		 * @returns The publisher options.
+		 */
+		semanticPublisher: () => publisher,
+		/**
+		 * How semantic context is delivered into this workhorse.
+		 * @param created What the workhorse has built so far.
+		 * @returns The delivery binding.
+		 */
+		semanticDelivery: (created) => ({
+			feedId: publisher.feedId,
+			/**
+			 * The coordinator paired with this workhorse.
+			 * @returns Its thread, or null when none is ready.
+			 */
+			pairedThreadId: () => readyCoordinatorThread(tab.components.coordinator),
+			/**
+			 * The clock delivery freshness is measured against.
+			 * @returns Now, in milliseconds.
+			 */
+			now: () => Date.now(),
+			publisher: requireCreated(created, "semanticPublisher"),
+			/**
+			 * The child epoch this generation runs under.
+			 * @returns The child and epoch.
+			 */
+			currentExecution: () => ({
+				childId: identity.identity.validator.childId,
+				epoch: identity.identity.validator.epoch,
+			}),
+			hooks: {
+				/**
+				 * The canonical context one settled change is delivered as, filed under the pane of
+				 * the tab it presents.
+				 * @param event The settled change.
+				 * @returns The context.
+				 */
+				contextForEvent: (event) => server.contextForEvent(event),
+			},
+			/**
+			 * Close the epoch store, which retires the epoch itself.
+			 * @returns Whatever closing it returns.
+			 */
+			retireEpoch: () => epoch.close(),
+		}),
+		/**
+		 * What this workhorse's queue is bound to.
+		 * @param created What the workhorse has built so far.
+		 * @returns The queue binding.
+		 */
+		queue: (created) => ({
+			/**
+			 * The child epoch and threads the queue runs turns against.
+			 * @returns The binding, or null while nothing is ready.
+			 */
+			currentBinding: () => {
+				const ready = pair(created);
+				if (ready === null) {
+					return null;
+				}
+				return {
+					childId: ready.childId,
+					epoch: ready.epoch,
+					coordinatorThreadId: ready.coordinatorThreadId,
+					workhorseThreadId: ready.workhorseThreadId,
+				};
+			},
+		}),
+		/**
+		 * What an operation of this workhorse is bound to, and the context it runs under.
+		 * @param created What the workhorse has built so far.
+		 * @returns The operations binding.
+		 */
+		operations: (created) => ({
+			/**
+			 * The operation binding the coordinator and this workhorse share.
+			 * @returns The binding, or null while they share none.
+			 */
+			currentBinding: () =>
+				currentOperationBinding(
+					{ workhorse: created.workhorse, coordinator: tab.components.coordinator },
+					epoch,
+				),
+			/**
+			 * The coordinator call in flight, when one is.
+			 * @returns The call, or null.
+			 */
+			currentCoordinatorCall: () => tab.state.currentCoordinatorCall,
+			/**
+			 * The canonical context one operation runs under, captured against the thread it is
+			 * proven to run on, through an open pane of the tab.
+			 * @param operation The operation.
+			 * @returns The context.
+			 */
+			contextFor: (operation) =>
+				server.contextForOperation(
+					provenWorkhorseTarget(
+						{ tabSessionId: tab.id, checkout: scope.checkout, key: scope.key },
+						requireCreated(created, "workhorse"),
+					),
+					{ id: operation.operationId, kind: operation.kind, rpc: operation.rpc },
+				),
+		}),
+	};
+}
+
+export {
+	createSessionBindings,
+	createWorkhorseBindings,
+	type SessionBindingContext,
+	type WorkhorseBindingContext,
+};

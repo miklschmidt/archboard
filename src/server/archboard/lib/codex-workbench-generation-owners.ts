@@ -5,7 +5,10 @@ import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,
 } from "@/server/archboard/lib/codex-workbench";
-import type { CodexWorkbenchSessionComponents } from "@/server/archboard/lib/codex-workbench-sessions";
+import type {
+	CodexWorkbenchSessionComponents,
+	CodexWorkbenchWorkhorseComponents,
+} from "@/server/archboard/lib/codex-workbench-sessions";
 import type { ServerBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
 import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
 import type { ServerDynamicAuthorityAdapters } from "@/server/archboard/lib/codex-workbench-authority";
@@ -65,7 +68,7 @@ function allNamed<Fields extends Record<string, unknown>>(
 
 /** One snapshot the operation binding is read from. */
 type BindingSnapshot =
-	| ReturnType<CodexWorkbenchSessionComponents["workhorse"]["snapshot"]>
+	| ReturnType<CodexWorkbenchWorkhorseComponents["workhorse"]["snapshot"]>
 	| ReturnType<CodexWorkbenchSessionComponents["coordinator"]["snapshot"]>;
 
 /**
@@ -96,22 +99,27 @@ function sharesReadyEpoch(workhorse: BindingSnapshot, coordinator: BindingSnapsh
 }
 
 /**
- * The operation binding the coordinator and workhorse currently share, which
+ * The operation binding the coordinator and one workhorse currently share, which
  * exists only while both are ready on the same child epoch and each names its
  * own thread and operation.
  *
  * The non-null reads below are the ones `namesReadyThread` has just proved;
  * TypeScript cannot carry that narrowing across the call.
- * @param created What the tab session has built so far.
+ * @param owners The workhorse and the tab's coordinator, each once it is built.
+ * @param owners.workhorse The workhorse.
+ * @param owners.coordinator The coordinator.
  * @param epoch What proves the workhorse's thread belongs to this child epoch.
  * @returns The binding, or null when they do not share one.
  */
 function currentOperationBinding(
-	created: Readonly<Partial<CodexWorkbenchSessionComponents>>,
+	owners: {
+		readonly workhorse: CodexWorkbenchWorkhorseComponents["workhorse"] | undefined;
+		readonly coordinator: CodexWorkbenchSessionComponents["coordinator"] | undefined;
+	},
 	epoch: Pick<CodexWorkbenchComponents["epoch"], "assertCurrent">,
 ): WorkhorseOperationBinding | null {
-	const workhorse = created.workhorse?.snapshot();
-	const coordinator = created.coordinator?.snapshot();
+	const workhorse = owners.workhorse?.snapshot();
+	const coordinator = owners.coordinator?.snapshot();
 	if (workhorse === undefined || coordinator === undefined) {
 		return null;
 	}

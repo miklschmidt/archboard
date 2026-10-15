@@ -40,6 +40,7 @@ interface BrowserLeaseManager {
 		browserId: BrowserConnectionId,
 		paneId: string,
 		tabSessionId: TabSessionId,
+		checkout: string,
 		connection: BrowserConnectionInstance,
 		binding: ThreadLinkBindingSnapshot,
 	) => BrowserLeaseRecord;
@@ -290,6 +291,7 @@ function createBrowserLeaseManager(options: {
 	 * @param browserId The claiming browser.
 	 * @param paneId The claiming pane.
 	 * @param tabSessionId The tab the claiming pane belongs to.
+	 * @param checkout The checkout of the claiming pane's vault, whose workhorse it commands.
 	 * @param connection The exact socket claiming.
 	 * @param capturedLink The pane's thread-link binding at claim time.
 	 * @returns The new active record.
@@ -298,6 +300,7 @@ function createBrowserLeaseManager(options: {
 		browserId: BrowserConnectionId,
 		paneId: string,
 		tabSessionId: TabSessionId,
+		checkout: string,
 		connection: BrowserConnectionInstance,
 		capturedLink: ThreadLinkBindingSnapshot,
 	): BrowserLeaseRecord => {
@@ -330,6 +333,7 @@ function createBrowserLeaseManager(options: {
 				connection,
 				paneId,
 				tabSessionId,
+				checkout,
 				commandId,
 				childId,
 				epoch,

@@ -142,7 +142,8 @@ type CodexProcessStorageInput =
 
 interface CodexProcessOptions {
 	readonly executablePath: string;
-	readonly checkoutRoot: string;
+	/** The directory the app-server child runs in: the coordinator's own, which is no checkout. */
+	readonly workingDirectory: string;
 	readonly storage: CodexProcessStorageInput;
 	/** The Archboard server the child's threads reach when they run `archboard`. */
 	readonly archboardServer: CodexArchboardServer;

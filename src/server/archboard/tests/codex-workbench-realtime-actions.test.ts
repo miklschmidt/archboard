@@ -4,6 +4,9 @@ import { createIdentityAuthorities } from "../../../shared/codex-workbench-ident
 import { parseTabSessionId, type BrowserActionContext } from "../../codex-workbench/index.js";
 import { createServerRealtimeActions } from "../codex-workbench-adapters.js";
 
+/** The checkout of the fixture's pane. */
+const CHECKOUT = "/work/payments";
+
 function fixture() {
 	const identity = createIdentityAuthorities();
 	const threadId = identity.identity.decoder.adoptThreadId("realtime-workhorse");
@@ -41,9 +44,14 @@ function fixture() {
 				);
 			},
 		},
-		workhorse: {
-			snapshot: () => ({ state: "ready", threadId }),
-		},
+	};
+	// The tab's one workhorse, in the checkout of the fixture's pane; its threads are not looked at.
+	const workhorse = { snapshot: () => ({ state: "ready", threadId }) };
+	const scope = {
+		claimThread: () => undefined,
+		releaseThread: () => undefined,
+		workhorses: () => [{ checkout: CHECKOUT, components: { workhorse } }],
+		state: { voiceCheckout: null as string | null },
 	};
 	const connection = Object.freeze({ socket: "one" });
 	const context: BrowserActionContext = {
@@ -51,6 +59,7 @@ function fixture() {
 		connection,
 		paneId: "pane-1",
 		tabSessionId: parseTabSessionId("tab-one")!,
+		checkout: CHECKOUT,
 		commandId: identity.identity.issuer.mintBrowserCommandId(),
 		childId: identity.identity.validator.childId,
 		epoch: identity.identity.validator.epoch,
@@ -71,6 +80,7 @@ function fixture() {
 	return {
 		calls,
 		components,
+		scope,
 		context,
 		identity,
 		threadId,
@@ -83,8 +93,6 @@ function fixture() {
 
 type Fixture = ReturnType<typeof fixture>;
 
-/** A tab session's thread claims, which these tests do not look at. */
-const noThreads = { claimThread: () => undefined, releaseThread: () => undefined };
 type Actions = ReturnType<typeof createServerRealtimeActions>;
 
 /**
@@ -145,9 +153,11 @@ async function onSession(
 
 test("a voice start after a finished session runs on a fresh coordinator", async () => {
 	const value = fixture();
-	const actions = createServerRealtimeActions(value.components as never, noThreads);
+	const actions = createServerRealtimeActions(value.components as never, value.scope as never);
 	const first = await startVoice(actions, value);
 	expect(value.replacements).toHaveLength(0);
+	// Voice is bound to the workhorse of the checkout of the pane it started from (ADR 0050).
+	expect(value.scope.state.voiceCheckout).toBe(CHECKOUT);
 	await onSession(actions, value, first, "stop");
 
 	const second = await startVoice(actions, value);
@@ -160,7 +170,7 @@ test("a voice start after a finished session runs on a fresh coordinator", async
 
 test("a start whose fresh coordinator does not come up is refused, and the next start tries again", async () => {
 	const value = fixture();
-	const actions = createServerRealtimeActions(value.components as never, noThreads);
+	const actions = createServerRealtimeActions(value.components as never, value.scope as never);
 	await onSession(actions, value, await startVoice(actions, value), "stop");
 	const voiced = value.components.coordinator.snapshot().threadId;
 	value.failReplace(new Error("thread/start was not delivered"));
@@ -177,7 +187,7 @@ test("a start whose fresh coordinator does not come up is refused, and the next 
 
 test("one stable realtime handle spans start, append, and stop", async () => {
 	const value = fixture();
-	const actions = createServerRealtimeActions(value.components as never, noThreads);
+	const actions = createServerRealtimeActions(value.components as never, value.scope as never);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
 	const started = await actions.start(
 		{
@@ -237,7 +247,7 @@ test("one stable realtime handle spans start, append, and stop", async () => {
 
 test("stale handles and replacement sockets cannot append to the active realtime session", async () => {
 	const value = fixture();
-	const actions = createServerRealtimeActions(value.components as never, noThreads);
+	const actions = createServerRealtimeActions(value.components as never, value.scope as never);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
 	await actions.start(
 		{
@@ -279,9 +289,9 @@ test("stale handles and replacement sockets cannot append to the active realtime
 	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);
 });
 
-test("another pane of the session can stop voice on the same link but cannot speak into it", async () => {
+test("another pane of the tab can stop voice, whichever checkout it shows, but cannot speak into it", async () => {
 	const value = fixture();
-	const actions = createServerRealtimeActions(value.components as never, noThreads);
+	const actions = createServerRealtimeActions(value.components as never, value.scope as never);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
 	await actions.start(
 		{
@@ -322,16 +332,14 @@ test("another pane of the session can stop voice on the same link but cannot spe
 	).rejects.toThrow();
 	const linked = value.context.link;
 	if (linked.state !== "executable") throw new Error("The fixture link must be executable.");
+	// A pane of another checkout shows another workhorse's link; voice is the whole tab's (ADR 0050).
 	const elsewhere: BrowserActionContext = {
 		...otherPane,
+		checkout: "/work/shop",
 		link: { ...linked, threadId: value.identity.identity.decoder.adoptThreadId("another-thread") },
 	};
-	await expect(
-		actions.stop({ ...base(elsewhere), command: "realtimeStop" }, elsewhere),
-	).rejects.toThrow();
 	expect(value.calls.map((call) => call.name)).toEqual(["start"]);
-
-	expect(await actions.stop({ ...base(otherPane), command: "realtimeStop" }, otherPane)).toEqual({
+	expect(await actions.stop({ ...base(elsewhere), command: "realtimeStop" }, elsewhere)).toEqual({
 		outcome: "delivered",
 	});
 	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);

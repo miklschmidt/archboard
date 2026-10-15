@@ -9,6 +9,7 @@ import type {
 import {
 	cancelTabSessionApprovals,
 	tabSessionLink,
+	workhorseApprovalLink,
 } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
 import { createServerDynamicOperationIdAdapter } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
 import type { GenerationOwners } from "@/server/archboard/lib/codex-workbench-generation-owners";
@@ -17,7 +18,10 @@ import {
 	type DynamicOwnerContext,
 } from "@/server/archboard/lib/codex-workbench-dynamic-owners";
 import { createGatewayBinding } from "@/server/archboard/lib/codex-workbench-gateway-binding";
-import { createSessionBindings } from "@/server/archboard/lib/codex-workbench-session-bindings";
+import {
+	createSessionBindings,
+	createWorkhorseBindings,
+} from "@/server/archboard/lib/codex-workbench-session-bindings";
 import type { CodexWorkbenchSessions } from "@/server/archboard/lib/codex-workbench-sessions";
 import type {
 	CodexWorkbenchServer,
@@ -45,7 +49,7 @@ function publishProjection(owners: GenerationOwners): void {
 
 /**
  * The bindings the storage-shaped owners are built from: where Codex writes,
- * which child this generation runs against, and which checkout it works in.
+ * which child this generation runs against, and the directory of its own it runs in.
  * @param context What the generation provides.
  * @returns Those bindings.
  */
@@ -55,7 +59,7 @@ function storageBindings(
 	ProductionCodexWorkbenchBindings,
 	"epoch" | "transport" | "session" | "threadLink" | "dynamicTools"
 > {
-	const { storage, server, input } = context;
+	const { storage, input } = context;
 	return {
 		/**
 		 * Where this installation keeps its epoch manifest and Codex storage.
@@ -81,7 +85,7 @@ function storageBindings(
 				sqliteHome: storage.sqliteHome,
 				configPath: storage.configPath,
 			},
-			checkoutRoot: server.checkoutRoot,
+			workingDirectory: storage.coordinatorDirectory,
 			lifecycle: input.child.lifecycle,
 		}),
 		/**
@@ -97,17 +101,17 @@ function storageBindings(
 			currentEpoch: () => created.epoch?.snapshot().manifest.activeEpoch ?? null,
 		}),
 		/**
-		 * What the dynamic tools may wait on and work in.
+		 * What the dynamic tools may wait on. A thread they start works where its caller works.
 		 * @returns The dynamic tools binding.
 		 */
-		dynamicTools: () => ({ waitGraph: context.waitGraph, checkoutRoot: server.checkoutRoot }),
+		dynamicTools: () => ({ waitGraph: context.waitGraph }),
 	};
 }
 
 /**
- * The tab session an approval on one thread belongs to: the live one that
- * started the thread, whether its workhorse or its coordinator asked. A session
- * that is ending holds nothing an approval could be shown on.
+ * Who an approval on one thread is shown to: the panes of the checkout of the workhorse that
+ * asked, or every pane of the tab when its coordinator asked. A session that is ending holds
+ * nothing an approval could be shown on.
  * @param sessions The generation's tab sessions, once they are built.
  * @param threadId The thread the approval was asked on.
  * @returns The link, or none when no tab session holds the thread.
@@ -117,7 +121,16 @@ function approvalLink(
 	threadId: ThreadId,
 ): { readonly link: string | null } {
 	const session = sessions?.forThread(threadId) ?? null;
-	return { link: session === null ? null : tabSessionLink(session.id) };
+	if (sessions === undefined || session === null) {
+		return { link: null };
+	}
+	const workhorse = sessions.workhorseForThread(threadId);
+	return {
+		link:
+			workhorse === null
+				? tabSessionLink(session.id)
+				: workhorseApprovalLink(session.id, workhorse.checkout),
+	};
 }
 
 /**
@@ -261,23 +274,30 @@ function createProductionBindings(context: BindingContext): ProductionCodexWorkb
 		...storageBindings(context),
 		...approvalBindings(context),
 		/**
-		 * What each owner of one tab session is configured with.
-		 * @param id The session.
+		 * What each owner of one tab session's coordinator and voice is configured with.
+		 * @param scope The session's id, state and workhorses.
 		 * @param shared The generation's components it runs over.
-		 * @param state What the session remembers.
 		 * @returns The session's bindings.
 		 */
-		tabSession: (id, shared, state) =>
+		tabSession: (scope, shared) =>
 			createSessionBindings({
-				tabSessionId: id,
+				scope,
 				server: context.server,
 				shared,
-				state,
+				coordinatorDirectory: context.storage.coordinatorDirectory,
 				/** Tell every browser projection listener the session changed something it shows. */
 				publishProjection: () => {
 					publishProjection(context.owners);
 				},
 			}),
+		/**
+		 * What each owner of one workhorse is configured with.
+		 * @param scope The workhorse's session, checkout and link key.
+		 * @param shared The generation's components it runs over.
+		 * @returns The workhorse's bindings.
+		 */
+		workhorse: (scope, shared) =>
+			createWorkhorseBindings({ scope, server: context.server, shared }),
 		gateway: createGatewayBinding(context),
 	};
 }

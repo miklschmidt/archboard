@@ -281,6 +281,8 @@ export function createGatewayHarness(
 		identity: authorities,
 		projection,
 		threadLink,
+		// Every pane of the fixture is in one checkout, so it has one workhorse link.
+		checkoutOf: () => "/work/checkout",
 		actions,
 		...(lifecycle ? { lifecycle } : {}),
 		...(options.snapshotMaxBytes === undefined

@@ -368,7 +368,7 @@ export function makeStorage(): { readonly root: string; readonly storage: CodexS
 export interface SessionFixture {
 	readonly root: string;
 	readonly storage: CodexSessionStorage;
-	readonly checkoutRoot: string;
+	readonly workingDirectory: string;
 	readonly identity: IdentityAuthority;
 	readonly transport: FakeTransport;
 	readonly session: CodexSession;
@@ -387,7 +387,7 @@ export function createSessionFixture(
 		readonly config?: unknown;
 		readonly storage?: CodexSessionStorage;
 		readonly storageTransform?: (storage: CodexSessionStorage) => CodexSessionStorage;
-		readonly checkoutRoot?: string;
+		readonly workingDirectory?: string;
 		readonly initializeCodexHome?: string;
 		readonly onNotification?: (event: TransportServerNotification) => void;
 		readonly listenerOwnership?: "self" | "composition";
@@ -396,7 +396,7 @@ export function createSessionFixture(
 ): SessionFixture {
 	const { root, storage: createdStorage } = makeStorage();
 	const storage = options.storage ?? options.storageTransform?.(createdStorage) ?? createdStorage;
-	const checkoutRoot = realpathSync(options.checkoutRoot ?? process.cwd());
+	const workingDirectory = realpathSync(options.workingDirectory ?? process.cwd());
 	const identity = createIdentityAuthority();
 	const transport = new FakeTransport(identity);
 	transport.enqueueResponse("initialize", {
@@ -432,7 +432,7 @@ export function createSessionFixture(
 		transport,
 		identity,
 		storage,
-		checkoutRoot,
+		workingDirectory,
 		lifecycle,
 		...(options.now === undefined ? {} : { now: options.now }),
 		onNotification: (event) => {
@@ -446,7 +446,7 @@ export function createSessionFixture(
 	return {
 		root,
 		storage,
-		checkoutRoot,
+		workingDirectory,
 		identity,
 		transport,
 		session,

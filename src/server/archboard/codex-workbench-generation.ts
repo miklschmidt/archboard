@@ -23,5 +23,8 @@ export type {
 	CodexWorkbenchTabSessionActions,
 	CodexWorkbenchTabSessionScope,
 	CodexWorkbenchTabSessionState,
+	CodexWorkbenchWorkhorse,
+	CodexWorkbenchWorkhorseComponents,
+	CodexWorkbenchWorkhorseScope,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 export type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";

@@ -25,7 +25,7 @@ import {
 	fitBrowserSnapshotBounded,
 	projectCodexBrowserState,
 } from "@/server/codex-workbench/lib/projection";
-import type { TabSessionId } from "@/server/codex-workbench/lib/tab-session";
+import { type TabSessionId, workhorseLinkKey } from "@/server/codex-workbench/lib/tab-session";
 import {
 	connectionKey,
 	emit,
@@ -69,7 +69,7 @@ interface BrowserConnections {
 	/** Whether the gateway has been disposed; a disposed gateway serves nothing. */
 	disposed: boolean;
 	readonly readBinding: (
-		tabSessionId: TabSessionId,
+		state: Pick<ConnectionState, "tabSessionId" | "browserId">,
 	) => ReturnType<CodexWorkbenchGatewayOptions["threadLink"]["read"]>;
 	readonly stateFor: (
 		browserId: string,
@@ -110,17 +110,18 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		disposed: false,
 
 		/**
-		 * The thread link of one tab session, which every pane of that tab shows,
-		 * refusing one that does not describe the session that was asked about.
-		 * The link port keys a link by the tab session (its `paneId`).
-		 * @param tabSessionId The tab session.
+		 * The thread link of the workhorse a connection's pane shows: the one of its tab session
+		 * for the checkout of the pane's vault now (ADR 0050), refusing a binding that does not
+		 * describe that workhorse. The link port keys a link by the workhorse (its `paneId`).
+		 * @param state The connection.
 		 * @returns Its binding.
 		 */
-		readBinding: (tabSessionId) => {
+		readBinding: (state) => {
 			try {
-				const binding = options.threadLink.read(tabSessionId);
+				const key = workhorseLinkKey(state.tabSessionId, options.checkoutOf(state.browserId));
+				const binding = options.threadLink.read(key);
 				if (
-					binding.paneId !== tabSessionId ||
+					binding.paneId !== key ||
 					!Number.isSafeInteger(binding.revision) ||
 					binding.revision < 0
 				)
@@ -165,7 +166,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		 * @returns The snapshot.
 		 */
 		snapshotFor: (state) => {
-			const binding = connections.readBinding(state.tabSessionId);
+			const binding = connections.readBinding(state);
 			const lease = owners.leaseForSnapshot(state);
 			let projection: BrowserOwnerProjection;
 			try {
@@ -173,6 +174,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 					browserId: state.browserId,
 					paneId: state.paneId,
 					tabSessionId: state.tabSessionId,
+					checkout: options.checkoutOf(state.browserId),
 					connection: state.instance,
 					binding,
 					lease,
@@ -431,8 +433,9 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 			browserId: state.browserId,
 			paneId: state.paneId,
 			tabSessionId: state.tabSessionId,
+			checkout: options.checkoutOf(state.browserId),
 			connection: state.instance,
-			binding: connections.readBinding(state.tabSessionId),
+			binding: connections.readBinding(state),
 			lease: owners.leaseForSnapshot(state),
 			mediaReady: state.mediaReady,
 		};

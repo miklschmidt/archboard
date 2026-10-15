@@ -17,7 +17,7 @@ import {
 	type ServerDynamicLifecycleOwner,
 } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
 import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";
-import { parseTabSessionId } from "@/server/codex-workbench";
+import { parseWorkhorseLinkKey, type TabSessionId } from "@/server/codex-workbench";
 import {
 	closedTransport,
 	requireCreated,
@@ -62,11 +62,11 @@ function createAuthority(
 		epoch: created.epoch,
 		threadLink: created.threadLink,
 		/**
-		 * The tab session that started a thread.
+		 * The link key of the workhorse that started a thread.
 		 * @param threadId The thread.
-		 * @returns The session's id, or null when none did.
+		 * @returns The key, or null when no workhorse did.
 		 */
-		sessionForThread: (threadId) => created.sessions?.forThread(threadId)?.id ?? null,
+		linkKeyForThread: (threadId) => created.sessions?.workhorseForThread(threadId)?.key ?? null,
 		/**
 		 * The canonical context one dynamic effect runs under, captured against
 		 * the caller's own tab session and thread rather than whatever is current.
@@ -74,13 +74,14 @@ function createAuthority(
 		 * @returns The context.
 		 */
 		contextFor: (authorityContext) => {
-			const tabSessionId = parseTabSessionId(authorityContext.authority.paneId);
-			if (tabSessionId === null) {
-				throw new Error("The dynamic caller's context authority names no tab session.");
+			const workhorse = parseWorkhorseLinkKey(authorityContext.authority.paneId);
+			if (workhorse === null) {
+				throw new Error("The dynamic caller's context authority names no workhorse.");
 			}
 			const captured = context.server.contextForOperation(
 				{
-					tabSessionId,
+					tabSessionId: workhorse.tabSessionId,
+					checkout: workhorse.checkout,
 					clientId: null,
 					childId: authorityContext.authority.childId,
 					epoch: authorityContext.authority.epoch,
@@ -97,6 +98,15 @@ function createAuthority(
 			});
 		},
 	});
+}
+
+/**
+ * The tab session of the workhorse a link key names.
+ * @param key The link key, or null when the caller has none.
+ * @returns The tab session, or null.
+ */
+function tabSessionOfLinkKey(key: string | null): TabSessionId | null {
+	return key === null ? null : (parseWorkhorseLinkKey(key)?.tabSessionId ?? null);
 }
 
 /**
@@ -127,7 +137,7 @@ function createApproval(
 		 * @returns The session, and the command and link it captured.
 		 */
 		bindingForCaller: (threadId) => {
-			const tabSessionId = owners.authority?.paneForThread(threadId) ?? null;
+			const tabSessionId = tabSessionOfLinkKey(owners.authority?.paneForThread(threadId) ?? null);
 			if (tabSessionId === null) throw new Error("The dynamic caller has no live tab session.");
 			return {
 				tabSessionId,
