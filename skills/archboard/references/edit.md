@@ -114,7 +114,9 @@ they are, and the board keeps its name. Two kinds of drill-down change their
 meaning, and the move rewrites them to name a repository identity: one in the
 source vault that opens the board then names the target's repository, and one
 on the board that opens a board of the source vault then names the source's
-repository. The answer's `rewritten` lists every drill-down that it rewrote,
+repository. A drill-down in the target vault that opens the board through the
+source's repository is rewritten too, to name no repository, as a link within
+the vault. The answer's `rewritten` lists every drill-down that it rewrote,
 and `to.registered` says when the command registered the target checkout.
 `--expect-version` is the version you read, as for every write. The move ends
 your claim on the board: claim it again with `-C <dir>` to go on there.
@@ -132,7 +134,9 @@ move that needs a drill-down into an untracked vault, which has no identity.
 Two vaults are two files, so the move writes in a fixed order: the board in the
 target vault, then each rewritten drill-down, then it deletes the board in the
 source vault. If the move stops part way (`MOVE_STOPPED`, exit 5), the board is
-in both vaults. Run the same command again to finish it. Each repository
+in both vaults. Run the same command again to finish it. If somebody wrote the
+target's copy since, the second run refuses with `BOARD_EXISTS` rather than
+write over it: discard the copy you do not want first. Each repository
 commits its own half. A drill-down in a third vault into the moved board now
 opens nothing, and `archboard check` in that vault names it.
 
