@@ -6,11 +6,12 @@
 // its subjects on the page; a step that names no view and so shows none; a
 // step's control that presents from another step; a page that comes back at
 // its top rather than where the reader left it; parts listed flat instead of
-// in their containment; a row that picks nothing, or shows the diagram without
-// the pick; a subject the view on screen does not draw that is never fitted,
-// because what waits for the whole board's picture went with the page; an
-// outline that does not take the keyboard to the section it names; and a
-// section with nothing to show that takes room anyway.
+// in their containment; a part that does not say which board it opens, or in
+// which repository that board is; a row that picks nothing, or shows the
+// diagram without the pick; a subject the view on screen does not draw that is
+// never fitted, because what waits for the whole board's picture went with the
+// page; an outline that does not take the keyboard to the section it names;
+// and a section with nothing to show that takes room anyway.
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
@@ -125,6 +126,17 @@ function showOf(row: Element): Element {
 }
 
 /**
+ * What one part's row says it opens.
+ * @param part The part's id.
+ * @returns The words of the row's Opens cell, or nothing for a part that opens no board.
+ */
+function opensOf(part: string): string | null | undefined {
+	return document.querySelector(
+		`[data-slot='about-part'][data-part='${part}'] [data-slot='about-part-opens']`,
+	)?.textContent;
+}
+
+/**
  * The point of the picture in the middle of the window on it.
  * @returns The point, in the picture's own units.
  */
@@ -226,6 +238,38 @@ test("the parts stand in their containment: each container, then the parts it ho
 			(row) => row.closest<HTMLElement>("[data-depth]")?.dataset["depth"],
 		),
 	).toEqual(["0", "1", "1", "0"]);
+});
+
+test("a part names the board it opens, and the repository of a board in another one", async () => {
+	serving({
+		nodes: [
+			{
+				id: "cli",
+				name: "Agent CLI",
+				kind: "service",
+				drillDown: { board: "agent cli", variant: { kind: "current" } },
+			},
+			{
+				id: "pay",
+				name: "Payments",
+				kind: "service",
+				drillDown: {
+					board: "payments",
+					variant: { kind: "current" },
+					repo: "github.com/acme/payments",
+				},
+			},
+		],
+		edges: [],
+		walkthroughs: [],
+	});
+	mountStage(null, { reducedMotion: true });
+	await settle();
+	openAboutPage();
+	await settle();
+	expect(opensOf("cli")).toBe("agent cli");
+	expect(opensOf("pay")).toContain("payments");
+	expect(opensOf("pay")).toContain("github.com/acme/payments");
 });
 
 test("a row picks its subject, and its control picks it and shows it on the diagram", async () => {
