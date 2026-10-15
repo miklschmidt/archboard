@@ -62,6 +62,23 @@ function boardName(browser: PageEvaluator): Promise<string | null> {
 }
 
 /**
+ * How far the open tab's line in the first pane's header reaches below the
+ * header's edge, read from the line's own box.
+ * @param browser The page.
+ * @returns The overhang in pixels, 0 while the line lies inside the header, or NaN with no open tab.
+ */
+function tabLineBelowHeader(browser: PageEvaluator): Promise<number> {
+	return browser.eval<number>(`(() => {
+		const header = document.querySelector('${PANE_HEADER}');
+		const tab = header?.querySelector('[data-slot="board-tab"][data-active]');
+		if (!header || !tab) return Number.NaN;
+		const line = getComputedStyle(tab, '::after');
+		const bottom = tab.getBoundingClientRect().bottom - Number.parseFloat(line.bottom);
+		return Math.max(0, bottom - header.getBoundingClientRect().bottom);
+	})()`);
+}
+
+/**
  * The theme on the root element.
  * @param browser The page.
  * @returns `light`, `dark`, or an empty string before the shell applies one.
@@ -187,6 +204,7 @@ export {
 	shellNotices,
 	stageIsFullscreen,
 	switchTheme,
+	tabLineBelowHeader,
 	type ShellNoticeView,
 };
 

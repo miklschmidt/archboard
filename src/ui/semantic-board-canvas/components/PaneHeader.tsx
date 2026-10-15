@@ -311,6 +311,11 @@ function PageTabs(props: Pick<PaneHeaderProps, "tab" | "onTab">): JSX.Element {
  * One tab: its mark and its name. While the header is narrow, a tab that is
  * not open keeps only its mark, named by its tooltip and to assistive
  * technology, so the breadcrumb keeps the board's name whole.
+ *
+ * The open tab's line lies on the header's rule, which is the header's own last
+ * row, so it ends at the header's edge. A line that hung below the edge, as one
+ * on a tab list's rule does, would lie under the sidebar's column, which starts
+ * at that edge and is drawn after the header (TASK-476).
  * @param props The tab, and whether it is open.
  * @param props.entry The tab.
  * @param props.open Whether it is the one open.
@@ -328,7 +333,7 @@ function PageTab(props: {
 			data-slot="board-tab"
 			data-tab={entry.tab}
 			title={entry.label}
-			className="text-control data-active:[&_svg]:text-primary-mark gap-1.5 px-2"
+			className="text-control data-active:[&_svg]:text-primary-mark gap-1.5 px-2 group-data-[variant=underline]/tabs-list:after:bottom-0!"
 		>
 			<Icon aria-hidden="true" className="size-4" />
 			<span className={open ? "" : "sr-only @min-[880px]/pane-header:not-sr-only"}>
