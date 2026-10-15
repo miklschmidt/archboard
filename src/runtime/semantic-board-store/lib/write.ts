@@ -213,6 +213,9 @@ function admit(
 		: { ok: true, id: claim, claimed: true };
 }
 
+/** How a write's checks read the board it is about. */
+type BoardReader = (vault: string, location: SemanticBoardLocation) => SemanticBoardRead;
+
 /**
  * The board as it stands, ready for the transition, or the refusal a caller
  * gets instead. A board that is simply not there yet is not a refusal: that is
@@ -220,16 +223,19 @@ function admit(
  * @param vault The vault root the board lives in.
  * @param location Where the board lives.
  * @param expected The version the writer stated, when it stated one.
+ * @param readBoard How the board is read: under its lease, which persists a
+ * migration it awaits, unless the caller holds none and writes nothing.
  * @returns The board and its version, or why the write cannot go ahead.
  */
 function boardBefore(
 	vault: string,
 	location: SemanticBoardLocation,
 	expected: number | undefined,
+	readBoard: BoardReader = readSemanticBoardAtUnderLease,
 ):
 	| { readonly ok: true; readonly board: SemanticBoard | null; readonly version: number | null }
 	| SemanticWriteRejection {
-	const read = readSemanticBoardAtUnderLease(vault, location);
+	const read = readBoard(vault, location);
 	const unusable = unusableRefusal(location, read);
 	if (unusable !== null) {
 		return unusable;
@@ -577,6 +583,7 @@ async function writeSemanticBoard(command: SemanticWriteCommand): Promise<Semant
 export {
 	type Admission,
 	type BoardLeaseAsk,
+	type BoardReader,
 	type SemanticWriter,
 	type SemanticWriteCommand,
 	type SemanticWriteRejection,

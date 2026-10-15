@@ -162,6 +162,15 @@ function verifiedRead(
 }
 
 /**
+ * The version a migration commits a board at: one write, so one version on.
+ * @param board The board as decoded, before the migration lands.
+ * @returns Its version once the migration lands.
+ */
+function versionAfterMigration(board: SemanticBoard): number {
+	return board.version + 1;
+}
+
+/**
  * Commit a validated migration as one board version under the caller's lease.
  * @param value The decoded document already validated with added order.
  * @param read The validated normalized board.
@@ -172,7 +181,7 @@ function persistBoardMigration(
 	read: Extract<SemanticBoardRead, { readonly ok: true }>,
 ): SemanticBoardRead {
 	if (!isRecord(value)) throw new Error("A migrated board must be a document");
-	const version = read.board.version + 1;
+	const version = versionAfterMigration(read.board);
 	const updatedAt = new Date().toISOString();
 	value["version"] = version;
 	value["updatedAt"] = updatedAt;
@@ -209,6 +218,28 @@ function readSemanticBoardAtUnderLease(
 		throw new Error("A migration cannot remain pending inside the board lease");
 	}
 	return result;
+}
+
+/**
+ * Read as a read under the board's lease would find it, holding no lease and
+ * persisting nothing: a board that awaits its migration is answered as the
+ * migration would leave it, at the version the migration commits. For a
+ * question asked before a write, such as what a move would do, whose answer
+ * states the version that write then finds.
+ * @param vault The vault root the board lives in.
+ * @param location The board address.
+ * @param configured The vault configuration; the vault's own when not given.
+ * @returns The board as its lease would read it, or refusal.
+ */
+function readSemanticBoardAtAsLeased(
+	vault: string,
+	location: SemanticBoardLocation,
+	configured = readSemanticBoardConfiguration(vault),
+): SemanticBoardRead {
+	const result = readAt(location, configured, false);
+	if (!("migration" in result)) return result;
+	const { read } = result;
+	return { ...read, board: { ...read.board, version: versionAfterMigration(read.board) } };
 }
 
 /**
@@ -318,6 +349,7 @@ function readSemanticBoard(vault: string, asked: string): SemanticBoardRead {
 export {
 	type SemanticBoardRead,
 	readSemanticBoardAt,
+	readSemanticBoardAtAsLeased,
 	readSemanticBoardAtUnderLease,
 	readSemanticBoard,
 };

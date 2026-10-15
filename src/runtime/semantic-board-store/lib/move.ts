@@ -72,6 +72,7 @@ import {
 	leaseRequest,
 	rejected,
 	type BoardLeaseAsk,
+	type BoardReader,
 	type SemanticWriteCommand,
 	type SemanticWriteRejection,
 } from "@/runtime/semantic-board-store/lib/write";
@@ -246,14 +247,17 @@ interface CheckedMove {
  * rewrites can name the identity it needs.
  * @param plan The move.
  * @param location Where the board is in the source vault.
+ * @param readBoard How the board is read: under the move's lease, unless a
+ * preview that holds none reads it.
  * @returns What moves, or why nothing does.
  */
 function checkedMove(
 	plan: MoveCheck,
 	location: SemanticBoardLocation,
+	readBoard?: BoardReader,
 ): CheckedMove | SemanticWriteRejection {
 	const { command, identities } = plan;
-	const before = boardBefore(command.vault, location, command.expectedVersion);
+	const before = boardBefore(command.vault, location, command.expectedVersion, readBoard);
 	if (!("ok" in before)) return before;
 	const source = before.board;
 	if (source === null) {
@@ -520,7 +524,6 @@ export {
 	checkedMove,
 	moveSemanticBoard,
 	type CheckedMove,
-	type MoveCheck,
 	type MoveWrite,
 	type SemanticMoveCommand,
 	type SemanticMoveResult,
