@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-15 21:05'
-updated_date: '2026-10-15 22:06'
+updated_date: '2026-10-15 22:13'
 labels:
   - skill
 dependencies:
@@ -51,6 +51,8 @@ Draft drawn at version 46: semantic compare reports 4 parts added and 16 parts c
 Owner decisions 2026-10-15: areas bind to a folder only where the code has one (src/server/archboard/lib is flat, so the Live panes areas are unbound; ADR 0052 amended); the overview no longer draws a line between a container and a part it holds. Splitting Pane connections measured 14 parts and 37 lines, so the owner chose to merge Pane places into it instead: the draft now has three areas and its overview draws 12 parts and 22 lines, inside the budget. The empty space in the track drawing is a layout defect under diagnosis, separate from the board.
 
 Closing: archboard check --code reports the same findings with and without --variant TASK-482.03 (empty diff). Footprint against base 59d7a38d3: current is TASK-472.11, the parent; namedAndChanged and changedNotNamed are empty; namedNotChanged lists the 16 moved parts, because the task regroups the board and changes none of their code. Adopted at version 49 with the summary rewritten to the board scope. archboard check: no OVERVIEW_CROWDED for Live panes (13 boards remain, TASK-482.04). Views open each area: Pane connections and Moving a pane, Board news, Server plumbing. No relationship moved into a flow: the board keeps one relationship per pair (71 over 69 pairs), and its two flows already draw the exchanges it needs.
+
+Follow-up 2026-10-16 (owner request): 9 relationships started at the Archboard server container itself, standing in for server routes the board did not draw (anchors in semantic-board-writes.ts, semantic-board-rename.ts, semantic-board-move.ts and pane-show-route.ts). A new card, Board routes, opens the Archboard server routes board, and those relationships now start there (version 50); the three views that select their targets also select it (version 51). Overview 13 parts, 24 lines. The vault group panes is now displayed as Pane state instead of Live panes, the board name. Code-check findings unchanged.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

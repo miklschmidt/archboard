@@ -91,7 +91,7 @@
     {
       writes: { name: Board writes, color: orange },
       drawing: { name: Drawing, color: violet },
-      panes: { name: Live panes, color: teal },
+      panes: { name: Pane state, color: teal },
       walkthrough: { name: Walkthroughs, color: cyan },
       voice: { name: Voice, color: yellow },
       workhorse: { name: Workhorse, color: sky },
