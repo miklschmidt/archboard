@@ -122,8 +122,8 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      foot.
 
   A section with nothing to show is absent. The tab lists no variants. The
-  navigator lists the variants of every board, the About page of the pane's
-  header lists them with the record of each and opens one in the pane, and the
+  navigator lists the variants of every board. The About page of the pane's
+  header lists them with the record of each and opens one in the pane. The
   breadcrumb in the header names the one on screen (TASK-388). Views live here
   and not in a switcher on the picture, because a switcher over the picture can
   cover what it switches.
@@ -343,8 +343,8 @@ An outline lists the sections, each with its mark and its count. On a page
 it stays in place while the page scrolls. On a narrower page, as in a pane that
 shares the centre, the outline is a bar at the top of the page. A piece of gold
 marks the section being read. Choosing an entry brings its section to the top
-and gives the heading of the section the keyboard. The last section is at least
-as tall as the page, so every section can come to the top.
+and gives the heading of the section the keyboard. The last section is tall
+enough that every section can come to the top.
 
 The sections come in the order a reader asks
 ([the study of that order](pane-sidebar-hierarchy.md)). A section with nothing
@@ -353,10 +353,11 @@ to show is absent from the page and from the outline.
 1. The walkthroughs, each a card set as a script. The head of the card has the
    name, the number of steps, the summary, Present and Narrate. Each step is a
    row with its number, its heading and its words. Beside them stand the view
-   that the step is told through and the subjects that it focuses, each subject
-   a chip with the icon of its kind. A step that names no view says that it uses
-   the view on screen, because a presentation keeps that view for the step. The
-   control at the end of a step presents the walkthrough from that step.
+   that the step is told through and the subjects that it focuses. Each
+   subject is a chip with the icon of its kind. A step that names no view says
+   that it uses the view on screen, because a presentation keeps that view for
+   the step. The control at the end of a step presents the walkthrough from
+   that step.
 2. The parts, in their containment: a container, then the parts that it holds,
    one rail in, as the navigator lists boards. A row gives the kind, the name,
    how many parts the part holds, its responsibility, its groups and the board
@@ -367,14 +368,14 @@ to show is absent from the page and from the outline.
    out.
 4. The variants, on one timeline with branches, as the navigator draws them.
    Each variant has its mark, its name, where it stands and the reason in its
-   record, or the summary of a proposal. The one on screen is marked, and
-   choosing another reads it in the pane.
+   record. A variant whose record gives no reason shows its summary. The one
+   on screen is marked, and choosing another reads it in the pane.
 
 Choosing a row or a chip picks its subject in the pane, and the page stays. The
 sidebar explains the subject, and the picture marks it when the diagram comes
 back. The control at the end of a part's or a relationship's row picks the
-subject, opens the diagram and fits the camera to the subject, as a code warning
-does. If the view on screen does not draw the subject, the pane opens
+subject and opens the diagram. Then it fits the camera to the subject, as a code
+warning does. If the view on screen does not draw the subject, the pane opens
 Everything first.
 
 A walkthrough is presented over the picture, so presenting from the page opens
