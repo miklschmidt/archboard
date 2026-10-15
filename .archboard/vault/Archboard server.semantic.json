@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 253,
+	"version": 254,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-15T03:53:03.802Z",
+	"updatedAt": "2026-10-15T04:08:50.392Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -101083,7 +101083,7 @@
 		{
 			"id": "oRdYPS0J",
 			"name": "TASK-472.03 after TASK-472.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "LE2uP3wL",
 			"summary": "The server reads and writes semantic boards, serves the viewer, checks code evidence, and attributes history through bound declarations or paths; its route handlers are one card that opens a board of their own.",
 			"content": {
@@ -102778,7 +102778,7 @@
 		{
 			"id": "ZdqjVp0j",
 			"name": "TASK-472.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "oRdYPS0J",
 			"summary": "The server reads and writes semantic boards, serves the viewer, checks code evidence, and attributes history through bound declarations or paths; its route handlers are one card that opens a board of their own.",
 			"content": {
@@ -104459,7 +104459,7 @@
 			}
 		}
 	],
-	"current": "oRdYPS0J",
+	"current": "ZdqjVp0j",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -104724,6 +104724,12 @@
 			"from": "LE2uP3wL",
 			"at": "2026-10-15T00:29:53.874Z",
 			"reason": "The code check reads the vault's own checkout for its own repository and the chosen checkout of every other repository"
+		},
+		{
+			"variant": "ZdqjVp0j",
+			"from": "oRdYPS0J",
+			"at": "2026-10-15T04:08:50.392Z",
+			"reason": "The server starts without a vault and counts no boards"
 		}
 	],
 	"shelvings": [

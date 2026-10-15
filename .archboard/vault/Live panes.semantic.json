@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 27,
+	"version": 28,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T03:53:03.313Z",
+	"updatedAt": "2026-10-15T04:08:51.177Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -2279,7 +2279,7 @@
 		{
 			"id": "7aPQQv25",
 			"name": "TASK-472.05",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "5CDXeeuu",
 			"summary": "Live pane connections, presentation state and board announcements, with the vault each pane is in",
 			"content": {
@@ -3660,7 +3660,7 @@
 		{
 			"id": "G3kDfojO",
 			"name": "TASK-472.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "7aPQQv25",
 			"summary": "Live pane connections, presentation state and board announcements, with the vault each pane is in",
 			"content": {
@@ -5039,7 +5039,7 @@
 			}
 		}
 	],
-	"current": "7aPQQv25",
+	"current": "G3kDfojO",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -5057,6 +5057,12 @@
 			"from": "5CDXeeuu",
 			"at": "2026-10-15T02:26:54.262Z",
 			"reason": "The server moves a pane between vaults and tells it in pane_board, and agent activity names its vault and reaches every pane"
+		},
+		{
+			"variant": "G3kDfojO",
+			"from": "7aPQQv25",
+			"at": "2026-10-15T04:08:51.177Z",
+			"reason": "The server serves every vault, and a pane opens in the page's opening vault"
 		}
 	]
 }

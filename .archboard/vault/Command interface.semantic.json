@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 61,
+	"version": 62,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-15T03:52:36.454Z",
+	"updatedAt": "2026-10-15T04:08:51.384Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -13816,7 +13816,7 @@
 		{
 			"id": "qcteWMNa",
 			"name": "TASK-472.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "AlUrRjLG",
 			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
@@ -15271,7 +15271,7 @@
 		{
 			"id": "BOLvnfpC",
 			"name": "TASK-472.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "qcteWMNa",
 			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
@@ -16724,7 +16724,7 @@
 			}
 		}
 	],
-	"current": "qcteWMNa",
+	"current": "BOLvnfpC",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -16791,6 +16791,12 @@
 			"from": "AlUrRjLG",
 			"at": "2026-10-14T22:43:17.653Z",
 			"reason": "repo use chooses a checkout, repo add registers without choosing, and repo forget takes a directory"
+		},
+		{
+			"variant": "BOLvnfpC",
+			"from": "qcteWMNa",
+			"at": "2026-10-15T04:08:51.384Z",
+			"reason": "Every request names the vault the command found, and the launcher starts a server that needs no vault"
 		}
 	],
 	"shelvings": [

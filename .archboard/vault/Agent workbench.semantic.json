@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 45,
+	"version": 46,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-15T03:53:02.628Z",
+	"updatedAt": "2026-10-15T04:08:51.646Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -9239,7 +9239,7 @@
 		{
 			"id": "qs9ERfoL",
 			"name": "TASK-456",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "KwhT7rtK",
 			"summary": "Codex integration inside the server",
 			"content": {
@@ -10539,7 +10539,7 @@
 		{
 			"id": "e3BQcvOM",
 			"name": "TASK-472.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "qs9ERfoL",
 			"summary": "Codex integration inside the server",
 			"content": {
@@ -11838,7 +11838,7 @@
 			}
 		}
 	],
-	"current": "qs9ERfoL",
+	"current": "e3BQcvOM",
 	"adoptions": [
 		{
 			"variant": "kUF7buv6",
@@ -11869,6 +11869,12 @@
 			"from": "KwhT7rtK",
 			"at": "2026-10-11T16:03:28.008Z",
 			"reason": "Bounded stdin EOF grace lets drained responses reach the child before mandatory group cleanup"
+		},
+		{
+			"variant": "e3BQcvOM",
+			"from": "qs9ERfoL",
+			"at": "2026-10-15T04:08:51.646Z",
+			"reason": "Briefs name their board's vault, and each tab session hears only the vaults of its panes"
 		}
 	]
 }

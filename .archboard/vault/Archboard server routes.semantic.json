@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 30,
+	"version": 31,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-15T03:53:03.082Z",
+	"updatedAt": "2026-10-15T04:08:51.843Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -5502,7 +5502,7 @@
 		{
 			"id": "NhIfIArt",
 			"name": "TASK-472.05",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "i4iQh9Yd",
 			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches.",
 			"content": {
@@ -6821,7 +6821,7 @@
 		{
 			"id": "OhAsaop7",
 			"name": "TASK-472.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "NhIfIArt",
 			"summary": "The server's route handlers: what each one answers, and the store, lease, panes, renderer, history, checkouts and repositories each reaches.",
 			"content": {
@@ -8152,7 +8152,7 @@
 			}
 		}
 	],
-	"current": "NhIfIArt",
+	"current": "OhAsaop7",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -8177,6 +8177,12 @@
 			"from": "i4iQh9Yd",
 			"at": "2026-10-15T02:26:53.815Z",
 			"reason": "Repository routes list every repository of the machine and choose a checkout, moving every pane of that repository into the chosen vault"
+		},
+		{
+			"variant": "OhAsaop7",
+			"from": "NhIfIArt",
+			"at": "2026-10-15T04:08:51.843Z",
+			"reason": "The server starts without a vault, and the service routes answer the vault a page opens in"
 		}
 	],
 	"shelvings": [

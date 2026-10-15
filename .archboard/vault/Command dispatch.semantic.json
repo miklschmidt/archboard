@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 24,
+	"version": 25,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-15T03:54:10.522Z",
+	"updatedAt": "2026-10-15T04:08:49.771Z",
 	"views": [],
 	"variants": [
 		{
@@ -1012,7 +1012,7 @@
 		{
 			"id": "DCKlehd5",
 			"name": "TASK-436.12",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "55d86UGv",
 			"summary": "Command matching, registry and handler dispatch",
 			"content": {
@@ -1394,7 +1394,7 @@
 		{
 			"id": "SgXh1GWP",
 			"name": "TASK-472.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "DCKlehd5",
 			"summary": "How one CLI invocation is routed: help, shared flags, the vault it addresses, dispatch and the run",
 			"content": {
@@ -1878,7 +1878,7 @@
 			}
 		}
 	],
-	"current": "DCKlehd5",
+	"current": "SgXh1GWP",
 	"adoptions": [
 		{
 			"variant": "eLxlFOKI",
@@ -1897,6 +1897,12 @@
 			"from": "55d86UGv",
 			"at": "2026-10-07T01:08:49.400Z",
 			"reason": "Built command dispatch exposes registryOf and childOf after deleting unused surface wrappers"
+		},
+		{
+			"variant": "SgXh1GWP",
+			"from": "DCKlehd5",
+			"at": "2026-10-15T04:08:49.771Z",
+			"reason": "An invocation finds its vault from -C, the environment or the working directory, registers it on first use and names it on every request"
 		}
 	]
 }
