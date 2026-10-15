@@ -301,6 +301,7 @@ test("the context an operation delivers is the board's grounding, not a summary 
 		board: {
 			key: BOARD.toLowerCase(),
 			name: BOARD,
+			vault,
 			file: join(vault, `${BOARD}.semantic.json`),
 			version: board().version,
 		},

@@ -166,6 +166,18 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			},
 		},
 		{
+			original: context.board.vault,
+			empty: "",
+			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 * Install the trimmed board.vault back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
+			 */
+			set: (value) => {
+				context.board = { ...context.board, vault: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+			},
+		},
+		{
 			original: context.board.file,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,

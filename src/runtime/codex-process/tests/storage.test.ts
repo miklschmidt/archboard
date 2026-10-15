@@ -25,7 +25,7 @@ function fileSystem(): CodexStorageFileSystem {
 }
 
 describe("Codex child environment", () => {
-	const archboardServer = { url: "http://127.0.0.1:3404", vault: "/tmp/web-shop" };
+	const archboardServer = { url: "http://127.0.0.1:3404" };
 
 	test("copies only the authored keys in order and overwrites both roots", () => {
 		const ambient: Record<string, string> = Object.fromEntries(
@@ -54,7 +54,6 @@ describe("Codex child environment", () => {
 			"CODEX_HOME",
 			"CODEX_SQLITE_HOME",
 			"ARCHBOARD_URL",
-			"ARCHBOARD_VAULT",
 			"ARCHBOARD_NO_AUTOSTART",
 		]);
 		expect(child["CODEX_HOME"]).toBe("/tmp/dedicated home");
@@ -64,6 +63,7 @@ describe("Codex child environment", () => {
 		expect(child["CODEX_HOME"]).not.toBe("poisoned-home");
 		expect(child["PATH"]).toBe("value:PATH");
 		expect(child["ARCHBOARD_URL"]).toBe(archboardServer.url);
+		expect(child["ARCHBOARD_VAULT"]).toBeUndefined();
 
 		const optional = buildCodexChildEnvironment({
 			ambient: { HOME: "home", PATH: undefined },
@@ -76,7 +76,6 @@ describe("Codex child environment", () => {
 			"CODEX_HOME",
 			"CODEX_SQLITE_HOME",
 			"ARCHBOARD_URL",
-			"ARCHBOARD_VAULT",
 			"ARCHBOARD_NO_AUTOSTART",
 		]);
 	});

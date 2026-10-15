@@ -11,7 +11,13 @@ import {
 function input(selection: readonly string[] = []): SemanticContextInput {
 	return {
 		repository: "repo",
-		board: { key: "board", name: "Board", file: "board.semantic.json", version: 1 },
+		board: {
+			key: "board",
+			name: "Board",
+			vault: "/vault",
+			file: "board.semantic.json",
+			version: 1,
+		},
 		pane: { paneId: "pane", focused: true },
 		architecture: {
 			variant: null,
@@ -32,6 +38,7 @@ function input(selection: readonly string[] = []): SemanticContextInput {
 function change(sequence: number): SettledChangeSourceEvent {
 	return {
 		cursor: sequence,
+		vault: "/work/.archboard/vault",
 		board: "board",
 		at: new Date(1_700_000_000_000).toISOString(),
 		origin: "human",

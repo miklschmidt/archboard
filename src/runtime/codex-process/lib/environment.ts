@@ -43,13 +43,12 @@ type CodexChildEnvironment = Readonly<Record<string, string>>;
 
 /**
  * The Archboard server that owns the child. A thread runs `archboard` like any agent does, and
- * that CLI finds its server and vault in its environment, so the child must name its own.
+ * that CLI finds its server in its environment, so the child must name its own. The child names
+ * no vault (ADR 0050): a thread's command finds its vault from its directory or `-C`.
  */
 interface CodexArchboardServer {
 	/** The URL the server listens at. */
 	readonly url: string;
-	/** The server's vault, absolute. */
-	readonly vault: string;
 }
 
 interface CodexChildEnvironmentInput {
@@ -128,7 +127,7 @@ function retainedValue(ambient: CodexAmbientEnvironment, key: string): string | 
  *
  * Auto-start is off in the child. It lives only as long as its server, so a thread's CLI that
  * finds no server has outlived it, and starting one would put a second server nobody asked for
- * over the same vault. An explicit `archboard start` still overrides it.
+ * beside it. An explicit `archboard start` still overrides it.
  * @param input - Canonical private Codex roots, the owning server and an optional reviewed ambient
  * environment.
  * @returns The frozen allowlisted environment for the owned app-server child.
@@ -136,7 +135,6 @@ function retainedValue(ambient: CodexAmbientEnvironment, key: string): string | 
 function buildCodexChildEnvironment(input: CodexChildEnvironmentInput): CodexChildEnvironment {
 	const codexHome = requirePath(input.codexHome, "CODEX_HOME");
 	const sqliteHome = requirePath(input.sqliteHome, "CODEX_SQLITE_HOME");
-	const vault = requirePath(input.archboardServer.vault, "ARCHBOARD_VAULT");
 	const ambient = input.ambient ?? process.env;
 	const child: Record<string, string> = {};
 
@@ -148,7 +146,6 @@ function buildCodexChildEnvironment(input: CodexChildEnvironmentInput): CodexChi
 	child["CODEX_HOME"] = codexHome;
 	child["CODEX_SQLITE_HOME"] = sqliteHome;
 	child["ARCHBOARD_URL"] = input.archboardServer.url;
-	child["ARCHBOARD_VAULT"] = vault;
 	child["ARCHBOARD_NO_AUTOSTART"] = "1";
 	return Object.freeze(child);
 }

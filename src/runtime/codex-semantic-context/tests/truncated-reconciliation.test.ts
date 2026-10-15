@@ -32,7 +32,13 @@ const ISSUE = {
 function crowded(description: string): SemanticContextInput {
 	return {
 		repository: "archboard",
-		board: { key: "pipeline", name: "Pipeline", file: "pipeline.semantic.json", version: 9 },
+		board: {
+			key: "pipeline",
+			name: "Pipeline",
+			vault: "/vault",
+			file: "pipeline.semantic.json",
+			version: 9,
+		},
 		pane: { paneId: "pane-a", focused: true },
 		architecture: {
 			variant: { id: "v2", name: "Queued ingest", lifecycle: "draft", against: "v1" },

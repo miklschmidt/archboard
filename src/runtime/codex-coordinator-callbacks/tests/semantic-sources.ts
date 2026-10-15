@@ -25,6 +25,7 @@ function semanticInput(ids: Identities, active: boolean): SemanticContextInput {
 		board: {
 			key: "architecture",
 			name: "Architecture",
+			vault: "/work/.archboard/vault",
 			file: "boards/architecture.semantic.json",
 			version: 7,
 		},
@@ -89,6 +90,7 @@ function semanticSources(ids: Identities, active: boolean): SemanticSources {
 	for (const listener of listeners) {
 		listener({
 			cursor: 7,
+			vault: "/work/.archboard/vault",
 			board: "architecture",
 			at: "2023-11-14T22:13:20.000Z",
 			origin: "human",

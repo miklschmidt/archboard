@@ -18,7 +18,7 @@ const SEMANTIC_CONTEXT_LIMITS = Object.freeze({
 	reasonBytes: 512,
 	repositoryBytes: 2048,
 	boardKeyBytes: 2048,
-	/** The path of the board document, which is a vault path and not a note. */
+	/** The path of the board document or of its vault, which is a path and not a note. */
 	fileBytes: 4096,
 	identityBytes: 256,
 	briefBytes: 8192,
