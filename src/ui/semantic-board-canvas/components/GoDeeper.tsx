@@ -38,7 +38,6 @@ import {
 	type DrillResolution,
 	type OtherRepository,
 } from "@/ui/semantic-board-canvas/lib/drill-target";
-import { PaneVaultContext } from "@/ui/semantic-board-canvas/lib/pane-vault";
 import { useDrillPlace } from "@/ui/semantic-board-canvas/hooks/use-drill-place";
 import {
 	semanticBoardDocumentQuery,
@@ -284,23 +283,23 @@ function WayDown(props: WayDownProps): JSX.Element {
 			</p>
 		);
 	}
-	return (
-		<PaneVaultContext value={place.there?.vault ?? vault}>
-			<WayDownIn {...props} there={place.there} />
-		</PaneVaultContext>
-	);
+	return <WayDownIn {...props} vault={place.there?.vault ?? vault} there={place.there} />;
 }
 
 /**
  * The way down to a board read in its own vault, or the reason there is none.
- * @param props The target, how to open it, and the other repository it is in, if any.
+ * Only the target is read there: which way it lies is measured in the levels of
+ * the vault the part is drawn in, as the card on the picture measures it.
+ * @param props The target, how to open it, the vault it is in, and the other repository, if any.
  * @returns The way down, or the reason there is none.
  */
 function WayDownIn(
-	props: WayDownProps & { readonly there: OtherRepository | undefined },
+	props: WayDownProps & {
+		readonly vault: string;
+		readonly there: OtherRepository | undefined;
+	},
 ): JSX.Element {
-	const { target, onOpen, kind, here, there } = props;
-	const vault = usePaneVault();
+	const { target, onOpen, kind, here, there, vault } = props;
 	const document = useQuery(semanticBoardDocumentQuery(vault, target.board));
 	const name = drillTargetName(target, document.data);
 	// Heard under the name the board goes by now, so a state superseded since the
