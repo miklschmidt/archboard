@@ -197,7 +197,11 @@ the decision follows every alternative. If an alternative ends the run (an
 early return, a thrown error), put the steps that only the other path runs
 inside that other alternative, and put nothing after the decision. A loop
 holds at least one step. Decisions and loops nest, and every message inside
-them names participants of the flow.
+them names participants of the flow. A message's `label`, a decision's `question`, an
+alternative's `label` and a loop's `condition` each hold at most 60
+characters. Put the detail in the step's `note`. A walkthrough beat can be
+about any step, inside a decision or a loop too, by its id or by the handle
+(`as`) that the same write gives it.
 
 The payload is the same `steps` list, with two more shapes beside a message.
 This fragment of a `flows` entry has a decision on the lease, and its `free`
