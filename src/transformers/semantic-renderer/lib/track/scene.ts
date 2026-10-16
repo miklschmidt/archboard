@@ -105,6 +105,12 @@ interface Region {
 	readonly caption: Item;
 }
 
+/** A point on a band. */
+interface Spot {
+	readonly band: number;
+	readonly x: number;
+}
+
 /** A placed shape, before it is known to have geometry. */
 interface Placed {
 	readonly x?: number | undefined;
@@ -455,6 +461,46 @@ class Scene {
 		return Math.max(
 			region.caption.band,
 			...nodes.map((id) => (this.cards.get(id) ?? this.titles.get(id))?.band ?? 0),
+		);
+	}
+
+	/**
+	 * The walls of each group region that a relaid label box on a band keeps
+	 * out of: each region that ends on that band, where it closes one inset
+	 * below its members and a box centred on a taller band hangs past its
+	 * foot. A region that holds both ends of the label's line grows round its
+	 * labels, and the region that held the box already holds it.
+	 * @param from Where the label's line starts.
+	 * @param to Where it ends.
+	 * @param label The box, where it stood.
+	 * @param band The band it would stand on.
+	 * @returns Each such region's walls.
+	 */
+	regionsOff(from: Spot, to: Spot, label: Item, band: number): [number, number][] {
+		return this.regions
+			.filter(
+				(region) =>
+					this.regionLastBand(region) === band &&
+					!this.holds(region, { band: label.band, x: centreX(label) }) &&
+					!(this.holds(region, from) && this.holds(region, to)),
+			)
+			.map(({ box }) => [box.x, box.x + box.width]);
+	}
+
+	/**
+	 * Whether a group region holds a point.
+	 * @param region The region.
+	 * @param spot The point.
+	 * @param spot.band Its band.
+	 * @param spot.x Its x.
+	 * @returns True when it does.
+	 */
+	private holds(region: Region, { band, x }: Spot): boolean {
+		return (
+			band >= region.caption.band &&
+			band <= this.regionLastBand(region) &&
+			x > region.box.x &&
+			x < region.box.x + region.box.width
 		);
 	}
 
