@@ -9,6 +9,7 @@ import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	emptyGraph,
 	heldEdges,
+	holdSinks,
 	holdSources,
 	placedLabel,
 	type VendorNode,
@@ -254,6 +255,7 @@ class CardLayout {
 		graph.edges.push(...entryRowEdges(this));
 		this.clusters.untie(graph.edges);
 		holdSources(this.block, this.graph, (name) => this.nodeOf(name));
+		holdSinks(this.block, this.graph);
 	}
 
 	/**
