@@ -58,7 +58,7 @@ const architecture = {
 	views: [
 		{
 			name: VIEW_NAME,
-			grammar: "data-flow",
+			grammar: "sequence",
 			scope: { kind: "selection", flows: ["One transfer"] },
 		},
 	],
@@ -151,7 +151,7 @@ describe("semantic rasterize", () => {
 	);
 
 	test(
-		"follows the same selectors as render: a data-flow view, a proposal, a scale",
+		"follows the same selectors as render: a sequence view, a proposal, a scale",
 		() => {
 			const before = boardFile();
 			const sequence = path.join(vault, "exchange.png");
@@ -170,7 +170,7 @@ describe("semantic rasterize", () => {
 			]);
 			expect(viewed.status, viewed.stderr).toBe(0);
 			const receipt = JSON.parse(viewed.stdout);
-			expect(receipt.view).toMatchObject({ name: VIEW_NAME, grammar: "data-flow" });
+			expect(receipt.view).toMatchObject({ name: VIEW_NAME, grammar: "sequence" });
 			expect(receipt.theme).toBe("dark");
 			expect(receipt.scale).toBe(2);
 			expect(pngSize(fs.readFileSync(sequence))).toEqual({

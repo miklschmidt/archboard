@@ -77,7 +77,7 @@ function marksOf(svg: string, id: string): string[] {
 		.flatMap((group) => [...group.matchAll(/data-drill=.([a-z]+)/gu)].map(([, way]) => way!));
 }
 
-for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) {
+for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 	test(
 		grammar + " marks each part that opens a board with the way it lies, and draws its name whole",
 		async () => {
@@ -197,7 +197,7 @@ function boxOf(groups: readonly DrawnGroup[], group: DrawnGroup): DiagramBox {
 const DRAWINGS: readonly (readonly [DiagramGrammar, LayoutEngineName | undefined])[] = [
 	["architecture", "track"],
 	["architecture", "blocks"],
-	["data-flow", undefined],
+	["sequence", undefined],
 ];
 
 for (const [grammar, layout] of DRAWINGS) {

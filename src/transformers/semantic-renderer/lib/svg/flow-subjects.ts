@@ -37,13 +37,18 @@ function columnSubjects(layout: FlowLayout): DrawnSubject[] {
 }
 
 /**
- * Every message of one flow, as a box.
+ * Every step of one flow, as a box: a message's row, and a decision's or
+ * loop's whole frame, since a pane sent to a decision is sent to every
+ * alternative it chooses between.
  * @param layout The flow.
- * @returns Each message's row.
+ * @returns Each step's box.
  */
 function stepSubjects(layout: FlowLayout): DrawnSubject[] {
 	const activeAt = activationLookup(layout.columns);
-	return layout.steps.map((placed) => ({ id: placed.step.id, box: stepBox(placed, activeAt) }));
+	return [
+		...layout.steps.map((placed) => ({ id: placed.step.id, box: stepBox(placed, activeAt) })),
+		...layout.frames.map((frame) => ({ id: frame.step.id, box: frame.box })),
+	];
 }
 
 export { columnSubjects, stepSubjects, type DrawnSubject };

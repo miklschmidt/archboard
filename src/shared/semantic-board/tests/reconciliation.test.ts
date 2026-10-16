@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+	messagesOf,
 	reconcileVariant,
 	VariantContentSchema,
 	VariantStandingSchema,
@@ -283,12 +284,12 @@ describe("an anchor", () => {
 		});
 		expect(inherited.issues).toEqual([]);
 		expect(inherited.content.edges[0]?.anchor).toEqual(cite("read"));
-		expect(inherited.content.flows[0]?.steps[0]?.anchor).toEqual(cite("read"));
+		expect(messagesOf(inherited.content.flows[0]?.steps ?? [])[0]?.anchor).toEqual(cite("read"));
 
 		const kept = reconcileVariant({ base: anchored(), mine: anchored("read"), theirs: anchored() });
 		expect(kept.issues).toEqual([]);
 		expect(kept.content.edges[0]?.anchor).toEqual(cite("read"));
-		expect(kept.content.flows[0]?.steps[0]?.anchor).toEqual(cite("read"));
+		expect(messagesOf(kept.content.flows[0]?.steps ?? [])[0]?.anchor).toEqual(cite("read"));
 	});
 
 	test("two different citations are a disagreement on the field", () => {

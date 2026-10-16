@@ -22,6 +22,9 @@ import {
 	type ChangeKind,
 	type FieldChange,
 	type FlowStep,
+	everyStep,
+	isMessage,
+	stepWords,
 	type SemanticBoard,
 	type SemanticEdge,
 	type SemanticFlow,
@@ -71,7 +74,7 @@ interface FlowSubject {
 	readonly participants: readonly string[];
 }
 
-/** One message of an exchange, with its ends and where it comes. */
+/** One step of an exchange (a message, decision or loop), with its ends and where it comes. */
 interface StepSubject {
 	/** Which sort of subject this is. */
 	readonly kind: "step";
@@ -137,16 +140,17 @@ function flowSubjectOf(
 				participants: flow.participants.map((one) => byId.get(one)?.name ?? one),
 			};
 		}
-		const at = flow.steps.findIndex((step) => step.id === id);
-		const step = flow.steps[at];
+		const steps = everyStep(flow.steps);
+		const at = steps.findIndex((step) => step.id === id);
+		const step = steps[at];
 		if (step !== undefined) {
 			return {
 				kind: "step",
 				step,
 				flow,
 				position: at + 1,
-				from: byId.get(step.from),
-				to: byId.get(step.to),
+				from: isMessage(step) ? byId.get(step.from) : undefined,
+				to: isMessage(step) ? byId.get(step.to) : undefined,
 			};
 		}
 	}
@@ -388,7 +392,8 @@ function flowName(flows: readonly SemanticFlow[], id: string): string {
 	if (flow !== undefined) {
 		return flow.name;
 	}
-	return flows.flatMap((one) => one.steps).find((step) => step.id === id)?.label ?? id;
+	const step = flows.flatMap((one) => everyStep(one.steps)).find((one) => one.id === id);
+	return step === undefined ? id : stepWords(step);
 }
 
 /**
@@ -570,7 +575,7 @@ function nameOfSubject(subject: Subject): string | undefined {
 		return subject.flow.name;
 	}
 	if (subject.kind === "step") {
-		return subject.step.label;
+		return stepWords(subject.step);
 	}
 	return subject.edge.label;
 }

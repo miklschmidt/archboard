@@ -97,7 +97,10 @@ function warningsOf(result: Awaited<ReturnType<typeof edit>>) {
 test("a new board keeps the anchors and the binding symbol the agent wrote", () => {
 	const content = current();
 	expect(content.edges[0]?.anchor).toEqual(CALL);
-	expect(content.flows[0]?.steps.map((step) => step.anchor)).toEqual([CALL, REPLY]);
+	expect(contract.messagesOf(content.flows[0]?.steps ?? []).map((step) => step.anchor)).toEqual([
+		CALL,
+		REPLY,
+	]);
 	expect(content.nodes[1]?.binding?.symbol).toBe("Orders");
 });
 
@@ -125,11 +128,14 @@ test("restating a relationship without its anchor drops it and says so", async (
 
 test("restating a flow drops the anchor of each step stated without one, and says so", async () => {
 	const flow = current().flows[0]!;
-	const [placed, accepted] = flow.steps;
+	const [placed, accepted] = contract.messagesOf(flow.steps);
 	const { anchor: _anchor, ...bare } = accepted!;
 	const result = await edit({ flows: [{ ...flow, steps: [placed, bare] }] });
 	expect(warningsOf(result)).toEqual([
 		["ANCHOR_DROPPED", `flows.${flow.id}.steps.${accepted!.id}.anchor`],
 	]);
-	expect(current().flows[0]?.steps.map((step) => step.anchor)).toEqual([CALL, undefined]);
+	expect(contract.messagesOf(current().flows[0]?.steps ?? []).map((step) => step.anchor)).toEqual([
+		CALL,
+		undefined,
+	]);
 });

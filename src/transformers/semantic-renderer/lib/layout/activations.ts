@@ -7,40 +7,59 @@ import type {
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 
 /**
+ * Whether two messages can both run in one pass through the flow: no decision
+ * holds them on different alternatives.
+ * @param one A message.
+ * @param other Another.
+ * @returns True when one run can meet both.
+ */
+function together(one: PlacedStep, other: PlacedStep): boolean {
+	for (const [decision, alternative] of one.branch) {
+		const theirs = other.branch.get(decision);
+		if (theirs !== undefined && theirs !== alternative) return false;
+	}
+	return true;
+}
+
+/**
  * Whether one message is the reply that answers a call.
  * @param candidate The message that might be the reply.
- * @param node The participant that received the call.
- * @param caller The participant that made it.
+ * @param call The call.
  * @returns True when it answers that call.
  */
-function answers(candidate: PlacedStep, node: string, caller: string): boolean {
+function answers(candidate: PlacedStep, call: PlacedStep): boolean {
 	return (
-		candidate.step.kind === "return" && candidate.step.from === node && candidate.step.to === caller
+		candidate.step.kind === "return" &&
+		candidate.step.from === call.step.to &&
+		candidate.step.to === call.step.from &&
+		together(candidate, call)
 	);
 }
 
 /**
- * The first later reply that answers a call and has not already answered one.
+ * The later replies that answer a call and have not already answered one: the
+ * first, and the first on each alternative of a decision that the first does
+ * not run on, since a call answered on one answer of a decision is answered
+ * on the others too.
  * @param steps Every message of the flow, in order.
  * @param index The call being answered.
  * @param claimed Which messages have already been spent answering a call.
- * @returns Its position, or -1 when nothing answers the call.
+ * @returns Their positions, in order; none when nothing answers the call.
  */
-function answerIndex(
+function answerIndexes(
 	steps: readonly PlacedStep[],
 	index: number,
 	claimed: ReadonlySet<number>,
-): number {
-	const call = steps[index];
-	if (call === undefined) {
-		return -1;
+): number[] {
+	const call = steps[index]!;
+	const found: number[] = [];
+	for (const [position, candidate] of steps.entries()) {
+		const fresh = position > index && !claimed.has(position) && answers(candidate, call);
+		if (fresh && !found.some((prior) => together(steps[prior]!, candidate))) {
+			found.push(position);
+		}
 	}
-	return steps.findIndex(
-		(candidate, position) =>
-			position > index &&
-			!claimed.has(position) &&
-			answers(candidate, call.step.to, call.step.from),
-	);
+	return found;
 }
 
 /**
@@ -102,19 +121,35 @@ function activationsFor(node: string, steps: readonly PlacedStep[]): ActivationB
 		if (call.step.kind !== "sync" || call.step.to !== node) {
 			continue;
 		}
-		const answer = answerIndex(steps, index, claimed);
-		const answered = steps[answer];
-		if (answered === undefined) {
-			bars.push({
-				top: call.y - BAR_OVERHANG,
-				bottom: lastInvolvement(steps, index, node) + MESSAGE_PITCH / 3,
-			});
-			continue;
-		}
-		claimed.add(answer);
-		bars.push({ top: call.y - BAR_OVERHANG, bottom: answered.y + BAR_OVERHANG });
+		bars.push(barOf(node, steps, index, claimed));
 	}
 	return mergedBars(bars);
+}
+
+/**
+ * The bar one synchronous call starts: to the last reply that answers it, each
+ * of which it claims, or through its receiver's last involvement when nothing
+ * answers it.
+ * @param node The receiver.
+ * @param steps Every message of the flow, in order.
+ * @param index The call's position.
+ * @param claimed The replies earlier calls claimed, to which this call adds its own.
+ * @returns The bar.
+ */
+function barOf(
+	node: string,
+	steps: readonly PlacedStep[],
+	index: number,
+	claimed: Set<number>,
+): ActivationBar {
+	const top = (steps[index]?.y ?? 0) - BAR_OVERHANG;
+	const answered = answerIndexes(steps, index, claimed);
+	const last = steps[answered.at(-1) ?? -1];
+	if (last === undefined) {
+		return { top, bottom: lastInvolvement(steps, index, node) + MESSAGE_PITCH / 3 };
+	}
+	for (const answer of answered) claimed.add(answer);
+	return { top, bottom: last.y + BAR_OVERHANG };
 }
 
 export { activationsFor };

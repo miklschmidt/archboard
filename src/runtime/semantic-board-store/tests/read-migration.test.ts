@@ -177,6 +177,22 @@ test("a version without a registered path is refused without rewriting", async (
 	expect(readFileSync(file, "utf8")).toBe(bytes);
 });
 
+test("a view in the grammar once called data-flow reads as a sequence and is written so", async () => {
+	const name = "old-sequence";
+	const view = {
+		id: "w1",
+		name: "In order",
+		grammar: "data-flow",
+		scope: { kind: "selection", nodes: [], edges: [], flows: ["f1"] },
+	};
+	// A board this old walks every step up to the one that renamed the grammar.
+	const file = put(name, { ...legacyBoard(name), views: [view] });
+	const result = await store.readSemanticBoard(vault, name);
+	if (!result.ok) throw new Error(result.problem);
+	expect(result.board.views.map((one) => one.grammar)).toEqual(["sequence"]);
+	expect(JSON.parse(readFileSync(file, "utf8")).views).toEqual([{ ...view, grammar: "sequence" }]);
+});
+
 test("known older contracts advance through compatibility steps", async () => {
 	const name = "old-compatible";
 	const file = put(name, { ...legacyBoard(name), schemaVersion: "2.0.0" });

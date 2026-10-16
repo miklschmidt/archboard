@@ -113,7 +113,7 @@ describe("pane news", () => {
 	test("only the parts the user changed are said, and the board always is", async () => {
 		const h = harness(true);
 		const base = semanticInput(h.ids, true);
-		const view = { id: "w1", name: "Data flow", grammar: "data-flow" as const };
+		const view = { id: "w1", name: "Data flow", grammar: "sequence" as const };
 		const event = h.semantic.publisher.publishPaneSelection(
 			said(h, {
 				pane: { ...base.pane, userChanged: ["view"] },
@@ -202,7 +202,7 @@ describe("pane news", () => {
 	test("during a narration a pick, a view or a variant chosen by hand is speech, and outside one the same news is quiet", async () => {
 		const h = harness(true);
 		h.state.narrated = "architecture";
-		const view = { id: "w1", name: "Data flow", grammar: "data-flow" as const };
+		const view = { id: "w1", name: "Data flow", grammar: "sequence" as const };
 		const variant = { id: "v2", name: "Proposal", lifecycle: "draft" as const, against: null };
 		// The fixture's clock stands still, so each report differs in what is selected to stay a
 		// report of its own rather than a repeat of the one before.

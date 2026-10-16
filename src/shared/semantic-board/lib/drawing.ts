@@ -32,6 +32,7 @@ import {
 	type VariantComparison,
 } from "@/shared/semantic-board/lib/compare";
 import type { VariantContent } from "@/shared/semantic-board/lib/content";
+import { everyStep } from "@/shared/semantic-board/lib/flow-steps";
 import { scopedContent, type ReadingScope } from "@/shared/semantic-board/lib/scope";
 
 /** What the answer says about a variant read against another, or nothing for the reference. */
@@ -123,7 +124,7 @@ function standingOfDrawn(
 		...against(comparison.flows, drawn.flows),
 		...against(
 			comparison.steps,
-			drawn.flows.flatMap((flow) => [...flow.steps]),
+			drawn.flows.flatMap((flow) => everyStep(flow.steps)),
 		),
 	};
 }

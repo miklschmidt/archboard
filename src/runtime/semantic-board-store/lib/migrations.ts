@@ -54,6 +54,25 @@ function addOrderToSubjects(value: unknown): void {
 	}
 }
 
+/** What the sequence grammar was called before 2.5.0. */
+const FORMER_SEQUENCE_GRAMMAR = "data-flow";
+
+/**
+ * Rename the grammar `data-flow` to `sequence` on every board view (ADR 0053).
+ * The grammar always drew a sequence diagram; the flowchart grammar beside it
+ * would have made the old name read as the other reading of a flow.
+ * @param document The decoded board.
+ */
+function renameSequenceGrammar(document: Record<string, unknown>): void {
+	const views = document["views"];
+	if (!Array.isArray(views)) return;
+	for (const view of views) {
+		if (isRecord(view) && view["grammar"] === FORMER_SEQUENCE_GRAMMAR) {
+			view["grammar"] = "sequence";
+		}
+	}
+}
+
 const migrations: readonly Migration[] = [
 	// These contracts already parse under the current shape when they did not
 	// use retired fields. The read boundary refuses old singular `group` first.
@@ -62,6 +81,8 @@ const migrations: readonly Migration[] = [
 	{ from: "2.2.0", to: "2.3.0", apply: addSubjectOrder },
 	// Only loosens: `current` became optional, so a 2.3.0 document already parses.
 	{ from: "2.3.0", to: "2.4.0", apply: keepContent },
+	// Decisions and loops in a flow are additive; the grammar rename is not.
+	{ from: "2.4.0", to: "2.5.0", apply: renameSequenceGrammar },
 ];
 const byVersion = new Map(migrations.map((migration) => [migration.from, migration]));
 

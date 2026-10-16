@@ -106,7 +106,7 @@
 		{ "name": "The parts", "grammar": "architecture", "summary": "What a write is made of" },
 		{
 			"name": "In order",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "The same parts, as the exchange they take part in",
 			"scope": { "kind": "selection", "flows": ["One agent write"] }
 		}

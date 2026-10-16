@@ -22,7 +22,7 @@ import {
 /** The two views this board offers. */
 const VIEWS = [
 	{ id: "v1", name: "The parts", grammar: "architecture" },
-	{ id: "v2", name: "One edit, in order", grammar: "data-flow" },
+	{ id: "v2", name: "One edit, in order", grammar: "sequence" },
 ] as const;
 
 /**

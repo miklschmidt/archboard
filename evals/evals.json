@@ -591,8 +591,8 @@
 					]
 				},
 				{
-					"feature": "view.data-flow",
-					"requirement": "a board view `Dispatch exchange` with the data-flow grammar scoped to the flow",
+					"feature": "view.sequence",
+					"requirement": "a board view `Dispatch exchange` with the sequence grammar scoped to the flow",
 					"skill": [
 						"SKILL.md#evidence-before-a-write",
 						"references/create-sequence.md#create-a-sequence-diagram",
@@ -625,7 +625,7 @@
 					"check": "view-exists",
 					"board": "Flask request pipeline",
 					"view": "Dispatch exchange",
-					"grammar": "data-flow"
+					"grammar": "sequence"
 				},
 				{
 					"check": "walkthrough-beat-references",
@@ -649,7 +649,7 @@
 					"label": "dispatch-exchange",
 					"board": "Flask request pipeline",
 					"view": "Dispatch exchange",
-					"grammar": "data-flow"
+					"grammar": "sequence"
 				},
 				{
 					"label": "pipeline",
@@ -792,8 +792,8 @@
 					"skill": ["SKILL.md#everything-the-code-shows"]
 				},
 				{
-					"feature": "view.data-flow",
-					"requirement": "a board view named Startup exchange draws the flask run exchange in the data-flow grammar",
+					"feature": "view.sequence",
+					"requirement": "a board view named Startup exchange draws the flask run exchange in the sequence grammar",
 					"skill": [
 						"references/create-sequence.md#create-a-sequence-diagram",
 						"references/sequences-views-walkthroughs.md#views"
@@ -838,7 +838,7 @@
 					"check": "view-exists",
 					"board": "Flask CLI startup",
 					"view": "Startup exchange",
-					"grammar": "data-flow"
+					"grammar": "sequence"
 				}
 			],
 			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
@@ -848,7 +848,7 @@
 					"label": "startup-exchange",
 					"board": "Flask CLI startup",
 					"view": "Startup exchange",
-					"grammar": "data-flow"
+					"grammar": "sequence"
 				},
 				{
 					"label": "startup",

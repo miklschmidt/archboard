@@ -546,4 +546,4 @@ function measureArchitecture(
 	};
 }
 
-export { measureArchitecture, farSizeFor, measureMessageLines, measureNoteLines };
+export { measureArchitecture, farSizeFor, measureLabel, measureMessageLines, measureNoteLines };

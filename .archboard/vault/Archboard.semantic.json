@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 54,
+	"version": 55,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-15T05:06:53.647Z",
+	"updatedAt": "2026-10-16T02:11:40.514Z",
 	"views": [],
 	"variants": [
 		{
