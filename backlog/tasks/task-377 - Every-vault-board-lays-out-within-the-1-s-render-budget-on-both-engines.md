@@ -5,7 +5,7 @@ status: To Do
 assignee:
   - '@claude'
 created_date: '2026-09-29 18:33'
-updated_date: '2026-10-07 01:56'
+updated_date: '2026-10-16 12:59'
 labels:
   - renderer
 dependencies: []
@@ -75,4 +75,6 @@ Timings: the first render in one warm process, after both engines were warmed on
 User decision 2026-09-30: accept Blocks over the budget for now. Track, the default engine, lays out every tracked board within 1 s after 5779892f and 14afc56f (Agent workbench 0.74 s, re-measured on a quiet machine after the merge). Blocks stays over: Agent workbench about 4.9 s, Browser application about 1.7 s, Archboard server about 1.0 s, almost all inside libavoid's routing. The task stays open for Blocks; switching off libavoid's unifying nudging step was measured and rejected because it makes some drawings worse.
 
 TASK-420 closure decision on 2026-10-07 keeps its existing Blocks speed issue here. The eighteen-board audit records Board viewer at 2109.20 ms on Blocks and 650.60 ms on Track. Board viewer is the only current drawing over one second in that audit. The owner accepted the spacing fix and kept this task open for the Blocks budget. Audit log: /tmp/surface-render-budget.log.
+
+2026-10-16, after TASK-482 nested every crowded vault board: three wide-board cases in tests/…/wide-boards.test.ts fail their bound on a quiet machine. Archboard server routes (blocks) and Command interface (blocks) pass the 20 s case limit (Archboard server routes took 6.5 s before the nesting and 23.8 s after, timed alone); Board viewer (track) takes 3.3 to 3.9 s against its 3 s bound. Agent workbench (blocks) went from 10.1 s to 21.0 s. The owner wants these drawings fast, not the limits raised; this task owns the work.
 <!-- SECTION:NOTES:END -->
