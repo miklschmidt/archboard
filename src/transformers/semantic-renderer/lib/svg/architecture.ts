@@ -340,21 +340,25 @@ function extentOf(
 
 /**
  * Paints one card that is not drawn as a card: a flowchart's decision diamond,
- * loop or terminal (ADR 0053).
+ * loop or terminal (ADR 0053). It has two parts, as a card does: the shadow it
+ * casts, laid under every line and every card, and the shape itself.
  */
-type ShapePainter = (
-	card: DrawingNode,
-	standing: SubjectStanding | undefined,
-	unsettled: boolean,
-) => string;
+interface ShapePainter {
+	readonly shadow: (card: DrawingNode, standing: SubjectStanding | undefined) => string;
+	readonly paint: (
+		card: DrawingNode,
+		standing: SubjectStanding | undefined,
+		unsettled: boolean,
+	) => string;
+}
 
 /** The drawing a page is fitted to, and how its subjects stand for the marks it holds. */
 interface HeldPage {
 	readonly drawing: PaintedDrawing;
 	readonly standingOf: StandingOf;
 	/**
-	 * The cards drawn as shapes of their own, by id: none has a port, a card's
-	 * shadow or a card's face. Absent on an architecture.
+	 * The cards drawn as shapes of their own, by id: each casts its own shadow
+	 * and is its own face, and none has a port. Absent on an architecture.
 	 */
 	readonly shapes?: ReadonlyMap<string, ShapePainter> | undefined;
 	/** What subject every other card is: a part, or a flowchart's message step. */
@@ -489,18 +493,20 @@ function paintArchitecture(
 			),
 		// The cards' and the labels' shadows, under every line and every card, so
 		// no line is shadowed and no shadow lies on a card (TASK-435).
-		...orderedCards
-			.filter(({ measured }) => page.shapes?.has(measured.node.id) !== true)
-			.map(({ measured, box }) =>
-				shadowUnder(
-					measured.node.id,
-					box,
-					SLAB_RADIUS,
-					"card",
-					palette,
-					standingOf(measured.node.id),
-				),
-			),
+		...orderedCards.map((card) => {
+			const { measured, box } = card;
+			const shape = page.shapes?.get(measured.node.id);
+			return shape === undefined
+				? shadowUnder(
+						measured.node.id,
+						box,
+						SLAB_RADIUS,
+						"card",
+						palette,
+						standingOf(measured.node.id),
+					)
+				: shape.shadow(card, standingOf(measured.node.id));
+		}),
 		...edges.map((edge) => labelShadow(edge, palette, standingOf(edge.edge.id))),
 		...edges.map((edge) =>
 			paintEdgeLine(
@@ -549,7 +555,7 @@ function paintArchitecture(
 						cuts.get(id),
 						page.cardKind,
 					)
-				: shape(card, standingOf(id), unsettledOf(id));
+				: shape.paint(card, standingOf(id), unsettledOf(id));
 		}),
 		...edges.map((edge) =>
 			paintEdgeWords(
