@@ -348,6 +348,7 @@ test("a node stated without an id is still new, even when a removed one has its 
 	await settleFields();
 	const added = await edit({
 		variant: DRAFT,
+		confirm: ["PART_RECREATED"],
 		nodes: [{ name: "Tagged JSON", kind: "module", responsibility: "A second tagging module" }],
 	});
 	expect(added.outcome).toBe("applied");

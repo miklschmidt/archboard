@@ -482,10 +482,18 @@ test("an absent ancestor-only subject comes back to a child only when the edit c
 	expect(result.outcome === "rejected" && result.code).toBe("RESTORE_UNCONFIRMED");
 	// Confirming never turns an id no variant holds into a new subject.
 	const unknown = { ...grid, id: "unknown1" };
-	const invented = await edit({ variant: "Child", restoreKnownIds: true, nodes: [unknown] });
+	const invented = await edit({
+		variant: "Child",
+		confirm: ["RESTORE_UNCONFIRMED"],
+		nodes: [unknown],
+	});
 	expect(invented.outcome === "rejected" && invented.code).toBe("UNKNOWN_NODE");
 	expect(read()).toEqual(before);
-	const confirmed = await edit({ variant: "Child", restoreKnownIds: true, nodes: [grid] });
+	const confirmed = await edit({
+		variant: "Child",
+		confirm: ["RESTORE_UNCONFIRMED"],
+		nodes: [grid],
+	});
 	expect(warningsOf(confirmed)).toEqual([["RESTORED_FROM_OTHER_VARIANT", `nodes.${grid.id}`]]);
 	expect(variant("Child").content.nodes).toContainEqual(grid);
 });

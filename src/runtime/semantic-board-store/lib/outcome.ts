@@ -33,6 +33,10 @@ type SemanticRefusalCode =
 	| "UNKNOWN_SUBJECT"
 	/** An edit states an id only another variant holds, and did not confirm restoring it. */
 	| "RESTORE_UNCONFIRMED"
+	/** An edit adds a part an ancestor holds under another id, and did not confirm it. */
+	| "PART_RECREATED"
+	/** An edit removes most of what the variant inherited, and did not confirm it. */
+	| "INHERITANCE_DROPPED"
 	/** A node went away and a flow it takes part in stayed. */
 	| "NODE_IN_FLOW"
 	/** Something went away and a beat about it stayed. */

@@ -84,7 +84,7 @@ function absentIn(present: VariantContent, sources: readonly VariantContent[]): 
 /**
  * What one edit may restore. The direct predecessor and the recorded
  * reconciliation base are sources without asking; every other variant of the
- * board is a source only when the edit confirms it with `restoreKnownIds`.
+ * board is a source only when the edit confirms `RESTORE_UNCONFIRMED`.
  * @param board The variant family.
  * @param variant The variant before the edit.
  * @param input The edit as stated.
@@ -107,7 +107,7 @@ function restoration(
 	if (elsewhere.length === 0) {
 		return { ok: true, restorable: inherited, notices: [] };
 	}
-	if (input.restoreKnownIds !== true) {
+	if (input.confirm?.includes("RESTORE_UNCONFIRMED") !== true) {
 		return refuse("RESTORE_UNCONFIRMED", unconfirmed(elsewhere));
 	}
 	const everySource = [...inheritedSources, ...others.map((one) => one.content)];
@@ -223,8 +223,8 @@ function heldBy(elsewhere: readonly HeldElsewhere[]): string {
 function unconfirmed(elsewhere: readonly HeldElsewhere[]): string {
 	return (
 		`this edit states ${heldBy(elsewhere)}, which this variant's direct predecessor and ` +
-		"recorded reconciliation base do not hold. Pass --restore-known-ids (restoreKnownIds in " +
-		"the edit) to restore them under those ids, or leave each id out to add a new subject"
+		"recorded reconciliation base do not hold (RESTORE_UNCONFIRMED). Add --confirm " +
+		"RESTORE_UNCONFIRMED to restore them under those ids, or leave each id out to add a new subject"
 	);
 }
 

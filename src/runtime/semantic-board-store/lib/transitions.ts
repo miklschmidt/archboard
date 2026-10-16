@@ -41,6 +41,7 @@ import {
 	restoration,
 	type RestorableSubjects,
 } from "@/runtime/semantic-board-store/lib/restore";
+import { guardInheritance } from "@/runtime/semantic-board-store/lib/inheritance";
 import { settleVariant } from "@/runtime/semantic-board-store/lib/settle";
 import { idsInUse, mintInto, openBatch } from "@/runtime/semantic-board-store/lib/batch";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
@@ -517,7 +518,9 @@ function editableVariant(
 
 /**
  * The content one edit leaves, restoring absent identities under their own ids
- * where the edit may (`restore.ts`) rather than minting replacements.
+ * where the edit may (`restore.ts`) rather than minting replacements, and
+ * keeping what the variant inherited unless the edit confirms otherwise
+ * (`inheritance.ts`).
  * @param board The board as it stands.
  * @param variant The edited variant, as it stood.
  * @param input The edit as stated.
@@ -535,11 +538,16 @@ function restoredContent(
 		return restoring;
 	}
 	const content = editContent(variant.content, input, board, restoring.restorable);
-	return content.ok
-		? {
-				...content,
-				restorable: restoring.restorable,
-				notices: [...restoring.notices, ...content.notices],
-			}
-		: content;
+	if (!content.ok) {
+		return content;
+	}
+	const guarded = guardInheritance(board, variant, content.content, input);
+	if (!guarded.ok) {
+		return guarded;
+	}
+	return {
+		...content,
+		restorable: restoring.restorable,
+		notices: [...restoring.notices, ...guarded.notices, ...content.notices],
+	};
 }

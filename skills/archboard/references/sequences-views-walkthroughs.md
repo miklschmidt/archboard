@@ -239,8 +239,10 @@ speak about a change that no beat names.
 ### A pull request's recording
 
 The video is how a reviewer who has not read the code learns what the pull
-request changed and why. The board is disposable. The vault's own boards are
-updated through their usual recipe, never through this one.
+request changed and why. The board is disposable. Its cut-down architecture
+(step 3) is only for this throwaway board. On a vault board, a proposal holds
+the whole architecture: follow [a stack of pull
+requests](variants.md#a-stack-of-pull-requests) instead.
 
 1. **Read the change and say why it exists.** Read the diff against the merge
    base, not against the tip of `main`. Write one sentence that says why the
