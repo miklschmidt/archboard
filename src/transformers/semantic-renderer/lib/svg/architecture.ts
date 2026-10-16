@@ -6,7 +6,11 @@ import {
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // Paint a complete drawing. Placement, wrapping and routing are already settled.
 import type { DiagramAtlas } from "@/shared/semantic-board/index";
-import type { DrawingEdge, PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
+import type {
+	DrawingEdge,
+	DrawingNode,
+	PaintedDrawing,
+} from "@/transformers/semantic-renderer/lib/drawing";
 import {
 	DIAGRAM_MARGIN,
 	PILL_RADIUS,
@@ -334,10 +338,27 @@ function extentOf(
 	]);
 }
 
+/**
+ * Paints one card that is not drawn as a card: a flowchart's decision diamond,
+ * loop or terminal (ADR 0053).
+ */
+type ShapePainter = (
+	card: DrawingNode,
+	standing: SubjectStanding | undefined,
+	unsettled: boolean,
+) => string;
+
 /** The drawing a page is fitted to, and how its subjects stand for the marks it holds. */
 interface HeldPage {
 	readonly drawing: PaintedDrawing;
 	readonly standingOf: StandingOf;
+	/**
+	 * The cards drawn as shapes of their own, by id: none has a port, a card's
+	 * shadow or a card's face. Absent on an architecture.
+	 */
+	readonly shapes?: ReadonlyMap<string, ShapePainter> | undefined;
+	/** What subject every other card is: a part, or a flowchart's message step. */
+	readonly cardKind?: "node" | "step" | undefined;
 }
 
 /** A painted drawing and the subject geometry a viewer interacts with. */
@@ -388,7 +409,11 @@ function paintArchitecture(
 	]);
 	// Where a line meets the foot of a card, it runs into a port cut through the
 	// card's front edge; a removed card is a ghost and has no edge to cut.
-	const ports = portsOf(cards, edges, (id) => standingOf(id) !== "removed");
+	const ports = portsOf(
+		cards,
+		edges,
+		(id) => standingOf(id) !== "removed" && page.shapes?.has(id) !== true,
+	);
 	const { wells, cuts } = portPlan(ports, edges);
 	// Every node the page lays out, drawn or not, so leaving some out changes
 	// no kept card's colour or whether it draws as a container.
@@ -464,16 +489,18 @@ function paintArchitecture(
 			),
 		// The cards' and the labels' shadows, under every line and every card, so
 		// no line is shadowed and no shadow lies on a card (TASK-435).
-		...orderedCards.map(({ measured, box }) =>
-			shadowUnder(
-				measured.node.id,
-				box,
-				SLAB_RADIUS,
-				"card",
-				palette,
-				standingOf(measured.node.id),
+		...orderedCards
+			.filter(({ measured }) => page.shapes?.has(measured.node.id) !== true)
+			.map(({ measured, box }) =>
+				shadowUnder(
+					measured.node.id,
+					box,
+					SLAB_RADIUS,
+					"card",
+					palette,
+					standingOf(measured.node.id),
+				),
 			),
-		),
 		...edges.map((edge) => labelShadow(edge, palette, standingOf(edge.edge.id))),
 		...edges.map((edge) =>
 			paintEdgeLine(
@@ -509,16 +536,21 @@ function paintArchitecture(
 		// Every relationship's traffic, over all the lines so a stretch two joined
 		// lines share never covers the other's pulses, and under the cards and words.
 		...edges.map((edge) => traffic.get(edge.edge.id) ?? ""),
-		...orderedCards.map((card) =>
-			paintMeasuredCard(
-				card,
-				palette,
-				standingOf(card.measured.node.id),
-				unsettledOf(card.measured.node.id),
-				appearances.get(card.measured.node.id)!,
-				cuts.get(card.measured.node.id),
-			),
-		),
+		...orderedCards.map((card) => {
+			const id = card.measured.node.id;
+			const shape = page.shapes?.get(id);
+			return shape === undefined
+				? paintMeasuredCard(
+						card,
+						palette,
+						standingOf(id),
+						unsettledOf(id),
+						appearances.get(id)!,
+						cuts.get(id),
+						page.cardKind,
+					)
+				: shape(card, standingOf(id), unsettledOf(id));
+		}),
 		...edges.map((edge) =>
 			paintEdgeWords(
 				edge,
@@ -550,4 +582,4 @@ function paintArchitecture(
 	};
 }
 
-export { type ArchitecturePainting, paintArchitecture };
+export { type ArchitecturePainting, type ShapePainter, paintArchitecture };
