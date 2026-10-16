@@ -49,13 +49,15 @@ import { AGAINST_OPTION } from "@/cli/commands/lib/drawn-against";
 import { SelectorSchema, UNNAMED_VARIANT, askedVariant } from "@/cli/commands/lib/semantic-input";
 
 const THEMES = DiagramThemeSchema.options;
+/** A video cannot follow its viewer's theme, so it is drawn dark unless asked otherwise (TASK-483). */
+const DEFAULT_THEME = "dark" satisfies (typeof THEMES)[number];
 
 const RecordInputSchema = z.object({
 	name: z.string(),
 	variant: SelectorSchema.optional(),
 	against: SelectorSchema.optional(),
 	walkthrough: z.string().optional(),
-	theme: DiagramThemeSchema.default("light"),
+	theme: DiagramThemeSchema.default(DEFAULT_THEME),
 	layout: LayoutEngineSchema.default(DEFAULT_LAYOUT_ENGINE),
 	language: RecordingLanguageSchema.default(DEFAULT_RECORDING_LANGUAGE),
 	out: z.string(),
@@ -334,7 +336,7 @@ const semanticRecordContract = defineCommand({
 			value: "required",
 			placeholder: "theme",
 			choices: THEMES,
-			default: "light",
+			default: DEFAULT_THEME,
 			description: "Which palette the pane draws in",
 		},
 		{

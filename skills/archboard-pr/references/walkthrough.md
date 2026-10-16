@@ -91,7 +91,7 @@ archboard semantic record <board> --variant "<proposal>" --against "<below>" --w
   greatest compatibility [GitHub, attaching files].
 - Pass `--layout blocks`, so the video draws the layout of the picture. The
   talk keeps the layout, so `semantic replay` draws it again.
-- The video is drawn in the light theme unless you pass `--theme dark`. A video
+- The video is drawn in the dark theme unless you pass `--theme light`. A video
   cannot follow the reader's theme, so record one video only.
 
 On a vault board, remove the walkthrough from the proposal afterwards, in one
