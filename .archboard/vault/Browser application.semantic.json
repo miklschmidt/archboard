@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 73,
+	"version": 76,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-15T22:24:58.253Z",
+	"updatedAt": "2026-10-16T01:30:26.034Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -13158,7 +13158,7 @@
 		{
 			"id": "eyQhpXN2",
 			"name": "TASK-482.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "kgEzJYfh",
 			"summary": "Browser application modules in four areas: drawing a board, panes and workspace, the agent and its voice, and walkthrough recordings",
 			"content": {
@@ -14544,9 +14544,1375 @@
 					}
 				]
 			}
+		},
+		{
+			"id": "jdZ1lIVr",
+			"name": "TASK-482.06",
+			"lifecycle": "current",
+			"parent": "eyQhpXN2",
+			"summary": "The board is its own container: no part stands for it",
+			"content": {
+				"nodes": [
+					{
+						"id": "HggZR41l",
+						"order": 2000,
+						"name": "Application composition",
+						"kind": "module",
+						"responsibility": "Connects pane and feature owners",
+						"description": "Mounts one pane per pane id (its session and its stage together, ApplicationPane), composes the agent's owners over the focused pane's transport, keeps voice on the pane it was started for, lays its subtitles or voice box over that pane (over the presented pane in a fullscreen presentation, and then tells the dock and the box that no dock is on screen), and connects routing, the catalog, notices, settings, narration, subtitles and a recording page. Both panes carry the tab's session, so the agent is the same whichever pane has focus. A pane opens in the vault the server was started with and then follows the vault its session reports, and its stage is given that vault. A board the person opens in the navigator is shown in the vault of the repository it was listed under, and a checkout the person chooses there is chosen through the catalog. The person's own acts decide which workhorse's conversation the dock shows: focusing a pane, opening a board in one, picking a workhorse from the dock's list and Fix with Codex tell the server through the one activation the application builds, and what an agent does to a pane never does. Fix with Codex activates the pane in front, reads the workbench again, and only then asks, so the repair goes to the workhorse of the repository diagnosed. It holds no board content.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application"
+						}
+					},
+					{
+						"id": "dtYjWvlf",
+						"order": 3000,
+						"name": "Semantic viewer",
+						"kind": "module",
+						"responsibility": "Reads and explores rendered boards",
+						"description": "Reads the board document from the vault of the pane it is drawn in, on the server, or from the talk on a replay, and draws its picture in this page (or asks the server's render route when the page runs no renderer). Owns only camera, selection, view, variant, walkthrough position and drill-down trail, and writes nothing (ADR 0023). A presented walkthrough is one plate over the foot of the picture: a rail of steps, the step's number, heading and words, the keys that step and leave, and at its foot a pill for the voice, which holds the key that narrates while voice is off and what the shell lays over the picture while it is live. The camera keeps the picture clear of the whole plate, and the stage says whether it lays that overlay free over the picture or in the pill, so what is laid there draws itself to fit.",
+						"parent": "POloYnX3",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas"
+						},
+						"drillDown": {
+							"board": "Board viewer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "xsn0RvSi",
+						"order": 4000,
+						"name": "Pane session",
+						"kind": "module",
+						"responsibility": "Keeps each pane in server contact",
+						"description": "Owns the pane's socket and its generations, registration and pane reports, board news, taking back a claim, opening code, saying which checkout the person activated, and the workbench transport each socket generation carries. Starts in the vault its pane opens in, then holds the vault and repository the server last put the pane in, and names that vault on every call and on its socket's address. Every socket names the tab session, so the server knows which panes share a conversation.",
+						"parent": "wlbLOPSH",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/pane-session"
+						}
+					},
+					{
+						"id": "HCghQa6I",
+						"order": 5000,
+						"name": "Workspace routing",
+						"kind": "module",
+						"responsibility": "Restores pane display intent",
+						"description": "One TanStack Router route at /, whose search parameters paneA, paneB and pane are the workspace, with repoA and repoB beside them naming each pane's repository by its identity or an untracked vault's registry name, never by a path. The address follows what the panes report; on a first load and on Back or Forward it leads, restoring through the workspace port with the same command the navigator runs, once the repositories are known. It is never board authority.",
+						"parent": "wlbLOPSH",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-routing"
+						}
+					},
+					{
+						"id": "zWQG6LJZ",
+						"order": 6000,
+						"name": "Board catalog",
+						"kind": "module",
+						"responsibility": "Lists the repositories and the boards of each",
+						"description": "Owns the tab's query cache and the live panes' inventory query. Reads the repositories of the machine, one board listing for each repository with a vault, and composes them with the inventory into what the navigator shows. Chooses the checkout a repository is read from, and holds the invalidations the application calls when pane news says a board moved or a checkout was chosen.",
+						"parent": "wlbLOPSH",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-catalog"
+						}
+					},
+					{
+						"id": "0x47EMoO",
+						"order": 7000,
+						"name": "Workbench client",
+						"kind": "service",
+						"responsibility": "The agent dock, the conversation beside the navigator and the voice box over a pane: the agent's state, Talk, the composer, the tab's workhorses to pick from, and its conversation with its work",
+						"description": "The dock lists the tab's workhorses by repository and checkout, once there are two, with the shown one picked and a word for each that runs, waits for your approval or waits for your answer, in text and not in colour alone; a pick shows that workhorse's conversation in every pane. The list is one named group of buttons that the Up and Down arrows move through. It reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's controllers and the voice session. While the person wants subtitles, and always in a fullscreen presentation, where no dock is on screen, it also draws the voice box, a capsule round the orb with mute and the subtitles control as two keys at its end, which carries the voice the dock otherwise shows. The box is free over the voice's pane, or in the pill at the foot of a presented walkthrough's box, where the pill is its skin. The dock hands the voice over only to a box that the orb's stage says is on the page, and places the orb after its own motion so the orb leaves from where it was seen. The bar of a fullscreen presentation holds one key of the client: Talk, which reads End voice while the voice is live.",
+						"parent": "W0EmXnR9",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/workbench"
+						},
+						"drillDown": {
+							"board": "Agent workbench",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "0SRnYXnC",
+						"order": 8000,
+						"name": "Voice session",
+						"kind": "module",
+						"responsibility": "The live voice this tab holds for one pane: availability, start and stop, mute, recovery",
+						"description": "Made by the application's VoiceStore for the pane voice runs for. The peer connection and the audio element belong to that pane's media owner (codex-workbench-media), negotiated over the pane's workbench transport.",
+						"parent": "W0EmXnR9",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/voice-session"
+						},
+						"drillDown": {
+							"board": "Voice coordinator",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "4LDuKQvq",
+						"order": 9000,
+						"name": "Code target",
+						"kind": "module",
+						"responsibility": "Opens the code a subject is bound to",
+						"description": "Sends the board, the subject's id and the vault of the pane it is in to the Archboard server, which owns the binding, the opener and the checkout registry, and opens the code at the branch or commit the binding pins. The browser never reads a local path. Also reads, tests and saves the opener settings.",
+						"parent": "wlbLOPSH",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/code-target"
+						}
+					},
+					{
+						"id": "G4NHQC25",
+						"order": 10000,
+						"name": "Archboard server",
+						"kind": "service",
+						"responsibility": "Owns every board and answers every read",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/index.ts"
+						},
+						"drillDown": {
+							"board": "Archboard server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "c4LPnwh5",
+						"order": 11000,
+						"name": "Shell",
+						"kind": "ui",
+						"responsibility": "The desktop frame in columns: the navigator with the agent dock at its foot, the conversation beside it while open, and the panes",
+						"description": "No row runs across the frame: each column has its own 40px top row (the brand bar over the navigator, a pane's header, the conversation's header), and the rows line up. The pane centre is the fullscreen root, so presenting a pane never remounts it, and a presented pane gets a slim bar with its exit and the one voice key. The navigator lists every repository with the boards of its chosen checkout under it, says in a repository's row when its checkout is gone or has no vault, and offers a menu of the repository's known checkouts.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/shell"
+						}
+					},
+					{
+						"id": "hDWpDois",
+						"order": 12000,
+						"name": "Browser renderer",
+						"kind": "module",
+						"responsibility": "Draws a board in this tab: the tab's own canvas for measuring, a worker pool for the layout",
+						"parent": "POloYnX3",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "6uWT4mUj",
+						"order": 13000,
+						"name": "Server requests",
+						"kind": "module",
+						"responsibility": "The one way this tab speaks JSON to the Archboard server: each call names the vault it is about, and the page learns once which vault it opens in, or that there is none",
+						"parent": "wlbLOPSH",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/server-requests/index.ts"
+						}
+					},
+					{
+						"id": "zs2QxCu7",
+						"order": 14000,
+						"name": "Agent setup",
+						"kind": "module",
+						"responsibility": "Talking needs no setup: a message or Talk is held and carried through sign-in, Codex starting and the creation of the tab's conversation",
+						"description": "One setup for the tab, outliving focus: both panes share the tab's conversation. Each held message says what it waits on. A failure stays on it with the reason, and nothing is retried behind the user's back. It speaks through ports the application wires to the focused pane's thread link, composer and voice session.",
+						"parent": "W0EmXnR9",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/agent-setup"
+						}
+					},
+					{
+						"id": "941UBxya",
+						"order": 15000,
+						"name": "Workbench transport",
+						"kind": "module",
+						"responsibility": "The agent's channel on one pane socket: the server's agent state in, the controllers' commands out",
+						"parent": "W0EmXnR9",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/workbench-transport"
+						}
+					},
+					{
+						"id": "0yb2VbKc",
+						"order": 16000,
+						"name": "Voice subtitles",
+						"kind": "ui",
+						"responsibility": "The voice's words, faded in one at a time over the pane it runs for, measured into two lines",
+						"description": "Cut into cues from the transcript on the pane's transport, or from a talk's lines on a replay; each word fades in, a cue gives way to the next without a cut, and a subtitle that stops growing lingers on the frame clock, then fades out. A person can turn them off, which moves the voice from the box that carries it back to the dock; in a fullscreen presentation, which has no dock, it only takes the words away and the voice stays in its box. A recording always has them, and a recording and a replay draw them bare, in the pill of a walkthrough's box.",
+						"parent": "W0EmXnR9",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/voice-subtitles"
+						}
+					},
+					{
+						"id": "fscW90Xt",
+						"order": 17000,
+						"name": "Walkthrough recording",
+						"kind": "module",
+						"responsibility": "A page recording one walkthrough's talk: it moves the pane a step at a time as the voice paces it, and keeps the voice and each step and subtitle line on one clock",
+						"description": "Asked for by the page's address. The page shows the one pane (RecordingStage) instead of the shell and publishes its contract on the window for the recorder that drives it (drawn on Board rasterizer). The page is its own tab session, so voice that is live in another tab does not refuse it. The voice's audio element is muted, so nobody hears it, and its stream is tapped through Web Audio. The talk's lines are the voice's own lines of the transcript on the pane's transport, and its drawn versions are what the pane reports. The page captures no picture: the replay draws every frame again from the talk.",
+						"parent": "01sVgqBF",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-recording"
+						}
+					},
+					{
+						"id": "aG0rP4SX",
+						"order": 18000,
+						"name": "Tab session",
+						"kind": "function",
+						"responsibility": "The tab's own id, kept in sessionStorage: a reload keeps it, and a new tab or window mints another",
+						"description": "Both panes of a tab send it on their sockets, so they share one conversation and one voice. The server never takes a thread id from the browser. A duplicated tab copies the id and shares the conversation.",
+						"parent": "wlbLOPSH",
+						"groups": [
+							"agent",
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/pane-session/lib/tab-session.ts"
+						}
+					},
+					{
+						"id": "aixSjfNe",
+						"order": 19000,
+						"name": "Walkthrough replay",
+						"kind": "module",
+						"responsibility": "A page drawing a recorded talk again, one frame at a time: the recording's pane and subtitles, fed from the talk, on a stepped clock",
+						"description": "Asked for by ?replay=1, and mounted by the entry point in place of the application, so it has no workbench, no pane session and no socket, and no Codex is involved. It publishes load(talk) and frame(n) on the window for the renderer that drives it (drawn on Board rasterizer). It reads the board and the policy only from the talk, and a read of any other board fails the render.",
+						"parent": "01sVgqBF",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay"
+						}
+					},
+					{
+						"id": "rouptSyK",
+						"order": 20000,
+						"name": "Frame clock",
+						"kind": "module",
+						"responsibility": "The one clock that glides, picture transitions and subtitle lingers read: the browser's own on a live page, a stepped one on a replay",
+						"description": "A replay swaps it once, before it mounts anything. Its stepped clock runs frame callbacks and timers at their due times, and takes over the browser's own requestAnimationFrame, so a library's frames run on it too. It pauses and stands every Web Animation and CSS transition at the frame's time, a picture's traffic at where its picture's clock stands, and records a violation for an animation on a timeline it cannot stand. A lint rule keeps the viewer and the subtitles on it.",
+						"parent": "POloYnX3",
+						"groups": [
+							"drawing",
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/frame-clock"
+						}
+					},
+					{
+						"id": "t5Wy06ua",
+						"order": 21000,
+						"name": "Voice orb",
+						"kind": "module",
+						"responsibility": "The one orb, drawn once and flown between the dock's circle and the voice box's socket",
+						"description": "The canvas is made once and moved, never remounted, so the light and the last second of level it has drawn go with it, and it carries the plate it sits on: what flies is one object, only one is ever on the page, and a home draws its seat only while the orb rests in it. The dock offers its circle as one home and the voice box offers a socket as the other; the stage flies an orb that can be seen over the page between them from where it was seen, meets a socket where it is as it moves, turns a flight round from where the orb is, and cuts when motion is not wanted, when a home is not on screen or when the orb is not yet seen, so voice starting lights it where it is wanted and does not launch it from the Talk key. It says whether a home is on the page, so a surface gives the voice up only to a home that is there. While the page is fullscreen it paints only the element presented, so the flight crosses inside that element, a home outside it is not on screen, and a flight in the air when fullscreen starts lands where it was going.",
+						"parent": "W0EmXnR9",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/voice-orb"
+						}
+					},
+					{
+						"id": "p5UCow7F",
+						"order": 22000,
+						"name": "Pane vault",
+						"kind": "function",
+						"responsibility": "The vault of the pane around a reader",
+						"description": "The pane provides its vault once, around its stage, and every read the pane draws takes it from here and names it, because two panes of a tab can show two repositories. In the application the pane session is its one source. A replay names the recorded talk instead, whose reads never reach a server. This only hands the value down.",
+						"parent": "POloYnX3",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/pane-vault.ts",
+							"symbol": "PaneVaultContext"
+						}
+					},
+					{
+						"id": "HQWPLutt",
+						"order": 23000,
+						"name": "Board move",
+						"kind": "module",
+						"responsibility": "A person moves the pane's board to another repository, with a look at what the move rewrites first",
+						"description": "TASK-472.16, ADR 0051. The control sits in the pane's header while the pane shows a board of a vault the server named. The dialog lists the repositories the board can move to, which Board catalog reads, and for the one chosen what the move would rewrite. That preview is read again whenever the pane hears the board changed, and again after a refused move, since a stopped move wrote part of what it lists. The move states the version its preview read and states a human origin, so a board written since is refused, and its refusal is shown in the dialog in the move's own words: the dialog stays open until the move has answered. The board's name comes from the pane's board key through Semantic viewer, so every variant moves. The move writes no doing line.",
+						"parent": "wlbLOPSH",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-move"
+						}
+					},
+					{
+						"id": "cLeaiTWy",
+						"order": 24000,
+						"name": "Shown conversation",
+						"kind": "function",
+						"responsibility": "Tells the server which checkout the person activated, by a pointer focus change, a board they opened or a pick from the dock's list; an agent's show activates nothing",
+						"description": "Each place where the person acts calls the one activation, which the application builds and the shell actions, a pane's pointer focus, the dock's list and Fix with Codex share, with the pane they acted in. The server keeps the one answer: every pane of the tab shows the conversation of that checkout. A refusal leaves the dock showing what it showed, which the server still says. Going back or forward activates nothing.",
+						"parent": "W0EmXnR9",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/lib/shown-conversation.ts",
+							"symbol": "conversationActivation"
+						}
+					},
+					{
+						"id": "POloYnX3",
+						"order": 25000,
+						"name": "Board drawing",
+						"kind": "module",
+						"responsibility": "Shows one board in a pane: the viewer keeps the camera and what somebody picked out, the browser renderer draws the board in this tab, and the frame clock moves what is drawn over time"
+					},
+					{
+						"id": "wlbLOPSH",
+						"order": 26000,
+						"name": "Panes and workspace",
+						"kind": "module",
+						"responsibility": "Gives the tab its panes: each pane's session with the server, the address that restores them, the catalog of boards to choose from, the move of a board to another repository, and the code a part opens"
+					},
+					{
+						"id": "W0EmXnR9",
+						"order": 27000,
+						"name": "Agent and voice",
+						"kind": "module",
+						"responsibility": "Carries the person's conversation with the agent: the dock and voice box, the setup that sends a message or Talk, the voice with its orb and words, and the agent's channel on the pane socket"
+					},
+					{
+						"id": "01sVgqBF",
+						"order": 28000,
+						"name": "Walkthrough recordings",
+						"kind": "module",
+						"responsibility": "Records a walkthrough's talk in a page of its own and draws the recorded talk again, one frame at a time"
+					}
+				],
+				"edges": [
+					{
+						"id": "4dl0EE8i",
+						"order": 1000,
+						"from": "HggZR41l",
+						"to": "c4LPnwh5",
+						"kind": "render",
+						"label": "the desktop frame",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/index.tsx",
+							"symbol": "Shell"
+						}
+					},
+					{
+						"id": "x9gy2EYu",
+						"order": 2000,
+						"from": "HggZR41l",
+						"to": "xsn0RvSi",
+						"kind": "call",
+						"label": "a session per pane, opened in a vault; show a board in one",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/components/ApplicationPane.tsx",
+							"symbol": "usePaneSession"
+						}
+					},
+					{
+						"id": "zfz9dQDf",
+						"order": 3000,
+						"from": "HCghQa6I",
+						"to": "HggZR41l",
+						"kind": "call",
+						"label": "restore through the workspace port, repository by pane",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+							"symbol": "open"
+						}
+					},
+					{
+						"id": "4iVsoxG0",
+						"order": 4000,
+						"from": "zWQG6LJZ",
+						"to": "dtYjWvlf",
+						"kind": "call",
+						"label": "one board listing for each repository's vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-catalog/hooks/use-board-catalog.ts",
+							"symbol": "semanticBoardListQuery"
+						}
+					},
+					{
+						"id": "pqG9kqlF",
+						"order": 5000,
+						"from": "dtYjWvlf",
+						"to": "G4NHQC25",
+						"kind": "http",
+						"label": "board documents, listing, policy",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+							"symbol": "fetch"
+						}
+					},
+					{
+						"id": "PuILGsjg",
+						"order": 6000,
+						"from": "xsn0RvSi",
+						"to": "G4NHQC25",
+						"kind": "event",
+						"label": "the pane socket, naming its vault: registration and news",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/pane-session/lib/pane-socket.ts",
+							"symbol": "WebSocket"
+						}
+					},
+					{
+						"id": "Cw08FQeQ",
+						"order": 9000,
+						"from": "xsn0RvSi",
+						"to": "4LDuKQvq",
+						"kind": "call",
+						"label": "open the bound code",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/pane-session/lib/pane-core.ts",
+							"symbol": "activateCodeTarget"
+						}
+					},
+					{
+						"id": "ygbcyDVT",
+						"order": 10000,
+						"from": "4LDuKQvq",
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "request activation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/code-target/api.ts",
+							"symbol": "mutation"
+						}
+					},
+					{
+						"id": "VbLQ6rfX",
+						"order": 11000,
+						"from": "HggZR41l",
+						"to": "dtYjWvlf",
+						"kind": "render",
+						"label": "one stage per pane, its overlay, and each repository's vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/components/ApplicationPane.tsx",
+							"symbol": "SemanticBoardStage"
+						}
+					},
+					{
+						"id": "G55H6teG",
+						"order": 12000,
+						"from": "dtYjWvlf",
+						"to": "hDWpDois",
+						"kind": "call",
+						"label": "draw this board here",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+							"symbol": "draw"
+						}
+					},
+					{
+						"id": "WchncnH1",
+						"order": 13000,
+						"from": "HggZR41l",
+						"to": "0x47EMoO",
+						"kind": "render",
+						"label": "dock, conversation, voice box, the presentation's voice key",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/components/AgentSurfaceSlots.tsx",
+							"symbol": "AgentDock"
+						}
+					},
+					{
+						"id": "chjmKQLj",
+						"order": 14000,
+						"from": "6uWT4mUj",
+						"to": "G4NHQC25",
+						"kind": "http",
+						"label": "JSON",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/server-requests/index.ts",
+							"symbol": "fetch"
+						}
+					},
+					{
+						"id": "vo87NlJg",
+						"order": 15000,
+						"from": "HggZR41l",
+						"to": "HCghQa6I",
+						"kind": "call",
+						"label": "opening address; write what panes show and where",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/hooks/use-workspace-addressing.ts",
+							"symbol": "useWorkspaceAddress"
+						}
+					},
+					{
+						"id": "ep2NF6Z5",
+						"order": 16000,
+						"from": "HggZR41l",
+						"to": "zWQG6LJZ",
+						"kind": "call",
+						"label": "the repositories and boards, read again on news; choose one",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/index.tsx",
+							"symbol": "useBoardCatalog"
+						}
+					},
+					{
+						"id": "fbpFPAWn",
+						"order": 17000,
+						"from": "zWQG6LJZ",
+						"to": "xsn0RvSi",
+						"kind": "call",
+						"label": "the live panes' inventory",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-catalog/lib/queries.ts",
+							"symbol": "fetchPaneInventory"
+						}
+					},
+					{
+						"id": "NcFmPj3W",
+						"order": 18000,
+						"from": "c4LPnwh5",
+						"to": "zWQG6LJZ",
+						"kind": "call",
+						"label": "each repository's outline",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/shell/components/Navigator.tsx",
+							"symbol": "listedBoard"
+						}
+					},
+					{
+						"id": "5U5bpM9T",
+						"order": 19000,
+						"from": "xsn0RvSi",
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "report the pane, show a board, take back, pick a checkout",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/pane-session/api.ts",
+							"symbol": "post"
+						}
+					},
+					{
+						"id": "ZDhACWtE",
+						"order": 20000,
+						"from": "xsn0RvSi",
+						"to": "dtYjWvlf",
+						"kind": "event",
+						"label": "a board's new version, in the pane's vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/pane-session/lib/socket-messages.ts",
+							"symbol": "announceSemanticBoardChange"
+						}
+					},
+					{
+						"id": "rcSUaP1b",
+						"order": 21000,
+						"from": "xsn0RvSi",
+						"to": "941UBxya",
+						"kind": "call",
+						"label": "one per socket generation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/pane-session/workbench-socket.ts",
+							"symbol": "createTransport"
+						}
+					},
+					{
+						"id": "EAT8ges2",
+						"order": 22000,
+						"from": "941UBxya",
+						"to": "G4NHQC25",
+						"kind": "event",
+						"label": "agent commands and snapshots",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/workbench-transport/lib/socket-run.ts",
+							"symbol": "send"
+						}
+					},
+					{
+						"id": "kZtsu0nq",
+						"order": 23000,
+						"from": "HggZR41l",
+						"to": "941UBxya",
+						"kind": "call",
+						"label": "controllers over the focused pane's",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/lib/agent-actions.ts",
+							"symbol": "state"
+						}
+					},
+					{
+						"id": "md5cpNZV",
+						"order": 24000,
+						"from": "HggZR41l",
+						"to": "zs2QxCu7",
+						"kind": "call",
+						"label": "send, Talk, narrate",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/hooks/use-workbench.ts",
+							"symbol": "createAgentSetup"
+						}
+					},
+					{
+						"id": "FWzvKaC4",
+						"order": 25000,
+						"from": "zs2QxCu7",
+						"to": "941UBxya",
+						"kind": "call",
+						"label": "sign in, create the tab's conversation, deliver",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/agent-setup/lib/setup.ts",
+							"symbol": "createConversation"
+						}
+					},
+					{
+						"id": "UBmrpsBg",
+						"order": 26000,
+						"from": "zs2QxCu7",
+						"to": "0SRnYXnC",
+						"kind": "call",
+						"label": "start voice",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/agent-setup/lib/setup.ts",
+							"symbol": "startVoice"
+						}
+					},
+					{
+						"id": "qKwYD1B2",
+						"order": 27000,
+						"from": "HggZR41l",
+						"to": "0SRnYXnC",
+						"kind": "call",
+						"label": "a session for voice's pane; mute, stop",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/lib/voice-store.ts",
+							"symbol": "createVoiceSession"
+						}
+					},
+					{
+						"id": "DTRtWKab",
+						"order": 28000,
+						"from": "0SRnYXnC",
+						"to": "941UBxya",
+						"kind": "data",
+						"label": "the pane's agent and media state",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/voice-session/lib/session.ts",
+							"symbol": "capabilities"
+						}
+					},
+					{
+						"id": "vm1xFAYO",
+						"order": 29000,
+						"from": "HggZR41l",
+						"to": "0yb2VbKc",
+						"kind": "render",
+						"label": "over voice's pane, or the presented one",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/components/PaneSubtitles.tsx",
+							"symbol": "VoiceSubtitles"
+						}
+					},
+					{
+						"id": "4zVUlTbS",
+						"order": 30000,
+						"from": "HggZR41l",
+						"to": "fscW90Xt",
+						"kind": "call",
+						"label": "the recorder, when the address asks",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/hooks/use-page-recording.ts",
+							"symbol": "openWalkthroughRecorder"
+						}
+					},
+					{
+						"id": "UEuRPGRJ",
+						"order": 31000,
+						"from": "fscW90Xt",
+						"to": "zs2QxCu7",
+						"kind": "call",
+						"label": "Talk as a recording, in its own tab session",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"symbol": "talk"
+						}
+					},
+					{
+						"id": "5y8UuVhP",
+						"order": 32000,
+						"from": "fscW90Xt",
+						"to": "0SRnYXnC",
+						"kind": "call",
+						"label": "live and loud yet; stop",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-recording/lib/voice-sources.ts",
+							"symbol": "level"
+						}
+					},
+					{
+						"id": "Gxh1Pbx3",
+						"order": 33000,
+						"from": "fscW90Xt",
+						"to": "dtYjWvlf",
+						"kind": "data",
+						"label": "the step to show",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"symbol": "recordedStep"
+						}
+					},
+					{
+						"id": "w9Qrw2Xe",
+						"order": 34000,
+						"from": "xsn0RvSi",
+						"to": "aG0rP4SX",
+						"kind": "call",
+						"label": "the id each of this tab's sockets carries",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/pane-session/lib/pane-socket.ts",
+							"symbol": "tabSessionId"
+						}
+					},
+					{
+						"id": "f2n9GAXv",
+						"order": 35000,
+						"from": "aixSjfNe",
+						"to": "rouptSyK",
+						"kind": "call",
+						"label": "install the stepped clock; step it a frame at a time",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"symbol": "createSteppedClock"
+						}
+					},
+					{
+						"id": "o3xHmMmJ",
+						"order": 36000,
+						"from": "aixSjfNe",
+						"to": "dtYjWvlf",
+						"kind": "render",
+						"label": "one stage, at the talk's step",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"symbol": "SemanticBoardStage"
+						}
+					},
+					{
+						"id": "TGkTEPYM",
+						"order": 37000,
+						"from": "aixSjfNe",
+						"to": "dtYjWvlf",
+						"kind": "data",
+						"label": "the talk's board and policy, in place of the server's",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"symbol": "readBoardsFrom"
+						}
+					},
+					{
+						"id": "FYKw5y8U",
+						"order": 38000,
+						"from": "aixSjfNe",
+						"to": "0x47EMoO",
+						"kind": "render",
+						"label": "the voice box, with the talk's lines as they were said",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"symbol": "VoiceBox"
+						}
+					},
+					{
+						"id": "3cky5MpR",
+						"order": 39000,
+						"from": "aixSjfNe",
+						"to": "fscW90Xt",
+						"kind": "render",
+						"label": "the recording's stage, so both pages draw alike",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"symbol": "RecordingStage"
+						}
+					},
+					{
+						"id": "PGzV2I05",
+						"order": 40000,
+						"from": "dtYjWvlf",
+						"to": "rouptSyK",
+						"kind": "call",
+						"label": "glides and picture transitions",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-camera-glide.ts",
+							"symbol": "frameClock"
+						}
+					},
+					{
+						"id": "1LB0Qkb3",
+						"order": 41000,
+						"from": "0yb2VbKc",
+						"to": "rouptSyK",
+						"kind": "call",
+						"label": "a line's linger and its fades",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/voice-subtitles/hooks/use-subtitle-fade.ts",
+							"symbol": "frameClock"
+						}
+					},
+					{
+						"id": "pNlMVRMt",
+						"order": 43000,
+						"from": "fscW90Xt",
+						"to": "941UBxya",
+						"kind": "event",
+						"label": "each change of the voice's transcript",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"symbol": "subscribe"
+						}
+					},
+					{
+						"id": "MmIPovT7",
+						"order": 44000,
+						"from": "0x47EMoO",
+						"to": "t5Wy06ua",
+						"kind": "render",
+						"label": "the dock's circle, or the voice box's socket",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/workbench/components/VoiceControl.tsx",
+							"symbol": "OrbHost"
+						}
+					},
+					{
+						"id": "5fWy6ymA",
+						"order": 45000,
+						"from": "0x47EMoO",
+						"to": "0yb2VbKc",
+						"kind": "render",
+						"label": "its words, inside the voice box",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/workbench/components/VoiceBox.tsx",
+							"symbol": "SubtitleWords"
+						}
+					},
+					{
+						"id": "ZISV4NoQ",
+						"order": 46000,
+						"from": "HggZR41l",
+						"to": "t5Wy06ua",
+						"kind": "render",
+						"label": "the stage the one orb is flown on",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/index.tsx",
+							"symbol": "OrbStageProvider"
+						}
+					},
+					{
+						"id": "pFEndLvU",
+						"order": 47000,
+						"from": "c4LPnwh5",
+						"to": "dtYjWvlf",
+						"kind": "render",
+						"label": "each board's level mark in the navigator",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/shell/components/BoardLine.tsx",
+							"symbol": "LevelMark"
+						}
+					},
+					{
+						"id": "q9tk8Tjs",
+						"order": 48000,
+						"from": "aixSjfNe",
+						"to": "zWQG6LJZ",
+						"kind": "call",
+						"label": "a board cache of its own, under the tab's defaults",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"symbol": "createBoardQueryClient"
+						}
+					},
+					{
+						"id": "294aYIvD",
+						"order": 49000,
+						"from": "0x47EMoO",
+						"to": "rouptSyK",
+						"kind": "call",
+						"label": "the voice box's wait while it leaves",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/workbench/hooks/use-voice-box-presence.ts",
+							"symbol": "frameClock"
+						}
+					},
+					{
+						"id": "gIVISpC9",
+						"order": 50000,
+						"from": "aixSjfNe",
+						"to": "t5Wy06ua",
+						"kind": "render",
+						"label": "the one orb, in the voice box's socket",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"symbol": "OrbHost"
+						}
+					},
+					{
+						"id": "wQi4PrJj",
+						"order": 51000,
+						"from": "dtYjWvlf",
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "names the pane's vault on each read",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+							"symbol": "inVault"
+						}
+					},
+					{
+						"id": "m0p0GrIc",
+						"order": 52000,
+						"from": "HggZR41l",
+						"to": "p5UCow7F",
+						"kind": "render",
+						"label": "gives the stage the vault of its pane",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/components/ApplicationPane.tsx",
+							"symbol": "PaneVaultContext"
+						}
+					},
+					{
+						"id": "yIlWm0s3",
+						"order": 53000,
+						"from": "dtYjWvlf",
+						"to": "p5UCow7F",
+						"kind": "call",
+						"label": "every read takes the vault from the pane",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-pane-vault.ts",
+							"symbol": "PaneVaultContext"
+						}
+					},
+					{
+						"id": "n41AFv0z",
+						"order": 54000,
+						"from": "zWQG6LJZ",
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "read the repositories; choose a checkout",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-catalog/api/repositories.ts",
+							"symbol": "json"
+						}
+					},
+					{
+						"id": "9vLmTtXn",
+						"order": 55000,
+						"from": "HggZR41l",
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "the vault a pane opens in, which the server serves",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/hooks/use-pane-views.ts",
+							"symbol": "servedVault"
+						}
+					},
+					{
+						"id": "tLxlPuMO",
+						"order": 56000,
+						"from": "aixSjfNe",
+						"to": "p5UCow7F",
+						"kind": "render",
+						"label": "gives the stage the recorded talk as its vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"symbol": "PaneVaultContext"
+						}
+					},
+					{
+						"id": "A19ksdGe",
+						"order": 57000,
+						"from": "dtYjWvlf",
+						"to": "HggZR41l",
+						"kind": "call",
+						"label": "move the pane into the repository a drill-down names",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/hooks/use-drill-repositories.ts",
+							"symbol": "useDrillRepositories"
+						}
+					},
+					{
+						"id": "1wY1628T",
+						"order": 58000,
+						"from": "c4LPnwh5",
+						"to": "HQWPLutt",
+						"kind": "render",
+						"label": "the move control in each pane's header",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/shell/components/PaneControls.tsx",
+							"symbol": "MoveBoardControl"
+						}
+					},
+					{
+						"id": "I1j6psfN",
+						"order": 59000,
+						"from": "HQWPLutt",
+						"to": "zWQG6LJZ",
+						"kind": "call",
+						"label": "the repositories a board can move to",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-move/hooks/use-board-move.ts",
+							"symbol": "repositoriesQuery"
+						}
+					},
+					{
+						"id": "vZBFJ5at",
+						"order": 60000,
+						"from": "HQWPLutt",
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "the move and its preview, in the board's vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-move/api/move.ts",
+							"symbol": "inVault"
+						}
+					},
+					{
+						"id": "LdhhD4lg",
+						"order": 61000,
+						"from": "HQWPLutt",
+						"to": "dtYjWvlf",
+						"kind": "call",
+						"label": "the board's name from the pane's board key",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-move/components/MoveBoardControl.tsx",
+							"symbol": "boardAddressOf"
+						}
+					},
+					{
+						"id": "XjRK4GvJ",
+						"order": 62000,
+						"from": "HggZR41l",
+						"to": "cLeaiTWy",
+						"kind": "call",
+						"label": "a pane focused, a board opened, a fix asked for",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/index.tsx",
+							"symbol": "conversationActivation"
+						}
+					},
+					{
+						"id": "zd3E41io",
+						"order": 63000,
+						"from": "cLeaiTWy",
+						"to": "xsn0RvSi",
+						"kind": "call",
+						"label": "say which checkout the person activated",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/lib/shown-conversation.ts",
+							"symbol": "showConversation"
+						}
+					},
+					{
+						"id": "4FfFQ9ag",
+						"order": 64000,
+						"from": "0x47EMoO",
+						"to": "HggZR41l",
+						"kind": "call",
+						"label": "a pick from the dock's list of workhorses",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/workbench/components/AgentDock.tsx",
+							"symbol": "showConversation"
+						}
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "WJBL4I5O",
+						"name": "Reading a board in the browser",
+						"beats": [
+							{
+								"id": "Xd4nFMUy",
+								"heading": "Restore the workspace",
+								"body": "Routing reads the address and restores it through the workspace port: application composition opens each board in its pane with the same command the navigator runs, and writes the address only once the pane reports its new board.",
+								"subjects": [
+									"HCghQa6I",
+									"HggZR41l",
+									"xsn0RvSi"
+								]
+							},
+							{
+								"id": "tHpt14lf",
+								"heading": "Read the board, draw it here",
+								"body": "The semantic viewer reads the board document from the server and the browser renderer draws it in this tab. The viewer owns camera, selection, views, variants, walkthroughs and drill-down only, and writes nothing.",
+								"subjects": [
+									"dtYjWvlf",
+									"hDWpDois",
+									"G4NHQC25"
+								]
+							},
+							{
+								"id": "y2YVfOOs",
+								"heading": "Carry the active context",
+								"body": "The pane socket brings a board's new version to the viewer and carries the workbench transport. The pane reports what is on screen, and opens bound code through the code target.",
+								"subjects": [
+									"xsn0RvSi",
+									"941UBxya",
+									"4LDuKQvq",
+									"6uWT4mUj"
+								]
+							},
+							{
+								"id": "TVrlXIEC",
+								"heading": "Talk without setup",
+								"body": "A message, Talk or Narrate goes to the agent setup, which carries it through sign-in, Codex starting and the creation of the tab's conversation, then delivers it or starts voice for the focused pane. Each tab has its own conversation and voice, so two tabs can talk at the same time. A reload keeps the conversation. The voice's words appear as subtitles over that pane.",
+								"subjects": [
+									"0x47EMoO",
+									"zs2QxCu7",
+									"0SRnYXnC",
+									"0yb2VbKc",
+									"aG0rP4SX"
+								]
+							},
+							{
+								"id": "WHOtxYjT",
+								"heading": "Record a walkthrough",
+								"body": "A page opened to record asks for voice as a recording and moves its one pane a step at a time as the voice paces it. It keeps the talk: the voice's sound, and each step and subtitle line on the same clock. It captures no picture. The page is its own tab session, so voice that is live in another tab does not refuse it. The voice is never played aloud.",
+								"subjects": [
+									"fscW90Xt",
+									"zs2QxCu7",
+									"0SRnYXnC",
+									"dtYjWvlf"
+								]
+							},
+							{
+								"id": "kLkXLnI4",
+								"heading": "Replay a talk frame by frame",
+								"body": "A page opened to replay draws a recorded talk again. It mounts the recording's stage, the viewer and the subtitles, with no workbench and no socket, and reads the board only from the talk. Every glide, picture transition and subtitle linger reads the frame clock, which the replay steps 1/30 s at a time.",
+								"subjects": [
+									"aixSjfNe",
+									"rouptSyK",
+									"dtYjWvlf"
+								]
+							},
+							{
+								"id": "sQ12FZsK",
+								"heading": "A person moves a board, after seeing what it rewrites",
+								"body": "The control in a pane header opens the board move dialog. Board move lists the repositories Board catalog reads, asks the server what moving to the chosen one would rewrite, and shows it before anything is written. The move states the version that preview read, so a board written since is refused, and the browser keeps only the choice and the answer it was given.",
+								"subjects": [
+									"c4LPnwh5",
+									"HQWPLutt",
+									"zWQG6LJZ",
+									"6uWT4mUj"
+								],
+								"view": "6Pg15UcI"
+							}
+						]
+					}
+				]
+			}
 		}
 	],
-	"current": "eyQhpXN2",
+	"current": "jdZ1lIVr",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -14619,6 +15985,12 @@
 			"from": "kgEzJYfh",
 			"at": "2026-10-15T22:24:58.253Z",
 			"reason": "TASK-482.04: the board's parts are gathered into areas, so its overview stays within the budget, and no relationship joins a container and its own part"
+		},
+		{
+			"variant": "jdZ1lIVr",
+			"from": "eyQhpXN2",
+			"at": "2026-10-16T01:30:26.034Z",
+			"reason": "The board is its own container (TASK-482.06): no part stands for it"
 		}
 	]
 }
