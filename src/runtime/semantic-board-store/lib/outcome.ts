@@ -31,6 +31,8 @@ type SemanticRefusalCode =
 	| "UNKNOWN_BEAT"
 	/** A beat was written about something the board does not have. */
 	| "UNKNOWN_SUBJECT"
+	/** An edit states an id only another variant holds, and did not confirm restoring it. */
+	| "RESTORE_UNCONFIRMED"
 	/** A node went away and a flow it takes part in stayed. */
 	| "NODE_IN_FLOW"
 	/** Something went away and a beat about it stayed. */

@@ -156,9 +156,9 @@ function planRemovals(
  * things come from the mint owner, which is also what keeps them unique across
  * the whole variant family rather than only this variant.
  *
- * An absent inherited node may be restored under its original identity.
- * The transition authorizes ids from the direct predecessor and recorded base;
- * this content editor never treats an arbitrary explicit id as a new subject.
+ * An absent node may be restored under its original identity. The transition
+ * says which ids may come back (`restore.ts`); this content editor never treats
+ * an arbitrary explicit id as a new subject.
  * @param nodes The nodes as they stand after removals.
  * @param batch The batch; its ids and handles are extended.
  * @param stated The node as the agent wrote it.
@@ -208,7 +208,7 @@ function statedId(
 	}
 	return refuse(
 		"UNKNOWN_NODE",
-		`there is no node "${id}" on this variant, its direct predecessor or its recorded reconciliation base. Leave the id out to add ` +
+		`there is no node "${id}" on this variant or any variant of this board. Leave the id out to add ` +
 			`"${stated.name}" as a new node, or state the id of the one you meant to change`,
 	);
 }
@@ -350,14 +350,14 @@ function orphanRefusal(
  * @param before The content as it stands.
  * @param edit What the agent stated.
  * @param board The board the content belongs to, for the ids already in use.
- * @param restorable Absent inherited node and edge ids the transition authorizes.
+ * @param restorable Absent node, edge and flow ids the transition authorizes.
  * @returns The content after the edit, or why it was refused.
  */
 function editContent(
 	before: VariantContent,
 	edit: VariantEditInput,
 	board: SemanticBoard | null,
-	restorable: RestorableSubjects = { nodes: new Set(), edges: new Set() },
+	restorable: RestorableSubjects = { nodes: new Set(), edges: new Set(), flows: new Map() },
 ): ContentEdit {
 	const batch = editBatch(board, before, edit);
 	const planned = planRemovals(before, edit, batch);
@@ -377,7 +377,8 @@ function editContent(
 	if (!edges.ok) {
 		return edges;
 	}
-	const placed = withViews(before, board, edit, nodes.nodes, edges.edges, batch);
+	const settled = { nodes: nodes.nodes, edges: edges.edges };
+	const placed = withViews(before, board, edit, settled, batch, restorable.flows);
 	return placed.ok
 		? {
 				...placed,
@@ -451,21 +452,27 @@ function statedNodes(
  * @param before The content as it stood.
  * @param board The board owning these views.
  * @param edit What the agent stated.
- * @param nodes The nodes the batch leaves behind.
- * @param edges The relationships the batch leaves behind.
+ * @param settled The nodes and relationships the batch leaves behind.
+ * @param settled.nodes The nodes.
+ * @param settled.edges The relationships.
  * @param batch The batch; its ids and handles are extended.
+ * @param restorable Each absent flow the batch may restore, with the step ids it may keep.
  * @returns The whole content, or why the batch was refused.
  */
 function withViews(
 	before: VariantContent,
 	board: SemanticBoard | null,
 	edit: VariantEditInput,
-	nodes: readonly SemanticNode[],
-	edges: readonly SemanticEdge[],
+	settled: { readonly nodes: readonly SemanticNode[]; readonly edges: readonly SemanticEdge[] },
 	batch: Batch,
+	restorable: RestorableSubjects["flows"],
 ): ContentEdit {
+	const { nodes, edges } = settled;
 	const relatives = relativeContent(board, before);
-	const rest = editViews(before, board?.views ?? [], edit, nodes, edges, batch, relatives);
+	const rest = editViews(before, board?.views ?? [], edit, settled, batch, {
+		relatives,
+		restorable,
+	});
 	if (!rest.ok) {
 		return rest;
 	}

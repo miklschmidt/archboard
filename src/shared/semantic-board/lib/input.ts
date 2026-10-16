@@ -305,6 +305,11 @@ const VariantEditInputSchema = z
 		/** Removing a shared view must leave every variant walkthrough coherent. */
 		removeViews: z.array(NodeReferenceSchema).default([]),
 		removeWalkthroughs: z.array(NodeReferenceSchema).default([]),
+		/**
+		 * Confirms restoring a stated id that only another variant of the board
+		 * holds; without it such an id is refused and named.
+		 */
+		restoreKnownIds: z.boolean().optional(),
 	})
 	.strict();
 type VariantEditInput = z.infer<typeof VariantEditInputSchema>;

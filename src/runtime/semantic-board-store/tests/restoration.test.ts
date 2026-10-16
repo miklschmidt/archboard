@@ -310,7 +310,7 @@ test("an unknown id stays refused, and nothing is written", async () => {
 	expect(read()).toEqual(before);
 }, 30_000);
 
-test("a sibling's node is refused, and a settled removal may be restored later", async () => {
+test("a sibling's node needs confirmation, and a settled removal may be restored later", async () => {
 	await settleFields();
 	await write(
 		store.branchVariantTransition(
@@ -324,7 +324,7 @@ test("a sibling's node is refused, and a settled removal may be restored later",
 		variant: DRAFT,
 		nodes: [{ id: sibling.id, name: "Only here", kind: "module" }],
 	});
-	expect(refused.outcome === "rejected" && refused.code).toBe("UNKNOWN_NODE");
+	expect(refused.outcome === "rejected" && refused.code).toBe("RESTORE_UNCONFIRMED");
 	// Keeping a removal settles it, but does not discard the inherited identity.
 	const kept = await write(
 		store.settleVariantTransition(
@@ -419,4 +419,37 @@ test("deleted relationships and flows cannot authorize node identities", async (
 		expect(refused.outcome === "rejected" && refused.code, id).toBe("UNKNOWN_NODE");
 	}
 	expect(read()).toEqual(before);
+}, 30_000);
+
+test("a flow the draft dropped comes back under its id and step ids, and settles its removal", async () => {
+	const steps = [
+		{ from: ids.app, to: ids.helpers, label: "decode" },
+		{ from: ids.helpers, to: ids.app, label: "decoded", kind: "return" },
+	];
+	await edit({ flows: [{ name: "Decode", participants: [ids.app, ids.helpers], steps }] });
+	const flow = variant("Initial").content.flows.find((one) => one.name === "Decode")!;
+	await write(
+		store.branchVariantTransition(
+			contract.BoardBranchInputSchema.parse({ from: "Initial", name: "Flow draft" }),
+		),
+	);
+	await edit({ variant: "Flow draft", removeFlows: [flow.id] });
+	const [first, second] = flow.steps;
+	await edit({ flows: [{ ...flow, steps: [{ ...first, label: "decode tagged" }, second] }] });
+	const issues = () => variant("Flow draft").reconciliation?.issues ?? [];
+	const removal = expect.objectContaining({ subject: flow.id, kind: "deleted-and-changed" });
+	expect(issues()).toContainEqual(removal);
+	const before = read();
+	// A step id the source flow does not hold is still a typo.
+	const typo = await edit({
+		variant: "Flow draft",
+		flows: [{ ...flow, steps: [{ ...first, id: "nostep1" }] }],
+	});
+	expect(typo.outcome === "rejected" && typo.code).toBe("UNKNOWN_STEP");
+	expect(read()).toEqual(before);
+	const restored = await edit({ variant: "Flow draft", flows: [flow] });
+	expect(restored.outcome).toBe("applied");
+	const back = variant("Flow draft").content.flows.find((one) => one.id === flow.id);
+	expect(back?.steps.map((step) => step.id)).toEqual(flow.steps.map((step) => step.id));
+	expect(issues()).not.toContainEqual(removal);
 }, 30_000);

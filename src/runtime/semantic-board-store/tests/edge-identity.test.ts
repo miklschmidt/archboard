@@ -386,7 +386,7 @@ test("restoring an inherited edge repairs its copy without reversing the identit
 	expect(variant().content.edges).toEqual([edge]);
 });
 
-test("restoration refuses unknown, sibling, wrong-kind and contradictory ids without changing the board", async () => {
+test("restoration refuses unknown, unconfirmed sibling, wrong-kind and contradictory ids without changing the board", async () => {
 	await branch("current", "Sibling");
 	await edit({ variant: "Sibling", edges: [{ from: "Compound", to: "Driver", kind: "call" }] });
 	const siblingEdge = variant("Sibling").content.edges.find(
@@ -396,12 +396,16 @@ test("restoration refuses unknown, sibling, wrong-kind and contradictory ids wit
 	const node = variant().content.nodes[1]!;
 	await edit({ variant: "Proposal", removeNodes: [node.id] });
 	const before = read();
-	for (const id of ["unknown1", siblingEdge.id, node.id]) {
+	for (const [id, code] of [
+		["unknown1", "UNKNOWN_EDGE"],
+		[siblingEdge.id, "RESTORE_UNCONFIRMED"],
+		[node.id, "UNKNOWN_EDGE"],
+	] as const) {
 		const result = await edit({
 			variant: "Proposal",
 			edges: [{ id, from: "Driver", to: "Compound", kind: "call" }],
 		});
-		expect(result.outcome === "rejected" && result.code).toBe("UNKNOWN_EDGE");
+		expect(result.outcome === "rejected" && result.code, id).toBe(code);
 	}
 	const wrongNode = await edit({
 		variant: "Proposal",
@@ -469,12 +473,19 @@ test("the recorded base restores absent subjects without settling an unrelated d
 	expect(variant().content.nodes).toContainEqual(grid!);
 });
 
-test("an absent ancestor-only subject is not inherited by a newly branched child", async () => {
+test("an absent ancestor-only subject comes back to a child only when the edit confirms it", async () => {
 	const grid = variant().content.nodes[1]!;
 	await edit({ variant: "Proposal", removeNodes: [grid.id] });
 	await branch("Proposal", "Child");
 	const before = read();
 	const result = await edit({ variant: "Child", nodes: [grid] });
-	expect(result.outcome === "rejected" && result.code).toBe("UNKNOWN_NODE");
+	expect(result.outcome === "rejected" && result.code).toBe("RESTORE_UNCONFIRMED");
+	// Confirming never turns an id no variant holds into a new subject.
+	const unknown = { ...grid, id: "unknown1" };
+	const invented = await edit({ variant: "Child", restoreKnownIds: true, nodes: [unknown] });
+	expect(invented.outcome === "rejected" && invented.code).toBe("UNKNOWN_NODE");
 	expect(read()).toEqual(before);
+	const confirmed = await edit({ variant: "Child", restoreKnownIds: true, nodes: [grid] });
+	expect(warningsOf(confirmed)).toEqual([["RESTORED_FROM_OTHER_VARIANT", `nodes.${grid.id}`]]);
+	expect(variant("Child").content.nodes).toContainEqual(grid);
 });
