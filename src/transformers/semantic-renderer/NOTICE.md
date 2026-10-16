@@ -1,7 +1,7 @@
 # Third-party notice
 
 This module is an in-repository fork of both grammars of the PR Lens SVG renderer —
-**architecture** and the message-sequence grammar it calls **data-flow** — taken from
+**architecture** and the message-sequence grammar it calls **data-flow** (here `sequence`) — taken from
 the `pr-lens` project at revision
 `0993b4dec8ae73f5e000370e6a758cdd8aa2bfd0`. The packages it was taken from are
 `@coldtea/pr-lens-renderer` 0.2.4 (the renderer itself) and
