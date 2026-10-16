@@ -452,9 +452,12 @@ class CardLayout {
 	/**
 	 * The block routed again with some of its ports moved along their edges,
 	 * where its parent settled them, and every pin on a block inside it where
-	 * that block's settled port now stands; Graphviz does not rank it again,
-	 * and it keeps its width.
-	 * @param placed The placed block; its ports' and pins' leaves move in place.
+	 * that block's settled port now stands, and every block inside it, and its
+	 * pins, as large as that block was routed again, round the same centre;
+	 * Graphviz does not rank it again, and it keeps its width. A block inside
+	 * grows when its own channels need more room: left at its first size, the
+	 * container round it closed above its foot and lines ran through it.
+	 * @param placed The placed block; its ports', pins' and blocks' leaves move in place.
 	 * @param held The block's width.
 	 * @param centres Every vendor node's centre.
 	 * @param ports Each moved port's x, in the block's own coordinates.
@@ -466,11 +469,23 @@ class CardLayout {
 		centres: ReadonlyMap<string, Point>,
 		ports: ReadonlyMap<string, number>,
 	): Laid {
-		for (const leaf of placed.children ?? []) {
+		const leaves = (nodes: readonly ElkNode[]): ElkNode[] =>
+			nodes.flatMap((node) => (node.children === undefined ? [node] : leaves(node.children)));
+		for (const leaf of leaves(placed.children ?? [])) {
 			const x = ports.get(leaf.id);
+			const inner = this.tree.blocks.has(leaf.id) ? this.laid.get(leaf.id) : undefined;
 			if (x !== undefined) leaf.x = x - this.insets.side - leaf.width! / 2;
 			else if (this.tree.pins.has(leaf.id))
-				leaf.x = pinnedLeaf(this.tree, this.laid, leaf.id, centres).x;
+				Object.assign(leaf, pinnedLeaf(this.tree, this.laid, leaf.id, centres));
+			else if (inner !== undefined) {
+				const centre = centres.get(leaf.id)!;
+				Object.assign(leaf, {
+					x: centre.x - inner.width / 2,
+					y: centre.y - inner.height / 2,
+					width: inner.width,
+					height: inner.height,
+				});
+			}
 		}
 		return this.routed(placed, held);
 	}
