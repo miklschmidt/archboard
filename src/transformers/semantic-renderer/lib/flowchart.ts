@@ -8,7 +8,8 @@
 // crossings are an architecture's, the message boxes are cards, and only the
 // diamonds, hexagons and terminals are drawn as shapes of their own. Every line
 // that meets a shape is carried on to its outline, and a line that meets a
-// decision to one of its diamond's points (`flowchart-ports.ts`).
+// decision or a terminal to the middle of the side it crosses, a diamond's
+// point (`flowchart-ports.ts`).
 
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import type { DiagramAtlas, VariantContent } from "@/shared/semantic-board/index";
@@ -38,7 +39,7 @@ import {
 	type FlowchartGraph,
 	type FlowchartShape,
 } from "@/transformers/semantic-renderer/lib/flowchart-graph";
-import { atDiamondPoints } from "@/transformers/semantic-renderer/lib/flowchart-ports";
+import { atShapePoints } from "@/transformers/semantic-renderer/lib/flowchart-ports";
 import {
 	SemanticRenderError,
 	type DiagramRenderRequest,
@@ -50,12 +51,14 @@ import {
 	type ShapePainter,
 } from "@/transformers/semantic-renderer/lib/svg/architecture";
 import { svgDocument } from "@/transformers/semantic-renderer/lib/svg/document";
+import { FLOW_ICON } from "@/transformers/semantic-renderer/lib/svg/icons";
 import {
 	exportedName,
 	framedForExport,
 } from "@/transformers/semantic-renderer/lib/svg/export-frame";
 import {
 	SHAPE_TEXT,
+	flowchartDefinitions,
 	onOutline,
 	shapePainter,
 } from "@/transformers/semantic-renderer/lib/svg/flowchart-shapes";
@@ -83,7 +86,7 @@ function flowchartPolicy(policy: SemanticPolicy): SemanticPolicy {
 		...policy,
 		nodeKinds: {
 			...policy.nodeKinds,
-			[FLOW_KIND]: { name: "Flow", icon: "RiGitBranchLine" },
+			[FLOW_KIND]: { name: "Flow", icon: FLOW_ICON },
 			[SHAPE_KIND]: { name: "Step", icon: "RiGitBranchLine" },
 		},
 		relationshipKinds: {
@@ -185,17 +188,19 @@ function lineBetween(from: Point, to: Point): Segment[] {
 }
 
 /**
- * The box of a decision's diamond, which a line meets at one of its points.
+ * The box of a shape a line meets at the middle of a side: a decision's
+ * diamond, at one of its points, and a terminal, where a flow starts or ends.
  * @param shaped The shape a line's end meets, if any.
- * @returns Its box when it is a decision.
+ * @returns Its box when the shape is one of those.
  */
-function diamond(shaped: Shaped): Box | undefined {
-	return shaped?.shape === "decision" ? shaped.box : undefined;
+function pointed(shaped: Shaped): Box | undefined {
+	return shaped === undefined || shaped.shape === "loop" ? undefined : shaped.box;
 }
 
 /**
  * The drawing with every line that meets a shape carried on to its outline,
- * and every line that meets a decision turned to one of its points.
+ * and every line that meets a decision or a terminal turned to the middle of
+ * the side it crosses.
  * @param drawing The drawing as laid out.
  * @param shapes Which nodes are shapes.
  * @returns The drawing to paint.
@@ -223,8 +228,8 @@ function withOutlines(
 	const onShapes = (routed: DrawingEdge): DrawingEdge => {
 		const from = shaped(routed.edge.from);
 		const to = shaped(routed.edge.to);
-		const pointed = atDiamondPoints(routed.curve, diamond(from), diamond(to));
-		const curve = outlined(pointed, from, to);
+		const turned = atShapePoints(routed.curve, pointed(from), pointed(to));
+		const curve = outlined(turned, from, to);
 		return { ...routed, curve, path: pathOf(curve) };
 	};
 	return {
@@ -340,7 +345,7 @@ async function renderFlowchart(request: DiagramRenderRequest): Promise<RenderedD
 		),
 		description: `Showing the logic of ${told.flows.map((flow) => flow.name).join(", ")}.`,
 		fonts: request.fonts ?? "linked",
-		body: page.body,
+		body: flowchartDefinitions() + page.body,
 		reading: drawing.direction,
 		theme: request.theme,
 	});

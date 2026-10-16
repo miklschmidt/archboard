@@ -85,6 +85,11 @@ interface SlabLook {
 	 * tint, which takes the softer light ({@link SOFT_SHEEN_ID}).
 	 */
 	readonly ground?: string;
+	/**
+	 * The colour its highlight is mixed from, where its face is a gradient
+	 * rather than one colour; absent, the face's own.
+	 */
+	readonly lit?: string;
 	/** Its front edge, the side of the block that faces the reader. */
 	readonly edge: string;
 	/** How tall its front edge shows, inside its box along its foot. */
@@ -450,7 +455,7 @@ function solidSlab(
 	const lit = intersection(face, translated(face, { x: 0, y: GLINT_WIDTH }));
 	return lines([
 		solid(body, radius, { fill: look.edge }),
-		solid(face, radius, { fill: glintOf(look.face, palette) }),
+		solid(face, radius, { fill: glintOf(look.lit ?? look.face, palette) }),
 		solid(lit, radius, { fill: look.face }),
 		look.sheen ? solid(lit, radius, { fill: `url(#${sheenOf(look)})` }) : "",
 		solidBorder(face, radius, standing, palette),

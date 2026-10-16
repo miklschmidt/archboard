@@ -1,3 +1,4 @@
+import { CARD_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { lightDark, translucent } from "@/transformers/semantic-renderer/lib/svg/colour";
@@ -65,8 +66,10 @@ function falloffAt(position: number): number {
  */
 function polygonShadow(polygon: Polygon, radius: number, reach: number, palette: Palette): string {
 	const step = reach / LAYERS;
+	// As strong as a card's shadow is at the same distance from its foot, where it
+	// is already part way down its fall: a card's starts under its round corner.
 	const bands = Array.from({ length: LAYERS }, (_, band) =>
-		falloffAt(((band + 0.5) * step) / reach),
+		falloffAt((CARD_RADIUS + (band + 0.5) * step) / (CARD_RADIUS + reach)),
 	);
 	const layers = bands.map((strength, band) => {
 		// The layers beyond this one reach as far as the next band does: this one adds the rest.
