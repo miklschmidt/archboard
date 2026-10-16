@@ -1,17 +1,17 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 112,
+	"version": 113,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-16T01:30:24.341Z",
+	"updatedAt": "2026-10-16T02:39:31.342Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
 			"name": "A pane opens a board",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "From the pane's key to a drawn picture and the reading it reports.",
 			"scope": {
 				"kind": "selection",

@@ -1,5 +1,5 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "6E6hL0Zk",
 	"name": "Archboard server",
@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 265,
+	"version": 266,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-16T01:30:21.302Z",
+	"updatedAt": "2026-10-16T02:39:30.611Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -72,7 +72,7 @@
 		{
 			"id": "zgTU0368",
 			"name": "Writes land",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "An agent's write, a discard and a rename, each under the board's lease and announced.",
 			"scope": {
 				"kind": "selection",
@@ -88,7 +88,7 @@
 		{
 			"id": "cMuH8UHA",
 			"name": "Panes and claims",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "A page's socket, a pane arriving on a board, and a user taking a board back.",
 			"scope": {
 				"kind": "selection",
@@ -102,7 +102,7 @@
 		{
 			"id": "Pug70kzg",
 			"name": "Start and health",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "The server's start, and the health answer that names it.",
 			"scope": {
 				"kind": "selection",

@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 59,
+	"version": 60,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-16T01:30:19.921Z",
+	"updatedAt": "2026-10-16T02:39:30.259Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",

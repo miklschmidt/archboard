@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 27,
+	"version": 28,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-10-16T01:30:27.287Z",
+	"updatedAt": "2026-10-16T02:39:31.407Z",
 	"views": [],
 	"variants": [
 		{

@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 90,
+	"version": 91,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-16T01:30:31.379Z",
+	"updatedAt": "2026-10-16T02:39:31.458Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
