@@ -124,17 +124,34 @@ beforeAll(async () => {
 				level: "system",
 				// No relationship, so no traffic: a picture at rest does not change from frame to frame.
 				// A container, so Track and Blocks lay it out differently: a row, and a column.
+				// The overview closes it, so the beats are told through a view that opens it.
 				nodes: [
 					{ name: "Edge", kind: "service" },
 					{ name: "Gateway", kind: "service", parent: "Edge" },
 					{ name: "Ledger", kind: "service" },
 				],
+				views: [
+					{
+						name: "Inside the edge",
+						grammar: "architecture",
+						scope: { kind: "selection", nodes: ["Gateway", "Ledger"] },
+					},
+				],
 				walkthroughs: [
 					{
 						name: "How a request lands",
 						beats: [
-							{ heading: "The front door", body: "Every request enters at the gateway." },
-							{ heading: "One writer", body: "Only the ledger writes.", subjects: ["Ledger"] },
+							{
+								heading: "The front door",
+								body: "Every request enters at the gateway.",
+								view: "Inside the edge",
+							},
+							{
+								heading: "One writer",
+								body: "Only the ledger writes.",
+								subjects: ["Ledger"],
+								view: "Inside the edge",
+							},
 						],
 					},
 				],
@@ -278,7 +295,9 @@ test(
 		const track = replay("blocks-as-track", { talk: blocksTalkDirectory, layout: "track" });
 		expect(blocks.receipt).toMatchObject({ layout: "blocks", frames: FRAMES });
 		expect(track.receipt).toMatchObject({ layout: "track", frames: FRAMES });
-		expect(blocks.frames[0]).not.toBe(track.frames[0]);
+		// The talk opens on the overview, which the two engines draw alike; the
+		// beats' view opens the container, which they lay out differently.
+		expect(blocks.frames.at(-1)).not.toBe(track.frames.at(-1));
 	},
 	TEST_RECORDING_CASE_MS,
 );
