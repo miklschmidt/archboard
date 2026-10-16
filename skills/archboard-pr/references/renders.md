@@ -14,8 +14,8 @@ label it. Section 5 of the skill says how to post it.
    reader does not need the view, draw the whole variant instead. If the whole
    variant fails the size check below, add the view.
 3. Draw one kind of picture per render: an architecture view, or a sequence
-   through its `data-flow` view. An ephemeral sequence board draws through the
-   `data-flow` view that it was created with. Arrows that mix several kinds of
+   through its `sequence` view. An ephemeral sequence board draws through the
+   `sequence` view that it was created with. Arrows that mix several kinds of
    relationship are hard to read [Kruchten]. **Judgement** for the choice of
    view.
 

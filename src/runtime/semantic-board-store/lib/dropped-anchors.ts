@@ -8,7 +8,12 @@
 // keeps its anchor, so only a restatement can drop one.
 
 import type { CodeAnchor } from "@/shared/code-target/index";
-import type { FlowStep, SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
+import {
+	messagesOf,
+	type FlowMessage,
+	type SemanticEdge,
+	type VariantContent,
+} from "@/shared/semantic-board/index";
 import type { WriteNotice } from "@/runtime/semantic-board-store/lib/replaced-relationships";
 
 /**
@@ -49,9 +54,11 @@ function droppedFromEdges(
  * @param content A variant's content.
  * @returns The steps by id.
  */
-function stepsById(content: VariantContent): Map<string, { flow: string; step: FlowStep }> {
+function stepsById(content: VariantContent): Map<string, { flow: string; step: FlowMessage }> {
 	return new Map(
-		content.flows.flatMap((flow) => flow.steps.map((step) => [step.id, { flow: flow.id, step }])),
+		content.flows.flatMap((flow) =>
+			messagesOf(flow.steps).map((step) => [step.id, { flow: flow.id, step }]),
+		),
 	);
 }
 

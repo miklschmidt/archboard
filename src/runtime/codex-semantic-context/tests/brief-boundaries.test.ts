@@ -100,7 +100,7 @@ function hostileArchitecture(id: string, name: string): SemanticContextInput["ar
 	const distinct = (index: number): string => String(index).padStart(3, "0") + id.slice(0, 29);
 	return {
 		variant: { id, name, lifecycle: "draft", against: id },
-		view: { id, name, grammar: "data-flow" },
+		view: { id, name, grammar: "sequence" },
 		selection: {
 			count: SEMANTIC_CONTEXT_LIMITS.selectionEntries,
 			subjects: Array.from({ length: SEMANTIC_CONTEXT_LIMITS.selectionEntries }, (_, index) => ({

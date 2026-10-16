@@ -31,7 +31,7 @@ import {
 /** The two ways the board below can be read. */
 const ENGINE_VIEWS = [
 	{ id: "ev1", name: "The parts", grammar: "architecture" },
-	{ id: "ev2", name: "One write, in order", grammar: "data-flow" },
+	{ id: "ev2", name: "One write, in order", grammar: "sequence" },
 ] as const;
 
 /** The one way the board above can be read. */

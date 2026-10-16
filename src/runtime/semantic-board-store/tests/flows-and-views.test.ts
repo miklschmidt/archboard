@@ -39,7 +39,7 @@ const SEED = {
 		{ name: "The parts", grammar: "architecture" },
 		{
 			name: "One edit, in order",
-			grammar: "data-flow",
+			grammar: "sequence",
 			scope: { kind: "selection", nodes: [], edges: [], flows: ["One edit"] },
 		},
 	],
@@ -68,7 +68,7 @@ test("flows and views land in one batch and read back resolved", () => {
 	if (!read.ok) return;
 	const content = read.board.variants[0]!.content;
 	expect(content.flows).toHaveLength(1);
-	expect(read.board.views.map((v) => v.grammar)).toEqual(["architecture", "data-flow"]);
+	expect(read.board.views.map((v) => v.grammar)).toEqual(["architecture", "sequence"]);
 	// The self step is a self step whether or not it was said.
 	expect(content.flows[0]!.steps[1]!.kind).toBe("self");
 	// The view's scope names the flow by identity, not by the name it was written with.
@@ -78,7 +78,7 @@ test("flows and views land in one batch and read back resolved", () => {
 	const nodeIds = new Set(content.nodes.map((n) => n.id));
 	expect(content.flows[0]!.participants.every((p) => nodeIds.has(p))).toBe(true);
 
-	// Two views over the same identities: the data-flow one keeps its flow's nodes.
+	// Two views over the same identities: the sequence one keeps its flow's nodes.
 	const drawn = contract.scopedContent(content, scope);
 	expect(drawn.nodes.map((n) => n.name).toSorted()).toEqual(["CLI", "Server", "Vault"]);
 	expect(drawn.flows).toHaveLength(1);
@@ -160,7 +160,7 @@ test("a step keeps its id when its flow is rewritten, and a stated id must name 
 	if (rewritten.outcome !== "applied") return;
 	const after = rewritten.board.variants[0]!.content.flows[0]!;
 	expect(after.steps.map((s) => s.id).slice(0, 2)).toEqual([moved, kept]);
-	expect(after.steps[1]!.label).toBe("state the change, precisely");
+	expect(contract.messagesOf(after.steps)[1]!.label).toBe("state the change, precisely");
 	expect(after.steps[2]!.id).not.toBe(kept);
 
 	// A step id that names nothing is a typo, not a new step.
@@ -366,4 +366,96 @@ test("a node keeps everything it was written with, including where it drills dow
 	});
 	expect(kept.responsibility).toBe("one board at a time");
 	expect(kept.description).toBe("serves the panes");
+}, 20_000);
+
+/** The ids a branching edit states for its decision, its loop and its write, where known. */
+interface BranchIds {
+	readonly decision?: string;
+	readonly loop?: string;
+	readonly write?: string;
+}
+
+test("a decision and a loop land with ids of their own, keep them on a rewrite, and name parts by name", async () => {
+	const read = store.readSemanticBoard(vault, board);
+	if (!read.ok) throw new Error("no board");
+	const flow = read.board.variants[0]!.content.flows[0]!;
+	const ask = flow.steps[0]!.id;
+	/**
+	 * The flow with a decision on the lease, its "no" side writing in a loop.
+	 * @param ids The ids to state.
+	 * @returns The edit.
+	 */
+	const branching = (ids: BranchIds): unknown => ({
+		flows: [
+			{
+				id: flow.id,
+				name: "One edit",
+				participants: ["CLI", "Server", "Vault"],
+				steps: [
+					{ id: ask, from: "CLI", to: "Server", label: "state the change" },
+					{
+						id: ids.decision,
+						kind: "decision",
+						question: "Is the lease held?",
+						alternatives: [
+							{
+								label: "yes",
+								steps: [{ from: "Server", to: "CLI", label: "held", kind: "return" }],
+							},
+							{
+								label: "no",
+								steps: [
+									{
+										id: ids.loop,
+										kind: "loop",
+										condition: "for each variant",
+										steps: [{ id: ids.write, from: "Server", to: "Vault", label: "atomic write" }],
+									},
+								],
+							},
+						],
+					},
+				],
+			},
+		],
+	});
+	const written = await store.writeSemanticBoard({
+		vault,
+		board,
+		writer,
+		expectedVersion: read.board.version,
+		transition: store.editVariantTransition(contract.VariantEditInputSchema.parse(branching({}))),
+	});
+	if (written.outcome !== "applied") throw new Error(`refused: ${JSON.stringify(written)}`);
+	const steps = written.board.variants[0]!.content.flows[0]!.steps;
+	const decision = steps[1]!;
+	if (decision.kind !== "decision") throw new Error("no decision");
+	const loop = decision.alternatives[1]!.steps[0]!;
+	if (loop.kind !== "loop") throw new Error("no loop");
+	const write = contract.messagesOf(loop.steps)[0]!;
+	// Every step got an id of its own, and a message names its parts by id.
+	const minted = contract.everyStep(steps).map((step) => step.id);
+	expect(new Set(minted).size).toBe(minted.length);
+	const nodes = new Map(
+		written.board.variants[0]!.content.nodes.map((node) => [node.name, node.id]),
+	);
+	expect([write.from, write.to]).toEqual([nodes.get("Server")!, nodes.get("Vault")!]);
+
+	// Stated again with the ids it was given, the logic keeps every one of them.
+	const rewritten = await store.writeSemanticBoard({
+		vault,
+		board,
+		writer,
+		expectedVersion: written.board.version,
+		transition: store.editVariantTransition(
+			contract.VariantEditInputSchema.parse(
+				branching({ decision: decision.id, loop: loop.id, write: write.id }),
+			),
+		),
+	});
+	if (rewritten.outcome !== "applied") throw new Error("refused");
+	const kept = contract.everyStep(rewritten.board.variants[0]!.content.flows[0]!.steps);
+	expect(kept.map((step) => step.id)).toEqual(
+		expect.arrayContaining([ask, decision.id, loop.id, write.id]),
+	);
 }, 20_000);

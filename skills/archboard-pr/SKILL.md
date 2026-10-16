@@ -109,7 +109,7 @@ your own.
 | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Adds, removes, renames or rewires something that a vault board draws, or changes what a part is for                                       | A proposal on that board (section 2)                                                              |
 | Adds or rewires durable architecture that no board draws                                                                                  | Draw the board as `current` from the base branch first (below), then a proposal on it (section 2) |
-| Changes a request or data flow, an ordering, a process or a state progression, or the steps inside one part, while every board stays true | An ephemeral sequence board: a `flow` through a `data-flow` view (section 3)                      |
+| Changes a request or data flow, an ordering, a process or a state progression, or the steps inside one part, while every board stays true | An ephemeral sequence board: a `flow` through a `sequence` view (section 3)                       |
 | Changes infrastructure, deployment topology, ownership or dependencies that no board draws and the vault need not keep                    | An ephemeral architecture board (section 3)                                                       |
 | Formatting, a rename inside one part, a dependency bump, generated files, a fix whose diff explains itself                                | No explainer: the ordinary description stands, and your final report says why                     |
 

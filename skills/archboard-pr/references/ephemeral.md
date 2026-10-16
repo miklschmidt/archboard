@@ -69,7 +69,7 @@ the head branch's code in the checkout.
 
 1. **The base as the current variant.** `semantic new "<board>" --input base.json --doing "…"`
    with what the base branch does. Name each part as the vault's boards name
-   it, and bind it to its code. A sequence carries its `data-flow` view in the
+   it, and bind it to its code. A sequence carries its `sequence` view in the
    same write.
 2. **The head as a draft.** `semantic branch "<board>" --as "<head branch>" --summary "<pull request title>" --expect-version 1 --doing "…"`,
    then `semantic edit "<board>" --variant "<head branch>" --expect-version 2 --doing "…" --input head.json`.
@@ -92,13 +92,13 @@ change in the archboard repository (the stop command keeping the pidfile of a
 live process). The last two follow from the `archboard` skill's variants
 reference and the CLI's commands:
 
-| Shape                                                                              | Result                                                                                                                                                                                                                 |
-| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| One board: the base as current, the head as a draft                                | Works. Through the `data-flow` view, the after render marks each added and changed step with a band and a pin, and the before render draws the base plain. `compare`, `footprint` and `check --code --variant` answer. |
-| The same board read through its architecture picture                               | Works. Without `--view`, the draft draws the parts and relationships with the changed relationship marked.                                                                                                             |
-| A flow that the base does not have, on a board created with `"lifecycle": "draft"` | Draws plain, with no marks. `compare` refuses: the first draft has nothing to be read against. Draw the after render only.                                                                                             |
-| Two boards, one for the base and one for the head                                  | Each is a current variant, which draws plain, and `compare` reads only variants of one board. So nothing is marked. Do not use it.                                                                                     |
-| A copy of a vault board                                                            | No command copies a board, and only the CLI writes a board. Restate the parts that you need in the `semantic new` payload instead.                                                                                     |
+| Shape                                                                              | Result                                                                                                                                                                                                                |
+| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One board: the base as current, the head as a draft                                | Works. Through the `sequence` view, the after render marks each added and changed step with a band and a pin, and the before render draws the base plain. `compare`, `footprint` and `check --code --variant` answer. |
+| The same board read through its architecture picture                               | Works. Without `--view`, the draft draws the parts and relationships with the changed relationship marked.                                                                                                            |
+| A flow that the base does not have, on a board created with `"lifecycle": "draft"` | Draws plain, with no marks. `compare` refuses: the first draft has nothing to be read against. Draw the after render only.                                                                                            |
+| Two boards, one for the base and one for the head                                  | Each is a current variant, which draws plain, and `compare` reads only variants of one board. So nothing is marked. Do not use it.                                                                                    |
+| A copy of a vault board                                                            | No command copies a board, and only the CLI writes a board. Restate the parts that you need in the `semantic new` payload instead.                                                                                    |
 
 A flow added to a proposal on a vault board stays in the vault after the
 adoption. Add one there only when the flow is durable: a later reader of the

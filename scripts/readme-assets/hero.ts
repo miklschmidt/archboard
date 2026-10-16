@@ -11,7 +11,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
-import type { VariantContent } from "@/shared/semantic-board";
+import { messagesOf, type VariantContent } from "@/shared/semantic-board";
 
 import {
 	Terminal,
@@ -48,7 +48,7 @@ function matches(content: VariantContent, kind: string, key: string): readonly {
 	if (kind === "F") return content.flows.filter((flow) => flow.name === key);
 	const split = key.indexOf(":");
 	const flow = content.flows.find((one) => one.name === key.slice(0, split));
-	return flow?.steps.filter((step) => step.label === key.slice(split + 1)) ?? [];
+	return messagesOf(flow?.steps ?? []).filter((step) => step.label === key.slice(split + 1));
 }
 
 /**

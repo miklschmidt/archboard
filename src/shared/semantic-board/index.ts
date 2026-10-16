@@ -82,6 +82,10 @@ export {
 export {
 	FlowStepSchema,
 	type FlowStep,
+	type FlowMessage,
+	type FlowDecision,
+	type FlowAlternative,
+	type FlowLoop,
 	SemanticFlowSchema,
 	type SemanticFlow,
 	ViewScopeSchema,
@@ -89,6 +93,17 @@ export {
 	SemanticViewSchema,
 	type SemanticView,
 } from "@/shared/semantic-board/lib/views";
+export {
+	type StepPlace,
+	type FlatStep,
+	isMessage,
+	stepWords,
+	placedSteps,
+	everyStep,
+	messagesOf,
+	flatSteps,
+	nestedSteps,
+} from "@/shared/semantic-board/lib/flow-steps";
 export {
 	WalkthroughBeatSchema,
 	type WalkthroughBeat,
@@ -186,6 +201,7 @@ export {
 	type BoardBranchInput,
 	FlowStepInputSchema,
 	type FlowStepInput,
+	type FlowMessageInput,
 	SemanticFlowInputSchema,
 	type SemanticFlowInput,
 	ViewScopeInputSchema,

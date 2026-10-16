@@ -16,18 +16,22 @@
 //   Board views keep their selections. Each variant draws the selected subjects
 //   it has, including an explicit empty reading when none are present.
 
-import type {
-	FlowStep,
-	FlowStepInput,
-	SemanticFlow,
-	SemanticFlowInput,
-	SemanticEdge,
-	SemanticNode,
-	SemanticView,
-	SemanticViewInput,
-	VariantContent,
-	VariantEditInput,
-	ViewScope,
+import {
+	everyStep,
+	type FlowAlternative,
+	type FlowMessage,
+	type FlowMessageInput,
+	type FlowStep,
+	type FlowStepInput,
+	type SemanticFlow,
+	type SemanticFlowInput,
+	type SemanticEdge,
+	type SemanticNode,
+	type SemanticView,
+	type SemanticViewInput,
+	type VariantContent,
+	type VariantEditInput,
+	type ViewScope,
 } from "@/shared/semantic-board/index";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import {
@@ -75,8 +79,8 @@ function buildFlow(
 	// The steps a stated id may name are the ones the flow being replaced
 	// already had. A flow's steps belong to that flow, so an id from elsewhere
 	// names nothing here even when it names something on the board.
-	const had = flows.find((flow) => flow.id === chosen.id)?.steps ?? [];
-	const steps = buildSteps(had, nodes, stated, batch);
+	const had = everyStep(flows.find((flow) => flow.id === chosen.id)?.steps ?? []);
+	const steps = buildSteps(had, nodes, stated.steps, batch);
 	if (!steps.ok) {
 		return steps;
 	}
@@ -126,20 +130,23 @@ function resolveAll(
  * it meant to change in place and add a second beside it, and a later
  * comparison would read that as a deletion and an addition rather than as the
  * mistake it is.
- * @param had The steps the flow being replaced already had.
+ * A decision and a loop hold steps of their own, built the same way, and any
+ * step anywhere in the flow may keep the id of any step the flow already had:
+ * moving a step into an alternative does not make it a new subject.
+ * @param had Every step the flow being replaced already had, at any depth.
  * @param nodes The nodes the endpoints must name.
- * @param stated The flow as the agent wrote it.
+ * @param stated The steps as the agent wrote them.
  * @param batch The batch; its ids and handles are extended.
  * @returns The steps in order, or the first refusal.
  */
 function buildSteps(
 	had: readonly FlowStep[],
 	nodes: readonly SemanticNode[],
-	stated: SemanticFlowInput,
+	stated: readonly FlowStepInput[],
 	batch: Batch,
-): { readonly ok: true; readonly steps: SemanticFlow["steps"] } | SemanticRefusal {
-	const steps: SemanticFlow["steps"] = [];
-	for (const stepInput of stated.steps) {
+): { readonly ok: true; readonly steps: FlowStep[] } | SemanticRefusal {
+	const steps: FlowStep[] = [];
+	for (const stepInput of stated) {
 		const built = buildStep(had, nodes, stepInput, batch);
 		if (!built.ok) {
 			return built;
@@ -150,16 +157,13 @@ function buildSteps(
 }
 
 /**
- * Build one step of a flow.
- *
- * A step that begins and ends at the same node is a `self` step whether or not
- * the agent said so, because the two statements cannot disagree: the contract
- * refuses a document where they do.
- * @param had The steps the flow being replaced already had.
+ * Build one step of a flow: a message, or a decision or loop with the steps
+ * it holds.
+ * @param had Every step the flow being replaced already had.
  * @param nodes The nodes the endpoints must name.
  * @param stated The step as the agent wrote it.
  * @param batch The batch; its ids and handles are extended.
- * @returns The step, or why its endpoints could not be resolved.
+ * @returns The step, or why it could not be built.
  */
 function buildStep(
 	had: readonly FlowStep[],
@@ -171,6 +175,86 @@ function buildStep(
 	if (!id.ok) {
 		return id;
 	}
+	if (stated.kind === "decision") {
+		return buildDecision(id.id, had, nodes, stated, batch);
+	}
+	if (stated.kind === "loop") {
+		const steps = buildSteps(had, nodes, stated.steps, batch);
+		if (!steps.ok) {
+			return steps;
+		}
+		return {
+			ok: true,
+			step: {
+				id: id.id,
+				kind: "loop",
+				condition: stated.condition,
+				steps: steps.steps,
+				...noted(stated),
+			},
+		};
+	}
+	return buildMessage(id.id, nodes, stated, batch);
+}
+
+/**
+ * Build one decision: its question, and each alternative's steps.
+ * @param id The id the decision carries.
+ * @param had Every step the flow being replaced already had.
+ * @param nodes The nodes the endpoints must name.
+ * @param stated The decision as the agent wrote it.
+ * @param batch The batch; its ids and handles are extended.
+ * @returns The decision, or why one of its steps could not be built.
+ */
+function buildDecision(
+	id: string,
+	had: readonly FlowStep[],
+	nodes: readonly SemanticNode[],
+	stated: Extract<FlowStepInput, { kind: "decision" }>,
+	batch: Batch,
+): { readonly ok: true; readonly step: FlowStep } | SemanticRefusal {
+	const alternatives: FlowAlternative[] = [];
+	for (const alternative of stated.alternatives) {
+		const steps = buildSteps(had, nodes, alternative.steps, batch);
+		if (!steps.ok) {
+			return steps;
+		}
+		alternatives.push({ label: alternative.label, steps: steps.steps });
+	}
+	return {
+		ok: true,
+		step: { id, kind: "decision", question: stated.question, alternatives, ...noted(stated) },
+	};
+}
+
+/**
+ * The note a decision or loop carries, present only where the agent wrote one.
+ * @param stated The decision or loop as the agent wrote it.
+ * @param stated.note Its note, if any.
+ * @returns The note field it actually has.
+ */
+function noted(stated: { readonly note?: string | undefined }): { note?: string } {
+	return stated.note === undefined ? {} : { note: stated.note };
+}
+
+/**
+ * Build one message of a flow.
+ *
+ * A message that begins and ends at the same node is a `self` step whether or
+ * not the agent said so, because the two statements cannot disagree: the
+ * contract refuses a document where they do.
+ * @param id The id the message carries.
+ * @param nodes The nodes the endpoints must name.
+ * @param stated The message as the agent wrote it.
+ * @param batch The batch, for the handles it has given out.
+ * @returns The message, or why its endpoints could not be resolved.
+ */
+function buildMessage(
+	id: string,
+	nodes: readonly SemanticNode[],
+	stated: FlowMessageInput,
+	batch: Batch,
+): { readonly ok: true; readonly step: FlowMessage } | SemanticRefusal {
 	const from = resolveNode(nodes, stated.from, "send a step", batch);
 	if (!from.ok) {
 		return from;
@@ -182,7 +266,7 @@ function buildStep(
 	return {
 		ok: true,
 		step: {
-			id: id.id,
+			id,
 			from: from.node.id,
 			to: to.node.id,
 			label: stated.label,
@@ -209,16 +293,30 @@ function stepId(had: readonly FlowStep[], stated: FlowStepInput, batch: Batch): 
 		: refuse(
 				"UNKNOWN_STEP",
 				`there is no step "${stated.id}" in this flow to replace. Leave the id out to add ` +
-					`"${stated.label}" as a new one`,
+					`"${wordsOf(stated)}" as a new one`,
 			);
 }
 
 /**
- * The optional fields a step carries, present only where the agent wrote them.
+ * The words a stated step is known by: a message's label, a decision's
+ * question, a loop's condition.
  * @param stated The step as the agent wrote it.
+ * @returns Its words.
+ */
+function wordsOf(stated: FlowStepInput): string {
+	if (stated.kind === "decision") return stated.question;
+	if (stated.kind === "loop") return stated.condition;
+	return stated.label;
+}
+
+/**
+ * The optional fields a message carries, present only where the agent wrote them.
+ * @param stated The message as the agent wrote it.
  * @returns The note, repeat and anchor fields it actually has.
  */
-function optionalStepFields(stated: FlowStepInput): Pick<FlowStep, "note" | "repeat" | "anchor"> {
+function optionalStepFields(
+	stated: FlowMessageInput,
+): Pick<FlowMessage, "note" | "repeat" | "anchor"> {
 	return {
 		...(stated.note === undefined ? {} : { note: stated.note }),
 		...(stated.repeat === undefined ? {} : { repeat: stated.repeat }),
