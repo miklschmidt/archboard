@@ -117,6 +117,21 @@ function besideWalls(block: Block, tree: BlockTree, scene: Scene): Beside[] {
 }
 
 /**
+ * Mark on a scene the stretch of its band that each line drawn straight to
+ * a wall runs along, which the scene's router does not route ({@link Scene.besides}).
+ * @param scene The placed scene, whose besides are set.
+ * @param beside The lines.
+ */
+function markBesides(scene: Scene, beside: readonly Beside[]): void {
+	for (const { card, wall } of beside) {
+		const { box, band } = scene.cards.get(card)!;
+		const run =
+			wall === "left" ? ([-Infinity, box.x] as const) : ([box.x + box.width, Infinity] as const);
+		scene.besides.set(band, [...(scene.besides.get(band) ?? []), run]);
+	}
+}
+
+/**
  * Whether nothing stands between a card and a wall on the card's band.
  * @param scene The placed scene.
  * @param item The card.
@@ -157,4 +172,4 @@ function besidePoints(scene: Scene, beside: readonly Beside[], left: number): Ma
 	);
 }
 
-export { besidePoints, besideWalls, entersBy, innerPoints, wallLines, wallOf };
+export { besidePoints, besideWalls, entersBy, innerPoints, markBesides, wallLines, wallOf };
