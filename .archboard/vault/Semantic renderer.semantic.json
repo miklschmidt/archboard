@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 55,
+	"version": 56,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-15T22:25:03.948Z",
+	"updatedAt": "2026-10-16T02:07:28.819Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -100,7 +100,7 @@
 		{
 			"id": "OANefo74",
 			"name": "Render sequence",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "The calls and returns of one architecture render.",
 			"scope": {
 				"kind": "selection",

@@ -1,17 +1,17 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 41,
+	"version": 42,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-15T22:25:02.757Z",
+	"updatedAt": "2026-10-16T02:07:28.645Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
 			"name": "Render sequence",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "A render request through the layout, in order.",
 			"scope": {
 				"kind": "selection",
@@ -33,7 +33,7 @@
 		{
 			"id": "JyXLZqHA",
 			"name": "Sizing a card",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "Where a card's size comes from: Pretext breaks the lines, the host's canvas measures them.",
 			"scope": {
 				"kind": "selection",
@@ -47,7 +47,7 @@
 		{
 			"id": "wTcA4BmE",
 			"name": "Layout sequence",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "Inside the one owner of boxes, ports, routes and labels.",
 			"scope": {
 				"kind": "selection",
