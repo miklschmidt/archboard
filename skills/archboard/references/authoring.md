@@ -725,9 +725,10 @@ approximated another way.
 - **ambiguous name**: Two nodes share the name; use the id from the family you
   read.
 - **unknown id**: A stated `id` names nothing on that variant; new subjects
-  leave `id` out. The one exception: a draft may restate a node it removed under
-  the `subject` id of its open `deleted-and-changed` issue
-  ([variants](variants.md)).
+  leave `id` out. The exception is a restore: a node, relationship or flow the
+  variant lacks comes back under its id when its predecessor or reconciliation
+  base holds it, and with `--restore-known-ids` when only another variant does
+  (`RESTORE_UNCONFIRMED`; [variants](variants.md#disagreements)).
 - **dangling reference**: An edge end, participant, step end, view selection or
   beat subject names nothing; fix the reference.
 - **containment cycle**: A `parent` chain loops.
@@ -750,13 +751,15 @@ configuration no longer defines (`archboard check` names each reference), and
 `RELATIONSHIP_REPLACED` means a relationship was implicitly removed with its
 endpoint and a close restatement received a new id, or one was removed while a
 close restatement from an earlier write still stands. If it was meant to
-continue and its id remains in the direct predecessor or recorded
-reconciliation base, remove the copy and restate the original `id` with its
-full properties in one edit. An explicit `removeEdges` plus idless addition
-declares a replacement without this warning.
+continue, remove the copy and restate the original `id` with its full
+properties in one edit (a restore, [variants](variants.md#disagreements)). An
+explicit `removeEdges` plus idless addition declares a replacement without this
+warning.
 `RELATIONSHIP_DUPLICATED` means the batch stated an existing relationship again
 without its `id`, so both now stand; do not remove the original to tidy up, but
 remove the copy and restate the original with its `id`.
 `ANCHOR_DROPPED` means the batch restated a relationship or a step without the
 `anchor` it had, so the anchor is gone; the message spells the anchor out, and
 restating the subject with it puts it back.
+`RESTORED_FROM_OTHER_VARIANT` means `--restore-known-ids` brought back an id
+that only another variant held; the message names it and that variant.

@@ -24,22 +24,21 @@ import {
 	subjectIds,
 	type VariantEditInput,
 } from "@/shared/semantic-board/index";
-import { editContent } from "@/runtime/semantic-board-store/lib/edit-content";
+import { editContent, type ContentEdit } from "@/runtime/semantic-board-store/lib/edit-content";
 import {
 	editsContent,
 	editsVariant,
 	summarized,
 } from "@/runtime/semantic-board-store/lib/edit-scope";
 import {
-	propagateEdit,
 	unsettledAncestor,
 	type DescendantOutcome,
 } from "@/runtime/semantic-board-store/lib/propagate";
 import { adoptVariant } from "@/runtime/semantic-board-store/lib/adopt";
 import { BRANCH_INSTEAD, shelveVariant } from "@/runtime/semantic-board-store/lib/shelve";
 import {
-	restorableSubjects,
-	settleByRestoring,
+	carriedFamily,
+	restoration,
 	type RestorableSubjects,
 } from "@/runtime/semantic-board-store/lib/restore";
 import { settleVariant } from "@/runtime/semantic-board-store/lib/settle";
@@ -288,14 +287,12 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 				return editable;
 			}
 			const { variant } = editable;
-			// Inherited identities can be restored without minting replacements.
-			const restorable = restorableSubjects(before, variant);
-			const content = editContent(variant.content, input, before, restorable);
+			const content = restoredContent(before, variant, input);
 			if (!content.ok) {
 				return content;
 			}
 			const carried = carriedFamily(before, variant, content.content, {
-				restorable,
+				restorable: content.restorable,
 				changesContent,
 			});
 			if (!carried.ok) {
@@ -519,58 +516,30 @@ function editableVariant(
 }
 
 /**
- * The family after one edit: every draft derived from this variant answers the
- * change in the same candidate, so the parent's new state and its consequences
- * are one write and one version, never a parent that landed and children that
- * have not caught up (ADR 0023). An edit that restores a subject this draft was
- * arguing about answers the draft's own disagreement, and that settlement is
- * part of the same write too: the restored subject, the settled standing and the
- * descendants' answers land as one version.
+ * The content one edit leaves, restoring absent identities under their own ids
+ * where the edit may (`restore.ts`) rather than minting replacements.
  * @param board The board as it stands.
  * @param variant The edited variant, as it stood.
- * @param content Its content as the edit leaves it.
- * @param edit What the edit could and did do.
- * @param edit.restorable The absent inherited identities this edit may restore.
- * @param edit.changesContent Whether the command edited variant content.
- * @returns The variant family and effects, or the refusal.
+ * @param input The edit as stated.
+ * @returns The content, what it could restore and what the answer says, or the refusal.
  */
-function carriedFamily(
+function restoredContent(
 	board: SemanticBoard,
 	variant: SemanticVariant,
-	content: SemanticVariant["content"],
-	edit: { readonly restorable: RestorableSubjects; readonly changesContent: boolean },
-): ReturnType<typeof settleByRestoring> {
-	const restored = new Set(
-		[...content.nodes, ...content.edges]
-			.map((subject) => subject.id)
-			.filter((id) => edit.restorable.nodes.has(id) || edit.restorable.edges.has(id)),
-	);
-	const settles = variant.reconciliation?.issues.some(
-		(issue) => issue.kind === "deleted-and-changed" && restored.has(issue.subject),
-	);
-	return settles
-		? settleByRestoring(board, variant, content, restored, nextVersion(board))
-		: editedFamily(board, variant, content, edit.changesContent);
-}
-
-/**
- * Propagate content edits; changing board views leaves the variant family alone.
- * @param board The board.
- * @param variant The edited variant.
- * @param content The resulting content.
- * @param changesContent Whether the command edited variant content.
- * @returns The variant family and effects.
- */
-function editedFamily(
-	board: SemanticBoard,
-	variant: SemanticVariant,
-	content: SemanticVariant["content"],
-	changesContent: boolean,
-): { readonly ok: true } & ReturnType<typeof propagateEdit> {
-	return {
-		ok: true,
-		...(changesContent
-			? propagateEdit(board, { ...variant, content }, nextVersion(board))
-			: { variants: board.variants, descendants: [] }),
-	};
+	input: VariantEditInput,
+):
+	| (Extract<ContentEdit, { ok: true }> & { readonly restorable: RestorableSubjects })
+	| SemanticRefusal {
+	const restoring = restoration(board, variant, input);
+	if (!restoring.ok) {
+		return restoring;
+	}
+	const content = editContent(variant.content, input, board, restoring.restorable);
+	return content.ok
+		? {
+				...content,
+				restorable: restoring.restorable,
+				notices: [...restoring.notices, ...content.notices],
+			}
+		: content;
 }

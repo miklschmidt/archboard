@@ -125,15 +125,20 @@ and a JSON of `choices`, each naming the `subject` (and `field` where the issue
 has one) and a `side`: `mine` keeps the draft's answer, `theirs` takes the
 predecessor's. Answer part of it and the rest stays open, reported in the
 answer. A third answer is not a side: write it as an ordinary edit. For a
-`deleted-and-changed` node or relationship the draft removed, state it again with its
-original `id` (the `subject` of the issue) and the fields you want; that one
-write restores the identity and settles that issue. An ordinary edit can also
-restore a removed node or relationship without an open disagreement when its
-id remains in the direct predecessor or recorded reconciliation base. State
-the original id and full properties, reconnect references, and remove any
-copy in the same batch. Unknown ids, sibling-only ids, and ids of another
-subject kind are refused; a removal and restatement of the same id in one
-batch is contradictory.
+`deleted-and-changed` node, relationship or flow the draft removed, state it
+again with its original `id` (the `subject` of the issue) and the fields you
+want; that one write restores the identity and settles that issue. An ordinary
+edit can also restore a removed node, relationship or flow without an open
+disagreement when its id remains in the direct predecessor or recorded
+reconciliation base. A restored flow's steps may keep the step ids that flow
+holds there. State the original id and full properties, reconnect references,
+and remove any copy in the same batch. An id that only another variant holds,
+such as a sibling's or an older ancestor's, is refused with
+`RESTORE_UNCONFIRMED`, which names each id and the variants that hold it. Add
+`--restore-known-ids` to restore it anyway; the answer warns
+`RESTORED_FROM_OTHER_VARIANT` for each one. Ids no variant holds and ids of
+another subject kind are refused; a removal and restatement of the same id in
+one batch is contradictory.
 Settling also catches the draft up with everything else the predecessor decided.
 
 Every value in that third answer is read, never retyped: the issue's `changed`

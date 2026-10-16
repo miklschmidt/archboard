@@ -155,7 +155,17 @@ const EditInputSchema = z.object({
 	name: z.string(),
 	variant: SelectorSchema.optional(),
 	input: z.string().optional(),
+	restoreKnownIds: z.boolean().optional(),
 });
+
+const restoreUnconfirmedRefusal = {
+	code: "RESTORE_UNCONFIRMED",
+	exit: 1,
+	stream: "stderr" as const,
+	description:
+		"The change states an id that only another variant of the board holds. The refusal names " +
+		"each id and the variants that hold it; pass --restore-known-ids to restore them.",
+};
 
 const semanticEditContract = defineCommand({
 	path: ["semantic", "edit"],
@@ -175,7 +185,9 @@ const semanticEditContract = defineCommand({
 		"those and no others, so one connection can be isolated; name none and it shows every " +
 		"relationship between the nodes it kept. Either way both ends of a shown relationship, every " +
 		"participant of a shown flow, and every container they sit inside come with it, except a " +
-		"container that holds all of them.",
+		"container that holds all of them. A stated id the variant lacks restores that subject " +
+		"under its id when the variant's predecessor or recorded reconciliation base holds it; one " +
+		"that only another variant holds needs --restore-known-ids.",
 	examples: [
 		'archboard semantic edit pipeline --expect-version 3 --input change.json --doing "adding the renderer"',
 		'archboard semantic edit pipeline --variant "Queued ingest" --expect-version 4 --input change.json --doing "putting the queue in the proposal"',
@@ -203,6 +215,15 @@ const semanticEditContract = defineCommand({
 			value: "required",
 			placeholder: "file.json",
 			description: "A JSON file stating the change; standard input when absent",
+		},
+		{
+			kind: "option",
+			key: "restoreKnownIds",
+			spellings: ["--restore-known-ids"],
+			value: "none",
+			description:
+				"Restore a stated id that only another variant of the board holds, such as a sibling's " +
+				"or an older ancestor's, under that id; the answer names each one",
 		},
 	],
 	input: { ingress: EditInputSchema },
@@ -232,6 +253,7 @@ const semanticEditContract = defineCommand({
 		boardHeldRefusal,
 		boardVersionRefusal,
 		claimRevokedRefusal,
+		restoreUnconfirmedRefusal,
 	],
 	relationships: [
 		{
@@ -267,7 +289,7 @@ const semanticEditContract = defineCommand({
 		for (const line of targeted.diagnostics) {
 			context.diagnostic(line);
 		}
-		const edit = context.parse(VariantEditInputSchema, targeted.stated);
+		const edit = context.parse(VariantEditInputSchema, confirmed(targeted.stated, input));
 		const written = await editSemanticBoardOnServer(input.name, edit);
 		return {
 			result: writeResult(written),
@@ -275,6 +297,20 @@ const semanticEditContract = defineCommand({
 		};
 	},
 });
+
+/**
+ * The stated change, confirming restoration from other variants when the
+ * command line asked for it. Without the flag the change says what it says.
+ * @param stated The change as stated.
+ * @param input What the command was given.
+ * @returns The change to send.
+ */
+function confirmed(
+	stated: Record<string, unknown>,
+	input: z.infer<typeof EditInputSchema>,
+): Record<string, unknown> {
+	return input.restoreKnownIds === true ? { ...stated, restoreKnownIds: true } : stated;
+}
 
 const BranchInputSchema = z.object({
 	name: z.string(),
