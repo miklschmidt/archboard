@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-16 13:19'
-updated_date: '2026-10-16 13:31'
+updated_date: '2026-10-16 13:32'
 labels:
   - board-store
   - skill
@@ -20,6 +20,14 @@ ordinal: 852000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 On 14 October an agent wrote a stack of PR proposals on two Docs-Architecture-Design boards (Device Trust Control Plane, Endpoint Gateway). The first branch of each stack held only the parts its PR changed: it dropped 16 of 21 inherited parts on one board and 6 of 19 on the other. Later branches re-created 12 and 3 of those parts under new ids with the same names and bindings. Archboard accepted every write. The result: every board view that names the original ids drew nothing on the last branch, although that branch holds the work of every earlier one, and each comparison read the re-created parts as removed and added. Repairing it took a restore on the first branch and an id merge on every branch below it (2026-10-16). A proposal is a whole architecture, not a patch (skills/archboard/references/variants.md), and nothing told the author.
+
+Why the skill recipe. The skill has no recipe for a stack of PRs on a vault board. The only PR recipe is the recording recipe (skills/archboard/references/sequences-views-walkthroughs.md, "A pull request's recording"), which builds a board of only the parts the PR touches and their neighbours, branches the PR from it and discards the board. That is the exact shape of the broken stack, so it is the likely source of the mistake. This is an inference from the result: the reasoning of the agent that wrote the stack could not be read. The legitimate need behind the mistake, focusing on one PR, is already served by a view and by the comparison, which marks what a proposal changed, so the recipe points there instead of to deletion.
+
+Why refusals and not warnings. The user chose refusals that need a confirmation (2026-10-16). A warning arrives after the write has landed: an agent that misses it has already damaged the board, and the damage spreads to every draft below. A refusal stops the write while the agent still has the context to choose, and the confirmation keeps a real redesign or a genuinely new part possible on purpose. It is the same pattern the user asked for when an id held only by another variant is restored.
+
+Why these two checks. Each mistake was one write, and each check catches one of them at that write. Re-creating a part by name or binding while an ancestor holds it under another id is the precise signal: it is what emptied the views and broke the comparisons, and it would have stopped both boards. The refusal points to restoring the ancestor id, which the flow and known-id restore change makes one step. Removing more than half of what a variant inherited catches the first mistake, where a PR proposal kept only its own change.
+
+Possible simplification, to decide once the restore change lands: one `--confirm <code>` option naming the refusal codes the caller accepts, instead of one flag per refusal, so archboard has a single confirmation concept.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
