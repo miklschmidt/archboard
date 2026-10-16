@@ -232,7 +232,7 @@ test("a frame whose only child the draft drops looks the same without its compar
 	const drawings = await bothModes(
 		{ nodes: [...nodes, child], edges: [writes] },
 		{ nodes, edges: [] },
-		{},
+		EVERY_PART,
 	);
 	expectSamePlaces(drawings, [child.id, writes.id]);
 	expect(lookOf(drawings.plain.svg, "svc")).toBe(lookOf(drawings.compared.svg, "svc"));

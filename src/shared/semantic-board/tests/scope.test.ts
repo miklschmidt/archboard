@@ -54,6 +54,30 @@ describe("what a view shows", () => {
 		expect(shown.edges.map((edge) => edge.id)).toEqual(["e2"]);
 	});
 
+	test("draws no container that holds every part the view asked for", () => {
+		const ROUTER = { id: "rt", name: "Router", kind: "function", parent: "gw" };
+		const AUDIT = { id: "au", name: "Audit", kind: "function", parent: "gw" };
+		const nested = content({ nodes: [PLATFORM, GATEWAY, ROUTER, AUDIT, LEDGER] });
+		const shown = scopedContent(nested, {
+			kind: "selection",
+			nodes: ["rt", "au"],
+			edges: [],
+			flows: [],
+		});
+		expect(shown.nodes.map((node) => [node.id, node.parent])).toEqual([
+			["rt", undefined],
+			["au", undefined],
+		]);
+		// A container that separates one asked-for part from another is drawn.
+		const across = scopedContent(nested, {
+			kind: "selection",
+			nodes: ["rt", "ld"],
+			edges: [],
+			flows: [],
+		});
+		expect(across.nodes.map((node) => node.id)).toEqual(["pl", "gw", "rt", "ld"]);
+	});
+
 	test("a view of everything is the variant itself, relationships and all", () => {
 		expect(scopedContent(BOARD, { kind: "all" })).toBe(BOARD);
 	});
@@ -119,14 +143,14 @@ describe("the overview a board opens on", () => {
 	});
 	const overview = scopedContent(DEEP, { kind: "overview" });
 
-	test("closes every container below the root's direct parts", () => {
-		expect(overview.nodes.map((node) => node.id)).toEqual(["pl", "gw", "ld"]);
+	test("draws the root parts with every container closed", () => {
+		expect(overview.nodes.map((node) => node.id)).toEqual(["pl", "ld"]);
 	});
 
 	test("joins every relationship between two drawn parts into one unlabelled line of the commonest kind", () => {
 		expect(overview.edges).toHaveLength(1);
 		const [line] = overview.edges;
-		expect(line).toMatchObject({ id: "e1", from: "gw", to: "ld", kind: "queue" });
+		expect(line).toMatchObject({ id: "e1", from: "pl", to: "ld", kind: "queue" });
 		expect(line?.label).toBeUndefined();
 	});
 
@@ -152,7 +176,7 @@ describe("the overview a board opens on", () => {
 			edges: [{ id: "e1", from: "rt", to: "ld", kind: "call", label: "posts" }],
 		});
 		expect(scopedContent(lone, { kind: "overview" }).edges).toEqual([
-			{ ...lone.edges[0]!, from: "gw" },
+			{ ...lone.edges[0]!, from: "pl" },
 		]);
 	});
 });

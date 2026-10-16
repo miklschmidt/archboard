@@ -456,12 +456,10 @@ test("a shared scope preserves its deleted exchange without unrelated deletions"
 
 describe("the overview of a proposal", () => {
 	test("marks what the proposal removed, as every reading does", () => {
-		const board = boardWith({ nodes: [PLATFORM, GATEWAY, LEDGER], edges: [KEPT_WIRE] });
+		const board = boardWith({ nodes: [PLATFORM, GATEWAY, LEGACY], edges: [OLD_WIRE] });
 		const drawn = drawingOf(board, board.variants[1]!, { kind: "overview" });
-		expect(drawn.changes?.standing).toMatchObject({
-			lg: "removed",
-			e1: "removed",
-			e2: "unchanged",
-		});
+		// The ledger is a root part and the line to it is drawn from the closed
+		// platform; the wire inside the platform is the platform's own business.
+		expect(drawn.changes?.standing).toEqual({ pl: "unchanged", ld: "removed", e2: "removed" });
 	});
 });

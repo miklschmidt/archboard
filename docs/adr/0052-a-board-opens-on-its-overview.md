@@ -34,8 +34,8 @@ A board has two readings that nobody authors, beside the views that agents
 author:
 
 - The overview. It is what a board opens on, and what a render with no view
-  draws. It shows the board's root parts and the parts directly inside each
-  root container. Every container below that is drawn closed, as a card. A
+  draws. It shows the board's root parts. Every container is drawn closed, as
+  a card. A
   relationship to a hidden part is drawn to the closed card that holds it. All
   relationships from one drawn part to another become one line. A line that
   joins several relationships has no label. Its kind is the kind that most of
@@ -67,10 +67,21 @@ folder, the container has no binding. Moving files to give a picture a box is
 not worth the change to every binding and import.
 
 A view that opens a container still draws a relationship between the
-container and a part inside it, as a line from the box into itself. A reader
+container and a part inside it. The line runs from the box into itself. A reader
 cannot tell what that line means. `archboard check` warns with
 `CONTAINER_LINE_TO_OWN_PART` on each such relationship of the current variant.
 A call inside a container starts at the part that makes it.
+
+The board is the container of its subject. On 2026-10-16 the owner found
+the Agent workbench board drawn as one giant box in every reading. Fourteen
+dogfood boards held a root part that stood for the board itself, with every
+other part inside it. The overview first drew the root parts and the parts one
+level inside them, and it needed that outer part. Now no part stands for the
+board, and the overview draws the root parts with every container closed. A
+view still draws the containers of the parts it shows, because a card drawn
+outside its container says something untrue. A container that holds every
+part the view asked for is the exception: it separates nothing in the
+picture, so the view leaves it out.
 
 Relationships and calls are drawn apart:
 

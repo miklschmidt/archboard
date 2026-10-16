@@ -15,21 +15,20 @@ afterAll(() => {
 });
 
 /**
- * Write one board of a service holding parts, each part calling the next.
+ * Write one board of parts, each part calling the next.
  * @param name The board's name.
- * @param parts How many parts the service holds directly.
+ * @param parts How many parts the board holds.
  * @param inAreas How many containers the parts are gathered into, or none.
  */
 async function create(name: string, parts: number, inAreas = 0): Promise<void> {
 	const areas = Array.from({ length: inAreas }, (_, index) => ({
 		name: `Area ${index}`,
 		kind: "module",
-		parent: "Service",
 	}));
 	const nodes = Array.from({ length: parts }, (_, index) => ({
 		name: `Part ${index}`,
 		kind: "function",
-		parent: inAreas === 0 ? "Service" : `Area ${index % inAreas}`,
+		...(inAreas === 0 ? {} : { parent: `Area ${index % inAreas}` }),
 	}));
 	const edges = nodes.slice(1).map((node, index) => ({
 		from: nodes[index]!.name,
@@ -44,7 +43,7 @@ async function create(name: string, parts: number, inAreas = 0): Promise<void> {
 			contract.BoardCreateInputSchema.parse({
 				name,
 				level: "service",
-				nodes: [{ name: "Service", kind: "service" }, ...areas, ...nodes],
+				nodes: [...areas, ...nodes],
 				edges,
 			}),
 		),

@@ -25,9 +25,9 @@
 
 //
 // Two readings are nobody's to author (ADR 0052). The overview is what a board
-// opens on: its root parts and the parts directly inside each root container,
-// with every deeper container closed. Everything is every part and every
-// relationship, asked for as the view of that name.
+// opens on: its root parts, with every container closed. The board itself is
+// the container of its subject, so no part stands for it. Everything is every
+// part and every relationship, asked for as the view of that name.
 
 import type { SemanticBoard } from "@/shared/semantic-board/lib/aggregate";
 import type { SemanticEdge, VariantContent } from "@/shared/semantic-board/lib/content";
@@ -52,7 +52,9 @@ const RESERVED_VIEW_NAMES: readonly string[] = Object.freeze(["Overview", EVERYT
  *
  * Containment is followed upward: selecting a module selects the service it is
  * part of, because a card drawn outside the container it belongs to would be
- * telling the reader something untrue about the architecture.
+ * telling the reader something untrue about the architecture. A container
+ * that holds every part the view asked for is the exception: it separates
+ * nothing in the picture, so it is left out, as the board is (ADR 0052).
  * @param content The variant's whole content.
  * @param scope What the reading selects.
  * @returns The content as that reading reads it.
@@ -66,7 +68,12 @@ function scopedContent(content: VariantContent, scope: ReadingScope): VariantCon
 	}
 	const kept = withContainers(content, endpointsOf(content, scope));
 	return {
-		nodes: content.nodes.filter((node) => kept.has(node.id)),
+		nodes: content.nodes.flatMap((node) => {
+			if (!kept.has(node.id)) return [];
+			if (node.parent === undefined || kept.has(node.parent)) return [node];
+			const { parent: _framing, ...unframed } = node;
+			return [unframed];
+		}),
 		edges: content.edges.filter(
 			(edge) =>
 				(scope.edges.length === 0 || scope.edges.includes(edge.id)) &&
@@ -85,8 +92,7 @@ function scopedContent(content: VariantContent, scope: ReadingScope): VariantCon
 }
 
 /**
- * The overview: the root parts and the parts directly inside each root
- * container, every deeper container drawn closed.
+ * The overview: the root parts, every container drawn closed.
  *
  * A relationship to a hidden part is drawn to the closed card that holds it,
  * because the card stands for everything inside it. All relationships from
@@ -94,22 +100,19 @@ function scopedContent(content: VariantContent, scope: ReadingScope): VariantCon
  * parts work together, and how often is the views' question. A joined line
  * keeps the identity of the first relationship in board order, so a comparison
  * marks it; it says no label, because no one label speaks for all of them, and
- * it takes the kind most of them have. A relationship inside one closed card is
- * the card's own business and is not drawn, and neither is one between a
- * container and a part it holds, because the nesting already draws that. Flows are calls in an order, which
- * the sequence views draw, so the overview draws none.
+ * it takes the kind most of them have. A relationship inside one closed card,
+ * or between a container and a part it holds, is the card's own business and
+ * is not drawn. Flows are calls in an order, which the sequence views draw, so
+ * the overview draws none.
  * @param content The variant's whole content.
  * @returns The overview's content.
  */
 function overviewContent(content: VariantContent): VariantContent {
-	const drawnAs = drawnPartOf(content);
-	const parentOf = new Map(content.nodes.map((node) => [node.id, node.parent]));
+	const drawnAs = rootOf(content);
 	const joined = new Map<string, [SemanticEdge, ...SemanticEdge[]]>();
 	for (const edge of content.edges) {
 		const [from, to] = [drawnAs(edge.from), drawnAs(edge.to)];
-		// A drawn part sits at most one level down, so a container and a part it
-		// holds are a root and its child: the nesting already says that one.
-		if (from === to || parentOf.get(to) === from || parentOf.get(from) === to) continue;
+		if (from === to) continue;
 		const key = `${from}\u0000${to}`;
 		const line = joined.get(key);
 		if (line === undefined) joined.set(key, [{ ...edge, from, to }]);
@@ -124,21 +127,17 @@ function overviewContent(content: VariantContent): VariantContent {
 }
 
 /**
- * The part the overview draws for each node: the node itself when it is a
- * root or directly inside one, else the part directly inside its root that
- * holds it.
+ * The part the overview draws for each node: the root part that holds it, or
+ * the node itself when it is a root.
  * @param content The variant's whole content.
  * @returns The drawn part's id, by node id.
  */
-function drawnPartOf(content: VariantContent): (id: string) => string {
-	const byId = new Map(content.nodes.map((node) => [node.id, node]));
+function rootOf(content: VariantContent): (id: string) => string {
+	const parentOf = new Map(content.nodes.map((node) => [node.id, node.parent]));
 	return (id) => {
-		const chain = [id];
-		for (let at = byId.get(id)?.parent; at !== undefined; at = byId.get(at)?.parent) {
-			chain.push(at);
-		}
-		// The chain runs from the node up to its root; one below the root stands for its subtree.
-		return chain.at(-2) ?? id;
+		let at = id;
+		for (let up = parentOf.get(at); up !== undefined; up = parentOf.get(at)) at = up;
+		return at;
 	};
 }
 
@@ -189,22 +188,34 @@ function endpointsOf(
 }
 
 /**
- * The wanted nodes, plus every container they sit inside.
+ * The wanted nodes, plus every container they sit inside that separates some
+ * of them from the rest: a container that holds every wanted node only frames
+ * the picture.
  * @param content The variant's whole content.
  * @param wanted The nodes the view asked for, directly or through what it selected.
  * @returns Every node that has to be drawn for those to make sense.
  */
 function withContainers(content: VariantContent, wanted: ReadonlySet<string>): Set<string> {
-	const byId = new Map(content.nodes.map((node) => [node.id, node]));
+	const parentOf = new Map(content.nodes.map((node) => [node.id, node.parent]));
+	const chains = [...wanted].map((id) => containersOf(parentOf, id));
+	const framing = new Set(chains[0]?.filter((at) => chains.every((chain) => chain.includes(at))));
 	const kept = new Set(wanted);
-	for (const id of wanted) {
-		let at = byId.get(id)?.parent;
-		while (at !== undefined && !kept.has(at)) {
-			kept.add(at);
-			at = byId.get(at)?.parent;
-		}
+	for (const at of chains.flat()) {
+		if (!framing.has(at)) kept.add(at);
 	}
 	return kept;
+}
+
+/**
+ * Every container a node sits inside, from its parent up to its root.
+ * @param parentOf Each node's parent, by node id.
+ * @param id The node.
+ * @returns The containers, innermost first.
+ */
+function containersOf(parentOf: ReadonlyMap<string, string | undefined>, id: string): string[] {
+	const chain: string[] = [];
+	for (let at = parentOf.get(id); at !== undefined; at = parentOf.get(at)) chain.push(at);
+	return chain;
 }
 
 /**

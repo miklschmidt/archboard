@@ -3,10 +3,11 @@ id: TASK-350
 title: >-
   Flows branch: a decision step with labelled alternatives, read as a sequence
   or as a flowchart
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-25 00:15'
-updated_date: '2026-10-15 21:05'
+updated_date: '2026-10-16 01:22'
 labels:
   - semantic-model
   - renderer
