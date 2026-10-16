@@ -260,9 +260,9 @@ describe("a step's shape in a proposal", () => {
 		const gone = stepOf(svg, "d1");
 		expect(gone.opacity).toBeUndefined();
 		expect(strokesOf(gone).some((stroke) => stroke.dash !== undefined)).toBe(true);
-		// The light that falls off down a block's face is not drawn on a ghost.
-		expect(gone.markup).not.toContain("ab-slab-sheen");
-		expect(stepOf(svg, "l1").markup).toContain("ab-slab-sheen");
+		// The gold a block's face is made of is not drawn on a ghost.
+		expect(gone.markup).not.toContain("ab-flow-gold");
+		expect(stepOf(svg, "l1").markup).toContain("ab-flow-gold");
 	});
 
 	test("wears the warning of an undecided step, and nothing else does", async () => {

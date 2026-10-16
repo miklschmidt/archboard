@@ -5,11 +5,13 @@
 //
 // A shape is a block as a card is (`slab.ts`): a face lit from above over a
 // front edge that shows how thick it is, the highlight along the sides that
-// face up, and a soft shadow under the sides that face down. What a card's
-// face is, a shape's is, leaning a little toward one cool tone that only the
-// flow's own pieces wear, so a diamond, a hexagon and a terminal read as the
-// flow's among the cards of an architecture. A proposal's standing takes over
-// the outline of the face as it does a card's.
+// face up, and a soft shadow under the sides that face down. It is made of the
+// product's gold as a primary action is (`primary-finish`): a face that runs
+// from the gold's light top to its deeper foot, a darker rim of gold for its
+// front edge, and the gold's dark ink for its words. So a diamond, a hexagon
+// and a terminal read as the flow's own pieces among the neutral cards of its
+// steps. A proposal's standing takes over the outline of the face as it does a
+// card's.
 
 import type { FlowchartShape } from "@/transformers/semantic-renderer/lib/flowchart-graph";
 import type { DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
@@ -27,13 +29,10 @@ import {
 	solidGhost,
 	solidSeat,
 	solidSlab,
-	tinted,
 	type SlabLook,
-	type Share,
 } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
 	OUTLINE_WIDTH,
-	standingPalette,
 	standingPinAt,
 	subjectGroup,
 	warningOnLine,
@@ -44,16 +43,16 @@ import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 /** The size a shape's words are set at, and the room each of their lines takes. */
 const SHAPE_TEXT = { size: 11, line: 14 } as const;
 
-/**
- * The cool tone a flow's own pieces lean toward: the palette's blue, mixed in
- * lightly. It is the hue of the light ground's own neutrals, so a shape reads as
- * a card of another make rather than a part of another colour, and the colours
- * a part, a group or a standing wears keep what they say.
- */
-const FLOW_INK = token("--semantic-blue");
-/** How much of it a shape's face and its front edge carry, on each ground. */
-const FACE_TINT: Share = { light: 0.06, dark: 0.1 };
-const EDGE_TINT: Share = { light: 0.16, dark: 0.18 };
+/** The gradient every shape's face is painted with, defined once in a flowchart. */
+const GOLD_FACE_ID = "ab-flow-gold";
+
+/** The gold of a primary action, as the shapes wear it (`theme.css`). */
+const GOLD = {
+	top: token("--primary-top"),
+	bottom: token("--primary-bottom"),
+	edge: token("--primary-edge"),
+	ink: token("--primary-foreground"),
+} as const;
 
 /** How round the corners of a diamond and of a hexagon are: a little less than a card's, as a point of a shape is small. */
 const CORNER = 5;
@@ -171,21 +170,39 @@ function outlineReach(
 }
 
 /**
- * How a shape looks: a card's face and front edge, leaning toward the flow's tone.
+ * How a shape looks: a block of the gold of a primary action.
  * @param shape What it is.
- * @param palette The theme's colours.
  * @returns The shape's look.
  */
-function lookOf(shape: FlowchartShape, palette: Palette): SlabLook {
+function lookOf(shape: FlowchartShape): SlabLook {
 	return {
-		face: tinted(palette.slabFace, FLOW_INK, FACE_TINT),
-		ground: palette.slabFace,
-		edge: tinted(palette.slabEdge, FLOW_INK, EDGE_TINT),
+		face: `url(#${GOLD_FACE_ID})`,
+		lit: GOLD.top,
+		edge: GOLD.edge,
 		thickness: CARD_THICKNESS,
 		// A terminal is as round as it is tall already.
 		radius: shape === "decision" || shape === "loop" ? CORNER : 0,
-		sheen: true,
+		// The gold runs from top to foot already.
+		sheen: false,
 	};
+}
+
+/**
+ * The gradient a shape's face is painted with: the gold of a primary action,
+ * from its light top to its deeper foot, in each face's own box.
+ * @returns The gradient, for the flowchart's definitions.
+ */
+function flowchartDefinitions(): string {
+	return wrap(
+		"defs",
+		{},
+		wrap(
+			"linearGradient",
+			{ id: GOLD_FACE_ID, x1: 0, y1: 0, x2: 0, y2: 1 },
+			tag("stop", { offset: 0, "stop-color": GOLD.top }) +
+				tag("stop", { offset: 1, "stop-color": GOLD.bottom }),
+		),
+	);
 }
 
 /**
@@ -270,7 +287,7 @@ function shapePainter(
 	words: readonly string[],
 	palette: Palette,
 ): ShapePainter {
-	const look = lookOf(shape, palette);
+	const look = lookOf(shape);
 	const isStep = shape === "decision" || shape === "loop";
 	/**
 	 * What the shape casts, under every line and card.
@@ -305,7 +322,7 @@ function shapePainter(
 			{},
 			lines([
 				solidSlab(outlineOf(shape, card.box), look, palette),
-				centredWords(card.box, words, palette.muted),
+				centredWords(card.box, words, GOLD.ink),
 			]),
 		);
 	}
@@ -348,11 +365,11 @@ function paintStepShape(
 			standing === "removed" ? solidGhost(outline, look.radius, palette) : "",
 			ring(outline, look.radius, standing, palette),
 			solidSlab(outline, look, palette, standing),
-			centredWords(box, words, standingPalette(palette, standing).foreground),
+			centredWords(box, words, standing === "removed" ? palette.muted : GOLD.ink),
 			standingPinAt(pin.x, pin.y, standing, palette),
 			warningOnLine(warning, unsettled, palette),
 		]),
 	);
 }
 
-export { SHAPE_TEXT, onOutline, shapePainter };
+export { SHAPE_TEXT, flowchartDefinitions, onOutline, shapePainter };
