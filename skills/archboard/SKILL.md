@@ -376,8 +376,6 @@ you used and which you judged not to apply.
 | `emphasis`     | a relationship                    |
 | `repeat`       | a flow step                       |
 | `note`         | a flow step                       |
-| `decision`     | a flow step                       |
-| `loop`         | a flow step                       |
 | `groups`       | a node                            |
 | `flow`         | the board, with a `sequence` view |
 | `view`         | the board                         |
@@ -430,15 +428,7 @@ What the source shows for each row, and what you author for it:
   _Author:_ `repeat` with that count on the step.
 - `note`. _Shows:_ an environment variable, a caveat, a detail the label
   cannot carry. _Author:_ `note` on the step. A branch or a loop is a step of
-  its own, never a note.
-- `decision`. _Shows:_ an `if`, a `switch`, an early return or a `catch` that
-  changes which messages follow. _Author:_ a `decision` step with the
-  condition as its `question` and one labelled alternative for each outcome,
-  each holding the steps that run on it
-  ([when a flow branches or repeats](references/create-sequence.md#when-a-flow-branches-or-repeats)).
-- `loop`. _Shows:_ steps that run again for each item of a list or until a
-  condition holds, where the data decides how often. _Author:_ a `loop` step
-  with that `condition`, holding the steps it repeats.
+  its own, never a note (the `flow` row).
 - `groups`. _Shows:_ a part whose concern is a configured group id in
   `config.yaml` (read them before every write). _Author:_ `groups` on each
   member, explicit, across containers.
@@ -447,7 +437,13 @@ What the source shows for each row, and what you author for it:
   or an existing one; a board owes no flow merely because what it draws runs in
   order ([which recipe](#which-recipe)). _Author:_ a `flow` and a `sequence`
   view over it, and a `flowchart` view as well when its decisions or loops are
-  the question ([which view](#which-view)).
+  the question ([which view](#which-view)). An `if`, a `switch`, an early
+  return or a `catch` that changes which messages follow is a `decision` step:
+  the condition as its `question`, and one labelled alternative for each
+  outcome, holding the steps that run on it. Steps that run again for each item
+  of a list, or until a condition holds, are a `loop` step with that
+  `condition`
+  ([when a flow branches or repeats](references/create-sequence.md#when-a-flow-branches-or-repeats)).
 - `view`. _Shows:_ a subset a reader wants alone: one path, one container's
   internals, the two sides of a change. _Author:_ a board `view`.
 - `walkthrough`. _Shows:_ a why the code enforces (an ordering, an invariant, a
