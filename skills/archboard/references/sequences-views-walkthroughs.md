@@ -198,8 +198,9 @@ subjects and, on a proposal, how each was added or changed. The voice does not
 speak about a change that no beat names.
 
 - If the variant states several walkthroughs, `--walkthrough <name>` picks one.
-  `--variant`, `--theme dark` and `--layout blocks` choose what is drawn. The
-  default layout is Track, and the talk keeps the layout it was drawn with.
+  `--variant`, `--theme light` and `--layout blocks` choose what is drawn. The
+  default theme is dark and the default layout is Track, and the talk keeps
+  the layout it was drawn with.
   `--against <variant>` draws every frame relative to that variant, without the
   "Planned" frame, as `render` does, and the talk keeps it too, so a replay
   draws the same comparison.
@@ -311,7 +312,7 @@ the words or the board change, record again instead.
 1. **Find the talk**: the directory that the recording's receipt names as
    `talk`. Done: it holds `talk.json` and `voice.wav`.
 2. **Render it** with `semantic replay <talk> --out <file>`, and with
-   `--theme dark` for the other palette. It draws the layout the talk was
+   `--theme light` or `--theme dark` for the other palette. It draws the layout the talk was
    recorded with, unless `--layout` names the other. It needs the Archboard
    server, a browser and ffmpeg, as `record` does, but no Codex sign-in. A talk
    that cannot be read is a usage error (exit 2) before a browser starts. Done:
@@ -319,7 +320,7 @@ the words or the board change, record again instead.
 
 ```bash
 archboard semantic record pr-128 --variant "This pull request" --talk ~/recordings/pr-128-talk --out ~/recordings/pr-128.mp4 --discard --doing "recording pull request 128 for its reviewers"
-archboard semantic replay ~/recordings/pr-128-talk --theme dark --out ~/recordings/pr-128-dark.mp4
+archboard semantic replay ~/recordings/pr-128-talk --theme light --out ~/recordings/pr-128-light.mp4
 ```
 
 ### A newcomer's walkthrough
