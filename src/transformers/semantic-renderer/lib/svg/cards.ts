@@ -221,4 +221,4 @@ function headerAnchor(header: Box): Anchor {
 	return { x: header.x, y: header.y + PART_TITLE.size, size: PART_TITLE.size };
 }
 
-export { halo, headerAnchor, paintCard, paintHeader };
+export { HALO_INSET, HALO_WIDTH, halo, headerAnchor, paintCard, paintHeader };

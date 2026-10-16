@@ -1,6 +1,11 @@
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { lightDark, translucent } from "@/transformers/semantic-renderer/lib/svg/colour";
+import {
+	polygonPath,
+	translated,
+	type Polygon,
+} from "@/transformers/semantic-renderer/lib/svg/polygon";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 
 /** The farthest a card's shadow reaches below its foot. */
@@ -11,10 +16,57 @@ const FALLOFF = [1, 0.82, 0.52, 0.16, 0] as const;
 /**
  * The shadow's ink on each ground, lighter than a front edge on the light ground.
  * @param palette The theme's colors.
+ * @param share How much of it, between 0 and 1.
  * @returns The shadow ink.
  */
-function shadowInk(palette: Palette): string {
-	return lightDark(translucent(palette.slabShadow, 0.65), palette.slabShadow);
+function shadowInk(palette: Palette, share = 1): string {
+	return lightDark(
+		translucent(palette.slabShadow, 0.65 * share),
+		translucent(palette.slabShadow, share),
+	);
+}
+
+/** How many layers the shadow of a shape that is not a box is stacked of. */
+const LAYERS = 6;
+
+/**
+ * How strong the shadow of a box is at a place along its fall.
+ * @param position How far along the gradient, from 0 at its start to 1 at its end.
+ * @returns Its share of the shadow's ink.
+ */
+function falloffAt(position: number): number {
+	const scaled = Math.min(Math.max(position, 0), 1) * (FALLOFF.length - 1);
+	const low = Math.min(Math.floor(scaled), FALLOFF.length - 2);
+	return FALLOFF[low]! + (FALLOFF[low + 1]! - FALLOFF[low]!) * (scaled - low);
+}
+
+/**
+ * The shadow of a shape that is not a box, which a box's patches cannot lie
+ * under: the shape itself, moved down and to the right in even steps, each
+ * layer faint enough that where they stack the shadow is as strong as a box's
+ * is at that distance from its foot, and so is its fall to nothing at `reach`.
+ * No filter, mask or blur, and no gradient of its own.
+ * @param polygon The shape's outline.
+ * @param radius How round the shape's corners are, which its shadow's are too.
+ * @param reach How far the shadow reaches below and to the right of the shape.
+ * @param palette The theme's colors.
+ * @returns The shadow's layers, the farthest first.
+ */
+function polygonShadow(polygon: Polygon, radius: number, reach: number, palette: Palette): string {
+	const step = reach / LAYERS;
+	const bands = Array.from({ length: LAYERS }, (_, band) =>
+		falloffAt((radius + (band + 0.5) * step) / (radius + reach)),
+	);
+	const layers = bands.map((strength, band) => {
+		// The layers beyond this one reach as far as the next band does: this one adds the rest.
+		const share = 1 - (1 - strength) / (1 - (bands[band + 1] ?? 0));
+		const by = (band + 1) * step;
+		return tag("path", {
+			d: polygonPath(translated(polygon, { x: by, y: by }), radius),
+			fill: shadowInk(palette, share),
+		});
+	});
+	return wrap("g", { "pointer-events": "none" }, lines(layers.toReversed()));
 }
 
 /**
@@ -93,4 +145,4 @@ function shadowDefinitions(palette: Palette): string {
 	]);
 }
 
-export { SHADOW_REACH, smoothShadow, shadowDefinitions };
+export { SHADOW_REACH, polygonShadow, smoothShadow, shadowDefinitions };
