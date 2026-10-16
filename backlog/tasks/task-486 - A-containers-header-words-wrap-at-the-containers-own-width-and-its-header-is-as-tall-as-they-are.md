@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-16 13:00'
-updated_date: '2026-10-16 16:59'
+updated_date: '2026-10-16 18:23'
 labels:
   - renderer
 dependencies: []
@@ -77,4 +77,6 @@ Corpus (every variant and view on both engines):
   - Archboard server Code evidence and Agent workbench One tab session also get worse.
 - Board viewer Moves between pictures (blocks) improves: crossings go from 38 to 8.
 - Far views fit the new header rows (checked on the flowchart frame and on Trust service deployment).
+
+Merged onto feat/derived-overview 2026-10-16 (header wraps at the slab width, both engines). Renderer tests: 587 pass, 3 known TASK-377 timing failures. AC4 stays open: a header's new size changes which arrangement an engine picks, and some drawings got worse. Clearly worse: Docs-Architecture-Design 'Azure deployment internals' (blocks), where TLS termination moved beside Client access and ingress and its lines loop over the top (before/after renders /tmp/t486/look/ext-adi-*.png), and Archboard server 'Code evidence' (track: flipped, long detour; blocks: lines enter by the left wall). Mixed or small: Trust service deployment and Inside Device trust control plane (blocks), Agent workbench 'One tab session' (blocks, crossings 111 to 120), Live panes 'Pane connections', Command interface 'Contract parts', Renderer layout 'Engine and graph'. Over both vaults 484 drawings fit better and 38 worse. Blocks first renders: 183.9 s before, 187.0 s after (Board persistence 8.8 to 10.9 s, Command interface 23.3 to 27.4 s). The arrangement choice and the timing belong with TASK-377, which reworks the same engines.
 <!-- SECTION:NOTES:END -->
