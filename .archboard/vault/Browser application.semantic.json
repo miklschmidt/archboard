@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 73,
+	"version": 74,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-15T22:24:58.253Z",
+	"updatedAt": "2026-10-16T02:11:40.559Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",

@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 37,
+	"version": 38,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-15T08:26:15.374Z",
+	"updatedAt": "2026-10-16T02:11:40.602Z",
 	"views": [],
 	"variants": [
 		{
