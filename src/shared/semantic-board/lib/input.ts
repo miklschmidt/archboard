@@ -282,6 +282,18 @@ const SemanticViewInputSchema = z
 type SemanticViewInput = z.infer<typeof SemanticViewInputSchema>;
 
 /**
+ * A refusal an edit may pass on purpose by naming its code (TASK-487): restoring
+ * an id only another variant holds, adding a part an ancestor holds under
+ * another id, and removing most of what the variant inherited.
+ */
+const ConfirmableRefusalSchema = z.enum([
+	"RESTORE_UNCONFIRMED",
+	"PART_RECREATED",
+	"INHERITANCE_DROPPED",
+]);
+type ConfirmableRefusal = z.infer<typeof ConfirmableRefusalSchema>;
+
+/**
  * One edit. Everything in it lands in one write or none of it does, which is
  * the whole reason the shape is a batch rather than a single change: one thing
  * somebody asked for is one write (TASK-068).
@@ -306,10 +318,10 @@ const VariantEditInputSchema = z
 		removeViews: z.array(NodeReferenceSchema).default([]),
 		removeWalkthroughs: z.array(NodeReferenceSchema).default([]),
 		/**
-		 * Confirms restoring a stated id that only another variant of the board
-		 * holds; without it such an id is refused and named.
+		 * The refusals this edit confirms, by code. A confirmable refusal names
+		 * its code, and the edit lands only when it names that code here.
 		 */
-		restoreKnownIds: z.boolean().optional(),
+		confirm: z.array(ConfirmableRefusalSchema).optional(),
 	})
 	.strict();
 type VariantEditInput = z.infer<typeof VariantEditInputSchema>;
@@ -359,6 +371,8 @@ const BoardCreateInputSchema = z
 type BoardCreateInput = z.infer<typeof BoardCreateInputSchema>;
 
 export {
+	ConfirmableRefusalSchema,
+	type ConfirmableRefusal,
 	BoardBranchInputSchema,
 	type BoardBranchInput,
 	FlowStepInputSchema,

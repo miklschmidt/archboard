@@ -15,7 +15,9 @@ interface WriteNotice {
 		| "RELATIONSHIP_DUPLICATED"
 		| "ANCHOR_DROPPED"
 		| "WALKTHROUGH_VIEW_MISSING"
-		| "RESTORED_FROM_OTHER_VARIANT";
+		| "RESTORED_FROM_OTHER_VARIANT"
+		| "PART_RECREATED"
+		| "INHERITANCE_DROPPED";
 	readonly path: string;
 	readonly message: string;
 }

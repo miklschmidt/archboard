@@ -19,6 +19,35 @@ proposal that landed on the current architecture is not repaired by editing the
 file, but by reading the family again and moving the meaning with ordinary
 writes.
 
+A draft holds the whole architecture at its point, not only its own change.
+Two edits that break this are refused unless the edit confirms the code with
+`--confirm <code>` (or `"confirm": ["<code>"]` in the batch); the write then
+lands and warns with the same code:
+
+- `PART_RECREATED`: the edit adds a node without an `id` while an ancestor
+  variant holds one with the same name, or exactly the same binding, under an
+  id this variant lacks. The refusal names that id and variant. To bring the
+  part back, state that `id` instead ([restore](#disagreements)). Confirm only
+  when the new node is a different part.
+- `INHERITANCE_DROPPED`: the edit removes more than half of the nodes the
+  variant holds from its predecessor. The refusal names how many. Confirm only
+  a deliberate redesign.
+
+### A stack of pull requests
+
+Each pull request of a stack on a vault board is one proposal, and each holds
+the whole architecture with the changes of every pull request below it.
+
+1. Branch the first pull request's proposal from the variant that reads as the
+   code before the stack, usually the current variant.
+2. Branch each later one from the proposal below it: `--from "<proposal below>"`.
+3. State only that pull request's change, as edits to its proposal. Never
+   remove a part because the pull request does not touch it, and never add a
+   part again that a proposal below removed: state its original `id`.
+4. To show one pull request on its own, use a view that selects the parts it
+   changes, or `semantic compare --against "<proposal below>"`, which marks
+   what that proposal changed.
+
 ## What a comparison counts
 
 The current variant is now, and every other variant — a proposal, history, a
@@ -135,7 +164,7 @@ holds there. State the original id and full properties, reconnect references,
 and remove any copy in the same batch. An id that only another variant holds,
 such as a sibling's or an older ancestor's, is refused with
 `RESTORE_UNCONFIRMED`, which names each id and the variants that hold it. Add
-`--restore-known-ids` to restore it anyway; the answer warns
+`--confirm RESTORE_UNCONFIRMED` to restore it anyway; the answer warns
 `RESTORED_FROM_OTHER_VARIANT` for each one. Ids no variant holds and ids of
 another subject kind are refused; a removal and restatement of the same id in
 one batch is contradictory.

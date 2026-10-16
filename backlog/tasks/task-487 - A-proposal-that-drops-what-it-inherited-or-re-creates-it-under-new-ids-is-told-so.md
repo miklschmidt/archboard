@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-16 13:19'
-updated_date: '2026-10-16 13:41'
+updated_date: '2026-10-16 16:34'
 labels:
   - board-store
   - skill
@@ -54,4 +54,6 @@ Possible simplification, to decide once the restore change lands: one `--confirm
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-10-16: the user chose refusals that need a confirmation over warnings. Implementation waits for the flow and known-id restore change (same edit path, implementer worktree), whose confirmation flag the re-creation refusal points to.
+
+2026-10-16 implementation: one confirmation concept. 'semantic edit --confirm <code>' (repeatable; also 'confirm: [...]' in the batch, merged with the option) replaces --restore-known-ids / restoreKnownIds. The shared schema accepts only the three confirmable codes (ConfirmableRefusalSchema), so a misspelled code is refused, not ignored. New guard src/runtime/semantic-board-store/lib/inheritance.ts runs in the edit transition after the content is computed: PART_RECREATED (a node under a freshly minted id whose name, or exact binding repo+path+symbol, matches a node an ancestor holds under an id the variant lacks after the edit; nearest ancestor named, with the restore hint and --confirm RESTORE_UNCONFIRMED when the predecessor and base lack the id), checked before INHERITANCE_DROPPED (variant with a parent; removed*2 > nodes held before that the parent also holds). A confirmed write warns with the same code (RESTORED_FROM_OTHER_VARIANT kept for restores). Tests: semantic-board-store/tests/inheritance.test.ts; restoration.test.ts 'a node stated without an id is still new' and tests/system/semantic-boards/edge-identity.test.ts now confirm PART_RECREATED, because each deliberately writes the re-created part the rule refuses (the rule is right, the fixtures make the mistake on purpose). Skill: variants.md Branching names both refusals and adds 'A stack of pull requests'; the recording recipe says its cut-down board is throwaway only and links there; edit.md and authoring.md use --confirm.
 <!-- SECTION:NOTES:END -->

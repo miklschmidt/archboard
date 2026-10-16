@@ -727,8 +727,12 @@ approximated another way.
 - **unknown id**: A stated `id` names nothing on that variant; new subjects
   leave `id` out. The exception is a restore: a node, relationship or flow the
   variant lacks comes back under its id when its predecessor or reconciliation
-  base holds it, and with `--restore-known-ids` when only another variant does
-  (`RESTORE_UNCONFIRMED`; [variants](variants.md#disagreements)).
+  base holds it, and with `--confirm RESTORE_UNCONFIRMED` when only another
+  variant does (`RESTORE_UNCONFIRMED`; [variants](variants.md#disagreements)).
+- **part re-created or inheritance dropped**: On a draft, a node added without
+  an id repeats one an ancestor holds (`PART_RECREATED`), or the edit removes
+  most of what the draft inherited (`INHERITANCE_DROPPED`). State the original
+  id, keep the parts, or confirm the code ([variants](variants.md#branching)).
 - **dangling reference**: An edge end, participant, step end, view selection or
   beat subject names nothing; fix the reference.
 - **containment cycle**: A `parent` chain loops.
@@ -761,5 +765,7 @@ remove the copy and restate the original with its `id`.
 `ANCHOR_DROPPED` means the batch restated a relationship or a step without the
 `anchor` it had, so the anchor is gone; the message spells the anchor out, and
 restating the subject with it puts it back.
-`RESTORED_FROM_OTHER_VARIANT` means `--restore-known-ids` brought back an id
-that only another variant held; the message names it and that variant.
+`RESTORED_FROM_OTHER_VARIANT` means `--confirm RESTORE_UNCONFIRMED` brought
+back an id that only another variant held; the message names it and that
+variant. `PART_RECREATED` and `INHERITANCE_DROPPED` say what a `--confirm` of
+that code let the write do.

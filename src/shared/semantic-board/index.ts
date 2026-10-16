@@ -219,6 +219,8 @@ export {
 	type SemanticEdgeInput,
 	VariantEditInputSchema,
 	type VariantEditInput,
+	ConfirmableRefusalSchema,
+	type ConfirmableRefusal,
 	BoardCreateInputSchema,
 	type BoardCreateInput,
 } from "@/shared/semantic-board/lib/input";

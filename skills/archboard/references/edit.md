@@ -18,11 +18,14 @@ onto its subjects, write one batch at the version you read, check the answer.
      original `id` and full properties from the direct predecessor or recorded
      reconciliation base. Remove any copy and reconnect edges, flows and view
      selections in the same batch. Do not put the restored id in removals.
-     An id only another variant holds needs `--restore-known-ids`
+     An id only another variant holds needs `--confirm RESTORE_UNCONFIRMED`
      ([variants](variants.md#disagreements)).
    - **Replacement**: a different unit takes its place; remove the old id and
      add the new subject without one. Similar names or paths do not make two
-     implementations one unit.
+     implementations one unit. On a draft, a new node with the name or the
+     exact binding of one an ancestor holds is refused `PART_RECREATED`:
+     confirm it only when it is a different part
+     ([variants](variants.md#branching)).
    - **Untouched**: leave it out of the payload entirely.
      A continuing relationship keeps its id even when several fields or an
      endpoint change. Explicit `removeEdges` plus an idless edge states that
