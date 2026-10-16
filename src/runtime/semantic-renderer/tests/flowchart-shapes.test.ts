@@ -5,7 +5,9 @@
 // What is guarded: every line that meets a shape ends on the outline the shape
 // is drawn with (the layout moves the line and the painter draws the shape, and
 // a shape drawn another way than its lines expect leaves each of its lines short
-// of it or inside it); the words stand centred and inside the shape; and the
+// of it or inside it); a line meets a diamond at one of its points, as the
+// layout would otherwise spread the lines along its slanted sides; the words
+// stand centred and inside the shape; and the
 // standing, the warning and the shadow of a step stay on the shape and say what
 // they say on a card.
 
@@ -189,6 +191,23 @@ describe("a flowchart's lines meet its shapes", () => {
 			for (const end of meeting) expect(distanceToOutline(outline, end)).toBeLessThan(MEETING);
 		});
 	}
+
+	test("at the points of the diamond, never on a slanted side", async () => {
+		const { svg } = await drawn({});
+		const outline = outlineOf(svg, "d1");
+		const xs = outline.map(({ x }) => x);
+		const ys = outline.map(({ y }) => y);
+		const centre = {
+			x: (Math.min(...xs) + Math.max(...xs)) / 2,
+			y: (Math.min(...ys) + Math.max(...ys)) / 2,
+		};
+		const meeting = lineEnds(svg).filter((end) => distanceToOutline(outline, end) < NEAR);
+		expect(meeting.length).toBeGreaterThanOrEqual(3);
+		for (const end of meeting) {
+			const atPoint = Math.abs(end.x - centre.x) < 0.5 || Math.abs(end.y - centre.y) < 0.5;
+			expect(atPoint, `a line meets the diamond at ${end.x}, ${end.y}`).toBe(true);
+		}
+	});
 });
 
 describe("the words of a shape", () => {

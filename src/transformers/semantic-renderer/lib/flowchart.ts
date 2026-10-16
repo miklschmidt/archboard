@@ -7,7 +7,8 @@
 // the architecture painter: the frames, the lines, their words and their
 // crossings are an architecture's, the message boxes are cards, and only the
 // diamonds, hexagons and terminals are drawn as shapes of their own. Every line
-// that meets a shape is carried on to its outline.
+// that meets a shape is carried on to its outline, and a line that meets a
+// decision to one of its diamond's points (`flowchart-ports.ts`).
 
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import type { DiagramAtlas, VariantContent } from "@/shared/semantic-board/index";
@@ -37,6 +38,7 @@ import {
 	type FlowchartGraph,
 	type FlowchartShape,
 } from "@/transformers/semantic-renderer/lib/flowchart-graph";
+import { atDiamondPoints } from "@/transformers/semantic-renderer/lib/flowchart-ports";
 import {
 	SemanticRenderError,
 	type DiagramRenderRequest,
@@ -183,7 +185,17 @@ function lineBetween(from: Point, to: Point): Segment[] {
 }
 
 /**
- * The drawing with every line that meets a shape carried on to its outline.
+ * The box of a decision's diamond, which a line meets at one of its points.
+ * @param shaped The shape a line's end meets, if any.
+ * @returns Its box when it is a decision.
+ */
+function diamond(shaped: Shaped): Box | undefined {
+	return shaped?.shape === "decision" ? shaped.box : undefined;
+}
+
+/**
+ * The drawing with every line that meets a shape carried on to its outline,
+ * and every line that meets a decision turned to one of its points.
  * @param drawing The drawing as laid out.
  * @param shapes Which nodes are shapes.
  * @returns The drawing to paint.
@@ -209,7 +221,10 @@ function withOutlines(
 	 * @returns The line to paint.
 	 */
 	const onShapes = (routed: DrawingEdge): DrawingEdge => {
-		const curve = outlined(routed.curve, shaped(routed.edge.from), shaped(routed.edge.to));
+		const from = shaped(routed.edge.from);
+		const to = shaped(routed.edge.to);
+		const pointed = atDiamondPoints(routed.curve, diamond(from), diamond(to));
+		const curve = outlined(pointed, from, to);
 		return { ...routed, curve, path: pathOf(curve) };
 	};
 	return {

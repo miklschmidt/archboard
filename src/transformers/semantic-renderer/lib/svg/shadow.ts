@@ -2,6 +2,7 @@ import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { lightDark, translucent } from "@/transformers/semantic-renderer/lib/svg/colour";
 import {
+	inset,
 	polygonPath,
 	translated,
 	type Polygon,
@@ -27,7 +28,15 @@ function shadowInk(palette: Palette, share = 1): string {
 }
 
 /** How many layers the shadow of a shape that is not a box is stacked of. */
-const LAYERS = 6;
+const LAYERS = 8;
+
+/**
+ * How a layer of a shape's shadow grows with its distance into the shadow: it
+ * spreads a little round the shape and moves mostly down, away from the light
+ * above, so it shows under the sides that face down and stays hidden under
+ * every side that faces up, as a box's shadow lies under its foot.
+ */
+const SPREAD = { grow: 0.35, x: 0.15, y: 0.75 } as const;
 
 /**
  * How strong the shadow of a box is at a place along its fall.
@@ -42,10 +51,12 @@ function falloffAt(position: number): number {
 
 /**
  * The shadow of a shape that is not a box, which a box's patches cannot lie
- * under: the shape itself, moved down and to the right in even steps, each
- * layer faint enough that where they stack the shadow is as strong as a box's
- * is at that distance from its foot, and so is its fall to nothing at `reach`.
- * No filter, mask or blur, and no gradient of its own.
+ * under: the shape grown round its outline and moved down from the light in
+ * even steps ({@link SPREAD}), each layer faint enough that where they stack
+ * the shadow is as strong as a box's is at that distance from its foot, and so
+ * is its fall to nothing at `reach`. Grown rather than only moved, its edge
+ * fades the way a box's does instead of repeating the shape's outline beside
+ * it. No filter, mask or blur, and no gradient of its own.
  * @param polygon The shape's outline.
  * @param radius How round the shape's corners are, which its shadow's are too.
  * @param reach How far the shadow reaches below and to the right of the shape.
@@ -55,14 +66,16 @@ function falloffAt(position: number): number {
 function polygonShadow(polygon: Polygon, radius: number, reach: number, palette: Palette): string {
 	const step = reach / LAYERS;
 	const bands = Array.from({ length: LAYERS }, (_, band) =>
-		falloffAt((radius + (band + 0.5) * step) / (radius + reach)),
+		falloffAt(((band + 0.5) * step) / reach),
 	);
 	const layers = bands.map((strength, band) => {
 		// The layers beyond this one reach as far as the next band does: this one adds the rest.
 		const share = 1 - (1 - strength) / (1 - (bands[band + 1] ?? 0));
-		const by = (band + 1) * step;
+		const distance = (band + 1) * step;
+		const grown = inset(polygon, -distance * SPREAD.grow);
+		const away = { x: distance * SPREAD.x, y: distance * SPREAD.y };
 		return tag("path", {
-			d: polygonPath(translated(polygon, { x: by, y: by }), radius),
+			d: polygonPath(translated(grown, away), radius + distance * SPREAD.grow),
 			fill: shadowInk(palette, share),
 		});
 	});

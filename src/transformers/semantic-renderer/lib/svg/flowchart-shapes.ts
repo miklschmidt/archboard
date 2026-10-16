@@ -5,7 +5,7 @@
 //
 // A shape is a block as a card is (`slab.ts`): a face lit from above over a
 // front edge that shows how thick it is, the highlight along the sides that
-// face up, and a soft shadow it casts down and to the right. What a card's
+// face up, and a soft shadow under the sides that face down. What a card's
 // face is, a shape's is, leaning a little toward one cool tone that only the
 // flow's own pieces wear, so a diamond, a hexagon and a terminal read as the
 // flow's among the cards of an architecture. A proposal's standing takes over
@@ -119,8 +119,10 @@ function outlineOf(shape: FlowchartShape, box: Box): Polygon {
  * the box's edge along the line's own direction onto the outline, keeping the
  * gap the line kept from the box for its arrowhead.
  *
- * A diamond meets a line at its slanted sides, a hexagon at its cut corners;
- * a terminal's ends are round, but a line meets its flat top or foot.
+ * A diamond meets a line at one of its points, where the line was turned to
+ * (`flowchart-ports.ts`), or at a slanted side where the line had no room to
+ * turn; a hexagon at its cut corners; a terminal's ends are round, but a line
+ * meets its flat top or foot.
  * @param shape What the line meets.
  * @param box The shape's box.
  * @param end Where the line ends, on or just outside the box.
