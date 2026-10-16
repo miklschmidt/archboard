@@ -36,6 +36,7 @@ import type {
 	SemanticNode,
 	VariantContent,
 } from "@/shared/semantic-board/lib/content";
+import { placedArrivals } from "@/shared/semantic-board/lib/positions";
 import { incoherenceOf } from "@/shared/semantic-board/lib/reconcile-candidate";
 import {
 	ChangedFieldSchema,
@@ -425,8 +426,8 @@ function reconcileVariant(states: ThreeStates): Reconciliation {
 		walkthroughs: walkthroughs.entities,
 	});
 	const assembled: VariantContent = {
-		nodes: nodes.entities,
-		edges: edges.entities,
+		nodes: placedArrivals(nodes.entities, states.mine.nodes),
+		edges: placedArrivals(edges.entities, states.mine.edges),
 		flows: told.flows,
 		walkthroughs: told.walkthroughs,
 	};
