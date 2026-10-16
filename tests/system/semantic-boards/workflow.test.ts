@@ -173,7 +173,17 @@ describe("authoring and opening a semantic board", () => {
 
 	test("the board draws, and nothing about the picture came off the board", () => {
 		const out = path.join(vault, "pipeline.svg");
-		const drawn = cli(["semantic", "render", "pipeline", "--out", out, "--theme", "dark"]);
+		const drawn = cli([
+			"semantic",
+			"render",
+			"pipeline",
+			"--view",
+			"Everything",
+			"--out",
+			out,
+			"--theme",
+			"dark",
+		]);
 		expect(drawn.status).toBe(0);
 		const receipt = JSON.parse(drawn.stdout);
 		expect(receipt.width).toBeGreaterThan(0);
@@ -383,7 +393,9 @@ describe("authoring and opening a semantic board", () => {
 			(node: { name: string }) => node.name === "Ingest queue",
 		);
 
-		const drawn = await (await render(`board=pipeline&variant=${proposal.id}`)).json();
+		const drawn = await (
+			await render(`board=pipeline&variant=${proposal.id}&view=Everything`)
+		).json();
 		expect(drawn.changes.against.id).toBe(baseline.id);
 		// The one node the proposal added is the one thing labelled as added.
 		expect(drawn.changes.standing[queue.id]).toBe("added");
