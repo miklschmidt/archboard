@@ -3,11 +3,11 @@ id: TASK-487
 title: >-
   A proposal cannot drop what it inherited, or re-create it under new ids,
   without confirming it
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-16 13:19'
-updated_date: '2026-10-16 18:19'
+updated_date: '2026-10-16 18:20'
 labels:
   - board-store
   - skill
@@ -32,11 +32,11 @@ Possible simplification, to decide once the restore change lands: one `--confirm
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A `semantic edit` that adds a node without an id while an ancestor of the variant holds a node of the same name or the same binding under another id is refused with its own error code; the refusal names the ancestor id and variant, and says to state that id to restore the part or to confirm a different part
-- [ ] #2 A `semantic edit` that removes more than half of the nodes the variant inherited from its predecessor is refused with its own error code that names the count, unless the edit confirms the removal
-- [ ] #3 Each refusal is passed by its confirmation, which is discoverable in `semantic edit --help`, and the landed write says what was confirmed
-- [ ] #4 A replacement made on purpose (old id removed, new part with another name and binding) and an ordinary edit pass without any confirmation, shown by a test
-- [ ] #5 The archboard skill has a recipe for a stack of pull requests on a vault board: each PR is a proposal branched from the one before, holds the whole architecture at that branch, and states only its own change; the pull request recording recipe says its cut-down board is for a throwaway board only and points to the stack recipe
+- [x] #1 A `semantic edit` that adds a node without an id while an ancestor of the variant holds a node of the same name or the same binding under another id is refused with its own error code; the refusal names the ancestor id and variant, and says to state that id to restore the part or to confirm a different part
+- [x] #2 A `semantic edit` that removes more than half of the nodes the variant inherited from its predecessor is refused with its own error code that names the count, unless the edit confirms the removal
+- [x] #3 Each refusal is passed by its confirmation, which is discoverable in `semantic edit --help`, and the landed write says what was confirmed
+- [x] #4 A replacement made on purpose (old id removed, new part with another name and binding) and an ordinary edit pass without any confirmation, shown by a test
+- [x] #5 The archboard skill has a recipe for a stack of pull requests on a vault board: each PR is a proposal branched from the one before, holds the whole architecture at that branch, and states only its own change; the pull request recording recipe says its cut-down board is for a throwaway board only and points to the stack recipe
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -56,4 +56,12 @@ Possible simplification, to decide once the restore change lands: one `--confirm
 2026-10-16: the user chose refusals that need a confirmation over warnings. Implementation waits for the flow and known-id restore change (same edit path, implementer worktree), whose confirmation flag the re-creation refusal points to.
 
 2026-10-16 implementation: one confirmation concept. 'semantic edit --confirm <code>' (repeatable; also 'confirm: [...]' in the batch, merged with the option) replaces --restore-known-ids / restoreKnownIds. The shared schema accepts only the three confirmable codes (ConfirmableRefusalSchema), so a misspelled code is refused, not ignored. New guard src/runtime/semantic-board-store/lib/inheritance.ts runs in the edit transition after the content is computed: PART_RECREATED (a node under a freshly minted id whose name, or exact binding repo+path+symbol, matches a node an ancestor holds under an id the variant lacks after the edit; nearest ancestor named, with the restore hint and --confirm RESTORE_UNCONFIRMED when the predecessor and base lack the id), checked before INHERITANCE_DROPPED (variant with a parent; removed*2 > nodes held before that the parent also holds). A confirmed write warns with the same code (RESTORED_FROM_OTHER_VARIANT kept for restores). Tests: semantic-board-store/tests/inheritance.test.ts; restoration.test.ts 'a node stated without an id is still new' and tests/system/semantic-boards/edge-identity.test.ts now confirm PART_RECREATED, because each deliberately writes the re-created part the rule refuses (the rule is right, the fixtures make the mistake on purpose). Skill: variants.md Branching names both refusals and adds 'A stack of pull requests'; the recording recipe says its cut-down board is throwaway only and links there; edit.md and authoring.md use --confirm.
+
+Validation 2026-10-16: bun test src/runtime/semantic-board-store src/shared/semantic-board (445 pass), bun run lint (exit 0), tests/system/repository-policy (27 pass). Live server, scratch copy of the pre-repair Device Trust Control Plane: adding Portal-Web service without an id on feat/device-trust-mac-enrollment is refused with PART_RECREATED naming UGWVai0p and the TASK-0417 proposal; the 14 October prune batch on a fresh branch of joT0a1AY is refused with INHERITANCE_DROPPED (19 of 21) and lands with --confirm INHERITANCE_DROPPED, warning with that code. --confirm is listed in semantic edit --help. archboard-pr now says that each stack proposal keeps the parts a later pull request builds.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+semantic edit refuses two writes that break 'a proposal holds the whole architecture': a node added under a new id while an ancestor holds one of the same name or exact binding (PART_RECREATED), and removing more than half of what a variant inherited (INHERITANCE_DROPPED). One repeatable --confirm <code> passes either, and RESTORE_UNCONFIRMED, replacing --restore-known-ids; a confirmed write warns with the code. The archboard skill has a PR stack recipe (variants.md), the recording recipe points to it, and archboard-pr says each stack proposal keeps the whole design. Verified with the store tests, lint, the repository-policy tests, and a live reproduction of both 14 October writes.
+<!-- SECTION:FINAL_SUMMARY:END -->
