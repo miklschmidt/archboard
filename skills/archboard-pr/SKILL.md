@@ -316,11 +316,7 @@ reader never sees it.
 
 **Summary.**
 
-- In a stack, the first line gives the position, the design and the
-  neighbours: `Part 10 of 18 of device trust (#589). Below: #606. Next: #608.`
-  Count every pull request of the stack from the bottom, the design's pull
-  request included. A design with no pull request of its own has no number.
-- Then one to three sentences: the problem or need, and what the change does
+- One to three sentences: the problem or need, and what the change does
   about it. Use the repository's domain words: its glossary (`CONTEXT.md`,
   `GLOSSARY.md` or similar) and the names that the picture carries.
 - Then the picture, with alt text that says what it shows, not the file name.
@@ -354,13 +350,15 @@ in the parts that have a relationship to a changed part.
   otherwise expect it.
 - A paragraph copied from another pull request's body.
 - Status news, such as a CI fix. That goes in a pull request comment.
+- The place of the pull request in a stack, or links to the pull requests
+  below and above it. GitHub shows the stack.
 
 Check before you post. Done: every line holds.
 
 - [ ] The sections are Summary, Evidence and Merge Danger, in that order, and
       nothing stands between them.
 - [ ] The visible body reads in about two minutes. The Summary has at most
-      three sentences above the picture, after the stack line.
+      three sentences above the picture.
 - [ ] No sentence breaks the never-list.
 - [ ] The picture is drawn with Blocks, `--theme auto`, a title and a
       horizontal legend, against `<below>`, and it has alt text.

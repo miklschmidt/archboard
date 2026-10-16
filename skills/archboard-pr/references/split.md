@@ -111,9 +111,8 @@ Done:
 
 ## 6. Explain each pull request
 
-1. Open the pull requests with `gh stack submit --auto`, as the gh-stack
-   skill says. Each one then has the number that the stack line of its
-   neighbours names.
+1. Open the pull requests as a stack with `gh stack submit --auto`, as the
+   gh-stack skill says.
 2. For each pull request, from the bottom, check out its branch and run the
    skill from section 1. Section 7 puts the body in as an update. The skill's
    rules for a stack of pull requests apply to each one. The groundwork layer
