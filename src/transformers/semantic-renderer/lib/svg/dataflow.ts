@@ -22,16 +22,13 @@ import type {
 	SemanticFlow,
 	SemanticNode,
 } from "@/shared/semantic-board/index";
+import { DIAGRAM_MARGIN, SLAB_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import {
-	BAND_RADIUS,
-	CARD_THICKNESS,
-	DIAGRAM_MARGIN,
-	SLAB_RADIUS,
-} from "@/transformers/semantic-renderer/lib/design";
-import { paintHeadingViews } from "@/transformers/semantic-renderer/lib/svg/far-card";
+	headShade,
+	paintFragment,
+	paintFrame,
+} from "@/transformers/semantic-renderer/lib/svg/flow-frames";
 import {
-	HEAD_REACH,
-	HEAD_SHADE_CLASS,
 	STEP_HEAD,
 	STEP_WEIGHT,
 	arrowStandoff,
@@ -62,13 +59,7 @@ import {
 	type PlacedStep,
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 import { endsFor, selfStart, travelOf } from "@/transformers/semantic-renderer/lib/layout/messages";
-import { trayLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import {
-	halo,
-	headerAnchor,
-	paintCard,
-	paintHeader,
-} from "@/transformers/semantic-renderer/lib/svg/cards";
+import { paintCard } from "@/transformers/semantic-renderer/lib/svg/cards";
 import {
 	paintColumn,
 	paintColumnShadows,
@@ -89,22 +80,12 @@ import {
 	wrap,
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import {
-	ghostFace,
-	shadowUnder,
-	slabSeat,
-	slabShadow,
-} from "@/transformers/semantic-renderer/lib/svg/slab";
-import { SHADOW_REACH } from "@/transformers/semantic-renderer/lib/svg/shadow";
-import { floorOf, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
+import { shadowUnder } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
 	HEAD_ATTRIBUTE,
-	MEMBERS_ATTRIBUTE,
 	ghostOpacity,
 	markedBox,
-	standingPin,
 	subjectGroup,
-	warningBadge,
 	type StandingOf,
 	type SubjectStanding,
 	type UnsettledOf,
@@ -302,105 +283,6 @@ function paintStep(
 }
 
 /**
- * The frame around one flow, with the flow's name and summary on it.
- *
- * A flow is the one subject of this grammar that has no counterpart in the
- * architecture one, and the frame is what makes it a subject at all: it is what
- * a reader clicks to mean "this exchange", and it is what keeps several flows on
- * one page from reading as one very long sequence.
- *
- * It is built as an architecture's container is: a neutral well the exchange
- * stands in, with a header slab standing on its floor that the flow's name is
- * printed on.
- *
- * Its standing is the pin on its corner, and its face stays the frame's own:
- * the frame is the page of its flow, and a page washed in a standing's ink said
- * the flow's name or cast changed as loudly as every message inside it. A
- * removed flow is the one exception, a ghost like every removed block.
- * @param layout The flow.
- * @param palette The theme's colours.
- * @param standing How this flow stands against the variant it came from, when the caller said.
- * @param unsettled Whether the board says nobody has decided this exchange yet.
- * @returns The frame's group.
- */
-function paintFrame(
-	layout: FlowLayout,
-	palette: Palette,
-	standing: SubjectStanding | undefined,
-	unsettled: boolean,
-): string {
-	const { frame, header, slab } = layout;
-	const styles = stylesFor(palette);
-	const ghosted = standing === "removed" ? standing : undefined;
-	const look = trayLook(slab, palette, 0);
-	// The header slab's face across the heading, which its far words stand on.
-	const plate = { ...header, y: slab.y, height: slab.height - CARD_THICKNESS };
-	return wrap(
-		"g",
-		subjectGroup("flow", layout.flow.id, standing),
-		lines([
-			slabSeat(frame, BAND_RADIUS),
-			slabShadow(frame, BAND_RADIUS, "tray", palette, ghosted),
-			halo(frame, BAND_RADIUS, styles, ghosted),
-			tray(frame, look, palette, ghosted),
-			paintHeadingViews(layout.flow, plate, palette, {
-				markup: paintHeader(header, layout.flow.name, layout.flow.summary, styles),
-				anchor: headerAnchor(header),
-			}),
-			standingPin(frame, standing, palette),
-			warningBadge(frame, unsettled, palette),
-		]),
-	);
-}
-
-/**
- * The frame's own face behind a flow's head of cards, and a strip of it
- * above them, shown only while a viewer has moved the head down to keep it in
- * view over rows further down.
- *
- * A moved head stands over the columns of time and the rows it passes, and a
- * card a presented step veils is seen through: without this, what it stands
- * over would show through it and run on above it. So the page's ground is laid
- * first and the frame's face over it, standing with the frame (it lists the
- * flow as its member): a frame a step veils is seen through to the page, and so
- * is this. Hidden in the picture (`visibility`), and shown under a head the
- * viewer marks as moved (`is-stuck`).
- * @param layout The flow.
- * @param standing How the flow stands: a removed flow's face is its ghost's.
- * @param palette The theme's colours.
- * @returns The shade.
- */
-function headShade(
-	layout: FlowLayout,
-	standing: SubjectStanding | undefined,
-	palette: Palette,
-): string {
-	const card = layout.columns[0]?.card.box;
-	if (card === undefined) {
-		return "";
-	}
-	// Across the floor, through the card shadow's foot: a moved shadow must not
-	// darken the lifelines it passes over.
-	const floor = floorOf(layout.frame);
-	const shape = {
-		x: coord(floor.x),
-		y: coord(card.y - HEAD_REACH),
-		width: coord(floor.width),
-		height: coord(card.height + HEAD_REACH + SHADOW_REACH),
-	};
-	// A top-level tray's floor, which is the frame's (`paintFrame`).
-	const face = standing === "removed" ? ghostFace(palette) : { fill: palette.trayFloor };
-	return wrap(
-		"g",
-		{ class: HEAD_SHADE_CLASS, visibility: "hidden" },
-		lines([
-			tag("rect", { ...shape, fill: palette.background }),
-			wrap("g", { [MEMBERS_ATTRIBUTE]: layout.flow.id }, tag("rect", { ...shape, ...face })),
-		]),
-	);
-}
-
-/**
  * One flow, painted.
  * @param layout The flow.
  * @param palette The theme's colours.
@@ -471,6 +353,13 @@ function paintFlow(
 				),
 			]),
 		),
+		// Each decision's and loop's frame over the lifelines and under the
+		// messages it governs, an outer frame before the frames inside it.
+		...layout.frames
+			.toReversed()
+			.map((frame) =>
+				paintFragment(frame, palette, markOf(frame.step.id), unsettledOf(frame.step.id)),
+			),
 		wrap(
 			"g",
 			{},
