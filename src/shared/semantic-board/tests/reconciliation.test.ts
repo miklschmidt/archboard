@@ -70,6 +70,26 @@ describe("a change nobody competed for", () => {
 		expect(settled.issues).toEqual([]);
 	});
 
+	test("a subject the predecessor added takes a free position when this proposal used its own", () => {
+		const mine = content({
+			nodes: [API, STORE, { id: "n4", name: "Queue", kind: "queue", order: 3000 }],
+			edges: [WIRE, { id: "e2", from: "n1", to: "n4", kind: "call", order: 2000 }],
+		});
+		const theirs = content({
+			nodes: [API, STORE, { id: "n3", name: "Cache", kind: "cache", order: 3000 }],
+			edges: [WIRE, { id: "e3", from: "n1", to: "n3", kind: "call", order: 2000 }],
+		});
+		const settled = reconcileVariant({ base: BASE, mine, theirs });
+		expect(settled.issues).toEqual([]);
+		expect(settled.content.nodes.map(({ id, order }) => [id, order])).toEqual([
+			["n1", 1000],
+			["n2", 2000],
+			["n4", 3000],
+			["n3", 4000],
+		]);
+		expect(settled.content.edges.map(({ order }) => order)).toEqual([1000, 2000, 3000]);
+	});
+
 	test("a subject the predecessor removed goes, when nothing here touched it", () => {
 		const theirs = content({ nodes: [API], edges: [] });
 		const settled = reconcileVariant({ base: BASE, mine: BASE, theirs });
