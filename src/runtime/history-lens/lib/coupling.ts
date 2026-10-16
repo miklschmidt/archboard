@@ -25,7 +25,7 @@ import type { WalkedCommit } from "@/runtime/history-lens/lib/commits";
 import type { ReadPart } from "@/runtime/history-lens/lib/parts";
 import { relatedSymbols } from "@/runtime/history-lens/lib/symbol-attribution";
 import type { CoupledPair } from "@/shared/locality/index";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import { messagesOf, type VariantContent } from "@/shared/semantic-board/index";
 
 /**
  * code-maat's `--min-shared-revs`: the fewest commits a coupled pair shares.
@@ -190,7 +190,10 @@ function couplePairs(
 	content: Pick<VariantContent, "nodes" | "edges" | "flows">,
 ): CoupledPair[] {
 	const reach = reaches(lineages(content));
-	const joints: Joint[] = [...content.edges, ...content.flows.flatMap((flow) => flow.steps)];
+	const joints: Joint[] = [
+		...content.edges,
+		...content.flows.flatMap((flow) => messagesOf(flow.steps)),
+	];
 	const pairs: CoupledPair[] = [];
 	parts.forEach((left, at) => {
 		const ids = new Set(left.counted.map((commit) => commit.commit));

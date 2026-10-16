@@ -22,6 +22,12 @@
 import type { VariantContent } from "@/shared/semantic-board/lib/content";
 import type { ChangedField } from "@/shared/semantic-board/lib/reconcile-standing";
 import type { FlowStep, SemanticFlow } from "@/shared/semantic-board/lib/views";
+import {
+	emptiedHolder,
+	flatSteps,
+	nestedSteps,
+	type FlatStep,
+} from "@/shared/semantic-board/lib/flow-steps";
 import type { SemanticWalkthrough, WalkthroughBeat } from "@/shared/semantic-board/lib/walkthrough";
 
 /** One disagreement about something told in an order. */
@@ -39,7 +45,19 @@ interface OrderedIssue {
 
 /** The fields a step and a beat merge, a step's bookkeeping `anchor` included. */
 const TOLD_FIELDS = {
-	step: ["from", "to", "label", "kind", "note", "repeat", "anchor"],
+	step: [
+		"from",
+		"to",
+		"label",
+		"kind",
+		"note",
+		"repeat",
+		"anchor",
+		"question",
+		"alternatives",
+		"condition",
+		"within",
+	],
 	beat: ["heading", "body", "subjects", "view"],
 } as const;
 
@@ -475,25 +493,37 @@ function reconcileTold(
 ): { flows: SemanticFlow[]; walkthroughs: SemanticWalkthrough[]; issues: OrderedIssue[] } {
 	const issues: OrderedIssue[] = [];
 	const flows = settled.flows.map((flow) => {
-		const merged = mergeTold<FlowStep>(
+		// Merged on the flat reading, so a step that moved into another alternative
+		// merges like a changed field, and built back into a tree.
+		const merged = mergeTold<FlatStep>(
 			{
-				base: stepsIn(states.base.flows, flow.id),
-				mine: stepsIn(states.mine.flows, flow.id),
-				theirs: stepsIn(states.theirs.flows, flow.id),
+				base: flatSteps(stepsIn(states.base.flows, flow.id)),
+				mine: flatSteps(stepsIn(states.mine.flows, flow.id)),
+				theirs: flatSteps(stepsIn(states.theirs.flows, flow.id)),
 			},
 			TOLD_FIELDS.step,
 			"step",
 		);
 		issues.push(...merged.issues);
-		if (merged.entries.length > 0) {
-			return { ...flow, steps: merged.entries };
+		const steps = nestedSteps(merged.entries);
+		const emptied = emptiedHolder(steps);
+		if (merged.entries.length > 0 && emptied === undefined) {
+			return { ...flow, steps };
 		}
 		// Each side removed what the other kept, and between them they have emptied
-		// the exchange. Neither removal is a conflict on its own and no third state
-		// is implied, so this proposal keeps what it told and the incoherence is
-		// said out loud — a flow with nothing in it is not a document anybody can
-		// write, let alone read.
-		issues.push(leftEmpty(flow.id, "flow", flow.name));
+		// the exchange, or a decision or loop inside it. Neither removal is a
+		// conflict on its own and no third state is implied, so this proposal
+		// keeps what it told and the incoherence is said out loud — a flow with
+		// nothing in it is not a document anybody can write, let alone read.
+		issues.push(
+			emptied === undefined
+				? leftEmpty(flow.id, "flow", flow.name)
+				: leftEmpty(
+						emptied.id,
+						emptied.kind,
+						emptied.kind === "loop" ? emptied.condition : emptied.question,
+					),
+		);
 		return { ...flow, steps: [...stepsIn(states.mine.flows, flow.id)] };
 	});
 	const walkthroughs = settled.walkthroughs.map((walkthrough) => {

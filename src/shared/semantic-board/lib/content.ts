@@ -71,6 +71,7 @@ import {
 	SemanticIdSchema,
 } from "@/shared/semantic-board/lib/primitives";
 import { SemanticFlowSchema } from "@/shared/semantic-board/lib/views";
+import { everyStep } from "@/shared/semantic-board/lib/flow-steps";
 import { SemanticWalkthroughSchema } from "@/shared/semantic-board/lib/walkthrough";
 import {
 	EdgeEmphasisSchema,
@@ -274,14 +275,15 @@ function* subjectsOf(content: VariantContent): Generator<VariantSubject> {
 }
 
 /**
- * Every flow and every step it tells, in document order.
+ * Every flow and every step it tells, in document order. A decision and a
+ * loop are steps, and so is every step they hold.
  * @param flows The variant's flows.
  * @yields {VariantSubject} The flow, then each of its steps.
  */
 function* flowSubjects(flows: VariantContent["flows"]): Generator<VariantSubject> {
 	for (const flow of flows) {
 		yield { id: flow.id, kind: "flow" };
-		for (const step of flow.steps) {
+		for (const step of everyStep(flow.steps)) {
 			yield { id: step.id, kind: "step" };
 		}
 	}

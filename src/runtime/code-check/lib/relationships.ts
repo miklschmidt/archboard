@@ -49,7 +49,7 @@ import type { BoardEvidence, Piece } from "@/runtime/code-check/lib/evidence";
 import type { PartCode, ReadPart, SkippedPart } from "@/runtime/code-check/lib/part-code";
 import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "@/shared/code-check/index";
-import type { SemanticEdge } from "@/shared/semantic-board/index";
+import { messagesOf, type SemanticEdge } from "@/shared/semantic-board/index";
 import {
 	describeSubject,
 	type EvidenceKind,
@@ -120,7 +120,7 @@ function drawn(reading: RelationshipReading, left: string, right: string): boole
 	const { content } = reading.read.variant;
 	const atLeft = reading.lineages.get(left) ?? new Set([left]);
 	const atRight = reading.lineages.get(right) ?? new Set([right]);
-	const joints = [...content.edges, ...content.flows.flatMap((flow) => flow.steps)];
+	const joints = [...content.edges, ...content.flows.flatMap((flow) => messagesOf(flow.steps))];
 	return joints.some(
 		({ from, to }) =>
 			(atLeft.has(from) && atRight.has(to)) || (atLeft.has(to) && atRight.has(from)),

@@ -54,7 +54,7 @@ function pointsOf(d: string): DrawnPoint[] {
  * loop is written in relative commands with no final pair, so it is not one of
  * these and asking for it gives a number that means nothing.
  * @param svg The rendered document.
- * @param kind Which sort of subject to read: `edge` in the architecture grammar, `step` in the data-flow one.
+ * @param kind Which sort of subject to read: `edge` in the architecture grammar, `step` in the sequence one.
  * @returns Each route's arrival point, by the id of the subject that drew it.
  */
 function routeEnds(svg: string, kind: string = "edge"): Map<string, DrawnPoint> {

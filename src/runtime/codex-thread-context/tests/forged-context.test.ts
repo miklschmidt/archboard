@@ -34,7 +34,7 @@ describe("a forged semantic context", () => {
 			"a view the pane was not reading it through",
 			(context: ArchboardContext): ArchboardContext => ({
 				...context,
-				view: { id: "w1", name: "Overview", grammar: "data-flow" },
+				view: { id: "w1", name: "Overview", grammar: "sequence" },
 			}),
 		],
 		[
