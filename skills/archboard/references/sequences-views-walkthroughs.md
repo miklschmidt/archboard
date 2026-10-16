@@ -10,8 +10,11 @@ A flow is an ordered exchange between nodes of one variant.
   participants are a subset of them. A node the board draws need not take a
   column. So the work that one part does through the parts it uses can be one
   step with that part at both ends.
-- `steps` are messages in sequence, each `from` one participant `to` another
-  with a `label` and a `kind`:
+- `steps` are in order. A step is a message, a decision or a loop. A decision
+  and a loop hold steps of their own
+  ([when a flow branches or repeats](create-sequence.md#when-a-flow-branches-or-repeats)).
+  A message goes `from` one participant `to` another with a `label` and a
+  `kind`:
   - `sync`: A call that waits (the default), an awaited promise included.
   - `return`: The answer travelling back.
   - `async`: Sent and not waited for: an event, a queue put, a promise nobody
@@ -23,16 +26,17 @@ A flow is an ordered exchange between nodes of one variant.
   written as a number, a batch of a stated size, a literal list of candidates
   tried in turn. A loop over two fixed file names is `repeat: 2`, and its `note`
   is the early exit on the first file that exists. A loop over a list of
-  data-dependent length, or a retry until success, is one step with a `note`
-  that says so. A count that the source does not state is a count you invented.
-- `note` is a caveat on one step, shown beside it: a condition under which the
-  step happens (a branch), a loop whose count is not fixed, a detail the label
-  cannot carry.
+  data-dependent length, or a retry until success, is a `loop` step. A count
+  that the source does not state is a count you invented.
+- `note` is a caveat on one message, shown beside it: an environment variable,
+  a detail the label cannot carry. A condition under which steps happen is a
+  decision, not a note.
 - A flow can have one participant whose steps are all `self`: a component's own
   sequence is a real explanation.
 - A step's position is meaningful. A step keeps its identity by the action it
   represents. To insert, remove or reorder steps, restate the flow. Keep the ids
-  of continuing calls and returns, even across a change of order or payload. A
+  of continuing calls, returns, decisions and loops, even across a change of
+  order, payload or the alternative that holds them. A
   flow written again without its ids reads as a wholesale deletion and addition.
 
 ## Views
@@ -42,7 +46,17 @@ board's shared reading. Naming a variant in the batch does not change that. A
 view's `grammar` is one of:
 
 - `architecture`: Nodes, containment and relationships of the selection.
-- `data-flow`: The selected flow as a sequence: columns and messages.
+- `sequence`: The selected flow as a sequence: columns and messages, a
+  decision as an `alt` frame and a loop as a `loop` frame.
+- `flowchart`: The selected flow's logic: its steps as boxes from a start to an
+  end, a decision as a diamond with a labelled line for each alternative, and a
+  loop as a hexagon with lines labelled `repeat` and `done`. A flow with no
+  decision and no loop draws as a column of boxes, which a sequence view
+  shows better.
+
+[Which view](../SKILL.md#which-view) says which grammar answers a question.
+Before schema 2.5.0, the `sequence` grammar was called `data-flow`. A payload
+that says `data-flow` is refused with the new name.
 
 `scope` is either `{ "kind": "all" }` or a selection, and a selection means
 one of two different things. Decide which the request asks for before writing
@@ -58,7 +72,7 @@ the view, and check the saved `scope` afterwards:
   call" or "not that one". Listing `nodes` as well does not add their other
   relationships back.
 - **A sequence**: `{ "kind": "selection", "flows": ["<flow>"] }` with the
-  `data-flow` grammar. A sequence drawn without its view is the architecture
+  `sequence` grammar. A sequence drawn without its view is the architecture
   picture, not the exchange.
 
 Both ends of a shown relationship, every participant of a shown flow, and every

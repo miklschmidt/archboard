@@ -464,7 +464,7 @@ fires, do these steps in the same change:
 
 The success contract of the skill is the fewest total author tokens per
 successfully completed workflow, not the shortest document. The five common
-paths are architecture from code, sequence through the data-flow grammar, edit one
+paths are architecture from code, sequence through the sequence grammar, edit one
 batch, propose and compare, and answer from a saved board. Each path runs on SKILL.md plus
 its own recipe under `references/` (`create-architecture`, `create-sequence`, `edit`,
 `propose-compare`, `read`). That recipe is the one targeted reference that a common path
@@ -582,7 +582,7 @@ Three facts about the evidence that the first batch had to teach:
 
 - The evaluation command takes the pictures. The author never supplies one.
   Every scenario declares `captures`: the boards, views and variants that its request
-  names, both sides of a comparison, and the data-flow view of a sequence. After
+  names, both sides of a comparison, and the sequence view of a sequence. After
   the author
   ran, the evaluation command draws each capture through `archboard semantic rasterize` at
   native scale. It also does this after a failed run in which the server is still up. It
