@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 63,
+	"version": 64,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-16T01:30:23.172Z",
+	"updatedAt": "2026-10-16T02:39:31.083Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
