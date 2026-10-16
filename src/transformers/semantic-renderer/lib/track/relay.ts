@@ -8,7 +8,8 @@
 // over the same bands: its lanes on any free column, its label box anywhere
 // free along its own band or a band beside it, each within the scene and
 // inside the frames it stood in, or those its own ends stand in, the label
-// box in the group regions it stood in and no other. A route costs
+// box off the last band of a group region that neither holds both its line's
+// ends nor held the box. A route costs
 // its sideways travel and a crossing's worth for each line it crosses, or
 // each trunk; the chain takes the new route only when that saves more than a
 // few lanes. A crossing is worth as much as the detour that makes a lap, so a
@@ -381,10 +382,7 @@ class Relay {
 	 * ({@link Scene.captionsFor}), a label's of a label, a lane of another
 	 * line's lane or of a line drawn straight from a card's side to the wall
 	 * ({@link Scene.besides}), or a container's inset of a frame's or region's wall, which
-	 * it never straddles. Nor does it move into or out of a group region:
-	 * placement stood it in the regions around both its line's ends
-	 * (`Clusters.holdLabel`), and a box moved into another region's last band
-	 * stands over its bottom edge.
+	 * it never straddles, or a group region it would hang out of ({@link Scene.regionsOff}).
 	 * @param chain The label's chain.
 	 * @param label The box.
 	 * @param band The band it would stand on.
@@ -402,21 +400,6 @@ class Relay {
 				stations.filter((one) => one.kind === "lane" && one.band === band),
 			);
 		const walls = [...this.scene.walled(band).values()].flat();
-		const centre = label.box.x + half;
-		const stood = new Set(
-			this.scene
-				.regionWalls(label.band)
-				.filter(([, [low, high]]) => centre > low && centre < high)
-				.map(([key]) => key),
-		);
-		const regions = this.scene.regionWalls(band).flatMap(([key, [low, high]]): Span[] =>
-			stood.has(key)
-				? [
-						[-Infinity, low],
-						[high, Infinity],
-					]
-				: [[low, high]],
-		);
 		return [
 			...solid.map((item) => [item, LABEL_CARD_CLEARANCE] as const),
 			...others.map((item) => [item, LABEL_LABEL_CLEARANCE] as const),
@@ -430,7 +413,7 @@ class Relay {
 					high + LANE + half,
 				]),
 				walls.map((wall): Span => [wall - CONTAINER_INSET - half, wall + CONTAINER_INSET + half]),
-				regions,
+				this.scene.regionsOff(chain.stations[0]!, chain.stations.at(-1)!, label, band),
 			);
 	}
 
