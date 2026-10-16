@@ -1,11 +1,13 @@
 ---
 id: TASK-487
 title: >-
-  A proposal that drops what it inherited, or re-creates it under new ids, is
-  told so
-status: To Do
-assignee: []
+  A proposal cannot drop what it inherited, or re-create it under new ids,
+  without confirming it
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-16 13:19'
+updated_date: '2026-10-16 13:31'
 labels:
   - board-store
   - skill
@@ -22,8 +24,15 @@ On 14 October an agent wrote a stack of PR proposals on two Docs-Architecture-De
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A `semantic edit` that removes more than half of the nodes the variant inherited from its predecessor lands with a warning that names the count and says a proposal holds the whole architecture
-- [ ] #2 `archboard check` reports each node that a draft holds under a new id while one of its ancestors holds a node of the same name or the same binding under another id, naming both ids and both variants
-- [ ] #3 Neither warning fires on a draft that replaces a part on purpose (old id removed, new part with a different binding), shown by a test
-- [ ] #4 The archboard skill says, where it explains branching, that each PR in a stack is a proposal holding the whole architecture at that branch
+- [ ] #1 A `semantic edit` that adds a node without an id while an ancestor of the variant holds a node of the same name or the same binding under another id is refused with its own error code; the refusal names the ancestor id and variant, and says to state that id to restore the part or to confirm a different part
+- [ ] #2 A `semantic edit` that removes more than half of the nodes the variant inherited from its predecessor is refused with its own error code that names the count, unless the edit confirms the removal
+- [ ] #3 Each refusal is passed by its confirmation, which is discoverable in `semantic edit --help`, and the landed write says what was confirmed
+- [ ] #4 A replacement made on purpose (old id removed, new part with another name and binding) and an ordinary edit pass without any confirmation, shown by a test
+- [ ] #5 The archboard skill has a recipe for a stack of pull requests on a vault board: each PR is a proposal branched from the one before, holds the whole architecture at that branch, and states only its own change; the pull request recording recipe says its cut-down board is for a throwaway board only and points to the stack recipe
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-16: the user chose refusals that need a confirmation over warnings. Implementation waits for the flow and known-id restore change (same edit path, implementer worktree), whose confirmation flag the re-creation refusal points to.
+<!-- SECTION:NOTES:END -->
