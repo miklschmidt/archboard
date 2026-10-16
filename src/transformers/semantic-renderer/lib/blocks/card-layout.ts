@@ -423,6 +423,12 @@ class CardLayout {
 		letPortsSlide(scene, this.block, this.tree.nesting);
 		const beside = besideWalls(this.block, this.tree, scene);
 		const straight = new Set(beside.map(({ key }) => key));
+		for (const { card, wall } of beside) {
+			const { box, band } = scene.cards.get(card)!;
+			const run =
+				wall === "left" ? ([-Infinity, box.x] as const) : ([box.x + box.width, Infinity] as const);
+			scene.besides.set(band, [...(scene.besides.get(band) ?? []), run]);
+		}
 		const lines = routeScene(
 			scene,
 			placed.edges

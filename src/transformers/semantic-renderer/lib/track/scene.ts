@@ -177,6 +177,12 @@ class Scene {
 	 * regions inline, rather than packed as blocks of their own.
 	 */
 	inline = false;
+	/**
+	 * The stretch of each band that a line drawn straight from a card's side
+	 * to the block's wall runs along (`blocks/walls.ts`), by band. Those lines
+	 * are not routed here, and no label box moves onto them.
+	 */
+	readonly besides = new Map<number, (readonly [number, number])[]>();
 
 	/**
 	 * Read every placed item and group them into bands by their centres.

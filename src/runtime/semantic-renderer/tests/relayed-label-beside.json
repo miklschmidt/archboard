@@ -1,0 +1,321 @@
+{
+	"nodes": [
+		{
+			"id": "skyIeErO",
+			"order": 2000,
+			"name": "Generation composition",
+			"kind": "module",
+			"groups": ["child"]
+		},
+		{
+			"id": "u2LFaG7R",
+			"order": 3000,
+			"name": "Browser gateway",
+			"kind": "module",
+			"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease per tab session, and every pane of a tab is carried out by the workhorse of the checkout the tab shows",
+			"parent": "i5AuDn9L"
+		},
+		{
+			"id": "FxzIjbIO",
+			"order": 5000,
+			"name": "Codex transport",
+			"kind": "module",
+			"groups": ["child"]
+		},
+		{
+			"id": "jylkTBp7",
+			"order": 6000,
+			"name": "Codex session",
+			"kind": "module",
+			"responsibility": "One initialized session and the reviewed methods it will send",
+			"groups": ["child"]
+		},
+		{
+			"id": "2ffhMTdn",
+			"order": 8000,
+			"name": "Workhorse queue",
+			"kind": "module",
+			"responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
+			"groups": ["workhorse"],
+			"parent": "Fvl3uDPi"
+		},
+		{
+			"id": "Fg9dkGj3",
+			"order": 9000,
+			"name": "Voice coordinator",
+			"kind": "module",
+			"responsibility": "The separate fast thread each tab session's voice attaches to, started with the tab's first message or Talk: the voice model's subconscious, which routes sustained work to a named checkout's workhorse",
+			"groups": ["voice"],
+			"parent": "3vO7eN8L"
+		},
+		{
+			"id": "giL6EI28",
+			"order": 10000,
+			"name": "Codex app-server",
+			"kind": "external",
+			"responsibility": "The Codex binary, run as one private child over stdio in the Archboard-only Codex home"
+		},
+		{
+			"id": "tzyaOHwF",
+			"order": 11000,
+			"name": "Browser pane",
+			"kind": "service",
+			"responsibility": "The pane a user works in: it names its tab session, holds the tab's lease, sends commands and draws the published state"
+		},
+		{
+			"id": "tlC2W839",
+			"order": 13000,
+			"name": "Workhorse operations",
+			"kind": "module",
+			"responsibility": "The four things the coordinator may ask of the workhorse of a checkout it names, one at a time: delegate, steer, inspect, manage its queue; each workhorse has its own",
+			"groups": ["workhorse"],
+			"parent": "Fvl3uDPi"
+		},
+		{
+			"id": "QGVPyMwG",
+			"order": 15000,
+			"name": "Approvals",
+			"kind": "module",
+			"parent": "i5AuDn9L"
+		},
+		{
+			"id": "DNQTPTxE",
+			"order": 16000,
+			"name": "Thread tool calls",
+			"kind": "module",
+			"groups": ["workhorse"],
+			"parent": "Fvl3uDPi"
+		},
+		{
+			"id": "iay14AUl",
+			"order": 20000,
+			"name": "Tab sessions",
+			"kind": "module",
+			"responsibility": "What each browser tab owns: its coordinator and voice, and one workhorse for each checkout it works in, found by the thread a notification or tool call names",
+			"parent": "Akuz1a3J"
+		},
+		{
+			"id": "hCKEBd5f",
+			"order": 21000,
+			"name": "Tab session presence",
+			"kind": "module",
+			"groups": ["panes"],
+			"parent": "Akuz1a3J"
+		},
+		{
+			"id": "JHbKEH3A",
+			"order": 22000,
+			"name": "Conversation start",
+			"kind": "module",
+			"responsibility": "Starts a conversation on a pane's first message or Talk: the tab's coordinator ready first, then the workhorse of the shown checkout, then board news to it",
+			"parent": "i5AuDn9L"
+		},
+		{
+			"id": "kEF4DfR4",
+			"order": 25000,
+			"name": "Session workhorses",
+			"kind": "module",
+			"responsibility": "One workhorse for each checkout of a tab session: its starter, board news, queue, operations and link actions, built on first use",
+			"parent": "Fvl3uDPi"
+		},
+		{
+			"id": "qTmIytbT",
+			"order": 28000,
+			"name": "Coordinator turn homes",
+			"kind": "module",
+			"responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the dock shows the turn in the right conversation",
+			"parent": "Akuz1a3J"
+		},
+		{
+			"id": "Akuz1a3J",
+			"order": 30000,
+			"name": "Per-tab sessions",
+			"kind": "module",
+			"responsibility": "Gives each browser tab its own session: finds the session a call names, knows which tab each pane belongs to, ends a tab no pane returns to, and remembers where each coordinator turn is shown"
+		},
+		{
+			"id": "i5AuDn9L",
+			"order": 31000,
+			"name": "Pane conversations",
+			"kind": "module",
+			"responsibility": "What a pane sees and says: the gateway with its lease, snapshots and commands, the start of a conversation, the dock's list of workhorses, and the approvals raised to the person"
+		},
+		{
+			"id": "Fvl3uDPi",
+			"order": 32000,
+			"name": "Workhorses",
+			"kind": "module",
+			"responsibility": "The sustained work of each checkout: a workhorse's thread link, queue, operations, start and board news, built per tab session on first use, with its tool calls and the context of what changed"
+		},
+		{
+			"id": "3vO7eN8L",
+			"order": 33000,
+			"name": "Voice",
+			"kind": "module"
+		}
+	],
+	"edges": [
+		{
+			"id": "FZnS78FX",
+			"order": 3000,
+			"from": "jylkTBp7",
+			"to": "FxzIjbIO",
+			"kind": "rpc",
+			"label": "one JSON-RPC request per method",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "b9HU99hH",
+			"order": 6000,
+			"from": "2ffhMTdn",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "thread/queue/add, update, reorder, delete, start",
+			"emphasis": "normal"
+		},
+		{
+			"id": "YOaSBuBr",
+			"order": 18000,
+			"from": "QGVPyMwG",
+			"to": "u2LFaG7R",
+			"kind": "event",
+			"label": "an approval, to the panes of its tab session or its checkout",
+			"emphasis": "normal"
+		},
+		{
+			"id": "xPCxyO70",
+			"order": 29000,
+			"from": "FxzIjbIO",
+			"to": "iay14AUl",
+			"kind": "event",
+			"label": "notifications and tool calls, routed by thread",
+			"description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "89ivSTaM",
+			"order": 31000,
+			"from": "u2LFaG7R",
+			"to": "iay14AUl",
+			"kind": "call",
+			"label": "the tab session of this connection",
+			"description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "IxtTYfQ6",
+			"order": 32000,
+			"from": "DNQTPTxE",
+			"to": "iay14AUl",
+			"kind": "call",
+			"label": "the calling thread's tab session",
+			"description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "egDoJ9fH",
+			"order": 33000,
+			"from": "tzyaOHwF",
+			"to": "hCKEBd5f",
+			"kind": "event",
+			"label": "each socket names its tab, and its close forgets it",
+			"description": "The browser reaches the handled WebSocket route. websocket-connection.ts calls noteTabSession inside the Archboard server; no browser imports the private tab-sessions file.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ELaAYJKS",
+			"order": 36000,
+			"from": "iay14AUl",
+			"to": "QGVPyMwG",
+			"kind": "call",
+			"label": "cancel an ended session's approvals",
+			"emphasis": "muted"
+		},
+		{
+			"id": "PqSkt9px",
+			"order": 37000,
+			"from": "skyIeErO",
+			"to": "iay14AUl",
+			"kind": "call",
+			"label": "one store per child, dropped when it exits",
+			"emphasis": "muted"
+		},
+		{
+			"id": "ZGfdJlmG",
+			"order": 46000,
+			"from": "JHbKEH3A",
+			"to": "iay14AUl",
+			"kind": "call",
+			"label": "claim its threads, retire the old workhorse",
+			"emphasis": "muted"
+		},
+		{
+			"id": "wMqJn1nW",
+			"order": 58000,
+			"from": "iay14AUl",
+			"to": "kEF4DfR4",
+			"kind": "call",
+			"label": "build one workhorse for each checkout, on first use",
+			"emphasis": "normal"
+		},
+		{
+			"id": "uoktRrXw",
+			"order": 63000,
+			"from": "kEF4DfR4",
+			"to": "tlC2W839",
+			"kind": "dependency",
+			"label": "its own operations",
+			"emphasis": "normal"
+		},
+		{
+			"id": "99za8lFO",
+			"order": 66000,
+			"from": "tzyaOHwF",
+			"to": "hCKEBd5f",
+			"kind": "http",
+			"label": "the person activated a checkout (/api/panes/conversation)",
+			"description": "A focus, a board the person opened or a pick from the dock's list names the checkout whose conversation the tab shows. shown-conversation-route.ts calls showConversation inside the Archboard server; no browser imports the private tab-sessions file.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "fVScKEoP",
+			"order": 67000,
+			"from": "u2LFaG7R",
+			"to": "hCKEBd5f",
+			"kind": "call",
+			"label": "the checkout the pane's tab shows, pinned on first read",
+			"emphasis": "normal"
+		},
+		{
+			"id": "vScn8k62",
+			"order": 71000,
+			"from": "u2LFaG7R",
+			"to": "qTmIytbT",
+			"kind": "call",
+			"label": "the coordinator turns the shown conversation keeps",
+			"emphasis": "normal"
+		},
+		{
+			"id": "eSE4XLJl",
+			"order": 72000,
+			"from": "iay14AUl",
+			"to": "qTmIytbT",
+			"kind": "call",
+			"label": "note a turn's start and the work its operations give",
+			"emphasis": "normal"
+		},
+		{
+			"id": "azMem83I",
+			"order": 73000,
+			"from": "iay14AUl",
+			"to": "hCKEBd5f",
+			"kind": "call",
+			"label": "the conversation shown when a coordinator turn starts",
+			"emphasis": "normal"
+		}
+	]
+}

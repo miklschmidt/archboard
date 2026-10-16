@@ -1,0 +1,139 @@
+{
+	"nodes": [
+		{
+			"id": "r6IpmadI",
+			"order": 2000,
+			"name": "Board routes",
+			"kind": "route",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "iwrhchml",
+			"order": 3000,
+			"name": "Board write routes",
+			"kind": "route",
+			"groups": ["writes"],
+			"parent": "I6MrfGUg"
+		},
+		{
+			"id": "TW3uG9Uh",
+			"order": 4000,
+			"name": "Claim routes",
+			"kind": "route",
+			"groups": ["writes"],
+			"parent": "I6MrfGUg"
+		},
+		{
+			"id": "kFQJkivd",
+			"order": 5000,
+			"name": "Rename route",
+			"kind": "route",
+			"groups": ["writes"],
+			"parent": "I6MrfGUg"
+		},
+		{
+			"id": "GXtY3Xsd",
+			"order": 6000,
+			"name": "Discard route",
+			"kind": "route",
+			"groups": ["writes"],
+			"parent": "I6MrfGUg"
+		},
+		{
+			"id": "3ld7pYE2",
+			"order": 7000,
+			"name": "Service routes",
+			"kind": "route"
+		},
+		{
+			"id": "S3kIYHon",
+			"order": 11000,
+			"name": "Live panes",
+			"kind": "module",
+			"groups": ["panes"]
+		},
+		{
+			"id": "3LoKNA2g",
+			"order": 14000,
+			"name": "Codex workbench",
+			"kind": "service",
+			"groups": ["agent"]
+		},
+		{
+			"id": "7fHOSn27",
+			"order": 27000,
+			"name": "Move route",
+			"kind": "route",
+			"groups": ["writes"],
+			"parent": "I6MrfGUg"
+		},
+		{
+			"id": "I6MrfGUg",
+			"order": 29000,
+			"name": "Board writes",
+			"kind": "module"
+		},
+		{
+			"id": "8fMA8lHI",
+			"order": 32000,
+			"name": "Repositories and checkouts",
+			"kind": "module"
+		}
+	],
+	"edges": [
+		{
+			"id": "C0qksVg8",
+			"order": 20000,
+			"from": "GXtY3Xsd",
+			"to": "iwrhchml",
+			"kind": "call",
+			"label": "the write envelope and refusal",
+			"emphasis": "normal"
+		},
+		{
+			"id": "pGjd62O0",
+			"order": 22000,
+			"from": "iwrhchml",
+			"to": "S3kIYHon",
+			"kind": "call",
+			"label": "what the writer said it was doing",
+			"emphasis": "normal"
+		},
+		{
+			"id": "tw3GPstl",
+			"order": 36000,
+			"from": "GXtY3Xsd",
+			"to": "S3kIYHon",
+			"kind": "call",
+			"label": "what the discarder said it was doing",
+			"emphasis": "muted"
+		},
+		{
+			"id": "59jbxyYa",
+			"order": 37000,
+			"from": "kFQJkivd",
+			"to": "3LoKNA2g",
+			"kind": "call",
+			"label": "the moved pane's focus, for its agent",
+			"emphasis": "muted"
+		},
+		{
+			"id": "YDToFZl3",
+			"order": 38000,
+			"from": "TW3uG9Uh",
+			"to": "S3kIYHon",
+			"kind": "call",
+			"label": "the board family of the pane's address",
+			"emphasis": "muted"
+		},
+		{
+			"id": "LFTy0P2E",
+			"order": 70000,
+			"from": "r6IpmadI",
+			"to": "7fHOSn27",
+			"kind": "dependency",
+			"label": "mounts",
+			"emphasis": "normal"
+		}
+	]
+}
