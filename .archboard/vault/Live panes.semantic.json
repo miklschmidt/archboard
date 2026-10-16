@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 51,
+	"version": 52,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-15T22:13:07.168Z",
+	"updatedAt": "2026-10-16T02:07:28.473Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -56,7 +56,7 @@
 		{
 			"id": "6qi2HmR7",
 			"name": "Panes connect",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],

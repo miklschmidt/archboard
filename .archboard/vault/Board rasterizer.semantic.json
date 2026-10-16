@@ -1,17 +1,17 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 50,
+	"version": 51,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-15T22:24:55.685Z",
+	"updatedAt": "2026-10-16T02:07:28.284Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
 			"name": "One rasterize",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "The calls and returns of one photograph.",
 			"scope": {
 				"kind": "selection",
@@ -43,7 +43,7 @@
 		{
 			"id": "tj0eNDOG",
 			"name": "One recording",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"summary": "The calls and returns of one narrated recording.",
 			"scope": {
 				"kind": "selection",

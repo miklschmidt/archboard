@@ -1,17 +1,17 @@
 {
-	"schemaVersion": "2.4.0",
+	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "MKhTEYqf",
 	"name": "Web shop",
 	"level": "system",
-	"version": 11,
+	"version": 12,
 	"createdAt": "2026-09-28T01:53:43.378Z",
-	"updatedAt": "2026-09-28T01:53:46.048Z",
+	"updatedAt": "2026-10-16T02:07:41.039Z",
 	"views": [
 		{
 			"id": "ejQ7ydLw",
 			"name": "Place an order",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -24,7 +24,7 @@
 		{
 			"id": "KT1RjpuK",
 			"name": "Fulfil a paid order",
-			"grammar": "data-flow",
+			"grammar": "sequence",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
