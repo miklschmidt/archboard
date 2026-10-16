@@ -4,9 +4,9 @@
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 23,
+	"version": 27,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-10-15T07:31:56.213Z",
+	"updatedAt": "2026-10-16T01:30:27.287Z",
 	"views": [],
 	"variants": [
 		{
@@ -1888,7 +1888,7 @@
 		{
 			"id": "czWsPLxf",
 			"name": "TASK-472.10",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "DTYLMGcv",
 			"summary": "The package-local Codex session and its stdio request paths",
 			"content": {
@@ -2395,9 +2395,508 @@
 					}
 				]
 			}
+		},
+		{
+			"id": "wGMnT2kK",
+			"name": "TASK-482.06",
+			"lifecycle": "current",
+			"parent": "czWsPLxf",
+			"summary": "The board is its own container: no part stands for it",
+			"content": {
+				"nodes": [
+					{
+						"id": "tFTiAUKg",
+						"order": 2000,
+						"name": "Handshake and request path",
+						"kind": "function",
+						"responsibility": "Runs the handshake once, then is the one path every call takes: serialize, send, decode, adopt",
+						"description": "createCodexSession: initialize, write initialized, read the config requirements and the config as the child's working directory sees it (workingDirectory: the coordinator's own directory, which is no checkout), prove storage, and advance the explicit session phase; notifications are buffered until the session is ready. requestDecoded serializes the parameters, decodes them against the protocol, sends them on the transport, checks the epoch, decodes the answer and adopts its identities, reporting any failure of a mutation as a delivery outcome.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session.ts"
+						}
+					},
+					{
+						"id": "Ly6hUU5o",
+						"order": 3000,
+						"name": "Prove isolated storage",
+						"kind": "function",
+						"responsibility": "Verify prepared child paths",
+						"description": "Compares handshake storage facts with canonical, non-symlinked CODEX_HOME, SQLite, and config paths before the session becomes usable.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/storage-proof.ts"
+						}
+					},
+					{
+						"id": "JBu1uGdl",
+						"order": 4000,
+						"name": "Gate protocol operations",
+						"kind": "function",
+						"responsibility": "Expose allowed reads and mutations",
+						"description": "Implements the reviewed login, thread, turn, queue, timeline, and realtime methods as reads or mutations of the request path, behind login-capable and thread-capable gates.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session-operations.ts"
+						}
+					},
+					{
+						"id": "X6j6fViI",
+						"order": 5000,
+						"name": "Serialize request identities",
+						"kind": "function",
+						"responsibility": "Prove IDs before wire encoding",
+						"description": "Validates every identity-bearing request field against the current child authority and serializes only issued identities for the wire.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/request-identities.ts"
+						}
+					},
+					{
+						"id": "aRDbMlep",
+						"order": 6000,
+						"name": "Response contracts",
+						"kind": "function",
+						"responsibility": "Which identity kinds each method's result carries, derived from the protocol schemas",
+						"description": "Defines the response shapes of the session's methods from the codex-protocol schemas and SESSION_PROTOCOL_METHODS, the identity kinds each result contains, which the adoption step collects.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/response-contract.ts"
+						}
+					},
+					{
+						"id": "M3mPynLe",
+						"order": 7000,
+						"name": "Adopt response identities",
+						"kind": "function",
+						"responsibility": "Brand returned IDs atomically",
+						"description": "Collects all raw identities in a decoded response, adopts them in one authority transaction, and overlays their trusted brands.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/results.ts"
+						}
+					},
+					{
+						"id": "3FR6mev4",
+						"order": 8000,
+						"name": "Answer reverse requests",
+						"kind": "function",
+						"responsibility": "Handle child-originated calls",
+						"description": "Routes current-time requests for owned threads and explicitly refuses unsupported token refresh and attestation requests.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/reverse-requests.ts"
+						}
+					},
+					{
+						"id": "8QpDaiD6",
+						"order": 9000,
+						"name": "Classify request failures",
+						"kind": "function",
+						"responsibility": "State mutation delivery outcome",
+						"description": "Distinguishes invalid inputs and failures that were not delivered from mutations whose remote outcome is unknown and requires inspection.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session-failures.ts"
+						}
+					},
+					{
+						"id": "FPKa6YCR",
+						"order": 10000,
+						"name": "Workhorse start",
+						"kind": "module",
+						"responsibility": "The caller that opens a thread on this session under an epoch transaction",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-start"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "ql0DevMk",
+						"order": 11000,
+						"name": "Codex transport",
+						"kind": "module",
+						"responsibility": "The wire under the session: one newline-framed JSON object at a time, each way",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-transport"
+						}
+					},
+					{
+						"id": "Sk7GfGta",
+						"order": 12000,
+						"name": "Codex protocol",
+						"kind": "module",
+						"responsibility": "The pinned app-server contract every request and response is decoded against",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-protocol"
+						}
+					},
+					{
+						"id": "xtHoCCnF",
+						"order": 13000,
+						"name": "Generation hooks",
+						"kind": "module",
+						"responsibility": "Takes the child's epoch, with the coordinator's own directory as its workspace root, then initializes the session and reads the account before a generation is ready",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-workbench-hooks.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "qQrqNYdt",
+						"order": 1000,
+						"from": "xtHoCCnF",
+						"to": "tFTiAUKg",
+						"kind": "call",
+						"label": "initialize, once",
+						"description": "The caller invokes initialize on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-workbench-hooks.ts",
+							"symbol": "initialize"
+						}
+					},
+					{
+						"id": "SI5PTs6X",
+						"order": 3000,
+						"from": "tFTiAUKg",
+						"to": "X6j6fViI",
+						"kind": "call",
+						"label": "serialize issued identities",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session.ts",
+							"symbol": "createRequestParamsSerializer"
+						}
+					},
+					{
+						"id": "HlhfxXJm",
+						"order": 5000,
+						"from": "tFTiAUKg",
+						"to": "M3mPynLe",
+						"kind": "call",
+						"label": "adopt returned identities",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session.ts",
+							"symbol": "adoptSessionResponse"
+						}
+					},
+					{
+						"id": "mpJAeANo",
+						"order": 6000,
+						"from": "tFTiAUKg",
+						"to": "8QpDaiD6",
+						"kind": "call",
+						"label": "settle mutation failure",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session.ts",
+							"symbol": "mutationFailure"
+						}
+					},
+					{
+						"id": "7dDHchT9",
+						"order": 9000,
+						"from": "FPKa6YCR",
+						"to": "JBu1uGdl",
+						"kind": "call",
+						"label": "thread/start for a new workhorse",
+						"description": "The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+							"symbol": "threadStart"
+						}
+					},
+					{
+						"id": "EAKN00R4",
+						"order": 10000,
+						"from": "tFTiAUKg",
+						"to": "ql0DevMk",
+						"kind": "rpc",
+						"label": "one request frame",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session.ts",
+							"symbol": "request"
+						}
+					},
+					{
+						"id": "blvoJ8p8",
+						"order": 12000,
+						"from": "ql0DevMk",
+						"to": "3FR6mev4",
+						"kind": "event",
+						"label": "a request the child made of us",
+						"description": "createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session.ts",
+							"symbol": "onServerRequest"
+						}
+					},
+					{
+						"id": "jhNZqAiD",
+						"order": 13000,
+						"from": "JBu1uGdl",
+						"to": "tFTiAUKg",
+						"kind": "call",
+						"label": "read or mutate, behind its gate",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session-operations.ts",
+							"symbol": "mutate"
+						}
+					},
+					{
+						"id": "d2caVqCr",
+						"order": 14000,
+						"from": "tFTiAUKg",
+						"to": "Sk7GfGta",
+						"kind": "call",
+						"label": "decode parameters and answer",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session.ts",
+							"symbol": "decodeResponse"
+						}
+					},
+					{
+						"id": "JOmIweJF",
+						"order": 15000,
+						"from": "M3mPynLe",
+						"to": "aRDbMlep",
+						"kind": "dependency",
+						"label": "which identities each result holds",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/results.ts",
+							"symbol": "SESSION_PROTOCOL_METHODS"
+						}
+					},
+					{
+						"id": "JTrBju8L",
+						"order": 16000,
+						"from": "tFTiAUKg",
+						"to": "Ly6hUU5o",
+						"kind": "call",
+						"label": "prove storage after config/read",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session.ts",
+							"symbol": "proveCodexStorage"
+						}
+					},
+					{
+						"id": "bEmVBBGp",
+						"order": 17000,
+						"from": "3FR6mev4",
+						"to": "ql0DevMk",
+						"kind": "call",
+						"label": "answer the clock, refuse the rest",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/reverse-requests.ts",
+							"symbol": "respond"
+						}
+					},
+					{
+						"id": "cDYih9Cs",
+						"order": 18000,
+						"from": "tFTiAUKg",
+						"to": "3FR6mev4",
+						"kind": "call",
+						"label": "install the answers to the child's requests",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session.ts",
+							"symbol": "createReverseRequestHandlers"
+						}
+					},
+					{
+						"id": "7wUmdcxh",
+						"order": 19000,
+						"from": "X6j6fViI",
+						"to": "aRDbMlep",
+						"kind": "dependency",
+						"label": "which fields each request issues",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/request-identities.ts",
+							"symbol": "SESSION_PROTOCOL_METHODS"
+						}
+					},
+					{
+						"id": "wVgRmbf8",
+						"order": 20000,
+						"from": "JBu1uGdl",
+						"to": "8QpDaiD6",
+						"kind": "call",
+						"label": "did a failed logout reach the child",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session-operations.ts",
+							"symbol": "mutationOutcome"
+						}
+					},
+					{
+						"id": "40GtFaKL",
+						"order": 21000,
+						"from": "JBu1uGdl",
+						"to": "Sk7GfGta",
+						"kind": "dependency",
+						"label": "reviewed methods, policies and schemas",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session-operations.ts",
+							"symbol": "LOGIN_POLICIES"
+						}
+					},
+					{
+						"id": "OjFVoTcz",
+						"order": 22000,
+						"from": "ql0DevMk",
+						"to": "Sk7GfGta",
+						"kind": "dependency",
+						"label": "decode each inbound frame",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-transport/lib/inbound-router.ts",
+							"symbol": "decodeServerNotification"
+						}
+					},
+					{
+						"id": "s0Qx9DbR",
+						"order": 23000,
+						"from": "X6j6fViI",
+						"to": "8QpDaiD6",
+						"kind": "call",
+						"label": "refuse params that are no object",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/request-identities.ts",
+							"symbol": "requestParams"
+						}
+					},
+					{
+						"id": "cGImVr7b",
+						"order": 24000,
+						"from": "X6j6fViI",
+						"to": "Sk7GfGta",
+						"kind": "dependency",
+						"label": "request methods and their parameters",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/request-identities.ts",
+							"symbol": "isClientRequestMethodWithoutParams"
+						}
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "nHXidPNe",
+						"name": "Guard one app-server exchange",
+						"beats": [
+							{
+								"id": "6uIC2378",
+								"heading": "Establish trusted readiness",
+								"body": "The generation hooks initialize the session once: the handshake negotiates the fixed capability set, and the storage proof confirms the child is using exactly the private paths prepared for it before any login or thread method opens.",
+								"subjects": [
+									"xtHoCCnF",
+									"qQrqNYdt",
+									"tFTiAUKg",
+									"JTrBju8L",
+									"Ly6hUU5o"
+								]
+							},
+							{
+								"id": "EzmGJ9EP",
+								"heading": "Send only owned requests",
+								"body": "Every reviewed method is a read or a mutation of the one request path, behind its gate. The path serializes only identities issued for this child epoch and decodes the parameters against the pinned protocol before one frame goes on the wire.",
+								"subjects": [
+									"JBu1uGdl",
+									"jhNZqAiD",
+									"X6j6fViI",
+									"SI5PTs6X",
+									"Sk7GfGta",
+									"EAKN00R4"
+								]
+							},
+							{
+								"id": "GgnkvAie",
+								"heading": "Settle every answer",
+								"body": "An answer is decoded against the protocol and its identities adopted in one transaction, by the identity kinds its method's contract names; a mutation that fails states whether it was delivered. A request the child makes of us is answered for an owned thread or refused by policy.",
+								"subjects": [
+									"aRDbMlep",
+									"M3mPynLe",
+									"HlhfxXJm",
+									"8QpDaiD6",
+									"3FR6mev4",
+									"bEmVBBGp"
+								]
+							}
+						]
+					}
+				]
+			}
 		}
 	],
-	"current": "czWsPLxf",
+	"current": "wGMnT2kK",
 	"adoptions": [
 		{
 			"variant": "QfFFXHyU",
@@ -2422,6 +2921,12 @@
 			"from": "DTYLMGcv",
 			"at": "2026-10-15T07:31:56.213Z",
 			"reason": "The app-server child and the config it reads work in the coordinator's own directory, which is no checkout; the epoch starts there"
+		},
+		{
+			"variant": "wGMnT2kK",
+			"from": "czWsPLxf",
+			"at": "2026-10-16T01:30:27.287Z",
+			"reason": "The board is its own container (TASK-482.06): no part stands for it"
 		}
 	]
 }
