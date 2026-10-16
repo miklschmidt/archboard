@@ -29,6 +29,7 @@ import { Containers } from "@/transformers/semantic-renderer/lib/track/container
 import { closeJogs, openNotches } from "@/transformers/semantic-renderer/lib/track/jogs";
 import { collinearPairs, partCollinear } from "@/transformers/semantic-renderer/lib/track/parting";
 import { relayLaps } from "@/transformers/semantic-renderer/lib/track/relay";
+import { fitTitleRows } from "@/transformers/semantic-renderer/lib/track/title-rows";
 import {
 	clearHeadings,
 	straightenThroughLabels,
@@ -452,6 +453,7 @@ function routeScene(
 	const chains = new Map(inner.map((line) => [line.id, chainOf(scene, line.placed)]));
 	// A line that enters its block by a wall comes from that wall, not from its stub.
 	const movable = inner.filter(({ enters }) => enters === undefined);
+	fitTitleRows(scene, [...chains.values()]);
 	clearHeadings(scene, [...chains.values()]);
 	straightenLanes(scene, [...chains.values()]);
 	relayLaps(

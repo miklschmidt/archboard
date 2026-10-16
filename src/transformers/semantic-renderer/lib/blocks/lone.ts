@@ -15,13 +15,16 @@ import {
 	PLACING_GROUP,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { cardOf, type Card } from "@/transformers/semantic-renderer/lib/blocks/card";
+import { stepsOf, type Header } from "@/transformers/semantic-renderer/lib/blocks/headers";
 import { CAPTION_INSET, type Insets } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { FrameShape } from "@/transformers/semantic-renderer/lib/track/containers";
 import {
 	TRACK_BELOW,
+	TRACK_STEPS,
 	TRACK_TITLE,
 	TRACK_WIDE,
 } from "@/transformers/semantic-renderer/lib/track/scene";
+import { ARCHITECTURE_HEADER_PADDING } from "@/transformers/semantic-renderer/lib/design";
 
 /** How far a line carried to a card's side keeps from the card's corners. */
 const CORNER_ROOM = 8;
@@ -177,9 +180,9 @@ function grownBy(lone: Lone): number {
  * @param band How much the caption band adds, when it is alone in its region.
  * @returns The header's size.
  */
-function frameHeader(node: ElkNode, band = 0): Size {
+function frameHeader(node: ElkNode, band = 0): Header {
 	const header = Number(node.layoutOptions?.["archboard.header.size"] ?? 0);
-	return { width: node.width!, height: Math.max(1, header) + band };
+	return { width: node.width!, height: Math.max(1, header) + band, ...stepsOf(node, band) };
 }
 
 /**
@@ -189,7 +192,7 @@ function frameHeader(node: ElkNode, band = 0): Size {
  * @param lone Its region, if it is alone in one.
  * @returns What the block is of.
  */
-function framed(node: ElkNode, lone: Lone | undefined): { header: Size; lone: Lone | undefined } {
+function framed(node: ElkNode, lone: Lone | undefined): { header: Header; lone: Lone | undefined } {
 	return { header: frameHeader(node, lone && bandOf(lone)), lone };
 }
 
@@ -242,6 +245,18 @@ function sideRoom(width: number, lone: Lone): number {
 }
 
 /**
+ * How wide a container is in a block of some width: the block's width, or
+ * alone in its region, the width it stands at inside the region (`cardIn`).
+ * @param block The container's block.
+ * @param block.lone Its region, if it is alone in one.
+ * @param width The block's width.
+ * @returns The container's width.
+ */
+function frameWidth(block: { readonly lone?: Lone | undefined }, width: number): number {
+	return block.lone === undefined ? width : width - 2 * sideRoom(width, block.lone);
+}
+
+/**
  * How far in from each side of its region a container stands: the region's
  * inset, or the room a block keeps round it in a region its caption widens.
  * @param lone The region.
@@ -262,18 +277,26 @@ function roomOf(lone: Lone): number {
  * @param head.centre The height of its centre.
  * @param head.height Its height.
  * @param head.words How far its title's words reach in from its left edge.
+ * @param head.steps Each wider size its title row can take, when it has more than one (`headers.ts`).
  * @param lone Its region, if it is alone in one.
  * @returns The layout options that carry them.
  */
 function titleRow(
 	bounds: Box,
-	head: { centre: number; height: number; words: number },
+	head: { centre: number; height: number; words: number; steps?: readonly Size[] | undefined },
 	lone: Lone | undefined,
 ): Record<string, string> {
-	const { centre, height, words } = head;
+	const { centre, height, words, steps } = head;
 	const row = [bounds.x, centre - height / 2, bounds.width, height, words];
 	return {
 		[TRACK_TITLE]: row.join(","),
+		...(steps === undefined
+			? {}
+			: {
+					[TRACK_STEPS]: JSON.stringify(
+						steps.map((step) => [step.width - ARCHITECTURE_HEADER_PADDING, step.height]),
+					),
+				}),
 		...(lone === undefined
 			? {}
 			: { [TRACK_BELOW]: String(REGION_INSET), [TRACK_WIDE]: String(captionWidth(lone)) }),
@@ -459,6 +482,7 @@ export {
 	cardIn,
 	carriedLine,
 	frameHeader,
+	frameWidth,
 	frameShape,
 	framed,
 	grownBy,

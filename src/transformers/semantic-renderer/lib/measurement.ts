@@ -14,13 +14,8 @@ import {
 import { DRILL_MARK_ROOM } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 // The words settle before placement. Pretext owns line breaking; the canvas of
 // the place drawing the picture measures the strings the SVG will paint.
-import {
-	layoutWithLines,
-	measureLineStats,
-	measureNaturalWidth,
-	prepareWithSegments,
-	walkLineRanges,
-} from "@chenglou/pretext";
+import { layoutWithLines, measureNaturalWidth, prepareWithSegments } from "@chenglou/pretext";
+import { balancedWrapWidth, fewerLinesAt } from "@/transformers/semantic-renderer/lib/wrap-widths";
 import {
 	gatheringGroups,
 	type SemanticNode,
@@ -142,16 +137,41 @@ const CARD_WIDTH = { least: 260, most: 340 } as const;
  * container's well (`lib/svg/tray.ts`) a small gap inside its walls; it is as
  * tall as its words need and no taller. Its width is the box's least width,
  * between a card's least and most, and its words are placed relative to the
- * box, on the slab.
+ * box, on the slab. A container laid out wider than that wraps its header's
+ * words wider and stands its header shorter: its `headers` are each width
+ * at which the header takes a line fewer.
  * @param node The semantic subject, including its complete authored words.
  * @param container Whether other subjects name this one as their parent.
  * @returns Its minimum box and all relative text positions.
  */
 function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 	if (!container) return measureSlab(node, { ...CARD_WIDTH, height: 72 });
+	const least = measureHeader(
+		node,
+		CARD_WIDTH.least - 2 * HEADER_SLAB_INSET,
+		CARD_WIDTH.most - 2 * HEADER_SLAB_INSET,
+	);
+	const headers = [least];
+	for (let wider = nextBreak(node, least); wider !== undefined;) {
+		const header = measureHeader(node, wider, wider);
+		if (header.height >= headers.at(-1)!.height) break;
+		headers.push(header);
+		wider = nextBreak(node, header);
+	}
+	return headers.length === 1 ? least : { ...least, headers };
+}
+
+/**
+ * A container's header slab at a width, and the header row it stands in.
+ * @param node The container.
+ * @param least The slab's least width.
+ * @param most The widest the slab grows before its words wrap.
+ * @returns Its header, its words placed relative to the container's box.
+ */
+function measureHeader(node: SemanticNode, least: number, most: number): MeasuredNode {
 	const slab = measureSlab(node, {
-		least: CARD_WIDTH.least - 2 * HEADER_SLAB_INSET,
-		most: CARD_WIDTH.most - 2 * HEADER_SLAB_INSET,
+		least,
+		most,
 		height: ICON_CHIP_SIZE + 2 * ARCHITECTURE_CARD_PADDING,
 	});
 	const headerHeight = HEADER_SLAB_INSET + slab.height;
@@ -166,6 +186,27 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 			y: run.y + HEADER_SLAB_INSET,
 		})),
 	};
+}
+
+/**
+ * The next width a container's header slab takes a line fewer at: the
+ * narrowest at which its name or its responsibility wraps into fewer lines
+ * than in a header.
+ * @param node The container.
+ * @param header Its header at some width.
+ * @returns The slab's width, or nothing when both already take one line.
+ */
+function nextBreak(node: SemanticNode, header: MeasuredNode): number | undefined {
+	const slab = header.width - 2 * HEADER_SLAB_INSET;
+	const inner = ARCHITECTURE_CARD_PADDING * 2 + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
+	const marked = node.drillDown === undefined ? 0 : DRILL_MARK_ROOM;
+	const widths = [
+		fewerLinesAt(prepare(node.name, TITLE), slab - inner - marked),
+		fewerLinesAt(prepare(node.responsibility ?? "", NOTE), slab - inner),
+	].flatMap((room, index) =>
+		room === undefined ? [] : [room + inner + (index === 0 ? marked : 0)],
+	);
+	return widths.length === 0 ? undefined : Math.min(...widths);
 }
 
 /**
@@ -222,60 +263,6 @@ function measureSlab(
 const LABEL_MAX_WIDTH = 200;
 /** The narrowest plate, so a one-glyph label still reads as a plate. */
 const LABEL_MIN_WIDTH = 40;
-
-/**
- * How many lines end inside a word: Pretext breaks a word wider than the line
- * between two of its letters rather than let it overflow.
- * @param prepared The measured text.
- * @param width The width the lines wrap at.
- * @returns The number of words broken.
- */
-function wordBreaks(prepared: ReturnType<typeof prepareWithSegments>, width: number): number {
-	let breaks = 0;
-	walkLineRanges(prepared, width, (line) => {
-		// A line that ends between segments ends at a place the text may break.
-		if (line.end.graphemeIndex > 0) breaks += 1;
-	});
-	return breaks;
-}
-
-/**
- * The narrowest wrap width that keeps the line count the widest wrap gives,
- * so wrapped words share their lines evenly instead of leaving one word alone
- * on the last, and that breaks no word the widest wrap keeps whole.
- * @param prepared The measured text.
- * @param limit The widest the lines may be.
- * @returns A width at most `limit` that breaks into no more lines, and inside
- *   no more words, than `limit` does.
- */
-function balancedWrapWidth(
-	prepared: ReturnType<typeof prepareWithSegments>,
-	limit: number,
-): number {
-	const lines = measureLineStats(prepared, limit).lineCount;
-	if (lines <= 1) {
-		return limit;
-	}
-	const breaks = wordBreaks(prepared, limit);
-	/**
-	 * Whether a narrower wrap is as good as the widest: no more lines, no more broken words.
-	 * @param width The narrower wrap's width.
-	 * @returns Whether it serves.
-	 */
-	const fitsAt = (width: number): boolean =>
-		measureLineStats(prepared, width).lineCount <= lines && wordBreaks(prepared, width) <= breaks;
-	let tooNarrow = measureNaturalWidth(prepared) / lines;
-	let fits = limit;
-	while (fits - tooNarrow > 0.5) {
-		const middle = (tooNarrow + fits) / 2;
-		if (fitsAt(middle)) {
-			fits = middle;
-		} else {
-			tooNarrow = middle;
-		}
-	}
-	return fits;
-}
 
 /**
  * Settle a relationship's complete words and padded plate before routing it.

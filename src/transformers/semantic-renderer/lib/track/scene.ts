@@ -22,6 +22,12 @@ const TRACK_BELOW = "archboard.track.below";
  * fitted to what it holds, where its layout kept the room (`sides.ts`).
  */
 const TRACK_WIDE = "archboard.track.wide";
+/**
+ * The layout option on a frame that carries each size its title row can
+ * take, as JSON `[words, height]` rows, narrowest first: how far its words
+ * reach in, and how tall the row stands (TASK-486).
+ */
+const TRACK_STEPS = "archboard.track.steps";
 /** The root layout option that carries every group region, as JSON `PlacedRegion` rows. */
 const TRACK_REGIONS = "archboard.track.regions";
 /** How far a region's caption sits in from its band's left edge. */
@@ -66,13 +72,32 @@ function cardFace(item: Item): Box {
  * @param title Its title row's layout option.
  * @returns The row and its words' reach.
  */
-function titleRow(node: ElkNode, title: string): { item: Item; words: number } {
+function titleRow(
+	node: ElkNode,
+	title: string,
+): { item: Item; words: number; steps: readonly TitleStep[] } {
 	const [x, y, width, height, words] = title.split(",").map(Number);
 	const inset = Number(node.layoutOptions?.[TRACK_BELOW] ?? 0);
 	const item: Item = { box: { x: x!, y: y!, width: width!, height: height! }, band: -1 };
 	if (inset > 0) item.inset = inset;
-	return { item, words: words! };
+	const rows = node.layoutOptions?.[TRACK_STEPS];
+	const steps =
+		rows === undefined
+			? []
+			: TitleStepsSchema.parse(JSON.parse(rows)).map(([reach, tall]) => ({
+					words: reach,
+					height: tall,
+				}));
+	return { item, words: words!, steps };
 }
+
+/** A size a frame's title row can take: how far its words reach in, and how tall it stands. */
+interface TitleStep {
+	readonly words: number;
+	readonly height: number;
+}
+
+const TitleStepsSchema = z.array(z.tuple([z.number(), z.number()]));
 
 /** One band: the items on one rank, and where it lies before and after spacing. */
 interface Band {
@@ -157,6 +182,10 @@ class Scene {
 	readonly titles = new Map<string, Item>();
 	/** How far each title row's words reach in from its left edge. */
 	readonly words = new Map<Item, number>();
+	/** Each size a title row can take, narrowest first; none where it has one size. */
+	readonly steps = new Map<Item, readonly TitleStep[]>();
+	/** Which of its sizes each frame's title row took, by frame, where it took a wider one. */
+	readonly headers = new Map<string, number>();
 	readonly frames = new Map<string, Frame>();
 	/** Each band's frame and region walls, once asked for. */
 	private readonly walls = new Map<number, ReadonlyMap<string, readonly [number, number]>>();
@@ -276,9 +305,10 @@ class Scene {
 				this.cards.set(node.id, { box: boxOf(node, node.id), band: -1 });
 				continue;
 			}
-			const { item, words } = titleRow(node, title);
+			const { item, words, steps } = titleRow(node, title);
 			this.titles.set(node.id, item);
 			this.words.set(item, words);
+			this.steps.set(item, steps);
 			this.frames.set(node.id, { node, depth, members: [] });
 			this.visit(node.children ?? [], depth + 1, [...frames, node.id]);
 		}
@@ -527,6 +557,7 @@ export {
 	TRACK_BELOW,
 	TRACK_POLYLINE,
 	TRACK_REGIONS,
+	TRACK_STEPS,
 	TRACK_TITLE,
 	TRACK_WIDE,
 	centreX,

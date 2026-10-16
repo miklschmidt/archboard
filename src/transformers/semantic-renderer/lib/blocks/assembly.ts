@@ -29,6 +29,8 @@ interface PlacedNode {
 	readonly id: string;
 	readonly box: Box;
 	readonly depth: number;
+	/** Which of a container's header's wider sizes it took, when it took one (`headers.ts`). */
+	readonly header?: number;
 }
 
 /** A group region, placed. */
@@ -256,16 +258,21 @@ class Assembly {
 		return [
 			...blocks
 				.filter((block) => block.kind === "frame")
-				.map((block) => ({
-					id: block.id,
-					box: this.frameBox(block),
-					depth: this.depths.get(block.parent!.id)!,
-				})),
+				.map((block) => {
+					const { header } = this.laid.get(block.id)!;
+					return {
+						id: block.id,
+						box: this.frameBox(block),
+						depth: this.depths.get(block.parent!.id)!,
+						...(header === undefined ? {} : { header }),
+					};
+				}),
 			...blocks.flatMap((block) =>
-				(this.laid.get(block.id)!.frames ?? []).map(({ id, box, depth }) => ({
+				(this.laid.get(block.id)!.frames ?? []).map(({ id, box, depth, header }) => ({
 					id,
 					box: moved(box, this.origins.get(block.id)!),
 					depth: this.depths.get(block.id)! + depth,
+					...(header === undefined ? {} : { header }),
 				})),
 			),
 		];
