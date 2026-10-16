@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-16 13:19'
-updated_date: '2026-10-16 13:32'
+updated_date: '2026-10-16 13:41'
 labels:
   - board-store
   - skill
@@ -38,6 +38,17 @@ Possible simplification, to decide once the restore change lands: one `--confirm
 - [ ] #4 A replacement made on purpose (old id removed, new part with another name and binding) and an ordinary edit pass without any confirmation, shown by a test
 - [ ] #5 The archboard skill has a recipe for a stack of pull requests on a vault board: each PR is a proposal branched from the one before, holds the whole architecture at that branch, and states only its own change; the pull request recording recipe says its cut-down board is for a throwaway board only and points to the stack recipe
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. One confirmation concept: replace the --restore-known-ids flag and the restoreKnownIds request field (commit 39d02606f) with a repeatable 'semantic edit --confirm <code>' carried as 'confirm: string[]' on the edit input. A refusal that can be confirmed names its code and the --confirm that passes it; the landed write warns for each confirmed act. Codes: RESTORE_UNCONFIRMED (existing), a re-created-part code and a mass-removal code.
+2. Re-creation refusal in the edit transition: a node the edit adds under a newly minted id, while an ancestor of the variant (parent chain) holds a node with the same name or the same binding (repo + path + symbol) under an id the edited variant lacks, is refused. The message names the ancestor id, the variant, and both ways on: state that id (restore, with --confirm RESTORE_UNCONFIRMED when the predecessor lacks it) or --confirm the code for a different part.
+3. Mass-removal refusal: an edit after which the variant holds fewer than half of the nodes it held before that its predecessor also holds is refused unless confirmed. Only variants with a predecessor.
+4. Tests in semantic-board-store: each refusal by code, each confirmation, a deliberate replacement and an ordinary edit pass unconfirmed.
+5. Skill: a PR stack recipe beside the recording recipe in sequences-views-walkthroughs.md (or variants.md), and the recording recipe says its cut-down board is throwaway and points to it; update variants.md and edit.md restore text for --confirm.
+6. Gate: store, shared and cli tests, lint, tsc, skill-links test.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
