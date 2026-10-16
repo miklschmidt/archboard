@@ -5,6 +5,7 @@
 import {
 	currentVariant,
 	findVariant,
+	messagesOf,
 	type SemanticBoard,
 	type SemanticFlow,
 	type SemanticNode,
@@ -359,7 +360,7 @@ const flowWithSteps: Check = (check, reading) =>
 const flowStepRepeat: Check = (check, reading) =>
 	onFlow(check, reading, (flow) => {
 		const least = check.minRepeat ?? 2;
-		const repeated = flow.steps.filter(
+		const repeated = messagesOf(flow.steps).filter(
 			(step) => (step.repeat ?? 1) >= least && (check.withNote !== true || step.note !== undefined),
 		);
 		return finding(

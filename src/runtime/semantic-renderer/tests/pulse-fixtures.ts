@@ -84,7 +84,7 @@ const CHAIN_NODES = [
  * @param grammar Which grammar to draw it in.
  * @returns The markup.
  */
-export async function drawn(grammar: "architecture" | "data-flow"): Promise<string> {
+export async function drawn(grammar: "architecture" | "sequence"): Promise<string> {
 	return (await renderSemanticView({ content: SAMPLE, grammar, theme: "light" })).svg;
 }
 

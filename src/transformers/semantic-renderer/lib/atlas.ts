@@ -2,7 +2,7 @@
 // beside it.
 //
 // Forked from PR Lens's `atlas.ts`. The flow-step record went with the
-// data-flow grammar; lanes became regions.
+// sequence grammar; lanes became regions.
 //
 // A pane that wants to put a rim around a node, scroll to an edge, or tell
 // which subject a click landed on needs geometry, and only the renderer knows

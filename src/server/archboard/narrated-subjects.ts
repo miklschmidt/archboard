@@ -9,6 +9,9 @@
 import type { StepSubject } from "@/runtime/codex-realtime";
 import {
 	changeOf,
+	everyStep,
+	isMessage,
+	stepWords,
 	comparedWith,
 	compareVariants,
 	type FieldChange,
@@ -45,7 +48,11 @@ function namesOf(content: VariantContent): ReadonlyMap<string, string> {
 		...parts,
 		...content.edges.map((edge) => [edge.id, between(edge)] as const),
 		...content.flows.map((flow) => [flow.id, `the sequence ${flow.name}`] as const),
-		...content.flows.flatMap((flow) => flow.steps.map((step) => [step.id, between(step)] as const)),
+		...content.flows.flatMap((flow) =>
+			everyStep(flow.steps).map(
+				(step) => [step.id, isMessage(step) ? between(step) : stepWords(step)] as const,
+			),
+		),
 	]);
 }
 

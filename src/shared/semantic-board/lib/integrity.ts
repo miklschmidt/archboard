@@ -22,6 +22,7 @@ import {
 } from "@/shared/semantic-board/lib/content";
 import { RESERVED_VIEW_NAMES } from "@/shared/semantic-board/lib/scope";
 import type { SemanticFlow } from "@/shared/semantic-board/lib/views";
+import { messagesOf } from "@/shared/semantic-board/lib/flow-steps";
 import type { WalkthroughBeat } from "@/shared/semantic-board/lib/walkthrough";
 
 /**
@@ -175,7 +176,7 @@ function flowNodeIssues(
 			});
 		}
 	}
-	for (const step of flow.steps) {
+	for (const step of messagesOf(flow.steps)) {
 		for (const [end, id] of [["from", step.from] as const, ["to", step.to] as const]) {
 			if (!columns.has(id)) {
 				issues.push({

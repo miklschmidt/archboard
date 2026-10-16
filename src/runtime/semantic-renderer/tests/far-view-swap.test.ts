@@ -164,8 +164,8 @@ const PARTS: readonly (readonly [DiagramGrammar, string, "card" | "header"])[] =
 	["architecture", "api", "card"],
 	["architecture", "store", "card"],
 	["architecture", "system", "header"],
-	["data-flow", "api", "card"],
-	["data-flow", "store", "card"],
+	["sequence", "api", "card"],
+	["sequence", "store", "card"],
 ];
 
 describe("a part's near and far views", () => {
@@ -223,8 +223,8 @@ describe("a part's near and far views", () => {
 		expect(chip!.far.y).toBeLessThanOrEqual(chip!.near.y);
 	});
 
-	test("data-flow save: a flow's heading, which has no chip, moves its words between the near and the far place", async () => {
-		const rendered = await renderSemanticView({ grammar: "data-flow", content, theme: "light" });
+	test("sequence save: a flow's heading, which has no chip, moves its words between the near and the far place", async () => {
+		const rendered = await renderSemanticView({ grammar: "sequence", content, theme: "light" });
 		const views = viewsOf(rendered.svg, "save", "flow");
 		expect(views.chips).toHaveLength(0);
 		expect(views.words).toHaveLength(2);

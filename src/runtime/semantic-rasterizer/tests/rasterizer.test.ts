@@ -99,7 +99,7 @@ function lightValue(colour: string): string {
  */
 function draw(
 	content: VariantContent,
-	grammar: "architecture" | "data-flow" = "architecture",
+	grammar: "architecture" | "sequence" = "architecture",
 ): Promise<RenderedDiagram> {
 	return renderSemanticView({ content, theme: "light", fonts: "embedded", grammar });
 }
@@ -184,8 +184,8 @@ describe("what one capture is", () => {
 		expect(colors.get(rgbOf(lightValue(PALETTE.slabEdge))) ?? 0).toBeGreaterThan(24 * 500);
 	});
 
-	test("a sequence draws through the data-flow grammar with its animation paused", async () => {
-		const drawn = await draw(SAMPLE, "data-flow");
+	test("a sequence draws through the sequence grammar with its animation paused", async () => {
+		const drawn = await draw(SAMPLE, "sequence");
 		expect(drawn.svg).toContain("<animate");
 		const capture = await owned().rasterize({ ...drawn, scale: 1 });
 		expect(readPngDimensions(capture.png)).toEqual({ width: drawn.width, height: drawn.height });

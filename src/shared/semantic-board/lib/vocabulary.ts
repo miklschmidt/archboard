@@ -36,14 +36,29 @@ const EdgeEmphasisSchema = z.enum(["normal", "hero", "muted"]);
 type EdgeEmphasis = z.infer<typeof EdgeEmphasisSchema>;
 
 /**
- * The two grammars a variant can be drawn in.
+ * The grammars a variant can be drawn in.
  *
- * Both are inherited from the renderer this repository forked, and both read
- * the same nodes: architecture shows what the parts are and how they are wired,
- * and data-flow shows one ordered exchange between them. A third would be a new
- * way of saying something, not a new way of drawing it, so the set is closed.
+ * Each reads what the variant already says, and none adds a way of saying
+ * something: architecture shows what the parts are and how they are wired;
+ * sequence shows a flow as an ordered exchange between their columns, a
+ * decision as labelled alternative frames and a loop as a loop frame; and
+ * flowchart shows the logic of the same flow, its steps as boxes and its
+ * decisions as diamonds with labelled branches (ADR 0053).
+ *
+ * `sequence` was called `data-flow` until schema 2.5.0, which renames every
+ * stored view. A write that still names it is told the new name.
  */
-const DiagramGrammarSchema = z.enum(["architecture", "data-flow"]);
+const DiagramGrammarSchema = z.enum(["architecture", "sequence", "flowchart"], {
+	/**
+	 * Why a grammar is refused, naming the new name of the old one.
+	 * @param issue What was refused.
+	 * @returns The reason.
+	 */
+	error: (issue) =>
+		issue.input === "data-flow"
+			? 'the grammar "data-flow" is now called "sequence"'
+			: 'a grammar is "architecture", "sequence" or "flowchart"',
+});
 type DiagramGrammar = z.infer<typeof DiagramGrammarSchema>;
 
 /**

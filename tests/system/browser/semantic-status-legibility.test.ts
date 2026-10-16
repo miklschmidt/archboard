@@ -215,7 +215,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 						],
 						views: [
 							{ name: "The parts", grammar: "architecture" },
-							{ name: "In order", grammar: "data-flow" },
+							{ name: "In order", grammar: "sequence" },
 						],
 					},
 				},
