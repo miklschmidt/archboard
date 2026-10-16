@@ -91,7 +91,11 @@ your own.
    if it is installed, names that branch. Each pull request of a stack gets its
    own proposal, unless it builds part of an earlier one (section 2). Branch it
    from the proposal of the branch below (`semantic branch --from`), and
-   compare it with that proposal (`semantic compare --against`). A render
+   compare it with that proposal (`semantic compare --against`). Each
+   proposal holds the whole architecture, with the parts a later pull request
+   builds. Never remove a part to narrow a pull request. Never add a part
+   again under a new id. A view or the comparison shows what this pull
+   request changed. A render
    reads a proposal against the current variant, and so do the parts that a
    footprint says it names. So they also show the changes below: say so beside
    the render.
