@@ -430,7 +430,6 @@ export {
 	SemanticRenderError,
 	renderArchitecture,
 	renderDataFlow,
-	renderFlowchart,
 	renderSemanticView,
 	drillDirection,
 	type DrillDirection,
