@@ -8,8 +8,16 @@ import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { extentOf } from "@/transformers/semantic-renderer/lib/track/labels";
 import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
-import { roomOf, sideRoom } from "@/transformers/semantic-renderer/lib/blocks/lone";
-import type { Block, BlockTree } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { frameWidth, roomOf, sideRoom } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import {
+	headerOf,
+	type Block,
+	type BlockTree,
+} from "@/transformers/semantic-renderer/lib/blocks/tree";
+import {
+	headerWithin,
+	type TakenHeader,
+} from "@/transformers/semantic-renderer/lib/blocks/headers";
 
 /** The side of a port's square. */
 const PORT = 1;
@@ -28,22 +36,62 @@ function level(one: ElkNode, other: ElkNode): boolean {
  * Stand the header in the block's top-left corner, over what the block
  * holds, and every leaf on its rank right of it a lane apart. Graphviz
  * ranks the header as a sliver, so it pushes neither the ports nor the
- * cards under them right by its width.
+ * cards under them right by its width. It takes the widest size it has room
+ * for there ({@link widened}).
  * @param leaves Every placed leaf; the header's and those on its rank move in place.
- * @param id The header's id.
+ * @param block The block.
+ * @param side The block's inset at its sides.
+ * @returns The header it took, if it has one.
  */
-function cornerHeader(leaves: readonly ElkNode[], id: string): void {
-	const header = leaves.find((leaf) => leaf.id === id);
-	if (header === undefined) return;
-	header.x = Math.min(...leaves.filter((leaf) => leaf !== header).map(({ x }) => x!));
-	const beside = leaves
-		.filter((leaf) => leaf !== header && level(leaf, header))
+function cornerHeader(
+	leaves: readonly ElkNode[],
+	block: Block,
+	side: number,
+): TakenHeader | undefined {
+	const header = leaves.find((leaf) => leaf.id === headerOf(block));
+	if (header === undefined) return undefined;
+	const others = leaves.filter((leaf) => leaf !== header);
+	header.x = Math.min(...others.map(({ x }) => x!));
+	const beside = others
+		.filter((leaf) => level(leaf, header))
 		.toSorted((one, other) => one.x! - other.x!);
+	const taken = widened(block, header, { others, beside, side });
 	let free = header.x + header.width! + LANE;
 	for (const leaf of beside) {
 		leaf.x = Math.max(leaf.x!, free);
 		free = leaf.x + leaf.width! + LANE;
 	}
+	return taken;
+}
+
+/**
+ * Give a block's header the widest size it has room for, now Graphviz has
+ * said how wide what the block holds is (TASK-486): no wider than that, so
+ * it widens no block, and left of every leaf on its rank, which Graphviz
+ * stood where its lines want it, so it pushes none of them aside.
+ * @param block The block.
+ * @param header The header's leaf, in its corner; it takes the size, about its centre.
+ * @param around What stands round it.
+ * @param around.others Every other leaf.
+ * @param around.beside The leaves on its rank.
+ * @param around.side The block's inset at its sides.
+ * @returns The header it took.
+ */
+function widened(
+	block: Block,
+	header: ElkNode,
+	around: { others: readonly ElkNode[]; beside: readonly ElkNode[]; side: number },
+): TakenHeader {
+	const least = block.header!;
+	const content = Math.max(...around.others.map(({ x, width }) => x! + width!)) - header.x!;
+	const taken = headerWithin(least, {
+		frame: frameWidth(block, content + 2 * around.side),
+		content,
+		beside: around.beside.map(({ x }) => x! - LANE - header.x!),
+	});
+	header.y = header.y! + (header.height! - taken.size.height) / 2;
+	[header.width, header.height] = [taken.size.width, taken.size.height];
+	return taken;
 }
 
 /**

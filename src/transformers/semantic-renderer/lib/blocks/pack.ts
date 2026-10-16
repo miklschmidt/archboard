@@ -23,6 +23,12 @@ import {
 	type Size,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PORT, rimOf } from "@/transformers/semantic-renderer/lib/blocks/leaves";
+import { frameWidth } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import {
+	headerWithin,
+	takenIndex,
+	type TakenHeader,
+} from "@/transformers/semantic-renderer/lib/blocks/headers";
 import {
 	extentOf,
 	packingsOf,
@@ -63,6 +69,8 @@ class PackLayout {
 	gap = PACK_GAP;
 	/** Room left of the packed blocks, for trunks that run round the leftmost. */
 	margin = 0;
+	/** The block's header as laid out: at its least size until a packing says how wide the block is. */
+	header: TakenHeader | undefined;
 
 	/**
 	 * Start the layout of a block of blocks.
@@ -76,7 +84,9 @@ class PackLayout {
 		readonly laid: ReadonlyMap<string, Laid>,
 		readonly tree: BlockTree,
 		readonly insets: Insets,
-	) {}
+	) {
+		this.header = block.header === undefined ? undefined : { size: block.header };
+	}
 
 	/**
 	 * The item a line end stands on.
@@ -149,7 +159,7 @@ class PackLayout {
 	 * @returns The room.
 	 */
 	headRoom(): number {
-		const header = this.block.header?.height ?? 0;
+		const header = this.header?.size.height ?? 0;
 		const ports = [...this.block.ports.values()].includes("top") ? PORT : 0;
 		return header > 0 || ports > 0 ? Math.max(header, ports) + HEAD_GAP : 0;
 	}
@@ -160,6 +170,7 @@ class PackLayout {
 	 */
 	place(packing: Packing): void {
 		[this.gap, this.margin] = [packing.gap ?? PACK_GAP, packing.margin ?? 0];
+		this.header = this.block.header === undefined ? undefined : { size: this.block.header };
 		const top = this.insets.top + this.headRoom();
 		const size = this.sizeOf(packing);
 		const length = packing.across ? size.width : size.height;
@@ -183,6 +194,28 @@ class PackLayout {
 			});
 			deep += thick + this.gap;
 		}
+		this.widenHeader(size);
+	}
+
+	/**
+	 * Take the widest size of the block's header that it has room for, once
+	 * its items are placed (TASK-486): no wider than what the block holds, so
+	 * it widens no block, and left of where each top port wants to stand, so
+	 * it pushes none of them aside. The items move up as far as it is shorter.
+	 * @param size The size of the packed items.
+	 */
+	widenHeader(size: Size): void {
+		const [least, { side, top }, before] = [this.block.header, this.insets, this.headRoom()];
+		if (least?.steps === undefined) return;
+		const width = Math.max(Math.max(size.width, least.width) + 2 * side + this.margin, this.held);
+		const edge: Span = [side, width - side];
+		const beside = [...this.block.ports]
+			.filter(([, at]) => at === "top")
+			.map(([port]) => this.wantedX(port, { side: "top", y: top, edge }) - LANE - side);
+		const content = width - 2 * side;
+		this.header = headerWithin(least, { frame: frameWidth(this.block, width), content, beside });
+		const by = before - this.headRoom();
+		for (const [item, box] of this.boxes) this.boxes.set(item, { ...box, y: box.y - by });
 	}
 
 	/**
@@ -294,7 +327,7 @@ class PackLayout {
 	placePorts(side: Side, width: number, y: number): void {
 		const { block, insets } = this;
 		const ports = [...block.ports].filter(([, at]) => at === side).map(([port]) => port);
-		const header = block.header;
+		const header = this.header?.size;
 		const low = insets.side + (side === "top" && header !== undefined ? header.width + LANE : 0);
 		const high = Math.max(width - insets.side, low + LANE * (ports.length + 1));
 		const wanted = ports
@@ -469,7 +502,7 @@ class PackLayout {
 		const size = this.sizeOf(packing);
 		const { side, top } = this.insets;
 		const width = Math.max(
-			Math.max(size.width, this.block.header?.width ?? 0) + 2 * side + this.margin,
+			Math.max(size.width, this.header?.size.width ?? 0) + 2 * side + this.margin,
 			this.held,
 		);
 		const ended = [...this.block.ports.values()].includes("bottom");
@@ -489,6 +522,7 @@ class PackLayout {
 			lines: this.lines,
 			bands: [],
 			packing,
+			...takenIndex(this.header),
 		};
 	}
 
@@ -549,11 +583,11 @@ class PackLayout {
 	 * @param span.bottom The bottom ports' height.
 	 */
 	placeEdges(width: number, span: { top: number; bottom: number }): void {
-		if (this.block.header !== undefined)
+		if (this.header !== undefined)
 			this.boxes.set(headerOf(this.block), {
 				x: this.insets.side,
 				y: span.top,
-				...this.block.header,
+				...this.header.size,
 			});
 		this.placePorts("top", width, span.top);
 		this.placePorts("bottom", width, span.bottom);

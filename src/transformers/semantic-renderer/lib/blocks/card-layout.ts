@@ -46,6 +46,7 @@ import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/trac
 import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { frameShape } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { takenIndex, type TakenHeader } from "@/transformers/semantic-renderer/lib/blocks/headers";
 import { entryRowEdges } from "@/transformers/semantic-renderer/lib/blocks/entry-row";
 import { leavingPull } from "@/transformers/semantic-renderer/lib/blocks/leaving";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
@@ -90,6 +91,8 @@ class CardLayout {
 	readonly clusters: Clusters;
 	/** How the block is arranged beyond Graphviz's own ranking. */
 	readonly arranged: Required<Arrangement>;
+	/** The size its header took once Graphviz laid it out, if it has one (`headers.ts`). */
+	taken: TakenHeader | undefined;
 
 	/**
 	 * Start a block's layout.
@@ -208,34 +211,8 @@ class CardLayout {
 		);
 		const stubs = new Set(entering.map(({ from }) => this.vendorOf(from)));
 		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
-		for (const line of this.boardOrder()) this.connect(line);
+		for (const line of this.clusters.boardOrder((end) => this.vendorOf(end))) this.connect(line);
 		this.arrange();
-	}
-
-	/**
-	 * Every line Graphviz ranks, by where its ends stand in the board's order,
-	 * a container at its first member. Graphviz meets cards in the order it
-	 * meets their lines, and keeps that order where no other reads better:
-	 * interchangeable cards then stand as the board lists them.
-	 * @returns The lines.
-	 */
-	boardOrder(): Line[] {
-		const place = new Map(this.block.items.map((item, index) => [item, index]));
-		for (const [index, item] of this.block.items.entries())
-			for (let around = this.block.clusterOf.get(item); around !== undefined;) {
-				const title = titleOf(around);
-				place.set(title, Math.min(place.get(title) ?? index, index));
-				around = this.block.clusterOf.get(around);
-			}
-		return [...this.block.lines.values()]
-			.filter((line) => wallOf(this.block, line) === undefined)
-			.map((line) => ({
-				line,
-				tail: place.get(this.vendorOf(line.tail)) ?? -1,
-				head: place.get(this.vendorOf(line.head)) ?? -1,
-			}))
-			.toSorted((one, other) => one.tail - other.tail || one.head - other.head)
-			.map(({ line }) => line);
 	}
 
 	/**
@@ -526,6 +503,7 @@ class CardLayout {
 			bands,
 			frames: drawn.map((shape) => frameShape(shape, this.block.clusters.get(shape.id)?.lone)),
 			regions,
+			...takenIndex(this.taken),
 		};
 	}
 
@@ -552,7 +530,7 @@ class CardLayout {
 			return { id, x: centre.x - width / 2, y: centre.y - height / 2, width, height };
 		});
 		for (const pin of this.pins()) leaves.push(pinnedLeaf(this.tree, this.laid, pin, centres));
-		cornerHeader(leaves, headerOf(this.block));
+		this.taken = cornerHeader(leaves, this.block, this.insets.side);
 		const edges = [...this.block.lines.values()].map((line) =>
 			this.placedLine(line, centres, polylines),
 		);

@@ -34,6 +34,7 @@ import {
 	type Lone,
 } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import { CycleWalk } from "@/transformers/semantic-renderer/lib/blocks/cycles";
+import type { Header } from "@/transformers/semantic-renderer/lib/blocks/headers";
 import { joinWays } from "@/transformers/semantic-renderer/lib/blocks/joins";
 import { trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
 
@@ -84,11 +85,8 @@ interface Block {
 	parent: Block | undefined;
 	/** The group, for a region. */
 	readonly group: string | undefined;
-	/**
-	 * The title row a frame keeps at its top-left, or a region's caption tab:
-	 * the caption and the inset it stands down from the region's top.
-	 */
-	readonly header: Size | undefined;
+	/** A frame's title row at its top-left, or a region's caption tab down to the caption's foot. */
+	readonly header: Header | undefined;
 	/** Its cards and the blocks directly inside it, in the board's order. */
 	readonly items: string[];
 	/** The lines it draws, by key. */
@@ -228,7 +226,7 @@ class BlockTree {
 		id: string,
 		kind: Block["kind"],
 		parent: Block | undefined,
-		of: { group?: string; header?: Size; lone?: Lone | undefined },
+		of: { group?: string; header?: Header; lone?: Lone | undefined },
 	): Block {
 		const made: Block = {
 			id,

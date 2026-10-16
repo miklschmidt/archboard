@@ -26,7 +26,9 @@ const PlacedSchema = z.object({
 	width: z.number(),
 	height: z.number(),
 	cards: z.array(z.object({ id: z.string(), box: BoxSchema, depth: z.number() })),
-	frames: z.array(z.object({ id: z.string(), box: BoxSchema, depth: z.number() })),
+	frames: z.array(
+		z.object({ id: z.string(), box: BoxSchema, depth: z.number(), header: z.number().optional() }),
+	),
 	regions: z.array(
 		z.object({
 			group: z.string(),
