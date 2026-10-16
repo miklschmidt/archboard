@@ -118,6 +118,41 @@ function pinnedLeaf(
 }
 
 /**
+ * Every leaf under a block's placed nodes, those inside its group regions included.
+ * @param nodes The placed nodes.
+ * @returns The leaves.
+ */
+function leavesOf(nodes: readonly ElkNode[]): ElkNode[] {
+	return nodes.flatMap((node) => (node.children === undefined ? [node] : leavesOf(node.children)));
+}
+
+/**
+ * Where a block routed again stands a pin or a block inside it: a pin where
+ * its block's settled port now stands, and a block as large as it was routed
+ * again, round the same centre. A block inside grows when its own channels
+ * need more room: left at its first size, the container round it closed
+ * above its foot and lines ran through it.
+ * @param tree The blocks.
+ * @param laid Every block laid out so far.
+ * @param id The leaf's id.
+ * @param centres Every vendor node's centre in the block.
+ * @returns Its box, or undefined for a leaf that stays where it is.
+ */
+function settledLeaf(
+	tree: BlockTree,
+	laid: ReadonlyMap<string, Laid>,
+	id: string,
+	centres: ReadonlyMap<string, Point>,
+): Box | undefined {
+	if (tree.pins.has(id)) return pinnedLeaf(tree, laid, id, centres);
+	const inner = tree.blocks.has(id) ? laid.get(id) : undefined;
+	if (inner === undefined) return undefined;
+	const centre = centres.get(id)!;
+	const { width, height } = inner;
+	return { x: centre.x - width / 2, y: centre.y - height / 2, width, height };
+}
+
+/**
  * A block's own top and bottom ports in its scene, each with the stretch of
  * its edge it may stand on.
  * @param scene The block's scene.
@@ -151,4 +186,4 @@ function rimOf(block: Block, insets: Insets): Rim | undefined {
 	return [...block.ports.values()].includes("bottom") ? { head: own, foot: own } : { head: own };
 }
 
-export { PORT, cornerHeader, letPortsSlide, markRegions, pinnedLeaf, rimOf };
+export { PORT, cornerHeader, leavesOf, letPortsSlide, markRegions, pinnedLeaf, rimOf, settledLeaf };
