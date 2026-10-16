@@ -174,7 +174,8 @@ const semanticEditContract = defineCommand({
 		"it since. A view's scope reads exactly as it is written: name relationships and the view shows " +
 		"those and no others, so one connection can be isolated; name none and it shows every " +
 		"relationship between the nodes it kept. Either way both ends of a shown relationship, every " +
-		"participant of a shown flow, and every container they sit inside come with it.",
+		"participant of a shown flow, and every container they sit inside come with it, except a " +
+		"container that holds all of them.",
 	examples: [
 		'archboard semantic edit pipeline --expect-version 3 --input change.json --doing "adding the renderer"',
 		'archboard semantic edit pipeline --variant "Queued ingest" --expect-version 4 --input change.json --doing "putting the queue in the proposal"',

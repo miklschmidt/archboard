@@ -288,8 +288,10 @@ board needs all of it.
    `anchor`, or the write drops it and says so. For a
    call (a function or method call, a hook, a component rendering another),
    `from` is the part whose body makes it and `to` is the part whose body runs,
-   inside its `parent`. A board that describes a module draws it as a
-   container: a part with children, whatever its kind (a module with its
+   inside its `parent`. A board is the container of its own subject: no part
+   stands for the board itself, and the parts of its subject are root parts
+   beside its callers and dependencies. A module inside that subject is drawn
+   as a container: a part with children, whatever its kind (a module with its
    functions, a class with its methods, a component with the components it
    defines). Its callers stay outside it. A call from outside lands on the
    entry point that the caller names: the exported function, public method,
@@ -503,8 +505,8 @@ and an explanation for somebody new to the code follows
   request is about vocabulary ([Vocabulary](#essentials)).
 - Fewer, truer parts: every node has a responsibility the source supports.
 - Give a board's subject structure. A board opens on its overview: the root
-  parts and the parts directly inside each root container, with deeper
-  containers closed. If the subject holds more than about a dozen
+  parts, with every container closed. The board is the container of its
+  subject, so never add a part that stands for the board itself. If the subject holds more than about a dozen
   parts, gather them into a few containers. Each container has a
   responsibility that the code supports, never a box for layout, and binds to
   the folder that holds its parts when the code has one.

@@ -62,15 +62,15 @@ the view, and check the saved `scope` afterwards:
   picture, not the exchange.
 
 Both ends of a shown relationship, every participant of a shown flow, and every
-container they sit inside come with the selection. A selection that names
+container they sit inside come with the selection, except a container that
+holds all of them: it would only frame the picture, so it is left out. A selection that names
 nothing that exists on a variant draws nothing. It never falls back to the whole
 board. A comparison keeps a selected subject the proposal removed, drawn as
 removed. Draw a view with
 `semantic rasterize <board> --view <name> --out <file.png>` (or
 `semantic render` for SVG). Without `--view`, the board's overview is drawn,
-never the first view. The overview shows the root parts and the parts directly
-inside each root container. It closes every deeper container and draws one
-line for all relationships between two drawn parts. `--view Everything` draws
+never the first view. The overview shows the root parts. It closes every
+container and draws one line for all relationships between two drawn parts. `--view Everything` draws
 every part and every relationship. No view can be called `Overview` or
 `Everything`. When the request asks for a picture of a view, look at that
 view's picture, not the overview's.
