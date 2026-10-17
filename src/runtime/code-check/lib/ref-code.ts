@@ -21,9 +21,14 @@
 // disk. A use in a tree that no import resolves stays as code facts read it,
 // and the pass says so once for each repository and ref.
 //
-// Only the bound and anchored paths, Terraform files and the like that
-// `sourceAt` selects are read as text, so a file beside them that only a
-// resolver reads, such as a `tsconfig.json` in another directory, is not.
+// A tree supplies what the checkout's resolvers read beside the code
+// (`tsconfig.json` and what it extends, `package.json`, project, manifest and
+// compose files), so its imports resolve as the checkout's would.
+//
+// In a draft every part of a repository is read at the draft's own ref
+// (`atOwnRef`), whatever older ref it pins, because in a stack that branch
+// holds the layers below it. A part that pins a ref the draft's ref does not
+// hold, such as a later layer's branch, keeps it.
 
 import path from "node:path";
 import {
@@ -32,6 +37,7 @@ import {
 	type Checkout,
 	type ReadCheckout,
 } from "@/runtime/code-check/lib/checkouts";
+import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import type { AnchorClaim, Claim } from "@/runtime/code-check/lib/claims";
 import type { Resolve } from "@/runtime/code-check/lib/resolution";
 import { createSourceFacts, type FactsPass } from "@/runtime/code-facts/index";
@@ -41,7 +47,7 @@ import {
 	type LocalCodeTargetResult,
 	type OtherRef,
 } from "@/runtime/code-target/index";
-import { sourceAt } from "@/runtime/history-lens/index";
+import { nodesAtOwnRef, sourceAt } from "@/runtime/history-lens/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target/index";
 
@@ -96,20 +102,46 @@ function keyOf(repo: string, named: string): string {
 
 /**
  * The ref a claim's code is pinned to, when its checkout has another one out:
- * a binding's own pin, or the pin of a part at an anchor's end that binds the
- * anchor's repository, since the files on disk are then not that ref's.
+ * a binding's own pin, or for an anchor the pin of the first of its ends that
+ * binds the anchor's repository (the code of the end the anchor is read as
+ * proving), since the files on disk are then not that ref's.
  * @param claim The claim.
  * @param snapshot The registered checkouts.
  * @returns The two refs, and for an anchor the end that is pinned, or nothing.
  */
 function pinOf(claim: Claim, snapshot: CheckoutSnapshot): Pick<CodeCheckSkip, "ref" | "detail"> {
 	if (claim.kind === "binding") return { ref: otherRefOf(claim.binding, snapshot) };
-	const pins = claim.ends.flatMap((end) => {
-		const ref =
-			end.binding?.repo === claim.anchor.repo ? otherRefOf(end.binding, snapshot) : undefined;
-		return ref === undefined ? [] : [{ ref, detail: `${end.name} is pinned to ${ref.named}` }];
-	});
-	return pins[0] ?? {};
+	const end = claim.ends.find((each) => each.binding?.repo === claim.anchor.repo);
+	const ref = end?.binding === undefined ? undefined : otherRefOf(end.binding, snapshot);
+	return ref === undefined ? {} : { ref, detail: `${end?.name} is pinned to ${ref.named}` };
+}
+
+/**
+ * A board as the check reads it: in a draft, every bound part of a repository
+ * at the one ref the draft is read against there (`nodesAtOwnRef`), so that in
+ * a stack the draft's own branch, which holds the layers below, is the code of
+ * all its parts.
+ * @param read The board, at the variant the check reads.
+ * @param checkouts Each repository's checkout.
+ * @param signal Cancels the reading.
+ * @returns The same board with the variant's parts as they are read.
+ */
+async function atOwnRef(
+	read: BoardToCheck,
+	checkouts: ReadonlyMap<string, Checkout>,
+	signal: AbortSignal,
+): Promise<BoardToCheck> {
+	/**
+	 * The checkout this machine reads for a repository.
+	 * @param repo The repository.
+	 * @returns Its root, or undefined when it is not read.
+	 */
+	const rootOf = (repo: string): string | undefined => {
+		const checkout = checkouts.get(repo);
+		return checkout?.status === "read" ? checkout.root : undefined;
+	};
+	const nodes = await nodesAtOwnRef(read.board, read.variant, rootOf, { signal });
+	return { ...read, variant: { ...read.variant, content: { ...read.variant.content, nodes } } };
 }
 
 /**
@@ -292,6 +324,13 @@ function routedFacts(refs: RefCodes, disk: FactsPass): FactsPass {
 		 * @returns Its facts, or undefined.
 		 */
 		read: (checkout, relative) => (refAt(refs, checkout)?.facts ?? disk).read(checkout, relative),
+		/**
+		 * The text of one file, from the source its checkout is.
+		 * @param checkout The checkout or tree.
+		 * @param relative The file.
+		 * @returns Its text, or undefined.
+		 */
+		text: (checkout, relative) => (refAt(refs, checkout)?.facts ?? disk).text(checkout, relative),
 	};
 }
 
@@ -398,6 +437,7 @@ export {
 	type RefCode,
 	type RefCodes,
 	type RepoCheckout,
+	atOwnRef,
 	codeFor,
 	noServerSkips,
 	pinOf,

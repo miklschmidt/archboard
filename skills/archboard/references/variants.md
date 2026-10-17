@@ -57,9 +57,12 @@ holds the whole architecture with the changes of every pull request below it.
    symbol, the anchors, the evidence between parts and the interface of a
    module. A language server reads files on disk, so a use that no import
    resolves stays as code facts read it (`ref-without-language-server`, once
-   for the repository and ref). A relationship whose two ends are bound to
-   different refs of one repository, or to a ref and to no ref, is skipped
-   (`refs-differ`): no one code holds both. A ref the checkout cannot resolve
+   for the repository and ref). In a draft, every part in a repository is read
+   at the draft's own branch, whatever older branch its binding pins, because
+   in a stack that branch holds the layers below it. A part that pins a branch
+   the draft's branch does not hold, such as a later pull request's, keeps its
+   own. A relationship whose two ends are then read at different code is
+   skipped (`refs-differ`): no one code holds both. A ref the checkout cannot resolve
    is skipped with the ref named (`ref-not-checked-out`). A binding that names
    no branch is read against the checkout's files, and so is a draft that
    names none.

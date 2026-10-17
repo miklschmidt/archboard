@@ -46,6 +46,7 @@ import {
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import { droppedBindings, judgeDroppedParts } from "@/runtime/code-check/lib/dropped-parts";
 import {
+	atOwnRef,
 	codeFor,
 	noServerSkips,
 	pinOf,
@@ -498,13 +499,15 @@ async function checkCode(
 	plans: FactsPass["plans"] = [],
 	serverOf?: ServerOf,
 ): Promise<CodeCheckOutcome> {
-	const claims = boards.flatMap(claimsOf);
-	const bound = partBindings(boards);
 	const inherited = droppedBindings(boards);
-	const bindings = [...claims.flatMap(pathsOf), ...bound, ...inherited];
+	const asked = boards.flatMap(claimsOf);
+	const bindings = [...asked.flatMap(pathsOf), ...partBindings(boards), ...inherited];
 	const snapshot = await snapshotCheckoutAccess({ vault, signal, bindings, timeoutMs: null });
-	const repos = [...claims.map(repoOf), ...[...bound, ...inherited].map((binding) => binding.repo)];
+	const repos = [...asked.map(repoOf), ...bindings.map((binding) => binding.repo)];
 	const checkouts = await readCheckouts(repos, snapshot, signal);
+	const reads = await Promise.all(boards.map((read) => atOwnRef(read, checkouts, signal)));
+	const claims = reads.flatMap(claimsOf);
+	const bound = partBindings(reads);
 	const refs = await readRefCodes(refReadsOf(claims, bound, snapshot), checkouts, signal);
 	const reading = timedFacts(routedFacts(refs, codeFacts.pass(signal, plans)));
 	const facts = reading.facts;
@@ -527,7 +530,7 @@ async function checkCode(
 	};
 	try {
 		await judgeAll(claims, pass);
-		for (const read of boards) {
+		for (const read of reads) {
 			// oxlint-disable-next-line no-await-in-loop -- one board at a time keeps the findings in board order, and a file one board reads is cached for the next
 			await judgeBoardRelationships(read, pass);
 		}

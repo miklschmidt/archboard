@@ -1,6 +1,13 @@
 // Immutable Git sources for declaration attribution, and for the code check's
 // reading of a ref a draft pins. No checkout files are read.
-import { createSourceFacts, isTerraformFile, neverRead, pairOf } from "@/runtime/code-facts/index";
+import {
+	createSourceFacts,
+	extendedConfigs,
+	isContextFile,
+	isTerraformFile,
+	neverRead,
+	pairOf,
+} from "@/runtime/code-facts/index";
 import { gitAnswer, gitBytes, gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { filesOfBinding } from "@/shared/code-target/index";
 
@@ -128,6 +135,49 @@ function sourceTexts(
 	);
 }
 
+/** How many configurations deep a `tsconfig.json` extends another that is read. */
+const EXTENDS_DEPTH = 8;
+
+/**
+ * Add the files that resolvers read beside the code (TASK-493): configuration,
+ * project, manifest and env files, and the configurations a `tsconfig.json`
+ * extends, read in turn.
+ * @param root The checkout.
+ * @param entries The revision's readable files.
+ * @param needed The sources the revision's bound paths need.
+ * @param blobs The walk's text cache, which this fills.
+ * @param options The request's cancellation signal.
+ * @returns The sources with their context.
+ */
+async function withContext(
+	root: string,
+	entries: readonly SourceEntry[],
+	needed: readonly SourceEntry[],
+	blobs: Map<string, string | undefined>,
+	options: GitRunOptions,
+): Promise<SourceEntry[]> {
+	const byFile = new Map(entries.map((entry) => [entry.file, entry]));
+	const read = new Map(needed.map((entry) => [entry.file, entry]));
+	for (const entry of entries) if (isContextFile(entry.file)) read.set(entry.file, entry);
+	let pending = [...read.values()];
+	for (let depth = 0; depth < EXTENDS_DEPTH && pending.length > 0; depth += 1) {
+		// oxlint-disable-next-line no-await-in-loop -- each round reads what the one before named
+		await fillBlobs(root, pending, blobs, options);
+		const named = pending.flatMap((entry) =>
+			/(?:^|\/)[jt]sconfig[^/]*\.json$/u.test(entry.file)
+				? extendedConfigs(entry.file, blobs.get(entry.id) ?? "")
+				: [],
+		);
+		pending = named.flatMap((file) => {
+			const entry = byFile.get(file);
+			if (entry === undefined || read.has(file)) return [];
+			read.set(file, entry);
+			return [entry];
+		});
+	}
+	return [...read.values()];
+}
+
 /**
  * Share a source reader across every part and revision of one repository walk.
  * @param root The checkout.
@@ -141,14 +191,16 @@ function sourceHistory(root: string, paths: readonly string[], options: GitRunOp
 	/**
 	 * Read a revision, including local module definitions outside bound roots.
 	 * @param revision The commit id; undefined represents the empty parent tree.
+	 * @param context Whether to read the files that resolvers read beside the code too.
 	 * @returns The revision's source texts and shared code-facts pass.
 	 */
-	const read = async (revision: string | undefined) => {
+	const read = async (revision: string | undefined, context = false) => {
 		const listing =
 			revision === undefined ? "" : await gitText(root, ["ls-tree", "-r", "-z", revision], options);
 		const entries = listing.split("\0").filter(Boolean).flatMap(sourceEntry);
 		const files = new Set(entries.map(({ file }) => file));
-		const needed = neededEntries(entries, paths);
+		const bound = neededEntries(entries, paths);
+		const needed = context ? await withContext(root, entries, bound, blobs, options) : bound;
 		await fillBlobs(root, needed, blobs, options);
 		const sources = sourceTexts(needed, blobs);
 		const checkout = { root, files };
@@ -205,7 +257,30 @@ async function sourceAt(
 ): Promise<SourceAtRef | undefined> {
 	const commit = await commitOf(root, ref, options);
 	if (commit === undefined) return undefined;
-	return { commit, ...(await sourceHistory(root, paths, options).read(commit)) };
+	return { commit, ...(await sourceHistory(root, paths, options).read(commit, true)) };
 }
 
-export { commitOf, type SourceAtRef, sourceAt, sourceHistory, type SourceRevision };
+/**
+ * Whether the code of one ref is in another: the commit the first names is the
+ * second's, or one of its ancestors.
+ * @param root The checkout.
+ * @param ancestor The ref whose code the other may hold.
+ * @param descendant The other ref.
+ * @param options The request's cancellation signal.
+ * @returns True when both resolve and the second holds the first.
+ */
+async function holdsRef(
+	root: string,
+	ancestor: string,
+	descendant: string,
+	options: GitRunOptions,
+): Promise<boolean> {
+	const [from, to] = await Promise.all([
+		commitOf(root, ancestor, options),
+		commitOf(root, descendant, options),
+	]);
+	if (from === undefined || to === undefined) return false;
+	return from === to || (await gitAnswer(root, ["merge-base", from, to], options)) === from;
+}
+
+export { commitOf, holdsRef, type SourceAtRef, sourceAt, sourceHistory, type SourceRevision };

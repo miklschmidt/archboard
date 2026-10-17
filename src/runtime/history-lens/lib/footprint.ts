@@ -12,7 +12,7 @@
 // against the parts the proposal names, in three lists, and a part the lens
 // skipped is in none of them.
 
-import { snapshotCheckoutAccess } from "@/runtime/code-target/index";
+import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@/runtime/code-target/index";
 import { attributeCommits, type AttributedCommits } from "@/runtime/history-lens/lib/attribution";
 import { markedCommit } from "@/runtime/history-lens/lib/answer-commit";
 import { walkCommits, type WalkedCommit } from "@/runtime/history-lens/lib/commits";
@@ -28,6 +28,7 @@ import type {
 	FootprintSkip,
 	NamedReason,
 } from "@/shared/footprint/index";
+import { nodesAtOwnRef } from "@/runtime/history-lens/lib/own-ref";
 import {
 	compareVariants,
 	emptyContent,
@@ -102,6 +103,33 @@ function partsOf(
 	if (proposal === undefined) return [...before];
 	const held = new Set(proposal.content.nodes.map((node) => node.id));
 	return [...proposal.content.nodes, ...before.filter((node) => !held.has(node.id))];
+}
+
+/**
+ * The parts to read, with those of the variant the commits are read against
+ * read at the one ref that variant is read against in each repository, which
+ * in a stack holds the layers below it (TASK-493). A part that pins a ref that
+ * ref does not hold keeps its own.
+ * @param request What to read.
+ * @param parts The parts, as `partsOf` lists them.
+ * @param snapshot The registered checkouts.
+ * @returns The parts, in the same order.
+ */
+async function atOwnRefs(
+	request: FootprintRequest,
+	parts: readonly SemanticNode[],
+	snapshot: CheckoutSnapshot,
+): Promise<SemanticNode[]> {
+	const read = request.proposal ?? request.against;
+	if (read === undefined) return [...parts];
+	const roots = new Map(
+		partReading({ nodes: [...parts] }, snapshot, true).read.map((part) => [part.repo, part.root]),
+	);
+	const own = await nodesAtOwnRef(request.board, read, (repo) => roots.get(repo), {
+		signal: request.signal,
+	});
+	const byId = new Map(own.map((node) => [node.id, node]));
+	return parts.map((node) => byId.get(node.id) ?? node);
 }
 
 /**
@@ -384,13 +412,14 @@ function namedBy(
  */
 async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer> {
 	const { vault, board, against, proposal, base, head, signal } = request;
-	const nodes = partsOf(against, proposal);
-	const named = namedBy(against, proposal, nodes);
+	const all = partsOf(against, proposal);
 	const snapshot = await snapshotCheckoutAccess({
 		vault,
 		...(signal === undefined ? {} : { signal }),
-		bindings: nodes.flatMap((node) => (node.binding === undefined ? [] : [node.binding])),
+		bindings: all.flatMap((node) => (node.binding === undefined ? [] : [node.binding])),
 	});
+	const nodes = await atOwnRefs(request, all, snapshot);
+	const named = namedBy(against, proposal, nodes);
 	const reading = partReading({ nodes }, snapshot, true);
 	const repositories = await Promise.all(
 		byRepository(reading.read, head).map((group) =>
