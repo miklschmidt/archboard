@@ -61,20 +61,12 @@ test.each<Choice>([
 		const tree: Joined = { joining: new Set(blocks), projections: [] };
 		const asked: Asked[] = [];
 		/**
-		 * Lay a page out a task later, as a worker answers, unless called off
-		 * while it waits. A layout facing every block's walls is asked for
-		 * beside the turns, and is not one of theirs.
+		 * Lay a page out a task later, as a worker answers, unless called off while it waits.
 		 * @param apart The blocks apart.
 		 * @param signal Calls it off.
-		 * @param facing Whether every block faces its walls.
 		 * @returns The page.
 		 */
-		const lay = (
-			apart: ReadonlySet<string>,
-			signal: AbortSignal,
-			facing = false,
-		): Promise<Page> => {
-			if (facing) return Promise.resolve(page(3000));
+		const lay = (apart: ReadonlySet<string>, signal: AbortSignal): Promise<Page> => {
 			const one: Asked = { apart: [...apart].toSorted().join(","), calledOff: false };
 			asked.push(one);
 			return new Promise((resolve, reject) => {

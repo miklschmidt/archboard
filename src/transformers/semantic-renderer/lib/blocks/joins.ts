@@ -248,15 +248,8 @@ function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
 
-/**
- * Lay a drawing out with some blocks' joins apart, by block id, and every
- * block facing its walls when asked (`BlockTree`), unless called off first.
- */
-type Lay<Placed> = (
-	apart: ReadonlySet<string>,
-	signal: AbortSignal,
-	facing?: boolean,
-) => Promise<Placed>;
+/** Lay a drawing out with some blocks' joins apart, by block id, unless called off first. */
+type Lay<Placed> = (apart: ReadonlySet<string>, signal: AbortSignal) => Promise<Placed>;
 
 /** A drawing as a solve answers it: whether facing every block's walls would change it (`place.ts`). */
 type Facing = Page & { readonly faces?: boolean | undefined };
@@ -357,14 +350,17 @@ function layingOnce<Placed>(lay: Lay<Placed>): {
  * crossed 14 lines fewer, and this choice could no longer take that way.
  * @param tree The blocks, which name the blocks joins move labels to.
  * @param lay Lay the drawing out with some blocks' joins apart, by block id.
+ * @param face Lay it out so with every block facing its walls (`BlockTree`);
+ * none where the drawing never faces them.
  * @returns The drawing laid out best.
  */
 async function layJoined<Placed extends Facing>(
 	tree: Joined,
 	lay: Lay<Placed>,
+	face?: Lay<Placed>,
 ): Promise<Drawn<Placed>> {
 	const { ask, keep } = layingOnce(lay);
-	const faced = layingOnce<Placed>((apart, signal) => lay(apart, signal, true));
+	const faced = facingOnce(face);
 	const blocks = [...tree.joining];
 	const turns = [
 		...(blocks.length > 1 ? [(): Set<string> => new Set(blocks)] : []),
@@ -411,18 +407,46 @@ async function layJoined<Placed extends Facing>(
 }
 
 /**
+ * A way to lay a drawing out with every block facing its walls, once for
+ * each set of blocks apart ({@link layingOnce}); one that asks for nothing
+ * where the drawing never faces them.
+ * @param face Lay the drawing out so, if it can face them.
+ * @returns The way to ask for a layout, and the way to keep only the ones still needed.
+ */
+function facingOnce<Placed>(face: Lay<Placed> | undefined): {
+	readonly ask: (apart: ReadonlySet<string>) => Promise<Placed> | undefined;
+	readonly keep: (needed: readonly ReadonlySet<string>[]) => void;
+} {
+	return face === undefined ? NOTHING_ASKED : layingOnce(face);
+}
+
+/** The way to lay out a drawing that never faces its blocks' walls: it asks for nothing. */
+const NOTHING_ASKED = {
+	/**
+	 * Ask for nothing.
+	 * @returns Nothing.
+	 */
+	ask: (): undefined => undefined,
+	/**
+	 * Call off nothing, since nothing was asked for.
+	 * @returns Nothing.
+	 */
+	keep: (): undefined => undefined,
+};
+
+/**
  * The drawing kept, or the same way laid out with every block facing its
  * walls where that would change it and reads better as a turn does.
  * @param best The drawing kept.
- * @param faced Its layout with every block facing its walls.
+ * @param faced Its layout with every block facing its walls, if it can face them.
  * @returns The drawing that reads better.
  */
 async function facedBetter<Placed extends Facing>(
 	best: Drawn<Placed>,
-	faced: () => Promise<Placed>,
+	faced: () => Promise<Placed> | undefined,
 ): Promise<Drawn<Placed>> {
-	if (best.placed.faces !== true) return best;
-	const turned = { tree: best.tree, placed: await faced() };
+	const placed = best.placed.faces === true ? await faced() : undefined;
+	const turned = placed === undefined ? best : { tree: best.tree, placed };
 	return drawsBetter(turned, best) ? turned : best;
 }
 

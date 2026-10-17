@@ -445,7 +445,10 @@ class BlockTree {
 		for (const block of out) {
 			const along = `${projection.to}|${this.kindOf(edge)}`;
 			const side = this.exitOf(block, "out", face, along, labelAt);
-			const port = this.port(block, `out|${side}|${walled(side, from)}${along}`, side);
+			// A line that carries its label to a wall reaches it under the label,
+			// not under its card, so it shares no wall port (`walls.ts`).
+			const inner = block === labelAt ? `${edge.id}|${from}` : from;
+			const port = this.port(block, `out|${side}|${walled(side, inner)}${along}`, side);
 			const ranked = side === "top" ? { tail: port, head: from } : { tail: from, head: port };
 			const line = this.line(block, edge, { from, to: port, ...ranked }, block === labelAt);
 			pieces.push([block, line]);
