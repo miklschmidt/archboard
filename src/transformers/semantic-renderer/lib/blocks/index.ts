@@ -75,11 +75,11 @@ function drawingOf(
 		box,
 		depth,
 	}));
-	const containers = placed.frames.map(({ id, box, depth }) => ({
-		measured: measured.nodes.get(id)!,
-		box,
-		depth,
-	}));
+	const containers = placed.frames.map(({ id, box, depth, header }) => {
+		const node = measured.nodes.get(id)!;
+		// The header as wide as the layout made room for (TASK-486).
+		return { measured: header === undefined ? node : node.headers![header]!, box, depth };
+	});
 	const boxes = new Map(
 		[...cards, ...containers].map(({ measured: { node }, box }) => [node.id, box]),
 	);

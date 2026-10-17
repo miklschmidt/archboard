@@ -28,13 +28,13 @@ interface PaneReadings {
 	/**
 	 * Which of the board's views one pane is reading it through.
 	 * @param paneId The pane.
-	 * @returns The view's id, or null for the whole variant.
+	 * @returns The view's id, or null for the overview.
 	 */
 	readonly viewOf: (paneId: string) => string | null;
 	/**
 	 * Read a board through one of its views, in this pane.
 	 * @param paneId The pane.
-	 * @param view The view's id, or null for the whole variant.
+	 * @param view The view's id, or null for the overview.
 	 */
 	readonly showView: (paneId: string, view: string | null) => void;
 	/**

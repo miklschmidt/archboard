@@ -20,7 +20,9 @@ import {
 	type SubjectKind,
 	type VariantContent,
 } from "@/shared/semantic-board/lib/content";
+import { RESERVED_VIEW_NAMES } from "@/shared/semantic-board/lib/scope";
 import type { SemanticFlow } from "@/shared/semantic-board/lib/views";
+import { messagesOf } from "@/shared/semantic-board/lib/flow-steps";
 import type { WalkthroughBeat } from "@/shared/semantic-board/lib/walkthrough";
 
 /**
@@ -174,7 +176,7 @@ function flowNodeIssues(
 			});
 		}
 	}
-	for (const step of flow.steps) {
+	for (const step of messagesOf(flow.steps)) {
 		for (const [end, id] of [["from", step.from] as const, ["to", step.to] as const]) {
 			if (!columns.has(id)) {
 				issues.push({
@@ -316,6 +318,23 @@ function orderIssues(content: VariantContent, at: string): IntegrityIssue[] {
 }
 
 /**
+ * Check that no authored view takes a name a reading nobody authors answers to.
+ *
+ * The overview and Everything are addressed by name (ADR 0052), so a view of
+ * either name could never be asked for.
+ * @param views The board's views.
+ * @returns The issues found.
+ */
+function reservedViewIssues(views: readonly { readonly name: string }[]): IntegrityIssue[] {
+	return views
+		.filter((view) => RESERVED_VIEW_NAMES.includes(view.name))
+		.map((view) => ({
+			at: "views",
+			problem: `a view cannot be called "${view.name}"; that name is a reading every board has`,
+		}));
+}
+
+/**
  * Everything wrong with a board beyond its shape, in document order.
  * @param board A board that has already been parsed.
  * @returns The issues found; empty when the board is coherent.
@@ -326,6 +345,7 @@ function checkSemanticBoard(board: SemanticBoard): IntegrityIssue[] {
 		...familyIssues(board),
 		...frameIssues(board),
 		...nameIssues(board.views, "views", "view"),
+		...reservedViewIssues(board.views),
 	];
 	const views = new Set(board.views.map((view) => view.id));
 	for (const id of repeated(board.views.map((view) => view.id))) {

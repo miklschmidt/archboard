@@ -170,6 +170,9 @@ test("a line is not hopped or cut where it crosses a line that is not drawn", ()
 	}
 });
 
+// The board's lines come from its flow, which the overview does not draw.
+const EVERY_PART = { view: { grammar: "architecture", scope: { kind: "all" } } };
+
 test("a board drawn from its flow keeps a line for every message the draft keeps", async () => {
 	const nodes = [
 		{ id: "web", name: "Console", kind: "ui" },
@@ -182,7 +185,7 @@ test("a board drawn from its flow keeps a line for every message the draft keeps
 	const riding = await bothModes(
 		{ nodes, edges: [], flows: [{ ...flow, steps: [first, again] }] },
 		{ nodes, edges: [], flows: [{ ...flow, steps: [again] }] },
-		{},
+		EVERY_PART,
 	);
 	expect(Object.keys(riding.plain.atlas.edges)).toEqual([again.id]);
 	expect(riding.plain.atlas.edges).toEqual(riding.compared.atlas.edges);
@@ -191,7 +194,7 @@ test("a board drawn from its flow keeps a line for every message the draft keeps
 	const unwired = await bothModes(
 		{ nodes, edges: [wiring], flows: [{ ...flow, steps: [first] }] },
 		{ nodes, edges: [], flows: [{ ...flow, steps: [first] }] },
-		{},
+		EVERY_PART,
 	);
 	expectSamePlaces(unwired, [wiring.id]);
 	expect(Object.keys(unwired.plain.atlas.edges)).toEqual([first.id]);
@@ -201,7 +204,7 @@ test("a board drawn from its flow keeps a line for every message the draft keeps
 	const emptied = await bothModes(
 		{ nodes: [...nodes, child], edges: [], flows: [{ ...flow, steps: [first] }] },
 		{ nodes, edges: [], flows: [{ ...flow, steps: [first] }] },
-		{},
+		EVERY_PART,
 	);
 	expectSamePlaces(emptied, [child.id]);
 	expect(Object.keys(emptied.plain.atlas.edges)).toEqual([first.id]);
@@ -229,7 +232,7 @@ test("a frame whose only child the draft drops looks the same without its compar
 	const drawings = await bothModes(
 		{ nodes: [...nodes, child], edges: [writes] },
 		{ nodes, edges: [] },
-		{},
+		EVERY_PART,
 	);
 	expectSamePlaces(drawings, [child.id, writes.id]);
 	expect(lookOf(drawings.plain.svg, "svc")).toBe(lookOf(drawings.compared.svg, "svc"));

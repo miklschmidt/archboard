@@ -45,6 +45,8 @@ interface FixtureVariant {
 	readonly id: string;
 	readonly name: string;
 	readonly lifecycle: "current" | "draft" | "historical" | "shelved";
+	/** The variant it was branched from, if any. */
+	readonly parent?: string;
 	readonly content: Record<string, unknown>;
 }
 

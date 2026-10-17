@@ -20,6 +20,7 @@ import {
 } from "@/runtime/semantic-board-store/lib/settle-order";
 import {
 	reconcileVariant,
+	subjectsAsIn,
 	type Choice,
 	type ReconciliationIssue,
 	type ResolutionInput,
@@ -312,60 +313,16 @@ function settledInto(
 	const moved = taken.filter(isOrder);
 	const whole = taken.filter((issue) => issue.kind === "deleted-and-changed");
 	const settled = fields.length === 0 ? base : taking(base, fields);
-	const agreed = whole.length === 0 ? settled : subjectsFrom(settled, theirs, whole);
+	// A disagreement about a subject's existence has no field to move: the whole
+	// subject is the answer. Whichever way it was answered — the removal kept,
+	// the change taken, or the subject restored with a third wording — the base
+	// takes the predecessor's subject, present or absent, so the next merge reads
+	// this proposal's state as its own decision instead of the same argument.
+	const agreed =
+		whole.length === 0
+			? settled
+			: subjectsAsIn(settled, theirs, new Set(whole.map((issue) => issue.subject)));
 	return moved.length === 0 ? agreed : reorderedInto(agreed, theirs, moved);
-}
-
-/**
- * The base with whole subjects moved to what the predecessor holds.
- *
- * A disagreement about a subject's existence has no field to move: the whole
- * subject is the answer. Whichever way it was answered — the removal kept, the
- * change taken, or the subject restored with a third wording — the base takes
- * the predecessor's subject, present or absent, so the next merge reads this
- * proposal's state as this proposal's own decision instead of finding the
- * same removal-against-change again.
- * @param base The state this proposal last agreed with.
- * @param theirs The predecessor's content.
- * @param answered The existence disagreements this command answered.
- * @returns The base to keep.
- */
-function subjectsFrom(
-	base: SemanticVariant["content"],
-	theirs: SemanticVariant["content"],
-	answered: readonly ReconciliationIssue[],
-): SemanticVariant["content"] {
-	const subjects = new Set(answered.map((issue) => issue.subject));
-	/**
-	 * One collection with the answered subjects as the predecessor holds them.
-	 * @param mine The base's collection.
-	 * @param yours The predecessor's collection.
-	 * @returns The collection to keep.
-	 */
-	const moved = <Entity extends { readonly id: string }>(
-		mine: readonly Entity[],
-		yours: readonly Entity[],
-	): Entity[] => {
-		const held = new Map(yours.map((entity) => [entity.id, entity]));
-		const kept = mine.flatMap((entity) => {
-			if (!subjects.has(entity.id)) {
-				return [entity];
-			}
-			const now = held.get(entity.id);
-			return now === undefined ? [] : [now];
-		});
-		const present = new Set(kept.map((entity) => entity.id));
-		return [
-			...kept,
-			...yours.filter((entity) => subjects.has(entity.id) && !present.has(entity.id)),
-		];
-	};
-	return {
-		nodes: moved(base.nodes, theirs.nodes),
-		edges: moved(base.edges, theirs.edges),
-		flows: moved(base.flows, theirs.flows),
-		walkthroughs: moved(base.walkthroughs, theirs.walkthroughs),
-	};
 }
 
 /**

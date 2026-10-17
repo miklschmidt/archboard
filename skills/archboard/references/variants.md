@@ -19,6 +19,56 @@ proposal that landed on the current architecture is not repaired by editing the
 file, but by reading the family again and moving the meaning with ordinary
 writes.
 
+A draft holds the whole architecture at its point, not only its own change.
+Archboard refuses two edits that break this. To make such an edit on purpose,
+confirm its code with `--confirm <code>` (or `"confirm": ["<code>"]` in the
+batch). The write then lands and warns with the same code:
+
+- `PART_RECREATED`: the edit adds a node without an `id` while an ancestor
+  variant holds one with the same name, or exactly the same binding, under an
+  id this variant lacks. The refusal names that id and variant. To bring the
+  part back, state that `id` instead ([restore](#disagreements)). Confirm only
+  when the new node is a different part.
+- `INHERITANCE_DROPPED`: the edit removes more than half of the nodes the
+  variant holds from its predecessor. The refusal names how many. Confirm only
+  a deliberate redesign.
+
+### A stack of pull requests
+
+Each pull request of a stack on a vault board is one proposal. Each proposal
+holds the whole architecture with the changes of every pull request below it.
+
+1. Branch the first pull request's proposal from the variant that reads as the
+   code before the stack, usually the current variant.
+2. Branch each later one from the proposal below it: `--from "<proposal below>"`.
+3. State only that pull request's change, as edits to its proposal. Never
+   remove a part because the pull request does not touch it. That includes a
+   part that the design plans for a later pull request. Never add a part again
+   that a proposal below removed: state its original `id`.
+4. To show one pull request on its own, use a view that selects the parts it
+   changes, or `semantic compare --against "<proposal below>"`, which marks
+   what that proposal changed.
+5. To hold the whole stack to its code, run `archboard check --code --every-draft`.
+   It reads every draft of every board. It reads each draft against the branch
+   (or commit) that its bindings name and no proposal below names: the pull
+   request's own branch. It reads that branch from Git and does not check it
+   out. A draft whose bindings name no branch is read against the checkout's
+   files.
+
+The code check warns with `INHERITED_PART_DROPPED` when a draft lacks a bound
+node that the variant it was branched from holds, and the code of the draft's
+branch still holds that node's path, and its symbol when the binding names
+one. The code says that the part still exists, so the draft most likely
+dropped it by mistake. State the node's original `id` in that draft to bring
+it back. The warning's `dropped` field names the earlier variant, the branch,
+the commit, and the file and line that hold the symbol. A node whose bound
+code is not on that branch gets no warning. This includes a part that a later
+pull request builds, so the check cannot find every dropped part: the
+write-time refusals above stay the guard. The check skips a draft, and says
+why, when the checkout has no such branch (`draft-ref-missing`) or when the
+draft names several branches and none of them is its own
+(`draft-refs-ambiguous`).
+
 ## What a comparison counts
 
 The current variant is now, and every other variant — a proposal, history, a
@@ -106,12 +156,17 @@ an unsettled draft waits, and the family lands whole or not at all.
 - `competing-field`: Both changed one field of one subject. Answered by `mine`
   or `theirs`.
 - `competing-order`: Both moved the same step or beat, to different positions.
-  Answered by `mine`, or an edit telling the order you mean.
+  When the `subject` is a flow (`field` `steps`), together they left a step in
+  a place neither side chose, such as between two steps the other side moved
+  into a decision or loop. Answered by `mine`, or an edit telling the order you
+  mean.
 - `deleted-and-changed`: One removed a subject the other changed. Answered by
   `mine`, or stating the subject again under its id.
 - `reference-lost`: Merging the predecessor would leave this draft referring to
-  something no longer there. Answered by `mine`, or an edit saying what it
-  should say.
+  something no longer there. The draft keeps its own version of only that part,
+  such as the node its relationship points to, and still takes the rest of the
+  change, such as a rename in the same edit. Answered by `mine`, which keeps
+  that part, or an edit saying what it should say.
 - `left-empty`: Both removed different parts of one flow or walkthrough; merged,
   it would hold nothing. Answered by `mine`, or an edit putting back what it
   should hold.
@@ -129,15 +184,20 @@ and a JSON of `choices`, each naming the `subject` (and `field` where the issue
 has one) and a `side`: `mine` keeps the draft's answer, `theirs` takes the
 predecessor's. Answer part of it and the rest stays open, reported in the
 answer. A third answer is not a side: write it as an ordinary edit. For a
-`deleted-and-changed` node or relationship the draft removed, state it again with its
-original `id` (the `subject` of the issue) and the fields you want; that one
-write restores the identity and settles that issue. An ordinary edit can also
-restore a removed node or relationship without an open disagreement when its
-id remains in the direct predecessor or recorded reconciliation base. State
-the original id and full properties, reconnect references, and remove any
-copy in the same batch. Unknown ids, sibling-only ids, and ids of another
-subject kind are refused; a removal and restatement of the same id in one
-batch is contradictory.
+`deleted-and-changed` node, relationship or flow the draft removed, state it
+again with its original `id` (the `subject` of the issue) and the fields you
+want; that one write restores the identity and settles that issue. An ordinary
+edit can also restore a removed node, relationship or flow without an open
+disagreement when its id remains in the direct predecessor or recorded
+reconciliation base. A restored flow's steps may keep the step ids that flow
+holds there. State the original id and full properties, reconnect references,
+and remove any copy in the same batch. An id that only another variant holds,
+such as a sibling's or an older ancestor's, is refused with
+`RESTORE_UNCONFIRMED`, which names each id and the variants that hold it. Add
+`--confirm RESTORE_UNCONFIRMED` to restore it anyway; the answer warns
+`RESTORED_FROM_OTHER_VARIANT` for each one. Ids no variant holds and ids of
+another subject kind are refused; a removal and restatement of the same id in
+one batch is contradictory.
 Settling also catches the draft up with everything else the predecessor decided.
 
 Every value in that third answer is read, never retyped: the issue's `changed`

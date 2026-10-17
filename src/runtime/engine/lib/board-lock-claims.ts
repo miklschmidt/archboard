@@ -127,4 +127,23 @@ function takeClaimRevocation(vault: string, board: string): ClaimRevocation | nu
 	return lost;
 }
 
-export { claimBoard, claimOn, claimWriterId, releaseClaim, takeClaimRevocation };
+/**
+ * Why a claim ended, as the opening of the refusal its agent is told once.
+ *
+ * Only a take-back names a person: a claim that ended any other way says what
+ * this server found where its lease should have been.
+ * @param lost The claim that ended.
+ * @returns The sentence's opening, without a full stop.
+ */
+function claimEndReason(lost: ClaimRevocation): string {
+	const board = `"${lost.claim.board}"`;
+	if (lost.cause === "taken-back") {
+		return `The user at the canvas took ${board} back`;
+	}
+	if (lost.cause === "held-by-another" && lost.by) {
+		return `Another writer (${lost.by.kind}, ${lost.by.process}) took the lease on ${board} while this server could not renew it, and holds it now`;
+	}
+	return `The lease on ${board} was given up or removed by another process, such as a take-back through another server, before this server renewed it`;
+}
+
+export { claimBoard, claimEndReason, claimOn, claimWriterId, releaseClaim, takeClaimRevocation };

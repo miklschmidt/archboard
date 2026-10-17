@@ -159,7 +159,8 @@ test("an order this proposal means is kept, and stays kept when the predecessor 
 	await tellAFlow();
 	await retell(A, [2, 0, 1]);
 	await retell(baseline, [0, 2, 1]);
-	const told = () => variant(A).content.flows[0]!.steps.map((step) => step.label);
+	const told = () =>
+		contract.messagesOf(variant(A).content.flows[0]!.steps).map((step) => step.label);
 	expect(variant(A).reconciliation?.issues.every((one) => one.kind === "competing-order")).toBe(
 		true,
 	);
@@ -244,11 +245,9 @@ test("an order settled while something else stays open leaves a base a board may
 	expect(settled.outcome, settled.outcome === "rejected" ? settled.problem : "").toBe("applied");
 	const after = variant(A).reconciliation;
 	expect(after?.issues.map((one) => one.kind)).toEqual(["competing-field"]);
-	expect(variant(A).content.flows[0]?.steps.map((step) => step.label)).toEqual([
-		"writes",
-		"asks",
-		"checks",
-	]);
+	expect(
+		contract.messagesOf(variant(A).content.flows[0]?.steps ?? []).map((step) => step.label),
+	).toEqual(["writes", "asks", "checks"]);
 
 	// And the argument that is left is still answerable afterwards.
 	const rest = await settleOrder(A);

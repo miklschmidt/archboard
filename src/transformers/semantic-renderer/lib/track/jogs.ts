@@ -6,8 +6,7 @@
 // closed by moving one of its ends onto the other's column where that end can move
 // without crowding anything: a card's own port along its face, a run of lanes
 // onto a free column, or a label box clear of the rest of its band. A move
-// that would bend a line that ran straight on the moved station's other side
-// is not made.
+// that would bend a line that ran straight on the moved station's other side is not made.
 //
 // Drawn as blocks, a step at a label of any width that turns its line back
 // against its last step is closed the same way.
@@ -462,11 +461,12 @@ function cardSteps(routes: readonly (readonly Net[])[]): { into: Place; outOf: P
  * @returns The keys.
  */
 function cardStepKeys(nets: readonly Net[]): string[] {
-	const tops = nets.filter((net) => net.wall === undefined && net.bottom.kind === "card");
+	const into = new Map<Station["item"], Net[]>();
+	for (const net of nets.filter(({ wall, bottom }) => wall === undefined && bottom.kind === "card"))
+		into.set(net.bottom.item, [...(into.get(net.bottom.item) ?? []), net]);
 	return nets.flatMap((net) =>
 		net.wall === undefined && net.top.kind === "card"
-			? tops
-					.filter(({ bottom }) => bottom.item === net.top.item)
+			? (into.get(net.top.item) ?? [])
 					.filter(({ bottomX }) => tooShort(bottomX, net.topX))
 					.map(({ bottomX }) => `${net.edge}|${net.channel}|${bottomX.toFixed(2)}`)
 			: [],

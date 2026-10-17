@@ -19,6 +19,7 @@ import {
 	type LayoutEngineName,
 	type FontSource,
 	type LegendLayout,
+	type NothingDrawnReason,
 	type OfferedView,
 	type SemanticBoard,
 	type SemanticRenderReply,
@@ -26,7 +27,7 @@ import {
 	type StandaloneTheme,
 	type SemanticView,
 	type ToldStanding,
-	type ViewScope,
+	type ReadingScope,
 } from "@/shared/semantic-board/index";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import { SemanticRenderError, renderSemanticView } from "@/transformers/semantic-renderer/index";
@@ -35,7 +36,7 @@ import { SemanticRenderError, renderSemanticView } from "@/transformers/semantic
 interface BoardRenderChoices {
 	/** A variant id or name; the board's current variant when absent. */
 	readonly variant?: string | undefined;
-	/** A view id or name; the whole variant when absent. */
+	/** A view id or name, `Everything` for the whole variant; the overview when absent (ADR 0052). */
 	readonly view?: string | undefined;
 	/** Whether the picture includes comparison marks and removed context. Defaults to true. */
 	readonly comparison?: boolean | undefined;
@@ -81,11 +82,14 @@ function offered(view: SemanticView): OfferedView {
 
 /**
  * The shared selection and grammar used to read either side of a change.
- * @param view The named view, or nothing for the whole architecture.
+ * @param view The named view, or nothing for the overview (ADR 0052).
  * @returns What the renderer is asked to explain.
  */
-function readingOf(view: SemanticView | undefined): { scope: ViewScope; grammar: DiagramGrammar } {
-	return view ?? { scope: { kind: "all" }, grammar: "architecture" };
+function readingOf(view: SemanticView | undefined): {
+	scope: ReadingScope;
+	grammar: DiagramGrammar;
+} {
+	return view ?? { scope: { kind: "overview" }, grammar: "architecture" };
 }
 
 /**
@@ -115,7 +119,7 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
  * @param title The words, true for the names, or nothing for no title.
  * @param identity What the answer says was drawn.
  * @param identity.board The board's name.
- * @param identity.view The view, or null for the whole variant.
+ * @param identity.view The view, or null for the overview.
  * @param identity.variant The variant.
  * @param identity.changes What the variant is read against, or null.
  * @param comparison Whether the picture draws the comparison.
@@ -137,13 +141,30 @@ function titleOf(
 }
 
 /**
+ * Why a render drew nothing: the variant holds nothing, or the view names
+ * nothing of what it holds.
+ * @param view The view drawn, or nothing for the overview.
+ * @param variant The variant drawn.
+ * @param refused The renderer's own refusal.
+ * @returns The reason the answer carries.
+ */
+function emptyReason(
+	view: SemanticView | undefined,
+	variant: SemanticVariant,
+	refused: NothingDrawnReason,
+): NothingDrawnReason {
+	const held = variant.content.nodes.length > 0 || variant.content.flows.length > 0;
+	return view !== undefined && held ? "VIEW_EMPTY_ON_VARIANT" : refused;
+}
+
+/**
  * Draw one variant of a board, or say that there is nothing on it yet.
  *
  * An empty board is not an error: it is a board somebody has just made and has
  * not filled in, answered as a success that carries no picture.
  * @param board The board, as read.
  * @param variant The variant to draw.
- * @param view The view to draw, or nothing for the whole variant.
+ * @param view The view to draw, or nothing for the overview.
  * @param against The variant the caller named to read it against, if any.
  * @param how The theme, the faces and the vault policy.
  * @param how.theme The theme a document that stands alone is drawn in, when it is one.
@@ -217,7 +238,7 @@ async function drawnReply(
 		return { ...identity, ...picture };
 	} catch (error) {
 		if (error instanceof SemanticRenderError) {
-			return { ...identity, empty: error.code };
+			return { ...identity, empty: emptyReason(view, variant, error.code) };
 		}
 		throw error;
 	}

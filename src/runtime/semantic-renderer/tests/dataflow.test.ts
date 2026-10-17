@@ -193,7 +193,7 @@ describe("renderDataFlow", () => {
 	test("two grammars draw the same identities as two different pictures", async () => {
 		const sequence = await renderSemanticView({
 			content: SAMPLE,
-			grammar: "data-flow",
+			grammar: "sequence",
 			theme: "light",
 		});
 		const architecture = await renderSemanticView({

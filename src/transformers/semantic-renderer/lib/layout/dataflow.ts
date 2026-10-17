@@ -20,7 +20,7 @@
 // language; here a flow is a single named box around the whole exchange, which
 // is what lets several flows stack down one page and still be told apart.
 
-import type { FlowStep, SemanticFlow, SemanticNode } from "@/shared/semantic-board/index";
+import type { FlowMessage, SemanticFlow, SemanticNode } from "@/shared/semantic-board/index";
 import { ARCHITECTURE_CARD_PADDING } from "@/transformers/semantic-renderer/config";
 import {
 	CONTAINER_BOTTOM_PAD,
@@ -36,7 +36,6 @@ import {
 	TITLE_SIZE_STEP,
 } from "@/transformers/semantic-renderer/lib/design";
 import {
-	MAX_PULSES_PER_STEP,
 	COLUMN_GAP,
 	COLUMN_MAX_WIDTH,
 	COLUMN_MIN_WIDTH,
@@ -44,20 +43,18 @@ import {
 	FLOW_BOTTOM_PADDING,
 	FLOW_GAP,
 	LIFELINE_GAP,
-	MESSAGE_LINE_STEP,
-	SELF_LOOP_EXTENT,
-	STEP_NOTE_GAP,
 } from "@/transformers/semantic-renderer/lib/sequence-design";
 import {
-	labelFor,
-	pitchOf,
-	placeNote,
 	requiredNoteColumnWidth,
-	wordsFor,
-	type ColumnBounds,
 	type MessageWords,
 	type PlacedNote,
 } from "@/transformers/semantic-renderer/lib/layout/step-rows";
+import { lowestDrawn, placeSteps } from "@/transformers/semantic-renderer/lib/layout/step-placing";
+import {
+	placeFrames,
+	spanAround,
+	type PlacedFrame,
+} from "@/transformers/semantic-renderer/lib/layout/frames";
 import { frameSpan } from "@/transformers/semantic-renderer/lib/layout/messages";
 import { activationsFor } from "@/transformers/semantic-renderer/lib/layout/activations";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
@@ -95,8 +92,14 @@ interface PlacedColumn {
 
 /** One message, placed on its row. */
 interface PlacedStep {
-	/** The step itself. */
-	readonly step: FlowStep;
+	/** The message itself. */
+	readonly step: FlowMessage;
+	/**
+	 * Which alternative of each decision that holds it the message runs on, by
+	 * decision id. Two messages on different alternatives of one decision never
+	 * both run, so a reply on one cannot answer a call on the other.
+	 */
+	readonly branch: ReadonlyMap<string, string>;
 	/** The label as drawn, with a repeat count folded in when there is one. */
 	readonly label: string;
 	/** The label's lines, wrapped to the room between the lifelines it stands between. */
@@ -141,6 +144,8 @@ interface FlowLayout {
 	readonly columns: readonly PlacedColumn[];
 	/** Its messages, in the order the flow states them. */
 	readonly steps: readonly PlacedStep[];
+	/** Its decisions' and loops' frames, each after the frames inside it. */
+	readonly frames: readonly PlacedFrame[];
 }
 
 /** Everything a stack of flows' geometry says, before anything is drawn. */
@@ -302,69 +307,6 @@ function placeColumnCard(
 }
 
 /**
- * Every message of one flow, stacked down the page in the order it is stated.
- * @param flow The flow.
- * @param centreOf Where each participant's lifeline runs.
- * @param bounds The flow's columns, which a note stays inside.
- * @param firstY The height the first message runs at.
- * @param firstTurn The turn of the drawing's clock this flow's first pulse takes.
- * @returns The placed messages.
- */
-function placeSteps(
-	flow: SemanticFlow,
-	centreOf: ReadonlyMap<string, number>,
-	bounds: ColumnBounds,
-	firstY: number,
-	firstTurn: number,
-): PlacedStep[] {
-	const placed: PlacedStep[] = [];
-	let y = firstY;
-	let turn = firstTurn;
-	for (const step of flow.steps) {
-		const count = Math.min(step.repeat ?? 1, MAX_PULSES_PER_STEP);
-		const fromX = centreOf.get(step.from) ?? 0;
-		const toX = centreOf.get(step.to) ?? 0;
-		const words = wordsFor(step, { fromX, toX, y }, bounds);
-		// A label stands above its arrow, so every line past the first lowers the row.
-		y += (words.lines.length - 1) * MESSAGE_LINE_STEP;
-		const note = placeNote(step, { fromX, toX, y }, bounds);
-		placed.push({
-			step,
-			label: labelFor(step),
-			words,
-			y,
-			fromX,
-			toX,
-			note,
-			slot: { start: turn, count },
-		});
-		turn += count;
-		// The row grows by the note it holds, so the next message's words sit
-		// where they would have without it, only lower.
-		y += pitchOf(step.kind) + (note === undefined ? 0 : note.box.height + STEP_NOTE_GAP);
-	}
-	return placed;
-}
-
-/**
- * How far down the page one flow's own drawing reaches.
- * @param steps The placed messages.
- * @param floor The height of the first message's row, when there is nothing below it.
- * @returns The lowest row anything was drawn on.
- */
-function lowestDrawn(steps: readonly PlacedStep[], floor: number): number {
-	return largest(
-		steps.map((placed) =>
-			Math.max(
-				placed.y + (placed.step.kind === "self" ? SELF_LOOP_EXTENT : 0),
-				placed.note === undefined ? 0 : placed.note.box.y + placed.note.box.height,
-			),
-		),
-		floor,
-	);
-}
-
-/**
  * One flow, placed.
  * @param flow The flow.
  * @param byId The variant's nodes.
@@ -414,8 +356,8 @@ function layoutFlow(
 	const cards = placedCards.map((card) => ({ ...card, box: { ...card.box, height: tallest } }));
 	const firstRow = cardsTop + tallest + LIFELINE_GAP + FIRST_MESSAGE_DROP;
 
-	const steps = placeSteps(
-		flow,
+	const placed = placeSteps(
+		flow.steps,
 		new Map(flow.participants.map((participant, index) => [participant, centres[index] ?? 0])),
 		{
 			left: contentLeft,
@@ -424,10 +366,10 @@ function layoutFlow(
 			firstCentre: centres[0] ?? 0,
 			lastCentre: centres.at(-1) ?? 0,
 		},
-		firstRow,
-		start.turn,
+		{ y: firstRow, turn: start.turn },
 	);
-	const lifelineBottom = lowestDrawn(steps, firstRow) + FLOW_BOTTOM_PADDING;
+	const { steps } = placed;
+	const lifelineBottom = lowestDrawn(steps, placed.frames, firstRow) + FLOW_BOTTOM_PADDING;
 
 	const columns = cards.map((card, index) => ({
 		card,
@@ -435,13 +377,17 @@ function layoutFlow(
 		lifelineTop: card.box.y + card.box.height + LIFELINE_GAP,
 		activations: activationsFor(card.node.id, steps),
 	}));
+	const activeAt = activationLookup(columns);
+	const frames = placeFrames(placed.frames, steps, activeAt, {
+		x: contentLeft,
+		width: contentWidth,
+	});
 
-	// The title row spans the frame, which a message's words may have widened.
-	const span = frameSpan(
-		steps,
-		activationLookup(columns),
-		DIAGRAM_MARGIN,
-		NEST_INSET * 2 + contentWidth,
+	// The title row spans the frame, which a message's words, or a decision's
+	// or loop's frame, may have widened.
+	const span = spanAround(
+		frameSpan(steps, activeAt, DIAGRAM_MARGIN, NEST_INSET * 2 + contentWidth),
+		frames,
 	);
 	return {
 		flow,
@@ -461,6 +407,7 @@ function layoutFlow(
 		lifelineBottom,
 		columns,
 		steps,
+		frames,
 	};
 }
 

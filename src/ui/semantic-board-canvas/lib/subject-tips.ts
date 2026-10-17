@@ -9,7 +9,14 @@
 // picture draws it, so it reads on its own beside the part it explains.
 
 import { drillWayWords } from "@/ui/semantic-board-canvas/lib/drill-way";
-import type { SemanticEdge, SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
+import {
+	everyStep,
+	isMessage,
+	stepWords,
+	type SemanticEdge,
+	type SemanticNode,
+	type SemanticVariant,
+} from "@/shared/semantic-board/index";
 import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
 import { drawnAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import { PULSE_CLASS } from "@/ui/semantic-board-canvas/lib/subjects";
@@ -242,11 +249,17 @@ function labelTip(variant: SemanticVariant, target: TipTarget): SubjectTip | nul
 		return edgeTip(edge, appearance);
 	}
 	const step = variant.content.flows
-		.flatMap((flow) => flow.steps)
+		.flatMap((flow) => everyStep(flow.steps))
 		.find((candidate) => candidate.id === target.id);
-	return step === undefined
-		? null
-		: { ...UNSAID, title: step.label, kind: messageKind(step.kind), appearance };
+	if (step === undefined) return null;
+	return isMessage(step)
+		? { ...UNSAID, title: step.label, kind: messageKind(step.kind), appearance }
+		: {
+				...UNSAID,
+				title: stepWords(step),
+				kind: step.kind === "decision" ? "Decision" : "Loop",
+				appearance,
+			};
 }
 
 /**

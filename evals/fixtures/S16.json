@@ -1,5 +1,5 @@
 {
-	"$comment": "S09's board without its groups and its Overview view: Flask app holds the WSGI entry, which the development server (outside the checkout) calls, and three more parts nothing outside reaches. The entry sends two relationships, one of them out of the container to the contexts module, and the response processor sends another out to the session interface, so the container has one entry point, three hidden parts, one caller, two outgoing relationships and no pass-through entry point.",
+	"$comment": "S09's board without its groups and its Request path view: Flask app holds the WSGI entry, which the development server (outside the checkout) calls, and three more parts nothing outside reaches. The entry sends two relationships, one of them out of the container to the contexts module, and the response processor sends another out to the session interface, so the container has one entry point, three hidden parts, one caller, two outgoing relationships and no pass-through entry point.",
 	"registerRepo": true,
 	"steps": [
 		{

@@ -6,7 +6,7 @@
 
 import { createHash } from "node:crypto";
 import path from "node:path";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { DiagramGrammar, SemanticBoard } from "@/shared/semantic-board/index";
 import {
 	exposureCounts,
 	type ClassifiedCommand,
@@ -62,7 +62,7 @@ interface BundledCapture {
 	readonly board: string;
 	readonly variant: string | null;
 	readonly view: string | null;
-	readonly grammar: "architecture" | "data-flow" | null;
+	readonly grammar: DiagramGrammar | null;
 	readonly ok: boolean;
 	readonly detail: string;
 	readonly file: string | null;

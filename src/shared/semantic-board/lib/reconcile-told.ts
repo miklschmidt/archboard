@@ -22,6 +22,8 @@
 import type { VariantContent } from "@/shared/semantic-board/lib/content";
 import type { ChangedField } from "@/shared/semantic-board/lib/reconcile-standing";
 import type { FlowStep, SemanticFlow } from "@/shared/semantic-board/lib/views";
+import { flatSteps, type FlatStep } from "@/shared/semantic-board/lib/flow-steps";
+import { leftEmpty, toldFlow } from "@/shared/semantic-board/lib/reconcile-flow";
 import type { SemanticWalkthrough, WalkthroughBeat } from "@/shared/semantic-board/lib/walkthrough";
 
 /** One disagreement about something told in an order. */
@@ -39,7 +41,19 @@ interface OrderedIssue {
 
 /** The fields a step and a beat merge, a step's bookkeeping `anchor` included. */
 const TOLD_FIELDS = {
-	step: ["from", "to", "label", "kind", "note", "repeat", "anchor"],
+	step: [
+		"from",
+		"to",
+		"label",
+		"kind",
+		"note",
+		"repeat",
+		"anchor",
+		"question",
+		"alternatives",
+		"condition",
+		"within",
+	],
 	beat: ["heading", "body", "subjects", "view"],
 } as const;
 
@@ -475,26 +489,21 @@ function reconcileTold(
 ): { flows: SemanticFlow[]; walkthroughs: SemanticWalkthrough[]; issues: OrderedIssue[] } {
 	const issues: OrderedIssue[] = [];
 	const flows = settled.flows.map((flow) => {
-		const merged = mergeTold<FlowStep>(
-			{
-				base: stepsIn(states.base.flows, flow.id),
-				mine: stepsIn(states.mine.flows, flow.id),
-				theirs: stepsIn(states.theirs.flows, flow.id),
-			},
+		// Merged on the flat reading, so a step that moved into another alternative
+		// merges like a changed field, and built back into a tree.
+		const sides = {
+			base: flatSteps(stepsIn(states.base.flows, flow.id)),
+			mine: stepsIn(states.mine.flows, flow.id),
+			theirs: stepsIn(states.theirs.flows, flow.id),
+		};
+		const merged = mergeTold<FlatStep>(
+			{ base: sides.base, mine: flatSteps(sides.mine), theirs: flatSteps(sides.theirs) },
 			TOLD_FIELDS.step,
 			"step",
 		);
-		issues.push(...merged.issues);
-		if (merged.entries.length > 0) {
-			return { ...flow, steps: merged.entries };
-		}
-		// Each side removed what the other kept, and between them they have emptied
-		// the exchange. Neither removal is a conflict on its own and no third state
-		// is implied, so this proposal keeps what it told and the incoherence is
-		// said out loud — a flow with nothing in it is not a document anybody can
-		// write, let alone read.
-		issues.push(leftEmpty(flow.id, "flow", flow.name));
-		return { ...flow, steps: [...stepsIn(states.mine.flows, flow.id)] };
+		const told = toldFlow({ flow, ...merged, ...sides });
+		issues.push(...told.issues);
+		return { ...flow, steps: told.steps };
 	});
 	const walkthroughs = settled.walkthroughs.map((walkthrough) => {
 		const merged = mergeTold<WalkthroughBeat>(
@@ -514,27 +523,6 @@ function reconcileTold(
 		return { ...walkthrough, beats: [...beatsIn(states.mine.walkthroughs, walkthrough.id)] };
 	});
 	return { flows, walkthroughs, issues };
-}
-
-/**
- * What to say when a merge would leave something with nothing to tell.
- * @param subject The flow or walkthrough.
- * @param what Which of those it is.
- * @param name What it is called.
- * @returns The issue.
- */
-function leftEmpty(subject: string, what: string, name: string): OrderedIssue {
-	return {
-		subject,
-		what,
-		kind: "left-empty",
-		mine: "kept what it told",
-		theirs: "removed the rest",
-		repair:
-			`This proposal and the variant it came from removed different parts of "${name}", and ` +
-			`between them they leave the ${what} with nothing in it. Say what it should tell now, or ` +
-			`remove the ${what} here.`,
-	};
 }
 
 /**

@@ -1,0 +1,264 @@
+{
+	"nodes": [
+		{
+			"id": "4P7YZdnj",
+			"order": 1000,
+			"name": "Archboard server",
+			"kind": "service"
+		},
+		{
+			"id": "tcwsrSQv",
+			"order": 4000,
+			"name": "Read and validate",
+			"kind": "function",
+			"parent": "ZqkmwupZ"
+		},
+		{
+			"id": "i2CrY6Xj",
+			"order": 5000,
+			"name": "Lifecycle transitions",
+			"kind": "function",
+			"groups": ["writes"],
+			"parent": "VCoMuJnP"
+		},
+		{
+			"id": "1gdbsn6M",
+			"order": 9000,
+			"name": "Write under lease",
+			"kind": "function",
+			"groups": ["writes"],
+			"parent": "0z23E66v"
+		},
+		{
+			"id": "qTv7HuBw",
+			"order": 10000,
+			"name": "Atomic file replacement",
+			"kind": "function",
+			"groups": ["writes"]
+		},
+		{
+			"id": "GWg2Fads",
+			"order": 16000,
+			"name": "Rename",
+			"kind": "function",
+			"groups": ["writes"],
+			"parent": "VCoMuJnP"
+		},
+		{
+			"id": "lkf45vPe",
+			"order": 17000,
+			"name": "Former names",
+			"kind": "function",
+			"parent": "ZqkmwupZ"
+		},
+		{
+			"id": "uZ8BMtTA",
+			"order": 18000,
+			"name": "Place the file",
+			"kind": "function",
+			"groups": ["writes"],
+			"parent": "0z23E66v"
+		},
+		{
+			"id": "QPkSSQP8",
+			"order": 19000,
+			"name": "Discard",
+			"kind": "function",
+			"groups": ["writes"],
+			"parent": "0z23E66v"
+		},
+		{
+			"id": "UFO3ulXp",
+			"order": 20000,
+			"name": "Board lease",
+			"kind": "function",
+			"responsibility": "One writer at a time per board: a lease file beside the board, an agent's claim on it, and who holds it",
+			"groups": ["writes"]
+		},
+		{
+			"id": "AJGft3Pe",
+			"order": 4500,
+			"name": "Vault configuration",
+			"kind": "function",
+			"responsibility": "Reads the vault's vocabulary and appearance from its config.yaml, and seeds that file in a new vault",
+			"parent": "ZqkmwupZ"
+		},
+		{
+			"id": "a6FGj58i",
+			"order": 22000,
+			"name": "Dropped anchors",
+			"kind": "function",
+			"groups": ["checks"],
+			"parent": "VCoMuJnP"
+		},
+		{
+			"id": "3HNevPSf",
+			"order": 26000,
+			"name": "Move",
+			"kind": "function",
+			"groups": ["writes"],
+			"parent": "IbkA2Se8"
+		},
+		{
+			"id": "ZqkmwupZ",
+			"order": 28000,
+			"name": "Board reading",
+			"kind": "module"
+		},
+		{
+			"id": "VCoMuJnP",
+			"order": 29000,
+			"name": "Board transitions",
+			"kind": "module"
+		},
+		{
+			"id": "0z23E66v",
+			"order": 30000,
+			"name": "Durable writes",
+			"kind": "module"
+		},
+		{
+			"id": "IbkA2Se8",
+			"order": 32000,
+			"name": "Board move",
+			"kind": "module"
+		}
+	],
+	"edges": [
+		{
+			"id": "9O4o9jcE",
+			"order": 10000,
+			"from": "1gdbsn6M",
+			"to": "tcwsrSQv",
+			"kind": "call",
+			"label": "read under lease",
+			"emphasis": "normal"
+		},
+		{
+			"id": "VWo4vJh0",
+			"order": 11000,
+			"from": "1gdbsn6M",
+			"to": "i2CrY6Xj",
+			"kind": "call",
+			"label": "apply transition",
+			"emphasis": "normal"
+		},
+		{
+			"id": "EqTEFYDa",
+			"order": 12000,
+			"from": "uZ8BMtTA",
+			"to": "qTv7HuBw",
+			"kind": "data",
+			"label": "commit serialized board",
+			"emphasis": "hero"
+		},
+		{
+			"id": "a85kagAw",
+			"order": 16000,
+			"from": "1gdbsn6M",
+			"to": "uZ8BMtTA",
+			"kind": "call",
+			"label": "write it where its name puts it",
+			"emphasis": "hero"
+		},
+		{
+			"id": "rs3a5Xhm",
+			"order": 17000,
+			"from": "1gdbsn6M",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"label": "hold the board for the pass",
+			"emphasis": "normal"
+		},
+		{
+			"id": "EKOObsIQ",
+			"order": 18000,
+			"from": "1gdbsn6M",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"label": "the board the name answers to",
+			"emphasis": "normal"
+		},
+		{
+			"id": "C0t1t0gb",
+			"order": 21000,
+			"from": "tcwsrSQv",
+			"to": "qTv7HuBw",
+			"kind": "data",
+			"label": "a migrated document",
+			"emphasis": "muted"
+		},
+		{
+			"id": "8Let5OXd",
+			"order": 23000,
+			"from": "uZ8BMtTA",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"label": "take the new name's lease",
+			"emphasis": "normal"
+		},
+		{
+			"id": "V478HCgq",
+			"order": 24000,
+			"from": "uZ8BMtTA",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"label": "does another board answer to it",
+			"emphasis": "normal"
+		},
+		{
+			"id": "s73zYKpi",
+			"order": 28000,
+			"from": "4P7YZdnj",
+			"to": "QPkSSQP8",
+			"kind": "call",
+			"label": "discard a whole board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "8TcPZofq",
+			"order": 29000,
+			"from": "QPkSSQP8",
+			"to": "1gdbsn6M",
+			"kind": "call",
+			"label": "the same lease and version check",
+			"emphasis": "normal"
+		},
+		{
+			"id": "WhfWPohX",
+			"order": 30000,
+			"from": "QPkSSQP8",
+			"to": "qTv7HuBw",
+			"kind": "call",
+			"label": "unlink and sync the directory",
+			"emphasis": "normal"
+		},
+		{
+			"id": "rHUNvCj0",
+			"order": 33000,
+			"from": "4P7YZdnj",
+			"to": "AJGft3Pe",
+			"kind": "call",
+			"label": "read the vocabulary",
+			"emphasis": "normal"
+		},
+		{
+			"id": "D97S65p8",
+			"order": 49000,
+			"from": "UFO3ulXp",
+			"to": "4P7YZdnj",
+			"kind": "event",
+			"label": "claim and release news",
+			"emphasis": "normal"
+		},
+		{
+			"id": "SHIuQ9tU",
+			"order": 65000,
+			"from": "3HNevPSf",
+			"to": "uZ8BMtTA",
+			"kind": "call",
+			"label": "write each board where its name puts it",
+			"emphasis": "normal"
+		}
+	]
+}

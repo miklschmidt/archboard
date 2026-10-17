@@ -66,10 +66,22 @@ interface Claim {
 	readonly expires: string;
 }
 
-/** A claim taken back, retained until the affected agent is told exactly once. */
+/**
+ * Why a claim ended before its holder released it or its deadline came.
+ *
+ * - `taken-back`: a person used the take-back control (ADR 0022): on this
+ *   server, or on another one while renewal found their take-back holding the lease.
+ * - `held-by-another`: renewal found another writer's lease on the board.
+ * - `lease-gone`: renewal found no lease at all: another process gave it up or
+ *   removed it, such as a take-back through another server, which releases at once.
+ */
+type ClaimEndCause = "taken-back" | "held-by-another" | "lease-gone";
+
+/** A claim that ended, retained until the affected agent is told exactly once. */
 interface ClaimRevocation {
 	readonly claim: Readonly<Claim>;
 	readonly by: Readonly<LockHolder> | null;
+	readonly cause: ClaimEndCause;
 }
 
 interface ClaimEntry {
@@ -180,6 +192,7 @@ class BoardHeldError extends Error {
 export {
 	BoardHeldError,
 	type Claim,
+	type ClaimEndCause,
 	type ClaimEntry,
 	type ClaimRevocation,
 	type HolderKind,

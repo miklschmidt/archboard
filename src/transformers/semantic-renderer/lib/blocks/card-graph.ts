@@ -129,6 +129,27 @@ function holdSources(block: Block, graph: VendorGraph, nodeOf: (name: string) =>
 }
 
 /**
+ * Hold every item no line leaves above a block's bottom ports, when the block
+ * ranks across the clusters it draws inline. Graphviz's own ranking stands
+ * `rank=sink` ports alone on the last rank, but its `newrank` ranking does
+ * not: a card at the foot of a container then shares the ports' rank, and
+ * that band, spaced as ports alone at the block's edge, stands over the bands
+ * above it, so a line on them runs through the card.
+ * @param block The block.
+ * @param graph Its Graphviz graph, its lines and holds already in it; the holds are added.
+ */
+function holdSinks(block: Block, graph: VendorGraph): void {
+	const port = [...block.ports].find(([, side]) => side === "bottom")?.[0];
+	if (port === undefined || block.clusters.size === 0) return;
+	const leaving = new Set(graph.edges.map(({ tail }) => tail));
+	graph.edges.push(
+		...block.items
+			.filter((item) => !leaving.has(item))
+			.map((tail) => ({ tail, head: port, attributes: { style: "invis", weight: 0, minlen: 1 } })),
+	);
+}
+
+/**
  * The invisible edges that hold the ports on one face of a block in the
  * order its parent settles them in (`orders.ts`).
  * @param tree The blocks.
@@ -145,4 +166,13 @@ function heldEdges(tree: BlockTree, block: Block, face: "top" | "bottom"): Edge[
 		.map((head, index) => ({ tail: held[index]!, head, attributes: { style: "invis" } }));
 }
 
-export { NODE_GAP, emptyGraph, heldEdges, holdSources, placedLabel, walledPoints, type VendorNode };
+export {
+	NODE_GAP,
+	emptyGraph,
+	heldEdges,
+	holdSinks,
+	holdSources,
+	placedLabel,
+	walledPoints,
+	type VendorNode,
+};

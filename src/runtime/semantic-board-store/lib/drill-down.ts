@@ -36,11 +36,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { checkoutsReadFrom, vaultIdentity } from "@/runtime/code-target/index";
-import type {
-	DrillDown,
-	SemanticBoard,
-	SemanticNode,
-	VariantContent,
+import {
+	messagesOf,
+	type DrillDown,
+	type SemanticBoard,
+	type SemanticNode,
+	type VariantContent,
 } from "@/shared/semantic-board/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 import { contentCheckedVariants } from "@/runtime/semantic-board-store/lib/content-checks";
@@ -197,7 +198,7 @@ function participates(node: SemanticNode, content: VariantContent): boolean {
 		content.flows.some(
 			(flow) =>
 				flow.participants.includes(node.id) ||
-				flow.steps.some((step) => step.from === node.id || step.to === node.id),
+				messagesOf(flow.steps).some((step) => step.from === node.id || step.to === node.id),
 		)
 	);
 }

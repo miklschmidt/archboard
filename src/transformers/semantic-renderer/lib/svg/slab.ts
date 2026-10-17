@@ -36,6 +36,13 @@ import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { lightDark, mixed, translucent } from "@/transformers/semantic-renderer/lib/svg/colour";
 import {
+	intersection,
+	inset,
+	polygonPath,
+	translated,
+	type Polygon,
+} from "@/transformers/semantic-renderer/lib/svg/polygon";
+import {
 	lines,
 	tag,
 	wrap,
@@ -78,6 +85,11 @@ interface SlabLook {
 	 * tint, which takes the softer light ({@link SOFT_SHEEN_ID}).
 	 */
 	readonly ground?: string;
+	/**
+	 * The colour its highlight is mixed from, where its face is a gradient
+	 * rather than one colour; absent, the face's own.
+	 */
+	readonly lit?: string;
 	/** Its front edge, the side of the block that faces the reader. */
 	readonly edge: string;
 	/** How tall its front edge shows, inside its box along its foot. */
@@ -213,13 +225,13 @@ function standingBorder(
 ): string {
 	const ink = standing === undefined ? undefined : standingInk(standing, palette);
 	if (standing === undefined || ink === undefined) return "";
-	const inset = OUTLINE_WIDTH / 2;
+	const half = OUTLINE_WIDTH / 2;
 	return tag("rect", {
-		x: coord(face.x + inset),
-		y: coord(face.y + inset),
+		x: coord(face.x + half),
+		y: coord(face.y + half),
 		width: coord(face.width - OUTLINE_WIDTH),
 		height: coord(face.height - OUTLINE_WIDTH),
-		rx: coord(Math.max(0, radius - inset)),
+		rx: coord(Math.max(0, radius - half)),
 		fill: "none",
 		stroke: ink,
 		"stroke-width": OUTLINE_WIDTH,
@@ -266,12 +278,32 @@ function slabShadow(
 }
 
 /**
- * The shadow a block casts, in a group of its own, so a picture can lay every
- * shadow under every block and every line: no shadow is then drawn over a
- * block, its own or one beside it, and no line is shadowed. It lists what cast
- * it, so a viewer veils and lights it with that, and holds it back while the
- * picture is in flight. It is no subject of its own and takes no pointer. A
- * removed block casts none: its ghost is drawn with it ({@link slabShadow}).
+ * A shadow in a group of its own, so a picture can lay every shadow under every
+ * block and every line: no shadow is then drawn over a block, its own or one
+ * beside it, and no line is shadowed. It lists what cast it, so a viewer veils
+ * and lights it with that, and holds it back while the picture is in flight. It
+ * is no subject of its own and takes no pointer.
+ * @param shadow The shadow's layers.
+ * @param member The id of what cast it, when it is a subject a viewer lights.
+ * @param part The part of the subject that casts the shadow, when it is not its card.
+ * @returns The shadow's group.
+ */
+function shadowGroup(shadow: string, member?: string, part?: string): string {
+	return wrap(
+		"g",
+		{
+			class: SHADOW_CLASS,
+			[MEMBERS_ATTRIBUTE]: member,
+			[PART_ATTRIBUTE]: part,
+			"pointer-events": "none",
+		},
+		shadow,
+	);
+}
+
+/**
+ * The shadow a block casts ({@link shadowGroup}). A removed block casts none:
+ * its ghost is drawn with it ({@link slabShadow}).
  * @param member The id of what cast it.
  * @param box The block's box.
  * @param radius Its corners.
@@ -292,16 +324,7 @@ function shadowUnder(
 ): string {
 	return standing === "removed"
 		? ""
-		: wrap(
-				"g",
-				{
-					class: SHADOW_CLASS,
-					[MEMBERS_ATTRIBUTE]: member,
-					[PART_ATTRIBUTE]: part,
-					"pointer-events": "none",
-				},
-				slabShadow(box, radius, lift, palette),
-			);
+		: shadowGroup(slabShadow(box, radius, lift, palette), member, part);
 }
 
 /**
@@ -347,6 +370,99 @@ function slab(
 }
 
 /**
+ * A shape that is not a box, painted: a polygon that takes no pointer.
+ * @param polygon The shape.
+ * @param radius How round its corners are.
+ * @param paint How it is painted.
+ * @returns The path.
+ */
+function solid(polygon: Polygon, radius: number, paint: Attributes): string {
+	return tag("path", { d: polygonPath(polygon, radius), "pointer-events": "none", ...paint });
+}
+
+/**
+ * A shape's seat: its outline, unpainted, which takes the pointer for the
+ * whole of it while every shape painted over it takes none.
+ * @param polygon The shape.
+ * @param radius How round its corners are.
+ * @returns The seat.
+ */
+function solidSeat(polygon: Polygon, radius: number): string {
+	return solid(polygon, radius, { fill: "none", "pointer-events": "all" });
+}
+
+/**
+ * The border a standing draws round the face of a block that is not a box
+ * ({@link standingBorder}): the standing's ink along the face's edge, inside it.
+ * @param face The face's outline.
+ * @param radius How round the face's corners are.
+ * @param standing How the part stands, or undefined when this is not a proposal.
+ * @param palette The theme's colours.
+ * @returns The border, or nothing for a part that stands unchanged.
+ */
+function solidBorder(
+	face: Polygon,
+	radius: number,
+	standing: SubjectStanding | undefined,
+	palette: Palette,
+): string {
+	const ink = standing === undefined ? undefined : standingInk(standing, palette);
+	if (standing === undefined || ink === undefined) return "";
+	const half = OUTLINE_WIDTH / 2;
+	return solid(inset(face, half), Math.max(0, radius - half), {
+		fill: "none",
+		stroke: ink,
+		"stroke-width": OUTLINE_WIDTH,
+		"stroke-dasharray": OUTLINE_DASH[standing],
+	});
+}
+
+/**
+ * Where a removed block that is not a box stood ({@link ghost}).
+ * @param polygon The block's outline.
+ * @param radius How round its corners are.
+ * @param palette The theme's colours.
+ * @returns The ghost.
+ */
+function solidGhost(polygon: Polygon, radius: number, palette: Palette): string {
+	return lines([
+		solid(polygon, radius, ghostFace(palette)),
+		solidBorder(polygon, radius, "removed", palette),
+	]);
+}
+
+/**
+ * A block that is not a box, as {@link slab} builds one: its body in the tone
+ * of its front edge, and its face over that. The face is the body cut by
+ * itself lifted by the block's thickness, so the front edge shows along every
+ * side that faces down and nowhere else, as it does along a box's foot; the
+ * highlight is the face cut by itself lowered, along every side that faces up.
+ * @param body The block's outline, its silhouette.
+ * @param look How the block looks, its radius how round its corners are.
+ * @param palette The theme's colours.
+ * @param standing How the part stands, when this is a proposal.
+ * @returns The block.
+ */
+function solidSlab(
+	body: Polygon,
+	look: SlabLook,
+	palette: Palette,
+	standing?: SubjectStanding,
+): string {
+	if (standing === "removed") return "";
+	const { radius } = look;
+	const face = intersection(body, translated(body, { x: 0, y: -look.thickness }));
+	const lit = intersection(face, translated(face, { x: 0, y: GLINT_WIDTH }));
+	return lines([
+		solid(body, radius, { fill: look.edge }),
+		solid(face, radius, { fill: glintOf(look.lit ?? look.face, palette) }),
+		solid(lit, radius, { fill: look.face }),
+		look.sheen ? solid(lit, radius, { fill: `url(#${sheenOf(look)})` }) : "",
+		solidBorder(face, radius, standing, palette),
+	]);
+}
+
+/**
  * The light that falls off down a face, from the sheen at its top edge to
  * nothing at its foot, one gradient in the face's own box so every face of
  * any size shares it.
@@ -369,7 +485,7 @@ function sheenGradient(id: string, sheen: string): string {
  * @param look How the block looks.
  * @returns The id of its gradient.
  */
-function sheenOf(look: SlabLook): string {
+function sheenOf(look: Pick<SlabLook, "ground">): string {
 	return look.ground === undefined ? SHEEN_ID : SOFT_SHEEN_ID;
 }
 
@@ -398,11 +514,15 @@ export {
 	ghostFace,
 	glintOf,
 	plate,
+	shadowGroup,
 	shadowUnder,
 	slab,
 	slabDefinitions,
 	slabSeat,
 	slabShadow,
+	solidGhost,
+	solidSeat,
+	solidSlab,
 	standingBorder,
 	tinted,
 };

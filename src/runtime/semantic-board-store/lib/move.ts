@@ -405,7 +405,12 @@ async function holdIn(
 	waitMs?: number,
 ): Promise<MoveHold | SemanticWriteRejection> {
 	const admission = admit(vault, address.key, command.writer);
-	if (!admission.ok) return rejected(address, null, "CLAIM_REVOKED", admission.problem);
+	if (!admission.ok) {
+		return {
+			...rejected(address, null, "CLAIM_REVOKED", admission.problem),
+			cause: admission.cause,
+		};
+	}
 	try {
 		const hold = await holdBoard({
 			...leaseRequest(address.key, { ...command, vault }, admission),

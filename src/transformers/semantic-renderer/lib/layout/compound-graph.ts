@@ -23,6 +23,11 @@ const GROUP_CAPTIONS = "archboard.group.captions";
  * container leads to it, else `false` ({@link entryPointsOf}).
  */
 const ENTRY_POINT = "archboard.entry";
+/**
+ * The layout option carrying each width a container's header can take and how
+ * tall it stands there, as `[width, height]` rows, narrowest first (TASK-486).
+ */
+const HEADER_STEPS = "archboard.header.steps";
 
 /**
  * Which child of a container holds each part inside it, at any depth.
@@ -97,6 +102,23 @@ function entryPointsOf(
 }
 
 /**
+ * The layout options that carry a container's header: its height at its
+ * least width, and each width it can take with its height there.
+ * @param measured The measured node.
+ * @param measured.headerHeight Its header's height; zero for a card.
+ * @param measured.headers Its header at each width it can take, when more than one.
+ * @returns The options, or none for a card.
+ */
+function headerOptions({ headerHeight, headers }: MeasuredNode): Record<string, string> {
+	if (headerHeight === 0) return {};
+	const steps = headers?.map((header) => [header.width, header.headerHeight]);
+	return {
+		"archboard.header.size": String(headerHeight),
+		...(steps === undefined ? {} : { [HEADER_STEPS]: JSON.stringify(steps) }),
+	};
+}
+
+/**
  * Convert measured dimensions to a card or expandable frame.
  * @param measured The complete text measurement.
  * @param group The group it is placed with, if any.
@@ -121,7 +143,7 @@ function nodeOf(
 				node.responsibility === undefined
 					? String(node.order)
 					: JSON.stringify([node.kind, node.responsibility]),
-			...(headerHeight === 0 ? {} : { "archboard.header.size": String(headerHeight) }),
+			...headerOptions(measured),
 		},
 		...(headerHeight === 0 ? {} : { children: [] }),
 	};
@@ -219,4 +241,4 @@ function compoundGraph(
 	};
 }
 
-export { ENTRY_POINT, GROUP_CAPTIONS, PLACING_GROUP, compoundGraph, entryPointsOf };
+export { ENTRY_POINT, GROUP_CAPTIONS, HEADER_STEPS, PLACING_GROUP, compoundGraph, entryPointsOf };

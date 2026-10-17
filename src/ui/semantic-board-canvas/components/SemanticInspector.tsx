@@ -17,6 +17,10 @@ import type { JSX, ReactNode } from "react";
 
 import {
 	addressedVariant,
+	everyStep,
+	isMessage,
+	stepWords,
+	type FlowStep,
 	type ReconciliationIssue,
 	type SemanticBoard,
 	type SemanticNode,
@@ -120,11 +124,22 @@ interface StepBodyProps {
 }
 
 /**
- * Everything the board says about one message of an exchange.
+ * What sort of step one is, in the words of its line under the title.
+ * @param step The step.
+ * @returns A message and its kind, or a decision, or a loop.
+ */
+function stepSort(step: FlowStep): string {
+	if (step.kind === "decision") return "Decision";
+	if (step.kind === "loop") return "Loop";
+	return `Message · ${step.kind}`;
+}
+
+/**
+ * Everything the board says about one step of an exchange.
  *
  * Where it comes is part of what it means, which is why the comparison treats a
  * step's position as one of its own fields.
- * @param props The message.
+ * @param props The step.
  * @returns The body.
  */
 function StepBody(props: StepBodyProps): JSX.Element {
@@ -132,8 +147,8 @@ function StepBody(props: StepBodyProps): JSX.Element {
 	return (
 		<>
 			<SidebarRegion slot="semantic-inspector-about">
-				<SubjectTitle name={step.label}>
-					<span>Message · {step.kind}</span>
+				<SubjectTitle name={stepWords(step)}>
+					<span>{stepSort(step)}</span>
 				</SubjectTitle>
 				<Account detail={step.note} />
 			</SidebarRegion>
@@ -146,10 +161,22 @@ function StepBody(props: StepBodyProps): JSX.Element {
 						    this variant does not send is the variant it is read against. The
 						    composed picture the diagram is drawn from holds both at once and
 						    is nobody's architecture, so nothing is counted against it. */}
-						<Row field="position" label="step" value={`${position} of ${flow.steps.length}`} />
-						<Row label="from" value={nameOf(from, step.from)} />
-						<Row label="to" value={nameOf(to, step.to)} />
-						{step.repeat !== undefined && <Row label="repeats" value={`${step.repeat}×`} />}
+						<Row
+							field="position"
+							label="step"
+							value={`${position} of ${everyStep(flow.steps).length}`}
+						/>
+						{isMessage(step) && <Row label="from" value={nameOf(from, step.from)} />}
+						{isMessage(step) && <Row label="to" value={nameOf(to, step.to)} />}
+						{isMessage(step) && step.repeat !== undefined && (
+							<Row label="repeats" value={`${step.repeat}×`} />
+						)}
+						{step.kind === "decision" && (
+							<Row
+								label="answers"
+								value={step.alternatives.map((alternative) => alternative.label).join(", ")}
+							/>
+						)}
 					</Facts>
 				</SidebarSection>
 			</SidebarRegion>

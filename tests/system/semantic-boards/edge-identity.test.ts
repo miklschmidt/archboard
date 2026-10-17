@@ -242,7 +242,9 @@ test("one CLI edit consolidates copied proposal subjects under their inherited i
 			],
 			JSON.stringify(input),
 		);
+	// The mistake being repaired: a re-created part, which now needs confirming.
 	const copied = edit(JSON.parse(branch.stdout).board.version, {
+		confirm: ["PART_RECREATED"],
 		removeNodes: [worker.id],
 		nodes: [{ name: worker.name, kind: worker.kind, description: worker.description }],
 		edges: [{ from: edge.from, to: "Worker", kind: edge.kind, label: edge.label }],

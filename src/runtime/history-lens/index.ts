@@ -5,7 +5,8 @@
 // locality and footprint. Behind, how far a board is behind its code, answers in
 // `archboard check --code`. Hotspots, change coupling and footprints
 // (TASK-369.03 to TASK-369.05) reuse the walk, the mapping and the part
-// reading exported here.
+// reading exported here. The code check reads the code a draft's bindings pin
+// through `sourceAt`, which reads a ref's tree without checking it out.
 
 export {
 	type BehindReading,
@@ -23,3 +24,4 @@ export { type PartReading, type ReadPart, partReading } from "@/runtime/history-
 export { type LocalityReading, createLocalityReading } from "@/runtime/history-lens/lib/locality";
 export { type AnswerMemory, createAnswerMemory } from "@/runtime/history-lens/lib/answer-memory";
 export { type FootprintRequest, readFootprint } from "@/runtime/history-lens/lib/footprint";
+export { type SourceAtRef, sourceAt } from "@/runtime/history-lens/lib/source-history";

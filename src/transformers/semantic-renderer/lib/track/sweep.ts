@@ -199,12 +199,14 @@ function spanned(xs: readonly number[], runs: readonly Span[]): Float64Array {
 function fromReach(xs: readonly number[], warped: Float64Array, reach: Span): Float64Array {
 	const left = firstAbove(xs, reach[0] - EDGE);
 	const right = firstAbove(xs, reach[1] - EDGE);
-	return warped.map((value, j) => {
-		if (j >= left && j <= right) return 0;
+	const cost = new Float64Array(warped.length);
+	for (let j = 0; j < warped.length; j += 1) {
+		if (j >= left && j <= right) continue;
 		const edge = j < left ? left : right;
 		const step = Math.abs(xs[edge]! - xs[j]!);
-		return step < MIN_STEP ? Infinity : Math.abs(warped[edge]! - value) + JOG;
-	});
+		cost[j] = step < MIN_STEP ? Infinity : Math.abs(warped[edge]! - warped[j]!) + JOG;
+	}
+	return cost;
 }
 
 export { CROSSING, EDGE, backtrack, block, descend, fromReach, spanned, warp, type Span };
