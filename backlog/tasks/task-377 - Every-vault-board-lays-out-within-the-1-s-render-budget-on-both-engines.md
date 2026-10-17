@@ -1,11 +1,11 @@
 ---
 id: TASK-377
 title: Every vault board lays out within the 1 s render budget on both engines
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 18:33'
-updated_date: '2026-10-16 12:59'
+updated_date: '2026-10-17 07:02'
 labels:
   - renderer
 dependencies: []
@@ -36,6 +36,8 @@ Measured 2026-09-29 on a quiet machine (load 0.8), each drawing's first render i
 4. Own the budget with a load-robust bound in the vault corpus test (wide-boards.test.ts).
 5. Board proposals: none. The change moves no part or relationship any board draws (the Renderer layout and Semantic renderer boards name the worker pool, not how it dispatches).
 6. Measure before/after on a quiet machine; run the gate.
+
+7. (2026-10-17) Profile the three failing wide-board cases in-process; take libavoid's UnsatisfiableException throw out of vpsc at instantiation (same as the catch); weigh the joins choice on every answer so later turns' follow-ups are laid out beside a long turn; speed Track's lane searches without changing what they answer; render both vaults on both engines before and after and look at every changed drawing.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -77,4 +79,29 @@ User decision 2026-09-30: accept Blocks over the budget for now. Track, the defa
 TASK-420 closure decision on 2026-10-07 keeps its existing Blocks speed issue here. The eighteen-board audit records Board viewer at 2109.20 ms on Blocks and 650.60 ms on Track. Board viewer is the only current drawing over one second in that audit. The owner accepted the spacing fix and kept this task open for the Blocks budget. Audit log: /tmp/surface-render-budget.log.
 
 2026-10-16, after TASK-482 nested every crowded vault board: three wide-board cases in tests/…/wide-boards.test.ts fail their bound on a quiet machine. Archboard server routes (blocks) and Command interface (blocks) pass the 20 s case limit (Archboard server routes took 6.5 s before the nesting and 23.8 s after, timed alone); Board viewer (track) takes 3.3 to 3.9 s against its 3 s bound. Agent workbench (blocks) went from 10.1 s to 21.0 s. The owner wants these drawings fast, not the limits raised; this task owns the work.
+
+2026-10-17, the three failing wide-board cases. Each engine was profiled in-process on the main thread (bun --cpu-prof-md).
+
+Profile findings:
+- Blocks: half of every solve was libavoid's unifying nudging throwing Avoid::UnsatisfiableException out of vpsc (findMinLMBetween, inlined in IncSolver::satisfy). The catch only marks the constraint unsatisfiable. Each throw went through the engine's JavaScript, and JSC captured a stack for each one. With BUN_JSC_exceptionStackTraceLimit=0, a solve took half the time.
+- Blocks, scheduling: the joins choice asked for the next layouts only after the turn it waited for answered, so a long turn held back the follow-ups of later turns that had already come.
+- Track, Board viewer: the inline solve was the critical path at about 2.65 to 2.8 s. Graphviz took 30% (16 calls), and routing took 65%, spread over relayLaps, the label straightening, partCollinear and straightenLanes. Occupancy.fits ran 195,000 times a solve against about 270 stretches each.
+- Still over 1 s on Blocks: the all-apart joins candidate of a packed cluster. In Archboard server routes, one libavoid route of 53 trunks takes 11.6 s of a 15.6 s solve. Unifying nudging solves the region again for every pair of free segments (orthogonal.cpp, the justUnifying loop). The work is libavoid's, so AC1 stays out of reach on Blocks.
+
+Fixes:
+1. lib/unsatisfiable.ts: as the engine instantiates libavoid-js 0.5.0-beta.5, it edits the throwing branch to mark the constraint as the catch does. It checks the length and FNV-1a hash of the build and refuses any other build (engine.ts, NOTICE.md).
+2. lib/blocks/joins-laid.ts: every answer that comes is weighed in the sequential order, and every layout that order reads next is asked for at once. Layouts that no turn reads any more are called off. joins.ts keeps the weighing.
+3. Graphviz answers in json0, which is json without the drawing operations that nothing reads. The once-cache keeps the text, and each caller parses its own copy. Graphviz time went down by about 14%, with identical boxes and polylines.
+4. Track lane searches: Occupancy.fitting reads a run's bands and frames once for a search (scene.keepsFrames answers a test, and track/clear.ts merges the stretches after 8 asks). Other changes: cheap tests first in parting.collinear, per-card grouping in jogs.cardStepKeys, and precomputed pair meets in straighten.crossingsFor. Test: tests/lane-clear.test.ts.
+
+Corpus (every variant and view, both engines; frozen snapshot against base f8f020cf2): this vault has 11360 SVGs, and 2 differ. That is one drawing, Live panes Pane connections (Blocks) in TASK-482.06 and TASK-482.07, moved by the libavoid edit through heap-address ties. It was looked at and reads better: 16 crossings instead of 22. Docs-Architecture-Design has 3370 SVGs, and 0 differ.
+
+First renders, one warm process, each board's current variant, base then after, two runs each:
+- Track (load 1.5 to 2.8): total 16.8 s and 16.8 s before, 13.0 s and 13.1 s after. Board viewer 3.51 s and 3.47 s before, 2.57 s and 2.58 s after. Agent workbench 2.39 s to 1.95 s. Every other board is under 1.6 s.
+- Blocks (load 2.1 to 4.6): total 188.2 s and 188.5 s before, 50.6 s and 49.9 s after. Board viewer 24.1 s to 5.6 to 5.8 s. Archboard server routes 75 s to 16.2 s. Command interface 30.5 s to 9.0 s. Agent workbench 15.6 s to 4.6 s. Browser application 15.1 s to 4.9 s. Board persistence 11.0 s to 3.3 s.
+- wide-boards.test.ts at load 1.2 to 2.4: 40 of 40 pass. Archboard server routes (blocks) takes 16.3 s, Command interface (blocks) 8.8 s, and Board viewer (track) 2.66 s.
+
+Gate: bun test src/runtime/semantic-renderer src/transformers/semantic-renderer gives 662 pass and 0 fail. bun run lint, tsc and oxfmt are clean. No bound was raised.
+
+Tried and not adopted: forcing Track's stacking choice in two parallel solves. It would take Board viewer (track) to about 1.7 s, but it rewrites the stacking choice that TASK-486 is changing.
 <!-- SECTION:NOTES:END -->

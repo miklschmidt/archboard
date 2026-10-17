@@ -3,6 +3,7 @@
 // lanes it passes on the bands between.
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { clearOf } from "@/transformers/semantic-renderer/lib/track/clear";
 import {
 	Scene,
 	TRACK_POLYLINE,
@@ -225,8 +226,8 @@ class Occupancy {
 	readonly held: [number, number][][];
 	/** The stretch each wall keeps a lane off, on each band, by the wall. */
 	readonly walls: Map<string, [number, number]>[];
-	/** What {@link along} answered, by band and the bands the line passes, until a lane is taken. */
-	private readonly alongs = new Map<string, readonly (readonly [number, number])[]>();
+	/** Whether an x is clear of what a run's bands hold for its lanes ({@link along}), by those bands, until a lane is taken. */
+	private readonly alongs = new Map<string, (x: number) => boolean>();
 
 	/**
 	 * Start with every item's box, widened by a lane either side.
@@ -276,11 +277,6 @@ class Occupancy {
 	 * @returns The stretches a lane keeps out of.
 	 */
 	along(band: number, bands: readonly number[]): readonly (readonly [number, number])[] {
-		// A search asks the same band of the same run for every column it
-		// tries, and the answer changes only when a lane is taken.
-		const key = `${band}|${bands.join(",")}`;
-		const known = this.alongs.get(key);
-		if (known !== undefined) return known;
 		const walls = [...this.walls[band]!].map(([wall, [low, high]]) =>
 			bands.reduce<readonly [number, number]>(
 				(narrowest, other) => {
@@ -292,9 +288,7 @@ class Occupancy {
 				[low, high],
 			),
 		);
-		const held = [...this.held[band]!, ...walls];
-		this.alongs.set(key, held);
-		return held;
+		return [...this.held[band]!, ...walls];
 	}
 
 	/**
@@ -324,12 +318,21 @@ class Occupancy {
 	 * @returns True when the column is free on every band and keeps the frames {@link Scene.keepsFrames} asks.
 	 */
 	fits(run: LaneRun, x: number): boolean {
+		return this.fitting(run)(x);
+	}
+
+	/**
+	 * {@link fits}, read once for a search that tries column after column and takes no lane meanwhile.
+	 * @param run The run's lanes and the stations either side of them.
+	 * @returns The test of a column.
+	 */
+	fitting(run: LaneRun): (x: number) => boolean {
 		const bands = run.lanes.map(({ band }) => band);
-		return (
-			run.lanes.every((lane) =>
-				this.along(lane.band, bands).every(([low, high]) => x <= low || x >= high),
-			) && this.scene.keepsFrames(run, x)
-		);
+		const key = bands.join(",");
+		const clear = this.alongs.get(key) ?? clearOf(bands.flatMap((band) => this.along(band, bands)));
+		this.alongs.set(key, clear);
+		const frames = this.scene.keepsFrames(run);
+		return (x) => clear(x) && frames(x);
 	}
 
 	/**

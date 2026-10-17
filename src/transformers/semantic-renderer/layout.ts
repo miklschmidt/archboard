@@ -1,8 +1,8 @@
 // The layout's own rules that focused runtime checks hold without a whole
 // board: corner rounding, crossing bridges, the marks where routes join, how
 // traffic keeps time and is held in a card, how Track and Blocks weigh one
-// reading against another, whether a wrap sinks a card, and how Blocks asks
-// for the layouts its joins weigh.
+// reading against another, whether a wrap sinks a card, how Blocks asks
+// for the layouts its joins weigh, and whether a lane stands clear.
 export { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
 export { shownDrawing } from "@/transformers/semantic-renderer/lib/shown";
 export { junctionsOf } from "@/transformers/semantic-renderer/lib/svg/junctions";
@@ -13,6 +13,7 @@ export {
 	curveClearanceIssue,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 export { placeRun, type Slider } from "@/transformers/semantic-renderer/lib/track/label-runs";
+export { clearOf } from "@/transformers/semantic-renderer/lib/track/clear";
 export { unstepped } from "@/transformers/semantic-renderer/lib/blocks/steps";
 export { captionIn } from "@/transformers/semantic-renderer/lib/blocks/lone";
 export { type Joined } from "@/transformers/semantic-renderer/lib/blocks/joins";

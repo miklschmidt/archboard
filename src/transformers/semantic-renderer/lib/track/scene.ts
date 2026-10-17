@@ -418,28 +418,26 @@ class Scene {
 	 * lies in: inside every frame both stations either side of them stand in,
 	 * outside every frame neither does, and either where one does, so the line
 	 * crosses a frame's or group region's wall only where it must, and once.
+	 * Read once for a search that tries column after column.
 	 * @param between The stations, and the stations either side of them.
 	 * @param between.lanes The stations.
 	 * @param between.before The station above them.
 	 * @param between.after The station below them.
-	 * @param x The column.
-	 * @returns True when the column keeps them so.
+	 * @returns The test of a column: true when it keeps them so.
 	 */
-	keepsFrames(
-		between: {
-			readonly lanes: readonly Spot[];
-			readonly before: Spot;
-			readonly after: Spot;
-		},
-		x: number,
-	): boolean {
+	keepsFrames(between: {
+		readonly lanes: readonly Spot[];
+		readonly before: Spot;
+		readonly after: Spot;
+	}): (x: number) => boolean {
 		const { lanes, before, after } = between;
-		return lanes.every(({ band }) =>
-			[...this.walled(band)].every(([id, [low, high]]) => {
-				const above = this.inside(id, before);
-				return above !== this.inside(id, after) || (x > low && x < high) === above;
+		const held = lanes.flatMap(({ band }) =>
+			[...this.walled(band)].flatMap(([id, [low, high]]) => {
+				const inside = this.inside(id, before);
+				return inside === this.inside(id, after) ? [{ low, high, inside }] : [];
 			}),
 		);
+		return (x) => held.every(({ low, high, inside }) => (x > low && x < high) === inside);
 	}
 
 	/**
