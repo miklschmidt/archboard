@@ -23,9 +23,11 @@
 
 import {
 	BoardHeldError,
+	claimEndReason,
 	claimWriterId,
 	takeClaimRevocation,
 	withBoardLock,
+	type ClaimEndCause,
 	type LockRequest,
 } from "@/runtime/engine/board-lock";
 import { mintId } from "@/shared/ids/ids";
@@ -103,6 +105,8 @@ interface SemanticWriteRejection {
 	readonly location: SemanticBoardLocation;
 	/** The version the board is actually at, when there is a board. */
 	readonly version: number | null;
+	/** Why the writer's claim ended, on a CLAIM_REVOKED refusal. */
+	readonly cause?: ClaimEndCause;
 }
 
 /** What a write did, or why it did nothing. */
@@ -197,15 +201,14 @@ function admit(
 	vault: string,
 	key: string,
 	writer: SemanticWriter,
-): Admission | { readonly ok: false; readonly problem: string } {
+): Admission | { readonly ok: false; readonly problem: string; readonly cause: ClaimEndCause } {
 	if (writer.kind !== "agent") {
 		return { ok: true, id: writer.id ?? `pane-${mintId()}`, claimed: false };
 	}
-	if (takeClaimRevocation(vault, key) !== null) {
-		return {
-			ok: false,
-			problem: `the claim on "${key}" was taken back; claim the board again before writing`,
-		};
+	const lost = takeClaimRevocation(vault, key);
+	if (lost !== null) {
+		const problem = `${claimEndReason(lost)}, so your claim has ended; claim the board again before writing`;
+		return { ok: false, problem, cause: lost.cause };
 	}
 	const claim = claimWriterId(vault, key);
 	return claim === null
@@ -536,13 +539,8 @@ async function underBoardLease<Done extends { readonly outcome: "applied" | "dis
 	const address = resolveSemanticBoard(ask.board, ask.vault);
 	const admission = admit(ask.vault, address.key, ask.writer);
 	if (!admission.ok) {
-		return {
-			outcome: "rejected",
-			code: "CLAIM_REVOKED",
-			problem: admission.problem,
-			location: { ...address, file: "" },
-			version: null,
-		};
+		const refusal = rejected({ ...address, file: "" }, null, "CLAIM_REVOKED", admission.problem);
+		return { ...refusal, cause: admission.cause };
 	}
 	try {
 		const result = await withBoardLock(leaseRequest(address.key, ask, admission), () =>

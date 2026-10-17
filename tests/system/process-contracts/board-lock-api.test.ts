@@ -112,12 +112,13 @@ test("the public lock API preserves claims, refusals and told-once recovery", as
 		).toBeDefined();
 
 		// Told once, and told what it means: nothing was rolled back.
-		const revoked = await request<{ code: string; error: string }>(
+		const revoked = await request<{ code: string; error: string; cause: string }>(
 			"/api/semantic-boards/claim?board=payments",
 			{ method: "POST", body: { reason: "carrying on" } },
 		);
 		expect(revoked.status).toBe(409);
 		expect(revoked.body.code).toBe("CLAIM_REVOKED");
+		expect(revoked.body.cause).toBe("taken-back");
 		expect(revoked.body.error).toContain("nothing was undone");
 
 		// Everything the claim wrote is on the board, and an ordinary write still
