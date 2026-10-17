@@ -191,7 +191,7 @@ async function footprint(base: string, proposal?: string, head?: string): Promis
 		await lens.readFootprint({
 			vault: scratch,
 			board: value,
-			current,
+			against: current,
 			proposal: named,
 			base,
 			head,
@@ -412,4 +412,54 @@ test("a --head that looks like an option is a ref and never an option", async ()
 	const answer = await footprint("main", undefined, `--output=${target}`);
 	expect(answer.repositories.every((one) => one.status === "unread")).toBe(true);
 	expect(existsSync(target)).toBe(false);
+});
+
+/**
+ * Read the footprint of a proposal against a variant of the test's choosing.
+ * @param proposal The proposal's name.
+ * @param variantName The variant it is read against, or none for nothing.
+ * @returns The answer, which names a proposal.
+ */
+async function readAgainst(proposal: string, variantName?: string) {
+	const value = board();
+	const answer = FootprintAnswerSchema.parse(
+		await lens.readFootprint({
+			vault: scratch,
+			board: value,
+			against: variantName === undefined ? undefined : resolveVariant(value, variantName),
+			proposal: resolveVariant(value, proposal),
+			base: "main",
+		}),
+	);
+	if (answer.proposal === null) throw new Error("a proposal was named");
+	return answer;
+}
+
+test("the variant a proposal is read against decides which parts it names", async () => {
+	const swapped = await readAgainst("Built", "Plan");
+	expect(swapped.against).toMatchObject({ name: "Plan" });
+	const reasons = Object.fromEntries(
+		[...swapped.namedAndChanged, ...swapped.namedNotChanged].map((part) => [
+			part.subject.id,
+			part.named,
+		]),
+	);
+	// Read against Plan, Built is the proposal that adds Legacy and removes Cache.
+	expect(reasons["pR"]).toEqual([{ by: "part", status: "added" }]);
+	expect(reasons["pC"]).toEqual([{ by: "part", status: "removed" }]);
+});
+
+test("a proposal read against nothing names every part it holds", async () => {
+	const answer = await readAgainst("Plan");
+	expect(answer.against).toBeNull();
+	const proposed = [
+		...answer.namedAndChanged,
+		...answer.changedNotNamed,
+		...answer.namedNotChanged,
+	];
+	expect(ids(answer.changedNotNamed)).toEqual([]);
+	expect(proposed.every((part) => part.named.some((reason) => reason.status === "added"))).toBe(
+		true,
+	);
+	expect(ids(answer.namedAndChanged)).toContain("pA");
 });

@@ -15,7 +15,7 @@ const reply: FootprintReply = {
 	board: "Orders",
 	version: 4,
 	base: "origin/main",
-	current: { id: "v1", name: "Built" },
+	against: { id: "v1", name: "Built" },
 	proposal: { id: "v2", name: "TASK-1" },
 	repositories: [
 		{
@@ -179,11 +179,29 @@ test("without --variant the command names no proposal", async () => {
 	]);
 });
 
-test("--head is carried to the route, and a head the route cannot resolve is refused with exit 2", async () => {
+test("--head and --against are carried to the route, and a head the route cannot resolve is refused with exit 2", async () => {
 	asked.length = 0;
-	await run(["semantic", "footprint", "Orders", "--base", "main", "--head", "feat/layer-two"]);
+	await run([
+		"semantic",
+		"footprint",
+		"Orders",
+		"--base",
+		"main",
+		"--head",
+		"feat/layer-two",
+		"--variant",
+		"Layer two",
+		"--against",
+		"Layer one",
+	]);
 	expect(asked.map((one) => Object.fromEntries(one.searchParams))).toEqual([
-		{ board: "Orders", base: "main", head: "feat/layer-two" },
+		{
+			board: "Orders",
+			base: "main",
+			head: "feat/layer-two",
+			variant: "Layer two",
+			against: "Layer one",
+		},
 	]);
 	refusal = { status: 422, code: "HEAD_UNRESOLVED" };
 	const { exited, stdout } = await run([

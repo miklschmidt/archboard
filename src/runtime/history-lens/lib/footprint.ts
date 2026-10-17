@@ -28,18 +28,24 @@ import type {
 } from "@/shared/footprint/index";
 import {
 	compareVariants,
+	emptyContent,
 	type SemanticBoard,
 	type SemanticNode,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
 
-/** What to read: a board's current variant, the ref, and the proposal to set it against. */
+/** What to read: the variant the commits are read against, the ref, and the proposal to set it against. */
 interface FootprintRequest {
 	/** The vault directory the board is in: its own checkout is read for its own repository. */
 	readonly vault: string;
 	readonly board: SemanticBoard;
 	/** The variant that is built, which the commits are read against. */
-	readonly current: SemanticVariant;
+	/**
+	 * The variant the proposal is read against: the board's current variant by
+	 * default. Undefined only with a proposal, which is then read against
+	 * nothing, so it names every part it holds.
+	 */
+	readonly against?: SemanticVariant | undefined;
 	/** A draft to set the commits against, when one was named. */
 	readonly proposal?: SemanticVariant | undefined;
 	/** Any ref that resolves in the checkouts, such as `main`, `origin/main` or a commit. */
@@ -80,16 +86,20 @@ interface Unread {
 
 /**
  * The parts to read: the proposal's, with what it removed put back from the
- * current variant. A removed part is only on the current variant and an added
- * part is only on the proposal.
- * @param current The current variant.
+ * variant it is read against. A removed part is only on that variant and an
+ * added part is only on the proposal.
+ * @param against The variant the proposal is read against, when there is one.
  * @param proposal The proposal, when there is one.
  * @returns The parts, each as the variant that has it states it.
  */
-function partsOf(current: SemanticVariant, proposal: SemanticVariant | undefined): SemanticNode[] {
-	if (proposal === undefined) return [...current.content.nodes];
+function partsOf(
+	against: SemanticVariant | undefined,
+	proposal: SemanticVariant | undefined,
+): SemanticNode[] {
+	const before = against?.content.nodes ?? [];
+	if (proposal === undefined) return [...before];
 	const held = new Set(proposal.content.nodes.map((node) => node.id));
-	return [...proposal.content.nodes, ...current.content.nodes.filter((node) => !held.has(node.id))];
+	return [...proposal.content.nodes, ...before.filter((node) => !held.has(node.id))];
 }
 
 /**
@@ -334,20 +344,20 @@ function isNamed(part: FootprintPart): boolean {
 
 /**
  * Why the proposal names each part: nothing without a proposal.
- * @param current The current variant.
+ * @param against The variant the proposal is read against, when there is one.
  * @param proposal The proposal, when there is one.
  * @param nodes The parts read, as `partsOf` lists them.
  * @returns For each named part, its reasons.
  */
 function namedBy(
-	current: SemanticVariant,
+	against: SemanticVariant | undefined,
 	proposal: SemanticVariant | undefined,
 	nodes: readonly SemanticNode[],
 ): Named {
 	if (proposal === undefined) return new Map();
 	const names = new Map(nodes.map((node) => [node.id, node.name]));
 	return namedParts(
-		compareVariants(current.content, proposal.content),
+		compareVariants(against?.content ?? emptyContent(), proposal.content),
 		(id) => names.get(id) ?? id,
 	);
 }
@@ -359,9 +369,9 @@ function namedBy(
  * @returns The footprint.
  */
 async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer> {
-	const { vault, board, current, proposal, base, head, signal } = request;
-	const nodes = partsOf(current, proposal);
-	const named = namedBy(current, proposal, nodes);
+	const { vault, board, against, proposal, base, head, signal } = request;
+	const nodes = partsOf(against, proposal);
+	const named = namedBy(against, proposal, nodes);
 	const snapshot = await snapshotCheckoutAccess({
 		vault,
 		...(signal === undefined ? {} : { signal }),
@@ -382,7 +392,7 @@ async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer
 		version: board.version,
 		base,
 		...(head === undefined ? {} : { head }),
-		current: { id: current.id, name: current.name },
+		against: against === undefined ? null : { id: against.id, name: against.name },
 		repositories: repositories.map((one) => one.range),
 		commits: repositories
 			.flatMap((one) => one.commits)

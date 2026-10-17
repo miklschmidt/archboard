@@ -85,6 +85,54 @@ function part(id: string, name: string, file: string, order = 1000) {
 	};
 }
 
+/**
+ * A board nobody has built: no current variant, only proposals. `Layer one`
+ * has no parent, `Layer two` and `Sibling` derive from it, and `Shelved` was put away.
+ * @returns The board document.
+ */
+function unbuilt() {
+	const nodes = (...ids: ("pA" | "pB")[]) =>
+		ids.map((id, index) =>
+			id === "pA"
+				? part("pA", "Checkout", "src/a.ts")
+				: part("pB", "Billing", "src/b.ts", 2000 + index),
+		);
+	return {
+		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+		kind: "semantic-board",
+		id: "bu",
+		name: "Unbuilt",
+		level: "system",
+		version: 1,
+		createdAt: "2026-10-06T00:00:00.000Z",
+		updatedAt: "2026-10-06T00:00:00.000Z",
+		variants: [
+			{ id: "u1", name: "Layer one", lifecycle: "draft", content: { nodes: nodes("pA") } },
+			{
+				id: "u2",
+				name: "Layer two",
+				lifecycle: "draft",
+				parent: "u1",
+				content: { nodes: nodes("pA", "pB") },
+			},
+			{
+				id: "u3",
+				name: "Sibling",
+				lifecycle: "draft",
+				parent: "u1",
+				content: { nodes: nodes("pA", "pB") },
+			},
+			{
+				id: "u4",
+				name: "Shelved",
+				lifecycle: "shelved",
+				parent: "u1",
+				content: { nodes: nodes("pA") },
+			},
+		],
+	};
+}
+
 beforeAll(async () => {
 	mkdirSync(join(checkout, "src"), { recursive: true });
 	writeFileSync(join(scratch, "gitconfig"), "");
@@ -136,6 +184,7 @@ beforeAll(async () => {
 			],
 		}),
 	);
+	writeFileSync(join(vault, "Unbuilt.semantic.json"), JSON.stringify(unbuilt()));
 	git("add", "-A");
 	git("commit", "-q", "--no-gpg-sign", "-m", "the board and its code");
 	before = git("rev-parse", "HEAD");
@@ -191,6 +240,81 @@ test("the production application reads a head that is not checked out, and refus
 	expect(refused.status).toBe(422);
 	expect(refused.body).toMatchObject({ success: false, code: "HEAD_UNRESOLVED" });
 	expect(String(refused.body["error"])).toContain("no-such-layer");
+});
+
+/**
+ * Ask the footprint of the board nobody has built.
+ * @param params The query beside the vault, the board and the base.
+ * @returns The status and the body.
+ */
+async function askUnbuilt(params: Record<string, string>) {
+	const base = await listen(server.app);
+	const query = new URLSearchParams({ vault, board: "Unbuilt", base: before, ...params });
+	const reply = await fetch(`${base}/api/semantic-boards/footprint?${query}`);
+	return {
+		status: reply.status,
+		body: z.record(z.string(), z.unknown()).parse(await reply.json()),
+	};
+}
+
+/**
+ * How a proposal names its parts in an answer.
+ * @param body An answer's body.
+ * @returns Each named part's id, with the lists it is in.
+ */
+function namedIn(body: Record<string, unknown>): Record<string, string[]> {
+	const answer = FootprintReplySchema.parse(body);
+	if (answer.proposal === null) throw new Error("a proposal was named");
+	const lists = {
+		namedAndChanged: answer.namedAndChanged,
+		namedNotChanged: answer.namedNotChanged,
+		changedNotNamed: answer.changedNotNamed,
+	};
+	const found: Record<string, string[]> = {};
+	for (const [list, parts] of Object.entries(lists)) {
+		for (const one of parts) found[one.subject.id] = [...(found[one.subject.id] ?? []), list];
+	}
+	return found;
+}
+
+test("a draft of a board nobody has built is read against its parent, and --against names another variant", async () => {
+	const byParent = await askUnbuilt({ variant: "Layer two" });
+	expect(byParent.status).toBe(200);
+	expect(byParent.body).toMatchObject({ against: { id: "u1" } });
+	expect(namedIn(byParent.body)).toEqual({ pA: ["changedNotNamed"], pB: ["namedNotChanged"] });
+	const bySibling = await askUnbuilt({ variant: "Layer two", against: "Sibling" });
+	expect(bySibling.body).toMatchObject({ against: { id: "u3" } });
+	// The sibling holds the same parts, so read against it the proposal names nothing.
+	expect(namedIn(bySibling.body)).toEqual({ pA: ["changedNotNamed"] });
+});
+
+test("a draft with no parent on a board nobody has built names every part it holds", async () => {
+	const answer = await askUnbuilt({ variant: "Layer one" });
+	expect(answer.status).toBe(200);
+	expect(answer.body).toMatchObject({ against: null });
+	expect(namedIn(answer.body)).toEqual({ pA: ["namedAndChanged"] });
+});
+
+test("a footprint with no proposal on a board nobody has built is refused, unless --against names what to read", async () => {
+	expect(await askUnbuilt({})).toMatchObject({ status: 422, body: { code: "NO_CURRENT_VARIANT" } });
+	const read = await askUnbuilt({ against: "Layer two" });
+	expect(read.status).toBe(200);
+	expect(read.body).toMatchObject({ against: { id: "u2" }, proposal: null });
+});
+
+test("--against must name a live variant other than the proposal", async () => {
+	expect(await askUnbuilt({ variant: "Layer two", against: "Shelved" })).toMatchObject({
+		status: 422,
+		body: { code: "AGAINST_NOT_LIVE" },
+	});
+	expect(await askUnbuilt({ variant: "Layer two", against: "Layer two" })).toMatchObject({
+		status: 422,
+		body: { code: "NOTHING_TO_COMPARE" },
+	});
+	expect(await askUnbuilt({ variant: "Layer two", against: "Nope" })).toMatchObject({
+		status: 422,
+		body: { code: "UNKNOWN_VARIANT" },
+	});
 });
 
 test("a request that cannot be read is turned away with the code the CLI maps to its exit status", async () => {

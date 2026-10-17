@@ -23,6 +23,7 @@ const FootprintInputSchema = z.object({
 	name: z.string(),
 	base: SelectorSchema,
 	head: SelectorSchema.optional(),
+	against: SelectorSchema.optional(),
 	variant: SelectorSchema.optional(),
 });
 
@@ -39,8 +40,16 @@ const noCurrentVariantRefusal = {
 	exit: 2,
 	stream: "stderr" as const,
 	description:
-		"The board has no current variant, so nothing it describes is built and there is no code " +
-		"to read a footprint against.",
+		"The board has no current variant and no --variant names a proposal, so nothing it " +
+		"describes is built and there is no code to read a footprint against.",
+};
+const againstNotLiveRefusal = {
+	code: "AGAINST_NOT_LIVE",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"The variant a proposal is read against, named by --against or taken from the proposal's " +
+		"parent, is shelved or historical. Name a current variant or a draft with --against.",
 };
 const unknownVariantRefusal = {
 	code: "UNKNOWN_VARIANT",
@@ -113,7 +122,11 @@ function described(answer: FootprintAnswer): string[] {
 		(sum, repository) => sum + (repository.status === "read" ? repository.commits : 0),
 		0,
 	);
-	const against = answer.proposal === null ? "" : ` against proposal "${answer.proposal.name}"`;
+	const read = answer.against === null ? "no variant" : `"${answer.against.name}"`;
+	const subject =
+		answer.proposal === null
+			? `at ${read}`
+			: `for proposal "${answer.proposal.name}" against ${read}`;
 	const lists =
 		answer.proposal === null
 			? listLines("Changed", answer.changed)
@@ -123,7 +136,7 @@ function described(answer: FootprintAnswer): string[] {
 					...listLines("Named but not changed", answer.namedNotChanged),
 				];
 	return [
-		`Footprint of "${answer.board}" at "${answer.current.name}"${against}: ` +
+		`Footprint of "${answer.board}" ${subject}: ` +
 			`${answer.commits.length} of ${plural(inRange, "commit")} since the merge base with ` +
 			`${answer.base} changed a part it read${large === 0 ? "" : `, ${large} large`}.`,
 		...answer.repositories.flatMap((repository) =>
@@ -152,8 +165,11 @@ const semanticFootprintContract = defineCommand({
 		"does not resolve is named in the answer and not read; when it resolves in none, the command is " +
 		"refused with HEAD_UNRESOLVED. Each part lists its commits; large commits (more than 30 files) are " +
 		"kept and marked. With --variant it also reads a proposal, a draft of the board, against " +
-		"the current variant, and splits the parts into named and changed, changed but not named, " +
-		"and named but not changed. The proposal names a part that the comparison marks added, " +
+		"the current variant, or the variant --against names, and splits the parts into named and " +
+		"changed, changed but not named, and named but not changed. On a board with no current " +
+		"variant a proposal is read against its parent, and a proposal with no parent is read " +
+		"against nothing, so it names every part it holds. Without --variant the board needs a current variant, " +
+		"or --against names the variant whose parts are read. The proposal names a part that the comparison marks added, " +
 		"changed or removed, and a part at either end of a relationship or a step that it marks, " +
 		"and each named part says why. A part with no binding, a part that opens another board, a " +
 		"repository this machine has not registered, a part pinned to a ref its checkout does not " +
@@ -164,6 +180,7 @@ const semanticFootprintContract = defineCommand({
 		"archboard semantic footprint payments --base origin/main",
 		"archboard semantic footprint payments --base feat/layer-one --head feat/layer-two",
 		'archboard semantic footprint payments --base origin/main --variant "Queued ingest"',
+		'archboard semantic footprint payments --base feat/layer-one --head feat/layer-two --variant "Layer two" --against "Layer one"',
 		"archboard semantic footprint payments --base 3f9c2ab --variant TASK-123",
 	],
 	parameters: [
@@ -206,6 +223,18 @@ const semanticFootprintContract = defineCommand({
 				"A draft of the board to set the commits against, by id or name; when absent, the " +
 				"answer only lists the parts the commits changed",
 		},
+		{
+			kind: "option",
+			key: "against",
+			spellings: ["--against"],
+			value: "required",
+			placeholder: "variant",
+			description:
+				"The variant the proposal is read against to decide which parts it names: a current " +
+				"variant or a draft, by id or name, other than the proposal. Defaults to the current " +
+				"variant, else the proposal's parent. For a pull request in a stack, the proposal " +
+				"of the pull request below",
+		},
 	],
 	input: { ingress: FootprintInputSchema },
 	result: FootprintReplySchema,
@@ -231,6 +260,7 @@ const semanticFootprintContract = defineCommand({
 		serverRefusal,
 		headUnresolvedRefusal,
 		noCurrentVariantRefusal,
+		againstNotLiveRefusal,
 		unknownVariantRefusal,
 		nothingToCompareRefusal,
 		notADraftRefusal,
@@ -257,6 +287,7 @@ const semanticFootprintContract = defineCommand({
 			base: input.base,
 			...(input.head === undefined ? {} : { head: input.head }),
 			...(input.variant === undefined ? {} : { variant: input.variant }),
+			...(input.against === undefined ? {} : { against: input.against }),
 		});
 		const reply = FootprintReplySchema.parse(
 			await requestJson<unknown>(`/api/semantic-boards/footprint?${query}`, {

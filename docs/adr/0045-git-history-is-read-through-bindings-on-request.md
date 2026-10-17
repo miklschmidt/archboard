@@ -288,15 +288,23 @@ up to that ref instead of HEAD, read from Git without a checkout, for a layer of
 a pull-request stack that is not checked out. The head resolves as the code
 check resolves a ref a draft pins: the name, else the branch of that name on
 `origin`. A checkout where it does not resolve is not read, as for the base.
-When it resolves in none, the request is refused with `HEAD_UNRESOLVED`. If the ref does not resolve in a
-checkout, the lens does not read that checkout, and the answer says so. The
+When it resolves in none, the request is refused with `HEAD_UNRESOLVED`. If the
+ref does not resolve in a checkout, the lens does not read that checkout, and
+the answer says so. The
 footprint lists the parts that those commits changed, with each part's
 commits, and it says which commits are large. It uses no period, and it leaves
 no large commit out.
 
-With `--variant <proposal>`, the footprint reads the parts of the current
-variant and of the proposal. A removed part is only on the current variant,
-and an added part is only on the proposal. The footprint splits the parts into
+With `--variant <proposal>`, the footprint reads the parts of the variant that
+the proposal is read against and of the proposal. That variant is the current
+variant, unless `--against <variant>` names another. It must be a current
+variant or a draft, and not the proposal (`AGAINST_NOT_LIVE`,
+`NOTHING_TO_COMPARE`). A board with no current variant reads a proposal against
+its parent. A proposal with no parent is read against nothing, so it names every
+part it holds, as added. Without `--variant`, a board with no current variant is
+refused with `NO_CURRENT_VARIANT`, unless `--against` names the variant to
+read. A removed part is only on the variant read against, and an added part is
+only on the proposal. The footprint splits the parts into
 three lists: named and changed, changed but not named, and named but not
 changed. A skipped part is in none of the three lists.
 
