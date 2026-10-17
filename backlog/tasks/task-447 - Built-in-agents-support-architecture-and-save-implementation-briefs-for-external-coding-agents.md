@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 19:57'
-updated_date: '2026-10-15 03:39'
+updated_date: '2026-10-17 04:20'
 labels:
   - voice
   - coordinator
@@ -76,6 +76,8 @@ The handoff skill was read only to understand its convention. It saves in the OS
 The user requires actual Archboard environment values and concise commands for proposal retrieval. tell_coordinator has a 2048-character limit, so the completion message links to the saved file. Archboard thread tools address local built-in threads, not the user external harness.
 
 The board check passes with no diagnostics. semantic compare changes only existing responsibilities. Current content remains unchanged. No proposal is adopted.
+
+2026-10-17: this task's board proposals were rebuilt on the current architecture, which holds the board's calls as flows (TASK-482.07). Each is now named 'TASK-447 after TASK-482.07' on every board that had one (Agent workbench, Browser application, Codex workhorse, Voice coordinator, as applicable); the old 'TASK-447' drafts stood on parents later adoptions made historical, were renamed 'TASK-447 (before flows)' and shelved. A former name stays with the shelved draft, so read and adopt the new proposal by its new name. Calls of the change are steps of the board's flows.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
