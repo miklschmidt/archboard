@@ -81,13 +81,14 @@ function findingLines(finding: CodeFinding): string[] {
 }
 
 /**
- * What a skip is about: a subject, a whole board, a whole checkout, or a
- * whole language that no checkout names.
+ * What a skip is about: a subject, a whole draft, a whole board, a whole
+ * checkout, or a whole language that no checkout names.
  * @param skip The skip.
  * @returns The noun.
  */
 function skippedNoun(skip: CodeCheckSkip): string {
 	if (skip.subject !== undefined) return "subject";
+	if (skip.variant !== undefined) return "draft";
 	if (skip.board !== undefined) return "board";
 	return skip.repo === undefined ? "language" : "checkout";
 }
@@ -97,13 +98,20 @@ function skippedNoun(skip: CodeCheckSkip): string {
  * reason can be said once for each project of a checkout, such as a Swift
  * package with no index; or each language with why. A checkout with no server
  * for a language says which language and what configures one, since that is
- * its whole answer. Skips of subjects and boards name nothing.
+ * its whole answer. A draft is named with its board, its repository and why,
+ * since which drafts were not read is the answer. Skips of subjects and boards
+ * name nothing.
  * @param same The skips of one reason.
  * @param noun What they are about.
  * @returns The names.
  */
 function namesOf(same: readonly CodeCheckSkip[], noun: string): string[] {
 	if (noun === "language") return same.flatMap((skip) => skip.detail ?? []);
+	if (noun === "draft") {
+		return same.map(
+			(skip) => `${skip.board} ${skip.variant} in ${skip.repo}: ${skip.detail ?? ""}`,
+		);
+	}
 	if (noun !== "checkout") return [];
 	if (same.every((skip) => skip.reason === "language-server-missing")) {
 		return same.map((skip) => `${skip.repo}: ${skip.detail}`);

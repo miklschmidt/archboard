@@ -48,6 +48,26 @@ holds the whole architecture with the changes of every pull request below it.
 4. To show one pull request on its own, use a view that selects the parts it
    changes, or `semantic compare --against "<proposal below>"`, which marks
    what that proposal changed.
+5. To hold the whole stack to its code, run `archboard check --code --every-draft`.
+   It reads every draft of every board. It reads each draft against the branch
+   (or commit) that its bindings name and no proposal below names: the pull
+   request's own branch. It reads that branch from Git and does not check it
+   out. A draft whose bindings name no branch is read against the checkout's
+   files.
+
+The code check warns with `INHERITED_PART_DROPPED` when a draft lacks a bound
+node that the variant it was branched from holds, and the code of the draft's
+branch still holds that node's path, and its symbol when the binding names
+one. The code says that the part still exists, so the draft most likely
+dropped it by mistake. State the node's original `id` in that draft to bring
+it back. The warning's `dropped` field names the earlier variant, the branch,
+the commit, and the file and line that hold the symbol. A node whose bound
+code is not on that branch gets no warning. This includes a part that a later
+pull request builds, so the check cannot find every dropped part: the
+write-time refusals above stay the guard. The check skips a draft, and says
+why, when the checkout has no such branch (`draft-ref-missing`) or when the
+draft names several branches and none of them is its own
+(`draft-refs-ambiguous`).
 
 ## What a comparison counts
 

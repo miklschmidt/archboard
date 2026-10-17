@@ -258,7 +258,10 @@ recipe names.
   part it reaches (`RELATIONSHIP_UNDRAWN`): draw the relationship. A
   relationship with no anchor that the code runs the other way or does not show
   is information ([evidence](references/authoring.md#evidence-for-a-relationship)). For a draft whose
-  code is written, add `--variant <draft>`. What it could not read (a
+  code is written, add `--variant <draft>`. For a stack of pull requests, add
+  `--every-draft`: each draft is read against its own branch, and a bound part
+  that a draft dropped while its code is still on that branch is
+  `INHERITED_PART_DROPPED` ([stack](references/variants.md#a-stack-of-pull-requests)). What it could not read (a
   repository this machine has not registered, a file Git ignores) is listed
   as skipped, never as a finding. If a checkout has no configured language
   server for a language, the answer says `language-server-missing`, and the

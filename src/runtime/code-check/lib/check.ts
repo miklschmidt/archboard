@@ -14,6 +14,9 @@
 // (relationships.ts), and each container's interface to what the module it
 // binds exposes (interfaces.ts). Language servers resolve the uses no import
 // resolves, and every one has stopped when the pass returns (resolution.ts).
+// A draft that lacks a bound part the variant before it holds, while the code
+// it describes still holds that part, is `INHERITED_PART_DROPPED`
+// (dropped-parts.ts).
 // What the pass cannot read is listed with the reason, never as a finding.
 
 import { createElapsedClock } from "@/shared/timing/timing";
@@ -42,6 +45,7 @@ import {
 	bindingSymbolMissing,
 } from "@/runtime/code-check/lib/claim-findings";
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
+import { droppedBindings, judgeDroppedParts } from "@/runtime/code-check/lib/dropped-parts";
 import { joinEnvironment } from "@/runtime/code-check/lib/environment-join";
 import { evidenceOf } from "@/runtime/code-check/lib/evidence";
 import { infrastructureRunners } from "@/runtime/code-check/lib/infrastructure-runners";
@@ -434,16 +438,17 @@ async function judgeAll(claims: readonly Claim[], pass: Pass): Promise<void> {
 }
 
 /**
- * Every bound part's binding on the boards.
+ * Every bound part's binding on the boards, and of each part a draft dropped.
  * @param boards The boards.
  * @returns Each binding.
  */
 function partBindings(boards: readonly BoardToCheck[]): CodeBinding[] {
-	return boards.flatMap((read) =>
+	const parts = boards.flatMap((read) =>
 		read.variant.content.nodes.flatMap((node) =>
 			node.binding === undefined ? [] : [node.binding],
 		),
 	);
+	return [...parts, ...droppedBindings(boards)];
 }
 
 /**
@@ -521,6 +526,9 @@ async function checkCode(
 			// oxlint-disable-next-line no-await-in-loop -- one board at a time keeps the findings in board order, and a file one board reads is cached for the next
 			await judgeBoardRelationships(read, pass);
 		}
+		const dropped = await judgeDroppedParts(boards, { checkouts, facts, signal });
+		pass.outcome.findings.push(...dropped.findings);
+		pass.outcome.skipped.push(...dropped.skipped);
 	} finally {
 		pass.outcome.skipped.push(...(await resolution.close()));
 	}
