@@ -64,7 +64,8 @@ const claimRevokedRefusal = {
 	code: "CLAIM_REVOKED",
 	exit: 5,
 	stream: "stderr" as const,
-	description: "The user took back the claim.",
+	description:
+		"The claim ended before its release: a person took it back, or its lease went to another process.",
 };
 
 const commonRefusals = [boardRequiredRefusal, serverRefusal] as const;

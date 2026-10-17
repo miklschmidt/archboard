@@ -18,12 +18,15 @@
    --highlight is the fine highlight on the top edge of a plane.
 
    The accent. One warm gold, from the picks (the wayfinding band and the
-   streaming title wall). It marks three things and nothing else:
+   streaming title wall). It marks four things and nothing else:
      1. what is chosen: the row or tab on screen (a 2px bar or underline),
         the focused pane, the part picked out on the picture;
      2. the one primary action of a region: opening the board a picked part
         leads to, sending a message, the confirming button of a dialog;
-     3. the voice, and the brand mark.
+     3. the voice, and the brand mark;
+     4. the decisions, loops and terminals of a flowchart, each built as a
+        primary action's piece of gold is, so they read as the flow's own
+        pieces among the neutral cards of its steps.
    --primary is the gold as a flat fill. --primary-mark is the gold as a mark:
    a 2px bar or underline, a ring, an icon, the edge of something chosen.
    --primary-text is the accent as text. On graphite it is the gold. On chalk

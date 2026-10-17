@@ -3,7 +3,12 @@
 // message (a branch, a loop's condition), so it is drawn whole under the message
 // it qualifies, never truncated, and the message's row grows to hold it.
 
-import type { FlowStep, MessageKind, SemanticFlow } from "@/shared/semantic-board/index";
+import {
+	messagesOf,
+	type FlowMessage,
+	type MessageKind,
+	type SemanticFlow,
+} from "@/shared/semantic-board/index";
 import {
 	NOTE_SIZE,
 	PILL_PADDING_X,
@@ -83,7 +88,9 @@ function minimumNoteWidth(note: string | undefined): number {
 function requiredNoteColumnWidth(flows: readonly SemanticFlow[]): number {
 	let width = 0;
 	for (const flow of flows) {
-		for (const step of flow.steps) width = Math.max(width, minimumNoteWidth(step.note));
+		for (const step of messagesOf(flow.steps)) {
+			width = Math.max(width, minimumNoteWidth(step.note));
+		}
 	}
 	return width === 0 ? 0 : width + (ACTIVATION_HALF_WIDTH + STEP_NOTE_INSET) * 2 - COLUMN_GAP;
 }
@@ -95,7 +102,7 @@ function requiredNoteColumnWidth(flows: readonly SemanticFlow[]): number {
  * @param bounds The available column corridors.
  * @returns The note's leading edge.
  */
-function noteAnchor(step: FlowStep, ends: MessageEnds, bounds: ColumnBounds): number {
+function noteAnchor(step: FlowMessage, ends: MessageEnds, bounds: ColumnBounds): number {
 	const inset = ACTIVATION_HALF_WIDTH + STEP_NOTE_INSET;
 	if (step.kind !== "self") return Math.min(ends.fromX, ends.toX) + inset;
 	if (ends.fromX === bounds.lastCentre && bounds.firstCentre !== bounds.lastCentre) {
@@ -114,7 +121,7 @@ function noteAnchor(step: FlowStep, ends: MessageEnds, bounds: ColumnBounds): nu
  * @returns The placed note, or nothing when the step has none.
  */
 function placeNote(
-	step: FlowStep,
+	step: FlowMessage,
 	ends: MessageEnds,
 	bounds: ColumnBounds,
 ): PlacedNote | undefined {
@@ -177,7 +184,7 @@ interface MessageWords {
  * @returns The room, and the centre of a crossing message's plate.
  */
 function roomFor(
-	step: FlowStep,
+	step: FlowMessage,
 	ends: MessageEnds,
 	bounds: ColumnBounds,
 ): { readonly width: number; readonly centre?: number } {
@@ -203,7 +210,7 @@ function roomFor(
  * @param bounds The flow's columns.
  * @returns Its lines, and its plate's centre when that moves.
  */
-function wordsFor(step: FlowStep, ends: MessageEnds, bounds: ColumnBounds): MessageWords {
+function wordsFor(step: FlowMessage, ends: MessageEnds, bounds: ColumnBounds): MessageWords {
 	const room = roomFor(step, ends, bounds);
 	const limit = Number.isFinite(room.width)
 		? room.width - PILL_PADDING_X * 2
@@ -217,7 +224,7 @@ function wordsFor(step: FlowStep, ends: MessageEnds, bounds: ColumnBounds): Mess
  * @param step The message.
  * @returns Its label, with the repeat count folded in.
  */
-function labelFor(step: FlowStep): string {
+function labelFor(step: FlowMessage): string {
 	return step.repeat === undefined ? step.label : `${step.label} ×${step.repeat}`;
 }
 

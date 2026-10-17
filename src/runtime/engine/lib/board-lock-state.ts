@@ -242,6 +242,12 @@ function releaseHold(vault: string, board: string, holderId: string): boolean {
  *
  * Renewal answers only "do I still have this?" It refuses to acquire a free or
  * rival lease, which is what keeps a remotely revoked claim from resurrecting.
+ *
+ * A lease that lapsed while it still names this holder is still theirs: nobody
+ * took it, the renewal was only late. A server busy with one long synchronous
+ * piece of work runs no timer until it is done, and that pause must not end
+ * every claim it renews (TASK-489). A process that takes the lapsed lease in
+ * the meantime writes its own record, and the next renewal is refused.
  * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param id Who is renewing.
@@ -250,11 +256,11 @@ function releaseHold(vault: string, board: string, holderId: string): boolean {
  */
 function renewRecord(vault: string, board: string, id: string, leaseMs: number): LockHolder | null {
 	const file = lockPathFor(vault, board);
-	const live = liveRecord(readRecord(file));
-	if (!live || live.id !== id) {
+	const current = readRecord(file);
+	if (!current || current.id !== id) {
 		return null;
 	}
-	const renewed: LockRecord = { ...live, until: stamp(Date.now() + leaseMs) };
+	const renewed: LockRecord = { ...current, until: stamp(Date.now() + leaseMs) };
 	writeRecord(file, renewed);
 	announceHeld(vault, board, holderOf(renewed));
 	return holderOf(renewed);

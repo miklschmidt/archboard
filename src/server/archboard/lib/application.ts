@@ -73,7 +73,7 @@ app.use(
 // policy may name any of the icon set's three thousand, so the page asks for
 // the few it draws rather than carrying them all.
 app.get("/assets/diagram-icons/:name", (req, res) => {
-	const name = /^(Ri[A-Za-z0-9]+(?:Line|Fill))\.json$/u.exec(req.params.name)?.[1];
+	const name = /^(Ri[A-Za-z0-9]+)\.json$/u.exec(req.params.name)?.[1];
 	const paths = name === undefined ? undefined : diagramIconPaths(name);
 	if (paths === undefined) {
 		res.status(404).json({ success: false, error: `No icon called "${req.params.name}"` });

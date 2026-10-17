@@ -41,6 +41,9 @@ import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
  * migrated by the store on read, preserving their array positions.
  * `2.4.0` makes the current designation optional: a board for something
  * nobody has built has none (ADR 0031).
+ * `2.5.0` renames the view grammar `data-flow` to `sequence`, adds the
+ * `flowchart` grammar, and lets a flow hold decisions and loops (ADR 0053).
+ * The store migrates every older view on read.
  *
  * `formerNames` on a board and on a variant (TASK-281, ADR 0036) did not move
  * the version, and neither did `anchor` on a relationship and a step and
@@ -50,7 +53,7 @@ import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
  * and refuses it by name. A bump would only have made every board of every
  * vault rewrite itself on its first read.
  */
-const SEMANTIC_BOARD_SCHEMA_VERSION = "2.4.0";
+const SEMANTIC_BOARD_SCHEMA_VERSION = "2.5.0";
 
 /**
  * The major version this build implements. A document whose major differs is

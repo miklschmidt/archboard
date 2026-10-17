@@ -8,6 +8,7 @@
 
 import { expect, test } from "bun:test";
 import { renderDataFlow } from "@/runtime/semantic-renderer/index";
+import { messagesOf } from "@/shared/semantic-board/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { subjectGroups, type DrawnGroup } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 import { labelPlates } from "@/runtime/semantic-renderer/tests/drawn-text";
@@ -177,7 +178,7 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", () =
 	const groups = subjectGroups(rendered.svg);
 	const steps = ["s1", "s2", "s3", "s4", "s5", "s6"];
 	const touched = steps.map((id) => {
-		const step = content.flows[0]!.steps.find((one) => one.id === id)!;
+		const step = messagesOf(content.flows[0]!.steps).find((one) => one.id === id)!;
 		const line = /<path\s[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/.exec(
 			groups.find((group) => group.id === id)!.markup,
 		)![0];

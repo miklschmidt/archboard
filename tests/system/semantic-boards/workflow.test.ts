@@ -173,7 +173,8 @@ describe("authoring and opening a semantic board", () => {
 
 	test("the board draws, and nothing about the picture came off the board", () => {
 		const out = path.join(vault, "pipeline.svg");
-		const drawn = cli(["semantic", "render", "pipeline", "--out", out, "--theme", "dark"]);
+		const whole = ["--view=Everything", "--out", out, "--theme=dark"];
+		const drawn = cli(["semantic", "render", "pipeline", ...whole]);
 		expect(drawn.status).toBe(0);
 		const receipt = JSON.parse(drawn.stdout);
 		expect(receipt.width).toBeGreaterThan(0);
@@ -252,7 +253,7 @@ describe("authoring and opening a semantic board", () => {
 				views: [
 					{
 						name: "In order",
-						grammar: "data-flow",
+						grammar: "sequence",
 						scope: { kind: "selection", flows: ["Drawing a board"] },
 					},
 				],
@@ -271,7 +272,7 @@ describe("authoring and opening a semantic board", () => {
 		// The answer says which reading it is, and what else could be asked for.
 		expect(whole.view).toBeNull();
 		expect(whole.views.map((one: { id: string }) => one.id)).toEqual([view.id]);
-		expect(sequence.view).toEqual({ id: view.id, name: "In order", grammar: "data-flow" });
+		expect(sequence.view).toEqual({ id: view.id, name: "In order", grammar: "sequence" });
 
 		// The sequence draws the flow and its steps as subjects of their own; the
 		// architecture does not, because it is not the picture that explains them.
@@ -383,7 +384,8 @@ describe("authoring and opening a semantic board", () => {
 			(node: { name: string }) => node.name === "Ingest queue",
 		);
 
-		const drawn = await (await render(`board=pipeline&variant=${proposal.id}`)).json();
+		const whole = `variant=${proposal.id}&view=Everything`;
+		const drawn = await (await render(`board=pipeline&${whole}`)).json();
 		expect(drawn.changes.against.id).toBe(baseline.id);
 		// The one node the proposal added is the one thing labelled as added.
 		expect(drawn.changes.standing[queue.id]).toBe("added");

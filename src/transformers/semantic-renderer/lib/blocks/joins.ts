@@ -85,18 +85,6 @@ function joinWays(
 }
 
 /**
- * A set with one member taken out, or put in when it was not there.
- * @param set The set.
- * @param member The member.
- * @returns The new set.
- */
-function toggled(set: ReadonlySet<string>, member: string): Set<string> {
-	const next = new Set(set);
-	if (!next.delete(member)) next.add(member);
-	return next;
-}
-
-/**
  * A route's straight runs, each as its two ends.
  * @param points The route.
  * @returns The runs.
@@ -241,145 +229,11 @@ function costOf(placed: Page): number {
 function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	const [parted, fewest] = [partedOf(one), partedOf(other)];
 	if (parted !== fewest) return parted < fewest;
-	const [mine, theirs] = [one, other].map(({ placed }) => weighedPlaced(placed));
+	const [mine, theirs] = [one, other].map(({ tree, placed }) =>
+		weighedPlaced(placed, tree.projections),
+	);
 	if ((mine!.length ?? 0) > (theirs!.length ?? 0)) return false;
 	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
 
-/** Lay a drawing out with some blocks' joins apart, by block id, unless called off first. */
-type Lay<Placed> = (apart: ReadonlySet<string>, signal: AbortSignal) => Promise<Placed>;
-
-/** One layout asked for: its answer, how to call it off, and whether a turn to come weighs it. */
-interface Asked<Placed> {
-	readonly calling: AbortController;
-	promise: Promise<Placed>;
-	needed: boolean;
-}
-
-/**
- * The same key for a set of blocks apart, whatever their order.
- * @param apart The blocks whose joins stay apart.
- * @returns The key.
- */
-function apartKey(apart: ReadonlySet<string>): string {
-	return JSON.stringify([...apart].toSorted());
-}
-
-/**
- * A way to lay a drawing out that lays it with each set of blocks apart
- * once, however often it is asked, and a way to call off the layouts no turn
- * to come weighs. A layout asked for ahead and never awaited is dropped, a
- * failure included: laid out one by one, it would never have been asked for.
- * A layout called off while a worker holds it is answered all the same, and
- * kept for a later ask. One called off while it waits is forgotten, and laid
- * out afresh when a turn asks for it again.
- * @param lay Lay the drawing out with some blocks' joins apart, by block id.
- * @returns The way to ask for a layout, and the way to keep only the ones still needed.
- */
-function layingOnce<Placed>(lay: Lay<Placed>): {
-	readonly ask: (apart: ReadonlySet<string>) => Promise<Placed>;
-	readonly keep: (needed: readonly ReadonlySet<string>[]) => void;
-} {
-	const asked = new Map<string, Asked<Placed>>();
-	/**
-	 * Ask for a layout, once.
-	 * @param apart The blocks whose joins stay apart.
-	 * @returns Its layout.
-	 */
-	const ask = (apart: ReadonlySet<string>): Promise<Placed> => {
-		const key = apartKey(apart);
-		let entry = asked.get(key);
-		if (entry === undefined) {
-			const calling = new AbortController();
-			const held: Asked<Placed> = { calling, promise: lay(apart, calling.signal), needed: true };
-			// The host refuses only a solve still waiting with the signal's reason.
-			// A turn may have asked for it again while that refusal travelled.
-			held.promise = held.promise.catch((error: unknown) => {
-				if (!calling.signal.aborted || error !== calling.signal.reason) throw error;
-				if (asked.get(key) === held) asked.delete(key);
-				if (held.needed) return ask(apart);
-				throw error;
-			});
-			held.promise.catch(() => undefined);
-			asked.set(key, held);
-			entry = held;
-		}
-		entry.needed = true;
-		return entry.promise;
-	};
-	/**
-	 * Call off every layout asked for that no turn to come weighs.
-	 * @param needed The layouts the turns to come weigh.
-	 */
-	const keep = (needed: readonly ReadonlySet<string>[]): void => {
-		const keys = new Set(needed.map(apartKey));
-		for (const [key, entry] of asked) {
-			entry.needed = keys.has(key);
-			if (!entry.needed) entry.calling.abort();
-		}
-	};
-	return { ask, keep };
-}
-
-/**
- * Lay a drawing out with every join kept whole the way that reads better:
- * every join before its labels; then every join apart; then, from the better
- * of those, each block's joins turned the other way in turn, kept where the
- * drawing reads better. Every layout the turns would weigh were none of them
- * kept is asked for at once, so they are laid out side by side; a turn kept
- * changes the ones after it, which are asked for then, and the ones asked
- * for before it that no turn to come weighs are called off. They are weighed
- * in turn all the same, so the drawing is the one laying them out one by one
- * gives. When the drawing is chosen, or a layout it waits for fails, every
- * layout still asked for is called off.
- * @param tree The blocks, which name the blocks joins move labels to.
- * @param lay Lay the drawing out with some blocks' joins apart, by block id.
- * @returns The drawing laid out best.
- */
-async function layJoined<Placed extends Page>(
-	tree: Joined,
-	lay: Lay<Placed>,
-): Promise<Drawn<Placed>> {
-	const { ask, keep } = layingOnce(lay);
-	const blocks = [...tree.joining];
-	const turns = [
-		...(blocks.length > 1 ? [(): Set<string> => new Set(blocks)] : []),
-		...blocks.map(
-			(block) =>
-				(apart: ReadonlySet<string>): Set<string> =>
-					toggled(apart, block),
-		),
-	];
-	/**
-	 * Ask for every layout from one turn on, as the turns would weigh it were
-	 * none of them kept, and call off the ones asked for before that none of
-	 * them weighs. The first turns call off nothing: the drawing they start
-	 * from is still to be weighed.
-	 * @param from The first turn.
-	 * @param apart The blocks apart in the drawing kept so far.
-	 */
-	const ahead = (from: number, apart: ReadonlySet<string>): void => {
-		const needed = turns.slice(from).map((turn) => turn(apart));
-		if (from > 0) keep(needed);
-		for (const one of needed) void ask(one);
-	};
-	try {
-		const first = ask(new Set());
-		ahead(0, new Set());
-		let best: Drawn<Placed> = { tree, placed: await first };
-		let apart: ReadonlySet<string> = new Set();
-		for (const [index, turn] of turns.entries()) {
-			const trial = turn(apart);
-			// oxlint-disable-next-line no-await-in-loop -- each turn is weighed against the best before it
-			const tried = { tree, placed: await ask(trial) };
-			if (!drawsBetter(tried, best)) continue;
-			[best, apart] = [tried, trial];
-			ahead(index + 1, apart);
-		}
-		return best;
-	} finally {
-		keep([]);
-	}
-}
-
-export { joinWays, layJoined, type Drawn, type Joined };
+export { drawsBetter, joinWays, type Drawn, type Joined };

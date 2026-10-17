@@ -24,17 +24,18 @@
 // nothing, with nobody told. The refusal says what to do instead, and removing
 // the node and rewriting the beat is one command either way.
 
-import type {
-	SemanticEdge,
-	SemanticFlow,
-	SemanticNode,
-	SemanticView,
-	SemanticWalkthrough,
-	SemanticWalkthroughInput,
-	VariantContent,
-	VariantEditInput,
-	WalkthroughBeat,
-	WalkthroughBeatInput,
+import {
+	everyStep,
+	type SemanticEdge,
+	type SemanticFlow,
+	type SemanticNode,
+	type SemanticView,
+	type SemanticWalkthrough,
+	type SemanticWalkthroughInput,
+	type VariantContent,
+	type VariantEditInput,
+	type WalkthroughBeat,
+	type WalkthroughBeatInput,
 } from "@/shared/semantic-board/index";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import { idFor, named, namedOne, place } from "@/runtime/semantic-board-store/lib/references";
@@ -74,7 +75,7 @@ function aboutable(holds: Holdings): Set<string> {
 	return new Set([
 		...holds.nodes.map((node) => node.id),
 		...holds.edges.map((edge) => edge.id),
-		...holds.flows.flatMap((flow) => [flow.id, ...flow.steps.map((step) => step.id)]),
+		...holds.flows.flatMap((flow) => [flow.id, ...everyStep(flow.steps).map((step) => step.id)]),
 	]);
 }
 

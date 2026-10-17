@@ -134,9 +134,12 @@ test("a claim taken through another server excludes writes here and reaches the 
 	);
 	expect(takenBack).toMatchObject({ status: 200, body: { released: true } });
 	await Bun.sleep(TEST_CROSS_PROCESS_CLAIM_RENEWAL_WAIT_MS);
-	const revoked = await requestSecond<{ code: string }>(
+	const revoked = await requestSecond<{ code: string; cause: string }>(
 		"/api/semantic-boards/claim?board=payments",
 		{ method: "POST", body: { reason: "carrying on" } },
 	);
+	// The claiming server says what its renewal found: the lease gone, or, when
+	// the renewal fell inside the take-back's moment of holding it, the person.
 	expect(revoked).toMatchObject({ status: 409, body: { code: "CLAIM_REVOKED" } });
+	expect(["lease-gone", "taken-back"]).toContain(revoked.body.cause);
 }, 30_000);

@@ -43,6 +43,8 @@ interface Laid {
 	readonly bands: readonly Band[];
 	/** The containers it draws inline, in its own coordinates. */
 	readonly frames?: readonly FrameShape[];
+	/** Which of its header's wider sizes a container's block took, when it took one (`headers.ts`). */
+	readonly header?: number;
 	/** The group regions it draws inline, in its own coordinates. */
 	readonly regions?: readonly RegionShape[];
 	/**

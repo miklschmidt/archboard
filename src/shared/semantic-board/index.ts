@@ -82,6 +82,10 @@ export {
 export {
 	FlowStepSchema,
 	type FlowStep,
+	type FlowMessage,
+	type FlowDecision,
+	type FlowAlternative,
+	type FlowLoop,
 	SemanticFlowSchema,
 	type SemanticFlow,
 	ViewScopeSchema,
@@ -89,6 +93,17 @@ export {
 	SemanticViewSchema,
 	type SemanticView,
 } from "@/shared/semantic-board/lib/views";
+export {
+	type StepPlace,
+	type FlatStep,
+	isMessage,
+	stepWords,
+	placedSteps,
+	everyStep,
+	messagesOf,
+	flatSteps,
+	nestedSteps,
+} from "@/shared/semantic-board/lib/flow-steps";
 export {
 	WalkthroughBeatSchema,
 	type WalkthroughBeat,
@@ -149,7 +164,14 @@ export {
 	checkVariantContent,
 	describeIntegrityIssues,
 } from "@/shared/semantic-board/lib/integrity";
-export { scopedContent, findView } from "@/shared/semantic-board/lib/scope";
+export {
+	EVERYTHING_VIEW,
+	RESERVED_VIEW_NAMES,
+	findView,
+	overviewContent,
+	scopedContent,
+	type ReadingScope,
+} from "@/shared/semantic-board/lib/scope";
 export {
 	drawingOf,
 	comparedWith,
@@ -179,6 +201,7 @@ export {
 	type BoardBranchInput,
 	FlowStepInputSchema,
 	type FlowStepInput,
+	type FlowMessageInput,
 	SemanticFlowInputSchema,
 	type SemanticFlowInput,
 	ViewScopeInputSchema,
@@ -196,6 +219,8 @@ export {
 	type SemanticEdgeInput,
 	VariantEditInputSchema,
 	type VariantEditInput,
+	ConfirmableRefusalSchema,
+	type ConfirmableRefusal,
 	BoardCreateInputSchema,
 	type BoardCreateInput,
 } from "@/shared/semantic-board/lib/input";
@@ -224,6 +249,8 @@ export {
 	RenderIdentitySchema,
 	DrawnBoardSchema,
 	type DrawnBoard,
+	NothingDrawnReasonSchema,
+	type NothingDrawnReason,
 	NothingDrawnSchema,
 	type NothingDrawn,
 	SemanticRenderReplySchema,
@@ -255,6 +282,8 @@ export {
 	SideSchema,
 	type Side,
 } from "@/shared/semantic-board/lib/resolution";
+export { ORDER_STEP } from "@/shared/semantic-board/lib/positions";
+export { subjectsAsIn } from "@/shared/semantic-board/lib/reconcile-candidate";
 export {
 	reconcileVariant,
 	ChangedFieldSchema,

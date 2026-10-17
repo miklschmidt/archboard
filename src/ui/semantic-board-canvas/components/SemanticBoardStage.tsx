@@ -174,7 +174,7 @@ interface SemanticBoardStageProps {
  * person looking at the view they chose themselves.
  * @param beat The beat being read, or null when no walkthrough is open.
  * @param asked The view the level on screen is being read through, if any.
- * @returns The view id to ask for, or undefined for the whole variant.
+ * @returns The view id to ask for, or undefined for the overview.
  */
 function viewToRead(beat: WalkthroughBeat | null, asked: string | undefined): string | undefined {
 	return beat?.view ?? asked;

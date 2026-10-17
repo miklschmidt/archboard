@@ -43,27 +43,36 @@ import type {
 	SemanticNode,
 	VariantContent,
 } from "@/shared/semantic-board/lib/content";
-import type { FlowStep, SemanticFlow } from "@/shared/semantic-board/lib/views";
+import type { SemanticFlow } from "@/shared/semantic-board/lib/views";
+import {
+	flatSteps,
+	isMessage,
+	nestedSteps,
+	type FlatStep,
+} from "@/shared/semantic-board/lib/flow-steps";
 import type { SemanticWalkthrough, WalkthroughBeat } from "@/shared/semantic-board/lib/walkthrough";
 import { sameSemanticValue } from "@/shared/semantic-board/lib/semantic-value";
 
 /**
- * One step, with where it stands: which flow tells it and how far into that
- * flow it comes.
+ * One step, with where it stands: which flow tells it, how far into that flow
+ * it comes, and (in its own `within`) which decision alternative or loop holds
+ * it.
  *
- * Both of those are the step's own meaning rather than the picture's. A
+ * All of those are the step's own meaning rather than the picture's. A
  * sequence is an ordered exchange — "the reply comes back before the queue is
  * written" is a claim about the system, and swapping two steps changes what the
- * flow says happens. So is which conversation a step belongs to. Neither is
- * carried on the step itself, because a step's place is where it is written;
- * this is where that place is read.
+ * flow says happens. So is which conversation a step belongs to, and which
+ * answer of a decision it runs on. None is carried on the step itself, because
+ * a step's place is where it is written; this is where that place is read. A
+ * decision or loop is compared without the steps it holds, each of which is a
+ * subject of its own.
  */
-interface PlacedStep extends FlowStep {
+type PlacedStep = FlatStep & {
 	/** The flow this step is told in. */
 	readonly flow: string;
 	/** How far into that flow it comes, counting from one. */
 	readonly position: number;
-}
+};
 
 /**
  * One beat, with where it stands: which explanation tells it and how far into
@@ -148,7 +157,9 @@ interface VariantComparison {
  * `steps`, for one reason: each of those is a subject with an identity of its
  * own and is compared as one. A container that also compared its contents would
  * report every reworded beat twice, once where it happened and once as the
- * whole explanation having changed.
+ * whole explanation having changed. A decision compares the labels of its
+ * alternatives and a loop its condition, and neither compares the steps they
+ * hold, for the same reason; a held step says where it stands in `within`.
  */
 const COMPARED = {
 	node: [
@@ -163,7 +174,20 @@ const COMPARED = {
 	],
 	edge: ["from", "to", "kind", "label", "description", "traffic"],
 	flow: ["name", "summary", "participants"],
-	step: ["from", "to", "label", "kind", "note", "repeat", "flow", "position"],
+	step: [
+		"from",
+		"to",
+		"label",
+		"kind",
+		"note",
+		"repeat",
+		"question",
+		"alternatives",
+		"condition",
+		"flow",
+		"within",
+		"position",
+	],
 	walkthrough: ["name", "summary"],
 	beat: ["heading", "body", "subjects", "view", "walkthrough", "position"],
 } as const;
@@ -294,11 +318,12 @@ function standing<Entity extends { readonly id: string }>(
  */
 function stepsOf(content: VariantContent, against: VariantContent): PlacedStep[] {
 	return content.flows.flatMap((flow) => {
+		const steps = flatSteps(flow.steps);
 		const ranks = rankedAgainst(
-			flow.steps.map((step) => step.id),
+			steps.map((step) => step.id),
 			stepsHeld(against, flow.id),
 		);
-		return flow.steps.map((step, index) => ({
+		return steps.map((step, index) => ({
 			...step,
 			flow: flow.id,
 			position: ranks.get(step.id) ?? index + 1,
@@ -313,7 +338,8 @@ function stepsOf(content: VariantContent, against: VariantContent): PlacedStep[]
  * @returns Its step ids there, or none when that state has no such flow.
  */
 function stepsHeld(content: VariantContent, flow: string): string[] {
-	return content.flows.find((one) => one.id === flow)?.steps.map((step) => step.id) ?? [];
+	const held = content.flows.find((one) => one.id === flow)?.steps ?? [];
+	return flatSteps(held).map((step) => step.id);
 }
 
 /**
@@ -442,14 +468,20 @@ function flowsWithRemoved(
 	const gone = new Set(removedFrom(comparison.steps).map((step) => step.id));
 	const baseline = new Map(before.map((flow) => [flow.id, flow.steps]));
 	const kept = flows.map((flow) => {
-		const steps = replaced(baseline.get(flow.id) ?? [], flow.steps, gone);
+		// Restored on the flat reading and built back into a tree, so a step taken
+		// out of an alternative goes back into it, and a removed decision comes
+		// back holding the removed steps that it held.
+		const flat = replaced(flatSteps(baseline.get(flow.id) ?? []), flatSteps(flow.steps), gone);
 		return {
 			...flow,
-			steps,
+			steps: nestedSteps(flat),
 			// Restored steps need columns even when their nodes still exist but
 			// no longer participate in the proposed exchange.
 			participants: [
-				...new Set([...flow.participants, ...steps.flatMap((step) => [step.from, step.to])]),
+				...new Set([
+					...flow.participants,
+					...flat.filter(isMessage).flatMap((step) => [step.from, step.to]),
+				]),
 			],
 		};
 	});
@@ -465,13 +497,13 @@ function flowsWithRemoved(
  * @returns The proposed exchange with its deleted runs anchored to continuations.
  */
 function replaced(
-	before: readonly FlowStep[],
-	steps: readonly FlowStep[],
+	before: readonly FlatStep[],
+	steps: readonly FlatStep[],
 	gone: ReadonlySet<string>,
-): FlowStep[] {
+): FlatStep[] {
 	const surviving = new Set(steps.map((step) => step.id));
-	const preceding = new Map<string, FlowStep[]>();
-	let pending: FlowStep[] = [];
+	const preceding = new Map<string, FlatStep[]>();
+	let pending: FlatStep[] = [];
 	for (const step of before) {
 		if (gone.has(step.id)) {
 			pending.push(step);

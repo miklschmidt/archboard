@@ -277,6 +277,45 @@ test("a beat about something the board has not got is refused", async () => {
 	expect(blind.outcome === "rejected" && blind.code).toBe("UNKNOWN_VIEW");
 }, 20_000);
 
+test("a beat can be about a step inside a decision, by the handle the same write gives it", async () => {
+	const walkthrough = held().walkthroughs[0]!;
+	const written = await edit({
+		flows: [
+			{
+				name: "Checked ingest",
+				participants: ["CLI", "Server", "Vault"],
+				steps: [
+					{ from: "CLI", to: "Server", label: "state the change" },
+					{
+						kind: "decision",
+						question: "Is the change valid?",
+						alternatives: [
+							{
+								label: "yes",
+								steps: [{ from: "Server", to: "Vault", label: "store", as: "stored" }],
+							},
+							{ label: "no", steps: [] },
+						],
+					},
+				],
+			},
+		],
+		walkthroughs: [
+			{
+				id: walkthrough.id,
+				name: "For the board",
+				beats: [
+					{ heading: "Stored", body: "Only a valid change is stored.", subjects: ["stored"] },
+				],
+			},
+		],
+	});
+	expect(written.outcome).toBe("applied");
+	const flow = held().flows.find((one) => one.name === "Checked ingest")!;
+	const stored = contract.messagesOf(flow.steps).find((step) => step.label === "store")!;
+	expect(held().walkthroughs[0]!.beats[0]!.subjects).toEqual([stored.id]);
+}, 20_000);
+
 test("an explanation with nothing in it is refused, and says which one", async () => {
 	const walkthrough = held().walkthroughs[0]!;
 	const refused = await edit({

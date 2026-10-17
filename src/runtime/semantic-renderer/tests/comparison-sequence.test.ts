@@ -45,7 +45,7 @@ test("turning the comparison off moves no participant or message of a sequence",
 				},
 			],
 		},
-		{ view: { grammar: "data-flow" } },
+		{ view: { grammar: "sequence" } },
 	);
 	expectSamePlaces(drawings, ["old", "s2", "f2", "s5"]);
 	expect(routeEnds(drawings.plain.svg, "step")).toEqual(
@@ -84,7 +84,7 @@ test("a participant the draft keeps as a node but drops from a flow has no colum
 			flows: [{ ...flow, participants: ["web", "api", "store"], steps: [place, write] }],
 		},
 		{ nodes, edges: [], flows: [{ ...flow, participants: ["web", "api"], steps: [place] }] },
-		{ view: { grammar: "data-flow" } },
+		{ view: { grammar: "sequence" } },
 	);
 	expectSamePlaces(drawings, ["store", write.id]);
 	// Another flow that keeps the participant keeps its column there.
@@ -101,7 +101,7 @@ test("a participant the draft keeps as a node but drops from a flow has no colum
 			edges: [],
 			flows: [{ ...flow, participants: ["web", "api"], steps: [place] }, reads],
 		},
-		{ view: { grammar: "data-flow" } },
+		{ view: { grammar: "sequence" } },
 	);
 	expect(storeColumns(both.compared.svg)).toBe(2);
 	expect(storeColumns(both.plain.svg)).toBe(1);
@@ -144,7 +144,7 @@ test("a column draws no bar only messages the draft drops open or hold", async (
 				edges: [],
 				flows: [{ ...flow, steps: steps.filter(({ id }) => !dropped.includes(id)) }],
 			},
-			{ view: { grammar: "data-flow" } },
+			{ view: { grammar: "sequence" } },
 		);
 	// The draft drops the write and its answer: the store's bar for them goes.
 	const write = await without(["s2", "s3"]);

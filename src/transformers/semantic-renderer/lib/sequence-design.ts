@@ -3,7 +3,7 @@ import type { MessageKind } from "@/shared/semantic-board/index";
 import { SHADOW_REACH } from "@/transformers/semantic-renderer/lib/svg/shadow";
 import { headReach, type Head, type Weight } from "@/transformers/semantic-renderer/lib/svg/styles";
 
-// Sequence-diagram measurements, used by the data-flow renderer.
+// Sequence-diagram measurements, used by the sequence renderer.
 // Participants occupy columns; their dashed vertical lifelines show progression
 // down the sequence. Messages are interaction arrows between participants, and
 // activation bars mark intervals when a participant is active.
@@ -101,6 +101,18 @@ const STEP_NOTE_MIN_WIDTH = 180;
 const STEP_NOTE_MAX_WIDTH = 320;
 
 /**
+ * A decision's or loop's frame (`layout/frames.ts`): the air between a frame's
+ * edge and the rows around it, the row its operator tab and words stand on,
+ * the row an alternative's label stands on, the room between its sides and
+ * the ink it holds, and the padding of the tab around its operator.
+ */
+const FRAME_GAP = 6;
+const FRAME_HEAD_HEIGHT = 18;
+const FRAME_GUARD_HEIGHT = 16;
+const FRAME_PAD = 10;
+const FRAME_TAB_PADDING = 6;
+
+/**
  * Maximum pulses per repeated step, keeping them countable and preventing
  * a high repetition count from delaying the rest of the sequence.
  */
@@ -173,4 +185,9 @@ export {
 	STEP_NOTE_PADDING_Y,
 	STEP_NOTE_MIN_WIDTH,
 	STEP_NOTE_MAX_WIDTH,
+	FRAME_GAP,
+	FRAME_HEAD_HEIGHT,
+	FRAME_GUARD_HEIGHT,
+	FRAME_PAD,
+	FRAME_TAB_PADDING,
 };

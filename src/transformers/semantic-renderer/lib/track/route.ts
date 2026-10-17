@@ -29,6 +29,7 @@ import { Containers } from "@/transformers/semantic-renderer/lib/track/container
 import { closeJogs, openNotches } from "@/transformers/semantic-renderer/lib/track/jogs";
 import { collinearPairs, partCollinear } from "@/transformers/semantic-renderer/lib/track/parting";
 import { relayLaps } from "@/transformers/semantic-renderer/lib/track/relay";
+import { fitTitleRows } from "@/transformers/semantic-renderer/lib/track/title-rows";
 import {
 	clearHeadings,
 	straightenThroughLabels,
@@ -69,6 +70,13 @@ interface SceneLine {
 	 * the wall along the channel under that band instead.
 	 */
 	readonly enters?: "left" | "right";
+	/**
+	 * The wall it runs to through its label, when it leaves its block
+	 * sideways carrying its label there: its target is then a stub on the
+	 * band below its label, and it runs out to the wall along the channel
+	 * under its label instead.
+	 */
+	readonly leaves?: "left" | "right";
 }
 
 /**
@@ -129,6 +137,27 @@ function wallX(scene: Scene, side: "left" | "right"): number {
 	return side === "left"
 		? Math.min(...boxes.map((box) => box.x)) - WALL_REACH
 		: Math.max(...boxes.map((box) => box.x + box.width)) + WALL_REACH;
+}
+
+/**
+ * Turn a line that enters or leaves its block by a wall onto that wall: the
+ * net from its stub runs in from the wall along the channel under the stub,
+ * and the net into its stub runs out to the wall along the channel above it.
+ * @param scene The scene.
+ * @param line The line.
+ * @param nets Its nets, top to bottom.
+ */
+function turnToWall(scene: Scene, line: SceneLine, nets: readonly Net[]): void {
+	if (line.enters !== undefined) {
+		const first = nets[0]!;
+		first.wall = "top";
+		first.topX = wallX(scene, line.enters);
+	}
+	if (line.leaves !== undefined) {
+		const last = nets.at(-1)!;
+		last.wall = "bottom";
+		last.bottomX = wallX(scene, line.leaves);
+	}
 }
 
 /**
@@ -450,8 +479,11 @@ function routeScene(
 ): Map<string, Point[]> {
 	const inner = lines.filter(({ wall }) => wall === undefined);
 	const chains = new Map(inner.map((line) => [line.id, chainOf(scene, line.placed)]));
-	// A line that enters its block by a wall comes from that wall, not from its stub.
-	const movable = inner.filter(({ enters }) => enters === undefined);
+	// A line that enters or leaves its block by a wall comes from or goes to that wall, not its stub.
+	const movable = inner.filter(
+		({ enters, leaves }) => enters === undefined && leaves === undefined,
+	);
+	fitTitleRows(scene, [...chains.values()]);
 	clearHeadings(scene, [...chains.values()]);
 	straightenLanes(scene, [...chains.values()]);
 	relayLaps(
@@ -483,11 +515,7 @@ function routeScene(
 		[...routed.values()].map((route) => route.nets),
 	);
 	for (const route of routed.values()) settleStraights(route.nets);
-	for (const line of lines.filter(({ enters }) => enters !== undefined)) {
-		const first = routed.get(line.id)!.nets[0]!;
-		first.wall = "top";
-		first.topX = wallX(scene, line.enters!);
-	}
+	for (const line of inner) turnToWall(scene, line, routed.get(line.id)!.nets);
 	partAndClose(scene, [...chains.values()], [...routed.values()]);
 	const edges = new Map(lines.map((line) => [line.id, line.placed]));
 	const rising = new Set(

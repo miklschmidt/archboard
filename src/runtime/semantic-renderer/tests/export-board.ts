@@ -71,7 +71,7 @@ const EXPORT_BOARD: SemanticBoard = SemanticBoardSchema.parse({
 		{
 			id: "exchange",
 			name: "Exchange",
-			grammar: "data-flow",
+			grammar: "sequence",
 			scope: { kind: "selection", flows: ["ingest"] },
 		},
 	],

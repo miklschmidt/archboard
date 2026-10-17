@@ -40,6 +40,7 @@ import {
  * @param ports Its ports, cut through its front edge, and the clip that cuts them (`ports.ts`).
  * @param ports.slots Its slots.
  * @param ports.id The id of the clip.
+ * @param kind What subject the card is: a part, or a flowchart's message step.
  * @returns The card group.
  */
 function paintMeasuredCard(
@@ -49,6 +50,7 @@ function paintMeasuredCard(
 	unsettled: boolean,
 	appearance: NodeAppearance,
 	ports?: { readonly slots: readonly Port[]; readonly id: string },
+	kind: "node" | "step" = "node",
 ): string {
 	const { measured, box } = placed;
 	const styles = stylesFor(palette);
@@ -59,7 +61,7 @@ function paintMeasuredCard(
 	return wrap(
 		"g",
 		{
-			...subjectGroup("node", measured.node.id, standing),
+			...subjectGroup(kind, measured.node.id, standing),
 			...appearanceAttributes(appearance),
 		},
 		lines([

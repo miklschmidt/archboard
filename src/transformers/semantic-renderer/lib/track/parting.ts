@@ -42,10 +42,13 @@ function related(one: Net, other: Net): boolean {
  * @returns True when they read as one.
  */
 function collinear(leaving: Net, entering: Net): boolean {
-	if (leaving.channel !== entering.channel || related(leaving, entering)) return false;
-	if (leaving.wall === "top" || entering.wall === "bottom" || meetAtOnePoint(leaving, entering))
+	// The cheap tests first: a search over pairs asks this of every pair in a
+	// channel for every move it tries, and few pairs stand within a lane.
+	const within = Math.abs(leaving.topX - entering.bottomX) < LANE;
+	if (leaving.channel !== entering.channel || !within) return false;
+	if (related(leaving, entering) || leaving.wall === "top" || entering.wall === "bottom")
 		return false;
-	return Math.abs(leaving.topX - entering.bottomX) < LANE;
+	return !meetAtOnePoint(leaving, entering);
 }
 
 /**

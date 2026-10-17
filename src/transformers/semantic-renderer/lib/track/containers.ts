@@ -19,6 +19,8 @@ interface FrameShape {
 	readonly depth: number;
 	/** The region round a frame alone in its group's region, laid out as that region (`blocks/lone.ts`). */
 	readonly region?: Box;
+	/** Which of its header's wider sizes its title row took, when it took one (`title-rows.ts`). */
+	readonly header?: number;
 }
 
 /** A group region's band and caption once the scene is spaced. */
@@ -221,7 +223,8 @@ function frameShapes(
 		const title = scene.moved(scene.titles.get(id)!, left);
 		const bottom = containers.bottomOf(containers.frames.get(id)!, left);
 		const box = { x: node.x! + left, y: title.y, width: node.width!, height: bottom - title.y };
-		return { id, box, depth };
+		const header = scene.headers.get(id);
+		return { id, box, depth, ...(header === undefined ? {} : { header }) };
 	});
 }
 

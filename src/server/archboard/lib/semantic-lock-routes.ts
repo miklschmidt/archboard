@@ -11,6 +11,7 @@ import {
 	BoardLockCancelledError,
 	boardLockState,
 	claimBoard,
+	claimEndReason,
 	holdBoard,
 	releaseClaim,
 	releaseHold,
@@ -50,13 +51,13 @@ function refuseRevokedClaim(res: Response, vault: string, board: string): boolea
 	if (!lost) {
 		return false;
 	}
-	const who = lost.by?.kind === "human" ? "The user at the canvas" : "Somebody";
 	const reason = lost.claim.holder.reason ? ` (${lost.claim.holder.reason})` : "";
 	res.status(409).json({
 		success: false,
 		code: "CLAIM_REVOKED",
+		cause: lost.cause,
 		error:
-			`${who} took "${board}" back, so your claim${reason}` +
+			`${claimEndReason(lost)}, so your claim${reason}` +
 			" has ended. Everything you had already written is on the board and nothing was undone, so it is " +
 			"part way through whatever you were doing — say what state you left it in rather than carrying on. " +
 			"Writing again is an ordinary write, and takes the board only for as long as that write.",

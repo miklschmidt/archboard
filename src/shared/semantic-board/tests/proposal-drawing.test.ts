@@ -453,3 +453,13 @@ test("a shared scope preserves its deleted exchange without unrelated deletions"
 	expect(initial.content.flows).toEqual([]);
 	expect(initial.changes).toBeNull();
 });
+
+describe("the overview of a proposal", () => {
+	test("marks what the proposal removed, as every reading does", () => {
+		const board = boardWith({ nodes: [PLATFORM, GATEWAY, LEGACY], edges: [OLD_WIRE] });
+		const drawn = drawingOf(board, board.variants[1]!, { kind: "overview" });
+		// The ledger is a root part and the line to it is drawn from the closed
+		// platform; the wire inside the platform is the platform's own business.
+		expect(drawn.changes?.standing).toEqual({ pl: "unchanged", ld: "removed", e2: "removed" });
+	});
+});

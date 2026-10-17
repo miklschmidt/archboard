@@ -9,6 +9,10 @@
 // is a record, and a finding on it would push somebody to rewrite a record.
 // Each board carries the vault's relationship kinds, which say the evidence
 // kinds each kind accepts (TASK-367.07).
+//
+// `--every-draft` reads every draft of every board instead, each as a named
+// draft, and nothing else: a stack of pull requests is all drafts, and a
+// board may have no current variant (TASK-488).
 
 import {
 	listSemanticBoards,
@@ -113,6 +117,34 @@ function readOne(
 }
 
 /**
+ * Read every draft of every board of the vault, each as a named draft.
+ * @param vault The vault directory.
+ * @returns The drafts, and the boards that could not be read.
+ */
+function readEveryDraftToCheck(vault: string): BoardsToCheck {
+	const { relationshipKinds } = readSemanticBoardConfiguration(vault).configuration;
+	const boards: BoardToCheck[] = [];
+	const skipped: CodeCheckSkip[] = [];
+	for (const location of listSemanticBoards(vault)) {
+		const read = readSemanticBoardAt(vault, location);
+		if (!read.ok) {
+			skipped.push({ reason: "board-unreadable", board: location.name, detail: read.problem });
+			continue;
+		}
+		for (const variant of read.board.variants.filter((one) => one.lifecycle === "draft")) {
+			boards.push({
+				board: read.board,
+				file: location.file,
+				variant,
+				named: true,
+				relationshipKinds,
+			});
+		}
+	}
+	return { ok: true, boards, skipped };
+}
+
+/**
  * Read every board of the vault at the variant the check reads.
  * @param vault The vault directory.
  * @param variant The draft `--variant` names, if any.
@@ -129,4 +161,10 @@ function readBoardsToCheck(vault: string, variant?: string): BoardsToCheck | NoS
 	return { ok: true, boards: reading.boards, skipped: reading.skipped };
 }
 
-export { type BoardToCheck, type BoardsToCheck, type NoSuchDraft, readBoardsToCheck };
+export {
+	type BoardToCheck,
+	type BoardsToCheck,
+	type NoSuchDraft,
+	readBoardsToCheck,
+	readEveryDraftToCheck,
+};

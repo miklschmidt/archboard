@@ -9,6 +9,12 @@ import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { MIN_GUTTER } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import { rimOf } from "@/transformers/semantic-renderer/lib/blocks/leaves";
+import { frameWidth } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import {
+	headerWithin,
+	takenIndex,
+	type TakenHeader,
+} from "@/transformers/semantic-renderer/lib/blocks/headers";
 import {
 	headerOf,
 	type Block,
@@ -103,6 +109,8 @@ class FoldLayout {
 	readonly portX = new Map<string, number>();
 	/** Each column's x. */
 	readonly columnX: number[] = [];
+	/** The block's header as laid out: at its least size until the columns say how wide the block is. */
+	header: TakenHeader | undefined;
 
 	/**
 	 * Start the layout of a folded block.
@@ -118,7 +126,9 @@ class FoldLayout {
 		readonly laid: ReadonlyMap<string, Laid>,
 		readonly tree: BlockTree,
 		readonly insets: Insets,
-	) {}
+	) {
+		this.header = block.header === undefined ? undefined : { size: block.header };
+	}
 
 	/**
 	 * The block's own ports on one side.
@@ -218,7 +228,7 @@ class FoldLayout {
 				return { port, x: reached.reduce((sum, x) => sum + x, 0) / Math.max(1, reached.length) };
 			})
 			.toSorted((one, other) => one.x - other.x);
-		const header = this.block.header;
+		const header = this.header?.size;
 		const clear = this.insets.side + (header === undefined ? 0 : header.width + LANE);
 		const low = side === "top" ? clear : this.insets.side;
 		const high = Math.max(right, low + LANE * (ports.length + 1));
@@ -262,14 +272,11 @@ class FoldLayout {
 	}
 
 	/**
-	 * Place the header and the columns side by side.
+	 * Place the columns side by side.
 	 * @param gutters Every gutter's width.
 	 * @returns Where the last column ends.
 	 */
 	placeColumns(gutters: readonly number[]): number {
-		const header = this.block.header;
-		if (header !== undefined)
-			this.boxes.set(headerOf(this.block), { x: this.insets.side, y: this.insets.top, ...header });
 		let x = this.insets.side;
 		for (const [index, column] of this.columns.entries()) {
 			x += gutters[index]!;
@@ -277,6 +284,32 @@ class FoldLayout {
 			x += this.laid.get(column.id)!.width;
 		}
 		return x;
+	}
+
+	/**
+	 * Place the header in the block's top-left corner, at the widest size it
+	 * has room for once the columns stand (TASK-486): no wider than the
+	 * columns, so it widens no block, and left of where each top port wants to
+	 * stand, so it pushes none of them aside.
+	 * @param courses Every line's course.
+	 * @param right Where the last column ends.
+	 */
+	placeHeader(courses: readonly Course[], right: number): void {
+		const least = this.block.header;
+		if (least === undefined) return;
+		const { side, top } = this.insets;
+		const wanted = this.portsOn("top").map((port) => {
+			const reached = courses
+				.filter(({ line }) => line.tail === port)
+				.map(({ line }) => this.endX(line.head));
+			return reached.reduce((sum, x) => sum + x, 0) / Math.max(1, reached.length);
+		});
+		this.header = headerWithin(least, {
+			frame: frameWidth(this.block, right + side),
+			content: right - side,
+			beside: wanted.map((x) => x - LANE - side),
+		});
+		this.boxes.set(headerOf(this.block), { x: side, y: top, ...this.header.size });
 	}
 
 	/**
@@ -298,7 +331,7 @@ class FoldLayout {
 	 */
 	stackRows(top: Stacked, bottom: Stacked): Rows {
 		const tops = this.portsOn("top");
-		const row = Math.max(this.block.header?.height ?? 0, tops.length > 0 ? PORT : 0);
+		const row = Math.max(this.header?.size.height ?? 0, tops.length > 0 ? PORT : 0);
 		const channelTop = this.insets.top + row;
 		const columnsTop = channelTop + this.headRoom(top);
 		// Every column's first card stands on one line, as newspaper columns do,
@@ -395,6 +428,7 @@ class FoldLayout {
 		const gutters = this.gutters(courses);
 		const right = this.placeColumns(gutters);
 		this.lanes(courses, gutters);
+		this.placeHeader(courses, right);
 		this.placePorts(courses, "top", right);
 		this.placePorts(courses, "bottom", right);
 		const top = this.stack(courses, "top");
@@ -402,7 +436,7 @@ class FoldLayout {
 		const rows = this.stackRows(top, bottom);
 		for (const course of courses) this.draw(course, top, bottom, rows);
 		const boxes = [...this.boxes.values()];
-		const header = this.block.header?.width ?? 0;
+		const header = this.header?.size.width ?? 0;
 		const ended = this.portsOn("bottom").length > 0;
 		return {
 			width: Math.max(header, ...boxes.map((one) => one.x + one.width)) + this.insets.side,
@@ -411,6 +445,7 @@ class FoldLayout {
 			boxes: this.boxes,
 			lines: this.lines,
 			bands: [],
+			...takenIndex(this.header),
 		};
 	}
 }

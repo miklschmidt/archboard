@@ -22,6 +22,8 @@ import {
 	findView,
 	scopedContent,
 	subjectsOf,
+	everyStep,
+	stepWords,
 	type SemanticBoard,
 	type SemanticVariant,
 	type SubjectKind,
@@ -111,8 +113,8 @@ function labelsById(content: VariantContent): Map<string, string> {
 function toldLabels(content: VariantContent, labels: Map<string, string>): void {
 	for (const flow of content.flows) {
 		labels.set(flow.id, flow.name);
-		for (const step of flow.steps) {
-			labels.set(step.id, step.label);
+		for (const step of everyStep(flow.steps)) {
+			labels.set(step.id, stepWords(step));
 		}
 	}
 	for (const walkthrough of content.walkthroughs) {

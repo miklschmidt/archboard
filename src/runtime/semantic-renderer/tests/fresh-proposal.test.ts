@@ -49,7 +49,8 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 	});
 	const proposal = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light", fonts: "linked" },
+		// Every nested part, which the overview would close.
+		{ variant: "draft", view: "Everything", theme: "light", fonts: "linked" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!proposal.ok || !("svg" in proposal.reply)) throw new Error("Expected a drawn proposal");

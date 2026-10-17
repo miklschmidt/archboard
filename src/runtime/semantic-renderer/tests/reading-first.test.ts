@@ -18,6 +18,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import boardChangesReachTheWorkhorse from "./board-changes-reach-the-workhorse.json";
 import boardPersistence from "./board-persistence.json";
+import codeEvidence from "./code-evidence.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
 import oneWriteLands from "./one-write-lands.json";
@@ -111,6 +112,17 @@ test("a board stacks its containers or not as before where the other way reads w
 	const lines = await linesOf(boardPersistence, "track", ["system", "service", "module"]);
 	expect(turnsOf(lines.get("8Let5OXd")!)).toBe(0);
 	expect(routesCross(lines.get("8Let5OXd")!, lines.get("C0t1t0gb")!)).toBe(false);
+});
+
+// Taken from a board of this repository (Archboard server, Code evidence):
+// once the header of Code evidence wrapped to one line, the page stacked
+// under HTTP serving fit the pane better and crossed one line fewer, so both
+// picks took it: Board writes stood at the far left, and 'read a board,
+// write one under its lease' ran over Code evidence and down its far side.
+// A line turning round a container it has no end in counts as a crossing.
+test("a board keeps its containers as ranked where stacking them sends a line round a container", async () => {
+	const lines = await linesOf(codeEvidence, "track", ["system", "service", "module"]);
+	expect(turnsOf(lines.get("iG4T44Pd")!)).toBe(0);
 });
 
 // Taken from a board of this repository: drawn with its group packed, its

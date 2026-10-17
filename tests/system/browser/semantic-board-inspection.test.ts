@@ -240,7 +240,8 @@ test("a person reads containment, code and the level below it, and writes nothin
 	const before = readFileSync(join(vault, "pipeline.semantic.json"), "utf8");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?paneA=pipeline`]);
+	// Every level of containment, which the overview would close (ADR 0052).
+	await browser.run(["open", `${server.base}/?paneA=pipeline&viewA=Everything`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => stageState(browser),
@@ -358,7 +359,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 	// And the address comes back with it, for the same reason it followed down.
 	await pollUntil(
 		() => browser.eval<string>("window.location.search"),
-		(search) => search === `?paneA=pipeline&repoA=${repo}`,
+		(search) => search === `?paneA=pipeline&repoA=${repo}&viewA=Everything`,
 		"the address to follow the reader back out",
 		WAIT,
 	);

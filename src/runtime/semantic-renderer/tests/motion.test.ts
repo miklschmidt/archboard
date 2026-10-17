@@ -122,7 +122,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		// The page slides each bar on the compositor, and there Chromium let light
 		// through outside the box of the mask: stray marks in empty canvas. A clip
 		// beside the mask, on the same group, still let one row through at its edge.
-		for (const grammar of ["architecture", "data-flow"] as const) {
+		for (const grammar of ["architecture", "sequence"] as const) {
 			const svg = await drawn(grammar);
 			const masks = new Map(
 				[...svg.matchAll(/<mask id="(ab-mask-[^"]+)"([^>]*)>/gu)].map(([, id, box]) => [
@@ -215,7 +215,7 @@ describe("a pulse is handed on through a card", () => {
 describe("a reader who asked for less motion gets none", () => {
 	test("a file opened with no viewer around honours the preference itself", async () => {
 		// CSS cannot stop a SMIL animation, so the rule hides what it moves.
-		for (const grammar of ["architecture", "data-flow"] as const) {
+		for (const grammar of ["architecture", "sequence"] as const) {
 			expect(await drawn(grammar)).toContain(
 				"@media(prefers-reduced-motion:reduce){.ab-pulse{display:none}}",
 			);
@@ -225,7 +225,7 @@ describe("a reader who asked for less motion gets none", () => {
 
 describe("motion costs the picture nothing else", () => {
 	test("the pulses are not in the way of a click, and are not subjects", async () => {
-		for (const grammar of ["architecture", "data-flow"] as const) {
+		for (const grammar of ["architecture", "sequence"] as const) {
 			const svg = await drawn(grammar);
 			const pulses = pulsesIn(svg);
 			expect(pulses).toBeGreaterThan(0);
@@ -239,7 +239,7 @@ describe("motion costs the picture nothing else", () => {
 	});
 
 	test("the same content draws the same bytes twice", async () => {
-		for (const grammar of ["architecture", "data-flow"] as const) {
+		for (const grammar of ["architecture", "sequence"] as const) {
 			expect(await drawn(grammar)).toBe(await drawn(grammar));
 		}
 	});

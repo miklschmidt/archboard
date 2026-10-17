@@ -23,6 +23,13 @@ interface MeasuredNode {
 	/** Zero for a card; the reserved title area for a containing node. */
 	readonly headerHeight: number;
 	readonly runs: readonly TextRun[];
+	/**
+	 * A container's header as it stands at each width it can take, from its
+	 * least, this node itself, to the width its words take one line each at;
+	 * each wider one is shorter. A layout picks one once it knows how wide the
+	 * container is (TASK-486). Absent where the header has one height.
+	 */
+	readonly headers?: readonly MeasuredNode[];
 }
 
 /** A relationship label whose words and box are settled before routing. */

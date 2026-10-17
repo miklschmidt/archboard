@@ -2,8 +2,9 @@
 name: archboard
 description: >-
   Diagram real code as archboard semantic boards with the archboard CLI: create
-  an architecture diagram (parts, containment, relationships) or a sequence
-  diagram (an ordered exchange) from source, edit an existing board, propose an
+  an architecture diagram (parts, containment, relationships), a sequence
+  diagram (an ordered exchange) or a flowchart (a flow's decisions and loops)
+  from source, edit an existing board, propose an
   architectural change as a variant and compare it, bind parts to code, render
   SVGs and PNGs, record a walkthrough to a narrated video such as a pull
   request's for its reviewers. Use when asked to document, explain or change a
@@ -18,20 +19,48 @@ when anything it describes is built, and proposals). There is no layout to autho
 rendered from meaning. Fix a semantic error in that meaning; when the saved
 meaning matches the source and the picture does not, report a renderer defect.
 
-Two diagram types, one board:
+A board holds two sorts of meaning:
 
-- **Architecture diagram**: nodes (with a configured `kind`, a clear short
-  `responsibility`, optional `parent` containment, `groups`, a code `binding`),
-  directed relationships (`edges`) between them, and board-owned `views` that
-  read a region of it. Use it to answer "what are the parts and how are they
-  wired".
-- **Sequence diagram**: a `flow` (participants in column order, ordered steps
-  with a message kind) drawn through a `data-flow` view. Use it to answer "what
-  happens, in what order, for one request or job". A flow lives on the same
-  board as the parts it moves between.
+- **Parts and relationships**: nodes (with a configured `kind`, a clear short
+  `responsibility`, optional `parent` containment, `groups`, a code `binding`)
+  and directed relationships (`edges`) between them.
+- **Flows**: one request, job or event as ordered steps between the parts it
+  names as participants. A step is a message, a decision with labelled
+  alternatives, or a loop. A flow lives on the same board as the parts it
+  moves between.
+
+Board-owned `views` read that meaning in one of three grammars:
+`architecture`, `sequence` and `flowchart`. [Which view](#which-view) says
+which one answers a question.
 
 Use a **variant** for a proposed evolution of the same diagram, and a separate
 **linked board** for a different subject or level of detail.
+
+## Which view
+
+Decide the reading before you decide what to write, because the reading
+decides whether the board needs relationships, a flow, or both.
+
+- **Architecture view**: the question is which parts exist and which depend on
+  or use which ("what is this made of, what talks to what"). It draws
+  relationships: at most one between two parts for each kind, never one for
+  each call. A view whose cards would have no lines between them is the wrong
+  reading, and so is a view whose lines would tell a numbered story.
+- **Sequence view**: the question is what happens, in what order, between
+  several parts, for one request, job or event ("what happens when X"). It
+  draws one flow: the participants in columns and every message, returns
+  included. Each call between two parts is a step of a flow, not a further
+  relationship.
+- **Flowchart view**: the question is the logic: which path is taken, under
+  which condition, and how often it repeats ("how does X decide", "what if Y
+  fails"). It draws one flow's steps as boxes and its decisions as diamonds.
+  Use it when the flow's decisions or loops matter more than who talks to
+  whom. The same flow can have a sequence view and a flowchart view.
+
+The quick test: if the answer is a sentence with "then", it is a flow, read as
+a sequence. If it has "if" or "until", the flow needs a decision or a loop,
+read as a flowchart, and its sequence view draws them as `alt` and `loop`
+frames. If it has neither, it is architecture.
 
 Write responsibilities as clear prose that usually reads over two or three
 card lines. Newlines are optional: the renderer wraps and shows the complete
@@ -48,7 +77,8 @@ question is the same walk with its own recipe at step 1 and the steps that
 recipe names.
 
 1. **Pick the workflow and read its one recipe** before the first command of
-   it ([which recipe](#which-recipe)).
+   it ([which recipe](#which-recipe)), and **decide which views answer the
+   question** ([which view](#which-view)).
 2. **Claim a board that already exists** when the work runs to several writes
    ([Claims](#essentials)).
 3. **Read the configured vocabulary and the boards the vault already holds**
@@ -73,10 +103,13 @@ recipe names.
    between them in the order the source runs them, returns included.
 9. **Read the source again for what a flow shows only on a second pass**: a
    call a participant makes on itself (one step with it at both ends, never a
-   call between two parts that each have a column) and a
-   count the source fixes (that step's `repeat`)
-   ([create a sequence diagram](references/create-sequence.md)). For a plan,
-   read the request again the same way: a count it states is a `repeat`.
+   call between two parts that each have a column), a
+   count the source fixes (that step's `repeat`), and each `if`, `switch`,
+   early return or `catch` that changes which messages follow (a decision) and
+   each loop whose length the data decides (a loop)
+   ([create a sequence diagram](references/create-sequence.md#when-a-flow-branches-or-repeats)).
+   For a plan, read the request again the same way: a count it states is a
+   `repeat`, and a condition it states is a decision.
 10. **Walk the catalogue** row by row against the source you read, or for a
     plan against what the request states
     ([everything the code shows](#everything-the-code-shows)).
@@ -87,7 +120,8 @@ recipe names.
 12. **Turn the request into checks** and write them down before the payload
     ([evidence rule 4](#evidence-before-a-write)).
 13. **Write one payload** carrying the parts, the relationships, the flow, the
-    views each reading wants — a `data-flow` view over a flow — and the
+    views you decided at step 1 — a `sequence` view over a flow, and a
+    `flowchart` view where its logic is the question — and the
     walkthrough an ordering needs, then claim the new board when more writes are
     coming ([Writes](#essentials), [Claims](#essentials)).
 14. **Read the answer against those checks and look at the picture it draws**
@@ -228,7 +262,10 @@ recipe names.
   part it reaches (`RELATIONSHIP_UNDRAWN`): draw the relationship. A
   relationship with no anchor that the code runs the other way or does not show
   is information ([evidence](references/authoring.md#evidence-for-a-relationship)). For a draft whose
-  code is written, add `--variant <draft>`. What it could not read (a
+  code is written, add `--variant <draft>`. For a stack of pull requests, add
+  `--every-draft`: each draft is read against its own branch, and a bound part
+  that a draft dropped while its code is still on that branch is
+  `INHERITED_PART_DROPPED` ([stack](references/variants.md#a-stack-of-pull-requests)). What it could not read (a
   repository this machine has not registered, a file Git ignores) is listed
   as skipped, never as a finding. If a checkout has no configured language
   server for a language, the answer says `language-server-missing`, and the
@@ -292,8 +329,10 @@ board needs all of it.
    `anchor`, or the write drops it and says so. For a
    call (a function or method call, a hook, a component rendering another),
    `from` is the part whose body makes it and `to` is the part whose body runs,
-   inside its `parent`. A board that describes a module draws it as a
-   container: a part with children, whatever its kind (a module with its
+   inside its `parent`. A board is the container of its own subject: no part
+   stands for the board itself, and the parts of its subject are root parts
+   beside its callers and dependencies. A module inside that subject is drawn
+   as a container: a part with children, whatever its kind (a module with its
    functions, a class with its methods, a component with the components it
    defines). Its callers stay outside it. A call from outside lands on the
    entry point that the caller names: the exported function, public method,
@@ -311,8 +350,8 @@ board needs all of it.
    `validate()` and then `persist()`, the source shows two relationships from
    `apply`, and none from `validate` to `persist`, whatever order they run in.
    For a sequence, check each step's order, return, branch and repeat count
-   against the source as well (a branch or a loop of unknown length in a
-   `note`, a count the source fixes in `repeat`;
+   against the source as well (a branch as a decision, a loop of unknown
+   length as a loop, a count the source fixes in `repeat`;
    [create a sequence diagram](references/create-sequence.md)).
 4. **Turn the request into checks.** Before the payload, write down what a
    correct answer must show: the board and the `version` you read; the target
@@ -336,22 +375,22 @@ the source you read, in this vocabulary (the grader uses the same words); every
 row the source justifies goes in the payload, and your answer says which rows
 you used and which you judged not to apply.
 
-| Row            | Lands on                           |
-| -------------- | ---------------------------------- |
-| `external`     | a node                             |
-| `binding`      | a node                             |
-| `containment`  | a node (`parent`)                  |
-| `relationship` | a relationship (`edge`)            |
-| `traffic`      | a relationship                     |
-| `emphasis`     | a relationship                     |
-| `repeat`       | a flow step                        |
-| `note`         | a flow step                        |
-| `groups`       | a node                             |
-| `flow`         | the board, with a `data-flow` view |
-| `view`         | the board                          |
-| `walkthrough`  | the board, as a beat               |
-| `drillDown`    | a node                             |
-| `description`  | a node or a relationship           |
+| Row            | Lands on                          |
+| -------------- | --------------------------------- |
+| `external`     | a node                            |
+| `binding`      | a node                            |
+| `containment`  | a node (`parent`)                 |
+| `relationship` | a relationship (`edge`)           |
+| `traffic`      | a relationship                    |
+| `emphasis`     | a relationship                    |
+| `repeat`       | a flow step                       |
+| `note`         | a flow step                       |
+| `groups`       | a node                            |
+| `flow`         | the board, with a `sequence` view |
+| `view`         | the board                         |
+| `walkthrough`  | the board, as a beat              |
+| `drillDown`    | a node                            |
+| `description`  | a node or a relationship          |
 
 What the source shows for each row, and what you author for it:
 
@@ -396,16 +435,24 @@ What the source shows for each row, and what you author for it:
   find it.
 - `repeat`. _Shows:_ a loop over a list the source fixes, or a retry limit.
   _Author:_ `repeat` with that count on the step.
-- `note`. _Shows:_ a branch and its condition, a data-dependent loop, an
-  environment variable, a caveat. _Author:_ `note` on the step.
+- `note`. _Shows:_ an environment variable, a caveat, a detail the label
+  cannot carry. _Author:_ `note` on the step. A branch or a loop is a step of
+  its own, never a note (the `flow` row).
 - `groups`. _Shows:_ a part whose concern is a configured group id in
   `config.yaml` (read them before every write). _Author:_ `groups` on each
   member, explicit, across containers.
 - `flow`. _Shows:_ a request that asks for the exchange itself — what happens,
   in what order, for one request, job, interaction or startup — on a new board
   or an existing one; a board owes no flow merely because what it draws runs in
-  order ([which recipe](#which-recipe)). _Author:_ a `flow` and a `data-flow`
-  view over it.
+  order ([which recipe](#which-recipe)). _Author:_ a `flow` and a `sequence`
+  view over it, and a `flowchart` view as well when its decisions or loops are
+  the question ([which view](#which-view)). An `if`, a `switch`, an early
+  return or a `catch` that changes which messages follow is a `decision` step:
+  the condition as its `question`, and one labelled alternative for each
+  outcome, holding the steps that run on it. Steps that run again for each item
+  of a list, or until a condition holds, are a `loop` step with that
+  `condition`
+  ([when a flow branches or repeats](references/create-sequence.md#when-a-flow-branches-or-repeats)).
 - `view`. _Shows:_ a subset a reader wants alone: one path, one container's
   internals, the two sides of a change. _Author:_ a board `view`.
 - `walkthrough`. _Shows:_ a why the code enforces (an ordering, an invariant, a
@@ -423,8 +470,8 @@ What the source shows for each row, and what you author for it:
 A row the source does not support stays out: an added relationship without a
 line of evidence is a wrong board, not a complete one.
 
-`from`, `to`, `kind`, `label` and `anchor` mean the same on a step and a
-relationship, and a step takes nothing else but `note` and `repeat`: `emphasis` or `traffic`
+`from`, `to`, `kind`, `label` and `anchor` mean the same on a message and a
+relationship, and a message takes nothing else but `note` and `repeat`: `emphasis` or `traffic`
 on one is refused by key name over the step it sits on
 (`→ at flows[0].steps[0]`), so move it onto the relationship between the same
 parts rather than dropping it from the payload.
@@ -472,7 +519,8 @@ Each recipe, and the request it is for:
   service's modules, how a request travels, what starts up).
 - [create a sequence diagram](references/create-sequence.md): explain one
   request, job or startup as an ordered exchange: a `flow` with participants and
-  steps, on a new board or an existing one.
+  steps, on a new board or an existing one. It also covers a flow that
+  branches or repeats, and its flowchart view.
 - [edit an existing board](references/edit.md): change, extend, correct or
   repair what an existing board says, or give a board or a variant a better
   name.
@@ -487,8 +535,9 @@ Each recipe, and the request it is for:
 
 A new board is the architecture recipe first, whatever the request calls its
 subject: a board that describes how a request travels is parts, containment
-and the calls between them, and the sequence recipe is read on top of it only
-when the request asks for the exchange itself. A request that combines
+and the relationships between them, and the sequence recipe is read on top of
+it when the request asks for the exchange itself or for its logic
+([which view](#which-view)). A request that combines
 workflows (extend the vocabulary, then create; link a detail board, then
 propose) reads each recipe it needs, in the order the request runs them. A
 request for a narrated video makes or finds the board with its recipe, then
@@ -506,6 +555,24 @@ and an explanation for somebody new to the code follows
 - Use the configured vocabulary and levels; extend `config.yaml` only when the
   request is about vocabulary ([Vocabulary](#essentials)).
 - Fewer, truer parts: every node has a responsibility the source supports.
+- Give a board's subject structure. A board opens on its overview: the root
+  parts, with every container closed. The board is the container of its
+  subject, so never add a part that stands for the board itself. If the subject holds more than about a dozen
+  parts, gather them into a few containers. Each container has a
+  responsibility that the code supports, never a box for layout, and binds to
+  the folder that holds its parts when the code has one.
+  Add a view that opens each container. If its parts have no relationship
+  between them, the view also names the parts outside the container that they
+  work with, so that it draws lines ([which view](#which-view)). `archboard check` warns
+  `OVERVIEW_CROWDED` when an overview draws more than 15 parts or 25 lines.
+- Draw one relationship between two parts. It says that one part needs or uses
+  the other, and its kind says how. The individual calls between them, in their
+  order, are steps of a flow that a `sequence` view draws. A second
+  relationship between the same two parts is a call, not a relationship.
+- Never draw a relationship between a container and a part inside it. The
+  nesting already says that the container holds the part. A call inside a
+  container starts at the part that makes it and ends at the part that runs
+  it. `archboard check` warns `CONTAINER_LINE_TO_OWN_PART` on such a line.
 
 ## When to read more
 
@@ -518,7 +585,7 @@ are what a branch of one needs on top of it.
   repository that you work in, read it. It configures a language server, and it
   says what a configured server runs and which TypeScript the check runs.
 - [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md):
-  view scopes and grammars, message kinds, repeat/note, walkthrough beats and
+  view scopes and grammars, message kinds, decisions and loops, repeat/note, walkthrough beats and
   their identity, recording a walkthrough to a narrated video, and rendering a
   recording's kept talk again.
 - [variants](references/variants.md): what a comparison counts, edge identity,
