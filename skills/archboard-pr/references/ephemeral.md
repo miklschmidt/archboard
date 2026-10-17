@@ -79,7 +79,8 @@ the head branch's code in the checkout.
    reports each step and relationship that is added, changed or removed.
    `semantic footprint` reads the `HEAD` of the checkout that this machine
    registered for the repository (`archboard repo list`), unless you add
-   `--head <branch>`, which reads that branch from Git without a checkout.
+   `--head <branch>`, which reads that branch from Git without a checkout. With
+   `--variant`, add `--against <variant>` for what the proposal is read against.
    `check --code` reads the files on disk there. So for `check --code`, that
    checkout must have the head branch out.
 

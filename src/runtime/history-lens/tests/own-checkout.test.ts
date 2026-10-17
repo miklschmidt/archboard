@@ -154,7 +154,7 @@ test("behind counts the commits of the checkout that holds the vault", async () 
 
 test("footprint and locality read the part in the checkout that holds the vault", async () => {
 	const current = currentVariant(board)!;
-	const footprint = await readFootprint({ vault, board, current, base: first });
+	const footprint = await readFootprint({ vault, board, against: current, base: first });
 	expect(footprint.skipped).toEqual([]);
 	expect(footprint.proposal).toBeNull();
 	const locality = await createLocalityReading().read(vault, board, current, undefined);

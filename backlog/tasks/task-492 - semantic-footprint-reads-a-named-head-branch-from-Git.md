@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@implementer'
 created_date: '2026-10-17 10:53'
-updated_date: '2026-10-17 11:00'
+updated_date: '2026-10-17 11:05'
 labels:
   - history-lens
   - cli
@@ -45,4 +45,8 @@ semantic footprint compares a proposal with the commits from --base up to the ch
 
 <!-- SECTION:NOTES:BEGIN -->
 Design: --head <ref> is resolved per checkout by the history lens's own commitOf (rev-parse, then refs/remotes/origin/<name>), exported additively from source-history.ts; sourceAt is unchanged. The range runs from the merge base of --base and the resolved head up to that head; no checkout, no working-tree change. Without --head the lens reads HEAD as before. A checkout where --head does not resolve is unread with the new reason head-unresolved (like base-unresolved, its parts are skipped, never unchanged); when it resolves in no checkout that holds a part, the route refuses 422 HEAD_UNRESOLVED naming the ref and the CLI exits 2. Decision: not a refusal when only some checkouts lack the head, because a stack branch often exists only in the code repository, not the vault's. Answer echoes head. Tests: lens (--head on a non-checked-out branch, origin-only branch, unresolved, option-looking ref), route (production app, HEAD_UNRESOLVED), CLI (query carries head, exit 2). Skill archboard-pr step 1.3 and 6, ephemeral.md, ADR 0045 and the CLI audit updated. Real run against /home/msc/Work/Platform (throwaway registry, not the user's): footprint of Platform Public API --head cleanup/device-trust-enrollment-only-server reads 651 commits, --head feat/device-trust 671, --head no-such-layer exits 2.
+
+Follow-up (coordinator): --against <variant> on semantic footprint, carried as ?against= through the route. The proposal is read against --against, else the current variant, else its parent; a parentless proposal on a board with no current variant is read against nothing and names every part (answer.against is null). The answer field current is renamed against. NO_CURRENT_VARIANT now only when no proposal and no variant to read; --against without --variant reads that variant's parts. --against must be current or draft (AGAINST_NOT_LIVE) and not the proposal (NOTHING_TO_COMPARE); unknown is UNKNOWN_VARIANT. Variant resolution moved to src/server/archboard/lib/footprint-variants.ts. Real run on a scratch copy of the vault (/tmp/vault492) with the throwaway registry: Device Trust Control Plane layer feat/device-trust-enrollment (--base/--against feat/device-trust-contracts) read 8 commits, 3 changed parts, none named; feat/device-trust-gateway (against identity-lifecycle) read 4 commits, 0 changed. 35 and 47 parts were skipped as ref-not-checked-out because the draft bindings pin a branch: footprint still skips those.
+
+Correction: only the enrollment layer's skips were broken down (35 ref-not-checked-out, 12 unbound in the --against run at the time of reading; 36 skipped in the answer). The gateway layer's 47 skips were not broken down.
 <!-- SECTION:NOTES:END -->

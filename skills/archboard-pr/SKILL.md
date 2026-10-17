@@ -101,8 +101,9 @@ your own.
    When this pull request is a layer of a stack that is not checked out, add
    `--head <branch>`. Its `changed` lists the parts the commits changed. For the parts in
    `skipped`, and for each repository that it did not read, use the diff. A
-   board with no current variant refuses (`NO_CURRENT_VARIANT`): read the diff
-   instead.
+   board with no current variant refuses here (`NO_CURRENT_VARIANT`), because
+   no proposal is named yet: read the diff instead, and use step 6 once the
+   proposal exists.
 4. Pick the picture from the first row that fits:
 
 | The change                                                                                                                                          | The picture                                                                                                                                                                                                                |
@@ -169,14 +170,19 @@ Do this for each vault board that section 1 chose.
    - `archboard semantic compare <board> --variant "<proposal>" --against "<below>"`
      reports every change that the diff makes to what the board draws, and
      nothing else.
-   - `archboard semantic footprint <board> --base <base> --variant "<proposal>"`:
+   - `archboard semantic footprint <board> --base <base> --variant "<proposal>" --against "<below>"`:
      each part in `changedNotNamed` and `namedNotChanged` is drawn, or you can
-     say why its change needs no picture. Without `--head`, it reads up to the
-     branch that is checked out. For a layer of a stack that is not checked
-     out, add `--head <branch>`: it reads that branch from Git, and nothing is
-     checked out. A branch that no checkout has is refused with
-     `HEAD_UNRESOLVED`. On a board that nobody has built, footprint refuses:
-     read the diff instead.
+     say why its change needs no picture. `--against` is the variant that the
+     proposal is read against, to decide which parts it names. It is the same
+     `<below>` as in `compare`. A board that nobody has built has no current
+     variant, so there `--against` is the base draft or the proposal below.
+     Without `--against`, footprint reads the proposal against the current
+     variant, else against the proposal's parent. A proposal with no parent
+     on such a board names every part it holds. Without `--head`, footprint
+     reads up to the branch that is checked out. For a layer of a stack that is
+     not checked out, add `--head <branch>`: it reads that branch from Git, and
+     nothing is checked out. A branch that no checkout has is refused with
+     `HEAD_UNRESOLVED`.
    - `archboard check --code --variant "<proposal>"` reports no warning that
      the same run without `--variant` lacks. It reads the draft of that name
      on every board, and it skips a part whose binding names a branch that is
