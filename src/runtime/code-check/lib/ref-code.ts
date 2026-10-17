@@ -12,7 +12,7 @@
 // interface of a module.
 //
 // Each ref is a tree of its own, named by a root that is no directory on disk:
-// the checkout's root and the commit. Everything the pass keys by checkout
+// the checkout's root and the ref. Everything the pass keys by checkout
 // keys by that root, so the files on disk and the trees of two refs of one
 // repository are never mixed. A ref the checkout cannot resolve has no tree,
 // and its parts are skipped with the ref named.

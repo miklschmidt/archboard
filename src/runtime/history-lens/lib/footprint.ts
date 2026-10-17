@@ -4,7 +4,9 @@
 // merge base of the named ref and HEAD up to HEAD, or up to a named head ref
 // that need not be checked out (a layer of a pull-request stack), never
 // fetching: a ref resolves only from what the checkout already has, and a
-// checkout where it does not resolve is not read, and says so. The commits map onto the parts
+// checkout where it does not resolve is not read, and says so. A part pinned to
+// a branch or commit that its checkout does not have out is read up to that ref
+// when no head is named (TASK-493). The commits map onto the parts
 // whose bound declarations or paths they changed. Large commits are
 // kept and marked. With a proposal, the footprint sets the changed parts
 // against the parts the proposal names, in three lists, and a part the lens
@@ -307,14 +309,26 @@ async function readRepository(
 }
 
 /**
- * The read parts of one variant by repository.
+ * The read parts of one variant by repository and by where their commits end:
+ * the head the caller named, else the ref a part is pinned to that its
+ * checkout lacks out, else HEAD (TASK-493).
  * @param parts The parts.
- * @returns Each repository with the parts bound there.
+ * @param head The head the caller named, if any.
+ * @returns Each repository with the parts bound there, and the head they are read up to.
  */
-function byRepository(parts: readonly ReadPart[]): Map<string, ReadPart[]> {
-	const grouped = new Map<string, ReadPart[]>();
-	for (const part of parts) grouped.set(part.repo, [...(grouped.get(part.repo) ?? []), part]);
-	return grouped;
+function byRepository(
+	parts: readonly ReadPart[],
+	head: string | undefined,
+): { repo: string; head: string | undefined; parts: ReadPart[] }[] {
+	const grouped = new Map<string, { repo: string; head: string | undefined; parts: ReadPart[] }>();
+	for (const part of parts) {
+		const tip = head ?? part.ref;
+		const key = `${part.repo}\0${tip ?? ""}`;
+		const held = grouped.get(key) ?? { repo: part.repo, head: tip, parts: [] };
+		held.parts.push(part);
+		grouped.set(key, held);
+	}
+	return [...grouped.values()];
 }
 
 /**
@@ -377,10 +391,10 @@ async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer
 		...(signal === undefined ? {} : { signal }),
 		bindings: nodes.flatMap((node) => (node.binding === undefined ? [] : [node.binding])),
 	});
-	const reading = partReading({ nodes }, snapshot);
+	const reading = partReading({ nodes }, snapshot, true);
 	const repositories = await Promise.all(
-		[...byRepository(reading.read)].map(([repo, parts]) =>
-			readRepository(repo, parts, { base, head }, named, { signal }),
+		byRepository(reading.read, head).map((group) =>
+			readRepository(group.repo, group.parts, { base, head: group.head }, named, { signal }),
 		),
 	);
 	const changed = inOrder(
