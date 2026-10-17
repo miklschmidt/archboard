@@ -183,11 +183,20 @@ const DrawnBoardSchema = RenderIdentitySchema.extend({
 type DrawnBoard = z.infer<typeof DrawnBoardSchema>;
 
 /**
- * A board that exists and has nothing on it yet. Not a failure: it is a board
- * somebody has just made, and the viewer says so in its own words.
+ * Why nothing was drawn. `NOTHING_TO_RENDER`: the variant holds nothing at all.
+ * `VIEW_EMPTY_ON_VARIANT`: it holds content, but none of the parts or flows the
+ * chosen view names.
+ */
+const NothingDrawnReasonSchema = z.enum(["NOTHING_TO_RENDER", "VIEW_EMPTY_ON_VARIANT"]);
+type NothingDrawnReason = z.infer<typeof NothingDrawnReasonSchema>;
+
+/**
+ * A board that exists and has nothing to draw. Not a failure: it is a board
+ * somebody has just made, or a view that names nothing the variant holds, and
+ * the viewer says so in its own words.
  */
 const NothingDrawnSchema = RenderIdentitySchema.extend({
-	empty: z.literal("NOTHING_TO_RENDER"),
+	empty: NothingDrawnReasonSchema,
 });
 type NothingDrawn = z.infer<typeof NothingDrawnSchema>;
 
@@ -229,6 +238,8 @@ export {
 	RenderIdentitySchema,
 	DrawnBoardSchema,
 	type DrawnBoard,
+	NothingDrawnReasonSchema,
+	type NothingDrawnReason,
 	NothingDrawnSchema,
 	type NothingDrawn,
 	SemanticRenderReplySchema,

@@ -10,7 +10,8 @@ import {
 	StandaloneThemeSchema,
 } from "@/shared/semantic-board/index";
 import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
-import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { refuseNothingDrawn, viewEmptyRefusal } from "@/cli/commands/lib/nothing-drawn";
 import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
 import {
 	DRAWN_AGAINST,
@@ -183,7 +184,7 @@ const semanticRenderContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal],
+	refusals: [serverRefusal, viewEmptyRefusal],
 	relationships: [
 		{
 			method: "GET",
@@ -197,16 +198,12 @@ const semanticRenderContract = defineCommand({
 	 * @param input What the command was given.
 	 * @param context The command context.
 	 * @returns The SVG bytes or the file receipt.
-	 * @throws {CliUsageError} When the board has nothing on it.
+	 * @throws {Error} When the board or the view has nothing to draw.
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic render");
 		const drawn = await renderSemanticBoardOnServer(input.name, exportRenderRequest(input));
-		if ("empty" in drawn) {
-			throw new CliUsageError(
-				`Semantic board "${drawn.board}" has nothing on it yet, so there is nothing to draw.`,
-			);
-		}
+		if ("empty" in drawn) refuseNothingDrawn(drawn);
 		if (input.out === undefined) return { result: Buffer.from(drawn.svg, "utf8") };
 		const file = context.resolvePath(input.out);
 		return {

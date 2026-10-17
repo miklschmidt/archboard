@@ -249,6 +249,8 @@ export {
 	RenderIdentitySchema,
 	DrawnBoardSchema,
 	type DrawnBoard,
+	NothingDrawnReasonSchema,
+	type NothingDrawnReason,
 	NothingDrawnSchema,
 	type NothingDrawn,
 	SemanticRenderReplySchema,
