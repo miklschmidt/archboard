@@ -172,10 +172,12 @@ const semanticFootprintContract = defineCommand({
 		"or --against names the variant whose parts are read. The proposal names a part that the comparison marks added, " +
 		"changed or removed, and a part at either end of a relationship or a step that it marks, " +
 		"and each named part says why. A part with no binding, a part that opens another board, a " +
-		"repository this machine has not registered, a part pinned to a ref its checkout does not " +
-		"have out, and a part in a checkout where --base does not resolve are skipped: they are in " +
-		"none of the lists and are listed with the reason. Information only: nothing is stored and " +
-		"the exit status does not change.",
+		"repository this machine has not registered, and a part in a checkout where --base does not " +
+		"resolve are skipped: they are in none of the lists and are listed with the reason. A part " +
+		"pinned to a branch or commit its checkout does not have out is read up to that ref from " +
+		"Git, never checked out, unless --head names where the commits end; one pinned to a ref " +
+		"the checkout cannot resolve is skipped as head-unresolved. Information only: nothing is " +
+		"stored and the exit status does not change.",
 	examples: [
 		"archboard semantic footprint payments --base origin/main",
 		"archboard semantic footprint payments --base feat/layer-one --head feat/layer-two",

@@ -51,9 +51,21 @@ holds the whole architecture with the changes of every pull request below it.
 5. To hold the whole stack to its code, run `archboard check --code --every-draft`.
    It reads every draft of every board. It reads each draft against the branch
    (or commit) that its bindings name and no proposal below names: the pull
-   request's own branch. It reads that branch from Git and does not check it
-   out. A draft whose bindings name no branch is read against the checkout's
-   files.
+   request's own branch. A binding that names a branch or commit that the
+   checkout does not have out is read at that ref from Git, without a checkout
+   and without touching the working tree, in every check: its bound path and
+   symbol, the anchors, the evidence between parts and the interface of a
+   module. A language server reads files on disk, so a use that no import
+   resolves stays as code facts read it (`ref-without-language-server`, once
+   for the repository and ref). A relationship whose two ends are bound to
+   different refs of one repository, or to a ref and to no ref, is skipped
+   (`refs-differ`): no one code holds both. A ref the checkout cannot resolve
+   is skipped with the ref named (`ref-not-checked-out`). A binding that names
+   no branch is read against the checkout's files, and so is a draft that
+   names none.
+   `archboard semantic footprint --head <ref>` also reads a ref that is not
+   checked out, and a part pinned to such a ref without `--head`, up to that
+   ref.
 
 The code check warns with `INHERITED_PART_DROPPED` when a draft lacks a bound
 node that the variant it was branched from holds, and the code of the draft's

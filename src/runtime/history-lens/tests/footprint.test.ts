@@ -463,3 +463,38 @@ test("a proposal read against nothing names every part it holds", async () => {
 	);
 	expect(ids(answer.namedAndChanged)).toContain("pA");
 });
+
+test("a part pinned to a branch that is not checked out is read up to that branch, and one pinned to a ref no checkout resolves is skipped naming it", async () => {
+	const pinned = (id: string, branch: string, order: number) => ({
+		id,
+		name: id,
+		kind: "module",
+		order,
+		binding: { repo: SHOP, path: "src/ledger.ts", branch },
+	});
+	const value = SemanticBoardSchema.parse({
+		...board(),
+		variants: [
+			{
+				id: "v1",
+				name: "Built",
+				lifecycle: "current",
+				content: { nodes: [pinned("pP", "stack-two", 1000), pinned("pQ", "gone", 2000)] },
+			},
+		],
+	});
+	const answer = FootprintAnswerSchema.parse(
+		await lens.readFootprint({
+			vault: scratch,
+			board: value,
+			against: currentVariant(value),
+			base: "feature",
+		}),
+	);
+	if (answer.proposal !== null) throw new Error("no proposal was named");
+	expect(ids(answer.changed)).toEqual(["pP"]);
+	expect(answer.skipped.map((skip) => [skip.subject.id, skip.reason])).toEqual([
+		["pQ", "head-unresolved"],
+	]);
+	expect(answer.skipped[0]?.detail).toContain("gone");
+});
