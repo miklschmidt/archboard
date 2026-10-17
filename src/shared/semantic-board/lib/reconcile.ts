@@ -20,8 +20,10 @@
 //   A real disagreement is held, never resolved by machine. Two different values
 //   for one field, a subject one side deleted and the other changed, or a
 //   reference the draft added to something the predecessor removed — each is
-//   reported against the subject it is about, and the draft keeps the content it
-//   already had, which is coherent, rather than being left half-merged.
+//   reported against the subject it is about, and the draft keeps its own side
+//   of that subject, rather than being left half-merged. Everything else the
+//   predecessor changed still arrives, as long as the result is a document a
+//   board may hold.
 //
 //   Order is meaning. Two sides moving the same step or the same beat to
 //   different places is a conflict like any other; picking the earlier index, or
@@ -37,7 +39,7 @@ import type {
 	VariantContent,
 } from "@/shared/semantic-board/lib/content";
 import { placedArrivals } from "@/shared/semantic-board/lib/positions";
-import { incoherenceOf } from "@/shared/semantic-board/lib/reconcile-candidate";
+import { coherentPart, incoherenceOf } from "@/shared/semantic-board/lib/reconcile-candidate";
 import {
 	ChangedFieldSchema,
 	ReconciliationIssueSchema,
@@ -401,6 +403,31 @@ function settledMembership(here: boolean, was: boolean, there: boolean): boolean
  * @returns The proposal's content afterwards, and what is left to settle.
  */
 function reconcileVariant(states: ThreeStates): Reconciliation {
+	const merged = mergedCandidate(states);
+	const dangling = incoherenceOf(merged.content);
+	if (dangling.length === 0) {
+		return merged;
+	}
+	// The merge would leave this proposal saying something no document may
+	// say — a beat about a step that is gone, an arrow to nothing. Only the
+	// subjects whose change does that keep this proposal's side; the rest of the
+	// change still arrives, and every reason is reported in the words the
+	// contract itself uses.
+	const part = coherentPart(states, mergedCandidate);
+	return {
+		content: part.content,
+		issues: [...merged.issues, ...dangling],
+		inherited: part.inherited,
+	};
+}
+
+/**
+ * The merge of three states, subject by subject, whether a board may hold it
+ * or not.
+ * @param states The base, this proposal, and the predecessor as it stands.
+ * @returns The merged content, what is left to settle, and what was inherited.
+ */
+function mergedCandidate(states: ThreeStates): Reconciliation {
 	const nodes = mergeByIdentity(
 		sidesOf<SemanticNode>(states, (content) => content.nodes),
 		MERGED.node,
@@ -433,14 +460,6 @@ function reconcileVariant(states: ThreeStates): Reconciliation {
 	};
 	const parts = [nodes, edges, flows, walkthroughs];
 	const issues = [...parts.flatMap((part) => part.issues), ...asIssues(told.issues)];
-	const dangling = incoherenceOf(assembled);
-	if (dangling.length > 0) {
-		// The merge would leave this proposal saying something no document may
-		// say — a beat about a step that is gone, an arrow to nothing. What it
-		// already said is coherent, so that is what it keeps, and every reason is
-		// reported in the words the contract itself uses.
-		return { content: states.mine, issues: [...issues, ...dangling], inherited: [] };
-	}
 	return { content: assembled, issues, inherited: parts.flatMap((part) => part.inherited) };
 }
 
