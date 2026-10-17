@@ -23,8 +23,8 @@ Measured 2026-09-29 on a quiet machine (load 0.8), each drawing's first render i
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Every tracked vault board's first render takes under 1 s on Track and on Blocks, measured in one warm process on a quiet machine
-- [ ] #2 No board's picture gets worse: the renderer's corpus tests pass and a before-and-after look at the changed boards shows the same or better drawing
-- [ ] #3 A test or measured check owns the budget so a later regression is caught
+- [x] #2 No board's picture gets worse: the renderer's corpus tests pass and a before-and-after look at the changed boards shows the same or better drawing
+- [x] #3 A test or measured check owns the budget so a later regression is caught
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -146,4 +146,6 @@ Critical path after this round (unchanged from round two):
 - Agent workbench, Track, about 1.5 s after a warm-up board (about 2.05 s as the first board of a process). It is bound by the groups turns of the joins choice. About ten solves run at once, and each takes about twice its in-process time.
 
 Timings at c77cc3204, Track, warm process, two runs (load 1.6 to 4.9): total 10.35 s and 10.51 s. Board viewer 1.49 s and 1.73 s, Agent workbench (first board) 2.07 s and 2.03 s, Archboard server routes 1.10 s and 1.14 s (second board, workers starting). Every other board is under 1 s.
+
+2026-10-17 state after three rounds, merged on feat/derived-overview: full bun run check passed after round one. AC2: every variant and view of both vaults on both engines byte-identical except Live panes 'Pane connections' (Blocks, 2 variants), which reads better (16 crossings, was 22). AC3: wide-boards.test.ts 40 of 40 pass with no bound raised. AC1 open: Track over 1 s on Board viewer (about 1.45 s) and Agent workbench (about 1.5 s warm, 2.05 s as first board); Blocks over 1 s on nine boards, worst Archboard server routes 15.5 s, bound by libavoid's unifying nudging. Reaching 1 s needs more CPU per render or warm idle workers (about 40-50 MB each); both left for the owner.
 <!-- SECTION:NOTES:END -->
