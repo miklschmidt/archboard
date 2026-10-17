@@ -551,7 +551,9 @@ and an explanation for somebody new to the code follows
 
 - Reuse an existing detail board: link it with `drillDown` on a part the board
   draws anyway, never duplicating its parts. A node whose only reason to exist
-  is the link is a button, and a diagram has no buttons.
+  is the link is a button, and a diagram has no buttons. `archboard check` warns
+  `SHARED_SYMBOL` when two parts bind the same symbol in the same file, on one
+  board or two, unless one of them drills down to the board of the other.
 - Use the configured vocabulary and levels; extend `config.yaml` only when the
   request is about vocabulary ([Vocabulary](#essentials)).
 - Fewer, truer parts: every node has a responsibility the source supports.
