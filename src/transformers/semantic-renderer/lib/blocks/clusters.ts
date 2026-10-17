@@ -12,7 +12,7 @@ import { CONTAINER_INSET, REGION_INSET } from "@/transformers/semantic-renderer/
 import { ARCHITECTURE_HEADER_PADDING } from "@/transformers/semantic-renderer/lib/design";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Block, Line, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
-import { wallOf } from "@/transformers/semantic-renderer/lib/blocks/walls";
+import { ranks } from "@/transformers/semantic-renderer/lib/blocks/walls";
 import {
 	anchorOf,
 	enteredFrame,
@@ -153,7 +153,7 @@ class Clusters {
 				around = block.clusterOf.get(around);
 			}
 		return [...block.lines.values()]
-			.filter((line) => wallOf(block, line) === undefined)
+			.filter((line) => ranks(block, line))
 			.map((line) => ({
 				line,
 				tail: place.get(vendorOf(line.tail)) ?? -1,

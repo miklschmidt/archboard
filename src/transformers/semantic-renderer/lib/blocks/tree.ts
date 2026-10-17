@@ -24,6 +24,7 @@ import {
 	type Nesting,
 } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { exitKey } from "@/transformers/semantic-renderer/lib/blocks/sides";
+import { walled } from "@/transformers/semantic-renderer/lib/blocks/walls";
 import type { Card } from "@/transformers/semantic-renderer/lib/blocks/card";
 import { tabOf } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import {
@@ -136,18 +137,6 @@ function headerOf(block: Block): string {
 }
 
 /**
- * What a port on a side wall adds to its key: the line's end inside the
- * block. Each line crosses a wall on the track it runs on inside, so lines
- * from different items never share a wall port.
- * @param side The edge the port crosses.
- * @param inner The line's end inside the block.
- * @returns The key's part, empty for a port on the top or bottom.
- */
-function walled(side: Side, inner: string): string {
-	return side === "left" || side === "right" ? `${inner}|` : "";
-}
-
-/**
  * The item a chain of blocks reaches its outermost block at, or the node itself.
  * @param chain The blocks, innermost first.
  * @param node The node.
@@ -190,6 +179,7 @@ class BlockTree {
 	 * @param nesting How containers and group regions are drawn.
 	 * @param apart The blocks whose joins keep ports of their own, by id.
 	 * @param orders Ports each block holds in an order on a face, keyed `block|face` (`orders.ts`).
+	 * @param facing Whether every block faces its walls ({@link BlockTree.exitOf}, `place.ts`).
 	 */
 	constructor(
 		graph: ElkNode,
@@ -197,6 +187,7 @@ class BlockTree {
 		readonly nesting: Nesting,
 		apart: ReadonlySet<string>,
 		readonly orders: ReadonlyMap<string, readonly string[]> = new Map(),
+		readonly facing = false,
 	) {
 		this.captions = captionsOf(graph);
 		this.root = this.block(":root", "root", undefined, {});
@@ -453,7 +444,7 @@ class BlockTree {
 		);
 		for (const block of out) {
 			const along = `${projection.to}|${this.kindOf(edge)}`;
-			const side = block === labelAt ? face : this.exitOf(block, "out", face, along);
+			const side = this.exitOf(block, "out", face, along, labelAt);
 			const port = this.port(block, `out|${side}|${walled(side, from)}${along}`, side);
 			const ranked = side === "top" ? { tail: port, head: from } : { tail: from, head: port };
 			const line = this.line(block, edge, { from, to: port, ...ranked }, block === labelAt);
@@ -520,9 +511,11 @@ class BlockTree {
 	 * @param way Whether the line leaves or enters the block there.
 	 * @param face Its face.
 	 * @param along What the lines through the port share.
+	 * @param labelAt Where it leaves, the block with its label, kept on its face unless facing.
 	 * @returns The edge.
 	 */
-	exitOf(block: Block, way: "in" | "out", face: Face, along: string): Side {
+	exitOf(block: Block, way: "in" | "out", face: Face, along: string, labelAt?: Block): Side {
+		if (block === labelAt && !this.facing) return face;
 		return this.exits.get(exitKey(block.id, way, face, along)) ?? face;
 	}
 

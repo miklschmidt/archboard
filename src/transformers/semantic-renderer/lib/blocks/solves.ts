@@ -13,6 +13,7 @@ import { layJoined, type Drawn } from "@/transformers/semantic-renderer/lib/bloc
 import { lineLength } from "@/transformers/semantic-renderer/lib/blocks/laying";
 import {
 	BLOCKS_APART,
+	BLOCKS_FACING,
 	BLOCKS_NESTING,
 	BLOCKS_PLACED,
 } from "@/transformers/semantic-renderer/lib/blocks/place";
@@ -41,6 +42,8 @@ const PlacedSchema = z.object({
 	edges: z.array(
 		z.object({ id: z.string(), points: z.array(PointSchema), label: BoxSchema.optional() }),
 	),
+	/** Whether facing every block's walls would change the blocks (`place.ts`); absent, it would not. */
+	faces: z.boolean().optional(),
 });
 /** A whole drawing's geometry, as a solve answers it. */
 type Placed = z.infer<typeof PlacedSchema>;
@@ -51,6 +54,7 @@ type Placed = z.infer<typeof PlacedSchema>;
  * @param nesting How its containers and group regions are drawn.
  * @param apart The blocks whose joins keep ports of their own, by id.
  * @param signal Calls the solve off while it waits for the engine.
+ * @param facing Whether every block faces its walls (`BlockTree`).
  * @returns The drawing's geometry.
  */
 async function solved(
@@ -58,6 +62,7 @@ async function solved(
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
 	signal: AbortSignal,
+	facing = false,
 ): Promise<Placed> {
 	const asked = {
 		...graph,
@@ -65,6 +70,7 @@ async function solved(
 			...graph.layoutOptions,
 			[BLOCKS_NESTING]: nesting,
 			[BLOCKS_APART]: JSON.stringify([...apart]),
+			[BLOCKS_FACING]: String(facing),
 		},
 	};
 	const answer = await rendererHost().solve(
@@ -84,7 +90,7 @@ async function solved(
  */
 function joinedOut(graph: ElkNode, nesting: Nesting): Promise<Drawn<Placed>> {
 	const tree = new BlockTree(graph, new Map(), nesting, new Set());
-	return layJoined(tree, (apart, signal) => solved(graph, nesting, apart, signal));
+	return layJoined(tree, (apart, signal, facing) => solved(graph, nesting, apart, signal, facing));
 }
 
 /**
