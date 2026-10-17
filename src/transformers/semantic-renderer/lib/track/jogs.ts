@@ -145,8 +145,8 @@ function onFace(station: Station, x: number): boolean {
 }
 
 /**
- * Move a card's own port along its face to an x, when the port is no trunk's
- * and stays clear of the face's corners and its other ports; a block's own
+ * Move a card's own port along its face to an x, when the port is no trunk's, held to no point
+ * (`points.ts`), and clear of the face's corners and its other ports; a block's own
  * port slides along the block's edge instead.
  * @param scene The scene.
  * @param nets Every net.
@@ -157,7 +157,7 @@ function onFace(station: Station, x: number): boolean {
  */
 function movePort(scene: Scene, nets: readonly Net[], net: Net, end: End, x: number): boolean {
 	if (scene.slides.has(net[end].item!)) return slidePort(scene, nets, net, end, x);
-	if (trunkAt(net, end) || !onFace(net[end], x)) return false;
+	if (trunkAt(net, end) || net[end].at !== undefined || !onFace(net[end], x)) return false;
 	const others = nets.filter((other) => other !== net && other[end].item === net[end].item);
 	if (others.some((other) => Math.abs(xAt(other, end) - x) < LANE)) return false;
 	setX(net, end, x);

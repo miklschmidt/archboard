@@ -10,8 +10,17 @@
 // that meets a shape is carried on to its outline, and a line that meets a
 // decision or a terminal to the middle of the side it crosses, a diamond's
 // point (`flowchart-ports.ts`).
+//
+// A decision's answers leave it from separate points: left and right, and the
+// bottom for a third. The layout is asked for that: a decision is measured
+// wider than its diamond on either side by an answer's sideways run and half
+// the widest answer's words, and marked so that the track engine holds each
+// answer to its own point of the box (`track/points.ts`). Once laid out, the
+// box is cut back to the diamond (`toDiamonds`), and each answer is drawn out
+// of its point.
 
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import { BEND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import type { DiagramAtlas, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	DrawingEdge,
@@ -73,6 +82,11 @@ const SHAPE_PAD = 10;
 const DIAMOND_ASPECT = 0.5;
 /** A terminal's size. */
 const TERMINAL = { width: 96, height: 34 } as const;
+/**
+ * How far an answer runs sideways out of a decision's left or right point
+ * before it turns down: a bend and as long a straight again.
+ */
+const SIDE_RUN = 2 * BEND_RADIUS;
 
 /**
  * The vault's policy with the flowchart's own kinds beside it: a flow's frame,
@@ -123,8 +137,28 @@ function shapeSize(
 }
 
 /**
+ * Half the widest answer's words out of each decision: how far in from the
+ * edge of its box an answer from a side point runs down, so its words stand
+ * on it inside the box.
+ * @param graph The graph.
+ * @param measure The measured lines.
+ * @returns The half width, by decision.
+ */
+function answerRooms(graph: FlowchartGraph, measure: MeasuredArchitecture): Map<string, number> {
+	const rooms = new Map<string, number>();
+	for (const edge of graph.content.edges) {
+		if (graph.shapes.get(edge.from) !== "decision") continue;
+		const half = Math.ceil((measure.labels.get(edge.id)?.width ?? 0) / 2);
+		rooms.set(edge.from, Math.max(rooms.get(edge.from) ?? 0, half));
+	}
+	return rooms;
+}
+
+/**
  * Measure the graph: frames, boxes and lines as an architecture's are, and
- * each shape to the size its words need.
+ * each shape to the size its words need. A decision is laid out wider than
+ * its diamond on either side by an answer's sideways run and the room its
+ * words take beside it (`track/points.ts`).
  * @param graph The graph.
  * @param policy The flowchart's policy.
  * @returns The measurement, and each shape's wrapped words.
@@ -134,6 +168,7 @@ function measured(
 	policy: SemanticPolicy,
 ): { readonly measure: MeasuredArchitecture; readonly words: ReadonlyMap<string, string[]> } {
 	const measure = measureArchitecture(graph.content, policy);
+	const rooms = answerRooms(graph, measure);
 	const nodes = new Map<string, MeasuredNode>(measure.nodes);
 	const words = new Map<string, string[]>();
 	for (const node of graph.content.nodes) {
@@ -141,9 +176,38 @@ function measured(
 		if (shape === undefined) continue;
 		const size = shapeSize(shape, node.name);
 		words.set(node.id, size.words);
-		nodes.set(node.id, { node, width: size.width, height: size.height, headerHeight: 0, runs: [] });
+		const base = { node, height: size.height, headerHeight: 0, runs: [] };
+		const room = rooms.get(node.id) ?? 0;
+		nodes.set(
+			node.id,
+			shape === "decision"
+				? { ...base, width: size.width + 2 * (SIDE_RUN + room), pointed: room }
+				: { ...base, width: size.width },
+		);
 	}
 	return { measure: { ...measure, nodes }, words };
+}
+
+/**
+ * The drawing with each decision's box cut to its diamond: it was laid out
+ * wider on either side by an answer's sideways run and its words' room.
+ * @param drawing The drawing as laid out.
+ * @param shapes Which nodes are shapes.
+ * @returns The drawing, each box the size of its shape.
+ */
+function toDiamonds(
+	drawing: PaintedDrawing,
+	shapes: ReadonlyMap<string, FlowchartShape>,
+): PaintedDrawing {
+	return {
+		...drawing,
+		cards: drawing.cards.map((card) => {
+			if (shapes.get(card.measured.node.id) !== "decision") return card;
+			const beside = SIDE_RUN + (card.measured.pointed ?? 0);
+			const box = { ...card.box, x: card.box.x + beside, width: card.box.width - 2 * beside };
+			return { ...card, box };
+		}),
+	};
 }
 
 /**
@@ -333,7 +397,7 @@ async function renderFlowchart(request: DiagramRenderRequest): Promise<RenderedD
 	const graph = flowchartOf(told.flows, told.nodes);
 	const { measure, words } = measured(graph, policy);
 	const laid = await layoutEngine("track")(graph.content, measure, undefined, new Map());
-	const drawing = withOutlines(laid, graph.shapes);
+	const drawing = withOutlines(toDiamonds(laid, graph.shapes), graph.shapes);
 	const page = painted({ request, plain, policy, graph, words, drawing });
 	const svg = svgDocument({
 		width: page.width,

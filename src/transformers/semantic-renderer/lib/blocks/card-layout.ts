@@ -42,6 +42,7 @@ import {
 	polylinePoints,
 	type Join,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
+import { FROM_POINTS } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
 import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
@@ -85,6 +86,19 @@ interface Arrangement {
 	 * the line's source, so containers in a chain stack.
 	 */
 	readonly stacked?: boolean;
+}
+
+/**
+ * The Graphviz port a line asks to leave its source by: a line out of a
+ * flowchart's decision asks to stand under its own point of the card
+ * (`track/points.ts`).
+ * @param line The line.
+ * @param tail Where Graphviz starts it.
+ * @returns The attribute, or none.
+ */
+function leavingPoint(line: Line, tail: string): { tailport?: string } {
+	const point = line.edge.layoutOptions?.[FROM_POINTS];
+	return point === undefined || tail !== line.edge.sources[0] ? {} : { tailport: point };
 }
 
 /** One block of cards' layout, from its Graphviz graph to its routed lines. */
@@ -327,15 +341,16 @@ class CardLayout {
 		// A wrapped item sits a row of cards and its labels lower for each row it is lowered.
 		const minlen = 1 + 2 * (this.arranged.lowered.get(head) ?? 0);
 		const weight = this.clusters.weightOf(tail, head);
+		const leaves = leavingPoint(line, tail);
 		if (label === undefined) {
-			this.graph.edges.push({ tail, head, attributes: { id, minlen, weight } });
+			this.graph.edges.push({ tail, head, attributes: { id, minlen, weight, ...leaves } });
 			return;
 		}
 		const name = `label:${line.edge.id}`;
 		const down = weight + leavingPull(this.clusters, tail, head);
 		this.graph.edges.push(
 			...this.clusters.holdLabel(tail, head, box(name, label.width!, label.height!), this.links()),
-			{ tail, head: name, attributes: { id: `${id}:1`, minlen, weight } },
+			{ tail, head: name, attributes: { id: `${id}:1`, minlen, weight, ...leaves } },
 			{ tail: name, head, attributes: { id: `${id}:2`, weight: down } },
 		);
 	}

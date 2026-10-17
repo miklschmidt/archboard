@@ -30,6 +30,14 @@ interface MeasuredNode {
 	 * container is (TASK-486). Absent where the header has one height.
 	 */
 	readonly headers?: readonly MeasuredNode[];
+	/**
+	 * For a card whose lines down leave it from its points, as out of a
+	 * flowchart's decision: how far in from the left and right edges of its
+	 * box the lines from its side points run down (`track/points.ts`). A third
+	 * line leaves from the middle. Absent on a card whose lines spread along
+	 * its face.
+	 */
+	readonly pointed?: number;
 }
 
 /** A relationship label whose words and box are settled before routing. */

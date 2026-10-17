@@ -28,6 +28,7 @@ import { Scene, centreX } from "@/transformers/semantic-renderer/lib/track/scene
 import { Containers } from "@/transformers/semantic-renderer/lib/track/containers";
 import { closeJogs, openNotches } from "@/transformers/semantic-renderer/lib/track/jogs";
 import { collinearPairs, partCollinear } from "@/transformers/semantic-renderer/lib/track/parting";
+import { holdToPoints } from "@/transformers/semantic-renderer/lib/track/points";
 import { relayLaps } from "@/transformers/semantic-renderer/lib/track/relay";
 import { fitTitleRows } from "@/transformers/semantic-renderer/lib/track/title-rows";
 import {
@@ -479,6 +480,7 @@ function routeScene(
 ): Map<string, Point[]> {
 	const inner = lines.filter(({ wall }) => wall === undefined);
 	const chains = new Map(inner.map((line) => [line.id, chainOf(scene, line.placed)]));
+	holdToPoints(inner, chains);
 	// A line that enters or leaves its block by a wall comes from or goes to that wall, not its stub.
 	const movable = inner.filter(
 		({ enters, leaves }) => enters === undefined && leaves === undefined,
