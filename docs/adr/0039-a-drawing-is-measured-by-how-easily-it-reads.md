@@ -205,6 +205,16 @@ weighs a block of cards before its ports are settled, and counting runs away
 there made Device Trust Delivery's overview (Track) worse. The held port
 order, the wraps and the folds also stay as they were.
 
+The stacking choice counts one more thing as a crossing, beside a line that
+laps round the block: a line that turns round the corner of a container it has
+no end in. It runs over or under the container past one side, and then down or
+up beside the container for more than 200 px (`turnsRoundOf` in
+`lib/blocks/weighing.ts`). After the header of Code evidence wrapped to one
+line, Code evidence (Archboard server, Track) stacked under HTTP serving on a
+page that fit better with one crossing fewer. Both picks took it. Board writes
+then stood at the far left, and 'read a board, write one under its lease' ran
+over Code evidence and down its far side, across the whole page.
+
 A reading pick can now take a crossing to end a run away. The September
 fixture of Starting a workhorse (Track) now packs Codex child. The packed
 layout crosses one line, bends six times fewer and runs no line away. The

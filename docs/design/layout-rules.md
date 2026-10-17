@@ -2528,11 +2528,55 @@ region and draws its line to Legacy IIS origins further. Moves between
 pictures (Board viewer, TASK-472.05) crosses 3 lines more for 13% less line.
 
 On a planned board the drawing's body is moved by `translate(16 24)`, which
-`bodyShift` in `drawn-routes.ts` does not read. The scorecard then counts a
+`bodyShift` in `drawn-routes.ts` did not read. The scorecard then counted a
 route 16 px under Local platform operator on Issuance and revocation as
-passing through it.
+passing through it. Section 49 records the fix.
 
 **Known gap.** A line to a wall still leaves under its card and enters above
 its target's label, so it climbs in the corridor beside the region. On native
 hosts the line from Device Identity to Device CA certificate state still runs
 some 1000 px away from its ends.
+
+## 49. A line round a container counts as a crossing when containers stack (2026-10-17, TASK-486)
+
+TASK-486 wrapped the header of Code evidence (Archboard server, view Code
+evidence, Track) to one line. The page stacked under HTTP serving became 83 px
+shorter, so it fit the pane better (0.741 to 0.789). Its score, fit less a
+share for each crossing, rose from 0.719 to 0.765, above the 0.736 of the page
+as Graphviz ranks it. Stacked, the block crossed 1 line, bent 16 times and drew
+5043 px of line. As ranked, it crossed 2 lines, bent 14 times and drew 4425 px.
+Both picks of the stacking choice now took the stacked page, so the guard did
+not weigh its 2 bends and 14% more line. Board writes stood at the far left.
+'read a board, write one under its lease' ran over Code evidence and down its
+far side, across the whole page.
+
+Treating a near tie on both score and fit as no earlier pick does not work.
+Three overviews of the work vault (Track) make the same trade on the block's
+numbers. There the stacked page reads clearly better.
+
+The block's reading measures now count one more crossing for each line that
+turns round the corner of a container it has no end in (`turnsRoundOf` in
+`blocks/weighing.ts`). The line runs over or under the container past one
+of its sides. It then runs down or up beside the container for more than 200
+px, the length of a lap. Only the stacking choice reads these measures. Code
+evidence then ties on crossings, and the page as ranked bends less, so the
+containers stand as Graphviz ranks them. The drawing is the one of before
+TASK-486, with the shorter header. A tighter rule counted only a run within
+200 px of the container's top or foot. With it, What the CLI can be asked
+(Track) crossed 13 lines instead of 5.
+
+Over every variant and view of both vaults on both engines, 18 drawings
+changed, 13 of them distinct, all on Track. On crossings
+plus runs away at 300 px each, 3 read better, 2 worse and 13 the same. The 2
+worse ones are Code evidence, which is back to its drawing of before TASK-486.
+Device trust design (Device Trust Control Plane) no longer runs two lines
+through the header of Device Identity. Shared library coupling (work vault)
+crosses as many lines and draws 5% more line. Track first renders took
+17.2 s and 17.0 s before, and 17.0 s and 17.1 s after.
+
+`bodyShift` in `tests/drawn-routes.ts` now reads every group that moves the
+body: the planned frame's `translate(16 24)` and the canvas shift inside it.
+Before, every route of a planned board was compared 16 px left of and 24 px
+above where it is drawn. Native hosts (Device Trust Control Plane, Track) then
+counted 5 routes through cards. Read where they are drawn, it has none, on
+Track or Blocks.

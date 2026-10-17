@@ -380,6 +380,7 @@ function sinks(
 export {
 	anchored,
 	crossingsOf,
+	LAP,
 	lapsOf,
 	readsBetter,
 	scoreOf,

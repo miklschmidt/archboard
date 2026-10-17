@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-16 13:00'
-updated_date: '2026-10-17 00:57'
+updated_date: '2026-10-17 06:17'
 labels:
   - renderer
 dependencies: []
@@ -100,4 +100,20 @@ Timings (one warm process, load average about 3 on 24 cores, two rounds, now the
 - Blocks first renders: 182.7 and 181.8 s before, 186.0 and 186.2 s after (+2%).
 - The cost is in the layouts chosen, not in the measure (the packing filter takes 0 to 2 ms per call). Command interface 26.3 to 29.9 s: the joins choice now takes a layout whose overview crosses 118 lines instead of 134 and runs lines 2700 px off instead of 24386 px. Browser application 15.0 to 17.3 s: the packing filter sets aside inner packings. Live panes 7.9 to 5.2 s.
 - AC #4 stays open: blocks first renders are slower, and some drawings still read worse than before TASK-486.
+
+Follow-up of 2026-10-17 (second): the two drawings that were still clearly worse.
+
+Code evidence (Archboard server, 482.07 and 368.05, Track). Cause: the stacking choice. The one-line header of Code evidence made the page stacked under HTTP serving 83 px shorter. Its fit went from 0.741 to 0.789 and its score (fit less a share per crossing) from 0.719 to 0.765, above the 0.736 of the page as ranked. Block measures, stacked against ranked: 1 crossing against 2, 16 bends against 14, 5043 px of line against 4425. Before TASK-486 the earlier pick was ranked and the guard refused the stacked page for its bends and length. Now both picks took it, so the guard never weighed the trade. Board writes stood at the far left, and 'read a board, write one under its lease' ran over Code evidence and down its far side.
+
+Rejected: a near tie on both score and fit as no earlier pick. It sends three work-vault overviews (Device Trust Delivery contracts and identity-lifecycle, Platform Test Cluster operations) back to drawings that read clearly worse. Also rejected: counting only a level run within 200 px of the container. It crossed What the CLI can be asked (Track) 13 times instead of 5.
+
+Fix: weighedLaid (blocks/weighing.ts), which only the stacking choice reads, counts a line that turns round the corner of a container it has no end in as one crossing (turnsRoundOf). The line passes over or under the container past one side, and runs down or up beside it for more than LAP (200 px). Code evidence then ties on crossings, the ranked page bends less, and the drawing is the one of before TASK-486 with the shorter header. Blocks Code evidence does not change. Test: reading-first.test.ts "a board keeps its containers as ranked where stacking them sends a line round a container" (fixture code-evidence.json). It fails on the old weighing (4 turns, expected 0).
+
+Native hosts (Device Trust Control Plane, Track). Cause: the checker. bodyShift (tests/drawn-routes.ts) read only `translate(x,y)` right after the background. A planned board's body is in `translate(16 24)` after the planned-frame slot, so every route was read 16 px left of and 24 px above where it is drawn. bodyShift now adds up every group that moves the body. Remeasured, native hosts has no route through a card on Track or Blocks. Track crosses 9 lines and runs 0 px away, against 16 and 2502 px before TASK-486. It is not worse than base, so the drawing is left as it is. Test: planned-frame.test.ts, which now checks that a route read off the framed drawing moves with the atlas. It fails on the old bodyShift (0,0 against 16,24).
+
+Corpus (every variant and view of both vaults, both engines, against feat/derived-overview at f8f020cf2): 18 of 14412 SVGs changed, 13 distinct, all Track. On crossings plus run away per 300 px: 3 better, 2 worse, 13 the same. The 2 worse are Code evidence, back to its base drawing. Picture review of every changed drawing: Device trust design (3 variants) no longer runs lines through the header of Device Identity (better). Code evidence 369.03 and 369.05 are more compact (better). Key and export (7 variants) and Moves between pictures are mixed or better. Walkthrough video (2) is mixed: it crosses 3 lines fewer but Frame renderer stands under the region. Shared library coupling (work vault) is mixed: as many crossings and 5% more line. None is clearly worse.
+
+Track first renders (one warm process, load about 4 on 24 cores): 17.2 s and 17.0 s before, 17.0 s and 17.1 s after.
+
+Gate: bun test src/runtime/semantic-renderer src/transformers/semantic-renderer gives 660 pass and 3 fail (the known TASK-377 wide-board bounds). Lint 0, tsc 0, oxfmt clean. Records: layout-rules section 49, ADR 0039 amendment of 2026-10-17.
 <!-- SECTION:NOTES:END -->
