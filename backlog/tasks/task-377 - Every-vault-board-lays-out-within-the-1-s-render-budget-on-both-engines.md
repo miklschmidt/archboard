@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 18:33'
-updated_date: '2026-10-17 07:02'
+updated_date: '2026-10-17 07:57'
 labels:
   - renderer
 dependencies: []
@@ -104,4 +104,33 @@ First renders, one warm process, each board's current variant, base then after, 
 Gate: bun test src/runtime/semantic-renderer src/transformers/semantic-renderer gives 662 pass and 0 fail. bun run lint, tsc and oxfmt are clean. No bound was raised.
 
 Tried and not adopted: forcing Track's stacking choice in two parallel solves. It would take Board viewer (track) to about 1.7 s, but it rewrites the stacking choice that TASK-486 is changing.
+
+2026-10-17, round two: AC1 on Track. Base is feat/derived-overview at 54cb1f168, with TASK-486's turnsRoundOf weighing in.
+
+Stacking choice laid out side by side (lib/blocks/stacking.ts, place.ts, solves.ts):
+- The choice moved unchanged from place.ts into stacking.ts. `stoodOf` gives what each way stood at: score and fit with titles tied and settled, line length, and weighedLaid of the settled layout, turnsRoundOf included. `stacks` makes the choice from two Stood values, and the in-solve choice uses the same function.
+- A Track solve with every join before its labels (`apart` empty) asks four solves. Two lay the first block that could stack one way each and answer what it stood at once it is laid (`archboard.blocks.until-stood`). Two lay the whole board each way. Once both have told, the renderer keeps the whole solve that `stacks` chooses and calls the other off where it still waits.
+- A board with no block that could stack is drawn by the told solves, which then lay it whole.
+- First version and why it changed: two forced whole solves only. The loser's continuation could be long. Archboard server routes inline took 1.76 s laid the losing way, against 0.5 s laid the chosen way.
+- Turns of the joins choice stay single solves. Splitting them too had them wait for the cores: Agent workbench took 1.64 s and 1.72 s against 1.50 s and 1.54 s.
+
+Relay search (track/relay.ts, sweep.ts): `cheapest` and `fromReach` use loops instead of Float64Array.map closures. The arithmetic is the same.
+
+Corpus (every variant and view, both engines, frozen snapshot against 54cb1f168): this vault has 11360 SVGs and Docs-Architecture-Design has 3370. 0 differ in either.
+
+Gate: renderer tests 665 pass and 0 fail. lint, tsc and oxfmt are clean. wide-boards passes 40 of 40. No bound was raised.
+
+Track first renders, warm process, base then after, two runs each (load 2.8 to 4.4, other agents running):
+- Total 13.07 s and 13.00 s before, 10.88 s and 10.66 s after.
+- Board viewer: 2.58 s and 2.56 s before, 1.55 s and 1.63 s after.
+- Board persistence: 1.29 s to 0.80 s. Browser application: 1.19 s to 0.79 s. Live panes: 1.26 s to 0.82 s.
+- Agent workbench: 1.96 s and 1.99 s before, 2.08 s and 2.06 s after. It is the first board in the run, so its solves start the workers the pool grows into, and those workers run the router cold. After one warm-up board (Board persistence), Agent workbench takes 1.78 s and 1.76 s before, 1.50 s and 1.47 s after. Board viewer takes 2.64 s and 2.58 s before, 1.43 s and 1.41 s after.
+- Archboard server routes: 0.92 s before, 1.34 s and 1.09 s after when it is second in the run. With the pool grown first, it takes 0.89 s and 0.92 s.
+
+Still over 1 s on Track:
+- Board viewer, about 1.45 s. The critical path is the plain whole solve: three lays, the untied lay, and the wrap check, which asks Graphviz 8 times for wraps that all sink (380 ms). The stacked path is four lays of about 300 ms each. Routing is about 75% of a lay: relayLaps about 37% (DP over about 1100 columns and 15 stations for each of 491 readings), partAndClose 20%, label straightening 15%, lane straightening 14%. Graphviz is the rest.
+- Agent workbench, about 1.5 s. The critical path is the groups turns of the joins choice. About ten solves run at once, and each takes about twice its in-process time.
+- What remains would lay the remedies (pullLeaving, anchorLabels) side by side in the same way: about 8 solves for each candidate. It would trade more CPU for each lay. On this machine the CPU is already the limit.
+
+Blocks first renders, same runs (load 4.4 to 5.5): total 48.6 s and 50.4 s before, 49.0 s and 49.3 s after. Archboard server routes 15.4 s, Command interface 8.6 to 8.8 s, Board viewer 5.9 s, Browser application 4.9 s, Agent workbench 4.5 s, Board persistence 3.3 s, Live panes 1.8 s, Archboard server 1.1 s, Voice coordinator 1.0 s. Every other board is under 1 s.
 <!-- SECTION:NOTES:END -->

@@ -542,13 +542,16 @@ class Relay {
 			}
 			const [above, below] = [traffic.get(band - 1)!.across, traffic.get(band)!.across];
 			const mask = masks[index]!;
-			cost = cost.map((value, j) =>
-				mask[j] === 1 ? value + (CROSSING * (above[j]! + below[j]!)) / 2 : Infinity,
-			);
+			// In place: each column's cost is its own array's, read once per station.
+			for (let j = 0; j < cost.length; j += 1)
+				cost[j] = mask[j] === 1 ? cost[j]! + (CROSSING * (above[j]! + below[j]!)) / 2 : Infinity;
 		});
-		const last = fromReach(xs, traffic.get(lower.band - 1)!.warped, reachOf(lower));
-		const totals = cost.map((value, j) => value + last[j]!);
-		const end = totals.reduce((best, value, j) => (value < totals[best]! ? j : best), 0);
+		const totals = fromReach(xs, traffic.get(lower.band - 1)!.warped, reachOf(lower));
+		let end = 0;
+		for (let j = 0; j < totals.length; j += 1) {
+			totals[j] = cost[j]! + totals[j]!;
+			if (totals[j]! < totals[end]!) end = j;
+		}
 		return Number.isFinite(totals[end]) ? backtrack(steps, end).map((j) => xs[j]!) : undefined;
 	}
 }

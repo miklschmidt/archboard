@@ -15,7 +15,6 @@
 // their earlier weighing.
 import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
-import { fitIn } from "@/shared/shell-geometry/index";
 import { CONTAINER_INSET, REGION_INSET } from "@/transformers/semantic-renderer/config";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { Assembly } from "@/transformers/semantic-renderer/lib/blocks/assembly";
@@ -30,23 +29,26 @@ import { corners, type Insets, type Laid } from "@/transformers/semantic-rendere
 import { grownInsets, widened } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import { NestingSchema, type Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { bestWrap, weighed } from "@/transformers/semantic-renderer/lib/blocks/wraps";
-import {
-	layBoth,
-	lineLength,
-	settled,
-	type Laying,
-} from "@/transformers/semantic-renderer/lib/blocks/laying";
+import { layBoth, settled } from "@/transformers/semantic-renderer/lib/blocks/laying";
 import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
 import { settlePorts } from "@/transformers/semantic-renderer/lib/blocks/settle";
 import { sidesOf } from "@/transformers/semantic-renderer/lib/blocks/sides";
 import { heldOrders } from "@/transformers/semantic-renderer/lib/blocks/orders";
 import { routedWeighed } from "@/transformers/semantic-renderer/lib/blocks/trunks";
-import { weighedLaid } from "@/transformers/semantic-renderer/lib/blocks/weighing";
+import {
+	BLOCKS_STACKING,
+	BLOCKS_STOOD,
+	BLOCKS_UNTIL_STOOD,
+	StoodLaid,
+	stackedOrNot,
+	type Stacking,
+	type Stood,
+} from "@/transformers/semantic-renderer/lib/blocks/stacking";
 import { facingTurns } from "@/transformers/semantic-renderer/lib/blocks/walls";
 import { awayPlaced } from "@/transformers/semantic-renderer/lib/blocks/away";
 import { BlockTree, type Block, type Side } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
-import { crossingsOf, scoreOf, takes } from "@/transformers/semantic-renderer/lib/track/score";
+import { crossingsOf, scoreOf } from "@/transformers/semantic-renderer/lib/track/score";
 
 /** The root option carrying the placed drawing, as the JSON the assembly answers. */
 const BLOCKS_PLACED = "archboard.blocks.placed";
@@ -73,17 +75,25 @@ function plainInsets(block: Block): Insets {
 }
 
 /**
- * Lay one block of cards out: whole, its widest rank wrapped into rows when
- * that reads clearly better, or folded into columns when that does.
+ * Lay one block of cards out: whole, stacked or not (`stacking.ts`), its
+ * widest rank wrapped into rows when that reads clearly better, or folded
+ * into columns when that does.
  * @param viz The initialized Graphviz instance.
  * @param tree The blocks.
  * @param block The block.
  * @param laid Every block laid out so far; the columns are added to it.
+ * @param stacking The solve's stacking choice.
  * @returns The laid-out block.
  */
-function layCards(viz: Graphviz, tree: BlockTree, block: Block, laid: Map<string, Laid>): Laid {
+function layCards(
+	viz: Graphviz,
+	tree: BlockTree,
+	block: Block,
+	laid: Map<string, Laid>,
+	stacking: Stacking,
+): Laid {
 	const insets = insetsOf(block);
-	const { whole, stacked } = stackedOrNot(viz, tree, block, laid);
+	const { whole, stacked } = stackedOrNot(viz, tree, block, { laid, insets }, stacking);
 	const wrapped = bestWrap(viz, tree, block, { laid, whole, stacked, insets });
 	if (wrapped !== undefined) return wrapped;
 	const walled = [...block.ports.values()].some((side) => side === "left" || side === "right");
@@ -98,109 +108,6 @@ function layCards(viz: Graphviz, tree: BlockTree, block: Block, laid: Map<string
 			),
 		);
 	return new FoldLayout(block, columns, laid, tree, insets).lay();
-}
-
-/** How near two scores or fits of a block are for the stacking choice's earlier weighing to call them tied. */
-const NEAR = 0.05;
-
-/**
- * Whether two measures of a block stand within a near tie of each other.
- * @param one A measure.
- * @param other Another.
- * @returns True when they do.
- */
-function near(one: number, other: number): boolean {
-	return Math.abs(one - other) <= NEAR * Math.min(one, other);
-}
-
-/**
- * How a block laid out whole scores at its best ({@link scoreOf}): as it
- * stands, or folded.
- * @param block The block.
- * @param laid The block laid out whole.
- * @returns The better score.
- */
-function bestScore(block: Block, laid: Laid): number {
-	const plan = foldPlan(block, laid, insetsOf(block), weighed(laid));
-	return Math.max(scoreOf(weighed(laid)), plan === undefined ? 0 : scoreOf(plan.weighed));
-}
-
-/**
- * A block of cards laid out whole: with the containers a line from another
- * container enters stacked below it, or else as Graphviz ranks them. Stacked
- * is taken where it scores better as before ADR 0039 ({@link scoresStacked})
- * and its lines as drawn read better, or where either way it is chosen reads
- * no worse on any measure than the other ({@link takes}).
- * @param viz The initialized Graphviz instance.
- * @param tree The blocks.
- * @param block The block.
- * @param laid Every block laid out so far.
- * @returns The block laid out, and whether it stacks. Its titles are pulled
- * onto their members where that crosses and draws no more line, and may
- * change whether it stacks only when the choice then draws no more line.
- */
-function stackedOrNot(
-	viz: Graphviz,
-	tree: BlockTree,
-	block: Block,
-	laid: Map<string, Laid>,
-): { whole: Laid; stacked: boolean } {
-	const insets = insetsOf(block);
-	const plain = layBoth(viz, () => new CardLayout(block, laid, tree, insets));
-	if (!new CardLayout(block, laid, tree, insets).stacks())
-		return { whole: settled(plain), stacked: false };
-	const stacked = layBoth(viz, () => new CardLayout(block, laid, tree, insets, { stacked: true }));
-	const ways = { stacked, plain };
-	const earlier = pulledOrTied(
-		ways,
-		scoresStacked(block, ways, ({ tied }) => tied),
-		scoresStacked(block, ways, settled),
-	);
-	const chosen = takes(weighedLaid(settled(stacked)), weighedLaid(settled(plain)), earlier);
-	return { whole: settled(chosen ? stacked : plain), stacked: chosen };
-}
-
-/**
- * Whether a block stacks, chosen with its titles tied and pulled down:
- * pulling them down may change the choice only when that draws no more line.
- * @param ways The block laid out stacked and plain.
- * @param ways.stacked It stacked.
- * @param ways.plain It plain.
- * @param tied Whether it stacks, chosen with its titles tied.
- * @param pulled Whether it stacks, chosen with them pulled down.
- * @returns Whether it stacks.
- */
-function pulledOrTied(
-	{ stacked, plain }: { stacked: Laying; plain: Laying },
-	tied: boolean,
-	pulled: boolean,
-): boolean {
-	const [was, is] = [tied, pulled].map((one) => settled(one ? stacked : plain));
-	return tied !== pulled && lineLength(is!.lines.values()) > lineLength(was!.lines.values())
-		? tied
-		: pulled;
-}
-
-/**
- * Whether a block stacks on its score, as before ADR 0039: each way weighed
- * at its best ({@link bestScore}), a near tie going to the page that fits
- * the pane clearly better, as it does between a block's joins, and to the
- * better score where neither page fits clearly better.
- * @param block The block.
- * @param ways The block laid out stacked and plain.
- * @param ways.stacked It stacked.
- * @param ways.plain It plain.
- * @param pick Which of each way the titles stand is weighed.
- * @returns True when it stacks.
- */
-function scoresStacked(
-	block: Block,
-	{ stacked, plain }: { stacked: Laying; plain: Laying },
-	pick: (laying: Laying) => Laid,
-): boolean {
-	const [one, other] = [bestScore(block, pick(stacked)), bestScore(block, pick(plain))];
-	const [fits, flat] = [fitIn(pick(stacked)), fitIn(pick(plain))];
-	return near(one, other) && !near(fits, flat) ? fits > flat : one > other;
 }
 
 /**
@@ -221,7 +128,9 @@ function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
  * @param avoid The initialized libavoid module.
  * @param board The blocks, every block laid out so far and each block of blocks' packing; the block's are set.
  * @param block The block.
- * @param earlier What an earlier layout decided, kept.
+ * @param kept What an earlier layout decided, and the solve's stacking choice.
+ * @param kept.earlier What an earlier layout decided, kept.
+ * @param kept.stacking The solve's stacking choice.
  * @returns The laid-out block.
  */
 function layBlock(
@@ -229,10 +138,10 @@ function layBlock(
 	avoid: AvoidEngine,
 	board: Board,
 	block: Block,
-	earlier: Earlier,
+	{ earlier, stacking }: { earlier: Earlier; stacking: Stacking },
 ): Laid {
 	const { tree, laid, packings } = board;
-	if (!packsBlocks(tree, block, tree.nesting)) return layCards(viz, tree, block, laid);
+	if (!packsBlocks(tree, block, tree.nesting)) return layCards(viz, tree, block, laid, stacking);
 	const packed = new PackLayout(block, laid, tree, insetsOf(block)).lay(
 		avoid,
 		earlier.packings.get(block.id),
@@ -250,7 +159,9 @@ function layBlock(
  * @param graph The measured hierarchy.
  * @param earlier What an earlier layout decided, kept.
  * @param nesting How containers and group regions are drawn.
- * @param apart The blocks whose joins keep ports of their own, by id.
+ * @param way The blocks whose joins keep ports of their own, and the solve's stacking choice.
+ * @param way.apart The blocks whose joins keep ports of their own, by id.
+ * @param way.stacking The solve's stacking choice.
  * @returns The blocks, every block laid out, and each block of blocks' packing.
  */
 function layAll(
@@ -259,21 +170,19 @@ function layAll(
 	graph: ElkNode,
 	earlier: Earlier = NOTHING_EARLIER,
 	nesting: Nesting,
-	apart: ReadonlySet<string>,
+	{ apart, stacking }: { apart: ReadonlySet<string>; stacking: Stacking },
 ): Board {
 	const tree = new BlockTree(graph, earlier.exits, nesting, apart, earlier.orders, earlier.facing);
 	const board = { tree, laid: new Map<string, Laid>(), packings: new Map<string, Packing>() };
+	const kept = { earlier, stacking };
 	for (const block of tree.innermostFirst()) {
-		const once = layBlock(viz, avoid, board, block, earlier);
+		const once = layBlock(viz, avoid, board, block, kept);
 		const wider = block.lone && widened(block.lone, once.width);
 		if (wider !== undefined) {
 			block.lone = wider;
 			tree.lone.set(block.id, wider);
 		}
-		board.laid.set(
-			block.id,
-			wider === undefined ? once : layBlock(viz, avoid, board, block, earlier),
-		);
+		board.laid.set(block.id, wider === undefined ? once : layBlock(viz, avoid, board, block, kept));
 	}
 	return board;
 }
@@ -315,9 +224,10 @@ interface Board {
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @param nesting How containers and group regions are drawn.
- * @param way Which joins to keep apart, and whether every block faces its walls.
+ * @param way Which joins to keep apart, whether every block faces its walls, and the solve's stacking choice.
  * @param way.apart The blocks whose joins keep ports of their own, by id.
  * @param way.facing Whether every block faces its walls.
+ * @param way.stacking The solve's stacking choice (`stacking.ts`).
  * @returns The blocks, every block laid out, and whether facing every block's
  * walls changes them ({@link facesOf}).
  */
@@ -326,16 +236,17 @@ function layOut(
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	nesting: Nesting,
-	{ apart, facing }: { apart: ReadonlySet<string>; facing: boolean },
+	way: { apart: ReadonlySet<string>; facing: boolean; stacking: Stacking },
 ): { tree: BlockTree; laid: Map<string, Laid>; faces: boolean } {
-	const first = layAll(viz, avoid, graph, undefined, nesting, apart);
+	const { apart, facing } = way;
+	const first = layAll(viz, avoid, graph, undefined, nesting, way);
 	const exits = sidesOf(first.tree, first.laid);
 	const faces = facesOf(graph, exits, nesting, apart);
 	const kept = { exits, packings: first.packings, facing: facing && faces };
-	const last = exits.size === 0 ? first : layAll(viz, avoid, graph, kept, nesting, apart);
+	const last = exits.size === 0 ? first : layAll(viz, avoid, graph, kept, nesting, way);
 	const orders = apart.size > 0 ? new Map() : heldOrders({ ...last, insetsOf, avoid });
 	const held =
-		orders.size === 0 ? [] : [layAll(viz, avoid, graph, { ...kept, orders }, nesting, apart)];
+		orders.size === 0 ? [] : [layAll(viz, avoid, graph, { ...kept, orders }, nesting, way)];
 	const { tree, laid } = [last, ...held]
 		.map((laying) => settledOrNot(laying, avoid))
 		.reduce((one, other) =>
@@ -418,9 +329,11 @@ const BLOCKS_FACING = "archboard.blocks.facing";
 /**
  * Lay a measured hierarchy out as blocks one way and route every
  * relationship: its containers and group regions drawn as its root options
- * name, else packed as blocks, or inline when asked; and the joins of the
- * blocks they name kept apart. Which way reads best is chosen where the
- * renderer runs (`solves.ts`).
+ * name, else packed as blocks, or inline when asked; the joins of the
+ * blocks they name kept apart; and its first block that could stack laid
+ * only the way they name, if they name one, telling what that way stood at,
+ * and answering only that once it is laid where they ask so.
+ * Which way reads best is chosen where the renderer runs (`solves.ts`).
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -429,24 +342,83 @@ const BLOCKS_FACING = "archboard.blocks.facing";
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
 function placeBlocks(viz: Graphviz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
-	const options = graph.layoutOptions ?? {};
-	const nesting = NestingSchema.parse(options[BLOCKS_NESTING] ?? (inline ? "inline" : "blocks"));
-	const apart = new Set(ApartSchema.parse(JSON.parse(options[BLOCKS_APART] ?? "[]")));
-	const facing = options[BLOCKS_FACING] === "true";
-	const way = { apart, facing };
-	const { tree, laid, faces } = layOut(answeringOnce(viz), avoid, graph, nesting, way);
+	const { nesting, ...way } = wayOf(graph.layoutOptions ?? {}, inline);
+	let laidOut: ReturnType<typeof layOut>;
+	try {
+		laidOut = layOut(answeringOnce(viz), avoid, graph, nesting, way);
+	} catch (error) {
+		if (!(error instanceof StoodLaid)) throw error;
+		return answer(graph, { width: 0, height: 0 }, toldStood(error.stood));
+	}
+	const { tree, laid, faces } = laidOut;
 	const placed = { ...Assembly.unstepped(new Assembly(tree, laid).placed()), faces };
+	return answer(graph, placed, {
+		[BLOCKS_PLACED]: JSON.stringify(placed),
+		...toldStood(way.stacking.stood),
+	});
+}
+
+/**
+ * The way a solve's root options ask it to lay a board out.
+ * @param options The root options.
+ * @param inline Whether containers and group regions are drawn inline when the options name no way.
+ * @returns How its containers and group regions are drawn, which joins stay
+ * apart, whether every block faces its walls, and its stacking choice.
+ */
+function wayOf(
+	options: Readonly<Record<string, string>>,
+	inline: boolean,
+): { nesting: Nesting; apart: ReadonlySet<string>; facing: boolean; stacking: Stacking } {
+	return {
+		nesting: NestingSchema.parse(options[BLOCKS_NESTING] ?? (inline ? "inline" : "blocks")),
+		apart: new Set(ApartSchema.parse(JSON.parse(options[BLOCKS_APART] ?? "[]"))),
+		facing: options[BLOCKS_FACING] === "true",
+		stacking: {
+			way: StackingSchema.parse(options[BLOCKS_STACKING]),
+			until: options[BLOCKS_UNTIL_STOOD] === "true",
+		},
+	};
+}
+
+/**
+ * The root option telling what a solve's first block that could stack stood at, once laid one way.
+ * @param stood What it stood at, if it was laid one way.
+ * @returns The option, or none.
+ */
+function toldStood(stood: Stood | undefined): Record<string, string> {
+	return stood === undefined ? {} : { [BLOCKS_STOOD]: JSON.stringify(stood) };
+}
+
+/**
+ * A solve's answer: the hierarchy's root, as large as the drawing, carrying it in its options.
+ * @param graph The measured hierarchy.
+ * @param size How large the drawing is.
+ * @param size.width Its width.
+ * @param size.height Its height.
+ * @param told What the solve tells, by root option.
+ * @returns The answer.
+ */
+function answer(
+	graph: ElkNode,
+	{ width, height }: { width: number; height: number },
+	told: Readonly<Record<string, string>>,
+): ElkNode {
 	return {
 		id: graph.id,
 		x: 0,
 		y: 0,
-		width: placed.width,
-		height: placed.height,
-		layoutOptions: { ...graph.layoutOptions, [BLOCKS_PLACED]: JSON.stringify(placed) },
+		width,
+		height,
+		layoutOptions: { ...graph.layoutOptions, ...told },
 	};
 }
 
 /** The blocks a solve keeps apart. */
 const ApartSchema = z.array(z.string());
+/** The way a solve lays its first block that could stack, if it names one. */
+const StackingSchema = z
+	.enum(["true", "false"])
+	.optional()
+	.transform((way) => (way === undefined ? undefined : way === "true"));
 
 export { BLOCKS_APART, BLOCKS_FACING, BLOCKS_NESTING, BLOCKS_PLACED, placeBlocks };
