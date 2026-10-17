@@ -15,7 +15,8 @@ export {
 export { placeRun, type Slider } from "@/transformers/semantic-renderer/lib/track/label-runs";
 export { unstepped } from "@/transformers/semantic-renderer/lib/blocks/steps";
 export { captionIn } from "@/transformers/semantic-renderer/lib/blocks/lone";
-export { layJoined, type Joined } from "@/transformers/semantic-renderer/lib/blocks/joins";
+export { type Joined } from "@/transformers/semantic-renderer/lib/blocks/joins";
+export { layJoined } from "@/transformers/semantic-renderer/lib/blocks/joins-laid";
 export { weighedPlaced, type Page } from "@/transformers/semantic-renderer/lib/blocks/weighing";
 export {
 	readsBetter,

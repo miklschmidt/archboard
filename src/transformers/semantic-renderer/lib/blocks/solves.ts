@@ -9,7 +9,8 @@ import { z } from "zod";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
-import { layJoined, type Drawn } from "@/transformers/semantic-renderer/lib/blocks/joins";
+import type { Drawn } from "@/transformers/semantic-renderer/lib/blocks/joins";
+import { layJoined } from "@/transformers/semantic-renderer/lib/blocks/joins-laid";
 import { lineLength } from "@/transformers/semantic-renderer/lib/blocks/laying";
 import {
 	BLOCKS_APART,
