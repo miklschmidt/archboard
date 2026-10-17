@@ -42,6 +42,7 @@ import { sidesOf } from "@/transformers/semantic-renderer/lib/blocks/sides";
 import { heldOrders } from "@/transformers/semantic-renderer/lib/blocks/orders";
 import { routedWeighed } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 import { weighedLaid } from "@/transformers/semantic-renderer/lib/blocks/weighing";
+import { awayPlaced } from "@/transformers/semantic-renderer/lib/blocks/away";
 import { BlockTree, type Block, type Side } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
 import { crossingsOf, scoreOf, takes } from "@/transformers/semantic-renderer/lib/track/score";
@@ -338,7 +339,10 @@ function layOut(
  * A layout with its ports settled, unless the drawing scores better
  * unsettled ({@link scoreOf}) on its lines as the blocks route them, before
  * the steps they need not take are taken out, the line its routes run round
- * what they pass counted as crossings at the trunk router's rate. It is the
+ * what they pass counted as crossings at the trunk router's rate, and so is
+ * each line's run away from its ends (`away.ts`): settled, two lines of
+ * Inside Rust device trust library (Blocks) ran down the far left of the
+ * page and along its foot to cross eight lines fewer. It is the
  * one choice ADR 0039's measures do not weigh: on them, the settled layout of
  * Browser application (Blocks) ran "the pane socket" 480 px along Browser
  * client's bottom wall, where a reader cannot tell the line from the frame;
@@ -357,12 +361,13 @@ function settledOrNot(
 	settlePorts({ ...laying, insetsOf, avoid });
 	const [was, is] = [unsettled, laying.laid].map((laid) => {
 		const placed = new Assembly(laying.tree, laid).placed();
-		return scoreOf(
-			routedWeighed(
+		return scoreOf({
+			...routedWeighed(
 				placed,
 				placed.edges.map(({ points }) => points),
 			),
-		);
+			away: awayPlaced(laying.tree.projections, placed),
+		});
 	});
 	if (was! > is!) for (const [id, laid] of unsettled) laying.laid.set(id, laid);
 	const lines = new Assembly(laying.tree, laying.laid).placed().edges.map(({ points }) => points);

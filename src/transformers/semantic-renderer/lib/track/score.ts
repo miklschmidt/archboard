@@ -4,7 +4,8 @@
 // reference pane only breaks a tie between layouts that read alike. Every
 // chooser ADR 0039 changed also weighs its two layouts as it did before, and
 // takes the pick of its reading measures only where the two agree or that
-// pick is no worse on any measure (`takes`). The stack chooser's and the
+// pick is no worse on any measure (`takes`). A line's run away from its ends
+// weighs as crossings (`blocks/away.ts`). The stack chooser's and the
 // Graphviz fold's earlier weighings, and the choices made before the drawing
 // a reader sees exists, weigh a layout's fit less a share for each crossing
 // (`scoreOf`); the joins' and the packing's earlier weighings are in
@@ -46,6 +47,8 @@ interface Weighed {
 	readonly width: number;
 	readonly height: number;
 	readonly crossings: number;
+	/** What its lines' runs away from their ends weigh, in crossings (`blocks/away.ts`). */
+	readonly away?: number;
 	readonly bus?: number;
 	/** Its line ends hooking into a card's side, its pairs of lines that touch and its crowded joins. */
 	readonly hooks?: number;
@@ -140,13 +143,14 @@ function lapsOf(lines: Iterable<readonly Point[]>, boxes: readonly Box[]): numbe
 }
 
 /**
- * A layout's reading measures, in the order of ADR 0039.
+ * A layout's reading measures, in the order of ADR 0039: its lines' runs
+ * away from their ends weigh as crossings.
  * @param layout What is weighed.
  * @returns Its crossings, hooks, bends and route length.
  */
 function measuresOf(layout: Weighed): [number, number, number, number] {
-	const { crossings, hooks = 0, bends = 0, length = 0 } = layout;
-	return [crossings, hooks, bends, length];
+	const { crossings, away = 0, hooks = 0, bends = 0, length = 0 } = layout;
+	return [crossings + away, hooks, bends, length];
 }
 
 /**
@@ -265,7 +269,8 @@ function fitsBetter(one: Weighed, other: Weighed): boolean {
  * @returns The score.
  */
 function scoreOf(layout: Weighed): number {
-	return fitIn(layout) * CROSSING_COST ** layout.crossings * BUS_COST ** (layout.bus ?? 0);
+	const crossings = layout.crossings + (layout.away ?? 0);
+	return fitIn(layout) * CROSSING_COST ** crossings * BUS_COST ** (layout.bus ?? 0);
 }
 
 /**

@@ -95,7 +95,10 @@ function joinedOut(graph: ElkNode, nesting: Nesting): Promise<Drawn<Placed>> {
  * a line's straight run for one round both blocks, which the score alone
  * does not see; and packing is for a page the board's own ranks spread out,
  * so a packing that fits worse only buys its crossings with lines run round
- * the blocks.
+ * the blocks. Both weighings count the lines' runs away from their ends as
+ * crossings (`away.ts`): packed, Device Trust Control Plane (Track) crossed
+ * five lines more and ran its lines some 3900 px round its blocks, for 5%
+ * less line.
  * @param packed The drawing with groups packed.
  * @param inline The drawing with groups inline.
  * @returns True when the packed one reads better.
@@ -103,12 +106,16 @@ function joinedOut(graph: ElkNode, nesting: Nesting): Promise<Drawn<Placed>> {
 function readsBetterPacked(packed: Drawn<Placed>, inline: Drawn<Placed>): boolean {
 	const [one, other] = [packed.placed, inline.placed];
 	const [packs, inlines] = [one, other].map(({ edges }) => edges.map(({ points }) => points));
+	const [mine, theirs] = [
+		weighedPlaced(one, packed.tree.projections),
+		weighedPlaced(other, inline.tree.projections),
+	];
 	const earlier =
-		scoreOf({ ...one, crossings: crossingsOf(packs!) }) >
-			scoreOf({ ...other, crossings: crossingsOf(inlines!) }) &&
+		scoreOf({ ...one, crossings: crossingsOf(packs!), away: mine.away }) >
+			scoreOf({ ...other, crossings: crossingsOf(inlines!), away: theirs.away }) &&
 		lineLength(packs!) <= lineLength(inlines!) &&
 		fitIn(one) >= fitIn(other);
-	return takes(weighedPlaced(one), weighedPlaced(other), earlier);
+	return takes(mine, theirs, earlier);
 }
 
 /**

@@ -4,19 +4,24 @@
 // length, and the page. A block of cards also counts each line that laps
 // round it past every card it holds as a crossing: stacked, One write lands
 // (Track) turned its lines four times less, but sent 'announce the accepted
-// write' down the page's right edge alongside another line.
+// write' down the page's right edge alongside another line. Each also counts
+// its lines' runs away from their ends as crossings (`away.ts`).
+import { awayPlaced } from "@/transformers/semantic-renderer/lib/blocks/away";
 import { corners, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Projection } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	crossingsOf,
 	lapsOf,
 	type Weighed,
 } from "@/transformers/semantic-renderer/lib/track/score";
 
-/** A drawing as placed: its page, and every relationship's points. */
+/** A drawing as placed: its page, its cards and containers, and every relationship's points. */
 interface Page {
 	readonly width: number;
 	readonly height: number;
+	readonly cards?: readonly { readonly id: string; readonly box: Box }[];
+	readonly frames?: readonly { readonly id: string; readonly box: Box }[];
 	readonly edges: readonly { readonly id: string; readonly points: readonly Point[] }[];
 }
 
@@ -63,15 +68,22 @@ function weighedLaid(laid: Laid): Weighed {
 
 /**
  * What a whole drawing as placed is weighed on, its lines joined end to end
- * through every block.
+ * through every block, and their runs away from their ends.
  * @param placed The drawing.
+ * @param projections Where each relationship is drawn, for its ends.
  * @returns What it is weighed on.
  */
-function weighedPlaced(placed: Page): Weighed {
-	return readingOf(
-		placed,
-		placed.edges.map(({ points }) => points),
-	);
+function weighedPlaced(
+	placed: Page,
+	projections: readonly Pick<Projection, "edge">[],
+): Weighed & { readonly away: number } {
+	return {
+		...readingOf(
+			placed,
+			placed.edges.map(({ points }) => points),
+		),
+		away: awayPlaced(projections, placed),
+	};
 }
 
 export { weighedLaid, weighedPlaced, type Page };

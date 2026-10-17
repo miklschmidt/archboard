@@ -39,6 +39,7 @@ import { slideToTrunks } from "@/transformers/semantic-renderer/lib/blocks/slide
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
 import { scoresBetter } from "@/transformers/semantic-renderer/lib/track/score";
+import { nearestAway } from "@/transformers/semantic-renderer/lib/blocks/away";
 import {
 	TRUNK_CLEARANCE,
 	TrunkRouter,
@@ -414,8 +415,8 @@ class PackLayout {
 	/**
 	 * Lay the block of blocks out: packed the way an earlier layout chose, or
 	 * each promising way, keeping the one that scores best once its trunks
-	 * are routed ({@link scoresBetter}). An estimate of the packed size
-	 * cannot tell a compact packing from one whose trunks run round the page.
+	 * are routed ({@link scoresBetter}) of those {@link nearestAway}. An estimate
+	 * of the packed size cannot tell a compact packing from one whose trunks run round the page.
 	 * @param avoid The initialized libavoid module.
 	 * @param kept The packing an earlier layout chose, to keep.
 	 * @returns The laid-out block, and the packing it used.
@@ -430,7 +431,8 @@ class PackLayout {
 				const layout = new PackLayout(this.block, this.laid, this.tree, this.insets);
 				return { layout, laid: layout.layOut(avoid, packing) };
 			});
-		const { layout, laid } = tried.reduce((one, other) =>
+		const near = nearestAway(this.tree, this.laid, this.block, tried);
+		const { layout, laid } = near.reduce((one, other) =>
 			scoresBetter(packedWeighed(other.laid), packedWeighed(one.laid)) ? other : one,
 		);
 		return layout.widened(avoid, laid);
