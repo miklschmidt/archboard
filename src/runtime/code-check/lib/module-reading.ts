@@ -328,7 +328,7 @@ function moduleReading(
 	checkout: RepoCheckout,
 	directory: string,
 ): Promise<ModuleReading | undefined> {
-	const key = `${checkout.repo}\0${directory}`;
+	const key = `${checkout.root}\0${directory}`;
 	let found = reading.modules.get(key);
 	if (found === undefined) {
 		found = (async () => {

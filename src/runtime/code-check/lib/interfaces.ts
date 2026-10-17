@@ -183,7 +183,7 @@ async function judgedChild(judged: Judged, child: SemanticNode): Promise<boolean
 	const code = judged.reading.codes.get(child.id);
 	const inside =
 		code?.status === "read" &&
-		code.checkout.repo === judged.checkout.repo &&
+		code.checkout.root === judged.checkout.root &&
 		within(judged.module.exposure.directory, boundPath(code));
 	return inside && (await parsedAny(judged.reading.facts, code));
 }
@@ -492,7 +492,7 @@ async function judgedContainer(
 		return undefined;
 	}
 	const parts = [...reading.codes.values()].filter(
-		(each): each is ReadPart => each.status === "read" && each.checkout.repo === code.checkout.repo,
+		(each): each is ReadPart => each.status === "read" && each.checkout.root === code.checkout.root,
 	);
 	return { reading, inspection, module, checkout: code.checkout, owners: ownersOf(parts) };
 }

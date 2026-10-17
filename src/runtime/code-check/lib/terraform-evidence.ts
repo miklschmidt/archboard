@@ -238,15 +238,15 @@ async function terraformEvidenceOf(
 	facts: FactsPass,
 	lineages: ReadonlyMap<string, ReadonlySet<string>>,
 ): Promise<Piece[]> {
-	const byRepo = new Map<string, [ReadPart, ...ReadPart[]]>();
+	const byTree = new Map<string, [ReadPart, ...ReadPart[]]>();
 	for (const code of codes.values()) {
 		if (code.status !== "read") continue;
-		const parts = byRepo.get(code.checkout.repo);
-		if (parts === undefined) byRepo.set(code.checkout.repo, [code]);
+		const parts = byTree.get(code.checkout.root);
+		if (parts === undefined) byTree.set(code.checkout.root, [code]);
 		else parts.push(code);
 	}
 	const pieces: Piece[] = [];
-	for (const parts of byRepo.values()) {
+	for (const parts of byTree.values()) {
 		const roots = [...new Set(parts.flatMap((part) => part.root ?? []))].toSorted();
 		for (const root of roots) {
 			// oxlint-disable-next-line no-await-in-loop -- one root module at a time, in order, so the pieces keep that order

@@ -175,14 +175,14 @@ async function readsIn(
  * @returns The read parts of each repository, in board order.
  */
 function partsByRepo(codes: ReadonlyMap<string, PartCode>): [ReadPart, ...ReadPart[]][] {
-	const byRepo = new Map<string, [ReadPart, ...ReadPart[]]>();
+	const byTree = new Map<string, [ReadPart, ...ReadPart[]]>();
 	for (const code of codes.values()) {
 		if (code.status !== "read") continue;
-		const parts = byRepo.get(code.checkout.repo);
-		if (parts === undefined) byRepo.set(code.checkout.repo, [code]);
+		const parts = byTree.get(code.checkout.root);
+		if (parts === undefined) byTree.set(code.checkout.root, [code]);
 		else parts.push(code);
 	}
-	return [...byRepo.values()];
+	return [...byTree.values()];
 }
 
 /**

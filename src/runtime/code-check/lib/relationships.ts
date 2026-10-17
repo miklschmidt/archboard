@@ -46,6 +46,7 @@ import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import type { ClaimSite } from "@/runtime/code-check/lib/claims";
 import type { EnvironmentJoin } from "@/runtime/code-check/lib/environment-join";
 import type { BoardEvidence, Piece } from "@/runtime/code-check/lib/evidence";
+import { differingCode } from "@/runtime/code-check/lib/part-code";
 import type { PartCode, ReadPart, SkippedPart } from "@/runtime/code-check/lib/part-code";
 import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "@/shared/code-check/index";
@@ -311,7 +312,7 @@ function isRead(code: PartCode | undefined): code is ReadPart {
  * @returns True when a grammar read one of those files.
  */
 function hasParsedCode(reading: RelationshipReading, part: ReadPart): boolean {
-	const parsed = reading.evidence.parsed.get(part.checkout.repo) ?? new Set();
+	const parsed = reading.evidence.parsed.get(part.checkout.root) ?? new Set();
 	return [...sideOf(reading, part.node.id)].some((id) => {
 		const code = reading.codes.get(id);
 		return isRead(code) && code.files.some((file) => parsed.has(file));
@@ -334,7 +335,8 @@ function holdsOneAnother(reading: RelationshipReading, left: string, right: stri
 
 /**
  * Why the check does not judge a relationship whose ends it read: ends that
- * hold one another or bind the same code, or code it read only as text.
+ * hold one another, bind the same code or are read at different code, or code it
+ * read only as text.
  * @param reading The board.
  * @param start The part at its start.
  * @param end The part at its end.
@@ -347,7 +349,10 @@ function unjudgedRead(
 ): Unjudged | undefined {
 	if (holdsOneAnother(reading, start.node.id, end.node.id) || start.key === end.key)
 		return { reason: "ends-overlap" };
-	return hasParsedCode(reading, start) && hasParsedCode(reading, end) ? undefined : "silent";
+	return (
+		differingCode(start, end) ??
+		(hasParsedCode(reading, start) && hasParsedCode(reading, end) ? undefined : "silent")
+	);
 }
 
 /**
@@ -442,7 +447,7 @@ function notFollowed(
 	const reached = new Set(
 		[...ends.end].flatMap((id) => {
 			const code = reading.codes.get(id);
-			return isRead(code) ? code.files.map((file) => `${code.checkout.repo}\0${file}`) : [];
+			return isRead(code) ? code.files.map((file) => `${code.checkout.root}\0${file}`) : [];
 		}),
 	);
 	for (const id of ends.start) {

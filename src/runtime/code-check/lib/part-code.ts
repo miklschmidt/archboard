@@ -23,27 +23,27 @@
 // service and its block in an override file or a later YAML document, is the
 // part's in every one of them (TASK-367.20).
 //
+// A part bound to a ref its checkout does not have out is read from that ref's
+// tree in Git (ref-code.ts), so its code is the ref's, not the working tree's.
+//
 // A part the pass cannot read says why where the reason is the board's or this
 // machine's to fix: a repository this machine has not registered, a ref its
-// checkout does not have out, a path Git ignores or one the pass never reads.
+// checkout cannot resolve, a path Git ignores or one the pass never reads.
 // A checkout that is unavailable is said once for the whole checkout, a bound
 // path that is not there is the plain check's to report, and a bound symbol
 // that is not there is a finding of its own, so those parts are only unread.
 
 import path from "node:path";
-import {
-	otherRefOf,
-	readableOf,
-	type Checkout,
-	type ReadCheckout,
-} from "@/runtime/code-check/lib/checkouts";
+import { otherRefOf, readableOf, type Checkout } from "@/runtime/code-check/lib/checkouts";
 import { heldInFiles, terraformRootOfTarget, type Search } from "@/runtime/code-check/lib/symbols";
 import { mergedDefinitions, type Definition } from "@/runtime/code-facts/index";
 import {
-	resolveLocalCodeTarget,
-	type CheckoutSnapshot,
-	type LocalCodeTarget,
-} from "@/runtime/code-target/index";
+	codeFor,
+	targetIn,
+	type RefCodes,
+	type RepoCheckout,
+} from "@/runtime/code-check/lib/ref-code";
+import type { CheckoutSnapshot, LocalCodeTarget } from "@/runtime/code-target/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
 import { bindingPathOf, type CodeBinding } from "@/shared/code-target/index";
 import type { SemanticNode } from "@/shared/semantic-board/index";
@@ -74,9 +74,6 @@ function isTestPath(file: string): boolean {
 		directories.some((name) => TEST_DIRECTORY.test(name) || TEST_TARGET.test(name))
 	);
 }
-
-/** A registered checkout the pass reads, with the repository it is. */
-type RepoCheckout = ReadCheckout & { readonly repo: string };
 
 /** How narrow a binding is: a symbol, a file, or a directory with its depth. */
 type Grain =
@@ -126,6 +123,8 @@ type PartCode = ReadPart | SkippedPart | UnreadPart;
 interface PartReading {
 	readonly snapshot: CheckoutSnapshot;
 	readonly checkouts: ReadonlyMap<string, Checkout>;
+	/** The refs read from Git where a checkout has another one out. */
+	readonly refs: RefCodes;
 	/**
 	 * How a search reads the files of one checkout.
 	 * @param checkout The checkout.
@@ -164,18 +163,14 @@ type Located =
 
 /**
  * Where a bound path is in its checkout, once the checkout is read and has the
- * binding's ref out.
+ * binding's ref out, or in the tree of the ref read from Git.
  * @param binding The binding.
- * @param checkout Its checkout.
- * @param snapshot The registered checkouts.
+ * @param checkout The code the binding is read in.
+ * @param reading The pass.
  * @returns The files the pass may read, or why it reads none.
  */
-function locateTarget(
-	binding: CodeBinding,
-	checkout: RepoCheckout,
-	snapshot: CheckoutSnapshot,
-): Located {
-	const target = resolveLocalCodeTarget(binding, snapshot);
+function locateTarget(binding: CodeBinding, checkout: RepoCheckout, reading: PartReading): Located {
+	const target = targetIn(binding, checkout, reading);
 	if (!target.ok) return { status: "unread" };
 	const readable = readableOf(target, checkout.files, true);
 	if (readable.status === "files") {
@@ -213,10 +208,9 @@ function locate(binding: CodeBinding, reading: PartReading): Located {
 	}
 	if (checkout?.status !== "read") return { status: "unread" };
 	const ref = otherRefOf(binding, reading.snapshot);
-	if (ref !== undefined) {
-		return { status: "skipped", skip: { reason: "ref-not-checked-out", repo, ref } };
-	}
-	return locateTarget(binding, { ...checkout, repo }, reading.snapshot);
+	const code = codeFor(reading.refs, checkout, repo, ref);
+	if (code !== undefined) return locateTarget(binding, code, reading);
+	return { status: "skipped", skip: { reason: "ref-not-checked-out", repo, ref } };
 }
 
 /**
@@ -272,6 +266,26 @@ function definitionsIn(part: ReadPart, file: string): Definition[] {
 	if (grain.kind !== "symbol") return [];
 	const merged = grain.merged.filter((each) => each.path === file).map((each) => each.definition);
 	return grain.file === file ? [grain.definition, ...merged] : merged;
+}
+
+/**
+ * Why two read parts of one repository have no one code to be judged against:
+ * a ref and another, or a ref and the files on disk (TASK-493).
+ * @param start One part.
+ * @param end The other.
+ * @returns The skip, which names what each is read at, or undefined when they are read at the same code.
+ */
+function differingCode(
+	start: ReadPart,
+	end: ReadPart,
+): Pick<CodeCheckSkip, "reason" | "repo" | "detail"> | undefined {
+	if (start.checkout.repo !== end.checkout.repo || start.checkout.root === end.checkout.root) {
+		return undefined;
+	}
+	const detail = [start, end]
+		.map((part) => `${part.node.name} is read at ${part.checkout.ref ?? "the checkout's files"}`)
+		.join("; ");
+	return { reason: "refs-differ", repo: start.checkout.repo, detail };
 }
 
 /**
@@ -335,6 +349,7 @@ export {
 	type RepoCheckout,
 	type SkippedPart,
 	definitionsIn,
+	differingCode,
 	isTestPath,
 	pairsOf,
 	partCodesOf,

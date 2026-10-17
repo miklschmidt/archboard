@@ -33,7 +33,7 @@
 // NetworkPolicy joins two workloads that a board draws, and neither end need
 // bind it (TASK-367.19).
 
-import { otherRefOf, readableOf, type ReadCheckout } from "@/runtime/code-check/lib/checkouts";
+import { readableOf, type ReadCheckout } from "@/runtime/code-check/lib/checkouts";
 import type { AnchorClaim } from "@/runtime/code-check/lib/claims";
 import type { Resolve } from "@/runtime/code-check/lib/resolution";
 import { heldInFiles, terraformRootOfTarget, type Search } from "@/runtime/code-check/lib/symbols";
@@ -50,7 +50,8 @@ import {
 	type FileFacts,
 	type Reference,
 } from "@/runtime/code-facts/index";
-import { resolveLocalCodeTarget, type CheckoutSnapshot } from "@/runtime/code-target/index";
+import { readsSameCode, targetIn, type RefCodes } from "@/runtime/code-check/lib/ref-code";
+import type { CheckoutSnapshot } from "@/runtime/code-target/index";
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import type { SemanticNode } from "@/shared/semantic-board/index";
 import { describeSubject } from "@/shared/semantic-policy/index";
@@ -65,6 +66,8 @@ type Holding = "holds" | "elsewhere" | "unknown";
 interface SupportContext {
 	readonly search: Search;
 	readonly snapshot: CheckoutSnapshot;
+	/** The refs read from Git where a checkout has another one out. */
+	readonly refs: RefCodes;
 	/** Where a language server says a use that no import resolves is defined. */
 	readonly resolve: Resolve;
 }
@@ -110,8 +113,10 @@ function boundFiles(
 	const { binding } = part;
 	if (binding === undefined) return "unknown";
 	if (binding.repo !== checkout.repo) return "elsewhere";
-	const target = resolveLocalCodeTarget(binding, context.snapshot);
-	if (!target.ok || otherRefOf(binding, context.snapshot) !== undefined) return "unknown";
+	// A part read at other code than the anchor's checkout holds is not read here.
+	if (!readsSameCode(binding, checkout, context)) return "unknown";
+	const target = targetIn(binding, checkout, context);
+	if (!target.ok) return "unknown";
 	const readable = readableOf(target, checkout.files, true);
 	if (readable.status !== "files") return "unknown";
 	return { files: readable.files, root: terraformRootOfTarget(target, checkout.files) };

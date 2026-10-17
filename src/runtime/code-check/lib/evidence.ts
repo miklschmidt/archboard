@@ -68,11 +68,11 @@ type Piece = CodeEvidence & { readonly from: string; readonly to: string };
 /** The evidence between the parts of one board, and the files a grammar read. */
 interface BoardEvidence {
 	readonly pieces: readonly Piece[];
-	/** For each repository, the files the pass read through code facts rather than as text. */
+	/** For each checkout or tree of a ref, by its root, the files the pass read through code facts rather than as text. */
 	readonly parsed: ReadonlyMap<string, ReadonlySet<string>>;
 	/**
 	 * For each part whose code holds a Nix expression the static reading cannot
-	 * follow, by its id: each Nix file that holds one, by its repository and
+	 * follow, by its id: each Nix file that holds one, by its checkout root and
 	 * path, with the file and the lines of the first (`flake.nix:12-14`).
 	 */
 	readonly unfollowed: ReadonlyMap<string, ReadonlyMap<string, string>>;
@@ -493,7 +493,7 @@ function noteUnfollowed(repo: RepoReading, facts: SyntaxFacts): void {
 	if (facts.adapter !== "nix") return;
 	for (const { start, end, source } of facts.unparsed) {
 		const at = unfollowedSite(source ?? { path: facts.path, start, end });
-		const file = `${repo.checkout.repo}\0${facts.path}`;
+		const file = `${repo.checkout.root}\0${facts.path}`;
 		for (const owner of ownersOfLines(repo.owners, facts.path, start, end)) {
 			const files = repo.unfollowed.get(owner.node.id) ?? new Map<string, string>();
 			repo.unfollowed.set(owner.node.id, new Map([[file, at], ...files]));
@@ -576,11 +576,11 @@ async function evidenceOf(
 	codes: ReadonlyMap<string, PartCode>,
 	reading: EvidenceReading,
 ): Promise<BoardEvidence> {
-	const byRepo = new Map<string, [ReadPart, ...ReadPart[]]>();
+	const byTree = new Map<string, [ReadPart, ...ReadPart[]]>();
 	for (const code of codes.values()) {
 		if (code.status !== "read") continue;
-		const parts = byRepo.get(code.checkout.repo);
-		if (parts === undefined) byRepo.set(code.checkout.repo, [code]);
+		const parts = byTree.get(code.checkout.root);
+		if (parts === undefined) byTree.set(code.checkout.root, [code]);
 		else parts.push(code);
 	}
 	const lineages = lineagesOf(codes);
@@ -588,11 +588,11 @@ async function evidenceOf(
 	const parsed = new Map<string, ReadonlySet<string>>();
 	const unfollowed = new Map<string, Map<string, string>>();
 	const values = new Set<Piece>();
-	for (const [repo, parts] of byRepo) {
+	for (const [tree, parts] of byTree) {
 		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in board order
 		const read = await evidenceInRepo(parts, reading, lineages, { unfollowed, values });
 		pieces.push(...read.pieces);
-		parsed.set(repo, read.parsed);
+		parsed.set(tree, read.parsed);
 	}
 	return { pieces: firstOfEach(pieces, values), parsed, unfollowed, values };
 }
