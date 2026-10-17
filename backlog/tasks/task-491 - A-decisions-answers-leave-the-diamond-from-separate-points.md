@@ -1,11 +1,11 @@
 ---
 id: TASK-491
 title: A decision's answers leave the diamond from separate points
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-17 10:38'
-updated_date: '2026-10-17 12:20'
+updated_date: '2026-10-17 12:22'
 labels:
   - renderer
 dependencies: []
@@ -21,11 +21,11 @@ A flowchart decision with two answers sends both lines out of the diamond's bott
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A decision with two answers draws one line from its left point and one from its right point, each leaving sideways before it turns down to its answer
-- [ ] #2 A decision with three answers draws them from its left, bottom and right points
-- [ ] #3 No line leaving a side point runs back under or through the diamond
-- [ ] #4 A test fails on the old code when two answers leave the same point
-- [ ] #5 Every flowchart view of both vaults is rendered before and after, and each changed drawing reads the same or better
+- [x] #1 A decision with two answers draws one line from its left point and one from its right point, each leaving sideways before it turns down to its answer
+- [x] #2 A decision with three answers draws them from its left, bottom and right points
+- [x] #3 No line leaving a side point runs back under or through the diamond
+- [x] #4 A test fails on the old code when two answers leave the same point
+- [x] #5 Every flowchart view of both vaults is rendered before and after, and each changed drawing reads the same or better
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -46,4 +46,12 @@ Round 2 (criterion 3 and the three crossings):
 - label-runs.ts: a label on a line from a side point does not stand inward of the point; labels.ts settleOnLanes leaves it on the point. The step goes below the label. Fixes Move a board, A reveal, A board moves to another vault.
 - A line into a decision is held to the middle of its top, where the flowchart draws it, so its label stands on the drawn line (a round-1 regression, e.g. A new picture, One write lands).
 Corpus (1759 drawings of this vault, 114 of a fresh copy of the work vault) against main: 1482 and 42 changed (206 and 37 distinct). Original -> round 1 -> now: crossings 20 -> 21 -> 14 (work 0 -> 0 -> 0); shared starts 1017 -> 64 -> 61 (262 -> 10 -> 10); side answers back under above their label 0 -> 6 -> 0; labels off their line 246 -> 326 -> 100 (0 -> 7 -> 0, the rest enter End). One drawing measures worse (work vault, Certificate lifecycle, mac-custody: a join stands in the bottom 8 px of a card's measured box; looked at, reads fine). Tests: src/runtime/semantic-renderer/tests/flowchart-answers.test.ts (moved from flowchart-shapes.test.ts with helpers in drawn-flowchart.ts), two new tests fail on main. Rendering the corpus takes 161 s instead of 155 s. Before/after PNGs: /tmp/t491b/round2-png.
+
+Merged on main (9270024b9 and d4ba0843b cherry-picked): renderer tests 674 pass 0 fail; tsc and lint clean. Owner direction 2026-10-17: flowcharts may change; routing as people expect from a flowchart matters most. Left as is: about 67 side answers here and 6 in the work vault step inward below their label toward a step standing under the diamond; the diamond itself is never crossed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A decision's answers leave the diamond from separate points: two from left and right, three from left, bottom and right, each running sideways before it turns down. The layout widens a decision by its answers' run and labels, asks Graphviz to place answers under its corners, picks the side order with the fewest crossings, and sends an answer from the bottom when a side exit would double back. Across both vaults, lines from one shared point fell from 1279 to 71, crossings from 20 to 14, and no answer steps back under its diamond. Verified by flowchart-answers.test.ts and before/after renders of every flowchart in both vaults.
+<!-- SECTION:FINAL_SUMMARY:END -->
