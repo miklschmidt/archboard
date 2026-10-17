@@ -135,9 +135,18 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   anchor names a repository this machine has not registered. It stays
  *   silent, and is listed. Also a draft, with no subject, whose dropped parts
  *   are bound into such a repository (TASK-488).
- * - `ref-not-checked-out`: a binding pinned to a branch or a commit its
- *   checkout does not have out; a relationship or step with such a part at an
- *   end is skipped with its anchor.
+ * - `ref-not-checked-out`: a binding pinned to a branch or a commit that its
+ *   checkout cannot resolve, so there is no code to read (TASK-493). Its `ref`
+ *   names the ref and what the checkout has out. A ref it can resolve but has
+ *   not out is read from Git without a checkout; a relationship or step with
+ *   an unresolvable part at an end is skipped with its anchor.
+ * - `ref-without-language-server`: a ref read from Git, in which a use that no
+ *   import resolves was not asked of a language server, because servers read
+ *   the files on disk (TASK-493). Said once for the repository and ref, with
+ *   its `repo` and `ref` and no subject; the use stays as code facts read it.
+ * - `refs-differ`: a relationship whose ends are bound in one repository and
+ *   read at different code, two refs or a ref and the checkout's files, so no
+ *   one code holds both ends. Its `detail` names the ref of each.
  * - `path-ignored`: a bound or anchored path that Git ignores.
  * - `path-never-read`: Terraform state, a variable file or the `.terraform`
  *   directory, which can hold secrets in plain text.
@@ -209,6 +218,8 @@ const CodeCheckSkipSchema = z
 			"board-unreadable",
 			"repository-unregistered",
 			"ref-not-checked-out",
+			"ref-without-language-server",
+			"refs-differ",
 			"path-ignored",
 			"path-never-read",
 			"checkout-unavailable",

@@ -1,4 +1,4 @@
-// The footprint's route, `GET /api/semantic-boards/footprint?board=&base=&variant=`
+// The footprint's route, `GET /api/semantic-boards/footprint?board=&base=&head=&variant=&against=`
 // (ADR 0045).
 //
 // `archboard semantic footprint` asks it. It is about one board, so it sits
@@ -21,12 +21,13 @@ import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { queryString } from "@/server/archboard/lib/request-board";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { FootprintReplySchema, type FootprintAnswer } from "@/shared/footprint/index";
+import type { SemanticBoard } from "@/shared/semantic-board/index";
 import {
-	addressedVariant,
-	currentVariant,
-	type SemanticBoard,
-	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+	type FootprintVariants,
+	isRefusal,
+	type Refusal,
+	variantsOf,
+} from "@/server/archboard/lib/footprint-variants";
 import { errorMessage } from "@/shared/thrown-error/index";
 import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
@@ -43,72 +44,13 @@ interface FootprintRouteDependencies {
 	readonly read: (request: FootprintRequest) => Promise<FootprintAnswer>;
 }
 
-/** A request the route turns away, with the code the CLI maps to its exit status. */
-interface Refusal {
-	readonly status: number;
-	readonly code: string;
-	readonly error: string;
-}
-
-/** The variants one footprint reads. */
-interface FootprintVariants {
-	readonly current: SemanticVariant;
-	readonly proposal?: SemanticVariant;
-}
-
-/**
- * Which variants a request reads: the current variant, and the proposal it
- * names. The lens never reads a historical or a shelved variant (ADR 0045).
- * @param board The board.
- * @param asked The proposal as the caller named it, if it did.
- * @returns The variants, or why the request reads none.
- */
-function variantsOf(board: SemanticBoard, asked: string | undefined): FootprintVariants | Refusal {
-	const current = currentVariant(board);
-	if (current === undefined) {
-		return {
-			status: 422,
-			code: "NO_CURRENT_VARIANT",
-			error: `"${board.name}" has no current variant: nothing it describes is built, so there is no code for a footprint to be read against.`,
-		};
-	}
-	if (asked === undefined) return { current };
-	const found = addressedVariant(board, asked);
-	if (!found.ok) {
-		return { status: 422, code: "UNKNOWN_VARIANT", error: `"${board.name}": ${found.problem}` };
-	}
-	const proposal = found.variant;
-	if (proposal.id === current.id) {
-		return {
-			status: 422,
-			code: "NOTHING_TO_COMPARE",
-			error: `"${proposal.name}" is the current variant of "${board.name}". Name a draft to set the footprint against, or leave --variant out.`,
-		};
-	}
-	if (proposal.lifecycle !== "draft") {
-		return {
-			status: 422,
-			code: "NOT_A_DRAFT",
-			error: `"${proposal.name}" is ${proposal.lifecycle}, and the footprint reads only a draft against the current variant.`,
-		};
-	}
-	return { current, proposal };
-}
-
-/**
- * Whether a value is a refusal and not a pair of variants.
- * @param value What a step of the request answered.
- * @returns True for a refusal.
- */
-function isRefusal(value: object): value is Refusal {
-	return "code" in value;
-}
-
 /** What a request asks for. */
 interface Asked {
 	readonly board: string;
 	readonly base: string;
+	readonly head: string | undefined;
 	readonly variant: string | undefined;
+	readonly against: string | undefined;
 }
 
 /** A request the route can read: the board, its variants, and the ref. */
@@ -116,6 +58,7 @@ interface Readable extends FootprintVariants {
 	readonly vault: string;
 	readonly board: SemanticBoard;
 	readonly base: string;
+	readonly head: string | undefined;
 }
 
 /**
@@ -132,14 +75,20 @@ function parameter(request: Request, key: string): string | undefined {
 /**
  * What a request asks for.
  * @param request The request.
- * @returns The board, the base and the proposal, or undefined when it names no board or no base.
+ * @returns The board, the base, the head and the proposal, or undefined when it names no board or no base.
  */
 function askedOf(request: Request): Asked | undefined {
 	const board = parameter(request, "board");
 	const base = parameter(request, "base");
 	return board === undefined || base === undefined
 		? undefined
-		: { board, base, variant: parameter(request, "variant") };
+		: {
+				board,
+				base,
+				head: parameter(request, "head"),
+				variant: parameter(request, "variant"),
+				against: parameter(request, "against"),
+			};
 }
 
 /**
@@ -157,10 +106,10 @@ function readableOf(vault: string, wanted: Asked): Readable | Refusal {
 			error: read.problem,
 		};
 	}
-	const variants = variantsOf(read.board, wanted.variant);
+	const variants = variantsOf(read.board, wanted);
 	return isRefusal(variants)
 		? variants
-		: { vault, board: read.board, base: wanted.base, ...variants };
+		: { vault, board: read.board, base: wanted.base, head: wanted.head, ...variants };
 }
 
 /**
@@ -184,6 +133,38 @@ function refuse(response: Response, refusal: Refusal): void {
 }
 
 /**
+ * Why a head the caller named is turned away: no checkout that holds a part of
+ * the board resolves it, so no part was read and none may look unchanged. A
+ * head only some checkouts have is read where it resolves, as a base is.
+ * @param answer The footprint, read.
+ * @returns The refusal, or undefined when the head resolved somewhere or none was named.
+ */
+function headRefusal(answer: FootprintAnswer): Refusal | undefined {
+	const { head, repositories } = answer;
+	const resolved = repositories.some(
+		(one) => one.status === "read" || one.reason !== "head-unresolved",
+	);
+	if (head === undefined || repositories.length === 0 || resolved) return undefined;
+	return {
+		status: 422,
+		code: "HEAD_UNRESOLVED",
+		error: `--head "${head}" does not resolve in any checkout that holds a part of "${answer.board}". Name a branch, tag or commit that the checkout has; nothing is fetched.`,
+	};
+}
+
+/**
+ * Send a footprint, or refuse a head that no checkout has.
+ * @param response The response.
+ * @param answer The footprint, read.
+ */
+function send(response: Response, answer: FootprintAnswer): void {
+	const refusal = headRefusal(answer);
+	if (refusal === undefined) {
+		response.json(FootprintReplySchema.parse({ success: true, ...answer }));
+	} else refuse(response, refusal);
+}
+
+/**
  * Answer one request with a footprint read as checkout work.
  * @param dependencies How the reading runs.
  * @param request The request.
@@ -200,7 +181,7 @@ async function answerFootprint(
 			status: 400,
 			code: "BAD_REQUEST",
 			error:
-				"Name the board and the base: /api/semantic-boards/footprint?board=<name>&base=<ref>[&variant=<proposal>]",
+				"Name the board and the base: /api/semantic-boards/footprint?board=<name>&base=<ref>[&head=<ref>][&variant=<proposal>][&against=<variant>]",
 		});
 		return;
 	}
@@ -216,9 +197,7 @@ async function answerFootprint(
 			"GET /api/semantic-boards/footprint",
 			(signal) => dependencies.read({ ...readable, signal }),
 		);
-		if (!callerGone(request, response)) {
-			response.json(FootprintReplySchema.parse({ success: true, ...answer }));
-		}
+		if (!callerGone(request, response)) send(response, answer);
 	} catch (error) {
 		if (!callerGone(request, response)) {
 			response.status(500).json({ success: false, error: errorMessage(error) });

@@ -179,15 +179,23 @@ function board(): SemanticBoard {
  * Read the footprint of the branch against the board.
  * @param base The ref.
  * @param proposal The proposal's name, when one is named.
+ * @param head The ref the commits run up to, when it is not HEAD.
  * @returns The answer, checked against its schema.
  */
-async function footprint(base: string, proposal?: string): Promise<FootprintAnswer> {
+async function footprint(base: string, proposal?: string, head?: string): Promise<FootprintAnswer> {
 	const value = board();
 	const current = currentVariant(value);
 	if (current === undefined) throw new Error("the board has no current variant");
 	const named = proposal === undefined ? undefined : resolveVariant(value, proposal);
 	return FootprintAnswerSchema.parse(
-		await lens.readFootprint({ vault: scratch, board: value, current, proposal: named, base }),
+		await lens.readFootprint({
+			vault: scratch,
+			board: value,
+			against: current,
+			proposal: named,
+			base,
+			head,
+		}),
 	);
 }
 
@@ -244,6 +252,11 @@ beforeAll(async () => {
 	commit(shop, "change events", { "src/e.ts": "2\n" });
 	git(shop, "checkout", "-q", "main");
 	commit(shop, "main moves on: change b.ts", { "src/b.ts": "2\n" });
+	git(shop, "checkout", "-q", "feature");
+	// A layer of a stack that is not checked out, and a branch only `origin` holds.
+	git(shop, "checkout", "-q", "-b", "stack-two");
+	commit(shop, "change the ledger on the second layer", { "src/ledger.ts": "2\n" });
+	git(shop, "update-ref", "refs/remotes/origin/remote-only", git(shop, "rev-parse", "stack-two"));
 	git(shop, "checkout", "-q", "feature");
 	lens = await import("@/runtime/history-lens/index");
 });
@@ -355,4 +368,98 @@ test("a ref that looks like an option is a ref and never an option", async () =>
 	const answer = await footprint(`--output=${target}`);
 	expect(answer.repositories.every((one) => one.status === "unread")).toBe(true);
 	expect(existsSync(target)).toBe(false);
+});
+
+test("--head reads a branch that is not checked out, and the checkout stays where it was", async () => {
+	const answer = await footprint("feature", undefined, "stack-two");
+	if (answer.proposal !== null) throw new Error("no proposal was named");
+	expect(answer.head).toBe("stack-two");
+	expect(ids(answer.changed)).toEqual(["pL"]);
+	expect(answer.repositories.find((one) => one.repo === SHOP)).toMatchObject({
+		status: "read",
+		commits: 1,
+	});
+	expect(git(shop, "rev-parse", "--abbrev-ref", "HEAD")).toBe("feature");
+	expect((await footprint("feature")).repositories.find((one) => one.repo === SHOP)).toMatchObject({
+		status: "read",
+		commits: 0,
+	});
+});
+
+test("--head resolves a branch only origin holds, as the code check does", async () => {
+	const answer = await footprint("feature", undefined, "remote-only");
+	if (answer.proposal !== null) throw new Error("no proposal was named");
+	expect(ids(answer.changed)).toEqual(["pL"]);
+});
+
+test("a --head no checkout resolves is unread in each, and no part is reported unchanged", async () => {
+	const answer = await footprint("main", "Plan", "a-branch-nobody-has");
+	if (answer.proposal === null) throw new Error("a proposal was named");
+	expect(answer.repositories.every((one) => one.status === "unread")).toBe(true);
+	expect(
+		answer.repositories.every((one) => one.status === "unread" && one.reason === "head-unresolved"),
+	).toBe(true);
+	expect(
+		[answer.namedAndChanged, answer.changedNotNamed, answer.namedNotChanged].flatMap(ids),
+	).toEqual([]);
+	expect(answer.skipped.filter((skip) => skip.reason === "head-unresolved").length).toBeGreaterThan(
+		0,
+	);
+});
+
+test("a --head that looks like an option is a ref and never an option", async () => {
+	const target = join(scratch, "written-by-a-head");
+	const answer = await footprint("main", undefined, `--output=${target}`);
+	expect(answer.repositories.every((one) => one.status === "unread")).toBe(true);
+	expect(existsSync(target)).toBe(false);
+});
+
+/**
+ * Read the footprint of a proposal against a variant of the test's choosing.
+ * @param proposal The proposal's name.
+ * @param variantName The variant it is read against, or none for nothing.
+ * @returns The answer, which names a proposal.
+ */
+async function readAgainst(proposal: string, variantName?: string) {
+	const value = board();
+	const answer = FootprintAnswerSchema.parse(
+		await lens.readFootprint({
+			vault: scratch,
+			board: value,
+			against: variantName === undefined ? undefined : resolveVariant(value, variantName),
+			proposal: resolveVariant(value, proposal),
+			base: "main",
+		}),
+	);
+	if (answer.proposal === null) throw new Error("a proposal was named");
+	return answer;
+}
+
+test("the variant a proposal is read against decides which parts it names", async () => {
+	const swapped = await readAgainst("Built", "Plan");
+	expect(swapped.against).toMatchObject({ name: "Plan" });
+	const reasons = Object.fromEntries(
+		[...swapped.namedAndChanged, ...swapped.namedNotChanged].map((part) => [
+			part.subject.id,
+			part.named,
+		]),
+	);
+	// Read against Plan, Built is the proposal that adds Legacy and removes Cache.
+	expect(reasons["pR"]).toEqual([{ by: "part", status: "added" }]);
+	expect(reasons["pC"]).toEqual([{ by: "part", status: "removed" }]);
+});
+
+test("a proposal read against nothing names every part it holds", async () => {
+	const answer = await readAgainst("Plan");
+	expect(answer.against).toBeNull();
+	const proposed = [
+		...answer.namedAndChanged,
+		...answer.changedNotNamed,
+		...answer.namedNotChanged,
+	];
+	expect(ids(answer.changedNotNamed)).toEqual([]);
+	expect(proposed.every((part) => part.named.some((reason) => reason.status === "added"))).toBe(
+		true,
+	);
+	expect(ids(answer.namedAndChanged)).toContain("pA");
 });

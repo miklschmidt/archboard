@@ -47,6 +47,7 @@ export {
 	within,
 } from "@/runtime/code-facts/lib/module-exposure";
 export { type CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
+export { extendedConfigs, isContextFile } from "@/runtime/code-facts/lib/context-files";
 export { neverRead } from "@/runtime/code-facts/lib/never-read";
 export {
 	type CodeFacts,

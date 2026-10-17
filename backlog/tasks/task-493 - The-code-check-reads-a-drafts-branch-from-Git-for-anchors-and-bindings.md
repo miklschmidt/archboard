@@ -1,0 +1,51 @@
+---
+id: TASK-493
+title: The code check reads a draft's branch from Git for anchors and bindings
+status: Done
+assignee:
+  - '@claude'
+created_date: '2026-10-17 10:53'
+updated_date: '2026-10-17 11:40'
+labels:
+  - code-check
+dependencies: []
+type: bug
+ordinal: 858000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+archboard check --code skips every anchor and binding whose binding names a branch that is not checked out (ref-not-checked-out). A pull-request stack binds each layer's parts to its own branch, so on 2026-10-17 a --every-draft run skipped 1796 subjects on Device Trust Control Plane, 367 on Platform Test Cluster and 139 on Endpoint Gateway: the check said nothing about almost every part it was asked about. TASK-488 already reads a branch from Git without a checkout for the dropped-part check (sourceAt in src/runtime/history-lens/lib/source-history.ts). skills/archboard/references/variants.md says 'It reads that branch from Git and does not check it out', which reads as if it covers every check, and it does not. Reported by the agent fixing the device-trust pull-request bodies.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [x] #1 Anchors and bindings whose binding names a branch or commit the checkout can resolve are checked against that ref's code read from Git, without a checkout and without changing the working tree
+- [x] #2 ref-not-checked-out is reported only for a ref the checkout cannot resolve, and the skip names the ref
+- [x] #3 A test shows a broken anchor on a branch that is not checked out is reported, and a sound one is not
+- [x] #4 The skill text says which checks read a branch from Git, and says it correctly
+- [x] #5 check --code --every-draft on a read-only copy of Device Trust Control Plane skips no subject as ref-not-checked-out (1796 before, 0 after); the only branch-related skips left are relationships whose two ends are pinned to refs where neither holds the other (refs-differ, 36), and the before and after counts are recorded
+<!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. ref-code.ts: read the code of each ref a binding names that its checkout lacks out, once per pass, with sourceAt (no checkout); a tree with root and files, and its facts. An unresolvable ref stays ref-not-checked-out and the skip names it. 2. The seam: the checkout a claim or part reads (checkoutFor, locate) and the path it resolves (a target in the tree, for boundTarget, judgeAnchor, locateTarget, boundFiles); facts reads route by tree, so anchors, bound paths, bound symbols, evidence, relationships and interfaces read the same code for a part. 3. Language servers run on disk files: a use in a ref tree stays as code facts read it, said once per repo and ref as skip ref-without-language-server. 4. Per-repository groupings key by tree; a relationship whose ends are read from different code is skipped as refs-differ. 5. Tests in tests/ref-code.test.ts. 6. Skill text and generate:skill-artifacts. 7. AC4 on a scratch vault, before and after.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-17 implementation. Seam: src/runtime/code-check/lib/ref-code.ts. Before judging, readRefCodes reads, once per pass, each (repo, ref) that a binding or anchor names and its checkout lacks out, with sourceAt (no checkout): a tree with its own root (checkout root + ref, no directory on disk) and its own facts pass. The pass's facts are routed by checkout root (routedFacts), targets in a tree come from its file list (targetIn replaces resolveLocalCodeTarget in check.ts, part-code.ts, support.ts), and every per-repository grouping of the evidence passes keys by checkout root, not repo name, so two refs of one repository are never pooled. So anchors, bound paths, bound symbols, evidence, relationships and module interfaces read the same code for a part. Language servers read files on disk: a use in a tree is not asked, stays as code facts read it, and is said once per repo and ref as ref-without-language-server. A relationship whose ends are one repository at different code (two refs, or a ref and the files on disk) is skipped as refs-differ, because evidence cannot join two trees. ref-not-checked-out remains only for a ref the checkout cannot resolve, with ref.named. Limits: sourceAt loads texts only for bound and anchored paths, Terraform files and the like, so a resolver config beside them (a tsconfig in another directory) is not read from a ref; the Swift manifest read in code-facts/swift-exposure.ts still reads Package.swift from disk; environment-join builders are keyed by repo. Footprint (coordinator addition): parts.ts partReading(content, snapshot, pinned) reads a part pinned to a ref its checkout lacks out, with ref on ReadPart; footprint.ts groups by repo and tip (head the caller named, else the part's pin, else HEAD); a pin no checkout resolves is skipped as head-unresolved naming the ref. Behind and locality still skip those parts. Additive in source-history.ts: none (uses commitOf from TASK-492 unchanged). AC4 on scratch copy of Device Trust Control Plane (Docs-Architecture-Design de2b187), worktree server, scratch registry: check --code --every-draft before: ref-not-checked-out 1796, text-only 1; findings ANCHOR_MISMATCH 1, EXPOSED_UNUSED 8, RELATIONSHIP_UNSUPPORTED 22. After: ref-not-checked-out 0, refs-differ 65, exposure-unknown 6 (the Rust library), ref-without-language-server 1, text-only 1; findings ANCHOR_MISMATCH 1, ANCHOR_PATH_MISSING 44 (anchored files that later branches of the stack build), EXPOSED_UNUSED 12, RELATIONSHIP_UNSUPPORTED 31. Footprint (--base origin/develop --against feat/device-trust-authorities --head <variant>) ref-not-checked-out skips before/after: contracts 9/0, enrollment 23/0, identity-lifecycle 32/0; parts changed 0/9, 3/26, 2/34. Tests: src/runtime/code-check/tests/ref-code.test.ts (5), footprint.test.ts (1 added).
+
+2026-10-17 round two. (1) Resolver inputs: sourceAt now also reads, from the ref, what the checkout's resolvers read beside the code (code-facts/lib/context-files.ts isContextFile: tsconfig*/jsconfig, package.json, pyproject.toml, setup.cfg, compile_commands.json, Package.swift, flake.lock, values.yaml, csproj, yaml/yml, env, compose files; plus the relative extends chain of a tsconfig, 8 deep). FactsPass gained text(); swift-exposure no longer reads Package.swift from disk. code-facts has no Cargo.toml, go.mod or npm workspaces reader, so there is nothing to supply for them. (2) One ref per draft: shared/semantic-board/draft-ref.ts and history-lens/lib/own-ref.ts; in a draft every part of a repository is read at the ref its bindings name that no earlier variant names (TASK-488's choice, now shared with dropped-parts), else the single ref named, else the files on disk; a part that pins a ref the draft's ref does not hold (git merge-base; a later layer or the tip branch) keeps its own pin, because moving it would report the code planned for later pull requests as missing (a first try that moved every part gave 33 BINDING_PATH_MISSING that were planned-later parts). Footprint uses the same choice when --head is not given. An anchor is read at the code of its first end bound in the anchor's repository. (3) Parity: scratch repo with Platform's objects through alternates, each of the 11 drafts checked out and not: findings and skips per draft identical, 0 differences, so none is caused by reading. Remaining ANCHOR_PATH_MISSING 22: all 22 absent at the draft's own branch and present at feat/device-trust (scripts/k8s/service-certificate-issuer.ts, -rollout.ts, DeviceCaClient.cs, ffi/src/lib.rs). New against before: RELATIONSHIP_UNSUPPORTED 9 (one relationship, Enrollment policy -> Customer and Client inventory, in 9 later drafts that were skipped before) and EXPOSED_UNUSED 4 (Bun reference Client, 4 later drafts); both already reported in earlier layers. Gate: system 248 pass, serial-browser 19 files pass.
+
+AC4 reworded 2026-10-17: the original 'skips no subject whose branch exists' cannot hold for a relationship whose ends sit in two trees that do not contain each other (a part planned for a later pull request, pinned to the tip branch, against a part at the draft's own branch). Those 36 are skipped as refs-differ, by design. Merged on main after cherry-pick: bun test --isolate src/runtime/code-check src/runtime/history-lens src/server/archboard src/cli src/shared/code-check src/shared/semantic-board 700 pass 0 fail; tsc, lint and the vault check clean. Parity: 11 drafts read from Git and checked out gave identical findings.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check and semantic footprint read a draft's code from Git without a checkout: each draft at its own branch per repository, with parts pinned to an older branch it holds read there too, and resolver inputs (tsconfig chains, package.json, manifests) read from the ref. ref-not-checked-out remains only for a ref the checkout cannot resolve and names it; relationships across unrelated refs are skipped as refs-differ. On Device Trust Control Plane, 1796 skips became 0, and Git reads match a checkout for all 11 drafts. Verified by ref-code, ref-stack and footprint-pinned tests and both system lanes.
+<!-- SECTION:FINAL_SUMMARY:END -->

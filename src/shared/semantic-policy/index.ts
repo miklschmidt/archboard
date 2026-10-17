@@ -201,6 +201,25 @@ const DiagnosticSubjectSchema = z.object({
 	name: z.string(),
 });
 type DiagnosticSubject = z.infer<typeof DiagnosticSubjectSchema>;
+/**
+ * One of the two parts a `SHARED_SYMBOL` warning names: its board, its id and
+ * name, and the ids of the live variants of that board that carry it.
+ */
+const SharedSymbolPartSchema = z.object({
+	board: z.string(),
+	id: z.string(),
+	name: z.string(),
+	variants: z.array(z.string()),
+});
+/**
+ * What a `SHARED_SYMBOL` warning is about: the repository, path and symbol
+ * that two distinct parts both bind, and those two parts.
+ */
+const SharedSymbolSchema = z.object({
+	binding: z.object({ repo: z.string(), path: z.string(), symbol: z.string() }),
+	parts: z.tuple([SharedSymbolPartSchema, SharedSymbolPartSchema]),
+});
+type SharedSymbol = z.infer<typeof SharedSymbolSchema>;
 const VaultDiagnosticSchema = z.object({
 	severity: z.enum(["warning", "error"]),
 	code: z.string(),
@@ -209,6 +228,7 @@ const VaultDiagnosticSchema = z.object({
 	board: z.string().optional(),
 	variant: z.string().optional(),
 	subject: DiagnosticSubjectSchema.optional(),
+	sharedSymbol: SharedSymbolSchema.optional(),
 	message: z.string(),
 });
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
@@ -263,6 +283,7 @@ export {
 	diagnosticLine,
 	EvidenceKindSchema,
 	type EvidenceKind,
+	type SharedSymbol,
 	VaultDiagnosticSchema,
 	type VaultDiagnostic,
 	VaultCheckSchema,

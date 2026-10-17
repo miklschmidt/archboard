@@ -98,10 +98,12 @@ your own.
 2. Read the change from the merge base: `git diff --find-renames <base>...HEAD`.
 3. List the boards with `archboard semantic`. For each board whose parts bind
    this repository, run `archboard semantic footprint <board> --base <base>`.
-   Its `changed` lists the parts the commits changed. For the parts in
+   When this pull request is a layer of a stack that is not checked out, add
+   `--head <branch>`. Its `changed` lists the parts the commits changed. For the parts in
    `skipped`, and for each repository that it did not read, use the diff. A
-   board with no current variant refuses (`NO_CURRENT_VARIANT`): read the diff
-   instead.
+   board with no current variant refuses here (`NO_CURRENT_VARIANT`), because
+   no proposal is named yet: read the diff instead, and use step 6 once the
+   proposal exists.
 4. Pick the picture from the first row that fits:
 
 | The change                                                                                                                                          | The picture                                                                                                                                                                                                                |
@@ -157,7 +159,9 @@ Do this for each vault board that section 1 chose.
 
    For a found proposal, `<below>` is the variant it came from: its `parent`
    in `semantic show`. Every picture and recording of the proposal is drawn
-   against `<below>`.
+   against `<below>`. A proposal with no parent, such as a design that is its
+   board's first draft, has no `<below>`: nothing on the board stands for the
+   base. Draw it and its recordings plain, with every part planned.
 
 5. Edit the proposal with the propose and compare recipe. Each `edit` names it
    with `--variant "<proposal>"`. Anchor every relationship you add or move in
@@ -168,10 +172,19 @@ Do this for each vault board that section 1 chose.
    - `archboard semantic compare <board> --variant "<proposal>" --against "<below>"`
      reports every change that the diff makes to what the board draws, and
      nothing else.
-   - `archboard semantic footprint <board> --base <base> --variant "<proposal>"`:
+   - `archboard semantic footprint <board> --base <base> --variant "<proposal>" --against "<below>"`:
      each part in `changedNotNamed` and `namedNotChanged` is drawn, or you can
-     say why its change needs no picture. On a board that nobody has built,
-     footprint refuses: read the diff instead.
+     say why its change needs no picture. `--against` is the variant that the
+     proposal is read against, to decide which parts it names. It is the same
+     `<below>` as in `compare`. A board that nobody has built has no current
+     variant, so there `--against` is the base draft or the proposal below.
+     Without `--against`, footprint reads the proposal against the current
+     variant, else against the proposal's parent. A proposal with no parent
+     on such a board names every part it holds. Without `--head`, footprint
+     reads up to the branch that is checked out. For a layer of a stack that is
+     not checked out, add `--head <branch>`: it reads that branch from Git, and
+     nothing is checked out. A branch that no checkout has is refused with
+     `HEAD_UNRESOLVED`.
    - `archboard check --code --variant "<proposal>"` reports no warning that
      the same run without `--variant` lacks. It reads the draft of that name
      on every board, and it skips a part whose binding names a branch that is
@@ -246,7 +259,8 @@ Draw it with [renders](references/renders.md). In short:
    named `Inside <design part>` or `Inside <part> and <part>`, and share it
    with the other pull requests that build inside those parts.
 3. Draw it `--against "<below>"`. The picture then marks only this pull
-   request's change, and it has no planned frame.
+   request's change, and it has no planned frame. A proposal with no
+   `<below>` (section 2 step 4) is drawn without `--against`.
 4. Give it a title that names where it sits and what it adds, such as
    `--title "Inside Board store: the lease table replaces lock files"`.
 
@@ -313,7 +327,7 @@ Every exported picture now passes through the export frame. Without a title it m
 ```
 
 **The state comment** is the second line. It names the board, the proposal
-and `against="<below>"`. When the vault is in another repository, it also
+and `against="<below>"`. A proposal with no `<below>` leaves `against` out. When the vault is in another repository, it also
 names that repository as bindings name it, such as
 `vault="github.com/<owner>/<name>"`. An ephemeral board
 writes `<!-- archboard-pr ephemeral -->`, because an update draws it again

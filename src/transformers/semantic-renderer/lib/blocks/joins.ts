@@ -236,4 +236,4 @@ function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
 
-export { drawsBetter, joinWays, type Drawn, type Joined };
+export { drawsBetter, joinWays, pairCrossings, type Drawn, type Joined };

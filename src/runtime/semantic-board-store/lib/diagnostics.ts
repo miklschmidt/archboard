@@ -22,6 +22,7 @@ import {
 	type DrillDownTarget,
 	semanticDrillDownDiagnostics,
 } from "@/runtime/semantic-board-store/lib/drill-down";
+import { sharedSymbolDiagnostics } from "@/runtime/semantic-board-store/lib/shared-symbols";
 import {
 	createCheckoutLookup,
 	semanticBindingDiagnostics,
@@ -162,6 +163,7 @@ function checkSemanticVault(root: string): VaultCheck {
 		diagnostics.push(...semanticOverviewDiagnostics(board, file));
 		diagnostics.push(...semanticContainerLineDiagnostics(board, file));
 	}
+	diagnostics.push(...sharedSymbolDiagnostics(read, lookup));
 	return {
 		policy: configured.configuration,
 		configurationValid: configured.ok,

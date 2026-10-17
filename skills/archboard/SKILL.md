@@ -252,7 +252,16 @@ recipe names.
   The check has no time limit. Cancel the command to stop waiting. Its output
   starts with the time for each check, and JSON carries those times in `timings`.
   `archboard check --code` holds every anchor and bound `symbol` of each
-  board's current variant to the files on disk: a file that is not there or
+  board's current variant to the files on disk, or to the code of the branch or
+  commit that its binding names when the checkout does not have it out. That
+  code is read from Git without a checkout, in every check (anchors, bound
+  paths and symbols, relationships, module interfaces). A language server
+  reads files on disk, so there a use that no import resolves is not resolved
+  (`ref-without-language-server`). A draft reads every part of a repository at
+  its own branch, which holds the layers below it, except a part that pins a
+  branch that one does not hold; a relationship whose ends are then read at
+  different code is skipped (`refs-differ`). A ref the checkout cannot
+  resolve is skipped (`ref-not-checked-out`, naming the ref). A file that is not there or
   does not hold the symbol is a warning that names its part, relationship or
   step, and exits 1. Repair the anchor or binding it names. A binding or anchor
   into the repository whose checkout holds the vault is read in that checkout
@@ -551,7 +560,9 @@ and an explanation for somebody new to the code follows
 
 - Reuse an existing detail board: link it with `drillDown` on a part the board
   draws anyway, never duplicating its parts. A node whose only reason to exist
-  is the link is a button, and a diagram has no buttons.
+  is the link is a button, and a diagram has no buttons. `archboard check` warns
+  `SHARED_SYMBOL` when two parts bind the same symbol in the same file, on one
+  board or two, unless one of them drills down to the board of the other.
 - Use the configured vocabulary and levels; extend `config.yaml` only when the
   request is about vocabulary ([Vocabulary](#essentials)).
 - Fewer, truer parts: every node has a responsibility the source supports.
