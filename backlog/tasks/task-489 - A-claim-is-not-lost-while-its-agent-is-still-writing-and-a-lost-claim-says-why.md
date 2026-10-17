@@ -3,11 +3,11 @@ id: TASK-489
 title: >-
   A claim is not lost while its agent is still writing, and a lost claim says
   why
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-17 04:20'
-updated_date: '2026-10-17 04:38'
+updated_date: '2026-10-17 04:40'
 labels:
   - board-store
 dependencies: []
@@ -23,8 +23,8 @@ On 2026-10-17 four agents, each claiming a different board of this vault on the 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A claimed board stays claimed for its whole duration while its holder writes, with several agents each claiming a different board on one server, shown by a test
-- [ ] #2 When a claim does end without a person taking it back, the refusal names the cause (expiry, refused renewal, restart) instead of "Somebody took it back"
+- [x] #1 A claimed board stays claimed for its whole duration while its holder writes, with several agents each claiming a different board on one server, shown by a test
+- [x] #2 When a claim does end without a person taking it back, the refusal names the cause (expiry, refused renewal, restart) instead of "Somebody took it back"
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -46,4 +46,12 @@ Fix: renewRecord renews a lapsed lease that still names the holder (nobody took 
 Cause on refusal: ClaimRevocation.cause is taken-back (a take-back on this server, or renewal found a person's take-back lease from another server), held-by-another (renewal found another writer's lease), or lease-gone (renewal found no lease). Every CLAIM_REVOKED answer carries cause, and the sentence opens with claimEndReason(): only taken-back names a person.
 Decisions: expiry and restart produce no CLAIM_REVOKED today (an expired claim is dropped and the next write is ordinary; a restarted server has no memory of the claim and the CLI carries no claim id), so there is no refusal to name them. Telling expiry once would refuse the next writer of the board, whoever it is, and the claim route would refuse the natural re-claim; left for the parent to decide. Not closed: after a pause, an unclaimed write from another agent on the same server that runs before the late renewal can still steal the claim's lapsed lease; four agents on four boards cannot hit it.
 Tests: src/runtime/engine/tests/board-claim-renewal.test.ts (both cases fail on the old code; the first also fails with only the renewal fix); board-lock-api.test.ts asserts cause taken-back; cross-process-lock.test.ts (opt-in topology) asserts lease-gone or taken-back.
+
+Validation on feat/derived-overview after cherry-pick (7817118ff): bun test --isolate src/runtime/engine src/server src/runtime/semantic-board-store 651 pass 0 fail; tsc clean. Left open: what paused the port-3000 server on 14 October is unknown; expiry and restart produce no CLAIM_REVOKED to name a cause in.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Claims were lost because a server busy with one long synchronous job renewed its leases late and refused its own lapsed leases, recording them as taken back by nobody. A late renewal now keeps a lease that still names its holder, a write under a lapsed claim rejoins it, and every CLAIM_REVOKED names its cause (taken-back, held-by-another, lease-gone). Verified by board-claim-renewal.test.ts, which failed on the old code, and by pausing a real server with SIGSTOP.
+<!-- SECTION:FINAL_SUMMARY:END -->
