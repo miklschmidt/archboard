@@ -30,13 +30,15 @@ const OPEN_REACH = 1_000_000;
 type Wall = readonly [number, number];
 
 /**
- * The x a station's line can reach it at: a card's face, or a single x.
+ * The x a station's line can reach it at: a card's face, the one point of
+ * the card its line is held to, or a single x.
  * @param station The station.
  * @returns The lowest and highest x.
  */
 function reach(station: Station): [number, number] {
 	if (station.kind !== "card") return [station.x, station.x];
 	const { x, width } = station.item!.box;
+	if (station.at !== undefined) return [x + station.at, x + station.at];
 	const margin = Math.min(FACE_MARGIN, width / 2);
 	return [x + margin, x + width - margin];
 }

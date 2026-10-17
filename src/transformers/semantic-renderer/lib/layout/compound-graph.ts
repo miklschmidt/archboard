@@ -1,6 +1,7 @@
 // The graph Track and Blocks lay out (lib/blocks): semantic containment,
-// measured dimensions and which children are entry points of the container
-// around them. Each engine chooses ranks and attachment faces.
+// measured dimensions, which children are entry points of the container
+// around them, and which point of a flowchart's decision each of its answers
+// leaves from. Each engine chooses ranks and attachment faces.
 import type { ElkLabel, ElkNode } from "@archboard/elk-rs";
 import {
 	inspectContainer,
@@ -28,6 +29,51 @@ const ENTRY_POINT = "archboard.entry";
  * tall it stands there, as `[width, height]` rows, narrowest first (TASK-486).
  */
 const HEADER_STEPS = "archboard.header.steps";
+/**
+ * The layout option marking a line that leaves its source from the source's
+ * points, as out of a flowchart's decision (`MeasuredNode.pointed`): the
+ * corner of the source's box Graphviz is asked to stand it under, by the
+ * line's place among the source's lines ({@link pointsOf}).
+ */
+const FROM_POINTS = "archboard.from-points";
+/**
+ * The layout option on such a line that says how far in from the left and
+ * right edges of its source's box the lines from its side points run down
+ * (`MeasuredNode.pointed`).
+ */
+const POINTS_INSET = "archboard.from-points.inset";
+
+/**
+ * The layout options of each line out of a card that leaves from its points:
+ * where it asks Graphviz to leave, as a compass point, and how far in from
+ * the box's edges its side points' lines run down. The first of two or more
+ * lines asks for the bottom-left corner of the card's box, the last for the
+ * bottom-right corner, and any other for the middle of its bottom. The router
+ * holds each line to its point by where Graphviz then stood it
+ * (`track/points.ts`).
+ * @param edges The relationships, in the board's order.
+ * @param measured The measured cards.
+ * @returns The options, by relationship id.
+ */
+function pointsOf(
+	edges: readonly SemanticEdge[],
+	measured: MeasuredArchitecture,
+): Map<string, Record<string, string>> {
+	const leaving = new Map<string, string[]>();
+	for (const edge of edges)
+		if (measured.nodes.get(edge.from)?.pointed !== undefined)
+			leaving.set(edge.from, [...(leaving.get(edge.from) ?? []), edge.id]);
+	const points = new Map<string, Record<string, string>>();
+	for (const [from, ids] of leaving) {
+		const inset = String(measured.nodes.get(from)!.pointed);
+		ids.forEach((id, index) => {
+			const end = ids.length > 1 && (index === 0 || index === ids.length - 1);
+			const compass = end ? (index === 0 ? "sw" : "se") : "s";
+			points.set(id, { [FROM_POINTS]: compass, [POINTS_INSET]: inset });
+		});
+	}
+	return points;
+}
 
 /**
  * Which child of a container holds each part inside it, at any depth.
@@ -186,6 +232,32 @@ function captionOptions(measured: MeasuredArchitecture): Pick<ElkNode, "layoutOp
 }
 
 /**
+ * A relationship's own layout options: its order and kind, its look where
+ * lines of another look keep apart, and its standing in a comparison.
+ * @param edge The relationship.
+ * @param standing Its standing, when the content is compared.
+ * @param byLook Whether relationships that differ in emphasis or traffic stay on separate lanes.
+ * @returns The options.
+ */
+function edgeOptions(
+	edge: SemanticEdge,
+	standing: ChangeKind | "unchanged" | undefined,
+	byLook: boolean,
+): Record<string, string> {
+	return {
+		"archboard.order": String(edge.order),
+		"archboard.relationship.kind": edge.kind,
+		...(byLook
+			? {
+					"archboard.relationship.emphasis": edge.emphasis,
+					"archboard.relationship.traffic": edge.traffic === undefined ? "off" : "on",
+				}
+			: {}),
+		...(standing === undefined ? {} : { "archboard.relationship.standing": standing }),
+	};
+}
+
+/**
  * Construct one whole graph without rank, flank or boundary-port policies.
  * @param content The view's semantic content.
  * @param measured Its fixed text and card dimensions.
@@ -212,33 +284,35 @@ function compoundGraph(
 		const parent = node.parent === undefined ? undefined : nodes.get(node.parent);
 		(parent?.children ?? children).push(nodes.get(node.id)!);
 	}
+	const edges = content.edges.toSorted((one, other) => one.order - other.order);
+	const points = pointsOf(edges, measured);
 	return {
 		id: "architecture:root",
 		...captionOptions(measured),
 		children,
-		edges: content.edges
-			.toSorted((one, other) => one.order - other.order)
-			.map((edge) => {
-				const standing = standings === undefined ? undefined : (standings[edge.id] ?? "unchanged");
-				return {
-					id: edge.id,
-					sources: [edge.from],
-					targets: [edge.to],
-					layoutOptions: {
-						"archboard.order": String(edge.order),
-						"archboard.relationship.kind": edge.kind,
-						...(byLook
-							? {
-									"archboard.relationship.emphasis": edge.emphasis,
-									"archboard.relationship.traffic": edge.traffic === undefined ? "off" : "on",
-								}
-							: {}),
-						...(standing === undefined ? {} : { "archboard.relationship.standing": standing }),
-					},
-					labels: labelsOf(edge, measured),
-				};
-			}),
+		edges: edges.map((edge) => {
+			const standing = standings === undefined ? undefined : (standings[edge.id] ?? "unchanged");
+			return {
+				id: edge.id,
+				sources: [edge.from],
+				targets: [edge.to],
+				layoutOptions: {
+					...edgeOptions(edge, standing, byLook),
+					...points.get(edge.id),
+				},
+				labels: labelsOf(edge, measured),
+			};
+		}),
 	};
 }
 
-export { ENTRY_POINT, GROUP_CAPTIONS, HEADER_STEPS, PLACING_GROUP, compoundGraph, entryPointsOf };
+export {
+	ENTRY_POINT,
+	FROM_POINTS,
+	POINTS_INSET,
+	GROUP_CAPTIONS,
+	HEADER_STEPS,
+	PLACING_GROUP,
+	compoundGraph,
+	entryPointsOf,
+};

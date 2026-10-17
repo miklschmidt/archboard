@@ -123,18 +123,26 @@ function outlineOf(svg: string, id: string): At[] {
 }
 
 /**
+ * Every line of the picture, as the points its path names, from its start.
+ * @param svg The drawn document.
+ * @returns The lines, on the page.
+ */
+function drawnLines(svg: string): At[][] {
+	return [...svg.matchAll(/<g data-semantic-kind="edge"[^>]*>([\s\S]*?)<\/g>/g)].flatMap(
+		([, group]) =>
+			[...group!.matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end=/g)].map(([, d]) =>
+				pointsOf(svg, d!),
+			),
+	);
+}
+
+/**
  * Where every line of the picture starts and ends.
  * @param svg The drawn document.
  * @returns The ends of the lines, on the page.
  */
 function lineEnds(svg: string): At[] {
-	return [...svg.matchAll(/<g data-semantic-kind="edge"[^>]*>([\s\S]*?)<\/g>/g)].flatMap(
-		([, group]) =>
-			[...group!.matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end=/g)].flatMap(([, d]) => {
-				const points = pointsOf(svg, d!);
-				return [points[0]!, points.at(-1)!];
-			}),
-	);
+	return drawnLines(svg).flatMap((points) => [points[0]!, points.at(-1)!]);
 }
 
 /**
@@ -207,6 +215,102 @@ describe("a flowchart's lines meet its shapes", () => {
 			const atPoint = Math.abs(end.x - centre.x) < 0.5 || Math.abs(end.y - centre.y) < 0.5;
 			expect(atPoint, `a line meets the diamond at ${end.x}, ${end.y}`).toBe(true);
 		}
+	});
+});
+
+/** A decision with three answers, each with a step of its own, and a step after it. */
+const THREE: VariantContent = orderedFixture({
+	nodes: FLOW.nodes,
+	flows: [
+		{
+			id: "f2",
+			name: "Three ways",
+			participants: ["pane", "gate", "run"],
+			steps: [
+				{ id: "t1", from: "pane", to: "gate", label: "ask", kind: "sync" },
+				{
+					id: "d2",
+					kind: "decision",
+					question: "Which way does the gateway send it?",
+					alternatives: ["first", "second", "third"].map((label, index) => ({
+						label,
+						steps: [
+							{ id: `a${index}`, from: "gate", to: "run", label: `go ${label}`, kind: "sync" },
+						],
+					})),
+				},
+				{ id: "t2", from: "gate", to: "pane", label: "answered", kind: "return" },
+			],
+		},
+	],
+});
+
+/**
+ * The lines that leave a decision, each from its start, left to right by where
+ * it starts, with the diamond's points.
+ * @param content What is drawn.
+ * @param id The decision.
+ * @returns The lines, and the diamond's left and right x, middle height and foot.
+ */
+async function answersOf(content: VariantContent, id: string) {
+	const { svg } = await renderSemanticView({ content, grammar: "flowchart", theme: "light" });
+	const outline = outlineOf(svg, id);
+	const xs = outline.map(({ x }) => x);
+	const ys = outline.map(({ y }) => y);
+	const diamond = {
+		left: Math.min(...xs),
+		right: Math.max(...xs),
+		middle: (Math.min(...ys) + Math.max(...ys)) / 2,
+		foot: Math.max(...ys),
+	};
+	const out = drawnLines(svg)
+		.filter((points) => distanceToOutline(outline, points[0]!) < MEETING)
+		.toSorted((one, other) => one[0]!.x - other[0]!.x);
+	return { out, diamond };
+}
+
+/**
+ * Whether a line out of a side point runs sideways out of it, and stays
+ * outside the diamond's width until it is below the diamond.
+ * @param points The line, from its start.
+ * @param side The x of the point it leaves.
+ * @param way Which way out of the diamond that side is: -1 left, 1 right.
+ * @param foot The diamond's foot.
+ * @returns True when it does.
+ */
+function leavesSideways(points: readonly At[], side: number, way: -1 | 1, foot: number): boolean {
+	const [start, next] = points;
+	const sideways = Math.abs(next!.y - start!.y) < 0.5 && (next!.x - side) * way > 0;
+	const beside = points.filter(({ y }) => y <= foot).every(({ x }) => (x - side) * way >= -0.5);
+	return sideways && beside;
+}
+
+describe("a decision's answers leave it from separate points", () => {
+	test("two answers leave from its left and right points, each sideways before it turns down", async () => {
+		const { out, diamond } = await answersOf(FLOW, "d1");
+		expect(out.length).toBe(2);
+		const [left, right] = out;
+		for (const [line, x] of [
+			[left!, diamond.left],
+			[right!, diamond.right],
+		] as const) {
+			expect(line[0]!.x).toBeCloseTo(x, 0);
+			expect(line[0]!.y).toBeCloseTo(diamond.middle, 0);
+		}
+		expect(leavesSideways(left!, diamond.left, -1, diamond.foot)).toBe(true);
+		expect(leavesSideways(right!, diamond.right, 1, diamond.foot)).toBe(true);
+	});
+
+	test("three answers leave from its left, bottom and right points", async () => {
+		const { out, diamond } = await answersOf(THREE, "d2");
+		expect(out.length).toBe(3);
+		const [left, bottom, right] = out;
+		expect(left![0]!.x).toBeCloseTo(diamond.left, 0);
+		expect(right![0]!.x).toBeCloseTo(diamond.right, 0);
+		expect(bottom![0]!.x).toBeCloseTo((diamond.left + diamond.right) / 2, 0);
+		expect(bottom![0]!.y).toBeCloseTo(diamond.foot, 0);
+		expect(leavesSideways(left!, diamond.left, -1, diamond.foot)).toBe(true);
+		expect(leavesSideways(right!, diamond.right, 1, diamond.foot)).toBe(true);
 	});
 });
 
