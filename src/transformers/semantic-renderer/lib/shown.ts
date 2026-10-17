@@ -12,7 +12,7 @@
 // hops or is cut beneath one that is not drawn. The page is still the whole
 // layout's page, so the subjects left keep their places on it.
 
-import type { SemanticFlow, VariantContent } from "@/shared/semantic-board/index";
+import { everyStep, type SemanticFlow, type VariantContent } from "@/shared/semantic-board/index";
 import type { LineLook, PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type {
@@ -37,7 +37,7 @@ function unshownOf(laid: VariantContent, held: VariantContent): ReadonlySet<stri
 	const kept = new Set([
 		...held.nodes.map(({ id }) => id),
 		...held.edges.map(({ id }) => id),
-		...held.flows.flatMap(({ steps }) => steps.map(({ id }) => id)),
+		...held.flows.flatMap(({ steps }) => everyStep(steps).map(({ id }) => id)),
 	]);
 	return new Set([...laid.nodes, ...laid.edges].map(({ id }) => id).filter((id) => !kept.has(id)));
 }
@@ -149,12 +149,13 @@ function shownFlows(
 			const flow = own.get(laid.flow.id);
 			if (flow === undefined) return [];
 			const participants = new Set(flow.participants);
-			const messages = new Set(flow.steps.map(({ id }) => id));
-			const steps = laid.steps.filter(({ step }) => messages.has(step.id));
+			const told = new Set(everyStep(flow.steps).map(({ id }) => id));
+			const steps = laid.steps.filter(({ step }) => told.has(step.id));
+			const frames = laid.frames.filter(({ step }) => told.has(step.id));
 			const columns = laid.columns
 				.filter(({ card }) => participants.has(card.node.id))
 				.map((column) => shownColumn(column, steps));
-			return [{ ...laid, columns, steps }];
+			return [{ ...laid, columns, steps, frames }];
 		}),
 	};
 }

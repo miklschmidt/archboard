@@ -49,6 +49,9 @@ type NodeResolution = { readonly ok: true; readonly node: SemanticNode } | Seman
  */
 type NamedKind = "flow" | "view" | "walkthrough";
 
+/** Absent ids of one kind that an edit may restore under their own ids. */
+type Restorable = Pick<ReadonlySet<string>, "has">;
+
 /** What to refuse a stated id with, when it names nothing of its kind. */
 const UNKNOWN: Readonly<Record<NamedKind, SemanticRefusalCode>> = {
 	flow: "UNKNOWN_FLOW",
@@ -117,6 +120,7 @@ function place<Entity extends { readonly id: string }>(
  * @param stated.as The handle it asked for, when it asked for one.
  * @param batch The batch; its ids and handles are extended.
  * @param what The kind of thing, for the refusal to name.
+ * @param restorable Absent ids of this kind the edit may restore.
  * @returns The id, or why the stated one names nothing.
  */
 function idFor(
@@ -128,9 +132,10 @@ function idFor(
 	},
 	batch: Batch,
 	what: NamedKind,
+	restorable?: Restorable,
 ): MintedId {
 	if (stated.id !== undefined) {
-		const replacing = replaced(existing, stated.id, stated.name, what);
+		const replacing = replaced(existing, stated.id, stated.name, what, restorable);
 		return replacing.ok ? held(batch, stated.as, replacing.id) : replacing;
 	}
 	const byName = existing.filter((one) => one.name === stated.name);
@@ -146,11 +151,12 @@ function idFor(
 }
 
 /**
- * The id of the entity a stated id replaces, or the refusal for naming none.
+ * The id of the entity a stated id replaces or restores, or the refusal for naming none.
  * @param existing The entities as they stand.
  * @param id The id the agent stated.
  * @param name What it called the entity, for the refusal.
  * @param what The kind of thing, for the refusal to name.
+ * @param restorable Absent ids of this kind the edit may restore.
  * @returns The id, or the refusal.
  */
 function replaced(
@@ -158,13 +164,14 @@ function replaced(
 	id: string,
 	name: string,
 	what: NamedKind,
+	restorable: Restorable | undefined,
 ): MintedId {
-	if (existing.some((one) => one.id === id)) {
+	if (existing.some((one) => one.id === id) || restorable?.has(id) === true) {
 		return { ok: true, id };
 	}
 	return refuse(
 		UNKNOWN[what],
-		`there is no ${what} "${id}" on this variant to replace. Leave the id out to add ` +
+		`there is no ${what} "${id}" here to replace or restore. Leave the id out to add ` +
 			`"${name}" as a new one`,
 	);
 }

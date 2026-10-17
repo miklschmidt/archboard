@@ -34,8 +34,8 @@ import {
 	type VariantComparison,
 } from "@/shared/semantic-board/lib/compare";
 import type { VariantContent } from "@/shared/semantic-board/lib/content";
-import { scopedContent } from "@/shared/semantic-board/lib/scope";
-import type { ViewScope } from "@/shared/semantic-board/lib/views";
+import { everyStep } from "@/shared/semantic-board/lib/flow-steps";
+import { scopedContent, type ReadingScope } from "@/shared/semantic-board/lib/scope";
 
 /** What the answer says about a variant read against another, or nothing for the reference. */
 interface DrawnChanges {
@@ -81,7 +81,7 @@ function comparedWith(board: SemanticBoard, variant: SemanticVariant): SemanticV
  * absent rather than as part of the variant.
  * @param board The board.
  * @param variant The variant being drawn.
- * @param scope The shared view selection, applied to both sides of the change.
+ * @param scope The shared reading, applied to both sides of the change.
  * @param named The variant to read it against when the caller named one, in place of
  * `comparedWith`.
  * @returns The content to draw and the changes to mark on it.
@@ -89,7 +89,7 @@ function comparedWith(board: SemanticBoard, variant: SemanticVariant): SemanticV
 function drawingOf(
 	board: SemanticBoard,
 	variant: SemanticVariant,
-	scope: ViewScope = { kind: "all" },
+	scope: ReadingScope = { kind: "all" },
 	named?: SemanticVariant,
 ): DrawnProposal {
 	const base = named ?? comparedWith(board, variant);
@@ -129,7 +129,7 @@ function standingOfDrawn(
 		...against(comparison.flows, drawn.flows),
 		...against(
 			comparison.steps,
-			drawn.flows.flatMap((flow) => [...flow.steps]),
+			drawn.flows.flatMap((flow) => everyStep(flow.steps)),
 		),
 	};
 }

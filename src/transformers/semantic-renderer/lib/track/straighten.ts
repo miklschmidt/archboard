@@ -4,9 +4,10 @@
 import {
 	Occupancy,
 	crossingsOf,
-	inversions,
 	laneRuns,
 	meeting,
+	meets,
+	meetsAt,
 	nearest,
 	straightOn,
 	type Chain,
@@ -68,7 +69,7 @@ function columnsOf(
 			before: run.lanes[index - 1] ?? run.before,
 			after: run.lanes[index + 1] ?? run.after,
 		};
-		return nearest(lane.x, (x) => occupancy.fits(one, x), occupancy.edges([lane])) ?? lane.x;
+		return nearest(lane.x, occupancy.fitting(one), occupancy.edges([lane])) ?? lane.x;
 	});
 	const pieces: number[] = [];
 	let before = run.before;
@@ -171,15 +172,44 @@ function columnOf(
 		straight.length > 0
 			? [straight, straight[0]!]
 			: [[...fromPort(run, bands, median), after.x, before.x, median, ...xs], median];
-	const found = nearest(near, (x) => occupancy.fits(run, x), occupancy.edges(lanes));
-	const free = [
-		...columns.filter((x) => occupancy.fits(run, x)),
-		...(found === undefined ? [] : [found]),
-	];
-	const counts = free.map((x) => inversions(run, x, bands));
+	const fits = occupancy.fitting(run);
+	const found = nearest(near, fits, occupancy.edges(lanes));
+	const free = [...columns.filter(fits), ...(found === undefined ? [] : [found])];
+	const crossings = crossingsFor([run.before, ...run.lanes, run.after], bands);
+	const counts = free.map((x) => crossings([run.before.x, ...run.lanes.map(() => x), run.after.x]));
 	const fewest = Math.min(...counts);
 	const crossesMore = scene.inline && fewest > standingCrossings(run, bands);
 	return crossesMore ? undefined : free[counts.indexOf(fewest)];
+}
+
+/**
+ * How many other chains a line would cross between one band and the next,
+ * as `crossingsOf` in chains.ts counts them, for any x its own stations
+ * stand at. Where the other chains meet each channel is read once, so a
+ * search that weighs many columns for one line reads it once for all.
+ * @param own The line's stations, or a run of them with the stations either side.
+ * @param bands Every chain's stations, by band, as they stand while the search weighs.
+ * @returns The count, for where the line's stations stand.
+ */
+function crossingsFor(
+	own: readonly Station[],
+	bands: readonly ReadonlyMap<number, Station>[],
+): (xs: readonly number[]) => number {
+	const others = own.slice(1).map((lower, index) => {
+		const upper = own[index]!;
+		return bands.flatMap((other) => {
+			const [one, two] = [other.get(upper.band), other.get(lower.band)];
+			if (one === undefined || two === undefined || meets(one, upper) || meets(two, lower))
+				return [];
+			return [[meetsAt(one, two.x), meetsAt(two, one.x)] as const];
+		});
+	});
+	return (xs) =>
+		own.slice(1).reduce((count, lower, index) => {
+			const [above, below] = [xs[index]!, xs[index + 1]!];
+			const [top, bottom] = [meetsAt(own[index]!, below, above), meetsAt(lower, above, below)];
+			return count + others[index]!.filter(([one, two]) => (top - one) * (bottom - two) < 0).length;
+		}, 0);
 }
 
 /**
@@ -197,4 +227,4 @@ function standingCrossings(run: LaneRun, bands: readonly ReadonlyMap<number, Sta
 	);
 }
 
-export { straightenLanes };
+export { crossingsFor, straightenLanes };

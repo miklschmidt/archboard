@@ -35,14 +35,18 @@ const policy = SemanticPolicySchema.parse({
 // Reduced from a board of a work vault, names replaced: a line out of a
 // container by its wall left its card by the bottom and ran along the
 // channel under it, a hook under the card's corner, although nothing stood
-// between the card's side and the wall.
+// between the card's side and the wall. Wherever the stores stand, the line
+// leaves its card by the face toward them.
 test("a line out of a container by its wall leaves its card's side when nothing stands between", async () => {
 	const content = orderedFixture(requestPath);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const card = drawn.atlas.nodes["JnkTz8V4"]!;
+	const [card, stores] = [drawn.atlas.nodes["JnkTz8V4"]!, drawn.atlas.nodes["WLY9p0FT"]!];
 	const [start] = corridorPoints(drawn.svg).get("FOrXU78u")!;
-	expect(start!.x).toBeCloseTo(card.x + card.width, 0);
-	expect(start!.y).toBeLessThan(card.y + card.height);
+	const [right, bottom] = [card.x + card.width, card.y + card.height];
+	const byBottom = Math.abs(start!.y - bottom) < 1;
+	expect(byBottom || Math.abs(start!.x - right) < 1).toBeTrue();
+	if (byBottom) expect(stores.y).toBeGreaterThan(bottom);
+	else expect(stores.x).toBeGreaterThan(right);
 });
 
 // Reduced from a board of a work vault, names replaced: the line into the

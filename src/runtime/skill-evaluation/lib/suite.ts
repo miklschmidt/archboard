@@ -6,7 +6,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { DiagramThemeSchema, VariantLifecycleSchema } from "@/shared/semantic-board/index";
+import {
+	DiagramGrammarSchema,
+	DiagramThemeSchema,
+	VariantLifecycleSchema,
+} from "@/shared/semantic-board/index";
 import {
 	FixtureSchema,
 	HomePathSchema,
@@ -131,7 +135,7 @@ const OutcomeCheckSchema = z
 		addedNodesAtLeast: z.number().optional(),
 		withReason: z.boolean().optional(),
 		view: z.string().optional(),
-		grammar: z.enum(["architecture", "data-flow"]).optional(),
+		grammar: DiagramGrammarSchema.optional(),
 		edgesSelected: z.number().optional(),
 		nodesSelectedAtLeast: z.number().optional(),
 		groups: Names.optional(),
@@ -191,7 +195,7 @@ const CaptureDeclarationSchema = z
 		board: z.string().min(1),
 		variant: z.string().min(1).optional(),
 		view: z.string().min(1).optional(),
-		grammar: z.enum(["architecture", "data-flow"]).optional(),
+		grammar: DiagramGrammarSchema.optional(),
 	})
 	.strict();
 type CaptureDeclaration = z.infer<typeof CaptureDeclarationSchema>;

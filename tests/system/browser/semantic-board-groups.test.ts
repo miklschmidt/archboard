@@ -98,7 +98,7 @@ test("a person selects a group from its colour and name, sees its members ringed
 	const before = readFileSync(join(vault, "orders.semantic.json"), "utf8");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?paneA=orders`]);
+	await browser.run(["open", `${server.base}/?paneA=orders&viewA=Everything`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => pictureAtRest(browser.eval.bind(browser)),

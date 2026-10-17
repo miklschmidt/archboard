@@ -18,9 +18,9 @@ skill says how to post it.
    their neighbours. The `archboard` skill's views section says how. If the
    whole variant passes the size check below, draw it instead.
 4. Draw one kind of picture per render: an architecture view, or a sequence
-   through its `data-flow` view. Arrows that mix several kinds of relationship
+   through its `sequence` view. Arrows that mix several kinds of relationship
    are hard to read [Kruchten]. An ephemeral sequence board draws through the
-   `data-flow` view that it was created with.
+   `sequence` view that it was created with.
 
 Done: the view is named, and it holds every part and relationship that
 `compare` reports as added, changed or removed.

@@ -153,7 +153,7 @@ function walkthroughSection(props: SemanticBoardPanelProps): ReactNode {
  */
 function viewSection(props: SemanticBoardPanelProps): ReactNode {
 	const { answer, onChooseView } = props;
-	if (answer === undefined || onChooseView === undefined || answer.views.length === 0) {
+	if (answer === undefined || onChooseView === undefined) {
 		return null;
 	}
 	const described = props.reading?.views.find((view) => view.id === answer.view?.id);

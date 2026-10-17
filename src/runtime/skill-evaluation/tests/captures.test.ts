@@ -21,7 +21,7 @@ const DECLARED: CaptureDeclaration = {
 	label: "exchange",
 	board: "Flask request pipeline",
 	view: "Dispatch exchange",
-	grammar: "data-flow",
+	grammar: "sequence",
 };
 
 /**
@@ -36,7 +36,7 @@ function receipt(overrides: Record<string, unknown> = {}): Record<string, unknow
 		version: 4,
 		variant: { id: "v1", name: "Current", lifecycle: "current" },
 		comparedWith: null,
-		view: { id: "w1", name: "Dispatch exchange", grammar: "data-flow" },
+		view: { id: "w1", name: "Dispatch exchange", grammar: "sequence" },
 		theme: "light",
 		file: "/run/captures/capture-0-exchange.png",
 		width: 900,
@@ -66,7 +66,7 @@ describe("what one capture record is", () => {
 		expect(attempt.provenance).toMatchObject({
 			version: 4,
 			variant: { id: "v1", name: "Current" },
-			view: { name: "Dispatch exchange", grammar: "data-flow" },
+			view: { name: "Dispatch exchange", grammar: "sequence" },
 			scale: 1,
 			width: 900,
 			height: 420,
@@ -259,7 +259,7 @@ describe("every view of a board", () => {
 				"Flask",
 				boardWith([
 					{ id: "w1", name: "Request path", grammar: "architecture", scope: { kind: "all" } },
-					{ id: "w2", name: "Request path!", grammar: "data-flow", scope: { kind: "all" } },
+					{ id: "w2", name: "Request path!", grammar: "sequence", scope: { kind: "all" } },
 					{ id: "w3", name: "Tile 3", grammar: "architecture", scope: { kind: "all" } },
 				]),
 			],
@@ -283,7 +283,7 @@ describe("every view of a board", () => {
 				label: "views-request-path-2",
 				board: "Flask",
 				view: "Request path!",
-				grammar: "data-flow",
+				grammar: "sequence",
 			},
 			{ label: "views-tile-3-view", board: "Flask", view: "Tile 3", grammar: "architecture" },
 		]);

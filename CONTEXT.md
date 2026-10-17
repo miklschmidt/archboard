@@ -39,6 +39,34 @@ every variant. The view stays the same while the selected variant supplies the
 architectural content.
 _Avoid_: board, pane, variant
 
+**Overview**:
+The reading a board opens on, which nobody authors (ADR 0052). It draws the
+root parts, and every container is closed. The board is the container of its
+subject, so no part stands for the board itself. All relationships from one drawn part to another are one
+line. It draws no line between a container and a part that it holds.
+_Avoid_: whole board, summary view, default view
+
+**Everything**:
+The reading of every part and every relationship, asked for as the view of
+that name. No authored view can be called Overview or Everything.
+_Avoid_: whole variant (in a reader's words), all view
+
+**Grammar**:
+What a view draws its scope as: `architecture`, `sequence` or `flowchart`.
+_Avoid_: diagram type, layout, mode
+
+**Sequence view**:
+A view in the `sequence` grammar. It draws one flow's participants as columns
+and every message in order, a decision as an `alt` frame and a loop as a
+`loop` frame. The grammar was called `data-flow` before schema 2.5.0.
+_Avoid_: data-flow view, sequence diagram (for the view)
+
+**Flowchart view**:
+A view in the `flowchart` grammar. It draws one flow's steps from a start to an
+end: a message as a box, a decision as a diamond with a labelled line for each
+alternative, and a loop as a hexagon (ADR 0053).
+_Avoid_: logic view, decision tree, activity diagram
+
 **Pane**:
 One of several side-by-side slots, each holding its own canvas, so that two
 boards can be worked on at once.
@@ -58,6 +86,37 @@ _Avoid_: box, component, entity, vertex, block
 **Edge**:
 A connection between two nodes standing for a dependency, call, or flow.
 _Avoid_: arrow, link, connector, relation, line
+
+**Flow**:
+One request, job or event told as an ordered exchange between the nodes it
+names as participants. Its steps say what happens, in what order, and under
+which condition (ADR 0053).
+_Avoid_: sequence (that is a reading of it), data flow, scenario
+
+**Step**:
+One thing that happens in a flow: a message, a decision or a loop. Each step
+has its own minted id, and its place in the flow is part of its meaning.
+_Avoid_: call (in a flow), row, line
+
+**Message**:
+A step from one participant to another, or to itself, with a label and a kind:
+`sync`, `return`, `async` or `self`.
+_Avoid_: edge, relationship, arrow
+
+**Decision**:
+A step that asks a question and goes on in one of two or more alternatives.
+The alternatives rejoin after it (ADR 0053).
+_Avoid_: branch node, condition, if-step
+
+**Alternative**:
+One answer to a decision's question, with its own label and the steps that run
+on that answer.
+_Avoid_: branch, case, arm, path
+
+**Loop**:
+A step that repeats the steps it holds while its condition holds. A count that
+the source fixes on one message is that message's `repeat`, not a loop.
+_Avoid_: repeat (that is a count on one message), iteration
 
 **Card**:
 The compact depiction of a node with no children shown inside it in the selected

@@ -153,7 +153,7 @@ whole, with no children. Draw its functions inside it, and the call lands on
    small enough to take in at once. A page thousands of pixels on both axes is
    the level this recipe opens with: cut it, or add the views its readings want;
    a second edit is the normal loop, not a repair. A request path the board
-   carries is a `flow` drawn through a `data-flow` view, not a row to declare
+   carries is a `flow` drawn through a `sequence` view, not a row to declare
    inapplicable. Run `archboard check --code`: every anchor and bound symbol
    holds in the files on disk.
 

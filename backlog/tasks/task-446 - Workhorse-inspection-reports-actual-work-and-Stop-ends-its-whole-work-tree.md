@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-07 19:57'
-updated_date: '2026-10-15 08:51'
+updated_date: '2026-10-17 04:20'
 labels:
   - voice
   - coordinator
@@ -81,6 +81,8 @@ A read-only replay through the existing fixture returned active status with null
 Protocol facts come from Codex rust-v0.160.1, commit c3e23d4c4385619ecec78408766e46b7fa7dd9ad. turn/interrupt targets one loaded thread and does not cascade. Its acknowledgment precedes turn/completed delivery. Native ancestry listing supports all-depth pagination. Interrupted durable queues pause. Accepted child input can survive parent cancellation. Pending mailbox input can start a later turn. The public API exposes no atomic tree-stop or spawn seal. Repeated observation therefore needs bounded partial and unconfirmed outcomes.
 
 The board check passes with no diagnostics. semantic compare matches the planned module responsibilities and relationships. Current content remains unchanged. No proposal is adopted.
+
+2026-10-17: this task's board proposals were rebuilt on the current architecture, which holds the board's calls as flows (TASK-482.07). Each is now named 'TASK-446 after TASK-482.07' on every board that had one (Agent workbench, Browser application, Codex workhorse, Voice coordinator, as applicable); the old 'TASK-446' drafts stood on parents later adoptions made historical, were renamed 'TASK-446 (before flows)' and shelved. A former name stays with the shelved draft, so read and adopt the new proposal by its new name. Calls of the change are steps of the board's flows.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

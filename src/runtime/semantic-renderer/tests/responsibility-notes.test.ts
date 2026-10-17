@@ -67,7 +67,7 @@ function cardBox(rendered: RenderedDiagram, id: string): DiagramBox {
 	return { ...rendered.atlas.nodes[id]!, height };
 }
 
-for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) {
+for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 	test(`${grammar} preserves explicit and wrapped responsibility lines within measured cards`, async () => {
 		const rendered = await renderSemanticView({ grammar, content, theme: "light" });
 		const faces = registeredFaces(rendered.svg);
@@ -98,7 +98,7 @@ for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) 
 					expect(run.y - run.size).toBeGreaterThan(previous.y);
 				}
 			}
-			if (grammar === "data-flow") {
+			if (grammar === "sequence") {
 				expect(rendered.atlas.edges["saveit"]!.y).toBeGreaterThan(box.y + box.height);
 			}
 		}
@@ -138,7 +138,7 @@ for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) 
 	});
 }
 
-for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[])
+for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[])
 	test(`${grammar}, seen from far away, draws each card's name larger, with the start of what it is responsible for`, async () => {
 		const rendered = await renderSemanticView({ grammar, content, theme: "light" });
 		const faces = registeredFaces(rendered.svg);
@@ -165,7 +165,7 @@ for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[])
 				expect(run.y + run.size * 0.3).toBeLessThan(box.y + box.height);
 			}
 		}
-		if (grammar === "data-flow") return;
+		if (grammar === "sequence") return;
 		// A container's header reads as a card does, its name and the start of what
 		// it is responsible for, and stays in its header, above what it holds.
 		const header = far.filter((run) => run.subject.id === "system");

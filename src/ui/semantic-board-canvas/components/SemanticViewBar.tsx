@@ -6,13 +6,11 @@
 // server to draw and nothing else. No board is written, no version moves, and
 // the other pane showing the other view is unaffected (ADR 0023).
 //
-// The whole variant is always one of the choices, and it is first. Without it a
-// board whose views are all narrow would have no way back to itself: a person
-// who picked one would be stuck inside it, and the board as a whole — the thing
-// every view is a reading of — would be the one thing they could not see.
-//
-// The list is absent entirely when a board names no views. Offering
-// a choice between the whole board and nothing else is furniture.
+// Two readings are on every board, because nobody authors them (ADR 0052).
+// The overview is what a board opens on, and it is first: the parts that work
+// together, with the rest closed. Everything is last and dimmed: it is the way
+// back to every part at once, which no narrow view gives, but it is the
+// reading a person should reach for least.
 //
 // A choice says the view's name and nothing else. The grammar a view is drawn
 // in used to be written under it, and a person naming their views the obvious
@@ -25,6 +23,7 @@
 
 import { useCallback, type JSX } from "react";
 
+import { EVERYTHING_VIEW } from "@/shared/semantic-board/index";
 import type { SemanticOfferedView } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import {
 	SidebarChoice,
@@ -36,31 +35,40 @@ import {
 interface SemanticViewBarProps {
 	/** Every view this board offers, in the order it states them. */
 	views: readonly SemanticOfferedView[];
-	/** The view on screen, or null when the whole variant is drawn. */
+	/** The view on screen, or null when the overview is drawn. */
 	showing: SemanticOfferedView | null;
 	/** What the view on screen answers, when its author said. */
 	summary: string | undefined;
 	/**
 	 * The person chose a way of reading this variant.
-	 * @param view The view's id, or null for the whole variant.
+	 * @param view The view's id, or null for the overview.
 	 */
 	onChoose: (view: string | null) => void;
 }
 
-/** The choice that is not a view: the variant, whole. */
-const WHOLE_VARIANT: SemanticOfferedView = Object.freeze({
+/** The choice that is not a view: the overview, which the board opens on. */
+const OVERVIEW: SemanticOfferedView = Object.freeze({
 	id: "",
-	name: "Everything",
+	name: "Overview",
 	grammar: "architecture",
+});
+
+/** Every part and every relationship, offered as the view of that name. */
+const EVERYTHING: SemanticOfferedView = Object.freeze({
+	id: EVERYTHING_VIEW.id,
+	name: EVERYTHING_VIEW.name,
+	grammar: EVERYTHING_VIEW.grammar,
 });
 
 /** One view's choice. */
 interface ViewChoiceProps {
 	view: SemanticOfferedView;
 	showing: boolean;
+	/** Whether its name is dimmed, as the reading to reach for least. */
+	quiet: boolean;
 	/**
 	 * The person chose this view.
-	 * @param view The view's id, or null for the whole variant.
+	 * @param view The view's id, or null for the overview.
 	 */
 	onChoose: (view: string | null) => void;
 }
@@ -71,10 +79,10 @@ interface ViewChoiceProps {
  * @returns The choice.
  */
 function ViewChoice(props: ViewChoiceProps): JSX.Element {
-	const { view, showing, onChoose } = props;
+	const { view, showing, quiet, onChoose } = props;
 	const choose = useCallback((): void => {
-		// The whole variant is a choice with no view behind it, so it says so with
-		// the absence the rest of the contract already spells as null.
+		// The overview is a choice with no view behind it, so it says so with the
+		// absence the rest of the contract already spells as null.
 		onChoose(view.id === "" ? null : view.id);
 	}, [onChoose, view.id]);
 	return (
@@ -84,7 +92,9 @@ function ViewChoice(props: ViewChoiceProps): JSX.Element {
 			data-semantic-view={view.id}
 			onClick={choose}
 		>
-			<SidebarLabel>{view.name}</SidebarLabel>
+			<SidebarLabel>
+				{quiet ? <span className="text-muted-foreground">{view.name}</span> : view.name}
+			</SidebarLabel>
 		</SidebarChoice>
 	);
 }
@@ -92,20 +102,17 @@ function ViewChoice(props: ViewChoiceProps): JSX.Element {
 /**
  * The ways this variant can be read, and which one is on screen.
  * @param props The views, the one showing, and what to do when one is chosen.
- * @returns The list, or null when there is nothing to choose between.
+ * @returns The list.
  */
-function SemanticViewBar(props: SemanticViewBarProps): JSX.Element | null {
+function SemanticViewBar(props: SemanticViewBarProps): JSX.Element {
 	const { views, showing, summary, onChoose } = props;
-	if (views.length === 0) {
-		return null;
-	}
 	return (
 		<SidebarChoices slot="semantic-view-bar" label="Ways of reading this board">
-			{[WHOLE_VARIANT, ...views].map((view) => {
+			{[OVERVIEW, ...views, EVERYTHING].map((view) => {
 				const on = view.id === "" ? showing === null : showing?.id === view.id;
 				return (
 					<div key={view.id} className="flex flex-col">
-						<ViewChoice view={view} showing={on} onChoose={onChoose} />
+						<ViewChoice view={view} showing={on} quiet={view === EVERYTHING} onChoose={onChoose} />
 						{on && summary !== undefined && (
 							<p
 								data-slot="semantic-view-summary"

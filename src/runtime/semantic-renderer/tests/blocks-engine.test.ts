@@ -471,9 +471,9 @@ test("a line into a container itself leaves its card on the card's own column", 
 test("a line into a container enters the card from the side its source stands on", async () => {
 	const content = orderedFixture(requestPath);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const card = drawn.atlas.nodes["42C5lYne"]!;
+	const [card, source] = [drawn.atlas.nodes["42C5lYne"]!, drawn.atlas.nodes["KpJL9Y0f"]!];
 	const end = routeEnds(drawn.svg).get("f3lzoqzb")!;
-	expect(end.y).toBeLessThan(card.y + card.height / 2);
+	expect(end.y < card.y + card.height / 2).toBe(source.y < card.y);
 });
 
 // Taken from a board of this repository: packed into a column, the region a

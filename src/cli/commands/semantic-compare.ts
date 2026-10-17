@@ -26,10 +26,7 @@ import { z } from "zod";
 import {
 	compareVariants,
 	RenderedVariantSchema,
-	SubjectStandingSchema,
-	type FieldChange,
 	type PlacedBeat,
-	type PlacedStep,
 	type SemanticEdge,
 	type SemanticFlow,
 	type SemanticNode,
@@ -60,29 +57,12 @@ import {
 } from "@/cli/commands/lib/measured-interfaces";
 import { nothingToCompareRefusal, readAgainst } from "@/cli/commands/lib/read-against";
 import { askedVariant, SelectorSchema, UNNAMED_VARIANT } from "@/cli/commands/lib/semantic-input";
-
-/** One field that moved, and what it moved between. */
-const MovedFieldSchema = z.object({
-	field: z.string(),
-	/** What the variant it is read against said; absent when it said nothing. */
-	before: z.unknown(),
-	/** What this variant says; absent when it says nothing. */
-	after: z.unknown(),
-});
-
-/**
- * What every compared subject carries: its identity, how it stands against the
- * variant it is read against, and the fields that moved — empty for anything
- * but a change.
- *
- * `standing` rather than `kind`, because a node and a relationship each already
- * have a `kind` of their own and an answer with two of them would be a riddle.
- */
-const comparedSubject = {
-	id: z.string(),
-	standing: SubjectStandingSchema,
-	fields: z.array(MovedFieldSchema),
-};
+import {
+	ComparedStepSchema,
+	comparedStep,
+	comparedSubject,
+	movedField,
+} from "@/cli/commands/lib/compared-subject";
 
 const ComparedNodeSchema = z.object({
 	...comparedSubject,
@@ -114,19 +94,6 @@ const ComparedFlowSchema = z.object({
 	...comparedSubject,
 	name: z.string(),
 	summary: z.string().nullable(),
-});
-
-/** One step, with the flow it is told in and how far into it it comes. */
-const ComparedStepSchema = z.object({
-	...comparedSubject,
-	flow: z.string(),
-	position: z.int(),
-	from: z.string(),
-	to: z.string(),
-	fromName: z.string().nullable(),
-	toName: z.string().nullable(),
-	kind: z.string(),
-	label: z.string(),
 });
 
 const ComparedWalkthroughSchema = z.object({
@@ -174,15 +141,6 @@ const VariantComparisonResultSchema = z.object({
 });
 type VariantComparisonResult = z.infer<typeof VariantComparisonResultSchema>;
 type ComparedEdge = z.infer<typeof ComparedEdgeSchema>;
-
-/**
- * One field that moved, as the answer carries it.
- * @param change The field change.
- * @returns The same three facts.
- */
-function movedField(change: FieldChange): z.infer<typeof MovedFieldSchema> {
-	return { field: change.field, before: change.before, after: change.after };
-}
 
 /**
  * Every subject of one kind, in a stable order: the answer is read by a machine
@@ -265,32 +223,6 @@ function comparedFlow(change: SubjectChange<SemanticFlow>): z.infer<typeof Compa
 		fields: change.fields.map(movedField),
 		name: flow.name,
 		summary: flow.summary ?? null,
-	};
-}
-
-/**
- * One step, as the answer carries it.
- * @param change How it stands.
- * @param names What each part is called.
- * @returns The entry.
- */
-function comparedStep(
-	change: SubjectChange<PlacedStep>,
-	names: ReadonlyMap<string, string>,
-): z.infer<typeof ComparedStepSchema> {
-	const step = change.entity;
-	return {
-		id: step.id,
-		standing: change.kind,
-		fields: change.fields.map(movedField),
-		flow: step.flow,
-		position: step.position,
-		from: step.from,
-		to: step.to,
-		fromName: names.get(step.from) ?? null,
-		toName: names.get(step.to) ?? null,
-		kind: step.kind,
-		label: step.label,
 	};
 }
 

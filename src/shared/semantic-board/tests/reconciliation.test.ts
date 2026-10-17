@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
+	checkVariantContent,
+	messagesOf,
 	reconcileVariant,
 	VariantContentSchema,
 	VariantStandingSchema,
@@ -67,6 +69,26 @@ describe("a change nobody competed for", () => {
 		const settled = reconcileVariant({ base: BASE, mine: BASE, theirs });
 		expect(settled.content.nodes.map((node) => node.id)).toEqual(["n1", "n2", "n3"]);
 		expect(settled.issues).toEqual([]);
+	});
+
+	test("a subject the predecessor added takes a free position when this proposal used its own", () => {
+		const mine = content({
+			nodes: [API, STORE, { id: "n4", name: "Queue", kind: "queue", order: 3000 }],
+			edges: [WIRE, { id: "e2", from: "n1", to: "n4", kind: "call", order: 2000 }],
+		});
+		const theirs = content({
+			nodes: [API, STORE, { id: "n3", name: "Cache", kind: "cache", order: 3000 }],
+			edges: [WIRE, { id: "e3", from: "n1", to: "n3", kind: "call", order: 2000 }],
+		});
+		const settled = reconcileVariant({ base: BASE, mine, theirs });
+		expect(settled.issues).toEqual([]);
+		expect(settled.content.nodes.map(({ id, order }) => [id, order])).toEqual([
+			["n1", 1000],
+			["n2", 2000],
+			["n4", 3000],
+			["n3", 4000],
+		]);
+		expect(settled.content.edges.map(({ order }) => order)).toEqual([1000, 2000, 3000]);
 	});
 
 	test("a subject the predecessor removed goes, when nothing here touched it", () => {
@@ -283,12 +305,12 @@ describe("an anchor", () => {
 		});
 		expect(inherited.issues).toEqual([]);
 		expect(inherited.content.edges[0]?.anchor).toEqual(cite("read"));
-		expect(inherited.content.flows[0]?.steps[0]?.anchor).toEqual(cite("read"));
+		expect(messagesOf(inherited.content.flows[0]?.steps ?? [])[0]?.anchor).toEqual(cite("read"));
 
 		const kept = reconcileVariant({ base: anchored(), mine: anchored("read"), theirs: anchored() });
 		expect(kept.issues).toEqual([]);
 		expect(kept.content.edges[0]?.anchor).toEqual(cite("read"));
-		expect(kept.content.flows[0]?.steps[0]?.anchor).toEqual(cite("read"));
+		expect(messagesOf(kept.content.flows[0]?.steps ?? [])[0]?.anchor).toEqual(cite("read"));
 	});
 
 	test("two different citations are a disagreement on the field", () => {
@@ -333,4 +355,45 @@ describe("what a proposal added to something the predecessor removed", () => {
 		expect(settled.content.nodes.map((node) => node.id)).toContain("n2");
 		expect(settled.content.edges.map((edge) => edge.id)).toContain("e2");
 	});
+
+	const REFERRERS = {
+		relationship: { edges: [WIRE, { id: "e2", from: "n2", to: "n1", kind: "call" }] },
+		flow: {
+			edges: [WIRE],
+			flows: [
+				{
+					id: "f1",
+					name: "One request",
+					participants: ["n1", "n2"],
+					steps: [{ id: "s1", from: "n1", to: "n2", label: "ask", kind: "sync" }],
+				},
+			],
+		},
+	};
+	for (const [what, referring] of Object.entries(REFERRERS)) {
+		test(`holds only the removal a ${what} here refers to, and takes the rest of the edit`, () => {
+			// One edit above renames the API, adds a cache and removes the store
+			// something this proposal says refers to.
+			const mine = content({ nodes: [API, STORE], ...referring });
+			const theirs = content({
+				nodes: [
+					{ ...API, name: "Gateway" },
+					{ id: "n3", name: "Cache", kind: "cache" },
+				],
+				edges: [],
+			});
+			const settled = reconcileVariant({ base: BASE, mine, theirs });
+			expect(settled.issues.map((issue) => issue.kind)).toEqual(["reference-lost"]);
+			const names = new Map(settled.content.nodes.map((node) => [node.id, node.name]));
+			expect(names.get("n1")).toBe("Gateway");
+			expect(names.has("n3")).toBe(true);
+			// Only the subject in dispute keeps this proposal's side.
+			expect(names.has("n2")).toBe(true);
+			expect(checkVariantContent(settled.content, "content")).toEqual([]);
+			// Merged again from the same states, it says the same: the catch-up a
+			// settlement runs finds nothing new to take or to drop.
+			const again = reconcileVariant({ base: BASE, mine: settled.content, theirs });
+			expect(again.content).toEqual(settled.content);
+		});
+	}
 });

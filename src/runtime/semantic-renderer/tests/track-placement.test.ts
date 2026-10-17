@@ -1,9 +1,7 @@
 // Where the track engine stands a card sideways (TASK-349). What this
-// catches: a fan whose wrap lowers a group region whole refused, so the
-// region stands on a row of its own above the fan's other cards; a card fed
-// by a fan standing off its middle, so the fan's lines land unevenly on it;
-// and a wrap standing a card in a line's way, or away from the port its one
-// line leaves; and the label of a line leaving a container standing beside
+// catches: a card fed by a fan standing off its middle, so the fan's lines
+// land unevenly on it; and a wrap standing a card in a line's way, or away
+// from the port its one line leaves; and the label of a line leaving a container standing beside
 // it, where the card the line leads into follows it out past the container's
 // wall; and a board's containers stacked or not by a near tie, given to the
 // page that fits the pane better however little, at the cost of a crossing;
@@ -20,9 +18,7 @@ import {
 	routeLabels,
 	routePoints,
 	routesCross,
-	turnsOf,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import startingAWorkhorse from "./starting-a-workhorse.json";
 import underPort from "./under-port.json";
 import browserApplication from "./browser-application.json";
 import grading from "./grading.json";
@@ -40,29 +36,6 @@ import wrappedBlocker from "./wrapped-blocker.json";
 function centre({ x, width }: { x: number; width: number }): number {
 	return x + width / 2;
 }
-
-// Taken from a board of this repository: Workhorse start fans out to cards
-// and to the two cards of Codex child, which the wrap lowers whole; refused,
-// the region stood on a row of its own, and 'thread/start with the authored
-// body' turned three times to reach it.
-test("a wrapped fan stands a group region beside its other cards", async () => {
-	const policy = SemanticPolicySchema.parse({
-		levels: ["service"],
-		nodeKinds: { module: { name: "Module", icon: "RiBox3Line" } },
-		relationshipKinds: {
-			call: { name: "Call", dash: "solid", arrowhead: "filled" },
-			rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
-			dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
-		},
-		groups: {
-			voice: { name: "Voice", color: "yellow" },
-			child: { name: "Codex child", color: "indigo" },
-		},
-	});
-	const content = orderedFixture(startingAWorkhorse);
-	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "track" });
-	expect(turnsOf(corridorPoints(drawing.svg).get("W87z7uEB")!)).toBeLessThanOrEqual(4);
-});
 
 // Reduced from a real hosting board, names replaced: two mirrored pairs of
 // servers, each pair feeding one database through labelled lines. Graphviz

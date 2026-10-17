@@ -31,18 +31,23 @@ const output = {
 } as const;
 /**
  * Run the code check on the Archboard server.
- * @param variant The draft to read on every board that has one, if any.
+ * @param reading The draft to read on every board that has one, if any, or every draft.
+ * @param reading.variant The draft to read on every board that has one.
+ * @param reading.everyDraft Whether to read every draft of every board.
  * @param plans The plan JSON files named, resolved against this directory,
  * because the server runs elsewhere.
  * @param signal Cancels the request, which cancels the check.
  * @returns Its answer.
  */
 async function codeCheckOnServer(
-	variant: string | undefined,
+	reading: { readonly variant?: string | undefined; readonly everyDraft?: boolean | undefined },
 	plans: readonly string[],
 	signal: AbortSignal,
 ): Promise<CodeCheckAnswer> {
-	const asked = new URLSearchParams(variant === undefined ? [] : [["variant", variant]]);
+	const asked = new URLSearchParams(
+		reading.variant === undefined ? [] : [["variant", reading.variant]],
+	);
+	if (reading.everyDraft === true) asked.append("every-draft", "true");
 	for (const plan of plans) asked.append("plan", path.resolve(plan));
 	const query = asked.toString() === "" ? "" : `?${asked}`;
 	return CodeCheckAnswerSchema.parse(
@@ -53,17 +58,30 @@ async function codeCheckOnServer(
 const CheckInputSchema = z.object({
 	code: z.boolean().optional(),
 	variant: z.string().optional(),
+	everyDraft: z.boolean().optional(),
 	plan: z.array(z.string()).optional(),
 });
 
-/** `--variant` and `--plan` name what the code check reads, so they mean nothing without `--code`. */
+/**
+ * `--variant`, `--every-draft` and `--plan` name what the code check reads, so
+ * they mean nothing without `--code`; one draft and every draft are two readings.
+ */
 const CheckRequestSchema = CheckInputSchema.refine(
 	(input) => input.variant === undefined || input.code === true,
 	"--variant names the draft the code check reads: use it with --code",
-).refine(
-	(input) => input.plan === undefined || input.code === true,
-	"--plan names a plan JSON the code check reads: use it with --code",
-);
+)
+	.refine(
+		(input) => input.everyDraft !== true || input.code === true,
+		"--every-draft makes the code check read every draft: use it with --code",
+	)
+	.refine(
+		(input) => input.everyDraft !== true || input.variant === undefined,
+		"--every-draft reads every draft, and --variant one name: use one of them",
+	)
+	.refine(
+		(input) => input.plan === undefined || input.code === true,
+		"--plan names a plan JSON the code check reads: use it with --code",
+	);
 
 const noSuchDraftRefusal = {
 	code: "NO_SUCH_DRAFT",
@@ -121,11 +139,12 @@ const checkContract = defineCommand({
 	shared: ["url", "directory"],
 	summary: "Check configuration and every board family in the vault",
 	description:
-		"Reports invalid configuration, unreadable boards and removed vocabulary references. With --code it then runs the code check over the current variant of every board: an anchor whose file is not in its checkout or does not hold its symbol, a bound symbol that the bound file or directory does not define, and an anchor whose symbol is defined outside the bound code of both ends or that the file uses only as evidence the relationship's kind does not accept (ANCHOR_MISMATCH), each a warning. From the code that joins the bound parts of a board it reports a part whose code other bound parts run, calling or constructing it, with no relationship between them (RELATIONSHIP_UNDRAWN), a warning unless its evidence is only matched by name, and, as information, a relationship with no anchor whose accepted evidence runs only the other way (RELATIONSHIP_BACKWARDS) or does not join its ends (RELATIONSHIP_UNSUPPORTED); the evidence list of each relationship kind in the vault configuration says what it accepts. Across a network hop it joins an environment value that bound code reads with the compose service, Kubernetes workload or Terraform resource that runs that code and sets the value to another part's address, as configured-path evidence: a compose service runs the directory it builds, and any of them runs the code drawn inside the part bound to it; the evidence is a candidate where the infrastructure leaves a choice, and an unsupported relationship whose kind accepts it names the side with no evidence, code or infrastructure, in missing. For a container bound to a module (a directory, or the index.ts or __init__.py that stands for it) it holds the interface the board derives against what the module exposes: an entry point that owns nothing the module exposes while the code of a caller drawn to it reaches it from outside the module (ENTRY_POINT_UNEXPOSED) and a hidden part whose exposed code a file outside the module that no part binds runs (CALLER_UNDRAWN) are warnings, and the exposed names that no file outside the module uses (EXPOSED_UNUSED) are information; a module whose root files it cannot read is skipped (exposure-unknown). A Terraform or OpenTofu module, a directory of .tf or .tofu files, exposes its variables and outputs, which a call of it uses; as information it names the variables the module passes unchanged to one argument of a resource (VARIABLE_PASSED_THROUGH), or says that the module wraps one resource and passes every variable through (MODULE_SHALLOW). It reads the languages and formats it knows by their syntax, such as TypeScript, Python, C#, Swift, docker-compose files and Terraform, and every other file as text, only files Git does not ignore, in the checkout that holds the vault for its own repository and in the chosen checkout of every other, and lists what it skipped with the reason, such as a symbol found only in code that did not parse (symbol-unparsed), and once for a checkout and language with no configured language server (language-server-missing; `repo language-server` configures one, and it runs that repository's code as an editor does), a project its server cannot answer about, such as a Swift directory with no Package.swift, a C# checkout with no solution or project file, or a C, C++ or Objective-C file with no compile_commands.json (language-server-unready), or a checkout where its server did not answer (language-server-failed). A part bound to a Terraform or OpenTofu root module, a directory of .tf or .tofu files, names an address there as its symbol, such as module.queue.aws_sqs_queue.this: the check reads the root module and the local modules it calls, never state, a variable file or .terraform, and never runs terraform or tofu; a reference that joins two such parts is configured-path evidence, and an address inside a remote module is skipped (module-not-read) unless --plan names a plan for that root. It also says how far each board is behind the commits to its bound files, which is information. --variant reads the named draft on every board that has one and the current variant elsewhere, and also warns about a bound path the draft names that is not in its checkout. Exit 1 means the vault still has diagnostics or the code check a warning; no board is changed.",
+		"Reports invalid configuration, unreadable boards and removed vocabulary references. With --code it then runs the code check over the current variant of every board: an anchor whose file is not in its checkout or does not hold its symbol, a bound symbol that the bound file or directory does not define, and an anchor whose symbol is defined outside the bound code of both ends or that the file uses only as evidence the relationship's kind does not accept (ANCHOR_MISMATCH), each a warning. From the code that joins the bound parts of a board it reports a part whose code other bound parts run, calling or constructing it, with no relationship between them (RELATIONSHIP_UNDRAWN), a warning unless its evidence is only matched by name, and, as information, a relationship with no anchor whose accepted evidence runs only the other way (RELATIONSHIP_BACKWARDS) or does not join its ends (RELATIONSHIP_UNSUPPORTED); the evidence list of each relationship kind in the vault configuration says what it accepts. Across a network hop it joins an environment value that bound code reads with the compose service, Kubernetes workload or Terraform resource that runs that code and sets the value to another part's address, as configured-path evidence: a compose service runs the directory it builds, and any of them runs the code drawn inside the part bound to it; the evidence is a candidate where the infrastructure leaves a choice, and an unsupported relationship whose kind accepts it names the side with no evidence, code or infrastructure, in missing. For a container bound to a module (a directory, or the index.ts or __init__.py that stands for it) it holds the interface the board derives against what the module exposes: an entry point that owns nothing the module exposes while the code of a caller drawn to it reaches it from outside the module (ENTRY_POINT_UNEXPOSED) and a hidden part whose exposed code a file outside the module that no part binds runs (CALLER_UNDRAWN) are warnings, and the exposed names that no file outside the module uses (EXPOSED_UNUSED) are information; a module whose root files it cannot read is skipped (exposure-unknown). A Terraform or OpenTofu module, a directory of .tf or .tofu files, exposes its variables and outputs, which a call of it uses; as information it names the variables the module passes unchanged to one argument of a resource (VARIABLE_PASSED_THROUGH), or says that the module wraps one resource and passes every variable through (MODULE_SHALLOW). It reads the languages and formats it knows by their syntax, such as TypeScript, Python, C#, Swift, docker-compose files and Terraform, and every other file as text, only files Git does not ignore, in the checkout that holds the vault for its own repository and in the chosen checkout of every other, and lists what it skipped with the reason, such as a symbol found only in code that did not parse (symbol-unparsed), and once for a checkout and language with no configured language server (language-server-missing; `repo language-server` configures one, and it runs that repository's code as an editor does), a project its server cannot answer about, such as a Swift directory with no Package.swift, a C# checkout with no solution or project file, or a C, C++ or Objective-C file with no compile_commands.json (language-server-unready), or a checkout where its server did not answer (language-server-failed). A part bound to a Terraform or OpenTofu root module, a directory of .tf or .tofu files, names an address there as its symbol, such as module.queue.aws_sqs_queue.this: the check reads the root module and the local modules it calls, never state, a variable file or .terraform, and never runs terraform or tofu; a reference that joins two such parts is configured-path evidence, and an address inside a remote module is skipped (module-not-read) unless --plan names a plan for that root. It also says how far each board is behind the commits to its bound files, which is information. --variant reads the named draft on every board that has one and the current variant elsewhere, and also warns about a bound path the draft names that is not in its checkout. --every-draft reads every draft of every board instead, each as a named draft. A draft read either way that lacks a bound node the variant it was branched from holds, while the code it describes still holds that node's path and symbol, gets INHERITED_PART_DROPPED, a warning whose dropped field names the earlier variant, the ref, the commit and where the code holds it. That code is the ref the draft's bindings name (branch or commit) that no earlier variant names, else the one ref they name, read from Git without checking it out, or the checkout's files when they name none; a checkout without that ref (draft-ref-missing) or several refs (draft-refs-ambiguous) skips the draft. Exit 1 means the vault still has diagnostics or the code check a warning; no board is changed.",
 	examples: [
 		"archboard check",
 		"archboard check --code",
 		"archboard check --code --variant TASK-123",
+		"archboard check --code --every-draft",
 		"archboard check --code --plan infra/plan.json",
 	],
 	parameters: [
@@ -134,7 +153,7 @@ const checkContract = defineCommand({
 			key: "code",
 			spellings: ["--code"],
 			value: "none",
-			requiredWhen: "with --variant or --plan",
+			requiredWhen: "with --variant, --every-draft or --plan",
 			description:
 				"Then run the code check, which reads the code and Git history of the checkout that holds the vault and of the chosen checkout of every other repository",
 		},
@@ -146,6 +165,14 @@ const checkContract = defineCommand({
 			placeholder: "draft",
 			description:
 				"With --code, read this draft on every board that has one, and the current variant elsewhere",
+		},
+		{
+			kind: "option",
+			key: "everyDraft",
+			spellings: ["--every-draft"],
+			value: "none",
+			description:
+				"With --code, read every draft of every board, each against the ref its bindings name, and no current variant",
 		},
 		{
 			kind: "option",
@@ -164,8 +191,12 @@ const checkContract = defineCommand({
 			{
 				name: "code-check-variant",
 				when: "before-server",
-				description: "A named draft and a named plan are read by the code check only",
-				rules: ["Refuse --variant without --code", "Refuse --plan without --code"],
+				description: "A named draft, every draft and a named plan are read by the code check only",
+				rules: [
+					"Refuse --variant without --code",
+					"Refuse --every-draft without --code or with --variant",
+					"Refuse --plan without --code",
+				],
 				schema: CheckRequestSchema,
 			},
 		],
@@ -239,7 +270,7 @@ const checkContract = defineCommand({
 		};
 		const codeCheck =
 			request.code === true
-				? await codeCheckOnServer(request.variant, request.plan ?? [], context.signal)
+				? await codeCheckOnServer(request, request.plan ?? [], context.signal)
 				: undefined;
 		const timings = [boardTiming, ...(codeCheck?.timings ?? [])];
 		return {

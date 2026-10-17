@@ -5,7 +5,12 @@
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { walledPoints } from "@/transformers/semantic-renderer/lib/blocks/card-graph";
 import { PORT } from "@/transformers/semantic-renderer/lib/blocks/leaves";
-import type { Block, BlockTree, Line } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import type {
+	Block,
+	BlockTree,
+	Line,
+	Side,
+} from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
@@ -17,14 +22,86 @@ interface Beside {
 }
 
 /**
+ * What a port on a side wall adds to its key: the line's end inside the
+ * block. Each line crosses a wall on the track it runs on inside, so lines
+ * from different items never share a wall port.
+ * @param side The edge the port crosses.
+ * @param inner The line's end inside the block.
+ * @returns The key's part, empty for a port on the top or bottom.
+ */
+function walled(side: Side, inner: string): string {
+	return side === "left" || side === "right" ? `${inner}|` : "";
+}
+
+/**
  * The wall a line leaves the block by, when its port is on one.
  * @param block The block.
  * @param line The line.
- * @returns The wall, or nothing for a line Graphviz ranks.
+ * @returns The wall, or nothing when its port is on the top or bottom, or is no port.
  */
 function wallOf(block: Block, line: Line): "left" | "right" | undefined {
 	const side = block.ports.get(line.to);
 	return side === "left" || side === "right" ? side : undefined;
+}
+
+/**
+ * The wall a line leaves the block by carrying its label, when its port is
+ * on one. Graphviz ranks such a line through its label to a stub below it,
+ * as it ranks a line from a wall from a stub above, and the line turns to
+ * the wall in the channel under its label. A line before a join carries its
+ * label in its source's block (`joins.ts`); held on the block's bottom
+ * instead, its port stood at the far end of the bottom from a block beside
+ * it, and the line ran from Local platform operator down the whole region
+ * and along its foot (Device Trust Control Plane, native hosts, Blocks).
+ * @param block The block.
+ * @param line The line.
+ * @returns The wall, or nothing.
+ */
+function labelledOut(block: Block, line: Line): "left" | "right" | undefined {
+	return line.labelled ? wallOf(block, line) : undefined;
+}
+
+/**
+ * Whether Graphviz ranks a line of the block: every line but one to a wall
+ * that carries no label there, which runs from its card along the channel under it.
+ * @param block The block.
+ * @param line The line.
+ * @returns True when it does.
+ */
+function ranks(block: Block, line: Line): boolean {
+	return wallOf(block, line) === undefined || line.labelled;
+}
+
+/**
+ * The wall a line runs to along the channel under its card: a line to a
+ * wall that Graphviz does not rank.
+ * @param block The block.
+ * @param line The line.
+ * @returns The wall, or nothing.
+ */
+function channelWall(block: Block, line: Line): "left" | "right" | undefined {
+	return ranks(block, line) ? undefined : wallOf(block, line);
+}
+
+/**
+ * How a line meets the block's walls, as the track router reads it: the
+ * wall it runs to along the channel under its card, the wall it comes in
+ * from, and the wall it runs to through its label. A line that meets no
+ * wall has none of them.
+ * @param block The block.
+ * @param line The line.
+ * @returns The walls it meets.
+ */
+function wallsOf(
+	block: Block,
+	line: Line,
+): { wall?: "left" | "right"; enters?: "left" | "right"; leaves?: "left" | "right" } {
+	const [wall, enters, leaves] = [channelWall, entersBy, labelledOut].map((by) => by(block, line));
+	return {
+		...(wall === undefined ? {} : { wall }),
+		...(enters === undefined ? {} : { enters }),
+		...(leaves === undefined ? {} : { leaves }),
+	};
 }
 
 /**
@@ -36,6 +113,82 @@ function wallOf(block: Block, line: Line): "left" | "right" | undefined {
 function entersBy(block: Block, line: Line): "left" | "right" | undefined {
 	const side = block.ports.get(line.from);
 	return side === "left" || side === "right" ? side : undefined;
+}
+
+/**
+ * The wall an item stands apart toward: the one wall that every line to
+ * or from it crosses. Lines to and from a wall are ranked only with their
+ * own labels and stubs, so such an item is a part of the block's graph of
+ * its own.
+ * @param block The block.
+ * @param item The item.
+ * @returns The wall, or nothing when some line of it stays inside or they cross both.
+ */
+function wallReached(block: Block, item: string): "left" | "right" | undefined {
+	const sides = new Set<"left" | "right" | undefined>();
+	for (const line of block.lines.values()) {
+		if (line.from === item) sides.add(wallOf(block, line));
+		if (line.to === item) sides.add(entersBy(block, line));
+	}
+	const [wall] = sides;
+	return sides.size === 1 ? wall : undefined;
+}
+
+/** Where an item that reaches one wall stands in the order Graphviz meets a block's items. */
+const TOWARD = { left: -1, right: 1 } as const;
+
+/**
+ * A block's items in the order Graphviz meets them: the items that stand
+ * apart toward the left wall first, those toward the right wall last
+ * ({@link wallReached}). Graphviz sets the parts of a graph side by side
+ * in the order it meets them. In the board's order, Device CA certificate
+ * state stood at the far end of its region from Device Identity beside it,
+ * and the line between them ran the region's width (Device Trust Control
+ * Plane, native hosts, Blocks). An item that some line holds among the rest
+ * keeps its place: Graphviz orders it with them, and moving it only stirs
+ * that order.
+ * @param block The block.
+ * @param items Its items, in the board's order.
+ * @returns The items, each wall's toward it.
+ */
+function towardWalls(block: Block, items: readonly string[]): string[] {
+	const toward = new Map(items.map((item) => [item, wallReached(block, item)]));
+	/**
+	 * Where an item stands in the order: before, among or after the rest.
+	 * @param item The item.
+	 * @returns -1, 0 or 1.
+	 */
+	const at = (item: string): number => {
+		const wall = toward.get(item);
+		return wall === undefined ? 0 : TOWARD[wall];
+	};
+	return items.toSorted((one, other) => at(one) - at(other));
+}
+
+/**
+ * A block's items in the order Graphviz meets them: toward the walls when
+ * every block faces its walls ({@link towardWalls}), else the board's order.
+ * @param tree The blocks.
+ * @param block The block.
+ * @returns The items.
+ */
+function itemsOf(tree: BlockTree, block: Block): readonly string[] {
+	return tree.facing ? towardWalls(block, block.items) : block.items;
+}
+
+/**
+ * Whether facing every block's walls changes a board's blocks (`BlockTree`):
+ * some block that holds a line's label turns it to a wall, or stands an item
+ * reached only through a wall toward it.
+ * @param tree The blocks, every block facing its walls.
+ * @returns True when it does.
+ */
+function facingTurns(tree: BlockTree): boolean {
+	return [...tree.blocks.values()].some(
+		(block) =>
+			[...block.lines.values()].some((line) => labelledOut(block, line) !== undefined) ||
+			itemsOf(tree, block).some((item, index) => item !== block.items[index]),
+	);
 }
 
 /**
@@ -104,7 +257,7 @@ function wallLines(
 function besideWalls(block: Block, tree: BlockTree, scene: Scene): Beside[] {
 	if (block.kind === "region") return [];
 	const beside = [...block.lines.values()].flatMap((line) => {
-		const wall = wallOf(block, line);
+		const wall = channelWall(block, line);
 		const item = scene.cards.get(line.from);
 		if (wall === undefined || !tree.cards.has(line.from) || item === undefined) return [];
 		if (block.clusterOf.has(line.from) || !outermost(scene, item, wall)) return [];
@@ -114,6 +267,21 @@ function besideWalls(block: Block, tree: BlockTree, scene: Scene): Beside[] {
 	return beside.filter(
 		(_, index) => sides.indexOf(sides[index]!) === sides.lastIndexOf(sides[index]!),
 	);
+}
+
+/**
+ * Mark on a scene the stretch of its band that each line drawn straight to
+ * a wall runs along, which the scene's router does not route ({@link Scene.besides}).
+ * @param scene The placed scene, whose besides are set.
+ * @param beside The lines.
+ */
+function markBesides(scene: Scene, beside: readonly Beside[]): void {
+	for (const { card, wall } of beside) {
+		const { box, band } = scene.cards.get(card)!;
+		const run =
+			wall === "left" ? ([-Infinity, box.x] as const) : ([box.x + box.width, Infinity] as const);
+		scene.besides.set(band, [...(scene.besides.get(band) ?? []), run]);
+	}
 }
 
 /**
@@ -157,4 +325,18 @@ function besidePoints(scene: Scene, beside: readonly Beside[], left: number): Ma
 	);
 }
 
-export { besidePoints, besideWalls, entersBy, innerPoints, wallLines, wallOf };
+export {
+	besidePoints,
+	besideWalls,
+	entersBy,
+	facingTurns,
+	innerPoints,
+	itemsOf,
+	labelledOut,
+	markBesides,
+	ranks,
+	wallLines,
+	wallOf,
+	walled,
+	wallsOf,
+};

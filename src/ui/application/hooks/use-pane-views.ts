@@ -81,7 +81,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 	const { panes, readings } = sources;
 	/**
 	 * The person chose a different way of reading this pane's board.
-	 * @param view The view's id, or null for the whole variant.
+	 * @param view The view's id, or null for the overview.
 	 */
 	function readThrough(view: string | null): void {
 		readings.showView(paneId, view);
