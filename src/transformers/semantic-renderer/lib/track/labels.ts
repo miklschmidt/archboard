@@ -77,6 +77,18 @@ function wantedCentre(item: Item, above: Net, below: Net): number {
 }
 
 /**
+ * Which way from a station a line steps back under its card: right from a
+ * point near the card's left edge it is held to, left from one near its
+ * right edge, and no way from its middle or from any other station.
+ * @param station The station a label's line comes down from.
+ * @returns 1, -1 or 0.
+ */
+function inwardFrom(station: Station): number {
+	if (station.at === undefined) return 0;
+	return Math.sign(station.item!.box.width / 2 - station.at);
+}
+
+/**
  * Every label box that sits on a line, with where it wants its centre.
  * @param nets Every net.
  * @returns The sliders.
@@ -98,6 +110,7 @@ function slidersOf(nets: readonly Net[]): Slider[] {
 						wanted: wantedCentre(item, above, below),
 						reaches: [reachFrom(above, "top"), reachFrom(below, "bottom")],
 						ends: [above.topX, below.bottomX],
+						inward: inwardFrom(above.top),
 					},
 				];
 	});
@@ -354,7 +367,9 @@ function meetingX(station: Station, item: Item): number {
  * could not turn whole. Drawn inline, the station below is tried first, so a
  * step the line must still take stands above its label, not between the
  * label and the card below, just over the arrowhead; the Blocks engine keeps
- * trying the station above first.
+ * trying the station above first. A label whose line comes straight down
+ * from a point of a decision it is held to (`points.ts`) stays on that point:
+ * a step above it would run back under the diamond.
  * @param scene The scene.
  * @param nets Every net.
  */
@@ -369,7 +384,11 @@ function settleOnLanes(scene: Scene, nets: readonly Net[]): void {
 	const pairs = (scene.inline ? [...below, ...above] : [...above, ...below]).filter(
 		([label, other]) => label.kind === "label" && other.kind !== "label",
 	);
-	const settled = new Set<Item>();
+	const settled = new Set<Item>(
+		nets
+			.filter(({ top, bottom }) => top.at !== undefined && bottom.kind === "label")
+			.map(({ bottom }) => bottom.item!),
+	);
 	for (const [label, other] of pairs) {
 		const item = label.item!;
 		const shift = meetingX(other, item) - centreX(item);
