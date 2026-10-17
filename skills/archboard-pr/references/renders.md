@@ -44,9 +44,10 @@ archboard semantic render <board> --view "<view>" --variant "<proposal>" --again
   2 of the skill): the proposal of the pull request below in a stack, the
   current variant, or the base draft of a board that nobody has built.
   On an ephemeral board, it is the current variant, which states the base
-  branch. A proposal with no parent has no `<below>`: leave `--against` out,
-  and the picture draws every part as planned. The picture marks only this pull request's change, and it carries no
-  planned frame, because it reads relative to the variant it names.
+ branch. The picture marks only this pull request's change, and it carries no
+  planned frame, because it reads relative to the variant it names. A
+  proposal with no parent has no `<below>`: leave `--against` out, and the
+  picture draws every part as planned.
 
 Never draw a before picture beside or under the after picture. The marks
 already say what changed, and each variant is laid out afresh, so cards move
