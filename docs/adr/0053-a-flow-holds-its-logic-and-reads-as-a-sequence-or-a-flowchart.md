@@ -41,7 +41,12 @@ step alone, in document order, with `within` naming the decision alternative
 or loop that holds it. A step moved into another alternative changed its
 `within`. A merge or a restore builds the tree again from the flat list. A
 merge that leaves a decision or a loop with nothing to hold is reported as
-`left-empty`, and the merged content keeps this proposal's steps.
+`left-empty`, and the merged content keeps this proposal's steps. A decision
+or loop the merge newly holds stands right before the first step it holds.
+A merged list that no tree reads back in the same order, such as a step one
+side put between two steps the other side moved into a loop, is reported as a
+`competing-order` of the whole flow (TASK-484). The merged content keeps this
+proposal's steps there too.
 
 One flow has two readings, chosen by the view's grammar:
 

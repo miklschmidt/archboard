@@ -8,8 +8,8 @@
 // part of, and `position` is not something a step holds — the merge invents it
 // to describe the disagreement, and writing it back into a board would produce
 // a document no board may hold. So the durable answer to "this proposal's order
-// is the one I mean" is an order rather than a value: the base's exchange is
-// dealt into the predecessor's order, which is what an answered field does too
+// is the one I mean" is an order rather than a value: the base tells the
+// exchange the predecessor's way, which is what an answered field does too
 // — once the base agrees with the predecessor, this proposal's own order reads
 // as this proposal's own change and nothing synthetic is ever persisted.
 //
@@ -17,7 +17,12 @@
 // relative: settling where one step sits without settling the others would be
 // deciding their places too, quietly, on somebody's behalf.
 
-import type { ReconciliationIssue, VariantContent } from "@/shared/semantic-board/index";
+import {
+	everyStep,
+	type FlowStep,
+	type ReconciliationIssue,
+	type VariantContent,
+} from "@/shared/semantic-board/index";
 
 /** Where an ordered entry lives: which container holds it, and of what kind. */
 interface Ordered {
@@ -32,11 +37,14 @@ interface Ordered {
 /**
  * Which ordered container one entry belongs to.
  * @param content The content to look in.
- * @param subject The entry's id.
+ * @param subject The entry's id: a step at any depth of a flow, a beat, or a
+ * flow whose whole order is in dispute.
  * @returns Where it lives, or undefined when this content has no such entry.
  */
 function orderedIn(content: VariantContent, subject: string): Ordered | undefined {
-	const flow = content.flows.find((one) => one.steps.some((step) => step.id === subject));
+	const flow = content.flows.find(
+		(one) => one.id === subject || everyStep(one.steps).some((step) => step.id === subject),
+	);
 	if (flow !== undefined) {
 		return { kind: "flow", container: flow.id, name: flow.name };
 	}
@@ -120,6 +128,12 @@ function isOrder(issue: ReconciliationIssue): boolean {
  * as this proposal's own change and is left alone, exactly as an answered field
  * does. Leaving the base where it was would find the same argument again and
  * report it as though nobody had decided it.
+ *
+ * A flow's base takes the predecessor's steps whole, because a step's place is
+ * the decision or loop that holds it as well as its position, and only the
+ * whole tree says both. Whatever the predecessor changed inside those steps has
+ * already reached this proposal, or is still held as a disagreement of its
+ * own. A walkthrough's beats are a list, dealt into the predecessor's order.
  * @param base The state this proposal last agreed with.
  * @param theirs The predecessor's content, whose order the base takes.
  * @param moved The order issues this command answered.
@@ -141,7 +155,7 @@ function reorderedInto(
 	return {
 		...base,
 		flows: base.flows.map((flow) =>
-			flows.has(flow.id) ? { ...flow, steps: told(flow.steps, stepsOf(theirs, flow.id)) } : flow,
+			flows.has(flow.id) ? { ...flow, steps: stepsOf(theirs, flow.id) ?? flow.steps } : flow,
 		),
 		walkthroughs: base.walkthroughs.map((one) =>
 			walkthroughs.has(one.id) ? { ...one, beats: told(one.beats, beatsOf(theirs, one.id)) } : one,
@@ -150,13 +164,13 @@ function reorderedInto(
 }
 
 /**
- * The order one content tells an exchange in.
- * @param content The content to read the order from.
+ * The steps one content tells an exchange with.
+ * @param content The content to read them from.
  * @param flow The exchange's id.
- * @returns Its steps' ids, in order.
+ * @returns Its steps, or undefined when it has no such exchange.
  */
-function stepsOf(content: VariantContent, flow: string): readonly string[] {
-	return content.flows.find((one) => one.id === flow)?.steps.map((step) => step.id) ?? [];
+function stepsOf(content: VariantContent, flow: string): FlowStep[] | undefined {
+	return content.flows.find((one) => one.id === flow)?.steps;
 }
 
 /**
