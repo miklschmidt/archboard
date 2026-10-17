@@ -24,7 +24,8 @@ import { neverRead, terraformRootOf, type FactsPass } from "@/runtime/code-facts
 import { sourceAt } from "@/runtime/history-lens/index";
 import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
 import { bindingPathOf, filesOfBinding, type CodeBinding } from "@/shared/code-target/index";
-import type { SemanticBoard, SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
+import { draftRefs } from "@/shared/semantic-board/draft-ref";
+import type { SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
 
 /** What holding dropped parts to code needs from the pass. */
 interface DroppedContext {
@@ -113,61 +114,6 @@ function droppedBindings(reads: readonly BoardToCheck[]): CodeBinding[] {
 }
 
 /**
- * The variants a variant was branched from, nearest first.
- * @param board The board.
- * @param variant The variant.
- * @returns Its parent, the parent's parent, and so on.
- */
-function ancestorsOf(board: SemanticBoard, variant: SemanticVariant): SemanticVariant[] {
-	const chain: SemanticVariant[] = [];
-	let next = board.variants.find((one) => one.id === variant.parent);
-	while (next !== undefined && !chain.includes(next)) {
-		chain.push(next);
-		const child = next;
-		next = board.variants.find((one) => one.id === child.parent);
-	}
-	return chain;
-}
-
-/**
- * The refs the bindings of some variants name in one repository.
- * @param variants The variants.
- * @param repo The repository.
- * @returns Each ref: a binding's commit, else its branch.
- */
-function refsIn(variants: readonly SemanticVariant[], repo: string): Set<string> {
-	return new Set(
-		variants.flatMap((variant) => variant.content.nodes.flatMap((node) => refOf(node, repo))),
-	);
-}
-
-/**
- * The ref a part's binding names in one repository.
- * @param node The part.
- * @param repo The repository.
- * @returns Its commit, else its branch; none when it binds another repository or names no ref.
- */
-function refOf(node: SemanticNode, repo: string): string[] {
-	if (node.binding?.repo !== repo) return [];
-	const ref = node.binding.commit ?? node.binding.branch;
-	return ref === undefined ? [] : [ref];
-}
-
-/**
- * The refs a draft could be read against in one repository: the refs its
- * bindings name that no variant before it names, else every ref they name.
- * @param drop The draft and the repository.
- * @returns The refs, sorted; none when the draft names no ref there.
- */
-function draftRefs(drop: Drop): string[] {
-	const { board, variant } = drop.read;
-	const named = refsIn([variant], drop.repo);
-	const earlier = refsIn(ancestorsOf(board, variant), drop.repo);
-	const own = [...named].filter((ref) => !earlier.has(ref));
-	return (own.length > 0 ? own : [...named]).toSorted();
-}
-
-/**
  * A skip that names a draft and a repository.
  * @param drop The draft and the repository.
  * @param reason Why its parts were not held to code.
@@ -211,7 +157,7 @@ async function codeAt(
 	checkout: ReadCheckout,
 	context: DroppedContext,
 ): Promise<Code | CodeCheckSkip> {
-	const refs = draftRefs(drop);
+	const refs = draftRefs(drop.read.board, drop.read.variant, drop.repo);
 	const [ref] = refs;
 	if (ref === undefined) return { checkout, facts: context.facts };
 	if (refs.length > 1) return draftSkip(drop, "draft-refs-ambiguous", refs.join(", "));

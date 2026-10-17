@@ -257,8 +257,10 @@ recipe names.
   code is read from Git without a checkout, in every check (anchors, bound
   paths and symbols, relationships, module interfaces). A language server
   reads files on disk, so there a use that no import resolves is not resolved
-  (`ref-without-language-server`), a relationship whose ends are bound to
-  different refs is skipped (`refs-differ`), and a ref the checkout cannot
+  (`ref-without-language-server`). A draft reads every part of a repository at
+  its own branch, which holds the layers below it, except a part that pins a
+  branch that one does not hold; a relationship whose ends are then read at
+  different code is skipped (`refs-differ`). A ref the checkout cannot
   resolve is skipped (`ref-not-checked-out`, naming the ref). A file that is not there or
   does not hold the symbol is a warning that names its part, relationship or
   step, and exits 1. Repair the anchor or binding it names. A binding or anchor

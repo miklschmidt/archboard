@@ -175,8 +175,10 @@ const semanticFootprintContract = defineCommand({
 		"repository this machine has not registered, and a part in a checkout where --base does not " +
 		"resolve are skipped: they are in none of the lists and are listed with the reason. A part " +
 		"pinned to a branch or commit its checkout does not have out is read up to that ref from " +
-		"Git, never checked out, unless --head names where the commits end; one pinned to a ref " +
-		"the checkout cannot resolve is skipped as head-unresolved. Information only: nothing is " +
+		"Git, never checked out, unless --head names where the commits end. In a draft, every part " +
+		"of a repository is read up to the draft's own branch, which holds the layers below it, " +
+		"except a part that pins a branch that one does not hold. A part pinned to a ref the " +
+		"checkout cannot resolve is skipped as head-unresolved. Information only: nothing is " +
 		"stored and the exit status does not change.",
 	examples: [
 		"archboard semantic footprint payments --base origin/main",

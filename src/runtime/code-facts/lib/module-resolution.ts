@@ -303,4 +303,4 @@ function createModuleResolver(checkout: CheckoutFiles, read: ReadText): ModuleRe
 	};
 }
 
-export { type CheckoutFiles, type ModuleResolver, createModuleResolver };
+export { type CheckoutFiles, type ModuleResolver, createModuleResolver, extendedFiles };
