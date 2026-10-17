@@ -7,6 +7,7 @@ import {
 } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import { routeEnds } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 /**
  * One board holding the same content, built or not.
@@ -85,4 +86,10 @@ test("a board nothing is built of is framed as planned, its atlas moved with its
 			expect([moved.width, moved.height]).toEqual([box.width, box.height]);
 		}
 	}
+
+	// A line read back off the framed drawing stands where the atlas moved it, so the
+	// drawn checks compare a planned board's routes with its cards in one frame.
+	const before = routeEnds(built.svg).get("put")!;
+	const after = routeEnds(planned.svg).get("put")!;
+	expect([after.x - before.x, after.y - before.y]).toEqual([...shift]);
 });
