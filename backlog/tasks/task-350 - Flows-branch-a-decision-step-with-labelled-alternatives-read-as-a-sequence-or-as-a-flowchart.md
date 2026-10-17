@@ -3,11 +3,11 @@ id: TASK-350
 title: >-
   Flows branch: a decision step with labelled alternatives, read as a sequence
   or as a flowchart
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-25 00:15'
-updated_date: '2026-10-16 02:38'
+updated_date: '2026-10-17 02:04'
 labels:
   - semantic-model
   - renderer
@@ -60,6 +60,8 @@ Board proposal: Semantic renderer@TASK-350 adds Flowchart (lib/flowchart.ts) wit
 Vault: every board read at schema 2.5.0 through the worktree server. 11 data-flow views on 6 boards and 3 in examples/web-shop are now sequence. Pictures looked at: /tmp/t350z/sequence.png, /tmp/t350z/flowchart.png, /tmp/t350z/skill-sequence.png and /tmp/t350z/skill-flowchart.png (the skill payload, accepted as written).
 
 Gate: bun run check stops at test:modules with 4744 pass, 1 skip, 5 fail, all in src/runtime/semantic-renderer/tests/wide-boards.test.ts (first-layout timing). Run alone twice on this branch and twice on the base tree 48161454c (git archive), both fail the same four: Agent workbench (blocks), Archboard server routes (blocks), Board persistence (track), Board viewer (track). Agent workbench (track) and Live panes (track) fail only under load. The boards they lay out are unchanged by this task except for the schema version. No bound was weakened. Remaining lanes run explicitly: test:system 240 pass 0 fail; test:repository 27 pass 0 fail; test:serial-browser 19 files pass, exit 0. lint 0, fmt:check 0, type-check 0. The first check run also found the skill catalogue rows decision and loop outside the closed set the skill evaluation grades; they moved under the flow row (a9457ab19) and the skill-evaluation tests pass.
+
+2026-10-16, owner review of the flowchart look: the shapes are gold (the primary accent gradient), cast a card's soft shadow, and lines meet a decision or a terminal at the middle of the side they cross (lib/flowchart-ports.ts); the Flow node type has its own icon (RiFlowChart), served by the icon route for every icon of the set. Commits 23b7182e1, 1288fba17, 3de5226c4, b371c2833. Verified by src/runtime/semantic-renderer/tests/flowchart-shapes.test.ts (the diamond-points test fails without the port fix) and by rendered pictures the owner reviewed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
