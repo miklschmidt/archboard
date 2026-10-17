@@ -2,7 +2,7 @@
 // `GET /api/semantic-boards/footprint` (ADR 0045).
 //
 // A footprint reads the commits from the merge base of a named ref and HEAD up
-// to HEAD, in each checkout, and says which parts of a board's current variant
+// to HEAD, or up to a named head ref that need not be checked out, in each checkout, and says which parts of a board's current variant
 // those commits changed through their bound declarations or paths. With a proposal it sets
 // that against the parts the proposal names, in three lists: named and
 // changed, changed but not named, and named but not changed. A part the lens
@@ -65,7 +65,7 @@ const FootprintPartSchema = BehindPartSchema.extend({
 });
 
 /** Why a checkout's range was not read. */
-const UNREAD_REASONS = ["base-unresolved", "no-merge-base"] as const;
+const UNREAD_REASONS = ["base-unresolved", "head-unresolved", "no-merge-base"] as const;
 
 /**
  * Why a part was not read: one of behind's reasons, or the range of its
@@ -80,7 +80,8 @@ const FootprintSkipSchema = BehindSkipSchema.extend({
 /**
  * What one repository's checkout was read for: the commit the ref resolved to,
  * the merge base with HEAD, HEAD, and how many commits lie between. Or why it
- * was not read: the ref does not resolve there, or shares no history with HEAD.
+ * was not read: the ref does not resolve there, the head the caller named does not, or the
+ * two share no history.
  */
 const FootprintRepositorySchema = z.discriminatedUnion("status", [
 	z
@@ -110,6 +111,8 @@ const footprintBase = {
 	version: z.int().nonnegative(),
 	/** The ref as the caller named it. */
 	base: z.string(),
+	/** The head ref as the caller named it; absent when the commits run up to each checkout's HEAD. */
+	head: z.string().optional(),
 	/** The current variant, which the commits are read against. */
 	current: z.object({ id: z.string(), name: z.string() }).strict(),
 	repositories: z.array(FootprintRepositorySchema),

@@ -1,9 +1,10 @@
 // The footprint of a range of commits (ADR 0045).
 //
 // It reads, in each checkout that holds a bound part, the commits from the
-// merge base of the named ref and HEAD up to HEAD, never fetching: a ref
-// resolves only from what the checkout already has, and a checkout where it
-// does not resolve is not read, and says so. The commits map onto the parts
+// merge base of the named ref and HEAD up to HEAD, or up to a named head ref
+// that need not be checked out (a layer of a pull-request stack), never
+// fetching: a ref resolves only from what the checkout already has, and a
+// checkout where it does not resolve is not read, and says so. The commits map onto the parts
 // whose bound declarations or paths they changed. Large commits are
 // kept and marked. With a proposal, the footprint sets the changed parts
 // against the parts the proposal names, in three lists, and a part the lens
@@ -16,6 +17,7 @@ import { walkCommits, type WalkedCommit } from "@/runtime/history-lens/lib/commi
 import { gitAnswer, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { namedParts, type Named } from "@/runtime/history-lens/lib/named-parts";
 import { partReading, type ReadPart } from "@/runtime/history-lens/lib/parts";
+import { commitOf } from "@/runtime/history-lens/lib/source-history";
 import type { BehindCommit } from "@/shared/code-check/index";
 import type {
 	FootprintAnswer,
@@ -42,6 +44,12 @@ interface FootprintRequest {
 	readonly proposal?: SemanticVariant | undefined;
 	/** Any ref that resolves in the checkouts, such as `main`, `origin/main` or a commit. */
 	readonly base: string;
+	/**
+	 * Where the commits end, when not at each checkout's HEAD: a branch, tag or
+	 * commit, resolved as the code check resolves a ref a draft pins. It is read
+	 * from Git and never checked out.
+	 */
+	readonly head?: string | undefined;
 	readonly signal?: AbortSignal | undefined;
 }
 
@@ -57,7 +65,7 @@ interface RepositoryFootprint {
 	readonly commits: readonly BehindCommit[];
 }
 
-/** Where a checkout's range runs: the ref's commit, the merge base with HEAD, and HEAD. */
+/** Where a checkout's range runs: the ref's commit, the merge base with the head, and the head. */
 interface Range {
 	readonly base: string;
 	readonly mergeBase: string;
@@ -66,7 +74,7 @@ interface Range {
 
 /** Why a checkout's range was not read. */
 interface Unread {
-	readonly reason: "base-unresolved" | "no-merge-base";
+	readonly reason: "base-unresolved" | "head-unresolved" | "no-merge-base";
 	readonly detail: string;
 }
 
@@ -102,16 +110,38 @@ function listed(part: ReadPart, commits: readonly string[], named: NamedReason[]
 }
 
 /**
- * Where a checkout's range runs. `--end-of-options` keeps a ref that begins
- * with a dash from being read as an option.
+ * The commit the range ends at: the head the caller named, resolved as the
+ * code check resolves a ref, else the checkout's HEAD.
+ * @param root The checkout.
+ * @param head The head ref as asked, when the caller named one.
+ * @param options The caller's signal.
+ * @returns The commit id, or undefined when the checkout has no such commit.
+ */
+function headOf(
+	root: string,
+	head: string | undefined,
+	options: GitRunOptions,
+): Promise<string | undefined> {
+	return head === undefined
+		? gitAnswer(root, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], options)
+		: commitOf(root, head, options);
+}
+
+/**
+ * Where a checkout's range runs between a head and the base. `--end-of-options`
+ * keeps a ref that begins with a dash from being read as an option.
  * @param root The checkout.
  * @param base The ref as asked.
+ * @param tip The commit the range ends at, when the checkout has one.
+ * @param tipName What the commit was asked for as: the head ref, or HEAD.
  * @param options The caller's signal.
  * @returns The range, or why it cannot be read.
  */
-async function rangeOf(
+async function rangeBetween(
 	root: string,
 	base: string,
+	tip: string | undefined,
+	tipName: string,
 	options: GitRunOptions,
 ): Promise<Range | Unread> {
 	const resolved = await gitAnswer(
@@ -125,20 +155,40 @@ async function rangeOf(
 			detail: `"${base}" does not resolve in the checkout at ${root}.`,
 		};
 	}
-	const head = await gitAnswer(
-		root,
-		["rev-parse", "--verify", "--quiet", "HEAD^{commit}"],
-		options,
-	);
 	const mergeBase =
-		head === undefined ? undefined : await gitAnswer(root, ["merge-base", resolved, head], options);
-	if (head === undefined || mergeBase === undefined) {
+		tip === undefined ? undefined : await gitAnswer(root, ["merge-base", resolved, tip], options);
+	if (tip === undefined || mergeBase === undefined) {
 		return {
 			reason: "no-merge-base",
-			detail: `"${base}" and HEAD share no history in the checkout at ${root}.`,
+			detail: `"${base}" and ${tipName} share no history in the checkout at ${root}.`,
 		};
 	}
-	return { base: resolved, mergeBase, head };
+	return { base: resolved, mergeBase, head: tip };
+}
+
+/**
+ * Where a checkout's range runs: from the base to the head the caller named,
+ * else to HEAD.
+ * @param root The checkout.
+ * @param base The ref as asked.
+ * @param head The head ref as asked, when the caller named one.
+ * @param options The caller's signal.
+ * @returns The range, or why it cannot be read.
+ */
+async function rangeOf(
+	root: string,
+	base: string,
+	head: string | undefined,
+	options: GitRunOptions,
+): Promise<Range | Unread> {
+	const tip = await headOf(root, head, options);
+	if (tip === undefined && head !== undefined) {
+		return {
+			reason: "head-unresolved",
+			detail: `"${head}" does not resolve in the checkout at ${root}.`,
+		};
+	}
+	return rangeBetween(root, base, tip, head ?? "HEAD", options);
 }
 
 /**
@@ -173,7 +223,7 @@ function unreadRepository(
 
 /**
  * What a checkout holds when its range was read: the commits between the
- * merge base and HEAD, mapped onto the parts bound there.
+ * merge base and the head, mapped onto the parts bound there.
  * @param repo The repository.
  * @param parts The parts bound there.
  * @param named Why the proposal names each part.
@@ -215,10 +265,12 @@ function mappedRepository(
 
 /**
  * Read one checkout's range: where the ref resolves, the merge base with
- * HEAD, and the commits between them mapped onto the paths bound there.
+ * the head, and the commits between them mapped onto the paths bound there.
  * @param repo The repository.
  * @param parts The parts bound there, all in one checkout.
- * @param base The ref as asked.
+ * @param refs The refs as asked.
+ * @param refs.base The ref the range starts from.
+ * @param refs.head The ref it ends at, when the caller named one.
  * @param named Why the proposal names each part.
  * @param options The caller's signal.
  * @returns What the checkout holds, or why its range was not read.
@@ -226,12 +278,12 @@ function mappedRepository(
 async function readRepository(
 	repo: string,
 	parts: readonly ReadPart[],
-	base: string,
+	refs: { readonly base: string; readonly head: string | undefined },
 	named: Named,
 	options: GitRunOptions,
 ): Promise<RepositoryFootprint> {
 	const root = parts[0]?.root ?? "";
-	const range = await rangeOf(root, base, options);
+	const range = await rangeOf(root, refs.base, refs.head, options);
 	if ("reason" in range) return unreadRepository(repo, parts, named, range);
 	const walked = await walkCommits(root, [`${range.mergeBase}..${range.head}`], options);
 	return mappedRepository(
@@ -307,7 +359,7 @@ function namedBy(
  * @returns The footprint.
  */
 async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer> {
-	const { vault, board, current, proposal, base, signal } = request;
+	const { vault, board, current, proposal, base, head, signal } = request;
 	const nodes = partsOf(current, proposal);
 	const named = namedBy(current, proposal, nodes);
 	const snapshot = await snapshotCheckoutAccess({
@@ -318,7 +370,7 @@ async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer
 	const reading = partReading({ nodes }, snapshot);
 	const repositories = await Promise.all(
 		[...byRepository(reading.read)].map(([repo, parts]) =>
-			readRepository(repo, parts, base, named, { signal }),
+			readRepository(repo, parts, { base, head }, named, { signal }),
 		),
 	);
 	const changed = inOrder(
@@ -329,6 +381,7 @@ async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer
 		board: board.name,
 		version: board.version,
 		base,
+		...(head === undefined ? {} : { head }),
 		current: { id: current.id, name: current.name },
 		repositories: repositories.map((one) => one.range),
 		commits: repositories

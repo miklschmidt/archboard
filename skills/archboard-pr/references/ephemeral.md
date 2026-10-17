@@ -78,9 +78,10 @@ the head branch's code in the checkout.
 3. **Check it** as the skill's section 2 step 6 does. `semantic compare`
    reports each step and relationship that is added, changed or removed.
    `semantic footprint` reads the `HEAD` of the checkout that this machine
-   registered for the repository (`archboard repo list`), and `check --code`
-   reads the files on disk there. So that checkout must have the head branch
-   out.
+   registered for the repository (`archboard repo list`), unless you add
+   `--head <branch>`, which reads that branch from Git without a checkout.
+   `check --code` reads the files on disk there. So for `check --code`, that
+   checkout must have the head branch out.
 
 Done: `compare` reports every change the diff makes to what the board draws,
 and nothing else.

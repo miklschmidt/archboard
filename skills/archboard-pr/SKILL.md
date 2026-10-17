@@ -98,7 +98,8 @@ your own.
 2. Read the change from the merge base: `git diff --find-renames <base>...HEAD`.
 3. List the boards with `archboard semantic`. For each board whose parts bind
    this repository, run `archboard semantic footprint <board> --base <base>`.
-   Its `changed` lists the parts the commits changed. For the parts in
+   When this pull request is a layer of a stack that is not checked out, add
+   `--head <branch>`. Its `changed` lists the parts the commits changed. For the parts in
    `skipped`, and for each repository that it did not read, use the diff. A
    board with no current variant refuses (`NO_CURRENT_VARIANT`): read the diff
    instead.
@@ -170,8 +171,12 @@ Do this for each vault board that section 1 chose.
      nothing else.
    - `archboard semantic footprint <board> --base <base> --variant "<proposal>"`:
      each part in `changedNotNamed` and `namedNotChanged` is drawn, or you can
-     say why its change needs no picture. On a board that nobody has built,
-     footprint refuses: read the diff instead.
+     say why its change needs no picture. Without `--head`, it reads up to the
+     branch that is checked out. For a layer of a stack that is not checked
+     out, add `--head <branch>`: it reads that branch from Git, and nothing is
+     checked out. A branch that no checkout has is refused with
+     `HEAD_UNRESOLVED`. On a board that nobody has built, footprint refuses:
+     read the diff instead.
    - `archboard check --code --variant "<proposal>"` reports no warning that
      the same run without `--variant` lacks. It reads the draft of that name
      on every board, and it skips a part whose binding names a branch that is

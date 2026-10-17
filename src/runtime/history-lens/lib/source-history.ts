@@ -208,4 +208,4 @@ async function sourceAt(
 	return { commit, ...(await sourceHistory(root, paths, options).read(commit)) };
 }
 
-export { type SourceAtRef, sourceAt, sourceHistory, type SourceRevision };
+export { commitOf, type SourceAtRef, sourceAt, sourceHistory, type SourceRevision };

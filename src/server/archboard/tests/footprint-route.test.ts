@@ -11,6 +11,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import express from "express";
+import { z } from "zod";
 import type * as ServerModule from "@/server/archboard/index";
 import type * as RouteModule from "@/server/archboard/footprint";
 import { FootprintReplySchema, type FootprintAnswer } from "@/shared/footprint/index";
@@ -140,6 +141,10 @@ beforeAll(async () => {
 	before = git("rev-parse", "HEAD");
 	writeFileSync(join(checkout, "src", "a.ts"), "2\n");
 	git("commit", "-q", "--no-gpg-sign", "-am", "change a.ts");
+	git("checkout", "-q", "-b", "second-layer");
+	writeFileSync(join(checkout, "src", "a.ts"), "3\n");
+	git("commit", "-q", "--no-gpg-sign", "-am", "change a.ts on the second layer");
+	git("checkout", "-q", "main");
 	[server, route] = await Promise.all([
 		import("@/server/archboard/index"),
 		import("@/server/archboard/footprint"),
@@ -164,6 +169,28 @@ test("the production application answers the footprint of a proposal against a c
 	if (answer.proposal === null) throw new Error("a proposal was named");
 	expect(answer.changedNotNamed.map((one) => one.subject.id)).toEqual(["pA"]);
 	expect(answer.namedNotChanged.map((one) => one.subject.id)).toEqual(["pB"]);
+});
+
+test("the production application reads a head that is not checked out, and refuses one no checkout has", async () => {
+	const base = await listen(server.app);
+	const ask = async (head: string) => {
+		const query = new URLSearchParams({ vault, board: "Shop", base: "main", head });
+		const reply = await fetch(`${base}/api/semantic-boards/footprint?${query}`);
+		return {
+			status: reply.status,
+			body: z.record(z.string(), z.unknown()).parse(await reply.json()),
+		};
+	};
+	const read = await ask("second-layer");
+	expect(read.status).toBe(200);
+	const answer = FootprintReplySchema.parse(read.body);
+	if (answer.proposal !== null) throw new Error("no proposal was named");
+	expect(answer.head).toBe("second-layer");
+	expect(answer.changed.map((one) => one.subject.id)).toEqual(["pA"]);
+	const refused = await ask("no-such-layer");
+	expect(refused.status).toBe(422);
+	expect(refused.body).toMatchObject({ success: false, code: "HEAD_UNRESOLVED" });
+	expect(String(refused.body["error"])).toContain("no-such-layer");
 });
 
 test("a request that cannot be read is turned away with the code the CLI maps to its exit status", async () => {
