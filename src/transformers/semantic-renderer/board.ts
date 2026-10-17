@@ -18,6 +18,7 @@ import {
 	type LayoutEngineName,
 	type FontSource,
 	type LegendLayout,
+	type NothingDrawnReason,
 	type OfferedView,
 	type SemanticBoard,
 	type SemanticRenderReply,
@@ -133,6 +134,23 @@ function titleOf(
 }
 
 /**
+ * Why a render drew nothing: the variant holds nothing, or the view names
+ * nothing of what it holds.
+ * @param view The view drawn, or nothing for the overview.
+ * @param variant The variant drawn.
+ * @param refused The renderer's own refusal.
+ * @returns The reason the answer carries.
+ */
+function emptyReason(
+	view: SemanticView | undefined,
+	variant: SemanticVariant,
+	refused: NothingDrawnReason,
+): NothingDrawnReason {
+	const held = variant.content.nodes.length > 0 || variant.content.flows.length > 0;
+	return view !== undefined && held ? "VIEW_EMPTY_ON_VARIANT" : refused;
+}
+
+/**
  * Draw one variant of a board, or say that there is nothing on it yet.
  *
  * An empty board is not an error: it is a board somebody has just made and has
@@ -211,7 +229,7 @@ async function drawnReply(
 		return { ...identity, ...picture };
 	} catch (error) {
 		if (error instanceof SemanticRenderError) {
-			return { ...identity, empty: error.code };
+			return { ...identity, empty: emptyReason(view, variant, error.code) };
 		}
 		throw error;
 	}

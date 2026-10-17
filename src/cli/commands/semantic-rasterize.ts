@@ -24,6 +24,7 @@ import {
 	type SemanticRasterPageSize,
 } from "@/runtime/semantic-rasterizer/receipt";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { refuseNothingDrawn, viewEmptyRefusal } from "@/cli/commands/lib/nothing-drawn";
 import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
 import {
 	DRAWN_AGAINST,
@@ -321,6 +322,7 @@ const semanticRasterizeContract = defineCommand({
 	effects: ["read", "local-write"],
 	refusals: [
 		serverRefusal,
+		viewEmptyRefusal,
 		rasterizerUnavailableRefusal,
 		rasterBoundsRefusal,
 		rasterFailedRefusal,
@@ -350,17 +352,13 @@ const semanticRasterizeContract = defineCommand({
 	 * @param input What the command was given.
 	 * @param context The command context.
 	 * @returns The PNG bytes or the file or clipboard receipt.
-	 * @throws {CliUsageError} When the board has nothing on it.
+	 * @throws {Error} When the board or the view has nothing to draw.
 	 * @throws {SemanticRasterError} When no browser can draw it or the bitmap is not what was asked for.
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic rasterize");
 		const drawn = await renderSemanticBoardOnServer(input.name, exportRenderRequest(input));
-		if ("empty" in drawn) {
-			throw new CliUsageError(
-				`Semantic board "${drawn.board}" has nothing on it yet, so there is nothing to draw.`,
-			);
-		}
+		if ("empty" in drawn) refuseNothingDrawn(drawn);
 		const capture = await captureBoard(drawn, input, context.signal);
 		if (!input.clipboard && input.out === undefined) return { result: capture.png };
 		const receipt = {
