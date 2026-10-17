@@ -171,7 +171,27 @@ function opposedSide(side: Side): Side {
 	return OPPOSITE[side];
 }
 
+/**
+ * The x of a polyline where it crosses a height.
+ * @param points The polyline, in order.
+ * @param y The height.
+ * @returns The x there, or nothing when the polyline never reaches it.
+ */
+function polylineX(points: readonly Point[], y: number): number | undefined {
+	for (let index = 1; index < points.length; index += 1) {
+		const one = points[index - 1]!;
+		const other = points[index]!;
+		const low = Math.min(one.y, other.y);
+		const high = Math.max(one.y, other.y);
+		if (y < low || y > high) continue;
+		if (high - low < 1e-6) return (one.x + other.x) / 2;
+		return one.x + ((other.x - one.x) * (y - one.y)) / (other.y - one.y);
+	}
+	return undefined;
+}
+
 export {
+	polylineX,
 	opposedSide,
 	sideAxis,
 	type Point,

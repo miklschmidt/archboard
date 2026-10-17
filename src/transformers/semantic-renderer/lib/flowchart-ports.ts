@@ -3,8 +3,15 @@
 // side of a terminal. The layout spreads the lines that leave or reach a box
 // along the side they cross; a diamond has no side to spread them along, and a
 // terminal is a mark that every line of a flow starts at or ends at. So every
-// line out of a decision leaves from one point and every line into it arrives
-// at one, as a flowchart draws them.
+// line into a decision arrives at one point, as a flowchart draws them.
+//
+// The answers out of a decision leave it apart: one from its left point, one
+// from its right point and a third from its bottom point. The layout holds
+// each answer to its point of the decision's box, which is wider than the
+// diamond on either side (`track/points.ts`). An answer held near the left or
+// right edge of the box starts beside the diamond, and here it is drawn out
+// of the point on that side: it runs out sideways and turns down where it was
+// laid out, clear of the diamond (`fromSide`).
 //
 // A line is moved in one of two ways: it turns in just outside the box to the
 // middle, or its first leg moves over to the middle and the run after its
@@ -217,15 +224,36 @@ function reversed(curve: Curve): Curve {
 }
 
 /**
+ * A line laid out to leave beside a shape's box, as a decision's answer held
+ * to an edge of its box is (`track/points.ts`), drawn out of the point on that
+ * side: it runs out sideways and turns down where it was laid out.
+ * @param curve The line, from the shape.
+ * @param box The shape's box.
+ * @returns The line, or undefined where it leaves from the box's own face.
+ */
+function fromSide(curve: Curve, box: Box): Curve | undefined {
+	const { x } = curve.from;
+	const right = box.x + box.width;
+	const side = x < box.x - EPSILON ? box.x : x > right + EPSILON ? right : undefined;
+	if (side === undefined) return undefined;
+	const { corners, rest } = firstLegs(curve);
+	const middle = box.y + box.height / 2;
+	const head = curveThrough([{ x: side, y: middle }, { x, y: middle }, ...corners], true);
+	return { from: head.from, segments: [...head.segments, ...rest] };
+}
+
+/**
  * A line with each end that meets a diamond or a terminal moved to the middle
- * of the side it crosses.
+ * of the side it crosses, or, where it was laid out to leave beside the
+ * shape, out of the point on that side.
  * @param curve The line as laid out, its ends on the boxes.
  * @param from The box the line leaves, if it leaves one of those.
  * @param to The box the line reaches, if it reaches one of those.
  * @returns The line.
  */
 function atShapePoints(curve: Curve, from: Box | undefined, to: Box | undefined): Curve {
-	const left = from === undefined ? curve : fromMiddle(curve, from, "leaves");
+	const left =
+		from === undefined ? curve : (fromSide(curve, from) ?? fromMiddle(curve, from, "leaves"));
 	if (to === undefined) return left;
 	return reversed(fromMiddle(reversed(left), to, "arrives"));
 }

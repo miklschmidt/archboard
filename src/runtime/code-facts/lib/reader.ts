@@ -183,6 +183,14 @@ interface FactsPass {
 	 * @returns Its facts, or undefined when the pass may not read it.
 	 */
 	read(checkout: CheckoutFiles, relative: string): Promise<FileFacts | undefined>;
+	/**
+	 * The text of one file of a checkout, from the source the pass reads: the
+	 * disk, or the revision of a Git source.
+	 * @param checkout The checkout and the files the pass may read in it.
+	 * @param relative The file, relative to the checkout.
+	 * @returns Its text, or undefined when the pass may not read it.
+	 */
+	text(checkout: CheckoutFiles, relative: string): string | undefined;
 	/** How the pass read its files so far. */
 	readonly stats: Readonly<PassStats>;
 	/** The Terraform or OpenTofu plans an agent named for the pass (`--plan`). */
@@ -494,6 +502,13 @@ function createPass(context: PassContext): FactsPass {
 	return {
 		stats,
 		plans: context.plans,
+		/**
+		 * The text of one file, if the pass may read it.
+		 * @param checkout The checkout.
+		 * @param relative The file.
+		 * @returns Its text, or undefined.
+		 */
+		text: (checkout, relative) => source.text(checkout, relative),
 		/**
 		 * The code facts of one file, read once in the pass.
 		 * @param checkout The checkout.

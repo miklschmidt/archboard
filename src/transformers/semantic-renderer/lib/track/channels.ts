@@ -11,7 +11,9 @@
 // reader can always tell who talks to whom; the painter marks every split.
 //
 // Cards spread their ports along a face, each as close to the other end as
-// spacing allows; each channel's units — a trunk, or a lone net — get tracks
+// spacing allows, but for a line held to one point of its card, as an answer
+// out of a flowchart's decision is (`points.ts`), which stands there and
+// shares a trunk only with lines held to the same point; each channel's units — a trunk, or a lone net — get tracks
 // as tracks.ts stacks them.
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE, reachOf, type Station } from "@/transformers/semantic-renderer/lib/track/chains";
@@ -211,7 +213,8 @@ function trunkGroups(nets: readonly Net[], side: "top" | "bottom"): Net[][] {
 
 /**
  * The nets not yet in a trunk that end on one card face, grouped by card,
- * channel, kind and standing.
+ * channel, kind and standing, and by the point they are held to, if any:
+ * lines held to different points of a decision leave it apart.
  * @param nets Every net.
  * @param side Which end: the upper station's, or the lower station's.
  * @returns The groups.
@@ -222,7 +225,7 @@ function sharing(nets: readonly Net[], side: "top" | "bottom"): Net[][] {
 		const station = net[side];
 		if (net.trunk !== undefined || station.kind !== "card") continue;
 		const byKind = groups.get(station.item!) ?? new Map<string, Net[]>();
-		const key = `${net.channel}|${net.kind}`;
+		const key = [net.channel, net.kind, station.at].join("|");
 		byKind.set(key, [...(byKind.get(key) ?? []), net]);
 		groups.set(station.item!, byKind);
 	}
@@ -397,14 +400,22 @@ function spreadOver(asked: number[], ports: readonly number[], start: number, en
  * with their bottom (`side` names the nets' end), the lines that meet it
  * from beyond one end fan out along it ({@link fanned}); on a bottom face
  * they stay a lane apart, as fanning them there sent a line leaving a card
- * out along its container's wall.
+ * out along its container's wall. A line held to one point of the card
+ * stands there, and the others spread round it.
  * @param item The card.
  * @param requests Its requests on that face.
  */
 function placePorts(item: Item, requests: readonly PortRequest[]): void {
-	const ordered = requests.toSorted(
-		(one, other) => one.wanted - other.wanted || one.order - other.order,
-	);
+	const held = requests.filter(({ nets, side }) => nets[0]![side].at !== undefined);
+	for (const { nets, side } of held)
+		for (const net of nets) {
+			const x = item.box.x + net[side].at!;
+			if (side === "top") net.topX = x;
+			else net.bottomX = x;
+		}
+	const ordered = requests
+		.filter((request) => !held.includes(request))
+		.toSorted((one, other) => one.wanted - other.wanted || one.order - other.order);
 	const wanted = ordered.map((request) => request.wanted);
 	const face = cardFace(item);
 	const ports = spreadPorts(face, ordered[0]?.side === "bottom" ? fanned(face, wanted) : wanted);

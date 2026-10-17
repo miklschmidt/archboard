@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 70,
+	"version": 71,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-17T09:58:43.531Z",
+	"updatedAt": "2026-10-17T11:08:17.035Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -23632,8 +23632,7 @@
 						"parent": "KovkhwZi",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/code-findings-memory.ts",
-							"symbol": "createCodeFindingsMemory"
+							"path": "src/server/archboard/lib/code-findings-memory.ts"
 						}
 					},
 					{

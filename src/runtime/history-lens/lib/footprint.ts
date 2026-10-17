@@ -1,21 +1,25 @@
 // The footprint of a range of commits (ADR 0045).
 //
 // It reads, in each checkout that holds a bound part, the commits from the
-// merge base of the named ref and HEAD up to HEAD, never fetching: a ref
-// resolves only from what the checkout already has, and a checkout where it
-// does not resolve is not read, and says so. The commits map onto the parts
+// merge base of the named ref and HEAD up to HEAD, or up to a named head ref
+// that need not be checked out (a layer of a pull-request stack), never
+// fetching: a ref resolves only from what the checkout already has, and a
+// checkout where it does not resolve is not read, and says so. A part pinned to
+// a branch or commit that its checkout does not have out is read up to that ref
+// when no head is named (TASK-493). The commits map onto the parts
 // whose bound declarations or paths they changed. Large commits are
 // kept and marked. With a proposal, the footprint sets the changed parts
 // against the parts the proposal names, in three lists, and a part the lens
 // skipped is in none of them.
 
-import { snapshotCheckoutAccess } from "@/runtime/code-target/index";
+import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@/runtime/code-target/index";
 import { attributeCommits, type AttributedCommits } from "@/runtime/history-lens/lib/attribution";
 import { markedCommit } from "@/runtime/history-lens/lib/answer-commit";
 import { walkCommits, type WalkedCommit } from "@/runtime/history-lens/lib/commits";
 import { gitAnswer, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { namedParts, type Named } from "@/runtime/history-lens/lib/named-parts";
 import { partReading, type ReadPart } from "@/runtime/history-lens/lib/parts";
+import { commitOf } from "@/runtime/history-lens/lib/source-history";
 import type { BehindCommit } from "@/shared/code-check/index";
 import type {
 	FootprintAnswer,
@@ -24,24 +28,37 @@ import type {
 	FootprintSkip,
 	NamedReason,
 } from "@/shared/footprint/index";
+import { nodesAtOwnRef } from "@/runtime/history-lens/lib/own-ref";
 import {
 	compareVariants,
+	emptyContent,
 	type SemanticBoard,
 	type SemanticNode,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
 
-/** What to read: a board's current variant, the ref, and the proposal to set it against. */
+/** What to read: the variant the commits are read against, the ref, and the proposal to set it against. */
 interface FootprintRequest {
 	/** The vault directory the board is in: its own checkout is read for its own repository. */
 	readonly vault: string;
 	readonly board: SemanticBoard;
 	/** The variant that is built, which the commits are read against. */
-	readonly current: SemanticVariant;
+	/**
+	 * The variant the proposal is read against: the board's current variant by
+	 * default. Undefined only with a proposal, which is then read against
+	 * nothing, so it names every part it holds.
+	 */
+	readonly against?: SemanticVariant | undefined;
 	/** A draft to set the commits against, when one was named. */
 	readonly proposal?: SemanticVariant | undefined;
 	/** Any ref that resolves in the checkouts, such as `main`, `origin/main` or a commit. */
 	readonly base: string;
+	/**
+	 * Where the commits end, when not at each checkout's HEAD: a branch, tag or
+	 * commit, resolved as the code check resolves a ref a draft pins. It is read
+	 * from Git and never checked out.
+	 */
+	readonly head?: string | undefined;
 	readonly signal?: AbortSignal | undefined;
 }
 
@@ -57,7 +74,7 @@ interface RepositoryFootprint {
 	readonly commits: readonly BehindCommit[];
 }
 
-/** Where a checkout's range runs: the ref's commit, the merge base with HEAD, and HEAD. */
+/** Where a checkout's range runs: the ref's commit, the merge base with the head, and the head. */
 interface Range {
 	readonly base: string;
 	readonly mergeBase: string;
@@ -66,22 +83,53 @@ interface Range {
 
 /** Why a checkout's range was not read. */
 interface Unread {
-	readonly reason: "base-unresolved" | "no-merge-base";
+	readonly reason: "base-unresolved" | "head-unresolved" | "no-merge-base";
 	readonly detail: string;
 }
 
 /**
  * The parts to read: the proposal's, with what it removed put back from the
- * current variant. A removed part is only on the current variant and an added
- * part is only on the proposal.
- * @param current The current variant.
+ * variant it is read against. A removed part is only on that variant and an
+ * added part is only on the proposal.
+ * @param against The variant the proposal is read against, when there is one.
  * @param proposal The proposal, when there is one.
  * @returns The parts, each as the variant that has it states it.
  */
-function partsOf(current: SemanticVariant, proposal: SemanticVariant | undefined): SemanticNode[] {
-	if (proposal === undefined) return [...current.content.nodes];
+function partsOf(
+	against: SemanticVariant | undefined,
+	proposal: SemanticVariant | undefined,
+): SemanticNode[] {
+	const before = against?.content.nodes ?? [];
+	if (proposal === undefined) return [...before];
 	const held = new Set(proposal.content.nodes.map((node) => node.id));
-	return [...proposal.content.nodes, ...current.content.nodes.filter((node) => !held.has(node.id))];
+	return [...proposal.content.nodes, ...before.filter((node) => !held.has(node.id))];
+}
+
+/**
+ * The parts to read, with those of the variant the commits are read against
+ * read at the one ref that variant is read against in each repository, which
+ * in a stack holds the layers below it (TASK-493). A part that pins a ref that
+ * ref does not hold keeps its own.
+ * @param request What to read.
+ * @param parts The parts, as `partsOf` lists them.
+ * @param snapshot The registered checkouts.
+ * @returns The parts, in the same order.
+ */
+async function atOwnRefs(
+	request: FootprintRequest,
+	parts: readonly SemanticNode[],
+	snapshot: CheckoutSnapshot,
+): Promise<SemanticNode[]> {
+	const read = request.proposal ?? request.against;
+	if (read === undefined) return [...parts];
+	const roots = new Map(
+		partReading({ nodes: [...parts] }, snapshot, true).read.map((part) => [part.repo, part.root]),
+	);
+	const own = await nodesAtOwnRef(request.board, read, (repo) => roots.get(repo), {
+		signal: request.signal,
+	});
+	const byId = new Map(own.map((node) => [node.id, node]));
+	return parts.map((node) => byId.get(node.id) ?? node);
 }
 
 /**
@@ -102,16 +150,38 @@ function listed(part: ReadPart, commits: readonly string[], named: NamedReason[]
 }
 
 /**
- * Where a checkout's range runs. `--end-of-options` keeps a ref that begins
- * with a dash from being read as an option.
+ * The commit the range ends at: the head the caller named, resolved as the
+ * code check resolves a ref, else the checkout's HEAD.
+ * @param root The checkout.
+ * @param head The head ref as asked, when the caller named one.
+ * @param options The caller's signal.
+ * @returns The commit id, or undefined when the checkout has no such commit.
+ */
+function headOf(
+	root: string,
+	head: string | undefined,
+	options: GitRunOptions,
+): Promise<string | undefined> {
+	return head === undefined
+		? gitAnswer(root, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], options)
+		: commitOf(root, head, options);
+}
+
+/**
+ * Where a checkout's range runs between a head and the base. `--end-of-options`
+ * keeps a ref that begins with a dash from being read as an option.
  * @param root The checkout.
  * @param base The ref as asked.
+ * @param tip The commit the range ends at, when the checkout has one.
+ * @param tipName What the commit was asked for as: the head ref, or HEAD.
  * @param options The caller's signal.
  * @returns The range, or why it cannot be read.
  */
-async function rangeOf(
+async function rangeBetween(
 	root: string,
 	base: string,
+	tip: string | undefined,
+	tipName: string,
 	options: GitRunOptions,
 ): Promise<Range | Unread> {
 	const resolved = await gitAnswer(
@@ -125,20 +195,40 @@ async function rangeOf(
 			detail: `"${base}" does not resolve in the checkout at ${root}.`,
 		};
 	}
-	const head = await gitAnswer(
-		root,
-		["rev-parse", "--verify", "--quiet", "HEAD^{commit}"],
-		options,
-	);
 	const mergeBase =
-		head === undefined ? undefined : await gitAnswer(root, ["merge-base", resolved, head], options);
-	if (head === undefined || mergeBase === undefined) {
+		tip === undefined ? undefined : await gitAnswer(root, ["merge-base", resolved, tip], options);
+	if (tip === undefined || mergeBase === undefined) {
 		return {
 			reason: "no-merge-base",
-			detail: `"${base}" and HEAD share no history in the checkout at ${root}.`,
+			detail: `"${base}" and ${tipName} share no history in the checkout at ${root}.`,
 		};
 	}
-	return { base: resolved, mergeBase, head };
+	return { base: resolved, mergeBase, head: tip };
+}
+
+/**
+ * Where a checkout's range runs: from the base to the head the caller named,
+ * else to HEAD.
+ * @param root The checkout.
+ * @param base The ref as asked.
+ * @param head The head ref as asked, when the caller named one.
+ * @param options The caller's signal.
+ * @returns The range, or why it cannot be read.
+ */
+async function rangeOf(
+	root: string,
+	base: string,
+	head: string | undefined,
+	options: GitRunOptions,
+): Promise<Range | Unread> {
+	const tip = await headOf(root, head, options);
+	if (tip === undefined && head !== undefined) {
+		return {
+			reason: "head-unresolved",
+			detail: `"${head}" does not resolve in the checkout at ${root}.`,
+		};
+	}
+	return rangeBetween(root, base, tip, head ?? "HEAD", options);
 }
 
 /**
@@ -173,7 +263,7 @@ function unreadRepository(
 
 /**
  * What a checkout holds when its range was read: the commits between the
- * merge base and HEAD, mapped onto the parts bound there.
+ * merge base and the head, mapped onto the parts bound there.
  * @param repo The repository.
  * @param parts The parts bound there.
  * @param named Why the proposal names each part.
@@ -215,10 +305,12 @@ function mappedRepository(
 
 /**
  * Read one checkout's range: where the ref resolves, the merge base with
- * HEAD, and the commits between them mapped onto the paths bound there.
+ * the head, and the commits between them mapped onto the paths bound there.
  * @param repo The repository.
  * @param parts The parts bound there, all in one checkout.
- * @param base The ref as asked.
+ * @param refs The refs as asked.
+ * @param refs.base The ref the range starts from.
+ * @param refs.head The ref it ends at, when the caller named one.
  * @param named Why the proposal names each part.
  * @param options The caller's signal.
  * @returns What the checkout holds, or why its range was not read.
@@ -226,12 +318,12 @@ function mappedRepository(
 async function readRepository(
 	repo: string,
 	parts: readonly ReadPart[],
-	base: string,
+	refs: { readonly base: string; readonly head: string | undefined },
 	named: Named,
 	options: GitRunOptions,
 ): Promise<RepositoryFootprint> {
 	const root = parts[0]?.root ?? "";
-	const range = await rangeOf(root, base, options);
+	const range = await rangeOf(root, refs.base, refs.head, options);
 	if ("reason" in range) return unreadRepository(repo, parts, named, range);
 	const walked = await walkCommits(root, [`${range.mergeBase}..${range.head}`], options);
 	return mappedRepository(
@@ -245,14 +337,26 @@ async function readRepository(
 }
 
 /**
- * The read parts of one variant by repository.
+ * The read parts of one variant by repository and by where their commits end:
+ * the head the caller named, else the ref a part is pinned to that its
+ * checkout lacks out, else HEAD (TASK-493).
  * @param parts The parts.
- * @returns Each repository with the parts bound there.
+ * @param head The head the caller named, if any.
+ * @returns Each repository with the parts bound there, and the head they are read up to.
  */
-function byRepository(parts: readonly ReadPart[]): Map<string, ReadPart[]> {
-	const grouped = new Map<string, ReadPart[]>();
-	for (const part of parts) grouped.set(part.repo, [...(grouped.get(part.repo) ?? []), part]);
-	return grouped;
+function byRepository(
+	parts: readonly ReadPart[],
+	head: string | undefined,
+): { repo: string; head: string | undefined; parts: ReadPart[] }[] {
+	const grouped = new Map<string, { repo: string; head: string | undefined; parts: ReadPart[] }>();
+	for (const part of parts) {
+		const tip = head ?? part.ref;
+		const key = `${part.repo}\0${tip ?? ""}`;
+		const held = grouped.get(key) ?? { repo: part.repo, head: tip, parts: [] };
+		held.parts.push(part);
+		grouped.set(key, held);
+	}
+	return [...grouped.values()];
 }
 
 /**
@@ -282,20 +386,20 @@ function isNamed(part: FootprintPart): boolean {
 
 /**
  * Why the proposal names each part: nothing without a proposal.
- * @param current The current variant.
+ * @param against The variant the proposal is read against, when there is one.
  * @param proposal The proposal, when there is one.
  * @param nodes The parts read, as `partsOf` lists them.
  * @returns For each named part, its reasons.
  */
 function namedBy(
-	current: SemanticVariant,
+	against: SemanticVariant | undefined,
 	proposal: SemanticVariant | undefined,
 	nodes: readonly SemanticNode[],
 ): Named {
 	if (proposal === undefined) return new Map();
 	const names = new Map(nodes.map((node) => [node.id, node.name]));
 	return namedParts(
-		compareVariants(current.content, proposal.content),
+		compareVariants(against?.content ?? emptyContent(), proposal.content),
 		(id) => names.get(id) ?? id,
 	);
 }
@@ -307,18 +411,19 @@ function namedBy(
  * @returns The footprint.
  */
 async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer> {
-	const { vault, board, current, proposal, base, signal } = request;
-	const nodes = partsOf(current, proposal);
-	const named = namedBy(current, proposal, nodes);
+	const { vault, board, against, proposal, base, head, signal } = request;
+	const all = partsOf(against, proposal);
 	const snapshot = await snapshotCheckoutAccess({
 		vault,
 		...(signal === undefined ? {} : { signal }),
-		bindings: nodes.flatMap((node) => (node.binding === undefined ? [] : [node.binding])),
+		bindings: all.flatMap((node) => (node.binding === undefined ? [] : [node.binding])),
 	});
-	const reading = partReading({ nodes }, snapshot);
+	const nodes = await atOwnRefs(request, all, snapshot);
+	const named = namedBy(against, proposal, nodes);
+	const reading = partReading({ nodes }, snapshot, true);
 	const repositories = await Promise.all(
-		[...byRepository(reading.read)].map(([repo, parts]) =>
-			readRepository(repo, parts, base, named, { signal }),
+		byRepository(reading.read, head).map((group) =>
+			readRepository(group.repo, group.parts, { base, head: group.head }, named, { signal }),
 		),
 	);
 	const changed = inOrder(
@@ -329,7 +434,8 @@ async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer
 		board: board.name,
 		version: board.version,
 		base,
-		current: { id: current.id, name: current.name },
+		...(head === undefined ? {} : { head }),
+		against: against === undefined ? null : { id: against.id, name: against.name },
 		repositories: repositories.map((one) => one.range),
 		commits: repositories
 			.flatMap((one) => one.commits)

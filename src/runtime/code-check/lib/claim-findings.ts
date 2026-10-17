@@ -48,17 +48,17 @@ function lacking(lacks: (typeof LACKS)[keyof typeof LACKS], held: Held, symbol: 
 /**
  * The warning for a bound path that a named draft names and the checkout lacks.
  * @param claim The binding.
- * @param root The checkout.
+ * @param where The code that was read: the checkout, or a ref in it.
  * @returns The finding.
  */
-function bindingPathMissing(claim: BindingClaim, root: string): CodeFinding {
+function bindingPathMissing(claim: BindingClaim, where: string): CodeFinding {
 	const { binding, site } = claim;
 	return warning(
 		site,
 		"BINDING_PATH_MISSING",
 		`Node ${JSON.stringify(site.subject.name)} is bound to ${JSON.stringify(binding.path)} in ` +
 			`${JSON.stringify(binding.repo)} on the named draft, and there is no such file or ` +
-			`directory in the checkout at ${JSON.stringify(root)}. Naming a draft says that its code ` +
+			`directory in ${where}. Naming a draft says that its code ` +
 			"is built now: bind the part to where its code lives, write that code, or leave --variant " +
 			"out until it is built.",
 	);
@@ -92,17 +92,16 @@ function bindingSymbolMissing(
 /**
  * The warning for an anchor whose file is not in the checkout.
  * @param claim The anchor.
- * @param root The checkout.
+ * @param where The code that was read: the checkout, or a ref in it.
  * @returns The finding.
  */
-function anchorPathMissing(claim: AnchorClaim, root: string): CodeFinding {
+function anchorPathMissing(claim: AnchorClaim, where: string): CodeFinding {
 	const { anchor, site } = claim;
 	return warning(
 		site,
 		"ANCHOR_PATH_MISSING",
 		`The anchor of ${describeSubject(site.subject)} names ${JSON.stringify(anchor.path)} in ` +
-			`${JSON.stringify(anchor.repo)}, and there is no such file in the checkout at ` +
-			`${JSON.stringify(root)}. Cite the file that holds the code now, or remove the anchor if ` +
+			`${JSON.stringify(anchor.repo)}, and there is no such file in ${where}. Cite the file that holds the code now, or remove the anchor if ` +
 			"the code that proved it is gone.",
 	);
 }

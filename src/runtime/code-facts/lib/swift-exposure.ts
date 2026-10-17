@@ -40,7 +40,8 @@ async function manifestFacts(
 	const listed = await pass.read(checkout, manifest);
 	const reading = adapterOf(manifest);
 	if (listed === undefined || listed.adapter === "text" || reading === undefined) return undefined;
-	return reading.parse(await Bun.file(path.join(checkout.root, listed.path)).text());
+	const text = pass.text(checkout, listed.path);
+	return text === undefined ? undefined : reading.parse(text);
 }
 
 /**

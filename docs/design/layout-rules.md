@@ -2580,3 +2580,137 @@ Before, every route of a planned board was compared 16 px left of and 24 px
 above where it is drawn. Native hosts (Device Trust Control Plane, Track) then
 counted 5 routes through cards. Read where they are drawn, it has none, on
 Track or Blocks.
+
+## 50. A decision's answers leave it from separate points (2026-10-17, TASK-491)
+
+On Device Trust Control Plane, the flowchart of "Enroll through the
+in-process Rust library" sent both answers of "Which caller drives the
+library?" out of the diamond's bottom point, and split them just below it. A
+flowchart reads a decision by its answers leaving it apart: one from the left
+point, one from the right point, and a third from the bottom point.
+
+Two things put every answer on the bottom point. The track router gives the
+lines of one kind that leave one card face one shared port and one trunk
+(`channels.ts`), and every line of a flowchart is of one kind. Then
+`flowchart-ports.ts` moved that port to the middle of the side it crosses.
+Moving the line ends after the layout cannot fix this. An answer whose label
+Graphviz stood inside the diamond's width would run back under the diamond.
+
+The layout now places the answers apart:
+
+- The flowchart measures a decision wider than its diamond on either side.
+  The extra room is an answer's sideways run (`2 × BEND_RADIUS`) and half the
+  widest answer's label. The measure marks the decision `pointed` with that
+  half width.
+- `compound-graph.ts` gives each line out of a marked card a Graphviz
+  compass point: the first answer `sw`, the last `se`, and any other `s`.
+  Graphviz then stands each answer's label and step under its corner of the
+  box, where its order of the ranks allows.
+- Before anything else is routed, `track/points.ts` holds each line down out
+  of the card to one point of its bottom edge. The line whose label box or
+  card Graphviz stood furthest left goes to the left side, the one furthest
+  right to the right side, and any other to the middle. A side line runs
+  down half a label in from the box's edge, so its label can stand on it
+  inside the box. A held line keeps a port of its own. It shares a trunk
+  only with lines held to the same point. Label boxes slide onto its point,
+  and no jog closing moves it.
+- Once the drawing is laid out, the flowchart cuts the box back to the
+  diamond. It draws a side line out of the point on that side: sideways,
+  then down where it was laid out (`fromSide`).
+
+With four or more answers, the middle ones share the bottom point and split
+below it. A line up out of a decision is not held.
+
+Without the room for the label, 43 side answers stepped back under the
+diamond just below it. The label could not stand on its line where the line
+ran down at the edge of the box, because a label slides no further out than
+the scene's items reach (`extentOf` in `labels.ts`). Holding Graphviz's first
+leg two or four times as heavy did not move those labels.
+
+Every flowchart view of every variant of both vaults was rendered before and
+after (1759 drawings of this repository's vault, 114 of a copy of the work
+vault) and compared byte for byte. 1759 and 108 of them changed, which are
+268 and 87 different pairs of pictures.
+
+| measure (sum over the changed drawings) | dogfood           | work            |
+| --------------------------------------- | ----------------- | --------------- |
+| lines that start at one point           | 1017 → 64         | 262 → 10        |
+| turns                                   | 6768 → 5951       | 1842 → 1520     |
+| length of line                          | 1224870 → 1201707 | 315034 → 304965 |
+| crossings                               | 20 → 21           | 0 → 0           |
+| runs through a step                     | 0 → 0             | 54 → 47         |
+| width of the page                       | 244397 → 245950   | 84475 → 84855   |
+
+Of the lines that still start at one point, 35 and 3 pairs are the middle
+answers of a decision with four or more answers. The rest start at no
+decision's point: they leave a card or a loop, which this change does not
+hold.
+
+The first round left three faults. Three drawings crossed one line more: A
+tab session ends (Agent workbench), A stop (Codex workhorse) and A spoken
+instruction becomes work (Voice coordinator). Six side answers in three
+drawings still stepped back under their diamond above their label: Move a
+board (Archboard server routes), A reveal (Board viewer) and A board moves to
+another vault (Board persistence). In the last one, "unclaimed" ran back under
+the whole diamond and round a step. And a label could stand off its line: the
+flowchart draws a line into a decision to its top point, and the router had
+stood the label on the line where it entered the wider box.
+
+The second round fixes them with four rules:
+
+- The flowchart lays the graph out twice. The first layout holds no answer
+  to a point. Graphviz orders each decision's answers there so that the
+  fewest lines cross, a loop's line back up included. The second layout
+  asks for the points in that order (`inFreeOrder` in `flowchart.ts`). If
+  that drawing crosses lines, a third layout asks in the board's order, and
+  the drawing that crosses fewer lines wins. Asked for its points, Graphviz
+  can still stand the steps against the first layout's order. A stop and A
+  tab session ends crossed because the board's order put the step that loops
+  back up on the far side.
+- `track/points.ts` holds a decision's answers to its points in the order
+  that crosses fewest of them on the lanes and cards past their labels. Label
+  boxes are left out of that count, because boxes that share a stretch of a
+  band trade places (`label-runs.ts`). Where Graphviz stood two answers'
+  labels against the order of the steps they reach, the steps decide the
+  sides. That is what crossed in A spoken instruction becomes work.
+- Of two answers, one whose label or step Graphviz stood past the middle, on
+  the far side from its point, leaves from the bottom point. From its side
+  point it would run back under the diamond. That is "claimed" in A board
+  moves to another vault: a loop's line stands between the diamond's right
+  point and the step it reaches.
+- A label box on a line from a side point does not stand inward of the
+  point (`label-runs.ts`), and it does not settle onto the lane below it
+  (`settleOnLanes`). A step that the line must still take goes below the
+  label, toward the step it reaches. A line into a decision is held to the
+  middle of its top, where the flowchart draws it, so its label stands on
+  the line that is drawn.
+
+Every flowchart view of every variant was rendered again: 1759 drawings of
+this repository's vault and 114 of a fresh copy of the work vault. Against
+the first round, 1482 and 42 drawings changed, which are 206 and 37
+different pairs of pictures. Only one of them crosses more lines, runs
+through more steps or starts more lines at one point (below).
+
+| measure (sum over every drawing, original → first round → now)  | dogfood            | work               |
+| --------------------------------------------------------------- | ------------------ | ------------------ |
+| crossings                                                       | 20 → 21 → 14       | 0 → 0 → 0          |
+| lines that start at one point                                   | 1017 → 64 → 61     | 262 → 10 → 10      |
+| turns                                                           | 6768 → 5951 → 5807 | 1846 → 1522 → 1444 |
+| side answers that step back under the diamond above their label | 0 → 6 → 0          | 0 → 0 → 0          |
+| labels that stand off their line                                | 246 → 326 → 100    | 0 → 7 → 0          |
+
+The first value of each cell is the renderer before this task, on the same
+vaults.
+913 answers of this repository's vault and 154 of the work vault leave from
+a side point. 67 and 6 of them run back under the diamond below their label,
+toward a step that stands under the diamond, as a branch that rejoins the
+step after the decision does. Five answers moved from a side point to the
+bottom point.
+
+One drawing measures worse: Certificate lifecycle and protected access (work
+vault, feat_device-trust-mac-custody). A line runs into the bottom 8 px of
+the box the measure gives a card, where it joins the line out of that card.
+On the page the join stands under the card, and the drawing turns twice
+less. The 100 labels that still stand off their line enter an End terminal,
+which the flowchart also draws to its middle. The extra layouts made rendering
+the whole corpus take 161 s in place of 155 s.

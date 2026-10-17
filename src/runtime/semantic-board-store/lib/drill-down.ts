@@ -373,4 +373,4 @@ function linkDiagnostics(
 	);
 }
 
-export { type DrillDownTarget, createDrillLookup, semanticDrillDownDiagnostics };
+export { type DrillDownTarget, type DrillLookup, createDrillLookup, semanticDrillDownDiagnostics };

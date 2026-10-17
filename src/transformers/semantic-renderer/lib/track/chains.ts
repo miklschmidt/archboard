@@ -2,7 +2,7 @@
 // from its upper end to its lower end — its two cards, its label box and the
 // lanes it passes on the bands between.
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
-import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { polylineX, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { clearOf } from "@/transformers/semantic-renderer/lib/track/clear";
 import {
 	Scene,
@@ -38,6 +38,12 @@ interface Station {
 	 * label that slides stands where every later step reads it.
 	 */
 	x: number;
+	/**
+	 * Where the line must meet its card, in from the card's left edge: a
+	 * line out of a decision leaves from its own point (`points.ts`). Absent
+	 * where the line may meet the card anywhere along its face.
+	 */
+	at?: number;
 }
 
 /** A relationship's stations, and whether it runs upward from source to target. */
@@ -51,25 +57,6 @@ interface LaneRun {
 	readonly lanes: Station[];
 	readonly before: Station;
 	readonly after: Station;
-}
-
-/**
- * The x of a polyline where it crosses a height.
- * @param points The polyline, in order.
- * @param y The height.
- * @returns The x there, or nothing when the polyline never reaches it.
- */
-function polylineX(points: readonly Point[], y: number): number | undefined {
-	for (let index = 1; index < points.length; index += 1) {
-		const one = points[index - 1]!;
-		const other = points[index]!;
-		const low = Math.min(one.y, other.y);
-		const high = Math.max(one.y, other.y);
-		if (y < low || y > high) continue;
-		if (high - low < 1e-6) return (one.x + other.x) / 2;
-		return one.x + ((other.x - one.x) * (y - one.y)) / (other.y - one.y);
-	}
-	return undefined;
 }
 
 /**
@@ -498,13 +485,14 @@ function runOf(chains: readonly Chain[], lane: Station): LaneRun | undefined {
 /**
  * The x a line can pass a station at straight: anywhere along a card's or
  * title row's face clear of its corners, anywhere across a label box, or a
- * lane's own x.
+ * lane's own x. A line held to one point of its card passes there alone.
  * @param station The station.
  * @returns The lowest and highest x.
  */
 function reachOf(station: Station): [number, number] {
 	if (station.item === undefined) return [station.x, station.x];
 	const { x, width } = station.item.box;
+	if (station.at !== undefined) return [x + station.at, x + station.at];
 	const margin = Math.min(station.kind === "label" ? LANE : FACE_MARGIN, width / 2);
 	return [x + margin, x + width - margin];
 }

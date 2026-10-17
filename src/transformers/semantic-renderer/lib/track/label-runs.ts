@@ -4,6 +4,12 @@
 // labels, then each as near where it wants to be as that allows. A port moved
 // after Graphviz ranked its block can leave one label's line on the far side
 // of another's, and the line then hooks back to its card.
+//
+// Before all of that, no box stands where its line would step back under the
+// decision it comes down from (TASK-491). A line from a decision's side point
+// runs down beside the diamond, and a step inward above its label runs back
+// under the diamond. The step goes below the label instead, toward the step
+// it reaches.
 import { LABEL_LABEL_CLEARANCE } from "@/transformers/semantic-renderer/config";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import type { Item } from "@/transformers/semantic-renderer/lib/track/scene";
@@ -16,10 +22,17 @@ interface Slider {
 	readonly reaches: readonly (readonly [number, number])[];
 	/** Where its line leaves the station above and enters the one below. */
 	readonly ends: readonly [number, number];
+	/**
+	 * Which way runs back under the decision when its line comes down from a
+	 * side point of one (`points.ts`): 1 right from a left point, -1 left from
+	 * a right point, else 0 or nothing. A step that way above the box would run back
+	 * under the diamond.
+	 */
+	readonly inward?: number;
 }
 
-/** A placement's cost: how many lines jog at their labels, how many of those jogs are too short to turn whole, then how far the boxes stand from where they want to be. */
-type Cost = readonly [number, number, number];
+/** A placement's cost: how many lines step back under their decision above their labels, how many lines jog at their labels, how many of those jogs are too short to turn whole, then how far the boxes stand from where they want to be. */
+type Cost = readonly [number, number, number, number];
 
 /** The shortest jog a line turns with two whole bends and a straight run between them. */
 const WHOLE_JOG = 2 * LANE;
@@ -31,11 +44,12 @@ const TOLERANCE = 1e-6;
  * What one box costs standing at one centre.
  * @param slider The box.
  * @param centre Its centre.
- * @returns How many of its two lines jog there, and how far it stands from its wanted centre.
+ * @returns Whether its line steps back under its decision above it there, how many of its two lines jog there, and how far it stands from its wanted centre.
  */
 function costAt(slider: Slider, centre: number): Cost {
 	const off = slider.reaches.map(([low, high]) => Math.max(low - centre, centre - high, 0));
 	return [
+		(centre - slider.reaches[0]![0]) * (slider.inward ?? 0) > TOLERANCE ? 1 : 0,
 		off.filter((d) => d > TOLERANCE).length,
 		off.filter((d) => d > TOLERANCE && d < WHOLE_JOG - TOLERANCE).length,
 		Math.abs(centre - slider.wanted),
@@ -43,15 +57,24 @@ function costAt(slider: Slider, centre: number): Cost {
 }
 
 /**
- * Whether one cost is lower than another: fewer jogs, then less displacement.
+ * Two costs together.
+ * @param one A cost.
+ * @param other Another.
+ * @returns Their sum.
+ */
+function plus(one: Cost, other: Cost): Cost {
+	return [one[0] + other[0], one[1] + other[1], one[2] + other[2], one[3] + other[3]];
+}
+
+/**
+ * Whether one cost is lower than another: fewer steps back under a decision, fewer jogs, then less displacement.
  * @param one A cost.
  * @param other Another.
  * @returns True when the first is lower.
  */
 function cheaper(one: Cost, other: Cost): boolean {
-	if (one[0] !== other[0]) return one[0] < other[0];
-	if (one[1] !== other[1]) return one[1] < other[1];
-	return one[2] < other[2] - TOLERANCE;
+	const at = one.slice(0, 3).findIndex((count, index) => count !== other[index]);
+	return at === -1 ? one[3] < other[3] - TOLERANCE : one[at]! < other[at]!;
 }
 
 /** Where the boxes of one stretch stand, in their order, and what that costs. */
@@ -115,15 +138,7 @@ function planRun(sliders: readonly Slider[], low: number, high: number): RunPlan
 					if (step.centre > centre - gaps[index]! + TOLERANCE) return;
 					if (best === undefined || cheaper(step.cost, best.cost)) [best, from] = [step, at];
 				});
-				return best === undefined
-					? []
-					: [
-							{
-								centre,
-								cost: [best.cost[0] + own[0], best.cost[1] + own[1], best.cost[2] + own[2]],
-								from,
-							},
-						];
+				return best === undefined ? [] : [{ centre, cost: plus(best.cost, own), from }];
 			}),
 		);
 	});

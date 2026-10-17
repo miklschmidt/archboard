@@ -83,7 +83,7 @@ archboard semantic record <board> --variant "<proposal>" --against "<below>" --w
 ```
 
 - Pass the same `--against` as the picture, so every frame marks the same
-  change.
+  change. Leave it out when the picture does.
 - Leave out `--discard`. It deletes the board: a vault board belongs to the
   vault, and an ephemeral board goes with its whole vault afterwards. Keep the
   talk in `$tmp`, outside any vault.

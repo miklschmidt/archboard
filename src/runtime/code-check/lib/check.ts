@@ -23,7 +23,6 @@ import { createElapsedClock } from "@/shared/timing/timing";
 import path from "node:path";
 import {
 	checkoutSkips,
-	otherRefOf,
 	readCheckouts,
 	readableOf,
 	type Checkout,
@@ -46,6 +45,20 @@ import {
 } from "@/runtime/code-check/lib/claim-findings";
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import { droppedBindings, judgeDroppedParts } from "@/runtime/code-check/lib/dropped-parts";
+import {
+	atOwnRef,
+	codeFor,
+	noServerSkips,
+	pinOf,
+	readRefCodes,
+	refReadsOf,
+	routedFacts,
+	resolveOnDisk,
+	targetIn,
+	whereIn,
+	type RefCode,
+	type RefCodes,
+} from "@/runtime/code-check/lib/ref-code";
 import { joinEnvironment } from "@/runtime/code-check/lib/environment-join";
 import { evidenceOf } from "@/runtime/code-check/lib/evidence";
 import { infrastructureRunners } from "@/runtime/code-check/lib/infrastructure-runners";
@@ -60,7 +73,6 @@ import { heldInFiles, terraformRootOfTarget, type Held } from "@/runtime/code-ch
 import { terraformEvidenceOf } from "@/runtime/code-check/lib/terraform-evidence";
 import { createCodeFacts, type Accept, type FactsPass } from "@/runtime/code-facts/index";
 import {
-	resolveLocalCodeTarget,
 	snapshotCheckoutAccess,
 	type CheckoutSnapshot,
 	type LocalCodeTarget,
@@ -87,6 +99,8 @@ interface Pass {
 	readonly snapshot: CheckoutSnapshot;
 	readonly checkouts: ReadonlyMap<string, Checkout>;
 	readonly facts: FactsPass;
+	/** The refs read from Git where a checkout has another one out. */
+	readonly refs: RefCodes;
 	/** Where the pass's language servers say a use that no import resolves is defined. */
 	readonly resolve: Resolve;
 	/** The kinds of file read as text in each repository. */
@@ -119,27 +133,11 @@ function repoOf(claim: Claim): string {
 }
 
 /**
- * The ref a claim's code is pinned to, when its checkout has another one out:
- * a binding's own pin, or the pin of a part at an anchor's end that binds the
- * anchor's repository, since the files on disk are then not that ref's.
- * @param claim The claim.
- * @param snapshot The registered checkouts.
- * @returns The two refs, and for an anchor the end that is pinned, or undefined.
- */
-function pinOf(claim: Claim, snapshot: CheckoutSnapshot): Pick<CodeCheckSkip, "ref" | "detail"> {
-	if (claim.kind === "binding") return { ref: otherRefOf(claim.binding, snapshot) };
-	const pins = claim.ends.flatMap((end) => {
-		const ref =
-			end.binding?.repo === claim.anchor.repo ? otherRefOf(end.binding, snapshot) : undefined;
-		return ref === undefined ? [] : [{ ref, detail: `${end.name} is pinned to ${ref.named}` }];
-	});
-	return pins[0] ?? {};
-}
-
-/**
  * The checkout a claim reads, or the skip that says why it reads none. A
- * checkout that is unavailable is said once for the whole checkout, so its
- * claims add nothing.
+ * claim pinned to a ref its checkout does not have out reads the tree of that
+ * ref from Git, and is skipped only where the checkout cannot resolve the
+ * ref. A checkout that is unavailable is said once for the whole checkout, so
+ * its claims add nothing.
  * @param claim The claim.
  * @param pass The pass.
  * @returns The checkout's root and files, or undefined when the claim is not read.
@@ -152,9 +150,11 @@ function checkoutFor(claim: Claim, pass: Pass): ClaimCheckout | undefined {
 	}
 	if (checkout?.status !== "read") return undefined;
 	const pin = pinOf(claim, pass.snapshot);
-	if (pin.ref === undefined) return { ...checkout, repo };
-	pass.outcome.skipped.push(skipped(claim.site, { reason: "ref-not-checked-out", repo, ...pin }));
-	return undefined;
+	const code = codeFor(pass.refs, checkout, repo, pin.ref);
+	if (code === undefined) {
+		pass.outcome.skipped.push(skipped(claim.site, { reason: "ref-not-checked-out", repo, ...pin }));
+	}
+	return code;
 }
 
 /**
@@ -254,9 +254,11 @@ function searchOf(checkout: ClaimCheckout, pass: Pass) {
  * @returns The resolved path, or undefined.
  */
 function boundTarget(claim: BindingClaim, checkout: ClaimCheckout, pass: Pass) {
-	const target = resolveLocalCodeTarget(claim.binding, pass.snapshot);
+	const target = targetIn(claim.binding, checkout, pass);
 	if (target.ok) return target;
-	if (claim.path) pass.outcome.findings.push(bindingPathMissing(claim, checkout.root));
+	if (claim.path) {
+		pass.outcome.findings.push(bindingPathMissing(claim, whereIn(checkout, pass.refs)));
+	}
 	return undefined;
 }
 
@@ -307,10 +309,10 @@ async function judgeAnchor(claim: AnchorClaim, pass: Pass): Promise<void> {
 	const checkout = checkoutFor(claim, pass);
 	if (checkout === undefined) return;
 	const { repo, path: file } = claim.anchor;
-	const target = resolveLocalCodeTarget({ repo, path: file }, pass.snapshot);
+	const target = targetIn({ repo, path: file }, checkout, pass);
 	if (target.ok && target.kind === "file") {
 		await judgeAnchorSymbol(claim, readableOf(target, checkout.files), checkout, pass);
-	} else pass.outcome.findings.push(anchorPathMissing(claim, checkout.root));
+	} else pass.outcome.findings.push(anchorPathMissing(claim, whereIn(checkout, pass.refs)));
 }
 
 /**
@@ -365,6 +367,7 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 	const codes = await partCodesOf(read.variant.content.nodes, {
 		snapshot: pass.snapshot,
 		checkouts: pass.checkouts,
+		refs: pass.refs,
 		/**
 		 * How a search reads one checkout in this pass.
 		 * @param checkout The checkout.
@@ -438,17 +441,16 @@ async function judgeAll(claims: readonly Claim[], pass: Pass): Promise<void> {
 }
 
 /**
- * Every bound part's binding on the boards, and of each part a draft dropped.
+ * Every bound part's binding on the boards.
  * @param boards The boards.
  * @returns Each binding.
  */
 function partBindings(boards: readonly BoardToCheck[]): CodeBinding[] {
-	const parts = boards.flatMap((read) =>
+	return boards.flatMap((read) =>
 		read.variant.content.nodes.flatMap((node) =>
 			node.binding === undefined ? [] : [node.binding],
 		),
 	);
-	return [...parts, ...droppedBindings(boards)];
 }
 
 /**
@@ -497,13 +499,17 @@ async function checkCode(
 	plans: FactsPass["plans"] = [],
 	serverOf?: ServerOf,
 ): Promise<CodeCheckOutcome> {
-	const claims = boards.flatMap(claimsOf);
-	const bound = partBindings(boards);
-	const bindings = [...claims.flatMap(pathsOf), ...bound];
+	const inherited = droppedBindings(boards);
+	const asked = boards.flatMap(claimsOf);
+	const bindings = [...asked.flatMap(pathsOf), ...partBindings(boards), ...inherited];
 	const snapshot = await snapshotCheckoutAccess({ vault, signal, bindings, timeoutMs: null });
-	const repos = [...claims.map(repoOf), ...bound.map((binding) => binding.repo)];
+	const repos = [...asked.map(repoOf), ...bindings.map((binding) => binding.repo)];
 	const checkouts = await readCheckouts(repos, snapshot, signal);
-	const reading = timedFacts(codeFacts.pass(signal, plans));
+	const reads = await Promise.all(boards.map((read) => atOwnRef(read, checkouts, signal)));
+	const claims = reads.flatMap(claimsOf);
+	const bound = partBindings(reads);
+	const refs = await readRefCodes(refReadsOf(claims, bound, snapshot), checkouts, signal);
+	const reading = timedFacts(routedFacts(refs, codeFacts.pass(signal, plans)));
 	const facts = reading.facts;
 	const servers = new Map(
 		snapshot.entries.flatMap((entry) =>
@@ -511,18 +517,20 @@ async function checkCode(
 		),
 	);
 	const resolution = openResolution(servers, signal, facts, checkouts, serverOf);
+	const withoutServer = new Set<RefCode>();
 	const pass: Pass = {
 		snapshot,
 		checkouts,
 		facts,
-		resolve: resolution.resolve,
+		refs,
+		resolve: resolveOnDisk(resolution.resolve, refs, withoutServer),
 		readAsText: new Map(),
 		modules: new Map(),
 		outcome: { timings: [], findings: [], skipped: [] },
 	};
 	try {
 		await judgeAll(claims, pass);
-		for (const read of boards) {
+		for (const read of reads) {
 			// oxlint-disable-next-line no-await-in-loop -- one board at a time keeps the findings in board order, and a file one board reads is cached for the next
 			await judgeBoardRelationships(read, pass);
 		}
@@ -532,6 +540,7 @@ async function checkCode(
 	} finally {
 		pass.outcome.skipped.push(...(await resolution.close()));
 	}
+	pass.outcome.skipped.push(...noServerSkips(withoutServer));
 	pass.outcome.skipped.push(...checkoutSkips(checkouts, pass.readAsText));
 	const serverTimings = resolution.timings();
 	pass.outcome.timings.push(
