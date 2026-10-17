@@ -29,6 +29,11 @@ What was changed, and what that change is:
   used by this adapter; real-engine rendering tests exercise that boundary.
   The package patch adds three omitted `void` return annotations to its
   fallback declarations, without modifying its JavaScript or WebAssembly.
+  The engine makes one edit to the WebAssembly as it instantiates it
+  (`lib/unsatisfiable.ts`, TASK-377): where vpsc's `findMinLMBetween` would
+  throw `UnsatisfiableException`, the constraint is marked unsatisfiable
+  as `IncSolver::satisfy`'s catch marks it. The engine refuses a libavoid
+  build other than the one that edit was read from.
 - **Architecture text wraps with Pretext.** Pretext measures through the canvas of
   the place drawing the picture (TASK-247). Prepared lines are supplied to
   the painter; the architecture painter neither shrinks fonts nor truncates text.
