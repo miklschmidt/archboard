@@ -139,10 +139,12 @@ Do this for each vault board that section 1 chose.
 
    A found proposal keeps its name for life, so never rename it after the
    head branch. Below, `<proposal>` is its name. A found chain that was cut
-   down from a design breaks the stack rules below and cannot be repaired,
-   because its first proposal's parent is the cut design. Start a new chain
-   on a board of its own, leave the old drafts as they are, and say so in
-   your final report.
+   down from a design breaks the stack rules below. Repair it in place, from
+   the bottom proposal up: each proposal states again, under their original
+   ids, the parts, relationships and flows that it dropped from the variant
+   it was branched from. The `archboard` skill's variants reference says how
+   to restore an id. Never start a second chain for the same stack, and say
+   in your final report what you restored.
 
 3. Claim the board: `archboard claim --board <board> --reason "explaining <head branch> for its reviewers"`.
 4. If no proposal was found, branch one named after the head branch:
@@ -211,9 +213,9 @@ pull request must see where its change sits in that design.
   A finer part that serves two design parts sits beside them. A drill-down
   board would need a base draft of its own.
 - A design drawn before the code, which several pull requests build, stays a
-  draft. Never cut it down into the first proposal: the cut parts read as
-  removed. If the design's board has nothing built, draw the stack on a board
-  of its own that starts with a base draft.
+  draft. Branch the stack's first proposal from it, so that the proposal
+  holds the design's parts and marks only its own change. Never cut the
+  design down into the first proposal: the cut parts read as removed.
 
 ## 3. Draw an ephemeral board
 
