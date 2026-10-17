@@ -22,11 +22,23 @@ interface DrawnPoint {
  * @returns The shift, or the origin when the body was not moved.
  */
 function bodyShift(svg: string): DrawnPoint {
-	// Only the group immediately after the document background moves the body.
-	// A standing pin has its own translation inside a subject further down.
-	const found =
-		/<\/defs>\s*<rect[^>]*\/>\s*<g transform="translate\((-?[\d.]+),(-?[\d.]+)\)">/.exec(svg);
-	return found === null ? { x: 0, y: 0 } : { x: Number(found[1] ?? 0), y: Number(found[2] ?? 0) };
+	// Only the groups immediately after the document background move the body: a
+	// planned frame's or a title band's (`translate(16 24)`, after the slot that
+	// draws the frame or the title), then the canvas shift (`translate(x,y)`), each
+	// opening inside the one before. A standing pin has its own translation inside
+	// a subject further down.
+	const background = /<\/defs>\s*<rect[^>]*\/>\s*/g;
+	if (background.exec(svg) === null) return { x: 0, y: 0 };
+	const step =
+		/(?:<g data-slot="(?:planned-frame|export-title)">[\s\S]*?<\/g>\s*)?<g transform="translate\((-?[\d.]+)[ ,](-?[\d.]+)\)">\s*/y;
+	step.lastIndex = background.lastIndex;
+	let x = 0;
+	let y = 0;
+	for (let found = step.exec(svg); found !== null; found = step.exec(svg)) {
+		x += Number(found[1] ?? 0);
+		y += Number(found[2] ?? 0);
+	}
+	return { x, y };
 }
 
 /**
