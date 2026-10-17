@@ -9,11 +9,19 @@ import {
 	DEFAULT_SEMANTIC_POLICY,
 	VaultCheckSchema,
 	type DiagnosticSubject,
+	type SharedSymbol,
 	type VaultCheck,
 } from "@/shared/semantic-policy/index";
 import { makeStandInVault } from "./stand-in-vault.ts";
 
 const ledger: DiagnosticSubject = { kind: "node", id: "AbCd", name: "Ledger" };
+const sharedSymbol: SharedSymbol = {
+	binding: { repo: "github.com/test/orders", path: "src/ledger.ts", symbol: "post" },
+	parts: [
+		{ board: "Orders", id: "AbCd", name: "Ledger", variants: ["v1"] },
+		{ board: "Billing", id: "EfGh", name: "Ledger copy", variants: ["v2", "v3"] },
+	],
+};
 const check: VaultCheck = {
 	policy: DEFAULT_SEMANTIC_POLICY,
 	configurationValid: true,
@@ -29,6 +37,15 @@ const check: VaultCheck = {
 			variant: "v1",
 			subject: ledger,
 			message: "Bound to a file that is gone.",
+		},
+		{
+			severity: "warning",
+			code: "SHARED_SYMBOL",
+			file: "/vault/Orders.semantic.json",
+			board: "Orders",
+			variant: "v1",
+			sharedSymbol,
+			message: "Two parts bind one symbol.",
 		},
 		{
 			severity: "error",
@@ -103,7 +120,13 @@ test("check names the subject beside its message, and its JSON answer carries th
 	}
 	expect(exited).toBe(1);
 	expect(VaultCheckSchema.parse(JSON.parse(stdout)).diagnostics[0]?.subject).toEqual(ledger);
-	const [named, plain] = check.diagnostics;
+	// The machine-readable fields of a diagnostic survive the command's own schema.
+	expect(
+		VaultCheckSchema.parse(JSON.parse(stdout)).diagnostics.find(
+			(one) => one.code === "SHARED_SYMBOL",
+		)?.sharedSymbol,
+	).toEqual(sharedSymbol);
+	const [named, , plain] = check.diagnostics;
 	const lines = stderr.split("\n");
 	expect(lines.find((line) => line.includes(named?.message ?? "-"))).toContain(ledger.name);
 	expect(lines.some((line) => line.includes(plain?.message ?? "-"))).toBe(true);
