@@ -1,0 +1,308 @@
+{
+	"nodes": [
+		{
+			"id": "Y70KOm9C",
+			"order": 4000,
+			"name": "Route handlers",
+			"kind": "module",
+			"responsibility": "Answers every request: board reads, the one write boundary with its claim, rename and discard, the code checks, the repositories and checkout choice, the page, health and opening vault",
+			"description": "Board routes, Board write routes, Claim routes, Rename route, Discard route, Service routes, Code check route, Locality route and Footprint route. Their own board draws each one with the parts it reaches.",
+			"parent": "nU6dNHBE",
+			"groups": ["drawing"],
+			"drillDown": {
+				"board": "Archboard server routes",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "wYcdVszt",
+			"order": 5000,
+			"name": "Semantic board store",
+			"kind": "module",
+			"responsibility": "The one place a board is read or written",
+			"groups": ["writes"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/semantic-board-store"
+			},
+			"drillDown": {
+				"board": "Board persistence",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "adthSPYy",
+			"order": 26000,
+			"name": "History lens",
+			"kind": "module",
+			"responsibility": "Maps checkout commits onto bound paths for behind and onto bound declarations for locality and footprint; labels path-wide fallback when a symbol cannot be resolved",
+			"parent": "ScjxtP0G",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/history-lens"
+			}
+		},
+		{
+			"id": "nDQmpHQi",
+			"order": 29000,
+			"name": "Code check",
+			"kind": "module",
+			"responsibility": "Holds each board's anchors, bound symbols, relationships between bound parts and container interfaces to the code facts of the files on disk, at its current variant or the named draft",
+			"description": "ADR 0046's code pass over the files Git does not ignore in the vault's own checkout and the chosen ones, through code facts: a bound symbol must be a definition, an anchor's symbol a definition or a use that supports its relationship (in the bound code of an end, of an evidence kind the relationship's kind accepts), and on a named draft a bound path must be in its checkout. Evidence between a board's bound parts comes from the code facts of every bound file, owned by the narrowest binding (a C, C++ or Objective-C file's part owns its pair): a run-time use through an import or include is a call, a type-only use an import. It joins an environment value that bound code reads with the compose service, Kubernetes workload or Terraform resource that runs that code (by its build, or a part drawn inside the part bound to it) and sets the value to another part's address: configured-path evidence. It reports the part code reaches with no relationship, and as information a relationship with no anchor whose accepted evidence runs only backwards or is missing (across a network hop, the side without evidence). For a container bound to a module it holds ADR 0044's interface to what the module exposes, and reads a Terraform module's pass-through variables and whether it is shallow. A binding to a Terraform root module names an address there; references join resource-bound parts, and --plan names plan JSON files. Kubernetes Service selectors and NetworkPolicies join workload-bound parts by labels, and a reference to a Service no part binds reaches the workloads it picks. A language server resolves the uses no import resolves, and a C use an include leads only to a declaration; the servers each checkout's registration holds decide which one runs there. It lists what it skipped and why. The header of src/shared/code-check/index.ts names each finding code and the task that added it, and skills/archboard/references/authoring.md says what each one asks of an author.",
+			"parent": "ScjxtP0G",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/code-check"
+			}
+		},
+		{
+			"id": "SmrySjjM",
+			"order": 30000,
+			"name": "Code findings memory",
+			"kind": "module",
+			"responsibility": "What the last code pass found on each board and variant of each vault, in memory only",
+			"description": "Each finished pass replaces the readings of the boards it read, with the version it read and when it ran; a cancelled pass changes nothing. GET /api/vault/code-findings answers from it alone, so a pane never starts a pass (ADR 0046).",
+			"parent": "ScjxtP0G",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/code-findings-memory.ts",
+				"symbol": "createCodeFindingsMemory"
+			}
+		},
+		{
+			"id": "aqjsNyJ9",
+			"order": 31000,
+			"name": "Code facts",
+			"kind": "module",
+			"responsibility": "Tells the code check what one file defines, references and imports, and what a module exposes, and keeps each file's facts in memory by its content",
+			"description": "ADR 0046's engine. One table of adapters, src/runtime/code-facts/lib/adapters.ts, says which files each language or format reads, by extension or file name, with its parser (a tree-sitter grammar or one Bun has) and its resolver; each adapter's own files say what it reads. A definition carries its qualified name and the visibility its language gives it. A reference carries its evidence kind: call, import, configured path or build dependency; the name of an environment value or an event in a string counts. A resolver leads a use to the file or address it reaches: through an import or an include, or through the names that a module, project or package declares. Each language's rule in module-exposure.ts says what a module exposes. Code that did not parse has no facts, and a name the reading cannot place there is unknown, never absent; a file no adapter reads is text. It finds a definition and a module's exposed names. One cache entry per file by content hash; grammars load on first use; a pass yields after each parse.",
+			"parent": "ScjxtP0G",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/code-facts"
+			}
+		},
+		{
+			"id": "1aoB46lM",
+			"order": 32000,
+			"name": "Language servers",
+			"kind": "module",
+			"responsibility": "Asks the language server of a file's language where a name the file uses is defined, and what the definition declares, for one pass of the code check",
+			"description": "TASK-367.13 to TASK-367.16, TASK-433 and ADR 0046. One pass starts the server of each language once per project on its first question: the checkout, for Swift the package that holds the file, for C, C++ and Objective-C the directory of its compile_commands.json. It speaks JSON-RPC over the child's stdio, asks textDocument/definition at the last name of a use on its line, and textDocument/documentSymbol once per file to tell code that runs from a member of a type. A language's row in languages.ts says what its server needs beyond that: pyright is told the checkout's .venv or venv; csharp-ls the solution nearest the root; sourcekit-lsp starts normally, builds and prepares its Swift package through background indexing, is asked workspace/synchronize with index true once and has each file opened; clangd has each file opened, finds its compile_commands.json where it would, keeps its own index where an editor's clangd does, and is asked once that index has ended. The command comes from server-command.ts. Every language but TypeScript runs only what the agent in that repository set on the checkout's registration (repo language-server), with the environment of the Archboard server and nothing added; if none is configured, the pass says so once for the checkout and the language, naming the command that configures one. TypeScript runs the native tsc --lsp of the checkout's own typescript package from version 7 on, with its native program, both inside the checkout, else Archboard's own. Every server has stopped before the pass returns: shutdown and exit, then a kill of its process group, or a kill at once when the pass is cancelled. A server that fails is said once for its checkout, and so is a project it cannot answer about, for which no server starts: a C file with no compile_commands.json.",
+			"parent": "ScjxtP0G",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/language-servers"
+			}
+		},
+		{
+			"id": "nU6dNHBE",
+			"order": 38000,
+			"name": "HTTP serving",
+			"kind": "module",
+			"responsibility": "Takes every HTTP call: mounts the routes on one application and listener, refuses foreign browser origins and calls that name no vault, and opens a node's code."
+		},
+		{
+			"id": "ScjxtP0G",
+			"order": 41000,
+			"name": "Code evidence",
+			"kind": "module",
+			"responsibility": "Checks boards against the code and Git history: the facts of each file, where names are defined, and the last findings kept in memory."
+		}
+	],
+	"edges": [
+		{
+			"id": "iG4T44Pd",
+			"order": 21000,
+			"from": "Y70KOm9C",
+			"to": "wYcdVszt",
+			"kind": "call",
+			"label": "read a board, write one under its lease",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/semantic-board-writes.ts",
+				"symbol": "writeSemanticBoard"
+			}
+		},
+		{
+			"id": "ELnpXxr9",
+			"order": 60000,
+			"from": "Y70KOm9C",
+			"to": "adthSPYy",
+			"kind": "call",
+			"label": "hotspots, footprints and how far boards are behind",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/locality-route.ts",
+				"symbol": "createLocalityReading"
+			}
+		},
+		{
+			"id": "D9dCZCLo",
+			"order": 65000,
+			"from": "Y70KOm9C",
+			"to": "nDQmpHQi",
+			"kind": "call",
+			"label": "runs the code pass over the vault's boards",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/code-check-route.ts",
+				"symbol": "checkCode"
+			}
+		},
+		{
+			"id": "rCuDH1LU",
+			"order": 66000,
+			"from": "nDQmpHQi",
+			"to": "wYcdVszt",
+			"kind": "call",
+			"label": "every board at its variant, and the relationship kinds",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/code-check/lib/boards.ts",
+				"symbol": "readSemanticBoardAt"
+			}
+		},
+		{
+			"id": "gjUcUvHu",
+			"order": 67000,
+			"from": "Y70KOm9C",
+			"to": "SmrySjjM",
+			"kind": "call",
+			"label": "keep what a finished pass found",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/code-check-route.ts",
+				"symbol": "createCodeFindingsMemory"
+			}
+		},
+		{
+			"id": "osnkOhpk",
+			"order": 69000,
+			"from": "nDQmpHQi",
+			"to": "aqjsNyJ9",
+			"kind": "call",
+			"label": "the facts of each file, and what each module exposes",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/code-check/lib/check.ts",
+				"symbol": "createCodeFacts"
+			}
+		},
+		{
+			"id": "uZdil5lI",
+			"order": 71000,
+			"from": "nDQmpHQi",
+			"to": "1aoB46lM",
+			"kind": "call",
+			"label": "where a use no import resolves is defined",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/code-check/lib/resolution.ts",
+				"symbol": "openLanguageServers"
+			}
+		},
+		{
+			"id": "AMHnFhbq",
+			"order": 100000,
+			"from": "adthSPYy",
+			"to": "wYcdVszt",
+			"kind": "call",
+			"label": "decodes historical board bytes without writes",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/history-lens/lib/last-change.ts",
+				"symbol": "decodeSemanticBoardDocument"
+			}
+		},
+		{
+			"id": "kXzRYl25",
+			"order": 113000,
+			"from": "adthSPYy",
+			"to": "aqjsNyJ9",
+			"kind": "call",
+			"label": "reads declarations from historical source bytes",
+			"description": "TASK-448 reuses code facts and Terraform module resolution to attribute Git changes to symbol bindings.",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/history-lens/lib/symbol-attribution.ts",
+				"symbol": "terraformConfiguration"
+			}
+		}
+	],
+	"flows": [],
+	"walkthroughs": [
+		{
+			"id": "rKhJWXwz",
+			"name": "How the backend serves a board",
+			"beats": [
+				{
+					"id": "V6wttd3K",
+					"heading": "One application, one admission",
+					"body": "Every request enters the same composed application, and every change is admitted and counted until it settles, so a stop drains what it has accepted rather than lose it, or refuses with SERVER_BUSY and goes on serving.",
+					"subjects": ["2naazvac", "K6P74fM7"],
+					"view": "55gvPlYI"
+				},
+				{
+					"id": "SCewKCv2",
+					"heading": "Meaning is read once and drawn here",
+					"body": "A read answers with the board family or with a drawing made on the server. The browser is a viewer: it holds board content only as a read-only cache of what this said.",
+					"subjects": ["Y70KOm9C", "wYcdVszt", "xP18j2Co"],
+					"view": "3rTjcIp7"
+				},
+				{
+					"id": "YWeWWUoZ",
+					"heading": "One write boundary, one lease",
+					"body": "Every change goes through one boundary: the writer states the version it read, the board's lease admits one writer at a time, and the file is committed before the write is answered.",
+					"subjects": ["Y70KOm9C", "wYcdVszt", "8imgDQSw", "F9g7x0jk"],
+					"view": "FawxUEKE"
+				},
+				{
+					"id": "uKlyn7Bt",
+					"heading": "A claim is visible wherever the board is",
+					"body": "When the holder of a board's lease changes, every pane showing the board is told who has it and what they said they were doing, and a person's one control is taking the claim back.",
+					"subjects": ["8imgDQSw", "tbH9ZyCA", "Y70KOm9C"],
+					"view": "cMuH8UHA"
+				},
+				{
+					"id": "5qNrPkqO",
+					"heading": "A rename carries what the server keyed by the name",
+					"body": "A rename is a write like any other, and then the panes on the board, the claim on it and what the agent said it was doing move to the new name. The old name stays a former name, so anything still using it reaches the board.",
+					"subjects": ["Y70KOm9C", "wYcdVszt", "tbH9ZyCA", "8imgDQSw"],
+					"view": "zgTU0368"
+				},
+				{
+					"id": "HRtMJ3Oc",
+					"heading": "The file stays the truth while panes stay live",
+					"body": "A pane is told a new version exists and reads again; a change nobody here made is noticed on disk and announced the same way. The agent reads the same announcements as a feed with a cursor. Nothing about a board lives in a pane.",
+					"subjects": ["tbH9ZyCA", "VO9ngl7m", "9G6CmNgt"],
+					"view": "ZyxNXY6t"
+				},
+				{
+					"id": "WQhCQCMM",
+					"heading": "A tab keeps its conversation through a reload",
+					"body": "Each pane names its browser tab when its socket opens, and the close of that socket forgets it. When the last pane of a tab closes, the tab has 60 seconds to come back, so a reload keeps its conversation. After that, the Codex workbench ends the tab session.",
+					"subjects": ["tbH9ZyCA", "fpTfPg1T"],
+					"view": "ZyxNXY6t"
+				}
+			]
+		}
+	]
+}
