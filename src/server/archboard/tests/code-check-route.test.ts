@@ -113,6 +113,8 @@ beforeAll(async () => {
 						],
 					},
 				},
+				{ id: "v2", name: "PR 1", lifecycle: "draft", parent: "v1", content: {} },
+				{ id: "v3", name: "PR 2", lifecycle: "draft", parent: "v2", content: {} },
 			],
 		}),
 	);
@@ -153,6 +155,22 @@ test("the polled check never reads code or says how far a board is behind, and t
 	]);
 	const [shop] = answer.behind;
 	expect(shop !== undefined && "parts" in shop ? shop.parts[0]?.commits.length : undefined).toBe(1);
+});
+
+test("every-draft reads every draft of a board, and says once how far the board is behind", async () => {
+	const base = await listen(server.app);
+	const answer = CodeCheckAnswerSchema.parse(
+		await (
+			await fetch(
+				`${base}/api/vault/code-check?${new URLSearchParams({ vault, "every-draft": "true" })}`,
+			)
+		).json(),
+	);
+	expect(answer.boards.map((one) => [one.board, one.variant])).toEqual([
+		["Shop", "v2"],
+		["Shop", "v3"],
+	]);
+	expect(answer.behind.map((one) => one.board)).toEqual(["Shop"]);
 });
 
 test("a variant that names no draft is refused", async () => {

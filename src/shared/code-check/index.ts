@@ -41,6 +41,10 @@
 // can exercise its internals; tests never make exposed names used.
 // TASK-436.08 applies the interface findings to a Nix flake's outputs and a
 // Helm chart's values. Compose files and plain manifests stay exposure-unknown.
+// TASK-488 adds `INHERITED_PART_DROPPED`, a warning on a draft that lacks a
+// bound part the variant before it holds while the code the draft is read
+// against still holds that part's path and symbol (`dropped`), and the skips
+// of a draft whose ref cannot be read.
 
 import { CONFIGURABLE_LANGUAGES } from "@/shared/language-servers/index";
 import { z } from "zod";
@@ -76,6 +80,28 @@ const CodeEvidenceSchema = z
 	.strict();
 
 /**
+ * The evidence of `INHERITED_PART_DROPPED` (TASK-488): the variant before the
+ * draft that holds the part (`from`, its id), and where the code the draft is
+ * read against still holds the part's bound path and symbol. `ref` and
+ * `commit` are the ref the draft's bindings name and the commit it resolved
+ * to; both are absent where the draft names no ref and the checkout's files
+ * were read. `file` and `line` say where the symbol is defined, when the
+ * binding names one.
+ */
+const DroppedPartSchema = z
+	.object({
+		from: z.string(),
+		repo: z.string(),
+		ref: z.string().optional(),
+		commit: z.string().optional(),
+		path: z.string(),
+		symbol: z.string().optional(),
+		file: z.string().optional(),
+		line: z.int().positive().optional(),
+	})
+	.strict();
+
+/**
  * One thing the code pass found. It has the shape of a vault diagnostic, and
  * its severity is warning or information, never error (ADR 0046). A finding
  * that says something is missing rests on nothing, so it has no `evidence`.
@@ -92,6 +118,7 @@ const CodeFindingSchema = VaultDiagnosticSchema.extend({
 	severity: z.enum(["warning", "information"]),
 	evidence: z.array(CodeEvidenceSchema).min(1).optional(),
 	missing: z.enum(["code", "infrastructure"]).optional(),
+	dropped: DroppedPartSchema.optional(),
 });
 
 /** A pinned binding's ref, and what its checkout has out instead. */
@@ -106,7 +133,8 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   named variant (ADR 0031). `board-unreadable`: its file is not a board.
  * - `repository-unregistered`: a part, relationship or step whose binding or
  *   anchor names a repository this machine has not registered. It stays
- *   silent, and is listed.
+ *   silent, and is listed. Also a draft, with no subject, whose dropped parts
+ *   are bound into such a repository (TASK-488).
  * - `ref-not-checked-out`: a binding pinned to a branch or a commit its
  *   checkout does not have out; a relationship or step with such a part at an
  *   end is skipped with its anchor.
@@ -164,6 +192,12 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   answer in time or ended in one checkout. Said once for the checkout and
  *   the language; its uses there stay as code facts read them. Its `detail`
  *   names the language, the program and what it did.
+ * - `draft-ref-missing`: a draft whose dropped parts are held to the ref its
+ *   bindings name in a repository, and whose checkout has no such branch, tag
+ *   or commit (TASK-488). Its `detail` is the ref.
+ * - `draft-refs-ambiguous`: a draft whose bindings name several refs of one
+ *   repository, none of them new on the draft, so the check cannot tell which
+ *   code it describes. Its `detail` names the refs.
  *
  * A reason that holds for a whole checkout names its `repo` and no subject,
  * which is how the check says a thing once.
@@ -187,6 +221,8 @@ const CodeCheckSkipSchema = z
 			"language-server-failed",
 			"exposure-unknown",
 			"module-not-read",
+			"draft-ref-missing",
+			"draft-refs-ambiguous",
 		]),
 		board: z.string().optional(),
 		variant: z.string().optional(),

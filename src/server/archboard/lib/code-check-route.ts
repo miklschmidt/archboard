@@ -1,5 +1,6 @@
 // The code check's route,
-// `GET /api/vault/code-check[?variant=<draft>][&plan=<file>]...` (ADR 0046).
+// `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>]...`
+// (ADR 0046).
 //
 // `archboard check --code` asks it after the plain check. It reads code and
 // Git, which takes seconds, so it runs only on a request and never inside
@@ -10,8 +11,9 @@
 //
 // The code pass (`src/runtime/code-check`) reads every board at its current
 // variant, or at the draft `variant` names, and gives `boards`, `findings` and
-// `skipped`. Behind (ADR 0045, TASK-369.02) reads the current variant of each
-// board, whatever the pass reads. A `variant` that names no draft on any board
+// `skipped`. `every-draft=true` reads every draft of every board instead, and
+// a `variant` beside it is not read (TASK-488). Behind (ADR 0045, TASK-369.02)
+// reads the current variant of each board once, whatever the pass reads. A `variant` that names no draft on any board
 // is refused with the drafts that exist. Each `plan` names a Terraform or
 // OpenTofu plan JSON by its absolute path (TASK-367.17); one outside every
 // registered checkout, one the check never reads or one that is not a plan
@@ -27,6 +29,7 @@ import type { Express, Request, Response } from "express";
 import {
 	checkCode,
 	readBoardsToCheck,
+	readEveryDraftToCheck,
 	readPlans,
 	type NoSuchDraft,
 	type PlanRefused,
@@ -50,6 +53,8 @@ interface CodeCheckRequest {
 	/** The vault the request named: the boards it reads and the checkouts it reads them against. */
 	readonly vault: string;
 	readonly variant: string | undefined;
+	/** Read every draft of every board, in place of `variant`. */
+	readonly everyDraft: boolean;
 	readonly plans: readonly string[];
 	readonly signal: AbortSignal;
 }
@@ -79,8 +84,8 @@ const behindReading = createBehindReading();
 const codeFindings = createCodeFindingsMemory();
 
 /**
- * Run the code check over every board of the vault, at its current variant or
- * the named draft, with behind beside it.
+ * Run the code check over every board of the vault, at its current variant,
+ * the named draft or every draft, with behind beside it.
  * @param request The draft to read, the plans named, and the signal that
  * cancels the check and every Git command it runs.
  * @returns The answer, the drafts that exist when no board has the named one,
@@ -90,19 +95,19 @@ async function runCodeCheck(
 	request: CodeCheckRequest,
 ): Promise<CodeCheckAnswer | CodeCheckRefusal> {
 	const { vault } = request;
-	const read = readBoardsToCheck(vault, request.variant);
+	const read = request.everyDraft
+		? readEveryDraftToCheck(vault)
+		: readBoardsToCheck(vault, request.variant);
 	if (!read.ok) return read;
+	// Every draft of a board is one board to behind, which reads its current variant.
+	const files = new Map(read.boards.map(({ board, file }) => [file, { board, file }]));
 	const plans = await readPlans(vault, request.plans, request.signal);
 	if (!plans.ok) return plans;
 	const historyStarted = performance.now();
 	const [code, history] = await Promise.all([
 		checkCode(vault, read.boards, request.signal, plans.plans),
 		behindReading
-			.read(
-				vault,
-				read.boards.map(({ board, file }) => ({ board, file })),
-				request.signal,
-			)
+			.read(vault, [...files.values()], request.signal)
 			.then((behind) => ({ behind, elapsedMs: performance.now() - historyStarted })),
 	]);
 	return CodeCheckAnswerSchema.parse({
@@ -195,6 +200,7 @@ async function answerCodeCheck(
 ): Promise<void> {
 	const vault = vaultOfRequest(request);
 	const variant = variantOf(request);
+	const everyDraft = queryString(request, "every-draft") === "true";
 	const plans = plansOf(request);
 	const checkedAt = new Date();
 	try {
@@ -203,7 +209,7 @@ async function answerCodeCheck(
 			response,
 			"GET /api/vault/code-check",
 			async (signal) => {
-				const checked = await dependencies.check({ vault, variant, plans, signal });
+				const checked = await dependencies.check({ vault, variant, everyDraft, plans, signal });
 				// A cancelled pass may have stopped short, so it is nobody's news.
 				if ("boards" in checked && !signal.aborted) {
 					dependencies.memory.remember(vault, checked, checkedAt);
