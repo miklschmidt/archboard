@@ -3,11 +3,11 @@ id: TASK-486
 title: >-
   A container's header words wrap at the container's own width, and its header
   is as tall as they are
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-16 13:00'
-updated_date: '2026-10-17 06:17'
+updated_date: '2026-10-17 07:05'
 labels:
   - renderer
 dependencies: []
@@ -27,7 +27,7 @@ A container's header slab is measured before layout, as a card is: its words wra
 - [x] #1 In the near view a container's responsibility wraps at the width of the container's header slab as drawn, on both engines and in flowchart frames
 - [x] #2 A container's header row is as tall as its words need at that width, so no header keeps room for lines it no longer has
 - [x] #3 The far view of a header fits the same header row
-- [ ] #4 No vault drawing lays out more slowly than before: the wide-board corpus times are measured before and after on a quiet machine
+- [x] #4 No vault drawing lays out more slowly than before: the wide-board corpus times are measured before and after on a quiet machine
 - [x] #5 A test fails if a header's words wrap narrower than the slab they stand on
 <!-- AC:END -->
 
@@ -116,4 +116,12 @@ Corpus (every variant and view of both vaults, both engines, against feat/derive
 Track first renders (one warm process, load about 4 on 24 cores): 17.2 s and 17.0 s before, 17.0 s and 17.1 s after.
 
 Gate: bun test src/runtime/semantic-renderer src/transformers/semantic-renderer gives 660 pass and 3 fail (the known TASK-377 wide-board bounds). Lint 0, tsc 0, oxfmt clean. Records: layout-rules section 49, ADR 0039 amendment of 2026-10-17.
+
+AC4 settled 2026-10-17 after TASK-377 (848808ecf, b8ec04d6a, c59d21c56 merged on feat/derived-overview): first renders in one warm process, two runs, before TASK-377 then after. Track total 16.8 s to 13.0 s, Blocks total 188 s to 50 s (182 s before TASK-486), Board viewer blocks 24.1 to 5.6 s, Archboard server routes blocks 75.6 to 16.4 s, Command interface blocks 30.2 to 9.1 s, Agent workbench blocks 15.5 to 4.5 s, Board viewer track 3.5 to 2.6 s. wide-boards.test.ts 40 of 40 pass with no bound raised; renderer tests 665 pass 0 fail. Clearly worse drawings fixed: Code evidence (Track) back to its base arrangement (12691d6a5); native-hosts lines through cards were a checker miscount on planned boards (e0c247b9d); native-hosts Blocks wall corridors fixed by f8f020cf2 and its predecessor.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Container headers wrap at the width of their slab on both engines, and the header row is as tall as its words. The arrangement scoring now counts a line that runs away from its ends, and a line that turns round a container when containers stack, so the drawings the shorter headers flipped read as well as before or better. Verified by header-wrap, wrap-sinks, reading-order and reading-first tests, corpus renders of both vaults, and first-render timings after TASK-377.
+<!-- SECTION:FINAL_SUMMARY:END -->
