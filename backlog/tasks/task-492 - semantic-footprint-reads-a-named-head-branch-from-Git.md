@@ -1,11 +1,11 @@
 ---
 id: TASK-492
 title: semantic footprint reads a named head branch from Git
-status: In Progress
+status: Done
 assignee:
   - '@implementer'
 created_date: '2026-10-17 10:53'
-updated_date: '2026-10-17 11:05'
+updated_date: '2026-10-17 11:07'
 labels:
   - history-lens
   - cli
@@ -22,11 +22,11 @@ semantic footprint compares a proposal with the commits from --base up to the ch
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 semantic footprint --head <ref> reads the commits from --base to that ref from Git, without checking it out and without changing the working tree
-- [ ] #2 Without --head, footprint reads up to the checkout's HEAD as now
-- [ ] #3 A --head the checkout cannot resolve is refused with a code that names the ref, and nothing is reported as unchanged
-- [ ] #4 A test shows footprint --head on a branch that is not checked out reports the parts that branch changed
-- [ ] #5 The archboard-pr skill's footprint step names --head for a stack layer that is not checked out
+- [x] #1 semantic footprint --head <ref> reads the commits from --base to that ref from Git, without checking it out and without changing the working tree
+- [x] #2 Without --head, footprint reads up to the checkout's HEAD as now
+- [x] #3 A --head the checkout cannot resolve is refused with a code that names the ref, and nothing is reported as unchanged
+- [x] #4 A test shows footprint --head on a branch that is not checked out reports the parts that branch changed
+- [x] #5 The archboard-pr skill's footprint step names --head for a stack layer that is not checked out
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,4 +49,12 @@ Design: --head <ref> is resolved per checkout by the history lens's own commitOf
 Follow-up (coordinator): --against <variant> on semantic footprint, carried as ?against= through the route. The proposal is read against --against, else the current variant, else its parent; a parentless proposal on a board with no current variant is read against nothing and names every part (answer.against is null). The answer field current is renamed against. NO_CURRENT_VARIANT now only when no proposal and no variant to read; --against without --variant reads that variant's parts. --against must be current or draft (AGAINST_NOT_LIVE) and not the proposal (NOTHING_TO_COMPARE); unknown is UNKNOWN_VARIANT. Variant resolution moved to src/server/archboard/lib/footprint-variants.ts. Real run on a scratch copy of the vault (/tmp/vault492) with the throwaway registry: Device Trust Control Plane layer feat/device-trust-enrollment (--base/--against feat/device-trust-contracts) read 8 commits, 3 changed parts, none named; feat/device-trust-gateway (against identity-lifecycle) read 4 commits, 0 changed. 35 and 47 parts were skipped as ref-not-checked-out because the draft bindings pin a branch: footprint still skips those.
 
 Correction: only the enrollment layer's skips were broken down (35 ref-not-checked-out, 12 unbound in the --against run at the time of reading; 36 skipped in the answer). The gateway layer's 47 skips were not broken down.
+
+Merged on main after cherry-pick: bun test --isolate src/runtime/history-lens src/shared/footprint src/cli src/server/archboard tests/system/cli/command-contract-artifacts.test.ts 391 pass 0 fail; tsc and lint clean. Parts bound to a pinned branch are still skipped as ref-not-checked-out; TASK-493 takes that.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+semantic footprint --head reads the commits from --base to a branch that is not checked out, from Git; --against names the variant a proposal is read against, and on a board with no current variant a proposal is read against its parent instead of refused. HEAD_UNRESOLVED and AGAINST_NOT_LIVE refuse what cannot be read. Verified by footprint, route and CLI tests and a run on a read-only copy of Device Trust Control Plane.
+<!-- SECTION:FINAL_SUMMARY:END -->
