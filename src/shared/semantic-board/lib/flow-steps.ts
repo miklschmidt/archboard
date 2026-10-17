@@ -181,6 +181,75 @@ function treeStep(
 }
 
 /**
+ * A flat reading with each new decision or loop put immediately before the
+ * first step it holds.
+ *
+ * A merge places the steps a decision or loop holds by the order the two sides
+ * tell them in, and nothing places the holder itself: where it was added it
+ * only followed something. Put anywhere else, building the tree pulls its steps
+ * up to it and pushes whatever stood between them after it, which is an order
+ * nobody wrote. A holder the base already had keeps its place, because where
+ * it stands is part of the order the merge decided.
+ * @param flat The flat steps, as a merge ordered them.
+ * @param placed The steps whose place the merge decided: the base's.
+ * @returns The same steps, the new holders moved.
+ */
+function holdersFirst(flat: readonly FlatStep[], placed: ReadonlySet<string>): FlatStep[] {
+	const holderOf = new Map(flat.map((one) => [one.id, one.within?.step]));
+	const moving = new Map(
+		flat.filter((one) => !isMessage(one) && !placed.has(one.id)).map((one) => [one.id, one]),
+	);
+	const holding = new Set(flat.flatMap((one) => holdersOf(one.id, holderOf)));
+	const out: FlatStep[] = [];
+	for (const one of flat) {
+		if (!(moving.has(one.id) && holding.has(one.id))) {
+			out.push(...unplacedHolders(one.id, { holderOf, moving, out }), one);
+		}
+	}
+	return out;
+}
+
+/**
+ * Every decision or loop that holds a step, nearest first.
+ * @param id The step.
+ * @param holderOf What holds each step.
+ * @returns Its holders, out to the top of the flow.
+ */
+function holdersOf(id: string, holderOf: ReadonlyMap<string, string | undefined>): string[] {
+	const chain: string[] = [];
+	for (let up = holderOf.get(id); up !== undefined && !chain.includes(up); up = holderOf.get(up)) {
+		chain.push(up);
+	}
+	return chain;
+}
+
+/**
+ * The new holders a step needs in front of it that are not yet placed,
+ * outermost first.
+ * @param id The step.
+ * @param placing What is being placed.
+ * @param placing.holderOf What holds each step.
+ * @param placing.moving The new holders, by id.
+ * @param placing.out The steps placed so far.
+ * @returns The holders to place before it.
+ */
+function unplacedHolders(
+	id: string,
+	placing: {
+		readonly holderOf: ReadonlyMap<string, string | undefined>;
+		readonly moving: ReadonlyMap<string, FlatStep>;
+		readonly out: readonly FlatStep[];
+	},
+): FlatStep[] {
+	return holdersOf(id, placing.holderOf)
+		.toReversed()
+		.flatMap((up) => {
+			const holder = placing.moving.get(up);
+			return holder === undefined || placing.out.includes(holder) ? [] : [holder];
+		});
+}
+
+/**
  * The first decision or loop in a tree that holds no message any more: a loop
  * with nothing to repeat, or a decision whose every alternative is empty. A
  * merge or a restore can leave one, and no document can hold one.
@@ -209,5 +278,6 @@ export {
 	messagesOf,
 	flatSteps,
 	nestedSteps,
+	holdersFirst,
 	emptiedHolder,
 };

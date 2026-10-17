@@ -132,7 +132,10 @@ an unsettled draft waits, and the family lands whole or not at all.
 - `competing-field`: Both changed one field of one subject. Answered by `mine`
   or `theirs`.
 - `competing-order`: Both moved the same step or beat, to different positions.
-  Answered by `mine`, or an edit telling the order you mean.
+  When the `subject` is a flow (`field` `steps`), together they left a step in
+  a place neither side chose, such as between two steps the other side moved
+  into a decision or loop. Answered by `mine`, or an edit telling the order you
+  mean.
 - `deleted-and-changed`: One removed a subject the other changed. Answered by
   `mine`, or stating the subject again under its id.
 - `reference-lost`: Merging the predecessor would leave this draft referring to
