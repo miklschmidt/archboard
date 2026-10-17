@@ -17,7 +17,10 @@
 // the widest answer's words, and marked so that the track engine holds each
 // answer to its own point of the box (`track/points.ts`). Once laid out, the
 // box is cut back to the diamond (`toDiamonds`), and each answer is drawn out
-// of its point.
+// of its point. Which answer goes to which point follows a first layout that
+// holds no answer to a point (`inFreeOrder`): Graphviz orders the answers there
+// so that the fewest lines cross, a loop's line back up included, and the
+// second layout asks for the points in that order.
 
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
@@ -36,6 +39,7 @@ import {
 	type Segment,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { layoutEngine } from "@/transformers/semantic-renderer/lib/layout/engines";
+import { pairCrossings } from "@/transformers/semantic-renderer/lib/blocks/joins";
 import {
 	measureArchitecture,
 	measureMessageLines,
@@ -186,6 +190,98 @@ function measured(
 		);
 	}
 	return { measure: { ...measure, nodes }, words };
+}
+
+/**
+ * Where an answer first stops below its decision in a drawing: the middle of
+ * its words, or else of the card it reaches.
+ * @param drawing A drawing of the graph.
+ * @returns The x, by answer id.
+ */
+function firstStops(drawing: PaintedDrawing): Map<string, number> {
+	const cards = new Map(drawing.cards.map((card) => [card.measured.node.id, card.box]));
+	return new Map(
+		drawing.edges.map(({ edge, label }) => {
+			const box = label?.box ?? cards.get(edge.to);
+			return [edge.id, box === undefined ? 0 : box.x + box.width / 2];
+		}),
+	);
+}
+
+/**
+ * The graph's content with each decision's answers in the order a layout
+ * that holds no answer to a point stood them, left to right. Asked for its
+ * points in the board's order instead, Graphviz keeps that order even where
+ * it costs a crossing, as when a loop runs back up past one answer.
+ * @param content The graph's content.
+ * @param measure The measurement.
+ * @returns The content, its answers reordered, or the same content when
+ * that order is the board's.
+ */
+async function inFreeOrder(
+	content: VariantContent,
+	measure: MeasuredArchitecture,
+): Promise<VariantContent> {
+	const unpointed = new Map(
+		[...measure.nodes].map(([id, { pointed: _pointed, ...node }]) => [id, node]),
+	);
+	const free = await layoutEngine("track")(
+		content,
+		{ ...measure, nodes: unpointed },
+		undefined,
+		new Map(),
+	);
+	const stops = firstStops(free);
+	const reordered = new Map<string, number>();
+	for (const [id, node] of measure.nodes) {
+		if (node.pointed === undefined) continue;
+		const answers = content.edges.filter(({ from }) => from === id);
+		const orders = answers.map(({ order }) => order).toSorted((one, other) => one - other);
+		answers
+			.toSorted(
+				(one, other) => stops.get(one.id)! - stops.get(other.id)! || one.order - other.order,
+			)
+			.forEach((edge, index) => reordered.set(edge.id, orders[index]!));
+	}
+	const edges = content.edges.map((edge) => ({
+		...edge,
+		order: reordered.get(edge.id) ?? edge.order,
+	}));
+	return edges.every((edge, index) => edge.order === content.edges[index]!.order)
+		? content
+		: { ...content, edges };
+}
+
+/**
+ * The graph laid out with each decision's answers asked for their points in
+ * the order of a first layout (`inFreeOrder`), or in the board's order when
+ * that crosses fewer lines: asked for its points, Graphviz can still stand
+ * answers' steps against the first layout's order.
+ * @param content The graph's content.
+ * @param measure The measurement.
+ * @returns The drawing whose lines cross fewer times, the first layout's order on a tie.
+ */
+async function laidOut(
+	content: VariantContent,
+	measure: MeasuredArchitecture,
+): Promise<PaintedDrawing> {
+	const free = await inFreeOrder(content, measure);
+	const first = await layoutEngine("track")(free, measure, undefined, new Map());
+	const crossed = crossingsOf(first);
+	if (free === content || crossed === 0) return first;
+	const board = await layoutEngine("track")(content, measure, undefined, new Map());
+	return crossingsOf(board) < crossed ? board : first;
+}
+
+/**
+ * How many times a drawing's lines cross each other.
+ * @param drawing The drawing.
+ * @returns The crossings.
+ */
+function crossingsOf(drawing: PaintedDrawing): number {
+	return pairCrossings(
+		drawing.edges.map(({ curve }) => [curve.from, ...curve.segments.map(({ to }) => to)]),
+	);
 }
 
 /**
@@ -396,7 +492,7 @@ async function renderFlowchart(request: DiagramRenderRequest): Promise<RenderedD
 	const policy = flowchartPolicy(request.policy ?? DEFAULT_SEMANTIC_POLICY);
 	const graph = flowchartOf(told.flows, told.nodes);
 	const { measure, words } = measured(graph, policy);
-	const laid = await layoutEngine("track")(graph.content, measure, undefined, new Map());
+	const laid = await laidOut(graph.content, measure);
 	const drawing = withOutlines(toDiamonds(laid, graph.shapes), graph.shapes);
 	const page = painted({ request, plain, policy, graph, words, drawing });
 	const svg = svgDocument({

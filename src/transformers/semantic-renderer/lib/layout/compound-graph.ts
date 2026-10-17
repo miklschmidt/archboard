@@ -46,7 +46,9 @@ const POINTS_INSET = "archboard.from-points.inset";
 /**
  * The layout options of each line out of a card that leaves from its points:
  * where it asks Graphviz to leave, as a compass point, and how far in from
- * the box's edges its side points' lines run down. The first of two or more
+ * the box's edges its side points' lines run down. In the relationships'
+ * order, which the flowchart takes from a first layout (`flowchart.ts`
+ * `inFreeOrder`), the first of two or more
  * lines asks for the bottom-left corner of the card's box, the last for the
  * bottom-right corner, and any other for the middle of its bottom. The router
  * holds each line to its point by where Graphviz then stood it
