@@ -185,6 +185,7 @@ function answerRefusal(
 			code: refused.code,
 			error: refused.problem,
 			version: refused.version,
+			...(refused.cause === undefined ? {} : { cause: refused.cause }),
 		});
 }
 

@@ -47,6 +47,7 @@ export { withBoardLockIfFreeSync } from "@/runtime/engine/lib/board-lock-migrati
 export {
 	BoardHeldError,
 	type Claim,
+	type ClaimEndCause,
 	type ClaimRevocation,
 	type HolderKind,
 	type LockHold,
@@ -56,6 +57,7 @@ export {
 } from "@/runtime/engine/lib/board-lock-contracts";
 export {
 	claimBoard,
+	claimEndReason,
 	claimOn,
 	claimWriterId,
 	releaseClaim,

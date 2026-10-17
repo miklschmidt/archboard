@@ -2,6 +2,7 @@ import { CLAIM_LEASE_MS, LOCK_RENEW_MS } from "@/shared/timing/timing";
 import { boardMemoryKey } from "@/runtime/engine/board";
 import type {
 	Claim,
+	ClaimEndCause,
 	ClaimEntry,
 	ClaimRevocation,
 	LockHolder,
@@ -79,28 +80,32 @@ function liveClaim(vault: string, board: string): ClaimEntry | null {
 }
 
 /**
- * Record that a claim was taken back, for the agent that lost it.
+ * Record that a claim ended, and why, for the agent that lost it.
  *
  * Both sides discover the same event here: a local take-back at proven
- * acquisition, or a later refused renewal after a remote take-back. Only the
- * server that owned this claim records it, and the record is consumed once.
+ * acquisition, or a later refused renewal after the lease went to somebody
+ * else. Only the server that owned this claim records it, and the record is
+ * consumed once.
  * @param vault The vault root the board lives in.
  * @param board The board key.
  * @param lost Who held the claim.
- * @param by Who took it back, when that is known.
+ * @param by Who has the board now, when that is known.
+ * @param cause Why the claim ended.
  */
 function noteClaimRevoked(
 	vault: string,
 	board: string,
 	lost: LockHolder,
 	by: LockHolder | null,
+	cause: ClaimEndCause,
 ): void {
-	const entry = processClaims.get(boardMemoryKey(vault, board));
+	const key = boardMemoryKey(vault, board);
+	const entry = processClaims.get(key);
 	if (!entry || entry.holder.id !== lost.id) {
 		return;
 	}
 	dropClaim(entry);
-	processRevocations.set(boardMemoryKey(vault, board), { claim: claimOf(board, entry), by });
+	processRevocations.set(key, { claim: claimOf(board, entry), by, cause });
 }
 
 /**
@@ -124,7 +129,22 @@ function renewClaim(vault: string, board: string): void {
 	}
 	// Never call ordinary acquisition here. Retaking a free lease would restore
 	// a claim the person explicitly took back (ADR 0022).
-	noteClaimRevoked(vault, board, entry.holder, boardLockState(vault, board));
+	const holder = boardLockState(vault, board);
+	noteClaimRevoked(vault, board, entry.holder, holder, causeOfRefusedRenewal(holder));
+}
+
+/**
+ * Why a refused renewal ended the claim, from who has the board now.
+ * @param holder Who holds the board's lease now, or null when nobody does.
+ * @returns The cause.
+ */
+function causeOfRefusedRenewal(holder: LockHolder | null): ClaimEndCause {
+	if (!holder) {
+		return "lease-gone";
+	}
+	// A person displaces a claim only by taking it back (ADR 0022), here or
+	// through another server, whose take-back holds the lease for a moment.
+	return holder.kind === "human" ? "taken-back" : "held-by-another";
 }
 
 /**
