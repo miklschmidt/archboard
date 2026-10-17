@@ -42,7 +42,7 @@ function turns(svg: string, ids: readonly string[]) {
 
 describe("an exchange is told on one clock", () => {
 	test("every message takes a turn, and a repeated one takes its repeat", async () => {
-		const svg = await drawn("data-flow");
+		const svg = await drawn("sequence");
 		expect(MOTION.test(svg)).toBe(true);
 		expect(pulsesOn(svg, "asks")).toBe(1);
 		expect(pulsesOn(svg, "answers")).toBe(1);
@@ -52,7 +52,7 @@ describe("an exchange is told on one clock", () => {
 	});
 
 	test("the turns share one cycle and follow one another in the order they are told", async () => {
-		const svg = await drawn("data-flow");
+		const svg = await drawn("sequence");
 		const told = turns(svg, ["asks", "again", "answers"]);
 		expect(told).toHaveLength(4);
 		expect(new Set(told.map(({ cycle }) => cycle)).size).toBe(1);
@@ -63,14 +63,14 @@ describe("an exchange is told on one clock", () => {
 	});
 
 	test("every pulse flies at the same pace, however long its message", async () => {
-		const svg = await drawn("data-flow");
+		const svg = await drawn("sequence");
 		for (const { speed } of turns(svg, ["asks", "again", "answers"])) {
 			expect(speed).toBeCloseTo(FLOWN, 1);
 		}
 	});
 
 	test("a message waits until the one before it has arrived, and then goes", async () => {
-		const svg = await drawn("data-flow");
+		const svg = await drawn("sequence");
 		const told = turns(svg, ["asks", "again", "answers"]);
 		for (let turn = 2; turn < told.length; turn += 1) {
 			const before = told[turn - 1]!;
@@ -89,7 +89,7 @@ describe("an exchange is told on one clock", () => {
 		const svg = (
 			await renderSemanticView({
 				content: TWO_FLOWS,
-				grammar: "data-flow",
+				grammar: "sequence",
 				theme: "light",
 			})
 		).svg;
@@ -115,7 +115,7 @@ describe("an exchange is told on one clock", () => {
 				nodes: SAMPLE.nodes,
 				flows: [{ id: "long", name: "Long", participants: ["api", "store"], steps }],
 			}),
-			grammar: "data-flow",
+			grammar: "sequence",
 			theme: "light",
 		});
 		const told = turns(

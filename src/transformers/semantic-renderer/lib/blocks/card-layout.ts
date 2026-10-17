@@ -9,6 +9,7 @@ import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	emptyGraph,
 	heldEdges,
+	holdSinks,
 	holdSources,
 	placedLabel,
 	type VendorNode,
@@ -17,10 +18,12 @@ import type { Band, Insets, Laid } from "@/transformers/semantic-renderer/lib/bl
 import {
 	PORT,
 	cornerHeader,
+	leavesOf,
 	letPortsSlide,
 	markRegions,
 	pinnedLeaf,
 	rimOf,
+	settledLeaf,
 } from "@/transformers/semantic-renderer/lib/blocks/leaves";
 import {
 	headerOf,
@@ -43,6 +46,7 @@ import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/trac
 import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { frameShape } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { takenIndex, type TakenHeader } from "@/transformers/semantic-renderer/lib/blocks/headers";
 import { entryRowEdges } from "@/transformers/semantic-renderer/lib/blocks/entry-row";
 import { leavingPull } from "@/transformers/semantic-renderer/lib/blocks/leaving";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
@@ -52,8 +56,12 @@ import {
 	besideWalls,
 	entersBy,
 	innerPoints,
+	labelledOut,
+	markBesides,
+	ranks,
+	itemsOf,
 	wallLines,
-	wallOf,
+	wallsOf,
 } from "@/transformers/semantic-renderer/lib/blocks/walls";
 import {
 	Scene,
@@ -86,6 +94,8 @@ class CardLayout {
 	readonly clusters: Clusters;
 	/** How the block is arranged beyond Graphviz's own ranking. */
 	readonly arranged: Required<Arrangement>;
+	/** The size its header took once Graphviz laid it out, if it has one (`headers.ts`). */
+	taken: TakenHeader | undefined;
 
 	/**
 	 * Start a block's layout.
@@ -172,7 +182,8 @@ class CardLayout {
 	 */
 	build(): void {
 		const { block, graph } = this;
-		for (const item of block.items) this.clusters.holderOf(item).nodes.push(this.nodeOf(item));
+		for (const item of itemsOf(this.tree, block))
+			this.clusters.holderOf(item).nodes.push(this.nodeOf(item));
 		const header = block.header === undefined ? [] : [headerOf(block)];
 		const tops = [...block.ports].filter(([, side]) => side === "top").map(([port]) => port);
 		const bottoms = [...block.ports].filter(([, side]) => side === "bottom").map(([port]) => port);
@@ -199,39 +210,15 @@ class CardLayout {
 				graph.edges.push(
 					...header.map((tail) => ({ tail, head: titleOf(id), attributes: { style: "invis" } })),
 				);
-		const entering = [...block.lines.values()].filter(
-			(line) => entersBy(this.block, line) !== undefined,
+		const stubs = new Set(
+			[...block.lines.values()].flatMap((line) => [
+				...(entersBy(block, line) === undefined ? [] : [this.vendorOf(line.from)]),
+				...(labelledOut(block, line) === undefined ? [] : [this.vendorOf(line.to)]),
+			]),
 		);
-		const stubs = new Set(entering.map(({ from }) => this.vendorOf(from)));
 		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
-		for (const line of this.boardOrder()) this.connect(line);
+		for (const line of this.clusters.boardOrder((end) => this.vendorOf(end))) this.connect(line);
 		this.arrange();
-	}
-
-	/**
-	 * Every line Graphviz ranks, by where its ends stand in the board's order,
-	 * a container at its first member. Graphviz meets cards in the order it
-	 * meets their lines, and keeps that order where no other reads better:
-	 * interchangeable cards then stand as the board lists them.
-	 * @returns The lines.
-	 */
-	boardOrder(): Line[] {
-		const place = new Map(this.block.items.map((item, index) => [item, index]));
-		for (const [index, item] of this.block.items.entries())
-			for (let around = this.block.clusterOf.get(item); around !== undefined;) {
-				const title = titleOf(around);
-				place.set(title, Math.min(place.get(title) ?? index, index));
-				around = this.block.clusterOf.get(around);
-			}
-		return [...this.block.lines.values()]
-			.filter((line) => wallOf(this.block, line) === undefined)
-			.map((line) => ({
-				line,
-				tail: place.get(this.vendorOf(line.tail)) ?? -1,
-				head: place.get(this.vendorOf(line.head)) ?? -1,
-			}))
-			.toSorted((one, other) => one.tail - other.tail || one.head - other.head)
-			.map(({ line }) => line);
 	}
 
 	/**
@@ -254,6 +241,7 @@ class CardLayout {
 		graph.edges.push(...entryRowEdges(this));
 		this.clusters.untie(graph.edges);
 		holdSources(this.block, this.graph, (name) => this.nodeOf(name));
+		holdSinks(this.block, this.graph);
 	}
 
 	/**
@@ -287,7 +275,7 @@ class CardLayout {
 	 */
 	links(endOf = (end: string): string => this.vendorOf(end)): (Join & { labelled: boolean })[] {
 		return [...this.block.lines.values()]
-			.filter((line) => wallOf(this.block, line) === undefined)
+			.filter((line) => ranks(this.block, line))
 			.map((line) => ({
 				tail: endOf(line.tail),
 				head: endOf(line.head),
@@ -376,7 +364,10 @@ class CardLayout {
 		boxes: ReadonlyMap<string, Box>;
 	} {
 		this.build();
-		const output = outputSchema.parse(viz.renderJSON(this.graph, { yInvert: true }));
+		// JSON without the drawing operations Graphviz's `json` format adds,
+		// which nothing reads: the same layout in about a seventh less time.
+		const answer = viz.renderString(this.graph, { yInvert: true, format: "json0" });
+		const output = outputSchema.parse(JSON.parse(answer));
 		const [left, low, right, high] = numbers(output.bb);
 		const origin = { x: Math.min(left!, right!), y: Math.min(low!, high!) };
 		const polylines = new Map<string, string[]>();
@@ -421,21 +412,19 @@ class CardLayout {
 		letPortsSlide(scene, this.block, this.tree.nesting);
 		const beside = besideWalls(this.block, this.tree, scene);
 		const straight = new Set(beside.map(({ key }) => key));
+		markBesides(scene, beside);
 		const lines = routeScene(
 			scene,
 			placed.edges
 				.filter((edge) => !straight.has(edge.id))
 				.map((edge) => {
 					const line = this.block.lines.get(edge.id)!;
-					const wall = wallOf(this.block, line);
-					const enters = entersBy(this.block, line);
 					return {
 						id: edge.id,
 						order: Number(edge.layoutOptions?.["archboard.order"] ?? 0),
 						kind: trunkKind(edge),
 						placed: edge,
-						...(wall === undefined ? {} : { wall }),
-						...(enters === undefined ? {} : { enters }),
+						...wallsOf(this.block, line),
 					};
 				}),
 			this.insets.side,
@@ -450,9 +439,10 @@ class CardLayout {
 	/**
 	 * The block routed again with some of its ports moved along their edges,
 	 * where its parent settled them, and every pin on a block inside it where
-	 * that block's settled port now stands; Graphviz does not rank it again,
-	 * and it keeps its width.
-	 * @param placed The placed block; its ports' and pins' leaves move in place.
+	 * that block's settled port now stands, and every block inside it as large
+	 * as it was routed again ({@link settledLeaf}); Graphviz does not rank it
+	 * again, and it keeps its width.
+	 * @param placed The placed block; its ports', pins' and blocks' leaves move in place.
 	 * @param held The block's width.
 	 * @param centres Every vendor node's centre.
 	 * @param ports Each moved port's x, in the block's own coordinates.
@@ -464,11 +454,10 @@ class CardLayout {
 		centres: ReadonlyMap<string, Point>,
 		ports: ReadonlyMap<string, number>,
 	): Laid {
-		for (const leaf of placed.children ?? []) {
+		for (const leaf of leavesOf(placed.children ?? [])) {
 			const x = ports.get(leaf.id);
 			if (x !== undefined) leaf.x = x - this.insets.side - leaf.width! / 2;
-			else if (this.tree.pins.has(leaf.id))
-				leaf.x = pinnedLeaf(this.tree, this.laid, leaf.id, centres).x;
+			else Object.assign(leaf, settledLeaf(this.tree, this.laid, leaf.id, centres));
 		}
 		return this.routed(placed, held);
 	}
@@ -520,6 +509,7 @@ class CardLayout {
 			bands,
 			frames: drawn.map((shape) => frameShape(shape, this.block.clusters.get(shape.id)?.lone)),
 			regions,
+			...takenIndex(this.taken),
 		};
 	}
 
@@ -546,7 +536,7 @@ class CardLayout {
 			return { id, x: centre.x - width / 2, y: centre.y - height / 2, width, height };
 		});
 		for (const pin of this.pins()) leaves.push(pinnedLeaf(this.tree, this.laid, pin, centres));
-		cornerHeader(leaves, headerOf(this.block));
+		this.taken = cornerHeader(leaves, this.block, this.insets.side);
 		const edges = [...this.block.lines.values()].map((line) =>
 			this.placedLine(line, centres, polylines),
 		);

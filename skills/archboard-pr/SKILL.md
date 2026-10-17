@@ -200,7 +200,11 @@ pull request must see where its change sits in that design.
   request's proposal is branched from the proposal of the nearest pull
   request below that has one on that board, and it is drawn against it, so it
   marks only its own change.
-- Each proposal holds what is built up to and including its pull request.
+- Each proposal holds the whole architecture, with the parts a later pull
+  request builds. Never remove a part to narrow a pull request. Never add a
+  part again under a new id: state its original `id`. A view of the parts it
+  changes, or the comparison with the proposal below, shows what this pull
+  request changed.
 - Name every part as the design names it. When two design boards name the
   same thing, use the names of the board at the level you draw.
 - Draw a finer part inside the design part it belongs to, on the same board.

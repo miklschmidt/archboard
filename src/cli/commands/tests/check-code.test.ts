@@ -268,6 +268,19 @@ test("--variant names the draft the code check reads, and a draft no board has i
 	expect(asked).toEqual([]);
 });
 
+test("--every-draft asks the code check for every draft, and is refused without --code or beside --variant", async () => {
+	plain = clean;
+	asked.length = 0;
+	expect((await run(["check", "--code", "--every-draft"])).exited).toBe(0);
+	expect(asked).toEqual(["/api/vault/check", "/api/vault/code-check?every-draft=true"]);
+	asked.length = 0;
+	expect((await run(["check", "--every-draft"])).exited).not.toBe(0);
+	expect((await run(["check", "--code", "--every-draft", "--variant", "TASK-1"])).exited).not.toBe(
+		0,
+	);
+	expect(asked).toEqual([]);
+});
+
 test("--plan names each plan JSON by its absolute path, and means nothing without --code", async () => {
 	plain = clean;
 	asked.length = 0;

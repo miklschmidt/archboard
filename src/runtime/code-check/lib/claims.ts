@@ -12,7 +12,7 @@
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeAnchor, CodeBinding } from "@/shared/code-target/index";
-import type { SemanticNode } from "@/shared/semantic-board/index";
+import { messagesOf, type SemanticNode } from "@/shared/semantic-board/index";
 import type {
 	DiagnosticSubject,
 	EvidenceKind,
@@ -169,7 +169,7 @@ function edgeClaims(variant: ReadVariant): AnchorClaim[] {
  */
 function stepClaims(variant: ReadVariant): AnchorClaim[] {
 	return variant.read.variant.content.flows.flatMap((flow) =>
-		flow.steps.flatMap((step) => {
+		messagesOf(flow.steps).flatMap((step) => {
 			if (step.anchor === undefined) return [];
 			const name = `${flow.name}: ${variant.edgeSubject(step).name}: ${step.label}`;
 			const subject = { kind: "step" as const, id: step.id, name };

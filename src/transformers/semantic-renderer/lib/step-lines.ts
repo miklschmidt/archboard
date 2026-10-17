@@ -1,4 +1,4 @@
-// A flow is drawn through its data-flow view; the board itself is the
+// A flow is drawn through its sequence view; the board itself is the
 // architecture picture. A board whose author wrote an exchange and no
 // relationships would otherwise draw its participants as cards with nothing
 // joining them, so the architecture reading draws each message of a flow as a
@@ -8,7 +8,12 @@
 // grammar stays the view's choice, and the line is a reading of content the
 // board already holds.
 
-import type { FlowStep, SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
+import {
+	messagesOf,
+	type FlowMessage,
+	type SemanticEdge,
+	type VariantContent,
+} from "@/shared/semantic-board/index";
 
 /** The content as the architecture reading draws it, and which lines are steps. */
 interface StepLines {
@@ -28,7 +33,7 @@ interface StepLines {
  * @param content The content being read.
  * @returns True when the step may be drawn.
  */
-function drawable(step: FlowStep, content: VariantContent): boolean {
+function drawable(step: FlowMessage, content: VariantContent): boolean {
 	if (step.from === step.to || step.kind === "return") return false;
 	const ends = content.nodes.filter((node) => node.id === step.from || node.id === step.to);
 	if (ends.length !== 2) return false;
@@ -41,7 +46,7 @@ function drawable(step: FlowStep, content: VariantContent): boolean {
  * @param order Its authored position in the flow reading.
  * @returns The line.
  */
-function lineOf(step: FlowStep, order: number): SemanticEdge {
+function lineOf(step: FlowMessage, order: number): SemanticEdge {
 	return {
 		id: step.id,
 		order,
@@ -65,9 +70,9 @@ function lineOf(step: FlowStep, order: number): SemanticEdge {
  * @returns The lines, in the order their pairs first appear.
  */
 function stepLinesOf(content: VariantContent, held: VariantContent): SemanticEdge[] {
-	const own = new Set(held.flows.flatMap(({ steps }) => steps.map(({ id }) => id)));
+	const own = new Set(held.flows.flatMap(({ steps }) => messagesOf(steps).map(({ id }) => id)));
 	const riders = new Map<string, SemanticEdge>();
-	for (const [index, step] of content.flows.flatMap((flow) => flow.steps).entries()) {
+	for (const [index, step] of content.flows.flatMap((flow) => messagesOf(flow.steps)).entries()) {
 		const pair = `${step.from}>${step.to}`;
 		const reading = own.has(step.id) ? held : content;
 		if (drawable(step, reading) && takesPair(riders.get(pair), step, own)) {
@@ -87,7 +92,7 @@ function stepLinesOf(content: VariantContent, held: VariantContent): SemanticEdg
  */
 function takesPair(
 	riding: SemanticEdge | undefined,
-	step: FlowStep,
+	step: FlowMessage,
 	own: ReadonlySet<string>,
 ): boolean {
 	return riding === undefined || (!own.has(riding.id) && own.has(step.id));

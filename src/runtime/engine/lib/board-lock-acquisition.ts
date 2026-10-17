@@ -297,30 +297,60 @@ async function attempt(
 		const claimHere =
 			revoke && who.kind === "human" ? processClaims.get(boardMemoryKey(vault, board)) : undefined;
 		if (claimHere && claimHere.holder.id !== who.id) {
-			noteClaimRevoked(vault, board, claimHere.holder, holderOf(taker));
+			noteClaimRevoked(vault, board, claimHere.holder, holderOf(taker), "taken-back");
 		}
 	};
 
+	const context = { vault, board, file, who, leaseMs, revoke };
 	if (live) {
-		const decided = decideAgainstLive(
-			live,
-			{ vault, board, file, who, leaseMs, revoke },
-			endsClaimHere,
-		);
+		const decided = decideAgainstLive(live, context, endsClaimHere);
 		if (decided) {
 			return decided;
 		}
 	}
 
-	const record = freshRecord(who, leaseMs);
 	if (!current) {
-		const settled = createExclusively(vault, file, record, board, endsClaimHere);
+		const settled = createExclusively(vault, file, freshRecord(who, leaseMs), board, endsClaimHere);
 		if (settled) {
 			return settled;
 		}
 	}
 
-	return stealContested(vault, file, record, board, endsClaimHere);
+	return takeLapsed(context, current, endsClaimHere);
+}
+
+/**
+ * Whether a lapsed lease is the asking claim's own.
+ * @param current The lease as read, lapsed or absent.
+ * @param who Who is asking.
+ * @returns True when a claim asks for a lease that still names it.
+ */
+function isOwnLapsedClaim(current: LockRecord | null, who: Asker): current is LockRecord {
+	return who.claimed === true && current?.id === who.id;
+}
+
+/**
+ * Take a lapsed lease. A claim's own lapsed lease was taken by nobody, only
+ * renewed late by a busy server (TASK-489), so a write under the claim joins it
+ * as it would a live one: `since` is kept and the write does not release it.
+ * It still pays the steal guard: another process may be taking it too.
+ * @param context What this attempt is asking for.
+ * @param current The lease as read, lapsed or absent.
+ * @param endsClaimHere Ends a standing claim this acquisition displaced.
+ * @returns This acquisition, or the writer that won the steal.
+ */
+async function takeLapsed(
+	context: AttemptContext,
+	current: LockRecord | null,
+	endsClaimHere: (taker: LockRecord) => void,
+): Promise<Attempt> {
+	const { vault, board, file, who, leaseMs } = context;
+	if (!isOwnLapsedClaim(current, who)) {
+		return stealContested(vault, file, freshRecord(who, leaseMs), board, endsClaimHere);
+	}
+	const record = { ...renewedRecord(current, who, leaseMs), token: newToken() };
+	const taken = await stealContested(vault, file, record, board, endsClaimHere);
+	return taken.ok ? { ...taken, created: false } : taken;
 }
 
 /**

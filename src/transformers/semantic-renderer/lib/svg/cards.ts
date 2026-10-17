@@ -165,7 +165,10 @@ function paintCard(
 					chip: {
 						markup: typeChip(0, 0, appearance, palette, standing),
 						x: box.x + CARD_PADDING_X,
-						y: box.y + (box.height - ICON_CHIP_SIZE) / 2,
+						// With a responsibility the words start at the top, and the chip
+						// stands in the corner with them, as on an architecture card; a
+						// name alone is centred, and so is its chip.
+						y: hasNote ? box.y + CARD_PADDING_X : box.y + (box.height - ICON_CHIP_SIZE) / 2,
 					},
 					words: { markup: lines([title, note]), anchor: { x: textX, y: titleY, size: titleSize } },
 				},
@@ -221,4 +224,4 @@ function headerAnchor(header: Box): Anchor {
 	return { x: header.x, y: header.y + PART_TITLE.size, size: PART_TITLE.size };
 }
 
-export { halo, headerAnchor, paintCard, paintHeader };
+export { HALO_INSET, HALO_WIDTH, halo, headerAnchor, paintCard, paintHeader };

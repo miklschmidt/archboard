@@ -9,6 +9,7 @@
 import { z } from "zod";
 
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import { OWN_ICONS } from "@/transformers/semantic-renderer/host";
 
 /** Where the server serves one icon's path data. */
 const ICON_URL = "/assets/diagram-icons";
@@ -22,7 +23,8 @@ const loaded = new Map<string, readonly string[] | undefined>();
 const loading = new Map<string, Promise<void>>();
 
 /**
- * Every icon a picture drawn under a policy can name.
+ * Every icon a picture drawn under a policy can name: the policy's, and the
+ * renderer's own, such as a flowchart's frame.
  * @param policy The vault policy.
  * @returns The icon names.
  */
@@ -31,7 +33,7 @@ function iconsNamedBy(policy: SemanticPolicy): Set<string> {
 		...Object.values(policy.nodeKinds),
 		...Object.values(DEFAULT_SEMANTIC_POLICY.nodeKinds),
 	];
-	return new Set([FALLBACK_ICON, ...kinds.map((kind) => kind.icon)]);
+	return new Set([FALLBACK_ICON, ...OWN_ICONS, ...kinds.map((kind) => kind.icon)]);
 }
 
 /**

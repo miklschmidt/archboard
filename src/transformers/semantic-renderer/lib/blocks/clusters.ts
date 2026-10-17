@@ -11,7 +11,8 @@ import type { Edge, Graph, Subgraph } from "@viz-js/viz";
 import { CONTAINER_INSET, REGION_INSET } from "@/transformers/semantic-renderer/config";
 import { ARCHITECTURE_HEADER_PADDING } from "@/transformers/semantic-renderer/lib/design";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import type { Block, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import type { Block, Line, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { ranks } from "@/transformers/semantic-renderer/lib/blocks/walls";
 import {
 	anchorOf,
 	enteredFrame,
@@ -132,6 +133,34 @@ class Clusters {
 			const parent = cluster.parent === undefined ? graph : this.graphs.get(cluster.parent)!;
 			parent.subgraphs.push(made);
 		}
+	}
+
+	/**
+	 * Every line Graphviz ranks, by where its ends stand in the board's order,
+	 * a container at its first member. Graphviz meets cards in the order it
+	 * meets their lines, and keeps that order where no other reads better:
+	 * interchangeable cards then stand as the board lists them.
+	 * @param vendorOf The vendor node a line end stands on.
+	 * @returns The lines.
+	 */
+	boardOrder(vendorOf: (end: string) => string): Line[] {
+		const { block } = this;
+		const place = new Map(block.items.map((item, index) => [item, index]));
+		for (const [index, item] of block.items.entries())
+			for (let around = block.clusterOf.get(item); around !== undefined;) {
+				const title = titleOf(around);
+				place.set(title, Math.min(place.get(title) ?? index, index));
+				around = block.clusterOf.get(around);
+			}
+		return [...block.lines.values()]
+			.filter((line) => ranks(block, line))
+			.map((line) => ({
+				line,
+				tail: place.get(vendorOf(line.tail)) ?? -1,
+				head: place.get(vendorOf(line.head)) ?? -1,
+			}))
+			.toSorted((one, other) => one.tail - other.tail || one.head - other.head)
+			.map(({ line }) => line);
 	}
 
 	/**
@@ -480,6 +509,7 @@ class Clusters {
 				centre: centres.get(titleOf(cluster.id))!.y,
 				height: cluster.header.height,
 				words: cluster.header.width - ARCHITECTURE_HEADER_PADDING,
+				steps: cluster.header.steps,
 			};
 			frames.set(cluster.id, {
 				id: cluster.id,

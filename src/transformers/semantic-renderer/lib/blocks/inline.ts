@@ -10,9 +10,9 @@ import type {
 	Block,
 	BlockTree,
 	Projection,
-	Size,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { tabOf } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import type { Header } from "@/transformers/semantic-renderer/lib/blocks/headers";
 import {
 	bandOf,
 	cardAs,
@@ -44,7 +44,7 @@ interface Cluster {
 	 * A frame's title row or a region's caption; a container alone in its
 	 * group's region heads the region's caption band too (`lone.ts`).
 	 */
-	readonly header: Size;
+	readonly header: Header;
 	/** The region round a container alone in it, laid out as the container. */
 	readonly lone?: Lone;
 }

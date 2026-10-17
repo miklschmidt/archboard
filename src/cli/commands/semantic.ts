@@ -18,6 +18,7 @@ import { diagnosticLine } from "@/shared/semantic-policy/index";
 import {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
+	ConfirmableRefusalSchema,
 	VariantEditInputSchema,
 } from "@/shared/semantic-board/index";
 import {
@@ -155,7 +156,35 @@ const EditInputSchema = z.object({
 	name: z.string(),
 	variant: SelectorSchema.optional(),
 	input: z.string().optional(),
+	confirm: z.array(z.string()).optional(),
 });
+
+/** The refusals an edit passes by naming their code with --confirm (TASK-487). */
+const confirmableRefusals = (
+	[
+		[
+			"RESTORE_UNCONFIRMED",
+			"The change states an id that only another variant of the board holds. The refusal names " +
+				"each id and the variants that hold it.",
+		],
+		[
+			"PART_RECREATED",
+			"The change adds a part under a new id while an ancestor variant holds it, by name or by " +
+				"binding, under an id this variant lacks. The refusal names that id: state it to bring " +
+				"the part back.",
+		],
+		[
+			"INHERITANCE_DROPPED",
+			"The change removes more than half of the parts the variant holds from its predecessor. " +
+				"The refusal names how many.",
+		],
+	] as const
+).map(([code, description]) => ({
+	code,
+	exit: 1,
+	stream: "stderr" as const,
+	description: `${description} Add --confirm ${code} to make the change on purpose.`,
+}));
 
 const semanticEditContract = defineCommand({
 	path: ["semantic", "edit"],
@@ -174,7 +203,12 @@ const semanticEditContract = defineCommand({
 		"it since. A view's scope reads exactly as it is written: name relationships and the view shows " +
 		"those and no others, so one connection can be isolated; name none and it shows every " +
 		"relationship between the nodes it kept. Either way both ends of a shown relationship, every " +
-		"participant of a shown flow, and every container they sit inside come with it.",
+		"participant of a shown flow, and every container they sit inside come with it, except a " +
+		"container that holds all of them. A stated id the variant lacks restores that subject " +
+		"under its id when the variant's predecessor or recorded reconciliation base holds it. " +
+		"A refusal an edit can make on purpose names its code, and --confirm with that code " +
+		"passes it: restoring an id only another variant holds, adding a part an ancestor holds " +
+		"under another id, or removing more than half of what the variant inherited.",
 	examples: [
 		'archboard semantic edit pipeline --expect-version 3 --input change.json --doing "adding the renderer"',
 		'archboard semantic edit pipeline --variant "Queued ingest" --expect-version 4 --input change.json --doing "putting the queue in the proposal"',
@@ -202,6 +236,17 @@ const semanticEditContract = defineCommand({
 			value: "required",
 			placeholder: "file.json",
 			description: "A JSON file stating the change; standard input when absent",
+		},
+		{
+			kind: "option",
+			key: "confirm",
+			spellings: ["--confirm"],
+			value: "required",
+			occurrences: "append",
+			placeholder: "code",
+			description:
+				"Make on purpose a change that the refusal with this code would stop " +
+				`(${ConfirmableRefusalSchema.options.join(", ")}); the answer names each confirmed act`,
 		},
 	],
 	input: { ingress: EditInputSchema },
@@ -231,6 +276,7 @@ const semanticEditContract = defineCommand({
 		boardHeldRefusal,
 		boardVersionRefusal,
 		claimRevokedRefusal,
+		...confirmableRefusals,
 	],
 	relationships: [
 		{
@@ -266,7 +312,7 @@ const semanticEditContract = defineCommand({
 		for (const line of targeted.diagnostics) {
 			context.diagnostic(line);
 		}
-		const edit = context.parse(VariantEditInputSchema, targeted.stated);
+		const edit = context.parse(VariantEditInputSchema, confirmed(targeted.stated, input));
 		const written = await editSemanticBoardOnServer(input.name, edit);
 		return {
 			result: writeResult(written),
@@ -274,6 +320,24 @@ const semanticEditContract = defineCommand({
 		};
 	},
 });
+
+/**
+ * The stated change with the codes --confirm named added to the ones it
+ * confirms itself. Without the option the change says what it says, and a
+ * `confirm` that is not a list is left for the schema to refuse.
+ * @param stated The change as stated.
+ * @param input What the command was given.
+ * @returns The change to send.
+ */
+function confirmed(
+	stated: Record<string, unknown>,
+	input: z.infer<typeof EditInputSchema>,
+): Record<string, unknown> {
+	const own = stated["confirm"] ?? [];
+	const asked = input.confirm ?? [];
+	if (asked.length === 0 || !Array.isArray(own)) return stated;
+	return { ...stated, confirm: [...own, ...asked] };
+}
 
 const BranchInputSchema = z.object({
 	name: z.string(),

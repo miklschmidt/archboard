@@ -137,7 +137,7 @@ impossible; it is reported as a waiver whatever its axis.
   `note` for a branch, a caveat, or a loop over a list of unknown length — one
   whose length data or an application's own registrations decide, such as the
   hooks an application registered.
-- **Views**: `architecture` or `data-flow`; a selection that names
+- **Views**: `architecture`, `sequence` or `flowchart`; a selection that names
   relationships shows only those; one that names none shows every relationship
   among the kept nodes; endpoints, participants and containers come along.
 - **Walkthroughs**: ordered beats with heading and body; subjects are nodes,
@@ -254,7 +254,7 @@ changed.
 
 The bundle's `captures` list is what you can see: one PNG per diagram the
 request asked for (every board, view and variant it named, both sides of a
-comparison, the data-flow view of a sequence, and where the scenario asks,
+comparison, the sequence view of a flow, and where the scenario asks,
 every view the author made on a board), taken by the harness from the
 final saved board at native scale, each with its provenance (board version,
 variant, view, dimensions, the digest of the SVG it was drawn from). Every

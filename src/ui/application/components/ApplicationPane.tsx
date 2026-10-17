@@ -59,7 +59,7 @@ interface ApplicationPaneProps {
 	view: string | null;
 	/**
 	 * The person chose a different way of reading this board.
-	 * @param view The view's id, or null for the whole variant.
+	 * @param view The view's id, or null for the overview.
 	 */
 	onViewChange: (view: string | null) => void;
 	/** What the person has picked out in this pane, or null. */

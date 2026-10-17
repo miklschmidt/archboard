@@ -62,7 +62,7 @@ function boardOf(draft: unknown) {
 				id: "inside",
 				name: "Inside",
 				grammar: "architecture",
-				scope: { kind: "selection", nodes: ["api", "job", "core"] },
+				scope: { kind: "selection", nodes: ["svc", "api", "job", "core"] },
 			},
 		],
 		variants: [
@@ -140,7 +140,7 @@ test("a child a comparison puts back is never an entry point", async () => {
 		...board,
 		variants: [{ ...board.variants[0]!, content: orderedFixture(current) }, board.variants[1]!],
 	});
-	const atlas = await atlasOf(withHook, { variant: "draft" });
+	const atlas = await atlasOf(withHook, { variant: "draft", view: "Everything" });
 	expect(atlas.nodes["hook"]).toBeDefined();
 	expect(standsBelow(atlas, "api", "hook")).toBe(true);
 });

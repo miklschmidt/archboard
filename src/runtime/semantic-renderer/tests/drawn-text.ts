@@ -191,7 +191,7 @@ function drawnTexts(svg: string, seen: "near" | "far" = "near"): DrawnText[] {
  * checked against the thing it actually has to fit, rather than against an atlas
  * box that was derived from it.
  * @param svg The document.
- * @param kind Which sort of subject to read: `edge` in the architecture grammar, `step` in the data-flow one.
+ * @param kind Which sort of subject to read: `edge` in the architecture grammar, `step` in the sequence one.
  * @returns Each labelled subject's plate.
  */
 function labelPlates(svg: string, kind: string = "edge"): Map<string, DiagramBox> {

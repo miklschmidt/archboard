@@ -22,6 +22,12 @@ const TRACK_BELOW = "archboard.track.below";
  * fitted to what it holds, where its layout kept the room (`sides.ts`).
  */
 const TRACK_WIDE = "archboard.track.wide";
+/**
+ * The layout option on a frame that carries each size its title row can
+ * take, as JSON `[words, height]` rows, narrowest first: how far its words
+ * reach in, and how tall the row stands (TASK-486).
+ */
+const TRACK_STEPS = "archboard.track.steps";
 /** The root layout option that carries every group region, as JSON `PlacedRegion` rows. */
 const TRACK_REGIONS = "archboard.track.regions";
 /** How far a region's caption sits in from its band's left edge. */
@@ -66,13 +72,32 @@ function cardFace(item: Item): Box {
  * @param title Its title row's layout option.
  * @returns The row and its words' reach.
  */
-function titleRow(node: ElkNode, title: string): { item: Item; words: number } {
+function titleRow(
+	node: ElkNode,
+	title: string,
+): { item: Item; words: number; steps: readonly TitleStep[] } {
 	const [x, y, width, height, words] = title.split(",").map(Number);
 	const inset = Number(node.layoutOptions?.[TRACK_BELOW] ?? 0);
 	const item: Item = { box: { x: x!, y: y!, width: width!, height: height! }, band: -1 };
 	if (inset > 0) item.inset = inset;
-	return { item, words: words! };
+	const rows = node.layoutOptions?.[TRACK_STEPS];
+	const steps =
+		rows === undefined
+			? []
+			: TitleStepsSchema.parse(JSON.parse(rows)).map(([reach, tall]) => ({
+					words: reach,
+					height: tall,
+				}));
+	return { item, words: words!, steps };
 }
+
+/** A size a frame's title row can take: how far its words reach in, and how tall it stands. */
+interface TitleStep {
+	readonly words: number;
+	readonly height: number;
+}
+
+const TitleStepsSchema = z.array(z.tuple([z.number(), z.number()]));
 
 /** One band: the items on one rank, and where it lies before and after spacing. */
 interface Band {
@@ -103,6 +128,12 @@ interface Region {
 	readonly members: readonly string[];
 	readonly box: { readonly x: number; readonly width: number };
 	readonly caption: Item;
+}
+
+/** A point on a band. */
+interface Spot {
+	readonly band: number;
+	readonly x: number;
 }
 
 /** A placed shape, before it is known to have geometry. */
@@ -151,6 +182,10 @@ class Scene {
 	readonly titles = new Map<string, Item>();
 	/** How far each title row's words reach in from its left edge. */
 	readonly words = new Map<Item, number>();
+	/** Each size a title row can take, narrowest first; none where it has one size. */
+	readonly steps = new Map<Item, readonly TitleStep[]>();
+	/** Which of its sizes each frame's title row took, by frame, where it took a wider one. */
+	readonly headers = new Map<string, number>();
 	readonly frames = new Map<string, Frame>();
 	/** Each band's frame and region walls, once asked for. */
 	private readonly walls = new Map<number, ReadonlyMap<string, readonly [number, number]>>();
@@ -177,6 +212,12 @@ class Scene {
 	 * regions inline, rather than packed as blocks of their own.
 	 */
 	inline = false;
+	/**
+	 * The stretch of each band that a line drawn straight from a card's side
+	 * to the block's wall runs along (`blocks/walls.ts`), by band. Those lines
+	 * are not routed here, and no label box moves onto them.
+	 */
+	readonly besides = new Map<number, (readonly [number, number])[]>();
 
 	/**
 	 * Read every placed item and group them into bands by their centres.
@@ -264,9 +305,10 @@ class Scene {
 				this.cards.set(node.id, { box: boxOf(node, node.id), band: -1 });
 				continue;
 			}
-			const { item, words } = titleRow(node, title);
+			const { item, words, steps } = titleRow(node, title);
 			this.titles.set(node.id, item);
 			this.words.set(item, words);
+			this.steps.set(item, steps);
 			this.frames.set(node.id, { node, depth, members: [] });
 			this.visit(node.children ?? [], depth + 1, [...frames, node.id]);
 		}
@@ -376,28 +418,26 @@ class Scene {
 	 * lies in: inside every frame both stations either side of them stand in,
 	 * outside every frame neither does, and either where one does, so the line
 	 * crosses a frame's or group region's wall only where it must, and once.
+	 * Read once for a search that tries column after column.
 	 * @param between The stations, and the stations either side of them.
 	 * @param between.lanes The stations.
 	 * @param between.before The station above them.
 	 * @param between.after The station below them.
-	 * @param x The column.
-	 * @returns True when the column keeps them so.
+	 * @returns The test of a column: true when it keeps them so.
 	 */
-	keepsFrames(
-		between: {
-			readonly lanes: readonly Spot[];
-			readonly before: Spot;
-			readonly after: Spot;
-		},
-		x: number,
-	): boolean {
+	keepsFrames(between: {
+		readonly lanes: readonly Spot[];
+		readonly before: Spot;
+		readonly after: Spot;
+	}): (x: number) => boolean {
 		const { lanes, before, after } = between;
-		return lanes.every(({ band }) =>
-			[...this.walled(band)].every(([id, [low, high]]) => {
-				const above = this.inside(id, before);
-				return above !== this.inside(id, after) || (x > low && x < high) === above;
+		const held = lanes.flatMap(({ band }) =>
+			[...this.walled(band)].flatMap(([id, [low, high]]) => {
+				const inside = this.inside(id, before);
+				return inside === this.inside(id, after) ? [{ low, high, inside }] : [];
 			}),
 		);
+		return (x) => held.every(({ low, high, inside }) => (x > low && x < high) === inside);
 	}
 
 	/**
@@ -453,6 +493,46 @@ class Scene {
 	}
 
 	/**
+	 * The walls of each group region that a relaid label box on a band keeps
+	 * out of: each region that ends on that band, where it closes one inset
+	 * below its members and a box centred on a taller band hangs past its
+	 * foot. A region that holds both ends of the label's line grows round its
+	 * labels, and the region that held the box already holds it.
+	 * @param from Where the label's line starts.
+	 * @param to Where it ends.
+	 * @param label The box, where it stood.
+	 * @param band The band it would stand on.
+	 * @returns Each such region's walls.
+	 */
+	regionsOff(from: Spot, to: Spot, label: Item, band: number): [number, number][] {
+		return this.regions
+			.filter(
+				(region) =>
+					this.regionLastBand(region) === band &&
+					!this.holds(region, { band: label.band, x: centreX(label) }) &&
+					!(this.holds(region, from) && this.holds(region, to)),
+			)
+			.map(({ box }) => [box.x, box.x + box.width]);
+	}
+
+	/**
+	 * Whether a group region holds a point.
+	 * @param region The region.
+	 * @param spot The point.
+	 * @param spot.band Its band.
+	 * @param spot.x Its x.
+	 * @returns True when it does.
+	 */
+	private holds(region: Region, { band, x }: Spot): boolean {
+		return (
+			band >= region.caption.band &&
+			band <= this.regionLastBand(region) &&
+			x > region.box.x &&
+			x < region.box.x + region.box.width
+		);
+	}
+
+	/**
 	 * An item's box after its band moved.
 	 * @param item The item.
 	 * @param left How far every x moves.
@@ -475,6 +555,7 @@ export {
 	TRACK_BELOW,
 	TRACK_POLYLINE,
 	TRACK_REGIONS,
+	TRACK_STEPS,
 	TRACK_TITLE,
 	TRACK_WIDE,
 	centreX,

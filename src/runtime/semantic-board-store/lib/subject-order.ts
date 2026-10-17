@@ -1,5 +1,4 @@
-/** Distance between automatically assigned positions in one collection. */
-const ORDER_STEP = 1000;
+import { ORDER_STEP } from "@/shared/semantic-board/index";
 
 /**
  * Keep a subject's position when restated, or append a new subject after the
@@ -21,4 +20,4 @@ function subjectOrder(
 	return existing?.order ?? Math.max(0, ...subjects.map((subject) => subject.order)) + ORDER_STEP;
 }
 
-export { ORDER_STEP, subjectOrder };
+export { subjectOrder };

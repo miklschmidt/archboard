@@ -203,6 +203,7 @@ export {
 	type ReadCheckout,
 	type Readable,
 	checkoutSkips,
+	normalized,
 	otherRefOf,
 	readCheckouts,
 	readableOf,

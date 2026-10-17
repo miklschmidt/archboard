@@ -14,6 +14,15 @@ import { wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 /** The icon drawn for a name the icon set does not have. */
 const FALLBACK_ICON = "RiQuestionLine";
 
+/** The icon of a flow's frame in a flowchart, a kind the renderer names itself. */
+const FLOW_ICON = "RiFlowChart";
+
+/**
+ * The icons the renderer draws whatever the vault's policy names: a place that
+ * fetches icons by name fetches these as well as the policy's.
+ */
+const OWN_ICONS: readonly string[] = [FALLBACK_ICON, FLOW_ICON];
+
 /**
  * One icon at chip size, as `@remixicon/react` renders it.
  * @param paths The icon's path data.
@@ -54,4 +63,4 @@ function glyphGroup(icon: string, cx: number, cy: number, ink: string): string {
 	);
 }
 
-export { FALLBACK_ICON, glyphGroup };
+export { FALLBACK_ICON, FLOW_ICON, OWN_ICONS, glyphGroup };

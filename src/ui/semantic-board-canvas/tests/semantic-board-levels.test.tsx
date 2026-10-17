@@ -31,7 +31,7 @@ import {
 /** The two ways the board below can be read. */
 const ENGINE_VIEWS = [
 	{ id: "ev1", name: "The parts", grammar: "architecture" },
-	{ id: "ev2", name: "One write, in order", grammar: "data-flow" },
+	{ id: "ev2", name: "One write, in order", grammar: "sequence" },
 ] as const;
 
 /** The one way the board above can be read. */
@@ -170,9 +170,10 @@ test("a board a level down offers its own views and its own states", async () =>
 	// The target's own views, not the ones from the board above: a view id is a
 	// subject of one variant's content and means nothing here.
 	expect(buttons("semantic-view-choice").map((one) => one.textContent)).toEqual([
-		"Everything",
+		"Overview",
 		"The parts",
 		"One write, in order",
+		"Everything",
 	]);
 	// And its own variants, on the About page, so a reader can tell whether
 	// what they followed a link into is the architecture, a proposal, or history:
@@ -349,8 +350,9 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 	const stage = document.querySelector("[data-slot='semantic-board-stage']");
 	expect(stage?.getAttribute("data-board")).toBe("pipeline");
 	expect(buttons("semantic-view-choice").map((one) => one.textContent)).toEqual([
-		"Everything",
+		"Overview",
 		"Where writes go",
+		"Everything",
 	]);
 	expect(
 		renderCalls().every((call) => !call.includes("view=pv1&") || call.includes("pipeline")),

@@ -1,6 +1,7 @@
-// Immutable Git sources for declaration attribution. No checkout files are read.
+// Immutable Git sources for declaration attribution, and for the code check's
+// reading of a ref a draft pins. No checkout files are read.
 import { createSourceFacts, isTerraformFile, neverRead, pairOf } from "@/runtime/code-facts/index";
-import { gitBytes, gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
+import { gitAnswer, gitBytes, gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { filesOfBinding } from "@/shared/code-target/index";
 
 /** A source blob in one tree; symbolic links are never followed. */
@@ -157,4 +158,54 @@ function sourceHistory(root: string, paths: readonly string[], options: GitRunOp
 }
 
 type SourceRevision = Awaited<ReturnType<ReturnType<typeof sourceHistory>["read"]>>;
-export { sourceHistory, type SourceRevision };
+
+/** The code a ref names: the commit it resolved to, and that commit's sources. */
+type SourceAtRef = SourceRevision & { readonly commit: string };
+
+/**
+ * The commit a branch, tag or commit names in a checkout: the name as Git
+ * resolves it, else the branch of that name on `origin`, which a clone that
+ * never checked the branch out still holds.
+ * @param root The checkout.
+ * @param ref The name.
+ * @param options The request's cancellation signal.
+ * @returns The commit id, or undefined when the checkout has no such ref.
+ */
+async function commitOf(
+	root: string,
+	ref: string,
+	options: GitRunOptions,
+): Promise<string | undefined> {
+	for (const name of [ref, `refs/remotes/origin/${ref}`]) {
+		// oxlint-disable-next-line no-await-in-loop -- the remote branch is asked for only when the name does not resolve
+		const commit = await gitAnswer(
+			root,
+			["rev-parse", "--verify", "--quiet", "--end-of-options", `${name}^{commit}`],
+			options,
+		);
+		if (commit !== undefined) return commit;
+	}
+	return undefined;
+}
+
+/**
+ * Read the code a ref names without checking it out: the files of its tree,
+ * and the texts of the bound paths read through code facts as a checkout's are.
+ * @param root The checkout.
+ * @param ref The branch, tag or commit.
+ * @param paths The bound paths whose sources the reading needs.
+ * @param options The request's cancellation signal.
+ * @returns The commit and its sources, or undefined when the checkout has no such ref.
+ */
+async function sourceAt(
+	root: string,
+	ref: string,
+	paths: readonly string[],
+	options: GitRunOptions,
+): Promise<SourceAtRef | undefined> {
+	const commit = await commitOf(root, ref, options);
+	if (commit === undefined) return undefined;
+	return { commit, ...(await sourceHistory(root, paths, options).read(commit)) };
+}
+
+export { type SourceAtRef, sourceAt, sourceHistory, type SourceRevision };

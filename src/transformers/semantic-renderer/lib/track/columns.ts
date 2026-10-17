@@ -28,6 +28,7 @@ import {
 	take,
 } from "@/transformers/semantic-renderer/lib/track/readings";
 import type { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import { crossingsFor } from "@/transformers/semantic-renderer/lib/track/straighten";
 
 /** What a line costs: the other lines it crosses, then the sideways steps it takes. */
 type Cost = readonly [number, number];
@@ -218,8 +219,12 @@ function leastCrossing(
 	standing: Cost,
 ): Placing | undefined {
 	const own = stationsOf(stretch);
+	const crossings = crossingsFor(own, bands);
 	const better = columns
-		.map((x) => ({ x, cost: costOf(own, xsOf(stretch, x), bands) }))
+		.map((x) => {
+			const xs = xsOf(stretch, x);
+			return { x, cost: [crossings(xs), stepsOf(own, xs)] as Cost };
+		})
 		.filter(({ cost }) => cost[0] <= standing[0] && cost[1] < standing[1]);
 	const best = better.toSorted(
 		(one, other) => one.cost[0] - other.cost[0] || one.cost[1] - other.cost[1],
@@ -291,14 +296,14 @@ function fitting(scene: Scene, occupancy: Occupancy, stretch: Stretch): (x: numb
 	const lanes = middle.filter(({ kind }) => kind === "lane");
 	const labels = middle.filter(({ kind }) => kind === "label");
 	const extent = extentOf(scene);
+	const fits = occupancy.fitting({ lanes, before, after });
 	return (x) =>
-		occupancy.fits({ lanes, before, after }, x) &&
-		labels.every((label) => labelFits(scene, { occupancy, extent }, label, x));
+		fits(x) && labels.every((label) => labelFits(scene, { occupancy, extent }, label, x));
 }
 
 /**
  * Whether a label box may stand centred on a column: a lane clear of
- * everything else on its band, a card's clearance from a group region's
+ * everything else on its band and of a line drawn straight to its block's wall there, a card's clearance from a group region's
  * caption row it would reach above or stand level with ({@link Scene.captionsFor},
  * {@link Scene.titleBandsFor}), and within
  * the scene's extent, since a label out past it widens the page.
@@ -323,8 +328,14 @@ function labelFits(
 	// the box stands as far from a line or another label as labels keep apart.
 	const half = width / 2 + LANE / 2;
 	const [left, right] = [x - half, x + half];
+	// A line drawn straight from a card's side to the wall is no lane, so the band's room does not hold it.
+	const besides = (scene.besides.get(label.band) ?? []).map(
+		([low, high]): readonly [number, number] => [low - LANE, high + LANE],
+	);
 	return (
-		room.occupancy.taken[label.band]!.every(([low, high]) => right <= low || left >= high) &&
+		[...room.occupancy.taken[label.band]!, ...besides].every(
+			([low, high]) => right <= low || left >= high,
+		) &&
 		x - width / 2 >= room.extent[0] &&
 		x + width / 2 <= room.extent[1] &&
 		[...scene.captionsFor(item), ...scene.titleBandsFor(item)].every(

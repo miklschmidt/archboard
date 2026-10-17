@@ -7,7 +7,12 @@
 
 import { expect, test } from "bun:test";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
-import { readsBetter, takes, type Weighed } from "@/transformers/semantic-renderer/layout";
+import {
+	readsBetter,
+	takes,
+	weighedPlaced,
+	type Weighed,
+} from "@/transformers/semantic-renderer/layout";
 
 /** A layout that fits the reference pane at full scale and reads cleanly. */
 const clean: Weighed = {
@@ -65,4 +70,64 @@ test("a guarded choice takes the reading order's pick only where it is nowhere w
 	expect(takes(clean, cleaner, true)).toBe(false);
 	// Where the two agree, that pick is taken.
 	expect(takes(fewer, clean, true)).toBe(true);
+});
+
+/**
+ * A card 200 wide and 80 high.
+ * @param id Its id.
+ * @param x Its left wall.
+ * @param y Its top wall.
+ * @returns The card.
+ */
+function card(id: string, x: number, y: number) {
+	return { id, box: { x, y, width: 200, height: 80 } };
+}
+
+/**
+ * Four cards with two relationships drawn: one straight down between the two
+ * middle cards, and one from the left card to the right card along a route.
+ * @param across The route from the left card to the right card.
+ * @returns How the drawing weighs.
+ */
+function weighedAcross(across: readonly (readonly [number, number])[]): Weighed {
+	const cards = [
+		card("from", 0, 300),
+		card("to", 600, 300),
+		card("above", 300, 0),
+		card("below", 300, 700),
+	];
+	const edges = [
+		{
+			id: "down",
+			points: [
+				{ x: 400, y: 80 },
+				{ x: 400, y: 700 },
+			],
+		},
+		{ id: "across", points: across.map(([x, y]) => ({ x, y })) },
+	];
+	const projections = [
+		{ edge: { id: "across", sources: ["from"], targets: ["to"] } },
+		{ edge: { id: "down", sources: ["above"], targets: ["below"] } },
+	];
+	return weighedPlaced({ width: 800, height: 800, cards, edges }, projections);
+}
+
+test("a line run away from its ends round the picture reads worse than a crossing", () => {
+	// The line from the left card to the right card either hops the line
+	// between them, or loops round over the top of the picture to miss it.
+	const hopping = weighedAcross([
+		[200, 340],
+		[600, 340],
+	]);
+	const looping = weighedAcross([
+		[100, 300],
+		[100, -40],
+		[700, -40],
+		[700, 300],
+	]);
+	expect(hopping.crossings).toBe(1);
+	expect(looping.crossings).toBe(0);
+	expect(readsBetter(hopping, looping)).toBe(true);
+	expect(readsBetter(looping, hopping)).toBe(false);
 });

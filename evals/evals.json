@@ -591,8 +591,8 @@
 					]
 				},
 				{
-					"feature": "view.data-flow",
-					"requirement": "a board view `Dispatch exchange` with the data-flow grammar scoped to the flow",
+					"feature": "view.sequence",
+					"requirement": "a board view `Dispatch exchange` with the sequence grammar scoped to the flow",
 					"skill": [
 						"SKILL.md#evidence-before-a-write",
 						"references/create-sequence.md#create-a-sequence-diagram",
@@ -625,7 +625,7 @@
 					"check": "view-exists",
 					"board": "Flask request pipeline",
 					"view": "Dispatch exchange",
-					"grammar": "data-flow"
+					"grammar": "sequence"
 				},
 				{
 					"check": "walkthrough-beat-references",
@@ -649,7 +649,7 @@
 					"label": "dispatch-exchange",
 					"board": "Flask request pipeline",
 					"view": "Dispatch exchange",
-					"grammar": "data-flow"
+					"grammar": "sequence"
 				},
 				{
 					"label": "pipeline",
@@ -792,8 +792,8 @@
 					"skill": ["SKILL.md#everything-the-code-shows"]
 				},
 				{
-					"feature": "view.data-flow",
-					"requirement": "a board view named Startup exchange draws the flask run exchange in the data-flow grammar",
+					"feature": "view.sequence",
+					"requirement": "a board view named Startup exchange draws the flask run exchange in the sequence grammar",
 					"skill": [
 						"references/create-sequence.md#create-a-sequence-diagram",
 						"references/sequences-views-walkthroughs.md#views"
@@ -838,7 +838,7 @@
 					"check": "view-exists",
 					"board": "Flask CLI startup",
 					"view": "Startup exchange",
-					"grammar": "data-flow"
+					"grammar": "sequence"
 				}
 			],
 			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
@@ -848,7 +848,7 @@
 					"label": "startup-exchange",
 					"board": "Flask CLI startup",
 					"view": "Startup exchange",
-					"grammar": "data-flow"
+					"grammar": "sequence"
 				},
 				{
 					"label": "startup",
@@ -958,7 +958,7 @@
 				"src/flask/ctx.py",
 				"src/flask/sessions.py"
 			],
-			"prompt": "On the `Flask application` board, which parts belong to the `request-lifecycle` group, which relationships stay inside it, which cross its boundary and in which direction, and what are its immediate neighbours? Answer from the saved board using the CLI, and note any member that the `Overview` view does not draw. Change nothing.",
+			"prompt": "On the `Flask application` board, which parts belong to the `request-lifecycle` group, which relationships stay inside it, which cross its boundary and in which direction, and what are its immediate neighbours? Answer from the saved board using the CLI, and note any member that the `Request path` view does not draw. Change nothing.",
 			"expectedFeatures": [
 				{
 					"feature": "inspect.group",
@@ -967,7 +967,7 @@
 				},
 				{
 					"feature": "inspect.hidden-members",
-					"requirement": "the answer names `Request context push` as a member the `Overview` view does not draw (the view selects neither the `Contexts` module nor the function inside it); how that is phrased is free",
+					"requirement": "the answer names `Request context push` as a member the `Request path` view does not draw (the view selects neither the `Contexts` module nor the function inside it); how that is phrased is free",
 					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
 				},
 				{
@@ -1012,7 +1012,7 @@
 				{
 					"label": "overview",
 					"board": "Flask application",
-					"view": "Overview",
+					"view": "Request path",
 					"grammar": "architecture"
 				}
 			]

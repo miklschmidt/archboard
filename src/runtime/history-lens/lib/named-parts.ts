@@ -10,7 +10,7 @@
 // changed from a part at the far end of a new relationship.
 
 import type { NamedReason } from "@/shared/footprint/index";
-import type { VariantComparison } from "@/shared/semantic-board/index";
+import { isMessage, type VariantComparison } from "@/shared/semantic-board/index";
 
 /** Every reason a part is named, by the part's id. */
 type Named = Map<string, NamedReason[]>;
@@ -67,7 +67,8 @@ function nameRelationshipEnds(named: Named, comparison: VariantComparison, nameO
  */
 function nameStepEnds(named: Named, comparison: VariantComparison, nameOf: NameOf): void {
 	for (const [id, change] of comparison.steps) {
-		if (change.kind === "unchanged") continue;
+		// A decision or loop joins no parts: the messages it holds name their own ends.
+		if (change.kind === "unchanged" || !isMessage(change.entity)) continue;
 		const { from, to, flow } = change.entity;
 		nameParts(named, new Set([from, to]), {
 			by: "step",

@@ -7,8 +7,9 @@
 // strays well outside both its ends' reach looks for the cheapest free route
 // over the same bands: its lanes on any free column, its label box anywhere
 // free along its own band or a band beside it, each within the scene and
-// inside the frames it stood in, or those its own ends stand in, and outside
-// every group region neither of its ends stands in. A route costs
+// inside the frames it stood in, or those its own ends stand in, the label
+// box off the last band of a group region that neither holds both its line's
+// ends nor held the box. A route costs
 // its sideways travel and a crossing's worth for each line it crosses, or
 // each trunk; the chain takes the new route only when that saves more than a
 // few lanes. A crossing is worth as much as the detour that makes a lap, so a
@@ -379,8 +380,9 @@ class Relay {
 	 * Where a label box's centre may not stand on its band: within a card's
 	 * clearance of a card, title row or the caption it keeps clear of
 	 * ({@link Scene.captionsFor}), a label's of a label, a lane of another
-	 * line's lane, or a container's inset of a frame's or region's wall, which
-	 * it never straddles.
+	 * line's lane or of a line drawn straight from a card's side to the wall
+	 * ({@link Scene.besides}), or a container's inset of a frame's or region's wall, which
+	 * it never straddles, or a group region it would hang out of ({@link Scene.regionsOff}).
 	 * @param chain The label's chain.
 	 * @param label The box.
 	 * @param band The band it would stand on.
@@ -406,7 +408,12 @@ class Relay {
 			.map(([{ box }, gap]): Span => [box.x - gap - half, box.x + box.width + gap + half])
 			.concat(
 				lanes.map(({ x }): Span => [x - LANE - half, x + LANE + half]),
+				(this.scene.besides.get(band) ?? []).map(([low, high]): Span => [
+					low - LANE - half,
+					high + LANE + half,
+				]),
 				walls.map((wall): Span => [wall - CONTAINER_INSET - half, wall + CONTAINER_INSET + half]),
+				this.scene.regionsOff(chain.stations[0]!, chain.stations.at(-1)!, label, band),
 			);
 	}
 
@@ -535,13 +542,16 @@ class Relay {
 			}
 			const [above, below] = [traffic.get(band - 1)!.across, traffic.get(band)!.across];
 			const mask = masks[index]!;
-			cost = cost.map((value, j) =>
-				mask[j] === 1 ? value + (CROSSING * (above[j]! + below[j]!)) / 2 : Infinity,
-			);
+			// In place: each column's cost is its own array's, read once per station.
+			for (let j = 0; j < cost.length; j += 1)
+				cost[j] = mask[j] === 1 ? cost[j]! + (CROSSING * (above[j]! + below[j]!)) / 2 : Infinity;
 		});
-		const last = fromReach(xs, traffic.get(lower.band - 1)!.warped, reachOf(lower));
-		const totals = cost.map((value, j) => value + last[j]!);
-		const end = totals.reduce((best, value, j) => (value < totals[best]! ? j : best), 0);
+		const totals = fromReach(xs, traffic.get(lower.band - 1)!.warped, reachOf(lower));
+		let end = 0;
+		for (let j = 0; j < totals.length; j += 1) {
+			totals[j] = cost[j]! + totals[j]!;
+			if (totals[j]! < totals[end]!) end = j;
+		}
 		return Number.isFinite(totals[end]) ? backtrack(steps, end).map((j) => xs[j]!) : undefined;
 	}
 }

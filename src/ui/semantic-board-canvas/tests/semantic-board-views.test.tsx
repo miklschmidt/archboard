@@ -22,7 +22,7 @@ import {
 /** The two views this board offers. */
 const VIEWS = [
 	{ id: "v1", name: "The parts", grammar: "architecture" },
-	{ id: "v2", name: "One edit, in order", grammar: "data-flow" },
+	{ id: "v2", name: "One edit, in order", grammar: "sequence" },
 ] as const;
 
 /**
@@ -60,14 +60,15 @@ test("a variant with two views offers both, and says which one is on screen", as
 	}
 	mountStage(null, { onViewChange: record });
 	await settle();
-	// The whole variant is first, then each named way of reading it.
-	// Each button says the view's name and nothing else: the grammar is what the
+	// The overview is first, then each named way of reading it, and Everything
+	// last (ADR 0052). Each button says the view's name and nothing else: the grammar is what the
 	// picture is, and writing it under a name that already says it read as "The
 	// parts the parts".
 	expect(choices().map((one) => one.textContent)).toEqual([
-		"Everything",
+		"Overview",
 		"The parts",
 		"One edit, in order",
+		"Everything",
 	]);
 	expect(choices()[1]?.getAttribute("aria-pressed")).toBe("true");
 	expect(choices()[2]?.getAttribute("aria-pressed")).toBe("false");
@@ -79,12 +80,15 @@ test("a variant with two views offers both, and says which one is on screen", as
 	});
 	expect(picked).toEqual(["v2"]);
 
-	// And there is always a way back to the board as a whole, which is what
-	// every view is a reading of.
+	// Everything is asked for by its own id, and the overview, which a board
+	// opens on, is the absence of a view.
+	act(() => {
+		fireEvent.click(choices()[3]!);
+	});
 	act(() => {
 		fireEvent.click(choices()[0]!);
 	});
-	expect(picked).toEqual(["v2", null]);
+	expect(picked).toEqual(["v2", "Everything", null]);
 });
 
 test("the view the pane is told to read rides in the request", async () => {
@@ -112,18 +116,19 @@ test("two panes read one board two ways at once", async () => {
 	expect(surface().querySelector("svg")).not.toBeNull();
 });
 
-test("a variant that names no view of its own offers no switcher", async () => {
+test("a variant that names no view of its own offers its overview and everything", async () => {
 	server.reply = { status: 200, body: { ...drawing(1), view: null, views: [] } };
 	mountStage(null, { onViewChange: ignoreChoice });
 	await settle();
-	expect(choices()).toHaveLength(0);
+	expect(choices().map((one) => one.textContent)).toEqual(["Overview", "Everything"]);
+	expect(choices()[0]?.getAttribute("aria-pressed")).toBe("true");
 });
 
-test("a variant with one view still offers the board as a whole beside it", async () => {
+test("a variant with one view still offers the overview before it and everything after it", async () => {
 	server.reply = { status: 200, body: { ...drawing(1), view: VIEWS[0], views: [VIEWS[0]] } };
 	mountStage(null, { view: "v1", onViewChange: ignoreChoice });
 	await settle();
-	expect(choices().map((one) => one.textContent)).toEqual(["Everything", "The parts"]);
+	expect(choices().map((one) => one.textContent)).toEqual(["Overview", "The parts", "Everything"]);
 	expect(choices()[0]?.getAttribute("aria-pressed")).toBe("false");
 });
 
@@ -147,7 +152,7 @@ test("a selected view with no subjects keeps its resolved identity and remains v
 	});
 	await settle();
 
-	expect(choices().map((one) => one.textContent)).toEqual(["Everything", "The parts"]);
+	expect(choices().map((one) => one.textContent)).toEqual(["Overview", "The parts", "Everything"]);
 	expect(choices()[1]?.getAttribute("aria-pressed")).toBe("true");
 	const stage = part("semantic-board-stage");
 	expect(stage.getAttribute("data-state")).toBe("empty");

@@ -144,7 +144,7 @@ describe("the canonical suite", () => {
 		expect([...traffic].toSorted()).toEqual(["custom", "default", "off"]);
 	});
 
-	test("every scenario declares the captures of what its request asks to see, sequences through their data-flow view and comparisons on both sides", () => {
+	test("every scenario declares the captures of what its request asks to see, sequences through their sequence view and comparisons on both sides", () => {
 		for (const scenario of loaded.suite.evals) {
 			expect(scenario.captures.length, scenario.id).toBeGreaterThan(0);
 			const labels = scenario.captures.map((capture) => capture.label);
@@ -164,7 +164,7 @@ describe("the canonical suite", () => {
 			}
 			if (scenario.workflow === "sequence-create") {
 				expect(
-					named.some((capture) => capture.grammar === "data-flow" && capture.view !== undefined),
+					named.some((capture) => capture.grammar === "sequence" && capture.view !== undefined),
 					scenario.id,
 				).toBe(true);
 			}

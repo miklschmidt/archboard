@@ -27,7 +27,11 @@ import {
 	ResponsibilitySchema,
 	StatedIdSchema,
 } from "@/shared/semantic-board/lib/primitives";
-import { StepLabelSchema } from "@/shared/semantic-board/lib/views";
+import {
+	alternativesOf,
+	FlowWordsSchema,
+	StepLabelSchema,
+} from "@/shared/semantic-board/lib/views";
 import { WALKTHROUGH_VIEW_DESCRIPTION } from "@/shared/semantic-board/lib/walkthrough";
 import {
 	DiagramGrammarSchema,
@@ -123,20 +127,84 @@ const SemanticEdgeInputSchema = z
 	.strict();
 type SemanticEdgeInput = z.infer<typeof SemanticEdgeInputSchema>;
 
-/** One step of a flow as an agent states it, with its ends named or identified. */
-const FlowStepInputSchema = z
-	.object({
-		id: StatedIdSchema.optional(),
-		as: HandleSchema.optional(),
-		from: NodeReferenceSchema,
-		to: NodeReferenceSchema,
-		label: StepLabelSchema,
-		kind: MessageKindSchema.optional(),
-		note: DescriptionSchema.optional(),
-		repeat: z.int().min(2).optional(),
-		anchor: CodeAnchorSchema.optional(),
-	})
-	.strict();
+/** One message of a flow as an agent states it, with its ends named or identified. */
+const FlowMessageInputSchema = z.strictObject({
+	id: StatedIdSchema.optional(),
+	as: HandleSchema.optional(),
+	from: NodeReferenceSchema,
+	to: NodeReferenceSchema,
+	label: StepLabelSchema,
+	kind: MessageKindSchema.optional(),
+	note: DescriptionSchema.optional(),
+	repeat: z.int().min(2).optional(),
+	anchor: CodeAnchorSchema.optional(),
+});
+type FlowMessageInput = z.infer<typeof FlowMessageInputSchema>;
+
+/** One answer of a decision as an agent states it: its label and its steps. */
+const FlowAlternativeInputSchema = z.strictObject({
+	label: FlowWordsSchema,
+	/**
+	 * The steps, read late because a step can hold steps.
+	 * @returns Their schema.
+	 */
+	get steps(): z.ZodArray<typeof FlowStepInputSchema> {
+		return z.array(FlowStepInputSchema);
+	},
+});
+
+/**
+ * A decision as an agent states it: `kind: "decision"`, the question, and two
+ * or more labelled alternatives, each with its steps in order. The steps after
+ * the decision follow every alternative.
+ */
+const FlowDecisionInputSchema = z.strictObject({
+	id: StatedIdSchema.optional(),
+	as: HandleSchema.optional(),
+	kind: z.literal("decision"),
+	question: FlowWordsSchema,
+	note: DescriptionSchema.optional(),
+	/**
+	 * The alternatives, read late because a step can hold steps.
+	 * @returns Their schema.
+	 */
+	get alternatives(): z.ZodArray<typeof FlowAlternativeInputSchema> {
+		return alternativesOf(FlowAlternativeInputSchema);
+	},
+});
+
+/**
+ * A loop as an agent states it: `kind: "loop"`, the condition it repeats
+ * while, and the steps it repeats, in order.
+ */
+const FlowLoopInputSchema = z.strictObject({
+	id: StatedIdSchema.optional(),
+	as: HandleSchema.optional(),
+	kind: z.literal("loop"),
+	condition: FlowWordsSchema,
+	note: DescriptionSchema.optional(),
+	/**
+	 * The steps, read late because a step can hold steps.
+	 * @returns Their schema.
+	 */
+	get steps(): z.ZodArray<typeof FlowStepInputSchema> {
+		return z.array(FlowStepInputSchema).min(1, "a loop repeats at least one step");
+	},
+});
+
+/**
+ * One step of a flow as an agent states it: a message, or a decision or loop
+ * that holds steps of its own. Told apart by `kind`, so a step with a kind
+ * that is none of these is refused with every kind it could have had, and a
+ * decision or loop that lacks a field is refused for that field.
+ */
+const FlowStepInputSchema: z.ZodDiscriminatedUnion<
+	[typeof FlowMessageInputSchema, typeof FlowDecisionInputSchema, typeof FlowLoopInputSchema]
+> = z.discriminatedUnion("kind", [
+	FlowMessageInputSchema,
+	FlowDecisionInputSchema,
+	FlowLoopInputSchema,
+]);
 type FlowStepInput = z.infer<typeof FlowStepInputSchema>;
 
 /** A flow as an agent states it: its columns and its steps, in order. */
@@ -214,6 +282,18 @@ const SemanticViewInputSchema = z
 type SemanticViewInput = z.infer<typeof SemanticViewInputSchema>;
 
 /**
+ * A refusal an edit may pass on purpose by naming its code (TASK-487): restoring
+ * an id only another variant holds, adding a part an ancestor holds under
+ * another id, and removing most of what the variant inherited.
+ */
+const ConfirmableRefusalSchema = z.enum([
+	"RESTORE_UNCONFIRMED",
+	"PART_RECREATED",
+	"INHERITANCE_DROPPED",
+]);
+type ConfirmableRefusal = z.infer<typeof ConfirmableRefusalSchema>;
+
+/**
  * One edit. Everything in it lands in one write or none of it does, which is
  * the whole reason the shape is a batch rather than a single change: one thing
  * somebody asked for is one write (TASK-068).
@@ -237,6 +317,11 @@ const VariantEditInputSchema = z
 		/** Removing a shared view must leave every variant walkthrough coherent. */
 		removeViews: z.array(NodeReferenceSchema).default([]),
 		removeWalkthroughs: z.array(NodeReferenceSchema).default([]),
+		/**
+		 * The refusals this edit confirms, by code. A confirmable refusal names
+		 * its code, and the edit lands only when it names that code here.
+		 */
+		confirm: z.array(ConfirmableRefusalSchema).optional(),
 	})
 	.strict();
 type VariantEditInput = z.infer<typeof VariantEditInputSchema>;
@@ -286,10 +371,13 @@ const BoardCreateInputSchema = z
 type BoardCreateInput = z.infer<typeof BoardCreateInputSchema>;
 
 export {
+	ConfirmableRefusalSchema,
+	type ConfirmableRefusal,
 	BoardBranchInputSchema,
 	type BoardBranchInput,
 	FlowStepInputSchema,
 	type FlowStepInput,
+	type FlowMessageInput,
 	SemanticFlowInputSchema,
 	type SemanticFlowInput,
 	ViewScopeInputSchema,

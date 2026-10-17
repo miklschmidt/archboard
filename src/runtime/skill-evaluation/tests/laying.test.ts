@@ -207,9 +207,10 @@ describe("variants", () => {
 		).toHaveLength(1);
 	});
 
-	test("a carried removal the draft cannot take keeps the whole draft", () => {
-		// The store keeps the whole draft when the removal would leave it naming
-		// a part that is gone, so a part the draft never stated stays too.
+	test("a carried removal the draft cannot take holds back only the part it names", () => {
+		// The store holds back only the removal that would leave the draft naming
+		// a part that is gone (TASK-490), so the rest of that edit arrives: the
+		// child leaves the target, and the call lands on a part without children.
 		const tag = { name: "Tagged JSON", kind: "module" };
 		expect(
 			problems([
@@ -219,7 +220,7 @@ describe("variants", () => {
 				edit({ removeNodes: ["dumps", "Tagged JSON"] }),
 				edit({ variant: "Draft", edges: [call] }),
 			]),
-		).toHaveLength(1);
+		).toEqual([]);
 	});
 
 	test("a draft's rename survives edits carried down by the old name", () => {

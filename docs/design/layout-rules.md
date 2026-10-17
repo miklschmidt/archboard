@@ -2464,3 +2464,119 @@ lines crosses what it crossed N times. Splitting only the router's key on
 Blocks (leaving its block keys) cost less (crossings up in 4 drawings, 2261 to 2388) but still shares lanes between blocks. Blocks therefore still shares a
 lane across lines that differ in emphasis or traffic; `matched-kind-channels.test.ts`
 holds the separation on Track only.
+
+## 48. A region faces the walls its lines cross (2026-10-17)
+
+On Device Trust Control Plane, native hosts (Blocks), lines from cards in the
+Device Trust Workloads region to cards on its right ran down the region,
+along its whole foot and up its far wall. Two causes made these detours.
+
+A label that a join moves to the source's block (`joins.ts`) kept its port on
+that block's face, because a line to a wall was not ranked by Graphviz and so
+could not carry a label. The line from Local platform operator held its label
+in the region, so its port stayed on the region's bottom. Settling stood that
+port at the far right of the bottom, and libavoid ran the trunk round the
+corner and up the corridor.
+
+A card reached only through a wall forms a Graphviz part of its own, and
+Graphviz sets those parts side by side in the board's order. Device CA
+certificate state stood at the region's far left, and its line from Device
+Identity crossed the region's whole width.
+
+A block can now face its walls (`BlockTree.facing`). A line that carries its
+label leaves by the wall through its label, ranked to a stub below it, as a
+line from a wall is ranked from a stub above (`labelledOut` in `walls.ts`). An
+item whose every line crosses one wall stands toward that wall in the order
+Graphviz meets the items (`towardWalls`). Facing changes many boards for the
+worse when it is always on: Two doors to a turn crossed 1 line before and 15
+after, and Command interface ran its lines some 20000 px further. So facing is
+a choice, and only Blocks makes it. A Blocks solve reports whether facing
+would change its blocks (`faces`). After the joins choice, `layJoined`
+(`joins.ts`) takes the chosen way laid out facing its walls where it reads
+better as a way of keeping the joins does (`drawsBetter`). Weighed inside each
+solve instead, the shorter faced layout kept the joins choice from a way that
+crossed 14 lines fewer. Track never faces its blocks: no Track drawing of
+either vault changed when it did.
+
+A line that carries its label to a wall reaches the wall under its label, and
+a line from the same card without a label there reaches it under the card. So
+a line from the label holder keeps a wall port of its own (`leave` in
+`tree.ts`). Sharing one, on Issuance and revocation (Blocks) the line from
+Rust device trust library ran down to its label's channel and climbed back
+to the port of its card's other line, and looped round the line from Local
+platform operator.
+
+The drawings of both vaults (this repository's and one work vault, 7206 Blocks
+drawings) were rendered against the commit before and compared byte for byte.
+Of this repository's drawings, 32 changed: 29 read better on crossings plus
+runs away from their ends at 300 px each, and 1 read worse. Of the work
+vault's, 17 changed: 13 read better and 2 worse. The native hosts drawing ran
+its lines 6295 px away from their ends before and 2208 after, and drew 30217
+px of line before and 25041 after. No Track drawing changed.
+
+**Cost.** A faced solve is one more Blocks solve per board. The joins search
+asks for it with every join before its labels at once, and again for each way
+it keeps, so it is laid out beside the turns. Over this repository's current
+variants, Blocks first renders took 186.0 s before and 186.8 s after (best of
+two runs each). Board viewer takes 4 s longer (19.9 s to 23.9 s): the way it
+keeps comes last, so its faced solve runs after the turns. Agent workbench
+takes 2.6 s less. Track first renders took 16.5 s before and after.
+
+Inside Service certificate rotation (work vault) runs one line further for 4
+crossings fewer. Existing ingress ownership stands Test clients beside its
+region and draws its line to Legacy IIS origins further. Moves between
+pictures (Board viewer, TASK-472.05) crosses 3 lines more for 13% less line.
+
+On a planned board the drawing's body is moved by `translate(16 24)`, which
+`bodyShift` in `drawn-routes.ts` did not read. The scorecard then counted a
+route 16 px under Local platform operator on Issuance and revocation as
+passing through it. Section 49 records the fix.
+
+**Known gap.** A line to a wall still leaves under its card and enters above
+its target's label, so it climbs in the corridor beside the region. On native
+hosts the line from Device Identity to Device CA certificate state still runs
+some 1000 px away from its ends.
+
+## 49. A line round a container counts as a crossing when containers stack (2026-10-17, TASK-486)
+
+TASK-486 wrapped the header of Code evidence (Archboard server, view Code
+evidence, Track) to one line. The page stacked under HTTP serving became 83 px
+shorter, so it fit the pane better (0.741 to 0.789). Its score, fit less a
+share for each crossing, rose from 0.719 to 0.765, above the 0.736 of the page
+as Graphviz ranks it. Stacked, the block crossed 1 line, bent 16 times and drew
+5043 px of line. As ranked, it crossed 2 lines, bent 14 times and drew 4425 px.
+Both picks of the stacking choice now took the stacked page, so the guard did
+not weigh its 2 bends and 14% more line. Board writes stood at the far left.
+'read a board, write one under its lease' ran over Code evidence and down its
+far side, across the whole page.
+
+Treating a near tie on both score and fit as no earlier pick does not work.
+Three overviews of the work vault (Track) make the same trade on the block's
+numbers. There the stacked page reads clearly better.
+
+The block's reading measures now count one more crossing for each line that
+turns round the corner of a container it has no end in (`turnsRoundOf` in
+`blocks/weighing.ts`). The line runs over or under the container past one
+of its sides. It then runs down or up beside the container for more than 200
+px, the length of a lap. Only the stacking choice reads these measures. Code
+evidence then ties on crossings, and the page as ranked bends less, so the
+containers stand as Graphviz ranks them. The drawing is the one of before
+TASK-486, with the shorter header. A tighter rule counted only a run within
+200 px of the container's top or foot. With it, What the CLI can be asked
+(Track) crossed 13 lines instead of 5.
+
+Over every variant and view of both vaults on both engines, 18 drawings
+changed, 13 of them distinct, all on Track. On crossings
+plus runs away at 300 px each, 3 read better, 2 worse and 13 the same. The 2
+worse ones are Code evidence, which is back to its drawing of before TASK-486.
+Device trust design (Device Trust Control Plane) no longer runs two lines
+through the header of Device Identity. Shared library coupling (work vault)
+crosses as many lines and draws 5% more line. Track first renders took
+17.2 s and 17.0 s before, and 17.0 s and 17.1 s after.
+
+`bodyShift` in `tests/drawn-routes.ts` now reads every group that moves the
+body: the planned frame's `translate(16 24)` and the canvas shift inside it.
+Before, every route of a planned board was compared 16 px left of and 24 px
+above where it is drawn. Native hosts (Device Trust Control Plane, Track) then
+counted 5 routes through cards. Read where they are drawn, it has none, on
+Track or Blocks.
