@@ -283,7 +283,12 @@ container above it or a part inside it. Then the two parts are joined.
 
 A footprint reads the commits from the merge base of a named ref and HEAD up to
 HEAD, in each checkout. The ref is anything that Git resolves in the checkout,
-such as `main`, `origin/main` or a commit. If the ref does not resolve in a
+such as `main`, `origin/main` or a commit. With `--head <ref>`, the commits run
+up to that ref instead of HEAD, read from Git without a checkout, for a layer of
+a pull-request stack that is not checked out. The head resolves as the code
+check resolves a ref a draft pins: the name, else the branch of that name on
+`origin`. A checkout where it does not resolve is not read, as for the base.
+When it resolves in none, the request is refused with `HEAD_UNRESOLVED`. If the ref does not resolve in a
 checkout, the lens does not read that checkout, and the answer says so. The
 footprint lists the parts that those commits changed, with each part's
 commits, and it says which commits are large. It uses no period, and it leaves

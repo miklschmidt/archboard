@@ -1,4 +1,4 @@
-// The footprint's route, `GET /api/semantic-boards/footprint?board=&base=&variant=`
+// The footprint's route, `GET /api/semantic-boards/footprint?board=&base=&head=&variant=`
 // (ADR 0045).
 //
 // `archboard semantic footprint` asks it. It is about one board, so it sits
@@ -108,6 +108,7 @@ function isRefusal(value: object): value is Refusal {
 interface Asked {
 	readonly board: string;
 	readonly base: string;
+	readonly head: string | undefined;
 	readonly variant: string | undefined;
 }
 
@@ -116,6 +117,7 @@ interface Readable extends FootprintVariants {
 	readonly vault: string;
 	readonly board: SemanticBoard;
 	readonly base: string;
+	readonly head: string | undefined;
 }
 
 /**
@@ -132,14 +134,14 @@ function parameter(request: Request, key: string): string | undefined {
 /**
  * What a request asks for.
  * @param request The request.
- * @returns The board, the base and the proposal, or undefined when it names no board or no base.
+ * @returns The board, the base, the head and the proposal, or undefined when it names no board or no base.
  */
 function askedOf(request: Request): Asked | undefined {
 	const board = parameter(request, "board");
 	const base = parameter(request, "base");
 	return board === undefined || base === undefined
 		? undefined
-		: { board, base, variant: parameter(request, "variant") };
+		: { board, base, head: parameter(request, "head"), variant: parameter(request, "variant") };
 }
 
 /**
@@ -160,7 +162,7 @@ function readableOf(vault: string, wanted: Asked): Readable | Refusal {
 	const variants = variantsOf(read.board, wanted.variant);
 	return isRefusal(variants)
 		? variants
-		: { vault, board: read.board, base: wanted.base, ...variants };
+		: { vault, board: read.board, base: wanted.base, head: wanted.head, ...variants };
 }
 
 /**
@@ -184,6 +186,38 @@ function refuse(response: Response, refusal: Refusal): void {
 }
 
 /**
+ * Why a head the caller named is turned away: no checkout that holds a part of
+ * the board resolves it, so no part was read and none may look unchanged. A
+ * head only some checkouts have is read where it resolves, as a base is.
+ * @param answer The footprint, read.
+ * @returns The refusal, or undefined when the head resolved somewhere or none was named.
+ */
+function headRefusal(answer: FootprintAnswer): Refusal | undefined {
+	const { head, repositories } = answer;
+	const resolved = repositories.some(
+		(one) => one.status === "read" || one.reason !== "head-unresolved",
+	);
+	if (head === undefined || repositories.length === 0 || resolved) return undefined;
+	return {
+		status: 422,
+		code: "HEAD_UNRESOLVED",
+		error: `--head "${head}" does not resolve in any checkout that holds a part of "${answer.board}". Name a branch, tag or commit that the checkout has; nothing is fetched.`,
+	};
+}
+
+/**
+ * Send a footprint, or refuse a head that no checkout has.
+ * @param response The response.
+ * @param answer The footprint, read.
+ */
+function send(response: Response, answer: FootprintAnswer): void {
+	const refusal = headRefusal(answer);
+	if (refusal === undefined) {
+		response.json(FootprintReplySchema.parse({ success: true, ...answer }));
+	} else refuse(response, refusal);
+}
+
+/**
  * Answer one request with a footprint read as checkout work.
  * @param dependencies How the reading runs.
  * @param request The request.
@@ -200,7 +234,7 @@ async function answerFootprint(
 			status: 400,
 			code: "BAD_REQUEST",
 			error:
-				"Name the board and the base: /api/semantic-boards/footprint?board=<name>&base=<ref>[&variant=<proposal>]",
+				"Name the board and the base: /api/semantic-boards/footprint?board=<name>&base=<ref>[&head=<ref>][&variant=<proposal>]",
 		});
 		return;
 	}
@@ -216,9 +250,7 @@ async function answerFootprint(
 			"GET /api/semantic-boards/footprint",
 			(signal) => dependencies.read({ ...readable, signal }),
 		);
-		if (!callerGone(request, response)) {
-			response.json(FootprintReplySchema.parse({ success: true, ...answer }));
-		}
+		if (!callerGone(request, response)) send(response, answer);
 	} catch (error) {
 		if (!callerGone(request, response)) {
 			response.status(500).json({ success: false, error: errorMessage(error) });

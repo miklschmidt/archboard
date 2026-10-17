@@ -179,6 +179,27 @@ test("without --variant the command names no proposal", async () => {
 	]);
 });
 
+test("--head is carried to the route, and a head the route cannot resolve is refused with exit 2", async () => {
+	asked.length = 0;
+	await run(["semantic", "footprint", "Orders", "--base", "main", "--head", "feat/layer-two"]);
+	expect(asked.map((one) => Object.fromEntries(one.searchParams))).toEqual([
+		{ board: "Orders", base: "main", head: "feat/layer-two" },
+	]);
+	refusal = { status: 422, code: "HEAD_UNRESOLVED" };
+	const { exited, stdout } = await run([
+		"semantic",
+		"footprint",
+		"Orders",
+		"--base",
+		"main",
+		"--head",
+		"nope",
+	]);
+	refusal = undefined;
+	expect(exited).toBe(2);
+	expect(stdout).toBe("");
+});
+
 test("a refusal of the route keeps the exit status its code declares", async () => {
 	refusal = { status: 422, code: "NOTHING_TO_COMPARE" };
 	const { exited, stdout } = await run([

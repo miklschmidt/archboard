@@ -22,9 +22,18 @@ import {
 const FootprintInputSchema = z.object({
 	name: z.string(),
 	base: SelectorSchema,
+	head: SelectorSchema.optional(),
 	variant: SelectorSchema.optional(),
 });
 
+const headUnresolvedRefusal = {
+	code: "HEAD_UNRESOLVED",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"--head resolves in none of the checkouts that hold a part of the board, so nothing was " +
+		"read and nothing is reported as unchanged.",
+};
 const noCurrentVariantRefusal = {
 	code: "NO_CURRENT_VARIANT",
 	exit: 2,
@@ -135,10 +144,13 @@ const semanticFootprintContract = defineCommand({
 		"A bound symbol narrows commits to its declaration through the language adapters. " +
 		"The answer labels path-wide fallback when a symbol is unsupported or unresolved. " +
 		"Reports which parts of a board's current variant the commits from the merge base of --base " +
-		"and HEAD up to HEAD changed, through their bound declarations or paths, in the checkout that holds the vault for its own repository and in the chosen checkout of every " +
+		"and HEAD up to HEAD, or with --head up to that ref, changed, through their bound declarations or paths, in the checkout that holds the vault for its own repository and in the chosen checkout of every " +
 		"other. --base is any ref that resolves in the checkout, such as main, origin/main or a commit; nothing is fetched, and a checkout where it does not resolve is named in the " +
-		"answer and not read. Each checkout is read at its HEAD, so a change that is not committed " +
-		"is not in it. Each part lists its commits; large commits (more than 30 files) are " +
+		"answer and not read. Each checkout is read at its HEAD, or at --head, which is resolved in each " +
+		"checkout as the code check resolves a ref (the name, else the branch of that name on origin) and " +
+		"never checked out, so a change that is not committed is not in it. A checkout where --head " +
+		"does not resolve is named in the answer and not read; when it resolves in none, the command is " +
+		"refused with HEAD_UNRESOLVED. Each part lists its commits; large commits (more than 30 files) are " +
 		"kept and marked. With --variant it also reads a proposal, a draft of the board, against " +
 		"the current variant, and splits the parts into named and changed, changed but not named, " +
 		"and named but not changed. The proposal names a part that the comparison marks added, " +
@@ -150,6 +162,7 @@ const semanticFootprintContract = defineCommand({
 		"the exit status does not change.",
 	examples: [
 		"archboard semantic footprint payments --base origin/main",
+		"archboard semantic footprint payments --base feat/layer-one --head feat/layer-two",
 		'archboard semantic footprint payments --base origin/main --variant "Queued ingest"',
 		"archboard semantic footprint payments --base 3f9c2ab --variant TASK-123",
 	],
@@ -171,6 +184,17 @@ const semanticFootprintContract = defineCommand({
 			description:
 				"The ref the branch started from: main, origin/main, a tag or a commit. Commits are " +
 				"read from its merge base with HEAD",
+		},
+		{
+			kind: "option",
+			key: "head",
+			spellings: ["--head"],
+			value: "required",
+			placeholder: "ref",
+			description:
+				"The ref the commits run up to, read from Git without checking it out: a branch, " +
+				"tag or commit, as the code check reads a ref a draft pins. Use it for a layer of a " +
+				"pull-request stack that is not checked out. When absent, they run up to HEAD",
 		},
 		{
 			kind: "option",
@@ -205,6 +229,7 @@ const semanticFootprintContract = defineCommand({
 	effects: ["read"],
 	refusals: [
 		serverRefusal,
+		headUnresolvedRefusal,
 		noCurrentVariantRefusal,
 		unknownVariantRefusal,
 		nothingToCompareRefusal,
@@ -230,6 +255,7 @@ const semanticFootprintContract = defineCommand({
 		const query = new URLSearchParams({
 			board: input.name,
 			base: input.base,
+			...(input.head === undefined ? {} : { head: input.head }),
 			...(input.variant === undefined ? {} : { variant: input.variant }),
 		});
 		const reply = FootprintReplySchema.parse(
