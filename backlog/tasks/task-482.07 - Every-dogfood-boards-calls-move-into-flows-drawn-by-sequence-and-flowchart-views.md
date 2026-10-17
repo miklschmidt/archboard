@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-16 01:21'
-updated_date: '2026-10-17 02:07'
+updated_date: '2026-10-17 04:20'
 labels: []
 dependencies:
   - TASK-350
@@ -53,6 +53,8 @@ Docs-Architecture-Design: drafts TASK-482.07 on 19 boards; code check added 69 a
 2026-10-16, owner correction: TASK-482.07 belongs to this repository and must not name anything in Docs-Architecture-Design. The TASK-482.07 drafts there were removed (the twelve boards restored from master), and the five adopted current variants were renamed '<historical name>, with flows'. Seven agents then moved calls into flows on every variant of every board in that vault, current and proposals, without adopting, through archboard semantic edit and resolve; the three boards with somebody's uncommitted work (Device Trust Control Plane, Device Trust Delivery, Platform Test Cluster) were edited in place and are not to be committed. Remaining: archboard check --code on that vault against the baseline in /tmp/dad-code-before.txt once Device Trust Delivery is done, and committing the boards without uncommitted work of others.
 
 2026-10-17 verification. Script over every current variant (and the opening draft of a board with no current variant) of both vaults: no pair of parts holds two relationships of one kind; every architecture view draws lines between the parts it finds, except views made for another variant, which on the opening variant find only two or three unrelated neighbours (the empty-view case of TASK-485, not a missing line). Docs-Architecture-Design: archboard check --code against /tmp/dad-code-before.txt: 18 findings, none new, two gone; archboard check clean. The four duplicate relationships of Endpoint Trust Sequences 'TASK-0417 enrollment-only implementation' were merged into one per pair (its flows carry each exchange). Not touched: the drafts TASK-446, TASK-447 and TASK-319 of Agent workbench, Browser application, Codex workhorse and Voice coordinator still hold calls without flows and two duplicate relationships; they stand on parents that later adoptions made historical, have no flows to carry the exchanges, and belong to those In Progress tasks. Docs-Architecture-Design is committed on branch archboard/calls-as-flows (97f6338, b607f00) without touching master or its working tree; Device Trust Control Plane, Device Trust Delivery and Platform Test Cluster stay uncommitted. The old branch archboard/flows-482-07 holds the removed drafts and is not used.
+
+Correction 2026-10-17: the stale drafts of TASK-446, TASK-447 and TASK-319 were then rebuilt on each board's current variant as '<task> after TASK-482.07', with their calls as flow steps, and the old drafts shelved. The archboard vault now has no live variant with calls outside flows and no pair of parts with two relationships of one kind.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
