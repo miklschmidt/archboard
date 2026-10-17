@@ -28,6 +28,7 @@ import {
 	take,
 } from "@/transformers/semantic-renderer/lib/track/readings";
 import type { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import { crossingsFor } from "@/transformers/semantic-renderer/lib/track/straighten";
 
 /** What a line costs: the other lines it crosses, then the sideways steps it takes. */
 type Cost = readonly [number, number];
@@ -218,8 +219,12 @@ function leastCrossing(
 	standing: Cost,
 ): Placing | undefined {
 	const own = stationsOf(stretch);
+	const crossings = crossingsFor(own, bands);
 	const better = columns
-		.map((x) => ({ x, cost: costOf(own, xsOf(stretch, x), bands) }))
+		.map((x) => {
+			const xs = xsOf(stretch, x);
+			return { x, cost: [crossings(xs), stepsOf(own, xs)] as Cost };
+		})
 		.filter(({ cost }) => cost[0] <= standing[0] && cost[1] < standing[1]);
 	const best = better.toSorted(
 		(one, other) => one.cost[0] - other.cost[0] || one.cost[1] - other.cost[1],
@@ -291,9 +296,9 @@ function fitting(scene: Scene, occupancy: Occupancy, stretch: Stretch): (x: numb
 	const lanes = middle.filter(({ kind }) => kind === "lane");
 	const labels = middle.filter(({ kind }) => kind === "label");
 	const extent = extentOf(scene);
+	const fits = occupancy.fitting({ lanes, before, after });
 	return (x) =>
-		occupancy.fits({ lanes, before, after }, x) &&
-		labels.every((label) => labelFits(scene, { occupancy, extent }, label, x));
+		fits(x) && labels.every((label) => labelFits(scene, { occupancy, extent }, label, x));
 }
 
 /**
