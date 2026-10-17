@@ -1,11 +1,11 @@
 ---
 id: TASK-377
 title: Every vault board lays out within the 1 s render budget on both engines
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 18:33'
-updated_date: '2026-10-17 08:04'
+updated_date: '2026-10-17 09:54'
 labels:
   - renderer
 dependencies: []
@@ -148,4 +148,12 @@ Critical path after this round (unchanged from round two):
 Timings at c77cc3204, Track, warm process, two runs (load 1.6 to 4.9): total 10.35 s and 10.51 s. Board viewer 1.49 s and 1.73 s, Agent workbench (first board) 2.07 s and 2.03 s, Archboard server routes 1.10 s and 1.14 s (second board, workers starting). Every other board is under 1 s.
 
 2026-10-17 state after three rounds, merged on feat/derived-overview: full bun run check passed after round one. AC2: every variant and view of both vaults on both engines byte-identical except Live panes 'Pane connections' (Blocks, 2 variants), which reads better (16 crossings, was 22). AC3: wide-boards.test.ts 40 of 40 pass with no bound raised. AC1 open: Track over 1 s on Board viewer (about 1.45 s) and Agent workbench (about 1.5 s warm, 2.05 s as first board); Blocks over 1 s on nine boards, worst Archboard server routes 15.5 s, bound by libavoid's unifying nudging. Reaching 1 s needs more CPU per render or warm idle workers (about 40-50 MB each); both left for the owner.
+
+Owner decision 2026-10-17: accept the remaining Track and Blocks times over 1 s. Neither laying the remedy steps side by side (more CPU per render) nor keeping layout workers started (about 40-50 MB each) is wanted. AC1 is closed by that decision, not met.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Made the slow boards fast without changing their pictures: libavoid's unsatisfiable constraints are marked instead of thrown, the Blocks joins choice weighs every answer as it comes, Graphviz answers without drawing operations, Track's lane searches read once, and Track lays a stacking choice out side by side. Blocks first renders went from 188 s to 49 s in total, Track from 16.8 s to 10.4 s; every wide-board case passes with no bound raised, and both vaults render byte-identical apart from one drawing that reads better. Board viewer and Agent workbench on Track and nine boards on Blocks stay over 1 s, which the owner accepted.
+<!-- SECTION:FINAL_SUMMARY:END -->
