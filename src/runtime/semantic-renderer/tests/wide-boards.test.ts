@@ -135,7 +135,7 @@ for (const board of cases) {
 					declareTestWallClockBudget({
 						test: name,
 						reason:
-							"Its Blocks layout routes the trunks of a six-block cluster with libavoid fifteen times a solve, once for each packing it weighs, over seven solves, and libavoid's nudging throws about 3.7 million C++ exceptions a render, each through the engine's JavaScript: the work is the layout's, and one hosted CI worker does it alone",
+							"Its Blocks layout routes the trunks of a six-block cluster with libavoid fifteen times a solve, once for each packing it weighs, over seven solves, and libavoid's nudging solves a region again for every pair of its free segments: the work is the layout's, and one hosted CI worker does it alone",
 						outerBoundMs: TEST_HEAVY_BLOCKS_CASE_MS,
 						task: "TASK-451",
 						evidence:

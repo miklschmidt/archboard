@@ -6,6 +6,7 @@ import type { Viz } from "@viz-js/viz";
 import { z } from "zod";
 import { placeBlocks } from "@/transformers/semantic-renderer/lib/blocks/place";
 import { SOLVE_STAGE } from "@/transformers/semantic-renderer/lib/host";
+import { markingUnsatisfiable } from "@/transformers/semantic-renderer/lib/unsatisfiable";
 
 /** A value owned by the WASM heap. */
 interface Owned {
@@ -121,30 +122,59 @@ function exportedMemories(answered: unknown): WebAssembly.Memory[] {
 	);
 }
 
+/** What loading the engines instantiated: each memory a module exports, and whether libavoid was marked. */
+interface Loading {
+	readonly memories: WebAssembly.Memory[];
+	marked: boolean;
+}
+
 /**
- * The same instantiation, which also keeps each memory it exports.
- * @param instantiate `WebAssembly.instantiate` or `instantiateStreaming`.
- * @param memories Where each memory is kept.
+ * The same instantiation, which instantiates libavoid with its unsatisfiable
+ * constraints marked rather than thrown (`lib/unsatisfiable.ts`) and keeps
+ * each memory a module exports.
+ * @param instantiate `WebAssembly.instantiate`.
+ * @param loading Where each memory is kept, and whether libavoid was marked.
  * @returns The instantiation, of the same type.
  */
-function keepingMemories<Instantiate extends (...args: never[]) => Promise<unknown>>(
-	instantiate: Instantiate,
-	memories: WebAssembly.Memory[],
-): Instantiate {
+function instantiating(
+	instantiate: typeof WebAssembly.instantiate,
+	loading: Loading,
+): typeof WebAssembly.instantiate {
 	return new Proxy(instantiate, {
 		/**
 		 * Instantiate, and keep what it exports of memory.
 		 * @param target The instantiation.
 		 * @param self Its receiver.
-		 * @param args Its arguments.
+		 * @param args Its arguments: the module or its bytes, and the imports.
 		 * @returns What it answered.
 		 */
-		async apply(target, self, args) {
-			const answered: unknown = await Reflect.apply(target, self, args);
-			memories.push(...exportedMemories(answered));
+		async apply(target, self, args: unknown[]) {
+			const [source, ...rest] = args;
+			const bytes =
+				source instanceof ArrayBuffer || ArrayBuffer.isView(source)
+					? markingUnsatisfiable(source)
+					: source;
+			loading.marked ||= bytes !== source;
+			const answered: unknown = await Reflect.apply(target, self, [bytes, ...rest]);
+			loading.memories.push(...exportedMemories(answered));
 			return answered;
 		},
 	});
+}
+
+/**
+ * A streaming instantiation that reads the module's bytes whole and hands
+ * them to an instantiation, so that one sees libavoid's bytes too.
+ * @param instantiate The instantiation.
+ * @returns The streaming instantiation.
+ */
+function streaming(
+	instantiate: typeof WebAssembly.instantiate,
+): typeof WebAssembly.instantiateStreaming {
+	return async (source, imports) => {
+		const response = await source;
+		return instantiate(await response.arrayBuffer(), imports);
+	};
 }
 
 /**
@@ -173,20 +203,24 @@ function heldBytes(memory: WebAssembly.Memory): Uint8Array {
  * before, decided the picture. Putting back what each engine held as loaded,
  * its allocator included, hands every solve's objects the same places, so a
  * solve's answer is decided by its graph and options alone. What is put back
- * is a few hundred kilobytes, which costs microseconds.
+ * is a few hundred kilobytes, which costs microseconds. libavoid is
+ * instantiated with the constraints vpsc cannot satisfy marked where it meets
+ * them, not thrown, which draws the same (`lib/unsatisfiable.ts`).
  * @param load Instantiates both engines, answering the Graphviz instance and
  * the initialized libavoid module. It must instantiate them itself: an engine
  * loaded earlier has nothing as loaded to go back to.
  * @returns The layout engine.
- * @throws {Error} When the load did not instantiate both engines.
+ * @throws {Error} When the load did not instantiate both engines, or the
+ * libavoid it instantiated is not the build `lib/unsatisfiable.ts` edits.
  */
 export async function loadLayoutEngine(
 	load: () => Promise<readonly [Viz, unknown]>,
 ): Promise<LayoutEngine> {
-	const memories: WebAssembly.Memory[] = [];
+	const loading: Loading = { memories: [], marked: false };
+	const { memories } = loading;
 	const { instantiate, instantiateStreaming } = WebAssembly;
-	WebAssembly.instantiate = keepingMemories(instantiate, memories);
-	WebAssembly.instantiateStreaming = keepingMemories(instantiateStreaming, memories);
+	WebAssembly.instantiate = instantiating(instantiate, loading);
+	WebAssembly.instantiateStreaming = streaming(WebAssembly.instantiate);
 	let loaded: readonly [Viz, unknown];
 	try {
 		loaded = await load();
@@ -197,6 +231,11 @@ export async function loadLayoutEngine(
 	if (memories.length !== 2) {
 		throw new Error(
 			`Loading the layout engine instantiated ${memories.length} WebAssembly memories where Graphviz and libavoid make two: load both engines in the call, not before it.`,
+		);
+	}
+	if (!loading.marked) {
+		throw new Error(
+			"The libavoid it loaded is not the libavoid-js 0.5.0-beta.5 build whose unsatisfiable constraints lib/unsatisfiable.ts marks: read that edit again against the new build, or take it out.",
 		);
 	}
 	const solve = createLayoutEngine(...loaded);
