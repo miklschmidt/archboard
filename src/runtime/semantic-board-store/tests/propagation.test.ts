@@ -300,6 +300,40 @@ test("a draft recovers fully once it stops naming what its predecessor removed",
 	expect(variant(A).content.nodes.map((one) => one.id)).not.toContain(held);
 }, 30_000);
 
+test("a draft keeps the rest of an edit that removed what it refers to, settled or not", async () => {
+	// A wires the API to the store, and B, derived from A, inherits that. One
+	// baseline edit then renames the API and removes the store.
+	const held = variant(A).content.nodes.find((one) => one.name === "Store")?.id ?? "";
+	await edit(A, { edges: [{ from: "API", to: "Store", kind: "call", label: "asks" }] });
+	await edit(read().variants[0]!.name, {
+		nodes: [{ id: apiId, name: "Gateway", kind: "service" }],
+		removeNodes: ["Store"],
+	});
+	expect(api(A).name).toBe("Gateway");
+	expect(keptIssues(A).map((one) => one.kind)).toEqual(["reference-lost"]);
+	expect(variant(A).content.nodes.map((one) => one.id)).toContain(held);
+	expect(blockerOf(B)).toBe(variant(A).id);
+
+	const settled = await store.writeSemanticBoard({
+		vault,
+		board,
+		writer,
+		expectedVersion: read().version,
+		transition: store.settleVariantTransition(
+			contract.ResolutionInputSchema.parse({ variant: A, choices: keptIssues(A).map(asMine) }),
+		),
+	});
+	expect(settled.outcome).toBe("applied");
+	// Keeping its side of the store does not give back the rename.
+	expect(variant(A).reconciliation).toBeUndefined();
+	expect(api(A).name).toBe("Gateway");
+	expect(variant(A).content.nodes.map((one) => one.id)).toContain(held);
+	expect(contract.checkVariantContent(variant(A).content, "content")).toEqual([]);
+	// And the draft under it, no longer waiting, takes the rename too.
+	expect(variant(B).reconciliation).toBeUndefined();
+	expect(api(B).name).toBe("Gateway");
+}, 30_000);
+
 test("a proposal derived from an unsettled one is told so the moment it exists", async () => {
 	await rename(A, "Gateway");
 	await rename(read().variants[0]!.name, "Public API");

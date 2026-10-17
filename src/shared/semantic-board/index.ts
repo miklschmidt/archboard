@@ -283,6 +283,7 @@ export {
 	type Side,
 } from "@/shared/semantic-board/lib/resolution";
 export { ORDER_STEP } from "@/shared/semantic-board/lib/positions";
+export { subjectsAsIn } from "@/shared/semantic-board/lib/reconcile-candidate";
 export {
 	reconcileVariant,
 	ChangedFieldSchema,

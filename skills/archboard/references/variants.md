@@ -139,8 +139,10 @@ an unsettled draft waits, and the family lands whole or not at all.
 - `deleted-and-changed`: One removed a subject the other changed. Answered by
   `mine`, or stating the subject again under its id.
 - `reference-lost`: Merging the predecessor would leave this draft referring to
-  something no longer there. Answered by `mine`, or an edit saying what it
-  should say.
+  something no longer there. The draft keeps its own version of only that part,
+  such as the node its relationship points to, and still takes the rest of the
+  change, such as a rename in the same edit. Answered by `mine`, which keeps
+  that part, or an edit saying what it should say.
 - `left-empty`: Both removed different parts of one flow or walkthrough; merged,
   it would hold nothing. Answered by `mine`, or an edit putting back what it
   should hold.

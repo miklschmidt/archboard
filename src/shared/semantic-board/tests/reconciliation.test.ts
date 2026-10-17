@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+	checkVariantContent,
 	messagesOf,
 	reconcileVariant,
 	VariantContentSchema,
@@ -354,4 +355,45 @@ describe("what a proposal added to something the predecessor removed", () => {
 		expect(settled.content.nodes.map((node) => node.id)).toContain("n2");
 		expect(settled.content.edges.map((edge) => edge.id)).toContain("e2");
 	});
+
+	const REFERRERS = {
+		relationship: { edges: [WIRE, { id: "e2", from: "n2", to: "n1", kind: "call" }] },
+		flow: {
+			edges: [WIRE],
+			flows: [
+				{
+					id: "f1",
+					name: "One request",
+					participants: ["n1", "n2"],
+					steps: [{ id: "s1", from: "n1", to: "n2", label: "ask", kind: "sync" }],
+				},
+			],
+		},
+	};
+	for (const [what, referring] of Object.entries(REFERRERS)) {
+		test(`holds only the removal a ${what} here refers to, and takes the rest of the edit`, () => {
+			// One edit above renames the API, adds a cache and removes the store
+			// something this proposal says refers to.
+			const mine = content({ nodes: [API, STORE], ...referring });
+			const theirs = content({
+				nodes: [
+					{ ...API, name: "Gateway" },
+					{ id: "n3", name: "Cache", kind: "cache" },
+				],
+				edges: [],
+			});
+			const settled = reconcileVariant({ base: BASE, mine, theirs });
+			expect(settled.issues.map((issue) => issue.kind)).toEqual(["reference-lost"]);
+			const names = new Map(settled.content.nodes.map((node) => [node.id, node.name]));
+			expect(names.get("n1")).toBe("Gateway");
+			expect(names.has("n3")).toBe(true);
+			// Only the subject in dispute keeps this proposal's side.
+			expect(names.has("n2")).toBe(true);
+			expect(checkVariantContent(settled.content, "content")).toEqual([]);
+			// Merged again from the same states, it says the same: the catch-up a
+			// settlement runs finds nothing new to take or to drop.
+			const again = reconcileVariant({ base: BASE, mine: settled.content, theirs });
+			expect(again.content).toEqual(settled.content);
+		});
+	}
 });
