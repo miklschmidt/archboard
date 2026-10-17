@@ -1,11 +1,11 @@
 ---
 id: TASK-494
 title: archboard check warns when two parts bind the same symbol
-status: In Progress
+status: Done
 assignee:
   - '@implementer'
 created_date: '2026-10-17 10:56'
-updated_date: '2026-10-17 11:04'
+updated_date: '2026-10-17 11:05'
 labels:
   - check
   - board-store
@@ -22,13 +22,13 @@ The archboard skill says to link another board with drillDown on a part the boar
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 archboard check warns with its own code when two distinct parts in live variants (current and draft, not historical or shelved) bind the same repository, path and symbol, on one board or on two, and the warning names both parts with their boards and variants
-- [ ] #2 The same part continuing across variants of one board (same id) is not a duplicate
-- [ ] #3 No warning when one of the two parts drills down to the other's board
-- [ ] #4 Bindings without a symbol are never reported
-- [ ] #5 Tests own each rule above and fail on the old code
-- [ ] #6 Run read-only against a copy of the Docs-Architecture-Design vault, the warning finds the 33 symbol duplicates the measurement found, or the difference is explained
-- [ ] #7 The archboard skill names the warning beside the drill-down rule
+- [x] #1 archboard check warns with its own code when two distinct parts in live variants (current and draft, not historical or shelved) bind the same repository, path and symbol, on one board or on two, and the warning names both parts with their boards and variants
+- [x] #2 The same part continuing across variants of one board (same id) is not a duplicate
+- [x] #3 No warning when one of the two parts drills down to the other's board
+- [x] #4 Bindings without a symbol are never reported
+- [x] #5 Tests own each rule above and fail on the old code
+- [x] #6 Run read-only against a copy of the Docs-Architecture-Design vault, the warning finds the 33 symbol duplicates the measurement found, or the difference is explained
+- [x] #7 The archboard skill names the warning beside the drill-down rule
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -41,4 +41,12 @@ The archboard skill says to link another board with drillDown on a part the boar
 
 <!-- SECTION:NOTES:BEGIN -->
 Built: src/runtime/semantic-board-store/lib/shared-symbols.ts, run by checkSemanticVault (the plain vault check, no --code) after the per-board checks. Warning SHARED_SYMBOL, one per pair, with machine-readable sharedSymbol {binding:{repo,path,symbol}, parts:[{board,id,name,variants[]}x2]} added to VaultDiagnosticSchema (src/shared/semantic-policy). A part is board+node id across current and draft variants only. Decisions: (1) two parts of one board are a pair only where one variant carries both, so a draft that replaces a part under a new id (PART_RECREATED confirmed) stays quiet; on the Docs vault this drops telemetry-route (34 -> 33 definitions). (2) a drill-down counts when resolved by the vault's drill lookup (former names, own repository identity) and the pair is on two boards. AC6 on a /tmp copy of Docs-Architecture-Design: 33 distinct symbol definitions shared, 63 pairs, equal to the measurement of 33. Tests: tests/shared-symbols.test.ts (9), check.test.ts keeps sharedSymbol through the CLI schema. SKILL.md names the warning.
+
+Merged on main after cherry-pick: bun test --isolate src/runtime/semantic-board-store src/shared/semantic-policy src/cli 359 pass 0 fail; tsc and lint clean. Accepted departure: two parts of one board pair only where one variant draws both, so a part replaced under a new id in a later draft is not a duplicate.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard check warns SHARED_SYMBOL when two distinct parts in live variants bind the same repository, path and symbol, on one board or two, naming both parts, their boards, variants and the binding; quiet when either drills down to the other's board and for bindings without a symbol. On a copy of the Docs-Architecture-Design vault it finds the 33 shared symbols measured by hand. Verified by shared-symbols.test.ts and check.test.ts.
+<!-- SECTION:FINAL_SUMMARY:END -->
