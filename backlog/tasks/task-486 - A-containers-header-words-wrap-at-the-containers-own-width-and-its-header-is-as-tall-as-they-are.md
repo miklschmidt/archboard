@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-16 13:00'
-updated_date: '2026-10-16 18:23'
+updated_date: '2026-10-17 00:57'
 labels:
   - renderer
 dependencies: []
@@ -79,4 +79,25 @@ Corpus (every variant and view on both engines):
 - Far views fit the new header rows (checked on the flowchart frame and on Trust service deployment).
 
 Merged onto feat/derived-overview 2026-10-16 (header wraps at the slab width, both engines). Renderer tests: 587 pass, 3 known TASK-377 timing failures. AC4 stays open: a header's new size changes which arrangement an engine picks, and some drawings got worse. Clearly worse: Docs-Architecture-Design 'Azure deployment internals' (blocks), where TLS termination moved beside Client access and ingress and its lines loop over the top (before/after renders /tmp/t486/look/ext-adi-*.png), and Archboard server 'Code evidence' (track: flipped, long detour; blocks: lines enter by the left wall). Mixed or small: Trust service deployment and Inside Device trust control plane (blocks), Agent workbench 'One tab session' (blocks, crossings 111 to 120), Live panes 'Pane connections', Command interface 'Contract parts', Renderer layout 'Engine and graph'. Over both vaults 484 drawings fit better and 38 worse. Blocks first renders: 183.9 s before, 187.0 s after (Board persistence 8.8 to 10.9 s, Command interface 23.3 to 27.4 s). The arrangement choice and the timing belong with TASK-377, which reworks the same engines.
+
+Follow-up of 2026-10-17: a line that runs away from its ends weighs as crossings (ADR 0039 amendment of 2026-10-17).
+
+Measure (lib/blocks/away.ts): for each line, the box round its two end cards, grown by 24 px. Each whole 300 px of the line outside that box counts as one crossing. It is added to crossings in measuresOf and scoreOf, so the order of the measures does not change. The joins choice, the group-packing choice (both picks) and the settle choice count it. A packing of blocks is set aside when its runs away exceed 4 times the least plus 4. Stacking does not count it.
+
+Targets against base (before TASK-486), metric crossings + run off/300:
+- Back to base or better: Azure deployment internals (3 variants, 16.7 to 6.0), Inside Rust device trust library (4 variants), Inside Device trust control plane (Track, 15.3 to 12.2, the base arrangement), Contract parts (9.2 to 8.0), Owning the child, One tab session 482.04 (Track), Moves between pictures, Walkthrough video, Camera and pointer, Server access, Per-deployment (2), Service certificate rotation, Ingress coexistence (Blocks).
+- Unchanged from now and still worse than base: Code evidence 482.07 (Track, a stacking choice), One tab session 482.06 and 482.07 (Blocks), Pane connections, Key and export, Picture supply, Working with an agent. Engine and graph and Trust service deployment did not change.
+- Code evidence 482.07 (Blocks) improved on the metric, but a review of the pictures still prefers base slightly.
+
+Corpus (every variant and view of both vaults, both engines, against now): 401 SVGs changed, 258 distinct. On the metric 204 read better, 41 worse, 13 the same. Picture review of every drawing that moved the wrong way: 16 slightly worse, 2 clearly worse (Device Trust Control Plane native-hosts overview, Track and Blocks: lines through cards). Routes through cards rose in 5 drawings and fell in 14. Labels off runs rose from 0 to 1 in 3 drawings.
+
+Tests: reading-order.test.ts "a line run away from its ends round the picture reads worse than a crossing" fails on the old score. The fixture test "a wrapped fan stands a group region beside its other cards" (track-placement) no longer reaches the wrap: the group choice now packs Codex child in the September fixture of Starting a workhorse (1 crossing, 6 fewer bends, no run away; the inline layout ran one line some 780 px beside the region). The board itself draws as before. The wrap rule now has its own test, wrap-sinks.test.ts, which fails on 1ed486b53~1 and passes after. Two request-path tests now assert the side relative to where the source stands.
+
+Gate: renderer tests 655 pass, 3 fail (the known TASK-377 wide-board bounds). Lint 0, tsc 0, oxfmt clean.
+
+Timings (one warm process, load average about 3 on 24 cores, two rounds, now then after):
+- Track first renders: 16.9 and 16.8 s before, 17.1 and 16.9 s after.
+- Blocks first renders: 182.7 and 181.8 s before, 186.0 and 186.2 s after (+2%).
+- The cost is in the layouts chosen, not in the measure (the packing filter takes 0 to 2 ms per call). Command interface 26.3 to 29.9 s: the joins choice now takes a layout whose overview crosses 118 lines instead of 134 and runs lines 2700 px off instead of 24386 px. Browser application 15.0 to 17.3 s: the packing filter sets aside inner packings. Live panes 7.9 to 5.2 s.
+- AC #4 stays open: blocks first renders are slower, and some drawings still read worse than before TASK-486.
 <!-- SECTION:NOTES:END -->

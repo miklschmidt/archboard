@@ -156,3 +156,69 @@ These choosers stay on their earlier weighing:
   Those trades are the cost of the rule that no drawing reads worse than it did.
 - Picture reviews list a change of fit as information and judge the drawing by
   how it reads.
+
+## Amendment of 2026-10-17: a line that runs away from its ends weighs as crossings
+
+TASK-486 wrapped container headers at their drawn width. The new sizes made
+some choosers take layouts that a reader sees at once as worse. In Azure
+deployment internals (Blocks), TLS termination moved beside Client access and
+ingress, and the lines into it looped out and over the top of the picture. In
+Inside Rust device trust library (Blocks), two lines ran down the far left of
+the page and along its foot to cross eight lines fewer. The measures did not
+weigh how far a line travels outside the region between its two ends.
+
+The measure is the run away. For each line, take the smallest box that holds
+both of its end cards, and grow it by 24 px on every side. The run away is the
+length of the line outside that box. Each whole 300 px that one line runs away
+counts as one crossing. 300 px is the rate at which the trunk router already
+weighs a detour (`lib/blocks/trunks.ts`). A short turn beside an end costs
+nothing. The code is `lib/blocks/away.ts`.
+
+Runs away are counted with crossings, so the order of the measures does not
+change. The second measure is now crossings, crossings on a line's corner and
+runs away. `readingOrder`, `noWorse` and `scoreOf` in `lib/track/score.ts` add
+the runs away to the crossings of a layout that counts them.
+
+These choosers count runs away:
+
+- The joins choice and the choice to pack a board's group regions weigh the
+  whole drawing as placed. Their reading picks count runs away. The earlier
+  weighing of the group choice counts them too. Without them in both picks,
+  Device Trust Control Plane (Track) packed its groups and crossed five lines
+  more.
+- Settling a block's ports stays on its earlier weighing, and that weighing
+  now counts runs away. This is the change that gives Inside Rust device trust
+  library its earlier layout back.
+- A block of blocks' packing is chosen before the drawing exists, and its
+  lines still leave their blocks by the walls that the board's second layout
+  turns (`lib/blocks/sides.ts`). So runs away do not rank the packings. They
+  only set some aside. The chooser measures every line that the block holds
+  whole, joined through the blocks inside it. It keeps each packing whose runs
+  away weigh at most four times those of the packing that runs away least,
+  plus four crossings. It then weighs the packings it kept as before. With a
+  smaller allowance, provisional walls set aside packings that read well
+  later. With a larger one, Azure deployment internals keeps TLS termination
+  beside Client access and ingress.
+
+Whether a block's containers stack does not count runs away. That choice
+weighs a block of cards before its ports are settled, and counting runs away
+there made Device Trust Delivery's overview (Track) worse. The held port
+order, the wraps and the folds also stay as they were.
+
+A reading pick can now take a crossing to end a run away. The September
+fixture of Starting a workhorse (Track) now packs Codex child. The packed
+layout crosses one line, bends six times fewer and runs no line away. The
+inline layout ran one line some 780 px down beside the region. The board as it
+is today draws as it did. The wrap rule that the fixture held, a region that
+the wrap lowers whole may stand under any card of the row above, now has a test
+of its own on `sinks` (`tests/wrap-sinks.test.ts`).
+
+Over every variant and view of both vaults on both engines, 401 drawings
+changed, 258 of them distinct. On crossings plus the length that lines run
+away at 300 px each, 204 read better, 41 read worse and 13 are the same. A
+review of the pictures whose numbers moved the wrong way found 16 of them
+slightly worse and 2 clearly worse. The two clearly worse drawings are Device
+Trust Control Plane in its native-hosts variant (Track and Blocks): the layout
+now taken draws lines through cards. In the Track drawing, the layout that the
+choice weighs draws none, and the steps after the choice move them into the
+cards. TASK-486 records the drawings that still read worse than before it.

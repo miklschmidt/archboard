@@ -241,7 +241,9 @@ function costOf(placed: Page): number {
 function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	const [parted, fewest] = [partedOf(one), partedOf(other)];
 	if (parted !== fewest) return parted < fewest;
-	const [mine, theirs] = [one, other].map(({ placed }) => weighedPlaced(placed));
+	const [mine, theirs] = [one, other].map(({ tree, placed }) =>
+		weighedPlaced(placed, tree.projections),
+	);
 	if ((mine!.length ?? 0) > (theirs!.length ?? 0)) return false;
 	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
