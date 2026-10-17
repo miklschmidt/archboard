@@ -319,7 +319,7 @@ interface Board {
  * @param way.apart The blocks whose joins keep ports of their own, by id.
  * @param way.facing Whether every block faces its walls.
  * @returns The blocks, every block laid out, and whether facing every block's
- * walls changes them ({@link facingTurns}).
+ * walls changes them ({@link facesOf}).
  */
 function layOut(
 	viz: Graphviz,
@@ -330,8 +330,7 @@ function layOut(
 ): { tree: BlockTree; laid: Map<string, Laid>; faces: boolean } {
 	const first = layAll(viz, avoid, graph, undefined, nesting, apart);
 	const exits = sidesOf(first.tree, first.laid);
-	const faces =
-		exits.size > 0 && facingTurns(new BlockTree(graph, exits, nesting, apart, undefined, true));
+	const faces = facesOf(graph, exits, nesting, apart);
 	const kept = { exits, packings: first.packings, facing: facing && faces };
 	const last = exits.size === 0 ? first : layAll(viz, avoid, graph, kept, nesting, apart);
 	const orders = apart.size > 0 ? new Map() : heldOrders({ ...last, insetsOf, avoid });
@@ -343,6 +342,26 @@ function layOut(
 			other.crossings < one.crossings && other.bends <= one.bends ? other : one,
 		);
 	return { tree, laid, faces };
+}
+
+/**
+ * Whether facing every block's walls would change a board's blocks
+ * ({@link facingTurns}). Only Blocks faces them: drawn inline, no drawing
+ * of either vault changed by facing them (`solves.ts`).
+ * @param graph The measured hierarchy.
+ * @param exits The wall each port moves to (`sides.ts`).
+ * @param nesting How containers and group regions are drawn.
+ * @param apart The blocks whose joins keep ports of their own, by id.
+ * @returns True when it would.
+ */
+function facesOf(
+	graph: ElkNode,
+	exits: ReadonlyMap<string, Side>,
+	nesting: Nesting,
+	apart: ReadonlySet<string>,
+): boolean {
+	if (nesting !== "blocks" || exits.size === 0) return false;
+	return facingTurns(new BlockTree(graph, exits, nesting, apart, undefined, true));
 }
 
 /**

@@ -30,10 +30,12 @@ const policy = SemanticPolicySchema.parse({
 		data: { name: "Data", color: "orange", dash: "solid", arrowhead: "filled" },
 		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
 	},
+	// Each name measures as wide as the work vault's group name it replaces,
+	// so its region's caption, and the layout, stay as they were.
 	groups: {
-		g1: { name: "Private trust", color: "purple" },
-		g2: { name: "Device Trust Workloads", color: "teal" },
-		g3: { name: "Application providers", color: "amber" },
+		g1: { name: "Copper Side", color: "purple" },
+		g2: { name: "Signal Paper Workloads", color: "teal" },
+		g3: { name: "Upper Tools Systems", color: "amber" },
 	},
 });
 

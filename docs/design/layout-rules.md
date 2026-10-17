@@ -2490,34 +2490,47 @@ item whose every line crosses one wall stands toward that wall in the order
 Graphviz meets the items (`towardWalls`). Facing changes many boards for the
 worse when it is always on: Two doors to a turn crossed 1 line before and 15
 after, and Command interface ran its lines some 20000 px further. So facing is
-a choice. A solve reports whether facing would change its blocks
-(`faces`). After the joins choice, `layJoined` (`joins.ts`) takes the chosen
-way laid out facing its walls where it reads better as a way of keeping the
-joins does (`drawsBetter`). Weighed inside each solve instead, the shorter
-faced layout kept the joins choice from a way that crossed 14 lines fewer.
+a choice, and only Blocks makes it. A Blocks solve reports whether facing
+would change its blocks (`faces`). After the joins choice, `layJoined`
+(`joins.ts`) takes the chosen way laid out facing its walls where it reads
+better as a way of keeping the joins does (`drawsBetter`). Weighed inside each
+solve instead, the shorter faced layout kept the joins choice from a way that
+crossed 14 lines fewer. Track never faces its blocks: no Track drawing of
+either vault changed when it did.
+
+A line that carries its label to a wall reaches the wall under its label, and
+a line from the same card without a label there reaches it under the card. So
+a line from the label holder keeps a wall port of its own (`leave` in
+`tree.ts`). Sharing one, on Issuance and revocation (Blocks) the line from
+Rust device trust library ran down to its label's channel and climbed back
+to the port of its card's other line, and looped round the line from Local
+platform operator.
 
 The drawings of both vaults (this repository's and one work vault, 7206 Blocks
 drawings) were rendered against the commit before and compared byte for byte.
-Of this repository's drawings, 32 changed: 30 read better on crossings plus
-runs away from their ends at 300 px each, none read worse. Of the work vault's,
-14 changed: 10 read better and 2 worse. The native hosts drawing ran its lines
-6295 px away from their ends before and 2208 after, and drew 30217 px of line
-before and 25041 after. No Track drawing changed.
+Of this repository's drawings, 32 changed: 29 read better on crossings plus
+runs away from their ends at 300 px each, and 1 read worse. Of the work
+vault's, 17 changed: 13 read better and 2 worse. The native hosts drawing ran
+its lines 6295 px away from their ends before and 2208 after, and drew 30217
+px of line before and 25041 after. No Track drawing changed.
 
-**Cost.** A faced solve is one more solve per board. The joins search asks
-for it with every join before its labels at once, and again for each way it
-keeps, so it is laid out beside the turns. Over this repository's current
-variants, Blocks first renders took 186.0 s before and 186.7 s to 189.3 s
-after, in two sessions (best of two runs each). Board viewer takes 4 s longer
-(19.9 s to 24.0 s): the way it keeps comes last, so its faced solve runs after
-the turns. Agent workbench takes 2.3 s less. Track first renders took 16.9 s
-before and 17.3 s after, and no Track drawing changed.
+**Cost.** A faced solve is one more Blocks solve per board. The joins search
+asks for it with every join before its labels at once, and again for each way
+it keeps, so it is laid out beside the turns. Over this repository's current
+variants, Blocks first renders took 186.0 s before and 186.8 s after (best of
+two runs each). Board viewer takes 4 s longer (19.9 s to 23.9 s): the way it
+keeps comes last, so its faced solve runs after the turns. Agent workbench
+takes 2.6 s less. Track first renders took 16.5 s before and after.
 
 Inside Service certificate rotation (work vault) runs one line further for 4
-crossings fewer. Existing ingress
-ownership stands Test clients beside its region and draws its line to Legacy
-IIS origins further. Issuance and revocation crosses 6 lines fewer, but two
-lines into Enrollment policy loop round each other in its region.
+crossings fewer. Existing ingress ownership stands Test clients beside its
+region and draws its line to Legacy IIS origins further. Moves between
+pictures (Board viewer, TASK-472.05) crosses 3 lines more for 13% less line.
+
+On a planned board the drawing's body is moved by `translate(16 24)`, which
+`bodyShift` in `drawn-routes.ts` does not read. The scorecard then counts a
+route 16 px under Local platform operator on Issuance and revocation as
+passing through it.
 
 **Known gap.** A line to a wall still leaves under its card and enters above
 its target's label, so it climbs in the corridor beside the region. On native

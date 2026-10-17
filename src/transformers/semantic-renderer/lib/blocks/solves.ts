@@ -83,14 +83,21 @@ async function solved(
 
 /**
  * A board laid out with every join of lines to one card kept whole the way
- * that reads better.
+ * that reads better. Only Blocks faces its blocks' walls: drawn inline, no
+ * drawing of either vault changed by facing them.
  * @param graph The measured hierarchy.
  * @param nesting How its containers and group regions are drawn.
  * @returns The blocks, and the drawing's geometry.
  */
 function joinedOut(graph: ElkNode, nesting: Nesting): Promise<Drawn<Placed>> {
 	const tree = new BlockTree(graph, new Map(), nesting, new Set());
-	return layJoined(tree, (apart, signal, facing) => solved(graph, nesting, apart, signal, facing));
+	return layJoined(
+		tree,
+		(apart, signal) => solved(graph, nesting, apart, signal),
+		nesting === "blocks"
+			? (apart, signal) => solved(graph, nesting, apart, signal, true)
+			: undefined,
+	);
 }
 
 /**
