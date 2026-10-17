@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 18:33'
-updated_date: '2026-10-17 07:57'
+updated_date: '2026-10-17 08:04'
 labels:
   - renderer
 dependencies: []
@@ -133,4 +133,17 @@ Still over 1 s on Track:
 - What remains would lay the remedies (pullLeaving, anchorLabels) side by side in the same way: about 8 solves for each candidate. It would trade more CPU for each lay. On this machine the CPU is already the limit.
 
 Blocks first renders, same runs (load 4.4 to 5.5): total 48.6 s and 50.4 s before, 49.0 s and 49.3 s after. Archboard server routes 15.4 s, Command interface 8.6 to 8.8 s, Board viewer 5.9 s, Browser application 4.9 s, Agent workbench 4.5 s, Board persistence 3.3 s, Live panes 1.8 s, Archboard server 1.1 s, Voice coordinator 1.0 s. Every other board is under 1 s.
+
+2026-10-17, round three: Board viewer and Agent workbench on Track without spending more CPU. No code changed. Both boards stay over 1 s.
+
+What was tried, measured against c77cc3204:
+1. The wrap check (8 Graphviz calls for wraps that all sink, about 380 ms on Board viewer's plain path). Whether a wrap sinks depends on where Graphviz and the lining up stand each lowered card across its row (sinks() compares x overlaps). So no sink is known before the layout. The 8 graphs differ from each other and from every layout laid later, so nothing is reused. Asking them at once would take solves of their own that repeat the stacking prefix, which costs more CPU.
+2. The relay search. An exact bound that skips columns cannot do better than the route the search finds. Even that ideal bound would skip only 27% of the columns (391,727 of 536,861 kept across 491 readings of one Board viewer solve), because a crossing is worth 25 lanes and the window stays wide. The search is about 45% of the relay pass, and the relay pass is about 37% of routing, so the gain is at most about 4% of a layout.
+3. Pool growth. A worker starts and answers its first tiny solve in 67 ms alone, and 12 started at once answer in about 165 ms each. Starting one worker for each waiting solve made the first board slower: Agent workbench took 2.91 s and 2.97 s against 2.07 s and 2.03 s. The first board's cost is the router running cold in each new worker, and more workers spread the solves over more cold ones. Starting every worker when the pool starts costs about 40 to 50 MB a worker: process RSS went from 214 MB with one worker to 775 MB as about 14 started. That is about 1 GB idle for 23, and the router would still be cold.
+
+Critical path after this round (unchanged from round two):
+- Board viewer, Track, about 1.45 s. Two solves bound it, each about 1.15 s in-process. The first is the told stacked solve: tied, pullLeaving, anchorLabels and untied layouts of the root, four layouts of about 300 ms each in sequence. The second is the whole plain solve: three layouts and the untied one (about 760 ms), then the wrap check (about 380 ms). Measuring and painting outside the solves adds about 250 ms. A layout is about 75% routing (relay pass about 37%, partAndClose 20%, label straightening 15%, lane straightening 14%) and about 25% Graphviz.
+- Agent workbench, Track, about 1.5 s after a warm-up board (about 2.05 s as the first board of a process). It is bound by the groups turns of the joins choice. About ten solves run at once, and each takes about twice its in-process time.
+
+Timings at c77cc3204, Track, warm process, two runs (load 1.6 to 4.9): total 10.35 s and 10.51 s. Board viewer 1.49 s and 1.73 s, Agent workbench (first board) 2.07 s and 2.03 s, Archboard server routes 1.10 s and 1.14 s (second board, workers starting). Every other board is under 1 s.
 <!-- SECTION:NOTES:END -->
