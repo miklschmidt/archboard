@@ -1,11 +1,11 @@
 ---
 id: TASK-482
 title: 'A board opens on its overview, and relationships and calls are drawn apart'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-15 21:04'
-updated_date: '2026-10-15 21:05'
+updated_date: '2026-10-17 02:07'
 labels:
   - renderer
   - semantic-model
@@ -27,6 +27,18 @@ On 2026-10-15 the owner found the whole drawing of Live panes (25 cards, 71 line
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every subtask is done
-- [ ] #2 Every dogfood board passes `archboard check` without `OVERVIEW_CROWDED`
+- [x] #1 Every subtask is done
+- [x] #2 Every dogfood board passes `archboard check` without `OVERVIEW_CROWDED`
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-17: every subtask is Done; archboard check on this vault and on Docs-Architecture-Design reports no OVERVIEW_CROWDED.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Board overviews read: every crowded dogfood board has inner structure, its calls live in flows drawn by sequence and flowchart views, the overview is the reading a board opens on, and archboard check warns about crowded overviews and about a container that relates to a part inside it. Verified by the subtasks' own evidence and a clean archboard check on both vaults.
+<!-- SECTION:FINAL_SUMMARY:END -->
