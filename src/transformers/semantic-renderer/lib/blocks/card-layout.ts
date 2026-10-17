@@ -56,9 +56,12 @@ import {
 	besideWalls,
 	entersBy,
 	innerPoints,
+	labelledOut,
 	markBesides,
+	ranks,
+	itemsOf,
 	wallLines,
-	wallOf,
+	wallsOf,
 } from "@/transformers/semantic-renderer/lib/blocks/walls";
 import {
 	Scene,
@@ -179,7 +182,8 @@ class CardLayout {
 	 */
 	build(): void {
 		const { block, graph } = this;
-		for (const item of block.items) this.clusters.holderOf(item).nodes.push(this.nodeOf(item));
+		for (const item of itemsOf(this.tree, block))
+			this.clusters.holderOf(item).nodes.push(this.nodeOf(item));
 		const header = block.header === undefined ? [] : [headerOf(block)];
 		const tops = [...block.ports].filter(([, side]) => side === "top").map(([port]) => port);
 		const bottoms = [...block.ports].filter(([, side]) => side === "bottom").map(([port]) => port);
@@ -206,10 +210,12 @@ class CardLayout {
 				graph.edges.push(
 					...header.map((tail) => ({ tail, head: titleOf(id), attributes: { style: "invis" } })),
 				);
-		const entering = [...block.lines.values()].filter(
-			(line) => entersBy(this.block, line) !== undefined,
+		const stubs = new Set(
+			[...block.lines.values()].flatMap((line) => [
+				...(entersBy(block, line) === undefined ? [] : [this.vendorOf(line.from)]),
+				...(labelledOut(block, line) === undefined ? [] : [this.vendorOf(line.to)]),
+			]),
 		);
-		const stubs = new Set(entering.map(({ from }) => this.vendorOf(from)));
 		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
 		for (const line of this.clusters.boardOrder((end) => this.vendorOf(end))) this.connect(line);
 		this.arrange();
@@ -269,7 +275,7 @@ class CardLayout {
 	 */
 	links(endOf = (end: string): string => this.vendorOf(end)): (Join & { labelled: boolean })[] {
 		return [...this.block.lines.values()]
-			.filter((line) => wallOf(this.block, line) === undefined)
+			.filter((line) => ranks(this.block, line))
 			.map((line) => ({
 				tail: endOf(line.tail),
 				head: endOf(line.head),
@@ -410,15 +416,12 @@ class CardLayout {
 				.filter((edge) => !straight.has(edge.id))
 				.map((edge) => {
 					const line = this.block.lines.get(edge.id)!;
-					const wall = wallOf(this.block, line);
-					const enters = entersBy(this.block, line);
 					return {
 						id: edge.id,
 						order: Number(edge.layoutOptions?.["archboard.order"] ?? 0),
 						kind: trunkKind(edge),
 						placed: edge,
-						...(wall === undefined ? {} : { wall }),
-						...(enters === undefined ? {} : { enters }),
+						...wallsOf(this.block, line),
 					};
 				}),
 			this.insets.side,

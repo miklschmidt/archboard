@@ -2464,3 +2464,62 @@ lines crosses what it crossed N times. Splitting only the router's key on
 Blocks (leaving its block keys) cost less (crossings up in 4 drawings, 2261 to 2388) but still shares lanes between blocks. Blocks therefore still shares a
 lane across lines that differ in emphasis or traffic; `matched-kind-channels.test.ts`
 holds the separation on Track only.
+
+## 48. A region faces the walls its lines cross (2026-10-17)
+
+On Device Trust Control Plane, native hosts (Blocks), lines from cards in the
+Device Trust Workloads region to cards on its right ran down the region,
+along its whole foot and up its far wall. Two causes made these detours.
+
+A label that a join moves to the source's block (`joins.ts`) kept its port on
+that block's face, because a line to a wall was not ranked by Graphviz and so
+could not carry a label. The line from Local platform operator held its label
+in the region, so its port stayed on the region's bottom. Settling stood that
+port at the far right of the bottom, and libavoid ran the trunk round the
+corner and up the corridor.
+
+A card reached only through a wall forms a Graphviz part of its own, and
+Graphviz sets those parts side by side in the board's order. Device CA
+certificate state stood at the region's far left, and its line from Device
+Identity crossed the region's whole width.
+
+A block can now face its walls (`BlockTree.facing`). A line that carries its
+label leaves by the wall through its label, ranked to a stub below it, as a
+line from a wall is ranked from a stub above (`labelledOut` in `walls.ts`). An
+item whose every line crosses one wall stands toward that wall in the order
+Graphviz meets the items (`towardWalls`). Facing changes many boards for the
+worse when it is always on: Two doors to a turn crossed 1 line before and 15
+after, and Command interface ran its lines some 20000 px further. So facing is
+a choice. A solve reports whether facing would change its blocks
+(`faces`). After the joins choice, `layJoined` (`joins.ts`) takes the chosen
+way laid out facing its walls where it reads better as a way of keeping the
+joins does (`drawsBetter`). Weighed inside each solve instead, the shorter
+faced layout kept the joins choice from a way that crossed 14 lines fewer.
+
+The drawings of both vaults (this repository's and one work vault, 7206 Blocks
+drawings) were rendered against the commit before and compared byte for byte.
+Of this repository's drawings, 32 changed: 30 read better on crossings plus
+runs away from their ends at 300 px each, none read worse. Of the work vault's,
+14 changed: 10 read better and 2 worse. The native hosts drawing ran its lines
+6295 px away from their ends before and 2208 after, and drew 30217 px of line
+before and 25041 after. No Track drawing changed.
+
+**Cost.** A faced solve is one more solve per board. The joins search asks
+for it with every join before its labels at once, and again for each way it
+keeps, so it is laid out beside the turns. Over this repository's current
+variants, Blocks first renders took 186.0 s before and 186.7 s to 189.3 s
+after, in two sessions (best of two runs each). Board viewer takes 4 s longer
+(19.9 s to 24.0 s): the way it keeps comes last, so its faced solve runs after
+the turns. Agent workbench takes 2.3 s less. Track first renders took 16.9 s
+before and 17.3 s after, and no Track drawing changed.
+
+Inside Service certificate rotation (work vault) runs one line further for 4
+crossings fewer. Existing ingress
+ownership stands Test clients beside its region and draws its line to Legacy
+IIS origins further. Issuance and revocation crosses 6 lines fewer, but two
+lines into Enrollment policy loop round each other in its region.
+
+**Known gap.** A line to a wall still leaves under its card and enters above
+its target's label, so it climbs in the corridor beside the region. On native
+hosts the line from Device Identity to Device CA certificate state still runs
+some 1000 px away from its ends.

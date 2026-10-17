@@ -248,8 +248,18 @@ function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
 
-/** Lay a drawing out with some blocks' joins apart, by block id, unless called off first. */
-type Lay<Placed> = (apart: ReadonlySet<string>, signal: AbortSignal) => Promise<Placed>;
+/**
+ * Lay a drawing out with some blocks' joins apart, by block id, and every
+ * block facing its walls when asked (`BlockTree`), unless called off first.
+ */
+type Lay<Placed> = (
+	apart: ReadonlySet<string>,
+	signal: AbortSignal,
+	facing?: boolean,
+) => Promise<Placed>;
+
+/** A drawing as a solve answers it: whether facing every block's walls would change it (`place.ts`). */
+type Facing = Page & { readonly faces?: boolean | undefined };
 
 /** One layout asked for: its answer, how to call it off, and whether a turn to come weighs it. */
 interface Asked<Placed> {
@@ -332,17 +342,29 @@ function layingOnce<Placed>(lay: Lay<Placed>): {
  * changes the ones after it, which are asked for then, and the ones asked
  * for before it that no turn to come weighs are called off. They are weighed
  * in turn all the same, so the drawing is the one laying them out one by one
- * gives. When the drawing is chosen, or a layout it waits for fails, every
- * layout still asked for is called off.
+ * gives. Last, where facing every block's walls would change the drawing
+ * kept, it is laid out the same way facing them, and that is kept where it
+ * reads better as a turn does. It is asked for as soon as a drawing is
+ * kept, and with every join before its labels at once, so it is laid out
+ * beside the turns. When the drawing is chosen, or a layout it waits for
+ * fails, every layout still asked for is called off.
+ * A block that holds the label of a line it crosses keeps that line on its
+ * face, and Graphviz meets its items in the board's order. Kept on its face,
+ * the line from Local platform operator ran down its region, along its foot
+ * and up its far wall to Device Identity beside it (Device Trust Control
+ * Plane, native hosts, Blocks). Faced to its walls in every way of keeping
+ * the joins, Two doors to a turn (Blocks) drew less line than the way that
+ * crossed 14 lines fewer, and this choice could no longer take that way.
  * @param tree The blocks, which name the blocks joins move labels to.
  * @param lay Lay the drawing out with some blocks' joins apart, by block id.
  * @returns The drawing laid out best.
  */
-async function layJoined<Placed extends Page>(
+async function layJoined<Placed extends Facing>(
 	tree: Joined,
 	lay: Lay<Placed>,
 ): Promise<Drawn<Placed>> {
 	const { ask, keep } = layingOnce(lay);
+	const faced = layingOnce<Placed>((apart, signal) => lay(apart, signal, true));
 	const blocks = [...tree.joining];
 	const turns = [
 		...(blocks.length > 1 ? [(): Set<string> => new Set(blocks)] : []),
@@ -368,6 +390,7 @@ async function layJoined<Placed extends Page>(
 	try {
 		const first = ask(new Set());
 		ahead(0, new Set());
+		void faced.ask(new Set());
 		let best: Drawn<Placed> = { tree, placed: await first };
 		let apart: ReadonlySet<string> = new Set();
 		for (const [index, turn] of turns.entries()) {
@@ -377,11 +400,30 @@ async function layJoined<Placed extends Page>(
 			if (!drawsBetter(tried, best)) continue;
 			[best, apart] = [tried, trial];
 			ahead(index + 1, apart);
+			faced.keep([apart]);
+			if (best.placed.faces === true) void faced.ask(apart);
 		}
-		return best;
+		return await facedBetter(best, () => faced.ask(apart));
 	} finally {
 		keep([]);
+		faced.keep([]);
 	}
+}
+
+/**
+ * The drawing kept, or the same way laid out with every block facing its
+ * walls where that would change it and reads better as a turn does.
+ * @param best The drawing kept.
+ * @param faced Its layout with every block facing its walls.
+ * @returns The drawing that reads better.
+ */
+async function facedBetter<Placed extends Facing>(
+	best: Drawn<Placed>,
+	faced: () => Promise<Placed>,
+): Promise<Drawn<Placed>> {
+	if (best.placed.faces !== true) return best;
+	const turned = { tree: best.tree, placed: await faced() };
+	return drawsBetter(turned, best) ? turned : best;
 }
 
 export { joinWays, layJoined, type Drawn, type Joined };

@@ -42,6 +42,7 @@ import { sidesOf } from "@/transformers/semantic-renderer/lib/blocks/sides";
 import { heldOrders } from "@/transformers/semantic-renderer/lib/blocks/orders";
 import { routedWeighed } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 import { weighedLaid } from "@/transformers/semantic-renderer/lib/blocks/weighing";
+import { facingTurns } from "@/transformers/semantic-renderer/lib/blocks/walls";
 import { awayPlaced } from "@/transformers/semantic-renderer/lib/blocks/away";
 import { BlockTree, type Block, type Side } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
@@ -260,7 +261,7 @@ function layAll(
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
 ): Board {
-	const tree = new BlockTree(graph, earlier.exits, nesting, apart, earlier.orders);
+	const tree = new BlockTree(graph, earlier.exits, nesting, apart, earlier.orders, earlier.facing);
 	const board = { tree, laid: new Map<string, Laid>(), packings: new Map<string, Packing>() };
 	for (const block of tree.innermostFirst()) {
 		const once = layBlock(viz, avoid, board, block, earlier);
@@ -285,6 +286,8 @@ interface Earlier {
 	readonly packings: ReadonlyMap<string, Packing>;
 	/** The ports each block holds in an order on a face (`orders.ts`). */
 	readonly orders?: ReadonlyMap<string, readonly string[]>;
+	/** Whether every block faces the walls its lines cross (`BlockTree`). */
+	readonly facing?: boolean;
 }
 
 /** What a first layout keeps: nothing. */
@@ -300,39 +303,46 @@ interface Board {
 /**
  * Lay a measured hierarchy out one way and route every relationship; when a
  * line's blocks do not stand the way its faces point, once more with every
- * block of its chain crossed by the edges that face each other (`sides.ts`).
- * Where settling would swap ports on a block of cards' face, once more with
- * those ports held in the settled order (`orders.ts`), kept where it crosses
- * fewer lines. Not while a join is parted: the joins choice would then
- * prefer a parted drawing that runs a line round a block. Last, the ports on
- * every block's top and bottom are settled where both ends of their trunks
- * are known, and the blocks routed again with them there.
+ * block of its chain crossed by the edges that face each other (`sides.ts`),
+ * and every block facing its walls when asked (`BlockTree`). Where settling
+ * would swap ports on a block of cards' face, once more with those ports
+ * held in the settled order (`orders.ts`), kept where it crosses fewer
+ * lines. Not while a join is parted: the joins choice would then prefer a
+ * parted drawing that runs a line round a block. Last, the ports on every
+ * block's top and bottom are settled where both ends of their trunks are
+ * known, and the blocks routed again with them there.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @param nesting How containers and group regions are drawn.
- * @param apart The blocks whose joins keep ports of their own, by id.
- * @returns The blocks, every block laid out.
+ * @param way Which joins to keep apart, and whether every block faces its walls.
+ * @param way.apart The blocks whose joins keep ports of their own, by id.
+ * @param way.facing Whether every block faces its walls.
+ * @returns The blocks, every block laid out, and whether facing every block's
+ * walls changes them ({@link facingTurns}).
  */
 function layOut(
 	viz: Graphviz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	nesting: Nesting,
-	apart: ReadonlySet<string>,
-): { tree: BlockTree; laid: Map<string, Laid> } {
+	{ apart, facing }: { apart: ReadonlySet<string>; facing: boolean },
+): { tree: BlockTree; laid: Map<string, Laid>; faces: boolean } {
 	const first = layAll(viz, avoid, graph, undefined, nesting, apart);
 	const exits = sidesOf(first.tree, first.laid);
-	const kept = { exits, packings: first.packings };
+	const faces =
+		exits.size > 0 && facingTurns(new BlockTree(graph, exits, nesting, apart, undefined, true));
+	const kept = { exits, packings: first.packings, facing: facing && faces };
 	const last = exits.size === 0 ? first : layAll(viz, avoid, graph, kept, nesting, apart);
 	const orders = apart.size > 0 ? new Map() : heldOrders({ ...last, insetsOf, avoid });
 	const held =
 		orders.size === 0 ? [] : [layAll(viz, avoid, graph, { ...kept, orders }, nesting, apart)];
-	return [last, ...held]
+	const { tree, laid } = [last, ...held]
 		.map((laying) => settledOrNot(laying, avoid))
 		.reduce((one, other) =>
 			other.crossings < one.crossings && other.bends <= one.bends ? other : one,
 		);
+	return { tree, laid, faces };
 }
 
 /**
@@ -383,6 +393,8 @@ function settledOrNot(
 const BLOCKS_NESTING = "archboard.blocks.nesting";
 /** The root option naming the blocks whose joins a solve keeps apart, as a JSON list of ids (`joins.ts`). */
 const BLOCKS_APART = "archboard.blocks.apart";
+/** The root option asking a solve to face every block's walls, `true` when asked (`solves.ts`). */
+const BLOCKS_FACING = "archboard.blocks.facing";
 
 /**
  * Lay a measured hierarchy out as blocks one way and route every
@@ -401,8 +413,10 @@ function placeBlocks(viz: Graphviz, avoid: AvoidEngine, graph: ElkNode, inline =
 	const options = graph.layoutOptions ?? {};
 	const nesting = NestingSchema.parse(options[BLOCKS_NESTING] ?? (inline ? "inline" : "blocks"));
 	const apart = new Set(ApartSchema.parse(JSON.parse(options[BLOCKS_APART] ?? "[]")));
-	const { tree, laid } = layOut(answeringOnce(viz), avoid, graph, nesting, apart);
-	const placed = Assembly.unstepped(new Assembly(tree, laid).placed());
+	const facing = options[BLOCKS_FACING] === "true";
+	const way = { apart, facing };
+	const { tree, laid, faces } = layOut(answeringOnce(viz), avoid, graph, nesting, way);
+	const placed = { ...Assembly.unstepped(new Assembly(tree, laid).placed()), faces };
 	return {
 		id: graph.id,
 		x: 0,
@@ -416,4 +430,4 @@ function placeBlocks(viz: Graphviz, avoid: AvoidEngine, graph: ElkNode, inline =
 /** The blocks a solve keeps apart. */
 const ApartSchema = z.array(z.string());
 
-export { BLOCKS_APART, BLOCKS_NESTING, BLOCKS_PLACED, placeBlocks };
+export { BLOCKS_APART, BLOCKS_FACING, BLOCKS_NESTING, BLOCKS_PLACED, placeBlocks };
