@@ -42,9 +42,12 @@ A design draft with a parent also names `against="<below>"`.
    file, use a small table.
 4. Put the picture of a concern in its section. Draw it through a view that
    shows that concern, on any board that the design changes, at the variant
-   that holds the design on that board. Follow [renders](renders.md), and
-   prefer a view that the boards already have. If no view shows the concern,
-   add one as renders says.
+   that holds the design on that board. Draw it against that board's current
+   variant, so that it marks what the design adds to what is built. On a
+   board with no current variant, draw it without `--against`. Never draw it
+   against another draft: its marks would show a rejected alternative as
+   removed. Follow [renders](renders.md), and prefer a view that the boards
+   already have. If no view shows the concern, add one as renders says.
 5. End with a section on scope: what the first delivery proves, and what the
    design leaves for later, as the design document states it.
 
