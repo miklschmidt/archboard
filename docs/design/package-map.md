@@ -23,12 +23,29 @@ the server-side subpaths from browser code and replaces the `archboard/import-bo
 the module root. The lint resolver must learn package specifiers first, because it ignores them
 today (`tools/oxlint-plugin-archboard/source-layout.ts:116`).
 
+Inside a package, each area keeps the folders that it has today. The `ui` folder still holds
+`components/`, `hooks/` and `state/`, and the other areas keep their own folders. Types live at the
+package root, next to the area folders. A package with few types has one `types.ts`. A package with
+several kinds of types has a `types/` folder with one file for each kind.
+
 ```text
 packages/<name>/
   package.json        # exports: the interface
-  src/<area>/...      # private, areas are folders inside
+  src/
+    types.ts          # or types/, shared by every area below
+    shared/           # code that browser and server both run
+    runtime/          # code that runs in Bun
+    server/           # HTTP and socket code
+    ui/
+      components/
+      hooks/
+      state/
 apps/{cli,server,web} # process entrypoints and glue, imported by nothing
 ```
+
+A package keeps only the areas that it needs. Lint applies the area rules to the folders of each
+package, in place of the module root. A type that two areas share goes in `types`, so no area
+imports another area only to reach a type.
 
 ## Map
 
