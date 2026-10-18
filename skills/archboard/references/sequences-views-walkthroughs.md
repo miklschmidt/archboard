@@ -89,6 +89,21 @@ every part and every relationship. No view can be called `Overview` or
 `Everything`. When the request asks for a picture of a view, look at that
 view's picture, not the overview's.
 
+Choose a view from text before you draw one. Every view belongs to every
+variant, and many draw little or nothing at a given variant.
+`semantic views <board> --variant <variant>` takes `--against` and
+`--no-comparison` as render does, and lists the overview, every view and
+`Everything`. For each it gives `drawn` (how many nodes, edges, flows and
+steps the picture draws), `marks` (the added, changed and removed counts that
+the key shows) and `size`. A view with every `drawn` count at zero draws
+nothing there. A grammar draws part of what its view selects: a sequence draws
+no relationships, a flowchart no parts, and an architecture on a board with
+relationships no flows. So a change shows only in a view whose `marks` count
+it. The receipt of `semantic render --out` and `semantic rasterize --out`
+names the same picture: `drawn` lists each subject by `id` and `name`, with its
+`standing` when the picture marks a comparison, and `marks` holds the key's
+counts (null when it marks none).
+
 Both export commands accept `--no-comparison`. Use it to hide comparison marks
 and removed subjects when exporting a variant. The file or clipboard receipt
 then reports `comparedWith: null`. Without the flag, comparisons stay visible.
