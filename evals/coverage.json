@@ -670,6 +670,13 @@
 					"owner": "src/runtime/semantic-board-store/tests/branching.test.ts, an edit restates the summary"
 				},
 				{
+					"path": "variant.documents: create.documents and edit.documents ({ repo, path, branch?, commit? }), copied by semantic branch, returned by semantic show, and DOCUMENT_PATH_MISSING from archboard check --code",
+					"expectedUse": "a draft that draws a design document, an ADR or a task names each, at the commit it was drawn from; an edit states the whole list of the variant it lands on, [] removes it; a later pull request finds the design draft through the document it names",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests/branching.test.ts (an edit replaces the edited list, a branch copies it, a record refuses it; a new board's first variant holds them); src/runtime/code-check/tests/documents.test.ts (a file missing at the named version, a directory, a branch the checkout cannot resolve, an unregistered repository, a draft read with --variant). No author run is asked to name documents: no scenario draws from a design document"
+				},
+				{
 					"path": "lifecycle draft | current | historical",
 					"expectedUse": "adoption moves current and leaves historical",
 					"scenarios": ["S06"],

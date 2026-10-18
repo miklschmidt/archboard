@@ -265,7 +265,9 @@ recipe names.
   different code is skipped (`refs-differ`). A ref the checkout cannot
   resolve is skipped (`ref-not-checked-out`, naming the ref). A file that is not there or
   does not hold the symbol is a warning that names its part, relationship or
-  step, and exits 1. Repair the anchor or binding it names. A binding or anchor
+  step, and exits 1. Repair the anchor or binding it names. A variant's
+  document reference whose file is not at the version it names is
+  `DOCUMENT_PATH_MISSING`. A binding or anchor
   into the repository whose checkout holds the vault is read in that checkout
   (a worktree reads its own files); one into any other repository is read in
   its chosen checkout. Code that one bound
@@ -503,7 +505,11 @@ has built never goes on the current variant, however the request words it:
   on it. Asking for `--variant current` there is refused: nothing is built.
 
 What stands in for a source line is the sentence that states the intent: in
-the request, or in a design document it names. Keep the same one-line record
+the request, or in a design document it names. When a draft draws a design
+document, an ADR or a task, name each in the draft's `documents`, at the
+commit you drew from ([documents](references/variants.md#documents-a-variant-draws)).
+To find the draft that draws a design, read the drafts' `documents` in
+`semantic show`. Keep the same one-line record
 per relationship and step ([evidence rule 3](#evidence-before-a-write)), citing
 that sentence where you would cite a symbol. A sentence is not an anchor: give
 a planned relationship an `anchor` only where the request names the code (the
@@ -601,7 +607,8 @@ are what a branch of one needs on top of it.
   view scopes and grammars, message kinds, decisions and loops, repeat/note, walkthrough beats and
   their identity, recording a walkthrough to a narrated video, and rendering a
   recording's kept talk again.
-- [variants](references/variants.md): what a comparison counts, edge identity,
+- [variants](references/variants.md): the documents a variant draws, what a
+  comparison counts, edge identity,
   flow/step identity, reconciliation and `resolve`, adoption, claims.
 - [schemas](references/schemas.md): the exact JSON Schemas of the payloads, the
   persisted document and `config.yaml`; vault setup and installation.

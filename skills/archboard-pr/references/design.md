@@ -11,6 +11,20 @@ The body keeps the three sections, the markers and the posting of the skill.
 In place of sections 4 to 6, this file gives the pictures, the walkthrough and
 the three sections of a design pull request.
 
+## The documents of the design draft
+
+Each design draft names the design document and the plan in its
+`documents`, at the commit of the head branch that you drew it from, so a
+reader knows which version it draws. Restate the list whole with
+`semantic edit --variant "<design draft>"`. The `archboard` skill's variants
+reference gives the shape, under "Documents a variant draws". A draft of an alternative that the design rejects never
+names the design document: shelve it with the reason that the design gives.
+The proposals that branch from the design draft copy its list.
+
+Done: on each board that holds a draft of this design, the design draft names
+the design document and the plan at one commit, and
+`archboard check --code --every-draft` reports no `DOCUMENT_PATH_MISSING`.
+
 ## The state comment
 
 Write one state comment for each board that holds a draft of this design,
