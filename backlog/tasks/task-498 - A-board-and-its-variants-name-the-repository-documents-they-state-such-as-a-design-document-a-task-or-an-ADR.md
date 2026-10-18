@@ -3,11 +3,11 @@ id: TASK-498
 title: >-
   A board and its variants name the repository documents they state, such as a
   design document, a task or an ADR
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-18 13:15'
-updated_date: '2026-10-18 16:06'
+updated_date: '2026-10-18 16:17'
 labels:
   - schema
   - cli
@@ -26,10 +26,10 @@ A board holds no link to the documents it draws. In the Docs-Architecture-Design
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An ADR decides where a document reference lives and what it names
-- [ ] #2 A board or a variant can name repository documents, and show returns them
-- [ ] #3 `archboard check` reports a reference whose document is missing at the branch it names
-- [ ] #4 The archboard and archboard-pr skills read a draft's documents to find a design and its version, and write them when they draw one
+- [x] #1 An ADR decides where a document reference lives and what it names
+- [x] #2 A board or a variant can name repository documents, and show returns them
+- [x] #3 `archboard check` reports a reference whose document is missing at the branch it names
+- [x] #4 The archboard and archboard-pr skills read a draft's documents to find a design and its version, and write them when they draw one
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,4 +49,12 @@ A board holds no link to the documents it draws. In the Docs-Architecture-Design
 Decisions: references live on the variant only (ADR 0054); no board-level list, because no case needs a reference that no variant carries. A reference is {repo, path, branch?, commit?} (DocumentReferenceSchema, derived from CodeBindingSchema) and resolves through the binding's resolver. Only check --code reads them (the plain check reads no Git, so a pinned ref could not be read there); it reads every variant the check reads, drafts included, because a document precedes the code a draft plans. A directory is not a document (DOCUMENT_PATH_MISSING). Write path: documents in the semantic new and semantic edit payloads (edit replaces the edited variant's list, [] removes it); branch copies the predecessor's list. No browser change.
 Closing: check --code against check --code --variant TASK-498 differ in nothing (25 findings each, none from this task). Footprint read against base e1c7a849c (the commit before d38674ccc, the first Refs: TASK-498 commit outside backlog and the vault): each proposal's against is its parent; namedAndChanged = Lifecycle transitions, Code check, Code check; changedNotNamed and namedNotChanged empty on all three. Adopted Archboard server@TASK-498 (v276), Archboard server routes@TASK-498 (v76), Board persistence@TASK-498 (v76); each names ADR 0054 as its document. archboard check: no diagnostics. Behind on this task's commits: Command interface (Semantic authoring, Vault check, Commands: 5668cfebb changed help descriptions of semantic edit, branch and check, nothing they draw) and Skill evaluation (Evaluation inputs: 1b553e9ff added a coverage row). Both boards stay right.
 Skill note: archboard-dev names ./bin/dogfood, which this checkout does not have; ./bin/archboard was used.
+
+Gate: bun run check passed (exit 0). Modules 4860 tests, 4859 pass, 0 fail. System 253 pass. Repository 27 pass. Serial browser lane 19 of 19 owners, exit 0. No rerun was needed. readme:check lists every asset as stale by its source globs; this task changes nothing an asset shows, so none was refreshed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A variant names the repository documents it draws (ADR 0054). A document reference is { repo, path, branch?, commit? }, the shape of a binding, resolved by the binding resolver. semantic new and semantic edit state documents (an edit replaces the edited variant's list, [] removes it), semantic branch copies the list, semantic show returns it on each variant, and check --code reports DOCUMENT_PATH_MISSING at variants.<id>.documents.<n> for a file that is not at the version a reference names; an unregistered repository and an unresolvable ref are skipped with the reason. The archboard skill names a draft's documents and finds a design through them; the archboard-pr skill names the design document and plan on the design draft, finds it in a later pull request, and moves the reference's commit when the design changes through the stack. Evidence: branching.test.ts and documents.test.ts; bun run check green. Adopted the TASK-498 proposals on Archboard server, Archboard server routes and Board persistence. Follow-up: run archboard install-skill again so installed skills carry the change; archboard-dev names ./bin/dogfood, which this checkout lacks.
+<!-- SECTION:FINAL_SUMMARY:END -->
