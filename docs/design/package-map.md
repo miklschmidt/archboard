@@ -184,8 +184,10 @@ because the code above them needs them below it. If no second caller appears, me
   `shared/code-check/index.ts:52`, `shared/language-servers/index.ts:8`). `code-intel` needs a
   browser subpath that holds no Node import. `shared/language-servers` now sits in `workspace`,
   which makes the same split necessary there.
-- Move the binding, anchor and document-reference schemas into `board` as well as the binding type
-  (`shared/semantic-board/lib/content.ts:65`, `lib/aggregate.ts:31`).
+- Keep the binding, anchor and document-reference schemas in `code-binding`. `board` imports them
+  (`shared/semantic-board/lib/content.ts:65`, `lib/aggregate.ts:31`), and the resolver in
+  `code-binding` parses with `CodeBindingSchema` (`runtime/code-target/lib/resolver-core.ts:330`).
+  If the schemas moved into `board`, the two packages would depend on each other.
 - Do not write one `exports` entry for each file. Put the interface in a few files per package. For
   example, `board` exposes `./document`, `./policy` and `./store`, and `board-lock` stays private to
   it. `atomic-write` stays in `workspace` with a public export, because the repository registry and
