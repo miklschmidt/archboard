@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 102,
+	"version": 104,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-18T15:07:49.251Z",
+	"updatedAt": "2026-10-18T15:31:43.732Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -31355,7 +31355,7 @@
 		{
 			"id": "SWCXjEpr",
 			"name": "TASK-478.01 after TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "7NG65tO7",
 			"summary": "TASK-478.01 restated after TASK-482.07",
 			"content": {
@@ -34591,9 +34591,9 @@
 		{
 			"id": "hEXl6vPG",
 			"name": "TASK-496",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "SWCXjEpr",
-			"summary": "An agent reads in text what a view draws at a variant, and which views draw anything there",
+			"summary": "CLI application modules and its command groups",
 			"content": {
 				"nodes": [
 					{
@@ -37869,7 +37869,7 @@
 			}
 		}
 	],
-	"current": "SWCXjEpr",
+	"current": "hEXl6vPG",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -37996,6 +37996,12 @@
 			"from": "7NG65tO7",
 			"at": "2026-10-17T09:58:48.587Z",
 			"reason": "semantic render, rasterize and record draw against a named variant (TASK-478.01, adopted on main while TASK-482 was adopted on feat/derived-overview)"
+		},
+		{
+			"variant": "hEXl6vPG",
+			"from": "SWCXjEpr",
+			"at": "2026-10-18T15:31:43.732Z",
+			"reason": "semantic views lists what every view draws at a variant, and the render and rasterize receipts name what a picture draws and marks"
 		}
 	],
 	"shelvings": [
