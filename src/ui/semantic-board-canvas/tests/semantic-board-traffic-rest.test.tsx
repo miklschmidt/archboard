@@ -8,7 +8,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test } from "bun:test";
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import { PICTURE_CLOCK } from "@/ui/frame-clock";
 import { cameraNow, pointerAt, takeFrames } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import {

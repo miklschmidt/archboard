@@ -10,7 +10,7 @@ import { act, cleanup, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 import { createElement, type JSX } from "react";
 
-import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
+import { PRESENTATION_STEP_MS } from "@archboard/timing";
 import { useOverlayPlace, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
 import {
 	drawing,

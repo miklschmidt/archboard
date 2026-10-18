@@ -3,7 +3,7 @@
 // workbench through these functions, so there is exactly one place a state
 // change, a retirement or an incompatibility is decided.
 
-import { SOCKET_RECONNECT_MS } from "@/shared/timing/timing";
+import { SOCKET_RECONNECT_MS } from "@archboard/timing";
 import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browser-model";
 import type {
 	BrowserWorkbenchCommandIntent,

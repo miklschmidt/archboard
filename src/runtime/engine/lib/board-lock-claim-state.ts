@@ -1,4 +1,4 @@
-import { CLAIM_LEASE_MS, LOCK_RENEW_MS } from "@/shared/timing/timing";
+import { CLAIM_LEASE_MS, LOCK_RENEW_MS } from "@archboard/timing";
 import { boardMemoryKey } from "@/runtime/engine/board";
 import type {
 	Claim,

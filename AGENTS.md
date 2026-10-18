@@ -140,8 +140,8 @@ rules that will not stop you:
   picture with the diagram fonts loaded: the browser's own, or `@napi-rs/canvas`
   under Bun (TASK-247).
   `tests/system/browser/measured-text.test.ts` holds the Bun canvas to what Chrome draws.
-- **Every duration lives in `src/shared/timing/timing.ts`** with what it pulls
-  against written beside it.
+- **Every duration lives in the `@archboard/timing` package** (`packages/timing`) with what it
+  pulls against written beside it.
 - **A node's code binding is part of its meaning**, not a presentation overlay:
   it persists on the node as `binding: { repo, path }` and is what "open the
   code" resolves.

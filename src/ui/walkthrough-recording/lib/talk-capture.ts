@@ -9,7 +9,7 @@
 // then, well under one frame of video. Nothing here draws or captures a
 // picture: the picture is rendered from the talk afterwards, frame by frame.
 
-import { RECORDING_TAP_DRAIN_MS } from "@/shared/timing/timing";
+import { RECORDING_TAP_DRAIN_MS } from "@archboard/timing";
 import {
 	TALK_SAMPLE_RATE,
 	type TalkEvent,

@@ -13,7 +13,7 @@ import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
 } from "../../codex-protocol/index.js";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 import {
 	captureRejection,
 	createHarness,

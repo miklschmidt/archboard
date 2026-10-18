@@ -11,7 +11,7 @@ import type {
 import type { TransportServerNotification } from "@/runtime/codex-transport";
 import type { SessionQueuedSubmission } from "@/runtime/codex-session";
 import type { OperationId, ThreadId } from "@/shared/codex-workbench-identity";
-import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@/shared/timing/timing";
+import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@archboard/timing";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";
 import type {

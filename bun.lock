@@ -78,6 +78,10 @@
         "vite": "8.2.2",
       },
     },
+    "packages/timing": {
+      "name": "@archboard/timing",
+      "version": "0.0.0",
+    },
   },
   "patchedDependencies": {
     "libavoid-js@0.5.0-beta.5": "patches/libavoid-js@0.5.0-beta.5.patch",
@@ -97,6 +101,8 @@
     "@archboard/elk-rs-linux-x64-musl": ["@archboard/elk-rs-linux-x64-musl@0.11.3", "", { "os": "linux", "cpu": "x64" }, "sha512-wD0aSayLK9IxmERuM57N2Lo8hlvC8WjslJ2xpm4TK0ObzdrZiPHAB3AYWCEXlx15E9sRfUDcuQ/Ok5oJ83OPQw=="],
 
     "@archboard/elk-rs-win32-x64-msvc": ["@archboard/elk-rs-win32-x64-msvc@0.11.3", "", { "os": "win32", "cpu": "x64" }, "sha512-0gur0QMU4kIXeE2dPK4ZG095KOUhxuNGzJdGpHkJRb91NGbFAOtEoIgK/Gv5ihjbQVuD5dormpq5y5fkwGLa3w=="],
+
+    "@archboard/timing": ["@archboard/timing@workspace:packages/timing"],
 
     "@assistant-ui/core": ["@assistant-ui/core@0.3.16", "", { "dependencies": { "assistant-stream": "^0.3.40", "nanoid": "^6.0.1" }, "peerDependencies": { "@assistant-ui/store": "^0.3.0", "@assistant-ui/tap": "^0.9.0", "@types/react": "*", "assistant-cloud": "^0.1.42", "react": "^18 || ^19", "zustand": "^5.0.11" }, "optionalPeers": ["@types/react", "assistant-cloud", "react", "zustand"] }, "sha512-fZ9ud+z7hEjegu6NrHyMEcQKCdij2KRcqpLsyOYzHE9LhnBv59Q29jU287EkD0NZE0SG4YTo5/klzz7C/lKA+Q=="],
 

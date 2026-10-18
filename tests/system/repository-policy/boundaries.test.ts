@@ -89,9 +89,17 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 				"src/ui/source/allowed.ts": 'import "@/shared/source";',
 				"src/ui/source/relative.ts": 'import "./allowed";',
 				"src/ui/source/javascript.js": "export const value = 1;",
+				"packages/alpha/src/shared/sibling.ts": 'import "./other";',
+				"packages/alpha/src/shared/escape.ts": 'import "../../../beta/src/shared/other";',
 			},
 			(root) => {
-				expectPass(lint(root, ["src/ui/source/allowed.ts"]));
+				expectPass(
+					lint(root, ["src/ui/source/allowed.ts", "packages/alpha/src/shared/sibling.ts"]),
+				);
+				expectRule(
+					lint(root, ["packages/alpha/src/shared/escape.ts"]),
+					"archboard(absolute-imports)",
+				);
 				expectRule(lint(root, ["src/ui/source/relative.ts"]), "archboard(absolute-imports)");
 				expectRule(lint(root, ["src/ui/source/javascript.js"]), "archboard(typescript-source)");
 			},
@@ -303,6 +311,121 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					"eslint(max-lines)",
 					"Maximum allowed is 500",
 				);
+			},
+		);
+	});
+
+	// A package states its interface in `exports`: the area rules hold between the folders of
+	// one package, only an export is public, and `./testing` is for tests alone.
+	const packageFiles = {
+		"packages/alpha/package.json": JSON.stringify({
+			name: "@archboard/alpha",
+			exports: {
+				".": "./src/shared/constants/value.ts",
+				"./testing": "./src/shared/testing.ts",
+			},
+		}),
+		"packages/alpha/src/shared/constants/value.ts": "export const value = 1;\n",
+		"packages/alpha/src/shared/constants/private.ts": "export const privateValue = 1;\n",
+		"packages/alpha/src/shared/testing.ts": "export const fixture = 1;\n",
+		"packages/alpha/src/runtime/work.ts": "export const work = 1;\n",
+		"packages/alpha/tests/support.ts": "export const support = 1;\n",
+		"packages/beta/package.json": JSON.stringify({
+			name: "@archboard/beta",
+			exports: { ".": "./src/runtime/beta.ts" },
+		}),
+		"packages/beta/src/runtime/beta.ts": "export const beta = 1;\n",
+	};
+
+	test("a package exposes its exports, and a test reaches the private files of its own package", async () => {
+		await withProject(
+			{
+				...packageFiles,
+				"packages/alpha/src/runtime/ok.ts":
+					'import { value } from "../shared/constants/value.js";\nexport { value };\n',
+				"packages/alpha/tests/own.test.ts":
+					'import { privateValue } from "../src/shared/constants/private.js";\nimport { support } from "./support.js";\nexport { privateValue, support };\n',
+				"packages/beta/tests/public.test.ts":
+					'import { value } from "@archboard/alpha";\nimport { fixture } from "@archboard/alpha/testing";\nexport { fixture, value };\n',
+				"src/domain/consumer/index.ts":
+					'import { value } from "@archboard/alpha";\nimport { elk } from "@archboard/not-a-workspace-package";\nexport { elk, value };\n',
+			},
+			(root) =>
+				expectPass(
+					lint(root, [
+						"packages/alpha/src/runtime/ok.ts",
+						"packages/alpha/tests/own.test.ts",
+						"packages/beta/tests/public.test.ts",
+						"src/domain/consumer/index.ts",
+					]),
+				),
+		);
+	});
+
+	test("a package refuses deep imports, and production never imports tests or ./testing", async () => {
+		await withProject(
+			{
+				...packageFiles,
+				"src/domain/deep/relative.ts":
+					'import { privateValue } from "../../../packages/alpha/src/shared/constants/private.js";\nexport { privateValue };\n',
+				"src/domain/deep/specifier.ts":
+					'import { privateValue } from "@archboard/alpha/src/shared/constants/private.ts";\nexport { privateValue };\n',
+				"packages/beta/tests/deep.test.ts":
+					'import { privateValue } from "../../alpha/src/shared/constants/private.js";\nexport { privateValue };\n',
+				"src/domain/product/testing.ts":
+					'import { fixture } from "@archboard/alpha/testing";\nexport { fixture };\n',
+				"packages/beta/src/runtime/testing.ts":
+					'import { fixture } from "@archboard/alpha/testing";\nexport { fixture };\n',
+				"packages/alpha/src/runtime/tests.ts":
+					'import { support } from "../../tests/support.js";\nexport { support };\n',
+				"packages/beta/tests/foreign.test.ts":
+					'import { support } from "../../alpha/tests/support.js";\nexport { support };\n',
+			},
+			(root) => {
+				for (const file of [
+					"src/domain/deep/relative.ts",
+					"src/domain/deep/specifier.ts",
+					"packages/beta/tests/deep.test.ts",
+				]) {
+					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "exports names");
+				}
+				for (const file of [
+					"src/domain/product/testing.ts",
+					"packages/beta/src/runtime/testing.ts",
+					"packages/alpha/src/runtime/tests.ts",
+				]) {
+					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "test-owned source");
+				}
+				expectRule(
+					lint(root, ["packages/beta/tests/foreign.test.ts"]),
+					"archboard(module-entrypoints)",
+					"only from its own",
+				);
+			},
+		);
+	});
+
+	test("the area directions hold between the folders of one package", async () => {
+		await withProject(
+			{
+				...packageFiles,
+				"packages/alpha/src/shared/leak.ts":
+					'import { work } from "../runtime/work.js";\nexport { work };\n',
+				"packages/alpha/src/ui/screen.ts":
+					'import { work } from "../runtime/work.js";\nexport { work };\n',
+				"packages/alpha/tests/ui/screen.test.ts":
+					'import { work } from "../../src/runtime/work.js";\nexport { work };\n',
+				"src/shared/screen/index.ts": 'import { beta } from "@archboard/beta";\nexport { beta };\n',
+			},
+			(root) => {
+				for (const file of [
+					"packages/alpha/src/shared/leak.ts",
+					"packages/alpha/src/ui/screen.ts",
+					"packages/alpha/tests/ui/screen.test.ts",
+					"src/shared/screen/index.ts",
+				]) {
+					expectRule(lint(root, [file]), "archboard(import-boundaries)");
+				}
 			},
 		);
 	});

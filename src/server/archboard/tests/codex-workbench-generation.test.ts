@@ -7,7 +7,7 @@ import {
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
 import { CODEX_SERVER_REQUEST_METHODS } from "../../../shared/codex-app-server-contract/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
-import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
 import { parseTabSessionId } from "../../codex-workbench/index.js";
 

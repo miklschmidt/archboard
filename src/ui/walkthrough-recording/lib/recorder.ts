@@ -10,7 +10,7 @@
 // stamped as they happen. The recorder outside the page reads the state and
 // takes the talk; this owns nothing else (TASK-381).
 
-import { RECORDING_PACE_TICK_MS } from "@/shared/timing/timing";
+import { RECORDING_PACE_TICK_MS } from "@archboard/timing";
 import type { RecordingPage, RecordingPhase, RecordingState } from "@/shared/walkthrough-recording";
 import { TALK_SAMPLE_RATE, type TalkLog } from "@/shared/walkthrough-recording/talk";
 import type { BrowserAudioElementPort } from "@/ui/codex-workbench-media";

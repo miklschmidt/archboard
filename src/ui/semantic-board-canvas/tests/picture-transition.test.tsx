@@ -10,7 +10,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
-import { PICTURE_TRANSITION_PHASES } from "@/shared/timing/timing";
+import { PICTURE_TRANSITION_PHASES } from "@archboard/timing";
 import { driveFramesFrom, frameClock } from "@/ui/frame-clock";
 import {
 	TRANSITION_ATTRIBUTE,

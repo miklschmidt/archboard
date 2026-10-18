@@ -7,7 +7,7 @@ import {
 	type ResponseMethod,
 } from "@/runtime/codex-protocol";
 import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "@/shared/timing/timing";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 import type {
 	IdentityAuthority,
 	JsonRpcRequestId,

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { parseDynamicToolCallResponse } from "../../codex-thread-tools/index.js";
 import { CodexSessionMutationError } from "../../codex-session/index.js";
-import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import { createCodexDynamicTools } from "../index.js";
 import {
 	CHECKOUT_ROOT,

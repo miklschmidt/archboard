@@ -10,7 +10,7 @@ import {
 	readProcessObservation,
 	type ProcessObservation,
 } from "@/shared/process-observation";
-import { GIT_PROCESS_GROUP_CLEANUP_MS, GIT_PROCESS_GROUP_POLL_MS } from "@/shared/timing/timing";
+import { GIT_PROCESS_GROUP_CLEANUP_MS, GIT_PROCESS_GROUP_POLL_MS } from "@archboard/timing";
 
 type KillableProcess = Pick<Subprocess, "kill">;
 type CapturedMembers = Map<number, ProcessObservation>;

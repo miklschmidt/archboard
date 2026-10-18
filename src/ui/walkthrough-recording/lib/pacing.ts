@@ -19,7 +19,7 @@ import {
 	RECORDING_STEP_MAX_MS,
 	RECORDING_TAIL_MS,
 	RECORDING_VOICE_START_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
 

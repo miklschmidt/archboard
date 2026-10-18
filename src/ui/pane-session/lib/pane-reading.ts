@@ -19,7 +19,7 @@ import {
 	type SemanticPaneContext,
 	type SemanticPanePart,
 } from "@/shared/semantic-pane-context";
-import { SELECTION_DEBOUNCE_MS } from "@/shared/timing/timing";
+import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
 import { createUserMarks } from "@/ui/pane-session/lib/user-marks";
 import { inVault, post } from "@/ui/server-requests";
 

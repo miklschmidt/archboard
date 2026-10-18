@@ -21,7 +21,7 @@ import type { DoingEntry } from "@/runtime/engine/board-doing";
 import type { LockHolder } from "@/runtime/engine/board-lock";
 import { boardMemoryKey } from "@/runtime/engine/board";
 import type { AgentActivity, AgentActivityMessage } from "@/runtime/engine/types";
-import { ACTIVITY_LINGER_MS } from "@/shared/timing/timing";
+import { ACTIVITY_LINGER_MS } from "@archboard/timing";
 
 interface Entry {
 	vault: string;

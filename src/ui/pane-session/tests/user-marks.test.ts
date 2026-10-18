@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { NOTHING_READ, createReadingPublisher, type PaneReading } from "@/ui/pane-session";
 import type { SemanticPaneContext } from "@/shared/semantic-pane-context";
-import { SELECTION_DEBOUNCE_MS } from "@/shared/timing/timing";
+import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
 
 // Which parts of a report are said to be the user's own doing (ADR 0034). What these catch is
 // the feedback loop of 2026-09-20 coming back: a change nobody's hand made being told to the

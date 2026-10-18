@@ -49,6 +49,7 @@
 		"src/server/*/tests/**",
 		"src/shared/*/tests/**",
 		"src/cli/*/tests/**",
+		"packages/*/tests/**",
 	],
 	"settings": {
 		"react": {

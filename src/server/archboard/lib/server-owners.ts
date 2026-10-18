@@ -1,4 +1,4 @@
-import { SERVER_MUTATION_DRAIN_TIMEOUT_MS } from "@/shared/timing/timing";
+import { SERVER_MUTATION_DRAIN_TIMEOUT_MS } from "@archboard/timing";
 import {
 	createServerMutationAdmission,
 	type ServerMutationLease,

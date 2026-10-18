@@ -12,7 +12,7 @@
 // was drawn, what it is still doing and how long the frame was, to the camera as
 // it is drawn next. Whoever drives it owns the clock (`use-camera-motion`).
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import { ZOOM_STEP, clampScale, type Camera } from "@/ui/semantic-board-canvas/lib/camera";
 
 /** Two numbers: a point of the viewport, or a distance across and down, in pixels. */

@@ -2,7 +2,7 @@
 // turn, at one speed, and waits until the one before it has arrived.
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_TRAFFIC_SPEED } from "@/shared/semantic-board/index";
-import { FLOW_CYCLE_CAP_MS } from "@/shared/timing/timing";
+import { FLOW_CYCLE_CAP_MS } from "@archboard/timing";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
 import { messageBeams, slidingSpeedOf } from "@/runtime/semantic-renderer/tests/drawn-traffic";
 import {

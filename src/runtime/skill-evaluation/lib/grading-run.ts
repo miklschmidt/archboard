@@ -12,7 +12,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { SKILL_EVAL_GRADER_TIMEOUT_MS } from "@/shared/timing/timing";
+import { SKILL_EVAL_GRADER_TIMEOUT_MS } from "@archboard/timing";
 import type { Usage } from "@/runtime/skill-evaluation/lib/events";
 import { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
 import { claudeGrader } from "@/runtime/skill-evaluation/lib/claude-grader";

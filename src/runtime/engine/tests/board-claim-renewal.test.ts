@@ -8,7 +8,7 @@ import {
 	LOCK_POLL_MS,
 	LOCK_RENEW_MS,
 	LOCK_STEAL_GUARD_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 
 // One server renews every claim it holds from timers, and a timer cannot run
 // while the server does one long synchronous piece of work, such as drawing a

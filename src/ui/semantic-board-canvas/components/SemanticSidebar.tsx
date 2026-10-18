@@ -32,7 +32,7 @@ import {
 } from "react";
 
 import { SIDEBAR_WIDTH } from "@/shared/shell-geometry/index";
-import { SIDEBAR_MS } from "@/shared/timing/timing";
+import { SIDEBAR_MS } from "@archboard/timing";
 import { cn } from "@/ui/components/class-names";
 import { IconButton } from "@/ui/components/IconButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/components/tabs";

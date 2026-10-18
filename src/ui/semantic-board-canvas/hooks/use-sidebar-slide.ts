@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from "react";
 
-import { SIDEBAR_MS, SLIDE_SETTLED_MS } from "@/shared/timing/timing";
+import { SIDEBAR_MS, SLIDE_SETTLED_MS } from "@archboard/timing";
 import { frameClock } from "@/ui/frame-clock";
 
 /** Where the sidebar is. */

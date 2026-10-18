@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { SKILL_EVAL_GIT_TIMEOUT_MS } from "@/shared/timing/timing";
+import { SKILL_EVAL_GIT_TIMEOUT_MS } from "@archboard/timing";
 import { runProcess, sequentially } from "@/runtime/skill-evaluation/lib/process";
 
 const GIT_ENV = { PATH: process.env["PATH"] ?? "", HOME: process.env["HOME"] ?? "" };

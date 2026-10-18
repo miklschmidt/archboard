@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "@/runtime/engine/board-lock";
 import { forgetDoing, recentDoing, recordDoing } from "@/runtime/engine/board-doing";
-import { LOCK_WATCH_MS } from "@/shared/timing/timing";
+import { LOCK_WATCH_MS } from "@archboard/timing";
 
 const home = mkdtempSync(join(tmpdir(), "archboard-lock-vaults-"));
 

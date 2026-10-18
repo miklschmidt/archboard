@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import { frameClock } from "@/ui/frame-clock";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { tipTargetAt } from "@/ui/semantic-board-canvas/lib/subject-tips";

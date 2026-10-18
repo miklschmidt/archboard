@@ -2,7 +2,7 @@
 // with the flags its page needs. Both are found before anything is recorded (TASK-381).
 
 import type { RecordingContainer } from "@/shared/walkthrough-recording";
-import { RECORDING_BROWSER_START_MS, RECORDING_BROWSER_STOP_MS } from "@/shared/timing/timing";
+import { RECORDING_BROWSER_START_MS, RECORDING_BROWSER_STOP_MS } from "@archboard/timing";
 import {
 	HeadlessChromiumError,
 	discoveredChromiumPath,

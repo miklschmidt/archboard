@@ -33,7 +33,7 @@ import {
 } from "react";
 
 import type { SemanticWalkthrough } from "@/shared/semantic-board/index";
-import { PRESENTATION_BOX_IN_MS, PRESENTATION_BOX_STEP_MS } from "@/shared/timing/timing";
+import { PRESENTATION_BOX_IN_MS, PRESENTATION_BOX_STEP_MS } from "@archboard/timing";
 import { PresentationFoot } from "@/ui/semantic-board-canvas/components/PresentationFoot";
 import { PresentationKeys } from "@/ui/semantic-board-canvas/components/PresentationKeys";
 import { PresentationRail } from "@/ui/semantic-board-canvas/components/PresentationRail";

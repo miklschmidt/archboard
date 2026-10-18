@@ -12,7 +12,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
+import { PRESENTATION_STEP_MS } from "@archboard/timing";
 import type { SemanticBox } from "@/ui/semantic-board-canvas/index";
 import {
 	chooseVariantInShell,

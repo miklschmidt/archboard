@@ -4,10 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createSemanticRasterizer } from "@/runtime/semantic-rasterizer/index";
 import { listProcessGroupObservations } from "@/shared/process-observation";
-import {
-	CLI_INTERRUPT_CLEANUP_MS,
-	PROCESS_GROUP_OBSERVATION_POLL_MS,
-} from "@/shared/timing/timing";
+import { CLI_INTERRUPT_CLEANUP_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
 
 // Startup cancellation needs a process that never opens DevTools. The fake
 // records its real pid/profile so the test can prove the interrupted owner

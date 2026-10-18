@@ -1,5 +1,5 @@
 import type { ChildEpoch, ChildId, TurnId } from "@/shared/codex-workbench-identity";
-import { CODEX_APPROVAL_EXPIRY_MS } from "@/shared/timing/timing";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,

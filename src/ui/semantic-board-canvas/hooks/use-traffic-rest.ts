@@ -9,7 +9,7 @@
 
 import { useEffect, useMemo } from "react";
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import { paceTraffic } from "@/ui/frame-clock";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 

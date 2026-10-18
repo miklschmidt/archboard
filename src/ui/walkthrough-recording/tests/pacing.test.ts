@@ -13,7 +13,7 @@ import {
 	RECORDING_QUIET_MS,
 	RECORDING_SPEECH_START_MS,
 	RECORDING_TAIL_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import { pace, type PaceObservation, type PaceState } from "@/ui/walkthrough-recording";
 
 const LIVE = { kind: "live" } as const;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CODEX_APPROVAL_EXPIRY_MS } from "@/shared/timing/timing";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import {
 	DYNAMIC_APPROVAL_DECISIONS,
 	DYNAMIC_APPROVAL_STATES,

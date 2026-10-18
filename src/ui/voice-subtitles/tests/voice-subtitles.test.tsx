@@ -16,8 +16,8 @@ import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import { useSyncExternalStore, type JSX } from "react";
 
-import { SUBTITLE_LINGER_MS } from "@/shared/timing/timing";
-import { SUBTITLE_OUT_MS, SUBTITLE_SWAP_MS } from "@/shared/timing/voice";
+import { SUBTITLE_LINGER_MS } from "@archboard/timing";
+import { SUBTITLE_OUT_MS, SUBTITLE_SWAP_MS } from "@archboard/timing/voice";
 import { TooltipProvider } from "@/ui/components/tooltip";
 import { driveFramesFrom } from "@/ui/frame-clock";
 import { createSteppedClock } from "@/ui/frame-clock/replay";

@@ -1,6 +1,6 @@
 import type { SessionNotificationHandler } from "@/runtime/codex-session";
 import type { ThreadId } from "@/shared/codex-workbench-identity";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "@/shared/timing/timing";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 import {
 	CodexCoordinatorError,
 	type CodexCoordinatorOptions,

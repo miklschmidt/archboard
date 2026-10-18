@@ -6,10 +6,7 @@ import { readProcessObservation } from "@/shared/process-observation";
 
 import { CodexProcessError } from "../process.js";
 import { createCodexProcessForTesting as createCodexProcess } from "../testing.js";
-import {
-	CODEX_TERM_GRACE_MS,
-	PROCESS_GROUP_OBSERVATION_POLL_MS,
-} from "../../../shared/timing/timing.js";
+import { CODEX_TERM_GRACE_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
 import {
 	fixture,
 	processOptions as options,

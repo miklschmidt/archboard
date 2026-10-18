@@ -7,7 +7,7 @@
 // loads and React's commits all run on the browser's own time, and this is
 // where the stepped clock waits for them.
 
-import { RECORDING_FRAME_READY_MS } from "@/shared/timing/timing";
+import { RECORDING_FRAME_READY_MS } from "@archboard/timing";
 
 /**
  * One turn of the browser's event loop.

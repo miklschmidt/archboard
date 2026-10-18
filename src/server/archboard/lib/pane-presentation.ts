@@ -19,7 +19,7 @@ import type {
 	SemanticPaneContext,
 	SemanticPanePresentation,
 } from "@/shared/semantic-pane-context/index";
-import { PRESENTATION_ARRIVAL_TIMEOUT_MS } from "@/shared/timing/timing";
+import { PRESENTATION_ARRIVAL_TIMEOUT_MS } from "@archboard/timing";
 import { paneBoardOf, panes, sendToPane } from "@/server/archboard/lib/pane-registry";
 
 /** Why a pane could not be shown the step it was asked for. */

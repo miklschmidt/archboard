@@ -12,7 +12,7 @@ import {
 	verifyCodexExecutable,
 } from "../executable.js";
 import { CODEX_PROTOCOL_BINARY_VERSION } from "../../codex-protocol/index.js";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 
 function temporaryRoot(): string {
 	return mkdtempSync(path.join(tmpdir(), "archboard-codex-process-executable-"));

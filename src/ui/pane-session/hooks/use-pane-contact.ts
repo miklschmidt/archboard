@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useReducer } from "react";
 
-import { CONTACT_LOST_MS } from "@/shared/timing/timing";
+import { CONTACT_LOST_MS } from "@archboard/timing";
 
 /** A pane's contact with the server. */
 interface PaneContact {

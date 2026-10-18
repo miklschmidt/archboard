@@ -19,7 +19,7 @@ import {
 	RECORDING_PAGE_READY_MS,
 	RECORDING_POLL_MS,
 	RECORDING_STALL_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import {
 	RECORDING_PAGE_GLOBAL,
 	RecordingStateSchema,

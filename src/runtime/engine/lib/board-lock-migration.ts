@@ -2,7 +2,7 @@
 // Ordinary writes keep the async lease path; a read that finds a live holder
 // can show normalized content and retry persistence on the next access.
 
-import { LOCK_LEASE_MS } from "@/shared/timing/timing";
+import { LOCK_LEASE_MS } from "@archboard/timing";
 import { normalizeBoardKey } from "@/runtime/engine/board";
 import { createExclusively, freshRecord } from "@/runtime/engine/lib/board-lock-acquisition";
 import type { LockRequest } from "@/runtime/engine/lib/board-lock-contracts";

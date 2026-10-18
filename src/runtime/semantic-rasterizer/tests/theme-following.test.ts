@@ -19,7 +19,7 @@ import {
 	SEMANTIC_RASTER_CLEANUP_MS,
 	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
 	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "./cold-start-timing.ts";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import { pngRgbCounts } from "./png-colors.ts";

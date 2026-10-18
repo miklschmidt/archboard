@@ -11,7 +11,7 @@ import type {
 } from "@/shared/server-startup-terminal";
 import { parseServerStartupProtocolRecord } from "@/shared/server-startup-terminal";
 import type { Readable } from "node:stream";
-import { CODEX_COMPOSED_SHUTDOWN_MS, CODEX_TERM_GRACE_MS } from "@/shared/timing/timing";
+import { CODEX_COMPOSED_SHUTDOWN_MS, CODEX_TERM_GRACE_MS } from "@archboard/timing";
 import { asError } from "@/runtime/engine/lib/thrown-error";
 
 interface FailedServerCleanupTiming {

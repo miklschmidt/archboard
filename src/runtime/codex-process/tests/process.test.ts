@@ -8,10 +8,7 @@ import {
 	CodexProcessError,
 } from "../process.js";
 import { createCodexProcessForTesting } from "../testing.js";
-import {
-	CODEX_PROCESS_RESTART_BASE_MS,
-	CODEX_TERM_GRACE_MS,
-} from "../../../shared/timing/timing.js";
+import { CODEX_PROCESS_RESTART_BASE_MS, CODEX_TERM_GRACE_MS } from "@archboard/timing";
 import {
 	fixture,
 	processOptions,

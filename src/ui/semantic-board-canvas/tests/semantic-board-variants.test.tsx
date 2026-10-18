@@ -12,7 +12,7 @@
 import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
 
-import { PICTURE_TRANSITION_MS } from "@/shared/timing/timing";
+import { PICTURE_TRANSITION_MS } from "@archboard/timing";
 import {
 	drawing,
 	surface,

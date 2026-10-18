@@ -7,7 +7,7 @@
 
 import { afterEach, expect, jest, test } from "bun:test";
 
-import { SOCKET_RECONNECT_MS } from "@/shared/timing/timing";
+import { SOCKET_RECONNECT_MS } from "@archboard/timing";
 
 import {
 	FakeSocket,

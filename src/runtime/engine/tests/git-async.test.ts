@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { GIT_PROCESS_GROUP_CLEANUP_MS } from "../../../shared/timing/timing.ts";
+import { GIT_PROCESS_GROUP_CLEANUP_MS } from "@archboard/timing";
 import { readProcessObservation } from "../../../shared/process-observation/index.ts";
 import { git } from "../git.js";
 

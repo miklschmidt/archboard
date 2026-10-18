@@ -1,4 +1,4 @@
-import { CLAIM_DEFAULT_MS, CLAIM_LEASE_MS, CLAIM_MAX_MS } from "@/shared/timing/timing";
+import { CLAIM_DEFAULT_MS, CLAIM_LEASE_MS, CLAIM_MAX_MS } from "@archboard/timing";
 import { boardMemoryKey, normalizeBoardKey } from "@/runtime/engine/board";
 import { holdBoard } from "@/runtime/engine/lib/board-lock-acquisition";
 import {

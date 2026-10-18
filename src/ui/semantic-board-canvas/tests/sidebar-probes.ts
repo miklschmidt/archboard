@@ -2,7 +2,7 @@
 
 import { act } from "@testing-library/react";
 
-import { SIDEBAR_MS } from "@/shared/timing/timing";
+import { SIDEBAR_MS } from "@archboard/timing";
 
 /**
  * Let a sidebar that is leaving finish leaving: it stays drawn, out of reach,

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, jest, test } from "bun:test";
 
-import { TAB_SESSION_GRACE_MS } from "../../../shared/timing/timing.js";
+import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
 import { parseTabSessionId, type TabSessionId } from "../../codex-workbench/index.js";
 import { createTabSessions } from "../codex-workbench-browser.js";
 

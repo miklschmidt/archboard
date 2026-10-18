@@ -14,7 +14,7 @@ import {
 	SEMANTIC_RASTER_CLEANUP_MS,
 	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
 	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import {
 	RASTER_MAX_PIXELS,
 	RASTER_MAX_SCALE,

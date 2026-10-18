@@ -16,7 +16,7 @@ import { afterAll, expect, jest, test } from "bun:test";
 import { createElement, type JSX } from "react";
 
 import type { LocalityAnswer } from "@/shared/locality/index";
-import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
+import { VAULT_CHECK_POLL_MS } from "@archboard/timing";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });

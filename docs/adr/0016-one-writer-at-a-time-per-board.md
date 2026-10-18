@@ -242,7 +242,7 @@ span both.
 Shortening either deadline writes the vault more often. Lengthening either
 deadline extends how long an agent can wait. The values that govern progress,
 idle, settling, leases and waiting therefore live together in
-`src/shared/timing/timing.ts`.
+`packages/timing/src/shared/constants/timing.ts`.
 
 The mutex is one concept with a small interface. A caller asks to write a board,
 and then either writes it or learns who holds it. Acquiring, renewing, expiring

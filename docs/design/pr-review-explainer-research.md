@@ -302,7 +302,7 @@ source).
   explains each beat, and the beat moves on after a quiet of 1.2 s
   (`RECORDING_QUIET_MS`). The video opens on the whole board for 1.2 s
   (`RECORDING_LEAD_MS`) and ends 1.5 s after the last beat (`RECORDING_TAIL_MS`).
-  Constants: `src/shared/timing/lib/walkthrough-recording.ts`. Command:
+  Constants: `packages/timing/src/shared/constants/walkthrough-recording.ts`. Command:
   `./bin/archboard semantic record --help`.
 - **Requirements.** The recording needs:
   - The Archboard server's Codex signed in.

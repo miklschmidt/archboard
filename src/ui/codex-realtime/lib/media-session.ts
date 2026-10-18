@@ -2,7 +2,7 @@
 // and dispose, a mute that touches only the captured track, and publications
 // delivered in order to every subscriber whatever a subscriber does.
 
-import { CODEX_REALTIME_STOP_MS } from "@/shared/timing/timing";
+import { CODEX_REALTIME_STOP_MS } from "@archboard/timing";
 import { browserRealtimeMediaEnvironment } from "@/ui/codex-realtime/lib/browser-environment";
 import {
 	INITIAL_REALTIME_STATE,

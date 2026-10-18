@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { SUBTITLE_LINGER_MS } from "@/shared/timing/timing";
+import { SUBTITLE_LINGER_MS } from "@archboard/timing";
 import { frameClock } from "@/ui/frame-clock";
 import { cuesOf, wordsOf, type LineCount, type SubtitleCue } from "@/ui/voice-subtitles/lib/cues";
 import {

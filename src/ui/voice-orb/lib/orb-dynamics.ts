@@ -20,7 +20,7 @@ import {
 	VOICE_SWELL_MS,
 	VOICE_SYLLABLE_MS,
 	VOICE_TRACE_STEP_MS,
-} from "@/shared/timing/voice";
+} from "@archboard/timing/voice";
 
 /** What the orb shows, from the voice's stage. */
 type OrbMode = "off" | "starting" | "listening" | "speaking" | "muted" | "ending";

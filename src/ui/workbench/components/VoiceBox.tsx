@@ -40,7 +40,7 @@ import {
 	VOICE_BOX_IN_MS,
 	VOICE_BOX_OUT_MS,
 	VOICE_WORD_IN_MS,
-} from "@/shared/timing/voice";
+} from "@archboard/timing/voice";
 import { cn } from "@/ui/components/class-names";
 import { OrbSlot } from "@/ui/voice-orb";
 import { SubtitleWords, SubtitlesToggle, type SubtitleSource } from "@/ui/voice-subtitles";

@@ -16,7 +16,7 @@ import {
 	parseToolArguments,
 	parseToolResultEnvelope,
 } from "../index.js";
-import { CODEX_BROWSER_COMMAND_LEASE_MS } from "../../../shared/timing/timing.js";
+import { CODEX_BROWSER_COMMAND_LEASE_MS } from "@archboard/timing";
 import {
 	APPROVAL_REQUIRED_ENVELOPE,
 	OUTCOME_UNKNOWN_ENVELOPE,

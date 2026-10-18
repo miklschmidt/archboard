@@ -14,7 +14,7 @@ import {
 	type SemanticBoard,
 } from "@/shared/semantic-board/index";
 import type { VaultCheck } from "@/shared/semantic-policy/index";
-import { SKILL_EVAL_TALK_STEP_MS } from "@/shared/timing/timing";
+import { SKILL_EVAL_TALK_STEP_MS } from "@archboard/timing";
 import { RecordingContainerSchema, type RecordingContainer } from "@/shared/walkthrough-recording";
 import {
 	SAMPLES_PER_FRAME,

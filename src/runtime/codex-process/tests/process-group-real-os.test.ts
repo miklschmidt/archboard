@@ -1,10 +1,7 @@
 import { expect, test } from "bun:test";
 import { spawn, type ChildProcess } from "node:child_process";
 
-import {
-	CODEX_COMPOSED_SHUTDOWN_MS,
-	PROCESS_GROUP_OBSERVATION_POLL_MS,
-} from "../../../shared/timing/timing.js";
+import { CODEX_COMPOSED_SHUTDOWN_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
 import {
 	CodexProcessGroupError,
 	createCodexProcessGroupOperations,

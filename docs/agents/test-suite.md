@@ -6,7 +6,8 @@ changing tests or CI, or when a browser check fails.
 `bun run test` type-checks and runs `build:frontend`, then runs four normal
 native lanes in this order:
 
-- `test:modules`: isolated module-owned product tests discovered under `src/`;
+- `test:modules`: isolated module-owned and package-owned product tests discovered under `src/`
+  and `packages/`;
 - `test:system`: system product owners under the seven explicit non-browser
   directories, with `--max-concurrency=1` because they own real processes and
   shared local ports;
@@ -107,7 +108,7 @@ happen. It never multiplies a poll cadence, a window in which nothing may happen
 or a product duration.
 
 No `TEST_*` budget comes from a product duration (TASK-154).
-`tests/system/support/timing.ts` imports nothing from `src/shared/timing`.
+`tests/system/support/timing.ts` imports nothing from `packages/timing`.
 A wait deadline is a ceiling that a passing run never reaches.
 A poll cadence and an intentional wait are separate durations.
 A product change must not retune these test values.

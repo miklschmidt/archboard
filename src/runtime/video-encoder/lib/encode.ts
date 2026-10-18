@@ -6,7 +6,7 @@
 
 import { rmSync, statSync } from "node:fs";
 
-import { RECORDING_ENCODE_FINISH_MS } from "@/shared/timing/timing";
+import { RECORDING_ENCODE_FINISH_MS } from "@archboard/timing";
 import type { RecordingContainer } from "@/shared/walkthrough-recording";
 import {
 	SAMPLES_PER_FRAME,

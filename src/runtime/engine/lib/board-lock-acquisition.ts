@@ -6,7 +6,7 @@ import {
 	LOCK_POLL_MS,
 	LOCK_STEAL_GUARD_MS,
 	LOCK_WAIT_CAP_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import { boardMemoryKey, normalizeBoardKey } from "@/runtime/engine/board";
 import { noteClaimRevoked, processClaims } from "@/runtime/engine/lib/board-lock-claim-state";
 import {

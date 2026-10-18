@@ -29,7 +29,7 @@ import {
 	RECORDING_FRAME_CALL_MS,
 	RECORDING_PAGE_READY_MS,
 	RECORDING_POLL_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import type { RecordingContainer } from "@/shared/walkthrough-recording";
 import {
 	REPLAY_PAGE_GLOBAL,

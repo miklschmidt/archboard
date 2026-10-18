@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import { frameClock } from "@/ui/frame-clock";
 import { panCamera, zoomCameraAbout, type Camera } from "@/ui/semantic-board-canvas/lib/camera";
 import {

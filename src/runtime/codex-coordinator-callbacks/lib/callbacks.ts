@@ -4,7 +4,7 @@ import {
 	createSettledLedger,
 	type RealtimeGeneration,
 } from "@/runtime/codex-coordinator-callbacks/lib/settled-ledger";
-import { CODEX_SEMANTIC_FRESHNESS_MS } from "@/shared/timing/timing";
+import { CODEX_SEMANTIC_FRESHNESS_MS } from "@archboard/timing";
 import { createWorkhorseNewsObserver } from "@/runtime/codex-coordinator-callbacks/lib/workhorse-news";
 import { createTellCoordinator } from "@/runtime/codex-coordinator-callbacks/lib/tell-coordinator";
 import {

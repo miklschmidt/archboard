@@ -1,5 +1,5 @@
 import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
-import { CODEX_COMPOSED_SHUTDOWN_MS } from "@/shared/timing/timing";
+import { CODEX_COMPOSED_SHUTDOWN_MS } from "@archboard/timing";
 import {
 	attachChildListeners,
 	destroyQuietly,

@@ -40,7 +40,7 @@ import {
 	fallbackResponse,
 	validateApprovalResponse,
 } from "@/runtime/codex-approvals/lib/response";
-import { CODEX_APPROVAL_EXPIRY_MS } from "@/shared/timing/timing";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import type { JsonRpcRequestId } from "@/shared/codex-workbench-identity";
 import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
 

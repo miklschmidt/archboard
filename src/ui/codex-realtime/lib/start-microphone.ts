@@ -1,7 +1,7 @@
 // The permission and support stages: the microphone is requested, adopted,
 // and the browser's realtime support confirmed before any peer exists.
 
-import { CODEX_REALTIME_START_MS } from "@/shared/timing/timing";
+import { CODEX_REALTIME_START_MS } from "@archboard/timing";
 import type {
 	RealtimeMediaDevices,
 	RealtimeMediaStream,

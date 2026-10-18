@@ -2,7 +2,7 @@
 // answer. The harness lays fixtures and reads outcomes through the same
 // commands an agent uses, so what the checks read is what the CLI says.
 
-import { SKILL_EVAL_CLI_TIMEOUT_MS } from "@/shared/timing/timing";
+import { SKILL_EVAL_CLI_TIMEOUT_MS } from "@archboard/timing";
 import { runProcess } from "@/runtime/skill-evaluation/lib/process";
 
 /** What one call answered. */
