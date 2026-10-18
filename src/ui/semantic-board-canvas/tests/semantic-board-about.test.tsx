@@ -302,6 +302,7 @@ test("showing a part the view on screen does not draw opens the whole board, the
 			view: { id: VIEW.id, name: VIEW.name, grammar: VIEW.grammar },
 			width: 4000,
 			height: 3000,
+			drawn: { nodes: [], edges: [], flows: [], steps: [] },
 			atlas: { nodes: {}, edges: {}, regions: {} },
 		},
 	};

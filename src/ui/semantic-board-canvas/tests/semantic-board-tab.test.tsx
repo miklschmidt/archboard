@@ -112,7 +112,7 @@ test("a proposal's key counts each standing it has, in one order, and leaves out
 	]);
 });
 
-test("a view in which nothing differs keeps the control; only a whole identical variant drops it", async () => {
+test("a reading in which nothing differs says so and keeps the control, the overview too", async () => {
 	const proposal = { id: "v2", name: "proposal", lifecycle: "draft" };
 	const against = { id: "v1", name: "as built", lifecycle: "current" };
 	// The standings are of what the picture draws: the view draws only parts
@@ -133,8 +133,10 @@ test("a view in which nothing differs keeps the control; only a whole identical 
 		status: 200,
 		body: { ...drawing(1), variant: proposal, changes: quiet },
 	};
+	// The overview draws part of the variant as well (ADR 0052), so its
+	// counts cannot say that the variant is identical (TASK-497).
 	mountStage();
 	await settle();
-	expect(part("semantic-changes")).not.toBeNull();
-	expect(document.querySelector("[data-slot='semantic-comparison-toggle']")).toBeNull();
+	expect(part("semantic-comparison-toggle")).not.toBeNull();
+	expect(part("semantic-change-none")).not.toBeNull();
 });

@@ -147,6 +147,12 @@ function picture(
 			),
 			regions: {},
 		},
+		drawn: {
+			nodes: cards.map((card) => ({ id: card.id, name: card.id })),
+			edges: lines.map((line) => ({ id: line.id, name: line.id })),
+			flows: [],
+			steps: [],
+		},
 		...identity,
 	};
 }

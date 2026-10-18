@@ -62,7 +62,9 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 	expect(plain.reply.svg).not.toContain("data-semantic-standing");
 	expect(plain.reply.svg).not.toContain('data-semantic-id="old"');
 	expect(plain.reply.svg).toContain('data-semantic-id="new"');
-	expect(plain.reply.changes).toEqual(decorated.reply.changes);
+	// Both are read against the same variant; each says how what it draws stands.
+	expect(plain.reply.changes?.against).toEqual(decorated.reply.changes?.against);
+	expect(plain.reply.changes?.standing).toEqual({ kept: "unchanged", new: "added" });
 	expect(plain.reply.variant).toEqual(decorated.reply.variant);
 });
 

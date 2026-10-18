@@ -7,6 +7,7 @@ import { z } from "zod";
 import {
 	DiagramThemeSchema,
 	OfferedViewSchema,
+	PictureReceiptShape,
 	RenderedVariantSchema,
 } from "@/shared/semantic-board/index";
 
@@ -50,6 +51,11 @@ const SemanticRasterReceiptSchema = z.object({
 	diagram: SemanticRasterPageSizeSchema,
 	/** The captured page rectangle, or null for the whole diagram. */
 	region: SemanticRasterRegionSchema.nullable(),
+	/**
+	 * Every node, edge, flow and step the diagram draws, and the counts of the
+	 * marks its key shows: of the whole diagram, also when a region is captured.
+	 */
+	...PictureReceiptShape,
 	/** The exact renderer document and stable presentation state used for capture. */
 	source: z.object({
 		renderer: z.literal("semantic-renderer"),

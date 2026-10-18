@@ -273,6 +273,27 @@ const MARKED = [
 type MarkCount = (typeof MARKED)[number] & { readonly count: number };
 
 /**
+ * How the subjects a drawing placed stand: a comparison's standing kept to
+ * them. A reading holds more than its grammar draws (a sequence view keeps the
+ * relationships between its participants and draws none of them), so a mark
+ * is counted, and a subject named, only where the drawing put one (TASK-497).
+ * @param standing How every subject of the reading stands.
+ * @param placed The subjects the drawing placed, by id.
+ * @returns The standing of those alone.
+ */
+function placedStanding(
+	standing: Readonly<Record<string, SubjectStanding>>,
+	placed: readonly string[],
+): Record<string, SubjectStanding> {
+	return Object.fromEntries(
+		placed.flatMap((id) => {
+			const stands = standing[id];
+			return stands === undefined ? [] : [[id, stands]];
+		}),
+	);
+}
+
+/**
  * How many subjects stand each marked way, leaving out the standings nothing has.
  * @param standing How every subject of the comparison stands.
  * @returns The counts, in the order a reader is told them.
@@ -291,6 +312,7 @@ export {
 	LINE_MARKS,
 	markCounts,
 	pictureAppearances,
+	placedStanding,
 	sampleKey,
 	type AppliedAppearance,
 	type LineMark,

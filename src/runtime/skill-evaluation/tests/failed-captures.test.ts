@@ -25,6 +25,8 @@ const CAPTURE_RECEIPT = {
 	scale: 1,
 	diagram: { width: 1, height: 1 },
 	region: null,
+	drawn: { nodes: [], edges: [], flows: [], steps: [] },
+	marks: null,
 	source: {
 		renderer: "semantic-renderer",
 		fonts: "embedded",

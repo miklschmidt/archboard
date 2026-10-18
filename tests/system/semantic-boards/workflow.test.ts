@@ -482,7 +482,9 @@ describe("authoring and opening a semantic board", () => {
 		expect(named.svg).toContain('data-semantic-standing="removed"');
 		expect(plain.svg).not.toContain("data-semantic-standing");
 		expect(plain.atlas.nodes[doomed.id]).toBeUndefined();
-		expect(plain.changes).toEqual(whole.changes);
+		// The plain picture is read against the same variant, and says how what it draws stands.
+		expect(plain.changes.against).toEqual(whole.changes.against);
+		expect(plain.changes.standing[doomed.id]).toBeUndefined();
 		// A selected deletion stays visible even when the proposal has none of it.
 		expect(selected.changes.standing).toEqual({ [doomed.id]: "removed" });
 		expect(selected.atlas.nodes[doomed.id]).toBeDefined();

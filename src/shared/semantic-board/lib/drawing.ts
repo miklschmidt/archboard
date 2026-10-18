@@ -34,7 +34,8 @@ import {
 	type VariantComparison,
 } from "@/shared/semantic-board/lib/compare";
 import type { VariantContent } from "@/shared/semantic-board/lib/content";
-import { everyStep } from "@/shared/semantic-board/lib/flow-steps";
+import { everyStep, stepWords } from "@/shared/semantic-board/lib/flow-steps";
+import type { DrawnSubjects } from "@/shared/semantic-board/lib/rendering";
 import { scopedContent, type ReadingScope } from "@/shared/semantic-board/lib/scope";
 
 /** What the answer says about a variant read against another, or nothing for the reference. */
@@ -155,4 +156,44 @@ function against(
 	return standing;
 }
 
-export { drawingOf, comparedWith, type DrawnChanges, type DrawnProposal };
+/**
+ * What a picture draws, named: the subjects of the drawn content that the
+ * renderer placed, by kind, in the board's order. Only the renderer knows
+ * which of the content's subjects its grammar draws, so it says which ids it
+ * placed and this names them as a person reads them.
+ * @param content The content the picture was drawn from.
+ * @param placed The subjects the renderer placed, by id.
+ * @returns Each placed node, edge, flow and step, by id and name.
+ */
+function drawnSubjects(content: VariantContent, placed: readonly string[]): DrawnSubjects {
+	const drawn = new Set(placed);
+	const names = new Map(content.nodes.map((node) => [node.id, node.name]));
+	/**
+	 * The placed subjects of one kind, named.
+	 * @param subjects That kind's subjects, in the board's order.
+	 * @param name What a person reads one of them as.
+	 * @returns The placed ones.
+	 */
+	const named = <Subject extends { readonly id: string }>(
+		subjects: readonly Subject[],
+		name: (subject: Subject) => string,
+	): DrawnSubjects["nodes"] =>
+		subjects
+			.filter(({ id }) => drawn.has(id))
+			.map((subject) => ({ id: subject.id, name: name(subject) }));
+	return {
+		nodes: named(content.nodes, (node) => node.name),
+		edges: named(
+			content.edges,
+			(edge) =>
+				edge.label ?? `${names.get(edge.from) ?? edge.from} → ${names.get(edge.to) ?? edge.to}`,
+		),
+		flows: named(content.flows, (flow) => flow.name),
+		steps: named(
+			content.flows.flatMap((flow) => everyStep(flow.steps)),
+			stepWords,
+		),
+	};
+}
+
+export { drawingOf, drawnSubjects, comparedWith, type DrawnChanges, type DrawnProposal };

@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
 	LayoutEngineSchema,
 	OfferedViewSchema,
+	PictureReceiptShape,
 	RenderedVariantSchema,
 	StandaloneThemeSchema,
 } from "@/shared/semantic-board/index";
@@ -33,6 +34,7 @@ import {
 	resolvedAgainst,
 } from "@/cli/commands/lib/drawn-against";
 import { serverRefusal } from "@/cli/command-contract/common";
+import { pictureReceipt } from "@/cli/commands/lib/drawn-receipt";
 
 const RenderInputSchema = z
 	.object({
@@ -79,6 +81,7 @@ const SemanticRenderResultSchema = z.object({
 	file: z.string(),
 	width: z.number(),
 	height: z.number(),
+	...PictureReceiptShape,
 });
 
 const semanticRenderContract = defineCommand({
@@ -88,6 +91,8 @@ const semanticRenderContract = defineCommand({
 	description:
 		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +
 		"routing belong to the renderer. Without --out, stdout carries the SVG, including its accessibility metadata. " +
+		"With --out, the receipt names every node, edge, flow and step the picture draws and the counts of the marks " +
+		"its key shows; semantic views lists that for every view at once. " +
 		"Use --no-comparison to hide comparison marks and removed subjects. " +
 		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
 		"leaving out the Planned frame. " +
@@ -232,6 +237,7 @@ const semanticRenderContract = defineCommand({
 				file,
 				width: drawn.width,
 				height: drawn.height,
+				...pictureReceipt(drawn, input.noComparison),
 			},
 			pendingArtifact: { path: file, content: drawn.svg, encoding: "utf8" as const },
 		};

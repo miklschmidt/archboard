@@ -36,6 +36,7 @@ import { semanticFootprintContract } from "@/cli/commands/semantic-footprint";
 import { semanticLocalityContract } from "@/cli/commands/semantic-locality";
 import { semanticRenderContract } from "@/cli/commands/semantic-render";
 import { semanticRasterizeContract } from "@/cli/commands/semantic-rasterize";
+import { semanticViewsContract } from "@/cli/commands/semantic-views";
 import { semanticRecordContract } from "@/cli/commands/semantic-record";
 import { semanticReplayContract } from "@/cli/commands/semantic-replay";
 import { claimContract, releaseContract } from "@/cli/commands/claim";
@@ -82,6 +83,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 				contract(semanticFootprintContract, "src/cli/commands/semantic-footprint.ts"),
 			),
 			locality: child(contract(semanticLocalityContract, "src/cli/commands/semantic-locality.ts")),
+			views: child(contract(semanticViewsContract, "src/cli/commands/semantic-views.ts")),
 			render: child(contract(semanticRenderContract, "src/cli/commands/semantic-render.ts")),
 			rasterize: child(
 				contract(semanticRasterizeContract, "src/cli/commands/semantic-rasterize.ts"),

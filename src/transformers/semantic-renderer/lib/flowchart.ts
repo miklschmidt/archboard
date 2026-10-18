@@ -509,7 +509,7 @@ async function renderFlowchart(request: DiagramRenderRequest): Promise<RenderedD
 		reading: drawing.direction,
 		theme: request.theme,
 	});
-	return { svg, width: page.width, height: page.height, atlas: page.atlas };
+	return { svg, width: page.width, height: page.height, atlas: page.atlas, placed: page.placed };
 }
 
 export { renderFlowchart };

@@ -47,6 +47,7 @@ import {
 } from "@/cli/commands/lib/drawn-against";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { copyImageToClipboard } from "@/cli/commands/lib/image-clipboard";
+import { pictureReceipt } from "@/cli/commands/lib/drawn-receipt";
 
 const THEMES = DiagramThemeSchema.options;
 
@@ -389,6 +390,7 @@ const semanticRasterizeContract = defineCommand({
 			scale: input.scale,
 			diagram: { width: drawn.width, height: drawn.height },
 			region: input.region ?? null,
+			...pictureReceipt(drawn, input.noComparison),
 			source: {
 				renderer: "semantic-renderer" as const,
 				fonts: "embedded" as const,
