@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-18 13:15'
-updated_date: '2026-10-18 15:53'
+updated_date: '2026-10-18 16:06'
 labels:
   - schema
   - cli
@@ -42,3 +42,11 @@ A board holds no link to the documents it draws. In the Docs-Architecture-Design
 5. Boards: Archboard server@TASK-498 and Archboard server routes@TASK-498 restate Code check (it now holds document references, ADR 0054); Board persistence@TASK-498 restates Lifecycle transitions (edit restates documents, branch copies them). No part, relationship or binding is added: the work stays inside src/runtime/code-check and transitions.ts. At closing the proposals name ADR 0054 as their document.
 6. Close per archboard-dev: check --code --variant TASK-498 diff, footprint, adopt, check, behind; bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Decisions: references live on the variant only (ADR 0054); no board-level list, because no case needs a reference that no variant carries. A reference is {repo, path, branch?, commit?} (DocumentReferenceSchema, derived from CodeBindingSchema) and resolves through the binding's resolver. Only check --code reads them (the plain check reads no Git, so a pinned ref could not be read there); it reads every variant the check reads, drafts included, because a document precedes the code a draft plans. A directory is not a document (DOCUMENT_PATH_MISSING). Write path: documents in the semantic new and semantic edit payloads (edit replaces the edited variant's list, [] removes it); branch copies the predecessor's list. No browser change.
+Closing: check --code against check --code --variant TASK-498 differ in nothing (25 findings each, none from this task). Footprint read against base e1c7a849c (the commit before d38674ccc, the first Refs: TASK-498 commit outside backlog and the vault): each proposal's against is its parent; namedAndChanged = Lifecycle transitions, Code check, Code check; changedNotNamed and namedNotChanged empty on all three. Adopted Archboard server@TASK-498 (v276), Archboard server routes@TASK-498 (v76), Board persistence@TASK-498 (v76); each names ADR 0054 as its document. archboard check: no diagnostics. Behind on this task's commits: Command interface (Semantic authoring, Vault check, Commands: 5668cfebb changed help descriptions of semantic edit, branch and check, nothing they draw) and Skill evaluation (Evaluation inputs: 1b553e9ff added a coverage row). Both boards stay right.
+Skill note: archboard-dev names ./bin/dogfood, which this checkout does not have; ./bin/archboard was used.
+<!-- SECTION:NOTES:END -->

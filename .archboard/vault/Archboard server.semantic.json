@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 273,
+	"version": 276,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-18T15:53:18.943Z",
+	"updatedAt": "2026-10-18T16:06:04.524Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -108071,7 +108071,7 @@
 		{
 			"id": "PexyuMLv",
 			"name": "TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Lnv4E0B2",
 			"summary": "Calls become flows with decisions and loops, drawn by sequence and flowchart views",
 			"content": {
@@ -111513,9 +111513,15 @@
 		{
 			"id": "ikFyiS12",
 			"name": "TASK-498",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "PexyuMLv",
-			"summary": "A board and its variants name the repository documents they state",
+			"summary": "Archboard server modules and the one write boundary",
+			"documents": [
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"path": "docs/adr/0054-a-variant-names-the-repository-documents-it-draws.md"
+				}
+			],
 			"content": {
 				"nodes": [
 					{
@@ -114953,7 +114959,7 @@
 			}
 		}
 	],
-	"current": "PexyuMLv",
+	"current": "ikFyiS12",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -115242,6 +115248,12 @@
 			"from": "Lnv4E0B2",
 			"at": "2026-10-16T02:58:35.647Z",
 			"reason": "Its exchanges are flows, drawn by sequence and flowchart views (TASK-482.07)"
+		},
+		{
+			"variant": "ikFyiS12",
+			"from": "PexyuMLv",
+			"at": "2026-10-18T16:06:04.524Z",
+			"reason": "The code check holds each variant's document references to the files at their version (ADR 0054)"
 		}
 	],
 	"shelvings": [
