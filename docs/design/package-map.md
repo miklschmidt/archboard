@@ -217,12 +217,17 @@ product behavior.
 
 ## Risk: the runtime
 
-`vp test` runs Vitest, and Vitest requires Node (`^22.18.0 || ^24.11.0 || >=26.0.0`, from the
-Vite+ test guide). The product runs on Bun. Production code calls `Bun.YAML`
+The Vite+ test guide says that Vitest requires Node (`^22.18.0 || ^24.11.0 || >=26.0.0`), and the
+guide does not mention Bun. The Bun 1.4 release notes say that Vitest runs under Bun, with the
+`threads` and `forks` pools and with `--coverage` (https://bun.com/blog/bun-v1.4#vitest). The
+installed Bun is 1.4.3. The product runs on Bun. Production code calls `Bun.YAML`
 (`runtime/semantic-board-store/lib/configuration.ts:142`), and 27 production files use other Bun
 APIs. The test harness starts servers with `process.execPath`
-(`tests/system/support/owned-server.ts:240`), which names the wrong executable under Node.
+(`tests/system/support/owned-server.ts:240`), which names the wrong executable if Vitest runs in
+Node.
 
-Do not promise that every test moves. Run a trial first. Run a few tests of board writes and
-server cleanup under `vp test`, once under Node and once with Vitest started by Bun. The result
-decides if tests that need Bun stay in a Bun project. Package moves do not depend on this trial.
+Run a short trial before the test move. Start Vitest under Bun, with a few board-write and
+server-cleanup tests. Make sure that the Bun APIs, `process.execPath` and process cleanup behave as
+they do under `bun test`. Also make sure that `vp test` starts under Bun and not under Node. If a
+group of tests cannot run under Bun, it stays in a separate project. Package moves do not depend on
+this trial.
