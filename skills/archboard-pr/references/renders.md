@@ -1,8 +1,8 @@
 # The picture in a pull request
 
-The Summary shows one picture: the change marked in place. This file says how
-to draw it, how to make it readable, and how to label it. Section 7 of the
-skill says how to post it.
+The Summary shows the change marked in place, in one picture or more. This
+file says how to draw each one, how to make it readable, and how to label it.
+Section 7 of the skill says how to post it.
 
 ## Choose the view
 
@@ -53,8 +53,7 @@ Never draw a before picture beside or under the after picture. The marks
 already say what changed, and each variant is laid out afresh, so cards move
 between two pictures and do not line up.
 
-Done: one SVG file, and a second only for a change that moves both structure
-and a flow, or that needs one picture for each design part to be read.
+Done: one SVG file for each picture that section 4 of the skill asks for.
 
 ## Look at it
 

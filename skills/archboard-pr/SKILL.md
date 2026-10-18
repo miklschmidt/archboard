@@ -246,15 +246,16 @@ own serves, so nothing reaches the repository's vault or its server. Follow
 Done: `compare` reports every change the diff makes to what the board draws,
 and the repository's vault is unchanged.
 
-## 4. Draw the picture
+## 4. Draw the pictures
 
 Draw it with [renders](references/renders.md). In short:
 
-1. Draw one picture. Add a second when the change moves both structure and a
-   flow (one architecture picture and one sequence), or when one picture of
-   every added part cannot be read at the size it will show (one picture for
-   each design part).
-2. Draw it through a view of the changed parts and their direct neighbours.
+1. Draw one architecture picture of the change. Add a sequence or a
+   flowchart for each flow that the change moves. When one architecture
+   picture of every added part cannot be read at the size it will show, draw
+   one for each design part. Each picture shows something that no other
+   picture shows.
+2. Draw each through a view of the changed parts and their direct neighbours.
    In a stack, use the view of the design parts that the pull request builds,
    named `Inside <design part>` or `Inside <part> and <part>`, and share it
    with the other pull requests that build inside those parts.
@@ -264,8 +265,8 @@ Draw it with [renders](references/renders.md). In short:
 4. Give it a title that names where it sits and what it adds, such as
    `--title "Inside Board store: the lease table replaces lock files"`.
 
-Done: you looked at the picture at the size it will show, and every part that
-`compare` reports as added or removed is on it.
+Done: you looked at each picture at the size it will show, and every part
+that `compare` reports as added or removed is on one of them.
 
 ## 5. Record a walkthrough
 
@@ -338,12 +339,13 @@ reader never sees it.
 
 - One to three sentences: the problem or need, and what the change does
   about it. Use the repository's domain words: its glossary (`CONTEXT.md`,
-  `GLOSSARY.md` or similar) and the names that the picture carries.
-- Then the picture, with alt text that says what it shows, not the file name.
-  If a card carries a triangle on its top-right corner, say under the picture
-  that it marks a disagreement with the current variant that nobody settled.
+  `GLOSSARY.md` or similar) and the names that the pictures carry.
+- Then the pictures, each with alt text that says what it shows, not the file
+  name. If a card carries a triangle on its top-right corner, say under that
+  picture that it marks a disagreement with the current variant that nobody
+  settled.
 - Then the walkthrough. Its chapters are the bold headings of the transcript,
-  collapsed with it. The sentences above the picture do not repeat the
+  collapsed with it. The sentences above the pictures do not repeat the
   walkthrough: they are the short version, and it is the long one.
 
 **Evidence.** One before and one after. A test that fails before and passes
@@ -378,9 +380,9 @@ Check before you post. Done: every line holds.
 - [ ] The sections are Summary, Evidence and Merge Danger, in that order, and
       nothing stands between them.
 - [ ] The visible body reads in about two minutes. The Summary has at most
-      three sentences above the picture.
+      three sentences above the pictures.
 - [ ] No sentence breaks the never-list.
-- [ ] The picture is drawn with Blocks, `--theme auto`, a title and a
+- [ ] Each picture is drawn with Blocks, `--theme auto`, a title and a
       horizontal legend, against `<below>`, and it has alt text.
 - [ ] Each beat of a video makes one point, and the transcript is collapsed
       under the video.
