@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 73,
+	"version": 76,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-18T15:53:07.532Z",
+	"updatedAt": "2026-10-18T16:06:05.052Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -18203,7 +18203,7 @@
 		{
 			"id": "B1ylVwwS",
 			"name": "TASK-480 after TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "jPTCrFVN",
 			"summary": "TASK-480 restated after TASK-482.07",
 			"content": {
@@ -22351,9 +22351,15 @@
 		{
 			"id": "As9UmFaC",
 			"name": "TASK-498",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "B1ylVwwS",
-			"summary": "A board and its variants name the repository documents they state",
+			"summary": "Board reads, transitions, and durable writes",
+			"documents": [
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"path": "docs/adr/0054-a-variant-names-the-repository-documents-it-draws.md"
+				}
+			],
 			"content": {
 				"nodes": [
 					{
@@ -26497,7 +26503,7 @@
 			}
 		}
 	],
-	"current": "B1ylVwwS",
+	"current": "As9UmFaC",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -26576,6 +26582,12 @@
 			"from": "jPTCrFVN",
 			"at": "2026-10-17T09:58:51.970Z",
 			"reason": "a checkout with no vault is told which known vaults hold boards of its code (TASK-480, adopted on main while TASK-482 was adopted on feat/derived-overview)"
+		},
+		{
+			"variant": "As9UmFaC",
+			"from": "B1ylVwwS",
+			"at": "2026-10-18T16:06:05.052Z",
+			"reason": "An edit restates a variant's document references and a branch copies them (ADR 0054)"
 		}
 	],
 	"shelvings": [

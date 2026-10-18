@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 73,
+	"version": 76,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-18T15:53:19.238Z",
+	"updatedAt": "2026-10-18T16:06:04.821Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -23459,7 +23459,7 @@
 		{
 			"id": "1FGVtYic",
 			"name": "TASK-478.01 after TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "HrZYXoCj",
 			"summary": "TASK-478.01 restated after TASK-482.07",
 			"content": {
@@ -27608,9 +27608,15 @@
 		{
 			"id": "mrxA7iel",
 			"name": "TASK-498",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "1FGVtYic",
-			"summary": "A board and its variants name the repository documents they state",
+			"summary": "The route handlers, and what each one reaches",
+			"documents": [
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"path": "docs/adr/0054-a-variant-names-the-repository-documents-it-draws.md"
+				}
+			],
 			"content": {
 				"nodes": [
 					{
@@ -31755,7 +31761,7 @@
 			}
 		}
 	],
-	"current": "1FGVtYic",
+	"current": "mrxA7iel",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -31840,6 +31846,12 @@
 			"from": "HrZYXoCj",
 			"at": "2026-10-17T09:58:43.531Z",
 			"reason": "semantic render, rasterize and record draw against a named variant (TASK-478.01, adopted on main while TASK-482 was adopted on feat/derived-overview)"
+		},
+		{
+			"variant": "mrxA7iel",
+			"from": "1FGVtYic",
+			"at": "2026-10-18T16:06:04.821Z",
+			"reason": "The code check holds each variant's document references to the files at their version (ADR 0054)"
 		}
 	],
 	"shelvings": [
