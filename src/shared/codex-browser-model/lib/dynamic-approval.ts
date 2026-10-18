@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CODEX_APPROVAL_EXPIRY_MS } from "@/shared/timing/timing";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import { createDynamicApprovalBrowserSchemas } from "@/shared/codex-browser-model/lib/dynamic-approval-browser";
 import { effectHashFor } from "@/shared/codex-browser-model/lib/dynamic-approval-hash";
 import {

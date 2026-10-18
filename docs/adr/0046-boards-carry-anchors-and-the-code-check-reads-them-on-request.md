@@ -869,7 +869,7 @@ evaluate MSBuild files, and sourcekit-lsp evaluates `Package.swift`. The check
 starts such a server only from an entry in `language-servers.json`. The user
 writes that entry for this machine and for checkouts that they trust. The check
 never asks a server to build. Every timeout of the engine lives in
-`src/shared/timing/timing.ts`.
+`packages/timing/src/shared/constants/timing.ts`.
 
 ### The packages
 

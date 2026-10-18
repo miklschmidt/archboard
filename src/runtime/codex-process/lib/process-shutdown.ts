@@ -1,4 +1,4 @@
-import { CODEX_COMPOSED_SHUTDOWN_MS, CODEX_STDIN_EOF_GRACE_MS } from "@/shared/timing/timing";
+import { CODEX_COMPOSED_SHUTDOWN_MS, CODEX_STDIN_EOF_GRACE_MS } from "@archboard/timing";
 import { ensureGroupCleanup } from "@/runtime/codex-process/lib/process-child";
 import type {
 	CodexProcessError,

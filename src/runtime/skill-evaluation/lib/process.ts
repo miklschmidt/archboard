@@ -5,7 +5,7 @@
 import {
 	PROCESS_GROUP_OBSERVATION_POLL_MS,
 	SKILL_EVAL_CODEX_TERM_GRACE_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,

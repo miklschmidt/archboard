@@ -20,7 +20,7 @@
 
 import { useLayoutEffect, useMemo, useRef } from "react";
 
-import { PICTURE_TRANSITION_MS, PRESENTATION_STEP_MS } from "@/shared/timing/timing";
+import { PICTURE_TRANSITION_MS, PRESENTATION_STEP_MS } from "@archboard/timing";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";

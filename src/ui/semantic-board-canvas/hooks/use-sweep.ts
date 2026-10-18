@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react";
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import type { StagedPicture } from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
 import { sweepLines } from "@/ui/semantic-board-canvas/lib/picture-sweep";
 

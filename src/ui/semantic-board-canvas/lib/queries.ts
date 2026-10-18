@@ -6,7 +6,7 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 
 import { DEFAULT_LAYOUT_ENGINE } from "@/shared/semantic-board/index";
-import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
+import { VAULT_CHECK_POLL_MS } from "@archboard/timing";
 import {
 	comparisonKey,
 	fetchSemanticBoards,
@@ -214,7 +214,7 @@ function semanticBoardListQuery(vault: string) {
  * is deliberately no timer here: the cached drawing stays fresh until the
  * board announces a new version over the pane socket, which is what
  * `useSemanticBoardChanges` listens for. That is also why there is no duration
- * to put in `@/shared/timing` — the absence of one is the contract.
+ * to put in `@archboard/timing` — the absence of one is the contract.
  *
  * A network reconnect is the one exception: while the tab was offline a change
  * could have been announced to nobody, so the picture is read again then.

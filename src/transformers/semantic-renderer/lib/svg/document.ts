@@ -42,7 +42,7 @@ import {
 	MEMBERS_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
-import { FAR_VIEW_SWAP_MS } from "@/shared/timing/timing";
+import { FAR_VIEW_SWAP_MS } from "@archboard/timing";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import { HEAD_SHADE_CLASS } from "@/transformers/semantic-renderer/lib/sequence-design";
 import {

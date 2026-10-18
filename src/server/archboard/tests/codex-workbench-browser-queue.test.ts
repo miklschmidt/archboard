@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import type { IdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
-import { CODEX_QUEUE_REREAD_FLOOR_MS } from "../../../shared/timing/timing.js";
+import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@archboard/timing";
 import { projectionHarness } from "./support/codex-workbench-projection-harness.js";
 
 /** A live workhorse holding one thread, as the ready adapter paths need. */

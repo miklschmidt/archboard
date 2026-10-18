@@ -3,7 +3,7 @@
 
 import { useMemo, type CSSProperties, type JSX } from "react";
 
-import { EXPLORING_MS, PRESENTATION_STEP_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS, PRESENTATION_STEP_MS } from "@archboard/timing";
 import { useCameraView, type BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { cameraTransform, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 

@@ -23,7 +23,7 @@ import {
 	setWriteSession,
 } from "@/runtime/engine/server-client";
 import { packageVersion } from "@/runtime/engine/package-version";
-import { CLI_INTERRUPT_CLEANUP_MS } from "@/shared/timing/timing";
+import { CLI_INTERRUPT_CLEANUP_MS } from "@archboard/timing";
 import type { CommandRoutes, RouteOwner } from "@/cli/command-routing/lib/route";
 import { helpText, usageLine } from "@/cli/command-routing/lib/help";
 import { dispatchedCommand } from "@/cli/command-routing/lib/dispatch";

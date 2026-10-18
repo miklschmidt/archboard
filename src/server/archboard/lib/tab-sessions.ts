@@ -16,7 +16,7 @@
 // agent does to a pane never does, so it never changes while somebody types. It ends with the tab.
 
 import { logger } from "@/runtime/engine/logger";
-import { TAB_SESSION_GRACE_MS } from "@/shared/timing/timing";
+import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
 import type { CodexWorkbenchComponents } from "@/server/archboard/codex-workbench-generation";
 import type { TabSessionId } from "@/server/codex-workbench";
 

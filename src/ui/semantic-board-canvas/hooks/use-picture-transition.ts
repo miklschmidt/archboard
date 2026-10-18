@@ -15,7 +15,7 @@
 
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
-import { PICTURE_ENTRY_MS, PICTURE_TRANSITION_MS } from "@/shared/timing/timing";
+import { PICTURE_ENTRY_MS, PICTURE_TRANSITION_MS } from "@archboard/timing";
 import { frameClock } from "@/ui/frame-clock";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { ghostPicture, type Departure } from "@/ui/semantic-board-canvas/lib/picture-departure";

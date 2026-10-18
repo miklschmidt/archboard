@@ -6,7 +6,7 @@
 // whole recording must not grow with it, so nothing else is kept.
 
 import { writeFileSync } from "node:fs";
-import { HEADLESS_CHROMIUM_CALL_MS } from "@/shared/timing/timing";
+import { HEADLESS_CHROMIUM_CALL_MS } from "@archboard/timing";
 
 import { HeadlessChromiumError } from "@/runtime/headless-chromium/lib/errors";
 

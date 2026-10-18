@@ -3,7 +3,7 @@ import {
 	CODEX_PROCESS_RESTART_BASE_MS,
 	CODEX_PROCESS_RESTART_MAX_MS,
 	CODEX_REQUEST_SETTLEMENT_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import {
 	CodexProcessError,
 	type ChildExit,

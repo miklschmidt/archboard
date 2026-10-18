@@ -16,7 +16,7 @@ import {
 	VOICE_COMET_MS,
 	VOICE_ROW_STEP_MS,
 	VOICE_TRACE_MS,
-} from "@/shared/timing/voice";
+} from "@archboard/timing/voice";
 import { rgba, type OrbColors } from "@/ui/voice-orb/lib/orb-colors";
 import { TAU, levelAgo, orbLight, type OrbDynamics } from "@/ui/voice-orb/lib/orb-dynamics";
 

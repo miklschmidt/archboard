@@ -10,7 +10,7 @@
 
 import { queryOptions } from "@tanstack/react-query";
 
-import { BOARD_LISTING_STALE_MS } from "@/shared/timing/timing";
+import { BOARD_LISTING_STALE_MS } from "@archboard/timing";
 import { fetchRepositories } from "@/ui/board-catalog/api/repositories";
 import { fetchPaneInventory } from "@/ui/pane-session";
 

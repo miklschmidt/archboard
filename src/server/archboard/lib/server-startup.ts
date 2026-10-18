@@ -1,6 +1,6 @@
 import { closeLogger, forceCloseLogger, logger } from "@/runtime/engine/logger";
 import { removePidFile } from "@/runtime/engine/pidfile";
-import { SERVER_HTTP_STOP_GRACE_MS } from "@/shared/timing/timing";
+import { SERVER_HTTP_STOP_GRACE_MS } from "@archboard/timing";
 import {
 	serverStartupTerminalRecord,
 	writeServerStartupProtocolRecord,

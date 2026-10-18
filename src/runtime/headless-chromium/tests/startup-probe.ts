@@ -1,8 +1,5 @@
 import { launchHeadlessChromium, HeadlessChromiumError } from "@/runtime/headless-chromium/index";
-import {
-	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-	SEMANTIC_RASTER_CLEANUP_MS,
-} from "@/shared/timing/timing";
+import { SEMANTIC_RASTER_STARTUP_TIMEOUT_MS, SEMANTIC_RASTER_CLEANUP_MS } from "@archboard/timing";
 
 try {
 	const chromium = await launchHeadlessChromium({

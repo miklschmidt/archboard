@@ -1,7 +1,7 @@
-// How long the voice takes to move, as a second entrypoint of the module: in the
+// How long the voice takes to move, as a second export of the package: in the
 // agent dock, between the dock and the voice box, and in the words of a subtitle.
 // `timing.ts` is at its length limit, and only the voice surfaces read these, so
-// the group is exported from here and written in `lib/voice-motion.ts` with what
+// the group is exported from here and written in `voice-motion.ts` with what
 // each duration pulls against.
 
 export {
@@ -32,4 +32,4 @@ export {
 	VOICE_TRACE_MS,
 	VOICE_TRACE_STEP_MS,
 	VOICE_WORD_IN_MS,
-} from "@/shared/timing/lib/voice-motion";
+} from "./voice-motion";

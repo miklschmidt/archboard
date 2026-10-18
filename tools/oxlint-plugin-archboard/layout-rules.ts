@@ -7,6 +7,7 @@ import {
 	ROOT_SOURCE_ENTRYPOINTS,
 	getRepoRelativePath,
 	hasGenericBucket,
+	isProductSourcePath,
 	isSourceFile,
 	isStateFile,
 	moduleAt,
@@ -332,7 +333,7 @@ const noGenericBuckets = createRule(
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);
-		if (!relativePath.startsWith("src/") || !hasGenericBucket(relativePath)) {
+		if (!isProductSourcePath(relativePath) || !hasGenericBucket(relativePath)) {
 			return {};
 		}
 
@@ -355,7 +356,7 @@ const noCompatibilityIdentifiers = createRule(
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);
-		if (!relativePath.startsWith("src/")) {
+		if (!isProductSourcePath(relativePath)) {
 			return {};
 		}
 

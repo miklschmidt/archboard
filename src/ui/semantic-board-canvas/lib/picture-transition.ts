@@ -17,7 +17,7 @@
 // Progress is handed in rather than read from a clock: whoever drives this
 // owns the frame loop, and a test drives it by hand.
 
-import { PICTURE_TRANSITION_PHASES } from "@/shared/timing/timing";
+import { PICTURE_TRANSITION_PHASES } from "@archboard/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { carryCard, growIn, isLabel } from "@/ui/semantic-board-canvas/lib/picture-cards";
 import { carryLine, drawOn } from "@/ui/semantic-board-canvas/lib/picture-lines";

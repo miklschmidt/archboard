@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CODEX_BROWSER_COMMAND_LEASE_MS } from "@/shared/timing/timing";
+import { CODEX_BROWSER_COMMAND_LEASE_MS } from "@archboard/timing";
 
 const WAIT_THREADS_TIMEOUT_MAX_MS: number = 120_000;
 

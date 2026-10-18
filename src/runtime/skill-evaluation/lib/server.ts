@@ -13,7 +13,7 @@ import {
 	SKILL_EVAL_SERVER_STARTUP_MS,
 	SKILL_EVAL_HEALTH_POLL_MS,
 	SKILL_EVAL_HEALTH_REQUEST_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import type { RunPaths } from "@/runtime/skill-evaluation/lib/isolation";
 import { ownProcess, pause, settlesWithin } from "@/runtime/skill-evaluation/lib/process";
 

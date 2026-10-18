@@ -9,7 +9,7 @@ import {
 	LOCK_LEASE_MS,
 	LOCK_POLL_MS,
 	LOCK_STEAL_GUARD_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-board-claim-"));
 const originalWarn = logger.warn;

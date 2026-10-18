@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 import { fork, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
 import type { z } from "zod";
-import { IMAGE_CLIPBOARD_TIMEOUT_MS } from "@/shared/timing/timing";
+import { IMAGE_CLIPBOARD_TIMEOUT_MS } from "@archboard/timing";
 import {
 	ImageClipboardInputSchema,
 	ImageClipboardReplySchema,

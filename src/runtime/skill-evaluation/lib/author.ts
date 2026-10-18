@@ -6,7 +6,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { SKILL_EVAL_AUTHOR_TIMEOUT_MS } from "@/shared/timing/timing";
+import { SKILL_EVAL_AUTHOR_TIMEOUT_MS } from "@archboard/timing";
 import type { SemanticBoard } from "@/shared/semantic-board/index";
 import type { CliContext } from "@/runtime/skill-evaluation/lib/archboard";
 import {

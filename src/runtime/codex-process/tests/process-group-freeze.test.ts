@@ -4,7 +4,7 @@ import {
 	CODEX_GROUP_FREEZE_MS,
 	CODEX_STDIN_EOF_GRACE_MS,
 	CODEX_TERM_GRACE_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 
 import { createCodexProcessForTesting as createCodexProcess } from "../testing.js";
 import {

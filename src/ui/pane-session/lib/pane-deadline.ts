@@ -7,7 +7,7 @@
 // the compromise, and `immediate` is the escape for the one case that cannot
 // wait — a pane arriving on a board, which the next CLI turn reads.
 
-import { PANE_DEBOUNCE_MS } from "@/shared/timing/timing";
+import { PANE_DEBOUNCE_MS } from "@archboard/timing";
 
 /** A clock the deadline schedules against; the browser's by default. */
 interface PaneDeadlineClock {

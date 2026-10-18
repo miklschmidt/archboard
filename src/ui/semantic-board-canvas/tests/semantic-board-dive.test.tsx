@@ -11,7 +11,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { EXPLORING_MS, PICTURE_ENTRY_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS, PICTURE_ENTRY_MS } from "@archboard/timing";
 import {
 	cameraNow,
 	takeFrames,

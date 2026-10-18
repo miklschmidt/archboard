@@ -14,7 +14,7 @@
 // with the stroke, fading in or out. A line only the new picture has is drawn
 // from its start to its end, its arrowhead appearing once it is nearly there.
 
-import { PICTURE_TRANSITION_PHASES } from "@/shared/timing/timing";
+import { PICTURE_TRANSITION_PHASES } from "@archboard/timing";
 import { morphPath, pathLength } from "@/ui/semantic-board-canvas/lib/path-morph";
 import {
 	drawnPaths,

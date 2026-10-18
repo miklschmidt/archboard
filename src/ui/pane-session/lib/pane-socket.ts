@@ -2,7 +2,7 @@
 // reconnected after an abnormal close, and identified by generation so a
 // listener on a superseded socket can tell it is stale.
 
-import { SOCKET_RECONNECT_MS } from "@/shared/timing/timing";
+import { SOCKET_RECONNECT_MS } from "@archboard/timing";
 import {
 	createPaneRegistrationLatch,
 	type PaneRegistrationLatch,

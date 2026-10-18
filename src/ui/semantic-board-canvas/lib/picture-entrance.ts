@@ -13,7 +13,7 @@
 // Like a transition, the picture is the live one from the first frame, and
 // landing stages it again untouched.
 
-import { PICTURE_ENTRY_PHASES } from "@/shared/timing/timing";
+import { PICTURE_ENTRY_PHASES } from "@archboard/timing";
 import type { SemanticBox, SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { growIn } from "@/ui/semantic-board-canvas/lib/picture-cards";
 import { drawOn } from "@/ui/semantic-board-canvas/lib/picture-lines";

@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { subjectBox } from "@/ui/semantic-board-canvas/lib/subjects";

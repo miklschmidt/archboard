@@ -15,10 +15,10 @@
 // So they live here, with what pulls against what written beside them. Nothing
 // in this file has behaviour. It is numbers and the reasons for them, and the
 // reasons are the point: the next person to halve one of these should not have
-// to discover by accident what else they halved. Two groups are large enough
-// to read on their own and are grouped in `lib/`, re-exported below: holding a
-// board, the motion a person watches rather than waits out, and recording a
-// walkthrough.
+// to discover by accident what else they halved. Some groups are large enough
+// to read on their own: holding a board, the motion a person watches rather than
+// waits out, and recording a walkthrough. Each sits in a file beside this one and
+// is re-exported below.
 //
 // This module is imported by the pane, the server, the CLI and the checks, so
 // it stays free of `process`, `node:` imports and anything a browser does not
@@ -370,7 +370,7 @@ const CLI_INTERRUPT_CLEANUP_MS = 3 * GIT_PROCESS_GROUP_CLEANUP_MS;
 // Restart delay doubles after each failed child attempt, caps at the maximum,
 // and resets only after one account-ready session. Shutdown is ordered around
 // the child lifecycle: stop realtime, settle local waiters, close stdin, wait for
-// EOF, TERM, then freeze and KILL the group (lib/codex-group-freeze), all within the composed cap.
+// EOF, TERM, then freeze and KILL the group (codex-group-freeze.ts), all within the composed cap.
 
 /** Retry-delay classification. Pulls against the first restart attempt. */
 const CODEX_PROCESS_RESTART_BASE_MS = 1000;
@@ -453,13 +453,9 @@ export {
 	PRESENTATION_BOX_STEP_MS,
 	PRESENTATION_STEP_MS,
 	SUBJECT_TIP_DELAY_MS,
-} from "@/shared/timing/lib/diagram-motion";
-export { EXPLORING_MS } from "@/shared/timing/lib/exploring";
-export {
-	AGENT_PANEL_SLIDE_MS,
-	SIDEBAR_MS,
-	SLIDE_SETTLED_MS,
-} from "@/shared/timing/lib/column-motion";
+} from "./diagram-motion";
+export { EXPLORING_MS } from "./exploring";
+export { AGENT_PANEL_SLIDE_MS, SIDEBAR_MS, SLIDE_SETTLED_MS } from "./column-motion";
 export {
 	RECORDING_ENCODE_FINISH_MS,
 	RECORDING_ENCODER_PROBE_MS,
@@ -480,11 +476,8 @@ export {
 	RECORDING_STEP_MAX_MS,
 	RECORDING_TAIL_MS,
 	RECORDING_VOICE_START_MS,
-} from "@/shared/timing/lib/walkthrough-recording";
-export {
-	RECORDING_FRAME_READY_MS,
-	RECORDING_REPLAY_PREROLL_MS,
-} from "@/shared/timing/lib/walkthrough-replay";
+} from "./walkthrough-recording";
+export { RECORDING_FRAME_READY_MS, RECORDING_REPLAY_PREROLL_MS } from "./walkthrough-replay";
 export {
 	ACTIVITY_LINGER_MS,
 	CLAIM_DEFAULT_MS,
@@ -496,7 +489,7 @@ export {
 	LOCK_STEAL_GUARD_MS,
 	LOCK_WAIT_CAP_MS,
 	LOCK_WATCH_MS,
-} from "@/shared/timing/lib/board-locks";
+} from "./board-locks";
 export {
 	REPORT_PROGRESS_MS,
 	REPORT_IDLE_SETTLE_MS,
@@ -583,13 +576,13 @@ export const SKILL_EVAL_CODEX_TERM_GRACE_MS = 10_000;
 
 // ── History lens (ADR 0045) ─────────────────────────────────────────────
 
-export { LOCALITY_DEFAULT_PERIOD_MS } from "@/shared/timing/lib/history-lens";
+export { LOCALITY_DEFAULT_PERIOD_MS } from "./history-lens";
 
 // ── Code check (ADR 0046) ────────────────────────────────────────────────
-export { LANGUAGE_SERVER_STOP_MS } from "@/shared/timing/lib/code-check";
+export { LANGUAGE_SERVER_STOP_MS } from "./code-check";
 
-export { createElapsedClock } from "@/shared/timing/lib/elapsed-clock";
-export { CODEX_GROUP_FREEZE_MS } from "@/shared/timing/lib/codex-group-freeze";
+export { createElapsedClock } from "./elapsed-clock";
+export { CODEX_GROUP_FREEZE_MS } from "./codex-group-freeze";
 
 export {
 	SERVER_HTTP_STOP_GRACE_MS,
@@ -597,4 +590,4 @@ export {
 	SERVER_STOP_PIDFILE_POLL_MS,
 	SERVER_STOP_PIDFILE_WAIT_MS,
 	SERVER_STOP_PROBE_POLL_MS,
-} from "@/shared/timing/lib/server-stop";
+} from "./server-stop";

@@ -3,7 +3,7 @@
 // and the one thing the person can do about it. Only the first rule that
 // applies speaks, so the line never says two things at once. Pure.
 
-import { AGENT_QUIET_MS } from "@/shared/timing/timing";
+import { AGENT_QUIET_MS } from "@archboard/timing";
 import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
 import type { AgentPhase } from "@/ui/agent-setup";
 import type { AgentView } from "@/ui/workbench/contracts";

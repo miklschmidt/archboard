@@ -18,7 +18,7 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 
-import { RECORDING_REPLAY_PREROLL_MS } from "@/shared/timing/timing";
+import { RECORDING_REPLAY_PREROLL_MS } from "@archboard/timing";
 import {
 	ReplayOptionsSchema,
 	TALK_FRAME_RATE,

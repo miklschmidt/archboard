@@ -11,11 +11,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test
 import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useState, type JSX } from "react";
 
-import {
-	PICTURE_ENTRY_MS,
-	PICTURE_ENTRY_PHASES,
-	PICTURE_TRANSITION_MS,
-} from "@/shared/timing/timing";
+import { PICTURE_ENTRY_MS, PICTURE_ENTRY_PHASES, PICTURE_TRANSITION_MS } from "@archboard/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas";
 import {
 	TRANSITION_ATTRIBUTE,

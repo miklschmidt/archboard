@@ -26,7 +26,7 @@ import { join } from "node:path";
 import type { DiagramTheme, LayoutEngineName, SemanticBoard } from "@/shared/semantic-board/index";
 import type { VaultCheck } from "@/shared/semantic-policy/index";
 import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
-import { RECORDING_CALL_MS } from "@/shared/timing/timing";
+import { RECORDING_CALL_MS } from "@archboard/timing";
 import {
 	RECORDING_AGAINST_SEARCH_PARAM,
 	RECORDING_LANGUAGE_SEARCH_PARAM,

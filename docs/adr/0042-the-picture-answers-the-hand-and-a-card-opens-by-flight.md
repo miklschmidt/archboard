@@ -96,7 +96,7 @@ flight meets it, so it draws the same cards as the board that opens.
   camera carries both pictures. Nothing has to be matched by eye. The flight ends
   where the board stands because the arithmetic puts it there, and the browser
   owner holds it to two pixels.
-- **Every duration is in one file.** They live in `src/shared/timing/lib/exploring.ts`
+- **Every duration is in one file.** They live in `packages/timing/src/shared/constants/exploring.ts`
   with what each pulls against, and everything that moves runs on the frame clock
   (ADR 0041), so a recording renders it frame by frame.
 

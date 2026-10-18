@@ -3,7 +3,7 @@ import {
 	CODEX_GROUP_FREEZE_MS,
 	CODEX_TERM_GRACE_MS,
 	PROCESS_GROUP_OBSERVATION_POLL_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import type { CodexProcessError } from "@/runtime/codex-process/lib/process-contract";
 import type {
 	CodexProcessGroupIdentity,

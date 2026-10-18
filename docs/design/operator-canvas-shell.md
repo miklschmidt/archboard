@@ -258,7 +258,7 @@ It eases in from 2 rem to the right of its place and from nothing over 160 ms, a
 leaves in 110 ms. Its shadow does not change. A pinned panel is swapped in place
 and does not move. The selection tab is drawn again for each subject, so a pick
 opens at the top of it and arrives with a 120 ms fade. The durations are
-`SIDEBAR_MS` in `src/shared/timing`. With reduced motion the sidebar appears and
+`SIDEBAR_MS` in `packages/timing`. With reduced motion the sidebar appears and
 goes at once.
 
 A presented walkthrough steps the sidebar aside. While it lasts the control in the

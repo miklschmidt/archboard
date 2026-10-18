@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CODEX_REALTIME_START_MS } from "@/shared/timing/timing";
+import { CODEX_REALTIME_START_MS } from "@archboard/timing";
 import { createRealtimeMediaSession } from "@/ui/codex-realtime";
 import type { RealtimeMediaSession, RealtimeMediaSnapshot } from "@/ui/codex-realtime";
 import {

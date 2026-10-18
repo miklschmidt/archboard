@@ -6,7 +6,7 @@ import {
 	CODEX_COMPOSED_SHUTDOWN_MS,
 	CODEX_STDIN_EOF_GRACE_MS,
 	CODEX_TERM_GRACE_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import {
 	driveManual,
 	expectKillAfterGrace,

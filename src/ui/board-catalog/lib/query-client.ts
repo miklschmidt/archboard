@@ -3,7 +3,7 @@
 
 import { QueryClient } from "@tanstack/react-query";
 
-import { BOARD_CACHE_GC_MS } from "@/shared/timing/timing";
+import { BOARD_CACHE_GC_MS } from "@archboard/timing";
 
 /**
  * A cache with this product's read defaults.

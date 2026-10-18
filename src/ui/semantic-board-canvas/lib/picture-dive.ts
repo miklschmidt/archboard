@@ -9,7 +9,7 @@
 // the document's timeline, so a stepped clock stands them wherever it says they
 // are.
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { Rect } from "@/ui/semantic-board-canvas/lib/camera";
 import { runTraffic, stopTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";

@@ -14,7 +14,7 @@ import {
 	GIT_COMMAND_TIMEOUT_MS,
 	GIT_PROCESS_GROUP_CLEANUP_MS,
 	GIT_PROCESS_GROUP_POLL_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,

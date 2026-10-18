@@ -6,7 +6,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import { cameraNow, takeFrames } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import { openSidebarTab, surface } from "@/ui/semantic-board-canvas/tests/stage-harness";
 import {

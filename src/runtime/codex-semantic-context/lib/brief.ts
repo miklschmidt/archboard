@@ -1,4 +1,4 @@
-import { CODEX_SEMANTIC_FRESHNESS_MS } from "@/shared/timing/timing";
+import { CODEX_SEMANTIC_FRESHNESS_MS } from "@archboard/timing";
 import { SEMANTIC_CONTEXT_LIMITS } from "@/runtime/codex-semantic-context/lib/limits";
 import { copyContext, fitAggregate } from "@/runtime/codex-semantic-context/lib/fit";
 import {

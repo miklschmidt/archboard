@@ -21,7 +21,7 @@ import {
 	surface,
 	viewport,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import {
 	cameraNow,
 	diagramPointUnder,

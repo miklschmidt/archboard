@@ -12,7 +12,7 @@
 // way, the old frame riding over the new. Content is clipped to the frame only
 // while the frame changes size, which is when it could spill.
 
-import { PICTURE_TRANSITION_PHASES } from "@/shared/timing/timing";
+import { PICTURE_TRANSITION_PHASES } from "@archboard/timing";
 import type { SemanticBox } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import {
 	SVG_NS,

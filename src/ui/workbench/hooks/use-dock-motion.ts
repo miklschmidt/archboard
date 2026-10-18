@@ -10,7 +10,7 @@
 
 import { useLayoutEffect, useRef, type RefObject } from "react";
 
-import { VOICE_MORPH_MS } from "@/shared/timing/voice";
+import { VOICE_MORPH_MS } from "@archboard/timing/voice";
 
 /** A part's box, in pixels from the dock's top left corner, so a resized window does not move it. */
 interface Box {

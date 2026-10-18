@@ -29,7 +29,7 @@ import {
 	SERVER_STOP_PIDFILE_POLL_MS,
 	SERVER_STOP_PIDFILE_WAIT_MS,
 	SERVER_STOP_PROBE_POLL_MS,
-} from "@/shared/timing/timing";
+} from "@archboard/timing";
 import { SERVER_STARTUP_TERMINAL_FD_ENV } from "@/shared/server-startup-terminal";
 import { readProcessObservation } from "@/shared/process-observation";
 import {

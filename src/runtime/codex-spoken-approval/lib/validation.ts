@@ -14,7 +14,7 @@ import type {
 	RealtimeTranscriptRecord,
 } from "@/shared/codex-realtime-contract";
 import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
-import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "@/shared/timing/timing";
+import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "@archboard/timing";
 import {
 	failure,
 	failureForIdentity,

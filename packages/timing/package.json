@@ -1,0 +1,12 @@
+{
+	"name": "@archboard/timing",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Every duration in Archboard, with what each one pulls against.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"exports": {
+		".": "./src/shared/constants/timing.ts",
+		"./voice": "./src/shared/constants/voice.ts"
+	}
+}

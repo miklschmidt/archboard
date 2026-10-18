@@ -1,6 +1,6 @@
 import { afterEach, expect, jest, test } from "bun:test";
 
-import { CODEX_REQUEST_SETTLEMENT_MS } from "@/shared/timing/timing";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 import {
 	createBrowserWorkbenchTransport,
 	type BrowserWorkbenchTransport,

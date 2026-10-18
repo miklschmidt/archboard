@@ -2,7 +2,7 @@
 // the snapshot it has reduced so far. The transport owns at most one run at a
 // time; a retired run answers nothing and touches nothing.
 
-import { CODEX_REQUEST_SETTLEMENT_MS } from "@/shared/timing/timing";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browser-model";
 import {
 	BrowserWorkbenchTransportError,

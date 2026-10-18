@@ -5,20 +5,43 @@ import { createRule, report, sourceImportVisitors, type RuleContext } from "./ru
 import {
 	AREA_IMPORT_DENIALS,
 	SOURCE_ALIAS_PREFIX,
+	areaOwnerAt,
+	exportedSubpath,
 	getRepoRelativePath,
 	isModuleInternal,
 	isSourceFile,
 	isTestFile,
+	isTestingSubpath,
 	isTypedTestSource,
 	moduleAt,
+	packageAt,
+	resolvePackageSpecifier,
 	resolveSourcePath,
 	sameModule,
 	sameTestOwner,
+	staysInsidePackage,
 	testOwnerAt,
+	type AreaOwner,
+	type PackageFile,
 	type SourceModule,
 	type TestOwner,
 	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
 } from "./source-layout.ts";
+
+/**
+ * Whether an import crosses an area direction that the documented map forbids.
+ * Inside one module the folders are private to it, so nothing is judged. Inside
+ * one package they are areas, and the same direction rules hold between them.
+ * @param importer The importing file's area owner.
+ * @param imported The imported file's area owner.
+ * @returns Whether the import is refused.
+ */
+function isForbiddenAreaImport(importer: AreaOwner, imported: AreaOwner): boolean {
+	if (importer.kind === "module" && importer.root === imported.root) {
+		return false;
+	}
+	return AREA_IMPORT_DENIALS[importer.area]?.has(imported.area) === true;
+}
 
 const importBoundaries = createRule(
 	{
@@ -27,19 +50,15 @@ const importBoundaries = createRule(
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);
-		const importer = moduleAt(relativePath);
+		const importer = areaOwnerAt(relativePath);
 		if (!importer) {
 			return {};
 		}
 
 		return sourceImportVisitors((source, node) => {
 			const importedPath = resolveSourcePath(context, relativePath, source);
-			const imported = importedPath ? moduleAt(importedPath) : undefined;
-			if (!imported || sameModule(importer, imported)) {
-				return;
-			}
-
-			if (AREA_IMPORT_DENIALS[importer.area]?.has(imported.area)) {
+			const imported = importedPath ? areaOwnerAt(importedPath) : undefined;
+			if (imported && isForbiddenAreaImport(importer, imported)) {
 				report(context, node, "noForbiddenAreaImport");
 			}
 		});
@@ -100,25 +119,68 @@ function deepImportMessage(importer: Importer, imported: SourceModule): string |
 }
 
 /**
- * The module-entrypoints message one import earns.
+ * The message a file of a package earns when another file imports it. Another
+ * package may import only what `exports` names, and never test support.
  * @param importer The importing file.
- * @param source The specifier as written.
+ * @param imported The imported file's package.
+ * @param importedPath The imported file's repository path.
  * @returns The message id, or undefined when the import is allowed.
  */
-function entrypointMessage(importer: Importer, source: string): string | undefined {
-	const importedPath = resolveSourcePath(importer.context, importer.relativePath, source);
-	if (!importedPath) {
-		return source.startsWith(SOURCE_ALIAS_PREFIX) ? "noUnresolvedSourceAlias" : undefined;
+function packageImportMessage(
+	importer: Importer,
+	imported: PackageFile,
+	importedPath: string,
+): string | undefined {
+	if (packageAt(importer.relativePath)?.name === imported.name) {
+		return undefined;
 	}
+	const subpath = exportedSubpath(importer.context, imported, importedPath);
+	if (subpath === undefined) {
+		return "noDeepImportAcrossPackages";
+	}
+	return isTestingSubpath(subpath) && !importer.owner ? "noProductTestImport" : undefined;
+}
+
+/**
+ * The module-entrypoints message an import of a resolved file earns.
+ * @param importer The importing file.
+ * @param importedPath The imported file's repository path.
+ * @returns The message id, or undefined when the import is allowed.
+ */
+function importedFileMessage(importer: Importer, importedPath: string): string | undefined {
 	const importedOwner = testOwnerAt(importedPath);
 	if (importedOwner) {
 		return testImportMessage(importer, importedOwner, importedPath);
+	}
+	const importedPackage = packageAt(importedPath);
+	if (importedPackage) {
+		return packageImportMessage(importer, importedPackage, importedPath);
 	}
 	const imported = moduleAt(importedPath);
 	if (!imported || !isModuleInternal(imported)) {
 		return undefined;
 	}
 	return deepImportMessage(importer, imported);
+}
+
+/**
+ * The module-entrypoints message one import earns.
+ * @param importer The importing file.
+ * @param source The specifier as written.
+ * @returns The message id, or undefined when the import is allowed.
+ */
+function entrypointMessage(importer: Importer, source: string): string | undefined {
+	const packageImport = resolvePackageSpecifier(importer.context, source);
+	if (packageImport) {
+		return packageImport.target
+			? importedFileMessage(importer, packageImport.target)
+			: "noDeepImportAcrossPackages";
+	}
+	const importedPath = resolveSourcePath(importer.context, importer.relativePath, source);
+	if (!importedPath) {
+		return source.startsWith(SOURCE_ALIAS_PREFIX) ? "noUnresolvedSourceAlias" : undefined;
+	}
+	return importedFileMessage(importer, importedPath);
 }
 
 /**
@@ -148,14 +210,16 @@ const moduleEntrypoints = createRule(
 			"Code outside a module may import only that module's root entrypoint files, never implementation subfolders.",
 		noDeepImportAcrossModules:
 			"Import another module through one of its root entrypoint files, not through its implementation subfolders.",
+		noDeepImportAcrossPackages:
+			"Import another package only through a path that its package.json exports names. Every other file of a package is private.",
 		noUnresolvedSourceAlias:
 			"Canonical @/ imports must resolve to a source module entrypoint and stay inside src/.",
 		noProductTestImport:
-			"Product, scripts, and tools must not import test-owned source. Move shared behavior behind a product module root entrypoint.",
+			"Product, scripts, and tools must not import test-owned source or a package's ./testing export. Move shared behavior behind a product module root entrypoint or a package export.",
 		noCrossOwnerTestImport:
 			"Test-owned source may import helpers only from its own owner (its module tests folder, or tests/system), and the preload's real-time declaration.",
 		noTestOutsideTestsDirectory:
-			"Bun test files must live under src/<area>/<module>/tests or tests/system.",
+			"Bun test files must live under src/<area>/<module>/tests, packages/<name>/tests or tests/system.",
 		testsThroughEntrypoints:
 			"Tests must import product modules through module-root entrypoint files; implementation subfolders are private.",
 		untypedTestSource:
@@ -197,14 +261,19 @@ const moduleEntrypoints = createRule(
 const absoluteImports = createRule(
 	{
 		useAlias:
-			"Use an @/ alias for local imports; relative and filesystem-absolute imports are not allowed.",
+			"Use an @/ alias for local imports; relative and filesystem-absolute imports are not allowed, except relative imports that stay inside one package.",
 	},
-	(context) =>
-		sourceImportVisitors((source, node) => {
+	(context) => {
+		const relativePath = getRepoRelativePath(context);
+		return sourceImportVisitors((source, node) => {
+			if (staysInsidePackage(relativePath, source)) {
+				return;
+			}
 			if (source.startsWith(".") || source.startsWith("/") || source.startsWith("file:")) {
 				report(context, node, "useAlias");
 			}
-		}),
+		});
+	},
 );
 
 export { absoluteImports, importBoundaries, moduleEntrypoints };

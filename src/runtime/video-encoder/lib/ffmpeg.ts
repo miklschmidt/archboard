@@ -5,7 +5,7 @@
 // else runs nixpkgs' through Nix, and refuses when there is none of these: a recording is minutes
 // of a live voice session, and a machine that cannot encode it should find out first.
 
-import { RECORDING_ENCODER_PROBE_MS, RECORDING_NIX_FETCH_MS } from "@/shared/timing/timing";
+import { RECORDING_ENCODER_PROBE_MS, RECORDING_NIX_FETCH_MS } from "@archboard/timing";
 import type { RecordingContainer } from "@/shared/walkthrough-recording";
 
 /** The variable that names an ffmpeg executable. */

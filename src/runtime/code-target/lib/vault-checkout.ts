@@ -23,7 +23,7 @@ import {
 	listRegistry,
 	type RegisteredRepoStatus,
 } from "@/runtime/engine/repo-registry";
-import { GIT_COMMAND_TIMEOUT_MS } from "@/shared/timing/timing";
+import { GIT_COMMAND_TIMEOUT_MS } from "@archboard/timing";
 
 /** The checkout that holds a vault: its canonical root, and what it calls itself. */
 interface VaultCheckout {

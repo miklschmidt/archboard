@@ -25,8 +25,8 @@
 import { RiChat3Line } from "@remixicon/react";
 import { useRef, type CSSProperties, type JSX } from "react";
 
-import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
-import { DOCK_WASH_MS, VOICE_MORPH_MS, VOICE_SEAT_OUT_MS } from "@/shared/timing/voice";
+import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@archboard/timing";
+import { DOCK_WASH_MS, VOICE_MORPH_MS, VOICE_SEAT_OUT_MS } from "@archboard/timing/voice";
 import { cn } from "@/ui/components/class-names";
 import { useClock } from "@/ui/components/use-clock";
 import { useOrbOffered, useOrbPlacement } from "@/ui/voice-orb";

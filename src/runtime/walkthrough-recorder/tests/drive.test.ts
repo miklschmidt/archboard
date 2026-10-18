@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { RECORDING_POLL_MS } from "@/shared/timing/timing";
+import { RECORDING_POLL_MS } from "@archboard/timing";
 import type { RecordingState } from "@/shared/walkthrough-recording";
 import { drive, type RecordingPageHandle } from "@/runtime/walkthrough-recorder/index";
 

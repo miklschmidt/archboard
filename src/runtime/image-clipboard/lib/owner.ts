@@ -5,7 +5,7 @@
 import { Buffer } from "node:buffer";
 import type { ClipboardManager } from "@teddyzhu/clipboard";
 import type { z } from "zod";
-import { IMAGE_CLIPBOARD_POLL_MS } from "@/shared/timing/timing";
+import { IMAGE_CLIPBOARD_POLL_MS } from "@archboard/timing";
 import {
 	ImageClipboardInputSchema,
 	ImageClipboardReplySchema,

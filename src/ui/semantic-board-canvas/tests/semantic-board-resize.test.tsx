@@ -5,7 +5,7 @@
 import { act } from "@testing-library/react";
 import { afterEach, expect, test } from "bun:test";
 
-import { BOARD_RESIZE_SETTLE_MS } from "@/shared/timing/timing";
+import { BOARD_RESIZE_SETTLE_MS } from "@archboard/timing";
 import { cameraNow, takeFrames } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import {
 	drawing,

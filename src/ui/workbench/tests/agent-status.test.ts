@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { AGENT_QUIET_MS } from "@/shared/timing/timing";
+import { AGENT_QUIET_MS } from "@archboard/timing";
 import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
 import type { AgentSetupSnapshot, HeldMessage } from "@/ui/agent-setup";
 import { agentStatus } from "@/ui/workbench";

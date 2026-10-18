@@ -18,7 +18,7 @@
 // pass kills it at once. Either way the stop returns only once the process
 // has ended.
 
-import { createElapsedClock } from "@/shared/timing/timing";
+import { createElapsedClock } from "@archboard/timing";
 import fs from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { z } from "zod";

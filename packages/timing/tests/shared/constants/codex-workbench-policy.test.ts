@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import * as timing from "@/shared/timing/timing";
+import * as timing from "../../../src/shared/constants/timing.ts";
 
 const REVIEWED_VALUES = {
 	CODEX_PROCESS_RESTART_BASE_MS: 1000,

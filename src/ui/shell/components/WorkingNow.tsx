@@ -8,7 +8,7 @@
 
 import { useCallback, useState, type JSX, type MouseEvent } from "react";
 
-import { SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
+import { SHELL_AGE_TICK_MS } from "@archboard/timing";
 import { ActivityLamp } from "@/ui/shell/components/ActivityLamp";
 import { PaneChips } from "@/ui/shell/components/PaneChips";
 import { useClock } from "@/ui/components/use-clock";

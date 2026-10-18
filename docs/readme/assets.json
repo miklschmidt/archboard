@@ -22,7 +22,7 @@
 				"src/shared/semantic-policy",
 				"src/shared/shell-geometry",
 				"src/shared/theme",
-				"src/shared/timing",
+				"packages/timing/src",
 				"src/ui/shell/assets/fonts/*.ttf",
 				"src/ui/shell/components/Brand.tsx",
 				"scripts/readme-assets/banner.ts",
@@ -160,7 +160,7 @@
 				"src/shared/semantic-policy",
 				"src/shared/shell-geometry",
 				"src/shared/theme",
-				"src/shared/timing",
+				"packages/timing/src",
 				"src/ui/shell/assets/fonts",
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
@@ -271,7 +271,7 @@
 				"src/shared/semantic-policy",
 				"src/shared/shell-geometry",
 				"src/shared/theme",
-				"src/shared/timing",
+				"packages/timing/src",
 				"src/ui/shell/assets/fonts",
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
@@ -295,7 +295,7 @@
 				"src/shared/semantic-policy",
 				"src/shared/shell-geometry",
 				"src/shared/theme",
-				"src/shared/timing",
+				"packages/timing/src",
 				"src/ui/shell/assets/fonts",
 				"scripts/readme-assets/svg.ts"
 			],

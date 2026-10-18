@@ -1,4 +1,4 @@
-import { CODEX_BROWSER_COMMAND_LEASE_MS } from "@/shared/timing/timing";
+import { CODEX_BROWSER_COMMAND_LEASE_MS } from "@archboard/timing";
 import type {
 	ChildEpoch,
 	ChildId,

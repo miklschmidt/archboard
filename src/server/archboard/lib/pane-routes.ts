@@ -5,7 +5,7 @@ import { logger } from "@/runtime/engine/logger";
 import { addressablePanes, MAX_PANES, panesInOrder, resolvePaneSpec } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { frontendState } from "@/runtime/engine/staleness";
-import { PANE_LAYOUT_TIMEOUT_MS } from "@/shared/timing/timing";
+import { PANE_LAYOUT_TIMEOUT_MS } from "@archboard/timing";
 import { serverUrl } from "@/server/archboard/lib/listener-address";
 import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";
 import {

@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { LOCK_WATCH_MS } from "@/shared/timing/timing";
+import { LOCK_WATCH_MS } from "@archboard/timing";
 import { VAULT_STATE_DIR, boardMemoryKey, normalizeBoardKey } from "@/runtime/engine/board";
 import { logger } from "@/runtime/engine/logger";
 import type { LockHolder, LockRecord, LockSink } from "@/runtime/engine/lib/board-lock-contracts";

@@ -36,7 +36,7 @@
 // same task as it is lit has no transition to run, so the stage lets its style
 // settle between the two.
 
-import { VOICE_FLIGHT_MS, VOICE_MORPH_MS } from "@/shared/timing/voice";
+import { VOICE_FLIGHT_MS, VOICE_MORPH_MS } from "@archboard/timing/voice";
 import { flightAt, type Spot } from "@/ui/voice-orb/lib/orb-flight";
 import { SIZE } from "@/ui/voice-orb/lib/orb-painter";
 

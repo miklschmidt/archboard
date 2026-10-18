@@ -1,7 +1,7 @@
 // What an executable says of its own version, for checking a pin before any
 // model call. `codex --version` and `claude --version` both print one.
 
-import { SKILL_EVAL_CLI_TIMEOUT_MS } from "@/shared/timing/timing";
+import { SKILL_EVAL_CLI_TIMEOUT_MS } from "@archboard/timing";
 import { runProcess } from "@/runtime/skill-evaluation/lib/process";
 
 /**

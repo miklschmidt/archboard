@@ -1,6 +1,7 @@
-// The rules tests are held to (TASK-151): tests/** and the module tests under
-// src/*/*/tests/**, except src/ui's. They are the repository's rules from before the policy in
-// .oxlintrc.jsonc, which owns every other authored source file.
+// The rules tests are held to (TASK-151): tests/**, the module tests under
+// src/*/*/tests/** except src/ui's, and the package tests under packages/*/tests/**.
+// They are the repository's rules from before the policy in .oxlintrc.jsonc, which
+// owns every other authored source file.
 {
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
 	"plugins": [
@@ -74,7 +75,7 @@
 	},
 	"overrides": [
 		{
-			"files": ["src/**/*.ts", "src/**/*.tsx", "tests/system/**/*.ts"],
+			"files": ["src/**/*.ts", "src/**/*.tsx", "packages/*/tests/**/*.ts", "tests/system/**/*.ts"],
 			"rules": {
 				"no-await-in-loop": "off",
 				"typescript/no-unsafe-type-assertion": "off",
@@ -86,7 +87,12 @@
 			},
 		},
 		{
-			"files": ["src/*/*/tests/**/*.ts", "src/*/*/tests/**/*.tsx", "tests/system/**/*.ts"],
+			"files": [
+				"src/*/*/tests/**/*.ts",
+				"src/*/*/tests/**/*.tsx",
+				"packages/*/tests/**/*.ts",
+				"tests/system/**/*.ts",
+			],
 			"rules": {
 				"max-lines": [
 					"error",

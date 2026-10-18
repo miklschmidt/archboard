@@ -20,7 +20,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import type { JSX } from "react";
 
-import { VOICE_FLIGHT_MS } from "@/shared/timing/voice";
+import { VOICE_FLIGHT_MS } from "@archboard/timing/voice";
 import {
 	OrbHost,
 	OrbSlot,

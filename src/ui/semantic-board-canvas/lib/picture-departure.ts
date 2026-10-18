@@ -20,7 +20,7 @@
 // These are the browser's own animations rather than frames of this code's,
 // because nothing here reads board content or needs a step drawn by hand.
 
-import { PICTURE_EXIT_MS } from "@/shared/timing/timing";
+import { PICTURE_EXIT_MS } from "@archboard/timing";
 import { clockOf, setClock } from "@/ui/semantic-board-canvas/lib/picture-clock";
 import { runTraffic, stopTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
 import type { SemanticBox } from "@/ui/semantic-board-canvas/api/semantic-boards";

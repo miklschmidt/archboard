@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useRef } from "react";
 
 import { FIT_MARGIN } from "@/shared/shell-geometry/index";
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";

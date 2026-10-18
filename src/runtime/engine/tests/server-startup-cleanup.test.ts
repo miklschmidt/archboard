@@ -6,7 +6,7 @@ import {
 	serverStartupTerminalRecord,
 	type ServerStartupProtocolEvent,
 } from "../../../shared/server-startup-terminal/index.js";
-import { SERVER_STARTUP_READINESS_MS } from "../../../shared/timing/timing.js";
+import { SERVER_STARTUP_READINESS_MS } from "@archboard/timing";
 import {
 	completeFailedServerCleanup,
 	createServerStartupProtocolReader,

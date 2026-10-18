@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { CODEX_PROTOCOL_BINARY_VERSION } from "@/runtime/codex-protocol";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "@/shared/timing/timing";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 
 const CODEX_EXECUTABLE_PROOF_MAX_BYTES = 64 * 1024;
 const VERIFICATION_ENVIRONMENT_KEYS = [

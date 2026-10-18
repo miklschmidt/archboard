@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CODEX_SEMANTIC_FRESHNESS_MS } from "../../../shared/timing/timing.ts";
+import { CODEX_SEMANTIC_FRESHNESS_MS } from "@archboard/timing";
 import {
 	SemanticContextLifecycleError,
 	SEMANTIC_CONTEXT_LIMITS,

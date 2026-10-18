@@ -9,7 +9,7 @@
 // message takes longer than a short one, as a long line does.
 
 import { DEFAULT_TRAFFIC_SPEED } from "@/shared/semantic-board/index";
-import { FLOW_CYCLE_CAP_MS } from "@/shared/timing/timing";
+import { FLOW_CYCLE_CAP_MS } from "@archboard/timing";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { lines } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {

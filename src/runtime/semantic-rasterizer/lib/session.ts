@@ -17,7 +17,7 @@ import {
 	type HeadlessChromium,
 	type HeadlessChromiumCleanup,
 } from "@/runtime/headless-chromium/index";
-import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@/shared/timing/timing";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
 
 import { regionOf, type RasterBounds } from "@/runtime/semantic-rasterizer/lib/bounds";
 import {

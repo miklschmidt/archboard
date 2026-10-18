@@ -1,7 +1,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { PICTURE_ENTRY_MS, PICTURE_TRANSITION_MS } from "@/shared/timing/timing";
+import { PICTURE_ENTRY_MS, PICTURE_TRANSITION_MS } from "@archboard/timing";
 import {
 	drawing,
 	mountStage,

@@ -14,7 +14,7 @@
 import { RiMicLine } from "@remixicon/react";
 import { useCallback, useRef, type CSSProperties, type JSX, type ReactNode } from "react";
 
-import { VOICE_BOX_IN_MS, VOICE_BOX_OUT_MS } from "@/shared/timing/voice";
+import { VOICE_BOX_IN_MS, VOICE_BOX_OUT_MS } from "@archboard/timing/voice";
 import { cn } from "@/ui/components/class-names";
 import { OverlayPlaceContext } from "@/ui/semantic-board-canvas/hooks/use-overlay-place";
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";

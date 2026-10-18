@@ -19,7 +19,7 @@ import {
 	type ReactNode,
 } from "react";
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { CameraSurface } from "@/ui/semantic-board-canvas/components/CameraSurface";
 import { SemanticSubjectTip } from "@/ui/semantic-board-canvas/components/SemanticSubjectTip";

@@ -10,7 +10,7 @@
 // These are the browser's own animations, on the document's timeline, so a
 // stepped clock stands them wherever it says they are (ADR 0041).
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 

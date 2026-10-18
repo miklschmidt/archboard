@@ -553,7 +553,7 @@ checkout. The next selection reads the HEADs anyway.
   `archboard check --code`. It depends on the code check's route of
   TASK-367.05, or it builds that route first.
 - The default period is a duration, so it lives in
-  `src/shared/timing/timing.ts`.
+  `packages/timing/src/shared/constants/timing.ts`.
 - TASK-369.03 creates `archboard semantic locality` with hotspots, and
   TASK-369.04 adds change coupling to the same answer. TASK-369.04 compares
   with the design note over the default period, which covers the commits that

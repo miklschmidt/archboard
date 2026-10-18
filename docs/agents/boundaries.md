@@ -4,6 +4,11 @@ Domain terms live in `CONTEXT.md`. This file defines Archboard's target source l
 interfaces, and dependency directions. The current tree predates this map. Oxlint reports the old
 locations as migration work rather than treating them as exceptions.
 
+Source is moving from modules under `src/<area>/<module>` to workspace packages under
+`packages/<name>` (TASK-500, `docs/design/package-map.md`). A module that has not moved keeps the
+module rules. A package follows [Packages](#packages). The two sets of rules run side by side until
+the last module has moved.
+
 ## Directory shape
 
 Every implementation module lives one level below a named area:
@@ -60,18 +65,20 @@ Tests follow the same interface as production callers. A file under a module's `
 import that folder's fixtures, but it may not import its own module's implementation or another
 module's implementation. Non-test code may not import any `tests/` folder. Cycles are errors.
 
-There are exactly two test owners:
+There are exactly three test owners:
 
 - `src/<area>/<module>/tests/` owns contract tests and private test support for one module.
+- `packages/<name>/tests/` owns the internal tests of one package. See [Packages](#packages).
 - `tests/system/` owns cross-module repository, package, process, browser, and full-product tests.
 
 Test-owned source may import support only from the same owner, and the preload's
 real-time declaration (`tests/system/repository-policy/support/test-wall-clock.ts`),
 which every owner may use. It imports product behavior through
-module-root entrypoint files, never an implementation subfolder. Product source, scripts, and tools
-never import test-owned source. Bun-discoverable tests outside the two owners are refused.
+module-root entrypoint files, never an implementation subfolder. A package's own tests are the
+exception. Product source, scripts, and tools
+never import test-owned source. Bun-discoverable tests outside the three owners are refused.
 
-All JavaScript-like source inside either test owner is TypeScript. The pre-task
+All JavaScript-like source inside any test owner is TypeScript. The pre-task
 500-physical-line test limit remains outside the UI. TASK-150 applies the approved
 600-physical-line limit to all authored UI source, including tests, comments and
 blank lines. Put large test data in a named non-TypeScript fixture instead.
@@ -80,10 +87,52 @@ Local imports use `@/` aliases, including same-module imports, re-exports and
 dynamic/type imports. The private-module and area rules still apply, and
 JavaScript source is rejected. This holds for every authored source file
 (TASK-151), not only `src/ui`. The alias resolves into `src/` alone, so the few
-sibling imports in `scripts/` and `tools/` stay relative and say so on the line.
+sibling imports in `scripts/` and `tools/` stay relative and say so on the line. A file in a
+package imports its own package relatively, as [Packages](#packages) says.
 
 Oxlint also rejects generic `core`, `utils`, `misc`, `migration`, and `compatibility` buckets. Name
 the module for the behavior it owns.
+
+## Packages
+
+A package owns one behavior. It lives in `packages/<name>/` and is listed by the `workspaces` field
+of the root `package.json`. `bun install` links it into `node_modules` as `@archboard/<name>`.
+
+```text
+packages/<name>/
+  package.json      # name, private, and `exports`: the whole interface
+  src/
+    types.ts        # only for types that more than one area uses
+    <area>/<role>/  # areas: shared, runtime, server, ui. Roles: constants, rules, store, ...
+  tests/            # internal tests, in folders that follow the areas
+```
+
+A package has no `lib/` folder and no `index.ts` barrel. Name the role of a folder, such as
+`constants`, `schemas`, `rules` or `operations`, and let a folder that grows past about 12 files
+split by behavior.
+
+- **`exports` is the interface.** Each value is a path to a source file. There is no build step, no
+  wildcard pattern and no condition object. Import `@archboard/<name>`, or
+  `@archboard/<name>/<subpath>` for a subpath that `exports` names. TypeScript, Bun and Vite resolve
+  it through the workspace link, so no path alias exists for a package. A file that `exports` does
+  not name is private.
+- **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
+  `exports` does not name. It also refuses a relative path that reaches a private file of another
+  package.
+- **Inside a package, imports are relative.** The `@/` alias points into `src/`, which is outside
+  every package. A relative import that leaves its package is refused as any other relative import.
+- **The area directions hold inside a package.** The folders under `src/` are areas, so `ui` never
+  imports `runtime` or `server` of the same package. The direction is judged by the area folder of
+  the imported file, so it also holds across packages and between a package and a module. A test
+  in `tests/<area>/` counts for that area.
+- **A package test may import any file of its own package.** It imports only the exports of another
+  package. It never imports the support of another test owner.
+- **Production code never imports a `tests/` folder.** It never imports a `./testing` export of a
+  package either. A `./testing` export holds a fixture that tests of two packages share. Its file
+  lives in `src/`, and only a test may import it.
+
+The first package is `timing` (`@archboard/timing`). Its `.` export holds every product duration.
+Its `./voice` export holds the voice motion durations.
 
 ## Vendor-owned data
 

@@ -14,7 +14,7 @@ import {
 	createCoordinatorThreadStartParams,
 } from "../index.js";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 import { WORKING_DIRECTORY, coordinatorModel, fixture, type Fixture } from "./support.js";
 
 async function flushMicrotasks(): Promise<void> {

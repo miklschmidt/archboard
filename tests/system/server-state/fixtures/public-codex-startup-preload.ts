@@ -59,7 +59,7 @@ if (
 
 const readinessTimeoutMs = Number(process.env["ARCHBOARD_TEST_PUBLIC_READINESS_TIMEOUT_MS"] ?? "0");
 if (Number.isFinite(readinessTimeoutMs) && readinessTimeoutMs > 0) {
-	const timingPath = resolve(import.meta.dir, "../../../../src/shared/timing/timing.ts");
+	const timingPath = "@archboard/timing";
 	const actualTiming = await import(timingPath);
 	await Promise.resolve(
 		mock.module(timingPath, () => ({
