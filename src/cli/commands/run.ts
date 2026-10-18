@@ -1,6 +1,6 @@
 import { checkContract, semanticConfigContract } from "@/cli/commands/vault";
 import { statusContract } from "@/cli/command-contract/status";
-import { startContract, stopContract } from "@/cli/commands/server";
+import { restartContract, startContract, stopContract } from "@/cli/commands/server";
 import {
 	browserContract,
 	browserShowContract,
@@ -60,6 +60,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 	},
 	stop: {
 		owner: contract(stopContract, "src/cli/commands/server.ts"),
+	},
+	restart: {
+		owner: contract(restartContract, "src/cli/commands/server.ts"),
 	},
 	status: {
 		owner: contract(statusContract, "src/cli/command-contract/status.ts"),

@@ -1,6 +1,5 @@
 // Renderer distances are diagram pixels, independent of camera zoom.
-// Edit this file to tune spacing; rebuild the frontend, restart the server,
-// and reload the viewer.
+// Edit this file to tune spacing, run `archboard restart` and reload the viewer.
 // Text sizes and visual styling remain in lib/design.ts.
 
 /** Space around the final drawing. */

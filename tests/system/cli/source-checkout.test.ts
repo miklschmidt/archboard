@@ -187,6 +187,7 @@ test("a command that finds a server of another checkout's source refuses and nam
 		[["semantic", "new", "payments", "--doing", "drawing payments"], JSON.stringify(board)],
 		[["start"], undefined],
 		[["stop"], undefined],
+		[["restart"], undefined],
 	] as const) {
 		const refused = await archboard(args, holder, env, input);
 		expect(refused.status).toBe(3);

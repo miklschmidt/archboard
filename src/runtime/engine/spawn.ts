@@ -586,6 +586,7 @@ export {
 	isServerHealth,
 	type EnsureResult,
 	ensureServerRunning,
+	refuseUnstartableServer,
 	type StopResult,
 	stopServer,
 };

@@ -64,7 +64,7 @@ function staleSource(health: Awaited<ReturnType<typeof getHealth>>) {
 	if (!source?.stale || !source.newestFile || !source.newestAt) {
 		return null;
 	}
-	const remedy = "Restart it to pick that up: `archboard stop && archboard start`.";
+	const remedy = "Restart it to pick that up: `archboard restart`.";
 	return {
 		startedAt: source.evaluatedAt,
 		changedFile: source.newestFile,

@@ -207,7 +207,7 @@ async function pageReady(window: HeadlessWindow, signal: AbortSignal): Promise<v
 		if (published === true) return;
 		if (performance.now() >= deadline) {
 			throw new Error(
-				`The canvas page never offered a replay within ${RECORDING_PAGE_READY_MS / 1000} seconds: the Archboard server serves a frontend built without it. Rebuild the frontend (bun run build:frontend) and restart the server.`,
+				`The canvas page never offered a replay within ${RECORDING_PAGE_READY_MS / 1000} seconds: the Archboard server serves a frontend built without it. Run \`archboard restart\` to build the frontend and restart the server.`,
 			);
 		}
 		// oxlint-disable-next-line no-await-in-loop -- a poll waits between looks
@@ -235,7 +235,7 @@ async function loadTalk(
 	const counted = isJsonRecord(loaded) ? loaded["frames"] : undefined;
 	if (counted !== frames) {
 		throw new Error(
-			`The canvas page counts ${String(counted)} frames in the talk and this archboard counts ${frames}. Rebuild the frontend (bun run build:frontend) and restart the Archboard server.`,
+			`The canvas page counts ${String(counted)} frames in the talk and this archboard counts ${frames}. Run \`archboard restart\` to build the frontend and restart the Archboard server.`,
 		);
 	}
 	const size = await window.page.evaluate("[window.innerWidth, window.innerHeight]", {
