@@ -3,9 +3,11 @@ id: TASK-498
 title: >-
   A board and its variants name the repository documents they state, such as a
   design document, a task or an ADR
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-18 13:15'
+updated_date: '2026-10-18 15:53'
 labels:
   - schema
   - cli
@@ -29,3 +31,14 @@ A board holds no link to the documents it draws. In the Docs-Architecture-Design
 - [ ] #3 `archboard check` reports a reference whose document is missing at the branch it names
 - [ ] #4 The archboard and archboard-pr skills read a draft's documents to find a design and its version, and write them when they draw one
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. ADR 0054 (docs/adr/0054-a-variant-names-the-repository-documents-it-draws.md) decides: a document reference {repo, path, branch?, commit?} has a binding's shape and resolver; a variant holds them as the optional list documents; semantic new/edit payloads state it (an edit replaces the edited variant's list, [] removes it); semantic branch copies it; show returns it; check --code reports DOCUMENT_PATH_MISSING on every variant it reads, at the ref the reference names, with the binding's skips. A board-level list is rejected: no case needs a reference no variant carries. CONTEXT.md gains Document reference.
+2. Schema: DocumentReferenceSchema in src/shared/code-target (derived from CodeBindingSchema); documents on SemanticVariantSchema, VariantEditInputSchema and BoardCreateInputSchema. Store: transitions.ts (new, branch copies, edit replaces) and edit-scope.ts (documents count as a variant edit, so historical/shelved refuse). Tests first in semantic-board-store tests.
+3. Code check: a document judge in src/runtime/code-check reads each reference through the ref-code reading (codeFor/targetIn/otherRefOf) and adds DOCUMENT_PATH_MISSING; references join the snapshot, checkouts and ref reads. Test beside ref-code.test.ts with a branch that lacks the file. Check command description and src/shared/code-check header name the code.
+4. Skills: archboard (authoring.md bindings section and propose-compare/variants: name documents when drawing a design or a task proposal; check finding) and archboard-pr (design.md: the design draft names its design document and plan at the commit or branch; SKILL.md section 2/6: find the design draft through the document; reconcile.md: move the reference's commit when the design changes through a stack). evals/coverage.json and the scenario inputs that the CLI change touches; bun run generate:skill-artifacts.
+5. Boards: Archboard server@TASK-498 and Archboard server routes@TASK-498 restate Code check (it now holds document references, ADR 0054); Board persistence@TASK-498 restates Lifecycle transitions (edit restates documents, branch copies them). No part, relationship or binding is added: the work stays inside src/runtime/code-check and transitions.ts. At closing the proposals name ADR 0054 as their document.
+6. Close per archboard-dev: check --code --variant TASK-498 diff, footprint, adopt, check, behind; bun run check.
+<!-- SECTION:PLAN:END -->
