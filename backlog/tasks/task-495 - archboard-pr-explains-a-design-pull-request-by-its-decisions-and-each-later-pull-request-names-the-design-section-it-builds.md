@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-18 12:19'
-updated_date: '2026-10-18 12:22'
+updated_date: '2026-10-18 13:15'
 labels:
   - skill
 dependencies: []
@@ -49,4 +49,6 @@ The redo of the device trust stack (Admin-By-Request/Platform #589 to #615) gave
 
 <!-- SECTION:NOTES:BEGIN -->
 Skill change committed in 5a325f353: references/design.md, the section 1 row, the never-list items, the design sentence in section 6 and walkthrough beat 1. Examples in the shipped skill use archboard's own domain. GitHub search finds text in the hidden state comment (tested: '"Managed PostgreSQL design"' finds #589). Rendered PR body headings carry no anchor (body_html has no user-content ids), so the design sentence names the section in words. test:repository and install-targets pass. An opus agent now explains #589 again with the changed skill (brief: /tmp/pr-audit/stack-redo3/_brief.txt).
+
+Full gate (bun run check) while the #589 agent used Chromium: every lane passed except one serial browser test, codex-text-workbench.test.ts 'a message typed while signed out is held through sign-in, delivered, and its approvals decided', which timed out waiting for the sign-in tab. The lane run alone passed three times in a row (/tmp/pr-audit/t495-browser-rerun-1..3.log), so it was load, not this change (skill Markdown only). Commits 72a41f25b and 0f5d9551d refine design.md after the first #589 trial. The second #589 rewrite was stopped: the design changes through the stack (Doc-0072 338 lines at #589, 499 at #615), and the vault's design drafts are to be renamed and linked to their documents first (TASK-498). Follow-ups filed: TASK-496, TASK-497, TASK-498.
 <!-- SECTION:NOTES:END -->
