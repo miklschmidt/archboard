@@ -40,7 +40,10 @@ function inputDigest(loaded: LoadedSuite): string {
  * @returns The identities a resumed batch must match.
  */
 function batchProvenance(checkout: string, loaded: LoadedSuite): Provenance {
-	const hash = createHash("sha256").update(digestOf(path.join(checkout, "src")));
+	const hash = createHash("sha256");
+	for (const folder of ["src", "packages"]) {
+		hash.update(digestOf(path.join(checkout, folder)));
+	}
 	for (const name of ["package.json", "bun.lock", "tsconfig.json", "INSTALL.md"]) {
 		hash.update(name).update(fs.readFileSync(path.join(checkout, name)));
 	}

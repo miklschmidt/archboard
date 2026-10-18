@@ -70,19 +70,37 @@ function visitLiteralSource(source: StringLiteralNode | null, onSource: SourceLi
 	}
 }
 
+/** The calls that name a module by their first argument besides `require`: test mocks. */
+const MOCK_CALLS = new Set(["mock.module", "vi.mock", "vi.doMock"]);
+
 /**
- * The first argument of a `require(...)` call when it is a string literal.
+ * Whether a call names a module by its first argument: `require(...)` or a
+ * test mock such as `mock.module(...)`, `vi.mock(...)` or `vi.doMock(...)`.
+ * @param callee The callee expression.
+ * @returns Whether the first argument is a module specifier.
+ */
+function isModuleCall(callee: VisitedNode<"CallExpression">["callee"]): boolean {
+	if (callee.type === "Identifier") {
+		return callee.name === "require";
+	}
+	return (
+		callee.type === "MemberExpression" &&
+		callee.object.type === "Identifier" &&
+		callee.property.type === "Identifier" &&
+		MOCK_CALLS.has(`${callee.object.name}.${callee.property.name}`)
+	);
+}
+
+/**
+ * The module specifier of a `require(...)` or test-mock call when it is a string literal.
  * @param node The call expression being inspected.
  * @returns The literal argument node, or undefined for any other call.
  */
-function requireLiteralArgument(
+function moduleCallLiteralArgument(
 	node: VisitedNode<"CallExpression">,
 ): StringLiteralNode | undefined {
 	const argument = node.arguments[0];
-	if (node.callee.type !== "Identifier" || node.callee.name !== "require") {
-		return undefined;
-	}
-	return isStringLiteral(argument) ? argument : undefined;
+	return isModuleCall(node.callee) && isStringLiteral(argument) ? argument : undefined;
 }
 
 /**
@@ -97,7 +115,7 @@ function isStringLiteral(node: AstNode | null | undefined): node is StringLitera
 /**
  * Visitors that surface every static and dynamic module specifier in a file:
  * import and re-export declarations, `import()` with a literal, `import(...)`
- * types and literal `require()` calls.
+ * types, literal `require()` calls and the literal module of a test mock.
  * @param onSource The listener receiving each specifier and its node.
  * @returns The visitor object to return from a rule's `create`.
  */
@@ -141,11 +159,11 @@ function sourceImportVisitors(onSource: SourceListener): RuleVisitors {
 			visitLiteralSource(node.source, onSource);
 		},
 		/**
-		 * A `require("...")` call.
+		 * A `require("...")` call or a test mock of a module.
 		 * @param node The visited node.
 		 */
 		CallExpression(node) {
-			const argument = requireLiteralArgument(node);
+			const argument = moduleCallLiteralArgument(node);
 			if (argument) {
 				onSource(argument.value, argument);
 			}

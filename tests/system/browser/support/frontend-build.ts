@@ -12,7 +12,7 @@ interface FrontendBuildRequest {
 
 type RunFrontendBuild = (request: FrontendBuildRequest) => Promise<void>;
 
-const INPUT_DIRECTORIES = ["frontend", "src"] as const;
+const INPUT_DIRECTORIES = ["frontend", "src", "packages"] as const;
 const INPUT_FILES = [
 	"vite.config.ts",
 	"tsconfig.frontend.json",

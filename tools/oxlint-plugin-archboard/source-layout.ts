@@ -64,6 +64,8 @@ interface TestOwner {
 
 /** A specifier of a workspace package, and the repository file its `exports` map it to. */
 interface PackageImport {
+	/** The export subpath that the specifier asks for: `.` or `./voice`. */
+	subpath: string;
 	/** The repository path of the exported file, or undefined when `exports` does not name it. */
 	target: string | undefined;
 }
@@ -214,9 +216,25 @@ function resolveSourcePath(
 	if (!unresolvedPath) {
 		return undefined;
 	}
-	return resolutionCandidates(unresolvedPath).find((candidate) =>
+	const written = resolutionCandidates(unresolvedPath).find((candidate) =>
 		isExistingFile(context, candidate),
 	);
+	return written && throughSymlinks(context, written);
+}
+
+/**
+ * The repository path of a file with every symlink resolved, so that a path
+ * through `node_modules/@archboard/<name>` names the package file it links to.
+ * @param context The rule context supplying the working directory.
+ * @param repoPath The existing file's repository path as written.
+ * @returns The path of the real file, or the written path when the file lies outside the repository.
+ */
+function throughSymlinks(context: RuleContext, repoPath: string): string {
+	const real = path.relative(
+		fs.realpathSync(context.cwd),
+		fs.realpathSync(path.resolve(context.cwd, repoPath)),
+	);
+	return real.startsWith("..") ? repoPath : normalizePath(real);
 }
 
 /**
@@ -272,23 +290,31 @@ function readManifestExports(context: RuleContext, name: string): unknown {
 function resolvePackageSpecifier(context: RuleContext, source: string): PackageImport | undefined {
 	const [, name, rest] = PACKAGE_SPECIFIER.exec(stripQueryAndFragment(source)) ?? [];
 	const exported = name ? packageExports(context, name) : undefined;
-	return exported ? { target: exported.get(rest ? `.${rest}` : ".") } : undefined;
+	const subpath = rest ? `.${rest}` : ".";
+	return exported ? { subpath, target: exported.get(subpath) } : undefined;
 }
 
 /**
- * The public subpath through which a package exports a file.
+ * The public subpaths through which an import reaches a package file.
  * @param context The rule context supplying the working directory.
  * @param file The file of the package.
  * @param repoPath The file's repository path.
- * @returns The subpath such as `.` or `./voice`, or undefined when the file is private.
+ * @param requested The subpath that a specifier asked for, if the import is one.
+ * @returns The requested subpath, or else every subpath that exports the file. None means private.
  */
-function exportedSubpath(
+function exportedSubpaths(
 	context: RuleContext,
 	file: PackageFile,
 	repoPath: string,
-): string | undefined {
+	requested: string | undefined,
+): string[] {
+	if (requested) {
+		return [requested];
+	}
 	const exported = packageExports(context, file.name);
-	return [...(exported ?? [])].find(([, target]) => target === repoPath)?.[0];
+	return [...(exported ?? [])]
+		.filter(([, target]) => target === repoPath)
+		.map(([subpath]) => subpath);
 }
 
 /**
@@ -475,7 +501,7 @@ export {
 	ROOT_SOURCE_ENTRYPOINTS,
 	SOURCE_ALIAS_PREFIX,
 	areaOwnerAt,
-	exportedSubpath,
+	exportedSubpaths,
 	getRepoRelativePath,
 	hasGenericBucket,
 	isModuleInternal,

@@ -65,7 +65,7 @@ describe.serial("source staleness", () => {
 		// checkout's source refuses (ADR 0049).
 		expect(first.source.checkout).toBe(realpathSync.native(repoRoot));
 		expect(first.source.stale).toBeFalse();
-		expect(first.source.newestFile).toStartWith("src/");
+		expect(first.source.newestFile).toMatch(/^(src|packages)\//);
 		expect(Number.isNaN(Date.parse(first.source.evaluatedAt))).toBeFalse();
 		expect(Number.isNaN(Date.parse(first.source.newestAt))).toBeFalse();
 		const quiet = cli();
@@ -73,7 +73,9 @@ describe.serial("source staleness", () => {
 		expect(quiet.json.stale).toBeUndefined();
 		expect(quiet.stderr).not.toMatch(/older code/);
 
-		const touched = join(repoRoot, "src/runtime/engine/board-doing.ts");
+		// A file of a workspace package counts as source too.
+		const changedFile = "packages/timing/src/shared/constants/timing.ts";
+		const touched = join(repoRoot, changedFile);
 		const edit = reversibleCheckoutEdit(repoRoot, [touched]);
 		resources.defer(() => edit.restore());
 		edit.edit(touched, (source) => source);
@@ -84,11 +86,11 @@ describe.serial("source staleness", () => {
 		if (!stale) {
 			throw new Error("The server never returned its stale source state.");
 		}
-		expect(stale.source.newestFile).toBe("src/runtime/engine/board-doing.ts");
+		expect(stale.source.newestFile).toBe(changedFile);
 		expect(stale.pid).toBe(first.pid);
 		const loud = cli();
 		expect(loud.status).toBe(0);
-		expect(loud.json.stale?.changedFile).toBe("src/runtime/engine/board-doing.ts");
+		expect(loud.json.stale?.changedFile).toBe(changedFile);
 		expect(loud.stderr).toMatch(/answering from the older code/);
 		expect(loud.stderr).toMatch(/archboard restart/);
 	}, 30_000);

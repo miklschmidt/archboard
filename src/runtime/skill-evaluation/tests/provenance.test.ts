@@ -43,7 +43,12 @@ describe("comparison provenance", () => {
 	test("resume checks implementation and both skill packages and keeps saved selection", () => {
 		const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-provenance-"));
 		try {
-			for (const directory of ["src", "skills/archboard", loaded.pins.baselineSkill.location]) {
+			for (const directory of [
+				"src",
+				"packages",
+				"skills/archboard",
+				loaded.pins.baselineSkill.location,
+			]) {
 				fs.mkdirSync(path.join(root, directory), { recursive: true });
 				fs.writeFileSync(path.join(root, directory, "input.txt"), "original");
 			}
@@ -100,6 +105,7 @@ describe("comparison provenance", () => {
 			fs.writeFileSync(path.join(root, "batch.json"), JSON.stringify(manifest));
 			for (const file of [
 				"src/input.txt",
+				"packages/input.txt",
 				"skills/archboard/input.txt",
 				`${loaded.pins.baselineSkill.location}/input.txt`,
 				"bun.lock",

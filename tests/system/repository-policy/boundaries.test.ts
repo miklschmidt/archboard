@@ -330,6 +330,11 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 		"packages/alpha/src/shared/testing.ts": "export const fixture = 1;\n",
 		"packages/alpha/src/runtime/work.ts": "export const work = 1;\n",
 		"packages/alpha/tests/support.ts": "export const support = 1;\n",
+		"packages/gamma/package.json": JSON.stringify({
+			name: "@archboard/gamma",
+			exports: { ".": "./src/shared/both.ts", "./testing": "./src/shared/both.ts" },
+		}),
+		"packages/gamma/src/shared/both.ts": "export const both = 1;\n",
 		"packages/beta/package.json": JSON.stringify({
 			name: "@archboard/beta",
 			exports: { ".": "./src/runtime/beta.ts" },
@@ -347,6 +352,10 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					'import { privateValue } from "../src/shared/constants/private.js";\nimport { support } from "./support.js";\nexport { privateValue, support };\n',
 				"packages/beta/tests/public.test.ts":
 					'import { value } from "@archboard/alpha";\nimport { fixture } from "@archboard/alpha/testing";\nexport { fixture, value };\n',
+				"packages/alpha/tests/own-testing.test.ts":
+					'import { fixture } from "../src/shared/testing.js";\nimport { fixture as exported } from "@archboard/alpha/testing";\nexport { exported, fixture };\n',
+				"packages/beta/src/runtime/gamma.ts":
+					'import { both } from "@archboard/gamma";\nexport { both };\n',
 				"src/domain/consumer/index.ts":
 					'import { value } from "@archboard/alpha";\nimport { elk } from "@archboard/not-a-workspace-package";\nexport { elk, value };\n',
 			},
@@ -356,6 +365,8 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 						"packages/alpha/src/runtime/ok.ts",
 						"packages/alpha/tests/own.test.ts",
 						"packages/beta/tests/public.test.ts",
+						"packages/alpha/tests/own-testing.test.ts",
+						"packages/beta/src/runtime/gamma.ts",
 						"src/domain/consumer/index.ts",
 					]),
 				),
@@ -380,12 +391,36 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					'import { support } from "../../tests/support.js";\nexport { support };\n',
 				"packages/beta/tests/foreign.test.ts":
 					'import { support } from "../../alpha/tests/support.js";\nexport { support };\n',
+				"packages/alpha/src/runtime/own-testing.ts":
+					'import { fixture } from "@archboard/alpha/testing";\nexport { fixture };\n',
+				"packages/alpha/src/runtime/own-testing-path.ts":
+					'import { fixture } from "../shared/testing.js";\nexport { fixture };\n',
+				"src/domain/product/both.ts":
+					'import { both } from "@archboard/gamma/testing";\nexport { both };\n',
+				"packages/beta/src/runtime/both-path.ts":
+					'import { both } from "../../../gamma/src/shared/both.js";\nexport { both };\n',
+				"src/domain/deep/linked.ts":
+					'import { privateValue } from "../../../node_modules/@archboard/alpha/src/shared/constants/private.js";\nexport { privateValue };\n',
+				"packages/beta/tests/linked.test.ts":
+					'import { support } from "../../../node_modules/@archboard/alpha/tests/support.js";\nexport { support };\n',
+				"packages/beta/tests/mock-bun.test.ts":
+					'import { mock } from "bun:test";\n\nmock.module("../../alpha/src/shared/constants/private.js", () => ({}));\n',
+				"packages/beta/tests/mock-vitest.test.ts":
+					'import { vi } from "vitest";\n\nvi.mock("../../alpha/src/shared/constants/private.js");\n',
 			},
 			(root) => {
+				fs.mkdirSync(path.join(root, "node_modules/@archboard"), { recursive: true });
+				fs.symlinkSync(
+					path.join(root, "packages/alpha"),
+					path.join(root, "node_modules/@archboard/alpha"),
+				);
 				for (const file of [
 					"src/domain/deep/relative.ts",
 					"src/domain/deep/specifier.ts",
 					"packages/beta/tests/deep.test.ts",
+					"src/domain/deep/linked.ts",
+					"packages/beta/tests/mock-bun.test.ts",
+					"packages/beta/tests/mock-vitest.test.ts",
 				]) {
 					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "exports names");
 				}
@@ -393,14 +428,19 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					"src/domain/product/testing.ts",
 					"packages/beta/src/runtime/testing.ts",
 					"packages/alpha/src/runtime/tests.ts",
+					"packages/alpha/src/runtime/own-testing.ts",
+					"packages/alpha/src/runtime/own-testing-path.ts",
+					"src/domain/product/both.ts",
+					"packages/beta/src/runtime/both-path.ts",
 				]) {
 					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "test-owned source");
 				}
-				expectRule(
-					lint(root, ["packages/beta/tests/foreign.test.ts"]),
-					"archboard(module-entrypoints)",
-					"only from its own",
-				);
+				for (const file of [
+					"packages/beta/tests/foreign.test.ts",
+					"packages/beta/tests/linked.test.ts",
+				]) {
+					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "only from its own");
+				}
 			},
 		);
 	});
