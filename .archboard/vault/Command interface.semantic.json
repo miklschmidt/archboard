@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 106,
+	"version": 109,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-18T17:46:39.335Z",
+	"updatedAt": "2026-10-18T18:02:53.227Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -34591,7 +34591,7 @@
 		{
 			"id": "hEXl6vPG",
 			"name": "TASK-496",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "SWCXjEpr",
 			"summary": "CLI application modules and its command groups",
 			"content": {
@@ -37871,9 +37871,9 @@
 		{
 			"id": "S0SxSDMx",
 			"name": "TASK-499",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "hEXl6vPG",
-			"summary": "archboard restart stops the server, builds the frontend and starts it again",
+			"summary": "CLI application modules and its command groups",
 			"content": {
 				"nodes": [
 					{
@@ -37963,7 +37963,7 @@
 						"order": 7000,
 						"name": "Runtime control",
 						"kind": "module",
-						"responsibility": "start, stop and restart: the server as a detached child of this command. restart refuses a server it could not start again before it stops it, and builds the frontend between the stop and the start",
+						"responsibility": "start, stop and restart: the server as a detached child of this command",
 						"parent": "bLpk2XKU",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -38436,7 +38436,7 @@
 						"order": 42000,
 						"name": "Server access",
 						"kind": "module",
-						"responsibility": "Every reach to the Archboard server: the one request path, the board routes with their refusals, starting the server when nothing answers, and building the bundle it serves"
+						"responsibility": "Every reach to the Archboard server: the one request path, the board routes with their refusals, starting the server when nothing answers, and restarting it on a new bundle"
 					},
 					{
 						"id": "QKs0tycT",
@@ -38464,13 +38464,14 @@
 					{
 						"id": "nvbnGOtV",
 						"order": 45000,
-						"name": "Frontend build",
+						"name": "Restart",
 						"kind": "module",
-						"responsibility": "Builds the frontend bundle of the checkout this process runs with bun run build:frontend, and names the entry script of the new bundle",
+						"responsibility": "Stops the server, builds the frontend of the checkout this process runs with bun run build:frontend, and starts the server again",
+						"description": "It refuses a server that it could not start again before it stops it, and a refused stop leaves the bundle unbuilt. A failed build refuses with FRONTEND_BUILD_FAILED, carries the build's output and says that the server is stopped. The answer names the entry script of the new bundle, as /health reports it.",
 						"parent": "dHZeNcMs",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/engine/frontend-build.ts"
+							"path": "src/runtime/engine/restart.ts"
 						}
 					}
 				],
@@ -38785,7 +38786,7 @@
 						"from": "fOJvfmZv",
 						"to": "eMSAZPvG",
 						"kind": "call",
-						"label": "start, stop and restart the child",
+						"label": "start and stop the child",
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -39525,12 +39526,12 @@
 						"from": "fOJvfmZv",
 						"to": "nvbnGOtV",
 						"kind": "call",
-						"label": "build the bundle before the start",
+						"label": "restart on a new bundle",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/server.ts",
-							"symbol": "buildFrontend"
+							"symbol": "restartServer"
 						}
 					},
 					{
@@ -39543,8 +39544,22 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/engine/frontend-build.ts",
+							"path": "src/runtime/engine/restart.ts",
 							"symbol": "SOURCE_CHECKOUT"
+						}
+					},
+					{
+						"id": "eSv7lgu3",
+						"order": 75000,
+						"from": "nvbnGOtV",
+						"to": "eMSAZPvG",
+						"kind": "call",
+						"label": "stop, then start again",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/restart.ts",
+							"symbol": "stopServer"
 						}
 					}
 				],
@@ -41189,7 +41204,7 @@
 			}
 		}
 	],
-	"current": "hEXl6vPG",
+	"current": "S0SxSDMx",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -41322,6 +41337,12 @@
 			"from": "SWCXjEpr",
 			"at": "2026-10-18T15:31:43.732Z",
 			"reason": "semantic views lists what every view draws at a variant, and the render and rasterize receipts name what a picture draws and marks"
+		},
+		{
+			"variant": "S0SxSDMx",
+			"from": "hEXl6vPG",
+			"at": "2026-10-18T18:02:53.227Z",
+			"reason": "archboard restart: a Restart module stops the server, builds the frontend and starts it again"
 		}
 	],
 	"shelvings": [
