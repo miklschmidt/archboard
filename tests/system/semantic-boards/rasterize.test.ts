@@ -237,6 +237,15 @@ describe("semantic rasterize", () => {
 			]);
 			expect(drawnSvg.status, drawnSvg.stderr).toBe(0);
 			expect(JSON.parse(drawnSvg.stdout).comparedWith).toEqual(comparedReceipt.comparedWith);
+			// Both name what the picture draws and marks alike (TASK-496): the removed auditor too.
+			const { drawn: svgDrawn, marks: svgMarks } = JSON.parse(drawnSvg.stdout);
+			expect({ drawn: comparedReceipt.drawn, marks: comparedReceipt.marks }).toEqual({
+				drawn: svgDrawn,
+				marks: svgMarks,
+			});
+			expect(comparedReceipt.drawn.nodes).toContainEqual(
+				expect.objectContaining({ name: "Auditor", standing: "removed" }),
+			);
 
 			// The plain SVG must omit the removed subject and every standing marker.
 			const decorated = fs.readFileSync(path.join(vault, "proposal.svg"), "utf8");

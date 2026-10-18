@@ -140,6 +140,12 @@ interface RenderedDiagram {
 	/** Where every subject the renderer drew ended up. */
 	readonly atlas: DiagramAtlas;
 	/**
+	 * Every subject the drawing placed, by id: what its key counts the marks
+	 * of, and what an answer says the picture draws. A legend drawn alone keys
+	 * the drawing it leaves out, so these are still that drawing's.
+	 */
+	readonly placed: readonly string[];
+	/**
 	 * Which way an architecture reads: down the page or left to right, the
 	 * renderer's choice for the content being drawn
 	 * (ADR 0032). A sequence reads one way and says nothing.

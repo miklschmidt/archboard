@@ -11,12 +11,21 @@
 // The drawing itself is never laid out again or drawn over: it is moved down
 // whole, under the title, and the page grows to hold everything. Asked for
 // nothing, the page is the page that was painted, byte for byte.
+//
+// The key counts the marks of what the painted drawing placed, read from its
+// atlas, and the page says which subjects those are: a view's reading holds
+// subjects its grammar never draws, and a count of those keyed a mark nobody
+// could find (TASK-497).
 
 import type { LegendLayout } from "@/shared/semantic-board/index";
 import { DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/config";
 import { roundCoord } from "@/transformers/semantic-renderer/lib/geometry";
 import { CARD_TITLE_FONT, fontAttributes } from "@/transformers/semantic-renderer/lib/fonts";
-import { markCounts, type MarkCount } from "@/transformers/semantic-renderer/picture-key";
+import {
+	markCounts,
+	placedStanding,
+	type MarkCount,
+} from "@/transformers/semantic-renderer/picture-key";
 import { measure } from "@/transformers/semantic-renderer/lib/text";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { legendOf, type Legend } from "@/transformers/semantic-renderer/lib/svg/legend";
@@ -42,6 +51,16 @@ interface Framed {
 	readonly standing?: Readonly<Record<string, SubjectStanding>> | undefined;
 	/** Whether the picture draws the comparison's marks. */
 	readonly paintStanding?: boolean | undefined;
+}
+
+/** A page as an export carries it, and the subjects its drawing placed. */
+interface FramedPage extends PaintedPage {
+	/**
+	 * Every subject the painted drawing placed, by id: what the key counts the
+	 * marks of. A legend drawn alone keys the drawing it leaves out, so these
+	 * are still that drawing's.
+	 */
+	readonly placed: readonly string[];
 }
 
 /** How large a title is set, in the card titles' face, and the line it takes. */
@@ -119,12 +138,30 @@ function underTitle(page: PaintedPage, title: string, palette: Palette): Painted
 }
 
 /**
+ * Every subject a painted drawing placed: what its atlas holds.
+ * @param page The painted page.
+ * @returns Their ids.
+ */
+function placedOn(page: PaintedPage): string[] {
+	return [
+		...new Set(
+			[page.atlas.nodes, page.atlas.edges, page.atlas.regions].flatMap((boxes) =>
+				Object.keys(boxes),
+			),
+		),
+	];
+}
+
+/**
  * The marks a picture draws, counted as the page's key counts them.
  * @param request The comparison the render draws.
- * @returns How many subjects carry each mark; none when the marks are not drawn.
+ * @param placed The subjects the drawing placed.
+ * @returns How many placed subjects carry each mark; none when the marks are not drawn.
  */
-function marksOf(request: Framed): readonly MarkCount[] {
-	return request.paintStanding === false ? [] : markCounts(request.standing ?? {});
+function marksOf(request: Framed, placed: readonly string[]): readonly MarkCount[] {
+	return request.paintStanding === false
+		? []
+		: markCounts(placedStanding(request.standing ?? {}, placed));
 }
 
 /**
@@ -133,10 +170,12 @@ function marksOf(request: Framed): readonly MarkCount[] {
  * @param page The painted page.
  * @param request What the render asks the export to carry, and the comparison it draws.
  * @param palette The theme's colours.
- * @returns The page, its atlas moved with its drawing; the same page when nothing is asked for.
+ * @returns The page, its atlas moved with its drawing, the same page when nothing is asked
+ * for; and the subjects its drawing placed.
  */
-function framedForExport(page: PaintedPage, request: Framed, palette: Palette): PaintedPage {
+function framedForExport(page: PaintedPage, request: Framed, palette: Palette): FramedPage {
 	const frame = request.frame ?? {};
+	const placed = placedOn(page);
 	const shown = frame.legendOnly === true && frame.legend !== undefined ? NOTHING : page;
 	// The legend alone keeps the width a row of it would wrap at under the picture.
 	const keyed =
@@ -144,10 +183,13 @@ function framedForExport(page: PaintedPage, request: Framed, palette: Palette): 
 			? shown
 			: withLegend(
 					shown,
-					legendOf(page.body, marksOf(request), frame.legend, page.width, palette),
+					legendOf(page.body, marksOf(request, placed), frame.legend, page.width, palette),
 					frame.legend,
 				);
-	return frame.title === undefined ? keyed : underTitle(keyed, frame.title, palette);
+	return {
+		...(frame.title === undefined ? keyed : underTitle(keyed, frame.title, palette)),
+		placed,
+	};
 }
 
 /**
@@ -162,4 +204,4 @@ function exportedName(name: string, frame: ExportFrame | undefined): string {
 	return frame?.legendOnly === true && frame.legend !== undefined ? `Legend. ${titled}` : titled;
 }
 
-export { exportedName, framedForExport, type ExportFrame };
+export { exportedName, framedForExport, type ExportFrame, type FramedPage };

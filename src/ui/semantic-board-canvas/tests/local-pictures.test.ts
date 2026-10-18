@@ -224,6 +224,7 @@ function page(
 				height: 300,
 				svg: `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"></svg>`,
 				atlas: { nodes: {}, edges: {}, regions: {} },
+				drawn: { nodes: [], edges: [], flows: [], steps: [] },
 			},
 		};
 	};

@@ -116,9 +116,11 @@ const SubjectStandingSchema = z.enum(["added", "removed", "changed", "unchanged"
 
 /**
  * How a variant differs, as the answer carries it: the variant it is read
- * against, and how every subject of the comparison picture stands against that
- * one. A clean canvas reading keeps this report even though it leaves the
- * comparison marks and removed subjects out of its SVG.
+ * against, and how every subject the picture draws stands against that one. A
+ * clean canvas reading keeps this report for what it draws, even though it
+ * leaves the comparison marks and removed subjects out of its SVG. A subject
+ * the view's reading holds and its grammar does not draw is not here, so a
+ * count of these is a count of marks the picture shows (TASK-497).
  *
  * Derived on every render rather than stored. Nothing on a board says "this node
  * is new": a variant states its architecture, and how it differs is read
@@ -173,12 +175,77 @@ const RenderIdentitySchema = z.object({
 	waiting: ToldStandingSchema.nullable(),
 });
 
+/** One subject a picture draws: the id that asks for it, and the name a person reads. */
+const DrawnSubjectSchema = z.object({
+	id: z.string(),
+	/**
+	 * A node's or a flow's name, a step's words, and a relationship's label,
+	 * or the names of the parts it joins when it has none.
+	 */
+	name: z.string(),
+});
+
+/**
+ * What a picture draws, by kind of subject, in the board's order: only what
+ * the renderer placed. A view's reading holds more than its grammar draws (a
+ * sequence draws no relationship, a flowchart no part, an architecture no flow
+ * on a board with relationships), so this is read off the drawing, never off
+ * the reading (TASK-496).
+ */
+const DrawnSubjectsSchema = z.object({
+	nodes: z.array(DrawnSubjectSchema),
+	edges: z.array(DrawnSubjectSchema),
+	flows: z.array(DrawnSubjectSchema),
+	steps: z.array(DrawnSubjectSchema),
+});
+type DrawnSubjects = z.infer<typeof DrawnSubjectsSchema>;
+
+/**
+ * A subject a picture draws, as a receipt names it: with how it stands when
+ * the picture marks a comparison, and without a standing when it marks none.
+ */
+const MarkedSubjectSchema = DrawnSubjectSchema.extend({
+	standing: SubjectStandingSchema.optional(),
+});
+
+/** What a picture draws and how each subject stands, by kind, as a receipt names it. */
+const MarkedSubjectsSchema = z.object({
+	nodes: z.array(MarkedSubjectSchema),
+	edges: z.array(MarkedSubjectSchema),
+	flows: z.array(MarkedSubjectSchema),
+	steps: z.array(MarkedSubjectSchema),
+});
+type MarkedSubjects = z.infer<typeof MarkedSubjectsSchema>;
+
+/**
+ * How many subjects a picture marks each way: the counts its key shows beside
+ * each mark, zero for a mark the key leaves out.
+ */
+const PictureMarksSchema = z.object({
+	added: z.int(),
+	changed: z.int(),
+	removed: z.int(),
+});
+type PictureMarks = z.infer<typeof PictureMarksSchema>;
+
+/**
+ * What a drawing command's receipt says about its picture (TASK-496,
+ * TASK-497): every subject it draws, and the counts of its marks, or null when
+ * it marks no comparison.
+ */
+const PictureReceiptShape = {
+	drawn: MarkedSubjectsSchema,
+	marks: PictureMarksSchema.nullable(),
+};
+
 /** A board that was drawn. */
 const DrawnBoardSchema = RenderIdentitySchema.extend({
 	svg: z.string().min(1),
 	width: z.number().positive(),
 	height: z.number().positive(),
 	atlas: DiagramAtlasSchema,
+	/** What the picture draws; `changes.standing` says how each of these stands, and no other. */
+	drawn: DrawnSubjectsSchema,
 });
 type DrawnBoard = z.infer<typeof DrawnBoardSchema>;
 
@@ -236,6 +303,11 @@ export {
 	RenderedVariantSchema,
 	type RenderedVariant,
 	RenderIdentitySchema,
+	type DrawnSubjects,
+	type MarkedSubjects,
+	PictureMarksSchema,
+	type PictureMarks,
+	PictureReceiptShape,
 	DrawnBoardSchema,
 	type DrawnBoard,
 	NothingDrawnReasonSchema,

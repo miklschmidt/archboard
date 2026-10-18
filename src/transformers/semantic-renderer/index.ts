@@ -275,6 +275,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		width: page.width,
 		height: page.height,
 		atlas: page.atlas,
+		placed: page.placed,
 		readingDirection: drawing.direction,
 	};
 }
@@ -347,7 +348,7 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		theme: request.theme,
 	});
 
-	return { svg, width: page.width, height: page.height, atlas: page.atlas };
+	return { svg, width: page.width, height: page.height, atlas: page.atlas, placed: page.placed };
 }
 
 /**

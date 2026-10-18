@@ -3,11 +3,12 @@
 
 import { expect } from "bun:test";
 
-import { renderBoard, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
+import { renderBoard } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import {
 	SemanticBoardSchema,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
+	type DrawnBoard,
 	type LayoutEngineName,
 } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
@@ -26,7 +27,7 @@ async function bothModes(
 	current: unknown,
 	draft: unknown,
 	how: { layout?: LayoutEngineName; view?: { grammar: string; scope?: unknown } },
-): Promise<{ compared: RenderedDiagram; plain: RenderedDiagram }> {
+): Promise<{ compared: DrawnBoard; plain: DrawnBoard }> {
 	const board = SemanticBoardSchema.parse({
 		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
@@ -70,7 +71,7 @@ async function bothModes(
  * @param removed The ids that stand removed.
  */
 function expectSamePlaces(
-	{ compared, plain }: { compared: RenderedDiagram; plain: RenderedDiagram },
+	{ compared, plain }: { compared: DrawnBoard; plain: DrawnBoard },
 	removed: readonly string[],
 ): void {
 	for (const kind of ["nodes", "edges", "regions"] as const) {

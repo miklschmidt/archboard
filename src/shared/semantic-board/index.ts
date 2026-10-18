@@ -174,6 +174,7 @@ export {
 } from "@/shared/semantic-board/lib/scope";
 export {
 	drawingOf,
+	drawnSubjects,
 	comparedWith,
 	type DrawnChanges,
 	type DrawnProposal,
@@ -247,6 +248,10 @@ export {
 	type RenderedChanges,
 	SubjectStandingSchema,
 	RenderIdentitySchema,
+	type MarkedSubjects,
+	PictureMarksSchema,
+	type PictureMarks,
+	PictureReceiptShape,
 	DrawnBoardSchema,
 	type DrawnBoard,
 	NothingDrawnReasonSchema,

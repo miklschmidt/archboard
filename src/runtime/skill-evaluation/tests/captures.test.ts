@@ -44,6 +44,8 @@ function receipt(overrides: Record<string, unknown> = {}): Record<string, unknow
 		scale: 1,
 		diagram: { width: 900, height: 420 },
 		region: null,
+		drawn: { nodes: [], edges: [], flows: [], steps: [] },
+		marks: null,
 		source: {
 			renderer: "semantic-renderer",
 			fonts: "embedded",

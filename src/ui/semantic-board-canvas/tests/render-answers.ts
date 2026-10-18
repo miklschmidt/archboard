@@ -32,6 +32,7 @@ function drawing(version: number, board = "pipeline"): Record<string, unknown> {
 			`<path class="ab-halo" id="wire-halo"></path><path id="wire" d="M0 0 L10 10"></path></g>` +
 			`<g data-semantic-kind="node" data-semantic-id="ghost"><rect id="stray"></rect></g>` +
 			`</svg>`,
+		drawn: { nodes: [], edges: [], flows: [], steps: [] },
 		atlas: {
 			nodes: { n1: { x: 0, y: 0, width: 80, height: 40 } },
 			edges: { e1: { x: 80, y: 20, width: 40, height: 2 } },

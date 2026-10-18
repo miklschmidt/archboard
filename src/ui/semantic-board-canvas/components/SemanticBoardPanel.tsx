@@ -105,14 +105,13 @@ function changes(props: SemanticBoardPanelProps): ReactNode {
 	if (answer === undefined) {
 		return null;
 	}
-	const { changes: found, view } = answer;
+	const { changes: found } = answer;
 	if (found === null) {
 		return null;
 	}
 	return (
 		<SemanticChanges
 			changes={found}
-			inView={view !== null}
 			comparison={props.comparison}
 			onComparisonChange={props.onComparisonChange}
 		/>

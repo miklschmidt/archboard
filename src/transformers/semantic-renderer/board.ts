@@ -10,6 +10,7 @@
 
 import {
 	drawingOf,
+	drawnSubjects,
 	findView,
 	addressedVariant,
 	nothingBuilt,
@@ -31,6 +32,7 @@ import {
 } from "@/shared/semantic-board/index";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import { SemanticRenderError, renderSemanticView } from "@/transformers/semantic-renderer/index";
+import { placedStanding } from "@/transformers/semantic-renderer/picture-key";
 
 /** What a render of one board asks for. */
 interface BoardRenderChoices {
@@ -215,7 +217,7 @@ async function drawnReply(
 		waiting,
 	};
 	try {
-		const picture = await renderSemanticView({
+		const { placed, ...picture } = await renderSemanticView({
 			policy: how.policy,
 			content: proposal.content,
 			...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
@@ -235,13 +237,40 @@ async function drawnReply(
 			unbuilt: framedAsPlanned(board, against),
 			level: board.level,
 		});
-		return { ...identity, ...picture };
+		return {
+			...identity,
+			changes: changesPlaced(proposal.changes, placed),
+			...picture,
+			drawn: drawnSubjects(proposal.content, placed),
+		};
 	} catch (error) {
 		if (error instanceof SemanticRenderError) {
-			return { ...identity, empty: emptyReason(view, variant, error.code) };
+			return {
+				...identity,
+				changes: changesPlaced(proposal.changes, []),
+				empty: emptyReason(view, variant, error.code),
+			};
 		}
 		throw error;
 	}
+}
+
+/**
+ * How a variant differs, as the answer says it: the standing of what the
+ * picture placed alone. The reading holds subjects its grammar never draws, and
+ * a panel or a receipt that counted them counted a mark nobody could find
+ * (TASK-497).
+ * @param changes How the reading differs, or null when there is nothing to read it against.
+ * @param placed The subjects the drawing placed.
+ * @returns The changes of the picture.
+ */
+function changesPlaced(
+	changes: SemanticRenderReply["changes"],
+	placed: readonly string[],
+): SemanticRenderReply["changes"] {
+	return changes === null
+		? null
+		: { ...changes, standing: placedStanding(changes.standing, placed) };
 }
 
 /**

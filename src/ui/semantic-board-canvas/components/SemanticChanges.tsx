@@ -10,14 +10,17 @@
 // added and removed is what lets a reader count a change without error, and a
 // count says at once whether a change is one part or half the board.
 //
-// The counts are of what the picture draws. A view draws part of the variant,
-// so a view in which nothing differs says so of the view, and keeps the
-// control: the change is elsewhere, and the reader may want the marks when
-// they read on. Only a whole variant in which nothing differs has no marks to
-// show, and says so plainly.
+// The counts are of what the picture draws: the render answer keeps its
+// standing to the subjects the renderer placed (TASK-497). Every reading draws
+// part of the variant, the overview included (ADR 0052), and no grammar draws
+// every kind of subject, so a reading in which nothing differs says so of the
+// reading and keeps the control: the change is elsewhere, and the reader may
+// want the marks when they read on.
 //
 // The control hides the marks and the removed context from the picture. While
-// they are hidden the rows go too, because they would key nothing on screen;
+// they are hidden the rows go too, and so does the line that says none
+// differs: they would key nothing on screen, and a picture drawn without the
+// removed context has fewer subjects to count;
 // the heading, which says what the variant is read against, stays, because that
 // is true either way. It is the section's own name: a heading "Changes" over a
 // line that said what they were against said the one thing twice (TASK-388).
@@ -37,10 +40,8 @@ import { markCounts, type MarkCount } from "@/transformers/semantic-renderer/pic
 
 /** Inputs for the changes. */
 interface SemanticChangesProps {
-	/** How the variant on screen differs from the one it is read against. */
+	/** How what the picture draws differs from the variant it is read against. */
 	readonly changes: Changes;
-	/** Whether a view narrows the picture to part of the variant. */
-	readonly inView: boolean;
 	/** Whether the picture draws the comparison: its marks and removed context. */
 	readonly comparison: boolean;
 	/**
@@ -57,19 +58,13 @@ interface SemanticChangesProps {
  * @returns The section.
  */
 function SemanticChanges(props: SemanticChangesProps): JSX.Element {
-	const counts = markCounts(props.changes.standing);
-	const identical = counts.length === 0 && !props.inView;
 	return (
 		<SidebarSection title={`Compared with ${props.changes.against.name}`} slot="semantic-changes">
-			{identical ? (
-				<p className="text-body text-muted-foreground">Nothing differs.</p>
-			) : (
-				<ChangeKey
-					counts={counts}
-					comparison={props.comparison}
-					onComparisonChange={props.onComparisonChange}
-				/>
-			)}
+			<ChangeKey
+				counts={markCounts(props.changes.standing)}
+				comparison={props.comparison}
+				onComparisonChange={props.onComparisonChange}
+			/>
 		</SidebarSection>
 	);
 }
@@ -91,7 +86,7 @@ function ChangeKey(props: {
 	const id = useId();
 	return (
 		<>
-			{props.counts.length === 0 && (
+			{props.counts.length === 0 && props.comparison && (
 				<p data-slot="semantic-change-none" className="text-body text-muted-foreground">
 					Nothing in this view differs.
 				</p>

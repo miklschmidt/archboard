@@ -39,6 +39,7 @@ const DRAWING = {
 		`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">` +
 		`<g data-semantic-kind="node" data-semantic-id="n1"><rect width="80" height="40"></rect></g>` +
 		`</svg>`,
+	drawn: { nodes: [], edges: [], flows: [], steps: [] },
 	atlas: { nodes: { n1: { x: 0, y: 0, width: 80, height: 40 } }, edges: {}, regions: {} },
 };
 

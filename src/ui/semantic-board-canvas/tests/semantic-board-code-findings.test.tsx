@@ -278,6 +278,7 @@ test("a warning hidden by a limited view opens the whole board before focusing",
 			view: { id: "parts", name: "Parts", grammar: "architecture" },
 			width: 4000,
 			height: 3000,
+			drawn: { nodes: [], edges: [], flows: [], steps: [] },
 			atlas: { nodes: {}, edges: {}, regions: {} },
 		},
 	};
