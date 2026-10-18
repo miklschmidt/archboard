@@ -13,8 +13,9 @@ the three sections of a design pull request.
 
 ## The state comment
 
-Write the flag `design` after `archboard-pr`, so that a later pull request
-can find this one (section 6 of the skill):
+Write one state comment for each board that holds a draft of this design,
+with the flag `design` after `archboard-pr`. A later pull request finds this
+one by these comments (section 6 of the skill):
 
 ```markdown
 <!-- archboard-pr design board="<board>" proposal="<design draft>" vault="github.com/<owner>/<name>" -->
@@ -32,16 +33,18 @@ A design draft with a parent also names `against="<below>"`.
    write reaches the board file" or "What happens when the server stops". Take
    the concerns from the design document's own sections, and make each one a
    `###` heading in the form of that question.
-3. Each section states, in two to five sentences, the decision, its reason
-   and the trade-off that it accepts. It also recites each negative decision
-   that the design records for that concern. Examples are "the browser
-   never writes board content" and "there is no default vault". Define a
-   domain term at its first use. If the decision is a matrix, such as which
-   caller may write which file, use a small table.
-4. Put the picture of a concern in its section. Draw it through a view of the
-   design board that shows that concern, with the rules of
-   [renders](renders.md). Prefer a view that the boards already have. A
-   concern that no view shows gets no picture.
+3. Each section opens with the decision and its reason, in short sentences
+   that each state one decision. If the design records a trade-off for the
+   concern, one sentence names it. Then a list recites each negative decision
+   that the design records for that concern, one line each, such as "The
+   browser never writes board content." Define a domain term at its first
+   use. If the decision is a matrix, such as which caller may write which
+   file, use a small table.
+4. Put the picture of a concern in its section. Draw it through a view that
+   shows that concern, on any board that the design changes, at the variant
+   that holds the design on that board. Follow [renders](renders.md), and
+   prefer a view that the boards already have. If no view shows the concern,
+   add one as renders says.
 5. End with a section on scope: what the first delivery proves, and what the
    design leaves for later, as the design document states it.
 
@@ -55,10 +58,10 @@ first sentence of each section state every decision.
 
 ## Walkthrough
 
-Record one walkthrough with [walkthrough](walkthrough.md). Beat 1 says why
-the design exists and where it applies. Then one beat for each concern, in
-the order of the sections. The last beat names the decision that a reviewer
-must check most closely.
+Record one walkthrough with [walkthrough](walkthrough.md), and put it at the
+end of the Summary. Beat 1 says why the design exists and where it applies.
+Then one beat for each concern, in the order of the sections. The last beat
+names the decision that Merge Danger names first.
 
 ## Evidence
 

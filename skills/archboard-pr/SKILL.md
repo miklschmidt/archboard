@@ -341,15 +341,15 @@ reader never sees it.
 - One to three sentences: the problem or need, and what the change does
   about it. Use the repository's domain words: its glossary (`CONTEXT.md`,
   `GLOSSARY.md` or similar) and the names that the pictures carry.
-- When the proposal descends from a design, one more sentence names the
-  design section that this pull request builds, with one link to the design
+- When this pull request builds a design, one more sentence names the design
+  section that it builds, or the two sections, with one link to the design
   pull request, such as: It builds "How a write reaches the board file" of
-  the design in #412. To find it, walk up the proposal's `parent` in
-  `semantic show`. For each name, run
-  `gh pr list --state all --search '"<name>" in:body' --json number,body`, and
-  keep the pull request whose state comment starts `archboard-pr design` and
-  names that draft as `proposal`. Its `###` headings are the sections. If no
-  ancestor has a design pull request, leave the sentence out.
+  the design in #412. List the design pull requests of the repository with
+  `gh pr list --repo <owner>/<name> --state all --search '"archboard-pr design" in:body' --json number,body,headRefName`.
+  This pull request builds the one that is below it in its stack, or the one
+  whose state comment names a draft that a proposal of this pull request
+  descends from (walk up `parent` in `semantic show`). Its `###` headings are
+  the sections. If no design pull request matches, leave the sentence out.
 - Then the pictures, each with alt text that says what it shows, not the file
   name. If a card carries a triangle on its top-right corner, say under that
   picture that it marks a disagreement with the current variant that nobody

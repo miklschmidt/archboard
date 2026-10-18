@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-18 12:19'
-updated_date: '2026-10-18 12:20'
+updated_date: '2026-10-18 12:22'
 labels:
   - skill
 dependencies: []
@@ -44,3 +44,9 @@ The redo of the device trust stack (Admin-By-Request/Platform #589 to #615) gave
 7. Run generate:skill-artifacts and test:repository, then the full gate at close.
 8. Apply: an opus agent explains #589 again with the changed skill. I review it against the author's summary, add the design link to the 17 later bodies, and post.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Skill change committed in 5a325f353: references/design.md, the section 1 row, the never-list items, the design sentence in section 6 and walkthrough beat 1. Examples in the shipped skill use archboard's own domain. GitHub search finds text in the hidden state comment (tested: '"Managed PostgreSQL design"' finds #589). Rendered PR body headings carry no anchor (body_html has no user-content ids), so the design sentence names the section in words. test:repository and install-targets pass. An opus agent now explains #589 again with the changed skill (brief: /tmp/pr-audit/stack-redo3/_brief.txt).
+<!-- SECTION:NOTES:END -->
