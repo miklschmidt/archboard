@@ -41,7 +41,11 @@ import {
 	NodeKindSchema,
 	VariantLifecycleSchema,
 } from "@/shared/semantic-board/lib/vocabulary";
-import { CodeAnchorSchema, CodeBindingSchema } from "@/shared/code-target/index";
+import {
+	CodeAnchorSchema,
+	CodeBindingSchema,
+	DocumentReferenceSchema,
+} from "@/shared/code-target/index";
 import { SemanticBoardLevelSchema } from "@/shared/semantic-board/lib/aggregate";
 
 /**
@@ -51,6 +55,12 @@ import { SemanticBoardLevelSchema } from "@/shared/semantic-board/lib/aggregate"
 const NodeReferenceSchema = z.string().trim().min(1);
 
 const MAX_HANDLE = 60;
+
+/**
+ * A variant's document references as an agent states them: the whole list,
+ * where an empty one stores nothing (ADR 0054).
+ */
+const DocumentsInputSchema = z.array(DocumentReferenceSchema);
 
 /**
  * A handle: a name for this one command only.
@@ -305,6 +315,10 @@ const VariantEditInputSchema = z
 		variant: NodeReferenceSchema.optional(),
 		/** The summary of the variant the edit lands on: omit to keep it, state one to replace it. */
 		summary: DescriptionSchema.optional(),
+		documents: DocumentsInputSchema.optional().meta({
+			description:
+				"The repository documents the variant the edit lands on draws (ADR 0054): omit to keep its list, state the whole list to replace it, or [] to remove it. No other variant's list changes.",
+		}),
 		nodes: z.array(SemanticNodeInputSchema).default([]),
 		edges: z.array(SemanticEdgeInputSchema).default([]),
 		flows: z.array(SemanticFlowInputSchema).default([]),
@@ -361,6 +375,10 @@ const BoardCreateInputSchema = z
 		variant: DisplayNameSchema.optional(),
 		lifecycle: VariantLifecycleSchema.extract(["current", "draft"]).optional(),
 		summary: DescriptionSchema.optional(),
+		documents: DocumentsInputSchema.optional().meta({
+			description:
+				"The repository documents the first variant draws (ADR 0054), such as a design document, an ADR or a task.",
+		}),
 		nodes: z.array(SemanticNodeInputSchema).default([]),
 		edges: z.array(SemanticEdgeInputSchema).default([]),
 		flows: z.array(SemanticFlowInputSchema).default([]),

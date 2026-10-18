@@ -44,7 +44,10 @@
 // TASK-488 adds `INHERITED_PART_DROPPED`, a warning on a draft that lacks a
 // bound part the variant before it holds while the code the draft is read
 // against still holds that part's path and symbol (`dropped`), and the skips
-// of a draft whose ref cannot be read.
+// of a draft whose ref cannot be read. TASK-498 adds `DOCUMENT_PATH_MISSING`,
+// a warning on a document reference of a variant the check reads whose file is
+// not at the version it names, with no subject: its `path` names the reference
+// as `variants.<id>.documents.<index>` (ADR 0054).
 
 import { CONFIGURABLE_LANGUAGES } from "@/shared/language-servers/index";
 import { z } from "zod";
@@ -134,12 +137,14 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  * - `repository-unregistered`: a part, relationship or step whose binding or
  *   anchor names a repository this machine has not registered. It stays
  *   silent, and is listed. Also a draft, with no subject, whose dropped parts
- *   are bound into such a repository (TASK-488).
+ *   are bound into such a repository (TASK-488), and a document reference into
+ *   one, with no subject and the reference's path as `detail` (TASK-498).
  * - `ref-not-checked-out`: a binding pinned to a branch or a commit that its
  *   checkout cannot resolve, so there is no code to read (TASK-493). Its `ref`
  *   names the ref and what the checkout has out. A ref it can resolve but has
  *   not out is read from Git without a checkout; a relationship or step with
- *   an unresolvable part at an end is skipped with its anchor.
+ *   an unresolvable part at an end is skipped with its anchor. A document
+ *   reference pinned so is skipped with no subject and its path as `detail`.
  * - `ref-without-language-server`: a ref read from Git, in which a use that no
  *   import resolves was not asked of a language server, because servers read
  *   the files on disk (TASK-493). Said once for the repository and ref, with

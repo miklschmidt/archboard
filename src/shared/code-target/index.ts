@@ -92,6 +92,21 @@ const CodeAnchorSchema = z
 	.object({ repo: NonemptyString, path: NonemptyString, symbol: NonemptyString })
 	.strict();
 type CodeAnchor = z.infer<typeof CodeAnchorSchema>;
+/**
+ * One file in a repository that a variant draws, such as a design document, an
+ * ADR or a task (ADR 0054). It has a binding's shape without what only code
+ * has, so the binding's resolver reads it: `commit` names one exact version
+ * and wins over `branch`, and with neither it names the file in the checkout
+ * the vault reads for that repository.
+ */
+const DocumentReferenceSchema = CodeBindingSchema.pick({
+	repo: true,
+	branch: true,
+	commit: true,
+})
+	.extend({ path: NonemptyString })
+	.strict();
+type DocumentReference = z.infer<typeof DocumentReferenceSchema>;
 const CodeTargetOpenRequestSchema = z
 	.object({ board: NonemptyString, element: NonemptyString })
 	.strict();
@@ -305,6 +320,8 @@ export {
 	type CodeBinding,
 	CodeAnchorSchema,
 	type CodeAnchor,
+	DocumentReferenceSchema,
+	type DocumentReference,
 	CodeTargetOpenRequestSchema,
 	type CodeTargetOpenRequest,
 	OpenerSettingsTestRequestSchema,

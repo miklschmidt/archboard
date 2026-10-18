@@ -171,27 +171,31 @@ test("a branch is one version, written against the version it was asked for", as
 	expect(read(board).variants.map((one) => one.name)).not.toContain("Derived from a stale read");
 }, 20_000);
 
+/**
+ * Write one transition against the version the test's board is at.
+ * @param transition The transition.
+ * @returns What the write did.
+ */
+async function write(transition: store.SemanticTransition) {
+	return store.writeSemanticBoard({
+		vault,
+		board,
+		writer,
+		expectedVersion: read(board).version,
+		transition,
+	});
+}
+
+/**
+ * Edit the test's board with one stated batch.
+ * @param batch The batch.
+ * @returns What the write did.
+ */
+async function edit(batch: Record<string, unknown>) {
+	return write(store.editVariantTransition(contract.VariantEditInputSchema.parse(batch)));
+}
+
 test("an edit restates the summary of the variant it lands on, and a record refuses it", async () => {
-	/**
-	 * Write one transition against the version the board is at.
-	 * @param transition The transition.
-	 * @returns What the write did.
-	 */
-	const write = async (transition: store.SemanticTransition) =>
-		store.writeSemanticBoard({
-			vault,
-			board,
-			writer,
-			expectedVersion: read(board).version,
-			transition,
-		});
-	/**
-	 * Edit the board with one stated batch.
-	 * @param batch The batch.
-	 * @returns What the write did.
-	 */
-	const edit = async (batch: Record<string, unknown>) =>
-		write(store.editVariantTransition(contract.VariantEditInputSchema.parse(batch)));
 	const summaryOf = (name: string) =>
 		read(board).variants.find((variant) => variant.name === name)?.summary;
 	const baseline = read(board).variants[0]!.name;
@@ -230,3 +234,68 @@ test("an edit restates the summary of the variant it lands on, and a record refu
 	expect(historical.outcome === "rejected" && historical.code).toBe("VARIANT_HISTORICAL");
 	expect(read(board)).toEqual(records);
 }, 20_000);
+
+test("a variant's documents: an edit replaces the edited list, a branch copies it, a record refuses it", async () => {
+	const documentsOf = (name: string) =>
+		read(board).variants.find((variant) => variant.name === name)?.documents;
+	const baseline = read(board).variants[0]!.name;
+	const design = { repo: "github.com/acme/shop", path: "docs/queue.md", commit: "abc1234" };
+	const plan = { repo: "github.com/acme/shop", path: "backlog/tasks/task-7.md" };
+
+	// Stated on the proposal alone, in the write that states its content.
+	const before = read(board).version;
+	const stated = await edit({
+		variant: PROPOSAL,
+		documents: [design, plan],
+		nodes: [{ name: "Queue", kind: "queue" }],
+	});
+	expect(stated.outcome).toBe("applied");
+	expect(read(board).version).toBe(before + 1);
+	expect(documentsOf(PROPOSAL)).toEqual([design, plan]);
+	expect(documentsOf(baseline)).toBeUndefined();
+
+	// A branch copies the list of the variant it comes from.
+	await branch(board, PROPOSAL, "Next layer");
+	expect(documentsOf("Next layer")).toEqual([design, plan]);
+
+	// A later list replaces the edited variant's only, and an edit that leaves it out keeps it.
+	const moved = { ...design, commit: "def5678" };
+	expect((await edit({ variant: "Next layer", documents: [moved] })).outcome).toBe("applied");
+	expect(documentsOf("Next layer")).toEqual([moved]);
+	expect(documentsOf(PROPOSAL)).toEqual([design, plan]);
+	expect((await edit({ variant: PROPOSAL, summary: "A queue" })).outcome).toBe("applied");
+	expect(documentsOf(PROPOSAL)).toEqual([design, plan]);
+
+	// An empty list removes the field.
+	expect((await edit({ variant: "Next layer", documents: [] })).outcome).toBe("applied");
+	const emptied = read(board).variants.find((one) => one.name === "Next layer");
+	expect(emptied).not.toHaveProperty("documents");
+
+	// A superseded architecture is a record: refused, nothing written.
+	await write(
+		store.adoptVariantTransition(contract.BoardAdoptInputSchema.parse({ variant: PROPOSAL })),
+	);
+	const records = read(board);
+	const historical = await edit({ variant: baseline, documents: [plan] });
+	expect(historical.outcome === "rejected" && historical.code).toBe("VARIANT_HISTORICAL");
+	expect(read(board)).toEqual(records);
+}, 20_000);
+
+test("a new board's first variant holds the documents its payload names", async () => {
+	const name = `documented-${boards}`;
+	const design = { repo: "github.com/acme/shop", path: "docs/queue.md", branch: "design" };
+	await store.writeSemanticBoard({
+		vault,
+		board: name,
+		writer,
+		transition: store.createBoardTransition(
+			contract.BoardCreateInputSchema.parse({
+				name,
+				level: "system",
+				lifecycle: "draft",
+				documents: [design],
+			}),
+		),
+	});
+	expect(read(name).variants[0]?.documents).toEqual([design]);
+});

@@ -192,7 +192,7 @@ const semanticEditContract = defineCommand({
 	summary: "Change a semantic architecture board",
 	description:
 		"Applies one batch of stated changes to a semantic board in one write. The batch is JSON with " +
-		"optional board `level` metadata, the target variant's `summary`, `nodes`, `edges`, `flows`, " +
+		"optional board `level` metadata, the target variant's `summary` and `documents`, `nodes`, `edges`, `flows`, " +
 		"`views`, `walkthroughs` and the matching `remove...` lists, read from --input or " +
 		"standard input, and it lands whole or not at all. Architectural content targets the selected " +
 		"variant; views are shared by the whole board. --variant says which variant the change lands " +
@@ -355,6 +355,7 @@ const semanticBranchContract = defineCommand({
 		"is carried over whole, with every entity keeping the identity it already had, which is what " +
 		"makes the two comparable: a node that keeps its id through a rename is a rename, and the same " +
 		"node written again under a fresh id would be a deletion standing beside an addition. The " +
+		"predecessor's document references are copied too, and an edit's `documents` restates them. The " +
 		"proposal starts as a draft and designates nothing — what is current stays where it is until " +
 		"somebody says otherwise — and what it actually proposes is said afterwards, as ordinary edits " +
 		`to it. --from names the variant to derive from, ${UNNAMED_VARIANT}.`,

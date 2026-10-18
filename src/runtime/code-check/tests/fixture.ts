@@ -47,6 +47,8 @@ interface FixtureVariant {
 	readonly lifecycle: "current" | "draft" | "historical" | "shelved";
 	/** The variant it was branched from, if any. */
 	readonly parent?: string;
+	/** The repository documents it draws (ADR 0054). */
+	readonly documents?: readonly Readonly<Record<string, string>>[];
 	readonly content: Record<string, unknown>;
 }
 

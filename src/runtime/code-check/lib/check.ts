@@ -16,7 +16,8 @@
 // resolves, and every one has stopped when the pass returns (resolution.ts).
 // A draft that lacks a bound part the variant before it holds, while the code
 // it describes still holds that part, is `INHERITED_PART_DROPPED`
-// (dropped-parts.ts).
+// (dropped-parts.ts). A document reference whose file is not at the version it
+// names is `DOCUMENT_PATH_MISSING` (documents.ts, ADR 0054).
 // What the pass cannot read is listed with the reason, never as a finding.
 
 import { createElapsedClock } from "@/shared/timing/timing";
@@ -44,6 +45,7 @@ import {
 	bindingSymbolMissing,
 } from "@/runtime/code-check/lib/claim-findings";
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
+import { documentsOf, judgeDocuments } from "@/runtime/code-check/lib/documents";
 import { droppedBindings, judgeDroppedParts } from "@/runtime/code-check/lib/dropped-parts";
 import {
 	atOwnRef,
@@ -501,13 +503,14 @@ async function checkCode(
 ): Promise<CodeCheckOutcome> {
 	const inherited = droppedBindings(boards);
 	const asked = boards.flatMap(claimsOf);
-	const bindings = [...asked.flatMap(pathsOf), ...partBindings(boards), ...inherited];
+	const documents = documentsOf(boards);
+	const bindings = [...asked.flatMap(pathsOf), ...partBindings(boards), ...inherited, ...documents];
 	const snapshot = await snapshotCheckoutAccess({ vault, signal, bindings, timeoutMs: null });
 	const repos = [...asked.map(repoOf), ...bindings.map((binding) => binding.repo)];
 	const checkouts = await readCheckouts(repos, snapshot, signal);
 	const reads = await Promise.all(boards.map((read) => atOwnRef(read, checkouts, signal)));
 	const claims = reads.flatMap(claimsOf);
-	const bound = partBindings(reads);
+	const bound = [...partBindings(reads), ...documents];
 	const refs = await readRefCodes(refReadsOf(claims, bound, snapshot), checkouts, signal);
 	const reading = timedFacts(routedFacts(refs, codeFacts.pass(signal, plans)));
 	const facts = reading.facts;
@@ -530,6 +533,9 @@ async function checkCode(
 	};
 	try {
 		await judgeAll(claims, pass);
+		const documented = judgeDocuments(reads, pass);
+		pass.outcome.findings.push(...documented.findings);
+		pass.outcome.skipped.push(...documented.skipped);
 		for (const read of reads) {
 			// oxlint-disable-next-line no-await-in-loop -- one board at a time keeps the findings in board order, and a file one board reads is cached for the next
 			await judgeBoardRelationships(read, pass);
