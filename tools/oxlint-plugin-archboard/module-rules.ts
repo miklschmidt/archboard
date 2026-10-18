@@ -6,7 +6,7 @@ import {
 	AREA_IMPORT_DENIALS,
 	SOURCE_ALIAS_PREFIX,
 	areaOwnerAt,
-	exportedSubpath,
+	exportedSubpaths,
 	getRepoRelativePath,
 	isModuleInternal,
 	isSourceFile,
@@ -119,42 +119,50 @@ function deepImportMessage(importer: Importer, imported: SourceModule): string |
 }
 
 /**
- * The message a file of a package earns when another file imports it. Another
- * package may import only what `exports` names, and never test support.
+ * The message a file of a package earns when another file imports it. Production
+ * code never imports test support. Another package may import only what
+ * `exports` names.
  * @param importer The importing file.
  * @param imported The imported file's package.
  * @param importedPath The imported file's repository path.
+ * @param requested The export subpath the specifier asked for. A path import has none, and
+ * then every export that names the file counts.
  * @returns The message id, or undefined when the import is allowed.
  */
 function packageImportMessage(
 	importer: Importer,
 	imported: PackageFile,
 	importedPath: string,
+	requested: string | undefined,
 ): string | undefined {
-	if (packageAt(importer.relativePath)?.name === imported.name) {
-		return undefined;
+	const subpaths = exportedSubpaths(importer.context, imported, importedPath, requested);
+	if (!importer.owner && subpaths.some(isTestingSubpath)) {
+		return "noProductTestImport";
 	}
-	const subpath = exportedSubpath(importer.context, imported, importedPath);
-	if (subpath === undefined) {
-		return "noDeepImportAcrossPackages";
-	}
-	return isTestingSubpath(subpath) && !importer.owner ? "noProductTestImport" : undefined;
+	const isPrivate =
+		subpaths.length === 0 && packageAt(importer.relativePath)?.name !== imported.name;
+	return isPrivate ? "noDeepImportAcrossPackages" : undefined;
 }
 
 /**
  * The module-entrypoints message an import of a resolved file earns.
  * @param importer The importing file.
  * @param importedPath The imported file's repository path.
+ * @param requested The export subpath the specifier asked for, when it names a package.
  * @returns The message id, or undefined when the import is allowed.
  */
-function importedFileMessage(importer: Importer, importedPath: string): string | undefined {
+function importedFileMessage(
+	importer: Importer,
+	importedPath: string,
+	requested?: string,
+): string | undefined {
 	const importedOwner = testOwnerAt(importedPath);
 	if (importedOwner) {
 		return testImportMessage(importer, importedOwner, importedPath);
 	}
 	const importedPackage = packageAt(importedPath);
 	if (importedPackage) {
-		return packageImportMessage(importer, importedPackage, importedPath);
+		return packageImportMessage(importer, importedPackage, importedPath, requested);
 	}
 	const imported = moduleAt(importedPath);
 	if (!imported || !isModuleInternal(imported)) {
@@ -173,7 +181,7 @@ function entrypointMessage(importer: Importer, source: string): string | undefin
 	const packageImport = resolvePackageSpecifier(importer.context, source);
 	if (packageImport) {
 		return packageImport.target
-			? importedFileMessage(importer, packageImport.target)
+			? importedFileMessage(importer, packageImport.target, packageImport.subpath)
 			: "noDeepImportAcrossPackages";
 	}
 	const importedPath = resolveSourcePath(importer.context, importer.relativePath, source);

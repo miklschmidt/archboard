@@ -32,6 +32,8 @@ const loaded = new Set<string>();
 
 const srcDir = path.join(__dirname, "..", "..");
 const repoRoot = path.join(__dirname, "..", "..", "..");
+/** The folders that hold source: the modules and the workspace packages. */
+const sourceRoots = [srcDir, path.join(repoRoot, "packages")].map((root) => root + path.sep);
 
 interface SourceState {
 	/** The real path of the checkout whose source this process runs (ADR 0049). */
@@ -87,15 +89,14 @@ function sourceState(): SourceState {
 }
 
 /**
- * Every `src/` TypeScript file this process has evaluated so far, accumulated
+ * Every TypeScript file of `src/` or `packages/` this process has evaluated so far, accumulated
  * across calls so a module that was loaded lazily is not forgotten.
  * @returns Absolute paths of the loaded source files.
  */
 function loadedSourceFiles(): string[] {
 	const registry = moduleRegistry();
-	const prefix = srcDir + path.sep;
 	for (const file of Object.keys(registry ?? {})) {
-		if (file.startsWith(prefix) && file.endsWith(".ts")) {
+		if (file.endsWith(".ts") && sourceRoots.some((root) => file.startsWith(root))) {
 			loaded.add(file);
 		}
 	}
