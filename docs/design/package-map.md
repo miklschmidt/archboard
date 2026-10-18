@@ -23,19 +23,34 @@ the server-side subpaths from browser code and replaces the `archboard/import-bo
 the module root. The lint resolver must learn package specifiers first, because it ignores them
 today (`tools/oxlint-plugin-archboard/source-layout.ts:116`).
 
-Inside a package, each area keeps the folders that it has today. The `ui` folder still holds
-`components/`, `hooks/` and `state/`, and the other areas keep their own folders. Types live at the
-package root, next to the area folders. A package with few types has one `types.ts`. A package with
-several kinds of types has a `types/` folder with one file for each kind.
+Inside a package, every area has role folders. There is no catch-all `lib/` folder. Today
+`server/archboard/lib` holds 109 files, `runtime/semantic-board-store/lib` holds 44, and
+`shared/semantic-board/lib` holds 29. The role names below come from the file names in those
+folders. Types live at the package root, next to the area folders. A package with few types has one
+`types.ts`. A package with several kinds of types has a `types/` folder with one file for each kind.
 
 ```text
 packages/<name>/
   package.json        # exports: the interface
   src/
     types.ts          # or types/, shared by every area below
-    shared/           # code that browser and server both run
+    shared/           # code that browser and server both run, with no I/O
+      schemas/        # data shapes, validation, branded ids
+      rules/          # pure functions: compare, reconcile, policy
+      protocol/       # wire contracts between browser, server and Codex
     runtime/          # code that runs in Bun
+      store/          # files, locks, registries, the atomic write
+      operations/     # one write or read a caller asks for: edit, move, rename
+      processes/      # spawn, process groups, git, shutdown
+      clients/        # talk to another process or server
+      services/       # long-lived objects with state: session, queue, coordinator
     server/           # HTTP and socket code
+      routes/         # one file for each route group
+      state/          # in-memory registries and owner transitions
+      lifecycle/      # startup, readiness, shutdown
+      projections/    # turn state into what a pane or the timeline shows
+      middleware/     # admission, request board and vault, work tracking
+      wiring/         # where parts are built and joined
     ui/
       components/
       hooks/
@@ -43,9 +58,17 @@ packages/<name>/
 apps/{cli,server,web} # process entrypoints and glue, imported by nothing
 ```
 
-A package keeps only the areas that it needs. Lint applies the area rules to the folders of each
-package, in place of the module root. A type that two areas share goes in `types`, so no area
-imports another area only to reach a type.
+A package keeps only the areas and folders that it needs. A folder that grows past about 12 files
+splits by behavior, not by a longer file prefix. For example, `runtime/operations/` can hold
+`edit/` and `move/`. Lint applies the area rules to the folders of each package, in place of the
+module root. It can also refuse a folder name that is not in the list above, so `lib/` does not
+return. A type that two areas share goes in `types`, so no area imports another area only to reach
+a type.
+
+The role lists are a first proposal. The `server` folder is the best fit today. 11 files in
+`server/archboard/lib` are routes, six are lifecycle files and two are projections. The `runtime`
+list is the least sure, because the Codex files (coordinator, queue, wait graph, approvals) are
+all long-lived objects. If `services/` grows too large, split it by behavior.
 
 ## Map
 
