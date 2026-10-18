@@ -31,6 +31,22 @@ Settle each difference in one of two ways:
 The picture then shows what was built. Never draw a part that this pull
 request does not build.
 
+## A design that changed through the stack
+
+A design document can change in a later pull request of the stack that
+builds it. The design draft's reference then names an older commit than the
+document now has. Read the change with `git diff <commit> <branch> -- <path>`,
+where `<branch>` is the head branch of the pull request that changed the
+document. Edit the design draft's parts, relationships and flows to what the
+document now says. In the same edit, restate its `documents` with the reference at the commit
+you read, so that the draft names the version it now draws. A proposal that
+branched from the design draft kept the old reference: restate its list too
+when it draws the new version.
+
+Done: every draft that names the design document names the commit whose
+version it draws, and `git diff <commit> <branch> -- <path>` is empty for
+each draft that draws the latest one.
+
 ## A design that several pull requests build
 
 A design that the user drew for more than this pull request is not this pull

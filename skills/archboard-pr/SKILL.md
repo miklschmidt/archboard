@@ -139,6 +139,13 @@ Do this for each vault board that section 1 chose.
    - A draft that the user drew before the code for exactly this change is
      the proposal too: reconcile it with the code
      ([reconcile](references/reconcile.md)).
+   - When the pull request builds a design, the design draft is the draft
+     whose `documents` in `semantic show` name the design document. Its
+     reference's `commit` is the version it draws. If
+     `git diff <commit> <base> -- <path>` shows a change, the design changed
+     after it was drawn: reconcile the design draft
+     ([reconcile](references/reconcile.md#a-design-that-changed-through-the-stack))
+     before you branch from it.
 
    A found proposal keeps its name for life, so never rename it after the
    head branch. Below, `<proposal>` is its name. A found chain that was cut

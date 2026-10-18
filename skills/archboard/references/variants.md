@@ -33,6 +33,47 @@ batch). The write then lands and warns with the same code:
   variant holds from its predecessor. The refusal names how many. Confirm only
   a deliberate redesign.
 
+### Documents a variant draws
+
+A variant names the repository documents it draws in `documents`: a design
+document, an ADR, a task, a plan. Each entry is `{ repo, path }`, spelled as a
+binding spells them, with `commit` when the variant draws one exact version of
+the document and `branch` when the document lives only on a branch, such as a
+pull request's. A design document changes while it is reviewed, so a draft
+that draws a design pins the commit it was drawn from.
+
+- `semantic edit` and `semantic new` take `documents` in the batch. An edit
+  that states it replaces the whole list of the variant it lands on, and only
+  that variant's. `[]` removes the list, and a batch without `documents` keeps
+  it.
+- `semantic branch` copies the list of the variant it branches from. Add the
+  proposal's own documents with an edit, and leave out one that the proposal no
+  longer stands on.
+- `semantic show` returns each variant with its `documents`. To find the draft
+  that draws a design, read the drafts' lists for the design document's path.
+- `archboard check --code` reads the references of every variant it reads, as
+  it reads a binding of the same repository and ref. A file that is not at
+  that version is `DOCUMENT_PATH_MISSING`, at `variants.<id>.documents.<n>`:
+  name the file where it is now, pin a commit that holds it, or remove it.
+
+Archboard's own `Board persistence` board shows it. The proposal of the task
+that added `documents` names the decision it builds. The ADR is on the
+default branch and stays at its path, so the reference pins no version:
+
+```bash
+archboard semantic edit "Board persistence" --variant TASK-498 --expect-version 73 --doing "naming the decision the proposal builds" <<'JSON'
+{
+  "documents": [
+    { "repo": "github.com/miklschmidt/archboard", "path": "docs/adr/0054-a-variant-names-the-repository-documents-it-draws.md" }
+  ]
+}
+JSON
+```
+
+A file that moves, such as a task that is archived, reads
+`DOCUMENT_PATH_MISSING` after the move. Pin a reference to such a file to a
+commit that holds it.
+
 ### A stack of pull requests
 
 Each pull request of a stack on a vault board is one proposal. Each proposal
