@@ -90,6 +90,6 @@ describe.serial("source staleness", () => {
 		expect(loud.status).toBe(0);
 		expect(loud.json.stale?.changedFile).toBe("src/runtime/engine/board-doing.ts");
 		expect(loud.stderr).toMatch(/answering from the older code/);
-		expect(loud.stderr).toMatch(/archboard stop && archboard start/);
+		expect(loud.stderr).toMatch(/archboard restart/);
 	}, 30_000);
 });

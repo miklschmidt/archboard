@@ -123,7 +123,7 @@ async function stateOf(page: RecordingPageHandle): Promise<RecordingState | null
 
 /** What a page from another build is told. */
 const OTHER_BUILD =
-	"The canvas page does not speak this recorder's contract. Rebuild the frontend (bun run build:frontend) and restart the Archboard server.";
+	"The canvas page does not speak this recorder's contract. Run `archboard restart` to build the frontend and restart the Archboard server.";
 
 /**
  * Why a page did not become ready in time.
@@ -134,7 +134,7 @@ function notReady(published: boolean): string {
 	const within = `within ${RECORDING_PAGE_READY_MS / 1000} seconds`;
 	return published
 		? `The canvas page was not ready to record ${within}: the board was not drawn or Codex did not start. Open the board on the canvas to see why, then record again.`
-		: `The canvas page never offered a recording ${within}: the Archboard server serves a frontend built without it. Rebuild the frontend (bun run build:frontend), restart the server, then record again.`;
+		: `The canvas page never offered a recording ${within}: the Archboard server serves a frontend built without it. Run \`archboard restart\` to build the frontend and restart the server, then record again.`;
 }
 
 /**
