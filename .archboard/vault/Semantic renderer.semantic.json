@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 72,
+	"version": 74,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-18T15:08:38.260Z",
+	"updatedAt": "2026-10-18T15:31:43.964Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -18206,7 +18206,7 @@
 		{
 			"id": "vWdekWlc",
 			"name": "TASK-478.01 after TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "G0Mnx1IZ",
 			"summary": "TASK-478.01 restated after TASK-482.07",
 			"content": {
@@ -20562,9 +20562,9 @@
 		{
 			"id": "MgiCUw9a",
 			"name": "TASK-496",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "vWdekWlc",
-			"summary": "A render receipt names what the picture marks, and the key counts only what it draws",
+			"summary": "Meaning to SVG and interaction geometry",
 			"content": {
 				"nodes": [
 					{
@@ -22930,7 +22930,7 @@
 			}
 		}
 	],
-	"current": "vWdekWlc",
+	"current": "MgiCUw9a",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
@@ -23021,6 +23021,12 @@
 			"from": "G0Mnx1IZ",
 			"at": "2026-10-17T09:58:50.189Z",
 			"reason": "semantic render, rasterize and record draw against a named variant (TASK-478.01, adopted on main while TASK-482 was adopted on feat/derived-overview)"
+		},
+		{
+			"variant": "MgiCUw9a",
+			"from": "vWdekWlc",
+			"at": "2026-10-18T15:31:43.964Z",
+			"reason": "The key and the render answer count and name only the subjects the drawing placed"
 		}
 	],
 	"shelvings": [
