@@ -224,6 +224,14 @@ Comparison ignores it, and the code check holds it to the code (ADR 0046).
 _Avoid_: evidence (that is what the code check finds), citation, source line,
 proof, location, binding (that belongs to a node)
 
+**Document reference**:
+One file in a repository that a variant draws, such as a design document, an
+ADR, a task or a plan: a repository identity and a path, and the branch or
+commit of the version that the variant draws. A variant holds a list of them,
+and a branch copies the list (ADR 0054).
+_Avoid_: link, attachment, citation, binding (that belongs to a node), anchor
+(that proves a relationship)
+
 **Symbol**:
 A name that code or infrastructure defines or references: a definition or a
 reference in code, or the address of a declaration in infrastructure or Nix,
