@@ -125,7 +125,7 @@ directory, or in the directory that `-C <dir>` names:
   still resolves against the working directory.
 - The commands that call a vault take `-C`: `semantic`, `check`, `claim`,
   `release`, `browser show`. If a command takes `-C`, the output of
-  `archboard <command> --help` lists it. `start`, `stop`, `status`, `repo`,
+  `archboard <command> --help` lists it. `start`, `stop`, `restart`, `status`, `repo`,
   `install-skill`, `browser open`, `browser panes`, `browser close` and
   `semantic replay` take none, because they need no vault.
 
@@ -500,9 +500,10 @@ gh 2.99 or newer.
 
 ## Update and remove
 
-To update archboard, run `git pull`, `bun install` and `bun run build` in the
-checkout, then run `archboard stop`. `archboard status` reports a server that
-runs older source. Run `archboard install-skill` again in each repository to
+To update archboard, run `git pull` and `bun install` in the checkout, then
+run `archboard restart`. It stops the Archboard server, builds the frontend
+and starts the server on the new source. `archboard status` reports a server
+that runs older source. Run `archboard install-skill` again in each repository to
 update its copy of the skills.
 
 There is no uninstall command. To remove archboard, delete these things:

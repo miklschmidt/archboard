@@ -35,7 +35,8 @@ Where things are written down:
   `npm run`. `bun install` intermittently fails to extract a tarball. If it
   fails, run it again.
 - A running server read its source at start. Editing source changes the next
-  CLI command, not the running server: `archboard stop && archboard start`.
+  CLI command, not the running server: `archboard restart` stops it, builds
+  the frontend and starts it again.
   Stop never waits for work: every accepted write is on disk before it is answered.
 - `archboard` on PATH links to one checkout's `bin/archboard`. Inside another
   archboard checkout, such as a worktree, it runs that checkout's own
