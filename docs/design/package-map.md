@@ -32,6 +32,7 @@ folders. Types live at the package root, next to the area folders. A package wit
 ```text
 packages/<name>/
   package.json        # exports: the interface
+  tests/              # internal tests, can import private files
   src/
     types.ts          # or types/, shared by every area below
     shared/           # code that browser and server both run, with no I/O
@@ -56,6 +57,7 @@ packages/<name>/
       hooks/
       state/
 apps/{cli,server,web} # process entrypoints and glue, imported by nothing
+tests/                # root suite: integration, system and browser tests
 ```
 
 A package keeps only the areas and folders that it needs. A folder that grows past about 12 files
@@ -69,6 +71,30 @@ The role lists are a first proposal. The `server` folder is the best fit today. 
 `server/archboard/lib` are routes, six are lifecycle files and two are projections. The `runtime`
 list is the least sure, because the Codex files (coordinator, queue, wait graph, approvals) are
 all long-lived objects. If `services/` grows too large, split it by behavior.
+
+## Tests
+
+Each package has a `tests/` folder at its root, next to `src/`. It holds the tests of the behavior
+inside that package. Its subfolders follow the area folders, for example `tests/runtime/store/`.
+An internal test can import any private file of its own package. This reverses today's rule, which
+bars a test from importing its own implementation (`docs/agents/boundaries.md:59`). The reason is
+cost. A test of internal behavior that must go through the public interface needs a large setup,
+and that setup is one cause of the slow suite.
+
+The root `tests/` folder holds the integration tests. A test there covers behavior that crosses
+packages, such as a CLI call against a running server or a browser workflow. It imports only the
+public `exports` of a package, as an outside caller does.
+
+Lint enforces these four rules:
+
+- An internal test imports private files of its own package and only public `exports` of another.
+- A root test imports only public `exports`.
+- Production code never imports a `tests/` folder.
+- A fixture that two packages need goes in a public `./testing` export of the package that owns it.
+
+Both kinds run under `vp test`. Each package declares its tests as a project, so `vp test` in a
+package runs only its internal tests. This is also where to delete tests that only restate the
+types, per the test policy in `CLAUDE.md`.
 
 ## Map
 
