@@ -1,0 +1,76 @@
+# A design pull request
+
+Section 1 of the skill sends you here. A design pull request states a design
+that later code builds, and its diff changes only documents and task records:
+a design document, an ADR, a plan and its tasks. In a stack, it is the pull
+request whose proposal is the design draft that the later proposals branch
+from. It prepares the reviewer for every pull request that builds the design,
+so its body explains the design's decisions, not the files that hold them.
+
+The body keeps the three sections, the markers and the posting of the skill.
+In place of sections 4 to 6, this file gives the pictures, the walkthrough and
+the three sections of a design pull request.
+
+## The state comment
+
+Write the flag `design` after `archboard-pr`, so that a later pull request
+can find this one (section 6 of the skill):
+
+```markdown
+<!-- archboard-pr design board="<board>" proposal="<design draft>" vault="github.com/<owner>/<name>" -->
+```
+
+A design draft with a parent also names `against="<below>"`.
+
+## Summary
+
+1. Open with up to three sentences: the problem, what the design decides, and
+   where it applies first. Say in one clause that the pull request changes no
+   code.
+2. Then write one section for each concern of the design. A concern is one
+   question that a reviewer of the later pull requests asks, such as "How a
+   write reaches the board file" or "What happens when the server stops". Take
+   the concerns from the design document's own sections, and make each one a
+   `###` heading in the form of that question.
+3. Each section states, in two to five sentences, the decision, its reason
+   and the trade-off that it accepts. It also recites each negative decision
+   that the design records for that concern. Examples are "the browser
+   never writes board content" and "there is no default vault". Define a
+   domain term at its first use. If the decision is a matrix, such as which
+   caller may write which file, use a small table.
+4. Put the picture of a concern in its section. Draw it through a view of the
+   design board that shows that concern, with the rules of
+   [renders](renders.md). Prefer a view that the boards already have. A
+   concern that no view shows gets no picture.
+5. End with a section on scope: what the first delivery proves, and what the
+   design leaves for later, as the design document states it.
+
+The later pull requests show the interfaces, the file layout and each
+parameter that no decision depends on, so the Summary leaves them out.
+
+Done: each concern of the design document has a section with its decision
+and reason. Every negative decision that the document records is in the
+Summary. The visible body reads in about five minutes. The headings and the
+first sentence of each section state every decision.
+
+## Walkthrough
+
+Record one walkthrough with [walkthrough](walkthrough.md). Beat 1 says why
+the design exists and where it applies. Then one beat for each concern, in
+the order of the sections. The last beat names the decision that a reviewer
+must check most closely.
+
+## Evidence
+
+- **Before:** what the base branch states about the problem, often nothing.
+- **After:** what the design rests on, such as an agreed review, a
+  measurement or a prototype, and the plan that will prove it, such as one
+  task for each concern. Link the design document and the plan.
+
+## Merge Danger
+
+**Door:** two-way, because the merge changes no code. Then name each
+decision that later pull requests make hard to reverse. Examples are the
+format of a stored file and who may write it.
+
+**Blast Radius:** `planning`, and one sentence on who builds on the design.

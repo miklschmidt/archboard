@@ -46,9 +46,9 @@ views. In a stack, every proposal branched from this one takes the walkthrough
 too, and its removal: record it and remove it before you work on the
 proposal above. Write the beats in this order:
 
-1. **Why, and where.** Why the change exists, and where it sits: the design
-   part it builds, and in a stack the pull request before it. No subjects: a
-   beat with no subjects is about the whole picture.
+1. **Why, and where.** Why the change exists, and where it sits in the
+   design: the design part it builds. No subjects: a beat with no subjects is
+   about the whole picture.
 2. **The changes.** One beat for each change that the reviewer must
    understand, the most important first. The
    heading states what the pull request does ("The ledger now takes the
