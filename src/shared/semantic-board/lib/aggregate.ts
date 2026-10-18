@@ -28,6 +28,7 @@ import { SemanticViewSchema } from "@/shared/semantic-board/lib/views";
 import { VariantContentSchema } from "@/shared/semantic-board/lib/content";
 import { VariantStandingSchema } from "@/shared/semantic-board/lib/reconcile";
 import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
+import { DocumentReferenceSchema } from "@/shared/code-target/index";
 
 /**
  * The contract version of the document itself. A reader that does not
@@ -47,7 +48,8 @@ import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
  *
  * `formerNames` on a board and on a variant (TASK-281, ADR 0036) did not move
  * the version, and neither did `anchor` on a relationship and a step and
- * `symbol` on a binding (TASK-367.04, ADR 0046). Each is optional and
+ * `symbol` on a binding (TASK-367.04, ADR 0046), nor `documents` on a variant
+ * (TASK-498, ADR 0054). Each is optional and
  * additive, so every document this build wrote before them is already a
  * document it reads, and an older build meets the field in its strict parse
  * and refuses it by name. A bump would only have made every board of every
@@ -80,6 +82,9 @@ const FIRST_BOARD_VERSION = 1;
  * rename, for the reason `adoptions` is: an empty record says nothing.
  */
 const FormerNamesSchema = z.array(DisplayNameSchema).min(1);
+
+/** A variant's document references, as the board holds them: one at least, or none stored. */
+const DocumentsSchema = z.array(DocumentReferenceSchema).min(1);
 
 const SemanticVersionFieldSchema = z
 	.string()
@@ -122,6 +127,12 @@ const SemanticVariantSchema = z
 		lifecycle: VariantLifecycleSchema,
 		parent: SemanticIdSchema.optional(),
 		summary: DescriptionSchema.optional(),
+		/**
+		 * The repository documents this reading draws, at the version it draws
+		 * (ADR 0054). Absent when it names none, for the reason `formerNames`
+		 * is: an empty list says nothing.
+		 */
+		documents: DocumentsSchema.optional(),
 		content: VariantContentSchema,
 		/**
 		 * What this variant is waiting on, when its predecessor has moved under it

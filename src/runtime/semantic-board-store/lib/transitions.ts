@@ -26,9 +26,10 @@ import {
 } from "@/shared/semantic-board/index";
 import { editContent, type ContentEdit } from "@/runtime/semantic-board-store/lib/edit-content";
 import {
+	documentsField,
 	editsContent,
 	editsVariant,
-	summarized,
+	restated,
 } from "@/runtime/semantic-board-store/lib/edit-scope";
 import {
 	unsettledAncestor,
@@ -190,6 +191,7 @@ function newBoard(
 				lifecycle,
 				content,
 				...(input.summary === undefined ? {} : { summary: input.summary }),
+				...documentsField(input.documents),
 			},
 		],
 	};
@@ -249,6 +251,9 @@ function branchVariantTransition(input: BoardBranchInput): SemanticTransition {
 							// what a comparison between the two reads.
 							content: parent.content,
 							...(input.summary === undefined ? {} : { summary: input.summary }),
+							// The documents the predecessor draws. The author adds the
+							// proposal's own afterwards, as an edit (ADR 0054).
+							...documentsField(parent.documents),
 							// A proposal derived from a state that is itself in dispute is
 							// standing on an argument nobody has finished. It has nothing of
 							// its own to settle — it agrees with its predecessor exactly —
@@ -305,7 +310,7 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 					...before,
 					...(input.level === undefined ? {} : { level: input.level }),
 					views: content.views,
-					variants: summarized(carried.variants, variant.id, input.summary),
+					variants: restated(carried.variants, variant.id, input),
 					updatedAt: at,
 				},
 				descendants: carried.descendants,
