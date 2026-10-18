@@ -26,27 +26,32 @@ today (`tools/oxlint-plugin-archboard/source-layout.ts:116`).
 Inside a package, every area has role folders. There is no catch-all `lib/` folder. Today
 `server/archboard/lib` holds 109 files, `runtime/semantic-board-store/lib` holds 44, and
 `shared/semantic-board/lib` holds 29. The role names below come from the file names in those
-folders. Types live at the package root, next to the area folders. A package with few types has one
-`types.ts`. A package with several kinds of types has a `types/` folder with one file for each kind.
+folders. A type that more than one area uses lives at the package root, next to the area folders.
+A package with few such types has one `types.ts`. A package with several kinds has a `types/`
+folder with one file for each kind. A type derived from a schema stays beside its schema
+(`shared/semantic-board/lib/content.ts:173`). A private type stays beside its implementation.
 
 ```text
 packages/<name>/
   package.json        # exports: the interface
   tests/              # internal tests, can import private files
   src/
-    types.ts          # or types/, shared by every area below
+    types.ts          # or types/, only for types that several areas use
     shared/           # code that browser and server both run, with no I/O
       schemas/        # data shapes, validation, branded ids
+      constants/      # fixed values, such as every duration
       rules/          # pure functions: compare, reconcile, policy
       protocol/       # wire contracts between browser, server and Codex
     runtime/          # code that runs in Bun
-      store/          # files, locks, registries, the atomic write
-      operations/     # one write or read a caller asks for: edit, move, rename
+      store/          # files, locks, registries, the atomic write, file formats
+      operations/     # one write or read a caller asks for: edit, move, rename, settle
       processes/      # spawn, process groups, git, shutdown
       clients/        # talk to another process or server
-      services/       # long-lived objects with state: session, queue, coordinator
+      services/       # one folder for each long-lived behavior: session, queue, coordinator
     server/           # HTTP and socket code
       routes/         # one file for each route group
+      sockets/        # socket connections
+      watchers/       # watch the disk and report changes
       state/          # in-memory registries and owner transitions
       lifecycle/      # startup, readiness, shutdown
       projections/    # turn state into what a pane or the timeline shows
@@ -57,6 +62,7 @@ packages/<name>/
       hooks/
       state/
 apps/{cli,server,web} # process entrypoints and glue, imported by nothing
+  tests/              # internal tests of the app, can import its private files
 tests/                # root suite: integration, system and browser tests
 ```
 
@@ -67,34 +73,45 @@ module root. It can also refuse a folder name that is not in the list above, so 
 return. A type that two areas share goes in `types`, so no area imports another area only to reach
 a type.
 
-The role lists are a first proposal. The `server` folder is the best fit today. 11 files in
-`server/archboard/lib` are routes, six are lifecycle files and two are projections. The `runtime`
-list is the least sure, because the Codex files (coordinator, queue, wait graph, approvals) are
-all long-lived objects. If `services/` grows too large, split it by behavior.
+The role lists are guidance, not a closed list, until every existing file has a home that
+describes it. A first pass found that `websocket-connection.ts` and `semantic-disk-watch.ts` fit
+none of the first names, so `sockets/` and `watchers/` exist. A role folder groups a behavior. It
+does not sort each helper by type. For example, `runtime/store/format/` holds `decode.ts` and the
+migrations, `runtime/operations/settle/` holds the ordering logic, and `runtime/services/queue/`
+holds the queue with its validation and reconciliation. Only some Codex files are long-lived
+objects, so `services/` holds those and no more. The theme loader reads files, so it moves to
+`runtime`, and the CSS stays an asset (`shared/theme/lib/source.ts:1`).
 
 ## Tests
 
-Each package has a `tests/` folder at its root, next to `src/`. It holds the tests of the behavior
-inside that package. Its subfolders follow the area folders, for example `tests/runtime/store/`.
-An internal test can import any private file of its own package. This reverses today's rule, which
-bars a test from importing its own implementation (`docs/agents/boundaries.md:59`). The reason is
-cost. A test of internal behavior that must go through the public interface needs a large setup,
-and that setup is one cause of the slow suite.
+Each package has a `tests/` folder at its root, next to `src/`. Each app has one too. It holds the
+tests of the behavior inside that package or app. Its subfolders follow the area folders, for
+example `tests/runtime/store/`. An internal test can import any private file of its own package.
+This reverses today's rule, which bars a test from importing its own implementation
+(`docs/agents/boundaries.md:59`). Today a public `testing.ts` exists only to expose one internal
+parser (`src/shared/process-observation/testing.ts:1`). Direct tests of such behavior are cheaper.
+Persistence guarantees still get tests through the public exports
+(`src/runtime/semantic-board-store/tests/one-write.test.ts:19`).
+
+The speed gain is a hypothesis. Measure it on one package first. The check is the run time of the
+tests that move, before and after, and the setup lines that disappear.
 
 The root `tests/` folder holds the integration tests. A test there covers behavior that crosses
 packages, such as a CLI call against a running server or a browser workflow. It imports only the
-public `exports` of a package, as an outside caller does.
+public `exports` of a package, as an outside caller does. The root configuration declares this
+suite as a Vitest project, because Vitest does not treat the root configuration as a project by
+itself. It keeps the process and browser serialization of `docs/agents/test-suite.md:9`.
 
-Lint enforces these four rules:
+Lint enforces these rules. The plugin needs three changes together. It must recognize the new
+package directories as owners (`tools/oxlint-plugin-archboard/source-layout.ts:259`). It must let
+a test import private files of its own package (`module-rules.ts:92`). It must apply the area
+rules inside one package, which it skips today (`module-rules.ts:38`).
 
 - An internal test imports private files of its own package and only public `exports` of another.
 - A root test imports only public `exports`.
 - Production code never imports a `tests/` folder.
+- Production code never imports `./testing`, even when the file lives outside `tests/`.
 - A fixture that two packages need goes in a public `./testing` export of the package that owns it.
-
-Both kinds run under `vp test`. Each package declares its tests as a project, so `vp test` in a
-package runs only its internal tests. This is also where to delete tests that only restate the
-types, per the test policy in `CLAUDE.md`.
 
 ## Map
 
@@ -170,8 +187,10 @@ because the code above them needs them below it. If no second caller appears, me
 - Move the binding, anchor and document-reference schemas into `board` as well as the binding type
   (`shared/semantic-board/lib/content.ts:65`, `lib/aggregate.ts:31`).
 - Do not write one `exports` entry for each file. Put the interface in a few files per package. For
-  example, `board` exposes `./document`, `./policy` and `./store`, and `engine/atomic-write` and
-  `board-lock` stay private to it. `workbench` exposes `./browser-contract`, `./runtime` and `./ui`.
+  example, `board` exposes `./document`, `./policy` and `./store`, and `board-lock` stays private to
+  it. `atomic-write` stays in `workspace` with a public export, because the repository registry and
+  the code opener use it too (`runtime/engine/lib/registry-file.ts:12`,
+  `server/code-opener/lib/configuration.ts:5`). `workbench` exposes `./browser-contract`, `./runtime` and `./ui`.
   `renderer` exposes `./browser`, `./worker` and `./bun`.
 - Keep these working. Update both TypeScript configurations too.
   - The generated contract path and its ignored output
@@ -195,3 +214,15 @@ because the code above them needs them below it. If no second caller appears, me
 The Vite+ conversion, and the move of the tests from `bun test` to `vp test`, are separate tasks
 that follow the first two steps. The test move is also the place to delete tests that do not check
 product behavior.
+
+## Risk: the runtime
+
+`vp test` runs Vitest, and Vitest requires Node (`^22.18.0 || ^24.11.0 || >=26.0.0`, from the
+Vite+ test guide). The product runs on Bun. Production code calls `Bun.YAML`
+(`runtime/semantic-board-store/lib/configuration.ts:142`), and 27 production files use other Bun
+APIs. The test harness starts servers with `process.execPath`
+(`tests/system/support/owned-server.ts:240`), which names the wrong executable under Node.
+
+Do not promise that every test moves. Run a trial first. Run a few tests of board writes and
+server cleanup under `vp test`, once under Node and once with Vitest started by Bun. The result
+decides if tests that need Bun stay in a Bun project. Package moves do not depend on this trial.
