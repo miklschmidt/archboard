@@ -108,6 +108,7 @@ your own.
 
 | The change                                                                                                                                          | The picture                                                                                                                                                                                                                |
 | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| States a design that later code builds, and changes only documents and task records: a design document, an ADR, a plan                              | A design pull request. Its proposal is the design draft (section 2), and [design](references/design.md) gives its pictures and body                                                                                        |
 | Adds, removes, renames or rewires something that a vault board draws, changes what a part is for, or adds durable architecture                      | A proposal on that board (section 2). When no board draws the code, first draw the board from the base branch with the `archboard` skill's create recipe, or start it with a base draft when the base has none of the code |
 | Changes a request or data flow, an order, a process or state progression, or infrastructure, ownership or dependencies that the vault need not keep | An ephemeral board (section 3)                                                                                                                                                                                             |
 | Formatting, a rename or refactor that changes nothing a board draws, a dependency bump, generated files, a fix whose diff explains itself           | No board. The Summary uses the smallest text view that makes the point: pseudocode, a call tree, a file tree, or a diff of one of them, in a fenced block                                                                  |
@@ -340,6 +341,15 @@ reader never sees it.
 - One to three sentences: the problem or need, and what the change does
   about it. Use the repository's domain words: its glossary (`CONTEXT.md`,
   `GLOSSARY.md` or similar) and the names that the pictures carry.
+- When the proposal descends from a design, one more sentence names the
+  design section that this pull request builds, with one link to the design
+  pull request, such as: It builds "How a write reaches the board file" of
+  the design in #412. To find it, walk up the proposal's `parent` in
+  `semantic show`. For each name, run
+  `gh pr list --state all --search '"<name>" in:body' --json number,body`, and
+  keep the pull request whose state comment starts `archboard-pr design` and
+  names that draft as `proposal`. Its `###` headings are the sections. If no
+  ancestor has a design pull request, leave the sentence out.
 - Then the pictures, each with alt text that says what it shows, not the file
   name. If a card carries a triangle on its top-right corner, say under that
   picture that it marks a disagreement with the current variant that nobody
@@ -367,20 +377,23 @@ in the parts that have a relationship to a changed part.
   receipt, or a command that opens or compares a board.
 - How the picture, the video or a test result was made, or where and when you
   ran anything.
-- A list of what the pull request does not do or does not claim. One
-  sentence, `Not in this pull request: …`, is allowed when a reader would
-  otherwise expect it.
+- A list of what the pull request does not contain. One sentence,
+  `Not in this pull request: …`, is allowed when a reader would otherwise
+  expect it. A negative decision that the change records is part of the
+  change: recite it, as in "the browser never writes board content".
 - A paragraph copied from another pull request's body.
 - Status news, such as a CI fix. That goes in a pull request comment.
 - The place of the pull request in a stack, or links to the pull requests
-  below and above it. GitHub shows the stack.
+  below and above it. GitHub shows the stack. The one link to a design pull
+  request (Summary, above) points at the design, not at the stack.
 
 Check before you post. Done: every line holds.
 
 - [ ] The sections are Summary, Evidence and Merge Danger, in that order, and
       nothing stands between them.
 - [ ] The visible body reads in about two minutes. The Summary has at most
-      three sentences above the pictures.
+      three sentences above the pictures, and the design sentence. A design
+      pull request meets the budget of [design](references/design.md).
 - [ ] No sentence breaks the never-list.
 - [ ] Each picture is drawn with Blocks, `--theme auto`, a title and a
       horizontal legend, against `<below>`, and it has alt text.
