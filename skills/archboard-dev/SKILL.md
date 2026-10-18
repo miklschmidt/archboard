@@ -616,7 +616,7 @@ Three facts about the evidence that the first batch had to teach:
   commands run the worktree's source and reach the worktree's own server: port
   3000 is the main checkout's, and a linked worktree takes a port from 10000
   to 19999 that its path decides. To test a server change, run
-  `archboard stop && archboard start` in the worktree. The owner's server on
+  `archboard restart` in the worktree. The owner's server on
   3000 keeps running. If a command finds a server of another checkout's
   source on its port, it refuses and names both checkouts.
 - A pane key carries a variant, but a board name never does.
