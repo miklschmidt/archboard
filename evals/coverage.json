@@ -109,6 +109,20 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "src/runtime/semantic-renderer/tests/export-legend.test.ts owns the content against the page key and the placement on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
+				},
+				{
+					"path": "semantic views: every view of a board with what it draws at a variant",
+					"expectedUse": "choose the view to draw from its drawn counts and marks before rendering; a view with nothing drawn draws nothing at that variant; --variant, --against and --no-comparison read as render reads them",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/semantic-boards/view-listing.test.ts owns the listing against the render of each view, the empty view and the refusal"
+				},
+				{
+					"path": "semantic render/rasterize receipt drawn and marks",
+					"expectedUse": "read what the picture draws and marks by id and name before looking at it; marks are the key's counts, null when the picture marks no comparison",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/drawn-marks.test.ts owns the key's counts and the answer's subjects against the drawn marks in all three grammars; tests/system/semantic-boards/view-listing.test.ts and rasterize.test.ts own the receipts"
 				}
 			]
 		},

@@ -238,7 +238,9 @@ recipe names.
   properties), restate it with the `id` you read. Explicit `removeEdges` plus
   an idless addition declares a replacement.
 - **Verification.** Read the write's answer back against the checks you wrote
-  down before writing (below). When the picture is the deliverable, draw it
+  down before writing (below). When the picture is the deliverable, pick its
+  view from `semantic views <board>`, which lists what each view draws at a
+  variant ([views](references/sequences-views-walkthroughs.md)), then draw it
   and look at it: `semantic rasterize <board> --out <file.png>` and open the
   PNG, or `semantic render <board> --out <file.svg>` and open the SVG in a
   viewer. Reading the SVG's text is not looking at a diagram. A picture the

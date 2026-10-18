@@ -6,9 +6,22 @@ Section 7 of the skill says how to post it.
 
 ## Choose the view
 
-1. Use a board view that holds the changed parts and their direct neighbours.
-   About 4 to 12 cards reads well (**judgement**). Views belong to every
-   variant, so prefer a view the board already has.
+Choose from text, before you render anything. List what every view draws at
+the proposal, read the way the picture will be read:
+
+```bash
+archboard semantic views <board> --variant "<proposal>" --against "<below>" --layout blocks
+```
+
+Each entry gives the view, `drawn` (the nodes, edges, flows and steps it
+draws), `marks` (the added, changed and removed counts its key will show) and
+`size`. A view with every `drawn` count at zero draws nothing at the proposal.
+A view shows the change only where its `marks` count it.
+
+1. Use a board view that holds the changed parts and their direct neighbours:
+   its `marks` count the change, and `drawn.nodes` is about 4 to 12
+   (**judgement**). Views belong to every variant, so prefer a view the board
+   already has.
 2. In a stack, use the view of the design parts that the pull request builds,
    named `Inside <design part>` or `Inside <part> and <part>`: a node-region
    selection of those parts. Every pull request that builds inside them shares
@@ -22,8 +35,9 @@ Section 7 of the skill says how to post it.
    are hard to read [Kruchten]. An ephemeral sequence board draws through the
    `sequence` view that it was created with.
 
-Done: the view is named, and it holds every part and relationship that
-`compare` reports as added, changed or removed.
+Done: the view is named, its listed `marks` are not all zero, and it holds
+every part and relationship that `compare` reports as added, changed or
+removed.
 
 ## Draw the file
 
@@ -66,13 +80,18 @@ unseen, and say so in your final report.
 archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --against "<below>" --layout blocks --title "<title>" --legend horizontal --out "$tmp/look.png"
 ```
 
-1. Open the PNG. Each change that the Summary names is visible and marked, and
+1. Read the receipt first. Its `drawn` names every subject the picture draws,
+   by `id` and `name`, with its `standing`, and `marks` holds the counts the
+   key shows. Each change that the Summary names is in `drawn` with the
+   standing that `compare` gives it. If one is missing, the view does not draw
+   it: choose another view before you look.
+2. Open the PNG. Each change that the Summary names is visible and marked, and
    the title and the key can be read.
-2. GitHub shrinks an image to the width of the text column. GitHub does not
+3. GitHub shrinks an image to the width of the text column. GitHub does not
    document that width (**unverified**). If the receipt's `width` is over 900,
    rasterize again with `--scale 0.5` and open it. That is about how small it
    will show (**judgement**).
-3. If the labels at half size cannot be read, split the view: one view for
+4. If the labels at half size cannot be read, split the view: one view for
    each design part that the change builds, each drawn as its own picture.
    Never drop parts from the proposal to make a picture fit.
 

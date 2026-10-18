@@ -47,7 +47,9 @@ A design draft with a parent also names `against="<below>"`.
    board with no current variant, draw it without `--against`. Never draw it
    against another draft: its marks would show a rejected alternative as
    removed. Follow [renders](renders.md), and prefer a view that the boards
-   already have. If no view shows the concern, add one as renders says.
+   already have: `semantic views` at the design's variant, with the
+   `--against` the picture takes, lists the views whose `marks` count the
+   concern. If no view shows the concern, add one as renders says.
 5. End with a section on scope: what the first delivery proves, and what the
    design leaves for later, as the design document states it.
 

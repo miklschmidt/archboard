@@ -257,7 +257,8 @@ Draw it with [renders](references/renders.md). In short:
    one for each design part. Each picture shows something that no other
    picture shows.
 2. Draw each through a view of the changed parts and their direct neighbours.
-   In a stack, use the view of the design parts that the pull request builds,
+   Choose it from `semantic views`, which lists what every view draws and
+   marks at the proposal, before you render one. In a stack, use the view of the design parts that the pull request builds,
    named `Inside <design part>` or `Inside <part> and <part>`, and share it
    with the other pull requests that build inside those parts.
 3. Draw it `--against "<below>"`. The picture then marks only this pull
