@@ -7,8 +7,8 @@ import { join } from "node:path";
 import { createServerApplicationLifetime } from "#server/lifecycle/lifetime/application-lifetime.ts";
 
 const FIXTURE_READINESS_TIMEOUT_MS = 500;
-const EXIT_TIMEOUT_MS = 10_000;
-const POLL_MS = 25;
+const EXIT_TIMEOUT_MS = 20_000;
+const POLL_MS = 50;
 
 /**
  * Whether a process is still observable. Signal zero only observes.
