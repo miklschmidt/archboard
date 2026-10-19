@@ -228,14 +228,23 @@ function holdsMarkup(placement: UiFilePlacement): boolean {
 }
 
 /**
- * Whether a React hook may be exported from a file at this placement. A
- * package's `api` folder holds its public interface, as a module's root files do.
+ * Whether a React hook may be declared in a file at this placement.
  * @param placement The file's concern and name.
- * @returns True for the hooks concern and the files of a public interface.
+ * @returns True for the hooks concern and a module's own root files.
  */
 function holdsHooks(placement: UiFilePlacement): boolean {
-	const { owner, concern } = placement;
-	return concern === "hooks" || concern === "" || (owner === "package" && concern === "api");
+	return placement.concern === "hooks" || placement.concern === "";
+}
+
+/**
+ * Whether a React hook may be re-exported by name from a file at this
+ * placement. A package's `api` folder holds its public interface, as a module's
+ * root files do, and it re-exports hooks without declaring them.
+ * @param placement The file's concern and name.
+ * @returns True where a hook may be declared and for a package's api files.
+ */
+function reexportsHooks(placement: UiFilePlacement): boolean {
+	return holdsHooks(placement) || (placement.owner === "package" && placement.concern === "api");
 }
 
 /**
@@ -249,6 +258,7 @@ function concernVisitors(context: RuleContext, placement: UiFilePlacement): Rule
 	const messages = placementMessages(placement);
 	const markupAllowed = holdsMarkup(placement);
 	const hooksAllowed = holdsHooks(placement);
+	const reexportAllowed = reexportsHooks(placement);
 	let markupReported = false;
 	return {
 		/**
@@ -287,7 +297,7 @@ function concernVisitors(context: RuleContext, placement: UiFilePlacement): Rule
 		ExportSpecifier(node) {
 			const exported = node.exported;
 			const name = exported.type === "Identifier" ? exported.name : null;
-			if (!hooksAllowed && name !== null && HOOK_NAME.test(name)) {
+			if (!reexportAllowed && name !== null && HOOK_NAME.test(name)) {
 				report(context, node, "hookOutsideHooks");
 			}
 		},
