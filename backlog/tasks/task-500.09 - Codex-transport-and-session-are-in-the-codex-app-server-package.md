@@ -1,11 +1,11 @@
 ---
 id: TASK-500.09
 title: Codex transport and session are in the codex-app-server package
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 03:14'
-updated_date: '2026-10-19 03:54'
+updated_date: '2026-10-19 04:27'
 labels: []
 dependencies:
   - TASK-500.08
@@ -21,10 +21,10 @@ The last runtime part of codex-app-server: runtime/codex-transport (request sett
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 codex-transport and codex-session live in packages/codex-app-server in runtime/ role folders with the exports that outside code needs, every importer uses them, and the error classes, identity brands and session symbols keep one definition each
-- [ ] #2 The tests of the moved code live in packages/codex-app-server/tests, and the opt-in write-capacity test path names its new location
-- [ ] #3 The package imports nothing from src/ and only lower packages
-- [ ] #4 bun run check passes
+- [x] #1 codex-transport and codex-session live in packages/codex-app-server in runtime/ role folders with the exports that outside code needs, every importer uses them, and the error classes, identity brands and session symbols keep one definition each
+- [x] #2 The tests of the moved code live in packages/codex-app-server/tests, and the opt-in write-capacity test path names its new location
+- [x] #3 The package imports nothing from src/ and only lower packages
+- [x] #4 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,3 +37,9 @@ The last runtime part of codex-app-server: runtime/codex-transport (request sett
 5. Fix the two doc nits in docs/agents/boundaries.md: runtime exports are runtime-only by policy, not all Node-bound; state the real count that became private.
 6. Browser safety trace with /tmp/pm/browser-trace.ts (0 node: imports; only shared files reachable). bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+codex-transport and codex-session are in packages/codex-app-server (clients, operations, services, schemas, protocol, store). Exports went from 16 to 14: nine subpaths became private and seven were added (session-contract, session-api, session-responses, transport, transport-types, transport-errors, session). Browser safety: the browser reaches six shared files, 0 node: imports, traced by the implementer and by Codex. bun run check: every lane passed except one serial-browser failure in codex-text-workbench.test.ts line 328; the lane then passed five more runs. Codex found the cause in the test, not in this move: the first poll stored the loading stage before it was drawn, and React replaces it. The test now remembers the canvas once drawn, and the full browser lane passed after the fix. Codex review of c0cf69590 found no defects. codex-semantic-context stays for the board package, because it imports board schemas by value.
+<!-- SECTION:FINAL_SUMMARY:END -->
