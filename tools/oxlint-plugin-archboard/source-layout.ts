@@ -212,7 +212,9 @@ function resolveSourcePath(
 	if (packageImport) {
 		return packageImport.target;
 	}
-	const unresolvedPath = sourceToRepoPath(fromRelativePath, stripQueryAndFragment(source));
+	const unresolvedPath = source.startsWith("#")
+		? resolveSubpathImport(context, fromRelativePath, source.split("?", 1)[0] ?? "")
+		: sourceToRepoPath(fromRelativePath, stripQueryAndFragment(source));
 	if (!unresolvedPath) {
 		return undefined;
 	}
@@ -247,7 +249,7 @@ function throughSymlinks(context: RuleContext, repoPath: string): string {
  * @throws {Error} When `exports` holds anything but file paths: a package has no build step.
  */
 function packageExports(context: RuleContext, name: string): Map<string, string> | undefined {
-	const declared = readManifestExports(context, name);
+	const declared = readManifestField(context, name, "exports");
 	if (declared === undefined) {
 		return undefined;
 	}
@@ -263,22 +265,86 @@ function packageExports(context: RuleContext, name: string): Map<string, string>
 }
 
 /**
- * The `exports` field of a workspace package's manifest.
+ * A field of a workspace package's manifest.
  * @param context The rule context supplying the working directory.
  * @param name The package's name without the scope.
+ * @param field The manifest field to read.
  * @returns The field's value (null when absent), or undefined when no such package exists.
  */
-function readManifestExports(context: RuleContext, name: string): unknown {
+function readManifestField(context: RuleContext, name: string, field: string): unknown {
 	try {
 		const manifest: unknown = JSON.parse(
 			fs.readFileSync(path.resolve(context.cwd, "packages", name, "package.json"), "utf8"),
 		);
-		return typeof manifest === "object" && manifest !== null && "exports" in manifest
-			? manifest.exports
+		return typeof manifest === "object" && manifest !== null
+			? (Reflect.get(manifest, field) ?? null)
 			: null;
 	} catch {
 		return undefined;
 	}
+}
+
+/**
+ * The `imports` entries of a package: the key and the file path it maps to.
+ * @param context The rule context supplying the working directory.
+ * @param own The package.
+ * @returns The entries, none when the package declares no `imports`.
+ * @throws {Error} When an entry is anything but a file path.
+ */
+function subpathImports(context: RuleContext, own: PackageFile): Array<[string, string]> {
+	const declared = readManifestField(context, own.name, "imports");
+	if (typeof declared !== "object" || declared === null) {
+		return [];
+	}
+	return Object.entries(declared).map(([key, target]) => {
+		if (typeof target !== "string") {
+			throw new Error(`${own.root}/package.json: imports "${key}" must be a file path`);
+		}
+		return [key, target];
+	});
+}
+
+/**
+ * Resolve a `#` specifier through the `imports` field of the importing file's own package,
+ * as Node, TypeScript, Bun and Vite do: the longest matching key wins, and `*` carries the rest.
+ * @param context The rule context supplying the working directory.
+ * @param fromRelativePath The importing file's repository path.
+ * @param source The specifier as written, with its query dropped.
+ * @returns The repository path the specifier names, or undefined when it names none.
+ */
+function resolveSubpathImport(
+	context: RuleContext,
+	fromRelativePath: string,
+	source: string,
+): string | undefined {
+	const own = packageAt(fromRelativePath);
+	const best = own
+		? subpathImports(context, own)
+				.map(([key, target]) => ({ key, mapped: mapSubpathImport(key, target, source) }))
+				.filter((entry) => entry.mapped !== undefined)
+				.toSorted((left, right) => right.key.length - left.key.length)[0]
+		: undefined;
+	return own && best?.mapped !== undefined ? path.posix.join(own.root, best.mapped) : undefined;
+}
+
+/**
+ * Apply one `imports` entry to a specifier.
+ * @param key The entry's key, with at most one `*`.
+ * @param target The entry's target, which repeats the `*`.
+ * @param source The specifier as written.
+ * @returns The mapped target, or undefined when the key does not match.
+ */
+function mapSubpathImport(key: string, target: string, source: string): string | undefined {
+	const star = key.indexOf("*");
+	if (star === -1) {
+		return source === key ? target : undefined;
+	}
+	const head = key.slice(0, star);
+	const tail = key.slice(star + 1);
+	const fits = source.length >= head.length + tail.length;
+	return fits && source.startsWith(head) && source.endsWith(tail)
+		? target.replace("*", source.slice(head.length, source.length - tail.length))
+		: undefined;
 }
 
 /**
@@ -356,21 +422,6 @@ function packageAt(relativePath: string): PackageFile | undefined {
  */
 function isProductSourcePath(relativePath: string): boolean {
 	return relativePath.startsWith("src/") || /^packages\/[^/]+\/src\//.test(relativePath);
-}
-
-/**
- * Whether a relative specifier stays inside the package of the importing file.
- * @param relativePath The importing file's repository path.
- * @param source The specifier as written.
- * @returns Whether the file is in a package and the specifier lands in the same package.
- */
-function staysInsidePackage(relativePath: string, source: string): boolean {
-	const own = packageAt(relativePath);
-	if (!own || !source.startsWith(".")) {
-		return false;
-	}
-	const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(relativePath), source));
-	return resolved.startsWith(`${own.root}/`);
 }
 
 /**
@@ -517,7 +568,6 @@ export {
 	resolveSourcePath,
 	sameModule,
 	sameTestOwner,
-	staysInsidePackage,
 	testOwnerAt,
 	type AreaOwner,
 	type PackageFile,

@@ -19,7 +19,6 @@ import {
 	resolveSourcePath,
 	sameModule,
 	sameTestOwner,
-	staysInsidePackage,
 	testOwnerAt,
 	type AreaOwner,
 	type PackageFile,
@@ -269,14 +268,10 @@ const moduleEntrypoints = createRule(
 const absoluteImports = createRule(
 	{
 		useAlias:
-			"Use an @/ alias for local imports; relative and filesystem-absolute imports are not allowed, except relative imports that stay inside one package.",
+			"Use an @/ alias for local imports in src/ and a # import in a package; relative and filesystem-absolute imports are not allowed.",
 	},
 	(context) => {
-		const relativePath = getRepoRelativePath(context);
 		return sourceImportVisitors((source, node) => {
-			if (staysInsidePackage(relativePath, source)) {
-				return;
-			}
 			if (source.startsWith(".") || source.startsWith("/") || source.startsWith("file:")) {
 				report(context, node, "useAlias");
 			}

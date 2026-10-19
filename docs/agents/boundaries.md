@@ -119,8 +119,12 @@ split by behavior.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
   `exports` does not name. It also refuses a relative path that reaches a private file of another
   package.
-- **Inside a package, imports are relative.** The `@/` alias points into `src/`, which is outside
-  every package. A relative import that leaves its package is refused as any other relative import.
+- **Inside a package, imports use `#`.** The `package.json` of each package declares
+  `"imports": { "#*": "./src/*", "#tests/*": "./tests/*" }`. Write `#shared/constants/timing.ts`
+  for a file of `src/` and `#tests/support.ts` for a file of `tests/`. Spell the extension, because
+  TypeScript does not add one to an `imports` target. A `#` specifier resolves from the nearest
+  `package.json`, so it can never reach another package. The `@/` alias points into `src/`, which is
+  outside every package. A relative import is refused everywhere.
 - **The area directions hold inside a package.** The folders under `src/` are areas, so `ui` never
   imports `runtime` or `server` of the same package. The direction is judged by the area folder of
   the imported file, so it also holds across packages and between a package and a module. A test
