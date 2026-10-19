@@ -28,7 +28,6 @@
 		"./coordinator": "./src/runtime/api/coordinator.ts",
 		"./workhorses": "./src/runtime/api/workhorses.ts",
 		"./gateway": "./src/server/api/gateway.ts",
-		"./leases": "./src/server/api/leases.ts",
 		"./projection": "./src/server/api/projection.ts",
 		"./tab-session": "./src/server/api/tab-session.ts",
 		"./listener": "./src/server/api/listener.ts",
