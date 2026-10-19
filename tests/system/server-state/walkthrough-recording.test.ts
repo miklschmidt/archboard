@@ -17,7 +17,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { readTalk } from "@/runtime/walkthrough-recorder";
+import { readTalk } from "@archboard/walkthrough/recorder";
 
 import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { startOwnedServer } from "../support/owned-server.ts";

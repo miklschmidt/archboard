@@ -11,8 +11,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import { TalkSchema } from "@/shared/walkthrough-recording/talk";
-import { renderTalk, writeTalk, askedTalkPlace } from "@/runtime/walkthrough-recorder";
+import { TalkSchema } from "@archboard/walkthrough/talk";
+import { renderTalk, writeTalk, askedTalkPlace } from "@archboard/walkthrough/recorder";
 
 import { prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
 

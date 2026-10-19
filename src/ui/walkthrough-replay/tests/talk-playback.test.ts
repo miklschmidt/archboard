@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import type { TalkEvent } from "@/shared/walkthrough-recording/talk";
+import type { TalkEvent } from "@archboard/walkthrough/talk";
 import { TalkPlayback, frameOf } from "@/ui/walkthrough-replay";
 
 /**

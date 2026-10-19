@@ -19,7 +19,7 @@ import {
 	type SemanticPolicy,
 	type VaultDiagnostic,
 } from "@archboard/board/policy";
-import { askedTalkPlace, writeTalk } from "@/runtime/walkthrough-recorder";
+import { askedTalkPlace, writeTalk } from "@archboard/walkthrough/recorder";
 import { archboard, archboardOk, type CliContext } from "@/runtime/skill-evaluation/lib/archboard";
 import type { InspectionRequest, RenderRequest } from "@/runtime/skill-evaluation/lib/outcomes";
 import { sequentially } from "@/runtime/skill-evaluation/lib/process";

@@ -8,7 +8,7 @@
 // on nearly every frame, so it is not part of the moment: it is read where it is
 // drawn, as the shell reads the level of a live voice.
 
-import { SAMPLES_PER_FRAME, type Talk, type TalkEvent } from "@/shared/walkthrough-recording/talk";
+import { SAMPLES_PER_FRAME, type Talk, type TalkEvent } from "@archboard/walkthrough/talk";
 import type { SubtitleSource } from "@/ui/voice-subtitles";
 import { recordedStep, type RecordedStep } from "@/ui/walkthrough-recording";
 import type { VoiceLevel } from "@/ui/workbench/contracts";

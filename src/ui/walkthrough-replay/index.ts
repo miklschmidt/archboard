@@ -1,8 +1,8 @@
 // A recording's picture, rendered frame by frame against the talk it recorded
 // (TASK-381): the page the recorder drives to draw each frame. The contract with
-// the recorder is in `@/shared/walkthrough-recording/talk`.
+// the recorder is in `@archboard/walkthrough/talk`.
 
-import { REPLAY_PAGE_GLOBAL } from "@/shared/walkthrough-recording/talk";
+import { REPLAY_PAGE_GLOBAL } from "@archboard/walkthrough/talk";
 
 import { WalkthroughReplay } from "@/ui/walkthrough-replay/lib/replay-page";
 

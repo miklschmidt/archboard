@@ -26,7 +26,7 @@ import {
 	framesOf,
 	type ReplayPage,
 	type Talk,
-} from "@/shared/walkthrough-recording/talk";
+} from "@archboard/walkthrough/talk";
 import { createBoardQueryClient } from "@/ui/board-catalog";
 import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { createSteppedClock, type SteppedClock } from "@archboard/ui-kit/stepped-clock";

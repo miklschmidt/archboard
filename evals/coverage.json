@@ -543,7 +543,7 @@
 					"expectedUse": "record a walkthrough to a narrated video; --discard for a board made only for it; the receipt's talk names what can be rendered again",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "tests/system/server-state/walkthrough-recording.test.ts (records end to end with a fake Codex and ffmpeg); src/runtime/walkthrough-recorder/tests/talk-files.test.ts (a talk lands whole, the newest ten are kept, a named place is never pruned and is refused when it exists). No author run records: a run's Archboard server keeps its Codex home in the run's own state directory, where nobody is signed in, and a voice session is minutes of a live model; S15's fixture keeps a talk as --talk would"
+					"owner": "tests/system/server-state/walkthrough-recording.test.ts (records end to end with a fake Codex and ffmpeg); packages/walkthrough/tests/runtime/store/talk-files.test.ts (a talk lands whole, the newest ten are kept, a named place is never pruned and is refused when it exists). No author run records: a run's Archboard server keeps its Codex home in the run's own state directory, where nobody is signed in, and a voice session is minutes of a live model; S15's fixture keeps a talk as --talk would"
 				},
 				{
 					"path": "recording refusals: an unreadable talk, no ffmpeg (ENCODER_UNAVAILABLE), a failed render (RENDER_FAILED)",

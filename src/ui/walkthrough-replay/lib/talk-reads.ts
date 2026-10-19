@@ -5,7 +5,7 @@
 // snapshot, and a read of any other board is a failure of the rendering rather
 // than a quiet trip to the server.
 
-import type { Talk } from "@/shared/walkthrough-recording/talk";
+import type { Talk } from "@archboard/walkthrough/talk";
 import { sameBoardName, type BoardReads } from "@/ui/semantic-board-canvas";
 
 /**

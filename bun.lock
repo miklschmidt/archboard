@@ -122,6 +122,10 @@
       "name": "@archboard/ui-kit",
       "version": "0.0.0",
     },
+    "packages/walkthrough": {
+      "name": "@archboard/walkthrough",
+      "version": "0.0.0",
+    },
     "packages/workspace": {
       "name": "@archboard/workspace",
       "version": "0.0.0",
@@ -167,6 +171,8 @@
     "@archboard/timing": ["@archboard/timing@workspace:packages/timing"],
 
     "@archboard/ui-kit": ["@archboard/ui-kit@workspace:packages/ui-kit"],
+
+    "@archboard/walkthrough": ["@archboard/walkthrough@workspace:packages/walkthrough"],
 
     "@archboard/workspace": ["@archboard/workspace@workspace:packages/workspace"],
 

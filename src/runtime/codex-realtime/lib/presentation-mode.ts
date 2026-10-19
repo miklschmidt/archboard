@@ -33,7 +33,7 @@
 // the voice can only explain what it is told.
 
 import type { ChangeKind } from "@archboard/board/comparison";
-import { languageName, type RecordingNarration } from "@/shared/walkthrough-recording";
+import { languageName, type RecordingNarration } from "@archboard/walkthrough/recording";
 
 /** How much of a walkthrough's name a start carries, in characters. */
 const PRESENTATION_NAME_MAX_CHARS = 200;

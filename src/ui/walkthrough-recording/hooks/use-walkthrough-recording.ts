@@ -5,7 +5,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 
-import { RECORDING_PAGE_GLOBAL } from "@/shared/walkthrough-recording";
+import { RECORDING_PAGE_GLOBAL } from "@archboard/walkthrough/recording";
 
 import type { RecordedStep, WalkthroughRecorder } from "@/ui/walkthrough-recording/lib/recorder";
 import type { RecordingSources } from "@/ui/walkthrough-recording/lib/voice-sources";

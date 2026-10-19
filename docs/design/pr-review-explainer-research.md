@@ -330,18 +330,18 @@ source).
   recording page always shows subtitles"
   ([ADR 0041](../adr/0041-a-recording-is-a-talk-rendered-frame-by-frame.md)).
 - **Output.** MP4 is H.264 High, yuv420p, CRF 18, with AAC at 160 kb/s
-  (`src/runtime/video-encoder/lib/encode.ts` and
+  (`packages/walkthrough/src/runtime/processes/video-encoder.ts` and
   `docs/design/walkthrough-recording-acceptance.md` §3). The sound alone is
   about 1.2 MB a minute. The size of the picture was not measured.
 - **Layout and theme.** `semantic record` and `semantic replay` have no
   `--layout`. The recorder names no engine, so the page draws with its default,
   Track. The browser keeps the choice of engine only in its storage
-  (`layout-engine.ts`), and nothing under `src/runtime/walkthrough-recorder/`
+  (`layout-engine.ts`), and nothing under `packages/walkthrough/src/runtime/`
   names a layout. `semantic replay <talk> --theme dark` renders a kept talk in
   the other theme with no new voice session.
 - **The kept talk.** `talk.json` holds every beat's start (`kind: "step"`) and
   every line the voice said (`kind: "said"`, with `text`). Each `at` is counted
-  in samples at 48 kHz (`src/shared/walkthrough-recording/talk.ts:29`). So
+  in samples at 48 kHz (`packages/walkthrough/src/shared/protocol/talk.ts`). So
   chapter times and a transcript can be read from it with `jq`, but no command
   prints them.
 

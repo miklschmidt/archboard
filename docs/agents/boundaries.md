@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `process` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -464,6 +464,29 @@ nothing from `src/`. The 2 files of `ui/api/` are safe for the browser, with no 
 - The tests are in `tests/`: `server/middleware/`, `server/projections/` and `server/store/` test the server files,
   `ui/rules/` and `ui/state/` the browser files. The end-to-end owners stay in `tests/system/code-targets` and
   `tests/system/browser/opener-settings.test.ts`.
+
+The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records a narrated walkthrough of a board to a video
+(ADR 0035, ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 38 names,
+where code outside imported 4 module paths. It imports `board`, `timing`, `workspace` and `renderer`, and nothing from
+`src/`. The 2 files of `shared/api/` are safe for the browser, with no Node import: the recording page and the replay
+page import them. The 2 files of `runtime/api/` run only in Bun.
+
+- `./recording` is the contract that the recording page and the command that drives it agree on: the address that opens
+  the page as a recording, the global it publishes its state on, the container and the language of a recording, and the
+  narration that the voice is told. `./talk` is the talk that the page keeps (the voice and a log stamped on its
+  samples), the frames drawn from it, the schema of a talk on disk and the address that opens the replay page. They are
+  `shared/protocol/recording-page.ts` and `shared/protocol/talk.ts`. The language schema is in `shared/schemas/`.
+- `./recorder` records a walkthrough, renders a kept talk again and reads and writes a talk in the state directory. It
+  is `runtime/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page client of
+  `runtime/clients/`, the talk files and the silent WAV of `runtime/store/`, and the choice of an encoder and a browser
+  in `runtime/services/recording-tools.ts`. The browser is the private Chromium of `@archboard/renderer/headless-chromium`.
+- `./ffmpeg` finds the ffmpeg that encodes a recording. The encoder is `runtime/processes/video-encoder.ts`, the ffmpeg
+  child, and `runtime/services/ffmpeg.ts` finds and proves it: `ARCHBOARD_FFMPEG`, else `ffmpeg` on `PATH`, else
+  `nixpkgs#ffmpeg-headless` through Nix. No file of the package reads an asset by a path, so nothing depends on where the
+  package sits.
+- The tests are in `tests/`: `shared/protocol/` holds the talk's contract, `runtime/store/` the talk on disk,
+  `runtime/clients/` the page client, `runtime/operations/` the browser flags of the render and `runtime/services/` and
+  `runtime/processes/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
 
 ## Vendor-owned data
 

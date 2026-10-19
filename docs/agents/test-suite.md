@@ -177,11 +177,11 @@ it is `RENDER_FAILED`, keeps the talk and writes no file.
 `walkthrough-recording-refusals.test.ts` owns the refusals that start no browser
 and no voice. These module owners hold the parts:
 
-- `src/runtime/video-encoder/tests`: finding and running ffmpeg.
-- `src/shared/walkthrough-recording/tests`: the talk's contract.
+- `packages/walkthrough/tests/runtime/services` and `processes`: finding and running ffmpeg.
+- `packages/walkthrough/tests/shared/protocol`: the talk's contract.
 - `src/ui/walkthrough-replay/tests`: the frame that shows each event.
 - `packages/ui-kit/tests/ui/state/frame-clock`: the stepped clock.
-- `src/runtime/walkthrough-recorder/tests`: the talk on disk and the browsers'
+- `packages/walkthrough/tests/runtime/store` and `operations`: the talk on disk and the browsers'
   flags.
 
 Every owner in these two paragraphs needs a Chromium-family executable

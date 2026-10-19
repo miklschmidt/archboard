@@ -7,8 +7,8 @@
 import { existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { readTalk } from "@/runtime/walkthrough-recorder";
-import { TALK_SAMPLE_RATE, type Talk } from "@/shared/walkthrough-recording/talk";
+import { readTalk } from "@archboard/walkthrough/recorder";
+import { TALK_SAMPLE_RATE, type Talk } from "@archboard/walkthrough/talk";
 
 import {
 	encodeThumbnail,

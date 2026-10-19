@@ -18,10 +18,10 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { askedTalkPlace, readTalk, renderTalk, writeTalk } from "@/runtime/walkthrough-recorder";
+import { askedTalkPlace, readTalk, renderTalk, writeTalk } from "@archboard/walkthrough/recorder";
 import { parseSemanticBoard } from "@archboard/board/document";
 import type { LayoutEngineName } from "@archboard/board/render-reply";
-import { TalkSchema, type Talk } from "@/shared/walkthrough-recording/talk";
+import { TalkSchema, type Talk } from "@archboard/walkthrough/talk";
 
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
