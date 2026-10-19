@@ -1,5 +1,5 @@
-import type { SessionNotificationHandler } from "@archboard/codex-app-server/session-api";
-import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
+import type { SessionNotificationHandler } from "@archboard/codex-app-server/session";
+import type { ThreadId } from "@archboard/codex-app-server/identity";
 import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 import {
 	CodexCoordinatorError,

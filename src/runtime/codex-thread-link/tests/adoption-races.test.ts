@@ -2,7 +2,7 @@ import { unavailableThreadRead } from "./fixtures.js";
 import { describe, expect, test } from "bun:test";
 
 import { createCodexThreadLink, type ThreadLinkTarget } from "../index.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 import { loadedPage, thread, threadPage, type ThreadOptions } from "./fixtures.ts";
 import { realEpochFixture, type RealEpochFixture } from "./epoch-fixtures.ts";
 

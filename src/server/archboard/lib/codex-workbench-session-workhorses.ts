@@ -9,9 +9,9 @@
 // A workhorse belongs to a checkout, not to a repository identity, so a new chosen checkout of its
 // identity leaves it as it is, linked until its tab session ends.
 
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
-import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context-types";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
+import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
+import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { CodexThreadContextController } from "@/runtime/codex-thread-context";
 import type { CodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
 import type { CodexWorkhorseQueue } from "@/runtime/codex-workhorse-queue";
@@ -21,7 +21,7 @@ import type {
 	ThreadId,
 	TrustedIdentityDecoder,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type { BrowserThreadLinkActions, CodexQueueProjectionInput } from "@/server/codex-workbench";
 
 /** The runtime owners one workhorse runs on. */

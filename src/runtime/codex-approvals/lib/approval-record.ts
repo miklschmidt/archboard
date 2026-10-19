@@ -21,8 +21,8 @@ import {
 	type ApprovalResponseHandlers,
 	handleApprovalResponse,
 } from "@/runtime/codex-approvals/lib/approval-family-dispatch";
-import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/identity";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
 
 /** What the broker holds for one approval: the request it was made from, and where it has got to. */
 export interface ApprovalRecord {

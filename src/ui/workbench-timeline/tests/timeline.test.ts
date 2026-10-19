@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import type { BrowserTimeline } from "@/shared/codex-browser-model";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	conversationTurnId,
 	mergeConversation,

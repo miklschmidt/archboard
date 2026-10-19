@@ -3,7 +3,7 @@ import { act, createElement } from "react";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { ActivityItem, ActivityRun as Run } from "@/ui/workbench-runtime";
 import { ActivityRun } from "@/ui/workbench-thread";
 

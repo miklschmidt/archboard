@@ -1,9 +1,9 @@
-import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/workbench-identity";
+import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/identity";
 import type {
 	PaneFocusEvent,
 	PaneSelectionEvent,
 	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context-types";
+} from "@archboard/codex-app-server/semantic-context";
 import type { WorkhorseOperationEvent } from "@/runtime/codex-workhorse-operations";
 import { paneNews } from "@/runtime/codex-coordinator-callbacks/lib/pane-news";
 import type {

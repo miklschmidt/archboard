@@ -3,14 +3,11 @@ import type {
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
 } from "@/shared/codex-realtime-contract";
-import {
-	IdentityValidationError,
-	type TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+import { IdentityValidationError, type TurnId } from "@archboard/codex-app-server/identity";
 import type {
 	DynamicServerRequest,
 	TransportServerNotification,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/transport";
 import type {
 	CodexSpokenApprovalGate,
 	CodexSpokenApprovalGateOptions,

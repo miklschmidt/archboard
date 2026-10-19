@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import type { EpochOperationRecord } from "../../codex-epoch/index.js";
 import type {
 	CoordinatorPersistedState,
 	CoordinatorSnapshot,
 	CoordinatorThreadLinkClassification,
 } from "../index.js";
-import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 import { createCodexCoordinator } from "../index.js";
 import { WORKING_DIRECTORY, fixture, type Fixture } from "./support.js";
 

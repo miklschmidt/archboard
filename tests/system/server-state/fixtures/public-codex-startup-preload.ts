@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/protocol-version";
+import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/protocol";
 import { mock } from "bun:test";
 import { resolve } from "node:path";
 

@@ -1,4 +1,4 @@
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import { CodexWorkhorseQueueError } from "@/runtime/codex-workhorse-queue";
 import {
 	CodexWorkhorseOperationsError,

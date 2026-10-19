@@ -1,4 +1,4 @@
-import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import type { IdentityAuthority } from "@archboard/codex-app-server/identity";
 import type {
 	EpochOperationOutcome,
 	EpochOperationRecord,
@@ -9,8 +9,8 @@ import type {
 	SessionThread,
 	SessionThreadPageResult,
 	SessionThreadSource,
-} from "@archboard/codex-app-server/session-responses";
-import type { SessionParams } from "@archboard/codex-app-server/session-api";
+	SessionParams,
+} from "@archboard/codex-app-server/session";
 import type { ThreadLinkCurrentEpoch, ThreadLinkStatus, ThreadLinkTarget } from "../index.js";
 
 interface ThreadOptions {

@@ -3,7 +3,7 @@ import type {
 	EpochExecutionProof,
 	EpochExecutionRequest,
 } from "../../codex-epoch/index.ts";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
+import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { ArchboardContext } from "../../codex-instructions/index.ts";
 import type {
 	CodexThreadLinkPort,
@@ -16,14 +16,14 @@ import type {
 	ThreadLinkSnapshot,
 	ThreadLinkStatus,
 } from "../../codex-thread-link/index.ts";
-import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context";
 import {
 	createIdentityAuthority,
 	type ChildEpoch,
 	type ChildId,
 	type IdentityAuthority,
 	type ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import { baseContext } from "./delivery-context.ts";
 import {
 	createCodexThreadContextDelivery,

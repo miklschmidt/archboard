@@ -1,4 +1,4 @@
-import type { TurnId } from "@archboard/codex-app-server/workbench-identity";
+import type { TurnId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexTimelinePlanInput,
 	CodexTimelineProjectionInput,

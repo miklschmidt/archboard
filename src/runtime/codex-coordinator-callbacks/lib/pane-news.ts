@@ -17,7 +17,7 @@ import type {
 	SemanticSubject,
 	SemanticUserChange,
 	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context-types";
+} from "@archboard/codex-app-server/semantic-context";
 import type { CoordinatorPaneNews } from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
 type PaneNewsSource = SettledSemanticChangeEvent | PaneFocusEvent | PaneSelectionEvent;

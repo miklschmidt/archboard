@@ -1,7 +1,7 @@
 import type { ThreadInjectItemsParams } from "@/runtime/codex-instructions";
-import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context";
 import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
-import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
+import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/identity";
 import type { CodexThreadContextEventId } from "@/runtime/codex-thread-context/lib/contract";
 
 /** The exact thread, child generation and operation authority one delivery may use. */

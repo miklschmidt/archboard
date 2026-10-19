@@ -2,7 +2,7 @@ import type {
 	SessionThread,
 	SessionThreadItem,
 	SessionTurn,
-} from "@archboard/codex-app-server/session-responses";
+} from "@archboard/codex-app-server/session";
 import { isRecord, projectionError } from "@/runtime/codex-dynamic-tools/lib/projection-pages";
 
 /**

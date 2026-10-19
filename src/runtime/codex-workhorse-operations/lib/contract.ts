@@ -1,8 +1,7 @@
 import type { CodexEpochStore, EpochExecutionProof, EpochTransaction } from "@/runtime/codex-epoch";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
-import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session-api";
-import type { SessionTurn } from "@archboard/codex-app-server/session-responses";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import type { CodexSession, SessionParams, SessionTurn } from "@archboard/codex-app-server/session";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
@@ -23,8 +22,8 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
-import type { CodexThreadStatusType } from "@archboard/codex-app-server/app-server-contract";
+} from "@archboard/codex-app-server/identity";
+import type { CodexThreadStatusType } from "@archboard/codex-app-server/contract";
 
 /** The only four operations the coordinator may dispatch to its workhorse. */
 const WORKHORSE_OPERATION_NAMES = Object.freeze([

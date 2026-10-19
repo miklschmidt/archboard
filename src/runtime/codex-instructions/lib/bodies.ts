@@ -1,7 +1,7 @@
 import path from "node:path";
 import { z } from "zod";
 
-import type { SessionUserInput } from "@archboard/codex-app-server/session-contract";
+import type { SessionUserInput } from "@archboard/codex-app-server/session";
 import {
 	ArchboardContextSchema,
 	canonicalContext,

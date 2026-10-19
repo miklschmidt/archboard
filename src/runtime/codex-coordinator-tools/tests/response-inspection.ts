@@ -1,4 +1,4 @@
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { DynamicToolResponse } from "../index.js";
 
 function copyRequest(request: DynamicServerRequest): DynamicServerRequest {

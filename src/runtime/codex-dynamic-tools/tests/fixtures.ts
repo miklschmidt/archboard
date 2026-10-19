@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
 import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoch/index.js";
 import type { ArchboardContext } from "../../codex-instructions/index.js";
 import type {
@@ -9,13 +9,9 @@ import type {
 	SessionThreadStartResult,
 	SessionTurn,
 	SessionTurnResult,
-} from "@archboard/codex-app-server/session-responses";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
-import type {
-	IdentityAuthorities,
-	ThreadId,
-	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/session";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
+import type { IdentityAuthorities, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,

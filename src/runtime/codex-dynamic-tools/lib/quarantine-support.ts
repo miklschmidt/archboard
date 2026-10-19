@@ -1,14 +1,11 @@
-import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
-import {
-	logicalToolCallKey,
-	type JsonRpcRequestId,
-} from "@archboard/codex-app-server/workbench-identity";
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/contract";
+import { logicalToolCallKey, type JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 	type DynamicToolCallResponse,
 } from "@/runtime/codex-thread-tools";
-import { type DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import {
 	type CodexDynamicToolsOptions,
 	type DynamicEpochTeardownProof,

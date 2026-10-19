@@ -6,7 +6,7 @@ import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
 	type ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	parseTabSessionId,
 	type BrowserProjectionContext,

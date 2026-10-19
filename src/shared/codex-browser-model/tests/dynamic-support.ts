@@ -1,4 +1,4 @@
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createCodexBrowserModel } from "../index.js";
 import type {
 	BrowserDynamicApproval,

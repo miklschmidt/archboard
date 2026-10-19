@@ -12,7 +12,7 @@ import type {
 	DynamicServerRequest,
 	ReverseResponse,
 	TransportServerRequest,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/transport";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -23,7 +23,7 @@ import type {
 	OperationAuthority,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	CoordinatorToolName,
 	DynamicToolRefusalReason,

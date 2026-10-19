@@ -1,10 +1,10 @@
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
 import {
+	CodexSessionMutationError,
 	type SessionQueueAddResult,
 	type SessionQueueListResult,
 	type SessionQueueStartResult,
 	type SessionQueueUpdateResult,
-} from "@archboard/codex-app-server/session-responses";
+} from "@archboard/codex-app-server/session";
 import { createTextUserInput } from "../../codex-instructions/index.js";
 import {
 	createCodexWorkhorseQueue,
@@ -16,8 +16,8 @@ import {
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
-} from "@archboard/codex-app-server/workbench-identity";
-import type { QueuedSubmissionId } from "@archboard/codex-app-server/workbench-identity";
+	type QueuedSubmissionId,
+} from "@archboard/codex-app-server/identity";
 
 type QueueAddParams = Parameters<WorkhorseQueueSessionPort["queueAdd"]>[0];
 type QueueListParams = Parameters<WorkhorseQueueSessionPort["queueListPage"]>[0];

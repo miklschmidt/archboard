@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { CodexProcessError } from "@archboard/codex-app-server/process";
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
 import { serverStartupFailureMessage } from "../index.js";
 
 test("classifies process-group ownership refusal without install recovery", () => {

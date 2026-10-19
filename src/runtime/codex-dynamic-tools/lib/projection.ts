@@ -4,8 +4,8 @@ import type {
 	SessionThreadTurnPageResult,
 	SessionThreadItemPageResult,
 	SessionTurn,
-} from "@archboard/codex-app-server/session-responses";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
+	CodexSession,
+} from "@archboard/codex-app-server/session";
 import type {
 	DynamicCallerAuthority,
 	DynamicObservedTarget,

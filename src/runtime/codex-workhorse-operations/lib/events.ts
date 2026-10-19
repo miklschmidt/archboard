@@ -1,5 +1,5 @@
 import type { EpochOperationRecord, EpochTransaction } from "@/runtime/codex-epoch";
-import type { QueuedSubmissionId, TurnId } from "@archboard/codex-app-server/workbench-identity";
+import type { QueuedSubmissionId, TurnId } from "@archboard/codex-app-server/identity";
 import type {
 	WorkhorseOperationOptions,
 	WorkhorseOperationRpc,

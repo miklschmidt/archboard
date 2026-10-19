@@ -10,7 +10,7 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	InspectWorkhorseRequest,
 	InspectWorkhorseResult,

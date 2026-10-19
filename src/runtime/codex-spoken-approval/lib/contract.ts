@@ -1,11 +1,11 @@
 import type { ApprovalSettlement, CodexApprovalBroker } from "@/runtime/codex-approvals";
 import type { CodexCoordinator } from "@/runtime/codex-coordinator";
 import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
+import type { CodexSession } from "@archboard/codex-app-server/session";
 import type {
 	DynamicServerRequest,
 	TransportServerNotification,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/transport";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type {
 	ChildEpoch,
@@ -16,7 +16,7 @@ import type {
 	JsonRpcRequestId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	RealtimeCorrelation,
 	RealtimeItemId,

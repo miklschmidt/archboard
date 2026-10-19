@@ -15,7 +15,7 @@ import {
 	type RealtimeState,
 	type RealtimeTranscriptRecord,
 } from "@/shared/codex-realtime-contract";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {
 	CodexRealtimeAdapter,
 	CodexRealtimeAdapterOptions,

@@ -12,8 +12,8 @@
 import type {
 	DynamicServerRequest,
 	TransportServerNotification,
-} from "@archboard/codex-app-server/transport-types";
-import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/transport";
+import type { IdentityAuthority } from "@archboard/codex-app-server/identity";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCurrentChild,

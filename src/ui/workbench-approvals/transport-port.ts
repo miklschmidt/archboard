@@ -9,7 +9,7 @@ import type {
 	BrowserGatewayCommandResult,
 	BrowserGatewayErrorCode,
 } from "@/shared/codex-browser-gateway";
-import type { CodexServerResponseByMethod } from "@archboard/codex-app-server/app-server-contract";
+import type { CodexServerResponseByMethod } from "@archboard/codex-app-server/contract";
 import type {
 	BrowserApproval,
 	BrowserCommand,

@@ -5,15 +5,15 @@ import {
 	CODEX_SESSION_CONTROL,
 	type CodexSession,
 	type ControlledCodexSession,
-} from "@archboard/codex-app-server/session-api";
+} from "@archboard/codex-app-server/session";
 import type { CodexThreadLinkPort } from "@/runtime/codex-thread-link";
-import type { CodexTransport } from "@archboard/codex-app-server/transport-types";
+import type { CodexTransport } from "@archboard/codex-app-server/transport";
 import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthorities,
 	IdentityLedger,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type { CodexWorkbenchGateway } from "@/server/codex-workbench";
 import type { CodexWorkbenchSessions } from "@/server/archboard/lib/codex-workbench-sessions";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";

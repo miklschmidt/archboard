@@ -1,12 +1,9 @@
-import {
-	CodexSessionMutationError,
-	type SessionParams,
-} from "@archboard/codex-app-server/session-api";
+import { CodexSessionMutationError, type SessionParams } from "@archboard/codex-app-server/session";
 import {
 	createThreadInjectItemsParams,
 	type ThreadInjectItemsParams,
 } from "@/runtime/codex-instructions";
-import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkClassification,

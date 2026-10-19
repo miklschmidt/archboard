@@ -1,6 +1,6 @@
 import type { createCodexBrowserModel } from "@/shared/codex-browser-model";
 import type { BrowserSnapshot, DeliveryOutcome } from "@/shared/codex-browser-model";
-import type { BrowserCommandId } from "@archboard/codex-app-server/workbench-identity";
+import type { BrowserCommandId } from "@archboard/codex-app-server/identity";
 import {
 	CodexWorkbenchGatewayError,
 	type BrowserActionResult,

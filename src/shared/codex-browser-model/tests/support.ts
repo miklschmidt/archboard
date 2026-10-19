@@ -1,4 +1,4 @@
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { BROWSER_IDLE_SPOKEN_APPROVAL, createCodexBrowserModel } from "../index.js";
 import type { BrowserCommand, BrowserSnapshot } from "../index.js";
 

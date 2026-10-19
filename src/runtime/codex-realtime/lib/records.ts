@@ -2,8 +2,8 @@ import {
 	parseRealtimeItemId,
 	type RealtimeTranscriptRecord,
 } from "@/shared/codex-realtime-contract";
-import type { TrustedIdentityDecoder } from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import type { TrustedIdentityDecoder } from "@archboard/codex-app-server/identity";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
 
 /**

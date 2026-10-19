@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/protocol-version";
+import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/protocol";
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";

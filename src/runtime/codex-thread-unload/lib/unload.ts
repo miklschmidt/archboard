@@ -1,14 +1,15 @@
 import type {
 	CodexSession,
 	SessionNotificationHandler,
-} from "@archboard/codex-app-server/session-api";
-import type { SessionResponse, SessionThread } from "@archboard/codex-app-server/session-responses";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+	SessionResponse,
+	SessionThread,
+} from "@archboard/codex-app-server/session";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {
 	IdentityValidator,
 	ThreadId,
 	TrustedIdentityDecoder,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 
 /**
  * What became of a thread given up: Codex's answer to its unsubscribe, or why the thread could not

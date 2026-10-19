@@ -1,7 +1,7 @@
 import type {
 	SemanticCursor,
 	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context-types";
+} from "@archboard/codex-app-server/semantic-context";
 import type {
 	CodexThreadContextDeliveryReason,
 	CodexThreadContextEventId,

@@ -1,10 +1,10 @@
-import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context";
 import {
 	sameThreadLinkIdentity,
 	type ThreadLinkBindingSnapshot,
 	type ThreadLinkSnapshot,
 } from "@/runtime/codex-thread-link";
-import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/workbench-identity";
+import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/identity";
 import {
 	CodexThreadContextControllerError,
 	type CodexThreadContextBinding,

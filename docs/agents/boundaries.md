@@ -123,7 +123,7 @@ split by behavior.
   from the private files that define the names, and it holds no second definition. A public name
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`
-  adopts it for `shared/` and `runtime/`. `tests/system/repository-policy/package-api.test.ts` holds the
+  and `codex-app-server` adopt it for `shared/` and `runtime/`. `tests/system/repository-policy/package-api.test.ts` holds the
   three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
   `exports` does not name. It also refuses a relative path that reaches a private file of another
@@ -187,49 +187,45 @@ checkout that holds a vault and the checkouts a reader of that vault resolves id
 The sixth is `codex-app-server` (`@archboard/codex-app-server`). It is one private Codex app-server
 session over stdio. The package is complete. It holds the shared files, the wire protocol, the
 process owner, the stdio transport, the session and the semantic context. It imports `board`
-(layer 4) and the lower packages, and nothing from `src/`. Every export in `shared/` is safe for the
-browser, with no Node import. The exports in `runtime/` are
-runtime-only by policy: the browser imports none of them, though a file such as `./session-contract`
-holds only Zod schemas.
+(layer 4) and the lower packages, and nothing from `src/`. It adopts the `api/` role for `shared/`
+and `runtime/` and exposes 7 subpaths, where it exposed 17 files. The 2 files of `shared/api/` are
+safe for the browser, with no Node import. The 5 files of `runtime/api/` are runtime-only by policy:
+the browser imports none of them, though `./session` carries some Zod schemas.
 
-- `shared/`: `./app-server-contract` is the authored wrapper over the generated protocol types. The
-  generated tree is ignored by git. It lives in `src/shared/protocol/generated`, and
-  `scripts/generate-codex-app-server-contract.ts` writes it on `bun install` and creates its parent
-  directories. The wrapper imports it with `#` and only as types, and no other file of the package or
-  outside it does. `./app-server-capacity` holds the connection capacity constants, and its test is
-  opt-in (`bun run test:opt-in:capacity`). `./workbench-identity` holds the identity brands, the
+- `shared/api/`: `./contract` holds the authored wrapper over the generated protocol types: the
+  request methods, the status types, the approval decisions and their schemas, and the connection
+  capacity constants. The generated tree is ignored by git. It lives in
+  `src/shared/protocol/generated`, and `scripts/generate-codex-app-server-contract.ts` writes it on
+  `bun install` and creates its parent directories. The wrapper imports it with `#` and only as
+  types, and no other file of the package or outside it does. The capacity test is opt-in
+  (`bun run test:opt-in:capacity`). `./identity` holds the identity brands, the authorities, the
   correlations and the ledger.
-- `runtime/protocol/` and `runtime/schemas/` are the Zod schemas and decoders of the wire.
-  `./protocol-decoder` decodes each message and `./protocol-version` pins the Codex version. Outside
-  tests build their notification fixtures with the decoder. The method lists, the request and
-  response schemas and the thread, item and core schemas are private. The package exported sixteen
-  subpaths before the transport and session moved in, and nine of them are private files now.
-  `./session-contract` is where code outside the package validates: the reply to a server request,
-  the supported login parameters, the queue parameters and a queued submission. It also names
-  `SessionUserInput`, the type of a user input that Codex reports. `./session-responses` holds the decoded
-  results of a session request, such as `SessionThread`.
-- `runtime/clients/` is the stdio transport. `./transport` creates it, `./transport-types` holds the
-  types of its requests, notifications and server requests, and `./transport-errors` holds its error
-  classes. `runtime/operations/` settles a request, routes a reverse request and adopts the identities
-  of a response. `runtime/protocol/wire.ts` decodes the JSON frames.
-- `runtime/services/` holds the session. `./session` creates it and `./session-api` holds its
-  interface, its options, its errors and its control symbol. The session's storage proof is in
-  `runtime/store/`. The transport's write-capacity test is opt-in too
-  (`bun run test:opt-in:capacity`).
-- `runtime/processes/` owns the `codex app-server` child. `./process` creates it and reports its
-  lifecycle. `runtime/store/` prepares and locks the private Codex home. `runtime/services/`
-  also holds the child's environment, its diagnostics buffer and the executable check.
-  `./executable` finds the Codex executable of the checkout whose source runs, through
-  `SOURCE_CHECKOUT` of `workspace`, and refuses a global one or one of another checkout.
-- The semantic context turns a user's gestures and the settled changes of a board into the briefs
-  and events that the coordinator and the workhorse read. `./semantic-context-publisher` creates
-  the publisher, in `runtime/operations/`. `./semantic-context-types` holds its input, brief, event
-  and publisher types, in `runtime/schemas/`, and `./semantic-context-limits` holds the byte and
-  entry limits. The input normalizers, the brief builder, the fitter and the bounded-text and
-  listener-diagnostic helpers are private. The barrel `codex-semantic-context/index.ts` is gone: a
-  name is imported from the file that defines it. The package reads board schemas by value from
-  `@archboard/board` (`./views`, `./document`, `./reconciliation`, `./pane-context`) to normalize the
-  architecture a pane reports.
+- `./protocol` is the pinned Codex version and the decode of a server notification. Outside tests
+  build their notification fixtures with the decoder. The method lists, the request and response
+  schemas and the thread, item and core schemas of `runtime/protocol/` and `runtime/schemas/` stay
+  private.
+- `./transport` is the stdio transport of `runtime/clients/`: it creates the transport and carries
+  the types of its requests, notifications and server requests and its error classes.
+  `runtime/operations/` settles a request, routes a reverse request and adopts the identities of a
+  response. `runtime/protocol/wire.ts` decodes the JSON frames. The write-capacity test of the
+  transport is opt-in too (`bun run test:opt-in:capacity`).
+- `./session` is the session of `runtime/services/`. It creates the session and carries its
+  interface, its options, its errors and its control symbol. It also carries the decoded results of
+  a session request, such as `SessionThread`, and the schemas where code outside the package
+  validates: the reply to a server request, the supported login parameters, the queue parameters
+  and a queued submission. The session's storage proof is in `runtime/store/`.
+- `./process` owns the `codex app-server` child of `runtime/processes/`: it creates the process and
+  reports its lifecycle. It also carries the executable check, which finds the Codex executable of
+  the checkout whose source runs, through `SOURCE_CHECKOUT` of `workspace`, and refuses a global one
+  or one of another checkout. `runtime/store/` prepares and locks the private Codex home, and
+  `runtime/services/` holds the child's environment and its diagnostics buffer.
+- `./semantic-context` turns a user's gestures and the settled changes of a board into the briefs
+  and events that the coordinator and the workhorse read. It creates the publisher and carries its
+  input, brief, event and publisher types and the byte and entry limits. The input normalizers, the
+  brief builder, the fitter and the bounded-text and listener-diagnostic helpers are private. The
+  barrel `codex-semantic-context/index.ts` is gone: a name is imported from the api file that
+  carries it. The package reads board schemas by value from `@archboard/board` (`./views`,
+  `./document`, `./reconciliation`, `./pane-context`) to normalize the architecture a pane reports.
 - A test that needs the process owner's injected dependencies imports
   `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
   package has no `./testing` export.

@@ -12,9 +12,9 @@ import { sameValue } from "@/runtime/codex-coordinator/lib/state";
 import {
 	CODEX_SESSION_THREAD_SOURCE,
 	CodexSessionMutationError,
-} from "@archboard/codex-app-server/session-api";
-import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/session";
+import type { ThreadId } from "@archboard/codex-app-server/identity";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 
 const COORDINATOR_THREAD_SOURCE = CODEX_SESSION_THREAD_SOURCE;
 

@@ -6,12 +6,9 @@ import type {
 	BrowserSnapshot,
 	DeliveryOutcome,
 } from "@/shared/codex-browser-model";
-import type {
-	BrowserCommandId,
-	JsonRpcRequestId,
-} from "@archboard/codex-app-server/workbench-identity";
+import type { BrowserCommandId, JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 import { parseApprovalResponse } from "@/runtime/codex-approvals";
-import { SupportedLoginAccountParamsSchema } from "@archboard/codex-app-server/session-contract";
+import { SupportedLoginAccountParamsSchema } from "@archboard/codex-app-server/session";
 import type { BrowserLeaseManager } from "@/server/codex-workbench/lib/lease";
 import {
 	CodexWorkbenchGatewayError,

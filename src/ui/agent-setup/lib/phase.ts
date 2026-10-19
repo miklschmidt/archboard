@@ -3,7 +3,7 @@
 // what, if anything, stands between them and talking to the agent. Pure.
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
-import type { LoginId } from "@archboard/codex-app-server/workbench-identity";
+import type { LoginId } from "@archboard/codex-app-server/identity";
 import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
 
 /** Where the agent stands. */

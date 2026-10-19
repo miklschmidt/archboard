@@ -1,12 +1,12 @@
 import {
 	CODEX_SESSION_CONTROL,
 	type ControlledCodexSession,
-} from "@archboard/codex-app-server/session-api";
-import { createCodexSession } from "@archboard/codex-app-server/session";
+	createCodexSession,
+} from "@archboard/codex-app-server/session";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	createCodexWorkbenchSessions,
 	type CodexWorkbenchComponentFactories,

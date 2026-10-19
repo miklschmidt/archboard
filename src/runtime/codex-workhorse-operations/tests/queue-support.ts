@@ -1,5 +1,5 @@
 import { createTextUserInput } from "../../codex-instructions/index.js";
-import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session-responses";
+import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
 import {
 	CodexWorkhorseQueueError,
 	type CodexWorkhorseQueue,
@@ -13,7 +13,7 @@ import type {
 	OperationAuthority,
 	OperationId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 
 export class FakeQueue implements CodexWorkhorseQueue<OperationId> {
 	readonly calls: string[] = [];

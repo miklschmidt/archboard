@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { SessionParams } from "@archboard/codex-app-server/session-api";
-import type { SessionResponse } from "@archboard/codex-app-server/session-responses";
+import type { SessionParams, SessionResponse } from "@archboard/codex-app-server/session";
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
@@ -17,7 +16,7 @@ import {
 	type CoordinatorModel,
 } from "../index.js";
 import type { CodexCoordinatorError } from "../index.js";
-import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 
 const WORKING_DIRECTORY = "/state/codex-workbench/coordinator";
 

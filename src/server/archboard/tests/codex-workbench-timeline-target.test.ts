@@ -1,10 +1,12 @@
 import { expect, test } from "bun:test";
 
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
-import type { SessionThreadTurnPageResult } from "@archboard/codex-app-server/session-responses";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import type {
+	CodexSession,
+	SessionThreadTurnPageResult,
+} from "@archboard/codex-app-server/session";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createServerTimelineOwner } from "../codex-workbench-adapters.js";
 import { flush, turnFixture } from "./support/codex-workbench-timeline-fixture.js";
 

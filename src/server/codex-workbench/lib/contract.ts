@@ -13,7 +13,7 @@ import type {
 	IdentityAuthorities,
 	JsonRpcRequestId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
@@ -21,7 +21,7 @@ import type {
 } from "@/runtime/codex-thread-link";
 import type { AnswerSdp } from "@/shared/codex-realtime-contract";
 import type { ApprovalOwnerView, ApprovalResponse } from "@/runtime/codex-approvals";
-import type { SupportedLoginAccountParams } from "@archboard/codex-app-server/session-contract";
+import type { SupportedLoginAccountParams } from "@archboard/codex-app-server/session";
 import type {
 	BrowserGatewayAccountReadResult,
 	BrowserGatewayCommandResult,

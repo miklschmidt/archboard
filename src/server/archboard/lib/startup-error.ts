@@ -1,6 +1,5 @@
-import { CodexExecutableError } from "@archboard/codex-app-server/executable";
-import { CodexProcessError } from "@archboard/codex-app-server/process";
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
+import { CodexExecutableError, CodexProcessError } from "@archboard/codex-app-server/process";
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
 
 /**
  * Every error inside one thrown value: itself, an aggregate's members and

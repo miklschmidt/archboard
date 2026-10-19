@@ -9,15 +9,17 @@ import { withProductionState } from "@/server/archboard/tests/support/production
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "../../../shared/codex-realtime-contract/index.js";
 import { createCodexRealtimeAdapter } from "../../../runtime/codex-realtime/index.js";
-import { createSemanticContextPublisher } from "@archboard/codex-app-server/semantic-context-publisher";
-import { type SemanticContextInput } from "@archboard/codex-app-server/semantic-context-types";
-import type { SessionParams } from "@archboard/codex-app-server/session-api";
+import {
+	createSemanticContextPublisher,
+	type SemanticContextInput,
+} from "@archboard/codex-app-server/semantic-context";
+import type { SessionParams } from "@archboard/codex-app-server/session";
 import {
 	createBrowserLeaseLedger,
 	createCodexWorkbenchGateway,

@@ -4,11 +4,8 @@
 // spelling of their ids, and bounded so a long-lived server cannot grow. Which thread a
 // notification is about is read here too.
 
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
-import type {
-	ThreadId,
-	TrustedIdentityDecoder,
-} from "@archboard/codex-app-server/workbench-identity";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
+import type { ThreadId, TrustedIdentityDecoder } from "@archboard/codex-app-server/identity";
 import type { CodexTimelinePlanInput, CodexTimelineUsageInput } from "@/server/codex-workbench";
 import type { TimelineLiveState } from "@/server/archboard/lib/codex-timeline-budget";
 import { boundedPlan } from "@/server/archboard/lib/codex-timeline-evidence";

@@ -10,9 +10,12 @@ const packagesRoot = path.resolve(
 
 // An `api/` folder is a package's interface over private implementation (docs/agents/boundaries.md,
 // "Packages"). A package that adopts it points the `exports` of an area only into that area's
-// `api/`, and nothing private reaches back up into it. `board` adopts it for `src/shared` and
-// `src/runtime`.
-const ADOPTERS = [{ name: "board", areas: ["shared", "runtime"] }];
+// `api/`, and nothing private reaches back up into it. Each package lists the areas it adopts it
+// for.
+const ADOPTERS = [
+	{ name: "board", areas: ["shared", "runtime"] },
+	{ name: "codex-app-server", areas: ["shared", "runtime"] },
+];
 
 const API_IMPORT = /["'`]#[a-z]+\/api\//;
 const EXPORT_STAR = /\bexport\s*\*/;

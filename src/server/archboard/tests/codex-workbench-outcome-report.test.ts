@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { createOutcomeReportPort } from "@/server/archboard/index";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { generationContextFixture } from "./support/codex-workbench-generation-values.js";
 
 /** A port whose turn/start a test scripts, recording what was started. */

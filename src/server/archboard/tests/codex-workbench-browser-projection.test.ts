@@ -5,7 +5,7 @@ import {
 	type CoordinatorCallbackDelivery,
 } from "../../../runtime/codex-coordinator-callbacks/index.js";
 import type { CodexRealtimeGeneration } from "../../../runtime/codex-realtime/index.js";
-import { SEMANTIC_CONTEXT_LIMITS } from "@archboard/codex-app-server/semantic-context-limits";
+import { SEMANTIC_CONTEXT_LIMITS } from "@archboard/codex-app-server/semantic-context";
 import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
@@ -16,7 +16,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "../../../shared/codex-realtime-contract/index.js";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import {
 	projectServerBrowserReadiness,

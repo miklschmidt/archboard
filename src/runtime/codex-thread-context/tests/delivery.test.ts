@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 
 import { CodexEpochError } from "../../codex-epoch/index.ts";
 import type { ThreadInjectItemsParams } from "../../codex-instructions/index.ts";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import type { ThreadLinkSnapshot } from "../../codex-thread-link/index.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 import {
 	createHarness,
 	FEED_ID,

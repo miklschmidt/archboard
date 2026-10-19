@@ -5,8 +5,8 @@ import {
 	type DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
-import { CODEX_SERVER_REQUEST_METHODS } from "@archboard/codex-app-server/app-server-contract";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { CODEX_SERVER_REQUEST_METHODS } from "@archboard/codex-app-server/contract";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
 import { parseTabSessionId } from "../../codex-workbench/index.js";

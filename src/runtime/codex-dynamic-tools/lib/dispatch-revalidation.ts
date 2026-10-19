@@ -1,5 +1,5 @@
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
-import type { OperationId, TurnId } from "@archboard/codex-app-server/workbench-identity";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
+import type { OperationId, TurnId } from "@archboard/codex-app-server/identity";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,

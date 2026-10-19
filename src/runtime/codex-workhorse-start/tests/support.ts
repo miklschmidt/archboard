@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
@@ -7,12 +7,12 @@ import {
 	type CodexEpochStore,
 	type EpochStageInput,
 } from "../../codex-epoch/index.js";
-import type { SessionParams } from "@archboard/codex-app-server/session-api";
 import type {
+	SessionParams,
 	SessionResponse,
 	SessionThread,
 	SessionTurn,
-} from "@archboard/codex-app-server/session-responses";
+} from "@archboard/codex-app-server/session";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
@@ -23,7 +23,7 @@ import {
 	type ChildId,
 	type IdentityAuthorities,
 	type ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	createCodexWorkhorseStart,
 	type CodexWorkhorseStart,

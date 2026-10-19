@@ -11,16 +11,14 @@ import {
 	type ChildEpoch,
 	type ChildId,
 	type IdentityAuthority,
-} from "@archboard/codex-app-server/workbench-identity";
-import type {
-	HumanApprovalMethod,
-	ReverseResponse,
-	TransportServerRequest,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/identity";
 import {
+	type HumanApprovalMethod,
+	type ReverseResponse,
+	type TransportServerRequest,
 	CodexTransportOwnershipError,
 	CodexTransportUsageError,
-} from "@archboard/codex-app-server/transport-errors";
+} from "@archboard/codex-app-server/transport";
 
 export interface CapturedResponse {
 	readonly request: TransportServerRequest;

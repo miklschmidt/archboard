@@ -1,6 +1,6 @@
 import type { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
 import type { ApprovalSnapshot } from "@/runtime/codex-approvals";
-import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
+import type { ThreadId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,

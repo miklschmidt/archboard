@@ -2,8 +2,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { ArchboardContextSchema, createTextUserInput } from "../../codex-instructions/index.js";
-import { type SessionParams } from "@archboard/codex-app-server/session-api";
-import { type SessionTurn } from "@archboard/codex-app-server/session-responses";
+import type { SessionParams, SessionTurn } from "@archboard/codex-app-server/session";
 import {
 	createCodexEpochStore,
 	type CodexEpochStore,
@@ -24,7 +23,7 @@ import {
 	type OperationId,
 	type ThreadId,
 	type TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	createCodexWorkhorseOperations,
 	type WorkhorseOperationBinding,

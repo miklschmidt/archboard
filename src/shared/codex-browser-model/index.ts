@@ -8,7 +8,7 @@ import {
 	NullableNonNegativeIntegerSchema,
 	SafeUrlSchema,
 } from "@/shared/codex-browser-model/lib/scalars";
-import type { IdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { IdentityContext } from "@/shared/codex-browser-model/lib/scalars";
 
 /**

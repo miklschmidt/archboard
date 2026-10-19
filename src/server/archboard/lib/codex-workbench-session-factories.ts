@@ -13,10 +13,10 @@ import {
 } from "@/runtime/codex-coordinator-tools";
 import { createCodexCoordinator } from "@/runtime/codex-coordinator";
 import { createCodexRealtimeAdapter } from "@/runtime/codex-realtime";
-import { createSemanticContextPublisher } from "@archboard/codex-app-server/semantic-context-publisher";
+import { createSemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
 import { createCodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
 import { createCodexThreadContextController } from "@/runtime/codex-thread-context";
-import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
 import { createCodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
 import { createCodexWorkhorseQueue } from "@/runtime/codex-workhorse-queue";
 import { createCodexWorkhorseStart } from "@/runtime/codex-workhorse-start";

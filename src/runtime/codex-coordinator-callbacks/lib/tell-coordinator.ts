@@ -11,10 +11,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 
-import type {
-	CodexTransport,
-	DynamicServerRequest,
-} from "@archboard/codex-app-server/transport-types";
+import type { CodexTransport, DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type {
 	CoordinatorCallbackDelivery,
 	CoordinatorCallbackSource,

@@ -9,7 +9,7 @@ import {
 	type CallValidationFailure,
 	type ValidationContext,
 } from "@/runtime/codex-spoken-approval/lib/validation";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 
 /**
  * Why a resolver call is not one this gate owns: it must come from the coordinator's own tool

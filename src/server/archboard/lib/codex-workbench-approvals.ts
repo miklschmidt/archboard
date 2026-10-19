@@ -12,13 +12,13 @@ import type {
 	BrowserCommandId,
 	IdentityAuthorities,
 	ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	DynamicToolApprovalDecision,
 	DynamicToolApprovalPort,
 	DynamicToolApprovalRequest,
 } from "@/runtime/codex-dynamic-tools";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 
 interface PendingDynamicApproval {
 	readonly request: DynamicApprovalOwnerRequest;

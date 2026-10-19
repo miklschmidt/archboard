@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
 	WORKHORSE_INSTRUCTION_HASH,

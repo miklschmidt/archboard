@@ -3,7 +3,7 @@
 // point cannot move where the command lands. A superseded action never
 // overwrites the action that replaced it.
 
-import type { LoginId } from "@archboard/codex-app-server/workbench-identity";
+import type { LoginId } from "@archboard/codex-app-server/identity";
 import type {
 	ThreadLinkActionCompletion,
 	ThreadLinkActionName,

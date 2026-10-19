@@ -2,7 +2,7 @@
 // snapshots it moves through on the way from signed out to a conversation.
 
 import { BROWSER_IDLE_SPOKEN_APPROVAL, type BrowserSnapshot } from "@/shared/codex-browser-model";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
 
 const { decoder, validator } = createIdentityAuthorities().identity;

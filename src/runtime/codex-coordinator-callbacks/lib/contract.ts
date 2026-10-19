@@ -1,5 +1,5 @@
 import type { CoordinatorSnapshot } from "@/runtime/codex-coordinator";
-import type { SessionParams } from "@archboard/codex-app-server/session-api";
+import type { SessionParams } from "@archboard/codex-app-server/session";
 import type {
 	PaneFocusEvent,
 	PaneSelectionEvent,
@@ -7,7 +7,7 @@ import type {
 	SemanticChangeSignificance,
 	SemanticContextPublisher,
 	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context-types";
+} from "@archboard/codex-app-server/semantic-context";
 import type { SemanticSubjectKind } from "@archboard/board/pane-context";
 import type {
 	CodexThreadLinkClassifier,
@@ -27,7 +27,7 @@ import type {
 	CodexTransport,
 	DynamicServerRequest,
 	TransportServerNotification,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/transport";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -38,7 +38,7 @@ import type {
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 
 type SemanticCallbackSource = SettledSemanticChangeEvent | PaneFocusEvent | PaneSelectionEvent;
 

@@ -21,7 +21,7 @@ import { createCodexThreadUnload } from "@/runtime/codex-thread-unload";
 import { reviewedCoordinatorHashes } from "@/runtime/codex-coordinator/lib/review";
 import { assertCurrentEpoch, decideCandidate } from "@/runtime/codex-coordinator/lib/reuse";
 import { createCoordinatorStarter } from "@/runtime/codex-coordinator/lib/start";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import {
 	coordinatorError,
 	emptySnapshot,

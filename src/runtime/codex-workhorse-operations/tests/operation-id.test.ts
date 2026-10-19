@@ -5,7 +5,7 @@ import {
 	restoreIdentityAuthorities,
 	type JsonRpcRequestId,
 	type OperationId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import { rejected } from "./evidence.js";
 import { useFixtureGroup } from "./fixture-group.js";
 import { fixture as standaloneFixture, turn } from "./support.js";

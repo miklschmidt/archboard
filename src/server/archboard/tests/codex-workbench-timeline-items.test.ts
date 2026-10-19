@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
 
-import type { SessionThreadItem } from "@archboard/codex-app-server/session-responses";
+import type { SessionThreadItem } from "@archboard/codex-app-server/session";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import { createServerTimelineOwner } from "../codex-workbench-adapters.js";
 import {
 	dynamicToolCallItem,

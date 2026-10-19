@@ -12,9 +12,9 @@ import {
 	type IdentityAuthority,
 	type IdentityLedger,
 	type ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
-import type { SessionParams } from "@archboard/codex-app-server/session-api";
+} from "@archboard/codex-app-server/identity";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import type { SessionParams } from "@archboard/codex-app-server/session";
 import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,

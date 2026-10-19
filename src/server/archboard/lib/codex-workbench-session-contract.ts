@@ -5,15 +5,15 @@ import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks
 import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
 import type { CodexCoordinator } from "@/runtime/codex-coordinator";
 import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
-import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context-types";
+import type { CodexSession } from "@archboard/codex-app-server/session";
+import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
 import type { CodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
 import type { ThreadUnload } from "@/runtime/codex-thread-unload";
 import type {
 	CodexTransport,
 	TransportServerNotification,
-} from "@archboard/codex-app-server/transport-types";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+	DynamicServerRequest,
+} from "@archboard/codex-app-server/transport";
 import type { WorkhorseOperationEventListener } from "@/runtime/codex-workhorse-operations";
 import type {
 	ChildEpoch,
@@ -22,7 +22,7 @@ import type {
 	LogicalToolCallCorrelation,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type { BrowserRealtimeActions, TabSessionId } from "@/server/codex-workbench";
 import type { TabSessionEnding } from "@/server/archboard/lib/codex-workbench-session-end";
 import type { CoordinatorTurnHome } from "@/server/archboard/lib/codex-workbench-delegations";

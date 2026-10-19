@@ -1,4 +1,4 @@
-import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/workbench-identity";
+import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/identity";
 import { CodexDynamicToolsError } from "@/runtime/codex-dynamic-tools/lib/errors";
 import { encodeJsonText } from "@/runtime/codex-dynamic-tools/lib/text-bounds";
 import {

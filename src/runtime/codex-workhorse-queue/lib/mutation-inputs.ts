@@ -1,5 +1,5 @@
 import { createTextUserInput, type TextUserInput } from "@/runtime/codex-instructions";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	CodexWorkhorseQueueError,
 	type QueueMutationOutcome,

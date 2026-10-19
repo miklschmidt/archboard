@@ -3,10 +3,7 @@ import {
 	type RealtimeState,
 	type RealtimeTranscriptRecord,
 } from "@/shared/codex-realtime-contract";
-import type {
-	ItemId,
-	TrustedIdentityDecoder,
-} from "@archboard/codex-app-server/workbench-identity";
+import type { ItemId, TrustedIdentityDecoder } from "@archboard/codex-app-server/identity";
 import * as phase from "@/runtime/codex-realtime/lib/phase";
 import type { RealtimeSessionOps } from "@/runtime/codex-realtime/lib/session-ops";
 import type {

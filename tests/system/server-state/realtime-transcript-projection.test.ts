@@ -4,8 +4,8 @@ import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
 } from "../../../src/runtime/codex-realtime/index.js";
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
-import type { SessionParams } from "@archboard/codex-app-server/session-api";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import type { SessionParams } from "@archboard/codex-app-server/session";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../src/runtime/codex-spoken-approval/index.js";
 import { createCodexBrowserModel } from "../../../src/shared/codex-browser-model/index.js";
 import {
@@ -17,7 +17,7 @@ import {
 	type ChildEpoch,
 	type ChildId,
 	type ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	projectCodexBrowserState,
 	type BrowserProjectionInput,

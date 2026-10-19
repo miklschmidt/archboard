@@ -2,7 +2,15 @@ import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import {
+	createIdentityAuthorities,
+	type ChildEpoch,
+	type ChildId,
+	type IdentityAuthorities,
+	type ThreadId,
+	type TurnId,
+	type BrowserCommandId,
+} from "@archboard/codex-app-server/identity";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import type {
@@ -21,14 +29,6 @@ import type {
 	TabSessionId,
 } from "../index.js";
 import { createCodexWorkbenchGateway, parseTabSessionId } from "../index.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	IdentityAuthorities,
-	ThreadId,
-	TurnId,
-	BrowserCommandId,
-} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,

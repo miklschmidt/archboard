@@ -1,6 +1,6 @@
 import type { DynamicToolCallResponse } from "@/runtime/codex-thread-tools";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
-import type { TurnId } from "@archboard/codex-app-server/workbench-identity";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
+import type { TurnId } from "@archboard/codex-app-server/identity";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,

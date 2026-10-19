@@ -6,14 +6,14 @@ import type {
 	EpochOperationStatus,
 	EpochOperationOutcome,
 } from "@/runtime/codex-epoch";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
 import type {
+	CodexSession,
 	SessionLoadedThreadPageResult,
 	SessionThread,
 	SessionThreadPageResult,
 	SessionThreadSource,
-} from "@archboard/codex-app-server/session-responses";
-import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/session";
+import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/identity";
 import type {
 	ThreadLinkReason as AuthoredThreadLinkReason,
 	ThreadLinkState as AuthoredThreadLinkState,

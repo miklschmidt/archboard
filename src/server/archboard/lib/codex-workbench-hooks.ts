@@ -1,5 +1,5 @@
 import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
-import { CodexTransportRemoteError } from "@archboard/codex-app-server/transport-errors";
+import { CodexTransportRemoteError } from "@archboard/codex-app-server/transport";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,

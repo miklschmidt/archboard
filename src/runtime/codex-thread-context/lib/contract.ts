@@ -1,5 +1,5 @@
 import type { CodexEpochStore } from "@/runtime/codex-epoch";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
+import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { ArchboardContext, ThreadInjectItemsParams } from "@/runtime/codex-instructions";
 import type {
 	CodexThreadLinkPort,
@@ -10,13 +10,13 @@ import type {
 import type {
 	SemanticContextPublisher,
 	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context-types";
+} from "@archboard/codex-app-server/semantic-context";
 import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthority,
 	ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 
 /** The one exact child capability a delivery is allowed to use. */
 interface CodexThreadContextExecution {

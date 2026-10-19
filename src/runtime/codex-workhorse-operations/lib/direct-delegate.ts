@@ -1,6 +1,6 @@
 import { createAdditionalContext, createTextUserInput } from "@/runtime/codex-instructions";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
-import type { SessionTurn } from "@archboard/codex-app-server/session-responses";
+import type { SessionTurn } from "@archboard/codex-app-server/session";
 import {
 	CodexWorkhorseOperationsError,
 	type DelegateToWorkhorseRequest,

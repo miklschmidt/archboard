@@ -11,10 +11,7 @@ import type {
 	SpokenApprovalSnapshot,
 	SpokenApprovalToolResult,
 } from "../../codex-spoken-approval/index.js";
-import type {
-	DynamicServerRequest,
-	ReverseResponse,
-} from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest, ReverseResponse } from "@archboard/codex-app-server/transport";
 import {
 	COORDINATOR_TOOLS_OWNER,
 	createCodexCoordinatorTools,
@@ -33,7 +30,7 @@ import {
 	type OperationId,
 	type ThreadId,
 	type TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import { bindingFor, readyAuthority } from "./authority-support.js";
 import {
 	parseRealtimeCorrelationId,

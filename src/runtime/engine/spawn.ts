@@ -21,7 +21,7 @@ import {
 import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
-} from "@archboard/codex-app-server/executable";
+} from "@archboard/codex-app-server/process";
 import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
 import {
 	SERVER_STARTUP_READINESS_MS,

@@ -3,7 +3,7 @@ import type {
 	ChildId,
 	OperationId,
 	ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	EpochExecutionProof,
 	EpochOperationRecord,
