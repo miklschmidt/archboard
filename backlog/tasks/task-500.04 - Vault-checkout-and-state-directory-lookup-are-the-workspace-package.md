@@ -1,11 +1,11 @@
 ---
 id: TASK-500.04
 title: 'Vault, checkout and state-directory lookup are the workspace package'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 01:59'
-updated_date: '2026-10-19 02:48'
+updated_date: '2026-10-19 02:53'
 labels: []
 dependencies:
   - TASK-500.03
@@ -21,10 +21,10 @@ workspace is layer 2 of docs/design/package-map.md: shared/repositories, shared/
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 packages/workspace holds the listed sources in role folders with an exports interface that includes atomic-write, and every importer uses @archboard/workspace
-- [ ] #2 A browser subpath of workspace holds no node: import, and the canvas imports only that subpath
-- [ ] #3 The tests of the moved code live in packages/workspace/tests
-- [ ] #4 bun run check passes
+- [x] #1 packages/workspace holds the listed sources in role folders with an exports interface that includes atomic-write, and every importer uses @archboard/workspace
+- [x] #2 A browser subpath of workspace holds no node: import, and the canvas imports only that subpath
+- [x] #3 The tests of the moved code live in packages/workspace/tests
+- [x] #4 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -44,3 +44,9 @@ workspace is layer 2 of docs/design/package-map.md: shared/repositories, shared/
 <!-- SECTION:NOTES:BEGIN -->
 Moved 13 sources and 4 tests into packages/workspace (bcf744b6d). shared/language-servers split: shared/schemas/configurable-languages.ts (browser safe, export ./configurable-languages) and runtime/store/language-servers.ts (node:path command validation, ./language-servers). SOURCE_CHECKOUT walks up to the nearest archboard checkout instead of counting depth; a test pins it. Browser safety traced with a throwaway import-graph script (0 node imports reachable from frontend/main.tsx and src/ui) and bun run build:frontend. Vault bindings in .archboard/vault still name the old paths.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/workspace holds the vault, registry, checkout, state-dir, atomic-write and git code behind ten exports, in shared/schemas, runtime/store, runtime/clients, runtime/services and server/projections. shared/language-servers is split: configurable-languages is browser-safe and language-servers is Node-only. SOURCE_CHECKOUT now walks up to the nearest archboard checkout instead of counting directory depth, and a test pins it. module-paths stays in server/archboard (a server host fact). Browser safety was traced twice, by me and independently by Codex: 801 and 802 reachable files, no node: import. bun run check passes. Codex review of bcf744b6d found no defects. Left for a later task: the .archboard/vault boards still bind the old paths.
+<!-- SECTION:FINAL_SUMMARY:END -->
