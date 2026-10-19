@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 
-import type { GitGroupTerminationOperations } from "../testing.js";
-import { stopAndKillOwnedGroup } from "../testing.js";
-import type { ProcessGroupIdentity } from "../process-group.js";
-import type { ProcessObservation } from "../../../shared/process-observation/index.js";
+import type { GitGroupTerminationOperations } from "#runtime/processes/git-group-termination.ts";
+import { stopAndKillOwnedGroup } from "#runtime/processes/git-group-termination.ts";
+import type { ProcessGroupIdentity } from "#runtime/processes/group.ts";
+import type { ProcessObservation } from "#runtime/processes/observation.ts";
 
 const group: ProcessGroupIdentity = {
 	group: 41,

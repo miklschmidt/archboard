@@ -6,7 +6,7 @@ import { isAbsolute, join, relative } from "node:path";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
-} from "@/runtime/codex-process/process-group";
+} from "@archboard/process/codex-group";
 
 import { pidFilePath, readPidFile, sweepDeadPidFiles, writePidFile } from "../pidfile.js";
 import { stateDir } from "../state-dir.js";

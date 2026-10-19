@@ -6,8 +6,8 @@ import {
 	CodexProcessGroupError,
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
-} from "../process-group.js";
-import { readProcessObservation } from "../../../shared/process-observation/index.js";
+} from "#runtime/processes/codex-group.ts";
+import { readProcessObservation } from "#runtime/processes/observation.ts";
 
 async function waitForQuiescent(
 	identity: CodexProcessGroupIdentity,

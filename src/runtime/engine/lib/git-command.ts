@@ -1,7 +1,7 @@
 // Running one Git command without ever blocking Bun's process supervisor.
 //
 // A Git command is spawned into a detached process group owned by a small
-// child process (git-process-owner.ts), so that a hung or runaway Git can be
+// child process (git-owner.ts of the process package), so that a hung or runaway Git can be
 // killed as a group without taking anything else with it. Everything here is
 // about that discipline: bounded output, a timeout, cancellation, and noticing
 // the failures that only show once every handle has settled.
@@ -20,17 +20,16 @@ import {
 	processGroupExists,
 	processGroupHasOtherMember,
 	type ProcessGroupIdentity,
-} from "@/runtime/engine/process-group";
+} from "@archboard/process/group";
 import { asError, errorMessage } from "@archboard/diagnostics/thrown-error";
-import { stopAndKillOwnedGroup } from "@/runtime/engine/lib/git-group-termination";
+import { stopAndKillOwnedGroup } from "@archboard/process/git-group-termination";
 import { GitCommandError } from "@/runtime/engine/lib/git-failure";
 import type { GitFailure } from "@/runtime/engine/lib/git-failure";
 import { drainBounded } from "@/runtime/engine/lib/git-output";
 import type { BoundedDrain, DrainOutcome } from "@/runtime/engine/lib/git-output";
 
-// The owner lives beside the module that used to run Git, one directory up
-// from here.
-const GIT_PROCESS_OWNER = fileURLToPath(new URL("../git-process-owner.ts", import.meta.url));
+// The owner script is an export of the process package, which Bun resolves to its file.
+const GIT_PROCESS_OWNER = fileURLToPath(import.meta.resolve("@archboard/process/git-owner"));
 
 /**
  * Poll until a process group is gone or the cleanup grace runs out.

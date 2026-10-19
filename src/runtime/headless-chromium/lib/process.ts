@@ -10,7 +10,7 @@ import { dlopen } from "bun:ffi";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
-} from "@/runtime/codex-process/process-group";
+} from "@archboard/process/codex-group";
 import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
 
 import { isJsonRecord } from "@/runtime/headless-chromium/lib/devtools";

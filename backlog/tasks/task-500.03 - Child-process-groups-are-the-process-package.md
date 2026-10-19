@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-19 01:59'
-updated_date: '2026-10-19 02:15'
+updated_date: '2026-10-19 02:29'
 labels: []
 dependencies:
   - TASK-500.02
@@ -37,3 +37,9 @@ process is layer 1 of docs/design/package-map.md: shared/process-observation, ru
 5. Move the tests of the moved code: shared/process-observation/tests, engine/tests/git-group-termination.test.ts, codex-process/tests/process-group-*.test.ts. Keep the real-OS test.
 6. Rewrite importers with /tmp/pm/move-package.ts, read the diff, fix what it cannot (URL forms). Update docs/agents/boundaries.md. bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Step 1 done: group cleanup diagnostics.failure returns Error. Step 2: packages/process holds observation, group, git-owner, git-group-termination, codex-group, group-cleanup under runtime/processes. No ./testing export: the two testing.ts files only served tests that moved into the package, which import private files directly. process-group-freeze.test.ts stays in codex-process/tests: it drives createCodexProcessForTesting and the Codex test support, so moving it would make process depend on codex-process. The git owner script is found with import.meta.resolve('@archboard/process/git-owner').
+<!-- SECTION:NOTES:END -->

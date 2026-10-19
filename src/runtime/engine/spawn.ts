@@ -22,7 +22,7 @@ import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
 } from "@/runtime/codex-process/executable";
-import { createCodexProcessGroupOperations } from "@/runtime/codex-process/process-group";
+import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
 import {
 	SERVER_STARTUP_READINESS_MS,
 	SERVER_STOP_CONFIRM_MS,
@@ -31,7 +31,7 @@ import {
 	SERVER_STOP_PROBE_POLL_MS,
 } from "@archboard/timing";
 import { SERVER_STARTUP_TERMINAL_FD_ENV } from "@/shared/server-startup-terminal";
-import { readProcessObservation } from "@/shared/process-observation";
+import { readProcessObservation } from "@archboard/process/observation";
 import {
 	completeFailedServerCleanup,
 	createServerStartupProtocolReader,

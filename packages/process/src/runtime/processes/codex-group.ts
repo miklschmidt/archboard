@@ -1,9 +1,9 @@
-import { errnoCode } from "@/runtime/codex-process/lib/errno-code";
+import { errnoCode } from "@archboard/diagnostics/errno";
 import {
 	listProcessGroupObservations,
 	readProcessObservation,
 	type ProcessObservation,
-} from "@/shared/process-observation";
+} from "#runtime/processes/observation.ts";
 
 type CodexProcessGroupSignal = "SIGTERM" | "SIGKILL" | "SIGSTOP" | "SIGCONT";
 type CodexProcessGroupInspection = "quiescent" | "owned" | "reused" | "unproven";

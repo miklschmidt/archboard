@@ -74,7 +74,7 @@ jobs:
       - name: Verify native ownership, storage, and board paths
         run: >-
           bun test --isolate --max-concurrency=1
-          src/shared/process-observation/tests src/runtime/codex-process/tests
+          packages/process/tests src/runtime/codex-process/tests
           src/runtime/engine/tests/git-async.test.ts
           src/runtime/engine/tests/pidfile.test.ts
           src/runtime/headless-chromium/tests/startup.test.ts

@@ -21,7 +21,10 @@ import type { FixtureRecord } from "./support/codex-workbench-lifecycle.ts";
 const { join } = path;
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
-const processObservationModule = join(repoRoot, "src/shared/process-observation/index.ts");
+const processObservationModule = join(
+	repoRoot,
+	"packages/process/src/runtime/processes/observation.ts",
+);
 
 function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, "defer">>): string {
 	const root = mkdtempSync(join(tmpdir(), "archboard-replacement-census-"));

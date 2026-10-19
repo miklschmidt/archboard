@@ -82,6 +82,10 @@
       "name": "@archboard/diagnostics",
       "version": "0.0.0",
     },
+    "packages/process": {
+      "name": "@archboard/process",
+      "version": "0.0.0",
+    },
     "packages/timing": {
       "name": "@archboard/timing",
       "version": "0.0.0",
@@ -107,6 +111,8 @@
     "@archboard/elk-rs-linux-x64-musl": ["@archboard/elk-rs-linux-x64-musl@0.11.3", "", { "os": "linux", "cpu": "x64" }, "sha512-wD0aSayLK9IxmERuM57N2Lo8hlvC8WjslJ2xpm4TK0ObzdrZiPHAB3AYWCEXlx15E9sRfUDcuQ/Ok5oJ83OPQw=="],
 
     "@archboard/elk-rs-win32-x64-msvc": ["@archboard/elk-rs-win32-x64-msvc@0.11.3", "", { "os": "win32", "cpu": "x64" }, "sha512-0gur0QMU4kIXeE2dPK4ZG095KOUhxuNGzJdGpHkJRb91NGbFAOtEoIgK/Gv5ihjbQVuD5dormpq5y5fkwGLa3w=="],
+
+    "@archboard/process": ["@archboard/process@workspace:packages/process"],
 
     "@archboard/timing": ["@archboard/timing@workspace:packages/timing"],
 

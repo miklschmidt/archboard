@@ -2,7 +2,7 @@ import { spawn as nodeSpawn } from "node:child_process";
 
 import { verifyCodexExecutable } from "@/runtime/codex-process/lib/executable";
 import type { CodexProcessTestOptions } from "@/runtime/codex-process/lib/process-contract";
-import { createCodexProcessGroupOperations } from "@/runtime/codex-process/lib/process-group";
+import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
 import { prepareCodexStorage } from "@/runtime/codex-process/lib/storage";
 import type { SpawnChild, Timer } from "@/runtime/codex-process/lib/process-contract";
 

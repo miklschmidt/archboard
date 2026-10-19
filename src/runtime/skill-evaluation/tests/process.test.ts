@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { ownProcess, runProcess, startServer } from "@/runtime/skill-evaluation/index";
-import { readProcessObservation } from "@/shared/process-observation";
+import { readProcessObservation } from "@archboard/process/observation";
 import { SKILL_EVAL_HEALTH_POLL_MS, SKILL_EVAL_HEALTH_REQUEST_MS } from "@archboard/timing";
 
 const env = { PATH: process.env["PATH"] ?? "" };

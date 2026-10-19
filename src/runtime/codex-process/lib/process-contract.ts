@@ -15,7 +15,7 @@ import type { VerifiedCodexExecutable } from "@/runtime/codex-process/lib/execut
 import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupOperations,
-} from "@/runtime/codex-process/lib/process-group";
+} from "@archboard/process/codex-group";
 import type {
 	CodexStorageFileSystem,
 	CodexStorageInput,

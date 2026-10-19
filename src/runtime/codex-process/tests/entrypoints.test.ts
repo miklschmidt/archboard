@@ -4,7 +4,6 @@ import * as lifecycle from "../index.js";
 import { createCodexDiagnosticsBuffer } from "../diagnostics.js";
 import { buildCodexChildEnvironment } from "../environment.js";
 import { verifyCodexExecutable } from "../executable.js";
-import { createCodexProcessGroupOperations } from "../process-group.js";
 import { prepareCodexStorage } from "../storage.js";
 import { createCodexProcessForTesting } from "../testing.js";
 
@@ -19,7 +18,6 @@ describe("Codex process entrypoints", () => {
 		expect(createCodexDiagnosticsBuffer).toBeFunction();
 		expect(buildCodexChildEnvironment).toBeFunction();
 		expect(verifyCodexExecutable).toBeFunction();
-		expect(createCodexProcessGroupOperations).toBeFunction();
 		expect(prepareCodexStorage).toBeFunction();
 		expect(createCodexProcessForTesting).toBeFunction();
 	});

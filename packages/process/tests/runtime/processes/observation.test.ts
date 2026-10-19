@@ -4,8 +4,8 @@ import {
 	listProcessGroupObservations,
 	listProcessObservations,
 	readProcessObservation,
-} from "../index.js";
-import { parseLinuxProcessStat } from "../testing.js";
+} from "#runtime/processes/observation.ts";
+import { parseLinuxProcessStat } from "#runtime/processes/linux-stat.ts";
 
 function linuxStat(state: string, parentPid = "11", pgid = "29"): string {
 	const fields = [state, parentPid, pgid, ...Array.from({ length: 16 }, () => "0"), "424242"];

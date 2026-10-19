@@ -4,12 +4,12 @@ import {
 	ownedProcessGroupMembers,
 	signalOwnedProcessGroup,
 	type ProcessGroupIdentity,
-} from "@/runtime/engine/process-group";
+} from "#runtime/processes/group.ts";
 import {
 	awaitFrozenGroup,
 	readProcessObservation,
 	type ProcessObservation,
-} from "@/shared/process-observation";
+} from "#runtime/processes/observation.ts";
 import { GIT_PROCESS_GROUP_CLEANUP_MS, GIT_PROCESS_GROUP_POLL_MS } from "@archboard/timing";
 
 type KillableProcess = Pick<Subprocess, "kill">;

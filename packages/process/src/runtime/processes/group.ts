@@ -3,7 +3,7 @@ import {
 	listProcessGroupObservations,
 	readProcessObservation,
 	type ProcessObservation,
-} from "@/shared/process-observation";
+} from "#runtime/processes/observation.ts";
 
 interface ProcessIdentity {
 	readonly pid: number;

@@ -14,7 +14,7 @@ import type {
 import type {
 	CodexProcessGroupInspection,
 	CodexProcessGroupSignal,
-} from "@/runtime/codex-process/process-group";
+} from "@archboard/process/codex-group";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import type {
 	ServerStartupProtocolReader,

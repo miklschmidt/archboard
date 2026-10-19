@@ -1,4 +1,4 @@
-import { awaitFrozenGroup } from "@/shared/process-observation";
+import { awaitFrozenGroup } from "#runtime/processes/observation.ts";
 import {
 	CODEX_GROUP_FREEZE_MS,
 	CODEX_TERM_GRACE_MS,
@@ -8,7 +8,7 @@ import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupInspection,
 	CodexProcessGroupOperations,
-} from "@/runtime/codex-process/lib/process-group";
+} from "#runtime/processes/codex-group.ts";
 
 type Timer = ReturnType<typeof setTimeout>;
 

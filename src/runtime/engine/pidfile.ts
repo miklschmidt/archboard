@@ -8,7 +8,7 @@ import {
 	recordedOwnerIsGone,
 	recordedOwnerPid,
 	recordedOwnerStartTime,
-} from "@/shared/process-observation";
+} from "@archboard/process/observation";
 
 const PID_FILE_NAME = /^server-\d+\.pid$/u;
 
