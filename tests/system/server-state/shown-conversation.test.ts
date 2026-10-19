@@ -17,8 +17,8 @@ import {
 import { createRequester } from "./support/http.ts";
 import { coordinatorModelFixture } from "./fixtures/fake-codex-production-data.ts";
 import { SHOWN_CONVERSATION_ROUTE } from "@archboard/workbench/browser-contract";
+import { productionServer } from "./support/production-server.ts";
 
-const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 const repoRoot = resolve(import.meta.dir, "../../..");
 
@@ -69,7 +69,7 @@ test("the page's activation changes the conversation every pane of a tab shows, 
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
 		const server = await startOwnedServer({
-			serverPath,
+			...productionServer,
 			vault: fixture.vault,
 			env: {
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,

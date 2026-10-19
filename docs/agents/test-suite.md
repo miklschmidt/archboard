@@ -67,6 +67,12 @@ the browser shows.
   vault, so a page opens in that vault. A test about the registry names its
   own with `ARCHBOARD_REPOS`, and the server then lists only what that file
   holds.
+- A test starts the real entry, `apps/server/src/server.ts`. Nothing imports the
+  app. A test that has to replace a module before the server loads it passes a
+  `preload` script to `startOwnedServer` (`bun --preload`): the Codex stand-in
+  of `tests/system/server-state/support/production-server.ts`, the failed
+  initial send and the HTTP failures of `tests/system/process-contracts/`.
+  The tests of the app's own parts are in `apps/server/tests/`.
 - A command runs in the directory that holds its vault, with the registry of
   the server it talks to: `runServerCli` in `tests/system/support/run-cli.ts`
   and in the browser support. It never runs in this checkout, because there it

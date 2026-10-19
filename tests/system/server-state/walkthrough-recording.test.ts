@@ -29,8 +29,8 @@ import {
 } from "./support/codex-production.ts";
 import { ffmpegCalls, frameManifest, prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
 import { createRequester } from "./support/http.ts";
+import { productionServer } from "./support/production-server.ts";
 
-const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 const repoRoot = join(import.meta.dir, "../../..");
 const BOARD = "tour";
@@ -57,7 +57,7 @@ test(
 			const fixture = prepareProductionFixture(resources, executableSource);
 			writeFileSync(fixture.controlPath, JSON.stringify({ narrates: true }));
 			const server = await startOwnedServer({
-				serverPath,
+				...productionServer,
 				vault: fixture.vault,
 				env: {
 					ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,

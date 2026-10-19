@@ -12,6 +12,7 @@ import {
 } from "./support/codex-production.ts";
 import { createRequester, sleep, waitFor } from "./support/http.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
+import { productionServer } from "./support/production-server.ts";
 
 /** As much of a board as this test reads back. */
 interface SemanticBoardReply {
@@ -25,7 +26,6 @@ interface SemanticBoardReply {
 }
 // Long enough for a callback to be delivered: the old appends arrived well inside it.
 const PANE_TELEMETRY_SETTLE_MS = 600;
-const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 
 // While voice is live a pane reports what it is reading and the server orders those reports. What
@@ -38,7 +38,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
 		const server = await startOwnedServer({
-			serverPath,
+			...productionServer,
 			vault: fixture.vault,
 			env: {
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
@@ -291,7 +291,7 @@ test("a command's context is its own pane's while another tab also shows pane A"
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
 		const server = await startOwnedServer({
-			serverPath,
+			...productionServer,
 			vault: fixture.vault,
 			env: {
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { join, resolve as resolvePath } from "node:path";
 import { WebSocket } from "ws";
@@ -20,12 +20,12 @@ import {
 	processExists,
 	waitForProcessExit,
 } from "../support/owned-server.ts";
-import { CODEX_PROCESS_MODULE_PATH } from "../support/codex-process-module.ts";
+import { productionServer } from "../server-state/support/production-server.ts";
 import { records } from "./support/codex-workbench-lifecycle.ts";
 
 const repoRoot = resolvePath(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
-const serverEntry = join(repoRoot, "src/server.ts");
+const httpFailurePreload = join(import.meta.dir, "fixtures/http-failure-preload.ts");
 type HttpFailureMode = "bind-race" | "runtime-error" | "delayed-listen-cancel";
 
 async function freePort(): Promise<number> {
@@ -44,111 +44,12 @@ async function freePort(): Promise<number> {
 	return address.port;
 }
 
-function wrapperSource(fixture: ProductionFixture, mode: "bind-race" | "runtime-error"): string {
-	const httpFactoryModule = join(repoRoot, "src/server/archboard/lib/http-server.ts");
-	const bindRace = mode === "bind-race";
-	return (
-		`import { mock } from "bun:test";\n` +
-		`const { createServer: createRealServer } = process.getBuiltinModule("http");\n` +
-		`let ownedServer;\n` +
-		`let rivalServer;\n` +
-		`mock.module(${JSON.stringify(httpFactoryModule)}, () => ({ createServerHttpServer: (handler) => {\n` +
-		`  ownedServer = createRealServer(handler);\n` +
-		(bindRace
-			? `  const realListen = ownedServer.listen.bind(ownedServer);\n` +
-				`  ownedServer.listen = (...args) => {\n` +
-				`    const options = args[0];\n` +
-				`    const port = options && typeof options === "object" ? options.port : options;\n` +
-				`    const host = options && typeof options === "object" ? options.host : args[1];\n` +
-				`    const listening = args.findLast((value) => typeof value === "function");\n` +
-				`    rivalServer = createRealServer();\n` +
-				`    rivalServer.listen(port, host, () => {\n` +
-				`      ownedServer.once("error", () => rivalServer.close());\n` +
-				`      realListen(...args);\n` +
-				`    });\n` +
-				`    return ownedServer;\n` +
-				`  };\n`
-			: "") +
-		`  return ownedServer;\n` +
-		`} }));\n` +
-		`const actualExecutable = await import(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)});\n` +
-		`mock.module(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
-		`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
-		`await startServer();\n` +
-		(mode === "runtime-error"
-			? `process.on("SIGUSR2", () => ownedServer.emit("error", Object.assign(new Error("injected runtime HTTP failure"), { code: "EIO" })));\n`
-			: "")
-	);
-}
-
-function delayedListenWrapperSource(
-	fixture: ProductionFixture,
-	pendingPath: string,
-	outcomePath: string,
-): string {
-	const httpFactoryModule = join(repoRoot, "src/server/archboard/lib/http-server.ts");
-	return (
-		`import { writeFileSync } from "node:fs";\n` +
-		`import { mock } from "bun:test";\n` +
-		`const { createServer: createRealServer } = process.getBuiltinModule("http");\n` +
-		`let ownedServer;\n` +
-		`let pending = false;\n` +
-		`let lateListen = () => {};\n` +
-		`mock.module(${JSON.stringify(httpFactoryModule)}, () => ({ createServerHttpServer: (handler) => {\n` +
-		`  ownedServer = createRealServer(handler);\n` +
-		`  const realListen = ownedServer.listen.bind(ownedServer);\n` +
-		`  ownedServer.listen = (...args) => {\n` +
-		`    const options = args[0];\n` +
-		`    const listening = args.findLast((value) => typeof value === "function");\n` +
-		`    pending = true;\n` +
-		`    writeFileSync(${JSON.stringify(pendingPath)}, "pending");\n` +
-		`    lateListen = () => {\n` +
-		`      if (options && typeof options === "object") {\n` +
-		`        const { signal: _signal, ...withoutSignal } = options;\n` +
-		`        realListen(withoutSignal, listening);\n` +
-		`      } else {\n` +
-		`        realListen(...args);\n` +
-		`      }\n` +
-		`    };\n` +
-		`    if (options && typeof options === "object" && options.signal) {\n` +
-		`      options.signal.addEventListener("abort", () => {\n` +
-		`        pending = false;\n` +
-		`        ownedServer.emit("close");\n` +
-		`      }, { once: true });\n` +
-		`    }\n` +
-		`    return ownedServer;\n` +
-		`  };\n` +
-		`  return ownedServer;\n` +
-		`} }));\n` +
-		`const actualExecutable = await import(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)});\n` +
-		`mock.module(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
-		`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
-		`try {\n` +
-		`  await startServer();\n` +
-		`} catch {\n` +
-		`  if (!pending) {\n` +
-		`    writeFileSync(${JSON.stringify(outcomePath)}, "listen-cancelled");\n` +
-		`  } else {\n` +
-		`    await new Promise((resolve, reject) => {\n` +
-		`      ownedServer.once("error", reject);\n` +
-		`      ownedServer.once("listening", () => {\n` +
-		`        writeFileSync(${JSON.stringify(outcomePath)}, "late-bind-after-stop");\n` +
-		`        ownedServer.close((error) => error ? reject(error) : resolve());\n` +
-		`      });\n` +
-		`      lateListen();\n` +
-		`    });\n` +
-		`  }\n` +
-		`}\n`
-	);
-}
-
 async function spawnServer(
 	resources: AsyncDisposableStack,
 	fixture: ProductionFixture,
 	mode: HttpFailureMode,
 ) {
 	const port = await freePort();
-	const wrapper = join(fixture.root, `${mode}-server.ts`);
 	const pendingPath = join(fixture.root, `${mode}.pending`);
 	const outcomePath = join(fixture.root, `${mode}.outcome`);
 	const paths = {
@@ -160,27 +61,34 @@ async function spawnServer(
 	for (const directory of Object.values(paths)) {
 		mkdirSync(directory, { recursive: true, mode: 0o700 });
 	}
-	writeFileSync(
-		wrapper,
-		mode === "delayed-listen-cancel"
-			? delayedListenWrapperSource(fixture, pendingPath, outcomePath)
-			: wrapperSource(fixture, mode),
+	const child = spawn(
+		process.execPath,
+		[
+			"--preload",
+			productionServer.preload,
+			"--preload",
+			httpFailurePreload,
+			productionServer.serverPath,
+		],
+		{
+			cwd: repoRoot,
+			detached: true,
+			env: buildOwnedServerEnvironment({
+				paths,
+				port,
+				registry: listOnlyVault(join(fixture.root, `${mode}-repos.json`), fixture.vault),
+				env: {
+					ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+					ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+					ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+					ARCHBOARD_TEST_HTTP_FAILURE: mode,
+					ARCHBOARD_TEST_HTTP_PENDING_PATH: pendingPath,
+					ARCHBOARD_TEST_HTTP_OUTCOME_PATH: outcomePath,
+				},
+			}),
+			stdio: ["ignore", "pipe", "pipe"],
+		},
 	);
-	const child = spawn(process.execPath, [wrapper], {
-		cwd: repoRoot,
-		detached: true,
-		env: buildOwnedServerEnvironment({
-			paths,
-			port,
-			registry: listOnlyVault(join(fixture.root, `${mode}-repos.json`), fixture.vault),
-			env: {
-				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
-				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
-				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
-			},
-		}),
-		stdio: ["ignore", "pipe", "pipe"],
-	});
 	if (child.pid === undefined) {
 		throw new Error(`${mode} server has no pid.`);
 	}
@@ -237,7 +145,7 @@ test(
 					),
 				),
 			]);
-			expect(result).toEqual({ code: 0, signal: null });
+			expect(result.signal).toBeNull();
 			expect(readFileSync(server.outcomePath, "utf8")).toBe("listen-cancelled");
 
 			const childPid = records(fixture.logPath).find(

@@ -117,7 +117,10 @@ function comparedAdded(board: string, args: readonly string[]): string[] {
 }
 
 beforeAll(async () => {
-	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({
+		serverPath: path.join(repoRoot, "apps/server/src/server.ts"),
+		vault,
+	});
 	stack("built", "current");
 	stack("planned", "draft");
 });

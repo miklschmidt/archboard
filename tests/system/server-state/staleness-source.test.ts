@@ -31,7 +31,7 @@ describe.serial("source staleness", () => {
 		const vault = vaultIn(join(root, "vault"));
 		const state = join(root, "state");
 		const server = await startOwnedServer({
-			serverPath: join(repoRoot, "src/server.ts"),
+			serverPath: join(repoRoot, "apps/server/src/server.ts"),
 			vault,
 			env: { XDG_STATE_HOME: state, LOG_FILE_PATH: join(root, "server.log") },
 		});
@@ -65,7 +65,7 @@ describe.serial("source staleness", () => {
 		// checkout's source refuses (ADR 0049).
 		expect(first.source.checkout).toBe(realpathSync.native(repoRoot));
 		expect(first.source.stale).toBeFalse();
-		expect(first.source.newestFile).toMatch(/^(src|packages)\//);
+		expect(first.source.newestFile).toMatch(/^(src|packages|apps)\//);
 		expect(Number.isNaN(Date.parse(first.source.evaluatedAt))).toBeFalse();
 		expect(Number.isNaN(Date.parse(first.source.newestAt))).toBeFalse();
 		const quiet = cli();
@@ -76,7 +76,10 @@ describe.serial("source staleness", () => {
 		// A file of a workspace package counts as source too.
 		const changedFile = "packages/timing/src/shared/constants/timing.ts";
 		const touched = join(repoRoot, changedFile);
-		const edit = reversibleCheckoutEdit(repoRoot, [touched]);
+		// So does a file of the server app, which the server loads as its entry.
+		const appFile = "apps/server/src/server.ts";
+		const appTouched = join(repoRoot, appFile);
+		const edit = reversibleCheckoutEdit(repoRoot, [touched, appTouched]);
 		resources.defer(() => edit.restore());
 		edit.edit(touched, (source) => source);
 		const stale = await waitFor(async () => {
@@ -93,5 +96,12 @@ describe.serial("source staleness", () => {
 		expect(loud.json.stale?.changedFile).toBe(changedFile);
 		expect(loud.stderr).toMatch(/answering from the older code/);
 		expect(loud.stderr).toMatch(/archboard restart/);
+
+		edit.edit(appTouched, (source) => source);
+		const appStale = await waitFor(async () => {
+			const current = await health();
+			return current.source.newestFile === appFile ? current : undefined;
+		}, "server to report touched app source");
+		expect(appStale?.source.stale).toBeTrue();
 	}, 30_000);
 });

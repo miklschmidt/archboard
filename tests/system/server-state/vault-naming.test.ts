@@ -79,7 +79,7 @@ describe.serial("every call names its vault", () => {
 		const vaultB = vaultIn(join(root, "vault-b"));
 		ensureSemanticVaultConfiguration(vaultB);
 		const server = await startOwnedServer({
-			serverPath: join(repoRoot, "src/server.ts"),
+			serverPath: join(repoRoot, "apps/server/src/server.ts"),
 			vault: vaultA,
 			env: { LOG_FILE_PATH: join(root, "server.log") },
 		});
@@ -216,7 +216,7 @@ describe.serial("every call names its vault", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-vault-refused-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const server = await startOwnedServer({
-			serverPath: join(repoRoot, "src/server.ts"),
+			serverPath: join(repoRoot, "apps/server/src/server.ts"),
 			vault: vaultIn(join(root, "vault")),
 			env: { LOG_FILE_PATH: join(root, "server.log") },
 		});
@@ -284,7 +284,7 @@ describe.serial("every call names its vault", () => {
 		resources.defer(() => fixture.dispose());
 		// The fixture's registry lists nothing, and its vault is not in it.
 		const server = await startOwnedServer({
-			serverPath: join(repoRoot, "src/server.ts"),
+			serverPath: join(repoRoot, "apps/server/src/server.ts"),
 			vault: fixture.vault,
 			env: fixture.serverEnvironment,
 		});

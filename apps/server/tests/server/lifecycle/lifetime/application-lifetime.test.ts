@@ -1,0 +1,350 @@
+import { describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import winston from "winston";
+
+import {
+	ServerApplicationBusyError,
+	createServerApplicationLifetime,
+	createServerMutationAdmission,
+} from "#server/lifecycle/lifetime/application-lifetime.ts";
+import { closeLogger } from "@archboard/diagnostics/logger";
+
+describe("server application lifetime", () => {
+	test("starts in order and stops every owner in reverse order", async () => {
+		const actions: string[] = [];
+		const lifetime = createServerApplicationLifetime({
+			resources: ["engine", "codex", "http", "browser", "signals"].map((name) => ({
+				name,
+				start: () => {
+					actions.push(`start:${name}`);
+				},
+				stop: () => {
+					actions.push(`stop:${name}`);
+				},
+			})),
+		});
+
+		await lifetime.start();
+		expect(lifetime.phase()).toBe("running");
+		await lifetime.stop("test");
+		expect(lifetime.phase()).toBe("stopped");
+		expect(lifetime.cleanupProven()).toBeTrue();
+		expect(actions).toEqual([
+			"start:engine",
+			"start:codex",
+			"start:http",
+			"start:browser",
+			"start:signals",
+			"stop:signals",
+			"stop:browser",
+			"stop:http",
+			"stop:codex",
+			"stop:engine",
+		]);
+	});
+
+	test("unwinds partial startup and a fresh owner can start afterwards", async () => {
+		const actions: string[] = [];
+		const failed = createServerApplicationLifetime({
+			resources: [
+				{
+					name: "engine",
+					stop: () => {
+						actions.push("stop:engine");
+					},
+				},
+				{
+					name: "codex",
+					start: () => {
+						throw new Error("codex failed");
+					},
+					stop: () => {
+						actions.push("stop:codex");
+					},
+				},
+			],
+			onStartupFailure: (error) => {
+				actions.push(`failed:${(error as Error).message}`);
+			},
+		});
+
+		await expect(failed.start()).rejects.toThrow("codex failed");
+		expect(failed.phase()).toBe("failed");
+		expect(failed.cleanupProven()).toBeTrue();
+		// The failure is heard while the log it is written to is still open.
+		expect(actions).toEqual(["failed:codex failed", "stop:codex", "stop:engine"]);
+
+		const replacement = createServerApplicationLifetime({
+			resources: [{ name: "engine", stop: () => undefined }],
+		});
+		await replacement.start();
+		expect(replacement.phase()).toBe("running");
+		await replacement.stop("test");
+	});
+
+	test("continues reverse teardown after failures and reports them", async () => {
+		const actions: string[] = [];
+		const lifetime = createServerApplicationLifetime({
+			resources: ["engine", "codex", "http"].map((name) => ({
+				name,
+				stop: () => {
+					actions.push(name);
+					if (name !== "codex") {
+						throw new Error(`${name} failed`);
+					}
+				},
+			})),
+		});
+		await lifetime.start();
+
+		await expect(lifetime.stop("test")).rejects.toThrow(
+			"Archboard server application cleanup failed",
+		);
+		expect(actions).toEqual(["http", "codex", "engine"]);
+		expect(lifetime.phase()).toBe("failed");
+		expect(lifetime.cleanupProven()).toBeFalse();
+	});
+
+	test("shares one terminal shutdown across concurrent and repeated callers", async () => {
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => void (release = resolve));
+		let stops = 0;
+		const lifetime = createServerApplicationLifetime({
+			resources: [
+				{
+					name: "engine",
+					stop: async () => {
+						stops++;
+						await gate;
+					},
+				},
+			],
+		});
+		await lifetime.start();
+
+		const first = lifetime.stop("test");
+		const concurrent = lifetime.stop("SIGTERM");
+		expect(concurrent).toBe(first);
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		expect(stops).toBe(1);
+		release();
+		await first;
+		expect(lifetime.stop("test")).toBe(first);
+		await lifetime.stop("test");
+		expect(stops).toBe(1);
+	});
+
+	test("forces a timed owner and waits for its original stop to settle", async () => {
+		const actions: string[] = [];
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => void (release = resolve));
+		const lifetime = createServerApplicationLifetime({
+			observe: ({ action, resource }) => {
+				if (resource !== null && (action === "force" || action === "forced")) {
+					actions.push(`${action}:${resource}`);
+				}
+			},
+			resources: [
+				{
+					name: "http",
+					stopGraceMs: 5,
+					stop: async () => {
+						actions.push("stop:http");
+						await gate;
+						actions.push("settled:http");
+					},
+					forceStop: () => {
+						actions.push("force-action:http");
+						release();
+					},
+				},
+			],
+		});
+		await lifetime.start();
+
+		await lifetime.stop("test");
+		expect(actions).toEqual([
+			"stop:http",
+			"force:http",
+			"force-action:http",
+			"settled:http",
+			"forced:http",
+		]);
+		expect(lifetime.phase()).toBe("stopped");
+	});
+
+	test("cancels a partially started owner and unwinds every entered owner", async () => {
+		const actions: string[] = [];
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => void (release = resolve));
+		const lifetime = createServerApplicationLifetime({
+			resources: [
+				{
+					name: "signals",
+					stop: () => {
+						actions.push("stop:signals");
+					},
+				},
+				{
+					name: "codex",
+					start: async (signal) => {
+						actions.push("start:codex");
+						signal.addEventListener("abort", release, { once: true });
+						await gate;
+						throw new Error("codex startup canceled");
+					},
+					stop: () => {
+						actions.push("stop:codex");
+						release();
+					},
+				},
+			],
+		});
+
+		const starting = lifetime.start();
+		expect(lifetime.phase()).toBe("starting");
+		await lifetime.stop("SIGTERM");
+		await expect(starting).rejects.toThrow("codex startup canceled");
+		expect(actions).toEqual(["start:codex", "stop:codex", "stop:signals"]);
+		expect(lifetime.phase()).toBe("stopped");
+	});
+
+	test("a stop that cannot drain leaves the server running and admitting writes", async () => {
+		const actions: string[] = [];
+		let quiesces = 0;
+		let resumes = 0;
+		const lifetime = createServerApplicationLifetime({
+			resources: [
+				{
+					name: "engine",
+					stop: () => {
+						actions.push("stop");
+					},
+				},
+			],
+			quiesce: () => {
+				quiesces++;
+				if (quiesces === 1) {
+					throw new Error("a write would not settle");
+				}
+			},
+			resume: () => {
+				resumes++;
+			},
+		});
+		await lifetime.start();
+
+		// Nothing was torn down, so the server goes back to serving rather than
+		// sitting in a half-stopped state nobody asked for.
+		await expect(lifetime.stop("test")).rejects.toThrow("a write would not settle");
+		expect(lifetime.phase()).toBe("running");
+		expect(resumes).toBe(1);
+		expect(actions).toEqual([]);
+
+		await lifetime.stop("test");
+		expect(quiesces).toBe(2);
+		expect(actions).toEqual(["stop"]);
+		expect(lifetime.phase()).toBe("stopped");
+	});
+
+	test("tracks mutation work beyond response settlement", async () => {
+		const admission = createServerMutationAdmission({ drainTimeoutMs: 100 });
+		const lease = admission.admit("POST /api/board-write");
+		if (lease === null) {
+			throw new Error("The first mutation was not admitted.");
+		}
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => void (release = resolve));
+		const work = lease.track("POST /api/board-write board-lock wait", () => gate);
+		lease.finish();
+		expect(admission.active()).toBe(1);
+
+		const draining = admission.quiesce();
+		expect(admission.accepting()).toBeFalse();
+		release();
+		await work;
+		await draining;
+		expect(admission.active()).toBe(0);
+	});
+
+	test("bounded mutation refusal is shared, named, resumed, and retryable", async () => {
+		const admission = createServerMutationAdmission({ drainTimeoutMs: 5 });
+		const lease = admission.admit("POST /api/selection");
+		if (lease === null) {
+			throw new Error("The first mutation was not admitted.");
+		}
+		const lifetime = createServerApplicationLifetime({
+			resources: [{ name: "engine", stop: () => undefined }],
+			quiesce: admission.quiesce,
+			resume: admission.resume,
+		});
+		await lifetime.start();
+
+		const first = lifetime.stop("SIGTERM");
+		const concurrent = lifetime.stop("SIGINT");
+		expect(concurrent).toBe(first);
+		const refusal = await first.catch((error: unknown) => error);
+		expect(refusal).toBeInstanceOf(ServerApplicationBusyError);
+		expect((refusal as ServerApplicationBusyError).code).toBe("SERVER_BUSY");
+		expect((refusal as Error).message).toContain("POST /api/selection");
+		expect(lifetime.phase()).toBe("running");
+		expect(admission.accepting()).toBeTrue();
+
+		lease.finish();
+		await lifetime.stop("test");
+		expect(lifetime.phase()).toBe("stopped");
+	});
+
+	test("disconnect aborts waitable work and releases request admission", async () => {
+		const admission = createServerMutationAdmission({ drainTimeoutMs: 100 });
+		const lease = admission.admit("POST /api/semantic-boards/edit");
+		if (lease === null) {
+			throw new Error("The first mutation was not admitted.");
+		}
+		let observed: AbortSignal | null = null;
+		const work = lease
+			.track("POST /api/semantic-boards/edit board-lock wait", async (signal) => {
+				observed = signal;
+				await new Promise<void>((_resolve, reject) =>
+					signal.addEventListener("abort", () => reject(signal.reason), { once: true }),
+				);
+			})
+			.catch((error: unknown) => error);
+		lease.abort(new Error("client disconnected"));
+		expect((observed as AbortSignal | null)?.aborted).toBeTrue();
+		expect(await work).toBeInstanceOf(Error);
+		await admission.quiesce();
+		expect(admission.active()).toBe(0);
+	});
+
+	test("startup unwind closes a real logger transport owned before the failure", async () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-lifetime-logger-failure-"));
+		const transport = new winston.transports.File({ filename: join(root, "startup.log") });
+		const owner = winston.createLogger({ transports: [transport] });
+		try {
+			const lifetime = createServerApplicationLifetime({
+				resources: [
+					{ name: "logger", stop: () => closeLogger(owner) },
+					{
+						name: "failing-owner",
+						start: () => {
+							throw new Error("startup failed after logger creation");
+						},
+						stop: () => undefined,
+					},
+				],
+			});
+
+			await expect(lifetime.start()).rejects.toThrow("startup failed after logger creation");
+			expect(owner.transports).toEqual([]);
+			expect(transport.listenerCount("finish")).toBe(0);
+		} finally {
+			if (!owner.destroyed && !owner.writableFinished) {
+				owner.destroy();
+			}
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+});

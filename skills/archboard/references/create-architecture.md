@@ -59,7 +59,7 @@ Keep the real relationship kind when judging routing.
    repo-relative path.
 3. State the architecture in one payload and create the board. The evidence
    behind this one comes from archboard's own source. The Archboard server's
-   `editRoute` (`src/server/archboard/lib/semantic-board-writes.ts`) calls
+   `editRoute` (`apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts`) calls
    two functions that the board store exports from its package, `@archboard/board`
    (`packages/board/src/runtime/operations/write`). It builds the edit with
    `editVariantTransition` (`transitions.ts`) and hands it to
@@ -77,7 +77,7 @@ Keep the real relationship kind when judging routing.
    Each relationship carries that line of evidence as its `anchor`: the file
    whose body makes the call and the name it calls. The agent's request
    reaches `editRoute` through the route table in
-   `src/server/archboard/lib/semantic-board-routes.ts`, so that file anchors
+   `apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts`, so that file anchors
    it. Each function drawn shares its file with others (four share
    `write.ts`), so each binding names its function in `symbol`. `Board lease`
    is drawn whole and owns its file.
@@ -89,7 +89,7 @@ archboard semantic new "Semantic board writes" --doing "describing how one board
   "nodes": [
     { "name": "Agent", "kind": "external", "responsibility": "Runs archboard semantic edit" },
     { "name": "Edit route", "kind": "function", "responsibility": "Accepts one edit and hands it to the store",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-writes.ts", "symbol": "editRoute" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts", "symbol": "editRoute" } },
     { "name": "Board store", "kind": "module", "responsibility": "The one place a board is read or written",
       "binding": { "repo": "github.com/miklschmidt/archboard", "path": "packages/board/src/runtime" } },
     { "name": "editVariantTransition", "kind": "function", "parent": "Board store",
@@ -112,11 +112,11 @@ archboard semantic new "Semantic board writes" --doing "describing how one board
   ],
   "edges": [
     { "from": "Agent", "to": "Edit route", "kind": "http", "label": "POST /api/semantic-boards/edit",
-      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-routes.ts", "symbol": "editRoute" } },
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts", "symbol": "editRoute" } },
     { "from": "Edit route", "to": "editVariantTransition", "kind": "call", "label": "builds the edit",
-      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-writes.ts", "symbol": "editVariantTransition" } },
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts", "symbol": "editVariantTransition" } },
     { "from": "Edit route", "to": "writeSemanticBoard", "kind": "call", "label": "edit transition",
-      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-writes.ts", "symbol": "writeSemanticBoard" } },
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts", "symbol": "writeSemanticBoard" } },
     { "from": "writeSemanticBoard", "to": "underBoardLease", "kind": "call",
       "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "packages/board/src/runtime/operations/write/write.ts", "symbol": "underBoardLease" } },
     { "from": "writeSemanticBoard", "to": "applyUnderLease", "kind": "call", "label": "as the leased pass",

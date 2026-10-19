@@ -186,10 +186,10 @@ interface SpawnedServer {
  * @returns The child, its pid and the observation handles the readiness wait uses.
  */
 function spawnServer(): SpawnedServer {
-	// The thin src/server.ts process entrypoint of the checkout whose source runs;
+	// The thin apps/server/src/server.ts process entrypoint of the checkout whose source runs;
 	// spawn args must be path strings. process.execPath is the bun that is
 	// running us, which is what can read a .ts entry point at all.
-	const serverEntry = path.join(SOURCE_CHECKOUT, "src", "server.ts");
+	const serverEntry = path.join(SOURCE_CHECKOUT, "apps", "server", "src", "server.ts");
 	const child = spawn(process.execPath, [serverEntry], {
 		detached: true,
 		stdio: ["ignore", "ignore", "ignore", "pipe"],

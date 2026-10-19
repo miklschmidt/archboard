@@ -37,7 +37,7 @@ describe.serial("doing write boundary", () => {
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = vaultIn(join(root, "vault"));
 		const server = await startOwnedServer({
-			serverPath: join(repoRoot, "src/server.ts"),
+			serverPath: join(repoRoot, "apps/server/src/server.ts"),
 			vault,
 			env: { LOG_FILE_PATH: join(root, "server.log") },
 		});

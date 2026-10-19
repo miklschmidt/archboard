@@ -32,8 +32,8 @@ import {
 	dockFocusOrder,
 	openConversation,
 } from "./support/shell-dom.ts";
+import { productionServer } from "../server-state/support/production-server.ts";
 
-const serverPath = join(import.meta.dir, "../server-state/fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "../server-state/fixtures/fake-codex-production.ts");
 
 /** The provider page the fixture names for a ChatGPT sign-in. */
@@ -146,7 +146,7 @@ test(
 		const vault = vaultIn(join(ownerRoot, "vault"));
 
 		const server = await startOwnedServer({
-			serverPath,
+			...productionServer,
 			vault,
 			env: serverTestEnvironment({
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
@@ -380,7 +380,7 @@ test(
 		const shop = realpathSync(holderOf(shopVault));
 		const orders = realpathSync(holderOf(ordersVault));
 		const server = await startOwnedServer({
-			serverPath,
+			...productionServer,
 			vault: shopVault,
 			env: serverTestEnvironment({
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,

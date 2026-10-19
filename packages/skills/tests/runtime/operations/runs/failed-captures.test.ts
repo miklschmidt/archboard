@@ -116,10 +116,10 @@ describe("failed runs keep grader capture evidence", () => {
 				.stdout.toString()
 				.trim();
 			const fake = path.join(root, "fake");
-			mkdirSync(path.join(fake, "src"), { recursive: true });
+			mkdirSync(path.join(fake, "apps/server/src"), { recursive: true });
 			mkdirSync(path.join(fake, "apps/cli/src"), { recursive: true });
 			writeFileSync(
-				path.join(fake, "src/server.ts"),
+				path.join(fake, "apps/server/src/server.ts"),
 				`
 				Bun.serve({ hostname: "127.0.0.1", port: Number(process.env.PORT),
 					fetch() { return Response.json({ pid: process.pid }); } });

@@ -269,7 +269,7 @@ describe("reading the product is its own class, apart from the skill, Flask and 
 			"product-source",
 		);
 		expect(
-			classified(`bash -lc 'cat ${RUN}/snapshot/x.json ${CHECKOUT}/src/server.ts'`).class,
+			classified(`bash -lc 'cat ${RUN}/snapshot/x.json ${CHECKOUT}/apps/server/src/x.ts'`).class,
 		).toBe("product-source");
 	});
 });

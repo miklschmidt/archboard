@@ -15,8 +15,8 @@ import {
 import { createRequester, waitFor } from "./support/http.ts";
 import { coordinatorModelFixture } from "./fixtures/fake-codex-production-data.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
+import { productionServer } from "./support/production-server.ts";
 
-const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 
 /**
@@ -90,7 +90,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
 		const server = await startOwnedServer({
-			serverPath,
+			...productionServer,
 			vault: fixture.vault,
 			env: {
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,

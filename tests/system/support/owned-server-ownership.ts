@@ -73,6 +73,16 @@ function createOwnedServerPaths(): OwnedServerPaths {
 	}
 }
 
+/**
+ * What Bun runs: the server entry, after the script that replaces what the server imports.
+ * @param serverPath The entry, or the script that stands in for it.
+ * @param preload A script Bun runs before the entry (`bun --preload`).
+ * @returns The arguments after the Bun executable.
+ */
+function ownedServerArguments(serverPath: string, preload?: string): string[] {
+	return preload === undefined ? [serverPath] : ["--preload", preload, serverPath];
+}
+
 function isOwnedServerNamespaceRoot(candidate: string): boolean {
 	const resolved = path.resolve(candidate);
 	return (
@@ -120,6 +130,7 @@ export {
 	buildOwnedServerEnvironment,
 	createOwnedServerPaths,
 	isOwnedServerNamespaceRoot,
+	ownedServerArguments,
 	processExists,
 	waitForProcessExit,
 };

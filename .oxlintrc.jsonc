@@ -46,7 +46,6 @@
 		"packages/codex-app-server/src/shared/protocol/generated/**",
 		// Tests outside src/ui, packages/*/tests/ui and apps/*/tests/ui are held to .oxlintrc.tests.jsonc instead.
 		"tests/**",
-		"src/server/*/tests/**",
 		"packages/*/tests/**",
 		"!packages/*/tests/ui",
 		"!packages/*/tests/ui/**",

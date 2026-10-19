@@ -8,12 +8,11 @@ import {
 	type WorkbenchResult,
 } from "../../server-state/support/codex-production.ts";
 import { waitFor } from "../../server-state/support/http.ts";
-import { CODEX_PROCESS_MODULE_PATH } from "../../support/codex-process-module.ts";
+import { productionServer } from "../../server-state/support/production-server.ts";
 import { buildOwnedServerEnvironment } from "../../support/owned-server.ts";
 import { listOnlyVault } from "../../support/test-vault.ts";
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
-const serverEntry = join(repoRoot, "src/server.ts");
 
 export interface FixtureRecord {
 	readonly kind?: string;
@@ -119,7 +118,6 @@ export async function startServer(options: {
 }): Promise<ServerProcess> {
 	const port = await freePort();
 	const base = `http://127.0.0.1:${port}`;
-	const wrapper = join(options.root, "production-server.ts");
 	const paths = {
 		home: join(options.root, "home"),
 		xdgConfig: join(options.root, "xdg-config"),
@@ -129,30 +127,26 @@ export async function startServer(options: {
 	for (const directory of Object.values(paths))
 		mkdirSync(directory, { recursive: true, mode: 0o700 });
 	const registry = listOnlyVault(join(options.root, "repos.json"), options.vault);
-	writeFileSync(
-		wrapper,
-		`import { mock } from "bun:test";\n` +
-			`const actualExecutable = await import(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)});\n` +
-			`mock.module(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => process.env.ARCHBOARD_TEST_CODEX_EXECUTABLE }));\n` +
-			`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
-			`await startServer();\n`,
+	const child = spawn(
+		process.execPath,
+		["--preload", productionServer.preload, productionServer.serverPath],
+		{
+			cwd: repoRoot,
+			detached: true,
+			env: buildOwnedServerEnvironment({
+				paths,
+				port,
+				registry,
+				env: {
+					ARCHBOARD_TEST_CODEX_EXECUTABLE: options.executablePath,
+					ARCHBOARD_TEST_CODEX_LOG: options.logPath,
+					ARCHBOARD_TEST_CODEX_CONTROL: options.controlPath,
+					ARCHBOARD_SETTLE_MS: "20",
+				},
+			}),
+			stdio: ["ignore", "pipe", "pipe"],
+		},
 	);
-	const child = spawn(process.execPath, [wrapper], {
-		cwd: repoRoot,
-		detached: true,
-		env: buildOwnedServerEnvironment({
-			paths,
-			port,
-			registry,
-			env: {
-				ARCHBOARD_TEST_CODEX_EXECUTABLE: options.executablePath,
-				ARCHBOARD_TEST_CODEX_LOG: options.logPath,
-				ARCHBOARD_TEST_CODEX_CONTROL: options.controlPath,
-				ARCHBOARD_SETTLE_MS: "20",
-			},
-		}),
-		stdio: ["ignore", "pipe", "pipe"],
-	});
 	if (child.pid === undefined) throw new Error("The server has no pid.");
 	let output = "";
 	child.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));

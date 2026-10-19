@@ -54,7 +54,7 @@ describe.serial("frontend staleness", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-staleness-frontend-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const server = await startOwnedServer({
-			serverPath: join(repoRoot, "src/server.ts"),
+			serverPath: join(repoRoot, "apps/server/src/server.ts"),
 			vault: vaultIn(join(root, "vault")),
 			env: { XDG_STATE_HOME: join(root, "state"), LOG_FILE_PATH: join(root, "server.log") },
 		});

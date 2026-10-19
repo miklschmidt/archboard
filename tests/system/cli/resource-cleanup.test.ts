@@ -211,7 +211,7 @@ describe("CLI resource cleanup", () => {
 			registry = acquiredFixture.registry;
 			fixtureRegistered = true;
 			server = await startOwnedServer({
-				serverPath: join(checkoutRoot, "src/server.ts"),
+				serverPath: join(checkoutRoot, "apps/server/src/server.ts"),
 				vault: acquiredFixture.vault,
 				env: acquiredFixture.serverEnvironment,
 			});

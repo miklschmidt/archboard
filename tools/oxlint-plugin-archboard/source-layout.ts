@@ -5,8 +5,6 @@ import path from "node:path";
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
 import type { RuleContext } from "./rule-api.ts";
 
-const ROOT_SOURCE_ENTRYPOINTS = new Set(["src/server.ts"]);
-
 /** The browser entry of the web app. It sits above `ui/` and counts as browser code. */
 const BROWSER_ENTRYPOINTS = new Set(["apps/web/src/main.tsx"]);
 
@@ -206,12 +204,12 @@ function isProductSourcePath(relativePath: string): boolean {
 }
 
 /**
- * Whether a path is a thin entry: a root entry or the entry of an app.
+ * Whether a path is a thin entry: the entry of an app.
  * @param relativePath The file's repository path.
  * @returns Whether the file may hold startup wiring only.
  */
 function isEntrypoint(relativePath: string): boolean {
-	return ROOT_SOURCE_ENTRYPOINTS.has(relativePath) || APP_ENTRYPOINTS.has(relativePath);
+	return APP_ENTRYPOINTS.has(relativePath);
 }
 
 /**

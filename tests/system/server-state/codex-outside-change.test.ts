@@ -14,6 +14,7 @@ import {
 } from "./support/codex-production.ts";
 import { createRequester, sleep, waitFor } from "./support/http.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
+import { productionServer } from "./support/production-server.ts";
 
 // Long enough for news to be told: a sentence follows its write within a few milliseconds.
 const NEWS_SETTLE_MS = 600;
@@ -21,7 +22,6 @@ const NEWS_SETTLE_MS = 600;
 const COORDINATOR_WIRE_THREAD = "thread-1";
 /** The workhorse thread as the fake Codex names it on the wire: the second thread started. */
 const WORKHORSE_WIRE_THREAD = "thread-2";
-const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 const repoRoot = resolve(import.meta.dir, "../../..");
 
@@ -46,7 +46,7 @@ test("live voice and its coordinator are told what another agent did to a board 
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
 		const server = await startOwnedServer({
-			serverPath,
+			...productionServer,
 			vault: fixture.vault,
 			env: {
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,

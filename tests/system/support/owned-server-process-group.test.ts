@@ -22,7 +22,7 @@ import {
 } from "./owned-server-process-group-runner.ts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const serverPath = path.join(repoRoot, "src/server.ts");
+const serverPath = path.join(repoRoot, "apps/server/src/server.ts");
 const thisFile = fileURLToPath(import.meta.url);
 
 async function readJson(server: OwnedServer, responsePromise: Promise<Response>): Promise<unknown> {

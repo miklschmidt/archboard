@@ -21,7 +21,7 @@ import { sanitizedEnvironment } from "./support/process-http.ts";
 // agent hears CLAIM_REVOKED (ADR 0022).
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const serverPath = join(repoRoot, "src/server.ts");
+const serverPath = join(repoRoot, "apps/server/src/server.ts");
 
 test("a claim taken through another server excludes writes here and reaches the pane within the lock sweep", async () => {
 	await using resources = new AsyncDisposableStack();

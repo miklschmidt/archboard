@@ -32,6 +32,15 @@ interface ServerCliResult {
 	readonly stderr: string;
 }
 
+/**
+ * The entry that a server test starts, in the checkout it runs against.
+ * @param repoRoot The checkout.
+ * @returns The path of `apps/server/src/server.ts`.
+ */
+export function serverEntry(repoRoot: string): string {
+	return join(repoRoot, "apps/server/src/server.ts");
+}
+
 export function runServerCli(options: ServerCliInput): ServerCliResult {
 	const result = spawnSync(join(options.repoRoot, "bin/archboard"), options.args, {
 		cwd: holderOf(options.vault ?? options.server.vault),

@@ -22,6 +22,7 @@ import {
 } from "./support/codex-production.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
+import { productionServer } from "./support/production-server.ts";
 
 /** As much of a board as this test reads back. */
 interface SemanticBoardReply {
@@ -29,7 +30,6 @@ interface SemanticBoardReply {
 	variants: Array<{ content: { walkthroughs: Array<{ id: string }> } }>;
 }
 
-const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 const CLIENT = "record-client";
 const PANE = "record-pane";
@@ -40,7 +40,7 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
 		const server = await startOwnedServer({
-			serverPath,
+			...productionServer,
 			vault: fixture.vault,
 			env: {
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,

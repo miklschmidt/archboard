@@ -8,7 +8,6 @@ export {
 	PORT,
 	serverUrl,
 } from "#server/services/host/listener-address.ts";
-export { moduleDir } from "#server/services/host/module-paths.ts";
 export {
 	boardOfRequest,
 	bodyOf,

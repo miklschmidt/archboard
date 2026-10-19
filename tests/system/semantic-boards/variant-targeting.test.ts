@@ -97,7 +97,10 @@ function edit(args: readonly string[], batch: Record<string, unknown>) {
 }
 
 beforeAll(async () => {
-	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({
+		serverPath: path.join(repoRoot, "apps/server/src/server.ts"),
+		vault,
+	});
 	const made = cli(
 		["semantic", "new", "queues", "--doing", "starting the queue board"],
 		JSON.stringify({ level: "system", nodes: [{ name: "Intake", kind: "service" }] }),

@@ -86,7 +86,7 @@ beforeAll(async () => {
 	mkdirSync(metaVault, { recursive: true });
 	mkdirSync(productVault, { recursive: true });
 	server = await startOwnedServer({
-		serverPath: join(repoRoot, "src/server.ts"),
+		serverPath: join(repoRoot, "apps/server/src/server.ts"),
 		vault: metaVault,
 		env: fixture.serverEnvironment,
 	});

@@ -9,8 +9,8 @@ import {
 	productionPane as pane,
 } from "./support/codex-production.ts";
 import { createRequester } from "./support/http.ts";
+import { productionServer } from "./support/production-server.ts";
 
-const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 
 // Since Codex 0.158.0 reading a ChatGPT account asks the backend for its workspace routing, so
@@ -22,7 +22,7 @@ test("an account Codex cannot read leaves the server running until a refresh rea
 		const fixture = prepareProductionFixture(resources, executableSource);
 		writeFileSync(fixture.controlPath, JSON.stringify({ accountReadFails: true }));
 		const server = await startOwnedServer({
-			serverPath,
+			...productionServer,
 			vault: fixture.vault,
 			env: {
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,

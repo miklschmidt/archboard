@@ -67,7 +67,7 @@ function isLoopbackUrl(): boolean {
 function unreachableError(reason: string): Error {
 	return codedError(
 		`Archboard server is not reachable at ${ARCHBOARD_URL} (${reason}). ` +
-			`Start it with \`archboard start\` (\`./bin/archboard start\` in the repo) or \`bun src/server.ts\`.`,
+			`Start it with \`archboard start\` (\`./bin/archboard start\` in the repo) or \`bun apps/server/src/server.ts\`.`,
 		"SERVER_UNREACHABLE",
 	);
 }

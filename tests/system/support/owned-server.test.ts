@@ -11,7 +11,7 @@ import { TEST_SERVER_HEALTH_POLL_MS } from "./timing.ts";
 import { stateDir } from "@archboard/workspace/state-dir";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const serverPath = path.join(repoRoot, "src/server.ts");
+const serverPath = path.join(repoRoot, "apps/server/src/server.ts");
 const thisFile = import.meta.path;
 
 async function probeLoopbackPort(): Promise<number> {

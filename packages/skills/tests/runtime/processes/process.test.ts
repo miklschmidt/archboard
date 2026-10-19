@@ -122,9 +122,9 @@ test("cancelled server readiness stops the exact fake server and its inherited c
 	const root = mkdtempSync(path.join(tmpdir(), "skill-server-cancel-"));
 	const controller = new AbortController();
 	const pids = path.join(root, "pids");
-	mkdirSync(path.join(root, "src"));
+	mkdirSync(path.join(root, "apps/server/src"), { recursive: true });
 	writeFileSync(
-		path.join(root, "src/server.ts"),
+		path.join(root, "apps/server/src/server.ts"),
 		`
 		const child = Bun.spawn(["sleep", "60"], { stdout: "ignore", stderr: "ignore" });
 		await Bun.write(${JSON.stringify(pids)}, JSON.stringify([process.pid, child.pid]));
