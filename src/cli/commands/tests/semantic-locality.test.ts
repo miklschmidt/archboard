@@ -96,8 +96,8 @@ process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 // Imported only now, because the CLI reads where its server is as it loads.
 const [config, client, { runCli }] = await Promise.all([
-	import("@/runtime/engine/config"),
-	import("@/runtime/engine/server-client"),
+	import("@archboard/server-lifecycle/config"),
+	import("@archboard/server-lifecycle/server-client"),
 	import("@/cli/commands/run"),
 ]);
 if (config.ARCHBOARD_URL !== url) {

@@ -28,7 +28,7 @@ import {
 	MAX_IDS,
 	arrangementOf,
 	panesInOrder,
-} from "@/runtime/engine/lib/panes-layout";
+} from "#runtime/rules/panes-layout.ts";
 import {
 	HOW_TO_OPEN_A_PANE,
 	MAX_PANES,
@@ -37,7 +37,7 @@ import {
 	paneWords,
 	resolvePaneSpec,
 	soloPane,
-} from "@/runtime/engine/lib/panes-addressing";
+} from "#runtime/rules/panes-addressing.ts";
 
 /**
  * What the read-out says beyond naming the panes: the things an agent needs
@@ -392,7 +392,7 @@ export type {
 	PaneReport,
 	PanesReport,
 	Rect,
-} from "@/runtime/engine/lib/panes-layout";
+} from "#runtime/rules/panes-layout.ts";
 export {
 	HOW_TO_OPEN_A_PANE,
 	MAX_PANES,

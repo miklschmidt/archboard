@@ -4,7 +4,7 @@ import {
 	type PaneRegistration,
 	type PlacedPane,
 	panesInOrder,
-} from "@/runtime/engine/lib/panes-layout";
+} from "#runtime/rules/panes-layout.ts";
 
 /** Everything `--pane` accepts, for the message that lists them. */
 // Every spelling here has to be taught, and a spelling that is never needed is

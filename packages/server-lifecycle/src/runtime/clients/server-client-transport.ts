@@ -1,8 +1,8 @@
 // One request to the Archboard server, and the identity gate in front of it.
 
-import { ARCHBOARD_URL } from "@/runtime/engine/config";
-import { withBoard, withVault, withWriteClaims } from "@/runtime/engine/lib/server-client-session";
-import { isBoardRefusal } from "@/runtime/engine/lib/server-client-refusal";
+import { ARCHBOARD_URL } from "#runtime/services/config.ts";
+import { withBoard, withVault, withWriteClaims } from "#runtime/state/server-client-session.ts";
+import { isBoardRefusal } from "#runtime/protocol/server-client-refusal.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 

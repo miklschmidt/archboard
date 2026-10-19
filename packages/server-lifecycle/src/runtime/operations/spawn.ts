@@ -1,14 +1,15 @@
 import { spawn, type ChildProcess } from "child_process";
 import { Readable } from "node:stream";
-import { fileURLToPath } from "url";
+import path from "path";
 import { logger } from "@archboard/diagnostics/logger";
-import { ARCHBOARD_URL, ARCHBOARD_NO_AUTOSTART } from "@/runtime/engine/config";
+import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { ARCHBOARD_URL, ARCHBOARD_NO_AUTOSTART } from "#runtime/services/config.ts";
 import {
 	foreignServiceError,
 	markServerIdentityVerified,
 	OtherSourceError,
 	type HealthStatus,
-} from "@/runtime/engine/server-client";
+} from "#runtime/clients/server-client.ts";
 
 import { existsSync } from "node:fs";
 import {
@@ -17,7 +18,7 @@ import {
 	readPidFile,
 	removePidFile,
 	removePidFileIfOwnerGone,
-} from "@/runtime/engine/pidfile";
+} from "#runtime/store/pidfile.ts";
 import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
@@ -30,14 +31,14 @@ import {
 	SERVER_STOP_PIDFILE_WAIT_MS,
 	SERVER_STOP_PROBE_POLL_MS,
 } from "@archboard/timing";
-import { SERVER_STARTUP_TERMINAL_FD_ENV } from "@/shared/server-startup-terminal";
+import { SERVER_STARTUP_TERMINAL_FD_ENV } from "#runtime/protocol/server-startup-terminal.ts";
 import { readProcessObservation } from "@archboard/process/observation";
 import {
 	completeFailedServerCleanup,
 	createServerStartupProtocolReader,
 	failedServerCleanupTiming,
 	type ServerStartupProtocolReader,
-} from "@/runtime/engine/server-startup-cleanup";
+} from "#runtime/operations/server-startup-cleanup.ts";
 import { errorCode, errorMessage } from "@archboard/diagnostics/thrown-error";
 import {
 	serverPort,
@@ -47,7 +48,7 @@ import {
 	spawnBindHost,
 	startupRefusal,
 	unreachableError,
-} from "@/runtime/engine/lib/server-spawn-target";
+} from "#runtime/operations/server-spawn-target.ts";
 
 /**
  * Whether a server's exit message says another server owns the port or its
@@ -185,10 +186,10 @@ interface SpawnedServer {
  * @returns The child, its pid and the observation handles the readiness wait uses.
  */
 function spawnServer(): SpawnedServer {
-	// This runtime module resolves the thin src/server.ts process entrypoint;
+	// The thin src/server.ts process entrypoint of the checkout whose source runs;
 	// spawn args must be path strings. process.execPath is the bun that is
 	// running us, which is what can read a .ts entry point at all.
-	const serverEntry = fileURLToPath(new URL("../../server.ts", import.meta.url));
+	const serverEntry = path.join(SOURCE_CHECKOUT, "src", "server.ts");
 	const child = spawn(process.execPath, [serverEntry], {
 		detached: true,
 		stdio: ["ignore", "ignore", "ignore", "pipe"],

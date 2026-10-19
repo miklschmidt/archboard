@@ -14,7 +14,7 @@ import { writeSemanticBoard, createBoardTransition } from "@archboard/board/stor
 import { readSemanticBoard } from "@archboard/board/store-read";
 import { semanticBoardAddress } from "@archboard/board/address";
 import { BoardCreateInputSchema } from "@archboard/board/commands";
-import type { PaneRegistration } from "@/runtime/engine/panes";
+import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import type { SemanticPaneContext, SemanticPanePresentation } from "@archboard/board/pane-context";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-two-browsers-"));

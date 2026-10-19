@@ -5,14 +5,14 @@ import {
 	serverStartupOwnershipRecord,
 	serverStartupTerminalRecord,
 	type ServerStartupProtocolEvent,
-} from "../../../shared/server-startup-terminal/index.js";
+} from "#runtime/protocol/server-startup-terminal.ts";
 import { SERVER_STARTUP_READINESS_MS } from "@archboard/timing";
 import {
 	completeFailedServerCleanup,
 	createServerStartupProtocolReader,
 	failedServerCleanupTiming,
 	type FailedServerCleanupOperations,
-} from "../server-startup-cleanup.js";
+} from "#runtime/operations/server-startup-cleanup.ts";
 
 const group = Object.freeze({ leaderPid: 41, pgid: 41, leaderStartTime: "100" });
 

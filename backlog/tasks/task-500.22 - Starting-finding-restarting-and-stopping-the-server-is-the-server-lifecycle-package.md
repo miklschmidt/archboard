@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-19 11:10'
+updated_date: '2026-10-19 14:01'
 labels: []
 dependencies:
   - TASK-500.14.04
@@ -25,3 +26,9 @@ server-lifecycle is layer 6: the rest of runtime/engine (panes, pidfile, restart
 - [ ] #2 Its tests live in the package, outside code uses only its curated api interface files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
 - [ ] #3 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Move the 23 files of runtime/engine, shared/server-startup-terminal and runtime/semantic-board-client into packages/server-lifecycle/src/runtime/{services,store,operations,clients,state,protocol,rules}, tests into tests/runtime/. 2. Rewrite every outside importer by (module, name) to 9 curated runtime/api files (config, server, server-host, server-client, request-context, semantic-board-client, panes, pane-messages, startup-terminal). 3. Replace depth-dependent paths (package.json version, src/server.ts spawn target, staleness roots) with SOURCE_CHECKOUT. 4. Update ci.yml, package-api ADOPTERS, boundaries/package-map/test-suite docs. 5. Verify tsc, lint, package tests, policy tests, fresh-process loads, cycles, bun run check, and a real status/restart/status from the worktree.
+<!-- SECTION:PLAN:END -->

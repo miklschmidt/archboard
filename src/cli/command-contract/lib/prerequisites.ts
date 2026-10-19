@@ -1,6 +1,5 @@
-import { getHealth } from "@/runtime/engine/server-client";
-import { ARCHBOARD_URL } from "@/runtime/engine/config";
-import { ensureServerRunning } from "@/runtime/engine/spawn";
+import { getHealth, ensureServerRunning } from "@archboard/server-lifecycle/server";
+import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
 import type { RuntimePrerequisite } from "@/cli/command-contract/contract";
 
 /**

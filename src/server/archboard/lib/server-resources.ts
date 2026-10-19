@@ -6,7 +6,11 @@ import {
 	watchBoardLocks,
 } from "@archboard/board/lock";
 import { forgetDoing } from "@archboard/board/doing";
-import { removePidFile, sweepDeadPidFiles, writePidFile } from "@/runtime/engine/pidfile";
+import {
+	removePidFile,
+	sweepDeadPidFiles,
+	writePidFile,
+} from "@archboard/server-lifecycle/server-host";
 import { server } from "@/server/archboard/lib/server-app";
 import { panePresentations } from "@/server/archboard/lib/pane-presentation";
 import { forgetSemanticPaneContexts } from "@/server/archboard/lib/semantic-pane-context";

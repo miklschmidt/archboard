@@ -13,7 +13,7 @@ import { join } from "node:path";
 import * as server from "@/server/archboard/index";
 import { writeSemanticBoard } from "@archboard/board/store-write";
 import { semanticBoardAddress } from "@archboard/board/address";
-import type { PaneRegistration } from "@/runtime/engine/panes";
+import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	SemanticBoardSchema,

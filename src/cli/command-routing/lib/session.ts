@@ -21,8 +21,8 @@ import {
 	setRequestedBoard,
 	setWriteDoing,
 	setWriteSession,
-} from "@/runtime/engine/server-client";
-import { packageVersion } from "@/runtime/engine/package-version";
+} from "@archboard/server-lifecycle/request-context";
+import { packageVersion } from "@archboard/server-lifecycle/config";
 import { CLI_INTERRUPT_CLEANUP_MS } from "@archboard/timing";
 import type { CommandRoutes, RouteOwner } from "@/cli/command-routing/lib/route";
 import { helpText, usageLine } from "@/cli/command-routing/lib/help";

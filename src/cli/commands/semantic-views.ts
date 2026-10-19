@@ -18,7 +18,7 @@ import {
 	RenderedVariantSchema,
 	type SemanticRenderReply,
 } from "@archboard/board/render-reply";
-import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
+import { renderSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
 import {

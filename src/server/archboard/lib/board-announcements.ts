@@ -10,7 +10,7 @@ import type { Response } from "express";
 import { boardLockState, onBoardLockChanged, type LockHolder } from "@archboard/board/lock";
 import { recentDoing, recordDoing, type DoingEntry } from "@archboard/board/doing";
 import { normalizeBoardKey } from "@archboard/board/address";
-import type { WebSocketMessage } from "@/runtime/engine/types";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
 import { createAgentActivity } from "@/server/archboard/lib/agent-activity";
 import { broadcastEverywhere } from "@/server/archboard/lib/pane-vaults";
 import {

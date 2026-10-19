@@ -28,7 +28,7 @@ import {
 	listSemanticBoardsOnServer,
 	SemanticBoardEntrySchema,
 	readSemanticBoardAnswerOnServer,
-} from "@/runtime/semantic-board-client/index";
+} from "@archboard/server-lifecycle/semantic-board-client";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import {
 	SemanticBoardReadSchema,

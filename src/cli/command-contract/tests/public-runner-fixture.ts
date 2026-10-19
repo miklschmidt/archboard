@@ -40,7 +40,7 @@ try {
 	process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 	const [{ getSyncStatus }, { cliContractRegistry }, { defineCommand }, { runCommand }] =
 		await Promise.all([
-			import("../../../runtime/engine/server-client.js"),
+			import("@archboard/server-lifecycle/server"),
 			import("../../commands/run.js"),
 			import("../contract.js"),
 			import("../runner.js"),

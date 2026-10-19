@@ -1,8 +1,13 @@
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@/runtime/engine/types";
-import { addressablePanes, panesInOrder, resolvePaneSpec, soloPane } from "@/runtime/engine/panes";
-import type { PaneRegistration } from "@/runtime/engine/panes";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
+import {
+	addressablePanes,
+	panesInOrder,
+	resolvePaneSpec,
+	soloPane,
+} from "@archboard/server-lifecycle/panes";
+import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { listSemanticBoards, readSemanticBoard } from "@archboard/board/store-read";
 import { statedVariant } from "@archboard/board/address";
 import { aggregateOf, paneAddress } from "@/server/archboard/lib/pane-board-key";
@@ -325,7 +330,7 @@ function copyableBoards(clientId: string, vault: string): string[] {
  * A named pane is taken literally. An unnamed one is only allowed where it
  * cannot be wrong: one pane on screen means that pane, no pane on screen means
  * the board is loaded without being shown, and two panes means say which
- * (src/runtime/engine/panes.ts). The response always names where the board landed.
+ * (packages/server-lifecycle/src/runtime/rules/panes.ts). The response always names where the board landed.
  * A named pane may show another repository's board now, and the show moves it
  * into the board's vault (ADR 0050). An unnamed one is only one of the board's
  * own vault, so a board is never put in front of a pane nobody pointed at it.

@@ -11,7 +11,7 @@ import type {
 import {
 	serverStartupOwnershipRecord,
 	writeServerStartupProtocolRecord,
-} from "@/shared/server-startup-terminal";
+} from "@archboard/server-lifecycle/startup-terminal";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchTabSession,

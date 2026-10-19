@@ -10,7 +10,7 @@ import {
 	RenderedVariantSchema,
 	StandaloneThemeSchema,
 } from "@archboard/board/render-reply";
-import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
+import { renderSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { refuseNothingDrawn, viewEmptyRefusal } from "@/cli/commands/lib/nothing-drawn";
 import { PendingArtifactSchema } from "@/cli/command-contract/schemas";

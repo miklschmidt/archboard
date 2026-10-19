@@ -18,7 +18,7 @@ import { z } from "zod";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { SelectorSchema } from "@/cli/commands/lib/semantic-input";
-import { requestJson } from "@/runtime/engine/server-client";
+import { requestJson } from "@archboard/server-lifecycle/server-client";
 
 const LocalityInputSchema = z.object({
 	name: z.string(),

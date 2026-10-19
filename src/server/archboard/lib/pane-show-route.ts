@@ -17,7 +17,7 @@ import {
 	statedVariant,
 	type BoardIdentity,
 } from "@archboard/board/address";
-import type { PaneRegistration } from "@/runtime/engine/panes";
+import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { logger } from "@archboard/diagnostics/logger";
 import { readSemanticBoard } from "@archboard/board/store-read";
 import {

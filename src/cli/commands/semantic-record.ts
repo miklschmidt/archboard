@@ -19,14 +19,14 @@ import {
 	RecordingLanguageSchema,
 	type RecordingState,
 } from "@archboard/walkthrough/recording";
-import { currentWriteDoing } from "@/runtime/engine/server-client";
-import { ARCHBOARD_URL } from "@/runtime/engine/config";
+import { currentWriteDoing } from "@archboard/server-lifecycle/request-context";
+import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
 import { registeredRepositoryOfVault as repositoryOfVault } from "@archboard/workspace/checkouts";
 import {
 	checkSemanticVaultOnServer,
 	discardSemanticBoardOnServer,
 	readSemanticBoardOnServer,
-} from "@/runtime/semantic-board-client/index";
+} from "@archboard/server-lifecycle/semantic-board-client";
 import {
 	TalkFileError,
 	askedTalkPlace,

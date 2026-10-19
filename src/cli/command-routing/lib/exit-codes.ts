@@ -1,7 +1,7 @@
 // Turns a command failure into the process exit code and the stderr explanation the CLI
 // contract promises, without trusting the thrown value's shape.
 import { CliUsageError } from "@/cli/command-contract/contract";
-import { BOARD_REFUSAL_CODES, formatBoardRefusal } from "@/runtime/engine/server-client";
+import { BOARD_REFUSAL_CODES, formatBoardRefusal } from "@archboard/server-lifecycle/server-client";
 import { type RouteOwner } from "@/cli/command-routing/lib/route";
 
 /**

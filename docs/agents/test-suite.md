@@ -250,20 +250,20 @@ test setup.
 
 Every transitional package check now has one final owner lane:
 
-| Former key                                                                     | Final lane         | Native owner selector                                                                                                |
-| ------------------------------------------------------------------------------ | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| `test:suites`, `test:boundaries`                                               | repository         | `tests/system/repository-policy/`                                                                                    |
-| `test:contracts`                                                               | modules and system | `src/cli/command-contract/tests/`, `src/cli/finding-rendering/tests/`, `tests/system/cli/`                           |
-| `test:inspection`                                                              | modules and system | `src/runtime/board-inspection/tests/`, `tests/system/board-inspection/`                                              |
-| `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                                    |
-| `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `src/runtime/engine/tests/`, `src/ui/canvas/tests/`, `tests/system/server-state/`, `tests/system/process-contracts/` |
-| `test:cli`, `test:install`, `test:repos`                                       | system             | `tests/system/cli/`                                                                                                  |
-| `test:one-write`                                                               | system             | `tests/system/process-contracts/promotion-delete-bridge-one-write.test.ts`                                           |
-| `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`             | system             | `tests/system/server-state/`                                                                                         |
-| `test:geometry`, `test:labels`                                                 | modules and system | `src/runtime/engine/tests/`, `tests/system/label-geometry/`                                                          |
-| `test:text`, `test:library`                                                    | modules            | `src/runtime/engine/tests/`                                                                                          |
-| `test:boards`                                                                  | system             | `tests/system/boards/`                                                                                               |
-| `test:browser`                                                                 | serial-browser     | `BROWSER_TEST_PATHS`                                                                                                 |
+| Former key                                                                     | Final lane         | Native owner selector                                                                                        |
+| ------------------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `test:suites`, `test:boundaries`                                               | repository         | `tests/system/repository-policy/`                                                                            |
+| `test:contracts`                                                               | modules and system | `src/cli/command-contract/tests/`, `src/cli/finding-rendering/tests/`, `tests/system/cli/`                   |
+| `test:inspection`                                                              | modules and system | `src/runtime/board-inspection/tests/`, `tests/system/board-inspection/`                                      |
+| `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                            |
+| `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `packages/*/tests/`, `src/ui/canvas/tests/`, `tests/system/server-state/`, `tests/system/process-contracts/` |
+| `test:cli`, `test:install`, `test:repos`                                       | system             | `tests/system/cli/`                                                                                          |
+| `test:one-write`                                                               | system             | `tests/system/process-contracts/promotion-delete-bridge-one-write.test.ts`                                   |
+| `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`             | system             | `tests/system/server-state/`                                                                                 |
+| `test:geometry`, `test:labels`                                                 | modules and system | `packages/*/tests/`, `tests/system/label-geometry/`                                                          |
+| `test:text`, `test:library`                                                    | modules            | `packages/*/tests/`                                                                                          |
+| `test:boards`                                                                  | system             | `tests/system/boards/`                                                                                       |
+| `test:browser`                                                                 | serial-browser     | `BROWSER_TEST_PATHS`                                                                                         |
 
 ## The serial browser lane
 

@@ -2,8 +2,8 @@
 // (ADR 0050). A tab session presents through one of its open panes, hears the boards of the vaults
 // its panes are in, and tells each workhorse the changes of its own checkout.
 
-import { panesInOrder } from "@/runtime/engine/panes";
-import type { PaneRegistration } from "@/runtime/engine/panes";
+import { panesInOrder } from "@archboard/server-lifecycle/panes";
+import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchTabSession,

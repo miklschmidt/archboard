@@ -2,9 +2,14 @@ import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "@archboard/diagnostics/logger";
-import { addressablePanes, MAX_PANES, panesInOrder, resolvePaneSpec } from "@/runtime/engine/panes";
-import type { PaneRegistration } from "@/runtime/engine/panes";
-import { frontendState } from "@/runtime/engine/staleness";
+import {
+	addressablePanes,
+	MAX_PANES,
+	panesInOrder,
+	resolvePaneSpec,
+} from "@archboard/server-lifecycle/panes";
+import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
+import { frontendState } from "@archboard/server-lifecycle/server-host";
 import { PANE_LAYOUT_TIMEOUT_MS } from "@archboard/timing";
 import { serverUrl } from "@/server/archboard/lib/listener-address";
 import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";

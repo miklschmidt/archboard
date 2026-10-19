@@ -1,5 +1,6 @@
+import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import fs from "fs";
-import { fileURLToPath } from "url";
+import path from "path";
 import { z } from "zod";
 
 const packageManifest = z.object({ version: z.string() });
@@ -11,7 +12,7 @@ const packageManifest = z.object({ version: z.string() });
  */
 export function packageVersion(): string {
 	try {
-		const pkgPath = fileURLToPath(new URL("../../../package.json", import.meta.url));
+		const pkgPath = path.join(SOURCE_CHECKOUT, "package.json");
 		return packageManifest.parse(JSON.parse(fs.readFileSync(pkgPath, "utf-8"))).version;
 	} catch {
 		return "unknown";

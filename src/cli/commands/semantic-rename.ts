@@ -7,7 +7,7 @@
 
 import { z } from "zod";
 import { BoardRenameInputSchema } from "@archboard/board/commands";
-import { renameSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
+import { renameSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import { defineCommand } from "@/cli/command-contract/contract";
 import {
 	boardHeldRefusal,

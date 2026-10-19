@@ -30,10 +30,11 @@ const evaluatedAt = Date.now();
 // compare its timestamp with what is now on disk.
 const loaded = new Set<string>();
 
-const srcDir = path.join(__dirname, "..", "..");
-const repoRoot = path.join(__dirname, "..", "..", "..");
+const repoRoot = SOURCE_CHECKOUT;
 /** The folders that hold source: the modules and the workspace packages. */
-const sourceRoots = [srcDir, path.join(repoRoot, "packages")].map((root) => root + path.sep);
+const sourceRoots = [path.join(repoRoot, "src"), path.join(repoRoot, "packages")].map(
+	(root) => root + path.sep,
+);
 
 interface SourceState {
 	/** The real path of the checkout whose source this process runs (ADR 0049). */

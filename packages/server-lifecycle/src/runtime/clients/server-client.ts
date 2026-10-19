@@ -1,23 +1,23 @@
 // The typed surface the CLI talks to the Archboard server through.
 //
 // Small on purpose. The CLI writes boards through one owner
-// (`src/runtime/semantic-board-client`), which states its own routes; what is
+// (`runtime/clients/semantic-board-client.ts`), which states its own routes; what is
 // here is everything else a command needs from a running Archboard server: its health,
 // the claim on a board, and the panes on screen.
 //
-// One request goes through `lib/server-client-transport.ts`, which owns the
+// One request goes through `server-client-transport.ts`, which owns the
 // identity gate and the error shapes; what this invocation says about itself —
 // which board, what it is doing, which version it believes it is editing —
-// lives in `lib/server-client-session.ts` and rides on every request from
+// lives in `state/server-client-session.ts` and rides on every request from
 // there rather than from every call site.
 
 import type { BoardIdentity } from "@archboard/board/address";
-import type { SourceState } from "@/runtime/engine/staleness";
+import type { SourceState } from "#runtime/services/staleness.ts";
 import {
 	type BoardRefusal,
 	BOARD_REFUSAL_CODES,
 	isBoardRefusal,
-} from "@/runtime/engine/lib/server-client-refusal";
+} from "#runtime/protocol/server-client-refusal.ts";
 import {
 	addQuery,
 	currentExpectedVersion,
@@ -31,7 +31,7 @@ import {
 	setWriteSession,
 	withBoard,
 	withDoing,
-} from "@/runtime/engine/lib/server-client-session";
+} from "#runtime/state/server-client-session.ts";
 import {
 	ARCHBOARD_SERVICE_NAME,
 	foreignServiceError,
@@ -39,7 +39,7 @@ import {
 	OtherSourceError,
 	requestJson,
 	responseError,
-} from "@/runtime/engine/lib/server-client-transport";
+} from "#runtime/clients/server-client-transport.ts";
 import { isRecord } from "@archboard/diagnostics/unknown-record";
 
 /**

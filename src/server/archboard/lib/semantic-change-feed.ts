@@ -13,7 +13,7 @@
 
 import { mintId } from "@archboard/board/ids";
 import { MoveEndSchema, type MoveEnd } from "@archboard/board/commands";
-import type { WebSocketMessage } from "@/runtime/engine/types";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
 import { onBoardBroadcast } from "@/server/archboard/lib/pane-registry";
 
 /** One settled change, as a context consumer reads it. */

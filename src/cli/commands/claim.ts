@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { claimBoard, releaseBoardClaim } from "@/runtime/engine/server-client";
+import { claimBoard, releaseBoardClaim } from "@archboard/server-lifecycle/server-client";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { claimRefusals, commonRefusals } from "@/cli/command-contract/common";
 

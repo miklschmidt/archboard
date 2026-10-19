@@ -7,7 +7,7 @@
 
 import type { AnsweredVault, RegisteredVault } from "@/cli/command-contract/schemas";
 import { declareIfUnknown, type Declared } from "@archboard/workspace/checkouts";
-import { setRequestedVault } from "@/runtime/engine/server-client";
+import { setRequestedVault } from "@archboard/server-lifecycle/request-context";
 import { vaultsBoundTo } from "@archboard/board/store-read";
 import {
 	findVault,
