@@ -25,14 +25,9 @@ const RULES = JSON.stringify({
 	},
 });
 
-// A phrase of the message that names why a file is refused, so a file refused for another
-// reason does not pass.
-const NOT_EXPORTED = "exports names";
-const NOT_AN_APP_IMPORT = "imports an app";
-const UNRESOLVED = "must name an existing file";
-const FOREIGN_TESTS = "only from its own";
-const PRODUCT_TESTS = "test-owned source";
-const AREA = "forbidden Archboard area";
+// Stable rule codes distinguish boundary failures without depending on diagnostic wording.
+const ENTRYPOINT = "archboard(module-entrypoints)";
+const AREA = "archboard(import-boundaries)";
 
 const IMPORTS = { "#*": "./src/*", "#tests/*": "./tests/*" };
 const appManifest = (name: string): string =>
@@ -112,14 +107,14 @@ describe("an app is held to the rules of a package", () => {
 			(root) => {
 				linkInto(root, "node_modules/@archboard/alpha", "packages/alpha");
 				expectJudged(root, {
-					"apps/cli/src/cli/relative.ts": NOT_EXPORTED,
-					"apps/cli/src/cli/specifier.ts": NOT_EXPORTED,
-					"apps/cli/src/cli/dynamic.ts": NOT_EXPORTED,
-					"apps/cli/src/cli/reexport.ts": NOT_EXPORTED,
-					"apps/cli/src/cli/linked.ts": NOT_EXPORTED,
-					"apps/cli/tests/mock.test.ts": NOT_EXPORTED,
-					"apps/cli/src/cli/testing.ts": PRODUCT_TESTS,
-					"apps/cli/src/cli/package-tests.ts": PRODUCT_TESTS,
+					"apps/cli/src/cli/relative.ts": ENTRYPOINT,
+					"apps/cli/src/cli/specifier.ts": ENTRYPOINT,
+					"apps/cli/src/cli/dynamic.ts": ENTRYPOINT,
+					"apps/cli/src/cli/reexport.ts": ENTRYPOINT,
+					"apps/cli/src/cli/linked.ts": ENTRYPOINT,
+					"apps/cli/tests/mock.test.ts": ENTRYPOINT,
+					"apps/cli/src/cli/testing.ts": ENTRYPOINT,
+					"apps/cli/src/cli/package-tests.ts": ENTRYPOINT,
 				});
 			},
 		);
@@ -148,15 +143,15 @@ describe("an app is held to the rules of a package", () => {
 			(root) => {
 				linkInto(root, "node_modules/@archboard-app/cli", "apps/cli");
 				expectJudged(root, {
-					"packages/alpha/src/runtime/static.ts": NOT_AN_APP_IMPORT,
-					"packages/alpha/src/runtime/dynamic.ts": NOT_AN_APP_IMPORT,
-					"packages/alpha/src/runtime/linked.ts": NOT_AN_APP_IMPORT,
-					"packages/alpha/tests/app.test.ts": NOT_AN_APP_IMPORT,
-					"apps/web/src/ui/components/Cross.ts": NOT_AN_APP_IMPORT,
-					"apps/web/tests/mock.test.ts": NOT_AN_APP_IMPORT,
-					"apps/server/src/server/reexport.ts": NOT_AN_APP_IMPORT,
-					"scripts/consumer.ts": NOT_AN_APP_IMPORT,
-					"tests/system/policy/app.test.ts": NOT_AN_APP_IMPORT,
+					"packages/alpha/src/runtime/static.ts": ENTRYPOINT,
+					"packages/alpha/src/runtime/dynamic.ts": ENTRYPOINT,
+					"packages/alpha/src/runtime/linked.ts": ENTRYPOINT,
+					"packages/alpha/tests/app.test.ts": ENTRYPOINT,
+					"apps/web/src/ui/components/Cross.ts": ENTRYPOINT,
+					"apps/web/tests/mock.test.ts": ENTRYPOINT,
+					"apps/server/src/server/reexport.ts": ENTRYPOINT,
+					"scripts/consumer.ts": ENTRYPOINT,
+					"tests/system/policy/app.test.ts": ENTRYPOINT,
 				});
 			},
 		);
@@ -189,18 +184,18 @@ describe("an app is held to the rules of a package", () => {
 				expectJudged(
 					root,
 					{
-						"packages/alpha/src/runtime/static.ts": NOT_AN_APP_IMPORT,
-						"packages/alpha/src/runtime/root.ts": NOT_AN_APP_IMPORT,
-						"packages/alpha/src/runtime/dynamic.ts": NOT_AN_APP_IMPORT,
-						"packages/alpha/src/runtime/query.ts": NOT_AN_APP_IMPORT,
-						"packages/alpha/tests/app.test.ts": NOT_AN_APP_IMPORT,
-						"apps/web/src/ui/components/Cross.ts": NOT_AN_APP_IMPORT,
-						"apps/web/tests/mock.test.ts": NOT_AN_APP_IMPORT,
-						"apps/server/src/server/reexport.ts": NOT_AN_APP_IMPORT,
-						"apps/cli/src/cli/self.ts": NOT_AN_APP_IMPORT,
-						"apps/cli/src/cli/self-root.ts": NOT_AN_APP_IMPORT,
-						"scripts/consumer.ts": NOT_AN_APP_IMPORT,
-						"tests/system/policy/app.test.ts": NOT_AN_APP_IMPORT,
+						"packages/alpha/src/runtime/static.ts": ENTRYPOINT,
+						"packages/alpha/src/runtime/root.ts": ENTRYPOINT,
+						"packages/alpha/src/runtime/dynamic.ts": ENTRYPOINT,
+						"packages/alpha/src/runtime/query.ts": ENTRYPOINT,
+						"packages/alpha/tests/app.test.ts": ENTRYPOINT,
+						"apps/web/src/ui/components/Cross.ts": ENTRYPOINT,
+						"apps/web/tests/mock.test.ts": ENTRYPOINT,
+						"apps/server/src/server/reexport.ts": ENTRYPOINT,
+						"apps/cli/src/cli/self.ts": ENTRYPOINT,
+						"apps/cli/src/cli/self-root.ts": ENTRYPOINT,
+						"scripts/consumer.ts": ENTRYPOINT,
+						"tests/system/policy/app.test.ts": ENTRYPOINT,
 					},
 					["scripts/npm.ts"],
 				),
@@ -228,12 +223,12 @@ describe("an app is held to the rules of a package", () => {
 			},
 			(root) =>
 				expectJudged(root, {
-					"apps/cli/tests/other-app.test.ts": FOREIGN_TESTS,
-					"apps/cli/tests/package.test.ts": FOREIGN_TESTS,
-					"packages/alpha/tests/app.test.ts": FOREIGN_TESTS,
-					"tests/system/policy/app.test.ts": FOREIGN_TESTS,
-					"apps/cli/src/runtime/tests.ts": PRODUCT_TESTS,
-					"apps/web/src/runtime/foreign-tests.ts": PRODUCT_TESTS,
+					"apps/cli/tests/other-app.test.ts": ENTRYPOINT,
+					"apps/cli/tests/package.test.ts": ENTRYPOINT,
+					"packages/alpha/tests/app.test.ts": ENTRYPOINT,
+					"tests/system/policy/app.test.ts": ENTRYPOINT,
+					"apps/cli/src/runtime/tests.ts": ENTRYPOINT,
+					"apps/web/src/runtime/foreign-tests.ts": ENTRYPOINT,
 				}),
 		);
 	});
@@ -255,14 +250,25 @@ describe("an app is held to the rules of a package", () => {
 			},
 			(root) =>
 				expectJudged(root, {
-					"apps/cli/src/cli/unmapped.ts": UNRESOLVED,
-					"apps/cli/src/cli/missing.ts": UNRESOLVED,
-					"packages/alpha/src/runtime/unmapped.ts": UNRESOLVED,
-					"scripts/hash.ts": UNRESOLVED,
-					"apps/cli/src/cli/other-app.ts": UNRESOLVED,
+					"apps/cli/src/cli/unmapped.ts": ENTRYPOINT,
+					"apps/cli/src/cli/missing.ts": ENTRYPOINT,
+					"packages/alpha/src/runtime/unmapped.ts": ENTRYPOINT,
+					"scripts/hash.ts": ENTRYPOINT,
+					"apps/cli/src/cli/other-app.ts": ENTRYPOINT,
 				}),
 		);
 	});
+
+	test.each(["#runtime/work.ts", "#server/host.ts", "#server/host.ts?raw", "@archboard/beta"])(
+		"the browser entry refuses the server or runtime target of %s",
+		async (source) => {
+			// Keeps the browser-entry boundary after the retired frontend/#web fixtures disappear:
+			// its own runtime, its own server (with a resource query too) and a package's runtime.
+			await withProject({ ...world, "apps/web/src/main.tsx": importing(source) }, (root) =>
+				expectJudged(root, { "apps/web/src/main.tsx": AREA }),
+			);
+		},
+	);
 
 	test("the area directions hold inside an app, and the browser entry is browser code", async () => {
 		// Catches an app ui that reaches runtime or server code of its own app or of a package,
@@ -298,10 +304,10 @@ describe("an app is held to the rules of a package", () => {
 });
 
 describe("the layout rules cover the source of an app", () => {
-	test("entries are thin, and the source of an app or a package sits in role folders of an area", async () => {
+	test("entries are thin, app source sits in areas, and packages keep their own layout", async () => {
 		// Catches implementation in an app entry, flat source beside it, a reintroduced legacy
-		// root and a folder that is no area: each would escape the area rules. A package may keep
-		// other folders beside src/, such as its assets.
+		// root and an app folder that is no area. Package folders keep the documented shared
+		// types layout and their own names, including folders beside src/ such as assets.
 		const implementation = "export function start() { return 1; }\n";
 		await withProject(
 			{
@@ -314,6 +320,7 @@ describe("the layout rules cover the source of an app", () => {
 				"apps/web/frontend/main.tsx": "export const legacy = 1;\n",
 				"apps/web/src/pages/page.ts": "export const page = 1;\n",
 				"packages/alpha/src/domain/widget.ts": "export const widget = 1;\n",
+				"packages/alpha/src/types/widget.ts": "export type Widget = { value: number };\n",
 				"packages/alpha/assets/fonts/readme.ts": "export const assets = 1;\n",
 				"apps/cli/src/cli/run.ts": "export const run = 1;\n",
 				"apps/cli/src/runtime/clipboard.ts": "export const clip = 1;\n",
@@ -323,20 +330,21 @@ describe("the layout rules cover the source of an app", () => {
 				expectJudged(
 					root,
 					{
-						"apps/cli/src/bin.ts": "startup wiring",
-						"apps/server/src/server.ts": "startup wiring",
-						"apps/web/src/main.tsx": "startup wiring",
-						"apps/cli/src/flat.ts": "reserved for thin",
-						"apps/cli/src/server.ts": "reserved for thin",
-						"apps/web/frontend/main.tsx": "legacy root",
-						"apps/web/src/pages/page.ts": "role folder of an area",
-						"packages/alpha/src/domain/widget.ts": "role folder of an area",
+						"apps/cli/src/bin.ts": "archboard(root-implementation-modules)",
+						"apps/server/src/server.ts": "archboard(root-implementation-modules)",
+						"apps/web/src/main.tsx": "archboard(root-implementation-modules)",
+						"apps/cli/src/flat.ts": "archboard(root-implementation-modules)",
+						"apps/cli/src/server.ts": "archboard(root-implementation-modules)",
+						"apps/web/frontend/main.tsx": "archboard(mapped-source-paths)",
+						"apps/web/src/pages/page.ts": "archboard(mapped-source-paths)",
 					},
 					[
 						"apps/cli/src/cli/run.ts",
 						"apps/cli/src/runtime/clipboard.ts",
 						"apps/web/tests/unit/setup.ts",
 						"packages/alpha/assets/fonts/readme.ts",
+						"packages/alpha/src/types/widget.ts",
+						"packages/alpha/src/domain/widget.ts",
 					],
 				),
 		);
@@ -358,10 +366,10 @@ describe("the layout rules cover the source of an app", () => {
 				expectJudged(
 					root,
 					{
-						"apps/cli/src/runtime/lib/impl.ts": "Do not put source in",
-						"apps/cli/src/runtime/utils/impl.ts": "Do not put source in",
-						"packages/alpha/src/runtime/lib/impl.ts": "Do not put source in",
-						"apps/cli/src/runtime/shim.ts": "compatibility or shim",
+						"apps/cli/src/runtime/lib/impl.ts": "archboard(no-generic-buckets)",
+						"apps/cli/src/runtime/utils/impl.ts": "archboard(no-generic-buckets)",
+						"packages/alpha/src/runtime/lib/impl.ts": "archboard(no-generic-buckets)",
+						"apps/cli/src/runtime/shim.ts": "archboard(no-compatibility-identifiers)",
 					},
 					["apps/cli/tests/lib/fixture.ts"],
 				),
@@ -385,10 +393,10 @@ describe("the layout rules cover the source of an app", () => {
 				expectJudged(
 					root,
 					{
-						"apps/web/src/ui/state/scene.ts": "State files must not import",
-						"apps/web/src/ui/state/canvas/scene.ts": "State files must not import",
-						"apps/web/src/ui/state/canvas/deeper/layers.ts": "State files must not import",
-						"packages/alpha/src/ui/state/canvas/scene.ts": "State files must not import",
+						"apps/web/src/ui/state/scene.ts": "archboard(state-files-pure)",
+						"apps/web/src/ui/state/canvas/scene.ts": "archboard(state-files-pure)",
+						"apps/web/src/ui/state/canvas/deeper/layers.ts": "archboard(state-files-pure)",
+						"packages/alpha/src/ui/state/canvas/scene.ts": "archboard(state-files-pure)",
 					},
 					["apps/web/src/ui/rules/scene.ts"],
 				),

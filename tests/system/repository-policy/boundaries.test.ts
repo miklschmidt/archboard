@@ -12,10 +12,8 @@ import {
 	withProject,
 } from "./support/oxlint-project.ts";
 
-const NOT_EXPORTED = "exports names";
-const PRODUCT_TESTS = "test-owned source";
-const FOREIGN_TESTS = "only from its own";
-const AREA = "forbidden Archboard area";
+const ENTRYPOINT = "archboard(module-entrypoints)";
+const AREA = "archboard(import-boundaries)";
 
 // A package states its interface in `exports`: the area rules hold between the folders of
 // one package, only an export is public, and `./testing` is for tests alone.
@@ -97,7 +95,7 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 		];
 		await withProject(
 			{ ...packageFiles, ...Object.fromEntries(files.map((file) => [file, aliased])) },
-			(root) => expectJudged(root, Object.fromEntries(files.map((file) => [file, "@/ alias"]))),
+			(root) => expectJudged(root, Object.fromEntries(files.map((file) => [file, ENTRYPOINT]))),
 		);
 	});
 
@@ -114,7 +112,10 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 		await withProject(
 			Object.fromEntries(legacy.map((file) => [file, "export const value = 1;\n"])),
 			(root) =>
-				expectJudged(root, Object.fromEntries(legacy.map((file) => [file, "top-level src/"]))),
+				expectJudged(
+					root,
+					Object.fromEntries(legacy.map((file) => [file, "archboard(mapped-source-paths)"])),
+				),
 		);
 	});
 
@@ -183,17 +184,17 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 			(root) => {
 				linkInto(root, "node_modules/@archboard/alpha", "packages/alpha");
 				expectJudged(root, {
-					"packages/beta/src/runtime/relative.ts": NOT_EXPORTED,
-					"packages/beta/src/runtime/extensionless.ts": NOT_EXPORTED,
-					"packages/beta/src/runtime/raw.ts": NOT_EXPORTED,
-					"packages/beta/src/runtime/require.ts": NOT_EXPORTED,
-					"packages/beta/src/runtime/generated.ts": NOT_EXPORTED,
-					"packages/beta/src/runtime/specifier.ts": NOT_EXPORTED,
-					"packages/beta/src/runtime/linked.ts": NOT_EXPORTED,
-					"packages/beta/tests/deep.test.ts": NOT_EXPORTED,
-					"packages/beta/tests/mock-bun.test.ts": NOT_EXPORTED,
-					"packages/beta/tests/mock-vitest.test.ts": NOT_EXPORTED,
-					"tests/system/policy/deep.test.ts": NOT_EXPORTED,
+					"packages/beta/src/runtime/relative.ts": ENTRYPOINT,
+					"packages/beta/src/runtime/extensionless.ts": ENTRYPOINT,
+					"packages/beta/src/runtime/raw.ts": ENTRYPOINT,
+					"packages/beta/src/runtime/require.ts": ENTRYPOINT,
+					"packages/beta/src/runtime/generated.ts": ENTRYPOINT,
+					"packages/beta/src/runtime/specifier.ts": ENTRYPOINT,
+					"packages/beta/src/runtime/linked.ts": ENTRYPOINT,
+					"packages/beta/tests/deep.test.ts": ENTRYPOINT,
+					"packages/beta/tests/mock-bun.test.ts": ENTRYPOINT,
+					"packages/beta/tests/mock-vitest.test.ts": ENTRYPOINT,
+					"tests/system/policy/deep.test.ts": ENTRYPOINT,
 				});
 				expectRule(
 					lint(root, ["packages/beta/src/runtime/require.ts"]),
@@ -237,18 +238,18 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 			(root) => {
 				linkInto(root, "node_modules/@archboard/alpha", "packages/alpha");
 				expectJudged(root, {
-					"packages/beta/src/runtime/testing.ts": PRODUCT_TESTS,
-					"packages/beta/src/runtime/both.ts": PRODUCT_TESTS,
-					"packages/beta/src/runtime/both-path.ts": PRODUCT_TESTS,
-					"packages/alpha/src/runtime/tests.ts": PRODUCT_TESTS,
-					"packages/alpha/src/runtime/own-testing.ts": PRODUCT_TESTS,
-					"packages/alpha/src/runtime/own-testing-path.ts": PRODUCT_TESTS,
-					"packages/beta/src/runtime/foreign-tests.ts": PRODUCT_TESTS,
-					"packages/beta/src/runtime/system.ts": PRODUCT_TESTS,
-					"packages/beta/tests/foreign.test.ts": FOREIGN_TESTS,
-					"packages/beta/tests/linked.test.ts": FOREIGN_TESTS,
-					"packages/alpha/tests/cross-system.test.ts": FOREIGN_TESTS,
-					"tests/system/policy/cross-package.test.ts": FOREIGN_TESTS,
+					"packages/beta/src/runtime/testing.ts": ENTRYPOINT,
+					"packages/beta/src/runtime/both.ts": ENTRYPOINT,
+					"packages/beta/src/runtime/both-path.ts": ENTRYPOINT,
+					"packages/alpha/src/runtime/tests.ts": ENTRYPOINT,
+					"packages/alpha/src/runtime/own-testing.ts": ENTRYPOINT,
+					"packages/alpha/src/runtime/own-testing-path.ts": ENTRYPOINT,
+					"packages/beta/src/runtime/foreign-tests.ts": ENTRYPOINT,
+					"packages/beta/src/runtime/system.ts": ENTRYPOINT,
+					"packages/beta/tests/foreign.test.ts": ENTRYPOINT,
+					"packages/beta/tests/linked.test.ts": ENTRYPOINT,
+					"packages/alpha/tests/cross-system.test.ts": ENTRYPOINT,
+					"tests/system/policy/cross-package.test.ts": ENTRYPOINT,
 				});
 			},
 		);
@@ -288,8 +289,7 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 		];
 		await withProject(
 			Object.fromEntries(misplaced.map((file) => [file, "export const misplaced = true;\n"])),
-			(root) =>
-				expectJudged(root, Object.fromEntries(misplaced.map((file) => [file, "must live under"]))),
+			(root) => expectJudged(root, Object.fromEntries(misplaced.map((file) => [file, ENTRYPOINT]))),
 		);
 	});
 
@@ -309,11 +309,11 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 				expectJudged(
 					root,
 					{
-						"packages/alpha/tests/runtime/untyped.js": "must use .ts",
-						"tests/system/policy/untyped.jsx": "must use .ts",
-						"packages/alpha/tests/runtime/oversized.test.ts": "too many lines",
-						"packages/alpha/tests/runtime/oversized.test.tsx": "too many lines",
-						"tests/system/policy/oversized.test.ts": "too many lines",
+						"packages/alpha/tests/runtime/untyped.js": ENTRYPOINT,
+						"tests/system/policy/untyped.jsx": ENTRYPOINT,
+						"packages/alpha/tests/runtime/oversized.test.ts": "eslint(max-lines)",
+						"packages/alpha/tests/runtime/oversized.test.tsx": "eslint(max-lines)",
+						"tests/system/policy/oversized.test.ts": "eslint(max-lines)",
 					},
 					["packages/alpha/tests/runtime/rendered.test.tsx"],
 				);
