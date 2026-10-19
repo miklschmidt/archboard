@@ -35,16 +35,14 @@ This catches platform-specific failures that the Ubuntu suite cannot exercise;
 it does not replace any local gate.
 
 The supported normal topology is one Archboard server, one package-local bound
-Codex app-server, and one human editor. Short races inside that topology stay in
+Codex app-server, and one human reader. Short races inside that topology stay in
 their cheapest product owner. These commands contain everything outside it:
 
-| Command                                                                  | Concrete regressions and cheapest interface                                                                                                                                                                                        |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run test:opt-in:capacity`                                           | Dynamic-tool wire limits, transport write capacity, and the frozen app-server capacity authority.                                                                                                                                  |
-| `bun run test:opt-in:tooling`                                            | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters.                                                                                     |
-| `bun run test:opt-in:topology`                                           | A claim taken through a second server excludes writes here and reaches this server's pane within the lock sweep. A take-back by a pane here ends that server's claim, and its agent hears `CLAIM_REVOKED` after one lease renewal. |
-| `bun run test:opt-in:browser-performance`                                | The 10,000-element human-edit measurement and 42-cycle convergence soak through the serial real-browser adapter.                                                                                                                   |
-| `bun run opt-in:renderer-chromium` / `bun run opt-in:renderer-emulation` | Manual renderer and upstream-emulation probes. They are never package test owners.                                                                                                                                                 |
+| Command                        | Concrete regressions and cheapest interface                                                                                                                                                                                        |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run test:opt-in:capacity` | Dynamic-tool wire limits, transport write capacity, and the frozen app-server capacity authority.                                                                                                                                  |
+| `bun run test:opt-in:tooling`  | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters.                                                                                     |
+| `bun run test:opt-in:topology` | A claim taken through a second server excludes writes here and reaches this server's pane within the lock sweep. A take-back by a pane here ends that server's claim, and its agent hears `CLAIM_REVOKED` after one lease renewal. |
 
 Every test owner belongs to exactly one lane; opt-in package commands are never
 reached from `check`. The Ubuntu CI job invokes the complete `bun run check` gate;
@@ -153,10 +151,6 @@ test owner may import the declaration from
 it feeds measures every owner. A module owner keeps its `TEST_*` bound beside the
 case.
 
-The opt-in renderer-tooling owners load `dist/frontend/renderer.html`. Run
-`bun run build:frontend` first in a clean checkout. The normal package test
-still builds the frontend before product owners.
-
 `tests/system/semantic-boards/rasterize.test.ts` owns the zero-client bitmap
 workflow: `semantic rasterize` against a real Archboard server, the same selectors as
 `semantic render`, and a board file that does not move. The rasterizer's own
@@ -201,7 +195,6 @@ Run browser diagnosis only through the adapter:
 ```bash
 bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts
 bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts --test-name "<exact test name>"
-bun tests/system/browser/run-browser-lane.ts --opt-in --focus tests/system/browser/<opt-in-owner>.test.ts
 ```
 
 The code-target system owners run after `tests/system/process-contracts`. The
@@ -212,11 +205,10 @@ bun run test:system
 bun run test:serial-browser
 ```
 
-Print the normal and opt-in executable paths without copying their counts into
-documentation:
+Print the executable browser inventory without copying its count into documentation:
 
 ```bash
-bun -e 'import { BROWSER_TEST_PATHS, OPT_IN_BROWSER_TEST_PATHS } from "./tests/system/browser/support/agent-browser.ts"; console.log(BROWSER_TEST_PATHS.join("\n")); console.log(OPT_IN_BROWSER_TEST_PATHS.join("\n"))'
+bun -e 'import { BROWSER_TEST_PATHS } from "./tests/system/browser/support/agent-browser.ts"; console.log(BROWSER_TEST_PATHS.join("\n"))'
 ```
 
 System and browser owners must reap children,
@@ -252,31 +244,11 @@ The `renderToStaticMarkup` owners elsewhere in `apps/web/tests/ui/` do not need 
 Do not add a shared harness or migrate unrelated owners solely to change their
 test setup.
 
-## Former check inventory
-
-Every transitional package check now has one final owner lane:
-
-| Former key                                                                     | Final lane         | Native owner selector                                                                                      |
-| ------------------------------------------------------------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `test:suites`, `test:boundaries`                                               | repository         | `tests/system/repository-policy/`                                                                          |
-| `test:contracts`                                                               | modules and system | `apps/cli/tests/`, `tests/system/cli/`                                                                     |
-| `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                          |
-| `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `packages/*/tests/`, `apps/web/tests/ui/`, `tests/system/server-state/`, `tests/system/process-contracts/` |
-| `test:cli`, `test:install`, `test:repos`                                       | system             | `tests/system/cli/`                                                                                        |
-| `test:one-write`                                                               | system             | `tests/system/process-contracts/promotion-delete-bridge-one-write.test.ts`                                 |
-| `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`             | system             | `tests/system/server-state/`                                                                               |
-| `test:geometry`, `test:labels`                                                 | modules and system | `packages/*/tests/`, `tests/system/label-geometry/`                                                        |
-| `test:text`, `test:library`                                                    | modules            | `packages/*/tests/`                                                                                        |
-| `test:boards`                                                                  | system             | `tests/system/boards/`                                                                                     |
-| `test:browser`                                                                 | serial-browser     | `BROWSER_TEST_PATHS`                                                                                       |
-
 ## The serial browser lane
 
-Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
-catch a renderer disagreeing with us: a socket holds whatever it was sent. The
-normal owners named by `BROWSER_TEST_PATHS` drive a real browser through one
-strict adapter for live-session behavior and rendered fidelity. They are not a gate
-for named-board runtime operations. The lane:
+The owners named by `BROWSER_TEST_PATHS` drive a real browser through one
+strict adapter. They test visible behavior and rendered fidelity. System owners
+test the CLI and server through their public contracts. The browser lane:
 
 - resolves the pinned `agent-browser` package in this checkout, then runs its packaged native executable directly.
   Prerequisite failure exits 2 before building or starting an owner;
@@ -334,82 +306,21 @@ The normal package command is the canonical normal lane. Focused diagnosis accep
 bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts
 ```
 
-One `--focus` may name any subset of the owners, in any order; a repeated path
-runs once. Only what would otherwise run the whole lane by mistake is refused
-before prerequisites or build: a path that is not an owner, a flag the runner
-does not know, or `--test-name` without exactly one owner. `--test-name` is
-the only focused-owner option and matches the complete test name exactly. Do
-not invoke an owner directly: the adapter is what makes browser work serial,
-headless, and clean after failures or interruption.
+One `--focus` can name any subset of the owners in any order. A repeated path runs once.
+The runner refuses unknown paths and flags before prerequisites or a build.
+`--test-name` needs exactly one owner and matches its complete test name.
+Run owners through the adapter, which keeps browser work serial, headless and clean after interruption.
 
-`BROWSER_TEST_PATHS` is the normal inventory and the order the package
-command runs it in. `OPT_IN_BROWSER_TEST_PATHS` is disjoint and requires the
-explicit `--opt-in` mode; a path from the other inventory is refused.
+`BROWSER_TEST_PATHS` is the inventory and the order of the package command.
+The runner accepts the package command or a focused selection from this inventory.
 
-### Opt-in human edit performance (TASK-118)
+### Board reading and claims
 
-Keeps the measured 10,000-element human-only reproduction that attributed the
-stall to a multi-megabyte normal response and its whole-document browser
-reconciliation. It seeds a throwaway vault through the human report route,
-uses no agent-origin write in the measured window, delays report delivery so
-trusted drag, resize and typing overlap persistence, and records request body
-and response sizes, JSON work, frame gaps, hold/report/release counts and
-server fsync counts. A normal acknowledgement must be compact and
-document-free; a no-correction acknowledgement must perform no scene
-replacement.
-
-Its frame assertion is relative to the same run's median and deliberately
-loose. Do not replace it with a fixed millisecond gate: browser and runner speed
-are not the contract. The structural response/reconciliation assertions and
-the locally visible edits are the gate; timings remain diagnostic evidence.
-
-### Pane telemetry recovery
-
-The pane recovery check uses `PANE_DEBOUNCE_MS` and observable publication
-conditions rather than fixed browser sleeps. It forces the measured rectangle
-non-finite, waits beyond the debounce by a named margin, and proves no pane POST
-left the browser. It then restores the exact rounded rectangle and viewport
-that were already published and requires the same payload to be posted and
-recorded again. That same-key retry is the proof that the invalid branch clears
-its publication key. The server's pathful 400 for invalid telemetry stays in
-`test:system`; this browser owner does not send malformed telemetry just to test
-the server again.
-
-### Live-session contracts (TASK-076)
-
-Drives 42 cycles of interleaved agent and human writes against one board and
-asserts the pane's document and the server's stay identical **after every
-cycle**, naming the element, the field, both values and the cycle a divergence
-first appeared on. That is what makes "the server is the truth" a property
-rather than a claim: the bugs it exists to catch — a label multiplying, a
-rename coming back — need a session to build up in. About forty seconds.
-
-That 42-cycle soak is opt-in. The normal browser lane keeps the short
-server-update ordering, hold-generation, hold-persistence, and claim owners that
-catch reachable single-session races without repeating the complete soak.
-
-It also probes the server-update ordering from TASK-099. A user edit must be in
-a report in flight or a report that is scheduled. The pane records a server
-update in the same statement sequence as `updateScene`. A report that becomes
-due while another report is in flight is scheduled again rather than dropped.
-The check patches `Scene.replaceAllElements` so the next server update schedules
-a user edit in a microtask after the pane applies the update but before it
-records the new baseline. Four cases produce that ordering in every run: a
-resize, a retype, a delete, and a move while the server updates another
-element. Each case asserts that the pane and server documents agree and that
-the server contains the user's exact edit.
-
-It also owns the half of the board mutex only a renderer can answer
-(ADR 0022): a claimed board is view mode for people while pan and zoom still
-report, a drag takes no hold and revokes nothing, the explicit take-back route
-releases the claim and the agent is told once, and a disconnected pane still
-assumes the board is held rather than free.
-
-Its hold-generation scenario delays hold A1, switches the pane from board A to
-board B and back to A, then starts delayed hold A2. Releasing A1 first must
-leave A2 owned, schedule no stale retry, and persist A2's edit. This is the
-browser-level guard that board adoption advances the hold generation and that
-late promise completion cannot clear a newer same-board attempt.
+`semantic-board-viewer.test.ts` proves that a board opens in the shell, camera
+controls work, server edits reach the page, and presentation writes no board content.
+`semantic-claim.test.ts` proves that a claimed board keeps drawing and shows the claim.
+Its take-back control ends the claim, and the next agent write receives the revocation once.
+The board keeps every accepted edit after take-back.
 
 ### Controlled text workbench (TASK-143.03.13)
 
@@ -492,20 +403,12 @@ their exhaustive state and failure matrices.
   the temporary outputs and proves the checkout status is unchanged. For a
   local readable copy, `bun run generate:cli-contract` writes the three views
   to ignored `docs/design/generated/`. The
-  black-box argv cases in `test:system` continue through the real Commander
-  adapter and the package binary.
+  system CLI cases continue through the real Commander adapter and the package binary.
 - The CLI owners in `test:system` resolve `bin.archboard` from `package.json` and drive
-  that executable from outside the checkout. It covers no-argument help and
-  every command/subcommand topic exposed by production `cliContractRegistry()` data. A
-  local HTTP double also pins the public write contract: `--document` on add,
-  update and delete, global board/`--doing` routing, clean success streams,
-  structured refusal and usage exits, and CLI-owned import path resolution.
-- One one-write owner in `test:system`,
-  `promotion-delete-bridge-one-write.test.ts`, counts writes on the wire
-  through a proxy for the intents that are composed from several elements
-  (promote, delete many, bridge), so a loop cannot pass itself off as a batch
-  (TASK-068). Single-body routes have no other way to be one write and need no
-  proxy (TASK-153).
+  that executable from outside the checkout. They cover vault lookup, checkout hand-off,
+  repository selection, skill installation, board moves and resource cleanup.
+  `apps/cli/tests/cli/rules/routing/help.test.ts` discovers command topics from
+  `cliContractRegistry()` and tests their help through the real parser.
 - Normal lock owners prove reachable one-server exclusion. The opt-in topology
   owner proves a claim in one Archboard server process excludes writes through
   another on the same vault and reaches its panes, which an in-process mutex

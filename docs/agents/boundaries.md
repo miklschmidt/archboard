@@ -2,6 +2,7 @@
 
 Domain terms live in `CONTEXT.md`. This file defines where Archboard source lives, which
 folder can import which, and who owns a test. Oxlint enforces it (`bun run lint`).
+The decision is [ADR 0055](../adr/0055-packages-own-behavior-and-apps-compose-it.md).
 The history of the move is in `docs/design/package-map.md` and `docs/design/apps-migration.md`.
 
 ## Layout
@@ -315,8 +316,7 @@ still need the package-local `#` rewrite.
   Vite's root off (`source(none)`), names `apps/web/src` and names `packages/*/src/ui/**/*` with `@source`, so the
   `ui` area of every package is scanned (a bare `packages/*/src/ui` matches nothing). `tsconfig.frontend.json`
   includes `packages/*/src/ui`.
-- A component that no code outside the package imports, such as `Combobox` and `AlertDialog`, has
-  no api name and stays private.
+- A component used only inside the package stays private. Delete a component with no caller.
 
 The ninth is `server-requests` (`@archboard/server-requests`). It is the browser's one way of speaking
 JSON to the Archboard server, and the browser side of the rule that every call names its vault
