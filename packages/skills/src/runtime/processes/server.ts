@@ -118,14 +118,17 @@ async function startServer(
 	const log = fs.openSync(paths.serverLog, "a");
 	let child: Bun.Subprocess;
 	try {
-		child = Bun.spawn([process.execPath, path.join(checkout, "src", "server.ts")], {
-			cwd: checkout,
-			env: { ...env, PORT: String(port), HOST: "127.0.0.1" },
-			detached: true,
-			stdin: "ignore",
-			stdout: "ignore",
-			stderr: log,
-		});
+		child = Bun.spawn(
+			[process.execPath, path.join(checkout, "apps", "server", "src", "server.ts")],
+			{
+				cwd: checkout,
+				env: { ...env, PORT: String(port), HOST: "127.0.0.1" },
+				detached: true,
+				stdin: "ignore",
+				stdout: "ignore",
+				stderr: log,
+			},
+		);
 	} finally {
 		// Spawn duplicates the descriptor; the parent never owns the child's copy.
 		fs.closeSync(log);

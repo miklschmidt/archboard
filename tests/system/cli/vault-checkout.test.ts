@@ -78,7 +78,7 @@ beforeAll(async () => {
 	mkdirSync(vault, { recursive: true });
 	ensureSemanticVaultConfiguration(vault);
 	server = await startOwnedServer({
-		serverPath: join(repoRoot, "src/server.ts"),
+		serverPath: join(repoRoot, "apps/server/src/server.ts"),
 		vault: fixture.vault,
 		env: fixture.serverEnvironment,
 	});

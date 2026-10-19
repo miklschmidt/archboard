@@ -89,7 +89,10 @@ function boardFile(): { bytes: string; mtimeNs: bigint } {
 }
 
 beforeAll(async () => {
-	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({
+		serverPath: path.join(repoRoot, "apps/server/src/server.ts"),
+		vault,
+	});
 	const created = cli(
 		["semantic", "new", "transfers", "--doing", "drawing the transfer path"],
 		JSON.stringify(architecture),

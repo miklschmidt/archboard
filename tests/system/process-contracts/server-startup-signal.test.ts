@@ -12,7 +12,7 @@ import {
 } from "../server-state/support/codex-production.ts";
 import { waitFor } from "../server-state/support/http.ts";
 import { listOnlyVault } from "../support/test-vault.ts";
-import { CODEX_PROCESS_MODULE_PATH } from "../support/codex-process-module.ts";
+import { productionServer } from "../server-state/support/production-server.ts";
 import { records, startServer } from "./support/codex-workbench-lifecycle.ts";
 import {
 	buildOwnedServerEnvironment,
@@ -33,7 +33,6 @@ import {
 
 const repoRoot = resolvePath(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
-const serverEntry = join(repoRoot, "src/server.ts");
 
 async function freePort(): Promise<number> {
 	const server = createServer();
@@ -56,15 +55,6 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 	try {
 		const fixture = prepareProductionFixture(resources, fixtureSource);
 		writeFileSync(fixture.controlPath, JSON.stringify({ exit: false, holdInitialize: true }));
-		const wrapper = join(fixture.root, "startup-signal-server.ts");
-		writeFileSync(
-			wrapper,
-			`import { mock } from "bun:test";\n` +
-				`const actualExecutable = await import(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)});\n` +
-				`mock.module(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => process.env.ARCHBOARD_TEST_CODEX_EXECUTABLE }));\n` +
-				`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
-				`await startServer();\n`,
-		);
 		const port = await freePort();
 		const paths = {
 			home: join(fixture.root, "first-home"),
@@ -75,22 +65,26 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 		for (const directory of Object.values(paths)) {
 			mkdirSync(directory, { recursive: true, mode: 0o700 });
 		}
-		const server = spawn(process.execPath, [wrapper], {
-			cwd: repoRoot,
-			detached: true,
-			env: buildOwnedServerEnvironment({
-				paths,
-				port,
-				registry: listOnlyVault(join(fixture.root, "first-repos.json"), fixture.vault),
-				env: {
-					ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
-					ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
-					ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
-					ARCHBOARD_SETTLE_MS: "20",
-				},
-			}),
-			stdio: ["ignore", "pipe", "pipe"],
-		});
+		const server = spawn(
+			process.execPath,
+			["--preload", productionServer.preload, productionServer.serverPath],
+			{
+				cwd: repoRoot,
+				detached: true,
+				env: buildOwnedServerEnvironment({
+					paths,
+					port,
+					registry: listOnlyVault(join(fixture.root, "first-repos.json"), fixture.vault),
+					env: {
+						ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+						ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+						ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+						ARCHBOARD_SETTLE_MS: "20",
+					},
+				}),
+				stdio: ["ignore", "pipe", "pipe"],
+			},
+		);
 		if (server.pid === undefined) {
 			throw new Error("The startup-signal server has no pid.");
 		}

@@ -74,7 +74,7 @@ beforeAll(async () => {
 	});
 	if (added.status !== 0) throw new Error(`repo add ${product}: ${added.stderr}`);
 	server = await startOwnedServer({
-		serverPath: join(repoRoot, "src/server.ts"),
+		serverPath: join(repoRoot, "apps/server/src/server.ts"),
 		vault: metaVault,
 		env: fixture.serverEnvironment,
 	});

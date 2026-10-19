@@ -94,7 +94,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 	test("a successful replacement retires the prior transport without erasing current authority", async () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-codex-application-sockets-"));
 		const server = await startOwnedServer({
-			serverPath: join(repoRoot, "src/server.ts"),
+			serverPath: join(repoRoot, "apps/server/src/server.ts"),
 			vault: vaultIn(join(root, "vault")),
 		});
 		const request = createRequester(server);
@@ -211,10 +211,8 @@ describe.serial("production server Codex WebSocket ownership", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-codex-initial-send-failure-"));
 		const sendLog = join(root, "initial-send.log");
 		const server = await startOwnedServer({
-			serverPath: join(
-				repoRoot,
-				"tests/system/server-state/fixtures/initial-send-failure-server.ts",
-			),
+			serverPath: join(repoRoot, "apps/server/src/server.ts"),
+			preload: join(repoRoot, "tests/system/server-state/fixtures/initial-send-failure-preload.ts"),
 			vault: vaultIn(join(root, "vault")),
 			env: { ARCHBOARD_TEST_INITIAL_SEND_LOG: sendLog },
 		});

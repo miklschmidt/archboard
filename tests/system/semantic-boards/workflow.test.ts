@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { vaultUrl } from "../support/http.ts";
-import { runServerCli } from "../support/run-cli.ts";
+import { runServerCli, serverEntry } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
 
 // The public path a person and an agent use: commands create, change, read and
@@ -59,7 +59,7 @@ const currentPipeline = {
 };
 
 beforeAll(async () => {
-	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({ serverPath: serverEntry(repoRoot), vault });
 });
 
 afterAll(async () => {

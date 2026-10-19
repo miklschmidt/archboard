@@ -20,12 +20,8 @@ import {
 } from "./agent-browser.ts";
 import { openWithControlledVoiceMedia } from "./codex-live-voice.ts";
 import { DOCK_VOICE } from "./voice-page.ts";
+import { productionServer } from "../../server-state/support/production-server.ts";
 
-/** The production server, with the fake Codex in place of the real one. */
-const VOICE_SERVER = join(
-	import.meta.dir,
-	"../../server-state/fixtures/codex-production-server.ts",
-);
 const FAKE_CODEX = join(import.meta.dir, "../../server-state/fixtures/fake-codex-production.ts");
 
 /** A server whose Codex is the fake, the fake's files and the server's vault. */
@@ -48,7 +44,7 @@ export async function startVoiceServer(
 	const fixture = prepareProductionFixture(resources, FAKE_CODEX);
 	const vault = vaultIn(join(browserTestRoots().ownerRoot, vaultName));
 	const server = await startOwnedServer({
-		serverPath: VOICE_SERVER,
+		...productionServer,
 		vault,
 		env: serverTestEnvironment({
 			ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,

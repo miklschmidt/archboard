@@ -46,7 +46,7 @@ import {
 } from "./support/shell-dom.ts";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
-const serverPath = join(repoRoot, "src/server.ts");
+const serverPath = join(repoRoot, "apps/server/src/server.ts");
 type PanesBody = { paneCount?: number };
 /** The lines an agent says it is doing, the latest of which the navigator shows as it works. */
 const activityLines = [

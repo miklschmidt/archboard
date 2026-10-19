@@ -42,8 +42,8 @@ model, and detector code accept only those snapshot records. The snapshot owner 
 separate 2,000,000-comparison limit; a stopped pair pass retains completed findings and comparisons.
 The two limits are capacity safeguards, not a general runtime or asymptotic guarantee.
 
-Root `src/` files are thin process entrypoints only. The one existing entrypoint is `src/server.ts`;
-the CLI's entry is `apps/cli/src/bin.ts`. Do not add implementation to these files.
+Root `src/` holds no process entrypoint any more: the entries are `apps/cli/src/bin.ts` and
+`apps/server/src/server.ts`. Do not add implementation to them.
 
 Browser code belongs under `src/ui/<module>`, not under a separate legacy frontend tree. Build host
 files can stay outside `src/`, but UI implementation follows the same module rules as server code.
@@ -174,7 +174,7 @@ defines a different `repositoryOfVault`, the one that the server projection answ
 finds the checkout by walking up to the nearest directory that is an archboard checkout, so the
 depth of the file decides nothing, and `bin.ts` loads it lazily, so a command that hands itself to
 another checkout loads nothing else first. `module-paths` is not here: it moved into `workbench`, which
-derives `src/` from `SOURCE_CHECKOUT`.
+derives the checkout root from `SOURCE_CHECKOUT`.
 
 The fifth is `code-binding` (`@archboard/code-binding`). It knows what a node's code binding is and
 where its path lives in a checkout. It adopts the `api/` role for `shared/` and `runtime/` and
@@ -530,8 +530,8 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
   `runtime/rules/` holds the pane layout, `runtime/store/` the pid file, `runtime/state/` the invocation's context
   and `runtime/services/` the configuration and the staleness check.
 - The server entry and the version file are found with `SOURCE_CHECKOUT` of `workspace`, because the package sits
-  at another depth than the module did: the spawn runs `src/server.ts` and the version is read from the root
-  `package.json` of that checkout. The staleness check watches `src/` and `packages/` of it. The startup preload
+  at another depth than the module did: the spawn runs `apps/server/src/server.ts` and the version is read from the root
+  `package.json` of that checkout. The staleness check watches `src/`, `packages/` and `apps/` of it. The startup preload
   of `tests/system/server-state/` mocks the cleanup timing of `runtime/operations/server-startup-cleanup.ts` by path,
   because the spawn imports that private file, and `package-api.test.ts` names it.
 - The tests are in `tests/`: `runtime/store/` holds the pid file, `runtime/operations/` the cleanup of a failed start
@@ -619,7 +619,7 @@ grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `
   (`bun run test:opt-in:capacity`).
 
 **Server.** `server/` is the workbench on the Archboard server. It reads the runtime and the shared contracts through
-their private files, and no private file imports an api file. The host in `src/server/archboard/` keeps the routes and
+their private files, and no private file imports an api file. The host in `apps/server/` keeps the routes and
 the application. It imports only `server/api/`, and only what a route or the application itself calls: the pane
 registry, the tab sessions, the request context, the wiring and the listener. Everything else (the generations, the
 owners and the actions that carry out a pane's command) is private, and its tests are in the package. Its parts were
@@ -660,8 +660,9 @@ owners and the actions that carry out a pane's command) is private, and its test
   routing and wait of a dynamic tool call. `services/browser-socket/` publishes to the sockets of a browser.
   `services/panes/` is the pane registry, the pane presentation, the tab sessions, the context each pane last
   reported and the settled change feed. `services/request/` reads the board and the vault a call names, and
-  `services/host/` holds where the server listens and where its source and frontend are (`module-paths.ts` takes them
-  from `SOURCE_CHECKOUT`, so no depth decides).
+  `services/host/` holds where the server listens and which checkout it runs (`module-paths.ts` takes it from
+  `SOURCE_CHECKOUT`, so no depth decides). The frontend directory is the host app's: `apps/server` serves
+  `SOURCE_CHECKOUT/dist/frontend`.
 - The 3 api files group what a caller does. `./server` is the workbench on the server (24 names): the wiring through
   which panes and routes reach it (its hooks, its preparation and stop, the browser socket owner); the gateway and the
   projection of the browser state, which the system tests compose with the runtime pieces; the actions of a tab's voice
@@ -672,7 +673,7 @@ owners and the actions that carry out a pane's command) is private, and its test
 - The tests are in `tests/server/`, in the folders of the code they cover. `support/generation/` holds the fake
   owners, fixtures and harness that the generation, owner, session, action and timeline tests share, and
   `support/gateway/` those of the gateway and the projection tests. Only the tests of the host's own routes, lifetime
-  and startup stay in `src/server/archboard/tests/`.
+  and startup stay in `apps/server/tests/`.
 
 **Ui.** `ui/` is the browser side of the workbench: the transport, the conversation and the composer (TASK-500.23.06),
 and over them the dock, the panes, the approvals, the queue, the agent setup and the voice (TASK-500.23.07). The
@@ -763,7 +764,7 @@ For commands other than help, it checks for retired environment variables before
 command table. Help returns before prerequisite checks or command execution. The command table
 still imports configuration and logging modules.
 
-Never import the server there: the CLI reaches it by spawning `src/server.ts`. Nothing imports the app.
+Never import the server there: the CLI reaches it by spawning `apps/server/src/server.ts`. Nothing imports the app.
 The root `generate:cli-contract` script, the system tests and the skill evaluation spawn it by
 path, and `archboard install-skill --print-source` is how a test learns which skills it ships.
 
@@ -787,6 +788,33 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
   repository paths of these files. Moving a command file means editing `run.ts`.
 - The tests are in `tests/cli/`, in the folders of the code they cover. `support/` holds the public
   runner fixture and the stand-in vault.
+
+### `apps/server`
+
+`apps/server` is the HTTP and socket host (TASK-500.24.03). Its entry is `src/server.ts`, which starts
+`startServer` when it is the process entry (`isMainModule`) and exports nothing. Nothing imports it: the
+launcher of `server-lifecycle` spawns `join(SOURCE_CHECKOUT, "apps", "server", "src", "server.ts")`, and a
+system test spawns the same path, with `bun --preload` where it has to replace a module before the server loads.
+The host serves the browser build from `SOURCE_CHECKOUT/dist/frontend` (`store/frontend/`) and nothing else
+of `dist/`.
+
+- `src/server/` is the `server` area. `wiring/` joins the parts: `application/` mounts every middleware and
+  route in the order Express runs them, `http/` holds the one Express app and the factory seam of its HTTP
+  listener, and `owners/` holds the owners that the lifetime and the routes share. `lifecycle/` holds the
+  lifetime of the server's resources and the admission of mutation work (`lifetime/`), the start of the process
+  with its signals and phase (`startup/`) and the resources it closes (`resources/`). `routes/` holds one
+  folder for each route group: `semantic-boards/` (edit, discard, move, rename and the claim), `panes/`,
+  `repositories/`, `code-check/`, `footprint/`, `locality/` and `service/` (the page, health and the
+  served vault). `middleware/mutation-work/` runs a request's work under its lease. `sockets/panes/` accepts the
+  pane sockets, `watchers/semantic-boards/` watches the board files on disk, `state/` holds the pane vaults, the
+  agent activity and the memory of code findings, `projections/board-announcements/` turns a lock or a doing line
+  into what a pane hears, `services/checkout-work/` owns the machine-local checkout work, `rules/footprint/`
+  picks the variants a footprint reads and `protocol/semantic-write/` is what a write request must prove.
+- The routes of other behavior live in `packages/workbench` (the panes, the tab sessions, the request
+  context and the listener) and `packages/code-opener`; this app imports their `exports` and mounts them.
+- The tests are in `tests/server/`, in the folders of the code they cover. `lifecycle/lifetime/` also holds the
+  proof that a stop force-reaps a real process group. The system tests that start the whole server stay in
+  `tests/system/`.
 
 ## Vendor-owned data
 

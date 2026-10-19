@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
+import { setTimeout as sleep } from "node:timers/promises";
 
 import {
 	TEST_SERVER_HEALTH_POLL_MS,
@@ -12,6 +13,7 @@ import {
 import {
 	buildOwnedServerEnvironment,
 	createOwnedServerPaths,
+	ownedServerArguments,
 	isOwnedServerNamespaceRoot,
 	processExists,
 	waitForProcessExit,
@@ -37,6 +39,8 @@ import { listOnlyVault } from "./test-vault.ts";
 type Environment = Readonly<Record<string, string | undefined>>;
 interface StartOwnedServerOptions {
 	readonly serverPath: string;
+	/** A script Bun runs before the server, to replace what the server imports (`bun --preload`). */
+	readonly preload?: string;
 	readonly port?: number;
 	readonly vault: string;
 	readonly env?: Environment;
@@ -84,11 +88,6 @@ const MAX_START_ATTEMPTS = 8;
 const settleOperation = (): void => {
 	// Intentionally swallow either outcome so later queued operations can continue.
 };
-const sleep = async (ms: number): Promise<void> => {
-	await new Promise<void>((resolve) => {
-		setTimeout(resolve, ms);
-	});
-};
 
 async function automaticPort(): Promise<number> {
 	const probe = createServer();
@@ -123,8 +122,14 @@ const healthPid = (value: unknown): number | undefined =>
 	value !== null && typeof value === "object" && "pid" in value && typeof value.pid === "number"
 		? value.pid
 		: undefined;
+const waitForExit = async (
+	exitPromise: Readonly<Promise<Exit>>,
+	timeoutMs: number,
+): Promise<boolean> =>
+	Promise.race([exitPromise.then(() => true), sleep(timeoutMs).then(() => false)]);
 async function startOwnedServer({
 	serverPath,
+	preload,
 	port: explicitPort,
 	vault,
 	env = {},
@@ -197,11 +202,6 @@ async function startOwnedServer({
 			throw deathError(generation, cause);
 		}
 	};
-	const waitForExit = async (
-		exitPromise: Readonly<Promise<Exit>>,
-		timeoutMs: number,
-	): Promise<boolean> =>
-		Promise.race([exitPromise.then(() => true), sleep(timeoutMs).then(() => false)]);
 	const stopGeneration = async (
 		generation: Readonly<StoppableGeneration>,
 		signal: NodeJS.Signals = "SIGTERM",
@@ -237,7 +237,7 @@ async function startOwnedServer({
 		}
 	};
 	const startAttempt = async (candidate: number): Promise<Generation> => {
-		const child = spawn(process.execPath, [serverPath], {
+		const child = spawn(process.execPath, ownedServerArguments(serverPath, preload), {
 			env: buildOwnedServerEnvironment({ paths, port: candidate, registry, env }),
 			stdio: ["ignore", "ignore", "pipe"],
 		});

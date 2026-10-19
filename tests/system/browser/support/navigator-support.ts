@@ -9,7 +9,7 @@ type HealthBody = { websocket_clients: number };
 type ElementsBody = { elements: unknown[] };
 type ChangesBody = { cursor: number };
 const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
-const serverPath = join(repoRoot, "src/server.ts");
+const serverPath = join(repoRoot, "apps/server/src/server.ts");
 
 /**
  * The repository a server lists its own vault under: what a pane's address

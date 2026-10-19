@@ -80,7 +80,7 @@ test("a board replaced by another writer reaches the pane showing it", async () 
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = vaultIn(join(root, "vault"));
 	const server = await startOwnedServer({
-		serverPath: join(repoRoot, "src/server.ts"),
+		serverPath: join(repoRoot, "apps/server/src/server.ts"),
 		vault,
 		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});
@@ -156,7 +156,7 @@ test("a second pane arriving does not swallow the news for the pane already ther
 	writeFileSync(file, `${JSON.stringify(boardDocument([node("Gateway")]), null, "\t")}\n`);
 
 	const server = await startOwnedServer({
-		serverPath: join(repoRoot, "src/server.ts"),
+		serverPath: join(repoRoot, "apps/server/src/server.ts"),
 		vault,
 		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});
@@ -208,7 +208,7 @@ test("a board that was already in the vault is watched from the moment it is sho
 	writeFileSync(file, `${JSON.stringify(boardDocument([node("Gateway")]), null, "\t")}\n`);
 
 	const server = await startOwnedServer({
-		serverPath: join(repoRoot, "src/server.ts"),
+		serverPath: join(repoRoot, "apps/server/src/server.ts"),
 		vault,
 		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});

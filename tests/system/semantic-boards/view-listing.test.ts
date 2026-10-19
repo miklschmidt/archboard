@@ -81,7 +81,10 @@ function rendered(args: readonly string[]) {
 }
 
 beforeAll(async () => {
-	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({
+		serverPath: path.join(repoRoot, "apps/server/src/server.ts"),
+		vault,
+	});
 	ok(
 		["semantic", "new", "ledger", "--doing", "drawing the ledger"],
 		JSON.stringify({

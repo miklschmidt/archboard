@@ -49,7 +49,10 @@ const ARCHITECTURE = {
 };
 
 beforeAll(async () => {
-	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({
+		serverPath: path.join(repoRoot, "apps/server/src/server.ts"),
+		vault,
+	});
 });
 
 afterAll(async () => {

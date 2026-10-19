@@ -65,7 +65,10 @@ beforeAll(async () => {
 	// A shell builtin, so the browser starts whatever PATH holds.
 	writeFileSync(browser, `#!/bin/sh\n: > '${started}'\nexit 1\n`);
 	chmodSync(browser, 0o700);
-	server = await startOwnedServer({ serverPath: join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({
+		serverPath: join(repoRoot, "apps/server/src/server.ts"),
+		vault,
+	});
 	const created = runServerCli({
 		repoRoot,
 		server,

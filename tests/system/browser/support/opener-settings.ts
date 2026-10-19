@@ -69,7 +69,7 @@ type MediaMode = "normal" | "reduced-motion" | "forced-colors";
 type ShellTheme = "light" | "dark";
 
 const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
-export const serverPath = join(repoRoot, "src/server.ts");
+export const serverPath = join(repoRoot, "apps/server/src/server.ts");
 export const repository = "github.com/acme/archboard";
 export const githubHref = "https://github.com/acme/archboard/actions/workflows/check.yml";
 export const draftSelection = {

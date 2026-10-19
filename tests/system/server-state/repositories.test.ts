@@ -88,7 +88,7 @@ beforeAll(async () => {
 	});
 	if (untracked.status !== 0) throw new Error(`repo add ${holder}: ${untracked.stderr}`);
 	server = await startOwnedServer({
-		serverPath: join(repoRoot, "src/server.ts"),
+		serverPath: join(repoRoot, "apps/server/src/server.ts"),
 		vault: fixture.vault,
 		env: fixture.serverEnvironment,
 	});

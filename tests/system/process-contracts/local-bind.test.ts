@@ -21,7 +21,7 @@ import { plantStaticProbes } from "./support/static-probes.ts";
 const repoRoot = resolve(import.meta.dir, "../../..");
 const fixture = join(import.meta.dir, "fixtures/server-start-environment.ts");
 const healthFixture = join(import.meta.dir, "fixtures/health-responder.ts");
-const serverEntry = join(repoRoot, "src/server.ts");
+const serverEntry = join(repoRoot, "apps/server/src/server.ts");
 const HealthResponderReadySchema = ReadySchema.extend({ port: z.number().int().positive() });
 
 const fixtureEnv = (root: string, mode: "default" | "broad") => ({
@@ -45,7 +45,7 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 		vault,
 		env: {
 			...fixtureEnv(root, "default"),
-			ARCHBOARD_TEST_SERVER_ENTRY: join(hiddenRepo, "src/server.ts"),
+			ARCHBOARD_TEST_SERVER_ENTRY: join(hiddenRepo, "apps/server/src/server.ts"),
 		},
 	});
 	resources.defer(() => server.dispose());

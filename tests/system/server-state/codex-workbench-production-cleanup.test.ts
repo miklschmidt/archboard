@@ -40,8 +40,8 @@ import {
 	closedLoopbackEndpoint,
 	pane,
 } from "./support/production-cleanup.ts";
+import { productionServer } from "./support/production-server.ts";
 
-const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 
 describe.serial("production Codex setup cleanup", () => {
@@ -281,7 +281,7 @@ describe.serial("production Codex setup cleanup", () => {
 				throw new Error("missing blocked port");
 			}
 			const failure = await startOwnedServer({
-				serverPath,
+				...productionServer,
 				port: address.port,
 				vault: fixture.vault,
 				env: {
@@ -317,7 +317,7 @@ describe.serial("production Codex setup cleanup", () => {
 				onRootCleanup: () => void cleanupOrder.push("root"),
 			});
 			const server = await startOwnedServer({
-				serverPath,
+				...productionServer,
 				vault: fixture.vault,
 				env: {
 					ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
@@ -413,7 +413,7 @@ describe.serial("production Codex setup cleanup", () => {
 				onRoot: (value) => void (root = value),
 			});
 			const failure = await startOwnedServer({
-				serverPath,
+				...productionServer,
 				vault: fixture.vault,
 				env: {
 					ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,

@@ -12,14 +12,14 @@ import {
 	productionPane as pane,
 } from "./support/codex-production.ts";
 import { createRequester, waitFor } from "./support/http.ts";
+import { productionServer } from "./support/production-server.ts";
 
-const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 /** The archboard checkout these tests run from, where no thread of a served vault works. */
 const repoRoot = realpathSync(resolve(import.meta.dir, "../../.."));
 
 describe.serial("actual production Codex composition", () => {
-	test("src/server.ts crosses every browser, protocol, semantic, approval, and cleanup seam", async () => {
+	test("apps/server/src/server.ts crosses every browser, protocol, semantic, approval, and cleanup seam", async () => {
 		const resources = new AsyncDisposableStack();
 		try {
 			const fixture = prepareProductionFixture(resources, executableSource);
@@ -27,7 +27,7 @@ describe.serial("actual production Codex composition", () => {
 			let server: Awaited<ReturnType<typeof startOwnedServer>>;
 			try {
 				server = await startOwnedServer({
-					serverPath,
+					...productionServer,
 					vault,
 					env: {
 						ARCHBOARD_TEST_CODEX_EXECUTABLE: executablePath,
@@ -214,7 +214,7 @@ describe.serial("actual production Codex composition", () => {
 			// Whether a settled change reaches the workhorse, and whose change is
 			// worth telling it about, is the semantic delivery gate's own question
 			// and has its own owner under codex-thread-context. What this test owns
-			// is the composition: that the real src/server.ts wires the feed, the
+			// is the composition: that the real apps/server/src/server.ts wires the feed, the
 			// context and the workbench together at all, which the turn/start
 			// context above is the evidence for.
 

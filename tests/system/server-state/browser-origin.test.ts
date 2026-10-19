@@ -16,7 +16,10 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 	const root = mkdtempSync(join(tmpdir(), "archboard-browser-origin-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = vaultIn(join(root, "vault"));
-	const server = await startOwnedServer({ serverPath: join(repoRoot, "src/server.ts"), vault });
+	const server = await startOwnedServer({
+		serverPath: join(repoRoot, "apps/server/src/server.ts"),
+		vault,
+	});
 	resources.defer(() => server.dispose());
 	const boardFile = join(vault, "payments.semantic.json");
 	const named = `vault=${encodeURIComponent(server.vault)}`;
