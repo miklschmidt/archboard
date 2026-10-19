@@ -11,7 +11,6 @@
 import { mock } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { createServer, type RequestListener, type Server } from "node:http";
-import { resolve } from "node:path";
 
 type Listen = (...args: unknown[]) => unknown;
 type ListenOptions = { port?: number; host?: string; signal?: AbortSignal };
@@ -19,10 +18,7 @@ type ListenOptions = { port?: number; host?: string; signal?: AbortSignal };
 const mode = process.env["ARCHBOARD_TEST_HTTP_FAILURE"];
 const pendingPath = process.env["ARCHBOARD_TEST_HTTP_PENDING_PATH"];
 const outcomePath = process.env["ARCHBOARD_TEST_HTTP_OUTCOME_PATH"];
-const httpFactoryModule = resolve(
-	import.meta.dir,
-	"../../../../apps/server/src/server/wiring/http/http-server.ts",
-);
+const httpFactoryModule = import.meta.resolve("#server/wiring/http/http-server.ts");
 let ownedServer: Server | undefined;
 let pending = false;
 

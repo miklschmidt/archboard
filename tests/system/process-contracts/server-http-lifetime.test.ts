@@ -25,7 +25,10 @@ import { records } from "./support/codex-workbench-lifecycle.ts";
 
 const repoRoot = resolvePath(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
-const httpFailurePreload = join(import.meta.dir, "fixtures/http-failure-preload.ts");
+const httpFailurePreload = join(
+	repoRoot,
+	"apps/server/tests/server/support/http-failure-preload.ts",
+);
 type HttpFailureMode = "bind-race" | "runtime-error" | "delayed-listen-cancel";
 
 async function freePort(): Promise<number> {
