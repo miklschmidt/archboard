@@ -10,11 +10,9 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
-		"./observation": "./src/runtime/processes/observation.ts",
-		"./group": "./src/runtime/processes/group.ts",
-		"./git-owner": "./src/runtime/processes/git-owner.ts",
-		"./git-group-termination": "./src/runtime/processes/git-group-termination.ts",
-		"./codex-group": "./src/runtime/processes/codex-group.ts",
-		"./group-cleanup": "./src/runtime/processes/group-cleanup.ts"
+		"./observation": "./src/runtime/api/observation.ts",
+		"./git-group": "./src/runtime/api/git-group.ts",
+		"./codex-group": "./src/runtime/api/codex-group.ts",
+		"./git-owner": "./src/runtime/processes/git-owner.ts"
 	}
 }

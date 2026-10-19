@@ -20,9 +20,9 @@ import {
 	processGroupExists,
 	processGroupHasOtherMember,
 	type ProcessGroupIdentity,
-} from "@archboard/process/group";
+	stopAndKillOwnedGroup,
+} from "@archboard/process/git-group";
 import { asError, errorMessage } from "@archboard/diagnostics/thrown-error";
-import { stopAndKillOwnedGroup } from "@archboard/process/git-group-termination";
 import { GitCommandError } from "#runtime/clients/git-failure.ts";
 import type { GitFailure } from "#runtime/clients/git-failure.ts";
 import { drainBounded } from "#runtime/clients/git-output.ts";

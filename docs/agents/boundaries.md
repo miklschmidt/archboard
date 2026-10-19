@@ -123,8 +123,10 @@ split by behavior.
   from the private files that define the names, and it holds no second definition. A public name
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
-  `codex-app-server` and `code-binding` adopt it for `shared/` and `runtime/`, and `workspace` also
-  for `server/`. `tests/system/repository-policy/package-api.test.ts` holds the three rules.
+  `codex-app-server` and `code-binding` adopt it for `shared/` and `runtime/`, `workspace` also for
+  `server/`, and `process` for `runtime/`. An export that is a file to run, not a module to import,
+  is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
+  `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
   `exports` does not name. It also refuses a relative path that reaches a private file of another
   package.
@@ -154,12 +156,14 @@ and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` 
 Error or string, and `./thrown-error` stringifies it.
 
 The third is `process` (`@archboard/process`). It owns a child process group and ends it, and every
-file sits in `runtime/processes/`. `./observation` reads the process table. `./group` and
-`./git-group-termination` signal a group and end the group of a Git command. `./git-owner` is the
-script that a Git command runs under, and callers find it with `import.meta.resolve`.
-`./codex-group` holds the Codex process-group operations, and `./group-cleanup` is their
-TERM-then-KILL escalation. The cleanup takes its error type from the caller, so the package does
-not import `codex-app-server`.
+file sits in `runtime/processes/`. It adopts the `api/` role for `runtime/` and exposes 4 subpaths,
+where it exposed 6 files. `./observation` reads the process table. `./git-group` carries the
+operations on the group of a Git command: capturing it, asking whether it or another member exists,
+and the TERM-then-KILL end of it. `./codex-group` carries the Codex process-group operations and
+their TERM-then-KILL escalation. The cleanup takes its error type from the caller, so the package
+does not import `codex-app-server`. `./git-owner` is the one export that is not an api file: it is
+the script that a Git command runs under, and callers find it with `import.meta.resolve` and spawn
+it, so it keeps pointing at its file, and `package-api.test.ts` names it as an executable.
 
 The fourth is `workspace` (`@archboard/workspace`). It knows where a vault, a checkout and the state
 directory are. It adopts the `api/` role for `shared/`, `runtime/` and `server/` and exposes 8

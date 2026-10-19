@@ -11,21 +11,39 @@ const packagesRoot = path.resolve(
 // An `api/` folder is a package's interface over private implementation (docs/agents/boundaries.md,
 // "Packages"). A package that adopts it points the `exports` of an area only into that area's
 // `api/`, and nothing private reaches back up into it. Each package lists the areas it adopts it
-// for.
-const ADOPTERS = [
+// for. An `executables` entry names an export that is a file to run, not a module to import, with
+// the reason: it keeps pointing at its file.
+const ADOPTERS: {
+	name: string;
+	areas: string[];
+	executables?: Record<string, string>;
+}[] = [
 	{ name: "board", areas: ["shared", "runtime"] },
 	{ name: "codex-app-server", areas: ["shared", "runtime"] },
 	{ name: "workspace", areas: ["shared", "runtime", "server"] },
 	{ name: "code-binding", areas: ["shared", "runtime"] },
+	{
+		name: "process",
+		areas: ["runtime"],
+		executables: {
+			"./git-owner": "a Git command runs it as a child process, found with import.meta.resolve",
+		},
+	},
 ];
 
 const API_IMPORT = /["'`]#[a-z]+\/api\//;
 const EXPORT_STAR = /\bexport\s*\*/;
 
-function exportsOutsideApi(exports: Record<string, string>, area: string): string[] {
+function exportsOutsideApi(
+	exports: Record<string, string>,
+	area: string,
+	executables: readonly string[] = [],
+): string[] {
 	const prefix = `./src/${area}/`;
 	return Object.entries(exports).flatMap(([subpath, target]) =>
-		target.startsWith(prefix) && !new RegExp(`^\\./src/${area}/api/[^/]+\\.ts$`).test(target)
+		target.startsWith(prefix) &&
+		!executables.includes(subpath) &&
+		!new RegExp(`^\\./src/${area}/api/[^/]+\\.ts$`).test(target)
 			? [`${subpath} -> ${target}`]
 			: [],
 	);
@@ -77,14 +95,16 @@ function productionFiles(name: string): Record<string, string> {
 	);
 }
 
-describe.each(ADOPTERS)("the api folder of $name", ({ name, areas }) => {
+describe.each(ADOPTERS)("the api folder of $name", ({ name, areas, executables = {} }) => {
 	const manifest = JSON.parse(
 		fs.readFileSync(path.join(packagesRoot, name, "package.json"), "utf8"),
 	) as { exports: Record<string, string> };
 	const files = productionFiles(name);
 
 	test.each(areas)("every export into src/%s points into its api folder", (area) => {
-		expect(exportsOutsideApi(manifest.exports, area)).toEqual([]);
+		const exempt = Object.keys(executables);
+		expect(exempt.filter((subpath) => !(subpath in manifest.exports))).toEqual([]);
+		expect(exportsOutsideApi(manifest.exports, area, exempt)).toEqual([]);
 	});
 
 	test("no private production file imports an api file", () => {
@@ -112,6 +132,17 @@ describe("the api checks", () => {
 			"./ids -> ./src/shared/rules/ids.ts",
 			"./nested -> ./src/shared/api/deeper/nested.ts",
 		]);
+		expect(
+			exportsOutsideApi(
+				{
+					"./owner": "./src/runtime/processes/owner.ts",
+					"./group": "./src/runtime/processes/group.ts",
+					"./api": "./src/runtime/api/group.ts",
+				},
+				"runtime",
+				["./owner"],
+			),
+		).toEqual(["./group -> ./src/runtime/processes/group.ts"]);
 		expect(
 			exportsOutsideApi(
 				{

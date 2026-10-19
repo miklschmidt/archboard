@@ -17,11 +17,11 @@ import {
 	type CodexProcessTestOptions,
 	type Timer,
 } from "#runtime/processes/process-contract.ts";
-import type { CodexProcessGroupIdentity } from "@archboard/process/codex-group";
 import {
+	type CodexProcessGroupIdentity,
 	createProcessGroupCleanup,
 	type ProcessGroupCleanup,
-} from "@archboard/process/group-cleanup";
+} from "@archboard/process/codex-group";
 import { diagnosticSecrets, truncateUtf8 } from "#runtime/processes/process-startup-checks.ts";
 import type { PreparedCodexStorage } from "#runtime/store/storage.ts";
 import {

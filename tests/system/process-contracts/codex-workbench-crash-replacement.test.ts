@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
 	openApplicationSocket,
@@ -21,9 +22,8 @@ import type { FixtureRecord } from "./support/codex-workbench-lifecycle.ts";
 const { join } = path;
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
-const processObservationModule = join(
-	repoRoot,
-	"packages/process/src/runtime/processes/observation.ts",
+const processObservationModule = fileURLToPath(
+	import.meta.resolve("@archboard/process/observation"),
 );
 
 function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, "defer">>): string {
