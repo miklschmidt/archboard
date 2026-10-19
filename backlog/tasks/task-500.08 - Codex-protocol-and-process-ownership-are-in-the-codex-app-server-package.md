@@ -1,9 +1,11 @@
 ---
 id: TASK-500.08
 title: Codex protocol and process ownership are in the codex-app-server package
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-19 03:14'
+updated_date: '2026-10-19 03:33'
 labels: []
 dependencies:
   - TASK-500.07
@@ -24,3 +26,14 @@ The runtime half of the codex-app-server package: runtime/codex-protocol (schema
 - [ ] #3 The tests of the moved code live in packages/codex-app-server/tests, and the normal and opt-in test paths in package.json and ci.yml name the new locations
 - [ ] #4 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Move runtime/codex-protocol (index.ts, lib/*, tests) and the remaining runtime/codex-process (lib/*, entry files, testing.ts, tests) into packages/codex-app-server under runtime/ role folders chosen from the content: protocol schemas and decoder (shared if browser-used, otherwise runtime/protocol or schemas), process owner, storage and executable (processes, store, services), diagnostics and environment.
+2. Remove the forwarding entry files (index.ts, process.ts, storage.ts, executable.ts, environment.ts, diagnostics.ts, testing.ts of codex-process; index.ts of codex-protocol). The exports point at the real files, with the minimum subpaths that outside code uses. A ./testing export only if tests outside the package need createCodexProcessForTesting and its types.
+3. runtime/codex-process/lib/executable.ts resolves the project root by walking four parents up from its own file. Use SOURCE_CHECKOUT from @archboard/workspace/source-checkout, keep refusing an executable outside the checkout node_modules, keep the createRequire resolve of @openai/codex/bin/codex.js, and keep its tests green (they prove the refusals).
+4. errno-code.ts in codex-process: replace by @archboard/diagnostics/errno where behavior is identical, delete the duplicate when no storage file needs it.
+5. Tests move to packages/codex-app-server/tests/runtime/<role>/. package.json test paths (test:modules ignore patterns, opt-in) and .github/workflows/ci.yml name the new locations.
+6. No @/ import in the package; the package depends on lower packages only. If a moved file needs a file that stays in src/, stop and report. Rewrite importers with /tmp/pm/move-package.ts, hand-fix reported strings, update docs/agents/boundaries.md and skills/archboard-dev/SKILL.md paths. bun run check.
+<!-- SECTION:PLAN:END -->
