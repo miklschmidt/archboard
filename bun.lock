@@ -114,6 +114,10 @@
       "name": "@archboard/server-requests",
       "version": "0.0.0",
     },
+    "packages/skills": {
+      "name": "@archboard/skills",
+      "version": "0.0.0",
+    },
     "packages/timing": {
       "name": "@archboard/timing",
       "version": "0.0.0",
@@ -167,6 +171,8 @@
     "@archboard/renderer": ["@archboard/renderer@workspace:packages/renderer"],
 
     "@archboard/server-requests": ["@archboard/server-requests@workspace:packages/server-requests"],
+
+    "@archboard/skills": ["@archboard/skills@workspace:packages/skills"],
 
     "@archboard/timing": ["@archboard/timing@workspace:packages/timing"],
 

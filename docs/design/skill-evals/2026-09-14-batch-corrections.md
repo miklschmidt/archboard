@@ -25,7 +25,7 @@ reading, and `grader/usage.json` summed them.
 
 The corrected grader cost is 11.3% of the reported figure. Author usage was
 unaffected: every author run is one call in one thread. `pins.json` now pins
-the semantics and `src/runtime/skill-evaluation/tests/evidence.test.ts` holds
+the semantics and `packages/skills/tests/runtime/rules/audit/evidence.test.ts` holds
 `callUsageFrom` and `sessionUsage` to them.
 
 ## 2. Five S11 authors patched the vault directly, and the harness saw two

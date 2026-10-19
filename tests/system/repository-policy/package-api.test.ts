@@ -26,6 +26,7 @@ const ADOPTERS: {
 	{ name: "renderer", areas: ["shared", "runtime", "ui"] },
 	{ name: "code-opener", areas: ["server", "ui"] },
 	{ name: "walkthrough", areas: ["shared", "runtime"] },
+	{ name: "skills", areas: ["runtime"] },
 	{
 		name: "process",
 		areas: ["runtime"],

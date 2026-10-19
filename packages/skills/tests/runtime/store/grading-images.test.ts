@@ -1,0 +1,115 @@
+// Model-free owners of attachment delivery: no author or model is started.
+import { afterEach, expect, test } from "bun:test";
+import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { codexGraderArgv } from "#runtime/clients/codex-grader.ts";
+import { fileImageReceipt, imagesForRun, suppliedCaptures } from "#runtime/store/grading-images.ts";
+import { loadSuite } from "#runtime/schemas/suite.ts";
+
+const roots: string[] = [];
+afterEach(() => {
+	for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
+});
+const run = "run-0123456789";
+const loaded = loadSuite(path.join(SOURCE_CHECKOUT, "evals"));
+// These bytes exercise only the PNG header/dimensions preflight. Codex's
+// image decoder owns complete decoding and a failed call produces no receipt.
+const png = (width = 1, height = 1) => {
+	const bytes = Buffer.from(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aRZkAAAAASUVORK5CYII=",
+		"base64",
+	);
+	bytes.writeUInt32BE(width, 16);
+	bytes.writeUInt32BE(height, 20);
+	return bytes;
+};
+
+function fixture(width = 1) {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-grade-images-"));
+	roots.push(root);
+	const workspace = path.join(root, "grader/workspace");
+	const directory = path.join(workspace, "runs", run);
+	fs.mkdirSync(path.join(directory, "captures"), { recursive: true });
+	const image = path.join(directory, "captures/main.png");
+	fs.writeFileSync(image, png(width));
+	const capture = {
+		label: "overview",
+		ok: true,
+		file: "captures/main.png",
+		provenance: { width, height: 1 },
+		tiles:
+			width === 1
+				? []
+				: [
+						{ x: 0, y: 0, width: 1600, height: 1, file: "captures/left.png" },
+						{ x: 1600, y: 0, width: width - 1600, height: 1, file: "captures/right.png" },
+					],
+	};
+	for (const tile of capture.tiles)
+		fs.writeFileSync(path.join(directory, tile.file), png(tile.width));
+	const bundle = path.join(directory, "bundle.json");
+	fs.writeFileSync(bundle, JSON.stringify({ captures: [capture] }));
+	const verdict = path.join(root, "grader/verdicts", `${run}.json`);
+	fs.mkdirSync(path.dirname(verdict), { recursive: true });
+	fs.writeFileSync(verdict, JSON.stringify({ run, summary: "answer" }));
+	return { root, workspace, directory, image, bundle, capture, verdict };
+}
+
+test("every initial and resumed Codex grading argv attaches the full image and all native tiles", () => {
+	const f = fixture(1601);
+	const images = imagesForRun(f.workspace, run);
+	expect(images.suppliedCaptures).toEqual(["overview"]);
+	expect(images.images).toHaveLength(3);
+	for (const thread of [null, "existing-thread"]) {
+		const argv = codexGraderArgv(loaded.graders.codex, "codex", {
+			workspace: f.workspace,
+			prompt: "Grade the attached diagrams",
+			schemaFile: path.join(f.root, "schema.json"),
+			verdictFile: f.verdict,
+			images: [images],
+			sessionId: thread,
+		});
+		const attached = argv.flatMap((arg, index) => (arg === "--image" ? [argv[index + 1]] : []));
+		expect(attached).toEqual(images.images.map((image) => path.join(f.workspace, image.file)));
+		expect(argv.includes("resume")).toBe(thread !== null);
+		expect(argv.at(-1)).toBe("Grade the attached diagrams");
+	}
+});
+
+test("missing, unreadable, wrong-sized images and absent native tiles cannot qualify a capture", () => {
+	const f = fixture(1601);
+	fs.unlinkSync(path.join(f.directory, "captures/right.png"));
+	expect(imagesForRun(f.workspace, run).suppliedCaptures).toEqual([]);
+	fs.writeFileSync(path.join(f.directory, "captures/right.png"), png());
+	fs.writeFileSync(
+		f.bundle,
+		JSON.stringify({ captures: [{ ...f.capture, tiles: f.capture.tiles.slice(0, 1) }] }),
+	);
+	expect(imagesForRun(f.workspace, run).suppliedCaptures).toEqual([]);
+	const small = fixture();
+	for (const content of [Buffer.from("unreadable"), png(2)]) {
+		fs.writeFileSync(small.image, content);
+		const images = imagesForRun(small.workspace, run);
+		expect(images.suppliedCaptures).toEqual([]);
+		expect(images.failures).toHaveLength(1);
+	}
+});
+
+test("delivery receipts belong to the successful call's exact images and verdict", () => {
+	const f = fixture();
+	const images = imagesForRun(f.workspace, run);
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual([]);
+	fileImageReceipt(f.verdict, images);
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual(["overview"]);
+	fs.appendFileSync(f.image, "changed");
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual([]);
+	fs.writeFileSync(f.image, png());
+	fs.appendFileSync(f.verdict, " ");
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual([]);
+	fileImageReceipt(f.verdict, images);
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual(["overview"]);
+	fileImageReceipt(f.verdict, null);
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual([]);
+});

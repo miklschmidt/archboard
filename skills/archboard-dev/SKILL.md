@@ -423,7 +423,7 @@ The consumer skill also ships derived files under
 persisted board document, the vault configuration and the `semantic new` and
 `semantic edit` payloads. They are rendered from the Zod authorities with
 `z.toJSONSchema`. The derived files also include an installation-local copy of
-`INSTALL.md`. One owner, `src/runtime/skill-distribution`, writes them. `bun install`, the
+`INSTALL.md`. One owner, `packages/skills` (`runtime/operations/distribution`), writes them. `bun install`, the
 staging step of the installer and `bun run generate:skill-artifacts` all call it.
 
 After you change a schema or `INSTALL.md`, run `bun run generate:skill-artifacts`. Never
@@ -459,7 +459,7 @@ fires, do these steps in the same change:
    `evals/` directory inside the consumer skill, the frozen baseline or a
    prepared copy.
 3. Run `bun run generate:skill-artifacts`, then
-   `bun test src/runtime/skill-evaluation tests/system/cli/install-targets.test.ts` and
+   `bun test packages/skills tests/system/cli/install-targets.test.ts` and
    `bun run check`.
 
 The success contract of the skill is the fewest total author tokens per

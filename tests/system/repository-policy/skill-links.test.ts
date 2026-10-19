@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { BUNDLED_SKILLS } from "@/cli/commands/install-skill";
-import { anchorsOf } from "@/runtime/skill-evaluation/index";
+import { anchorsOf } from "@archboard/skills/citations";
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 

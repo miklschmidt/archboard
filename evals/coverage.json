@@ -474,7 +474,7 @@
 					"expectedUse": "a sequence scenario's sequence view and a comparison's shared view are captured by name; a view the author never made is a failed capture",
 					"scenarios": ["S02", "S05", "S07", "S12"],
 					"evidence": "harness-check",
-					"owner": "captureFromReceipt refuses a receipt without the declared view or grammar; src/runtime/skill-evaluation/tests/captures.test.ts"
+					"owner": "captureFromReceipt refuses a receipt without the declared view or grammar; packages/skills/tests/runtime/operations/runs/captures.test.ts"
 				}
 			]
 		},
@@ -1027,7 +1027,7 @@
 					"expectedUse": "runtime evidence, not shape coverage",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests integrity; src/runtime/skill-distribution/tests/artifacts.test.ts (obligations named)"
+					"owner": "packages/board/tests integrity; packages/skills/tests/runtime/operations/distribution/artifacts.test.ts (obligations named)"
 				}
 			]
 		},
@@ -1040,7 +1040,7 @@
 					"expectedUse": "refused with the field named",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/skill-distribution/tests/artifacts.test.ts; semantic-board input tests"
+					"owner": "packages/skills/tests/runtime/operations/distribution/artifacts.test.ts; semantic-board input tests"
 				},
 				{
 					"path": "bounded single-line names/labels/handles; bounded multiline responsibilities; description limits",
@@ -1089,7 +1089,7 @@
 					"expectedUse": "the grader opens every capture as an image and names what it opened; a pass without every capture opened is downgraded to incomplete; a still proves no animation",
 					"scenarios": ["S00", "S05", "S07", "S10", "S12", "S14"],
 					"evidence": "grader",
-					"owner": "visualStandingOf (src/runtime/skill-evaluation/tests/captures.test.ts); rubric.md What you can and cannot see"
+					"owner": "visualStandingOf (packages/skills/tests/runtime/operations/runs/captures.test.ts); rubric.md What you can and cannot see"
 				}
 			]
 		}

@@ -12,22 +12,21 @@
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command, InvalidArgumentError } from "commander";
+import { gradeBatch, writeReport } from "@archboard/skills/grading";
 import {
 	ARMS,
 	GRADER_NAMES,
 	executableVersion,
-	gradeBatch,
 	layingProblems,
 	loadSuite,
 	pinVersions,
 	resumeSelection,
 	runBatch,
-	writeReport,
 	type Arm,
 	type BatchOptions,
 	type GraderName,
 	type LoadedSuite,
-} from "@/runtime/skill-evaluation/index";
+} from "@archboard/skills/evaluation-run";
 
 /**
  * One arm as typed, refused when it is not one.

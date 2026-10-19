@@ -82,7 +82,7 @@ skill repinned on that CLI, and its report is the first measurement. Until
 then every statement above about improvement is a hypothesis, and the
 comparison to read is success and semantic/visual quality first, tokens
 second. Fast owners hold the implementation to its contract without any
-model run: `src/runtime/skill-evaluation/tests` (captures, blinding, visual
+model run: `packages/skills/tests` (captures, blinding, visual
 standing, suite shape), `packages/renderer/tests/runtime/services/rasterizer` and
 `tests/system/semantic-boards/rasterize.test.ts` (the pictures themselves),
 skill synchronization and `bun run check`.
