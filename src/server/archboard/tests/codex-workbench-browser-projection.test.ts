@@ -4,7 +4,7 @@ import {
 	CALLBACK_MAX_UTF8_BYTES,
 	type CoordinatorCallbackDelivery,
 } from "../../../runtime/codex-coordinator-callbacks/index.js";
-import type { CodexRealtimeGeneration } from "../../../runtime/codex-realtime/index.js";
+import type { CodexRealtimeGeneration } from "@archboard/workbench/realtime";
 import { SEMANTIC_CONTEXT_LIMITS } from "@archboard/codex-app-server/semantic-context";
 import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,

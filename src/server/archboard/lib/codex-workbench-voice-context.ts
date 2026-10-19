@@ -2,7 +2,7 @@ import type {
 	CoordinatorCallbackDelivery,
 	CoordinatorCallbacks,
 } from "@/runtime/codex-coordinator-callbacks";
-import type { CodexRealtimeGeneration } from "@/runtime/codex-realtime";
+import type { CodexRealtimeGeneration } from "@archboard/workbench/realtime";
 import type { BrowserVoiceContext } from "@archboard/workbench/browser-model";
 
 /**

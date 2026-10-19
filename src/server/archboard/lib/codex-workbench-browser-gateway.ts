@@ -12,7 +12,7 @@ import type { TransportServerNotification } from "@archboard/codex-app-server/tr
 import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
 import type { OperationId, ThreadId } from "@archboard/codex-app-server/identity";
 import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@archboard/timing";
-import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { ArchboardContext } from "@archboard/workbench/instructions";
 import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";
 import type {
 	CodexWorkbenchSessions,

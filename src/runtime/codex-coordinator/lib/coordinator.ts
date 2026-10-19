@@ -17,7 +17,7 @@ import {
 	selectCoordinatorModel,
 	type CoordinatorModelSelection,
 } from "@/runtime/codex-coordinator/lib/model";
-import { createCodexThreadUnload } from "@/runtime/codex-thread-unload";
+import { createCodexThreadUnload } from "@archboard/workbench/thread-link";
 import { reviewedCoordinatorHashes } from "@/runtime/codex-coordinator/lib/review";
 import { assertCurrentEpoch, decideCandidate } from "@/runtime/codex-coordinator/lib/reuse";
 import { createCoordinatorStarter } from "@/runtime/codex-coordinator/lib/start";

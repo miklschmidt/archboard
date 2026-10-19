@@ -1,6 +1,6 @@
 import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/identity";
 import { CODEX_SESSION_THREAD_SOURCE } from "@archboard/codex-app-server/session";
-import type { ThreadLinkClassification } from "@/runtime/codex-thread-link";
+import type { ThreadLinkClassification } from "@archboard/workbench/thread-link";
 import {
 	CodexCoordinatorError,
 	type CodexCoordinatorOptions,

@@ -335,10 +335,10 @@ at the grace bound while remaining inside the composed cap.
 
 Each Codex role is started with one reviewed document, and the voice model is
 given neither (TASK-297):
-[`workhorse-developer-instructions.txt`](../../src/runtime/codex-instructions/workhorse-developer-instructions.txt)
+[`workhorse-developer-instructions.txt`](../../packages/workbench/src/runtime/rules/instructions/workhorse-developer-instructions.txt)
 and
-[`coordinator-developer-instructions.txt`](../../src/runtime/codex-instructions/coordinator-developer-instructions.txt).
-Those files are the authored bytes. `src/runtime/codex-instructions/lib/authored.ts`
+[`coordinator-developer-instructions.txt`](../../packages/workbench/src/runtime/rules/instructions/coordinator-developer-instructions.txt).
+Those files are the authored bytes. `packages/workbench/src/runtime/rules/instructions/authored.ts`
 pins each one by its SHA-256 and refuses to start a thread with a document that
 drifted, so changing either is a review of that digest. This document used to
 keep a copy of each, and the copies drifted from the reviewed bytes; read the
@@ -1236,7 +1236,7 @@ This policy applies only to `archboard_app.create_thread`, `fork_thread`, and
 `send_message_to_thread`. Each valid dynamic call gets one fresh visual
 decision. A prior decision, a session grant, or a decision for another call can
 never authorize it. The seven app-server approval families remain in
-`src/runtime/codex-approvals`; this policy and its requests never enter that
+`packages/workbench/src/runtime/services/approvals`; this policy and its requests never enter that
 broker.
 
 The request identity is the exact `LogicalToolCallCorrelation` in its existing
@@ -1765,7 +1765,7 @@ contracts:
 		"composition": "TASK-143.01.14",
 		"systemOwner": "TASK-143.01.15",
 		"browserOwner": "TASK-143.03.13",
-		"excludedBroker": "src/runtime/codex-approvals"
+		"excludedBroker": "packages/workbench/src/runtime/services/approvals"
 	}
 }
 ```

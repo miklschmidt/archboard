@@ -12,11 +12,14 @@ import {
 	type DynamicContextPort,
 	type DynamicTargetAuthority,
 	type DynamicThreadAuthorityPort,
-} from "@/runtime/codex-dynamic-tools";
-import type { CodexEpochStore, EpochOperationRecord } from "@/runtime/codex-epoch";
-import type { CodexThreadLinkPort, ThreadLinkClassification } from "@/runtime/codex-thread-link";
+} from "@archboard/workbench/dynamic-tools";
+import type { CodexEpochStore, EpochOperationRecord } from "@archboard/workbench/epoch";
+import type {
+	CodexThreadLinkPort,
+	ThreadLinkClassification,
+} from "@archboard/workbench/thread-link";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
-import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { ArchboardContext } from "@archboard/workbench/instructions";
 
 export interface ServerDynamicAuthorityOptions {
 	readonly identity: IdentityAuthorities;

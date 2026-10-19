@@ -14,7 +14,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "@archboard/workbench/realtime-contract";
-import { createCodexRealtimeAdapter } from "../../../runtime/codex-realtime/index.js";
+import { createCodexRealtimeAdapter } from "@archboard/workbench/realtime";
 import {
 	createSemanticContextPublisher,
 	type SemanticContextInput,

@@ -8,8 +8,8 @@ import type {
 	EpochExecutionProof,
 	EpochOperationRecord,
 	EpochTransaction,
-} from "@/runtime/codex-epoch";
-import type { ThreadLinkBindingSnapshot, ThreadLinkTarget } from "@/runtime/codex-thread-link";
+} from "@archboard/workbench/epoch";
+import type { ThreadLinkBindingSnapshot, ThreadLinkTarget } from "@archboard/workbench/thread-link";
 import { compensateAfterBindFailure } from "@/runtime/codex-workhorse-start/lib/cleanup";
 import {
 	WORKHORSE_INSTRUCTION_HASH,

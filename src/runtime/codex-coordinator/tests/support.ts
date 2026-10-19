@@ -2,7 +2,7 @@ import {
 	CODEX_PROTOCOL_VERSION,
 	type ServerNotificationPayloads,
 } from "@archboard/codex-app-server/protocol";
-import type { ActiveEpoch } from "../../codex-epoch/index.js";
+import type { ActiveEpoch } from "@archboard/workbench/epoch";
 import type {
 	CodexSessionMutationError,
 	SessionParams,

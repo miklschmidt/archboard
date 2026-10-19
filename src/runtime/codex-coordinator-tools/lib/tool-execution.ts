@@ -5,10 +5,12 @@ import {
 } from "@/runtime/codex-workhorse-operations";
 import {
 	DynamicToolRefusalReasonSchema,
-	type CoordinatorToolName,
 	type DynamicToolRefusalReason,
+} from "@archboard/workbench/coordinator-tool-results";
+import {
+	type CoordinatorToolName,
 	type ManageWorkhorseQueueInput,
-} from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/coordinator-tools";
 import type { OperationId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexCoordinatorToolsOptions,

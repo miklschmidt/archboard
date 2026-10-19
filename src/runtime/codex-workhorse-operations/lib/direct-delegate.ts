@@ -1,5 +1,5 @@
-import { createAdditionalContext, createTextUserInput } from "@/runtime/codex-instructions";
-import type { ArchboardContext } from "@/runtime/codex-instructions";
+import { createAdditionalContext, createTextUserInput } from "@archboard/workbench/instructions";
+import type { ArchboardContext } from "@archboard/workbench/instructions";
 import type { SessionTurn } from "@archboard/codex-app-server/session";
 import {
 	CodexWorkhorseOperationsError,

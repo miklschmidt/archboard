@@ -1,5 +1,5 @@
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import { CodexWorkhorseQueueError } from "@/runtime/codex-workhorse-queue";
+import { CodexWorkhorseQueueError } from "@archboard/workbench/workhorse-queue";
 import {
 	CodexWorkhorseOperationsError,
 	type WorkhorseOperationDelivery,

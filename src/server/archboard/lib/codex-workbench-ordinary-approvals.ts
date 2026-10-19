@@ -1,4 +1,4 @@
-import type { ApprovalOwnerView, CodexApprovalBroker } from "@/runtime/codex-approvals";
+import type { ApprovalOwnerView, CodexApprovalBroker } from "@archboard/workbench/approvals";
 import {
 	parseTabSessionId,
 	parseWorkhorseLinkKey,

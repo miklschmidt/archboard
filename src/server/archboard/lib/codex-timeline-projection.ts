@@ -1,4 +1,4 @@
-import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
+import type { ApprovalOwnerView } from "@archboard/workbench/approvals";
 import type { SessionThreadItem, SessionTurn } from "@archboard/codex-app-server/session";
 import { BROWSER_TIMELINE_LIMITS as LIMITS } from "@archboard/workbench/browser-model";
 import type { ThreadId } from "@archboard/codex-app-server/identity";

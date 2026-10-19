@@ -6,7 +6,7 @@ import type {
 	BrowserSettings,
 	BrowserVoice,
 } from "@archboard/workbench/browser-model";
-import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
+import type { ApprovalOwnerView } from "@archboard/workbench/approvals";
 import type {
 	BrowserProjectionInput,
 	BrowserProjectionResult,

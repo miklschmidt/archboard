@@ -1,6 +1,6 @@
 import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type { ThreadLinkSnapshot } from "../../../../runtime/codex-thread-link/index.js";
-import type { ArchboardContext } from "../../../../runtime/codex-instructions/index.js";
+import type { ThreadLinkSnapshot } from "@archboard/workbench/thread-link";
+import type { ArchboardContext } from "@archboard/workbench/instructions";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import {
 	parseTabSessionId,

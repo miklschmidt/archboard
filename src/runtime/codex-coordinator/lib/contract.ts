@@ -3,8 +3,8 @@ import type {
 	EpochOperationRecord,
 	EpochSnapshot,
 	EpochTransaction,
-} from "@/runtime/codex-epoch";
-import type { COORDINATOR_IDENTITY } from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/epoch";
+import type { COORDINATOR_IDENTITY } from "@archboard/workbench/coordinator-tools";
 import type {
 	CodexSession,
 	SessionParams,
@@ -14,9 +14,9 @@ import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
 	ThreadLinkTarget,
-} from "@/runtime/codex-thread-link";
+} from "@archboard/workbench/thread-link";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type { ThreadUnload } from "@/runtime/codex-thread-unload";
+import type { ThreadUnload } from "@archboard/workbench/thread-link";
 import type {
 	ChildEpoch,
 	ChildId,

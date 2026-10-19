@@ -11,12 +11,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { withProductionState } from "@/server/archboard/tests/support/production-state";
 
-import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
+import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
 import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
-} from "../../../runtime/codex-dynamic-tools/index.js";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
+} from "@archboard/workbench/dynamic-tools";
+import { ARCHBOARD_APP_MANIFEST_SHA256 } from "@archboard/workbench/thread-tools";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { parseTabSessionId } from "../../codex-workbench/index.js";
 import {

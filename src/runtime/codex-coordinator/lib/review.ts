@@ -3,11 +3,11 @@ import { createHash } from "node:crypto";
 import {
 	COORDINATOR_TOOL_MANIFEST_DIGESTS,
 	verifyCoordinatorManifestIntegrity,
-} from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/coordinator-tools";
 import {
 	COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
 	verifyAuthoredInstructionIntegrity,
-} from "@/runtime/codex-instructions";
+} from "@archboard/workbench/instructions";
 import type {
 	CoordinatorReviewHashes,
 	CoordinatorSettings,

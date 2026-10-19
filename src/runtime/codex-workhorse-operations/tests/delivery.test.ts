@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { createTextUserInput } from "../../codex-instructions/index.js";
+import { createTextUserInput } from "@archboard/workbench/instructions";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import { CodexWorkhorseQueueError } from "../../codex-workhorse-queue/index.js";
+import { CodexWorkhorseQueueError } from "@archboard/workbench/workhorse-queue";
 import { flush, notification, rawTurn, rejected } from "./evidence.js";
 import { useFixtureGroup } from "./fixture-group.js";
 import { turn } from "./support.js";

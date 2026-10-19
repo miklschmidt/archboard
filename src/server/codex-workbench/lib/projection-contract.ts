@@ -28,15 +28,15 @@ import type {
 	ApprovalState,
 	DeepReadonly,
 	ItemApprovalIdentity,
-} from "@/runtime/codex-approvals";
-import type { DynamicToolApprovalRequest } from "@/runtime/codex-dynamic-tools";
+} from "@archboard/workbench/approvals";
+import type { DynamicToolApprovalRequest } from "@archboard/workbench/dynamic-tools";
 import type {
 	SessionQueuedSubmission,
 	SessionResponsePayloads,
 	SessionThreadItem,
 	SessionTurn,
 } from "@archboard/codex-app-server/session";
-import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
+import type { ThreadLinkSnapshot } from "@archboard/workbench/thread-link";
 import type { RealtimeTranscriptRecord } from "@archboard/workbench/realtime-contract";
 import type { SpokenApprovalSnapshot } from "@/runtime/codex-spoken-approval";
 

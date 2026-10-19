@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import type { EpochOperationRecord } from "../../codex-epoch/index.js";
+import type { EpochOperationRecord } from "@archboard/workbench/epoch";
 import type {
 	CoordinatorPersistedState,
 	CoordinatorSnapshot,

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import {
 	parseDynamicToolCallResponse,
 	type ParsedDynamicToolCallResponse,
-} from "../../../src/runtime/codex-thread-tools/index.ts";
+} from "@archboard/workbench/thread-tools";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,

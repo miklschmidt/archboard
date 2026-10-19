@@ -5,7 +5,7 @@ import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
 } from "@archboard/codex-app-server/process";
-import { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
+import { createCodexWaitGraph } from "@archboard/workbench/dynamic-tools";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { PORT, serverUrl } from "@/server/archboard/lib/listener-address";
 import type { InstallProductionCodexWorkbenchOptions } from "@/server/archboard/lib/codex-workbench";

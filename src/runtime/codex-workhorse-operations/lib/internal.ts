@@ -1,6 +1,6 @@
-import type { EpochTransaction } from "@/runtime/codex-epoch";
-import type { ThreadLinkClassification } from "@/runtime/codex-thread-link";
-import type { WorkhorseQueueMutation } from "@/runtime/codex-workhorse-queue";
+import type { EpochTransaction } from "@archboard/workbench/epoch";
+import type { ThreadLinkClassification } from "@archboard/workbench/thread-link";
+import type { WorkhorseQueueMutation } from "@archboard/workbench/workhorse-queue";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {
 	OperationId,

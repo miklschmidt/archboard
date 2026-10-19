@@ -1,17 +1,21 @@
-import type { CodexEpochStore, EpochExecutionProof, EpochTransaction } from "@/runtime/codex-epoch";
-import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type {
+	CodexEpochStore,
+	EpochExecutionProof,
+	EpochTransaction,
+} from "@archboard/workbench/epoch";
+import type { ArchboardContext } from "@archboard/workbench/instructions";
 import type { CodexSession, SessionParams, SessionTurn } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
 	ThreadLinkTarget,
-} from "@/runtime/codex-thread-link";
+} from "@archboard/workbench/thread-link";
 import type {
 	CodexWorkhorseQueue,
 	WorkhorseQueueOperation as QueueOperation,
 	WorkhorseQueueMutation,
-} from "@/runtime/codex-workhorse-queue";
+} from "@archboard/workbench/workhorse-queue";
 import type {
 	ChildEpoch,
 	ChildId,

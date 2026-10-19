@@ -1,5 +1,5 @@
-import type { EpochExecutionProof, EpochOperationRecord } from "@/runtime/codex-epoch";
-import type { ThreadLinkEpochProof } from "@/runtime/codex-thread-link";
+import type { EpochExecutionProof, EpochOperationRecord } from "@archboard/workbench/epoch";
+import type { ThreadLinkEpochProof } from "@archboard/workbench/thread-link";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCorrelation,

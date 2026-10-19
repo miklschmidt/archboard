@@ -23,7 +23,7 @@
 
 import { answerUnownedTellCoordinator } from "@/runtime/codex-coordinator-callbacks";
 import { COORDINATOR_TOOLS_OWNER, refusedResponse } from "@/runtime/codex-coordinator-tools";
-import { createCodexThreadUnload } from "@/runtime/codex-thread-unload";
+import { createCodexThreadUnload } from "@archboard/workbench/thread-link";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { WorkhorseOperationEventListener } from "@/runtime/codex-workhorse-operations";
 import type { IdentityAuthority, ThreadId } from "@archboard/codex-app-server/identity";

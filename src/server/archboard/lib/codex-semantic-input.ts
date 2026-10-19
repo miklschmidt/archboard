@@ -1,14 +1,14 @@
 import { boardLockState } from "@archboard/board/lock";
 import { recentDoing } from "@archboard/board/doing";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import { ArchboardContextSchema, type ArchboardContext } from "@/runtime/codex-instructions";
+import { ArchboardContextSchema, type ArchboardContext } from "@archboard/workbench/instructions";
 import type {
 	SemanticArchitectureInput,
 	SemanticContextInput,
 	SettledSemanticChangeEvent,
 } from "@archboard/codex-app-server/semantic-context";
 import { readSemanticBoard } from "@archboard/board/store-read";
-import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
+import { canonicalSemanticCursorToken } from "@archboard/workbench/thread-tools";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPaneContext } from "@archboard/board/pane-context";
 import { checkoutOfVault } from "@archboard/workspace/vault";

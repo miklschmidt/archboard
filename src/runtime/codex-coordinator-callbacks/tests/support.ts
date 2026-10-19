@@ -11,10 +11,10 @@ import {
 	type CoordinatorCallbackTurnPort,
 } from "../index.js";
 import { COORDINATOR_CAPABILITY_POLICY } from "../../codex-coordinator/index.js";
-import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoch/index.js";
+import type { EpochExecutionProof, EpochOperationRecord } from "@archboard/workbench/epoch";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import { semanticInput, semanticSources, type SemanticSources } from "./semantic-sources.js";
-import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
+import type { ThreadLinkClassification } from "@archboard/workbench/thread-link";
 import type { ReverseResponse } from "@archboard/codex-app-server/transport";
 import type { WorkhorseOperationEvent } from "../../codex-workhorse-operations/index.js";
 import {

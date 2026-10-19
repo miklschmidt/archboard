@@ -18,9 +18,9 @@ import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
-} from "@/runtime/codex-thread-link";
+} from "@archboard/workbench/thread-link";
 import type { AnswerSdp } from "@archboard/workbench/realtime-contract";
-import type { ApprovalOwnerView, ApprovalResponse } from "@/runtime/codex-approvals";
+import type { ApprovalOwnerView, ApprovalResponse } from "@archboard/workbench/approvals";
 import type { SupportedLoginAccountParams } from "@archboard/codex-app-server/session";
 import type {
 	BrowserGatewayAccountReadResult,

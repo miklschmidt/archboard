@@ -1,4 +1,4 @@
-import type { DynamicWaitEvent } from "@/runtime/codex-dynamic-tools";
+import type { DynamicWaitEvent } from "@archboard/workbench/dynamic-tools";
 import { CODEX_WAIT_TARGET_POLL_MS } from "@archboard/timing";
 import type { CodexWorkbenchComponents } from "@/server/archboard/codex-workbench-generation";
 import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-production";

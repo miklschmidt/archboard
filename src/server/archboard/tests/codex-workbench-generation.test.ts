@@ -3,8 +3,8 @@ import { expect, jest, test } from "bun:test";
 import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
-} from "../../../runtime/codex-dynamic-tools/index.js";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
+} from "@archboard/workbench/dynamic-tools";
+import { ARCHBOARD_APP_MANIFEST_SHA256 } from "@archboard/workbench/thread-tools";
 import { CODEX_SERVER_REQUEST_METHODS } from "@archboard/codex-app-server/contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";

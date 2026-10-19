@@ -4,8 +4,8 @@ import type { SessionParams, SessionResponse } from "@archboard/codex-app-server
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
-} from "../../codex-coordinator-tool-contract/index.js";
-import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "../../codex-instructions/index.js";
+} from "@archboard/workbench/coordinator-tools";
+import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "@archboard/workbench/instructions";
 import {
 	COORDINATOR_EFFORT,
 	COORDINATOR_MODEL,

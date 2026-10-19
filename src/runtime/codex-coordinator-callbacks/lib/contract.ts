@@ -14,7 +14,7 @@ import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkClassification,
 	ThreadLinkTarget,
-} from "@/runtime/codex-thread-link";
+} from "@archboard/workbench/thread-link";
 import type {
 	CodexWorkhorseOperations,
 	WorkhorseOperationEvent,

@@ -4,12 +4,12 @@ import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkCasToken,
-} from "@/runtime/codex-thread-link";
+} from "@archboard/workbench/thread-link";
 import type { CodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
 import type {
 	CodexThreadContextBindingToken,
 	CodexThreadContextController,
-} from "@/runtime/codex-thread-context";
+} from "@archboard/workbench/thread-tools";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
 import type {
 	CodexWorkbenchSessionComponents,

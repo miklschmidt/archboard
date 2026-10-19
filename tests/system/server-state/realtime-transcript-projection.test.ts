@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
-} from "../../../src/runtime/codex-realtime/index.js";
+} from "@archboard/workbench/realtime";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../src/runtime/codex-spoken-approval/index.js";

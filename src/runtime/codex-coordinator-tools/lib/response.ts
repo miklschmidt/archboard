@@ -11,16 +11,16 @@ import {
 	UnknownDynamicToolResponseSchema,
 	ValidDynamicToolResponseSchema,
 	parseCoordinatorToolResult,
-	type CoordinatorToolName,
 	type DynamicToolRefusalReason,
-} from "@/runtime/codex-coordinator-tool-contract";
-import type { DynamicToolOkEnvelopeSchema } from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/coordinator-tool-results";
+import { type CoordinatorToolName } from "@archboard/workbench/coordinator-tools";
+import type { DynamicToolOkEnvelopeSchema } from "@archboard/workbench/coordinator-tool-results";
 import type {
 	CoordinatorToolValue,
 	CoordinatorToolValueFor,
 	DynamicToolResponse,
 } from "@/runtime/codex-coordinator-tools/lib/contract";
-import { DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE } from "@/runtime/codex-coordinator-tool-contract";
+import { DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE } from "@archboard/workbench/coordinator-tool-results";
 import { z } from "zod";
 
 type DynamicToolEnvelope = z.infer<typeof DynamicToolEnvelopeSchema>;

@@ -4,7 +4,7 @@ import type {
 	QueueListResult,
 	QueueStartResult,
 	WorkhorseQueueResult,
-} from "@/runtime/codex-workhorse-queue";
+} from "@archboard/workbench/workhorse-queue";
 import type {
 	OperationId,
 	QueuedSubmissionId,

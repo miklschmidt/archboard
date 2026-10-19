@@ -13,7 +13,10 @@
 // by itself, so the server opens nothing: every step the recording pane reports, the first
 // included, reaches the voice model as a step chosen by hand does.
 
-import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
+import type {
+	RealtimePresentation,
+	RealtimePresentationChange,
+} from "@archboard/workbench/realtime";
 import { parseBoardKey, statedVariant } from "@archboard/board/address";
 import { readSemanticBoard } from "@archboard/board/store-read";
 import {

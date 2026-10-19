@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
-} from "../../../runtime/codex-dynamic-tools/index.js";
+} from "@archboard/workbench/dynamic-tools";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import { createCodexBrowserModel } from "@archboard/workbench/browser-model";

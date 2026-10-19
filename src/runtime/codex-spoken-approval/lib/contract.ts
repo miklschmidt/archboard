@@ -1,12 +1,12 @@
-import type { ApprovalSettlement, CodexApprovalBroker } from "@/runtime/codex-approvals";
+import type { ApprovalSettlement, CodexApprovalBroker } from "@archboard/workbench/approvals";
 import type { CodexCoordinator } from "@/runtime/codex-coordinator";
-import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
+import type { CodexRealtimeAdapter } from "@archboard/workbench/realtime";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type {
 	DynamicServerRequest,
 	TransportServerNotification,
 } from "@archboard/codex-app-server/transport";
-import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { ArchboardContext } from "@archboard/workbench/instructions";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -23,10 +23,8 @@ import type {
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
 } from "@archboard/workbench/realtime-contract";
-import type {
-	DynamicToolRefusalReason,
-	ResolveSpokenApprovalInput,
-} from "@/runtime/codex-coordinator-tool-contract";
+import type { DynamicToolRefusalReason } from "@archboard/workbench/coordinator-tool-results";
+import type { ResolveSpokenApprovalInput } from "@archboard/workbench/coordinator-tools";
 
 type SpokenApprovalGateState =
 	| "idle"

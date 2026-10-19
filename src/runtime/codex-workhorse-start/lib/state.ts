@@ -4,7 +4,7 @@ import type {
 	OperationId,
 	ThreadId,
 } from "@archboard/codex-app-server/identity";
-import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
+import type { ThreadLinkBindingSnapshot } from "@archboard/workbench/thread-link";
 import { cloneAndFreeze } from "@/runtime/codex-workhorse-start/lib/immutability";
 import type {
 	WorkhorseCleanupFacts,

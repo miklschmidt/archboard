@@ -17,8 +17,8 @@ import type {
 	DynamicToolLifecyclePort,
 	DynamicWaitEvent,
 	DynamicWaitOwner,
-} from "@/runtime/codex-dynamic-tools";
-import type { CodexWaitGraph, WaitOwner } from "@/runtime/codex-wait-graph";
+} from "@archboard/workbench/dynamic-tools";
+import type { CodexWaitGraph, WaitOwner } from "@archboard/workbench/dynamic-tools";
 import type {
 	DynamicServerRequest,
 	TransportServerNotification,

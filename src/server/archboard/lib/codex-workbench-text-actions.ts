@@ -8,7 +8,7 @@ import {
 	createTurnStartParams,
 	createTurnSteerParams,
 	type ArchboardContext,
-} from "@/runtime/codex-instructions";
+} from "@archboard/workbench/instructions";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
 
 /**

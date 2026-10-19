@@ -2,7 +2,7 @@
 	"name": "@archboard/workbench",
 	"version": "0.0.0",
 	"private": true,
-	"description": "The Codex workbench: the coordinator, the workhorses, the conversation and the voice. It grows over TASK-500.23.01 to .07; so far it holds the browser-safe contracts that the browser and the server exchange.",
+	"description": "The Codex workbench: the coordinator, the workhorses, the conversation and the voice. It grows over TASK-500.23.01 to .07; so far it holds the browser-safe contracts that the browser and the server exchange and the foundation of the Codex runtime: the instructions, the epoch, the thread link, the tools, the approvals, the dynamic tools and the realtime adapter.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -14,6 +14,16 @@
 		"./browser-model": "./src/shared/api/browser-model.ts",
 		"./browser-approvals": "./src/shared/api/browser-approvals.ts",
 		"./browser-gateway": "./src/shared/api/browser-gateway.ts",
-		"./shown-conversation": "./src/shared/api/shown-conversation.ts"
+		"./shown-conversation": "./src/shared/api/shown-conversation.ts",
+		"./approvals": "./src/runtime/api/approvals.ts",
+		"./coordinator-tool-results": "./src/runtime/api/coordinator-tool-results.ts",
+		"./coordinator-tools": "./src/runtime/api/coordinator-tools.ts",
+		"./dynamic-tools": "./src/runtime/api/dynamic-tools.ts",
+		"./epoch": "./src/runtime/api/epoch.ts",
+		"./instructions": "./src/runtime/api/instructions.ts",
+		"./realtime": "./src/runtime/api/realtime.ts",
+		"./thread-link": "./src/runtime/api/thread-link.ts",
+		"./thread-tools": "./src/runtime/api/thread-tools.ts",
+		"./workhorse-queue": "./src/runtime/api/workhorse-queue.ts"
 	}
 }

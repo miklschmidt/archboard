@@ -1,0 +1,63 @@
+import {
+	parseRealtimeItemId,
+	type RealtimeTranscriptRecord,
+} from "#shared/protocol/realtime-contract.ts";
+import type { TrustedIdentityDecoder } from "@archboard/codex-app-server/identity";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
+import type { ActiveRealtimeSession } from "#runtime/services/realtime/state.ts";
+
+/**
+ * The session's transcript as browser records in stable order: recovered timeline position
+ * first, live arrival order after, item id as the tie-break.
+ * @param session - The session whose entries to project.
+ * @returns The ordered transcript records.
+ */
+function orderedRecords(session: ActiveRealtimeSession): readonly RealtimeTranscriptRecord[] {
+	// Codex starts every segment with empty text and sends its first words a moment later
+	// (0.160.0, `realtime_history.rs`). A segment nobody has said anything in yet is not a
+	// transcript record, and the browser contract rightly cannot carry an empty one.
+	return [...session.entries.values()]
+		.filter((entry) => entry.text.length > 0)
+		.toSorted((left, right) => left.order - right.order || left.itemId.localeCompare(right.itemId))
+		.map((entry, sequence) => ({
+			sessionId: session.browserSessionId,
+			correlationId: session.correlationId,
+			itemId: parseRealtimeItemId(entry.itemId),
+			sequence,
+			role: entry.role,
+			status: entry.status,
+			text: entry.text,
+		}));
+}
+
+/**
+ * Whether a server notification belongs exactly to this session's child epoch and coordinator
+ * thread; anything else, including an undecodable thread id, is ignored rather than guessed.
+ * @param session - The session receiving notifications.
+ * @param event - The correlated notification.
+ * @param identity - Decodes wire thread ids.
+ * @returns True when the notification is this session's.
+ */
+function exactNotification(
+	session: ActiveRealtimeSession,
+	event: TransportServerNotification,
+	identity: TrustedIdentityDecoder,
+): boolean {
+	if (
+		event.correlation.child !== session.binding.child ||
+		event.correlation.epoch !== session.binding.epoch ||
+		!("threadId" in event.notification.params)
+	) {
+		return false;
+	}
+	try {
+		return (
+			identity.resolveThreadId(event.notification.params.threadId) ===
+			session.binding.coordinatorThreadId
+		);
+	} catch {
+		return false;
+	}
+}
+
+export { orderedRecords, exactNotification };

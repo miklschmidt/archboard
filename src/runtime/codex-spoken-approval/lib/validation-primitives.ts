@@ -1,5 +1,8 @@
-import type { ApprovalSnapshot, SpokenApprovalEffectPresentation } from "@/runtime/codex-approvals";
-import type { DynamicToolRefusalReason } from "@/runtime/codex-coordinator-tool-contract";
+import type {
+	ApprovalSnapshot,
+	SpokenApprovalEffectPresentation,
+} from "@archboard/workbench/approvals";
+import type { DynamicToolRefusalReason } from "@archboard/workbench/coordinator-tool-results";
 import type { SpokenApprovalFallbackReason } from "@/runtime/codex-spoken-approval/lib/contract";
 import { IdentityValidationError } from "@archboard/codex-app-server/identity";
 import type {
