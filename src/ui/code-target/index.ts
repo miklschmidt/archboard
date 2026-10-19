@@ -7,7 +7,7 @@ import type {
 	CodeTargetNotice,
 	CodeTargetOpenFailure,
 	CodeTargetOpenSuccess,
-} from "@archboard/code-binding/code-target-open";
+} from "@archboard/code-binding/opening";
 import {
 	fetchOpenerSettings,
 	openCodeTarget,

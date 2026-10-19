@@ -35,7 +35,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/vault-checkout";
+import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/resolution";
 import { messagesOf } from "#shared/rules/flow-steps.ts";
 import { type DrillDown, type SemanticNode, type VariantContent } from "#shared/schemas/content.ts";
 import { type SemanticBoard } from "#shared/schemas/board-document.ts";

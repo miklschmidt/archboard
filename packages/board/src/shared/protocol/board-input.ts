@@ -41,7 +41,7 @@ import {
 	CodeAnchorSchema,
 	CodeBindingSchema,
 	DocumentReferenceSchema,
-} from "@archboard/code-binding/code-binding";
+} from "@archboard/code-binding/bindings";
 import { SemanticBoardLevelSchema } from "#shared/schemas/board-document.ts";
 
 /**

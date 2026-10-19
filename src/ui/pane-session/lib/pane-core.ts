@@ -31,10 +31,7 @@ import {
 } from "@/ui/pane-session/lib/session-contracts";
 import type { PaneWorkbenchSocketOwner } from "@/ui/pane-session/workbench-socket";
 import type { WorkbenchTransportPort } from "@/ui/pane-session/workbench-port";
-import type {
-	CodeTargetNotice,
-	CodeTargetOpenSuccess,
-} from "@archboard/code-binding/code-target-open";
+import type { CodeTargetNotice, CodeTargetOpenSuccess } from "@archboard/code-binding/opening";
 import { activateCodeTarget, openedNotice } from "@/ui/code-target";
 import type { BoardIdentity, DoingEntry, LockHolder, PaneStatus } from "@/ui/types";
 

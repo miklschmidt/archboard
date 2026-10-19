@@ -10,14 +10,8 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
-		"./code-binding": "./src/shared/schemas/code-binding.ts",
-		"./code-target-open": "./src/shared/schemas/code-target-open.ts",
-		"./opener-settings": "./src/shared/schemas/opener-settings.ts",
-		"./binding-files": "./src/shared/rules/binding-files.ts",
-		"./opener-executable": "./src/shared/rules/opener-executable.ts",
-		"./binding-resolver": "./src/runtime/operations/binding-resolver.ts",
-		"./checkout-snapshot": "./src/runtime/operations/checkout-snapshot.ts",
-		"./vault-checkout": "./src/runtime/services/vault-checkout.ts",
-		"./code-target-link": "./src/runtime/projections/code-target-link.ts"
+		"./bindings": "./src/shared/api/bindings.ts",
+		"./opening": "./src/shared/api/opening.ts",
+		"./resolution": "./src/runtime/api/resolution.ts"
 	}
 }

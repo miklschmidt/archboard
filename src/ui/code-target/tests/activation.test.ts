@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import type {
-	CodeTargetNotice,
-	CodeTargetOpenSuccess,
-} from "@archboard/code-binding/code-target-open";
+import type { CodeTargetNotice, CodeTargetOpenSuccess } from "@archboard/code-binding/opening";
 import { activateCodeTarget, openedNotice } from "@/ui/code-target";
 
 const originalFetch = globalThis.fetch;

@@ -2,13 +2,13 @@
 // the wire is the shared Zod contract's; this file only names the dialog's
 // own state and the callbacks the host satisfies.
 
-import type { CodeTargetOpenFailure } from "@archboard/code-binding/code-target-open";
 import type {
+	CodeTargetOpenFailure,
 	OpenerSelection,
 	OpenerSettingsReply,
 	OpenerSettingsTestRequest,
 	OpenerTestReply,
-} from "@archboard/code-binding/opener-settings";
+} from "@archboard/code-binding/opening";
 import { type DialogError } from "@/ui/dialog-parts";
 
 /** The three actions, each with its own in-flight state. */

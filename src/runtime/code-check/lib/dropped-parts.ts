@@ -23,8 +23,7 @@ import { heldInFiles } from "@/runtime/code-check/lib/symbols";
 import { neverRead, terraformRootOf, type FactsPass } from "@/runtime/code-facts/index";
 import { sourceAt } from "@/runtime/history-lens/index";
 import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
-import { bindingPathOf, filesOfBinding } from "@archboard/code-binding/binding-files";
-import { type CodeBinding } from "@archboard/code-binding/code-binding";
+import { bindingPathOf, filesOfBinding, type CodeBinding } from "@archboard/code-binding/bindings";
 import { draftRefs, type SemanticVariant } from "@archboard/board/document";
 import type { SemanticNode } from "@archboard/board/content";
 

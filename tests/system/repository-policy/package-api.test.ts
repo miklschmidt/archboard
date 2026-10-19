@@ -16,6 +16,7 @@ const ADOPTERS = [
 	{ name: "board", areas: ["shared", "runtime"] },
 	{ name: "codex-app-server", areas: ["shared", "runtime"] },
 	{ name: "workspace", areas: ["shared", "runtime", "server"] },
+	{ name: "code-binding", areas: ["shared", "runtime"] },
 ];
 
 const API_IMPORT = /["'`]#[a-z]+\/api\//;

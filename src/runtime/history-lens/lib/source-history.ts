@@ -9,7 +9,7 @@ import {
 	pairOf,
 } from "@/runtime/code-facts/index";
 import { gitAnswer, gitBytes, gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
-import { filesOfBinding } from "@archboard/code-binding/binding-files";
+import { filesOfBinding } from "@archboard/code-binding/bindings";
 
 /** A source blob in one tree; symbolic links are never followed. */
 interface SourceEntry {

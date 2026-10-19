@@ -6,7 +6,7 @@
 // the batch, whether the change reaches the drafts under it, and what the
 // variant's summary and documents are afterwards.
 
-import type { DocumentReference } from "@archboard/code-binding/code-binding";
+import type { DocumentReference } from "@archboard/code-binding/bindings";
 import type { SemanticVariant } from "#shared/schemas/board-document.ts";
 import type { VariantEditInput } from "#shared/protocol/board-input.ts";
 

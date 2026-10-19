@@ -12,10 +12,7 @@
 // against the parts the proposal names, in three lists, and a part the lens
 // skipped is in none of them.
 
-import {
-	snapshotCheckoutAccess,
-	type CheckoutSnapshot,
-} from "@archboard/code-binding/checkout-snapshot";
+import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@archboard/code-binding/resolution";
 import { attributeCommits, type AttributedCommits } from "@/runtime/history-lens/lib/attribution";
 import { markedCommit } from "@/runtime/history-lens/lib/answer-commit";
 import { walkCommits, type WalkedCommit } from "@/runtime/history-lens/lib/commits";

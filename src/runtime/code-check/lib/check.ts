@@ -77,11 +77,11 @@ import { createCodeFacts, type Accept, type FactsPass } from "@/runtime/code-fac
 import {
 	snapshotCheckoutAccess,
 	type CheckoutSnapshot,
-} from "@archboard/code-binding/checkout-snapshot";
-import { type LocalCodeTarget } from "@archboard/code-binding/binding-resolver";
+	type LocalCodeTarget,
+} from "@archboard/code-binding/resolution";
 import type { ServerOf } from "@/runtime/language-servers/index";
 import type { CheckTiming, CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
-import type { CodeBinding } from "@archboard/code-binding/code-binding";
+import type { CodeBinding } from "@archboard/code-binding/bindings";
 
 /** What one pass found and what it did not read. */
 interface CodeCheckOutcome {

@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState, type JSX, type RefObject } from "react";
 
-import type { OpenerSettingsReply } from "@archboard/code-binding/opener-settings";
+import type { OpenerSettingsReply } from "@archboard/code-binding/opening";
 import { Button } from "@/ui/components/button";
 import {
 	Dialog,

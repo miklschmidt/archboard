@@ -12,7 +12,7 @@
 import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
 
-import type { CodeBinding } from "@archboard/code-binding/code-binding";
+import type { CodeBinding } from "@archboard/code-binding/bindings";
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import {
 	PANE_VAULT,

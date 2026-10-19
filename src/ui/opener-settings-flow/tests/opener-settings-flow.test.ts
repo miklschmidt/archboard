@@ -3,13 +3,11 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import type {
 	CodeTargetNotice,
 	CodeTargetOpenFailure,
-} from "@archboard/code-binding/code-target-open";
-import type {
 	OpenerSelection,
 	OpenerSelectionReply,
 	OpenerSettingsReply,
 	OpenerTestReply,
-} from "@archboard/code-binding/opener-settings";
+} from "@archboard/code-binding/opening";
 import {
 	createOpenerSettingsFlow,
 	type OpenerSettingsApi,

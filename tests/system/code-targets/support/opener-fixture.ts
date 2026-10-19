@@ -20,8 +20,8 @@ import {
 	createCodeOpenerRouter,
 	type CodeOpenerRouteDependencies,
 } from "../../../../src/server/code-opener/index.ts";
-import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/code-binding";
-import { type OpenerSelection } from "@archboard/code-binding/opener-settings";
+import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
+import type { OpenerSelection } from "@archboard/code-binding/opening";
 import { TEST_OPENER_LIFECYCLE } from "../../support/timing.ts";
 import {
 	assertBefore,

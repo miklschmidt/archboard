@@ -35,9 +35,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { checkoutsReadFrom } from "@archboard/code-binding/vault-checkout";
-import { isPathWithin } from "@archboard/code-binding/binding-resolver";
-import type { CodeBinding } from "@archboard/code-binding/code-binding";
+import { checkoutsReadFrom, isPathWithin } from "@archboard/code-binding/resolution";
+import type { CodeBinding } from "@archboard/code-binding/bindings";
 import { currentVariant, type SemanticBoard } from "#shared/schemas/board-document.ts";
 import type { VaultDiagnostic } from "#shared/schemas/semantic-policy.ts";
 import { nodeSubject } from "#runtime/operations/check/subject.ts";

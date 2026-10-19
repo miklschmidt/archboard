@@ -26,7 +26,7 @@ import type { SemanticNode } from "@archboard/board/content";
 import { RelationshipChip } from "@/ui/semantic-board-canvas/components/KindMarks";
 import { DetailsPanel } from "@/ui/semantic-board-canvas/components/DetailsPanel";
 import type { RememberedReading } from "@/shared/code-check/index";
-import type { CodeBinding } from "@archboard/code-binding/code-binding";
+import type { CodeBinding } from "@archboard/code-binding/bindings";
 import {
 	Account,
 	Facts,

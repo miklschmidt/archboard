@@ -10,7 +10,7 @@ import {
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import type { SourceRevision } from "@/runtime/history-lens/lib/source-history";
-import { filesOfBinding } from "@archboard/code-binding/binding-files";
+import { filesOfBinding } from "@archboard/code-binding/bindings";
 
 /** A declaration's source, with its identity separate from shifting line numbers. */
 interface DeclarationSource {

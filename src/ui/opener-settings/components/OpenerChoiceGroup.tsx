@@ -3,7 +3,7 @@
 
 import { useCallback, useId, type JSX } from "react";
 
-import type { OpenerCommand, OpenerSettingsReply } from "@archboard/code-binding/opener-settings";
+import type { OpenerCommand, OpenerSettingsReply } from "@archboard/code-binding/opening";
 import { Badge } from "@/ui/components/badge";
 import {
 	Field,
