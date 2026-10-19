@@ -3,7 +3,7 @@ import {
 	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
 	COORDINATOR_NAMESPACE_NAMES,
 	type NamespaceName,
-} from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/coordinator-tools";
 import {
 	COORDINATOR_TOOLS_OWNER,
 	type CodexCoordinatorToolsOptions,

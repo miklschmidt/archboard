@@ -3,11 +3,11 @@ import { describe, expect, test } from "bun:test";
 import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
-} from "../../../runtime/codex-dynamic-tools/index.js";
+} from "@archboard/workbench/dynamic-tools";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
-import { createCodexWaitGraph } from "../../../runtime/codex-wait-graph/index.js";
+import { ARCHBOARD_APP_MANIFEST_SHA256 } from "@archboard/workbench/thread-tools";
+import { createCodexWaitGraph } from "@archboard/workbench/dynamic-tools";
 import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
 import { parseTabSessionId } from "../../codex-workbench/index.js";
 

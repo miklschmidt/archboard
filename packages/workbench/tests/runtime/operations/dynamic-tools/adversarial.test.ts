@@ -1,0 +1,404 @@
+import { describe, expect, test } from "bun:test";
+
+import { parseDynamicToolCallResponse } from "#runtime/protocol/thread-tools/results.ts";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
+import { createCodexDynamicTools } from "#runtime/operations/dynamic-tools/dispatch/dispatcher.ts";
+import {
+	CHECKOUT_ROOT,
+	FakeApproval,
+	dynamicDecision,
+	optionsFor,
+	requestFor,
+	setupAuthorities,
+	targetAuthority,
+	thread,
+	threadForkResult,
+	threadStartResult,
+	turn,
+	turnResult,
+} from "#tests/runtime/support/dynamic-tools/support.ts";
+
+function record(value: unknown): Record<string, unknown> {
+	if (value === null || typeof value !== "object" || Array.isArray(value)) {
+		throw new Error("fixture expected an object");
+	}
+	return Object.fromEntries(Object.entries(value));
+}
+
+describe("codex dynamic dispatcher terminal boundaries", () => {
+	test("keeps unresolved, mismatched, and unproven caller identities outside the valid boundary", async () => {
+		for (const kind of ["unresolved", "mismatched", "unproven"] as const) {
+			const { authorities, caller } = setupAuthorities();
+			const fixture = optionsFor(authorities, caller);
+			if (kind === "unresolved") {
+				fixture.threadAuthority.callerError = Object.assign(new Error("caller disappeared"), {
+					code: "stale_child",
+				});
+			} else if (kind === "mismatched") {
+				fixture.threadAuthority.caller = { ...caller, wireThreadId: "another-thread" };
+			} else {
+				fixture.threadAuthority.caller = { ...caller, provenance: null };
+			}
+
+			const response = await createCodexDynamicTools(fixture.options).dispatch(
+				requestFor(authorities, caller, "create_thread", { prompt: kind }, `caller-${kind}`),
+			);
+			const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+			expect(response.success).toBe(false);
+			expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "invalid_call" });
+			expect(fixture.approval.presented).toHaveLength(0);
+			expect(fixture.session.calls).toHaveLength(0);
+		}
+	});
+
+	test("keeps current-call and target-policy refusals inside the valid identity boundary", async () => {
+		const { authorities, caller, otherTarget } = setupAuthorities();
+		const stale = optionsFor(authorities, caller);
+		stale.lifecycle.assertionError = Object.assign(new Error("current call ended"), {
+			code: "stale_child",
+		});
+		stale.lifecycle.assertionErrorPhase = "before_approval";
+		const staleResponse = await createCodexDynamicTools(stale.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "stale current call" }),
+		);
+		const staleParsed = parseDynamicToolCallResponse("create_thread", staleResponse);
+		expect(staleResponse.success).toBe(true);
+		expect(staleParsed.envelope).toMatchObject({ tag: "refused", reason: "stale_child" });
+
+		const policy = optionsFor(authorities, caller);
+		const foreign = targetAuthority(authorities, otherTarget.wireThreadId, caller, {
+			ownership: "foreign",
+		});
+		policy.threadAuthority.targets.set(foreign.wireThreadId, foreign);
+		const policyResponse = await createCodexDynamicTools(policy.options).dispatch(
+			requestFor(authorities, caller, "send_message_to_thread", {
+				threadId: foreign.wireThreadId,
+				prompt: "policy refusal",
+			}),
+		);
+		const policyParsed = parseDynamicToolCallResponse("send_message_to_thread", policyResponse);
+		expect(policyResponse.success).toBe(true);
+		expect(policyParsed.envelope).toMatchObject({
+			tag: "refused",
+			reason: "unknown_provenance",
+		});
+	});
+
+	test("honors the approval port's terminal timestamp without a second clock race", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const approval = new FakeApproval((request) =>
+			dynamicDecision(request, { outcome: "approved", cause: "person_approved" }, 50_000),
+		);
+		const createdThread = thread(authorities, "clocked-thread");
+		const fixture = optionsFor(authorities, caller, { approval });
+		fixture.session.threadStartResult = threadStartResult(createdThread);
+		fixture.session.turnStartResult = turnResult(turn(authorities, "clocked-turn"));
+		const clock = [100, 50_001];
+		const options = { ...fixture.options, now: () => clock.shift() ?? 50_001 };
+		const response = await createCodexDynamicTools(options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "clocked" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(parsed.envelope.tag).toBe("ok");
+		expect(fixture.session.calls.map(({ method }) => method)).toEqual([
+			"thread/start",
+			"turn/start",
+		]);
+		expect(approval.settled[0]?.decision).toMatchObject({
+			outcome: "approved",
+			decidedAtMs: 50_000,
+		});
+	});
+
+	test("turns an approval at the exact deadline into an expired no-effect result", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const approval = new FakeApproval((request) =>
+			dynamicDecision(
+				request,
+				{ outcome: "approved", cause: "person_approved" },
+				request.expiresAtMs,
+			),
+		);
+		const fixture = optionsFor(authorities, caller, { approval });
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "too late" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(parsed.envelope).toEqual({
+			tag: "refused",
+			reason: "expired",
+			message: "The visual approval expired before the effect could run.",
+		});
+		expect(response.success).toBe(true);
+		expect(
+			approval.settled[0]!.request.expiresAtMs - approval.settled[0]!.request.createdAtMs,
+		).toBe(CODEX_APPROVAL_EXPIRY_MS);
+		expect(approval.settled[0]?.decision).toMatchObject({
+			outcome: "expired",
+			cause: "deadline_reached",
+		});
+		expect(fixture.session.calls).toHaveLength(0);
+		expect(fixture.epoch.stages).toHaveLength(0);
+	});
+
+	test("browser disconnect returns terminal approval_required and leaves no effect", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const approval = new FakeApproval(() => {
+			throw new Error("browser disconnected");
+		});
+		const fixture = optionsFor(authorities, caller, { approval });
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "disconnect" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(parsed.envelope.tag).toBe("approval_required");
+		expect(approval.settled[0]?.decision).toMatchObject({
+			outcome: "disconnected",
+			cause: "browser_disconnected",
+		});
+		expect(fixture.session.calls).toHaveLength(0);
+		expect(fixture.epoch.stages).toHaveLength(0);
+	});
+
+	test("server shutdown is terminal approval_required while approval is pending", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const approval = new FakeApproval((request) =>
+			dynamicDecision(request, { outcome: "cancelled", cause: "server_shutdown" }),
+		);
+		const fixture = optionsFor(authorities, caller, { approval });
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "shutdown" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(parsed.envelope.tag).toBe("approval_required");
+		expect(approval.settled[0]?.decision).toMatchObject({
+			outcome: "cancelled",
+			cause: "server_shutdown",
+		});
+		expect(fixture.session.calls).toHaveLength(0);
+		expect(fixture.epoch.stages).toHaveLength(0);
+	});
+
+	test("promptless fork confirms its thread and omits the initial-turn boundary", async () => {
+		const { authorities, caller, otherTarget } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		fixture.threadAuthority.targets.set(otherTarget.wireThreadId, otherTarget);
+		const forkedThread = thread(authorities, "promptless-fork");
+		fixture.session.threadForkResult = threadForkResult(forkedThread);
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "fork_thread", { threadId: otherTarget.wireThreadId }),
+		);
+		const parsed = parseDynamicToolCallResponse("fork_thread", response);
+		if (parsed.envelope.tag !== "ok") {
+			throw new Error("promptless fork did not succeed");
+		}
+		const value = record(parsed.envelope.value);
+
+		expect(value).toMatchObject({
+			threadId: String(forkedThread.id),
+			state: "executable",
+			initialTurn: { delivery: "not_requested", turnId: null, operationId: null, reason: null },
+		});
+		expect(fixture.session.calls.map(({ method }) => method)).toEqual(["thread/fork"]);
+		expect(fixture.session.calls[0]?.params).toEqual({
+			threadId: otherTarget.threadId,
+			cwd: CHECKOUT_ROOT,
+			runtimeWorkspaceRoots: [CHECKOUT_ROOT],
+			developerInstructions: expect.any(String),
+			ephemeral: false,
+			threadSource: "archboard",
+			excludeTurns: true,
+		});
+		expect(fixture.contextReads).toHaveLength(0);
+		expect(fixture.epoch.settlements.map(({ outcome }) => outcome)).toEqual(["delivered"]);
+	});
+
+	test("rejects a boundary authority that does not honor self-fork semantics", async () => {
+		const { authorities, caller, selfTarget } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		fixture.threadAuthority.targets.set(selfTarget.wireThreadId, selfTarget);
+		fixture.threadAuthority.boundary = authorities.identity.decoder.adoptTurnId("wrong-boundary");
+
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "fork_thread", {
+				threadId: selfTarget.wireThreadId,
+				beforeTurnId: "caller-supplied-boundary",
+			}),
+		);
+		const parsed = parseDynamicToolCallResponse("fork_thread", response);
+
+		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "invalid_call" });
+		expect(response.success).toBe(true);
+		expect(fixture.approval.presented).toHaveLength(0);
+		expect(fixture.session.calls).toHaveLength(0);
+		expect(fixture.epoch.stages).toHaveLength(0);
+	});
+
+	test("rejects a pane authority that changes identity during post-approval revalidation", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		const initialAuthority = await fixture.options.context.issueAndRevalidatePaneLinkAuthority({
+			caller,
+		});
+		let calls = 0;
+		const options = {
+			...fixture.options,
+			context: {
+				...fixture.options.context,
+				issueAndRevalidatePaneLinkAuthority: () => {
+					calls += 1;
+					return calls === 1 ? initialAuthority : { ...initialAuthority, paneId: "another-pane" };
+				},
+			},
+		};
+
+		const response = await createCodexDynamicTools(options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "pane changed" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "invalid_call" });
+		expect(response.success).toBe(true);
+		expect(fixture.approval.presented).toHaveLength(1);
+		expect(fixture.session.calls).toHaveLength(0);
+		expect(fixture.epoch.stages).toHaveLength(0);
+	});
+
+	test("stale target revalidation refuses before staging or remote mutation", async () => {
+		const { authorities, caller, otherTarget } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		fixture.threadAuthority.targets.set(otherTarget.wireThreadId, otherTarget);
+		fixture.threadAuthority.revalidateTargetError = Object.assign(
+			new Error("target child exited"),
+			{ code: "stale_child" },
+		);
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "send_message_to_thread", {
+				threadId: otherTarget.wireThreadId,
+				prompt: "stale target",
+			}),
+		);
+		const parsed = parseDynamicToolCallResponse("send_message_to_thread", response);
+
+		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "stale_child" });
+		expect(response.success).toBe(true);
+		expect(fixture.session.calls).toHaveLength(0);
+		expect(fixture.epoch.stages).toHaveLength(0);
+		expect(fixture.operationIds.retired).toHaveLength(1);
+		expect(fixture.operationIds.consumed).toHaveLength(0);
+	});
+
+	test("keeps an approved lifecycle refusal successful and retires issued identities", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		fixture.lifecycle.assertionError = Object.assign(new Error("the call was interrupted"), {
+			code: "invalid_call",
+		});
+		fixture.lifecycle.assertionErrorPhase = "after_approval";
+
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "lifecycle refusal" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(response.success).toBe(true);
+		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "invalid_call" });
+		expect(fixture.approval.presented).toHaveLength(1);
+		expect(fixture.session.calls).toHaveLength(0);
+		expect(fixture.epoch.stages).toHaveLength(0);
+		expect(fixture.operationIds.retired).toHaveLength(2);
+		expect(fixture.operationIds.consumed).toHaveLength(0);
+	});
+
+	test("keeps a confirmed create identity when its durable settlement throws", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		fixture.epoch.commitError = new Error("durable commit failed");
+		const createdThread = thread(authorities, "commit-error-thread");
+		fixture.session.threadStartResult = threadStartResult(createdThread);
+
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "commit error" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(response.success).toBe(true);
+		expect(parsed.envelope).toMatchObject({
+			tag: "ok",
+			value: {
+				threadId: String(createdThread.id),
+				initialTurn: { delivery: "not_delivered" },
+			},
+		});
+		expect(fixture.session.calls.map(({ method }) => method)).toEqual(["thread/start"]);
+		expect(fixture.epoch.settlements).toHaveLength(0);
+		expect(fixture.operationIds.consumed).toHaveLength(1);
+		expect(fixture.operationIds.retired).toHaveLength(1);
+	});
+
+	test("retires every issued identity when staging throws after approval", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		fixture.epoch.stageError = new Error("stage failed");
+
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "stage error" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(response.success).toBe(true);
+		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "system_error" });
+		expect(fixture.approval.presented).toHaveLength(1);
+		expect(fixture.session.calls).toHaveLength(0);
+		expect(fixture.operationIds.consumed).toHaveLength(0);
+		expect(fixture.operationIds.retired).toHaveLength(2);
+	});
+
+	test("malformed non-object input still gets one failed transport boundary", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		const tools = createCodexDynamicTools(fixture.options);
+		const response = await tools.dispatch(null as never);
+		const text = response.contentItems[0]?.text;
+
+		expect(response.success).toBe(false);
+		expect(typeof text).toBe("string");
+		expect(text === undefined ? null : JSON.parse(text)).toMatchObject({
+			tag: "refused",
+			reason: "invalid_call",
+		});
+		expect(fixture.transportResponses).toHaveLength(1);
+		expect(fixture.transportResponses[0]?.request).toBe(null);
+	});
+
+	test("does not turn a rejected initial turn into a second attempt", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		const createdThread = thread(authorities, "one-attempt-thread");
+		fixture.session.threadStartResult = threadForkResult(createdThread);
+		fixture.session.turnStartResult = new CodexSessionMutationError(
+			"turn/start",
+			"not_delivered",
+			"rejected once",
+		);
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "one attempt" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(parsed.envelope).toMatchObject({
+			tag: "ok",
+			value: { threadId: String(createdThread.id), initialTurn: { delivery: "not_delivered" } },
+		});
+		expect(fixture.session.calls.map(({ method }) => method)).toEqual([
+			"thread/start",
+			"turn/start",
+		]);
+	});
+});

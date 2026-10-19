@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `workbench` for `shared/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `workbench` for `shared/` and `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -545,11 +545,15 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
 
 The sixteenth is `workbench` (`@archboard/workbench`). It is the Codex workbench: the coordinator, the workhorses, the
 conversation and the voice (layer 7, the last). It grows over TASK-500.23.01 to .07, one move for each step up its
-import graph, and the later moves add `runtime/`, `server/` and `ui/`. So far it holds the browser-safe contracts that
-the browser and the server exchange. It adopts the `api/` role for `shared/` and exposes 5 subpaths with 100 names, where
-code outside imported 4 module paths. It imports `codex-app-server`, `walkthrough` and `timing`, and nothing from
-`src/`. The 5 files of `shared/api/` are safe for the browser, with no Node import and no path into a runtime or
-server area: the pane transport and the voice session import them as well as the server.
+import graph, and the later moves add the coordinator and the workhorses to `runtime/`, then `server/` and `ui/`. So far
+it holds the browser-safe contracts that the browser and the server exchange, and the foundation of the Codex runtime
+under them. It adopts the `api/` role for `shared/` and `runtime/` and exposes 15 subpaths. It imports `codex-app-server`,
+`board`, `walkthrough` and `timing`, and nothing from `src/`. The 5 files of `shared/api/` hold 100 names and are safe
+for the browser, with no Node import and no path into a runtime or server area: the pane transport and the voice session
+import them as well as the server. The 10 files of `runtime/api/` hold 163 names and run only in Bun. The browser
+imports none of them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/`.
+
+**Shared.**
 
 - `./realtime-contract` is the realtime voice session: its phases and the transitions between them, the ids that name
   a session, an item and a correlation, and the commands, outcomes and events that the browser and the server exchange
@@ -569,6 +573,38 @@ server area: the pane transport and the voice session import them as well as the
 - The tests are in `tests/`: `shared/protocol/` holds the identity types of the realtime contract, `shared/rules/` the
   canonical hash and `shared/schemas/` the browser states and the dynamic approval. `shared/support/` holds the fixture
   model they share.
+
+**Runtime.** `runtime/` keeps its code in role folders, each with one folder for each behavior. A role folder that
+grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `mutation/` and `projection/` below
+`operations/`). A module that is not in `runtime/api/` is private, and no private file imports an api file.
+
+- `rules/` holds the pure decisions: `instructions/` (the two authored developer instructions, their reviewed digests and
+  the context a turn carries), `thread-link/` (the classification of a target thread, the pane's binding by
+  compare-and-swap and its durable evidence), `realtime/` (the presentation mode, the voice prompt and the start policy)
+  and `dynamic-tools/` (the authority a call runs under, the effects it may have and the validation of a call).
+- `protocol/` holds the contracts that a tool call or a manifest states: `thread-tools/` (the `archboard_app` manifest
+  and the parse of a call response), `coordinator-tool-contract/` (the reviewed voice and workhorse manifests, the
+  tool inputs and results) and `dynamic-tools/` (the ports and the lifecycle events of an operation).
+- `services/` holds the long-lived behaviors: `approvals/` (the broker), `workhorse-queue/`, `thread-context/` (the
+  delivery of context into a thread), `realtime/` (the voice adapter) and `dynamic-tools/` (the quarantine of an
+  uncertain mutation and the wait for a thread).
+- `operations/` holds one act a caller asks for: `dynamic-tools/` (the dispatch of a call, its mutations and the pages
+  it answers with) and `thread-unload/`. `store/epoch/` is the durable epoch manifest, and `state/wait-graph/` is the
+  in-memory graph of waiting threads.
+- The two instruction documents and the two manifests of the coordinator and the `archboard_app` namespace are data
+  files that sit beside the code that reads them, found with `import.meta.resolve` of a `#` path, so no file depends on
+  its own depth. Their digests are pinned in the code, and a changed byte is a review.
+- `./thread-link` is a pane's link to a thread: `createCodexThreadLink`, its ports and snapshots, and the unload of a
+  thread. `./epoch` is the epoch store and the proofs and transactions that its operations carry. `./instructions` is the
+  authored instructions, the context and the builders of a turn's parameters. `./approvals` is the broker and the owner
+  view a pane renders. `./dynamic-tools` is the dispatcher with its ports, the authority token issuer and the wait graph.
+  `./realtime` is the voice adapter and the presentation a walkthrough narrates through. `./thread-tools` is the
+  `archboard_app` manifest, the parse of a tool-call response and the thread context controller. `./workhorse-queue` is
+  the queue of one workhorse. `./coordinator-tools` is what the coordinator may call: the manifests with their digests,
+  the names and the input schemas. `./coordinator-tool-results` is what a coordinator tool answers.
+- The tests are in `tests/runtime/`, in the folders of the code they cover. `support/dynamic-tools/` holds the fakes and
+  fixtures that the dynamic-tools tests share. The capacity test of the dynamic tools is opt-in
+  (`bun run test:opt-in:capacity`).
 
 ## Vendor-owned data
 

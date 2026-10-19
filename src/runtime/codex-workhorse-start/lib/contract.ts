@@ -4,7 +4,7 @@ import type {
 	EpochOperationRecord,
 	EpochSnapshot,
 	EpochTransaction,
-} from "@/runtime/codex-epoch";
+} from "@archboard/workbench/epoch";
 import type {
 	CodexSession,
 	SessionParams,
@@ -17,7 +17,7 @@ import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkCasToken,
 	ThreadLinkTarget,
-} from "@/runtime/codex-thread-link";
+} from "@archboard/workbench/thread-link";
 import type {
 	ChildEpoch,
 	ChildId,

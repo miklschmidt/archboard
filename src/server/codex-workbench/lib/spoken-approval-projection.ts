@@ -1,6 +1,6 @@
 import type { BrowserSchemas } from "@archboard/workbench/browser-model";
 import type { BrowserSpokenApproval } from "@archboard/workbench/browser-approvals";
-import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
+import type { ApprovalOwnerView } from "@archboard/workbench/approvals";
 import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,

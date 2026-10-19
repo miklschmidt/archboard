@@ -3,7 +3,7 @@ import {
 	JsonValueSchema,
 } from "@archboard/workbench/browser-model";
 import { type BrowserApproval } from "@archboard/workbench/browser-approvals";
-import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
+import type { ApprovalOwnerView } from "@archboard/workbench/approvals";
 
 type OwnerApprovalRequest = ApprovalOwnerView["request"];
 type OwnerCommandRequest = Extract<OwnerApprovalRequest, { readonly family: "command_execution" }>;

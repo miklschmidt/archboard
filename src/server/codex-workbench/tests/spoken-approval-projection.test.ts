@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+import type { ApprovalOwnerView } from "@archboard/workbench/approvals";
 import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,

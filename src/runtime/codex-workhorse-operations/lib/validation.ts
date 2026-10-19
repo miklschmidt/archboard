@@ -1,8 +1,8 @@
-import type { ThreadLinkClassification } from "@/runtime/codex-thread-link";
+import type { ThreadLinkClassification } from "@archboard/workbench/thread-link";
 import {
 	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
-} from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/coordinator-tools";
 import {
 	CodexWorkhorseOperationsError,
 	type WorkhorseCoordinatorCall,

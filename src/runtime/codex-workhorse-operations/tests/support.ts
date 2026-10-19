@@ -1,19 +1,19 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { ArchboardContextSchema, createTextUserInput } from "../../codex-instructions/index.js";
+import { ArchboardContextSchema, createTextUserInput } from "@archboard/workbench/instructions";
 import type { SessionParams, SessionTurn } from "@archboard/codex-app-server/session";
 import {
 	createCodexEpochStore,
 	type CodexEpochStore,
 	type EpochExecutionProof,
 	type EpochStageInput,
-} from "../../codex-epoch/index.js";
-import type { CodexWorkhorseQueue } from "../../codex-workhorse-queue/index.js";
+} from "@archboard/workbench/epoch";
+import type { CodexWorkhorseQueue } from "@archboard/workbench/workhorse-queue";
 import {
 	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
-} from "../../codex-coordinator-tool-contract/index.js";
+} from "@archboard/workbench/coordinator-tools";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthority,
@@ -31,7 +31,7 @@ import {
 	type WorkhorseOperationOptions,
 	type WorkhorseOperationSessionPort,
 } from "../index.js";
-import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
+import type { ThreadLinkClassification } from "@archboard/workbench/thread-link";
 import { FakeQueue } from "./queue-support.js";
 
 const INSTRUCTION_HASH = "1".repeat(64);

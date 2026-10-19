@@ -9,7 +9,7 @@ import type {
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
-} from "../../../runtime/codex-thread-link/index.js";
+} from "@archboard/workbench/thread-link";
 
 const CLOCK_START = 1_787_682_840_000;
 

@@ -8,8 +8,8 @@ import type {
 	EpochConfirmation,
 	EpochOperationRecord,
 	EpochTransaction,
-} from "@/runtime/codex-epoch";
-import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
+} from "@archboard/workbench/epoch";
+import type { ThreadLinkBindingSnapshot } from "@archboard/workbench/thread-link";
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
 	WORKHORSE_CLEANUP_RPC,

@@ -1,6 +1,6 @@
-import { createCodexApprovalBroker } from "../../../../runtime/codex-approvals/index.js";
+import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../../runtime/codex-spoken-approval/index.js";
-import type { ThreadLinkSnapshot } from "../../../../runtime/codex-thread-link/index.js";
+import type { ThreadLinkSnapshot } from "@archboard/workbench/thread-link";
 import type { IdentityAuthorities, ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	createCodexWorkbenchGateway,

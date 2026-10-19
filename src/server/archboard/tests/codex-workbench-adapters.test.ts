@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { createDynamicAuthorityTokenIssuer } from "../../../runtime/codex-dynamic-tools/index.js";
+import { createDynamicAuthorityTokenIssuer } from "@archboard/workbench/dynamic-tools";
 import {
 	createServerDynamicOperationIdAdapter,
 	presentingPane,

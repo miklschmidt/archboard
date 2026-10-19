@@ -1,5 +1,8 @@
-import type { EpochExecutionProof, EpochOperationRecord } from "@/runtime/codex-epoch";
-import type { ThreadLinkBindingSnapshot, ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
+import type { EpochExecutionProof, EpochOperationRecord } from "@archboard/workbench/epoch";
+import type {
+	ThreadLinkBindingSnapshot,
+	ThreadLinkSnapshot,
+} from "@archboard/workbench/thread-link";
 import type {
 	ChildEpoch,
 	ChildId,

@@ -6,7 +6,7 @@ import {
 	createCodexEpochStore,
 	type CodexEpochStore,
 	type EpochStageInput,
-} from "../../codex-epoch/index.js";
+} from "@archboard/workbench/epoch";
 import type {
 	SessionParams,
 	SessionResponse,
@@ -16,7 +16,7 @@ import type {
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
-} from "../../codex-thread-link/index.js";
+} from "@archboard/workbench/thread-link";
 import {
 	createIdentityAuthorities,
 	type ChildEpoch,

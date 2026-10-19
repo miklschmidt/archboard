@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { afterAll, beforeAll } from "bun:test";
 
-import { createCodexEpochStore } from "../../codex-epoch/index.js";
+import { createCodexEpochStore } from "@archboard/workbench/epoch";
 import {
 	createIdentityAuthorities,
 	restoreIdentityAuthorities,

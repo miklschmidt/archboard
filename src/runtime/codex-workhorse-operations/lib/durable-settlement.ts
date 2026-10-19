@@ -1,4 +1,4 @@
-import type { EpochConfirmation } from "@/runtime/codex-epoch";
+import type { EpochConfirmation } from "@archboard/workbench/epoch";
 import type { WorkhorseOperationOptions } from "@/runtime/codex-workhorse-operations/lib/contract";
 import type {
 	OperationState,

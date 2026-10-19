@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
+import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
 import {
 	createIdentityAuthorities,
 	createIdentityAuthority,

@@ -20,7 +20,7 @@ import {
 	type SemanticBoard,
 } from "@archboard/board/document";
 import type { SemanticPaneContext, SemanticPanePresentation } from "@archboard/board/pane-context";
-import type { RealtimePresentationChange } from "@/runtime/codex-realtime";
+import type { RealtimePresentationChange } from "@archboard/workbench/realtime";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-narration-against-"));
 const BOARD = "Stacked";

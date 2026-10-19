@@ -1,5 +1,8 @@
 import { isDeepStrictEqual } from "node:util";
-import { sameThreadLinkIdentity, type ThreadLinkEpochProof } from "@/runtime/codex-thread-link";
+import {
+	sameThreadLinkIdentity,
+	type ThreadLinkEpochProof,
+} from "@archboard/workbench/thread-link";
 import { sameRealtimeGeneration } from "@/runtime/codex-coordinator-callbacks/lib/realtime";
 import { workhorseLinkOf } from "@/runtime/codex-coordinator-callbacks/lib/workhorse-links";
 import type {

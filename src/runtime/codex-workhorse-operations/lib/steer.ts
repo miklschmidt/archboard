@@ -1,4 +1,4 @@
-import { createAdditionalContext, createTextUserInput } from "@/runtime/codex-instructions";
+import { createAdditionalContext, createTextUserInput } from "@archboard/workbench/instructions";
 import {
 	CodexWorkhorseOperationsError,
 	type SteerWorkhorseRequest,

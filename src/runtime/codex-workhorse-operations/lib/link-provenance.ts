@@ -1,5 +1,8 @@
-import type { EpochOperationRecord } from "@/runtime/codex-epoch";
-import type { ExecutableThreadLink, ThreadLinkClassification } from "@/runtime/codex-thread-link";
+import type { EpochOperationRecord } from "@archboard/workbench/epoch";
+import type {
+	ExecutableThreadLink,
+	ThreadLinkClassification,
+} from "@archboard/workbench/thread-link";
 import type { WorkhorseOperationTarget } from "@/runtime/codex-workhorse-operations/lib/contract";
 import {
 	mapLinkReason,

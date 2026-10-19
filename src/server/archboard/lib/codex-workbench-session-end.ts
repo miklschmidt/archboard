@@ -5,9 +5,9 @@
 // unloads it. Its coordinator's tools and its voice adapter stay until then, so a turn still
 // running is answered rather than left waiting.
 
-import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
-import type { CodexThreadLinkPort } from "@/runtime/codex-thread-link";
-import type { ThreadUnload } from "@/runtime/codex-thread-unload";
+import type { CodexRealtimeAdapter } from "@archboard/workbench/realtime";
+import type { CodexThreadLinkPort } from "@archboard/workbench/thread-link";
+import type { ThreadUnload } from "@archboard/workbench/thread-link";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
 import type { TabSessionId } from "@/server/codex-workbench";
 import { appendFailure } from "@/server/archboard/lib/codex-workbench-failures";

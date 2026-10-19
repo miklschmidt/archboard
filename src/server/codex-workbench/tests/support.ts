@@ -1,7 +1,7 @@
 import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
-} from "../../../runtime/codex-dynamic-tools/index.js";
+} from "@archboard/workbench/dynamic-tools";
 import {
 	createIdentityAuthorities,
 	type ChildEpoch,
@@ -32,8 +32,8 @@ import { createCodexWorkbenchGateway, parseTabSessionId } from "../index.js";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
-} from "../../../runtime/codex-thread-link/index.js";
-import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+} from "@archboard/workbench/thread-link";
+import type { ApprovalOwnerView } from "@archboard/workbench/approvals";
 import { commandApprovalOwnerFixture } from "./approval-owner-fixture.js";
 import {
 	CLOCK_START,

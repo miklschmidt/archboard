@@ -2,8 +2,8 @@ import type {
 	ApprovalSnapshot,
 	CodexApprovalBroker,
 	SpokenApprovalEffectPresentation,
-} from "@/runtime/codex-approvals";
-import { ArchboardContextSchema, type ArchboardContext } from "@/runtime/codex-instructions";
+} from "@archboard/workbench/approvals";
+import { ArchboardContextSchema, type ArchboardContext } from "@archboard/workbench/instructions";
 import type {
 	SpokenApprovalArmInput,
 	SpokenApprovalFallbackReason,

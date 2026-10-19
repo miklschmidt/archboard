@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
-import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
-import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
+import type { ThreadLinkSnapshot } from "@archboard/workbench/thread-link";
+import type { ArchboardContext } from "@archboard/workbench/instructions";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,

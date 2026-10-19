@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ThreadLinkBindingSnapshot } from "../../codex-thread-link/index.js";
+import type { ThreadLinkBindingSnapshot } from "@archboard/workbench/thread-link";
 import type { WorkhorseSnapshot } from "../index.js";
 import {
 	CHECKOUT_ROOT,

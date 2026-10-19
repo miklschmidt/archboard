@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { createServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
-import { createCodexApprovalBroker } from "../../../src/runtime/codex-approvals/index.js";
+import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../src/runtime/codex-spoken-approval/index.js";
 import type {
 	ReverseResponse,

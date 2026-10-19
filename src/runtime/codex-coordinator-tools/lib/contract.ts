@@ -26,25 +26,27 @@ import type {
 } from "@archboard/codex-app-server/identity";
 import type {
 	CoordinatorToolName,
+	ManageWorkhorseQueueInput,
+	DelegateToWorkhorseInput,
+	SteerWorkhorseInput,
+} from "@archboard/workbench/coordinator-tools";
+import type {
 	DynamicToolRefusalReason,
 	InspectWorkhorseResult,
-	ManageWorkhorseQueueInput,
 	ManageWorkhorseQueueResult,
-	DelegateToWorkhorseInput,
 	DelegateToWorkhorseResult,
 	ResolveSpokenApprovalResult,
-	SteerWorkhorseInput,
 	SteerWorkhorseResult,
 	StopWorkhorsesResult,
-} from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/coordinator-tool-results";
 import {
 	ARCHBOARD_VOICE_MANIFEST_SHA256,
 	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
-} from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/coordinator-tools";
 import type {
 	UnknownDynamicToolResponseSchema,
 	ValidDynamicToolResponseSchema,
-} from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/coordinator-tool-results";
 import type { z } from "zod";
 
 const COORDINATOR_TOOLS_OWNER = "codex-coordinator-tools" as const;

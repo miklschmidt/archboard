@@ -1,4 +1,4 @@
-import type { ArchboardContext } from "../../../../runtime/codex-instructions/index.js";
+import type { ArchboardContext } from "@archboard/workbench/instructions";
 
 const CODEX_WORKBENCH_COMPONENT_ORDER = [
 	"identity",

@@ -3,9 +3,9 @@ import { describe, expect, test } from "bun:test";
 import {
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-} from "../../codex-instructions/index.js";
+} from "@archboard/workbench/instructions";
 import { WORKHORSE_INSTRUCTION_HASH, createWorkhorseThreadStartParams } from "../index.js";
-import { ARCHBOARD_APP_NAMESPACE } from "../../codex-thread-tools/index.js";
+import { ARCHBOARD_APP_NAMESPACE } from "@archboard/workbench/thread-tools";
 import { ARCHBOARD_COORDINATOR_NAMESPACE } from "../../codex-coordinator-callbacks/index.js";
 
 const CHECKOUT_ROOT = "/workspace/archboard";

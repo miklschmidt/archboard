@@ -1,5 +1,5 @@
-import { ArchboardContextSchema } from "@/runtime/codex-instructions";
-import type { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
+import { ArchboardContextSchema } from "@archboard/workbench/instructions";
+import type { createCodexWaitGraph } from "@archboard/workbench/dynamic-tools";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,

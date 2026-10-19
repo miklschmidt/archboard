@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { parseTabSessionId } from "../../codex-workbench/index.js";
-import { ArchboardContextSchema } from "../../../runtime/codex-instructions/index.js";
+import { ArchboardContextSchema } from "@archboard/workbench/instructions";
 import { createServerCanonicalTextActions } from "../codex-workbench-adapters.js";
 
 test("browser start and steer emit canonical authored bodies from lease-bound context", async () => {

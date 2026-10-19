@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { parseDynamicToolCallResponse } from "../../../src/runtime/codex-thread-tools/index.ts";
+import { parseDynamicToolCallResponse } from "@archboard/workbench/thread-tools";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,

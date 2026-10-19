@@ -2,7 +2,7 @@ import {
 	ARCHBOARD_VOICE_MANIFEST_SHA256,
 	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
 	type CoordinatorToolName,
-} from "../../codex-coordinator-tool-contract/index.js";
+} from "@archboard/workbench/coordinator-tools";
 import type {
 	CodexWorkhorseOperations,
 	WorkhorseOperationBinding,

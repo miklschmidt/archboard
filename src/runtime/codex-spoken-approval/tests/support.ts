@@ -26,8 +26,8 @@ import {
 	type ApprovalResponsePort,
 	type ApprovalSnapshot,
 	type CodexApprovalBroker,
-} from "../../codex-approvals/index.js";
-import { ARCHBOARD_VOICE_MANIFEST_SHA256 } from "../../codex-coordinator-tool-contract/index.js";
+} from "@archboard/workbench/approvals";
+import { ARCHBOARD_VOICE_MANIFEST_SHA256 } from "@archboard/workbench/coordinator-tools";
 import type {
 	TransportServerRequest,
 	TransportServerNotification,
@@ -38,7 +38,7 @@ import type {
 	SessionResponse,
 	SessionTurn,
 } from "@archboard/codex-app-server/session";
-import type { ArchboardContext } from "../../codex-instructions/index.js";
+import type { ArchboardContext } from "@archboard/workbench/instructions";
 import {
 	createCodexSpokenApprovalGate,
 	type CodexSpokenApprovalGate,

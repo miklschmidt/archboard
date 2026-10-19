@@ -1,4 +1,4 @@
-import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
+import type { CodexApprovalBroker } from "@archboard/workbench/approvals";
 import { CodexTransportRemoteError } from "@archboard/codex-app-server/transport";
 import type {
 	CodexWorkbenchComponents,

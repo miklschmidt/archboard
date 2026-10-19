@@ -76,7 +76,8 @@
 				"packages/workbench/src/shared",
 				"packages/walkthrough/src/runtime",
 				"src/cli/commands/semantic-replay.ts",
-				"src/runtime/codex-realtime",
+				"packages/workbench/src/runtime/rules/realtime",
+				"packages/workbench/src/runtime/services/realtime",
 				"src/server/archboard/lib/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts"
 			],
@@ -151,7 +152,8 @@
 				"packages/workbench/src/shared",
 				"packages/walkthrough/src/runtime",
 				"src/cli/commands/semantic-replay.ts",
-				"src/runtime/codex-realtime",
+				"packages/workbench/src/runtime/rules/realtime",
+				"packages/workbench/src/runtime/services/realtime",
 				"src/server/archboard/lib/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
@@ -201,7 +203,8 @@
 				"packages/workbench/src/shared",
 				"packages/walkthrough/src/runtime",
 				"src/cli/commands/semantic-replay.ts",
-				"src/runtime/codex-realtime",
+				"packages/workbench/src/runtime/rules/realtime",
+				"packages/workbench/src/runtime/services/realtime",
 				"src/server/archboard/lib/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"

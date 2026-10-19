@@ -7,7 +7,7 @@
 // against that one, as the picture marks it, and a changed one says what moved, so the voice can
 // explain the difference the viewer is looking at.
 
-import type { StepSubject } from "@/runtime/codex-realtime";
+import type { StepSubject } from "@archboard/workbench/realtime";
 import {
 	changeOf,
 	compareVariants,

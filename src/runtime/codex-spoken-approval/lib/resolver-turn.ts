@@ -1,5 +1,5 @@
-import { CodexApprovalError, type ApprovalSettlement } from "@/runtime/codex-approvals";
-import { ResolveSpokenApprovalInputSchema } from "@/runtime/codex-coordinator-tool-contract";
+import { CodexApprovalError, type ApprovalSettlement } from "@archboard/workbench/approvals";
+import { ResolveSpokenApprovalInputSchema } from "@archboard/workbench/coordinator-tools";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { SpokenApprovalToolResult } from "@/runtime/codex-spoken-approval/lib/contract";
 import type { ActiveSlot } from "@/runtime/codex-spoken-approval/lib/state";

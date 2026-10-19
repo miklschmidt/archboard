@@ -1,4 +1,4 @@
-import { createTextUserInput } from "../../codex-instructions/index.js";
+import { createTextUserInput } from "@archboard/workbench/instructions";
 import type { ManageWorkhorseQueueRequest } from "../index.js";
 import type { Fixture } from "./support.js";
 

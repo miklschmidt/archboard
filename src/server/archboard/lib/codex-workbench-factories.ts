@@ -1,18 +1,18 @@
-import { createCodexApprovalBroker } from "@/runtime/codex-approvals";
+import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
 import {
 	ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
 	ARCHBOARD_COORDINATOR_NAMESPACE,
 	TELL_COORDINATOR_OWNER,
 } from "@/runtime/codex-coordinator-callbacks";
 import { COORDINATOR_DYNAMIC_DISPATCHERS } from "@/runtime/codex-coordinator-tools";
-import { createCodexDynamicTools } from "@/runtime/codex-dynamic-tools";
-import { createCodexEpochStore } from "@/runtime/codex-epoch";
+import { createCodexDynamicTools } from "@archboard/workbench/dynamic-tools";
+import { createCodexEpochStore } from "@archboard/workbench/epoch";
 import { createCodexSession } from "@archboard/codex-app-server/session";
-import { createCodexThreadLink } from "@/runtime/codex-thread-link";
+import { createCodexThreadLink } from "@archboard/workbench/thread-link";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
-} from "@/runtime/codex-thread-tools";
+} from "@archboard/workbench/thread-tools";
 import { createCodexTransport, type CodexTransport } from "@archboard/codex-app-server/transport";
 import {
 	createIdentityAuthorities,

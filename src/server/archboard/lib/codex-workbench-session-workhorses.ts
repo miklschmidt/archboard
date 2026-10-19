@@ -12,9 +12,9 @@
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
 import type { CodexSession } from "@archboard/codex-app-server/session";
-import type { CodexThreadContextController } from "@/runtime/codex-thread-context";
+import type { CodexThreadContextController } from "@archboard/workbench/thread-tools";
 import type { CodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
-import type { CodexWorkhorseQueue } from "@/runtime/codex-workhorse-queue";
+import type { CodexWorkhorseQueue } from "@archboard/workbench/workhorse-queue";
 import type { CodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
 import type {
 	OperationId,

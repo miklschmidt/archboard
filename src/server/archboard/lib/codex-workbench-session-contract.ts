@@ -4,11 +4,11 @@
 import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
 import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
 import type { CodexCoordinator } from "@/runtime/codex-coordinator";
-import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
+import type { CodexRealtimeAdapter } from "@archboard/workbench/realtime";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
 import type { CodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
-import type { ThreadUnload } from "@/runtime/codex-thread-unload";
+import type { ThreadUnload } from "@archboard/workbench/thread-link";
 import type {
 	CodexTransport,
 	TransportServerNotification,

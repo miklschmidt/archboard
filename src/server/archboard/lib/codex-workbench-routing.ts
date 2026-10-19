@@ -1,5 +1,5 @@
-import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
-import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
+import type { CodexApprovalBroker } from "@archboard/workbench/approvals";
+import type { CodexDynamicTools } from "@archboard/workbench/dynamic-tools";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type {
 	DynamicServerRequest,

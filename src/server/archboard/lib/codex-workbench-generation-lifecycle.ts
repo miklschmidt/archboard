@@ -1,12 +1,12 @@
-import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
-import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
-import type { CodexEpochStore } from "@/runtime/codex-epoch";
+import type { CodexApprovalBroker } from "@archboard/workbench/approvals";
+import type { CodexDynamicTools } from "@archboard/workbench/dynamic-tools";
+import type { CodexEpochStore } from "@archboard/workbench/epoch";
 import {
 	CODEX_SESSION_CONTROL,
 	type CodexSession,
 	type ControlledCodexSession,
 } from "@archboard/codex-app-server/session";
-import type { CodexThreadLinkPort } from "@/runtime/codex-thread-link";
+import type { CodexThreadLinkPort } from "@archboard/workbench/thread-link";
 import type { CodexTransport } from "@archboard/codex-app-server/transport";
 import type {
 	ChildEpoch,

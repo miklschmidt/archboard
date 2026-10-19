@@ -71,7 +71,7 @@ timeout -k 5s 25s bun test \
   packages/codex-app-server/tests/runtime/operations/semantic-truncated-reconciliation.test.ts \
   packages/codex-app-server/tests/runtime/schemas/semantic-brief-boundaries.test.ts \
   packages/codex-app-server/tests/runtime/schemas/semantic-context-types.test.ts \
-  src/runtime/codex-thread-context/tests \
+  packages/workbench/tests/runtime/services/thread-context \
   src/runtime/codex-coordinator-callbacks/tests \
   src/runtime/codex-spoken-approval/tests
 

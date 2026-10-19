@@ -1,4 +1,4 @@
-import { createTextUserInput } from "../../codex-instructions/index.js";
+import { createTextUserInput } from "@archboard/workbench/instructions";
 import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
 import {
 	CodexWorkhorseQueueError,
@@ -7,7 +7,7 @@ import {
 	type QueueEffectContext,
 	type QueueMutationOutcome,
 	type QueueSnapshot,
-} from "../../codex-workhorse-queue/index.js";
+} from "@archboard/workbench/workhorse-queue";
 import type {
 	IdentityAuthority,
 	OperationAuthority,

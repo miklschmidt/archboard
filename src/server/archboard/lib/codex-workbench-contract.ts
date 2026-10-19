@@ -1,4 +1,4 @@
-import type { CodexApprovalBrokerOptions } from "@/runtime/codex-approvals";
+import type { CodexApprovalBrokerOptions } from "@archboard/workbench/approvals";
 import type { CoordinatorCallbackOptions } from "@/runtime/codex-coordinator-callbacks";
 import type { CodexCoordinatorToolsOptions } from "@/runtime/codex-coordinator-tools";
 import type { CodexCoordinatorOptions } from "@/runtime/codex-coordinator";
@@ -9,21 +9,21 @@ import type {
 	DynamicThreadAuthorityPort,
 	DynamicToolApprovalPort,
 	DynamicToolLifecyclePort,
-} from "@/runtime/codex-dynamic-tools";
-import type { CodexEpochStoreOptions } from "@/runtime/codex-epoch";
+} from "@archboard/workbench/dynamic-tools";
+import type { CodexEpochStoreOptions } from "@archboard/workbench/epoch";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
 import type { CodexSessionOptions } from "@archboard/codex-app-server/session";
-import type { CodexRealtimeAdapterOptions } from "@/runtime/codex-realtime";
+import type { CodexRealtimeAdapterOptions } from "@archboard/workbench/realtime";
 import type { SemanticContextPublisherOptions } from "@archboard/codex-app-server/semantic-context";
 import type { CodexSpokenApprovalGateOptions } from "@/runtime/codex-spoken-approval";
-import type { CodexThreadContextControllerOptions } from "@/runtime/codex-thread-context";
-import type { CodexThreadLinkOptions } from "@/runtime/codex-thread-link";
+import type { CodexThreadContextControllerOptions } from "@archboard/workbench/thread-tools";
+import type { CodexThreadLinkOptions } from "@archboard/workbench/thread-link";
 import type {
 	CodexTransportOptions,
 	DynamicServerRequest,
 } from "@archboard/codex-app-server/transport";
 import type { WorkhorseOperationOptions } from "@/runtime/codex-workhorse-operations";
-import type { WorkhorseQueueOptions } from "@/runtime/codex-workhorse-queue";
+import type { WorkhorseQueueOptions } from "@archboard/workbench/workhorse-queue";
 import type { CodexWorkhorseStartOptions } from "@/runtime/codex-workhorse-start";
 import type { IdentityLedger, OperationId } from "@archboard/codex-app-server/identity";
 import type { CodexWorkbenchGatewayOptions } from "@/server/codex-workbench";

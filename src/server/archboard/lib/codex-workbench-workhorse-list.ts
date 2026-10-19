@@ -8,7 +8,7 @@
 // answer to a question it asked. What the coordinator asks marks no entry, because every pane of
 // the tab shows it whatever conversation is shown.
 
-import type { ApprovalFamily, CodexApprovalBroker } from "@/runtime/codex-approvals";
+import type { ApprovalFamily, CodexApprovalBroker } from "@archboard/workbench/approvals";
 import {
 	BROWSER_WORKHORSE_LIMIT,
 	type BrowserWorkhorses,

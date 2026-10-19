@@ -4,9 +4,9 @@ import {
 	ARCHBOARD_WORKHORSE_NAMESPACE,
 	COORDINATOR_IDENTITY,
 	COORDINATOR_THREAD_CONFIG,
-} from "@/runtime/codex-coordinator-tool-contract";
-import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "@/runtime/codex-instructions";
-import type { CanonicalNamespace } from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/coordinator-tools";
+import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "@archboard/workbench/instructions";
+import type { CanonicalNamespace } from "@archboard/workbench/coordinator-tools";
 import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session";
 import {
 	CodexCoordinatorError,

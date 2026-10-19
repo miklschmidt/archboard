@@ -7,7 +7,7 @@ import type {
 } from "@archboard/workbench/browser-model";
 import type { BrowserDynamicApprovalResponse } from "@archboard/workbench/browser-approvals";
 import type { BrowserCommandId, JsonRpcRequestId } from "@archboard/codex-app-server/identity";
-import { parseApprovalResponse } from "@/runtime/codex-approvals";
+import { parseApprovalResponse } from "@archboard/workbench/approvals";
 import { SupportedLoginAccountParamsSchema } from "@archboard/codex-app-server/session";
 import type { BrowserLeaseManager } from "@/server/codex-workbench/lib/lease";
 import {

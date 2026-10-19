@@ -7,7 +7,7 @@ import {
 	type EpochSnapshot,
 	type EpochStageInput,
 	type EpochTransaction,
-} from "../../codex-epoch/index.js";
+} from "@archboard/workbench/epoch";
 import type { CoordinatorEpochPort } from "../index.js";
 import type { IdentityAuthority } from "@archboard/codex-app-server/identity";
 

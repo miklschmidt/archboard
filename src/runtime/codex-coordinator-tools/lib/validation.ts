@@ -18,7 +18,7 @@ import {
 	type ResolveSpokenApprovalInput,
 	type SteerWorkhorseInput,
 	type StopWorkhorsesInput,
-} from "@/runtime/codex-coordinator-tool-contract";
+} from "@archboard/workbench/coordinator-tools";
 import type { CodexCoordinatorToolsOptions } from "@/runtime/codex-coordinator-tools/lib/contract";
 import {
 	COORDINATOR_TOOLS_OWNER,

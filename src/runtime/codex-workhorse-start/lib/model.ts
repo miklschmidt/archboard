@@ -7,12 +7,12 @@ import {
 import {
 	ARCHBOARD_APP_DYNAMIC_TOOLS,
 	ARCHBOARD_APP_MANIFEST_SHA256,
-} from "@/runtime/codex-thread-tools";
+} from "@archboard/workbench/thread-tools";
 import {
 	assertCanonicalInstructionBytes,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-} from "@/runtime/codex-instructions";
+} from "@archboard/workbench/instructions";
 import {
 	CODEX_SESSION_THREAD_SOURCE,
 	type SessionParams,

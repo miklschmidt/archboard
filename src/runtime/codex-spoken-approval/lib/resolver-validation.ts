@@ -1,5 +1,5 @@
-import { ARCHBOARD_VOICE_MANIFEST_SHA256 } from "@/runtime/codex-coordinator-tool-contract";
-import type { ApprovalSnapshot } from "@/runtime/codex-approvals";
+import { ARCHBOARD_VOICE_MANIFEST_SHA256 } from "@archboard/workbench/coordinator-tools";
+import type { ApprovalSnapshot } from "@archboard/workbench/approvals";
 import type { ActiveSlot } from "@/runtime/codex-spoken-approval/lib/state";
 import {
 	failure,

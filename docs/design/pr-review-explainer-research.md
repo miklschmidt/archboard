@@ -324,7 +324,7 @@ source).
   speaker would … in your own words … Keep it to a few sentences with at most
   one aside". It is told not to read the text out. It is told to "close the
   walkthrough with one short sentence"
-  (`src/runtime/codex-realtime/lib/presentation-mode.ts`). The
+  (`packages/workbench/src/runtime/rules/realtime/presentation-mode.ts`). The
   author does not script its words, and no option controls its pace.
 - **What is on screen.** The caption shows the beat's heading and body, and "the
   recording page always shows subtitles"

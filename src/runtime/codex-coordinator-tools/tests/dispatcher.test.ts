@@ -6,10 +6,12 @@ import {
 	ARCHBOARD_VOICE_TOOL_NAMES,
 	ARCHBOARD_WORKHORSE_TOOL_NAMES,
 	COORDINATOR_TOOL_MANIFEST_DIGESTS,
+} from "@archboard/workbench/coordinator-tools";
+import {
 	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
 	DynamicToolResponseSchema,
 	UnknownDynamicToolResponseSchema,
-} from "../../codex-coordinator-tool-contract/index.js";
+} from "@archboard/workbench/coordinator-tool-results";
 import {
 	approvalRequiredResponse,
 	COORDINATOR_DYNAMIC_DISPATCHERS,
