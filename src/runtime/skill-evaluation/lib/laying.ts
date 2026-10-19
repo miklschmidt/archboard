@@ -5,15 +5,15 @@
 // calls would, and reads the boards the steps leave. A fixture that does not
 // lay is refused here, at `eval:skill check`, rather than hours into a batch.
 
-import { acceptedBoard } from "@archboard/board/accepted";
 import {
+	acceptedBoard,
 	adoptVariantTransition,
 	branchVariantTransition,
 	createBoardTransition,
 	editVariantTransition,
 	settleVariantTransition,
 	type SemanticTransition,
-} from "@archboard/board/transitions";
+} from "@archboard/board/store-write";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { VariantContent } from "@archboard/board/content";
 import {

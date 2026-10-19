@@ -19,11 +19,10 @@
 
 import fs from "node:fs";
 
-import { boardMemoryKey } from "@archboard/board/address";
+import { boardMemoryKey, locateSemanticBoard } from "@archboard/board/address";
 import { onBoardSweep } from "@archboard/board/lock";
 import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
-import { locateSemanticBoard } from "@archboard/board/location";
 import { broadcast, onBoardBroadcast } from "@/server/archboard/lib/pane-registry";
 
 /**

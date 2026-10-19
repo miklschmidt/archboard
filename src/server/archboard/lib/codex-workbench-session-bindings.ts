@@ -2,7 +2,7 @@
 // works, what it is bound to, read at the moment it asks, and the context its operations run
 // under.
 
-import { readBoardCatalogue, watchBoardCatalogue } from "@archboard/board/catalogue";
+import { readBoardCatalogue, watchBoardCatalogue } from "@archboard/board/store-read";
 import {
 	createCoordinatorCallbackContextPort,
 	createCoordinatorCallbackRealtimePort,

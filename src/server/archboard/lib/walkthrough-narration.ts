@@ -15,7 +15,7 @@
 
 import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
 import { parseBoardKey, statedVariant } from "@archboard/board/address";
-import { readSemanticBoard } from "@archboard/board/read";
+import { readSemanticBoard } from "@archboard/board/store-read";
 import {
 	addressedVariant,
 	type SemanticBoard,

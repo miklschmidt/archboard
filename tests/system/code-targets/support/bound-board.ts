@@ -1,7 +1,6 @@
-import { createBoardTransition } from "@archboard/board/transitions";
-import { locateSemanticBoard } from "@archboard/board/location";
-import { readSemanticBoard } from "@archboard/board/read";
-import { writeSemanticBoard } from "@archboard/board/write";
+import { createBoardTransition, writeSemanticBoard } from "@archboard/board/store-write";
+import { locateSemanticBoard } from "@archboard/board/address";
+import { readSemanticBoard } from "@archboard/board/store-read";
 
 /** A board written to a vault, and the node whose binding is bound. */
 interface BoundBoard {

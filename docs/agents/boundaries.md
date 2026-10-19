@@ -123,7 +123,7 @@ split by behavior.
   from the private files that define the names, and it holds no second definition. A public name
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`
-  adopts it for `shared/` first. `tests/system/repository-policy/package-api.test.ts` holds the
+  adopts it for `shared/` and `runtime/`. `tests/system/repository-policy/package-api.test.ts` holds the
   three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
   `exports` does not name. It also refuses a relative path that reaches a private file of another
@@ -238,8 +238,9 @@ The seventh is `board` (`@archboard/board`). It is the board document, its polic
 reader and writer. The package is complete. It has two areas. `shared/` holds the code that the
 browser and the server both run, and imports no Node module. `runtime/` holds the store and runs
 only in Bun. Browser code imports only `shared/` exports. The `shared/` folder keeps its code in
-private role folders and exposes it through `shared/api/`, the first use of the `api/` role. The
-role folders are:
+private role folders and exposes it through `shared/api/`. `runtime/` exposes itself through
+`runtime/api/`. Both use the `api/` role, and `board` has 20 api subpaths in total. The role
+folders of `shared/` are:
 
 - `schemas/` are the data shapes: the board aggregate, what one variant holds, the views, the
   walkthrough, the vocabulary, the semantic policy, the standing of a variant against its
@@ -279,25 +280,37 @@ private file that defines it:
 
 The `runtime/` folder is the one place a board file is read or written (CLAUDE.md, "The file is the
 board"). Every write goes through `@archboard/workspace/atomic-write` and is committed before it is
-answered. The lock is deny by default. The folder has two roles:
+answered. The lock is deny by default. The folder keeps its code in two private role folders and
+exposes it through seven files of `runtime/api/`. Each carries only the names that code outside the
+package imports:
 
-- `store/` holds files, locks, registries and file formats. `./address` is a board's identity, its
-  key and its vault path. `./location` is where the note lives, `./configuration` the vault's
-  levels and kinds and `./bound-vaults` the vaults that hold boards of one repository. `./doing` is
-  the line an agent said about its write. `store/format/` holds `./decode` and the schema
-  migrations. `store/lock/` is the one-writer lease, its claims and its announcements. `./lock` is
-  the only lock file that outside code imports. `former-names.ts` is private.
-- `operations/` is one write or one read that a caller asks for. `write/` holds the write
-  boundary (`./write`), the pure transitions it applies (`./transitions`), `./accepted` and
-  `./discard`. `read/` holds `./read`, `./listing` and `./catalogue`. `check/` holds the vault
-  check (`./diagnostics`, `./subject`). `edit/` turns one batch of stated changes into content.
-  `move/` (`./move`, `./move-preview`), `rename/` (`./rename`), `settle/` and `variant/`
-  (`./propagate`; adopt, shelve, restore and inheritance are private) are the other behaviors.
+- `store/` holds files, locks, registries and file formats: the board's identity and key, where a
+  note lives, the vault's configuration, the vaults bound to a repository, the line an agent said
+  about its write, `format/` (the decode and the schema migrations) and `lock/` (the one-writer
+  lease, its claims and its announcements). `former-names.ts` is private.
+- `operations/` is one write or one read that a caller asks for: `write/` (the write boundary and
+  the pure transitions it applies), `read/`, `check/`, `edit/` (one batch of stated changes into
+  content), `move/`, `rename/`, `settle/` and `variant/` (adopt, shelve, restore, inheritance and
+  propagation).
+
+The seven files of `runtime/api/` are:
+
+- `./address` is where a board lives: its identity, its key and the variant a key states, and the
+  path of its note in a vault.
+- `./store-read` reads boards from a vault: one board, the listing and the catalogue of them, the
+  vaults that hold boards of one repository, and the decode of a board file.
+- `./vault-policy` is the vault's configuration, the vault check against its policy and the
+  subject a diagnostic names.
+- `./doing` is the line an agent said about its write.
+- `./lock` is the one-writer lease: claims, holds, the lock state and what announces a change of
+  it.
+- `./store-move` moves a board to another repository's vault and previews that move.
+- `./store-write` is the write boundary, the transitions it applies, the discard and acceptance of
+  a board, the rename and the outcome of a propagation to drill-downs.
 
 The package has no barrel. In the old `index.ts`, the names of the document, the input, the render
 reply, the reconciliation and the comparison came from one import. An importer now names the api
-file that carries each name. The runtime half still exports one file for each behavior.
-`semantic-board-store/index.ts` and `engine/board.ts` forwarded names, and both are gone. `./integrity`, `./positions`, `./primitives`,
+file that carries each name. `semantic-board-store/index.ts` and `engine/board.ts` forwarded names, and both are gone. `./integrity`, `./positions`, `./primitives`,
 `./reconcile-candidate` and `./reconcile` were exported only because the store imported them. The
 store is inside the package now, so these five are private, and no file outside the package
 imported one. `board` imports only `timing`, `diagnostics`, `process`, `workspace` and

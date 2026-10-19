@@ -11,8 +11,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as server from "@/server/archboard/index";
-import { writeSemanticBoard } from "@archboard/board/write";
-import { semanticBoardAddress } from "@archboard/board/location";
+import { writeSemanticBoard } from "@archboard/board/store-write";
+import { semanticBoardAddress } from "@archboard/board/address";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,

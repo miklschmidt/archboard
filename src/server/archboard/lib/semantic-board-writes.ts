@@ -1,4 +1,4 @@
-import { readSemanticBoard } from "@archboard/board/read";
+import { readSemanticBoard } from "@archboard/board/store-read";
 // The routes that change a semantic board.
 //
 // A semantic write states its own boundary: `writeSemanticBoard` takes the
@@ -25,16 +25,17 @@ import {
 	BoardCreateInputSchema,
 	VariantEditInputSchema,
 } from "@archboard/board/commands";
-import type { DescendantOutcome } from "@archboard/board/propagate";
 import {
+	type DescendantOutcome,
 	adoptVariantTransition,
 	branchVariantTransition,
 	createBoardTransition,
 	editVariantTransition,
 	settleVariantTransition,
 	shelveVariantTransition,
-} from "@archboard/board/transitions";
-import { writeSemanticBoard, type SemanticWriteResult } from "@archboard/board/write";
+	writeSemanticBoard,
+	type SemanticWriteResult,
+} from "@archboard/board/store-write";
 import { broadcast } from "@/server/archboard/lib/pane-registry";
 import { settledChangeFields } from "@/server/archboard/lib/semantic-change-feed";
 import { checkDoing } from "@archboard/board/doing";

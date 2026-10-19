@@ -79,7 +79,7 @@ a curated list of named re-exports (`export { a } from "#shared/rules/x.ts"`, ne
 and carries only the names that code outside the package imports. `exports` points only into
 `api/` for a package that adopts it, and a private file never imports an api file. The `exports`
 then name a few interfaces of the package, not one subpath for each file that something imports.
-`board` adopts it for `shared/` first, with thirteen api files.
+`board` adopts it for `shared/` with thirteen api files and for `runtime/` with seven.
 
 The role lists are guidance, not a closed list, until every existing file has a home that
 describes it. A first pass found that `websocket-connection.ts` and `semantic-disk-watch.ts` fit

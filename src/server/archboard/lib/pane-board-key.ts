@@ -1,7 +1,6 @@
 // What a pane's board key names. Pure: it reads no pane and no vault.
 
-import { parseBoardKey } from "@archboard/board/address";
-import type { BoardIdentity } from "@archboard/board/address";
+import { parseBoardKey, type BoardIdentity } from "@archboard/board/address";
 
 /**
  * What a pane's key names, or nothing when it does not name a board at all.

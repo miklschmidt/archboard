@@ -77,13 +77,7 @@ async function registerResourceSet(
 }
 
 async function lockMode(): Promise<void> {
-	const repoRoot = process.env["ARCHBOARD_TEST_REPO_ROOT"];
-	if (!repoRoot) {
-		throw new Error("ARCHBOARD_TEST_REPO_ROOT is required.");
-	}
-	const { holdBoard, releaseHold } = await import(
-		join(repoRoot, "packages/board/src/runtime/store/lock/lock.ts")
-	);
+	const { holdBoard, releaseHold } = await import("@archboard/board/lock");
 	const vault = process.env["ARCHBOARD_TEST_LOCK_VAULT"];
 	if (!vault) {
 		throw new Error("ARCHBOARD_TEST_LOCK_VAULT is required.");
