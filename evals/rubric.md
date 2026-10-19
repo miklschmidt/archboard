@@ -352,7 +352,7 @@ row is a `missed` entry in `unprompted`.
 
 Reading the installed skill, its references and the generated schemas is what
 the skill asks for. Reading the archboard product's own source (the checkout
-that provides the CLI: `src/runtime`, `src/cli`, its tests) is different: the
+that provides the CLI: `apps/`, `packages/`, `src/`, its tests) is different: the
 author went past the skill, the schemas and `--help` to how the product is
 built, which means a question none of them answered. The bundle's commands
 carry the class `product-source` for each such read. List every one under

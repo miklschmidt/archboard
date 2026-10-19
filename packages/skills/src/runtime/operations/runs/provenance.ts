@@ -41,8 +41,11 @@ function inputDigest(loaded: LoadedSuite): string {
  */
 function batchProvenance(checkout: string, loaded: LoadedSuite): Provenance {
 	const hash = createHash("sha256");
-	for (const folder of ["src", "packages"]) {
-		hash.update(digestOf(path.join(checkout, folder)));
+	// The roots that hold source: `src` until the last app has moved out of it.
+	for (const folder of ["src", "apps", "packages"]) {
+		if (fs.existsSync(path.join(checkout, folder))) {
+			hash.update(digestOf(path.join(checkout, folder)));
+		}
 	}
 	for (const name of ["package.json", "bun.lock", "tsconfig.json", "INSTALL.md"]) {
 		hash.update(name).update(fs.readFileSync(path.join(checkout, name)));

@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-# Runs the CLI straight from src/. bun executes TypeScript, so there is no
+# Runs the CLI straight from apps/cli/src/. bun executes TypeScript, so there is no
 # build step and no compiled copy to go stale (ADR 0014). Needs bun on PATH.
-exec bun "$(dirname "$(realpath "$0")")/../src/bin.ts" "$@"
+exec bun "$(dirname "$(realpath "$0")")/../apps/cli/src/bin.ts" "$@"

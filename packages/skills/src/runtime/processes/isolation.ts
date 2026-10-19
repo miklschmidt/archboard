@@ -126,7 +126,7 @@ function writeCliWrapper(paths: RunPaths, checkout: string): void {
 	const wrapper = path.join(paths.bin, "archboard");
 	fs.writeFileSync(
 		wrapper,
-		`#!/bin/sh\nexec "${process.execPath}" "${path.join(checkout, "src", "bin.ts")}" "$@"\n`,
+		`#!/bin/sh\nexec "${process.execPath}" "${path.join(checkout, "apps", "cli", "src", "bin.ts")}" "$@"\n`,
 		{ mode: 0o755 },
 	);
 }

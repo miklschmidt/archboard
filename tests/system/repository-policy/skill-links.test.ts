@@ -3,14 +3,27 @@
 // repository follows these links in its installed copy.
 
 import { describe, expect, test } from "bun:test";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { z } from "zod";
 
-import { BUNDLED_SKILLS } from "@/cli/commands/install-skill";
 import { anchorsOf } from "@archboard/skills/citations";
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+
+/** The skills `archboard install-skill` ships, as the real command reports them. */
+const BUNDLED_SKILLS = z
+	.object({ skills: z.array(z.object({ skill: z.string() })) })
+	.parse(
+		JSON.parse(
+			execFileSync(path.join(repository, "bin/archboard"), ["install-skill", "--print-source"], {
+				encoding: "utf8",
+			}),
+		),
+	)
+	.skills.map(({ skill }) => skill);
 
 /** A markdown link's target: `](target)` or `](<target>)`, with an optional title. */
 const LINK = /\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/gu;

@@ -85,5 +85,5 @@ jobs:
           packages/code-binding/tests/runtime/operations/resolution.test.ts
           packages/workbench/tests/server/services/owner/production-initialization.test.ts
           packages/workbench/tests/server/services/actions/approval-sessions.test.ts
-          src/cli/commands/tests/language-server-configuration.test.ts
+          apps/cli/tests/cli/operations/vault/language-server-configuration.test.ts
           tests/system/semantic-boards/lifecycle.test.ts tests/system/process-contracts/codex-workbench-storage.test.ts

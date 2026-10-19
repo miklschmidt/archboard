@@ -2,7 +2,7 @@
 // entry points added and removed, the parts that moved between the interface
 // and the hidden parts, and the callers gained and lost. That the reading sets
 // no comparison status is owned where both sit in one answer
-// (`src/cli/commands/tests/comparison-answer.test.ts`).
+// (`apps/cli/tests/cli/operations/semantic/compare/comparison-answer.test.ts`).
 
 import { describe, expect, test } from "bun:test";
 import { compareInterfaces, type InterfaceChange } from "#shared/rules/compare/interfaces.ts";

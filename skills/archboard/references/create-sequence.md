@@ -91,8 +91,8 @@ a condition holds, it holds a decision or a loop
    same payload with `semantic edit` and the version you read.
 
    The evidence comes from archboard's own source. `executeInstallSkill`
-   (`src/cli/commands/install-skill.ts`) calls `setUpRepository`
-   (`src/cli/commands/lib/repo-setup.ts`). To remove the block that earlier
+   (`apps/cli/src/cli/operations/install-skill/install-skill.ts`) calls `setUpRepository`
+   (`apps/cli/src/cli/operations/install-skill/repo-setup.ts`). To remove the block that earlier
    versions wrote, `removeOldBlocks` loops over the literal list
    `["CLAUDE.md", "AGENTS.md"]`. So that step is `repeat: 2`, and the `note`
    says that it cuts the block from each document that holds one.
@@ -111,17 +111,17 @@ archboard semantic new "Skill install" --doing "explaining how install-skill set
   "nodes": [
     { "name": "User", "kind": "external", "responsibility": "Runs archboard install-skill in a repository" },
     { "name": "install-skill command", "kind": "module", "responsibility": "Installs the skill files, then sets the repository up",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "apps/cli/src/cli/operations/install-skill/install-skill.ts" } },
     { "name": "Repository setup", "kind": "module", "responsibility": "Makes the vault and removes the block that earlier versions wrote",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup.ts" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "apps/cli/src/cli/operations/install-skill/repo-setup.ts" } },
     { "name": "git", "kind": "external", "responsibility": "Answers whether a path is ignored" }
   ],
   "edges": [
     { "from": "User", "to": "install-skill command", "kind": "call", "label": "install-skill" },
     { "from": "install-skill command", "to": "Repository setup", "kind": "call", "label": "setUpRepository", "emphasis": "hero",
-      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts", "symbol": "setUpRepository" } },
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "apps/cli/src/cli/operations/install-skill/install-skill.ts", "symbol": "setUpRepository" } },
     { "from": "Repository setup", "to": "git", "kind": "call", "label": "check-ignore",
-      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup.ts", "symbol": "execFileSync" } }
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "apps/cli/src/cli/operations/install-skill/repo-setup.ts", "symbol": "execFileSync" } }
   ],
   "flows": [{
     "name": "Repository setup",
@@ -129,14 +129,14 @@ archboard semantic new "Skill install" --doing "explaining how install-skill set
     "steps": [
       { "from": "User", "to": "install-skill command", "label": "install-skill" },
       { "from": "install-skill command", "to": "Repository setup", "label": "setUpRepository",
-        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts", "symbol": "setUpRepository" } },
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "apps/cli/src/cli/operations/install-skill/install-skill.ts", "symbol": "setUpRepository" } },
       { "as": "remove", "from": "Repository setup", "to": "Repository setup", "label": "remove the earlier block", "kind": "self", "repeat": 2, "note": "looks in CLAUDE.md, then AGENTS.md, and cuts the block from each that holds one; every other byte of the document stays",
-        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup.ts", "symbol": "removeOldBlocks" } },
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "apps/cli/src/cli/operations/install-skill/repo-setup.ts", "symbol": "removeOldBlocks" } },
       { "from": "Repository setup", "to": "git", "label": "check-ignore the vault",
-        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup.ts", "symbol": "execFileSync" } },
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "apps/cli/src/cli/operations/install-skill/repo-setup.ts", "symbol": "execFileSync" } },
       { "from": "git", "to": "Repository setup", "label": "ignored or not", "kind": "return" },
       { "as": "report", "from": "Repository setup", "to": "install-skill command", "label": "setup result", "kind": "return",
-        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup.ts", "symbol": "setUpRepository" } }
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "apps/cli/src/cli/operations/install-skill/repo-setup.ts", "symbol": "setUpRepository" } }
     ]
   }],
   "views": [{ "name": "Setup exchange", "grammar": "sequence", "scope": { "kind": "selection", "flows": ["Repository setup"] } }],

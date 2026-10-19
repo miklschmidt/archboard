@@ -3,10 +3,14 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
-import { CLI_CONTRACT_ARTIFACT_NAMES } from "../../../../src/cli/command-contract/artifacts.js";
 import { checkoutRoot } from "./package-cli.ts";
 
-const artifactNames = CLI_CONTRACT_ARTIFACT_NAMES;
+/** The files `bun run generate:cli-contract` writes, in the order it writes them. */
+const artifactNames = [
+	"cli-command-audit.md",
+	"command-contract-proof.json",
+	"command-contract-proof.md",
+] as const;
 
 const spawnSchema = z.object({
 	command: z.array(z.string()),
