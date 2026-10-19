@@ -8,7 +8,9 @@ that workflow and keep its state out of the application root.
 
 ## Placement
 
-Keep `src/ui/<module>` flat and name each module for the behavior that it owns.
+The browser app is moving to `apps/web/src/ui/<role>/<behavior>/`.
+For modules that remain under `src/ui/`, keep `src/ui/<module>` flat.
+Name each module for the behavior that it owns.
 Feature-specific UI, state and commands belong to that module. A visual section
 with its own workflow is a feature owner, not only a shared component.
 Reusable domain behavior belongs in a named peer module, and generic UI belongs
@@ -165,8 +167,8 @@ scopes. Existing generated/vendor conventions keep only their documented
 exceptions. Backend and CLI structure is outside this adoption.
 
 `archboard/ui-concern-placement` enforces the half of these rules that a machine
-can check, over authored `src/ui` source. It checks the concern folder names
-above and PascalCase component files. It checks `use-` prefixed kebab-case hook
+can check, over authored UI source in `src/ui/`, packages and apps. It checks the concern
+folder names above and PascalCase component files. It checks `use-` prefixed kebab-case hook
 files and scoped kebab-case everywhere else. It also permits React markup and
 hook exports only in `components/`, `hooks/` or an intentionally public
 entrypoint at the module root.

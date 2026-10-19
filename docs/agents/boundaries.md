@@ -45,9 +45,9 @@ The two limits are capacity safeguards, not a general runtime or asymptotic guar
 Root `src/` holds no process entrypoint any more: the entries are `apps/cli/src/bin.ts` and
 `apps/server/src/server.ts`. Do not add implementation to them.
 
-Browser code belongs under `src/ui/<module>`, not under a separate legacy frontend tree. Build host
-files can stay outside `src/`, but UI implementation follows the same module rules as server code.
-For frontend concern placement, naming, and React ownership, read [frontend.md](frontend.md).
+Browser code is moving from `src/ui/<module>` to `apps/web/src/ui/<role>/<behavior>/`.
+Modules that remain under `src/ui/` keep the module rules. Build host files can stay outside
+`src/`. For frontend concern placement, naming, and React ownership, read [frontend.md](frontend.md).
 
 ## Import rules
 
@@ -59,18 +59,19 @@ Tests follow the same interface as production callers. A file under a module's `
 import that folder's fixtures, but it may not import its own module's implementation or another
 module's implementation. Non-test code may not import any `tests/` folder. Cycles are errors.
 
-There are exactly three test owners:
+Tests use these owner layouts:
 
 - `src/<area>/<module>/tests/` owns contract tests and private test support for one module.
 - `packages/<name>/tests/` owns the internal tests of one package. See [Packages](#packages).
+- `apps/<name>/tests/` owns the internal tests of one app. See [Apps](#apps).
 - `tests/system/` owns cross-module repository, package, process, browser, and full-product tests.
 
 Test-owned source may import support only from the same owner, and the preload's
 real-time declaration (`tests/system/repository-policy/support/test-wall-clock.ts`),
 which every owner may use. It imports product behavior through
-module-root entrypoint files, never an implementation subfolder. A package's own tests are the
-exception. Product source, scripts, and tools
-never import test-owned source. Bun-discoverable tests outside the three owners are refused.
+module-root entrypoint files, never an implementation subfolder. A package or app can test its own
+implementation files. Product source, scripts, and tools
+never import test-owned source. Bun-discoverable tests outside these owners are refused.
 
 All JavaScript-like source inside any test owner is TypeScript. The pre-task
 500-physical-line test limit remains outside the UI. TASK-150 applies the approved
