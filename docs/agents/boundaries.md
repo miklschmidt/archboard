@@ -548,12 +548,12 @@ conversation and the voice (layer 7, the last). It grows over TASK-500.23.01 to 
 import graph, and the later moves add the UI. So far it holds the browser-safe contracts that the browser and the server
 exchange, the Codex runtime under them (the foundation, and over it the coordinator and the workhorses) and the server
 side: the gateway over the runtime, and the sessions, generations and pane plumbing that wire it into the Archboard
-server. It adopts the `api/` role for `shared/`, `runtime/` and `server/` and exposes 28 subpaths. It imports
+server. It adopts the `api/` role for `shared/`, `runtime/` and `server/` and exposes 27 subpaths. It imports
 `board`, `codex-app-server`, `diagnostics`, `process`, `server-lifecycle`, `timing`, `walkthrough` and `workspace`, and
 nothing from `src/`.
 The 5 files of `shared/api/` hold 100 names and are safe for the browser, with no Node import and no path into a runtime
 or server area: the pane transport and the voice session import them as well as the server. The 12 files of
-`runtime/api/` hold 204 names and the 11 of `server/api/` hold 115, and they run only in Bun. The browser imports none of
+`runtime/api/` hold 204 names and the 10 of `server/api/` hold 82, and they run only in Bun. The browser imports none of
 them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/` or `server/`.
 
 **Shared.**
@@ -669,9 +669,8 @@ owners and the actions that carry out a pane's command) is private, and its test
   reported and the settled change feed. `services/request/` reads the board and the vault a call names, and
   `services/host/` holds where the server listens and where its source and frontend are (`module-paths.ts` takes them
   from `SOURCE_CHECKOUT`, so no depth decides).
-- `./gateway` is the gateway and the types of its owners. `./projection` is the projection of the browser state with its
-  inputs, the snapshot budget and the redaction of secrets. `./tab-session` is the tab session id and the workhorse link
-  key. `./leases` is the ledger of the browser command leases that the pane registry creates.
+- `./gateway` is the gateway and the two types its caller names. `./projection` is the projection of the browser state
+  and its input. `./tab-session` is the tab session id.
 - The api files that the host imports group what a caller does. `./wiring` installs the workbench into the server and
   is where the panes reach it (its hooks, its preparation and stop, the browser socket owner). `./pane-registry` is the
   open panes, their sockets and the broadcast every write announces through. `./pane-tabs` is which tab a pane

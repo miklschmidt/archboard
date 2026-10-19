@@ -81,7 +81,7 @@ and carries only the names that code outside the package imports. `exports` poin
 then name a few interfaces of the package, not one subpath for each file that something imports.
 `board` adopts it for `shared/` with thirteen api files and for `runtime/` with seven.
 `codex-app-server`, `workspace`, `code-binding`, `process`, `ui-kit`, `server-requests`, `code-intel`, `renderer`,
-`code-opener`, `walkthrough`, `skills`, `server-lifecycle` and `workbench` adopt it too, with 7, 8, 3, 3, 10, 1, 5, 8, 4, 4, 4, 9 and 21 api files. `process` also exports `./git-owner`, the script that a Git command runs, as the file itself.
+`code-opener`, `walkthrough`, `skills`, `server-lifecycle` and `workbench` adopt it too, with 7, 8, 3, 3, 10, 1, 5, 8, 4, 4, 4, 9 and 27 api files. `process` also exports `./git-owner`, the script that a Git command runs, as the file itself.
 
 The role lists are guidance, not a closed list, until every existing file has a home that
 describes it. A first pass found that `websocket-connection.ts` and `semantic-disk-watch.ts` fit
