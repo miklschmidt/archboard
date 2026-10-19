@@ -329,7 +329,7 @@ attempts.
 
 Commands that reach for material an author must not see are recorded as
 exposure, by kind: `evaluation-inputs` (this directory, by path or by the
-canonical file names), `harness-source` (`src/runtime/skill-evaluation`), and
+canonical file names), `harness-source` (`packages/skills`), and
 `other-run` (another run's directory under the batch). The bundle carries the
 kind beside each command and the counts; the report lists every contaminated
 run apart, and a scenario with a contaminated run reports no token change,

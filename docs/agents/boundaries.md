@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process` and `skills` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -487,6 +487,30 @@ page import them. The 2 files of `runtime/api/` run only in Bun.
 - The tests are in `tests/`: `shared/protocol/` holds the talk's contract, `runtime/store/` the talk on disk,
   `runtime/clients/` the page client, `runtime/operations/` the browser flags of the render and `runtime/services/` and
   `runtime/processes/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
+
+The fourteenth is `skills` (`@archboard/skills`). It ships the archboard skill and evaluates it. It adopts the `api/`
+role for `runtime/` and exposes 4 subpaths with 16 names, where code outside imported 2 module paths. It imports
+`board`, `timing`, `renderer`, `process` and `walkthrough`, and nothing from `src/`. Every file is Node-bound and runs
+only in Bun. The 4 files of `runtime/api/` are the interface.
+
+- `./distribution` prepares the copy of the skill that the checkout, the installer and `generate:skill-artifacts`
+  ship: the JSON Schemas that Zod renders for the board document, the vault configuration and the two authoring payloads
+  (`runtime/projections/schemas.ts`), and the installation-local manual (`runtime/operations/distribution/prepare.ts`).
+- `./evaluation-run`, `./grading` and `./citations` are what `bun run eval:skill` calls. The evaluation is human-run and
+  never part of the gate: real Codex authors on real Flask checkouts, one blinded grader and a comparison report.
+  `./evaluation-run` loads the canonical inputs of `evals/`, pins the tool versions and runs a batch. `./grading` grades a
+  batch and writes the report. `./citations` reads the anchors of a document.
+- `runtime/operations/runs/` holds an author run and a batch, `operations/grading/` the grading session and the blinding.
+  `rules/audit/` classifies what an author ran and what it reached for, `rules/outcomes/` holds the deterministic
+  checks and `rules/reports/` the comparison. `processes/` holds the child processes, the Archboard server and the Flask
+  checkout of a run, `clients/` the two grader programs, `protocol/` what their event streams and answers say,
+  `schemas/` the canonical inputs and the manifest of a run, and `store/` what a batch keeps on disk.
+- `rules/audit/classify.ts` treats `packages/skills` as the harness's source, so an author that reads it has the
+  exposure `harness-source`. It still counts the old module directory `skill-evaluation/`, for a batch recorded before
+  the move. No file of the package finds a path from where it sits. A test finds the checkout with
+  `@archboard/workspace/source-checkout`.
+- The tests are in `tests/`, in the folder of the file they test. `runtime/support/` holds the fake `claude` and `codex`
+  executables and the fixtures. Their end-to-end owner is `bun run eval:skill`, which a person runs.
 
 ## Vendor-owned data
 

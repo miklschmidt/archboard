@@ -1,0 +1,351 @@
+// From a batch directory to a comparison report: each run's manifest joined
+// with the verdict each grader filed for it, one report per grader that
+// graded the batch, how the graders agree, all written beside the batch.
+
+import fs from "node:fs";
+import path from "node:path";
+import { resumeSelection } from "#runtime/operations/runs/batch.ts";
+import {
+	RunManifestSchema,
+	runDirectories,
+	type RunManifest,
+} from "#runtime/schemas/run-manifest.ts";
+import {
+	byAxis,
+	checklistGaps,
+	checklistStanding,
+	excusedDepartures,
+	findingsByAxis,
+	semanticallyCompliant,
+	type RunVerdict,
+} from "#runtime/protocol/grader.ts";
+import { BATCH_SKILL_DIRECTORY, citationProblem } from "#runtime/services/citations.ts";
+import type { Arm } from "#runtime/operations/grading/blind.ts";
+import { suppliedCaptures } from "#runtime/store/grading-images.ts";
+import { visualStandingOf } from "#runtime/protocol/grader.ts";
+import { availableGraders } from "#runtime/store/grader-layout.ts";
+import {
+	filedVerdict,
+	graderIdentity,
+	graderUsage,
+} from "#runtime/operations/grading/grading-run.ts";
+import { agreementOf } from "#runtime/rules/reports/report-agreement.ts";
+import { renderBatchReportMarkdown } from "#runtime/rules/reports/report-markdown.ts";
+import { assertBatchInputs } from "#runtime/operations/runs/provenance.ts";
+import { exposureAudit, type ExposureAudit } from "#runtime/operations/runs/reaudit.ts";
+import {
+	buildReport,
+	type BatchReport,
+	type GraderReport,
+	type RunRecord,
+	type PlannedRun,
+} from "#runtime/rules/reports/report.ts";
+import type { GraderName, LoadedSuite } from "#runtime/schemas/suite.ts";
+
+/**
+ * Every run manifest under a batch.
+ * @param batchRoot The batch.
+ * @returns The manifests.
+ */
+function readManifests(batchRoot: string): RunManifest[] {
+	return runDirectories(batchRoot)
+		.map((directory) => path.join(directory, "run.json"))
+		.filter((file) => fs.existsSync(file))
+		.map((file) => RunManifestSchema.parse(JSON.parse(fs.readFileSync(file, "utf8"))));
+}
+
+/**
+ * What the grader's verdict says about a run's checklist, when there is one.
+ * @param loaded The suite, for the expected features.
+ * @param scenario The run's scenario id.
+ * @param verdict The filed verdict, or null.
+ * @returns Compliance, waived features and what the answer did with the checklist, unknown without a verdict.
+ */
+function gradedOf(
+	loaded: LoadedSuite,
+	scenario: string,
+	verdict: RunVerdict | null,
+): Pick<RunRecord, "semanticallyCompliant" | "waivedFeatures" | "checklist"> {
+	if (verdict === null) return { semanticallyCompliant: null, waivedFeatures: [], checklist: null };
+	const expected =
+		loaded.suite.evals.find((candidate) => candidate.id === scenario)?.expectedFeatures ?? [];
+	const gaps = checklistGaps(expected, verdict);
+	const standing = checklistStanding(expected, verdict);
+	// An answer that is not about this scenario can say neither that the run
+	// complied nor that it did not.
+	return {
+		semanticallyCompliant:
+			standing === "off-checklist" ? null : semanticallyCompliant(expected, verdict),
+		waivedFeatures: gaps.waived,
+		checklist: { standing, unmentioned: gaps.unmentioned, invented: gaps.invented },
+	};
+}
+
+/**
+ * What the record says of the pictures: the captures the manifest recorded,
+ * and the visual verdict as it stands against them.
+ * @param batchRoot The batch.
+ * @param grader The grader whose verdict this is, or null for an ungraded record.
+ * @param manifest The manifest.
+ * @param verdict The filed verdict, or null.
+ * @returns The two fields.
+ */
+function visualOf(
+	batchRoot: string,
+	grader: GraderName | null,
+	manifest: RunManifest,
+	verdict: RunVerdict | null,
+): Pick<RunRecord, "captures" | "visual"> {
+	const captures = manifest.captures ?? null;
+	const supplied = grader === null ? [] : suppliedCaptures(batchRoot, grader, manifest.run);
+	return { captures, visual: visualStandingOf(captures, verdict, supplied) };
+}
+
+/**
+ * The verdict one grader filed for a run, when a grader is asked.
+ * @param batchRoot The batch.
+ * @param grader The grader, or null.
+ * @param run The anonymous id.
+ * @returns The verdict, or null.
+ */
+function verdictFor(batchRoot: string, grader: GraderName | null, run: string): RunVerdict | null {
+	return grader === null ? null : filedVerdict(batchRoot, grader, run);
+}
+
+/**
+ * The candidate skill as the batch kept it, or the checkout's for a batch that
+ * kept none.
+ * @param batchRoot The batch.
+ * @param loaded The suite, for the checkout.
+ * @returns The skill's root directory.
+ */
+function candidateSkill(batchRoot: string, loaded: LoadedSuite): string {
+	const kept = path.join(batchRoot, BATCH_SKILL_DIRECTORY);
+	return fs.existsSync(kept) ? kept : path.join(loaded.directory, "..", "skills", "archboard");
+}
+
+/**
+ * The skill a run's arm was given: the baseline's frozen package, or the
+ * candidate as the batch kept it.
+ * @param batchRoot The batch.
+ * @param loaded The suite, for the checkout and the baseline's location.
+ * @param arm The arm.
+ * @returns The skill's root directory.
+ */
+function armSkill(batchRoot: string, loaded: LoadedSuite, arm: Arm): string {
+	return arm === "baseline"
+		? path.join(loaded.directory, "..", loaded.pins.baselineSkill.location)
+		: candidateSkill(batchRoot, loaded);
+}
+
+/**
+ * The verdict's findings by axis, and where each one's passage stands. A
+ * passage is resolved against the candidate the grader was given first: one
+ * absent there names no passage of the skill at all, which is the grader's
+ * error and never the run's. A conformance passage the candidate holds but the
+ * run's own skill did not is a departure from text the run was never shown.
+ * A skill finding naming a passage its feature cites is held as a departure,
+ * and named as one the grader tried to excuse.
+ * @param batchRoot The batch.
+ * @param loaded The suite.
+ * @param manifest The run.
+ * @param verdict The filed verdict, or null.
+ * @returns The four fields; empty for an ungraded run.
+ */
+function findingsOf(
+	batchRoot: string,
+	loaded: LoadedSuite,
+	manifest: RunManifest,
+	verdict: RunVerdict | null,
+): Pick<RunRecord, "findings" | "conformanceUnseen" | "uncited" | "excusedDepartures"> {
+	if (verdict === null)
+		return {
+			findings: byAxis(() => []),
+			conformanceUnseen: [],
+			uncited: [],
+			excusedDepartures: [],
+		};
+	const expected =
+		loaded.suite.evals.find((candidate) => candidate.id === manifest.scenario)?.expectedFeatures ??
+		[];
+	const findings = findingsByAxis(expected, verdict);
+	const passages = new Map(
+		verdict.features.map((entry) => [entry.feature, entry.finding?.passage ?? ""]),
+	);
+	/**
+	 * Whether a feature's finding cites a passage the given skill holds.
+	 * @param skill The skill's root.
+	 * @param feature The feature.
+	 * @returns True when the passage resolves there.
+	 */
+	const citedIn = (skill: string, feature: string): boolean =>
+		citationProblem(skill, passages.get(feature) ?? "") === null;
+	const candidate = candidateSkill(batchRoot, loaded);
+	const own = armSkill(batchRoot, loaded, manifest.arm);
+	const found = [...findings.conformance, ...findings.truth, ...findings.skill];
+	return {
+		findings,
+		uncited: found.filter((feature) => !citedIn(candidate, feature)),
+		conformanceUnseen: findings.conformance.filter(
+			(feature) => citedIn(candidate, feature) && !citedIn(own, feature),
+		),
+		excusedDepartures: excusedDepartures(expected, verdict),
+	};
+}
+
+/**
+ * What a manifest recorded of the audit, each absent before its harness kept
+ * it. Exposure is read again from the run's stored commands, so a classifier
+ * fix reaches a batch already run.
+ * @param audit The batch's exposure audit.
+ * @param manifest The manifest.
+ * @returns The three audit fields, null where the manifest predates them.
+ */
+function auditOf(
+	audit: ExposureAudit,
+	manifest: RunManifest,
+): Pick<RunRecord, "directWrites" | "exposure" | "guidance"> {
+	return {
+		directWrites: manifest.directWrites ?? null,
+		exposure: audit(manifest),
+		guidance: manifest.guidance ?? null,
+	};
+}
+
+/**
+ * One run's record, one grader's verdict joined in.
+ * @param batchRoot The batch.
+ * @param loaded The suite, for the expected features.
+ * @param manifest The manifest.
+ * @param grader The grader, or null for a record with no verdict.
+ * @param audit The batch's exposure audit, read once for every run of a report.
+ * @returns The record.
+ */
+function recordOf(
+	batchRoot: string,
+	loaded: LoadedSuite,
+	manifest: RunManifest,
+	grader: GraderName | null = null,
+	audit: ExposureAudit = exposureAudit(batchRoot, loaded),
+): RunRecord {
+	const verdict = verdictFor(batchRoot, grader, manifest.run);
+	const graded = gradedOf(loaded, manifest.scenario, verdict);
+	return {
+		run: manifest.run,
+		arm: manifest.arm,
+		scenario: manifest.scenario,
+		workflow: manifest.workflow,
+		report: manifest.report,
+		repetition: manifest.repetition,
+		status: manifest.status,
+		durationMs: manifest.author?.durationMs ?? 0,
+		usage: manifest.usage,
+		commandCounts: manifest.commandCounts,
+		...auditOf(audit, manifest),
+		...visualOf(batchRoot, grader, manifest, verdict),
+		outcomesPassed: manifest.outcomesPassed,
+		guardrailsPassed: manifest.guardrailsPassed,
+		verdict,
+		...graded,
+		...findingsOf(batchRoot, loaded, manifest, verdict),
+	};
+}
+
+/**
+ * Every job selected for the saved batch, whether it produced a manifest yet or not.
+ * @param batchRoot The saved batch directory.
+ * @param loaded The provenance-checked scenario suite.
+ * @returns The planned run identities and reporting groups.
+ */
+function plannedRuns(batchRoot: string, loaded: LoadedSuite): PlannedRun[] {
+	const selection = resumeSelection(batchRoot);
+	return selection.arms.flatMap((arm) =>
+		selection.scenarios.flatMap((id) => {
+			const scenario = loaded.suite.evals.find((entry) => entry.id === id);
+			if (scenario === undefined) throw new Error(`Unknown planned scenario ${id}`);
+			return Array.from({ length: selection.repetitions }, (_, index) => ({
+				arm,
+				scenario: id,
+				workflow: scenario.workflow,
+				report: scenario.report,
+				repetition: index + 1,
+			}));
+		}),
+	);
+}
+
+/**
+ * One grader's report over the batch.
+ * @param batchRoot The batch.
+ * @param loaded The suite.
+ * @param manifests Every run manifest.
+ * @param planned Every planned job.
+ * @param grader The grader, or null when nothing was graded yet.
+ * @returns The report with its records.
+ */
+function graderReport(
+	batchRoot: string,
+	loaded: LoadedSuite,
+	manifests: readonly RunManifest[],
+	planned: readonly PlannedRun[],
+	grader: GraderName | null,
+): GraderReport {
+	const audit = exposureAudit(batchRoot, loaded);
+	const runs = manifests.map((manifest) => recordOf(batchRoot, loaded, manifest, grader, audit));
+	const identity = grader === null ? null : graderIdentity(batchRoot, grader);
+	const usage = grader === null ? null : graderUsage(batchRoot, grader);
+	return { grader: identity, report: buildReport(runs, usage, planned, identity), runs };
+}
+
+/**
+ * Builds the whole batch report: one per grader that graded it, and their
+ * agreement when two did. A batch nobody graded yet reports once, ungraded.
+ * @param batchRoot The batch.
+ * @param loaded The suite.
+ * @returns The batch report.
+ */
+function buildBatchReport(batchRoot: string, loaded: LoadedSuite): BatchReport {
+	const manifests = readManifests(batchRoot);
+	const planned = plannedRuns(batchRoot, loaded);
+	const names = availableGraders(batchRoot);
+	const graders = (names.length === 0 ? [null] : names).map((name) =>
+		graderReport(batchRoot, loaded, manifests, planned, name),
+	);
+	const [first, second] = graders;
+	const agreement =
+		first?.grader != null && second?.grader != null
+			? agreementOf(
+					{ grader: first.grader.name, runs: first.runs },
+					{ grader: second.grader.name, runs: second.runs },
+				)
+			: null;
+	return { graders, agreement };
+}
+
+/**
+ * Builds and writes the comparison report for a batch.
+ * @param batchRoot The batch.
+ * @param loaded The suite.
+ * @returns The report and where it was written.
+ */
+function writeReport(
+	batchRoot: string,
+	loaded: LoadedSuite,
+): { readonly report: BatchReport; readonly markdown: string; readonly json: string } {
+	assertBatchInputs(batchRoot, loaded);
+	const report = buildBatchReport(batchRoot, loaded);
+	const markdown = path.join(batchRoot, "report.md");
+	const json = path.join(batchRoot, "report.json");
+	fs.writeFileSync(markdown, renderBatchReportMarkdown(report));
+	fs.writeFileSync(json, `${JSON.stringify(report, null, "\t")}\n`);
+	return { report, markdown, json };
+}
+
+export {
+	RunManifestSchema,
+	buildBatchReport,
+	readManifests,
+	recordOf,
+	writeReport,
+	type RunManifest,
+};

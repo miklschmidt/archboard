@@ -16,7 +16,7 @@ import {
 	resolveTarget,
 } from "@/cli/commands/lib/skill-destination";
 import { setUpRepository, withoutOldBlock } from "@/cli/commands/lib/repo-setup";
-import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
+import { prepareSkillArtifacts } from "@archboard/skills/distribution";
 
 const INSTALL_TARGETS = ["agents", "claude"] as const;
 const INSTALL_AGENTS = ["codex", "claude-code"] as const;

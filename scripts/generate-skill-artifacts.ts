@@ -10,7 +10,7 @@
 
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
+import { prepareSkillArtifacts } from "@archboard/skills/distribution";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outputFlag = process.argv.indexOf("--output-dir");
