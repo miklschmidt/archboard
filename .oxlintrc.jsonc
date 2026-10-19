@@ -190,10 +190,10 @@
 				"src/ui/semantic-board-canvas/components/**",
 				"src/ui/semantic-board-canvas/hooks/**",
 				"src/ui/semantic-board-canvas/lib/**",
-				"src/ui/voice-subtitles/*.ts",
-				"src/ui/voice-subtitles/components/**",
-				"src/ui/voice-subtitles/hooks/**",
-				"src/ui/voice-subtitles/lib/**",
+				"packages/workbench/src/ui/components/subtitles/**",
+				"packages/workbench/src/ui/hooks/subtitles/**",
+				"packages/workbench/src/ui/rules/subtitles/**",
+				"packages/workbench/src/ui/state/subtitles/**",
 			],
 			"rules": {
 				"no-restricted-globals": [

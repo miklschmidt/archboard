@@ -18,7 +18,7 @@ import {
 	type SetStateAction,
 } from "react";
 
-import { createAgentSetup, type AgentSetup } from "@/ui/agent-setup";
+import { createAgentSetup, type AgentSetup } from "@archboard/workbench/agent-setup";
 import { createAgentFocus } from "@/ui/application/lib/agent-focus";
 import { createVoiceStore } from "@/ui/application/lib/voice-store";
 import type { PaneHandles } from "@/ui/application/lib/pane-handles";

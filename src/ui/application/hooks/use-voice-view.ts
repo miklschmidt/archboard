@@ -9,10 +9,14 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 
-import type { AgentSetupSnapshot } from "@/ui/agent-setup";
+import type { AgentSetupSnapshot } from "@archboard/workbench/agent-setup";
 import type { VoiceOwner } from "@/ui/application/lib/workbench-owners";
-import type { VoiceSession, VoiceSessionStatus, VoiceSessionView } from "@/ui/voice-session";
-import type { AgentVoiceView, VoiceLevel, VoiceStage } from "@/ui/workbench/contracts";
+import type {
+	VoiceSession,
+	VoiceSessionStatus,
+	VoiceSessionView,
+} from "@archboard/workbench/voice-session";
+import type { AgentVoiceView, VoiceLevel, VoiceStage } from "@archboard/workbench/voice-surface";
 
 /** The stage each session status is at. */
 const STAGES: Readonly<Record<VoiceSessionStatus, VoiceStage>> = {

@@ -9,9 +9,9 @@
 // drawn, as the shell reads the level of a live voice.
 
 import { SAMPLES_PER_FRAME, type Talk, type TalkEvent } from "@archboard/walkthrough/talk";
-import type { SubtitleSource } from "@/ui/voice-subtitles";
+import type { SubtitleSource } from "@archboard/workbench/voice-subtitles";
 import { recordedStep, type RecordedStep } from "@/ui/walkthrough-recording";
-import type { VoiceLevel } from "@/ui/workbench/contracts";
+import type { VoiceLevel } from "@archboard/workbench/voice-surface";
 
 /** Where a talk stands at one frame. */
 interface TalkMoment {

@@ -601,7 +601,7 @@
    re-formed. While the voice box over a picture carries the voice the plate is the
    key again, with the gold edge the circle has, so the dock still says that voice is
    on. The orb is not drawn here: it sits in the socket in the plate, and the stage
-   (src/ui/voice-orb) flies it in and out. Both follow the dock's own morph time
+   (packages/workbench/src/ui/state/orb) flies it in and out. Both follow the dock's own morph time
    (--voice-morph-ms). */
 [data-slot="voice-circle"] {
 	display: flex;

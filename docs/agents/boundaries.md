@@ -544,17 +544,18 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
   and `runtime/rules/` the pane addressing. The end-to-end owners stay in `tests/system/`.
 
 The sixteenth is `workbench` (`@archboard/workbench`). It is the Codex workbench: the coordinator, the workhorses, the
-conversation and the voice (layer 7, the last). It grows over TASK-500.23.01 to .07, one move for each step up its
-import graph. So far it holds the browser-safe contracts that the browser and the server exchange, the Codex runtime
-under them (the foundation, and over it the coordinator and the workhorses), the server side (the gateway over the
-runtime, and the sessions, generations and pane plumbing that wire it into the Archboard server) and the first of the
-browser UI (the transport, the conversation, the composer and the realtime media). It adopts the `api/` role for
-`shared/`, `runtime/`, `server/` and `ui/` and exposes 35 subpaths. It imports `board`, `codex-app-server`,
+conversation and the voice (layer 7, the last). It came over in TASK-500.23.01 to .07, one move for each step up its
+import graph, and it is complete: no workbench module is left in `src/`. It holds the browser-safe contracts that the
+browser and the server exchange, the Codex runtime under them (the foundation, and over it the coordinator and the
+workhorses), the server side (the gateway over the runtime, and the sessions, generations and pane plumbing that wire
+it into the Archboard server) and the browser UI (the transport, the conversation and the composer, then the dock, the
+panes, the approvals, the queue, the agent setup and the voice). It adopts the `api/` role for
+`shared/`, `runtime/`, `server/` and `ui/` and exposes 43 subpaths. It imports `board`, `codex-app-server`,
 `diagnostics`, `process`, `server-lifecycle`, `timing`, `ui-kit`, `walkthrough` and `workspace`, and nothing from
 `src/`.
 The 5 files of `shared/api/` hold 100 names and are safe for the browser, with no Node import and no path into a runtime
-or server area: the pane transport and the voice session import them as well as the server. The 8 files of
-`ui/api/` hold 31 names and are safe for the browser too. The 12 files of
+or server area: the pane transport and the voice session import them as well as the server. The 16 files of
+`ui/api/` hold 72 names and are safe for the browser too. The 12 files of
 `runtime/api/` hold 204 names and the 10 of `server/api/` hold 82, and they run only in Bun. The browser imports none of
 them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/` or `server/`. `ui/` never imports
 the `runtime/` or `server/` of the package, and the shared files it reads are the private ones, not the api files.
@@ -685,42 +686,60 @@ owners and the actions that carry out a pane's command) is private, and its test
   `support/gateway/` those of the gateway and the projection tests. Only the tests of the host's own routes, lifetime
   and startup stay in `src/server/archboard/tests/`.
 
-**Ui.** `ui/` is the browser side of the workbench that has no workbench UI above it: the modules `workbench-transport`,
-`-timeline`, `-thread-link`, `-runtime`, `-thread` and `-composer`, `voice-output-level`, `codex-realtime` and
-`codex-workbench-media` of `src/ui/`. The modules that draw the dock, the panes, the approvals, the queue, the agent
-setup and the voice (`src/ui/workbench` and its neighbors) stay in `src/ui/` until TASK-500.23.07, and they import
-the api files. A private file reads the shared contracts through their defining files (`#shared/...`), never through an
+**Ui.** `ui/` is the browser side of the workbench: the transport, the conversation and the composer (TASK-500.23.06),
+and over them the dock, the panes, the approvals, the queue, the agent setup and the voice (TASK-500.23.07). The
+modules of `src/ui/` that stay (`application`, `shell`, `pane-session`, the walkthrough replay and the rest) import the
+api files. A private file reads the shared contracts through their defining files (`#shared/...`), never through an
 api file. `ui/` keeps its code in the role folders that `code-opener` uses, with one folder for each behavior.
 
 - `components/` holds the React components: `thread/` (the conversation as a person reads it, with the files placed
-  from the assistant-ui registry and the README that records them) and
-  `runtime/` (the provider of the assistant-ui runtime). `hooks/` holds `runtime/` (the hook that reads the
-  conversation) and `thread/` (the copy hook of the registry).
+  from the assistant-ui registry and the README that records them), `runtime/` (the provider of the assistant-ui
+  runtime), `dock/` (the agent dock and its plan, details and pending work, with the README of the agent surfaces),
+  `panel/` (the conversation panel, its composer, approval cards and sign-in), `voice/` (the voice box, the voice
+  control and the key of a presentation), `orb/` (the voice orb and its stage) and `subtitles/` (the words of the
+  voice and their toggle). `hooks/` holds `runtime/` (the hook that reads the conversation), `thread/` (the copy hook
+  of the registry), `dock/` (the dock's motion and circle), `voice/`, `orb/` and `subtitles/`.
 - `state/` holds the contracts and the controllers that own state without React: `transport/` (the transport's typed
   surface and its error), `timeline/`, `thread-link/` (the contracts, the port a transport satisfies and the
-  controller), `composer/` (the contract and the controller the assistant-ui composer submits through) and
-  `realtime/` (the neutral realtime contract, the ports of the media session and its contract).
+  controller), `composer/` (the contract and the controller the assistant-ui composer submits through), `realtime/`
+  (the neutral realtime contract, the ports of the media session and its contract), `surfaces/` (what the agent
+  surfaces read and act through, and the composer's draft store), `agent-setup/` (the setup that a message or a press
+  of Talk carries itself through), `approvals/` and `queue/` (the contracts, the transport port and the controller of
+  each), `voice-session/` (the contract, the session and the level channel), `orb/` (the stage that flies the orb) and
+  `subtitles/` (the person's wish to have them).
 - `clients/` holds what talks to the server or the browser platform: `transport/` (the socket reducer, its session,
   lease, command and prepared-action owners), `wire/` (the parsers of what the socket carries), `realtime/` (the
   WebRTC media session and its start sequence), `media/` (the owner of the microphone, the mute and the audio
-  elements over one transport) and `output-level/` (the measured level of the model's voice).
+  elements over one transport), `output-level/` (the measured level of the model's voice) and `orb/` (the canvas
+  painter and the runner that draws the orb every frame).
 - `rules/` holds the pure decisions: `transport/` (which commands the state answers and what a command is bound to),
   `timeline/` (the projection of the server's timelines into turns), `thread-link/` (how a link command settles),
   `runtime/` (turns into assistant-ui messages), `thread/` (the words of an activity run) and `composer/` (intent,
-  draft policy, keys and the link a composer reads).
+  draft policy, keys and the link a composer reads), `dock/` (the agent's one-line status, the plan steps, the circle's
+  state and the projection of approvals into cards), `agent-setup/` (the phase), `approvals/` and `approval-forms/`
+  (the families, choices, disclosure and status of an approval; its fields, form, validation and reviewed answer),
+  `queue/` (order, projection, correlation and narratives), `voice-session/` (binding, failure, narration and the
+  projection of the session into a view), `orb/` (colors, dynamics and flight) and `subtitles/` (cues, measured lines
+  and recency).
 - assistant-ui is imported only in the `thread/` and `runtime/` folders of these role folders, and
-  `@assistant-ui/react-markdown` only in `thread/` (the lint rule `archboard/assistant-ui-imports`). Tailwind finds the
-  class names through the `@source` of every package's `ui` area.
+  `@assistant-ui/react-markdown` only in `thread/` (the lint rule `archboard/assistant-ui-imports`). The `subtitles/`
+  folders of `components/`, `hooks/`, `rules/` and `state/` read no browser clock: they ask the frame clock of
+  `ui-kit`, so a recording renders them frame by frame (the override in `.oxlintrc.jsonc`). Tailwind finds the class
+  names through the `@source` of every package's `ui` area.
 - The api files group what a caller does: `./browser-transport` (the transport and its state and capabilities),
   `./composer`, `./thread-link-controller`, `./conversation-timeline` (the projection and the turns it makes),
   `./conversation-runtime` (the provider, the hook and the activity items), `./conversation-thread` (the rendered
   conversation and the words of its activity), `./workbench-media` (the media owner, the audio elements and the
   snapshot of the realtime session) and `./voice-output-level`. A caller that needs a realtime phase or a state
-  imports it from `./realtime-contract`. The surface is every name that `src/ui/` imports today, so TASK-500.23.08
-  can trim the names that only the modules of TASK-500.23.07 use.
+  imports it from `./realtime-contract`. The eight files of TASK-500.23.07 name what `src/ui/` imports from the rest:
+  `./agent-setup` (the setup, its snapshot and its phase), `./voice-session`, `./agent-surfaces` (the dock, the
+  panel, the view and actions they take, and the draft store), `./voice-surface` (the voice box, the key of a
+  presentation, the surface the application offers them and the voice view), `./voice-subtitles`, `./voice-orb`,
+  `./approvals-controller` and `./queue-controller`. TASK-500.23.08 trims the names that only the package itself uses.
 - The tests are in `tests/ui/`, in the folders of the code they cover. `support/` holds the fake socket and fixtures
-  of the transport, the harness of the prepared commands, the fakes of the media session and the media owner, and the
-  fixtures of the thread link and the composer.
+  of the transport, the harness of the prepared commands, the fakes of the media session and the media owner, the
+  fixtures of the thread link, the composer, the approvals, the queue, the agent setup and the voice session, and the
+  identities and voice fixtures of the dock.
 
 ## Vendor-owned data
 

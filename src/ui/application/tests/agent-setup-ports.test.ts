@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test";
 
-import type { AgentSetup, AgentSetupSnapshot, TalkOptions } from "@/ui/agent-setup";
+import type { AgentSetup, AgentSetupSnapshot, TalkOptions } from "@archboard/workbench/agent-setup";
 import {
 	narrate,
 	releaseWhenVoiceEnds,
 	threadLinkStep,
 	voicePort,
 } from "@/ui/application/agent-setup-ports";
-import type { VoiceSessionStatus, VoiceSessionView } from "@/ui/voice-session";
+import type { VoiceSessionStatus, VoiceSessionView } from "@archboard/workbench/voice-session";
 import type { ThreadLinkActionSnapshot } from "@archboard/workbench/thread-link-controller";
 
 /**
