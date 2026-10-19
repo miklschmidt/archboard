@@ -13,9 +13,11 @@ rather than colours; the
 components import `cn` from there.
 
 The package exposes these components through `src/ui/api/controls.ts`,
-`overlays.ts` and `display.ts`. The CLI resolves only the `@/` path, so the
-aliases in `components.json` reach this folder as `@/../packages/ui-kit/...`;
-rewrite the import lines it writes to `#` specifiers. Product behaviour never
+`overlays.ts` and `display.ts`. The aliases in `components.json` are plain
+repository paths, such as `packages/ui-kit/src/ui/components`. The CLI resolves
+them from the repository root, with no TypeScript path alias. `shadcn info`
+lists them under Resolved Paths. Rewrite the import lines it writes to `#`
+specifiers. Product behaviour never
 lives in this package: feature modules compose these controls and keep their
 own state. Allowed local changes are theme tokens, Tailwind classes, size and
 colour variants, Remix imports and import paths. Markup, focus handling,

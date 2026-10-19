@@ -1,8 +1,8 @@
 {
 	"task": "TASK-150",
 	"adoptedOutsideUiBy": "TASK-151",
-	"scope": ["src/**", "frontend/**", "scripts/**", "tools/**", "vite.config.ts"],
-	"testsScope": ["tests/**", "src/*/*/tests/**"],
+	"scope": ["packages/**", "apps/**", "scripts/**", "tools/**", "vite.config.ts"],
+	"testsScope": ["tests/**", "packages/*/tests/**", "apps/*/tests/**"],
 	"oxlint": "1.80.0",
 	"tsgolint": "7.0.2001",
 	"categories": ["correctness", "suspicious", "perf"],
@@ -18,7 +18,7 @@
 	],
 	"complexity": 6,
 	"maxPhysicalLines": 600,
-	"localImportPrefix": "@/",
+	"localImportPrefix": "#",
 	"jsdoc": {
 		"package": "eslint-plugin-jsdoc",
 		"version": "64.3.5",

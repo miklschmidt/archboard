@@ -39,7 +39,7 @@ that Codex passes its checks. A Codex on your `PATH` is not used.
 
 `bun run build` builds the browser application into `dist/frontend`. Without
 it, the page tells you to run the build. The server and the CLI run from the
-TypeScript in `apps/`, `src/` and `packages/`, so nothing else is built. After each `git pull`,
+TypeScript in `apps/` and `packages/`, so nothing else is built. After each `git pull`,
 run `bun install` and `bun run build` again. `bun install` also links the workspace
 packages into `node_modules`, and the server does not start without those links.
 

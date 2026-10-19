@@ -1,90 +1,65 @@
-# Agent module map
+# Source layout and boundaries
 
-Domain terms live in `CONTEXT.md`. This file defines Archboard's target source layout, module
-interfaces, and dependency directions. The current tree predates this map. Oxlint reports the old
-locations as migration work rather than treating them as exceptions.
+Domain terms live in `CONTEXT.md`. This file defines where Archboard source lives, which
+folder can import which, and who owns a test. Oxlint enforces it (`bun run lint`).
+The history of the move is in `docs/design/package-map.md` and `docs/design/apps-migration.md`.
 
-Source is moving from modules under `src/<area>/<module>` to workspace packages under
-`packages/<name>` (TASK-500, `docs/design/package-map.md`). A module that has not moved keeps the
-module rules. A package follows [Packages](#packages). The two sets of rules run side by side until
-the last module has moved.
+## Layout
 
-## Directory shape
-
-Every implementation module lives one level below a named area:
+All source lives in workspaces. The root `package.json` lists `packages/*` and `apps/*` in
+`workspaces`, and `bun install` links each one into `node_modules`.
 
 ```text
-src/<area>/<module>/
-  index.ts          # one public entrypoint
-  client.ts         # another public entrypoint, when callers need it
-  lib/              # private implementation
-  tests/            # tests and their private fixtures
+packages/<name>/   # a library that owns one behavior. See Packages.
+apps/<name>/       # a process entry that nothing imports: cli, server, web. See Apps.
+tests/system/      # repository, process, browser and full-product tests across owners
+scripts/, tools/   # repository scripts and the Oxlint plugin
+vite.config.ts     # the build host of the browser app
 ```
 
-The allowed areas are `cli`, `domain`, `privileged`, `runtime`, `server`, `shared`,
-`transformers`, and `ui`. Keep modules flat. A module cannot contain another module.
+There is no top-level `src/` or `frontend/`, and no `@/` alias. Lint refuses a source file in
+either root and an import that starts with `@/`.
+`tests/system/repository-policy/workspace-layout.test.ts` holds the end state.
 
-The files at a module root are its interface. A module may expose several small entrypoints. Do
-not hide a large implementation behind one catch-all barrel. Files in any subfolder are private,
-regardless of whether the folder is named `lib`, `tests`, or something else.
+Inside a package or an app, the folders below `src/` are areas: `shared`, `runtime`, `server`, `ui`,
+and `cli` in the CLI app. Each area has role folders, and a role folder has one folder for each
+behavior. See [Area directions](#area-directions). For frontend concern placement, naming, and
+React ownership, read [frontend.md](frontend.md).
 
-`src/runtime/board-inspection/diagnostics.ts` is a pure development entrypoint. It runs the same
-inspection pipeline as `index.ts` and reports coarse semantic work for performance regressions:
-input units, broad-phase events, eligible visits, expiry, bucket scans, exact-query and
-hierarchy-node visits, path checks, and active bucket/profile/index peaks. The counters are
-informative development evidence, not a promise about JavaScript engine primitives. Product callers
-and the `check` command use `index.ts`; diagnostic counters never enter schema-v3 report bytes.
-
-`lib/input-snapshot.ts` is the only boundary that accepts `readonly unknown[]`. It copies the fixed
-inspection vocabulary into inert closed records without invoking caller-owned JavaScript. Decode,
-model, and detector code accept only those snapshot records. The snapshot owner enforces the
-1,000,000-unit input limit before semantic analysis. Eligible broad-phase pair delivery has a
-separate 2,000,000-comparison limit; a stopped pair pass retains completed findings and comparisons.
-The two limits are capacity safeguards, not a general runtime or asymptotic guarantee.
-
-Root `src/` holds no process entrypoint any more: the entries are `apps/cli/src/bin.ts` and
-`apps/server/src/server.ts`. Do not add implementation to them.
-
-Browser code lives in `apps/web/src/ui/<role>/<behavior>/`. Build host files can stay outside
-`src/`. For frontend concern placement, naming, and React ownership, read [frontend.md](frontend.md).
+The entries are `apps/cli/src/bin.ts`, `apps/server/src/server.ts` and `apps/web/src/main.tsx`.
+Do not add implementation to them.
 
 ## Import rules
 
-Code outside a module imports only files at that module's root. Files inside one module may import
-their own private implementation freely. A module that depends on another module must cross one of
-the dependency's root entrypoints.
-
-Tests follow the same interface as production callers. A file under a module's `tests/` folder may
-import that folder's fixtures, but it may not import its own module's implementation or another
-module's implementation. Non-test code may not import any `tests/` folder. Cycles are errors.
+- **Inside a package or an app, imports use `#`.** The `package.json` of each declares
+  `"imports": { "#*": "./src/*", "#tests/*": "./tests/*" }`. Re-exports and dynamic and type
+  imports follow the same rule. Spell out the file extension. A relative import is refused
+  everywhere, and JavaScript source is rejected. Sibling imports in `scripts/` and `tools/` stay
+  relative and state the exception on the line. Scripts, tools and root tests have no `#` imports.
+- **Another package is reached only through its `exports`.** See [Packages](#packages).
+- **Nothing imports an app.** See [Apps](#apps).
+- **Production code never imports a `tests/` folder.** Cycles are errors.
 
 Tests use these owner layouts:
 
-- `src/<area>/<module>/tests/` owns contract tests and private test support for one module.
 - `packages/<name>/tests/` owns the internal tests of one package. See [Packages](#packages).
 - `apps/<name>/tests/` owns the internal tests of one app. See [Apps](#apps).
-- `tests/system/` owns cross-module repository, package, process, browser, and full-product tests.
+- `tests/system/` owns cross-package repository, process, browser, and full-product tests. It
+  imports only the exports of a package.
 
-Test-owned source may import support only from the same owner, and the preload's
-real-time declaration (`tests/system/repository-policy/support/test-wall-clock.ts`),
-which every owner may use. It imports product behavior through
-module-root entrypoint files, never an implementation subfolder. A package or app can test its own
-implementation files. Product source, scripts, and tools
-never import test-owned source. Bun-discoverable tests outside these owners are refused.
+Test-owned source imports support only from the same owner, and from the preload's real-time
+declaration (`tests/system/repository-policy/support/test-wall-clock.ts`), which every owner can use.
+A package or app test can import the implementation files of its own owner. Product source,
+scripts, and tools never import test-owned source. Bun-discoverable tests outside these owners
+are refused.
 
-All JavaScript-like source inside any test owner is TypeScript. The pre-task
-500-physical-line test limit remains outside the UI. TASK-150 applies the approved
-600-physical-line limit to all authored UI source, including tests, comments and
-blank lines. Put large test data in a named non-TypeScript fixture instead.
+All JavaScript-like source inside any test owner is TypeScript. Test files stay under 500
+physical lines outside the UI. TASK-150 applies the approved 600-physical-line limit to all
+authored UI source, including tests, comments and blank lines. Put large test data in a named
+non-TypeScript fixture instead.
 
-Local imports in a package or app use its own `#` entries, including re-exports and
-dynamic/type imports. Spell out the file extension. The private-module and area rules still
-apply, and JavaScript source is rejected. Sibling imports in `scripts/` and `tools/` stay
-relative and state the exception on the line. The root `@/` mapping remains for the old
-module rules until TASK-500.24.06. No browser source uses it.
-
-Oxlint also rejects generic `core`, `utils`, `misc`, `migration`, and `compatibility` buckets. Name
-the module for the behavior it owns.
+Oxlint also rejects generic `core`, `utils`, `misc`, `migration`, `compatibility` and `lib`
+folders. Name the role of the folder, or the behavior it owns.
 
 ## Packages
 
@@ -120,24 +95,22 @@ split by behavior.
   `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
-- **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
+- **Another package, an app, a script or a test imports only exported files.** Oxlint refuses a subpath that
   `exports` does not name. It also refuses a relative path that reaches a private file of another
   package.
-- **Inside a package, imports use `#`.** The `package.json` of each package declares
-  `"imports": { "#*": "./src/*", "#tests/*": "./tests/*" }`. Write `#shared/constants/timing.ts`
-  for a file of `src/` and `#tests/support.ts` for a file of `tests/`. Spell the extension, because
-  TypeScript does not add one to an `imports` target. A `#` specifier resolves from the nearest
-  `package.json`, so it can never reach another package. The `@/` alias points into `src/`, which is
-  outside every package. A relative import is refused everywhere.
+- **Inside a package, imports use `#`.** Write `#shared/constants/timing.ts` for a file of `src/`
+  and `#tests/support.ts` for a file of `tests/`. Spell the extension, because TypeScript does not
+  add one to an `imports` target. A `#` specifier resolves from the nearest `package.json`, so it
+  can never reach another package.
 - **The area directions hold inside a package.** The folders under `src/` are areas, so `ui` never
   imports `runtime` or `server` of the same package. The direction is judged by the area folder of
-  the imported file, so it also holds across packages and between a package and a module. A test
-  in `tests/<area>/` counts for that area.
-- **A package test may import any file of its own package.** It imports only the exports of another
+  the imported file, so it also holds across packages. A test in `tests/<area>/` counts for that
+  area. A folder of `src/` that is no area is refused.
+- **A package test can import any file of its own package.** It imports only the exports of another
   package. It never imports the support of another test owner.
 - **Production code never imports a `tests/` folder.** It never imports a `./testing` export of a
   package either. A `./testing` export holds a fixture that tests of two packages share. Its file
-  lives in `src/`, and only a test may import it.
+  lives in `src/`, and only a test can import it.
 
 The first package is `timing` (`@archboard/timing`). Its `.` export holds every product duration.
 Its `./voice` export holds the voice motion durations.
@@ -191,7 +164,7 @@ the code is not local.
 The sixth is `codex-app-server` (`@archboard/codex-app-server`). It is one private Codex app-server
 session over stdio. The package is complete. It holds the shared files, the wire protocol, the
 process owner, the stdio transport, the session and the semantic context. It imports `board`
-(layer 4) and the lower packages, and nothing from `src/`. It adopts the `api/` role for `shared/`
+(layer 4) and the lower packages. It adopts the `api/` role for `shared/`
 and `runtime/` and exposes 7 subpaths, where it exposed 17 files. The 2 files of `shared/api/` are
 safe for the browser, with no Node import. The 5 files of `runtime/api/` are runtime-only by policy:
 the browser imports none of them, though `./session` carries some Zod schemas.
@@ -314,18 +287,18 @@ file that carries each name. `semantic-board-store/index.ts` and `engine/board.t
 `./reconcile-candidate` and `./reconcile` were exported only because the store imported them. The
 store is inside the package now, so these five are private, and no file outside the package
 imported one. `board` imports only `timing`, `diagnostics`, `process`, `workspace` and
-`code-binding`, and nothing from `src/`. `server-lifecycle` imports `board`, and `board`
+`code-binding`. `server-lifecycle` imports `board`, and `board`
 imports nothing back, so the old import cycle between them is gone.
 
 The eighth is `ui-kit` (`@archboard/ui-kit`). It holds the presentation parts that more than one UI
-module draws with, in the `ui` area, and imports nothing from `src/`. It adopts the `api/` role for
+module draws with, in the `ui` area. It adopts the `api/` role for
 `ui/` and exposes 10 subpaths, where code outside imported 29 paths. Every export is safe for the browser.
 `ui/components/` holds the shadcn Base UI components with their `README.md` and the dialog parts in
 `dialog-parts/`; `ui/state/` holds the frame clock and the fullscreen presentation; `ui/rules/`,
 `ui/hooks/` and `ui/constants/` hold the small helpers. The `components` aliases in
 `components.json` name `ui/components/` as `packages/ui-kit/src/ui/components`. The shadcn CLI
-resolves these paths from the repository root. They do not depend on the old `src/` directory.
-Generated imports still need the package-local `#` rewrite.
+resolves these paths from the repository root with no TypeScript path alias. Generated imports
+still need the package-local `#` rewrite.
 
 - `./controls` is what a person acts on: buttons, inputs, selects, tabs, toggles and form fields,
   and `usesCommandKey`, the platform's modifier for shortcuts.
@@ -358,7 +331,7 @@ The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says ab
 facts of a checkout, the code check of a board's claims, the history lens over Git and the language
 servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
 subpaths with 36 names, where code outside imported 7 module paths. It imports `board`,
-`code-binding`, `workspace`, `diagnostics` and `timing`, and nothing from `src/`. The 2 files of
+`code-binding`, `workspace`, `diagnostics` and `timing`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
 `runtime/api/` are Node-bound and run only in Bun.
 
@@ -390,7 +363,7 @@ subpaths with 36 names, where code outside imported 7 module paths. It imports `
 
 The eleventh is `renderer` (`@archboard/renderer`). It draws a board as a picture. It adopts the `api/` role for
 `shared/`, `runtime/` and `ui/` and exposes 8 subpaths with 61 names, where code outside imported 10 module paths and
-two asset paths. It imports `board`, `timing` and `process`, and nothing from `src/`. The 2 files of `shared/api/` and the
+two asset paths. It imports `board`, `timing` and `process`. The 2 files of `shared/api/` and the
 1 file of `ui/api/` are safe for the browser, with no Node import. The 5 files of `runtime/api/` are Node-bound and run
 only in Bun.
 
@@ -436,8 +409,7 @@ only in Bun.
 
 The twelfth is `code-opener` (`@archboard/code-opener`). It opens the code a node binds in the person's editor. It
 adopts the `api/` role for `server/` and `ui/` and exposes 4 subpaths with 13 names, where code outside imported
-5 module paths. It imports `board`, `code-binding`, `code-intel`, `workspace` and `server-requests`, and
-nothing from `src/`. The 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
+5 module paths. It imports `board`, `code-binding`, `code-intel`, `workspace` and `server-requests`. The 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
 `server/api/` are Node-bound and run only in Bun.
 
 - `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, the
@@ -462,8 +434,7 @@ nothing from `src/`. The 2 files of `ui/api/` are safe for the browser, with no 
 
 The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records a narrated walkthrough of a board to a video
 (ADR 0035, ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 38 names,
-where code outside imported 4 module paths. It imports `board`, `timing`, `workspace` and `renderer`, and nothing from
-`src/`. The 2 files of `shared/api/` are safe for the browser, with no Node import: the recording page and the replay
+where code outside imported 4 module paths. It imports `board`, `timing`, `workspace` and `renderer`. The 2 files of `shared/api/` are safe for the browser, with no Node import: the recording page and the replay
 page import them. The 2 files of `runtime/api/` run only in Bun.
 
 - `./recording` is the contract that the recording page and the command that drives it agree on: the address that opens
@@ -485,7 +456,7 @@ page import them. The 2 files of `runtime/api/` run only in Bun.
 
 The fourteenth is `skills` (`@archboard/skills`). It ships the archboard skill and evaluates it. It adopts the `api/`
 role for `runtime/` and exposes 4 subpaths with 16 names, where code outside imported 2 module paths. It imports
-`board`, `timing`, `renderer`, `process` and `walkthrough`, and nothing from `src/`. Every file is Node-bound and runs
+`board`, `timing`, `renderer`, `process` and `walkthrough`. Every file is Node-bound and runs
 only in Bun. The 4 files of `runtime/api/` are the interface.
 
 - `./distribution` prepares the copy of the skill that the checkout, the installer and `generate:skill-artifacts`
@@ -510,7 +481,7 @@ only in Bun. The 4 files of `runtime/api/` are the interface.
 The fifteenth is `server-lifecycle` (`@archboard/server-lifecycle`). It starts, finds, restarts and stops the
 Archboard server, and holds the CLI's client of that server. It adopts the `api/` role for `runtime/` and exposes 9
 subpaths with 71 names, where code outside imported 12 module paths. It imports `board`, `codex-app-server`,
-`workspace`, `process`, `timing` and `diagnostics`, and nothing from `src/`. Every file is Node-bound and runs only in
+`workspace`, `process`, `timing` and `diagnostics`. Every file is Node-bound and runs only in
 Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `runtime/semantic-board-client` and
 `shared/server-startup-terminal`, which used the `shared/` name for a file that writes to a file descriptor.
 
@@ -532,7 +503,7 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
   and `runtime/services/` the configuration and the staleness check.
 - The server entry and the version file are found with `SOURCE_CHECKOUT` of `workspace`, because the package sits
   at another depth than the module did: the spawn runs `apps/server/src/server.ts` and the version is read from the root
-  `package.json` of that checkout. The staleness check watches `src/`, `packages/` and `apps/` of it. The startup preload
+  `package.json` of that checkout. The staleness check watches `packages/` and `apps/` of it. The startup preload
   of `tests/system/server-state/` mocks the cleanup timing of `runtime/operations/server-startup-cleanup.ts` by path,
   because the spawn imports that private file, and `package-api.test.ts` names it.
 - The tests are in `tests/`: `runtime/store/` holds the pid file, `runtime/operations/` the cleanup of a failed start
@@ -540,15 +511,14 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
 
 The sixteenth is `workbench` (`@archboard/workbench`). It is the Codex workbench: the coordinator, the workhorses, the
 conversation and the voice (layer 7, the last). It came over in TASK-500.23.01 to .07, one move for each step up its
-import graph, and it is complete: no workbench module is left in `src/`. It holds the browser-safe contracts that the
+import graph, and it is complete. It holds the browser-safe contracts that the
 browser and the server exchange, the Codex runtime under them (the foundation, and over it the coordinator and the
 workhorses), the server side (the gateway over the runtime, and the sessions, generations and pane plumbing that wire
 it into the Archboard server) and the browser UI (the transport, the conversation and the composer, then the dock, the
 panes, the approvals, the queue, the agent setup and the voice). It adopts the `api/` role for
 `shared/`, `runtime/`, `server/` and `ui/` and exposes 8 subpaths, each an api file that carries only the names that code
 outside the package imports (TASK-500.23.08). It imports `board`, `codex-app-server`,
-`diagnostics`, `process`, `server-lifecycle`, `timing`, `ui-kit`, `walkthrough` and `workspace`, and nothing from
-`src/`.
+`diagnostics`, `process`, `server-lifecycle`, `timing`, `ui-kit`, `walkthrough` and `workspace`.
 The file of `shared/api/` (`./browser-contract`) holds 12 names and is safe for the browser, with no Node import and no
 path into a runtime or server area: the pane session imports it as well as the server. The 3 files of `ui/api/`
 (`./controllers`, `./agent` and `./voice`) hold 58 names and are safe for the browser too. The file of `runtime/api/`
@@ -609,8 +579,7 @@ grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `
 - The two instruction documents and the four manifests (the voice and the workhorse manifests of the
   coordinator, and the `archboard_app` and `archboard_coordinator` namespaces) are data files that sit beside the code
   that reads them, found with `import.meta.resolve` of a `#` path, so no file depends on its own depth. Their digests are pinned in the code, and a changed byte is a review.
-- `./runtime` holds the 8 names that the system tests outside the package build the gateway and the projection from, and
-  nothing in `src/` imports it: the approval broker (`createCodexApprovalBroker`), the realtime voice adapter
+- `./runtime` holds the 8 names that the system tests outside the package build the gateway and the projection from, and no app imports it: the approval broker (`createCodexApprovalBroker`), the realtime voice adapter
   (`createCodexRealtimeAdapter` with its binding), the parse of a tool-call response (`parseDynamicToolCallResponse`) and
   the empty spoken approval snapshot. The coordinator, the workhorses, the epoch store, the thread link, the
   instructions, the dynamic tools, the queue and the tool manifests are private: the server area reads them through
@@ -623,9 +592,7 @@ grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `
 their private files, and no private file imports an api file. The host in `apps/server/` keeps the routes and
 the application. It imports only `server/api/`, and only what a route or the application itself calls: the pane
 registry, the tab sessions, the request context, the wiring and the listener. Everything else (the generations, the
-owners and the actions that carry out a pane's command) is private, and its tests are in the package. Its parts were
-`src/server/codex-workbench/` (the gateway) and the Codex files, the pane and tab plumbing and the request context of
-`src/server/archboard/lib/`.
+owners and the actions that carry out a pane's command) is private, and its tests are in the package.
 
 - `protocol/` holds `gateway/contract.ts` (the options, the owners' ports, the connection and the gateway that the host
   wires, with the error a command is refused with), `projection/projection-contract.ts` (what the host hands the
@@ -737,18 +704,17 @@ An app is a layer-8 workspace in `apps/<name>/` that holds what the packages lef
 `workspaces` field. The lint plugin holds an app to the rules of a package, with these differences:
 
 - **Nothing imports an app.** Only the app's own source and tests reach its files. A package, another
-  app, a script and a test of another owner are refused. The root `package.json` has no `imports` entry
-  for an app any more. The lint plugin still holds the branches of the old `#web/*` allowance, and
-  TASK-500.24.06 removes them.
+  app, a script and a test of another owner are refused, and so is the `@archboard-app/<name>`
+  workspace name, even from the app itself.
 - **An app imports a package only through its `exports`.** Inside an app, imports use the `#`
   entries of its own `package.json`, as in a package. A `#` import that names no existing file is
   an error whoever owns the importing file.
 - **An app has areas and role folders like a package.** `apps/web/src/ui/<role>/<behavior>/`,
   `apps/cli/src/{cli,runtime}/`, `apps/server/src/server/`. The thin entries are
   `apps/cli/src/bin.ts`, `apps/server/src/server.ts` and `apps/web/src/main.tsx`; the last counts as
-  browser code. Other files directly in `src/`, a folder of `src/` that is no area and a folder
-  beside `src/` and `tests/` that holds source are refused.
-- **A package or an app has no `lib/` folder.** Root `src/` modules keep theirs until they move.
+  browser code. Other files directly in `src/` and a folder beside `src/` and `tests/` that holds
+  source are refused. So is a folder of `src/` that is no area, in an app and in a package.
+- **A package or an app has no `lib/` folder.** Name the role of the folder.
 - **Tests** follow `apps/<name>/tests/` like a package's. Its `ui/` folder is held to the UI lint
   policy.
 
@@ -820,7 +786,7 @@ of `dist/`.
 
 ### `apps/web`
 
-`apps/web` is the browser app (TASK-500.24.04 and TASK-500.24.05). It holds the whole `src/ui` of the old tree, its
+`apps/web` is the browser app (TASK-500.24.04 and TASK-500.24.05). It holds the whole browser UI, its
 entry, the page and the stylesheet. Inside the app a file is `#ui/components/semantic-board-canvas/LevelMark.tsx`. No
 behavior has an index: a caller imports the file that defines a name.
 
@@ -836,7 +802,7 @@ behavior has an index: a caller imports the file that defines a name.
   records and lists, the agent surfaces, the workspace port), `shell` (the frame, the navigator and its rows),
   `pane-session` (one pane's socket, status, reading and registration), `board-routing` (the address bar as the
   workspace), `board-catalog` (the listing of boards and its cache), `board-move`, `vault-diagnostics`,
-  `walkthrough-recording` and `walkthrough-replay` are the old modules. The canvas is the `semantic-board-canvas`
+  `walkthrough-recording` and `walkthrough-replay` are the behaviors of the shell. The canvas is the `semantic-board-canvas`
   behavior, the name that the frame-clock override of `.oxlintrc.jsonc` matches, and the variant lifecycle is
   `variant-lifecycle`. `rules/` holds the pure parts, `state/` what outlives a render (stores, the pane core, the
   recorder), `clients/` what touches the outside (the server calls, sockets, storage, audio, the page's own
@@ -880,23 +846,18 @@ machine-observable. An upgrade should fail at type-check time at each incompatib
 
 ## Area directions
 
-These directions keep transport and I/O details out of domain modules:
+These directions keep transport and I/O details apart. They hold between the area folders of one
+package or app, between packages, and for tests, which count for the area of their folder
+(`tests/ui/` is `ui`).
 
-- `shared` depends on no other Archboard area.
-- `domain` depends on `shared` and other domain modules.
-- `transformers` depends on `shared`, `domain`, and other transformer modules.
-- `privileged` depends on `shared`, `domain`, `transformers`, and other privileged modules.
-- `server` depends on `shared`, `domain`, `transformers`, `privileged`, `runtime`, and other server
-  modules. It never imports CLI or UI code.
-- `runtime` depends on server, privileged, domain, transformer, shared, and other runtime modules.
-  It never imports CLI or UI code.
-- `cli` depends on runtime, domain, transformers, shared, and other CLI modules. It never imports
-  server implementation, privileged adapters, or UI code.
-- `ui` depends on shared, domain, transformers, and other UI modules. It never imports CLI, server,
-  runtime, or privileged code.
+- `shared` depends on no other area.
+- `runtime` depends on `shared` and `server`. It never imports `cli` or `ui`.
+- `server` depends on `shared` and `runtime`. It never imports `cli` or `ui`.
+- `cli` depends on `shared` and `runtime`. It never imports `server` or `ui`.
+- `ui` depends on `shared`. It never imports `cli`, `server` or `runtime`.
 
-These are dependency permissions, not permission to deep-import. Every allowed cross-module import
-still goes through a root entrypoint.
+These are dependency permissions, not permission to deep-import. A cross-package import still goes
+through an export.
 
 ## Validation
 

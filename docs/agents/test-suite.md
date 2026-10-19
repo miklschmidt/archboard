@@ -8,7 +8,7 @@ native lanes in this order:
 
 - `test:modules`: isolated package-owned and app-owned product tests discovered under
   `packages/` and `apps/`;
-- `test:system`: system product owners under the seven explicit non-browser
+- `test:system`: system product owners under the five explicit non-browser
   directories, with `--max-concurrency=1` because they own real processes and
   shared local ports;
 - `test:repository`: the source-boundary lint fixtures, the owner that resolves
@@ -260,7 +260,6 @@ Every transitional package check now has one final owner lane:
 | ------------------------------------------------------------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------- |
 | `test:suites`, `test:boundaries`                                               | repository         | `tests/system/repository-policy/`                                                                          |
 | `test:contracts`                                                               | modules and system | `apps/cli/tests/`, `tests/system/cli/`                                                                     |
-| `test:inspection`                                                              | modules and system | `src/runtime/board-inspection/tests/`, `tests/system/board-inspection/`                                    |
 | `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                          |
 | `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `packages/*/tests/`, `apps/web/tests/ui/`, `tests/system/server-state/`, `tests/system/process-contracts/` |
 | `test:cli`, `test:install`, `test:repos`                                       | system             | `tests/system/cli/`                                                                                        |
@@ -457,37 +456,21 @@ their exhaustive state and failure matrices.
 
 ## Source boundary check
 
-- `bun test tests/system/repository-policy/boundaries.test.ts` creates disposable source fixtures outside the checkout and
-  invokes syntax-only Oxlint subprocesses with the repository's custom plugin. It proves
-  allowed module-root imports and thin process entrypoints pass, while root
-  entrypoint implementation, domain-to-transformer imports, flat
-  area files, extensionless directory deep imports and Vite resource-query deep
-  imports fail under the expected Archboard rules. It also proves static
-  `require()` deep imports fail both the built-in TypeScript rule and the custom
-  entrypoint rule, co-located test files are rejected, and test/spec files under
-  a module's `tests/` directory are accepted. Each assertion removes its
-  temporary project even when the assertion fails.
-
-## Board inspection check
-
-- The board-inspection owners under `src/runtime/board-inspection/tests/` and
-  `tests/system/board-inspection/` drive the pure raw-record inspector and the real package binary. They pin
-  the dense whole-board reroute and run the comparison-limit behavior matrix against an internal
-  2,000-comparison detector budget while production code and public schemas stay pinned to 2,000,000.
-  Its package checks run with no server process, parse JSON through the
-  exported schema, cover text and strict exits 6/7/8, and compare vault paths, bytes, and mtimes
-  before and after every read. The inert input snapshot matrix covers proxies, revoked proxies,
-  accessors, cycles, custom prototypes, unsafe scalar values, holes, sparse arrays, exact string and
-  array boundaries, and large supported paths. The module-root `diagnostics.ts` entrypoint supplies
-  coarse noncontractual algorithm counters for focused regressions. Alternating exact-exclusion and
-  hierarchy fixtures retain their pair-set, ordering, and semantic-exclusion checks without claiming
-  a general complexity bound. The module comparison case proves the boundary stop, deterministic
-  findings, and preservation of completed findings without production-sized work. The persisted
-  package case proves the input limit's strict/non-strict exits and text rendering, while other
-  package owners prove the absence of diagnostic counters from product output. TASK-120 adds the
-  schema-v2 bridge matrix: strict metadata, incomplete/stale provenance,
-  exact one-crossing suppression, a second unmarked crossing, and unchanged architecture/compare/
-  describe bytes for valid decoration parts.
+- `tests/system/repository-policy/boundaries.test.ts` creates disposable source fixtures
+  outside the checkout and invokes syntax-only Oxlint subprocesses with the repository's custom
+  plugin. It proves what a package exports is the only way in, in every import spelling:
+  extensionless paths, Vite resource queries, static `require()` (which fails the built-in
+  TypeScript rule too), generated-code paths, symlinks and mocks. It proves production code never
+  imports a tests folder or a `./testing` export, that a test reads only its own owner's support,
+  that the area directions hold, that the retired `@/` alias and files in the old `src/` and
+  `frontend/` roots are refused, and that misplaced, untyped and oversized tests fail.
+- `app-boundaries.test.ts` proves the same for apps: nothing imports an app, an app reaches a
+  package only through its exports, entries stay thin and source sits in role folders.
+  `ui-lint-policy.test.ts` proves the UI rules and the split of the lint configs.
+  `workspace-layout.test.ts` proves the end state: no file in the old roots, no root `imports`,
+  no `@/` in a TypeScript config or `components.json`, and the workspaces cover `packages/*` and
+  `apps/*`.
+- Each fixture project is removed even when an assertion fails.
 
 ## Wire and lock checks
 
