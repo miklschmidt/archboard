@@ -29,9 +29,29 @@ function isApiFile(file: string): boolean {
 	return file.split("/").includes("api");
 }
 
-function privateFilesImportingApi(files: Record<string, string>): string[] {
+/** The api subpaths of a package: the `exports` keys that point into an `api/` folder. */
+function apiSubpaths(exports: Record<string, string>): string[] {
+	return Object.entries(exports).flatMap(([subpath, target]) =>
+		isApiFile(target) ? [subpath.slice(2)] : [],
+	);
+}
+
+/** Whether a file names an api file, by `#` specifier or by the package's own name. */
+function importsApi(text: string, name: string, subpaths: readonly string[]): boolean {
+	const own = new RegExp(`["'\`]@archboard/${name}/([^"'\`?]+)`, "g");
+	return (
+		API_IMPORT.test(text) ||
+		[...text.matchAll(own)].some(([, subpath]) => subpaths.includes(subpath ?? ""))
+	);
+}
+
+function privateFilesImportingApi(
+	files: Record<string, string>,
+	name: string,
+	subpaths: readonly string[],
+): string[] {
 	return Object.entries(files).flatMap(([file, text]) =>
-		!isApiFile(file) && API_IMPORT.test(text) ? [file] : [],
+		!isApiFile(file) && importsApi(text, name, subpaths) ? [file] : [],
 	);
 }
 
@@ -62,7 +82,7 @@ describe.each(ADOPTERS)("the api folder of $name", ({ name, area }) => {
 	});
 
 	test("no private production file imports an api file", () => {
-		expect(privateFilesImportingApi(files)).toEqual([]);
+		expect(privateFilesImportingApi(files, name, apiSubpaths(manifest.exports))).toEqual([]);
 	});
 
 	test("no api file uses export *", () => {
@@ -92,8 +112,13 @@ describe("the api checks", () => {
 			"shared/api/star.ts": `export * from "#shared/rules/a.ts";\n`,
 			"shared/rules/b.ts": `import { a } from "#shared/api/document.ts";\n`,
 			"runtime/c.ts": `import { a } from "#shared/rules/a.ts";\n`,
+			"runtime/d.ts": `import { mintId } from "@archboard/board/ids";\n`,
+			"runtime/e.ts": `import { x } from "@archboard/board/private-thing";\n`,
 		};
-		expect(privateFilesImportingApi(files)).toEqual(["shared/rules/b.ts"]);
+		expect(privateFilesImportingApi(files, "board", ["document", "ids"])).toEqual([
+			"shared/rules/b.ts",
+			"runtime/d.ts",
+		]);
 		expect(apiFilesWithExportStar(files)).toEqual(["shared/api/star.ts"]);
 	});
 });
