@@ -6,7 +6,7 @@
 // version' ran right past the region round Panes and back 40 px to pass it.
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import { cornersOf, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import commandInterface from "./command-interface.json";

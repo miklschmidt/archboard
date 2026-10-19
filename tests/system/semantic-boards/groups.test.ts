@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";

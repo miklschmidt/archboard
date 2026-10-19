@@ -19,7 +19,7 @@ the old tree and the research stand as they were found.
 
 The listing route reports every board with its name, level, variants and the
 drill-downs of the variant its name opens
-(`src/shared/semantic-board/lib/listing.ts`). The outline turns that into a
+(`packages/board/src/shared/protocol/board-listing.ts`). The outline turns that into a
 tree (`src/ui/board-catalog/lib/outline.ts`). Five structures reach the
 navigator:
 

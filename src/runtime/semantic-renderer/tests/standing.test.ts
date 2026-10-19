@@ -1,10 +1,7 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
-import {
-	LayoutEngineSchema,
-	type LayoutEngineName,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
+import { type VariantContent } from "@archboard/board/content";
 import {
 	renderArchitecture,
 	type RenderedDiagram,

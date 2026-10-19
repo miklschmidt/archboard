@@ -32,7 +32,7 @@ import {
 	type RefObject,
 } from "react";
 
-import type { SemanticWalkthrough } from "@/shared/semantic-board/index";
+import type { SemanticWalkthrough } from "@archboard/board/walkthrough";
 import { PRESENTATION_BOX_IN_MS, PRESENTATION_BOX_STEP_MS } from "@archboard/timing";
 import { PresentationFoot } from "@/ui/semantic-board-canvas/components/PresentationFoot";
 import { PresentationKeys } from "@/ui/semantic-board-canvas/components/PresentationKeys";

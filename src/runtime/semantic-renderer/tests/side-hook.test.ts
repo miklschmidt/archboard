@@ -6,8 +6,8 @@
 // its top (Board persistence's "Durable write boundary").
 
 import { expect, test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import { LayoutEngineSchema, type LayoutEngineName } from "@/shared/semantic-board/index";
+import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/board/policy";
+import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import type { StatedStandings } from "@/transformers/semantic-renderer/index";
 import {

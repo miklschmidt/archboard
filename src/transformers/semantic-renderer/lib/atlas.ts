@@ -10,7 +10,7 @@
 // travels with the picture rather than being measured back out of it by
 // something that would have to guess.
 
-import type { DiagramBox } from "@/shared/semantic-board/index";
+import type { DiagramBox } from "@archboard/board/render-reply";
 import {
 	covering,
 	roundCoord,
@@ -19,7 +19,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/geometry";
 
 // The box and the atlas are the shared render contract's
-// (`@/shared/semantic-board`), not this module's. Three areas of the
+// (`@archboard/board/render-reply`), not this module's. Three areas of the
 // repository read an atlas — the server that serves it, the command that writes
 // it beside a file, and the pane that hit-tests against it — so the shape is
 // written down once, where all three can reach it.

@@ -12,7 +12,8 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/code-binding";
-import type { SemanticVariant, VariantContent } from "@/shared/semantic-board/index";
+import type { SemanticVariant } from "@archboard/board/document";
+import type { VariantContent } from "@archboard/board/content";
 import { KindIcon, RelationshipChip } from "@/ui/semantic-board-canvas/components/KindMarks";
 import { ContainerInterface } from "@/ui/semantic-board-canvas/components/ContainerInterface";
 import { GoDeeper } from "@/ui/semantic-board-canvas/components/GoDeeper";

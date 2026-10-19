@@ -5,7 +5,7 @@
 
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import { DEFAULT_LAYOUT_ENGINE } from "@/shared/semantic-board/index";
+import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
 import { VAULT_CHECK_POLL_MS } from "@archboard/timing";
 import {
 	comparisonKey,

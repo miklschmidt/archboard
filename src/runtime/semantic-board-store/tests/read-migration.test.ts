@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
 import * as lock from "@/runtime/engine/board-lock";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
+import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-read-migration-"));
 

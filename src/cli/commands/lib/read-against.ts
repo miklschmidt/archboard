@@ -1,12 +1,12 @@
 // Which variant `semantic compare` reads another against: the one named, or the
 // one its picture is drawn against.
 
+import { comparedWith } from "@archboard/board/drawing";
 import {
-	comparedWith,
 	resolveVariant,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
 import { CliUsageError } from "@/cli/command-contract/contract";
 
 /** The refusal `readAgainst` throws when nothing was named and there is nothing to read against. */

@@ -6,12 +6,9 @@ import { bothModes, expectSamePlaces } from "@/runtime/semantic-renderer/tests/c
 import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { across, bridged, down, drawing } from "@/runtime/semantic-renderer/tests/fixed-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
-import {
-	LayoutEngineSchema,
-	SemanticBoardSchema,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-} from "@/shared/semantic-board/index";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** How a line of a call is drawn. */
 const LINE = { dash: "solid", arrowhead: "filled" } as const;

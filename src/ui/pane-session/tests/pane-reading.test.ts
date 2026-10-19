@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { NOTHING_READ, createReadingPublisher, type PaneReading } from "@/ui/pane-session";
-import type { SemanticPaneContext } from "@/shared/semantic-pane-context";
+import type { SemanticPaneContext } from "@archboard/board/pane-context";
 import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
 
 /**

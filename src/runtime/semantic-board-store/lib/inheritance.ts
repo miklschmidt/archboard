@@ -7,14 +7,9 @@
 // Each is refused unless the edit confirms its code; a confirmed write lands
 // and its answer names each confirmed act.
 
-import type {
-	ConfirmableRefusal,
-	SemanticBoard,
-	SemanticNode,
-	SemanticVariant,
-	VariantContent,
-	VariantEditInput,
-} from "@/shared/semantic-board/index";
+import type { ConfirmableRefusal, VariantEditInput } from "@archboard/board/board-input";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import type { SemanticNode, VariantContent } from "@archboard/board/content";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import type { WriteNotice } from "@/runtime/semantic-board-store/lib/replaced-relationships";
 

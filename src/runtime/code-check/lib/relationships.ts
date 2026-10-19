@@ -50,12 +50,9 @@ import { differingCode } from "@/runtime/code-check/lib/part-code";
 import type { PartCode, ReadPart, SkippedPart } from "@/runtime/code-check/lib/part-code";
 import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "@/shared/code-check/index";
-import { messagesOf, type SemanticEdge } from "@/shared/semantic-board/index";
-import {
-	describeSubject,
-	type EvidenceKind,
-	type SemanticPolicy,
-} from "@/shared/semantic-policy/index";
+import { messagesOf } from "@archboard/board/flow-steps";
+import { type SemanticEdge } from "@archboard/board/content";
+import { describeSubject, type EvidenceKind, type SemanticPolicy } from "@archboard/board/policy";
 
 /** The evidence kinds that are a dependency at run time or at build time. */
 const DEPENDENCY_KINDS: ReadonlySet<EvidenceKind> = new Set([

@@ -13,8 +13,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as server from "@/server/archboard/index";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
-import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { type SemanticBoard, findVariant, currentVariant } from "@archboard/board/document";
+import { findView } from "@archboard/board/scope";
+import type { SemanticPaneContext } from "@archboard/board/pane-context";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-agent-context-"));
 
@@ -30,7 +36,7 @@ beforeAll(async () => {
 		board: BOARD,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: BOARD,
 				level: "system",
 				nodes: [
@@ -57,7 +63,7 @@ afterAll(() => {
  * The board as it now stands.
  * @returns The board.
  */
-function board(): contract.SemanticBoard {
+function board(): SemanticBoard {
 	const answer = store.readSemanticBoard(vault, BOARD);
 	if (!answer.ok) {
 		throw new Error(answer.problem);
@@ -77,8 +83,8 @@ function reading(
 	selection: readonly string[],
 	viewId: string | null = null,
 ): SemanticPaneContext {
-	const found = variant === null ? null : contract.findVariant(board(), variant);
-	const view = viewId === null ? undefined : contract.findView(board(), viewId);
+	const found = variant === null ? null : findVariant(board(), variant);
+	const view = viewId === null ? undefined : findView(board(), viewId);
 	reported += 1;
 	return {
 		paneId: "pane-a",
@@ -101,7 +107,7 @@ function reading(
  * @returns The variant name.
  */
 function showing(): string {
-	const current = contract.currentVariant(board());
+	const current = currentVariant(board());
 	if (current === undefined) {
 		throw new Error("the board has no current variant");
 	}
@@ -114,7 +120,7 @@ function showing(): string {
  * @returns Its id.
  */
 function nodeId(name: string): string {
-	const variant = contract.currentVariant(board());
+	const variant = currentVariant(board());
 	const node = variant?.content.nodes.find((candidate) => candidate.name === name);
 	if (node === undefined) {
 		throw new Error(`no node called ${name}`);
@@ -169,8 +175,8 @@ test("a proposal reaches the agent with its differences derived, not authored", 
 		writer,
 		expectedVersion: board().version,
 		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({
-				from: contract.currentVariant(board())?.name ?? "",
+			BoardBranchInputSchema.parse({
+				from: currentVariant(board())?.name ?? "",
 				name: PROPOSAL,
 			}),
 		),
@@ -181,7 +187,7 @@ test("a proposal reaches the agent with its differences derived, not authored", 
 		writer,
 		expectedVersion: board().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: PROPOSAL,
 				nodes: [{ name: "Queue", kind: "queue" }],
 			}),
@@ -192,7 +198,7 @@ test("a proposal reaches the agent with its differences derived, not authored", 
 	const differences = context.architecture.differences;
 
 	expect(context.architecture.variant?.name).toBe(PROPOSAL);
-	expect(context.architecture.variant?.against).toBe(contract.currentVariant(board())?.id);
+	expect(context.architecture.variant?.against).toBe(currentVariant(board())?.id);
 	expect(differences?.added).toBe(1);
 	expect(differences?.subjects).toContainEqual({
 		change: "added",
@@ -221,7 +227,7 @@ test("an edit that landed and left a proposal in disagreement carries its repair
 		writer,
 		expectedVersion: board().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: PROPOSAL,
 				nodes: [{ id: gateway, name: "Public API", kind: "service" }],
 			}),
@@ -233,8 +239,8 @@ test("an edit that landed and left a proposal in disagreement carries its repair
 		writer,
 		expectedVersion: board().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
-				variant: contract.currentVariant(board())?.name ?? "",
+			VariantEditInputSchema.parse({
+				variant: currentVariant(board())?.name ?? "",
 				nodes: [{ id: gateway, name: "Front door", kind: "service" }],
 			}),
 		),
@@ -325,8 +331,8 @@ test("the description reads as sentences, because a coordinator says it out loud
 		writer,
 		expectedVersion: board().version,
 		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({
-				from: contract.currentVariant(board())?.name ?? "",
+			BoardBranchInputSchema.parse({
+				from: currentVariant(board())?.name ?? "",
 				name: "Narrated",
 				summary: unterminated,
 			}),

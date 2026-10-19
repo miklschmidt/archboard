@@ -22,7 +22,7 @@ import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { DiagramTheme, LayoutEngineName } from "@/shared/semantic-board/index";
+import type { DiagramTheme, LayoutEngineName } from "@archboard/board/render-reply";
 import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
 import {
 	RECORDING_CALL_MS,

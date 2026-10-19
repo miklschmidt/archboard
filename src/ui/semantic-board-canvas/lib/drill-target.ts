@@ -9,10 +9,10 @@
 import {
 	resolveVariant,
 	variantNamed,
-	type DrillDown,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
+import { type DrillDown } from "@archboard/board/content";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { readBoard } from "@/ui/semantic-board-canvas/lib/board-document";
 

@@ -10,7 +10,7 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import { labelsAcrossWalls, runsUnderLabels } from "@/runtime/semantic-renderer/tests/drawn-checks";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import labelBeside from "./relayed-label-beside.json";

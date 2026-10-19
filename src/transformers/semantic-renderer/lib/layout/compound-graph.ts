@@ -3,12 +3,9 @@
 // around them, and which point of a flowchart's decision each of its answers
 // leaves from. Each engine chooses ranks and attachment faces.
 import type { ElkLabel, ElkNode } from "@archboard/elk-rs";
-import {
-	inspectContainer,
-	type ChangeKind,
-	type SemanticEdge,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+import { inspectContainer } from "@archboard/board/container-interface";
+import { type ChangeKind } from "@archboard/board/compare-variants";
+import { type SemanticEdge, type VariantContent } from "@archboard/board/content";
 import type {
 	MeasuredArchitecture,
 	MeasuredNode,

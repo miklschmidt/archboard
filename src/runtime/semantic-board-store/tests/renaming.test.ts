@@ -4,7 +4,14 @@ import { basename, dirname } from "node:path";
 import * as lock from "@/runtime/engine/board-lock";
 import * as store from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import * as contract from "@/shared/semantic-board/index";
+import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/board-input";
+import { BoardRenameInputSchema } from "@archboard/board/resolution-input";
+import {
+	type SemanticBoard,
+	findVariant,
+	variantNamed,
+	addressedVariant,
+} from "@archboard/board/document";
 
 // Renaming a board or a variant through the write boundary (TASK-281, ADR
 // 0036): only the name moves, the old name keeps opening what it named, and a
@@ -32,7 +39,7 @@ beforeEach(async () => {
 			board,
 			writer,
 			transition: store.createBoardTransition(
-				contract.BoardCreateInputSchema.parse({
+				BoardCreateInputSchema.parse({
 					name: board,
 					level: "system",
 					nodes: [
@@ -106,7 +113,7 @@ async function write(transition: store.SemanticTransition, name = board) {
  */
 function rename(to: string, variant?: string) {
 	return store.renameTransition(
-		contract.BoardRenameInputSchema.parse(variant === undefined ? { to } : { to, variant }),
+		BoardRenameInputSchema.parse(variant === undefined ? { to } : { to, variant }),
 	);
 }
 
@@ -115,7 +122,7 @@ function rename(to: string, variant?: string) {
  * @param one The board.
  * @returns It, without its name, its former names and its edit stamp.
  */
-function identity(one: contract.SemanticBoard) {
+function identity(one: SemanticBoard) {
 	const { name: _name, formerNames: _formerNames, version: _v, updatedAt: _at, ...rest } = one;
 	return {
 		...rest,
@@ -145,7 +152,7 @@ test("a board renamed keeps every id and all its history, moves its file, and an
 	const edited = applied(
 		await write(
 			store.editVariantTransition(
-				contract.VariantEditInputSchema.parse({ nodes: [{ name: "Cache", kind: "service" }] }),
+				VariantEditInputSchema.parse({ nodes: [{ name: "Cache", kind: "service" }] }),
 			),
 			board,
 		),
@@ -163,13 +170,13 @@ test("a variant renamed keeps its id, lifecycle and ancestry, and answers to its
 	expect(renamed.renamedFrom).toBeUndefined();
 	const after = read();
 	expect(identity(after)).toEqual(identity(before));
-	const now = contract.findVariant(after, "public-api-independent");
+	const now = findVariant(after, "public-api-independent");
 	expect(now?.id).toBe(old.id);
 	expect(now?.name).toBe("Independent Public and Phone APIs");
 	expect(now?.formerNames).toEqual(["public-api-independent"]);
 	// A drill-down names a variant by name, and one written before still opens it.
-	expect(contract.variantNamed(after, "public-api-independent")?.id).toBe(old.id);
-	expect(contract.addressedVariant(after, "public-api-independent")).toMatchObject({ ok: true });
+	expect(variantNamed(after, "public-api-independent")?.id).toBe(old.id);
+	expect(addressedVariant(after, "public-api-independent")).toMatchObject({ ok: true });
 });
 
 test("a drill-down naming a board's old name still opens a board the vault holds", async () => {
@@ -180,7 +187,7 @@ test("a drill-down naming a board's old name still opens a board the vault holds
 			board: linking,
 			writer,
 			transition: store.createBoardTransition(
-				contract.BoardCreateInputSchema.parse({
+				BoardCreateInputSchema.parse({
 					name: linking,
 					level: "system",
 					nodes: [
@@ -229,7 +236,7 @@ test("a name another board carries, or used to carry, is refused and nothing mov
 			board: other,
 			writer,
 			transition: store.createBoardTransition(
-				contract.BoardCreateInputSchema.parse({ name: other, level: "system" }),
+				BoardCreateInputSchema.parse({ name: other, level: "system" }),
 			),
 		}),
 	);
@@ -247,7 +254,7 @@ test("a name another board carries, or used to carry, is refused and nothing mov
 		board: other,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({ name: other, level: "system" }),
+			BoardCreateInputSchema.parse({ name: other, level: "system" }),
 		),
 	});
 	expect(created).toMatchObject({ outcome: "rejected", code: "BOARD_EXISTS" });
@@ -263,7 +270,7 @@ test("a name that cannot address a board is refused", async () => {
 
 test("a variant name another variant answers to is refused", async () => {
 	await write(rename("Independent", "public-api-independent"));
-	const initial = contract.findVariant(read(), "Initial")!.id;
+	const initial = findVariant(read(), "Initial")!.id;
 	const version = read().version;
 	// Another variant's name, a name another variant had, and another's id.
 	for (const [renaming, taken] of [

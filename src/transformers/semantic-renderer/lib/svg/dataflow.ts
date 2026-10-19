@@ -2,7 +2,7 @@ import {
 	nodeAppearances,
 	type NodeAppearance,
 } from "@/transformers/semantic-renderer/lib/semantic-appearance";
-import type { SemanticPolicy } from "@/shared/semantic-policy/index";
+import type { SemanticPolicy } from "@archboard/board/policy";
 // Painting a message sequence: the frame, then the marks on the rows a
 // comparison says moved (`flow-rows.ts`), then activation and label shadows,
 // then columns and their head cards, then the messages crossing them, and last the
@@ -16,12 +16,10 @@ import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // and a label plate, opaque precisely so that it can be read wherever it lands,
 // passes over everything every message drew.
 
-import type {
-	DiagramAtlas,
-	MessageKind,
-	SemanticFlow,
-	SemanticNode,
-} from "@/shared/semantic-board/index";
+import type { DiagramAtlas } from "@archboard/board/render-reply";
+import type { MessageKind } from "@archboard/board/vocabulary";
+import type { SemanticFlow } from "@archboard/board/views";
+import type { SemanticNode } from "@archboard/board/content";
 import { DIAGRAM_MARGIN, SLAB_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import {
 	headShade,

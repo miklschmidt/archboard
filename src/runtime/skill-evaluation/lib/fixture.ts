@@ -3,13 +3,10 @@
 // recording kept may follow them. Parsed strictly, like every canonical input.
 
 import { z } from "zod";
-import {
-	BoardCreateInputSchema,
-	DiagramThemeSchema,
-	ResolutionInputSchema,
-	VariantEditInputSchema,
-} from "@/shared/semantic-board/index";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/board-input";
+import { DiagramThemeSchema } from "@archboard/board/render-reply";
+import { ResolutionInputSchema } from "@archboard/board/resolution-input";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 
 /** A path in the run's home, spelled as a prompt spells it: `~/` is the author's own HOME. */
 const HomePathSchema = z.string().regex(/^~\/[^/]/u, "a path in the run's home, starting ~/");

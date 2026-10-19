@@ -1,6 +1,6 @@
 // Test vocabulary for positions along and across a downward architecture drawing.
 
-import type { DiagramBox } from "@/shared/semantic-board/index";
+import type { DiagramBox } from "@archboard/board/render-reply";
 import type { ReadingDirection, RenderedDiagram } from "@/runtime/semantic-renderer/index";
 
 /** A position or a box on the page. */

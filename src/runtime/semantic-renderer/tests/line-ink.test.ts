@@ -12,7 +12,7 @@ import { describe, expect, test } from "bun:test";
 import { renderArchitecture, renderDataFlow } from "@/runtime/semantic-renderer/index";
 import { APCA, lightnessContrast, seenIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
-import type { DiagramTheme } from "@/shared/semantic-board/index";
+import type { DiagramTheme } from "@archboard/board/render-reply";
 import { themeColor } from "@/shared/theme/server";
 
 /** Three neutral lines of each emphasis inside a container, and one exchange. */

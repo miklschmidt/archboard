@@ -11,15 +11,13 @@ import { z } from "zod";
 import {
 	inspectContainer,
 	interfaceMeasures,
-	RenderedVariantSchema,
 	type ContainerInspection,
 	type InterfaceMeasures,
-	type SemanticBoard,
-	type SemanticEdge,
-	type SemanticNode,
-	type SemanticVariant,
-} from "@/shared/semantic-board/index";
-import { VaultDiagnosticSchema } from "@/shared/semantic-policy/index";
+} from "@archboard/board/container-interface";
+import { RenderedVariantSchema } from "@archboard/board/render-reply";
+import { type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
+import { type SemanticEdge, type SemanticNode } from "@archboard/board/content";
+import { VaultDiagnosticSchema } from "@archboard/board/policy";
 import { CliUsageError } from "@/cli/command-contract/contract";
 import {
 	InspectedEdgeSchema,

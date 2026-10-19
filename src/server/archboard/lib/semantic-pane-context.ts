@@ -17,7 +17,7 @@ import {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
 	SemanticPaneContextSchema,
 	type SemanticPaneContext,
-} from "@/shared/semantic-pane-context/index";
+} from "@archboard/board/pane-context";
 import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
 import { panePresentations } from "@/server/archboard/lib/pane-presentation";
 import { paneVaults, panes } from "@/server/archboard/lib/pane-registry";

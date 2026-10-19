@@ -17,11 +17,8 @@ import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	SemanticBoardSchema,
 	type SemanticBoard,
-} from "@/shared/semantic-board/index";
-import type {
-	SemanticPaneContext,
-	SemanticPanePresentation,
-} from "@/shared/semantic-pane-context/index";
+} from "@archboard/board/document";
+import type { SemanticPaneContext, SemanticPanePresentation } from "@archboard/board/pane-context";
 import type { RealtimePresentationChange } from "@/runtime/codex-realtime";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-narration-against-"));

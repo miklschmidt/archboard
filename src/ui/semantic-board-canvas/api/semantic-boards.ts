@@ -16,26 +16,28 @@
 import { z } from "zod";
 import { RememberedFindingsSchema, type RememberedFindings } from "@/shared/code-check/index";
 import { LocalityReplySchema, type LocalityAnswer } from "@/shared/locality/index";
-import { VaultCheckSchema, type VaultCheck } from "@/shared/semantic-policy/index";
+import { VaultCheckSchema, type VaultCheck } from "@archboard/board/policy";
 import { inVault } from "@/ui/server-requests";
 import {
 	BoardListingSchema,
-	SemanticRenderReplySchema,
 	type BoardListing,
+	type ListedBoard,
+} from "@archboard/board/board-listing";
+import {
+	SemanticRenderReplySchema,
 	type DiagramAtlas,
 	type DiagramBox,
 	type DrawnBoard,
 	type LayoutEngineName,
-	type ListedBoard,
 	type NothingDrawn,
 	type OfferedView,
 	type RenderedVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
 
 // The render contract itself is not described here. It is one external protocol
 // with three consumers — the canvas that serves it, the command that writes a
 // picture beside a file, and this viewer — so it has one owner in
-// `@/shared/semantic-board`, and every consumer infers its types from that.
+// `@archboard/board/render-reply`, and every consumer infers its types from that.
 // Two copies of a protocol are two protocols the first time somebody adds a
 // field to one of them.
 

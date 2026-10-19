@@ -215,6 +215,34 @@ holds only Zod schemas.
   `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
   package has no `./testing` export.
 
+The seventh is `board` (`@archboard/board`). It is the board document and its policy. This first
+half holds the code that the browser and the server both run, so every file is in `shared/` and
+imports no Node module. The runtime half, the store and the lock, follows in the next task and
+will bring the package its own `runtime/` area. The `shared/` folder follows the role names:
+
+- `schemas/` are the data shapes. `./document` is the board aggregate and the variant address
+  functions, and `./content` is what one variant holds: nodes, relationships and drill-downs.
+  `./views`, `./walkthrough`, `./vocabulary` and `./primitives` are the parts it is built from.
+  `./reconciliation` is the standing of a variant against its predecessor, `./draft-ref` reads the
+  code a draft is read against and `./policy` is the semantic policy and the vault check. The
+  binding, anchor and document-reference schemas are not here. They stay in `code-binding`.
+- `protocol/` are the wire contracts. `./board-input` is what an agent may say, `./render-reply`
+  what a render answers, `./board-listing` the answer of the listing route, `./board-move` the move
+  to another vault, `./resolution-input` the choice of a side and `./pane-context` what a pane
+  reports about its reading.
+- `rules/` are pure functions. `rules/ids.ts` is the one place that mints an id, and `./ids` is its
+  export. `rules/coherence/` holds the checks a shape cannot state, and `./parse-board` reads an
+  untrusted value as a board. `rules/compare/` compares two variants, their interfaces and the
+  drawing of a proposal against current. `rules/reconcile/` brings a proposal forward when its
+  predecessor moves. `rules/inspect/` reads one container or one group off a variant. `./scope`,
+  `./flow-steps` and `./positions` stand beside them.
+
+The package has no barrel. In the old `index.ts`, the names of the document, the input, the render
+reply, the reconciliation and the comparison came from one import. An importer now names the file
+that defines each name. `./integrity`, `./positions`, `./primitives` and `./reconcile-candidate`
+are exported only because the store, which has not moved yet, imports them. They become private
+when the store joins the package.
+
 ## Vendor-owned data
 
 When a dependency owns a data structure and publishes its TypeScript type, that exported type is

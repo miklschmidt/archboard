@@ -3,7 +3,12 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { ResolutionInputSchema, BoardAdoptInputSchema } from "@archboard/board/resolution-input";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-settlement-"));
 const writer = { kind: "agent" as const };
@@ -25,7 +30,7 @@ beforeEach(async () => {
 		board,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "system",
 				nodes: [{ name: "API", kind: "service", responsibility: "Serves requests" }],
@@ -83,9 +88,7 @@ async function branch(from: string, name: string) {
 		board,
 		writer,
 		expectedVersion: read().version,
-		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from, name }),
-		),
+		transition: store.branchVariantTransition(BoardBranchInputSchema.parse({ from, name })),
 	});
 }
 
@@ -102,7 +105,7 @@ async function rename(on: string, to: string) {
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: on,
 				nodes: [{ id: apiId, name: to, kind: "service" }],
 			}),
@@ -132,7 +135,7 @@ async function settle(on: string, side: "mine" | "theirs") {
 		writer,
 		expectedVersion: read().version,
 		transition: store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: on,
 				choices: [{ subject: apiId, field: "name", side }],
 			}),
@@ -153,7 +156,7 @@ async function adopt(name: string, reason?: string) {
 		writer,
 		expectedVersion: read().version,
 		transition: store.adoptVariantTransition(
-			contract.BoardAdoptInputSchema.parse({
+			BoardAdoptInputSchema.parse({
 				variant: name,
 				...(reason === undefined ? {} : { reason }),
 			}),
@@ -193,7 +196,7 @@ test("an answer to something nothing is holding is refused, and writes nothing",
 		writer,
 		expectedVersion: before.version,
 		transition: store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: A,
 				choices: [{ subject: apiId, field: "responsibility", side: "mine" }],
 			}),
@@ -212,7 +215,7 @@ test("a stale answer is refused by the same version check every write makes", as
 		writer,
 		expectedVersion: stale,
 		transition: store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: A,
 				choices: [{ subject: apiId, field: "name", side: "mine" }],
 			}),
@@ -306,7 +309,7 @@ test("taking one side of one disagreement touches nothing else", async () => {
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: A,
 				nodes: [{ id: apiId, name: "Gateway", kind: "service", responsibility: "Serves the edge" }],
 			}),
@@ -330,7 +333,7 @@ test("settling catches the proposal up with everything decided while it waited",
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: baseline,
 				nodes: [{ name: "Ledger", kind: "service" }],
 			}),

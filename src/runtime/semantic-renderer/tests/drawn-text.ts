@@ -7,7 +7,7 @@
 // another, fails here rather than in somebody's browser.
 
 import { diagramTextWidth } from "@/runtime/semantic-renderer/index";
-import type { DiagramBox } from "@/shared/semantic-board/index";
+import type { DiagramBox } from "@archboard/board/render-reply";
 import { bodyShift } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 /** One `<text>` element, as it was written into the document. */

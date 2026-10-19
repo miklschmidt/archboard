@@ -1,9 +1,6 @@
-import type { SemanticBoard, VariantContent } from "@/shared/semantic-board/index";
-import type {
-	DiagnosticSubject,
-	SemanticPolicy,
-	VaultDiagnostic,
-} from "@/shared/semantic-policy/index";
+import type { SemanticBoard } from "@archboard/board/document";
+import type { VariantContent } from "@archboard/board/content";
+import type { DiagnosticSubject, SemanticPolicy, VaultDiagnostic } from "@archboard/board/policy";
 import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/lib/subject";
 
 interface Reference {

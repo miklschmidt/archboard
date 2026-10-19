@@ -14,7 +14,8 @@ import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
-import { LayoutEngineSchema, type SemanticBoard } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { type SemanticBoard } from "@archboard/board/document";
 import { fitIn } from "@/shared/shell-geometry/index";
 import {
 	locateSemanticBoard,

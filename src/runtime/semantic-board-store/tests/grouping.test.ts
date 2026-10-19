@@ -12,8 +12,14 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import {
+	BoardCreateInputSchema,
+	VariantEditInputSchema,
+	BoardBranchInputSchema,
+} from "@archboard/board/board-input";
+import { compareVariants } from "@archboard/board/compare-variants";
+import { BoardAdoptInputSchema } from "@archboard/board/resolution-input";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-grouping-"));
 const writer = { kind: "agent" as const };
@@ -54,7 +60,7 @@ beforeEach(async () => {
 		board,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "system",
 				nodes: [
@@ -124,7 +130,7 @@ async function restate(node: Record<string, unknown>, variant?: string) {
 		writer,
 		expectedVersion: read(board).board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				...(variant === undefined ? {} : { variant }),
 				nodes: [node],
 			}),
@@ -147,7 +153,7 @@ async function branch(name: string): Promise<void> {
 				writer,
 				expectedVersion: held.version,
 				transition: store.branchVariantTransition(
-					contract.BoardBranchInputSchema.parse({ from: baseline.name, name }),
+					BoardBranchInputSchema.parse({ from: baseline.name, name }),
 				),
 			})
 		).outcome,
@@ -190,7 +196,7 @@ test("an empty list, a missing field and a reordered list are all the same membe
 	).toBe("applied");
 	expect(nodeNamed("Ledger", "Reordered").groups).toBeUndefined();
 	const proposal = read(board).board.variants.find((one) => one.name === "Reordered")!;
-	const comparison = contract.compareVariants(baseline.content, proposal.content);
+	const comparison = compareVariants(baseline.content, proposal.content);
 	expect(comparison.nodes.get(worker.id)?.kind).toBe("unchanged");
 	expect(comparison.nodes.get(ledger.id)?.kind).toBe("unchanged");
 }, 20_000);
@@ -218,7 +224,7 @@ test("joining or leaving a group is a change to the architecture", async () => {
 		).outcome,
 	).toBe("applied");
 	const proposal = read(board).board.variants.find((one) => one.name === "Regrouped")!;
-	const comparison = contract.compareVariants(baseline.content, proposal.content);
+	const comparison = compareVariants(baseline.content, proposal.content);
 	expect(comparison.nodes.get(queue.id)?.kind).toBe("changed");
 	expect(comparison.nodes.get(queue.id)?.fields.map((moved) => moved.field)).toEqual(["groups"]);
 	expect(comparison.nodes.get(nodeNamed("Handler").id)?.kind).toBe("unchanged");
@@ -279,7 +285,7 @@ test("a node removed here and regrouped there is still a deletion somebody has t
 				writer,
 				expectedVersion: read(board).board.version,
 				transition: store.editVariantTransition(
-					contract.VariantEditInputSchema.parse({
+					VariantEditInputSchema.parse({
 						variant: "Trimmed",
 						removeNodes: [ledger.id],
 					}),
@@ -316,7 +322,7 @@ test("adopting a proposal carries its memberships into the architecture", async 
 				writer,
 				expectedVersion: read(board).board.version,
 				transition: store.adoptVariantTransition(
-					contract.BoardAdoptInputSchema.parse({ variant: "Adopted" }),
+					BoardAdoptInputSchema.parse({ variant: "Adopted" }),
 				),
 			})
 		).outcome,

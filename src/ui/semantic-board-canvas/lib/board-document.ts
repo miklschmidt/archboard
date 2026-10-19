@@ -7,34 +7,31 @@
 // come from the board itself.
 //
 // So this file reads the board document through the same contract the server
-// and the CLI read it through (`@/shared/semantic-board`) and answers the three
+// and the CLI read it through (`@archboard/board`) and answers the three
 // questions inspection asks. Nothing here writes: the browser never states
 // anything about a semantic board (ADR 0023).
 
 import {
 	addressedVariant,
-	comparedWith,
 	type Adoption,
 	type Shelving,
+	type SemanticBoard,
+	type SemanticVariant,
+} from "@archboard/board/document";
+import { comparedWith } from "@archboard/board/drawing";
+import {
 	compareVariants,
-	parseSemanticBoard,
 	standingOf,
 	type ChangeKind,
 	type FieldChange,
-	type FlowStep,
-	everyStep,
-	isMessage,
-	stepWords,
-	type SemanticBoard,
-	type SemanticEdge,
-	type SemanticFlow,
-	type SemanticNode,
-	type SemanticVariant,
-	type SemanticView,
-	type SemanticWalkthrough,
 	type VariantComparison,
-	type VariantLifecycle,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/compare-variants";
+import { parseSemanticBoard } from "@archboard/board/parse-board";
+import { type FlowStep, type SemanticFlow, type SemanticView } from "@archboard/board/views";
+import { everyStep, isMessage, stepWords } from "@archboard/board/flow-steps";
+import { type SemanticEdge, type SemanticNode } from "@archboard/board/content";
+import { type SemanticWalkthrough } from "@archboard/board/walkthrough";
+import { type VariantLifecycle } from "@archboard/board/vocabulary";
 
 /** One node, with the containment around it. */
 interface NodeSubject {
@@ -199,7 +196,7 @@ function subjectOf(variant: SemanticVariant, id: string): Subject | undefined {
 // opinion:
 //
 //   The baseline is the same. `comparedWith` in
-//   `src/shared/semantic-board/lib/drawing.ts` is the one rule for it — the
+//   `@archboard/board/drawing` is the one rule for it — the
 //   board's current variant, or on a board with none the variant it came from —
 //   and the picture and this panel both ask it, so neither can read a variant
 //   against a different one.

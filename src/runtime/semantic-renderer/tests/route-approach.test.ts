@@ -5,15 +5,15 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import { expect, test } from "bun:test";
 import frameApproach from "./frame-head-approach.json";
 import sideApproach from "./side-head-approach.json";
-import { type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import {
 	routeCrosses,
 	routePoints,
 	type DrawnPoint,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import type { DiagramBox } from "@/shared/semantic-board/index";
+import type { DiagramBox } from "@archboard/board/render-reply";
 
 /** Containment and opposing relationships exercise each endpoint face. */
 const CROWDED: VariantContent = orderedFixture({

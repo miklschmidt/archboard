@@ -4,7 +4,7 @@
 // beside the wall has room, a line keeps a whole lane from it.
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { bodyShift, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";

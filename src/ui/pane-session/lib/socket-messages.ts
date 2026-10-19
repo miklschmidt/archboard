@@ -9,7 +9,7 @@
 // about the layout, which step of a walkthrough somebody narrating it asked for,
 // and that a checkout was chosen somewhere.
 
-import { PanePresentRequestSchema, type PanePresentRequest } from "@/shared/semantic-pane-context";
+import { PanePresentRequestSchema, type PanePresentRequest } from "@archboard/board/pane-context";
 import { announceSemanticBoardChange, boardAddressOf } from "@/ui/semantic-board-canvas";
 import type {
 	AgentActivityEntry,

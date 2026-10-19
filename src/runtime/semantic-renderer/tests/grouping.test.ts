@@ -1,6 +1,6 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import { themeColor } from "@/shared/theme/server";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";

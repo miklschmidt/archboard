@@ -48,7 +48,7 @@ import type { LocalCodeTarget } from "@archboard/code-binding/binding-resolver";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
 import { bindingPathOf } from "@archboard/code-binding/binding-files";
 import { type CodeBinding } from "@archboard/code-binding/code-binding";
-import type { SemanticNode } from "@/shared/semantic-board/index";
+import type { SemanticNode } from "@archboard/board/content";
 
 /**
  * A directory that holds tests, by the conventions of common languages: `test`,

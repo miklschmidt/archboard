@@ -1,6 +1,6 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { bodyShift, roundBridges } from "./drawn-routes";
 

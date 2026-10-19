@@ -5,7 +5,7 @@
 // a row read that row against its lines, neither filling any room, and a
 // move that packs the blocks hardly smaller only reshaped the page.
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import boardRasterizer from "./board-rasterizer.json";

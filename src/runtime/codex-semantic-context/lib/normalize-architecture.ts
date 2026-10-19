@@ -8,13 +8,10 @@
 // would not take.
 
 import { SEMANTIC_CONTEXT_LIMITS } from "@/runtime/codex-semantic-context/lib/limits";
-import {
-	DiagramGrammarSchema,
-	ReconciliationKindSchema,
-	VariantLifecycleSchema,
-	type ChangeKind,
-} from "@/shared/semantic-board/index";
-import { SemanticSubjectKindSchema } from "@/shared/semantic-pane-context/index";
+import { DiagramGrammarSchema, VariantLifecycleSchema } from "@archboard/board/vocabulary";
+import { ReconciliationKindSchema } from "@archboard/board/reconciliation";
+import { type ChangeKind } from "@archboard/board/compare-variants";
+import { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
 import type {
 	SemanticArchitecture,
 	SemanticContextInput,

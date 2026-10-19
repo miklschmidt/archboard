@@ -19,7 +19,7 @@
 // `auto` and carries both, for the reader's colour scheme to choose between.
 
 import { coord, type Canvas } from "@/transformers/semantic-renderer/lib/geometry";
-import type { FontSource, StandaloneTheme } from "@/shared/semantic-board/index";
+import type { FontSource, StandaloneTheme } from "@archboard/board/render-reply";
 import type { ReadingDirection } from "@/transformers/semantic-renderer/lib/drawing";
 import { faceRules, SANS_STACK } from "@/transformers/semantic-renderer/lib/fonts";
 import { themeColor } from "@/transformers/semantic-renderer/lib/host";

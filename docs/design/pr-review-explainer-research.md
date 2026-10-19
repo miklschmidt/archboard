@@ -255,7 +255,7 @@ source).
   `--theme light|dark` (default `light`) and `--layout track|blocks`
   (`./bin/archboard semantic render --help`, `semantic rasterize --help`).
 - **Layout engines.** Track is the default and Blocks is selectable
-  (`src/shared/semantic-board/lib/rendering.ts:40`,
+  (`packages/board/src/shared/protocol/render-reply.ts:40`,
   [ADR 0040](../adr/0040-track-and-blocks-replace-the-graphviz-engine.md)). The
   browser labels Blocks "Blocks (experimental)"
   (`src/ui/semantic-board-canvas/lib/layout-engine.ts`).
@@ -317,7 +317,7 @@ source).
 
 - **Limits.** One beat runs for at most 180 s (`RECORDING_STEP_MAX_MS`). Nothing
   else limits the length or the number of beats. The walkthrough schema has no
-  maximum (`src/shared/semantic-board/lib/walkthrough.ts`).
+  maximum (`packages/board/src/shared/schemas/walkthrough.ts`).
 - **What the voice is told.** The voice gets each beat's heading, body and
   subjects. On a proposal, it is also told whether each subject was added or
   changed. Its instructions say: "explain it at once … as a good conference

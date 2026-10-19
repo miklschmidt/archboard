@@ -8,7 +8,7 @@ import type { AnchorClaim, BindingClaim, ClaimSite } from "@/runtime/code-check/
 import type { Held } from "@/runtime/code-check/lib/symbols";
 import { lastName } from "@/runtime/code-facts/index";
 import type { CodeFinding } from "@/shared/code-check/index";
-import { describeSubject } from "@/shared/semantic-policy/index";
+import { describeSubject } from "@archboard/board/policy";
 
 /**
  * A warning about one claim.

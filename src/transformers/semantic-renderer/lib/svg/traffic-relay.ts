@@ -11,7 +11,7 @@
 //
 // Everything here is a function of the board, so one board draws the same bytes
 // every time.
-import { type SemanticEdge } from "@/shared/semantic-board/index";
+import { type SemanticEdge } from "@archboard/board/content";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 
 /**

@@ -23,7 +23,7 @@
 // sure that canvas exists and has the diagram faces loaded before measuring.
 
 import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
-import type { DiagramTheme } from "@/shared/semantic-board/index";
+import type { DiagramTheme } from "@archboard/board/render-reply";
 
 /** Every theme colour by theme and custom property name. */
 type ThemeColors = Readonly<Record<DiagramTheme, Readonly<Record<string, string>>>>;

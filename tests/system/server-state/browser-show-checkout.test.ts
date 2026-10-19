@@ -10,7 +10,7 @@ import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { z } from "zod";
 
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@/shared/semantic-pane-context";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
 import { packageBin } from "../cli/support/package-cli.ts";
 import {
 	createRepositoryFixture,

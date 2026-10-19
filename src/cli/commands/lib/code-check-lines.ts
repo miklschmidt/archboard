@@ -9,7 +9,7 @@ import type {
 	CodeCheckSkip,
 	CodeFinding,
 } from "@/shared/code-check/index";
-import { diagnosticLine } from "@/shared/semantic-policy/index";
+import { diagnosticLine } from "@archboard/board/policy";
 
 /**
  * Count entries by a key, in the order each key first appears.

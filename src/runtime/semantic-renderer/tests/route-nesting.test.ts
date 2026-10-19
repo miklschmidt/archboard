@@ -3,7 +3,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 // semantic endpoints must remain legible even when their geometry coincides.
 
 import { expect, test } from "bun:test";
-import { type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@archboard/board/content";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
 	covering,

@@ -1,7 +1,7 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { across, along, breadth, depth } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import { routePoints, routeCrosses } from "@/runtime/semantic-renderer/tests/drawn-routes";
 

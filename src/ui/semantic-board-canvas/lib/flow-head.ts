@@ -14,7 +14,7 @@
 // Every number comes from the atlas the server returned with the picture: the
 // flow's frame, its columns and its rows. Nothing here reads the picture.
 
-import type { SemanticVariant } from "@/shared/semantic-board/index";
+import type { SemanticVariant } from "@archboard/board/document";
 import { FIT_MARGIN } from "@/shared/shell-geometry/index";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { unionRect, type Camera, type Rect } from "@/ui/semantic-board-canvas/lib/camera";

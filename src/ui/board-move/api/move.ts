@@ -4,7 +4,7 @@
 // and writes no doing line. It states the version the preview read, so a board
 // written since is refused rather than moved as nobody saw it.
 
-import type { BoardMoveAnswer, BoardMovePreview } from "@/shared/semantic-board/index";
+import type { BoardMoveAnswer, BoardMovePreview } from "@archboard/board/board-move";
 import { cancellable, inVault, json, post } from "@/ui/server-requests";
 
 /** Which board to move, from which vault, to which vault. */

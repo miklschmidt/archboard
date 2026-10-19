@@ -10,7 +10,8 @@
 
 import { expect, test } from "bun:test";
 
-import { LayoutEngineSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { type VariantContent } from "@archboard/board/content";
 import { APPROACH_STRAIGHT } from "@/transformers/semantic-renderer/config";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";

@@ -12,12 +12,9 @@
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/code-binding";
-import { messagesOf, type SemanticNode } from "@/shared/semantic-board/index";
-import type {
-	DiagnosticSubject,
-	EvidenceKind,
-	VaultDiagnostic,
-} from "@/shared/semantic-policy/index";
+import { messagesOf } from "@archboard/board/flow-steps";
+import { type SemanticNode } from "@archboard/board/content";
+import type { DiagnosticSubject, EvidenceKind, VaultDiagnostic } from "@archboard/board/policy";
 
 /** Where a claim sits: the board, its variant, the place in the document and its subject. */
 type ClaimSite = Pick<VaultDiagnostic, "file" | "board" | "variant" | "path"> & {

@@ -2,7 +2,7 @@
 // drawn as it was (the comparison marks are off), over a timeline strip that names each state,
 // the date it was adopted and the reason the board file records for it.
 
-import type { SemanticBoard } from "@/shared/semantic-board";
+import type { SemanticBoard } from "@archboard/board/document";
 
 import {
 	encodeTake,

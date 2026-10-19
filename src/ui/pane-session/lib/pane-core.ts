@@ -6,7 +6,7 @@
 // writing it and that the board has moved (ADR 0023). The picture itself is a
 // separate read, made by the viewer through the query cache.
 
-import type { SemanticPanePart } from "@/shared/semantic-pane-context";
+import type { SemanticPanePart } from "@archboard/board/pane-context";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import { takeBoardBack } from "@/ui/pane-session/api";
 import { createPaneArrival } from "@/ui/pane-session/lib/pane-arrival";

@@ -12,10 +12,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { z } from "zod";
 
-import {
-	SemanticPaneContextSchema,
-	type SemanticPaneContext,
-} from "@/shared/semantic-pane-context";
+import { SemanticPaneContextSchema, type SemanticPaneContext } from "@archboard/board/pane-context";
 import {
 	SERVED,
 	FakeSocket,

@@ -8,12 +8,8 @@
 // named as runtime obligations rather than silently left out.
 
 import { z } from "zod";
-import {
-	BoardCreateInputSchema,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
-	VariantEditInputSchema,
-} from "@/shared/semantic-board/index";
+import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/board-input";
+import { SEMANTIC_BOARD_SCHEMA_VERSION, SemanticBoardSchema } from "@archboard/board/document";
 import { SemanticBoardConfigurationSchema } from "@/runtime/semantic-board-store/index";
 
 /** One generated schema: where it goes, and the document itself. */

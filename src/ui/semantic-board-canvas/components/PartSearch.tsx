@@ -26,7 +26,7 @@ import {
 	type RefObject,
 } from "react";
 
-import { addressedVariant } from "@/shared/semantic-board/index";
+import { addressedVariant } from "@archboard/board/document";
 import { cn } from "@/ui/components/class-names";
 import { usePaneChrome } from "@/ui/components/PaneChrome";
 import { useSearchRequested } from "@/ui/semantic-board-canvas/hooks/use-search-request";

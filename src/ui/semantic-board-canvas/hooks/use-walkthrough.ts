@@ -19,7 +19,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { SemanticWalkthrough, WalkthroughBeat } from "@/shared/semantic-board/index";
+import type { SemanticWalkthrough, WalkthroughBeat } from "@archboard/board/walkthrough";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 
 /** Which board and variant a pane is reading. */

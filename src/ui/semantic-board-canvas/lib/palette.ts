@@ -1,7 +1,7 @@
 // A curated palette colour as the page paints it: the diagram's own colour
 // tokens, so a key or a chip in the sidebar is the colour the picture draws.
 
-import { PaletteColorSchema } from "@/shared/semantic-policy/index";
+import { PaletteColorSchema } from "@archboard/board/policy";
 
 /**
  * Resolve a curated colour name, keeping a neutral fallback.

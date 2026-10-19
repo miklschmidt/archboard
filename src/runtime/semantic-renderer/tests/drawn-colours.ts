@@ -8,7 +8,7 @@
 
 import { APCAcontrast, sRGBtoY } from "apca-w3";
 
-import type { DiagramTheme } from "@/shared/semantic-board/index";
+import type { DiagramTheme } from "@archboard/board/render-reply";
 import { themeColor } from "@/shared/theme/server";
 
 /** One colour: sRGB channels 0 to 255 and alpha 0 to 1. */

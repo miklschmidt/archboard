@@ -10,8 +10,9 @@
 // so the picture is the server's picture of that board, measured the way this
 // browser paints it.
 
-import { DEFAULT_LAYOUT_ENGINE, type SemanticBoard } from "@/shared/semantic-board/index";
-import type { SemanticPolicy } from "@/shared/semantic-policy/index";
+import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
+import { type SemanticBoard } from "@archboard/board/document";
+import type { SemanticPolicy } from "@archboard/board/policy";
 import {
 	renderBoard,
 	type BoardRenderChoices,

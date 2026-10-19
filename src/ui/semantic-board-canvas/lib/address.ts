@@ -24,7 +24,7 @@
 // here while two kinds of board existed, marking the ones the legacy open path
 // had to keep away from; TASK-181 left one kind, so the marker went with it.
 
-import type { OfferedView, RenderedVariant } from "@/shared/semantic-board/index";
+import type { OfferedView, RenderedVariant } from "@archboard/board/render-reply";
 /** How a variant is spelled onto a board key. */
 const VARIANT_MARK = "@";
 

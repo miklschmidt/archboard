@@ -18,7 +18,7 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import {
 	corridorPoints,
 	routeLabels,

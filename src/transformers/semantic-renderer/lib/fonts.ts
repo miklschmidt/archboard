@@ -20,7 +20,7 @@
 // the SIL Open Font License, whose texts sit beside the files in
 // `src/ui/shell/assets/fonts/OFL-*.txt`.
 
-import type { FontSource } from "@/shared/semantic-board/index";
+import type { FontSource } from "@archboard/board/render-reply";
 import { rendererHost } from "@/transformers/semantic-renderer/lib/host";
 
 /** Which of the two families a piece of text is set in. */

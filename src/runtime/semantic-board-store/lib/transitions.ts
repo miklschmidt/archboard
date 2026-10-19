@@ -8,22 +8,25 @@
 // and adoption are later tickets, and they arrive as further transitions
 // through this same shape rather than as second write paths.
 
+import { emptyContent, subjectIds } from "@archboard/board/content";
 import {
-	emptyContent,
 	type BoardBranchInput,
+	type BoardCreateInput,
+	type VariantEditInput,
+} from "@archboard/board/board-input";
+import {
 	addressedVariant,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	FIRST_BOARD_VERSION,
-	type BoardAdoptInput,
-	type BoardCreateInput,
-	type BoardShelveInput,
 	nextVersion,
-	type ResolutionInput,
 	type SemanticBoard,
 	type SemanticVariant,
-	subjectIds,
-	type VariantEditInput,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
+import {
+	type BoardAdoptInput,
+	type BoardShelveInput,
+	type ResolutionInput,
+} from "@archboard/board/resolution-input";
 import { editContent, type ContentEdit } from "@/runtime/semantic-board-store/lib/edit-content";
 import {
 	documentsField,

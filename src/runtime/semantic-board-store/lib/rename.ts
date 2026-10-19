@@ -16,10 +16,10 @@
 import { normalizeBoardKey } from "@/runtime/engine/board";
 import {
 	addressedVariant,
-	type BoardRenameInput,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
+import { type BoardRenameInput } from "@archboard/board/resolution-input";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import { semanticBoardAddress } from "@/runtime/semantic-board-store/lib/location";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";

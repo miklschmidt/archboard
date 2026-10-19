@@ -1,0 +1,42 @@
+{
+	"name": "@archboard/board",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The board document and its policy: the schemas, wire contracts and pure rules (comparison, reconciliation, coherence) that the browser and the server both run, with the id mint.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./document": "./src/shared/schemas/board-document.ts",
+		"./content": "./src/shared/schemas/content.ts",
+		"./draft-ref": "./src/shared/schemas/draft-ref.ts",
+		"./primitives": "./src/shared/schemas/primitives.ts",
+		"./reconciliation": "./src/shared/schemas/reconciliation.ts",
+		"./policy": "./src/shared/schemas/semantic-policy.ts",
+		"./views": "./src/shared/schemas/views.ts",
+		"./vocabulary": "./src/shared/schemas/vocabulary.ts",
+		"./walkthrough": "./src/shared/schemas/walkthrough.ts",
+		"./board-input": "./src/shared/protocol/board-input.ts",
+		"./board-listing": "./src/shared/protocol/board-listing.ts",
+		"./board-move": "./src/shared/protocol/board-move.ts",
+		"./pane-context": "./src/shared/protocol/pane-context.ts",
+		"./render-reply": "./src/shared/protocol/render-reply.ts",
+		"./resolution-input": "./src/shared/protocol/resolution-input.ts",
+		"./integrity": "./src/shared/rules/coherence/integrity.ts",
+		"./parse-board": "./src/shared/rules/coherence/parse-board.ts",
+		"./drawing": "./src/shared/rules/compare/drawing.ts",
+		"./compare-interfaces": "./src/shared/rules/compare/interfaces.ts",
+		"./compare-variants": "./src/shared/rules/compare/variants.ts",
+		"./flow-steps": "./src/shared/rules/flow-steps.ts",
+		"./ids": "./src/shared/rules/ids.ts",
+		"./container-interface": "./src/shared/rules/inspect/container-interface.ts",
+		"./groups": "./src/shared/rules/inspect/groups.ts",
+		"./positions": "./src/shared/rules/positions.ts",
+		"./reconcile-candidate": "./src/shared/rules/reconcile/candidate.ts",
+		"./reconcile": "./src/shared/rules/reconcile/variant.ts",
+		"./scope": "./src/shared/rules/scope.ts"
+	}
+}

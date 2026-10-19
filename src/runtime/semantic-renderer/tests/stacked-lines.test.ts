@@ -5,12 +5,9 @@
 // when both turn into it from the cards on either side.
 
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema, type SemanticPolicy } from "@/shared/semantic-policy/index";
-import {
-	LayoutEngineSchema,
-	type LayoutEngineName,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+import { SemanticPolicySchema, type SemanticPolicy } from "@archboard/board/policy";
+import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
+import { type VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { corridorPoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";

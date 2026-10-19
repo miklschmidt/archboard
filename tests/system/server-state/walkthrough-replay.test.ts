@@ -19,8 +19,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { askedTalkPlace, readTalk, renderTalk, writeTalk } from "@/runtime/walkthrough-recorder";
-import { parseSemanticBoard } from "@/shared/semantic-board/index";
-import type { LayoutEngineName } from "@/shared/semantic-board/index";
+import { parseSemanticBoard } from "@archboard/board/parse-board";
+import type { LayoutEngineName } from "@archboard/board/render-reply";
 import { TalkSchema, type Talk } from "@/shared/walkthrough-recording/talk";
 
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";

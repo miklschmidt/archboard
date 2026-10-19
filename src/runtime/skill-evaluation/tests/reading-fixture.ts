@@ -3,13 +3,10 @@
 // removed, traffic changed, a flow and a walkthrough added, one draft with an
 // open disagreement, and one adoption recorded.
 
-import {
-	parseSemanticBoard,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	type SemanticBoard,
-} from "@/shared/semantic-board/index";
+import { parseSemanticBoard } from "@archboard/board/parse-board";
+import { SEMANTIC_BOARD_SCHEMA_VERSION, type SemanticBoard } from "@archboard/board/document";
 import { withFixtureOrders } from "./fixture-orders.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import {
 	evaluateOutcomes,
 	type OutcomeCheck,

@@ -19,11 +19,10 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 	DiagramThemeSchema,
 	LayoutEngineSchema,
-	addressedVariant,
-	parseSemanticBoard,
-	type SemanticBoard,
-} from "@/shared/semantic-board/index";
-import { VaultCheckSchema } from "@/shared/semantic-policy/index";
+} from "@archboard/board/render-reply";
+import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
+import { parseSemanticBoard } from "@archboard/board/parse-board";
+import { VaultCheckSchema } from "@archboard/board/policy";
 import { RecordingLanguageSchema } from "@/shared/walkthrough-recording/lib/language";
 
 /** What a talk's file says it is. */

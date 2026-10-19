@@ -4,7 +4,7 @@
 import { expect } from "bun:test";
 
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { VariantContent } from "@archboard/board/content";
 import {
 	renderDataFlow,
 	type RenderedDiagram,

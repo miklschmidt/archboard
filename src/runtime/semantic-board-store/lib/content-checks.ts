@@ -22,7 +22,7 @@
 // carry the level the target declares — rewrites the variant's own nodes.
 // TASK-260's out-of-repository binding check is the same shape.
 
-import type { SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 
 /**
  * Whether an accepted write could still change this variant's content: the

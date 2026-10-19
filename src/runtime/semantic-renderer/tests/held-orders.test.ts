@@ -6,7 +6,7 @@
 // held order kept for the lines it uncrosses at the cost of turns elsewhere.
 
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	corridorPoints,

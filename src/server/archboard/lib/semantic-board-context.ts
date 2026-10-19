@@ -14,22 +14,17 @@
 // nothing now is reported as an ambiguity rather than passed on as though an
 // agent could act on it.
 
+import { comparedWith } from "@archboard/board/drawing";
+import { compareVariants, type VariantComparison } from "@archboard/board/compare-variants";
 import {
-	comparedWith,
-	compareVariants,
 	currentVariant,
 	findVariant,
-	findView,
-	scopedContent,
-	subjectsOf,
-	everyStep,
-	stepWords,
 	type SemanticBoard,
 	type SemanticVariant,
-	type SubjectKind,
-	type VariantContent,
-	type VariantComparison,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
+import { findView, scopedContent } from "@archboard/board/scope";
+import { subjectsOf, type SubjectKind, type VariantContent } from "@archboard/board/content";
+import { everyStep, stepWords } from "@archboard/board/flow-steps";
 import type {
 	SemanticArchitectureInput,
 	SemanticDifferenceInput,
@@ -43,7 +38,7 @@ import {
 	describeVariant,
 	unbuiltSentence,
 } from "@/server/archboard/lib/semantic-board-description";
-import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
+import type { SemanticPaneContext } from "@archboard/board/pane-context";
 
 /** What the board says, and anything about the reading that was not right. */
 interface BoardContext {

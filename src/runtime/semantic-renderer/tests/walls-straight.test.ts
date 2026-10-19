@@ -4,7 +4,7 @@
 // reach the wall.
 
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	corridorPoints,

@@ -3,8 +3,8 @@
 // about them: the plain check here, and the code check (ADR 0046), which names
 // a flow step by its flow, these ends and its label.
 
-import type { SemanticEdge, SemanticNode, VariantContent } from "@/shared/semantic-board/index";
-import type { DiagnosticSubject } from "@/shared/semantic-policy/index";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
+import type { DiagnosticSubject } from "@archboard/board/policy";
 
 /**
  * A part as a diagnostic names it.

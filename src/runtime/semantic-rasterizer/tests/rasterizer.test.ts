@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, setDefaultTimeout, test } from "bun:test";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { VariantContentSchema, type VariantContent } from "@archboard/board/content";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import {
 	PALETTE,

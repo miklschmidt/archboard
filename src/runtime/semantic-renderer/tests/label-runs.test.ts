@@ -1,7 +1,7 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import reservedCorner from "./reserved-label-corner.json";
 import reservedLane from "./reserved-label-lane.json";
 import archboardServer from "./archboard-server.json";

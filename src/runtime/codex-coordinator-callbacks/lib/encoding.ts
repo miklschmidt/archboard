@@ -6,7 +6,7 @@ import type {
 	CoordinatorPaneNews,
 	CoordinatorSemanticSubject,
 } from "@/runtime/codex-coordinator-callbacks/lib/contract";
-import { SemanticSubjectKindSchema } from "@/shared/semantic-pane-context/index";
+import { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
 
 const CALLBACK_MAX_UTF8_BYTES = 32_768;
 const CALLBACK_MAX_STRING_UTF8_BYTES = 8_192;

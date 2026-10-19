@@ -8,7 +8,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 
-import type { BoardListing } from "@/shared/semantic-board/index";
+import type { BoardListing } from "@archboard/board/board-listing";
 import { semanticBoardKeys, semanticBoardListQuery } from "@/ui/semantic-board-canvas/index";
 
 /** The vault the listing is of. */

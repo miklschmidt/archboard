@@ -20,7 +20,8 @@
 // language; here a flow is a single named box around the whole exchange, which
 // is what lets several flows stack down one page and still be told apart.
 
-import type { FlowMessage, SemanticFlow, SemanticNode } from "@/shared/semantic-board/index";
+import type { FlowMessage, SemanticFlow } from "@archboard/board/views";
+import type { SemanticNode } from "@archboard/board/content";
 import { ARCHITECTURE_CARD_PADDING } from "@/transformers/semantic-renderer/config";
 import {
 	CONTAINER_BOTTOM_PAD,

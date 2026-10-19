@@ -3,7 +3,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/board-input";
+import { type SemanticBoard } from "@archboard/board/document";
+import { type VariantContent } from "@archboard/board/content";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-handles-"));
 const writer = { kind: "agent" as const };
@@ -30,9 +32,7 @@ beforeEach(async () => {
 		vault,
 		board,
 		writer,
-		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({ ...SEED, name: board }),
-		),
+		transition: store.createBoardTransition(BoardCreateInputSchema.parse({ ...SEED, name: board })),
 	});
 });
 afterAll(() => {
@@ -43,7 +43,7 @@ afterAll(() => {
  * The board as it now stands, read back off disk.
  * @returns The board.
  */
-const readBack = (): contract.SemanticBoard => {
+const readBack = (): SemanticBoard => {
 	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error(read.problem);
 	return read.board;
@@ -53,7 +53,7 @@ const readBack = (): contract.SemanticBoard => {
  * The one variant's content as it now stands, read back off disk.
  * @returns The content.
  */
-const held = (): contract.VariantContent => readBack().variants[0]!.content;
+const held = (): VariantContent => readBack().variants[0]!.content;
 
 /**
  * Apply one batch to the board as it now stands.
@@ -66,7 +66,7 @@ const edit = async (stated: Record<string, unknown>) => {
 		board,
 		writer,
 		expectedVersion: readBack().version,
-		transition: store.editVariantTransition(contract.VariantEditInputSchema.parse(stated)),
+		transition: store.editVariantTransition(VariantEditInputSchema.parse(stated)),
 	});
 };
 

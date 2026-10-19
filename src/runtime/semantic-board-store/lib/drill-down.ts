@@ -36,14 +36,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/vault-checkout";
-import {
-	messagesOf,
-	type DrillDown,
-	type SemanticBoard,
-	type SemanticNode,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
-import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
+import { messagesOf } from "@archboard/board/flow-steps";
+import { type DrillDown, type SemanticNode, type VariantContent } from "@archboard/board/content";
+import { type SemanticBoard } from "@archboard/board/document";
+import type { VaultDiagnostic } from "@archboard/board/policy";
 import { contentCheckedVariants } from "@/runtime/semantic-board-store/lib/content-checks";
 import { decodeSemanticBoardDocument } from "@/runtime/semantic-board-store/lib/decode";
 import { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";

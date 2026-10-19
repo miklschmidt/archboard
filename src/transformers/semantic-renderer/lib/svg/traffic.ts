@@ -1,6 +1,6 @@
 // A board's traffic, painted: the pulses on every line that carries some, in
 // the time that lines which keep the same time hand on (`traffic-relay.ts`).
-import { type SemanticEdge } from "@/shared/semantic-board/index";
+import { type SemanticEdge } from "@archboard/board/content";
 import type { DrawingEdge } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Curve } from "@/transformers/semantic-renderer/lib/layout/curves";

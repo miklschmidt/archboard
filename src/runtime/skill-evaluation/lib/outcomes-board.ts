@@ -8,7 +8,7 @@ import {
 	type DrillDown,
 	type SemanticNode,
 	type VariantContent,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/content";
 import { namesMatch } from "@/runtime/skill-evaluation/lib/naming";
 import {
 	edgesBetween,

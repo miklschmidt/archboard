@@ -13,7 +13,7 @@ import express from "express";
 import type * as ServerModule from "@/server/archboard/index";
 import type * as RouteModule from "@/server/archboard/locality";
 import { LocalityReplySchema, type LocalityAnswer } from "@/shared/locality/index";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
+import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],

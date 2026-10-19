@@ -11,7 +11,7 @@
 // before. It keeps clear of the lines itself, though: it stands in the corner no
 // route runs down through, and from far away it grows only as far as the
 // nearest route.
-import type { PaletteColor, SemanticPolicy } from "@/shared/semantic-policy/index";
+import type { PaletteColor, SemanticPolicy } from "@archboard/board/policy";
 import { BAND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import type { DrawingRegion, TextRun } from "@/transformers/semantic-renderer/lib/drawing";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";

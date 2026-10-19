@@ -14,7 +14,8 @@
 
 import type { JSX } from "react";
 
-import type { ChangeKind, FieldChange, ReconciliationIssue } from "@/shared/semantic-board/index";
+import type { ChangeKind, FieldChange } from "@archboard/board/compare-variants";
+import type { ReconciliationIssue } from "@archboard/board/reconciliation";
 import { cn } from "@/ui/components/class-names";
 import {
 	CodeBlock,

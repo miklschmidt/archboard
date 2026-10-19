@@ -3,7 +3,8 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/board-input";
+import { type SemanticBoard } from "@archboard/board/document";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-one-write-"));
 
@@ -21,7 +22,7 @@ async function create(name: string, stated: Record<string, unknown> = {}) {
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({ level: "system", ...stated, name }),
+			BoardCreateInputSchema.parse({ level: "system", ...stated, name }),
 		),
 	});
 }
@@ -39,13 +40,13 @@ async function edit(name: string, stated: Record<string, unknown>, expectedVersi
 		vault,
 		board: name,
 		writer,
-		transition: store.editVariantTransition(contract.VariantEditInputSchema.parse(stated)),
+		transition: store.editVariantTransition(VariantEditInputSchema.parse(stated)),
 		expectedVersion: expectedVersion ?? (read.ok ? read.board.version : 0),
 	});
 }
 
 /** The nodes on a board's first variant, by name. */
-const namesOn = (board: contract.SemanticBoard) =>
+const namesOn = (board: SemanticBoard) =>
 	board.variants[0]!.content.nodes.map((node) => node.name).toSorted();
 
 afterAll(() => {

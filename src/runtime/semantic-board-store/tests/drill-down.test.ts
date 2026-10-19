@@ -8,8 +8,14 @@ import { afterAll, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 import * as store from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import * as contract from "@/shared/semantic-board/index";
-import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { BoardAdoptInputSchema } from "@archboard/board/resolution-input";
+import { type SemanticBoard } from "@archboard/board/document";
+import type { VaultDiagnostic } from "@archboard/board/policy";
 
 const vault = createConfiguredTestVault("archboard-drill-down-");
 const writer = { kind: "agent" as const };
@@ -28,7 +34,7 @@ async function create(input: Record<string, unknown>): Promise<void> {
 		vault,
 		board: String(input["name"]),
 		writer,
-		transition: store.createBoardTransition(contract.BoardCreateInputSchema.parse(input)),
+		transition: store.createBoardTransition(BoardCreateInputSchema.parse(input)),
 	});
 	if (written.outcome !== "applied") throw new Error(`seed refused: ${JSON.stringify(written)}`);
 }
@@ -46,9 +52,7 @@ async function branch(on: string, from: string, name: string) {
 		board: on,
 		writer,
 		expectedVersion: read(on).version,
-		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from, name }),
-		),
+		transition: store.branchVariantTransition(BoardBranchInputSchema.parse({ from, name })),
 	});
 }
 
@@ -66,7 +70,7 @@ async function restate(on: string, variant: string, node: Record<string, unknown
 		writer,
 		expectedVersion: read(on).version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({ variant, nodes: [node] }),
+			VariantEditInputSchema.parse({ variant, nodes: [node] }),
 		),
 	});
 }
@@ -83,7 +87,7 @@ async function adopt(on: string, variant: string) {
 		board: on,
 		writer,
 		expectedVersion: read(on).version,
-		transition: store.adoptVariantTransition(contract.BoardAdoptInputSchema.parse({ variant })),
+		transition: store.adoptVariantTransition(BoardAdoptInputSchema.parse({ variant })),
 	});
 }
 
@@ -99,7 +103,7 @@ function linkFindings(board: string): VaultDiagnostic[] {
 }
 
 test("the default vocabulary can name a board of every level it configures", async () => {
-	const policy = (await import("@/shared/semantic-policy/index")).DEFAULT_SEMANTIC_POLICY;
+	const policy = (await import("@archboard/board/policy")).DEFAULT_SEMANTIC_POLICY;
 	// A node standing for another board carries that board's level as its kind
 	// (ADR 0029), so a level with no kind of the same name is a board nothing
 	// can link to.
@@ -316,7 +320,7 @@ test("a link a proposal introduces is reported, because a proposal can still be 
  * @param board Its name.
  * @returns The saved family.
  */
-function read(board: string): contract.SemanticBoard {
+function read(board: string): SemanticBoard {
 	const result = store.readSemanticBoard(vault, board);
 	if (!result.ok) throw new Error(result.problem);
 	return result.board;

@@ -12,7 +12,7 @@
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { use, useCallback, useEffect, useRef } from "react";
 
-import type { DrillDown } from "@/shared/semantic-board/index";
+import type { DrillDown } from "@archboard/board/content";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import {
 	drillPlace,

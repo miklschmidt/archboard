@@ -205,7 +205,7 @@ renderer refuses other selectors and rules, `!important` and values that are
 not colors. It also refuses a token that a picture uses but the file does not
 set. A new palette
 name needs its token here and its name in `PaletteColorSchema` in
-`src/shared/semantic-policy/index.ts`.
+`packages/board/src/shared/schemas/semantic-policy.ts`.
 
 A picture in the page paints with the tokens themselves, so a theme switch
 redraws nothing. A standalone SVG or PNG from `semantic render` or

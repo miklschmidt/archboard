@@ -6,7 +6,7 @@
 // than the relationship, and a step the store refuses.
 
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { FixtureSchema, layingProblems, type Fixture } from "@/runtime/skill-evaluation/index";
 
 const BOARD = "Flask JSON";

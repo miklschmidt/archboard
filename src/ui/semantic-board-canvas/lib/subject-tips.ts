@@ -9,14 +9,9 @@
 // picture draws it, so it reads on its own beside the part it explains.
 
 import { drillWayWords } from "@/ui/semantic-board-canvas/lib/drill-way";
-import {
-	everyStep,
-	isMessage,
-	stepWords,
-	type SemanticEdge,
-	type SemanticNode,
-	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+import { everyStep, isMessage, stepWords } from "@archboard/board/flow-steps";
+import { type SemanticEdge, type SemanticNode } from "@archboard/board/content";
+import { type SemanticVariant } from "@archboard/board/document";
 import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
 import { drawnAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import { PULSE_CLASS } from "@/ui/semantic-board-canvas/lib/subjects";

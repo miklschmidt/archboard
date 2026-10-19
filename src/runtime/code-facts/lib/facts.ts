@@ -4,7 +4,7 @@
 // A line is 1-based. A file's facts quote names, lines and source offsets, never other text
 // of the file, so a finding built from them never quotes a secret.
 
-import type { EvidenceKind } from "@/shared/semantic-policy/index";
+import type { EvidenceKind } from "@archboard/board/policy";
 
 /**
  * One definition: a declaration at module level, or a member of one.

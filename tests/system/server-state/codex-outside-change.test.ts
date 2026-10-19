@@ -13,7 +13,7 @@ import {
 	productionPane as pane,
 } from "./support/codex-production.ts";
 import { createRequester, sleep, waitFor } from "./support/http.ts";
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@/shared/semantic-pane-context";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
 
 // Long enough for news to be told: a sentence follows its write within a few milliseconds.
 const NEWS_SETTLE_MS = 600;

@@ -12,8 +12,9 @@
 
 import fs from "node:fs";
 import { errnoCode, errorMessage } from "@archboard/diagnostics/errno";
-import { mintId } from "@/shared/ids/ids";
-import { parseSemanticBoard, type SemanticBoard } from "@/shared/semantic-board/index";
+import { mintId } from "@archboard/board/ids";
+import { parseSemanticBoard } from "@archboard/board/parse-board";
+import { type SemanticBoard } from "@archboard/board/document";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { claimWriterId, withBoardLockIfFreeSync } from "@/runtime/engine/board-lock";
 import {
@@ -24,7 +25,7 @@ import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/l
 import { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";
 import { semanticVocabularyDiagnostics } from "@/runtime/semantic-board-store/lib/vocabulary";
 import { decodeSemanticBoardDocument } from "@/runtime/semantic-board-store/lib/decode";
-import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
+import type { VaultDiagnostic } from "@archboard/board/policy";
 
 /** A board that was there and was coherent, or why it was neither. */
 type SemanticBoardRead =

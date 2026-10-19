@@ -31,7 +31,7 @@ import {
 	type OtherRef,
 } from "@archboard/code-binding/binding-resolver";
 import { githubUrlForBinding } from "@archboard/code-binding/code-target-link";
-import { addressedVariant } from "@/shared/semantic-board/index";
+import { addressedVariant } from "@archboard/board/document";
 import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { createBrowserOriginGuard } from "@/server/browser-origin";
 import {

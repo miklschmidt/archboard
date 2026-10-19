@@ -11,7 +11,7 @@ import { boardForPane, panes } from "@/server/archboard/lib/pane-registry";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { statedVault } from "@/server/archboard/lib/request-vault";
 import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
-import type { SemanticPaneContext } from "@/shared/semantic-pane-context";
+import type { SemanticPaneContext } from "@archboard/board/pane-context";
 
 /**
  * What one pane last said it was reading, when that is still about the board

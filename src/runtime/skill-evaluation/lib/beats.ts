@@ -7,7 +7,7 @@
 // tells "the context is pushed before dispatch, and here is where" apart from
 // two beats that each describe one side and never say what ordered them.
 
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { VariantContent } from "@archboard/board/content";
 import { namedSubject, namesMatch } from "@/runtime/skill-evaluation/lib/naming";
 import type { OutcomeCheck } from "@/runtime/skill-evaluation/lib/suite";
 

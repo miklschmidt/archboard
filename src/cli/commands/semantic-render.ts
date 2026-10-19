@@ -9,7 +9,7 @@ import {
 	PictureReceiptShape,
 	RenderedVariantSchema,
 	StandaloneThemeSchema,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
 import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { refuseNothingDrawn, viewEmptyRefusal } from "@/cli/commands/lib/nothing-drawn";

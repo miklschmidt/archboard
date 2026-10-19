@@ -7,7 +7,7 @@
 // around the drawing, labelled. It is drawn into the document rather than laid
 // over it by a viewer, so a file somebody exports says it too.
 
-import type { DiagramAtlas, DiagramBox } from "@/shared/semantic-board/index";
+import type { DiagramAtlas, DiagramBox } from "@archboard/board/render-reply";
 import { PLANNED_FRAME_INSET, PLANNED_FRAME_MARGIN } from "@/transformers/semantic-renderer/config";
 import { fontAttributes, PILL_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import { roundCoord } from "@/transformers/semantic-renderer/lib/geometry";

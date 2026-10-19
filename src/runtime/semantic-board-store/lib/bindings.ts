@@ -38,8 +38,8 @@ import path from "node:path";
 import { checkoutsReadFrom } from "@archboard/code-binding/vault-checkout";
 import { isPathWithin } from "@archboard/code-binding/binding-resolver";
 import type { CodeBinding } from "@archboard/code-binding/code-binding";
-import { currentVariant, type SemanticBoard } from "@/shared/semantic-board/index";
-import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
+import { currentVariant, type SemanticBoard } from "@archboard/board/document";
+import type { VaultDiagnostic } from "@archboard/board/policy";
 import { nodeSubject } from "@/runtime/semantic-board-store/lib/subject";
 
 /** Where a repository identity lives on this machine, or nothing knowable. */

@@ -6,8 +6,13 @@ import { afterAll, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 import * as store from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import * as contract from "@/shared/semantic-board/index";
-import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { BoardAdoptInputSchema } from "@archboard/board/resolution-input";
+import type { VaultDiagnostic } from "@archboard/board/policy";
 
 const vaults: string[] = [];
 const writer = { kind: "agent" as const };
@@ -38,7 +43,7 @@ async function create(vault: string, input: Record<string, unknown>): Promise<vo
 		vault,
 		board: String(input["name"]),
 		writer,
-		transition: store.createBoardTransition(contract.BoardCreateInputSchema.parse(input)),
+		transition: store.createBoardTransition(BoardCreateInputSchema.parse(input)),
 	});
 	if (written.outcome !== "applied") throw new Error(`seed refused: ${JSON.stringify(written)}`);
 }
@@ -155,7 +160,7 @@ async function branch(vault: string, board: string, name: string): Promise<void>
 		vault,
 		board,
 		store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from: current.board.variants[0]!.name, name }),
+			BoardBranchInputSchema.parse({ from: current.board.variants[0]!.name, name }),
 		),
 	);
 }
@@ -191,7 +196,7 @@ test("a historical variant does not count", async () => {
 		vault,
 		"refunds",
 		store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: "Next",
 				nodes: [
 					{
@@ -206,7 +211,7 @@ test("a historical variant does not count", async () => {
 	await apply(
 		vault,
 		"refunds",
-		store.adoptVariantTransition(contract.BoardAdoptInputSchema.parse({ variant: "Next" })),
+		store.adoptVariantTransition(BoardAdoptInputSchema.parse({ variant: "Next" })),
 	);
 	// The variant that bound `charge` is history now.
 	expect(shared(vault)).toEqual([]);
@@ -286,7 +291,7 @@ test("a draft that replaces a part under a new id never draws the old one beside
 		vault,
 		"billing",
 		store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: "Next",
 				removeNodes: ["Charge"],
 				confirm: ["PART_RECREATED", "INHERITANCE_DROPPED"],

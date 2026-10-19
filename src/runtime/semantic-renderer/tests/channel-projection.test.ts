@@ -2,7 +2,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import { expect, test } from "bun:test";
 import fixture from "./channel-projection.json";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { type ChangeKind } from "@/shared/semantic-board/index";
+import { type ChangeKind } from "@archboard/board/compare-variants";
 import { corridorPoints, routeLabels, routeCrosses } from "./drawn-routes";
 
 // Six real cards retain the incoming/outgoing channel conflict and the

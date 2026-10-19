@@ -14,7 +14,7 @@
 import { RiArrowRightLine, RiFocus3Line } from "@remixicon/react";
 import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
-import type { SemanticEdge, SemanticNode, VariantContent } from "@/shared/semantic-board/index";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
 import { cn } from "@/ui/components/class-names";
 import { IconButton } from "@/ui/components/IconButton";
 import { RepositoryName } from "@/ui/repository-name";

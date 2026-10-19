@@ -3,7 +3,15 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { everyStep, stepWords } from "@archboard/board/flow-steps";
+import { type FlowStep } from "@archboard/board/views";
+import { type ReconciliationIssue } from "@archboard/board/reconciliation";
+import { ResolutionInputSchema } from "@archboard/board/resolution-input";
 
 // Moving a flow's existing steps into a new decision or loop on one variant,
 // carried down a chain of drafts (TASK-484). Each draft either ends up telling
@@ -24,7 +32,7 @@ beforeEach(async () => {
 	board = `flow-logic-${boards}`;
 	await write(
 		store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "system",
 				nodes: [
@@ -93,7 +101,7 @@ function variant(name: string) {
  * @param name What to call the proposal.
  */
 async function branch(from: string, name: string) {
-	await write(store.branchVariantTransition(contract.BoardBranchInputSchema.parse({ from, name })));
+	await write(store.branchVariantTransition(BoardBranchInputSchema.parse({ from, name })));
 }
 
 /**
@@ -112,9 +120,9 @@ function fresh(label: string) {
  * @returns The stated step.
  */
 function kept(label: string, was = label) {
-	const step = contract
-		.everyStep(variant(root).content.flows[0]!.steps)
-		.find((one) => contract.stepWords(one) === was);
+	const step = everyStep(variant(root).content.flows[0]!.steps).find(
+		(one) => stepWords(one) === was,
+	);
 	if (step === undefined) throw new Error(`no step "${was}"`);
 	return { ...fresh(label), id: step.id };
 }
@@ -154,7 +162,7 @@ async function retell(on: string, steps: readonly unknown[]) {
 	const flow = variant(on).content.flows[0]!;
 	const written = await write(
 		store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: on,
 				flows: [{ id: flow.id, name: flow.name, participants: ["API", "Store"], steps }],
 			}),
@@ -171,7 +179,7 @@ type Outline = string | { readonly [words: string]: Outline[] | Record<string, O
  * @param steps The steps.
  * @returns The outline.
  */
-function outline(steps: readonly contract.FlowStep[]): Outline[] {
+function outline(steps: readonly FlowStep[]): Outline[] {
 	return steps.map((step) => {
 		if (step.kind === "decision") {
 			return {
@@ -236,11 +244,11 @@ test("steps moved into a new loop after another step reach the drafts in their o
  * @param which Which of them to answer.
  * @returns What the write did.
  */
-async function keepMine(on: string, which: (issue: contract.ReconciliationIssue) => boolean) {
+async function keepMine(on: string, which: (issue: ReconciliationIssue) => boolean) {
 	const issues = (variant(on).reconciliation?.issues ?? []).filter(which);
 	return write(
 		store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: on,
 				choices: issues.map((one) => ({ subject: one.subject, field: one.field, side: "mine" })),
 			}),
@@ -258,7 +266,7 @@ async function rename(on: string, to: string) {
 	const clock = variant(on).content.nodes.find((one) => !flow.participants.includes(one.id))!;
 	await write(
 		store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: on,
 				nodes: [{ id: clock.id, name: to, kind: "service" }],
 			}),

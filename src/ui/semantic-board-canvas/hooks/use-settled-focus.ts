@@ -10,7 +10,7 @@
 
 import { useMemo, useState } from "react";
 
-import type { WalkthroughBeat } from "@/shared/semantic-board/index";
+import type { WalkthroughBeat } from "@archboard/board/walkthrough";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import { beatFocus, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";

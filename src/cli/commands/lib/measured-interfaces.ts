@@ -10,15 +10,14 @@
 // ranks no variant. What changed between two of them is `interfaceChanges`.
 
 import { z } from "zod";
+import { inspectContainer, interfaceMeasures } from "@archboard/board/container-interface";
+import { RenderedVariantSchema } from "@archboard/board/render-reply";
 import {
-	inspectContainer,
-	interfaceMeasures,
-	RenderedVariantSchema,
 	resolveVariant,
 	type SemanticBoard,
-	type SemanticNode,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
+import { type SemanticNode } from "@archboard/board/content";
 import { CliUsageError } from "@/cli/command-contract/contract";
 import { InterfacePartSchema, interfacePart } from "@/cli/commands/lib/compared-interfaces";
 import { InterfaceMeasuresSchema } from "@/cli/commands/lib/container-inspection";

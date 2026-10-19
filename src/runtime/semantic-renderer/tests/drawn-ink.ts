@@ -9,7 +9,8 @@
 // docs/design/wide-board-layout-fixtures/measure.ts, so a number in a test and
 // the same number in a design note are the same measurement.
 
-import type { DiagramBox, VariantContent } from "@/shared/semantic-board/index";
+import type { DiagramBox } from "@archboard/board/render-reply";
+import type { VariantContent } from "@archboard/board/content";
 import { fitIn } from "@/shared/shell-geometry/index";
 import type { RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import { across, along, breadth, faceOf } from "@/runtime/semantic-renderer/tests/drawn-reading";

@@ -6,13 +6,18 @@ import {
 	DEFAULT_SEMANTIC_POLICY,
 	PaletteColorSchema,
 	type SemanticPolicy,
-} from "@/shared/semantic-policy/index";
+} from "@archboard/board/policy";
 import type * as Store from "@/runtime/semantic-board-store/index";
-import type * as Contract from "@/shared/semantic-board/index";
+import { BoardAdoptInputSchema } from "@archboard/board/resolution-input";
+import {
+	BoardBranchInputSchema,
+	BoardCreateInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { EdgeKindSchema, NodeKindSchema } from "@archboard/board/vocabulary";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-policy-"));
 let store: typeof Store;
-let contract: typeof Contract;
 const writer = { kind: "agent" as const };
 let serial = 0;
 let name = "";
@@ -27,7 +32,6 @@ const policy: SemanticPolicy = {
 };
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
 });
 beforeEach(() => {
 	serial++;
@@ -47,7 +51,7 @@ async function create(kind = "api", level = "context") {
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({ name, level, nodes: [{ name: "Gateway", kind }] }),
+			BoardCreateInputSchema.parse({ name, level, nodes: [{ name: "Gateway", kind }] }),
 		),
 	});
 }
@@ -62,13 +66,13 @@ async function edit(input: unknown) {
 		board: name,
 		writer,
 		expectedVersion: read().board.version,
-		transition: store.editVariantTransition(contract.VariantEditInputSchema.parse(input)),
+		transition: store.editVariantTransition(VariantEditInputSchema.parse(input)),
 	});
 }
 
 test("custom vocabulary admits configured kinds and rejects newly authored unknown references", async () => {
 	expect(
-		contract.BoardCreateInputSchema.safeParse({
+		BoardCreateInputSchema.safeParse({
 			name,
 			level: "context",
 			nodes: [
@@ -105,7 +109,7 @@ test("removed definitions remain readable and editable, and cloning them preserv
 		writer,
 		expectedVersion: read().board.version,
 		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ name: "Proposal", from: "current" }),
+			BoardBranchInputSchema.parse({ name: "Proposal", from: "current" }),
 		),
 	});
 	expect(branch.outcome).toBe("applied");
@@ -119,7 +123,7 @@ test("an unknown kind names the node or the relationship that states it", async 
 				board: name,
 				writer,
 				transition: store.createBoardTransition(
-					contract.BoardCreateInputSchema.parse({
+					BoardCreateInputSchema.parse({
 						name,
 						level: "context",
 						nodes: [
@@ -169,7 +173,7 @@ test("a historical removed kind cannot authorize a newly authored reference in a
 		writer,
 		expectedVersion: read().board.version,
 		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ name: "Proposal", from: "current" }),
+			BoardBranchInputSchema.parse({ name: "Proposal", from: "current" }),
 		),
 	});
 	await edit({ variant: "Proposal", nodes: [{ ...node, kind: "worker" }] });
@@ -192,7 +196,7 @@ test("a removed definition is reported on frozen history too, because config.yam
 		writer,
 		expectedVersion: read().board.version,
 		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ name: "Worker instead", from: "current" }),
+			BoardBranchInputSchema.parse({ name: "Worker instead", from: "current" }),
 		),
 	});
 	const node = read().board.variants[0]!.content.nodes[0]!;
@@ -205,7 +209,7 @@ test("a removed definition is reported on frozen history too, because config.yam
 		writer,
 		expectedVersion: read().board.version,
 		transition: store.adoptVariantTransition(
-			contract.BoardAdoptInputSchema.parse({ variant: "Worker instead" }),
+			BoardAdoptInputSchema.parse({ variant: "Worker instead" }),
 		),
 	});
 	expect(adopted.outcome).toBe("applied");
@@ -238,7 +242,7 @@ test("missing, malformed, invalid-color and unknown-icon policies activate coher
 	rmSync(file);
 	expect((await create("custom", "custom")).outcome).toBe("applied");
 	expect(read().warnings[0]?.code).toBe("INVALID_CONFIG");
-	expect(contract.BoardCreateInputSchema.safeParse({ name: "Missing level" }).success).toBe(false);
+	expect(BoardCreateInputSchema.safeParse({ name: "Missing level" }).success).toBe(false);
 	save(policy);
 	expect(store.readSemanticBoardConfiguration(vault).ok).toBe(true);
 	expect(read().warnings.some((issue) => issue.code === "UNKNOWN_VOCABULARY")).toBe(true);
@@ -280,8 +284,8 @@ test("the shared checker reports unreadable files and every variant alongside he
 
 test("configuration fallback preserves reference syntax while allowing unknown vocabulary names", async () => {
 	rmSync(join(vault, ".archboard/config.yaml"));
-	expect(contract.NodeKindSchema.safeParse("payment service").success).toBe(false);
-	expect(contract.EdgeKindSchema.safeParse("???").success).toBe(false);
+	expect(NodeKindSchema.safeParse("payment service").success).toBe(false);
+	expect(EdgeKindSchema.safeParse("???").success).toBe(false);
 	expect((await create("new-service")).outcome).toBe("applied");
 	expect(read().board.variants[0]?.content.nodes[0]?.kind).toBe("new-service");
 });

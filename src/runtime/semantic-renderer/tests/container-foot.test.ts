@@ -10,7 +10,7 @@
 // a line through a card that is neither of its ends.
 
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";

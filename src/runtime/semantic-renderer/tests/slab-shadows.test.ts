@@ -10,7 +10,7 @@ import { expect, test } from "bun:test";
 import { renderArchitecture, renderDataFlow } from "@/runtime/semantic-renderer/index";
 import { lightnessOf, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
-import type { DiagramTheme } from "@/shared/semantic-board/index";
+import type { DiagramTheme } from "@archboard/board/render-reply";
 
 /** A container that holds two cards, and a card beside it, joined by labelled lines. */
 const BOARD = orderedFixture({

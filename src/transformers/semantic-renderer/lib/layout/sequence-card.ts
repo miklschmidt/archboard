@@ -1,5 +1,5 @@
 // The sequence grammar keeps equal-width participant columns and compact cards.
-import type { SemanticNode } from "@/shared/semantic-board/index";
+import type { SemanticNode } from "@archboard/board/content";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { TextRun } from "@/transformers/semantic-renderer/lib/drawing";
 import { measureNoteLines } from "@/transformers/semantic-renderer/lib/measurement";

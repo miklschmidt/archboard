@@ -14,7 +14,8 @@
 // its ring. A frame's name drawn from far away once kept no room for the
 // frame's far mark, so a long name ran under it.
 import { expect, test } from "bun:test";
-import type { DiagramBox, DiagramGrammar, LayoutEngineName } from "@/shared/semantic-board/index";
+import type { DiagramBox, LayoutEngineName } from "@archboard/board/render-reply";
+import type { DiagramGrammar } from "@archboard/board/vocabulary";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
 import {
 	bodyShift,

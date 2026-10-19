@@ -9,7 +9,7 @@ import {
 	OfferedViewSchema,
 	PictureReceiptShape,
 	RenderedVariantSchema,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
 
 /** The diagram page before bitmap scaling. */
 const SemanticRasterPageSizeSchema = z.object({ width: z.number(), height: z.number() });

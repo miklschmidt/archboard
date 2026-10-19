@@ -14,7 +14,8 @@ import {
 	settleVariantTransition,
 	type SemanticTransition,
 } from "@/runtime/semantic-board-store/index";
-import type { SemanticBoard, VariantContent } from "@/shared/semantic-board/index";
+import type { SemanticBoard } from "@archboard/board/document";
+import type { VariantContent } from "@archboard/board/content";
 import {
 	FixtureStepSchema,
 	type Fixture,

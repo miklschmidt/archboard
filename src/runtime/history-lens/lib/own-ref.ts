@@ -9,13 +9,9 @@
 
 import { holdsRef } from "@/runtime/history-lens/lib/source-history";
 import type { GitRunOptions } from "@/runtime/history-lens/lib/git";
-import {
-	nodesPinnedTo,
-	ownRefs,
-	refOfBinding,
-	type OwnRef,
-} from "@/shared/semantic-board/draft-ref";
-import type { SemanticBoard, SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
+import { nodesPinnedTo, ownRefs, refOfBinding, type OwnRef } from "@archboard/board/draft-ref";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import type { SemanticNode } from "@archboard/board/content";
 
 /**
  * What a ref pinned in a repository is keyed by.

@@ -10,7 +10,7 @@
 
 import { useCallback, useMemo } from "react";
 
-import type { SemanticPanePart } from "@/shared/semantic-pane-context";
+import type { SemanticPanePart } from "@archboard/board/pane-context";
 import type { Destination, Flier } from "@/ui/semantic-board-canvas/hooks/use-dive";
 import type { DrillNavigation } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
 import type { DepartureWay } from "@/ui/semantic-board-canvas/lib/picture-departure";

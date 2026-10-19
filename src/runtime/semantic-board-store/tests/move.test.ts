@@ -22,8 +22,9 @@ import { join } from "node:path";
 import { boardLockState, holdBoard, releaseHold } from "@/runtime/engine/board-lock";
 import { declareDirectory } from "@archboard/workspace/repo-registry";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { type SemanticBoard } from "@archboard/board/document";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { BoardCreateInputSchema } from "@archboard/board/board-input";
 
 const META = "github.com/acme/meta";
 const PRODUCT = "github.com/acme/product";
@@ -31,7 +32,6 @@ const callerRepos = process.env["ARCHBOARD_REPOS"];
 const root = realpathSync.native(mkdtempSync(join(tmpdir(), "archboard-move-")));
 process.env["ARCHBOARD_REPOS"] = join(root, "repos.json");
 let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 const vaults = {
 	meta: join(root, "meta", ".archboard", "vault"),
@@ -71,7 +71,6 @@ beforeAll(async () => {
 	await declareDirectory(join(root, "meta"));
 	await declareDirectory(join(root, "product"));
 	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
 });
 
 afterAll(() => {
@@ -107,7 +106,7 @@ async function create(
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name,
 				level: "service",
 				nodes,
@@ -146,7 +145,7 @@ async function change(
  * @param name The board's name.
  * @returns The board.
  */
-function board(vault: string, name: string): ContractModule.SemanticBoard {
+function board(vault: string, name: string): SemanticBoard {
 	const read = store.readSemanticBoard(vault, name);
 	if (!read.ok) throw new Error(read.problem);
 	return read.board;
@@ -180,7 +179,7 @@ function drillOf(vault: string, name: string, part: string) {
  * @param one The board.
  * @returns Each variant's id beside the ids of its nodes.
  */
-function subjects(one: ContractModule.SemanticBoard) {
+function subjects(one: SemanticBoard) {
 	return one.variants.map((variant) => [variant.id, variant.content.nodes.map((node) => node.id)]);
 }
 

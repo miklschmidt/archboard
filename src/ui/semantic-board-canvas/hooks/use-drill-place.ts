@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { use } from "react";
 
-import type { DrillDown } from "@/shared/semantic-board/index";
+import type { DrillDown } from "@archboard/board/content";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 import {
 	drillPlace,

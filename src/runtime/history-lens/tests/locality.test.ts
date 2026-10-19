@@ -19,7 +19,7 @@ import {
 	SemanticBoardSchema,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-locality-"));

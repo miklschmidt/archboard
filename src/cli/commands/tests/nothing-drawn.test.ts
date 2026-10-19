@@ -5,7 +5,7 @@
 // server is a stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
-import type { NothingDrawn } from "@/shared/semantic-board/index";
+import type { NothingDrawn } from "@archboard/board/render-reply";
 import { makeStandInVault } from "./stand-in-vault.ts";
 
 const vault = makeStandInVault();

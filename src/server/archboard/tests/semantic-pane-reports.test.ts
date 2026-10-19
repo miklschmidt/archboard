@@ -14,7 +14,7 @@ import {
 	recordSemanticPaneContext,
 	semanticPaneContextFor,
 } from "@/server/archboard/index";
-import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
+import type { SemanticPaneContext } from "@archboard/board/pane-context";
 
 /**
  * One report from the same pane.

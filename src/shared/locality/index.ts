@@ -16,7 +16,7 @@
 import { z } from "zod";
 import { HistoryAttributionSchema } from "@/shared/history-attribution/index";
 import { BehindCommitSchema, BehindPartSchema, BehindSkipSchema } from "@/shared/code-check/index";
-import { RenderedVariantSchema } from "@/shared/semantic-board/index";
+import { RenderedVariantSchema } from "@archboard/board/render-reply";
 
 /**
  * The start of a period: a date, or a date and time with its offset. A date

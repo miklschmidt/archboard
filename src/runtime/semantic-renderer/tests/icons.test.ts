@@ -9,7 +9,7 @@ import { describe, expect, test } from "bun:test";
 import * as RemixIcons from "@remixicon/react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import {
 	diagramIconNames,
 	diagramIconPaths,

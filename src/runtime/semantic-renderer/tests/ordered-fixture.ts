@@ -1,4 +1,4 @@
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { VariantContentSchema, type VariantContent } from "@archboard/board/content";
 
 /** Supply orders for old fixture arrays; explicit test orders take precedence. */
 function ordered(items: unknown): unknown {

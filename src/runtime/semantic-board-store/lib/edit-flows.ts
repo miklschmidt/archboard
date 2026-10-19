@@ -6,17 +6,19 @@
 // family. Its steps belong to it: a stated step id must name a step that flow
 // already had, or, for a restored flow, one its source holds.
 
+import { everyStep } from "@archboard/board/flow-steps";
 import {
-	everyStep,
 	type FlowAlternative,
 	type FlowMessage,
-	type FlowMessageInput,
 	type FlowStep,
-	type FlowStepInput,
 	type SemanticFlow,
+} from "@archboard/board/views";
+import {
+	type FlowMessageInput,
+	type FlowStepInput,
 	type SemanticFlowInput,
-	type SemanticNode,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/board-input";
+import { type SemanticNode } from "@archboard/board/content";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import { idFor, named, resolveNode } from "@/runtime/semantic-board-store/lib/references";
 import {

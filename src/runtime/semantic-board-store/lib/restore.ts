@@ -7,15 +7,10 @@
 // restoration also answers an open removal disagreement, the restoration and
 // the settlement share the same atomic family write.
 
-import {
-	everyStep,
-	nextVersion,
-	type FlowStepInput,
-	type SemanticBoard,
-	type SemanticVariant,
-	type VariantContent,
-	type VariantEditInput,
-} from "@/shared/semantic-board/index";
+import { everyStep } from "@archboard/board/flow-steps";
+import { nextVersion, type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
+import { type FlowStepInput, type VariantEditInput } from "@archboard/board/board-input";
+import { type VariantContent } from "@archboard/board/content";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import { caughtUp, type Settlement } from "@/runtime/semantic-board-store/lib/settle";
 import { propagateEdit } from "@/runtime/semantic-board-store/lib/propagate";

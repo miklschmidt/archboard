@@ -142,7 +142,7 @@
 					"expectedUse": "refused at the boundary",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests integrity (cycle)"
+					"owner": "packages/board/tests integrity (cycle)"
 				},
 				{
 					"path": "edge.from/to at a module's edge: callers outside the container, entry points and hidden parts inside it",
@@ -170,28 +170,28 @@
 					"expectedUse": "presentation intent, excluded from semantic change badges",
 					"scenarios": ["S10"],
 					"evidence": "harness-check",
-					"owner": "fixture S10 holds hero and muted; edge-ids-retained shows they survive restate; src/shared/semantic-board/tests compare (emphasis not a change)"
+					"owner": "fixture S10 holds hero and muted; edge-ids-retained shows they survive restate; packages/board/tests compare (emphasis not a change)"
 				},
 				{
 					"path": "semantic inspect --container: entry points, hidden parts, callers, outgoing relationships, pass-through entry points",
 					"expectedUse": "answer which parts of a module its callers reach, from the CLI",
 					"scenarios": ["S16"],
 					"evidence": "grader",
-					"owner": "grader inspect.container; src/shared/semantic-board/tests/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
+					"owner": "grader inspect.container; packages/board/tests/shared/rules/inspect/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
 				},
 				{
 					"path": "a node with no children holds no parts; a container nothing outside reaches has only hidden parts and no callers; a relationship to the container itself makes a caller and no entry point",
 					"expectedUse": "the answer says each in words instead of reporting zero entry points",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
+					"owner": "packages/board/tests/shared/rules/inspect/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
 				},
 				{
 					"path": "semantic compare reports each container's interface changes before the other changes: entry points added and removed, parts moved between the interface and the hidden parts, callers gained and lost, and no comparison status",
 					"expectedUse": "report the interface changes of a proposal first, naming the callers each one costs",
 					"scenarios": ["S17"],
 					"evidence": "grader",
-					"owner": "grader compare.interface-changes; src/shared/semantic-board/tests/compare-interface.test.ts; src/cli/commands/tests/comparison-answer.test.ts"
+					"owner": "grader compare.interface-changes; packages/board/tests/shared/rules/compare/interfaces.test.ts; src/cli/commands/tests/comparison-answer.test.ts"
 				},
 				{
 					"path": "semantic compare interfaceMeasures and --beside: the five interface measures of each container on the variant, the one it is read against and each competing proposal, side by side, with the entry points and pass-through entry points named",
@@ -232,7 +232,7 @@
 					"expectedUse": "{} and explicit defaults compare equal",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests compare (effectiveTraffic)"
+					"owner": "packages/board/tests compare (effectiveTraffic)"
 				},
 				{
 					"path": "illustration is not telemetry",
@@ -266,14 +266,14 @@
 					"expectedUse": "a part that is one definition among others in its file names it; a changed symbol is a changed binding",
 					"scenarios": ["S00"],
 					"evidence": "author-run",
-					"owner": "grader binding.symbol; src/shared/semantic-board/tests/comparison.test.ts (a changed symbol is a changed binding)"
+					"owner": "grader binding.symbol; packages/board/tests/shared/rules/compare/comparison.test.ts (a changed symbol is a changed binding)"
 				},
 				{
 					"path": "edge.anchor, step.anchor {repo, path, symbol}",
 					"expectedUse": "every relationship and step carries its line of evidence; restating one without it drops it with ANCHOR_DROPPED; comparison ignores it",
 					"scenarios": ["S00", "S07"],
 					"evidence": "author-run",
-					"owner": "grader edge.anchor, step.anchor; src/runtime/semantic-board-store/tests/anchors.test.ts; src/shared/semantic-board/tests/comparison.test.ts and reconciliation.test.ts"
+					"owner": "grader edge.anchor, step.anchor; src/runtime/semantic-board-store/tests/anchors.test.ts; packages/board/tests/shared/rules/compare/comparison.test.ts and reconciliation.test.ts"
 				},
 				{
 					"path": "archboard check --code [--variant <draft>]: ANCHOR_PATH_MISSING, ANCHOR_SYMBOL_MISSING, ANCHOR_MISMATCH (the anchor's symbol is defined in the checkout outside the bound code of both ends, or the anchored file uses it only as an evidence kind the relationship kind does not accept), BINDING_SYMBOL_MISSING and, on a named draft, BINDING_PATH_MISSING, each a warning whose subject is a node, an edge or a step; RELATIONSHIP_UNDRAWN once on the part that bound parts' code reaches with no relationship, a warning when its evidence is resolved and information on candidates; RELATIONSHIP_BACKWARDS and RELATIONSHIP_UNSUPPORTED, information, for a relationship with no anchor; across a network hop, an environment value bound code reads joined with the compose service, Kubernetes workload or Terraform resource that runs that code and sets it to another part's address as configured-path evidence (a candidate where the infrastructure leaves a choice), and RELATIONSHIP_UNSUPPORTED naming the side with no evidence in missing (code or infrastructure); each finding with evidence names its kind and whether it is resolved or a candidate; skipped subjects and checkouts listed with the reason, symbol-unparsed (found only in code that did not parse), ends-overlap (a relationship whose ends hold one another), language-server-missing (a checkout with no configured server for a language, said once for the checkout and the language, naming the command that configures one), language-server-unready (a project its server cannot answer about, said once for it: a Swift package with no index, which the check never builds, a C# checkout with no solution or project file, or a C, C++ or Objective-C file with no compile_commands.json or one that lists no command) and language-server-failed (a server that did not start or answer, said once for its checkout) among them; a --variant no board has as a draft refused NO_SUCH_DRAFT",
@@ -329,7 +329,7 @@
 					"expectedUse": "only when the detail board is in another repository: the identity a binding names, never a path; without it the link stays in the board's own vault. DRILL_DOWN_UNKNOWN_REPOSITORY (the repository has no usable checkout on this machine) and DRILL_DOWN_UNKNOWN_BOARD (the chosen checkout's vault lacks the board) are reported by check",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests/drill-down-repository.test.ts (the link without repo stays local, the chosen checkout's vault, the target's level, a former or recased name, the vault's own identity, an unknown or gone repository, no write to the other vault); tests/system/cli/drill-down-repository.test.ts (archboard check over two checkouts with a registry of their own); src/shared/semantic-board/tests/listing.test.ts (the schema refuses a path; the listed link carries repo) and comparison.test.ts (a changed repo is a changed drill-down). Mechanical validation: no Flask scenario links to a board of another repository"
+					"owner": "src/runtime/semantic-board-store/tests/drill-down-repository.test.ts (the link without repo stays local, the chosen checkout's vault, the target's level, a former or recased name, the vault's own identity, an unknown or gone repository, no write to the other vault); tests/system/cli/drill-down-repository.test.ts (archboard check over two checkouts with a registry of their own); packages/board/tests/shared/protocol/board-listing.test.ts (the schema refuses a path; the listed link carries repo) and comparison.test.ts (a changed repo is a changed drill-down). Mechanical validation: no Flask scenario links to a board of another repository"
 				},
 				{
 					"path": "archboard semantic move <board> --to <dir> --expect-version <n> --doing <line>: the whole board, with every variant, former name and id, into the vault found from --to; the drill-downs whose meaning the move changes rewritten to name a repository identity and listed in rewritten; MOVE_SAME_REPOSITORY, BOARD_EXISTS, MOVE_NEEDS_IDENTITY, BOARD_HELD, MOVE_STOPPED (the board in both vaults until the same move runs again)",
@@ -391,7 +391,7 @@
 					"expectedUse": "a component's own steps as one flow",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests views (one participant, self steps)"
+					"owner": "packages/board/tests views (one participant, self steps)"
 				},
 				{
 					"path": "step insert/delete/reorder with continuing identity",
@@ -439,14 +439,14 @@
 					"expectedUse": "a sequence view scoped to a flow",
 					"scenarios": ["S05"],
 					"evidence": "author-run",
-					"owner": "grader view.sequence; src/shared/semantic-board/tests scope"
+					"owner": "grader view.sequence; packages/board/tests scope"
 				},
 				{
 					"path": "automatic endpoints, participants and ancestor context",
 					"expectedUse": "come with the selection",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests scope (withContainers, endpointsOf)"
+					"owner": "packages/board/tests scope (withContainers, endpointsOf)"
 				},
 				{
 					"path": "board-owned view edits across variants",
@@ -460,7 +460,7 @@
 					"expectedUse": "the removal stays visible through the view",
 					"scenarios": ["S12"],
 					"evidence": "harness-check",
-					"owner": "comparison-standing removedNodes 1 + render-ok; src/shared/semantic-board/tests compare withRemoved"
+					"owner": "comparison-standing removedNodes 1 + render-ok; packages/board/tests compare withRemoved"
 				},
 				{
 					"path": "view empty on both sides without falling back to all",
@@ -515,7 +515,7 @@
 					"expectedUse": "repair each warned beat with an explicit view; writes still succeed while view remains optional",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests/walkthroughs.test.ts (creation, omission after an explicit view, repeated explicit views, repair, and untouched walkthroughs). Mechanical author feedback uses a runtime owner. Schema descriptions come from the shared guidance in src/shared/semantic-board/lib/walkthrough.ts."
+					"owner": "src/runtime/semantic-board-store/tests/walkthroughs.test.ts (creation, omission after an explicit view, repeated explicit views, repair, and untouched walkthroughs). Mechanical author feedback uses a runtime owner. Schema descriptions come from the shared guidance in packages/board/src/shared/schemas/walkthrough.ts."
 				},
 				{
 					"path": "stable beat identity across reword/reorder/add/remove",
@@ -716,14 +716,14 @@
 					"expectedUse": "a proposal reads as its real delta",
 					"scenarios": ["S02", "S12"],
 					"evidence": "harness-check",
-					"owner": "comparison-standing; grader compare.reading; src/shared/semantic-board/tests compare"
+					"owner": "comparison-standing; grader compare.reading; packages/board/tests compare"
 				},
 				{
 					"path": "current variant as the reference: history and proposals drawn against it, current drawn plain, compare --against names another side",
 					"expectedUse": "report a proposal against now; read a superseded proposal's own change with --against its parent before restating it",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests/read-against-current.test.ts; src/cli/commands/tests/comparison-answer.test.ts"
+					"owner": "packages/board/tests/shared/rules/compare/read-against-current.test.ts; src/cli/commands/tests/comparison-answer.test.ts"
 				},
 				{
 					"path": "fresh architecture layout independent of variant ancestry",
@@ -834,7 +834,7 @@
 					"expectedUse": "reported and settleable",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests reconcile"
+					"owner": "packages/board/tests reconcile"
 				},
 				{
 					"path": "blocked descendants and atomic family outcomes",
@@ -944,14 +944,14 @@
 					"expectedUse": "the document stores a sorted set or omits it",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests groups; src/runtime/semantic-board-store/tests grouping"
+					"owner": "packages/board/tests groups; src/runtime/semantic-board-store/tests grouping"
 				},
 				{
 					"path": "display-name change without semantic delta; independent membership reconciliation",
 					"expectedUse": "renaming a group changes no board",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests reconcile memberships; compare tests"
+					"owner": "packages/board/tests reconcile memberships; compare tests"
 				},
 				{
 					"path": "semantic inspect --group: members, internal edges, directed boundary edges, immediate neighbours",
@@ -999,7 +999,7 @@
 					"expectedUse": "outcomes of writes, never authored",
 					"scenarios": ["S00", "S01"],
 					"evidence": "harness-check",
-					"owner": "version-advanced-by; check-clean; src/shared/semantic-board/tests aggregate"
+					"owner": "version-advanced-by; check-clean; packages/board/tests aggregate"
 				},
 				{
 					"path": "variant ids, parent, current, lifecycle",
@@ -1020,14 +1020,14 @@
 					"expectedUse": "recorded by the store on a parent edit",
 					"scenarios": ["S11"],
 					"evidence": "harness-check",
-					"owner": "reconciliation-settled; src/shared/semantic-board/tests reconcile-standing"
+					"owner": "reconciliation-settled; packages/board/tests reconcile-standing"
 				},
 				{
 					"path": "schema refinements and cross-reference rules",
 					"expectedUse": "runtime evidence, not shape coverage",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests integrity; src/runtime/skill-distribution/tests/artifacts.test.ts (obligations named)"
+					"owner": "packages/board/tests integrity; src/runtime/skill-distribution/tests/artifacts.test.ts (obligations named)"
 				}
 			]
 		},
@@ -1047,7 +1047,7 @@
 					"expectedUse": "mechanical limits",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests primitives; src/shared/semantic-board/tests/responsibility.test.ts"
+					"owner": "packages/board/tests primitives; packages/board/tests/shared/schemas/responsibility.test.ts"
 				},
 				{
 					"path": "ambiguous name references versus ids",
@@ -1061,7 +1061,7 @@
 					"expectedUse": "refused at the boundary",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests integrity and input"
+					"owner": "packages/board/tests integrity and input"
 				},
 				{
 					"path": "interpret a refusal and repair meaning",

@@ -6,7 +6,8 @@
 
 import { createHash } from "node:crypto";
 import path from "node:path";
-import type { DiagramGrammar, SemanticBoard } from "@/shared/semantic-board/index";
+import type { DiagramGrammar } from "@archboard/board/vocabulary";
+import type { SemanticBoard } from "@archboard/board/document";
 import {
 	exposureCounts,
 	type ClassifiedCommand,

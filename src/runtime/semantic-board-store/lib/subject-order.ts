@@ -1,4 +1,4 @@
-import { ORDER_STEP } from "@/shared/semantic-board/index";
+import { ORDER_STEP } from "@archboard/board/positions";
 
 /**
  * Keep a subject's position when restated, or append a new subject after the

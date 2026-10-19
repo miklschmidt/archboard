@@ -3,7 +3,7 @@
 // before layout at a card's widest, a wide container's responsibility stood
 // as a narrow column at the left of a wide, tall, mostly empty slab.
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import {
 	ARCHITECTURE_CARD_PADDING,
 	ARCHITECTURE_ICON_GAP,

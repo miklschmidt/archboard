@@ -8,7 +8,7 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import {
 	bodyShift,
 	corridorPoints,

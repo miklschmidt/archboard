@@ -17,8 +17,8 @@ import express from "express";
 import type * as ServerModule from "@/server/archboard/index";
 import type * as RouteModule from "@/server/archboard/code-check";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
-import { VaultCheckSchema } from "@/shared/semantic-policy/index";
+import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
+import { VaultCheckSchema } from "@archboard/board/policy";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],

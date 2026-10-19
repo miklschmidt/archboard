@@ -132,10 +132,10 @@ rules that will not stop you:
   `@`. A board name can never hold one, and a variant's name can. The file, the
   lease, the claim and what an agent said it was doing are all facts about the
   board. Only what is drawn depends on the variant.
-- **Never rename a subject id.** Every id comes from `src/shared/ids/ids.ts`
-  (one to eight characters). No second site mints an id. An id is what a proposal is
-  compared by, so renaming one makes a change look like a deletion and an
-  addition.
+- **Never rename a subject id.** Every id comes from
+  `packages/board/src/shared/rules/ids.ts` (one to eight characters). No second
+  site mints an id. An id is what a proposal is compared by, so renaming one
+  makes a change look like a deletion and an addition.
 - **Text width is measured, not estimated**, by the canvas of the place that draws the
   picture with the diagram fonts loaded: the browser's own, or `@napi-rs/canvas`
   under Bun (TASK-247).

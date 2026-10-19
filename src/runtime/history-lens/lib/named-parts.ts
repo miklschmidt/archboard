@@ -10,7 +10,8 @@
 // changed from a part at the far end of a new relationship.
 
 import type { NamedReason } from "@/shared/footprint/index";
-import { isMessage, type VariantComparison } from "@/shared/semantic-board/index";
+import { isMessage } from "@archboard/board/flow-steps";
+import { type VariantComparison } from "@archboard/board/compare-variants";
 
 /** Every reason a part is named, by the part's id. */
 type Named = Map<string, NamedReason[]>;

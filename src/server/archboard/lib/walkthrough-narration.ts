@@ -20,8 +20,8 @@ import {
 	addressedVariant,
 	type SemanticBoard,
 	type SemanticVariant,
-	type SemanticWalkthrough,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
+import { type SemanticWalkthrough } from "@archboard/board/walkthrough";
 import {
 	panePresentations,
 	type UserPresentationChange,

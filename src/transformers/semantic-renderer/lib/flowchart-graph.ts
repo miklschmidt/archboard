@@ -16,14 +16,8 @@
 // reader who picks one has picked the step; its lines and terminals carry ids
 // of the picture's own, which name no subject.
 
-import type {
-	FlowMessage,
-	FlowStep,
-	SemanticEdge,
-	SemanticFlow,
-	SemanticNode,
-	VariantContent,
-} from "@/shared/semantic-board/index";
+import type { FlowMessage, FlowStep, SemanticFlow } from "@archboard/board/views";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
 
 /** What a node of the graph is drawn as when it is not a box. */
 type FlowchartShape = "decision" | "loop" | "start" | "end";

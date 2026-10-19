@@ -12,11 +12,8 @@
 import { RiArrowRightLine, RiMicLine, RiPlayCircleLine, RiPlayLine } from "@remixicon/react";
 import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
 
-import type {
-	SemanticView,
-	SemanticWalkthrough,
-	WalkthroughBeat,
-} from "@/shared/semantic-board/index";
+import type { SemanticView } from "@archboard/board/views";
+import type { SemanticWalkthrough, WalkthroughBeat } from "@archboard/board/walkthrough";
 import { Button } from "@/ui/components/button";
 import { IconButton } from "@/ui/components/IconButton";
 import { KindIcon } from "@/ui/semantic-board-canvas/components/KindMarks";

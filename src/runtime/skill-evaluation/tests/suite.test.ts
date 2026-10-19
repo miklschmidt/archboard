@@ -9,8 +9,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
-import { SemanticBoardSchema } from "@/shared/semantic-board/index";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { SemanticBoardSchema } from "@archboard/board/document";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import {
 	FixtureStepSchema,

@@ -6,12 +6,9 @@
 // it, so "two nodes removed" and "four subjects removed" describe the same
 // proposal, and a check may state either.
 
-import {
-	comparedWith,
-	compareVariants,
-	type SemanticBoard,
-	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+import { comparedWith } from "@archboard/board/drawing";
+import { compareVariants } from "@archboard/board/compare-variants";
+import { type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
 import {
 	finding,
 	located,

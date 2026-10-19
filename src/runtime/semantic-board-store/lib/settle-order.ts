@@ -17,12 +17,10 @@
 // relative: settling where one step sits without settling the others would be
 // deciding their places too, quietly, on somebody's behalf.
 
-import {
-	everyStep,
-	type FlowStep,
-	type ReconciliationIssue,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+import { everyStep } from "@archboard/board/flow-steps";
+import { type FlowStep } from "@archboard/board/views";
+import { type ReconciliationIssue } from "@archboard/board/reconciliation";
+import { type VariantContent } from "@archboard/board/content";
 
 /** Where an ordered entry lives: which container holds it, and of what kind. */
 interface Ordered {

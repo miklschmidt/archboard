@@ -4,7 +4,7 @@
 // other's internals.
 
 import type { CodeTargetNotice } from "@archboard/code-binding/code-target-open";
-import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
+import type { PanePresentRequest, SemanticPanePart } from "@archboard/board/pane-context";
 import type { PaneReading } from "@/ui/pane-session/lib/pane-reading";
 import type {
 	AgentActivityEntry,

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "@/runtime/engine/board-lock";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import { BoardCreateInputSchema } from "@archboard/board/board-input";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-discard-"));
 
@@ -20,7 +20,7 @@ async function create(name: string): Promise<void> {
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				level: "system",
 				name,
 				nodes: [{ name: "Gateway", kind: "service" }],

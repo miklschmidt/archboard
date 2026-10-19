@@ -17,15 +17,13 @@ import type { JSX, ReactNode } from "react";
 
 import {
 	addressedVariant,
-	everyStep,
-	isMessage,
-	stepWords,
-	type FlowStep,
-	type ReconciliationIssue,
 	type SemanticBoard,
-	type SemanticNode,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
+import { everyStep, isMessage, stepWords } from "@archboard/board/flow-steps";
+import { type FlowStep } from "@archboard/board/views";
+import { type ReconciliationIssue } from "@archboard/board/reconciliation";
+import { type SemanticNode } from "@archboard/board/content";
 import { RelationshipChip } from "@/ui/semantic-board-canvas/components/KindMarks";
 import { DetailsPanel } from "@/ui/semantic-board-canvas/components/DetailsPanel";
 import type { RememberedReading } from "@/shared/code-check/index";

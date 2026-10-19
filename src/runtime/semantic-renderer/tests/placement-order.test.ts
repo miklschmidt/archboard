@@ -1,12 +1,8 @@
 import { expect, test } from "bun:test";
 import input from "@/runtime/semantic-renderer/tests/placement-order-graph.json";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import {
-	LayoutEngineSchema,
-	VariantContentSchema,
-	type LayoutEngineName,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
+import { VariantContentSchema, type VariantContent } from "@archboard/board/content";
 
 const CONTENT = VariantContentSchema.parse(input);
 

@@ -11,8 +11,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { declareDirectory } from "@archboard/workspace/repo-registry";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
-import type * as ContractModule from "@/shared/semantic-board/index";
-import { DEFAULT_SEMANTIC_POLICY, type VaultDiagnostic } from "@/shared/semantic-policy/index";
+
+import { DEFAULT_SEMANTIC_POLICY, type VaultDiagnostic } from "@archboard/board/policy";
+import { BoardCreateInputSchema } from "@archboard/board/board-input";
+import { BoardRenameInputSchema } from "@archboard/board/resolution-input";
 
 const META = "github.com/acme/meta";
 const PRODUCT = "github.com/acme/product";
@@ -20,7 +22,6 @@ const callerRepos = process.env["ARCHBOARD_REPOS"];
 const root = realpathSync.native(mkdtempSync(join(tmpdir(), "archboard-drill-repo-")));
 process.env["ARCHBOARD_REPOS"] = join(root, "repos.json");
 let store: typeof StoreModule;
-let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
 /** The vaults by checkout name; `meta` carries the drill-downs. */
 const vaults = {
@@ -58,7 +59,6 @@ beforeAll(async () => {
 	await declareDirectory(spare);
 	await declareDirectory(product);
 	store = await import("@/runtime/semantic-board-store/index");
-	contract = await import("@/shared/semantic-board/index");
 	// The product holds the board; the spare, which is chosen, does not.
 	await create(vaults.product, { name: "Payments", level: "service", nodes: nodes("module") });
 	await create(vaults.spare, { name: "Spare only", level: "service", nodes: nodes("module") });
@@ -90,7 +90,7 @@ async function create(vault: string, input: Record<string, unknown>): Promise<vo
 		vault,
 		board: String(input["name"]),
 		writer,
-		transition: store.createBoardTransition(contract.BoardCreateInputSchema.parse(input)),
+		transition: store.createBoardTransition(BoardCreateInputSchema.parse(input)),
 	});
 	if (written.outcome !== "applied") throw new Error(`seed refused: ${JSON.stringify(written)}`);
 }
@@ -158,7 +158,7 @@ test("a name the board had before a rename, or in other letters, opens it in tha
 		board: "Payments",
 		writer,
 		expectedVersion: before.board.version,
-		transition: store.renameTransition(contract.BoardRenameInputSchema.parse({ to: "Ledger" })),
+		transition: store.renameTransition(BoardRenameInputSchema.parse({ to: "Ledger" })),
 	});
 	expect(renamed.outcome).toBe("applied");
 	for (const [at, board] of ["Payments", "LEDGER", "ledger"].entries()) {

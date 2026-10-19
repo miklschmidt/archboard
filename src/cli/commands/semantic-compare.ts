@@ -25,22 +25,24 @@
 import { z } from "zod";
 import {
 	compareVariants,
-	RenderedVariantSchema,
 	type PlacedBeat,
-	type SemanticEdge,
-	type SemanticFlow,
-	type SemanticNode,
-	type SemanticVariant,
-	type SemanticWalkthrough,
 	type SubjectChange,
 	type VariantComparison,
+} from "@archboard/board/compare-variants";
+import { RenderedVariantSchema } from "@archboard/board/render-reply";
+import {
+	type SemanticEdge,
+	type SemanticNode,
 	type VariantContent,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/content";
+import { type SemanticFlow } from "@archboard/board/views";
+import { type SemanticVariant } from "@archboard/board/document";
+import { type SemanticWalkthrough } from "@archboard/board/walkthrough";
 import {
 	diagnosticLine,
 	VaultDiagnosticSchema,
 	type VaultDiagnostic,
-} from "@/shared/semantic-policy/index";
+} from "@archboard/board/policy";
 import { readSemanticBoardAnswerOnServer } from "@/runtime/semantic-board-client/index";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";

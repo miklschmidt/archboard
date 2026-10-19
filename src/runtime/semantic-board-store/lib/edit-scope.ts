@@ -7,7 +7,8 @@
 // variant's summary and documents are afterwards.
 
 import type { DocumentReference } from "@archboard/code-binding/code-binding";
-import type { SemanticVariant, VariantEditInput } from "@/shared/semantic-board/index";
+import type { SemanticVariant } from "@archboard/board/document";
+import type { VariantEditInput } from "@archboard/board/board-input";
 
 /**
  * Whether a stated batch edits variant content at all, as opposed to the

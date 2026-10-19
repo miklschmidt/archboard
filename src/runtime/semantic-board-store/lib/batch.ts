@@ -35,13 +35,10 @@
 // handle at all. That is the same rule ADR 0015 states for every other input
 // spelling: one converter, on the way in, nothing on the way out.
 
-import { mintId } from "@/shared/ids/ids";
-import {
-	subjectIds,
-	type SemanticBoard,
-	type VariantContent,
-	type VariantEditInput,
-} from "@/shared/semantic-board/index";
+import { mintId } from "@archboard/board/ids";
+import { subjectIds, type VariantContent } from "@archboard/board/content";
+import { type SemanticBoard } from "@archboard/board/document";
+import { type VariantEditInput } from "@archboard/board/board-input";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 
 /** One identity, or why the entry asking for it could not be given one. */

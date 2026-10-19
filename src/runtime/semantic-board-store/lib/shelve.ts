@@ -16,11 +16,7 @@
 // variant is not a draft, so it stops inheriting (`propagate.ts`), and it is
 // not editable or adoptable, for the reason history is neither.
 
-import {
-	type SemanticBoard,
-	type SemanticVariant,
-	type Shelving,
-} from "@/shared/semantic-board/index";
+import { type SemanticBoard, type SemanticVariant, type Shelving } from "@archboard/board/document";
 import { withoutStanding } from "@/runtime/semantic-board-store/lib/propagate";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 

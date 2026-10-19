@@ -8,7 +8,7 @@
 // the part and all it holds, every relationship that touches any of it, and the
 // parts at their other ends.
 
-import type { SemanticEdge, SemanticNode, VariantContent } from "@/shared/semantic-board/index";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 
 /** The parts and relationships of a variant, as far as containment and wiring are concerned. */

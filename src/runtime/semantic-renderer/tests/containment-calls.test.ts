@@ -2,7 +2,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 // A frame and its own part meet at the title divider. The line stays inside
 // the frame, clears its title and touches its child, whichever way the page reads.
 import { expect, test } from "bun:test";
-import { type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { measureArchitecture } from "@/runtime/semantic-renderer/measurement";
 import {

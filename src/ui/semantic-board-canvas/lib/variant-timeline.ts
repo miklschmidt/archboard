@@ -7,7 +7,7 @@
 // current variant has no adopted line, and its first drafts stand on the line
 // in its place. Pure.
 
-import type { Adoption, Shelving } from "@/shared/semantic-board/index";
+import type { Adoption, Shelving } from "@archboard/board/document";
 import type { OfferedVariant } from "@/ui/semantic-board-canvas/lib/board-document";
 
 /** One variant's row on the timeline. */

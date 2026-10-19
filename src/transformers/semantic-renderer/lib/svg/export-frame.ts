@@ -17,7 +17,7 @@
 // subjects its grammar never draws, and a count of those keyed a mark nobody
 // could find (TASK-497).
 
-import type { LegendLayout } from "@/shared/semantic-board/index";
+import type { LegendLayout } from "@archboard/board/render-reply";
 import { DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/config";
 import { roundCoord } from "@/transformers/semantic-renderer/lib/geometry";
 import { CARD_TITLE_FONT, fontAttributes } from "@/transformers/semantic-renderer/lib/fonts";

@@ -30,7 +30,7 @@ import { lastChangeOf, type LastChange } from "@/runtime/history-lens/lib/last-c
 import { partReading, type PartReading, type ReadPart } from "@/runtime/history-lens/lib/parts";
 import type { BehindCommit, BoardBehind } from "@/shared/code-check/index";
 import type { CodeBinding } from "@archboard/code-binding/code-binding";
-import { currentVariant, type SemanticBoard } from "@/shared/semantic-board/index";
+import { currentVariant, type SemanticBoard } from "@archboard/board/document";
 
 /** One board to read, as the store read it, and the file it lives in. */
 interface BoardToRead {

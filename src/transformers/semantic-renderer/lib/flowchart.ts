@@ -22,9 +22,10 @@
 // so that the fewest lines cross, a loop's line back up included, and the
 // second layout asks for the points in that order.
 
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
-import type { DiagramAtlas, VariantContent } from "@/shared/semantic-board/index";
+import type { DiagramAtlas } from "@archboard/board/render-reply";
+import type { VariantContent } from "@archboard/board/content";
 import type {
 	DrawingEdge,
 	MeasuredArchitecture,

@@ -41,8 +41,8 @@ import {
 } from "@/runtime/code-facts/index";
 import { nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
-import type { SemanticNode } from "@/shared/semantic-board/index";
-import { describeSubject } from "@/shared/semantic-policy/index";
+import type { SemanticNode } from "@archboard/board/content";
+import { describeSubject } from "@archboard/board/policy";
 
 /** One variable a module passes on unchanged, at its one use. */
 interface PassedVariable {

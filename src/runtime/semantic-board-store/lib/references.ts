@@ -17,7 +17,7 @@
 // Ids themselves are never derived from anything an agent can change. A node
 // removed and written again under the same name is a new node, not the old one
 // come back, and two unrelated nodes written into sibling variants are two
-// nodes. Both of those follow from minting through `src/shared/ids/ids.ts`
+// nodes. Both of those follow from minting through `@archboard/board/ids`
 // against every id the board already holds, rather than hashing a name.
 //
 // The identity rules the flows, the views and the walkthroughs share live here
@@ -26,7 +26,7 @@
 // there, a stated name resolves only when it fits exactly one thing, and
 // anything genuinely new is minted against the whole board family.
 
-import type { SemanticNode } from "@/shared/semantic-board/index";
+import type { SemanticNode } from "@archboard/board/content";
 import {
 	refuse,
 	type SemanticRefusal,

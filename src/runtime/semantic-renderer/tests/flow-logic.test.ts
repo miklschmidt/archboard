@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { DiagramBox, VariantContent } from "@/shared/semantic-board/index";
+import type { DiagramBox } from "@archboard/board/render-reply";
+import type { VariantContent } from "@archboard/board/content";
 import { renderSemanticView, SemanticRenderError } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { drawnTexts } from "@/runtime/semantic-renderer/tests/drawn-text";

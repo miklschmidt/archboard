@@ -24,19 +24,19 @@
 // nothing, with nobody told. The refusal says what to do instead, and removing
 // the node and rewriting the beat is one command either way.
 
+import { everyStep } from "@archboard/board/flow-steps";
 import {
-	everyStep,
 	type SemanticEdge,
-	type SemanticFlow,
 	type SemanticNode,
-	type SemanticView,
-	type SemanticWalkthrough,
-	type SemanticWalkthroughInput,
 	type VariantContent,
+} from "@archboard/board/content";
+import { type SemanticFlow, type SemanticView } from "@archboard/board/views";
+import { type SemanticWalkthrough, type WalkthroughBeat } from "@archboard/board/walkthrough";
+import {
+	type SemanticWalkthroughInput,
 	type VariantEditInput,
-	type WalkthroughBeat,
 	type WalkthroughBeatInput,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/board-input";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import { idFor, named, namedOne, place } from "@/runtime/semantic-board-store/lib/references";
 import { handled, mintInto, type Batch } from "@/runtime/semantic-board-store/lib/batch";

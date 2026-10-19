@@ -1,6 +1,6 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import type { DiagramBox } from "@/shared/semantic-board/index";
+import type { DiagramBox } from "@archboard/board/render-reply";
 import { renderDataFlow } from "@/runtime/semantic-renderer/index";
 import {
 	drawnSpan,

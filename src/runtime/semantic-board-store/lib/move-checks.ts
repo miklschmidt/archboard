@@ -6,7 +6,7 @@
 
 import fs from "node:fs";
 import { normalizeBoardKey } from "@/runtime/engine/board";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { SemanticBoard } from "@archboard/board/document";
 import { decodeSemanticBoardDocument } from "@/runtime/semantic-board-store/lib/decode";
 import { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";
 import { listSemanticBoards } from "@/runtime/semantic-board-store/lib/listing";
