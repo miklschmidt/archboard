@@ -2,10 +2,8 @@ import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/proto
 import { mock } from "bun:test";
 import { resolve } from "node:path";
 
-const modulePath = resolve(
-	import.meta.dir,
-	"../../../../packages/codex-app-server/src/runtime/services/executable.ts",
-);
+import { CODEX_PROCESS_MODULE_PATH as modulePath } from "../../support/codex-process-module.ts";
+
 const actual = await import(modulePath);
 const executable = process.env["ARCHBOARD_TEST_PUBLIC_CODEX_EXECUTABLE"];
 if (executable !== undefined) {
