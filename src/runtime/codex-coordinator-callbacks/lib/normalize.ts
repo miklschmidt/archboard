@@ -3,7 +3,7 @@ import type {
 	PaneFocusEvent,
 	PaneSelectionEvent,
 	SettledSemanticChangeEvent,
-} from "@/runtime/codex-semantic-context";
+} from "@archboard/codex-app-server/semantic-context-types";
 import type { WorkhorseOperationEvent } from "@/runtime/codex-workhorse-operations";
 import { paneNews } from "@/runtime/codex-coordinator-callbacks/lib/pane-news";
 import type {

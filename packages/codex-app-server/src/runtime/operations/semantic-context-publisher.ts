@@ -1,5 +1,5 @@
-import { buildSemanticBrief } from "@/runtime/codex-semantic-context/lib/brief";
-import { SEMANTIC_CONTEXT_LIMITS } from "@/runtime/codex-semantic-context/lib/limits";
+import { buildSemanticBrief } from "#runtime/schemas/semantic-brief.ts";
+import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 import {
 	byteLength,
 	clipJsonUtf8,
@@ -10,7 +10,7 @@ import {
 	userChanges,
 	agentSwitchOf,
 	type BoundedValue,
-} from "@/runtime/codex-semantic-context/lib/normalize";
+} from "#runtime/schemas/semantic-context-input.ts";
 import type {
 	FreshSemanticBrief,
 	PaneFocusEvent,
@@ -27,15 +27,13 @@ import type {
 	SemanticUnsubscribe,
 	SettledChangeSourceEvent,
 	SettledSemanticChangeEvent,
-} from "@/runtime/codex-semantic-context/lib/types";
+} from "#runtime/schemas/semantic-context-types.ts";
 
 import {
 	errorDetails,
 	LISTENER_DIAGNOSTIC_ERROR_NAME_FALLBACK,
 	LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE,
-} from "@/runtime/codex-semantic-context/lib/listener-diagnostics";
-
-export { SemanticContextInputError } from "@/runtime/codex-semantic-context/lib/normalize";
+} from "#runtime/services/semantic-listener-diagnostics.ts";
 
 export class SemanticContextLifecycleError extends Error {
 	readonly phase: "registration" | "dispose";

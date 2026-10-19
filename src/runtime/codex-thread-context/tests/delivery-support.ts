@@ -16,7 +16,7 @@ import type {
 	ThreadLinkSnapshot,
 	ThreadLinkStatus,
 } from "../../codex-thread-link/index.ts";
-import type { SettledSemanticChangeEvent } from "../../codex-semantic-context/index.ts";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
 import {
 	createIdentityAuthority,
 	type ChildEpoch,

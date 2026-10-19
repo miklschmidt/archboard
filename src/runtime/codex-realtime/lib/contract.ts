@@ -17,7 +17,7 @@ import type {
 	CodexSession,
 	SessionNotificationHandler,
 } from "@archboard/codex-app-server/session-api";
-import type { FreshSemanticBrief } from "@/runtime/codex-semantic-context";
+import type { FreshSemanticBrief } from "@archboard/codex-app-server/semantic-context-types";
 import type {
 	RealtimePresentation,
 	RealtimePresentationChange,

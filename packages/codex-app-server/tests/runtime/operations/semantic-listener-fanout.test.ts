@@ -3,10 +3,12 @@ import { describe, expect, test } from "bun:test";
 import {
 	createSemanticContextPublisher,
 	SEMANTIC_LISTENER_DIAGNOSTIC_POLICY,
+} from "#runtime/operations/semantic-context-publisher.ts";
+import {
 	type SemanticContextInput,
 	type SettledChangeSourceEvent,
 	type SettledChangeSource,
-} from "../index.ts";
+} from "#runtime/schemas/semantic-context-types.ts";
 
 function input(selection: readonly string[] = []): SemanticContextInput {
 	return {

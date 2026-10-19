@@ -1,9 +1,9 @@
-import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthority } from "#shared/rules/workbench-identity.ts";
+import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
 import {
-	createSemanticContextPublisher,
 	type SemanticContextInput,
 	type SettledChangeSourceEvent,
-} from "../index.ts";
+} from "#runtime/schemas/semantic-context-types.ts";
 
 function identities() {
 	const authority = createIdentityAuthority();

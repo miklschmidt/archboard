@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
 import { close, harness, semanticInput, type Harness } from "./support.js";
 
 // Outside news (TASK-293.06): what an agent that is neither this session's workhorse nor its

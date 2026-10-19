@@ -1,7 +1,7 @@
 import {
 	SEMANTIC_CONTEXT_ELLIPSIS,
 	SEMANTIC_CONTEXT_LIMITS,
-} from "@/runtime/codex-semantic-context/lib/limits";
+} from "#runtime/services/semantic-context-limits.ts";
 
 /** A value that may have been shortened to fit a reviewed limit. */
 interface BoundedValue<Value> {

@@ -5,7 +5,7 @@
 // because the two together no longer fit in one reviewed file.
 
 import type { ArchboardContext } from "@/runtime/codex-instructions";
-import type { SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
 import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
 import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
 

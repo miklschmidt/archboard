@@ -1,4 +1,4 @@
-import type { SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
 import {
 	sameThreadLinkIdentity,
 	type ThreadLinkBindingSnapshot,

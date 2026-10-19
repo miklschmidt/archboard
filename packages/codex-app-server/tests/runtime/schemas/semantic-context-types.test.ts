@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
 
-import type { SemanticContextInput, SemanticCursorInput } from "../index.ts";
+import type {
+	SemanticContextInput,
+	SemanticCursorInput,
+} from "#runtime/schemas/semantic-context-types.ts";
 
 const qualifiedCursor = { feedId: "feed", sequence: 3 } satisfies SemanticCursorInput;
 

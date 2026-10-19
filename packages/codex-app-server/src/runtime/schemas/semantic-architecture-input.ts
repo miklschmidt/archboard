@@ -7,7 +7,7 @@
 // composition adapter says the board said, and refuses a word an edit command
 // would not take.
 
-import { SEMANTIC_CONTEXT_LIMITS } from "@/runtime/codex-semantic-context/lib/limits";
+import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 import { DiagramGrammarSchema, VariantLifecycleSchema } from "@archboard/board/vocabulary";
 import { ReconciliationKindSchema } from "@archboard/board/reconciliation";
 import { type ChangeKind } from "@archboard/board/compare-variants";
@@ -22,14 +22,14 @@ import type {
 	SemanticSubject,
 	SemanticVariantIdentity,
 	SemanticViewIdentity,
-} from "@/runtime/codex-semantic-context/lib/types";
+} from "#runtime/schemas/semantic-context-types.ts";
 import {
 	fail,
 	nullableTextValue,
 	numberValue,
 	textValue,
 	type BoundedValue,
-} from "@/runtime/codex-semantic-context/lib/bounded-text";
+} from "#runtime/services/semantic-bounded-text.ts";
 
 /**
  * Whether a value is a non-array object whose keys can be inspected.

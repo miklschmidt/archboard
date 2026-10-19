@@ -176,9 +176,10 @@ checkout that holds a vault and the checkouts a reader of that vault resolves id
 `./code-target-link` chooses the URL a card opens.
 
 The sixth is `codex-app-server` (`@archboard/codex-app-server`). It is one private Codex app-server
-session over stdio. It holds the shared files, the wire protocol, the process owner, the stdio
-transport and the session. `codex-semantic-context` joins it later, with the board package. Every
-export in `shared/` is safe for the browser, with no Node import. The exports in `runtime/` are
+session over stdio. The package is complete. It holds the shared files, the wire protocol, the
+process owner, the stdio transport, the session and the semantic context. It imports `board`
+(layer 4) and the lower packages, and nothing from `src/`. Every export in `shared/` is safe for the
+browser, with no Node import. The exports in `runtime/` are
 runtime-only by policy: the browser imports none of them, though a file such as `./session-contract`
 holds only Zod schemas.
 
@@ -211,6 +212,15 @@ holds only Zod schemas.
   also holds the child's environment, its diagnostics buffer and the executable check.
   `./executable` finds the Codex executable of the checkout whose source runs, through
   `SOURCE_CHECKOUT` of `workspace`, and refuses a global one or one of another checkout.
+- The semantic context turns a user's gestures and the settled changes of a board into the briefs
+  and events that the coordinator and the workhorse read. `./semantic-context-publisher` creates
+  the publisher, in `runtime/operations/`. `./semantic-context-types` holds its input, brief, event
+  and publisher types, in `runtime/schemas/`, and `./semantic-context-limits` holds the byte and
+  entry limits. The input normalizers, the brief builder, the fitter and the bounded-text and
+  listener-diagnostic helpers are private. The barrel `codex-semantic-context/index.ts` is gone: a
+  name is imported from the file that defines it. The package reads board schemas by value from
+  `@archboard/board` (`./vocabulary`, `./reconciliation`, `./pane-context`) to normalize the
+  architecture a pane reports.
 - A test that needs the process owner's injected dependencies imports
   `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
   package has no `./testing` export.

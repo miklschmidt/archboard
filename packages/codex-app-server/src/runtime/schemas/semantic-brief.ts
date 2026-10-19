@@ -1,6 +1,6 @@
 import { CODEX_SEMANTIC_FRESHNESS_MS } from "@archboard/timing";
-import { SEMANTIC_CONTEXT_LIMITS } from "@/runtime/codex-semantic-context/lib/limits";
-import { copyContext, fitAggregate } from "@/runtime/codex-semantic-context/lib/fit";
+import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
+import { copyContext, fitAggregate } from "#runtime/services/semantic-brief-fit.ts";
 import {
 	boundedReasons,
 	byteLength,
@@ -8,7 +8,7 @@ import {
 	fail,
 	normalizeContext,
 	uniqueSorted,
-} from "@/runtime/codex-semantic-context/lib/normalize";
+} from "#runtime/schemas/semantic-context-input.ts";
 import type {
 	SemanticArchitecture,
 	SemanticBriefFields,
@@ -18,7 +18,7 @@ import type {
 	SemanticCursorInput,
 	SemanticFreshness,
 	SemanticStaleness,
-} from "@/runtime/codex-semantic-context/lib/types";
+} from "#runtime/schemas/semantic-context-types.ts";
 
 interface BriefMetadata {
 	readonly source: SemanticBriefSource;

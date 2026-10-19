@@ -1,10 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	createSemanticContextPublisher,
-	SEMANTIC_CONTEXT_LIMITS,
-	type SemanticContextInput,
-} from "../index.ts";
+import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
+import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
+import { type SemanticContextInput } from "#runtime/schemas/semantic-context-types.ts";
 
 function utf8(value: string): number {
 	return new TextEncoder().encode(value).byteLength;

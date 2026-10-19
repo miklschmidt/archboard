@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { createSemanticContextPublisher, type SettledChangeSourceEvent } from "../index.ts";
+import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
+import { type SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
 
 describe("semantic context source failures", () => {
 	test("keeps the feed alive when an unbound server cannot capture context", () => {

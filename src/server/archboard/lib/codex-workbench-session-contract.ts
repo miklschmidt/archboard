@@ -6,7 +6,7 @@ import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tool
 import type { CodexCoordinator } from "@/runtime/codex-coordinator";
 import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
 import type { CodexSession } from "@archboard/codex-app-server/session-api";
-import type { SemanticContextPublisher } from "@/runtime/codex-semantic-context";
+import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context-types";
 import type { CodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
 import type { ThreadUnload } from "@/runtime/codex-thread-unload";
 import type {
