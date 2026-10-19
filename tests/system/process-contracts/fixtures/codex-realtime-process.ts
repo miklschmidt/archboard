@@ -1,7 +1,7 @@
 import {
 	CODEX_PROTOCOL_BINARY_VERSION,
 	CODEX_PROTOCOL_VERSION,
-} from "../../../../src/runtime/codex-protocol/index.ts";
+} from "@archboard/codex-app-server/protocol-version";
 import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { EventEmitter } from "node:events";
 import { tmpdir } from "node:os";
@@ -11,7 +11,7 @@ import {
 	createCodexProcess,
 	type CodexProcess,
 	type CodexProcessChild,
-} from "../../../../src/runtime/codex-process/index.ts";
+} from "@archboard/codex-app-server/process";
 import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,

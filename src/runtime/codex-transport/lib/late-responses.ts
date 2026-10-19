@@ -1,6 +1,9 @@
 import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
-import { decodeJsonRpcError, decodeResponseEnvelope } from "@/runtime/codex-protocol";
-import type { ResponseMethod } from "@/runtime/codex-protocol";
+import {
+	decodeJsonRpcError,
+	decodeResponseEnvelope,
+} from "@archboard/codex-app-server/protocol-decoder";
+import type { ResponseMethod } from "@archboard/codex-app-server/protocol-methods";
 import { redactRemoteError } from "@/runtime/codex-transport/lib/errors";
 import type { RequestTombstone } from "@/runtime/codex-transport/lib/internals";
 import type {

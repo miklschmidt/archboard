@@ -1,6 +1,6 @@
-import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
 import type { ActiveEpoch } from "../../codex-epoch/index.js";
-import type { ServerNotificationPayloads } from "../../codex-protocol/index.js";
+import type { ServerNotificationPayloads } from "@archboard/codex-app-server/protocol-decoder";
 import type {
 	CodexSessionMutationError,
 	SessionParams,

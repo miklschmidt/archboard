@@ -1,9 +1,9 @@
 import {
 	isClientRequestMethodWithoutParams,
 	type ClientRequestMethod,
-	type ClientRequestParams,
 	type ResponseMethod,
-} from "@/runtime/codex-protocol";
+} from "@archboard/codex-app-server/protocol-methods";
+import { type ClientRequestParams } from "@archboard/codex-app-server/client-request-schemas";
 import { CodexSessionError } from "@/runtime/codex-session/lib/contract";
 import {
 	SESSION_PROTOCOL_METHODS,

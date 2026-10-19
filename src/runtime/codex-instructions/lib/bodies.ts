@@ -1,7 +1,7 @@
 import path from "node:path";
 import { z } from "zod";
 
-import type { UserInputSchema } from "@/runtime/codex-protocol";
+import type { UserInputSchema } from "@archboard/codex-app-server/core-schemas";
 import {
 	ArchboardContextSchema,
 	canonicalContext,

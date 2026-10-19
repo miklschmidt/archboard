@@ -1,5 +1,5 @@
-import { CodexServerResponseSchema } from "@/runtime/codex-protocol";
-import type { ServerRequestMethod } from "@/runtime/codex-protocol";
+import { CodexServerResponseSchema } from "@archboard/codex-app-server/server-response-schemas";
+import type { ServerRequestMethod } from "@archboard/codex-app-server/protocol-methods";
 import {
 	CodexTransportOwnershipError,
 	CodexTransportUsageError,

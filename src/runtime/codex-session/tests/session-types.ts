@@ -1,4 +1,5 @@
-import type { ResponseMethod, ResponsePayloads } from "../../codex-protocol/index.js";
+import type { ResponseMethod } from "@archboard/codex-app-server/protocol-methods";
+import type { ResponsePayloads } from "@archboard/codex-app-server/protocol-decoder";
 import type {
 	ItemId,
 	LoginId,

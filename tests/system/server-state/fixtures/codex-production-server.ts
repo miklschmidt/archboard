@@ -16,9 +16,10 @@ if (logPath !== undefined) {
 
 const executableModulePath = path.resolve(
 	import.meta.dir,
-	"../../../../src/runtime/codex-process/executable.ts",
+	"../../../../packages/codex-app-server/src/runtime/services/executable.ts",
 );
-const executableModule = await import("../../../../src/runtime/codex-process/executable.ts");
+const executableModule =
+	await import("../../../../packages/codex-app-server/src/runtime/services/executable.ts");
 await Promise.resolve(
 	mock.module(executableModulePath, (): typeof executableModule => ({
 		...executableModule,

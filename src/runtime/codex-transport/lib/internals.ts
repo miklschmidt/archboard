@@ -1,4 +1,4 @@
-import type { ResponseMethod } from "@/runtime/codex-protocol";
+import type { ResponseMethod } from "@archboard/codex-app-server/protocol-methods";
 import type { TransportServerRequest } from "@/runtime/codex-transport/lib/types";
 import type { FrameWriterJob } from "@/runtime/codex-transport/lib/frame-writer";
 import type {

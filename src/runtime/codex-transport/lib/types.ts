@@ -3,12 +3,14 @@ import type { ChildProcessEventMap, ChildProcessWithoutNullStreams } from "node:
 import type {
 	ClientNotificationMethod,
 	ClientRequestMethodWithoutParams,
-	DecodedServerNotification,
 	ResponseMethod,
-	ResponsePayloads,
 	ServerRequestMethod,
+} from "@archboard/codex-app-server/protocol-methods";
+import type {
+	DecodedServerNotification,
+	ResponsePayloads,
 	ServerRequestPayloads,
-} from "@/runtime/codex-protocol";
+} from "@archboard/codex-app-server/protocol-decoder";
 import type {
 	ChildEpoch,
 	ChildId,

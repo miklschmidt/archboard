@@ -341,7 +341,7 @@ only at this point: nothing states a version that nobody re-read.
    Diff `codex-rs/app-server-protocol/src/protocol` for the wire shapes and for the serde
    attributes of each new field. A generated `T | null` is sent as `null` unless serde
    skips it. Diff the `app-server` request processors for the methods in
-   `src/runtime/codex-protocol/lib/methods.ts`. Diff realtime
+   `packages/codex-app-server/src/runtime/protocol/protocol-methods.ts`. Diff realtime
    (`core/src/realtime_conversation*`, `realtime_history.rs`,
    `session/world_state.rs`, `codex-api/src/endpoint/realtime_websocket`). Diff the model
    list (`models-manager`): `gpt-6-sol` must still be listed with `low` effort.
@@ -349,7 +349,7 @@ only at this point: nothing states a version that nobody re-read.
 3. Bump the pin in three places:
    `package.json`, `expectedCodexVersion` in
    `scripts/generate-codex-app-server-contract.ts` and `CODEX_PROTOCOL_VERSION`
-   in `src/runtime/codex-protocol/lib/version.ts`. `bun install` updates
+   in `packages/codex-app-server/src/runtime/protocol/protocol-version.ts`. `bun install` updates
    `bun.lock` and generates the new contract beside the old one under
    `packages/codex-app-server/src/shared/protocol/generated/versions/`. So
    `diff -r` of the two version directories is the wire change. A fresh
@@ -357,7 +357,7 @@ only at this point: nothing states a version that nobody re-read.
    exists to diff.
    Done: `bun run ensure:codex-contract` passes.
 4. Adapt the schemas to `bun run type-check`.
-   Each handwritten Zod schema in `src/runtime/codex-protocol/lib` is proved against the
+   Each handwritten Zod schema in `packages/codex-app-server/src/runtime/schemas` and `packages/codex-app-server/src/runtime/protocol` is proved against the
    generated type in both directions. `__codexGeneratedWireMustExtendSchemaInput` means
    that the schema refuses something that the new wire sends.
    `__schemaOutputMustExtendCodexGeneratedWire` means that the schema lacks a

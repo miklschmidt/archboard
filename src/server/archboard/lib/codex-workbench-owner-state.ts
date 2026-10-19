@@ -3,7 +3,7 @@ import {
 	type CodexProcess,
 	type CodexProcessChild,
 	type CodexProcessSnapshot,
-} from "@/runtime/codex-process";
+} from "@archboard/codex-app-server/process";
 import type { CodexTransport } from "@/runtime/codex-transport";
 import type {
 	IdentityAuthorities,

@@ -3,7 +3,7 @@ import type {
 	CodexProcessChild,
 	CodexProcessFailureCode,
 	CodexProcessSnapshot,
-} from "../../../../runtime/codex-process/index.js";
+} from "@archboard/codex-app-server/process";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,

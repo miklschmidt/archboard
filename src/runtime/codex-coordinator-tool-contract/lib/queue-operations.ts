@@ -1,5 +1,5 @@
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
 import {
-	CODEX_PROTOCOL_VERSION,
 	ThreadQueueAddParamsSchema,
 	ThreadQueueDeleteParamsSchema,
 	ThreadQueueListParamsSchema,
@@ -12,7 +12,7 @@ import {
 	type ThreadQueueReorderParams,
 	type ThreadQueueStartParams,
 	type ThreadQueueUpdateParams,
-} from "@/runtime/codex-protocol";
+} from "@archboard/codex-app-server/client-request-schemas";
 import { deepFreeze } from "@/runtime/codex-coordinator-tool-contract/lib/manifest";
 import type { QueueOperation } from "@/runtime/codex-coordinator-tool-contract/lib/tool-inputs";
 

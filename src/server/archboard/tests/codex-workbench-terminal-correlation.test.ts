@@ -4,7 +4,7 @@ import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
-import { decodeServerNotification } from "../../../runtime/codex-protocol/index.js";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
 import { createCodexWaitGraph } from "../../../runtime/codex-wait-graph/index.js";

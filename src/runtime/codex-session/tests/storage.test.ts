@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
 import { chmodSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, test } from "bun:test";

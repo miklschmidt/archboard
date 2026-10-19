@@ -19,7 +19,7 @@ import {
 	COORDINATOR_CAPABILITY_POLICY,
 	type CoordinatorSnapshot,
 } from "../../codex-coordinator/index.js";
-import { decodeServerNotification } from "../../codex-protocol/index.js";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
 import {
 	createCodexApprovalBroker,
 	type ApprovalBindingInput,

@@ -11,7 +11,7 @@
 import { statSync } from "node:fs";
 import { join } from "node:path";
 
-import { resolveProjectCodexExecutable } from "@/runtime/codex-process/executable";
+import { resolveProjectCodexExecutable } from "@archboard/codex-app-server/executable";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { PRODUCERS } from "./assets.ts";

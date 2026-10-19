@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
 import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -9,7 +9,8 @@ import {
 	type WireRequestCorrelation,
 } from "@archboard/codex-app-server/workbench-identity";
 import { createCodexSession, type CodexSession, type CodexSessionStorage } from "../index.js";
-import type { ResponseMethod, ResponsePayloads } from "../../codex-protocol/index.js";
+import type { ResponseMethod } from "@archboard/codex-app-server/protocol-methods";
+import type { ResponsePayloads } from "@archboard/codex-app-server/protocol-decoder";
 import type {
 	CodexTransport,
 	CodexTransportRequestOptions,

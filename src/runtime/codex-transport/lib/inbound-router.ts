@@ -2,8 +2,8 @@ import {
 	decodeJsonRpcError,
 	decodeResponseEnvelope,
 	decodeServerNotification,
-	JSON_RPC_ERROR_CODES,
-} from "@/runtime/codex-protocol";
+} from "@archboard/codex-app-server/protocol-decoder";
+import { JSON_RPC_ERROR_CODES } from "@archboard/codex-app-server/request-schemas";
 import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import {
 	CodexTransportUsageError,

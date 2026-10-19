@@ -1,11 +1,13 @@
 import {
 	isSupportedClientNotificationMethod,
-	isClientRequestMethodWithoutParams,
 	isSupportedResponseMethod,
+} from "@archboard/codex-app-server/protocol-decoder";
+import {
+	isClientRequestMethodWithoutParams,
 	type ClientNotificationMethod,
 	type ClientRequestMethodWithoutParams,
 	type ResponseMethod,
-} from "@/runtime/codex-protocol";
+} from "@archboard/codex-app-server/protocol-methods";
 import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 import type {

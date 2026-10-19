@@ -1,4 +1,7 @@
-import { LOGIN_POLICIES, SupportedLoginAccountParamsSchema } from "@/runtime/codex-protocol";
+import {
+	LOGIN_POLICIES,
+	SupportedLoginAccountParamsSchema,
+} from "@archboard/codex-app-server/authored-schemas";
 import {
 	CodexSessionError,
 	type CodexSession,
