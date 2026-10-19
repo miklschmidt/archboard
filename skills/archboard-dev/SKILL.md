@@ -125,7 +125,7 @@ Record each repair and the passing gate result before closing the original task.
      - A relationship's kind and label. The check only tests the evidence kinds
        that the vault's `evidence` key lists for a kind, and never a flow step's.
      - Code that the check reads only as text: a file that no adapter reads.
-       The table in `src/runtime/code-facts/lib/adapters.ts` names the
+       The table in `packages/code-intel/src/runtime/operations/code-facts/adapters.ts` names the
        extensions and file names that an adapter reads. For any other file, the
        skip `text-only` says that anchors and symbols were tested by name and
        nothing judged undrawn, backwards or unsupported. The skip

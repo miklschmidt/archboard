@@ -6,8 +6,8 @@
 // is the one the voice spoke over, whatever the board says now (TASK-381). The
 // page chooses once, at start, before anything is read.
 
-import type { RememberedFindings } from "@/shared/code-check/index";
-import type { LocalityAnswer } from "@/shared/locality/index";
+import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { LocalityAnswer } from "@archboard/code-intel/history";
 import type { VaultCheck } from "@archboard/board/policy";
 import {
 	fetchCodeFindings,

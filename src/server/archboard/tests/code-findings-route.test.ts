@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import express from "express";
 import * as route from "@/server/archboard/code-check";
-import { RememberedFindingsSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
+import { RememberedFindingsSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-findings-route-"));
 const ownVault = vaultIn(scratch);

@@ -14,8 +14,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
-import type { BehindSkip } from "@/shared/code-check/index";
-import type { LocalityAnswer, LocalityCommit, LocalityPeriod } from "@/shared/locality/index";
+import type { BehindSkip } from "@archboard/code-intel/code-check";
+import type { LocalityAnswer, LocalityCommit, LocalityPeriod } from "@archboard/code-intel/history";
 import type { SemanticNode } from "@archboard/board/content";
 import type { SemanticVariant } from "@archboard/board/document";
 import { KindIcon } from "@/ui/semantic-board-canvas/components/KindMarks";

@@ -8,7 +8,7 @@ import type {
 	CodeCheckAnswer,
 	CodeCheckSkip,
 	CodeFinding,
-} from "@/shared/code-check/index";
+} from "@archboard/code-intel/code-check";
 import { diagnosticLine } from "@archboard/board/policy";
 
 /**

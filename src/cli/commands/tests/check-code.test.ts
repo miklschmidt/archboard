@@ -12,7 +12,7 @@ import {
 	type CodeCheckAnswer,
 	type CodeFinding,
 	CheckTimingSchema,
-} from "@/shared/code-check/index";
+} from "@archboard/code-intel/code-check";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	VaultCheckSchema,

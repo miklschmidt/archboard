@@ -9,7 +9,7 @@
 // cancels it, and a stop cancels it and waits for it to settle, so a stop
 // never refuses because of it. A pass changes nothing, so the route is a GET.
 //
-// The code pass (`src/runtime/code-check`) reads every board at its current
+// The code pass (`packages/code-intel/src/runtime/operations/code-check`) reads every board at its current
 // variant, or at the draft `variant` names, and gives `boards`, `findings` and
 // `skipped`. `every-draft=true` reads every draft of every board instead, and
 // a `variant` beside it is not read (TASK-488). Behind (ADR 0045, TASK-369.02)
@@ -33,15 +33,15 @@ import {
 	readPlans,
 	type NoSuchDraft,
 	type PlanRefused,
-} from "@/runtime/code-check/index";
-import { createBehindReading } from "@/runtime/history-lens/index";
+} from "@archboard/code-intel/code-check-run";
+import { createBehindReading } from "@archboard/code-intel/history-lens";
 import { queryString } from "@/server/archboard/lib/request-board";
 import {
 	createCodeFindingsMemory,
 	type CodeFindingsMemory,
 } from "@/server/archboard/lib/code-findings-memory";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 

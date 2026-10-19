@@ -20,7 +20,7 @@ import type {
 	CodeCheckAnswer,
 	RememberedFindings,
 	RememberedReading,
-} from "@/shared/code-check/index";
+} from "@archboard/code-intel/code-check";
 
 /** What the server remembers of its code passes. */
 interface CodeFindingsMemory {

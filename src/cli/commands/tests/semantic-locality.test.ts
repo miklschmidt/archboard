@@ -5,7 +5,7 @@
 
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
-import { LocalityReplySchema, type LocalityAnswer } from "@/shared/locality/index";
+import { LocalityReplySchema, type LocalityAnswer } from "@archboard/code-intel/history";
 import { makeStandInVault } from "./stand-in-vault.ts";
 
 const answer: LocalityAnswer = {

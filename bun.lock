@@ -86,6 +86,10 @@
       "name": "@archboard/code-binding",
       "version": "0.0.0",
     },
+    "packages/code-intel": {
+      "name": "@archboard/code-intel",
+      "version": "0.0.0",
+    },
     "packages/codex-app-server": {
       "name": "@archboard/codex-app-server",
       "version": "0.0.0",
@@ -123,6 +127,8 @@
     "@archboard/board": ["@archboard/board@workspace:packages/board"],
 
     "@archboard/code-binding": ["@archboard/code-binding@workspace:packages/code-binding"],
+
+    "@archboard/code-intel": ["@archboard/code-intel@workspace:packages/code-intel"],
 
     "@archboard/codex-app-server": ["@archboard/codex-app-server@workspace:packages/codex-app-server"],
 

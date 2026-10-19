@@ -14,8 +14,11 @@
 // shrug for all of them.
 
 import { z } from "zod";
-import { RememberedFindingsSchema, type RememberedFindings } from "@/shared/code-check/index";
-import { LocalityReplySchema, type LocalityAnswer } from "@/shared/locality/index";
+import {
+	RememberedFindingsSchema,
+	type RememberedFindings,
+} from "@archboard/code-intel/code-check";
+import { LocalityReplySchema, type LocalityAnswer } from "@archboard/code-intel/history";
 import { VaultCheckSchema, type VaultCheck } from "@archboard/board/policy";
 import { inVault } from "@archboard/server-requests";
 import {

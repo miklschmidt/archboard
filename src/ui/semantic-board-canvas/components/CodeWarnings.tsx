@@ -1,7 +1,7 @@
 import { RiErrorWarningLine } from "@remixicon/react";
 import { useCallback, useState, type JSX } from "react";
 
-import type { RememberedReading } from "@/shared/code-check/index";
+import type { RememberedReading } from "@archboard/code-intel/code-check";
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BoardTab } from "@/ui/semantic-board-canvas/components/PaneHeader";
 import { useCodeFindings } from "@/ui/semantic-board-canvas/hooks/use-code-findings";

@@ -6,13 +6,13 @@
 // read is only in `skipped`, with the reason, and must never look like a part
 // that no commit changed.
 
-import type { BehindSkip } from "@/shared/code-check/index";
+import type { BehindSkip } from "@archboard/code-intel/code-check";
 import type {
 	CoupledPair,
 	LocalityAnswer,
 	LocalityCommit,
 	LocalityPeriod,
-} from "@/shared/locality/index";
+} from "@archboard/code-intel/history";
 
 /** One part this part changes together with, as seen from this part. */
 interface Partner {

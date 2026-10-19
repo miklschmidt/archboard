@@ -10,7 +10,7 @@ import {
 	CodeCheckAnswerSchema,
 	type CodeCheckAnswer,
 	type CheckTiming,
-} from "@/shared/code-check/index";
+} from "@archboard/code-intel/code-check";
 import { diagnosticLine, VaultCheckSchema, type VaultCheck } from "@archboard/board/policy";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
 

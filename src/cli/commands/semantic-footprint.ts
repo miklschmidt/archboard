@@ -7,17 +7,17 @@
 // changes no exit status. A part the lens skipped is in none of the lists and
 // is listed with the reason, so it never reads as a part nothing changed.
 
-import { historyAttributionLabel } from "@/shared/history-attribution/index";
+import {
+	historyAttributionLabel,
+	FootprintReplySchema,
+	type FootprintAnswer,
+	type FootprintPart,
+} from "@archboard/code-intel/history";
 import { z } from "zod";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { SelectorSchema } from "@/cli/commands/lib/semantic-input";
 import { requestJson } from "@/runtime/engine/server-client";
-import {
-	FootprintReplySchema,
-	type FootprintAnswer,
-	type FootprintPart,
-} from "@/shared/footprint/index";
 
 const FootprintInputSchema = z.object({
 	name: z.string(),

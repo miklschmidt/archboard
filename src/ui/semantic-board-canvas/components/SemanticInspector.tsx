@@ -25,7 +25,7 @@ import type { ReconciliationIssue } from "@archboard/board/reconciliation";
 import type { SemanticNode } from "@archboard/board/content";
 import { RelationshipChip } from "@/ui/semantic-board-canvas/components/KindMarks";
 import { DetailsPanel } from "@/ui/semantic-board-canvas/components/DetailsPanel";
-import type { RememberedReading } from "@/shared/code-check/index";
+import type { RememberedReading } from "@archboard/code-intel/code-check";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import {
 	Account,

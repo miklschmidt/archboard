@@ -14,7 +14,7 @@ import express from "express";
 import { z } from "zod";
 import type * as ServerModule from "@/server/archboard/index";
 import type * as RouteModule from "@/server/archboard/footprint";
-import { FootprintReplySchema, type FootprintAnswer } from "@/shared/footprint/index";
+import { FootprintReplySchema, type FootprintAnswer } from "@archboard/code-intel/history";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 const caller = {
