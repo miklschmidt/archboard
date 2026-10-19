@@ -9,9 +9,9 @@
 // group's name comes from the vault policy.
 
 import { z } from "zod";
-import { inspectGroup, groupsUsed, type GroupInspection } from "@archboard/board/groups";
+import { inspectGroup, groupsUsed, type GroupInspection } from "@archboard/board/content";
 import { RenderedVariantSchema } from "@archboard/board/render-reply";
-import { type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import {
 	diagnosticLine,
 	VaultDiagnosticSchema,

@@ -6,7 +6,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 // together decide where a pill lands.
 
 import { describe, expect, test } from "bun:test";
-import { type VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	routeLabels,

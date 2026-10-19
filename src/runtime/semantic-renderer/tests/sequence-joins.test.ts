@@ -8,7 +8,7 @@
 
 import { expect, test } from "bun:test";
 import { renderDataFlow } from "@/runtime/semantic-renderer/index";
-import { messagesOf } from "@archboard/board/flow-steps";
+import { messagesOf } from "@archboard/board/flow";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { subjectGroups, type DrawnGroup } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 import { labelPlates } from "@/runtime/semantic-renderer/tests/drawn-text";

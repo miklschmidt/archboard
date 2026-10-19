@@ -13,7 +13,7 @@ import { RiArrowRightLine, RiMicLine, RiPlayCircleLine, RiPlayLine } from "@remi
 import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
 
 import type { SemanticView } from "@archboard/board/views";
-import type { SemanticWalkthrough, WalkthroughBeat } from "@archboard/board/walkthrough";
+import type { SemanticWalkthrough, WalkthroughBeat } from "@archboard/board/content";
 import { Button } from "@/ui/components/button";
 import { IconButton } from "@/ui/components/IconButton";
 import { KindIcon } from "@/ui/semantic-board-canvas/components/KindMarks";

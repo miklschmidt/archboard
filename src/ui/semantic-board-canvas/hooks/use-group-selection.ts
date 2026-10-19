@@ -21,8 +21,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 
-import { groupsUsed } from "@archboard/board/groups";
-import { type SemanticVariant } from "@archboard/board/document";
+import { groupsUsed } from "@archboard/board/content";
+import type { SemanticVariant } from "@archboard/board/document";
 import {
 	groupChoices,
 	groupSelection,

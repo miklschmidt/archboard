@@ -13,12 +13,11 @@ import {
 	compareVariants,
 	type FieldChange,
 	type VariantComparison,
-} from "@archboard/board/compare-variants";
-import { everyStep, isMessage, stepWords } from "@archboard/board/flow-steps";
-import { comparedWith } from "@archboard/board/drawing";
-import { type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
-import { type VariantContent } from "@archboard/board/content";
-import { type WalkthroughBeat } from "@archboard/board/walkthrough";
+	comparedWith,
+} from "@archboard/board/comparison";
+import { everyStep, isMessage, stepWords } from "@archboard/board/flow";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import type { VariantContent, WalkthroughBeat } from "@archboard/board/content";
 
 /** A value a moved field had that is longer than this is said to have changed, not what it was. */
 const MOVED_VALUE_MAX_CHARS = 120;

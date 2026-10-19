@@ -16,7 +16,7 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { WalkthroughBeatSchema } from "@archboard/board/walkthrough";
+import { WalkthroughBeatSchema } from "@archboard/board/content";
 import type { SemanticPaneContext } from "@archboard/board/pane-context";
 
 const GATEWAY = { id: "gw", name: "Gateway", kind: "service", order: 1000 };

@@ -14,17 +14,16 @@
 // nothing now is reported as an ambiguity rather than passed on as though an
 // agent could act on it.
 
-import { comparedWith } from "@archboard/board/drawing";
-import { compareVariants, type VariantComparison } from "@archboard/board/compare-variants";
+import { comparedWith, compareVariants, type VariantComparison } from "@archboard/board/comparison";
 import {
 	currentVariant,
 	findVariant,
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { findView, scopedContent } from "@archboard/board/scope";
+import { findView, scopedContent } from "@archboard/board/views";
 import { subjectsOf, type SubjectKind, type VariantContent } from "@archboard/board/content";
-import { everyStep, stepWords } from "@archboard/board/flow-steps";
+import { everyStep, stepWords } from "@archboard/board/flow";
 import type {
 	SemanticArchitectureInput,
 	SemanticDifferenceInput,

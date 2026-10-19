@@ -19,7 +19,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { askedTalkPlace, readTalk, renderTalk, writeTalk } from "@/runtime/walkthrough-recorder";
-import { parseSemanticBoard } from "@archboard/board/parse-board";
+import { parseSemanticBoard } from "@archboard/board/document";
 import type { LayoutEngineName } from "@archboard/board/render-reply";
 import { TalkSchema, type Talk } from "@/shared/walkthrough-recording/talk";
 

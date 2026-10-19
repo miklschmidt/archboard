@@ -9,8 +9,14 @@
 
 import { holdsRef } from "@/runtime/history-lens/lib/source-history";
 import type { GitRunOptions } from "@/runtime/history-lens/lib/git";
-import { nodesPinnedTo, ownRefs, refOfBinding, type OwnRef } from "@archboard/board/draft-ref";
-import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import {
+	nodesPinnedTo,
+	ownRefs,
+	refOfBinding,
+	type OwnRef,
+	type SemanticBoard,
+	type SemanticVariant,
+} from "@archboard/board/document";
 import type { SemanticNode } from "@archboard/board/content";
 
 /**

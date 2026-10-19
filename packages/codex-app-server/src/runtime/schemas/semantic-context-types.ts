@@ -5,8 +5,9 @@ import type {
 	ThreadId,
 	TurnId,
 } from "#shared/rules/workbench-identity.ts";
-import type { ChangeKind } from "@archboard/board/compare-variants";
-import type { DiagramGrammar, VariantLifecycle } from "@archboard/board/vocabulary";
+import type { ChangeKind } from "@archboard/board/comparison";
+import type { DiagramGrammar } from "@archboard/board/views";
+import type { VariantLifecycle } from "@archboard/board/document";
 import type { ReconciliationKind } from "@archboard/board/reconciliation";
 import type { SemanticSubjectKind } from "@archboard/board/pane-context";
 

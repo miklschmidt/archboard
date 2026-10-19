@@ -24,7 +24,7 @@ import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/p
 // that stand alone are drawn for a theme.
 
 import { DEFAULT_LAYOUT_ENGINE, type LayoutEngineName } from "@archboard/board/render-reply";
-import { type VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
 import {
 	SemanticRenderError,
 	type DiagramRenderRequest,

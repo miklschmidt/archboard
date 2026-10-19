@@ -15,8 +15,8 @@ import {
 	type InterfaceMeasures,
 } from "@archboard/board/container-interface";
 import { RenderedVariantSchema } from "@archboard/board/render-reply";
-import { type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
-import { type SemanticEdge, type SemanticNode } from "@archboard/board/content";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import type { SemanticEdge, SemanticNode } from "@archboard/board/content";
 import { VaultDiagnosticSchema } from "@archboard/board/policy";
 import { CliUsageError } from "@/cli/command-contract/contract";
 import {

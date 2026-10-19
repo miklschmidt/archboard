@@ -14,7 +14,7 @@ import {
 } from "@remixicon/react";
 import type { JSX } from "react";
 
-import type { VariantLifecycle } from "@archboard/board/vocabulary";
+import type { VariantLifecycle } from "@archboard/board/document";
 import { cn } from "@/ui/components/class-names";
 
 /** The mark of each lifecycle. */

@@ -14,7 +14,7 @@
 
 import type { JSX } from "react";
 
-import type { SemanticWalkthrough } from "@archboard/board/walkthrough";
+import type { SemanticWalkthrough } from "@archboard/board/content";
 import { cn } from "@/ui/components/class-names";
 
 /** Where a step stands against the one shown. */

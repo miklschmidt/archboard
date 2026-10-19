@@ -63,7 +63,7 @@ import {
 import { nodeSubject } from "@archboard/board/subject";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import { inspectContainer, type ContainerInterface } from "@archboard/board/container-interface";
-import { type SemanticNode } from "@archboard/board/content";
+import type { SemanticNode } from "@archboard/board/content";
 import { describeSubject } from "@archboard/board/policy";
 
 /** What judging the containers of one board needs. */

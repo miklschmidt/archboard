@@ -19,7 +19,7 @@ import {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
 	VariantEditInputSchema,
-} from "@archboard/board/board-input";
+} from "@archboard/board/commands";
 import { wasDrawn } from "@archboard/board/render-reply";
 import {
 	branchVariantTransition,

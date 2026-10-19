@@ -28,16 +28,16 @@ import {
 	type PlacedBeat,
 	type SubjectChange,
 	type VariantComparison,
-} from "@archboard/board/compare-variants";
+} from "@archboard/board/comparison";
 import { RenderedVariantSchema } from "@archboard/board/render-reply";
-import {
-	type SemanticEdge,
-	type SemanticNode,
-	type VariantContent,
+import type {
+	SemanticEdge,
+	SemanticNode,
+	VariantContent,
+	SemanticWalkthrough,
 } from "@archboard/board/content";
-import { type SemanticFlow } from "@archboard/board/views";
-import { type SemanticVariant } from "@archboard/board/document";
-import { type SemanticWalkthrough } from "@archboard/board/walkthrough";
+import type { SemanticFlow } from "@archboard/board/flow";
+import type { SemanticVariant } from "@archboard/board/document";
 import {
 	diagnosticLine,
 	VaultDiagnosticSchema,

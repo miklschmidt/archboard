@@ -12,8 +12,7 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import { SemanticPolicySchema } from "@archboard/board/policy";
-import { placingGroups } from "@archboard/board/groups";
-import { type VariantContent } from "@archboard/board/content";
+import { placingGroups, type VariantContent } from "@archboard/board/content";
 import { routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import {
 	bodyShift,

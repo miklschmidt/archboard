@@ -16,8 +16,7 @@ import { DRILL_MARK_ROOM } from "@/transformers/semantic-renderer/lib/svg/drill-
 // the place drawing the picture measures the strings the SVG will paint.
 import { layoutWithLines, measureNaturalWidth, prepareWithSegments } from "@chenglou/pretext";
 import { balancedWrapWidth, fewerLinesAt } from "@/transformers/semantic-renderer/lib/wrap-widths";
-import { gatheringGroups } from "@archboard/board/groups";
-import { type SemanticNode, type VariantContent } from "@archboard/board/content";
+import { gatheringGroups, type SemanticNode, type VariantContent } from "@archboard/board/content";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 import { canvasWidth, cssFont } from "@/transformers/semantic-renderer/lib/canvas-text";
 import { lineLooks } from "@/transformers/semantic-renderer/lib/semantic-appearance";

@@ -9,7 +9,7 @@ import { expect, test } from "bun:test";
 
 import { narratedSubjects } from "@/server/archboard/narrated-subjects";
 import { SEMANTIC_BOARD_SCHEMA_VERSION, SemanticBoardSchema } from "@archboard/board/document";
-import { WalkthroughBeatSchema } from "@archboard/board/walkthrough";
+import { WalkthroughBeatSchema } from "@archboard/board/content";
 
 const GATEWAY = { id: "gw", name: "Gateway", kind: "service", order: 1000 };
 const INTAKE = { id: "in", name: "Legacy intake", kind: "service", order: 2000 };

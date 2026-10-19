@@ -10,7 +10,7 @@
 //   bun docs/design/wide-board-layout-fixtures/timing.ts [runs]
 import fs from "node:fs";
 import path from "node:path";
-import { parseSemanticBoard } from "@archboard/board/parse-board";
+import { parseSemanticBoard } from "@archboard/board/document";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 

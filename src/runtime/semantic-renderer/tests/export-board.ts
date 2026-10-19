@@ -7,7 +7,7 @@ import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	type SemanticBoard,
 } from "@archboard/board/document";
-import { type DrawnBoard } from "@archboard/board/render-reply";
+import type { DrawnBoard } from "@archboard/board/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { renderBoard, type BoardRenderChoices } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";

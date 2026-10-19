@@ -11,8 +11,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
-import { messagesOf } from "@archboard/board/flow-steps";
-import { type VariantContent } from "@archboard/board/content";
+import { messagesOf } from "@archboard/board/flow";
+import type { VariantContent } from "@archboard/board/content";
 
 import {
 	Terminal,

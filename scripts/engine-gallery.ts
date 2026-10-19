@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { type SemanticBoard } from "@archboard/board/document";
+import type { SemanticBoard } from "@archboard/board/document";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { locateSemanticBoard } from "@archboard/board/location";
 import { readSemanticBoardAt } from "@archboard/board/read";

@@ -8,7 +8,7 @@ import type {
 	LayoutEngineName,
 	StandaloneTheme,
 } from "@archboard/board/render-reply";
-import type { DiagramGrammar } from "@archboard/board/vocabulary";
+import type { DiagramGrammar } from "@archboard/board/views";
 import type { VariantContent } from "@archboard/board/content";
 import type { ReadingDirection } from "@/transformers/semantic-renderer/lib/drawing";
 import type { ExportFrame } from "@/transformers/semantic-renderer/lib/svg/export-frame";

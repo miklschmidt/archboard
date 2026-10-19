@@ -12,8 +12,8 @@ import {
 	DiagramThemeSchema,
 	LayoutEngineSchema,
 } from "@archboard/board/render-reply";
-import { type SemanticBoard } from "@archboard/board/document";
-import { type SemanticWalkthrough } from "@archboard/board/walkthrough";
+import type { SemanticBoard } from "@archboard/board/document";
+import type { SemanticWalkthrough } from "@archboard/board/content";
 import {
 	DEFAULT_RECORDING_LANGUAGE,
 	RecordingLanguageSchema,

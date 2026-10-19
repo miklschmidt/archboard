@@ -31,8 +31,11 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 
-import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
-import { parseSemanticBoard } from "@archboard/board/parse-board";
+import {
+	addressedVariant,
+	type SemanticBoard,
+	parseSemanticBoard,
+} from "@archboard/board/document";
 import { wasDrawn, type SemanticRenderReply } from "@archboard/board/render-reply";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import type {

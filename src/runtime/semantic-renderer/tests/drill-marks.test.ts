@@ -15,7 +15,7 @@
 // frame's far mark, so a long name ran under it.
 import { expect, test } from "bun:test";
 import type { DiagramBox, LayoutEngineName } from "@archboard/board/render-reply";
-import type { DiagramGrammar } from "@archboard/board/vocabulary";
+import type { DiagramGrammar } from "@archboard/board/views";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
 import {
 	bodyShift,

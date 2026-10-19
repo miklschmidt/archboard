@@ -8,12 +8,8 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { type DiagramTheme } from "@archboard/board/render-reply";
-import {
-	type SemanticEdge,
-	type SemanticNode,
-	type VariantContent,
-} from "@archboard/board/content";
+import type { DiagramTheme } from "@archboard/board/render-reply";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
 import type { SemanticPolicy, VaultDiagnostic } from "@archboard/board/policy";
 import type { RecordingContainer } from "@/shared/walkthrough-recording";
 import type { CaptureAttempt } from "@/runtime/skill-evaluation/lib/captures";

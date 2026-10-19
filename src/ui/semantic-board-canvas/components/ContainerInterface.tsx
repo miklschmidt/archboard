@@ -15,7 +15,7 @@ import {
 	type Caller,
 	type ContainerInterface as Derived,
 } from "@archboard/board/container-interface";
-import { type SemanticNode, type VariantContent } from "@archboard/board/content";
+import type { SemanticNode, VariantContent } from "@archboard/board/content";
 import { KindIcon } from "@/ui/semantic-board-canvas/components/KindMarks";
 import {
 	SidebarChoice,

@@ -23,7 +23,7 @@ import type { NextFunction, Request, Response } from "express";
 import type { z } from "zod";
 import { parseBoardKey } from "@archboard/board/address";
 import { forgetDoing } from "@archboard/board/doing";
-import { BoardMoveInputSchema } from "@archboard/board/board-move";
+import { BoardMoveInputSchema } from "@archboard/board/commands";
 import { moveSemanticBoard, type SemanticMoveResult } from "@archboard/board/move";
 import { previewSemanticMove } from "@archboard/board/move-preview";
 import { semanticBoardAddress } from "@archboard/board/location";

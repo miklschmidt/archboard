@@ -16,7 +16,7 @@
 // reader who picks one has picked the step; its lines and terminals carry ids
 // of the picture's own, which name no subject.
 
-import type { FlowMessage, FlowStep, SemanticFlow } from "@archboard/board/views";
+import type { FlowMessage, FlowStep, SemanticFlow } from "@archboard/board/flow";
 import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
 
 /** What a node of the graph is drawn as when it is not a box. */

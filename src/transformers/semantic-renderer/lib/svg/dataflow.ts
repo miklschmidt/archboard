@@ -17,8 +17,7 @@ import type { SemanticPolicy } from "@archboard/board/policy";
 // passes over everything every message drew.
 
 import type { DiagramAtlas } from "@archboard/board/render-reply";
-import type { MessageKind } from "@archboard/board/vocabulary";
-import type { SemanticFlow } from "@archboard/board/views";
+import type { MessageKind, SemanticFlow } from "@archboard/board/flow";
 import type { SemanticNode } from "@archboard/board/content";
 import { DIAGRAM_MARGIN, SLAB_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import {

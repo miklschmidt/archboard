@@ -6,7 +6,7 @@
 // pane address and command that named it goes on opening it.
 
 import { z } from "zod";
-import { BoardRenameInputSchema } from "@archboard/board/resolution-input";
+import { BoardRenameInputSchema } from "@archboard/board/commands";
 import { renameSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import { defineCommand } from "@/cli/command-contract/contract";
 import {

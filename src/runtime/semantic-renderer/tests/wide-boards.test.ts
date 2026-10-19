@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/board/render-reply";
-import { type VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import { locateSemanticBoard } from "@archboard/board/location";

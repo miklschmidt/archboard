@@ -10,7 +10,7 @@
 // rather than astride it — `MESSAGE_LABEL_GAP` in `design.ts` says why — so the
 // line a reader follows runs unbroken from the sender to the arrowhead.
 
-import type { MessageKind } from "@archboard/board/vocabulary";
+import type { MessageKind } from "@archboard/board/flow";
 import {
 	NEST_INSET,
 	PILL_HEIGHT,

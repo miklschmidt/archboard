@@ -8,9 +8,9 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { messagesOf } from "@archboard/board/flow-steps";
-import { type SemanticFlow, type SemanticView } from "@archboard/board/views";
-import { type SemanticNode, type VariantContent } from "@archboard/board/content";
+import { messagesOf, type SemanticFlow } from "@archboard/board/flow";
+import type { SemanticView } from "@archboard/board/views";
+import type { SemanticNode, VariantContent } from "@archboard/board/content";
 import {
 	beatReferences,
 	beatsOf,

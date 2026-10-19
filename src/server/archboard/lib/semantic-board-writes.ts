@@ -21,12 +21,10 @@ import {
 	BoardAdoptInputSchema,
 	BoardShelveInputSchema,
 	ResolutionInputSchema,
-} from "@archboard/board/resolution-input";
-import {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
 	VariantEditInputSchema,
-} from "@archboard/board/board-input";
+} from "@archboard/board/commands";
 import type { DescendantOutcome } from "@archboard/board/propagate";
 import {
 	adoptVariantTransition,

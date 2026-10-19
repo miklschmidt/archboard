@@ -17,7 +17,7 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { type SemanticNode } from "@archboard/board/content";
+import type { SemanticNode } from "@archboard/board/content";
 import { CliUsageError } from "@/cli/command-contract/contract";
 import { InterfacePartSchema, interfacePart } from "@/cli/commands/lib/compared-interfaces";
 import { InterfaceMeasuresSchema } from "@/cli/commands/lib/container-inspection";

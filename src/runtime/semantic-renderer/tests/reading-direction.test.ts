@@ -3,7 +3,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 
 import { describe, expect, test } from "bun:test";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { type VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";

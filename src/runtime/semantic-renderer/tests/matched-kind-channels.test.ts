@@ -2,7 +2,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { type VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
 import { overdrawnRun } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import publicApi from "../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";

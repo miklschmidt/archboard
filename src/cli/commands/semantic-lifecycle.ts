@@ -14,8 +14,8 @@ import {
 	BoardAdoptInputSchema,
 	BoardShelveInputSchema,
 	ResolutionInputSchema,
-} from "@archboard/board/resolution-input";
-import { type SemanticBoard } from "@archboard/board/document";
+} from "@archboard/board/commands";
+import type { SemanticBoard } from "@archboard/board/document";
 import {
 	adoptSemanticBoardOnServer,
 	resolveSemanticBoardOnServer,

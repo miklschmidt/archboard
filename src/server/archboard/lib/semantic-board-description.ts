@@ -6,7 +6,7 @@
 // which is why the punctuation here is not decoration.
 
 import { nothingBuilt, type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
-import { type VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
 
 /**
  * A count and the word for what it counts, pluralised.
