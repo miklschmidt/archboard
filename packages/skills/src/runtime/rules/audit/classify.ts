@@ -136,9 +136,17 @@ const WRITE_RE = /\barchboard\s+semantic\s+(?:new|edit|branch|resolve|adopt)\b/u
 const HELP_RE = /\barchboard\b(?:\s+\S+)*\s+(?:help|--help|-h)\b|\barchboard\s+help\b/u;
 /**
  * The harness's own source, by the package that holds it. A batch recorded before the harness
- * moved into the package named its old module directory, so reading it still counts.
+ * moved into the package named its old module directory, with or without a trailing slash, so
+ * reading it still counts.
  */
-const HARNESS_SOURCE_RE = /\b(?:packages\/skills|skill-evaluation)\//u;
+const HARNESS_SOURCE_RE =
+	/\bpackages\/skills\/|\bsrc\/runtime\/skill-evaluation\b|\bskill-evaluation\//u;
+/**
+ * The package's shipping code, which prepares the skill's artifacts and is no evaluation
+ * evidence. Reading it never exposed the harness, as it did not when it sat in its own module.
+ */
+const DISTRIBUTION_PATH_RE =
+	/\bpackages\/skills\/src\/runtime\/(?:operations\/distribution|projections)\/\S*/gu;
 /** The words that begin a read of evaluation inputs by their canonical names. */
 const EVALUATION_INPUT_RE =
 	/\bevals\/(?:evals\.json|pins\.json|coverage\.json|rubric\.md|README\.md|fixtures\/S\d{2}\.json)\b/u;
@@ -363,6 +371,17 @@ function startsWithPath(text: string, at: number, root: string): boolean {
 }
 
 /**
+ * Tells whether a script reaches the harness's source. The package's shipping code is left out.
+ * @param script The unwrapped script.
+ * @param roots Where the evaluation material lives.
+ * @returns True when the script names harness source.
+ */
+function touchesHarness(script: string, roots: ExposureRoots): boolean {
+	const evaluationOnly = script.replace(DISTRIBUTION_PATH_RE, "");
+	return evaluationOnly.includes(roots.harnessSource) || HARNESS_SOURCE_RE.test(evaluationOnly);
+}
+
+/**
  * Finds canonical inputs, harness source, a skill package or the batch tree
  * outside the run's world named by a script.
  * @param script The unwrapped script.
@@ -382,7 +401,7 @@ function exposureOf(
 			"evaluation-inputs",
 			script.includes(roots.evaluationInputs) || EVALUATION_INPUT_RE.test(script),
 		],
-		["harness-source", script.includes(roots.harnessSource) || HARNESS_SOURCE_RE.test(script)],
+		["harness-source", touchesHarness(script, roots)],
 		["skill-package", reachesSkillPackage(script, roots)],
 		["other-run", reachesBatchOutsideWorld(script, output, roots, context.checkoutRoot)],
 	];
