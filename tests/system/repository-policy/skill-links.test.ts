@@ -19,6 +19,7 @@ const BUNDLED_SKILLS = z
 	.parse(
 		JSON.parse(
 			execFileSync(path.join(repository, "bin/archboard"), ["install-skill", "--print-source"], {
+				cwd: repository,
 				encoding: "utf8",
 			}),
 		),
