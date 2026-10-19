@@ -1,81 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const oxlint = path.join(repoRoot, "node_modules/.bin/oxlint");
-const plugin = path.join(repoRoot, "tools/oxlint-plugin-archboard.ts");
-
-interface CommandResult {
-	exitCode: number;
-	output: string;
-}
-
-function run(cwd: string, cmd: string[]): CommandResult {
-	const result = Bun.spawnSync({
-		cmd,
-		cwd,
-		env: {
-			...process.env,
-			PATH: `${path.join(repoRoot, "node_modules/.bin")}:${process.env["PATH"] ?? ""}`,
-		},
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	return {
-		exitCode: result.exitCode,
-		output: `${result.stdout.toString()}${result.stderr.toString()}`,
-	};
-}
-
-function repositoryOxlintConfig(): string {
-	const authored = fs.readFileSync(path.join(repoRoot, ".oxlintrc.tests.jsonc"), "utf8");
-	const relativePlugin = '"./tools/oxlint-plugin-archboard.ts"';
-	if (!authored.includes(relativePlugin)) {
-		throw new Error("repository Oxlint plugin path is missing");
-	}
-	return authored.replace(relativePlugin, JSON.stringify(plugin));
-}
-
-async function withProject<T>(
-	files: Record<string, string>,
-	check: (root: string) => T | Promise<T>,
-): Promise<T> {
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-boundaries-"));
-	try {
-		fs.writeFileSync(path.join(root, ".oxlintrc.jsonc"), repositoryOxlintConfig());
-		for (const [relative, content] of Object.entries(files)) {
-			const target = path.join(root, relative);
-			fs.mkdirSync(path.dirname(target), { recursive: true });
-			fs.writeFileSync(target, content);
-		}
-		return await check(root);
-	} finally {
-		fs.rmSync(root, { recursive: true, force: true });
-	}
-}
-
-function lintCommand(relativePaths: string[]): string[] {
-	return [oxlint, "--config=.oxlintrc.jsonc", "--format=default", ...relativePaths];
-}
-
-function lint(root: string, relativePaths: string[]): CommandResult {
-	return run(root, lintCommand(relativePaths));
-}
-
-function expectPass(result: CommandResult): void {
-	expect(result.exitCode, result.output).toBe(0);
-}
-
-function expectRule(result: CommandResult, rule: string, guidance?: string): void {
-	expect(result.exitCode, result.output).not.toBe(0);
-	expect(result.output).toContain(rule);
-	if (guidance) {
-		expect(result.output).toContain(guidance);
-	}
-}
+import { expectPass, expectRule, lint, plugin, withProject } from "./support/oxlint-project.ts";
 
 describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 	test("local source uses aliases and TypeScript", async () => {

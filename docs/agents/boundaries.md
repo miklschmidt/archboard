@@ -734,6 +734,30 @@ api file. `ui/` keeps its code in the role folders that `code-opener` uses, with
   fixtures of the thread link, the composer, the approvals, the queue, the agent setup and the voice session, and the
   identities and voice fixtures of the dock.
 
+## Apps
+
+An app is a layer-8 workspace in `apps/<name>/` that holds what the packages left (TASK-500.24,
+`docs/design/apps-migration.md`). It is private, has no `exports`, and `apps/*` is in the
+`workspaces` field. The lint plugin holds an app to the rules of a package, with these differences:
+
+- **Nothing imports an app.** Only the app's own source and tests reach its files. A package, another
+  app, a script and a test of another owner are refused. The one temporary exception is the root
+  `"#web/*": "./apps/web/src/*"` entry of `package.json`: a file under root `src/` may import
+  through it, and nothing else may. TASK-500.24.06 removes it.
+- **An app imports a package only through its `exports`.** Inside an app, imports use the `#`
+  entries of its own `package.json`, as in a package. A `#` import that names no existing file is
+  an error whoever owns the importing file.
+- **An app has areas and role folders like a package.** `apps/web/src/ui/<role>/<behavior>/`,
+  `apps/cli/src/{cli,runtime}/`, `apps/server/src/server/`. The thin entries are
+  `apps/cli/src/bin.ts`, `apps/server/src/server.ts` and `apps/web/src/main.tsx`; the last counts as
+  browser code. Other files directly in `src/`, a folder of `src/` that is no area and a folder
+  beside `src/` and `tests/` that holds source are refused.
+- **A package or an app has no `lib/` folder.** Root `src/` modules keep theirs until they move.
+- **Tests** follow `apps/<name>/tests/` like a package's. Its `ui/` folder is held to the UI lint
+  policy.
+
+`tests/system/repository-policy/app-boundaries.test.ts` holds these rules.
+
 ## Vendor-owned data
 
 When a dependency owns a data structure and publishes its TypeScript type, that exported type is

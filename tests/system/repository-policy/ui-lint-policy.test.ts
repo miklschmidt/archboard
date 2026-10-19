@@ -165,3 +165,119 @@ describe("the lint configs split package tests the way they split src/ui", () =>
 		});
 	});
 });
+
+describe("the UI rules cover the ui area and the browser entry of an app", () => {
+	const fixtures = {
+		"apps/alpha/src/ui/components/Card.tsx":
+			'import React from "react";\nexport const Card = () => <div />;\nexport const kind = React.version;\n',
+		"apps/alpha/tests/ui/components/card.test.tsx":
+			'import * as React from "react";\nexport const kind = React.version;\n',
+		"apps/alpha/src/ui/state/use-thing.ts": HOOK,
+		"apps/alpha/src/ui/hooks/use-thing.ts": HOOK,
+		"apps/alpha/src/ui/api/thing.ts": 'export { useThing } from "#ui/hooks/use-thing.ts";\n',
+		"apps/alpha/src/ui/lib/helper.ts": "export const helper = 1;\n",
+		"apps/alpha/src/ui/index.ts": "export const root = 1;\n",
+		"apps/alpha/src/ui/rules/Widget.tsx": "export const Widget = () => <div />;\n",
+	};
+
+	test("refuses a React namespace import in the source and in the tests of an app", () => {
+		// Catches an app ui that keeps the ambient React namespace: the guard skipped apps.
+		withProject({ "oxlint.json": UI_RULES_CONFIG }, fixtures, (root) => {
+			for (const file of [
+				"apps/alpha/src/ui/components/Card.tsx",
+				"apps/alpha/tests/ui/components/card.test.tsx",
+			]) {
+				refused(lint(root, "oxlint.json", file), "archboard(named-react-imports)");
+			}
+		});
+	});
+
+	test("keeps hooks, components and names in the role folder that owns them", () => {
+		// Catches an app ui with no placement policy: a hook in state, a lib or root folder, and
+		// markup in a rules file.
+		withProject({ "oxlint.json": UI_RULES_CONFIG }, fixtures, (root) => {
+			for (const file of [
+				"apps/alpha/src/ui/state/use-thing.ts",
+				"apps/alpha/src/ui/lib/helper.ts",
+				"apps/alpha/src/ui/index.ts",
+				"apps/alpha/src/ui/rules/Widget.tsx",
+			]) {
+				refused(lint(root, "oxlint.json", file), "archboard(ui-concern-placement)");
+			}
+			for (const file of [
+				"apps/alpha/src/ui/hooks/use-thing.ts",
+				"apps/alpha/src/ui/api/thing.ts",
+			]) {
+				const result = lint(root, "oxlint.json", file);
+				expect(result.exitCode, result.output).toBe(0);
+			}
+		});
+	});
+
+	test("the browser entry sits above ui/ with markup, and takes only named React imports", () => {
+		// Catches a browser entry that placement refuses because it has no concern folder, and
+		// one that escapes the named import guard because it is not in ui/.
+		const main = "apps/web/src/main.tsx";
+		withProject(
+			{ "oxlint.json": UI_RULES_CONFIG },
+			{ [main]: 'import { StrictMode } from "react";\nexport const root = <StrictMode />;\n' },
+			(root) => expect(lint(root, "oxlint.json", main).exitCode).toBe(0),
+		);
+		withProject(
+			{ "oxlint.json": UI_RULES_CONFIG },
+			{ [main]: 'import React from "react";\nexport const kind = React.version;\n' },
+			(root) => refused(lint(root, "oxlint.json", main), "archboard(named-react-imports)"),
+		);
+	});
+});
+
+describe("the lint configs split app tests the way they split package tests", () => {
+	// More than the 500-line cap of the tests config, less than the 600-line limit of the UI policy.
+	const between = "// pad\n".repeat(550);
+	const files = {
+		"apps/alpha/tests/ui/components/long.test.tsx": `${between}export const value = 1;\n`,
+		"apps/alpha/tests/runtime/long.test.tsx": `${between}export const value = 1;\n`,
+		"apps/alpha/src/runtime/long.ts": `${"// pad\n".repeat(601)}export const value = 1;\n`,
+		"apps/alpha/package.json": JSON.stringify({
+			name: "@archboard-app/alpha",
+			imports: { "#*": "./src/*" },
+		}),
+		"apps/alpha/src/runtime/work.ts": "export const work = 1;\n",
+		"apps/alpha/tests/ui/screen.test.ts":
+			'import { work } from "#runtime/work.ts";\nexport { work };\n',
+	};
+	const configs = {
+		".oxlintrc.jsonc": repositoryConfig(".oxlintrc.jsonc"),
+		".oxlintrc.tests.jsonc": repositoryConfig(".oxlintrc.tests.jsonc"),
+	};
+
+	test("holds the tests of an app's ui area to the UI policy and caps its other tests", () => {
+		// Catches an app test routed to the wrong config: its ui tests get the 600-line UI limit
+		// from the main config, and its other tests the 500-line cap from the tests config.
+		withProject(configs, files, (root) => {
+			const ui = "apps/alpha/tests/ui/components/long.test.tsx";
+			expect(lint(root, ".oxlintrc.jsonc", ui).exitCode).toBe(0);
+			ignored(lint(root, ".oxlintrc.tests.jsonc", ui));
+			const other = "apps/alpha/tests/runtime/long.test.tsx";
+			refused(lint(root, ".oxlintrc.tests.jsonc", other), "eslint(max-lines)");
+			ignored(lint(root, ".oxlintrc.jsonc", other));
+		});
+	});
+
+	test("holds the source of an app to the 600-line limit of the policy config", () => {
+		// Catches app source that no config lints.
+		withProject(configs, files, (root) => {
+			refused(lint(root, ".oxlintrc.jsonc", "apps/alpha/src/runtime/long.ts"), "eslint(max-lines)");
+		});
+	});
+
+	test("keeps the area directions for the tests of an app's ui area", () => {
+		// Catches an app ui test that imports runtime code, which no config would then judge.
+		withProject(configs, files, (root) => {
+			refused(
+				lint(root, ".oxlintrc.jsonc", "apps/alpha/tests/ui/screen.test.ts"),
+				"archboard(import-boundaries)",
+			);
+		});
+	});
+});

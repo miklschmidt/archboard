@@ -4,9 +4,11 @@
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
 import { createRule, report, sourceImportVisitors, type AstNode, type NodeOf } from "./rule-api.ts";
 import {
-	ROOT_SOURCE_ENTRYPOINTS,
+	appPlacementProblem,
 	getRepoRelativePath,
 	hasGenericBucket,
+	isEntrypoint,
+	isFlatAppSource,
 	isProductSourcePath,
 	isSourceFile,
 	isStateFile,
@@ -69,17 +71,16 @@ function isTopLevelFunctionVariable(node: NodeOf<"VariableDeclarator">): boolean
 }
 
 /**
- * Whether a file is a flat root file under `src/` other than the thin entrypoints.
+ * Whether a file is a flat root file under `src/`, or under an app's `src/`, other than the
+ * thin entrypoints.
  * @param relativePath The file's repository path.
  * @returns Whether the root-implementation rule refuses the file outright.
  */
 function isFlatRootSource(relativePath: string): boolean {
-	return (
-		relativePath.startsWith("src/") &&
-		isSourceFile(relativePath) &&
-		!relativePath.slice("src/".length).includes("/") &&
-		!ROOT_SOURCE_ENTRYPOINTS.has(relativePath)
-	);
+	const flat =
+		(relativePath.startsWith("src/") && !relativePath.slice("src/".length).includes("/")) ||
+		isFlatAppSource(relativePath);
+	return flat && isSourceFile(relativePath) && !isEntrypoint(relativePath);
 }
 
 /**
@@ -213,13 +214,13 @@ const stateFilesPure = createRule(
 const rootImplementationModules = createRule(
 	{
 		noRootImplementation:
-			"Root src files are reserved for thin package, binary, server, and development entrypoints.",
+			"Root src files, and the files directly in an app's src, are reserved for thin package, binary, server, browser and development entrypoints.",
 		noEntrypointImplementation:
-			"Root src entrypoints may contain startup wiring, not function or class implementations.",
+			"Entrypoints may contain startup wiring, not function or class implementations.",
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);
-		if (ROOT_SOURCE_ENTRYPOINTS.has(relativePath)) {
+		if (isEntrypoint(relativePath)) {
 			return {
 				/**
 				 * Report a top-level function in a thin entrypoint.
@@ -274,14 +275,31 @@ function unmappedSourceMessage(relativePath: string): string | undefined {
 	if (relativePath.startsWith("frontend/src/")) {
 		return "noLegacyFrontendRoot";
 	}
-	if (
-		relativePath.startsWith("src/") &&
-		!ROOT_SOURCE_ENTRYPOINTS.has(relativePath) &&
-		!moduleAt(relativePath)
-	) {
-		return "noUnmappedSourcePath";
+	return unmappedAppMessage(relativePath) ?? unmappedRootMessage(relativePath);
+}
+
+/**
+ * The mapped-source-paths message a file of an app earns, if any.
+ * @param relativePath The file's repository path.
+ * @returns The message id, or undefined when the file is not in an app or is placed correctly.
+ */
+function unmappedAppMessage(relativePath: string): string | undefined {
+	const problem = appPlacementProblem(relativePath);
+	if (problem === undefined) {
+		return undefined;
 	}
-	return undefined;
+	return problem === "legacy-root" ? "noLegacyAppRoot" : "noUnmappedAppPath";
+}
+
+/**
+ * The mapped-source-paths message a file of the root `src/` earns, if any.
+ * @param relativePath The file's repository path.
+ * @returns The message id, or undefined when the file is not in root `src/` or is placed correctly.
+ */
+function unmappedRootMessage(relativePath: string): string | undefined {
+	const unmapped =
+		relativePath.startsWith("src/") && !isEntrypoint(relativePath) && !moduleAt(relativePath);
+	return unmapped ? "noUnmappedSourcePath" : undefined;
 }
 
 const mappedSourcePaths = createRule(
@@ -290,6 +308,10 @@ const mappedSourcePaths = createRule(
 			"Browser source belongs in a deep module under src/ui/<module>, not frontend/src.",
 		noUnmappedSourcePath:
 			"Source must be a thin root entrypoint or live in a deep module under src/<area>/<module>.",
+		noLegacyAppRoot:
+			"An app keeps source in apps/<name>/src and tests in apps/<name>/tests, never in a legacy root such as frontend or lib.",
+		noUnmappedAppPath:
+			"Source in an app lives in a role folder of an area under apps/<name>/src/<area>/, or is a thin entrypoint.",
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);
@@ -329,7 +351,7 @@ const noCatchAllExports = createRule(
 const noGenericBuckets = createRule(
 	{
 		noGenericBucket:
-			"Do not put source in compatibility, core, migration, misc, or utils buckets; name the owning module.",
+			"Do not put source in compatibility, core, migration, misc, or utils buckets, or in a lib folder of a package or app; name the owning module or role.",
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);

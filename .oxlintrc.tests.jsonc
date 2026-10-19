@@ -1,6 +1,6 @@
 // The rules tests are held to (TASK-151): tests/**, the module tests under
-// src/*/*/tests/** except src/ui's, and the package tests under packages/*/tests/**
-// except their ui folders.
+// src/*/*/tests/** except src/ui's, and the package and app tests under packages/*/tests/**
+// and apps/*/tests/** except their ui folders.
 // They are the repository's rules from before the policy in .oxlintrc.jsonc, which
 // owns every other authored source file.
 {
@@ -40,6 +40,7 @@
 		"packages/codex-app-server/src/shared/protocol/generated/**",
 		"src/ui/**",
 		"packages/*/tests/ui/**",
+		"apps/*/tests/ui/**",
 	],
 	"settings": {
 		"react": {
@@ -77,7 +78,13 @@
 	},
 	"overrides": [
 		{
-			"files": ["src/**/*.ts", "src/**/*.tsx", "packages/*/tests/**/*.ts", "tests/system/**/*.ts"],
+			"files": [
+				"src/**/*.ts",
+				"src/**/*.tsx",
+				"packages/*/tests/**/*.ts",
+				"apps/*/tests/**/*.ts",
+				"tests/system/**/*.ts",
+			],
 			"rules": {
 				"no-await-in-loop": "off",
 				"typescript/no-unsafe-type-assertion": "off",
@@ -94,6 +101,8 @@
 				"src/*/*/tests/**/*.tsx",
 				"packages/*/tests/**/*.ts",
 				"packages/*/tests/**/*.tsx",
+				"apps/*/tests/**/*.ts",
+				"apps/*/tests/**/*.tsx",
 				"tests/system/**/*.ts",
 			],
 			"rules": {
