@@ -346,6 +346,8 @@ describe("the resolved package graph", () => {
 				'import("@archboard/board/views");',
 				"mock.module(`@archboard/board/policy`, () => ({}));",
 				'import.meta.resolve("@archboard/board/comparison");',
+				'new Worker(new URL("../workers/layout-worker.ts", import.meta.url));',
+				'new URL("../assets/layout.wasm", import.meta.url);',
 				'// import "@archboard-app/server";',
 			].join("\n"),
 		);
@@ -356,6 +358,7 @@ describe("the resolved package graph", () => {
 			"@archboard/board/views",
 			"@archboard/board/policy",
 			"@archboard/board/comparison",
+			"../workers/layout-worker.ts",
 		]);
 	});
 
@@ -403,6 +406,14 @@ describe("the resolved package graph", () => {
 			expect(
 				browserViolations([path.join(base, "packages/process/src/shared/api.ts")], fixtureOwners),
 			).toHaveLength(2);
+			write(
+				"packages/process/src/shared/api.ts",
+				'new Worker(new URL("../ui/background.ts", import.meta.url));',
+			);
+			write("packages/process/src/ui/background.ts", 'import "node:fs";');
+			expect(
+				browserViolations([path.join(base, "packages/process/src/shared/api.ts")], fixtureOwners),
+			).toHaveLength(1);
 		} finally {
 			fs.rmSync(base, { recursive: true, force: true });
 		}
