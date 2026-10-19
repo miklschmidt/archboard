@@ -19,9 +19,9 @@ import {
 	type RuleContext,
 	type StringLiteralNode,
 	type VisitedNode,
-	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./rule-api.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 import { getRepoRelativePath } from "./source-layout.ts";
 
 const ASSISTANT_UI_PACKAGE = "@assistant-ui/react";

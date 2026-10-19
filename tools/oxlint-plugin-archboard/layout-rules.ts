@@ -1,19 +1,19 @@
-// Rules about where a file sits and what it may contain: root entrypoints,
-// mapped module paths, generic buckets, state purity, archive references and
+// Rules about where a file sits and what it may contain: app entrypoints,
+// mapped source paths, generic buckets, state purity, archive references and
 // the TypeScript-only and inline-handler restrictions.
-// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 import { createRule, report, sourceImportVisitors, type AstNode, type NodeOf } from "./rule-api.ts";
 import {
-	appPlacementProblem,
 	getRepoRelativePath,
 	hasGenericBucket,
 	isEntrypoint,
 	isFlatAppSource,
+	isLegacyRoot,
 	isProductSourcePath,
 	isSourceFile,
 	isStateFile,
-	moduleAt,
-	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+	placementProblem,
+	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./source-layout.ts";
 
 const SIDE_EFFECT_IMPORTS = new Set([
@@ -71,16 +71,12 @@ function isTopLevelFunctionVariable(node: NodeOf<"VariableDeclarator">): boolean
 }
 
 /**
- * Whether a file is a flat root file under `src/`, or under an app's `src/`, other than the
- * thin entrypoints.
+ * Whether a file sits directly in an app's `src/` and is not a thin entrypoint.
  * @param relativePath The file's repository path.
  * @returns Whether the root-implementation rule refuses the file outright.
  */
 function isFlatRootSource(relativePath: string): boolean {
-	const flat =
-		(relativePath.startsWith("src/") && !relativePath.slice("src/".length).includes("/")) ||
-		isFlatAppSource(relativePath);
-	return flat && isSourceFile(relativePath) && !isEntrypoint(relativePath);
+	return isFlatAppSource(relativePath) && isSourceFile(relativePath) && !isEntrypoint(relativePath);
 }
 
 /**
@@ -214,7 +210,7 @@ const stateFilesPure = createRule(
 const rootImplementationModules = createRule(
 	{
 		noRootImplementation:
-			"Root src files, and the files directly in an app's src, are reserved for thin package, binary, server, browser and development entrypoints.",
+			"The files directly in an app's src are reserved for thin binary, server and browser entrypoints.",
 		noEntrypointImplementation:
 			"Entrypoints may contain startup wiring, not function or class implementations.",
 	},
@@ -272,46 +268,24 @@ const rootImplementationModules = createRule(
  * @returns The message id, or undefined when the file is placed correctly.
  */
 function unmappedSourceMessage(relativePath: string): string | undefined {
-	if (relativePath.startsWith("frontend/src/")) {
-		return "noLegacyFrontendRoot";
+	if (isLegacyRoot(relativePath)) {
+		return "noLegacyRoot";
 	}
-	return unmappedAppMessage(relativePath) ?? unmappedRootMessage(relativePath);
-}
-
-/**
- * The mapped-source-paths message a file of an app earns, if any.
- * @param relativePath The file's repository path.
- * @returns The message id, or undefined when the file is not in an app or is placed correctly.
- */
-function unmappedAppMessage(relativePath: string): string | undefined {
-	const problem = appPlacementProblem(relativePath);
+	const problem = placementProblem(relativePath);
 	if (problem === undefined) {
 		return undefined;
 	}
-	return problem === "legacy-root" ? "noLegacyAppRoot" : "noUnmappedAppPath";
-}
-
-/**
- * The mapped-source-paths message a file of the root `src/` earns, if any.
- * @param relativePath The file's repository path.
- * @returns The message id, or undefined when the file is not in root `src/` or is placed correctly.
- */
-function unmappedRootMessage(relativePath: string): string | undefined {
-	const unmapped =
-		relativePath.startsWith("src/") && !isEntrypoint(relativePath) && !moduleAt(relativePath);
-	return unmapped ? "noUnmappedSourcePath" : undefined;
+	return problem === "legacy-root" ? "noLegacyAppRoot" : "noUnmappedPath";
 }
 
 const mappedSourcePaths = createRule(
 	{
-		noLegacyFrontendRoot:
-			"Browser source belongs in a deep module under src/ui/<module>, not frontend/src.",
-		noUnmappedSourcePath:
-			"Source must be a thin root entrypoint or live in a deep module under src/<area>/<module>.",
+		noLegacyRoot:
+			"The top-level src/ and frontend/ folders are gone. Source belongs in packages/<name>/src or apps/<name>/src.",
 		noLegacyAppRoot:
 			"An app keeps source in apps/<name>/src and tests in apps/<name>/tests, never in a legacy root such as frontend or lib.",
-		noUnmappedAppPath:
-			"Source in an app lives in a role folder of an area under apps/<name>/src/<area>/, or is a thin entrypoint.",
+		noUnmappedPath:
+			"Source in a package or an app lives in a role folder of an area (cli, runtime, server, shared or ui) under src/<area>/. Only the thin entrypoints of an app sit directly in its src.",
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);
@@ -351,7 +325,7 @@ const noCatchAllExports = createRule(
 const noGenericBuckets = createRule(
 	{
 		noGenericBucket:
-			"Do not put source in compatibility, core, migration, misc, or utils buckets, or in a lib folder of a package or app; name the owning module or role.",
+			"Do not put source in compatibility, core, lib, migration, misc, or utils folders; name the role of the folder.",
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);

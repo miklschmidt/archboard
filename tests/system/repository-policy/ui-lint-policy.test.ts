@@ -127,7 +127,7 @@ describe("the UI rules cover the ui area of a package", () => {
 	});
 });
 
-describe("the lint configs split package tests the way they split src/ui", () => {
+describe("the lint configs split package tests the way they split ui tests", () => {
 	const longTest = "// pad\n".repeat(601);
 	const files = {
 		"packages/alpha/tests/ui/components/long.test.tsx": `${longTest}export const value = 1;\n`,
@@ -305,7 +305,7 @@ describe("the frame clock rule follows the board canvas into apps/web", () => {
 	);
 
 	test("restricts the clocks at a canvas path of apps/web and leaves its sibling behaviors alone", () => {
-		// Catches the restriction vanishing when the canvas leaves src/ui: the override named only
+		// Catches the restriction vanishing when the canvas moves: the override named only
 		// the old paths. A sibling behavior stays free to read the clock, so it was not widened.
 		withProject({ ".oxlintrc.jsonc": repositoryConfig(".oxlintrc.jsonc") }, files, (root) => {
 			for (const file of canvas) {

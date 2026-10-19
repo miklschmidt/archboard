@@ -1,7 +1,7 @@
-// The Archboard Oxlint plugin: the module-layout, dependency-direction and
+// The Archboard Oxlint plugin: the package-layout, dependency-direction and
 // vendor-ownership rules of docs/agents/boundaries.md, loaded by both lint
 // lanes through `jsPlugins`. The rules live in tools/oxlint-plugin-archboard/.
-// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 import { assistantUiImports } from "./oxlint-plugin-archboard/assistant-ui-imports.ts";
 import {
 	mappedSourcePaths,
@@ -13,17 +13,17 @@ import {
 	rootImplementationModules,
 	stateFilesPure,
 	typescriptSource,
-	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./oxlint-plugin-archboard/layout-rules.ts";
 import {
 	absoluteImports,
 	importBoundaries,
 	moduleEntrypoints,
-	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./oxlint-plugin-archboard/module-rules.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 import type { Rule } from "./oxlint-plugin-archboard/rule-api.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 import { namedReactImports, uiConcernPlacement } from "./oxlint-plugin-archboard/ui-rules.ts";
 
 // Oxlint 1.80 exports no plugin type; this is the shape its loader registers.
