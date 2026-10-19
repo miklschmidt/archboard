@@ -1,11 +1,13 @@
 import {
 	decodeClientRequestParams,
 	decodeResponse,
+	type ResponsePayloads,
+} from "@archboard/codex-app-server/protocol-decoder";
+import {
 	INITIALIZE_CAPABILITIES,
 	InitializeCapabilitiesSchema,
-	type ClientRequestParams,
-	type ResponsePayloads,
-} from "@/runtime/codex-protocol";
+} from "@archboard/codex-app-server/authored-schemas";
+import { type ClientRequestParams } from "@archboard/codex-app-server/client-request-schemas";
 import type { CodexTransport, CodexTransportResponse } from "@/runtime/codex-transport";
 import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import {

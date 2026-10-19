@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_BINARY_VERSION } from "@/runtime/codex-protocol";
+import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/protocol-version";
 import { describe, expect, test } from "bun:test";
 import {
 	chmodSync,

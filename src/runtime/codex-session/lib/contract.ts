@@ -1,4 +1,4 @@
-import type { CodexProcessLifecycle } from "@/runtime/codex-process";
+import type { CodexProcessLifecycle } from "@archboard/codex-app-server/process";
 import type {
 	TransportServerNotification,
 	TransportServerRequest,
@@ -6,11 +6,13 @@ import type {
 import type { CodexTransport } from "@/runtime/codex-transport";
 import type {
 	BedrockSetupParams,
-	ClientRequestMethod,
-	CodexSessionRequestParams,
 	LoginAccountParams,
+} from "@archboard/codex-app-server/authored-schemas";
+import type {
+	ClientRequestMethod,
 	ResponseMethod,
-} from "@/runtime/codex-protocol";
+} from "@archboard/codex-app-server/protocol-methods";
+import type { CodexSessionRequestParams } from "@archboard/codex-app-server/client-request-schemas";
 import type {
 	IdentityAuthority,
 	ThreadId,
@@ -18,7 +20,7 @@ import type {
 } from "@archboard/codex-app-server/workbench-identity";
 import type { SessionResponsePayloads } from "@/runtime/codex-session/lib/results";
 
-export type { BedrockSetupParams } from "@/runtime/codex-protocol";
+export type { BedrockSetupParams } from "@archboard/codex-app-server/authored-schemas";
 
 /**
  * Codex 0.160.0 reports this origin for our fixed app-server initialization.

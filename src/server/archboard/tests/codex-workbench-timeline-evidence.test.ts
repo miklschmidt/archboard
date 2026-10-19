@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { decodeServerNotification } from "../../../runtime/codex-protocol/index.js";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
 import type { CodexSession } from "../../../runtime/codex-session/index.js";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";

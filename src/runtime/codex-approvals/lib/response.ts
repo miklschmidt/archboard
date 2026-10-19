@@ -8,7 +8,7 @@ import type {
 } from "@/runtime/codex-approvals/lib/contract";
 import { CodexApprovalError } from "@/runtime/codex-approvals/lib/contract";
 import type { ReverseResponse } from "@/runtime/codex-transport/server-requests";
-import { CodexServerResponseSchema } from "@/runtime/codex-protocol";
+import { CodexServerResponseSchema } from "@archboard/codex-app-server/server-response-schemas";
 import {
 	CodexTransportOwnershipError,
 	CodexTransportUsageError,

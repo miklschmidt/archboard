@@ -1,4 +1,5 @@
-import type { ResponseMethod, ResponsePayloads } from "@/runtime/codex-protocol";
+import type { ResponseMethod } from "@archboard/codex-app-server/protocol-methods";
+import type { ResponsePayloads } from "@archboard/codex-app-server/protocol-decoder";
 import type { TrustedIdentityDecoder } from "@archboard/codex-app-server/workbench-identity";
 import { SESSION_PROTOCOL_METHODS } from "@/runtime/codex-session/lib/response-contract";
 import { collectResponseIdentities } from "@/runtime/codex-session/lib/response-identity-collection";

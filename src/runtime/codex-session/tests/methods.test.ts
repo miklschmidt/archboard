@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { SESSION_METHODS, type CodexSession, type SessionMethod } from "../index.js";
-import type { ResponseMethod } from "../../codex-protocol/index.js";
+import type { ResponseMethod } from "@archboard/codex-app-server/protocol-methods";
 import { createSessionFixture, emptyResponse, threadFixture, turnFixture } from "./support.js";
 import { responseFor } from "./response-fixtures.js";
 

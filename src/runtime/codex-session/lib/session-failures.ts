@@ -1,4 +1,4 @@
-import { ProtocolDecodeError } from "@/runtime/codex-protocol";
+import { ProtocolDecodeError } from "@archboard/codex-app-server/protocol-decoder";
 import {
 	CodexSessionError,
 	CodexSessionMutationError,

@@ -1,4 +1,4 @@
-import { QueuedSubmissionSchema } from "@/runtime/codex-protocol";
+import { QueuedSubmissionSchema } from "@archboard/codex-app-server/item-schemas";
 import type { SessionQueuedSubmission } from "@/runtime/codex-session";
 import type {
 	QueueSnapshot,

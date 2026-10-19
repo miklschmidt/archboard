@@ -1,12 +1,14 @@
 import {
 	decodeServerRequest,
 	isSupportedServerRequestMethod,
+	type DecodedServerRequest,
+	type ServerRequestPayloads,
+} from "@archboard/codex-app-server/protocol-decoder";
+import {
 	JSON_RPC_ERROR_CODES,
 	SERVER_REQUEST_SCHEMAS,
-	type DecodedServerRequest,
-	type ServerRequestMethod,
-	type ServerRequestPayloads,
-} from "@/runtime/codex-protocol";
+} from "@archboard/codex-app-server/request-schemas";
+import { type ServerRequestMethod } from "@archboard/codex-app-server/protocol-methods";
 import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 import type {
 	IdentityAuthority,

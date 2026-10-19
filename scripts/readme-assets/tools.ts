@@ -14,7 +14,7 @@ import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { resolveProjectCodexExecutable } from "@/runtime/codex-process/executable";
+import { resolveProjectCodexExecutable } from "@archboard/codex-app-server/executable";
 import { discoveredChromiumPath } from "@/runtime/headless-chromium";
 import { findFfmpeg } from "@/runtime/video-encoder";
 

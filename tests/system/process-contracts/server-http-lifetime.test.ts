@@ -44,7 +44,10 @@ async function freePort(): Promise<number> {
 }
 
 function wrapperSource(fixture: ProductionFixture, mode: "bind-race" | "runtime-error"): string {
-	const executableModule = join(repoRoot, "src/runtime/codex-process/executable.ts");
+	const executableModule = join(
+		repoRoot,
+		"packages/codex-app-server/src/runtime/services/executable.ts",
+	);
 	const httpFactoryModule = join(repoRoot, "src/server/archboard/lib/http-server.ts");
 	const bindRace = mode === "bind-race";
 	return (
@@ -86,7 +89,10 @@ function delayedListenWrapperSource(
 	pendingPath: string,
 	outcomePath: string,
 ): string {
-	const executableModule = join(repoRoot, "src/runtime/codex-process/executable.ts");
+	const executableModule = join(
+		repoRoot,
+		"packages/codex-app-server/src/runtime/services/executable.ts",
+	);
 	const httpFactoryModule = join(repoRoot, "src/server/archboard/lib/http-server.ts");
 	return (
 		`import { writeFileSync } from "node:fs";\n` +

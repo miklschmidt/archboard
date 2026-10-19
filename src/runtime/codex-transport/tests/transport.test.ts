@@ -12,7 +12,7 @@ import {
 import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
-} from "../../codex-protocol/index.js";
+} from "@archboard/codex-app-server/authored-schemas";
 import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 import {
 	captureRejection,

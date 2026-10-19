@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
 import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoch/index.js";
 import type { ArchboardContext } from "../../codex-instructions/index.js";
 import type {

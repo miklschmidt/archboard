@@ -119,7 +119,10 @@ export async function startServer(options: {
 	const port = await freePort();
 	const base = `http://127.0.0.1:${port}`;
 	const wrapper = join(options.root, "production-server.ts");
-	const executableModule = join(repoRoot, "src/runtime/codex-process/executable.ts");
+	const executableModule = join(
+		repoRoot,
+		"packages/codex-app-server/src/runtime/services/executable.ts",
+	);
 	const paths = {
 		home: join(options.root, "home"),
 		xdgConfig: join(options.root, "xdg-config"),

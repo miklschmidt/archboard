@@ -11,7 +11,7 @@ import type {
 	DynamicToolLifecyclePort,
 } from "@/runtime/codex-dynamic-tools";
 import type { CodexEpochStoreOptions } from "@/runtime/codex-epoch";
-import type { CodexProcessOptions } from "@/runtime/codex-process";
+import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
 import type { CodexSessionOptions } from "@/runtime/codex-session";
 import type { CodexRealtimeAdapterOptions } from "@/runtime/codex-realtime";
 import type { SemanticContextPublisherOptions } from "@/runtime/codex-semantic-context";

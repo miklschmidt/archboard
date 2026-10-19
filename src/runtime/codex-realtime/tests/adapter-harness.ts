@@ -14,7 +14,7 @@ import {
 import {
 	decodeServerNotification,
 	type DecodedServerNotification,
-} from "../../codex-protocol/index.js";
+} from "@archboard/codex-app-server/protocol-decoder";
 import type { SessionParams } from "../../codex-session/index.js";
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import {

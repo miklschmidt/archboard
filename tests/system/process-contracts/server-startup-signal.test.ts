@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_BINARY_VERSION } from "@/runtime/codex-protocol";
+import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/protocol-version";
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
@@ -56,7 +56,10 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 		const fixture = prepareProductionFixture(resources, fixtureSource);
 		writeFileSync(fixture.controlPath, JSON.stringify({ exit: false, holdInitialize: true }));
 		const wrapper = join(fixture.root, "startup-signal-server.ts");
-		const executableModule = join(repoRoot, "src/runtime/codex-process/executable.ts");
+		const executableModule = join(
+			repoRoot,
+			"packages/codex-app-server/src/runtime/services/executable.ts",
+		);
 		writeFileSync(
 			wrapper,
 			`import { mock } from "bun:test";\n` +

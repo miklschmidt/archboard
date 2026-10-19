@@ -1,8 +1,8 @@
 import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
-	type ResponsePayloads,
-} from "@/runtime/codex-protocol";
+} from "@archboard/codex-app-server/authored-schemas";
+import { type ResponsePayloads } from "@archboard/codex-app-server/protocol-decoder";
 import type { CodexTransport } from "@/runtime/codex-transport";
 import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
 import { CodexSessionError, type SessionServerRequest } from "@/runtime/codex-session/lib/contract";

@@ -150,7 +150,7 @@ file sits in `runtime/processes/`. `./observation` reads the process table. `./g
 script that a Git command runs under, and callers find it with `import.meta.resolve`.
 `./codex-group` holds the Codex process-group operations, and `./group-cleanup` is their
 TERM-then-KILL escalation. The cleanup takes its error type from the caller, so the package does
-not import `codex-process`.
+not import `codex-app-server`.
 
 The fourth is `workspace` (`@archboard/workspace`). It knows where a vault, a checkout and the state
 directory are. `./repositories` and `./configurable-languages` are in `shared/schemas/` and safe for
@@ -176,15 +176,33 @@ checkout that holds a vault and the checkouts a reader of that vault resolves id
 `./code-target-link` chooses the URL a card opens.
 
 The sixth is `codex-app-server` (`@archboard/codex-app-server`). It is one private Codex app-server
-session over stdio, and it grows in the next two tasks (the protocol and process ownership, then the
-transport and session). For now it holds the shared files, and every export is safe for the browser,
-with no Node import. `./app-server-contract` is the authored wrapper over the generated protocol
-types. The generated tree is ignored by git. It lives in `src/shared/protocol/generated`, and
-`scripts/generate-codex-app-server-contract.ts` writes it on `bun install` and creates its parent
-directories. The wrapper imports it with `#` and only as types, and no other file of the package or
-outside it does. `./app-server-capacity` holds the connection capacity constants, and its test is
-opt-in (`bun run test:opt-in:capacity`). `./workbench-identity` holds the identity brands, the
-correlations and the ledger. Its other files are private.
+session over stdio, and it grows in the next task (the transport and session). It holds the shared
+files, the wire protocol and the process owner. Every export in `shared/` is safe for the browser,
+with no Node import. Every export in `runtime/` is Node-bound, and the browser imports none of them.
+
+- `shared/`: `./app-server-contract` is the authored wrapper over the generated protocol types. The
+  generated tree is ignored by git. It lives in `src/shared/protocol/generated`, and
+  `scripts/generate-codex-app-server-contract.ts` writes it on `bun install` and creates its parent
+  directories. The wrapper imports it with `#` and only as types, and no other file of the package or
+  outside it does. `./app-server-capacity` holds the connection capacity constants, and its test is
+  opt-in (`bun run test:opt-in:capacity`). `./workbench-identity` holds the identity brands, the
+  correlations and the ledger.
+- `runtime/protocol/` and `runtime/schemas/` are the Zod schemas and decoders of the wire.
+  `./protocol-decoder` decodes each message, `./protocol-methods` lists the methods and
+  `./protocol-version` pins the Codex version. `./client-request-schemas`, `./request-schemas`,
+  `./response-schemas`, `./server-response-schemas`, `./authored-schemas`, `./core-schemas`,
+  `./item-schemas` and `./thread-schemas` are the schemas that code outside the package reads.
+  These subpaths are the ones outside code imports today, and most become private when the
+  transport and session move in.
+- `runtime/processes/` owns the `codex app-server` child. `./process` creates it and reports its
+  lifecycle. `runtime/store/` prepares and locks the private Codex home. `runtime/services/`
+  holds the child's environment, its diagnostics buffer and the executable check. `./executable`
+  finds the Codex executable of the checkout whose source runs, through `SOURCE_CHECKOUT` of
+  `workspace`, and refuses a global one or one of another checkout. Nothing else in `runtime/` is
+  exported.
+- A test that needs the process owner's injected dependencies imports
+  `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
+  package has no `./testing` export.
 
 ## Vendor-owned data
 

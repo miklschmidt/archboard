@@ -1,4 +1,4 @@
-import type { CodexProcessSnapshot } from "@/runtime/codex-process";
+import type { CodexProcessSnapshot } from "@archboard/codex-app-server/process";
 import type { BrowserLogin, BrowserReadiness } from "@/shared/codex-browser-model";
 import type { BrowserAccountProjectionInput } from "@/server/codex-workbench";
 

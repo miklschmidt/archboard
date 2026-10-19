@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { decodeServerNotification } from "../../../runtime/codex-protocol/index.js";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
 import type {
 	CodexSession,
 	SessionThreadTurnPageResult,

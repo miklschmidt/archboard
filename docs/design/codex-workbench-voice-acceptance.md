@@ -54,8 +54,8 @@ bun run build
 test "$(node_modules/.bin/codex --version)" = "codex-cli 0.160.0"
 
 timeout -k 5s 25s bun test \
-  src/runtime/codex-process/tests/storage.test.ts \
-  src/runtime/codex-process/tests/process-lifecycle.test.ts \
+  packages/codex-app-server/tests/runtime/store/storage.test.ts \
+  packages/codex-app-server/tests/runtime/processes/process-lifecycle.test.ts \
   src/runtime/codex-session/tests/storage.test.ts
 
 timeout -k 5s 25s bun test \

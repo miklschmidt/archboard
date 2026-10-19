@@ -1,4 +1,4 @@
-import type { ResponseMethod } from "@/runtime/codex-protocol";
+import type { ResponseMethod } from "@archboard/codex-app-server/protocol-methods";
 import { SESSION_PROTOCOL_METHODS } from "@/runtime/codex-session/lib/response-contract";
 
 type ResponseIdentityKind = (typeof SESSION_PROTOCOL_METHODS)[ResponseMethod]["responseIdentities"];

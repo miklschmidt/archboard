@@ -13,7 +13,7 @@ import {
 	type IdentityLedger,
 	type ThreadId,
 } from "@archboard/codex-app-server/workbench-identity";
-import { decodeServerNotification } from "../../codex-protocol/index.js";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
 import type { SessionParams } from "../../codex-session/index.js";
 import {
 	createCodexRealtimeAdapter,

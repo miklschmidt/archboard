@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 

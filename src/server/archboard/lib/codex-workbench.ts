@@ -1,4 +1,4 @@
-import { createCodexProcess } from "@/runtime/codex-process";
+import { createCodexProcess } from "@archboard/codex-app-server/process";
 import { createCodexTransport } from "@/runtime/codex-transport";
 import {
 	createIdentityAuthorities,

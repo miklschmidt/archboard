@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { ResponsePayloads } from "@/runtime/codex-protocol";
+import type { ResponsePayloads } from "@archboard/codex-app-server/protocol-decoder";
 import {
 	CodexSessionStorageError,
 	type CodexSessionStorage,
