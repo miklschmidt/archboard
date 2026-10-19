@@ -7,11 +7,9 @@ import {
 	type IdentityAuthorities,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
-import {
-	parseTabSessionId,
-	type BrowserProjectionContext,
-	type CodexTimelineProjectionInput,
-} from "../../codex-workbench/index.js";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
+import { type BrowserProjectionContext } from "@archboard/workbench/gateway";
+import { type CodexTimelineProjectionInput } from "@archboard/workbench/projection";
 import {
 	createServerBrowserProjectionBudget,
 	createServerBrowserGatewayOptions,

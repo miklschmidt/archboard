@@ -59,7 +59,7 @@ timeout -k 5s 25s bun test \
   packages/codex-app-server/tests/runtime/store/storage-proof.test.ts
 
 timeout -k 5s 25s bun test \
-  src/server/codex-workbench/tests/sequenced-delivery.test.ts \
+  packages/workbench/tests/server/services/gateway/sequenced-delivery.test.ts \
   src/server/archboard/tests/codex-workbench-text-actions.test.ts \
   src/ui/workbench-transport/tests/stream-reduction.test.ts \
   src/ui/workbench-composer/tests

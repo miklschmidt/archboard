@@ -1,10 +1,10 @@
 import type { TurnId } from "@archboard/codex-app-server/identity";
-import type {
-	CodexTimelinePlanInput,
-	CodexTimelineProjectionInput,
-	CodexTimelineTurnProjectionInput,
-} from "@/server/codex-workbench";
-import { assertBrowserSnapshotBudget } from "@/server/codex-workbench";
+import {
+	type CodexTimelinePlanInput,
+	type CodexTimelineProjectionInput,
+	type CodexTimelineTurnProjectionInput,
+	assertBrowserSnapshotBudget,
+} from "@archboard/workbench/projection";
 import {
 	projectTurn,
 	TIMELINE_ITEM_LIMIT,

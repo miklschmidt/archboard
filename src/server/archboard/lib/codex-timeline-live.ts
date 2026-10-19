@@ -6,7 +6,10 @@
 
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { ThreadId, TrustedIdentityDecoder } from "@archboard/codex-app-server/identity";
-import type { CodexTimelinePlanInput, CodexTimelineUsageInput } from "@/server/codex-workbench";
+import type {
+	CodexTimelinePlanInput,
+	CodexTimelineUsageInput,
+} from "@archboard/workbench/projection";
 import type { TimelineLiveState } from "@/server/archboard/lib/codex-timeline-budget";
 import { boundedPlan } from "@/server/archboard/lib/codex-timeline-evidence";
 

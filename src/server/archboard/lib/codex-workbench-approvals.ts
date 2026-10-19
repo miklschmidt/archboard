@@ -2,12 +2,14 @@ import type {
 	BrowserActionContext,
 	BrowserActionResult,
 	BrowserDynamicApprovalActions,
-	BrowserDynamicApprovalResponse,
+} from "@archboard/workbench/gateway";
+import type { BrowserDynamicApprovalResponse } from "@archboard/workbench/browser-approvals";
+import type {
 	DynamicApprovalOwnerBinding,
 	DynamicApprovalOwnerRequest,
 	DynamicApprovalOwnerView,
-	TabSessionId,
-} from "@/server/codex-workbench";
+} from "@archboard/workbench/projection";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 import type {
 	BrowserCommandId,
 	IdentityAuthorities,

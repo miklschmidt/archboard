@@ -3,9 +3,9 @@ import {
 	parseTabSessionId,
 	parseWorkhorseLinkKey,
 	workhorseLinkKey,
-	type BrowserOrdinaryApprovalActions,
 	type TabSessionId,
-} from "@/server/codex-workbench";
+} from "@archboard/workbench/tab-session";
+import { type BrowserOrdinaryApprovalActions } from "@archboard/workbench/gateway";
 
 /** How an approval's link names the tab session it is shown to. */
 const TAB_SESSION_LINK_PREFIX = "tab:";

@@ -9,7 +9,7 @@ import { CODEX_SERVER_REQUEST_METHODS } from "@archboard/codex-app-server/contra
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
-import { parseTabSessionId } from "../../codex-workbench/index.js";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
 
 /** The tab session every dynamic caller here belongs to. */
 const TAB_SESSION = parseTabSessionId("tab-one")!;

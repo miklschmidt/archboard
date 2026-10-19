@@ -24,7 +24,8 @@ import type {
 	TrustedIdentityDecoder,
 	TurnId,
 } from "@archboard/codex-app-server/identity";
-import type { BrowserThreadLinkActions, CodexQueueProjectionInput } from "@/server/codex-workbench";
+import type { BrowserThreadLinkActions } from "@archboard/workbench/gateway";
+import type { CodexQueueProjectionInput } from "@archboard/workbench/projection";
 
 /** The runtime owners one workhorse runs on. */
 interface CodexWorkbenchWorkhorseComponents {

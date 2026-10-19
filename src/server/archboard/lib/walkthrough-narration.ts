@@ -34,7 +34,7 @@ import { paneBoardOf, panes } from "@/server/archboard/lib/pane-registry";
 import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
 import { aggregateKey } from "@/server/archboard/lib/semantic-board-context";
 import { tabSessionOf } from "@/server/archboard/lib/tab-sessions";
-import type { TabSessionId } from "@/server/codex-workbench";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 
 /**
  * The board a pane shows: what the pane itself last said is on screen, which

@@ -16,7 +16,7 @@ import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchTabSession,
 } from "@/server/archboard/codex-workbench-generation";
-import type { TabSessionId } from "@/server/codex-workbench";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 import {
 	createServerCodexBrowserSocketOwner,
 	type BrowserConnectionInstance,

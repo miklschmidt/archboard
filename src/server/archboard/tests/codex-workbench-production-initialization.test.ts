@@ -20,11 +20,9 @@ import {
 	type SemanticContextInput,
 } from "@archboard/codex-app-server/semantic-context";
 import type { SessionParams } from "@archboard/codex-app-server/session";
-import {
-	createBrowserLeaseLedger,
-	createCodexWorkbenchGateway,
-	parseTabSessionId,
-} from "../../codex-workbench/index.js";
+import { createBrowserLeaseLedger } from "@archboard/workbench/leases";
+import { createCodexWorkbenchGateway } from "@archboard/workbench/gateway";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
 import { createServerCodexWorkbenchInstallation } from "../codex-workbench-production.js";
 import type {
 	CodexWorkbenchComponents,

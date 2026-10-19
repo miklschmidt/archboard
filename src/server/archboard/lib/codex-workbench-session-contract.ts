@@ -25,7 +25,8 @@ import type {
 	ThreadId,
 	TurnId,
 } from "@archboard/codex-app-server/identity";
-import type { BrowserRealtimeActions, TabSessionId } from "@/server/codex-workbench";
+import type { BrowserRealtimeActions } from "@archboard/workbench/gateway";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 import type { TabSessionEnding } from "@/server/archboard/lib/codex-workbench-session-end";
 import type { CoordinatorTurnHome } from "@/server/archboard/lib/codex-workbench-delegations";
 import type {

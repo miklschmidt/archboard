@@ -2,12 +2,11 @@ import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { ThreadLinkSnapshot } from "@archboard/workbench/thread-link";
 import type { ArchboardContext } from "@archboard/workbench/instructions";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
+import { parseTabSessionId, workhorseLinkKey } from "@archboard/workbench/tab-session";
 import {
-	parseTabSessionId,
-	workhorseLinkKey,
 	type BrowserActionContext,
 	type BrowserProjectionContext,
-} from "../../../codex-workbench/index.js";
+} from "@archboard/workbench/gateway";
 import {
 	createCodexWorkbenchSessions,
 	type CodexWorkbenchSessionComponents,

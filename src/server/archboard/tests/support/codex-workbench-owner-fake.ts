@@ -8,7 +8,7 @@ import {
 	createIdentityAuthorities,
 	createIdentityLedger,
 } from "@archboard/codex-app-server/identity";
-import type { CodexWorkbenchGateway } from "../../../codex-workbench/index.js";
+import type { CodexWorkbenchGateway } from "@archboard/workbench/gateway";
 import type {
 	CodexWorkbenchGeneration,
 	CodexWorkbenchGenerationInput,

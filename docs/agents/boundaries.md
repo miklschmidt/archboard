@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `workbench` for `shared/` and `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `workbench` for `shared/`, `runtime/` and `server/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -545,13 +545,14 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
 
 The sixteenth is `workbench` (`@archboard/workbench`). It is the Codex workbench: the coordinator, the workhorses, the
 conversation and the voice (layer 7, the last). It grows over TASK-500.23.01 to .07, one move for each step up its
-import graph, and the later moves add `server/` and `ui/`. So far it holds the browser-safe contracts that the browser
-and the server exchange, and the Codex runtime under them: the foundation, and over it the coordinator and the
-workhorses. It adopts the `api/` role for `shared/` and `runtime/` and exposes 17 subpaths. It imports `codex-app-server`,
-`board`, `walkthrough` and `timing`, and nothing from `src/`. The 5 files of `shared/api/` hold 100 names and are safe
-for the browser, with no Node import and no path into a runtime or server area: the pane transport and the voice session
-import them as well as the server. The 12 files of `runtime/api/` hold 204 names and run only in Bun. The browser
-imports none of them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/`.
+import graph, and the later moves add the rest of `server/` and `ui/`. So far it holds the browser-safe contracts that
+the browser and the server exchange, the Codex runtime under them (the foundation, and over it the coordinator and the
+workhorses) and the server's gateway over the runtime. It adopts the `api/` role for `shared/`, `runtime/` and `server/`
+and exposes 21 subpaths. It imports `codex-app-server`, `board`, `walkthrough` and `timing`, and nothing from `src/`.
+The 5 files of `shared/api/` hold 100 names and are safe for the browser, with no Node import and no path into a runtime
+or server area: the pane transport and the voice session import them as well as the server. The 12 files of
+`runtime/api/` hold 204 names and the 4 of `server/api/` hold 41, and they run only in Bun. The browser imports none of
+them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/` or `server/`.
 
 **Shared.**
 
@@ -621,6 +622,30 @@ grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `
 - The tests are in `tests/runtime/`, in the folders of the code they cover. `support/dynamic-tools/` holds the fakes and
   fixtures that the dynamic-tools tests share. The capacity test of the dynamic tools is opt-in
   (`bun run test:opt-in:capacity`).
+
+**Server.** `server/` is the gateway that serves the browser's workbench connections. It reads the runtime and the
+shared contracts through their private files, and no private file imports an api file. It is the code that was
+`src/server/codex-workbench/`: the host in `src/server/archboard/` wires it with the owners that act (the actions of a
+pane, the readers of the runtime) and imports only `server/api/`.
+
+- `protocol/` holds `gateway/contract.ts` (the options, the owners' ports, the connection and the gateway that the host
+  wires, with the error a command is refused with) and `projection/projection-contract.ts` (what the host hands the
+  projection to read).
+- `rules/` holds `tab-session/` (the tab session id and the key that links one to the workhorse of a checkout) and
+  `snapshot/` (the byte budget of a snapshot and a delta, the fit and the diff that keep them inside it, and the
+  redaction of secret keys).
+- `projections/browser-state/` turns the owners' state into the snapshot a pane renders: the timeline, the thread link,
+  the ordinary, dynamic and spoken approvals, and the whole of it in `projection.ts`.
+- `services/gateway/` is the gateway: `gateway.ts` takes a connection, and its connections, execution (the command
+  surface and the cache a retry is answered from) and leases files hold what one connection and one command need.
+  `services/lease/` is the ledger and the manager of the browser command leases. `operations/command/` admits a browser
+  command (the readiness, the thread link and the lease it needs) and dispatches it to the one action that carries it
+  out, so a command with no action is not one this gateway serves.
+- `./gateway` is the gateway and the types of its owners. `./projection` is the projection of the browser state with its
+  inputs, the snapshot budget and the redaction of secrets. `./tab-session` is the tab session id and the workhorse link
+  key. `./leases` is the ledger of the browser command leases that the pane registry creates.
+- The tests are in `tests/server/`, in the folders of the code they cover. `support/gateway/` holds the fake owners, the
+  fixtures and the helpers that the gateway and the projection tests share.
 
 ## Vendor-owned data
 

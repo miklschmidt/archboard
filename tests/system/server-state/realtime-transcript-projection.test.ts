@@ -21,7 +21,7 @@ import {
 import {
 	projectCodexBrowserState,
 	type BrowserProjectionInput,
-} from "../../../src/server/codex-workbench/index.js";
+} from "@archboard/workbench/projection";
 
 const LINKED_THREAD = "projection-linked-thread";
 const COORDINATOR_THREAD = "projection-coordinator-thread";

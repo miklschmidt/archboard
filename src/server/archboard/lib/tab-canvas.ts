@@ -7,7 +7,7 @@ import { aggregateKey } from "@/server/archboard/lib/semantic-board-context";
 import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
 import { tabSessionOf } from "@/server/archboard/lib/tab-sessions";
 import { narratedBoardOf } from "@/server/archboard/lib/walkthrough-narration";
-import type { TabSessionId } from "@/server/codex-workbench";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 
 /**
  * What one tab's canvas holds now, read at the moment it is asked: a pane moves, and leaving a

@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, expect, jest, test } from "bun:test";
 
 import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
-import { parseTabSessionId, type TabSessionId } from "../../codex-workbench/index.js";
+import { parseTabSessionId, type TabSessionId } from "@archboard/workbench/tab-session";
 import { createTabSessions } from "../codex-workbench-browser.js";
 
 const TAB = parseTabSessionId("tab-one") as TabSessionId;

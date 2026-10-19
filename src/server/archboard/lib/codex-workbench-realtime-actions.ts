@@ -15,7 +15,7 @@
 // the coordinator unsubscribes from it so Codex unloads it (TASK-374), and the trace says how
 // that went.
 
-import type { BrowserActionContext, BrowserRealtimeActions } from "@/server/codex-workbench";
+import type { BrowserActionContext, BrowserRealtimeActions } from "@archboard/workbench/gateway";
 import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	parseRealtimeCorrelationId,

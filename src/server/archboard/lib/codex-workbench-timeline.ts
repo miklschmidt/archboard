@@ -9,10 +9,8 @@ import type {
 	TrustedIdentityDecoder,
 	TurnId,
 } from "@archboard/codex-app-server/identity";
-import type {
-	BrowserConnectionInstance,
-	CodexTimelineProjectionInput,
-} from "@/server/codex-workbench";
+import type { BrowserConnectionInstance } from "@archboard/workbench/gateway";
+import type { CodexTimelineProjectionInput } from "@archboard/workbench/projection";
 import {
 	projectTurnData,
 	TIMELINE_CURSOR_LIMIT,

@@ -18,7 +18,7 @@
 import { logger } from "@archboard/diagnostics/logger";
 import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
 import type { CodexWorkbenchComponents } from "@/server/archboard/codex-workbench-generation";
-import type { TabSessionId } from "@/server/codex-workbench";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 
 /** The panes on screen by tab, and when each tab that has none left ends. */
 interface TabSessions {

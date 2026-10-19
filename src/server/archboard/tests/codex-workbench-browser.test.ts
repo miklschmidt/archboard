@@ -2,13 +2,13 @@ import { expect, test } from "bun:test";
 import { createServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
 import {
-	parseTabSessionId,
 	type BrowserConnectionInstance,
-	type BrowserGatewayMessage,
 	type BrowserWorkbenchConnection,
 	type CodexWorkbenchGateway,
-} from "../../codex-workbench/index.js";
+} from "@archboard/workbench/gateway";
+import { type BrowserGatewayMessage } from "@archboard/workbench/browser-gateway";
 import { createServerCodexBrowserSocketOwner } from "../codex-workbench-browser.js";
 
 test("socket acceptance transfers gateway ownership before the retired socket closes", async () => {

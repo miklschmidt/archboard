@@ -1,4 +1,4 @@
-import type { BrowserWorkbenchActions } from "@/server/codex-workbench";
+import type { BrowserWorkbenchActions } from "@archboard/workbench/gateway";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {
 	ControlledCodexSession,

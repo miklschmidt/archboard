@@ -1,14 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { WebSocket } from "ws";
 
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
 import {
-	parseTabSessionId,
 	type BrowserGatewayMessage,
 	type BrowserGatewaySnapshotMessage,
-	type BrowserSnapshot,
+} from "@archboard/workbench/browser-gateway";
+import { type BrowserSnapshot } from "@archboard/workbench/browser-model";
+import {
 	type BrowserWorkbenchConnection,
 	type CodexWorkbenchGateway,
-} from "../../codex-workbench/index.js";
+} from "@archboard/workbench/gateway";
 import {
 	createServerCodexBrowserSocketOwner,
 	createServerCodexBrowserSocketSend,

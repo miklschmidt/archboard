@@ -15,7 +15,7 @@ import {
 import {
 	BROWSER_SNAPSHOT_MAX_BYTES,
 	BROWSER_SNAPSHOT_MIN_BYTES,
-} from "../../codex-workbench/index.js";
+} from "@archboard/workbench/projection";
 import {
 	createServerBrowserProjectionBudget,
 	createServerTimelineOwner,

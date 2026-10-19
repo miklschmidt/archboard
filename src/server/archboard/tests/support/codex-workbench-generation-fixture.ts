@@ -16,7 +16,7 @@ import {
 	type CodexWorkbenchTabSession,
 	type CodexWorkbenchTabSessionScope,
 } from "../../codex-workbench-generation.js";
-import { parseTabSessionId } from "../../../codex-workbench/index.js";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
 
 import {
 	createSessionComponentsFixture,

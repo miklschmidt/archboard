@@ -5,7 +5,7 @@ import {
 	parseTabSessionId,
 	workhorseLinkKey,
 	type TabSessionId,
-} from "../../codex-workbench/index.js";
+} from "@archboard/workbench/tab-session";
 import {
 	createCodexWorkbenchSessions,
 	type CodexWorkbenchSessionComponents,

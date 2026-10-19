@@ -15,7 +15,7 @@ import { addressedVariant } from "@archboard/board/document";
 import { sleep, watchBoardLocks, type WatchedBoard } from "@archboard/board/lock";
 import { PANE_SETTLE_CAP_MS } from "@archboard/timing";
 import type { BrowserConnectionInstance } from "@/server/archboard/codex-workbench-browser";
-import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "@/server/codex-workbench";
+import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "@archboard/workbench/leases";
 
 // WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the board file
 // is the board and the server holds no copy of one (ADR 0015, ADR 0023).

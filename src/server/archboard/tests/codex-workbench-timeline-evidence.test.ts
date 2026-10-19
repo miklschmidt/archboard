@@ -16,7 +16,7 @@ import {
 	projectCodexBrowserState,
 	type BrowserProjectionInput,
 	type CodexTimelineProjectionInput,
-} from "../../codex-workbench/index.js";
+} from "@archboard/workbench/projection";
 import {
 	createServerBrowserProjectionBudget,
 	createServerTimelineOwner,

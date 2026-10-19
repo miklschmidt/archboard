@@ -6,7 +6,7 @@ import type {
 	CodexTimelineItemProjectionInput,
 	CodexTimelinePlanInput,
 	CodexTimelineTurnProjectionInput,
-} from "@/server/codex-workbench";
+} from "@archboard/workbench/projection";
 import {
 	fileChangeEntry,
 	promptText,

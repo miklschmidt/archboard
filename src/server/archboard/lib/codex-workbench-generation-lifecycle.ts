@@ -14,7 +14,7 @@ import type {
 	IdentityAuthorities,
 	IdentityLedger,
 } from "@archboard/codex-app-server/identity";
-import type { CodexWorkbenchGateway } from "@/server/codex-workbench";
+import type { CodexWorkbenchGateway } from "@archboard/workbench/gateway";
 import type { CodexWorkbenchSessions } from "@/server/archboard/lib/codex-workbench-sessions";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import { appendFailure } from "@/server/archboard/lib/codex-workbench-failures";

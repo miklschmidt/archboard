@@ -2,7 +2,7 @@ import {
 	CodexWorkbenchGatewayError,
 	type BrowserActionContext,
 	type BrowserTextActions,
-} from "@/server/codex-workbench";
+} from "@archboard/workbench/gateway";
 import type { OperationId, ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	createTurnStartParams,

@@ -9,7 +9,7 @@ import type { CodexRealtimeAdapter } from "@archboard/workbench/realtime";
 import type { CodexThreadLinkPort } from "@archboard/workbench/thread-link";
 import type { ThreadUnload } from "@archboard/workbench/thread-link";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
-import type { TabSessionId } from "@/server/codex-workbench";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 import { appendFailure } from "@/server/archboard/lib/codex-workbench-failures";
 import type { CodexWorkbenchTabSession } from "@/server/archboard/lib/codex-workbench-sessions";
 

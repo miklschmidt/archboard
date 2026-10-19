@@ -9,7 +9,7 @@ import type { TransportServerNotification } from "@archboard/codex-app-server/tr
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "@archboard/workbench/thread-tools";
 import { createCodexWaitGraph } from "@archboard/workbench/dynamic-tools";
 import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
-import { parseTabSessionId } from "../../codex-workbench/index.js";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
 
 /** The tab session every dynamic caller here belongs to. */
 const TAB_SESSION = parseTabSessionId("tab-one")!;
