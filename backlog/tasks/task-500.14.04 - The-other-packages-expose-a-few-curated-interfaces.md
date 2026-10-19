@@ -1,11 +1,11 @@
 ---
 id: TASK-500.14.04
 title: The other packages expose a few curated interfaces
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 09:18'
-updated_date: '2026-10-19 10:07'
+updated_date: '2026-10-19 11:09'
 labels: []
 dependencies:
   - TASK-500.14.03
@@ -21,8 +21,8 @@ codex-app-server 17, workspace 10, code-binding 9, process 6, diagnostics 4, tim
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 bun run check passes
-- [ ] #2 codex-app-server (17 subpaths), workspace (10), code-binding (9) and process (6) each expose a few curated api files (about 7, 8, 3 and 4), with the grouping and names from the Codex advice in /tmp/archboard-da2a77cb0-review-advice.md, and docs/agents/boundaries.md lists each package interface; timing and diagnostics keep their current small interfaces and need no api folder
+- [x] #1 bun run check passes
+- [x] #2 codex-app-server (17 subpaths), workspace (10), code-binding (9) and process (6) each expose a few curated api files (about 7, 8, 3 and 4), with the grouping and names from the Codex advice in /tmp/archboard-da2a77cb0-review-advice.md, and docs/agents/boundaries.md lists each package interface; timing and diagnostics keep their current small interfaces and need no api folder
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -33,3 +33,9 @@ codex-app-server 17, workspace 10, code-binding 9, process 6, diagnostics 4, tim
 3. Extend tests/system/repository-policy/package-api.test.ts: ADOPTERS covers each adopted package and area, with an explicit exemption list (process git-owner).
 4. For each package: fresh-process load of every export, import orders, no value cycle, browser trace (shared files only), docs/agents/boundaries.md paragraph updated. bun run check at the end of each package.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+codex-app-server (17 to 7), workspace (10 to 8), code-binding (9 to 3) and process (6 to 4) expose curated api files (names per file from the Codex advice, matched by the scan). 435 importer files were rewritten by script with a per-binding definition, alias and type check (1,357 bindings audited independently by Codex). timing and diagnostics keep their small interfaces. workspace exports the registry repositoryOfVault as registeredRepositoryOfVault and the duplicate VAULT_DIRECTORY has one definition. process keeps git-owner as a direct executable export with a named exemption. Codex found that six system fixtures mocked the private executable.ts by path; they now use the public package path through one helper, and a new guard test refuses a private package path in tests, scripts and src. bun run check passed twice plus the fixture follow-up (system, repository and browser lanes), and the opt-in topology test passes.
+<!-- SECTION:FINAL_SUMMARY:END -->
