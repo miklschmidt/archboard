@@ -17,9 +17,13 @@ import { useSyncExternalStore, type JSX } from "react";
 
 import { subtitledTranscript, type VoiceFeed } from "@/ui/application/subtitled-transcript";
 import { useOverlayPlace } from "@/ui/semantic-board-canvas";
-import { VoiceSubtitles, useSubtitlesWanted, useVoiceBoxed } from "@/ui/voice-subtitles";
-import type { SubtitleSource } from "@/ui/voice-subtitles";
-import { VoiceBox, useVoiceSurface } from "@/ui/workbench";
+import {
+	VoiceSubtitles,
+	useSubtitlesWanted,
+	useVoiceBoxed,
+	type SubtitleSource,
+} from "@archboard/workbench/voice-subtitles";
+import { VoiceBox, useVoiceSurface } from "@archboard/workbench/voice-surface";
 
 /** Inputs for a pane's subtitles. */
 interface PaneSubtitlesProps {

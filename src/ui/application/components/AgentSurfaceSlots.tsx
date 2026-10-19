@@ -11,8 +11,7 @@ import { useAgentView } from "@/ui/application/hooks/use-agent";
 import { useUnread } from "@/ui/application/hooks/use-agent-panel";
 import type { AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
 import type { Workbench } from "@/ui/application/hooks/use-workbench";
-import { AgentDock, AgentPanel } from "@/ui/workbench";
-import type { AgentContext } from "@/ui/workbench/contracts";
+import { AgentDock, AgentPanel, type AgentContext } from "@archboard/workbench/agent-surfaces";
 
 /** What a surface is drawn from. */
 interface AgentSurfaceProps {

@@ -14,8 +14,12 @@ import { useCallback, useMemo, useState } from "react";
 import { useAgent } from "@/ui/application/hooks/use-agent";
 import { useAgentPanel, type AgentPanelState } from "@/ui/application/hooks/use-agent-panel";
 import type { Workbench } from "@/ui/application/hooks/use-workbench";
-import { createDraftStore, type DraftStore } from "@/ui/workbench";
-import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
+import {
+	createDraftStore,
+	type DraftStore,
+	type AgentActions,
+} from "@archboard/workbench/agent-surfaces";
+import type { AgentVoiceView } from "@archboard/workbench/voice-surface";
 
 /** The agent's surfaces, as the application holds them. */
 interface AgentSurfaces {

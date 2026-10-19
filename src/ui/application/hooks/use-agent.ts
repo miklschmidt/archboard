@@ -14,9 +14,9 @@ import type {
 	AgentActions,
 	AgentContext,
 	AgentView,
-	AgentVoiceView,
-} from "@/ui/workbench/contracts";
-import type { DraftStore } from "@/ui/workbench";
+	DraftStore,
+} from "@archboard/workbench/agent-surfaces";
+import type { AgentVoiceView } from "@archboard/workbench/voice-surface";
 import { useConversation } from "@archboard/workbench/conversation-runtime";
 
 /** What the agent hook reads beyond the workbench. */

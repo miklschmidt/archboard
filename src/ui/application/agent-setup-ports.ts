@@ -4,9 +4,14 @@
 // opened from the person's own gesture for a provider's sign-in page, so a
 // popup blocker lets it through.
 
-import type { AgentSetup, AgentSetupPorts, AuthTab, SetupStepResult } from "@/ui/agent-setup";
+import type {
+	AgentSetup,
+	AgentSetupPorts,
+	AuthTab,
+	SetupStepResult,
+} from "@archboard/workbench/agent-setup";
 import type { AgentFocus } from "@/ui/application/lib/agent-focus";
-import type { VoiceSession, VoiceSessionStatus } from "@/ui/voice-session";
+import type { VoiceSession, VoiceSessionStatus } from "@archboard/workbench/voice-session";
 import type {
 	ThreadLinkActionCompletion,
 	ThreadLinkController,

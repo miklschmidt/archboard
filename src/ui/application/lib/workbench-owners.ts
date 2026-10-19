@@ -5,11 +5,11 @@
 
 import { createSnapshotCache, type SnapshotStore } from "@/ui/application/lib/snapshot-cache";
 import { createProgressClock } from "@/ui/application/lib/progress-clock";
-import type { VoiceSession } from "@/ui/voice-session";
+import type { VoiceSession } from "@archboard/workbench/voice-session";
 import {
 	createWorkbenchApprovalsController,
 	type WorkbenchApprovalsController,
-} from "@/ui/workbench-approvals";
+} from "@archboard/workbench/approvals-controller";
 import {
 	createWorkbenchComposerController,
 	type WorkbenchComposerController,
@@ -17,7 +17,7 @@ import {
 import {
 	createWorkbenchQueueController,
 	type WorkbenchQueueController,
-} from "@/ui/workbench-queue";
+} from "@archboard/workbench/queue-controller";
 import {
 	createThreadLinkController,
 	type ThreadLinkController,
