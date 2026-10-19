@@ -14,13 +14,13 @@ import {
 	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,
 	type CheckoutSnapshot,
-	type LocalCodeTarget,
-	type OtherRef,
-} from "@/runtime/code-target/index";
+} from "@archboard/code-binding/checkout-snapshot";
+import { type LocalCodeTarget, type OtherRef } from "@archboard/code-binding/binding-resolver";
 import { listReadableFiles } from "@/runtime/code-check/lib/readable-files";
 import { neverRead, pairOf } from "@/runtime/code-facts/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
-import { bindingPathOf, filesOfBinding, type CodeBinding } from "@/shared/code-target/index";
+import { bindingPathOf, filesOfBinding } from "@archboard/code-binding/binding-files";
+import { type CodeBinding } from "@archboard/code-binding/code-binding";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
 /** A registered checkout the pass reads: its canonical root, and the files Git does not ignore. */

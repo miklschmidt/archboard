@@ -3,11 +3,11 @@
 
 import { useCallback, useMemo, type JSX } from "react";
 
+import type { CodeTargetNotice } from "@archboard/code-binding/code-target-open";
 import type {
-	CodeTargetNotice,
 	OpenerSelection,
 	OpenerSettingsTestRequest,
-} from "@/shared/code-target";
+} from "@archboard/code-binding/opener-settings";
 import { OpenerSettingsDialog } from "@/ui/opener-settings";
 import { useOpenerSettingsFlow, type OpenerSettingsFlowListener } from "@/ui/opener-settings-flow";
 

@@ -14,7 +14,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
-import type { CodeBinding } from "@/shared/code-target";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 import type { WalkthroughBeat } from "@/shared/semantic-board/index";
 import type { SemanticPanePart } from "@/shared/semantic-pane-context";
 import { usePaneChrome } from "@/ui/components/PaneChrome";

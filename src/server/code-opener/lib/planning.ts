@@ -2,11 +2,11 @@ import {
 	LINE_TOKEN,
 	OpenerSelectionSchema,
 	PATH_TOKEN,
-	isAbsoluteOrBareOpenerExecutable,
-	type CodeTargetFailureCode,
 	type OpenerCommand,
 	type OpenerSelection,
-} from "@/shared/code-target";
+} from "@archboard/code-binding/opener-settings";
+import { isAbsoluteOrBareOpenerExecutable } from "@archboard/code-binding/opener-executable";
+import { type CodeTargetFailureCode } from "@archboard/code-binding/code-target-open";
 
 interface OpenerPlanSuccess {
 	ok: true;

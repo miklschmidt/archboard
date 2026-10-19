@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-19 01:59'
-updated_date: '2026-10-19 02:53'
+updated_date: '2026-10-19 02:58'
 labels: []
 dependencies:
   - TASK-500.04
@@ -35,3 +35,9 @@ code-binding is layer 3 of docs/design/package-map.md: shared/code-target and ru
 4. Move the tests of the moved files (shared/code-target/tests/contract.test.ts, runtime/code-target/tests/*) to packages/code-binding/tests with # imports.
 5. Run /tmp/pm/move-package.ts, read the diff, hand-fix reported strings and depth-dependent paths. Update docs/agents/boundaries.md. bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Design: packages/code-binding splits the old shared index into schemas/{code-binding,code-target-open,opener-settings} plus rules/{binding-files,opener-executable,internal-code-target-url}; the runtime index becomes operations/checkout-snapshot, resolver-core operations/binding-resolver, vault-checkout services/vault-checkout, presentation projections/code-target-link. diagnostics.ts was deleted: its one test calls resolveLocalCodeTargetsWith directly. Every file under shared/ has no Node import (browser-trace: 0 node imports reached from frontend/main.tsx and src/ui).
+<!-- SECTION:NOTES:END -->

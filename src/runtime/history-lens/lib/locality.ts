@@ -18,7 +18,10 @@
 // each checkout with its HEAD. A request that arrives while it is made waits for
 // that work. Nothing is written anywhere.
 
-import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@/runtime/code-target/index";
+import {
+	snapshotCheckoutAccess,
+	type CheckoutSnapshot,
+} from "@archboard/code-binding/checkout-snapshot";
 import { attributeCommits, type AttributedCommits } from "@/runtime/history-lens/lib/attribution";
 import { answerCommit, isoTime } from "@/runtime/history-lens/lib/answer-commit";
 import { createAnswerMemory } from "@/runtime/history-lens/lib/answer-memory";

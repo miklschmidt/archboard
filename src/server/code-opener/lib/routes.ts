@@ -7,27 +7,30 @@ import {
 	type Response,
 } from "express";
 
+import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/code-binding";
 import {
-	CodeBindingSchema,
 	CodeTargetOpenRequestSchema,
+	type CodeTargetOpenSuccess,
+	type CodeTargetFailureCode,
+	type CodeTargetOpenRequest,
+} from "@archboard/code-binding/code-target-open";
+import {
 	LINE_TOKEN,
 	OpenerSelectionSchema,
 	OpenerSettingsTestRequestSchema,
 	PATH_TOKEN,
-	type CodeBinding,
-	type CodeTargetOpenSuccess,
-	type CodeTargetFailureCode,
-	type CodeTargetOpenRequest,
 	type OpenerSelection,
-} from "@/shared/code-target";
+} from "@archboard/code-binding/opener-settings";
 import {
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
+} from "@archboard/code-binding/checkout-snapshot";
+import {
 	type LocalCodeTarget,
 	type LocalCodeTargetResult,
 	type OtherRef,
-} from "@/runtime/code-target";
-import { githubUrlForBinding } from "@/runtime/code-target/presentation";
+} from "@archboard/code-binding/binding-resolver";
+import { githubUrlForBinding } from "@archboard/code-binding/code-target-link";
 import { addressedVariant } from "@/shared/semantic-board/index";
 import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { createBrowserOriginGuard } from "@/server/browser-origin";

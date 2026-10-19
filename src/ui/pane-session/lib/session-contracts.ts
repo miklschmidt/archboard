@@ -3,7 +3,7 @@
 // application and the pane core agree on one shape without importing each
 // other's internals.
 
-import type { CodeTargetNotice } from "@/shared/code-target";
+import type { CodeTargetNotice } from "@archboard/code-binding/code-target-open";
 import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
 import type { PaneReading } from "@/ui/pane-session/lib/pane-reading";
 import type {

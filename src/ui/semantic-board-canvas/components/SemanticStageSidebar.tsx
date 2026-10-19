@@ -7,7 +7,7 @@
 
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
-import type { CodeBinding } from "@/shared/code-target";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import {
 	SemanticBoardPanel,

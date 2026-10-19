@@ -16,8 +16,11 @@ import {
 	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
-} from "../index.ts";
-import { createResolverFixture, type ResolverFixture } from "./support.ts";
+} from "#runtime/operations/checkout-snapshot.ts";
+import {
+	createResolverFixture,
+	type ResolverFixture,
+} from "#tests/runtime/support/resolver-fixture.ts";
 
 /**
  * The root of the chosen checkout of an identity.

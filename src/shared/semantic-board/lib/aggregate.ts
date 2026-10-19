@@ -28,7 +28,7 @@ import { SemanticViewSchema } from "@/shared/semantic-board/lib/views";
 import { VariantContentSchema } from "@/shared/semantic-board/lib/content";
 import { VariantStandingSchema } from "@/shared/semantic-board/lib/reconcile";
 import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
-import { DocumentReferenceSchema } from "@/shared/code-target/index";
+import { DocumentReferenceSchema } from "@archboard/code-binding/code-binding";
 
 /**
  * The contract version of the document itself. A reader that does not

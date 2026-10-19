@@ -1,0 +1,23 @@
+{
+	"name": "@archboard/code-binding",
+	"version": "0.0.0",
+	"private": true,
+	"description": "A node's code binding and where its path lives in a checkout: the binding, anchor and document-reference schemas, the opener contract, and the resolver that turns a binding into a file or directory.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./code-binding": "./src/shared/schemas/code-binding.ts",
+		"./code-target-open": "./src/shared/schemas/code-target-open.ts",
+		"./opener-settings": "./src/shared/schemas/opener-settings.ts",
+		"./binding-files": "./src/shared/rules/binding-files.ts",
+		"./opener-executable": "./src/shared/rules/opener-executable.ts",
+		"./binding-resolver": "./src/runtime/operations/binding-resolver.ts",
+		"./checkout-snapshot": "./src/runtime/operations/checkout-snapshot.ts",
+		"./vault-checkout": "./src/runtime/services/vault-checkout.ts",
+		"./code-target-link": "./src/runtime/projections/code-target-link.ts"
+	}
+}

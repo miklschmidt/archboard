@@ -8,7 +8,7 @@ import { afterAll, afterEach, beforeAll } from "bun:test";
 import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
-import type { CodeBinding } from "@/shared/code-target";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 import { PaneChromeContext, usePaneChrome, type PaneChrome } from "@/ui/components/PaneChrome";
 import {
 	PaneVaultContext,

@@ -2,11 +2,20 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import fs from "node:fs";
 import { join } from "node:path";
 
-import { resolveLocalCodeTargets, snapshotCheckoutAccess } from "../index.ts";
-import { resolveLocalCodeTargetsForDiagnostics, type ResolverDiagnostics } from "../diagnostics.ts";
+import {
+	resolveLocalCodeTargets,
+	snapshotCheckoutAccess,
+} from "#runtime/operations/checkout-snapshot.ts";
+import {
+	resolveLocalCodeTargetsWith,
+	type ResolverDependencies,
+} from "#runtime/operations/binding-resolver.ts";
 import { repoIdentityAt, repoRootOf } from "@archboard/workspace/git";
 import { chosenCheckouts } from "@archboard/workspace/repo-registry";
-import { createResolverFixture, type ResolverFixture } from "./support.ts";
+import {
+	createResolverFixture,
+	type ResolverFixture,
+} from "#tests/runtime/support/resolver-fixture.ts";
 
 let fixture: ResolverFixture;
 let previousRegistry: string | undefined;
@@ -110,7 +119,7 @@ test("one batch validates each repository once and every target independently", 
 		[fixture.checkout, await repoIdentityAt(fixture.checkout)],
 		[secondCheckout, await repoIdentityAt(secondCheckout)],
 	]);
-	const diagnostics: ResolverDiagnostics = {
+	const dependencies: ResolverDependencies = {
 		readRegistry: () => {
 			counts.registry++;
 			return chosenCheckouts();
@@ -141,8 +150,8 @@ test("one batch validates each repository once and every target independently", 
 		{ repo: "github.com/acme/missing", path: "src/index.ts" },
 	] as const;
 
-	resolveLocalCodeTargetsForDiagnostics(bindings, diagnostics);
+	resolveLocalCodeTargetsWith(bindings, dependencies);
 	expect(counts).toEqual({ registry: 1, root: 2, identity: 2, realpath: 8, stat: 6 });
-	resolveLocalCodeTargetsForDiagnostics(bindings, diagnostics);
+	resolveLocalCodeTargetsWith(bindings, dependencies);
 	expect(counts).toEqual({ registry: 2, root: 4, identity: 4, realpath: 16, stat: 12 });
 });

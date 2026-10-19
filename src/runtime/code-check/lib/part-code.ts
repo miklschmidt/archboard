@@ -43,9 +43,11 @@ import {
 	type RefCodes,
 	type RepoCheckout,
 } from "@/runtime/code-check/lib/ref-code";
-import type { CheckoutSnapshot, LocalCodeTarget } from "@/runtime/code-target/index";
+import type { CheckoutSnapshot } from "@archboard/code-binding/checkout-snapshot";
+import type { LocalCodeTarget } from "@archboard/code-binding/binding-resolver";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
-import { bindingPathOf, type CodeBinding } from "@/shared/code-target/index";
+import { bindingPathOf } from "@archboard/code-binding/binding-files";
+import { type CodeBinding } from "@archboard/code-binding/code-binding";
 import type { SemanticNode } from "@/shared/semantic-board/index";
 
 /**

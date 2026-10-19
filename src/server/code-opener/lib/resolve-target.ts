@@ -1,9 +1,9 @@
-import type { CodeBinding } from "@/shared/code-target";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 import {
 	resolveLocalCodeTarget,
 	snapshotCheckoutAccess,
-	type LocalCodeTargetResult,
-} from "@/runtime/code-target";
+} from "@archboard/code-binding/checkout-snapshot";
+import { type LocalCodeTargetResult } from "@archboard/code-binding/binding-resolver";
 
 /**
  * Resolves a binding against a fresh checkout snapshot limited to that binding.

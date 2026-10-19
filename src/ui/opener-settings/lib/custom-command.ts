@@ -5,9 +5,9 @@
 import {
 	OpenerSelectionSchema,
 	PATH_TOKEN,
-	isAbsoluteOrBareOpenerExecutable,
 	type OpenerSelection,
-} from "@/shared/code-target";
+} from "@archboard/code-binding/opener-settings";
+import { isAbsoluteOrBareOpenerExecutable } from "@archboard/code-binding/opener-executable";
 import type {
 	CustomCommandCheck,
 	CustomCommandDraft,

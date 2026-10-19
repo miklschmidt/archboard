@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 
-import type { OpenerSelection } from "../../../src/shared/code-target/index.ts";
+import type { OpenerSelection } from "@archboard/code-binding/opener-settings";
 import { TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS } from "../support/timing.ts";
 import type { OpenerFixture } from "./support/opener-fixture.ts";
 

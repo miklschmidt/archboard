@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { githubUrlForBinding } from "../presentation.ts";
+import { githubUrlForBinding } from "#runtime/projections/code-target-link.ts";
 
 test.each([
 	[

@@ -29,7 +29,7 @@ import {
 import { RelationshipChip } from "@/ui/semantic-board-canvas/components/KindMarks";
 import { DetailsPanel } from "@/ui/semantic-board-canvas/components/DetailsPanel";
 import type { RememberedReading } from "@/shared/code-check/index";
-import type { CodeBinding } from "@/shared/code-target";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 import {
 	Account,
 	Facts,

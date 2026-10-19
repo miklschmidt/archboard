@@ -1,11 +1,8 @@
 import type { Stats } from "node:fs";
 import path from "node:path";
 
-import {
-	CodeBindingSchema,
-	type CodeBinding,
-	type CodeTargetFailureCode,
-} from "@/shared/code-target";
+import { CodeBindingSchema, type CodeBinding } from "#shared/schemas/code-binding.ts";
+import { type CodeTargetFailureCode } from "#shared/schemas/code-target-open.ts";
 import type { CheckoutHead } from "@archboard/workspace/git";
 import type { RegisteredRepo } from "@archboard/workspace/repo-registry";
 

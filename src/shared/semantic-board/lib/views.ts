@@ -13,7 +13,7 @@
 // carries two opinions eventually carries two different ones.
 
 import { z } from "zod";
-import { CodeAnchorSchema } from "@/shared/code-target/index";
+import { CodeAnchorSchema } from "@archboard/code-binding/code-binding";
 import {
 	DescriptionSchema,
 	DisplayNameSchema,

@@ -19,7 +19,7 @@ const RENDERER_SOURCES = [
 	"src/runtime/semantic-renderer/lib/layout-worker.ts",
 	"src/shared/semantic-board",
 	"src/shared/semantic-policy",
-	"src/shared/code-target",
+	"packages/code-binding/src/shared",
 	"src/shared/ids",
 	"src/shared/shell-geometry",
 	"packages/timing/src",

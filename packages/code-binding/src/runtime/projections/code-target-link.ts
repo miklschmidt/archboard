@@ -1,14 +1,13 @@
 import path from "node:path";
 
+import { buildInternalCodeTargetUrl } from "#shared/rules/internal-code-target-url.ts";
+import { CodeBindingSchema, type CodeBinding } from "#shared/schemas/code-binding.ts";
 import {
-	buildInternalCodeTargetUrl,
-	CodeBindingSchema,
 	GitHubHttpsUrlSchema,
-	type CodeBinding,
 	type CodeTargetOpenRequest,
 	type GitHubHttpsUrl,
-} from "@/shared/code-target";
-import type { LocalCodeTargetResult } from "@/runtime/code-target";
+} from "#shared/schemas/code-target-open.ts";
+import type { LocalCodeTargetResult } from "#runtime/operations/binding-resolver.ts";
 
 /**
  * Percent-encodes one URL path segment.

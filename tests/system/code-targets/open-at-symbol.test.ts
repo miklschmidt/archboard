@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { CodeTargetOpenReplySchema } from "../../../src/shared/code-target/index.ts";
+import { CodeTargetOpenReplySchema } from "@archboard/code-binding/code-target-open";
 import { createOpenerFixture, jsonBody, type OpenerFixture } from "./support/opener-fixture.ts";
 
 const LEDGER = `// The ledger.

@@ -39,7 +39,7 @@ import {
 	releaseHold,
 	withBoardLockIfFreeSync,
 } from "@/runtime/engine/board-lock";
-import { vaultIdentity } from "@/runtime/code-target/index";
+import { vaultIdentity } from "@archboard/code-binding/vault-checkout";
 import { mintId } from "@/shared/ids/ids";
 import type { MoveEnd, MovedDrillDown, SemanticBoard } from "@/shared/semantic-board/index";
 import { acceptedBoard } from "@/runtime/semantic-board-store/lib/accepted";

@@ -1,6 +1,6 @@
 // How an opener command reads when it is shown to a person.
 
-import type { OpenerCommand } from "@/shared/code-target";
+import type { OpenerCommand } from "@archboard/code-binding/opener-settings";
 
 /**
  * A command on one line, for the mono face.

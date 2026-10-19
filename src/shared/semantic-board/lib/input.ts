@@ -45,7 +45,7 @@ import {
 	CodeAnchorSchema,
 	CodeBindingSchema,
 	DocumentReferenceSchema,
-} from "@/shared/code-target/index";
+} from "@archboard/code-binding/code-binding";
 import { SemanticBoardLevelSchema } from "@/shared/semantic-board/lib/aggregate";
 
 /**

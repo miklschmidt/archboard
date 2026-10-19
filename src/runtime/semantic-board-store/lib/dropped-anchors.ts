@@ -7,7 +7,7 @@
 // next write can put it back (ADR 0046). A subject the batch did not state
 // keeps its anchor, so only a restatement can drop one.
 
-import type { CodeAnchor } from "@/shared/code-target/index";
+import type { CodeAnchor } from "@archboard/code-binding/code-binding";
 import {
 	messagesOf,
 	type FlowMessage,

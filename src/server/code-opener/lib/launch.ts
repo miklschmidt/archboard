@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-import type { OpenerCommand } from "@/shared/code-target";
+import type { OpenerCommand } from "@archboard/code-binding/opener-settings";
 
 type LaunchResult =
 	| { ok: true }

@@ -11,7 +11,7 @@ import {
 	type SymbolReading,
 } from "@/runtime/history-lens/lib/symbol-attribution";
 import type { HistoryAttribution } from "@/shared/history-attribution/index";
-import { filesOfBinding } from "@/shared/code-target/index";
+import { filesOfBinding } from "@archboard/code-binding/binding-files";
 
 interface AttributedCommits {
 	readonly commits: readonly string[];
