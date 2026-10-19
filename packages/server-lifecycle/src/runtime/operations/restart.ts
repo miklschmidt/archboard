@@ -6,14 +6,14 @@
 // to build stays there.
 
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
-import { frontendBuild } from "@/runtime/engine/staleness";
+import { frontendBuild } from "#runtime/services/staleness.ts";
 import {
 	type EnsureResult,
 	ensureServerRunning,
 	refuseUnstartableServer,
 	type StopResult,
 	stopServer,
-} from "@/runtime/engine/spawn";
+} from "#runtime/operations/spawn.ts";
 import { codedError } from "@archboard/diagnostics/thrown-error";
 
 interface RestartResult extends EnsureResult {

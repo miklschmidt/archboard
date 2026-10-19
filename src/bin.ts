@@ -6,7 +6,7 @@
 //   <subcommand>  -> CLI command
 //
 // IMPORTANT: never statically import ./server.js here. The CLI reaches the
-// Archboard server by spawning src/server.ts as a child process (see runtime/engine/spawn.ts).
+// Archboard server by spawning src/server.ts as a child process (see runtime/operations/spawn.ts of @archboard/server-lifecycle).
 
 const argv = process.argv.slice(2);
 
@@ -28,7 +28,7 @@ const { applyCliBootstrap } = await import("@/cli/command-contract/bootstrap");
 const bootstrap = applyCliBootstrap(argv);
 
 if (!bootstrap.help) {
-	const { removedEnvironmentMessage } = await import("@/runtime/engine/config");
+	const { removedEnvironmentMessage } = await import("@archboard/server-lifecycle/config");
 	const removed = removedEnvironmentMessage();
 	if (removed !== null) {
 		process.stderr.write(`${removed}\n`);

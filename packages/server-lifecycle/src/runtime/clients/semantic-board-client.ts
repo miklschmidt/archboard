@@ -19,7 +19,7 @@ import {
 	currentWriteDoing,
 	currentWriteSession,
 	requestJson,
-} from "@/runtime/engine/server-client";
+} from "#runtime/clients/server-client.ts";
 import { BoardMoveAnswerSchema, type BoardMoveAnswer } from "@archboard/board/commands";
 import {
 	SemanticBoardSchema,

@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { z } from "zod";
-import { ARCHBOARD_SERVICE_NAME } from "../../../src/runtime/engine/server-client.ts";
+import { ARCHBOARD_SERVICE_NAME } from "@archboard/server-lifecycle/server-client";
 import { packageBin } from "./support/package-cli.ts";
 
 const repoRoot = realpathSync.native(resolve(import.meta.dir, "../../.."));

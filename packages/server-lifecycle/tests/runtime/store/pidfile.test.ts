@@ -8,7 +8,12 @@ import {
 	type CodexProcessGroupIdentity,
 } from "@archboard/process/codex-group";
 
-import { pidFilePath, readPidFile, sweepDeadPidFiles, writePidFile } from "../pidfile.js";
+import {
+	pidFilePath,
+	readPidFile,
+	sweepDeadPidFiles,
+	writePidFile,
+} from "#runtime/store/pidfile.ts";
 import { stateDir } from "@archboard/workspace/state-dir";
 
 const HOME_VARIABLES = ["HOME", "USERPROFILE", "LOCALAPPDATA", "XDG_STATE_HOME"] as const;
@@ -143,7 +148,7 @@ function stopAgainstSilentPort(): Promise<{ port: number; stopServer: () => Prom
 		probe.stop(true);
 		originalUrl = process.env["ARCHBOARD_URL"];
 		process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${port}`;
-		const { stopServer } = await import("../spawn.js");
+		const { stopServer } = await import("#runtime/operations/spawn.ts");
 		return { port, stopServer };
 	})();
 	return silentPort;

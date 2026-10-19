@@ -7,7 +7,7 @@
 // answers are the smallest true ones rather than a second implementation.
 
 import { z } from "zod";
-import { ARCHBOARD_SERVICE_NAME } from "../../../../src/runtime/engine/server-client.ts";
+import { ARCHBOARD_SERVICE_NAME } from "@archboard/server-lifecycle/server-client";
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 

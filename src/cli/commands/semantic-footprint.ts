@@ -17,7 +17,7 @@ import { z } from "zod";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { SelectorSchema } from "@/cli/commands/lib/semantic-input";
-import { requestJson } from "@/runtime/engine/server-client";
+import { requestJson } from "@archboard/server-lifecycle/server-client";
 
 const FootprintInputSchema = z.object({
 	name: z.string(),

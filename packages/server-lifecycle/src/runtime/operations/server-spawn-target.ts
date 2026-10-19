@@ -1,13 +1,13 @@
 // Where the Archboard server is expected to answer, and how the launcher tells that
 // answer apart from a foreign service or a server holding unsaved work.
 
-import { ARCHBOARD_URL } from "@/runtime/engine/config";
+import { ARCHBOARD_URL } from "#runtime/services/config.ts";
 import {
 	getHealth,
 	ARCHBOARD_SERVICE_NAME,
 	OtherSourceError,
 	type HealthStatus,
-} from "@/runtime/engine/server-client";
+} from "#runtime/clients/server-client.ts";
 import { codedError } from "@archboard/diagnostics/thrown-error";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);

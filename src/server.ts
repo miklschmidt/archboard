@@ -1,4 +1,4 @@
-import { isMainModule } from "@/runtime/engine/entry";
+import { isMainModule } from "@archboard/server-lifecycle/server-host";
 import { app, serverStartupFailureMessage, startServer } from "@/server/archboard";
 
 export { app, startServer };

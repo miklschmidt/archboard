@@ -1,10 +1,10 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
-import { removePidFile } from "@/runtime/engine/pidfile";
+import { removePidFile } from "@archboard/server-lifecycle/server-host";
 import { SERVER_HTTP_STOP_GRACE_MS } from "@archboard/timing";
 import {
 	serverStartupTerminalRecord,
 	writeServerStartupProtocolRecord,
-} from "@/shared/server-startup-terminal";
+} from "@archboard/server-lifecycle/startup-terminal";
 import {
 	ServerApplicationBusyError,
 	createServerApplicationLifetime,

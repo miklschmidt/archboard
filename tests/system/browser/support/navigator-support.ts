@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { PanesReport } from "../../../../src/runtime/engine/panes.ts";
+import type { PanesReport } from "@archboard/server-lifecycle/panes";
 import type { RepositoryListing } from "@archboard/workspace/repositories";
 
 type PanesBody = PanesReport & { success: boolean };

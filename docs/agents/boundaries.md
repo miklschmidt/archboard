@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process` and `skills` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -321,7 +321,7 @@ file that carries each name. `semantic-board-store/index.ts` and `engine/board.t
 `./reconcile-candidate` and `./reconcile` were exported only because the store imported them. The
 store is inside the package now, so these five are private, and no file outside the package
 imported one. `board` imports only `timing`, `diagnostics`, `process`, `workspace` and
-`code-binding`, and nothing from `src/`. The rest of `runtime/engine` imports `board`, and `board`
+`code-binding`, and nothing from `src/`. `server-lifecycle` imports `board`, and `board`
 imports nothing back, so the old import cycle between them is gone.
 
 The eighth is `ui-kit` (`@archboard/ui-kit`). It holds the presentation parts that more than one UI
@@ -511,6 +511,37 @@ only in Bun. The 4 files of `runtime/api/` are the interface.
   `@archboard/workspace/source-checkout`.
 - The tests are in `tests/`, in the folder of the file they test. `runtime/support/` holds the fake `claude` and `codex`
   executables and the fixtures. Their end-to-end owner is `bun run eval:skill`, which a person runs.
+
+The fifteenth is `server-lifecycle` (`@archboard/server-lifecycle`). It starts, finds, restarts and stops the
+Archboard server, and holds the CLI's client of that server. It adopts the `api/` role for `runtime/` and exposes 9
+subpaths with 71 names, where code outside imported 12 module paths. It imports `board`, `codex-app-server`,
+`workspace`, `process`, `timing` and `diagnostics`, and nothing from `src/`. Every file is Node-bound and runs only in
+Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `runtime/semantic-board-client` and
+`shared/server-startup-terminal`, which used the `shared/` name for a file that writes to a file descriptor.
+
+- `./server` is what a command does to the server: find it, start it (`ensureServerRunning`), stop it, restart it and
+  read its health, sync status and pid file. `./config` is the server URL that the CLI reads from the environment, the
+  removed variable that it refuses, and the version of the install. `bin.ts` imports `./config` alone and late, because
+  loading it reads `.env`.
+- `./server-client` is the typed request to a running server: JSON requests, claims on a board, the panes on screen
+  and how a refused board request is shown. `./request-context` is what one CLI invocation says about itself on
+  every request: its board, vault, doing line, write session and expected version.
+  `./semantic-board-client` reads and writes a board through the server, never through the vault.
+- `./server-host` is what the server process does for itself: whether it is the entry point, its pid file, and
+  whether its source or frontend bundle is stale. `./startup-terminal` is the records that a starting server writes
+  down the startup pipe, for the launcher to clean up after it. `./pane-messages` is the messages that the server
+  sends a pane over its socket. `./panes` is how a pane is addressed, ordered and reported.
+- `runtime/operations/` holds the spawn, the restart and the cleanup of a failed start. `runtime/clients/` holds
+  the two clients. `runtime/protocol/` holds what is written down the startup pipe and what the server sends a pane.
+  `runtime/rules/` holds the pane layout, `runtime/store/` the pid file, `runtime/state/` the invocation's context
+  and `runtime/services/` the configuration and the staleness check.
+- The server entry and the version file are found with `SOURCE_CHECKOUT` of `workspace`, because the package sits
+  at another depth than the module did: the spawn runs `src/server.ts` and the version is read from the root
+  `package.json` of that checkout. The staleness check watches `src/` and `packages/` of it. The startup preload
+  of `tests/system/server-state/` mocks the cleanup timing of `runtime/operations/server-startup-cleanup.ts` by path,
+  because the spawn imports that private file, and `package-api.test.ts` names it.
+- The tests are in `tests/`: `runtime/store/` holds the pid file, `runtime/operations/` the cleanup of a failed start
+  and `runtime/rules/` the pane addressing. The end-to-end owners stay in `tests/system/`.
 
 ## Vendor-owned data
 

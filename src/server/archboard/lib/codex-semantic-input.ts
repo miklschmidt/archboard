@@ -1,6 +1,6 @@
 import { boardLockState } from "@archboard/board/lock";
 import { recentDoing } from "@archboard/board/doing";
-import type { PaneRegistration } from "@/runtime/engine/panes";
+import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { ArchboardContextSchema, type ArchboardContext } from "@/runtime/codex-instructions";
 import type {
 	SemanticArchitectureInput,

@@ -10,7 +10,7 @@ import type {
 	ServerStartupProcessGroupIdentity,
 	ServerStartupProtocolEvent,
 	ServerStartupProtocolRecord,
-} from "@/shared/server-startup-terminal";
+} from "#runtime/protocol/server-startup-terminal.ts";
 import type {
 	CodexProcessGroupInspection,
 	CodexProcessGroupSignal,
@@ -20,12 +20,12 @@ import type {
 	ServerStartupProtocolReader,
 	FailedServerCleanupProtocol,
 	FailedServerCleanupTiming,
-} from "@/runtime/engine/lib/server-startup-protocol";
+} from "#runtime/protocol/server-startup-protocol.ts";
 import {
 	createServerStartupProtocolReader,
 	failedServerCleanupTiming,
 	validateTiming,
-} from "@/runtime/engine/lib/server-startup-protocol";
+} from "#runtime/protocol/server-startup-protocol.ts";
 
 interface FailedServerCleanupOperations {
 	readonly now: () => number;

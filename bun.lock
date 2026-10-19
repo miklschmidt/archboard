@@ -110,6 +110,10 @@
       "name": "@archboard/renderer",
       "version": "0.0.0",
     },
+    "packages/server-lifecycle": {
+      "name": "@archboard/server-lifecycle",
+      "version": "0.0.0",
+    },
     "packages/server-requests": {
       "name": "@archboard/server-requests",
       "version": "0.0.0",
@@ -169,6 +173,8 @@
     "@archboard/process": ["@archboard/process@workspace:packages/process"],
 
     "@archboard/renderer": ["@archboard/renderer@workspace:packages/renderer"],
+
+    "@archboard/server-lifecycle": ["@archboard/server-lifecycle@workspace:packages/server-lifecycle"],
 
     "@archboard/server-requests": ["@archboard/server-requests@workspace:packages/server-requests"],
 

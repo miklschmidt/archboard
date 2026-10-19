@@ -8,8 +8,8 @@
 import type {
 	ServerStartupProtocolEvent,
 	ServerStartupProtocolRecord,
-} from "@/shared/server-startup-terminal";
-import { parseServerStartupProtocolRecord } from "@/shared/server-startup-terminal";
+} from "#runtime/protocol/server-startup-terminal.ts";
+import { parseServerStartupProtocolRecord } from "#runtime/protocol/server-startup-terminal.ts";
 import type { Readable } from "node:stream";
 import { CODEX_COMPOSED_SHUTDOWN_MS, CODEX_TERM_GRACE_MS } from "@archboard/timing";
 import { asError } from "@archboard/diagnostics/thrown-error";

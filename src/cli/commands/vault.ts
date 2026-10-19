@@ -3,8 +3,8 @@ import { z } from "zod";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { codeCheckLines } from "@/cli/commands/lib/code-check-lines";
-import { requestJson } from "@/runtime/engine/server-client";
-import { checkSemanticVaultOnServer } from "@/runtime/semantic-board-client/index";
+import { requestJson } from "@archboard/server-lifecycle/server-client";
+import { checkSemanticVaultOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import {
 	CheckTimingSchema,
 	CodeCheckAnswerSchema,

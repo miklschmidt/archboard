@@ -43,7 +43,7 @@ import {
 	VaultDiagnosticSchema,
 	type VaultDiagnostic,
 } from "@archboard/board/policy";
-import { readSemanticBoardAnswerOnServer } from "@/runtime/semantic-board-client/index";
+import { readSemanticBoardAnswerOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
 import {

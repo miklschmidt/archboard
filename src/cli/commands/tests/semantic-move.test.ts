@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { sayingWhatWasRewritten } from "@/cli/commands/semantic-move";
-import { responseError } from "@/runtime/engine/server-client";
+import { responseError } from "@archboard/server-lifecycle/server-client";
 
 // A move that stopped part way (ADR 0051) has already rewritten some
 // drill-downs, and running it again rewrites only what is left, so the

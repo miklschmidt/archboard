@@ -27,6 +27,7 @@ const ADOPTERS: {
 	{ name: "code-opener", areas: ["server", "ui"] },
 	{ name: "walkthrough", areas: ["shared", "runtime"] },
 	{ name: "skills", areas: ["runtime"] },
+	{ name: "server-lifecycle", areas: ["runtime"] },
 	{
 		name: "process",
 		areas: ["runtime"],
@@ -129,6 +130,8 @@ describe.each(ADOPTERS)("the api folder of $name", ({ name, areas, executables =
 const PRIVATE_PATH_FILE_USES: Record<string, string> = {
 	"scripts/generate-codex-app-server-contract.ts": "writes the generated contract into the package",
 	"tests/system/repository-policy/package-api.test.ts": "holds the synthetic paths of its own scan",
+	"tests/system/server-state/fixtures/public-codex-startup-preload.ts":
+		"replaces the cleanup timing of the one private file that the launcher's spawn imports",
 	"tests/system/server-state/staleness-source.test.ts":
 		"touches a package file to age the source the server runs",
 };

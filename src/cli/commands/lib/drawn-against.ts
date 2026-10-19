@@ -2,7 +2,7 @@
 // refusals, and the id the server is told (TASK-478.01). `semantic render`, `semantic rasterize`
 // and `semantic record` share it.
 
-import { readSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
+import { readSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import { drawnAgainstNamed } from "@/cli/commands/lib/read-against";
 import { askedVariant } from "@/cli/commands/lib/semantic-input";
 

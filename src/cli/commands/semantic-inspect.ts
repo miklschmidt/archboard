@@ -20,7 +20,7 @@ import {
 import {
 	checkSemanticVaultOnServer,
 	readSemanticBoardAnswerOnServer,
-} from "@/runtime/semantic-board-client/index";
+} from "@archboard/server-lifecycle/semantic-board-client";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { askedVariant, SelectorSchema, UNNAMED_VARIANT } from "@/cli/commands/lib/semantic-input";

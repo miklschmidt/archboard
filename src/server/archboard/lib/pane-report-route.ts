@@ -5,7 +5,7 @@
 import type { Request, Response } from "express";
 
 import { parseBoardKey } from "@archboard/board/address";
-import { buildPanesReport } from "@/runtime/engine/panes";
+import { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import { serverUrl } from "@/server/archboard/lib/listener-address";
 import { boardForPane, panes } from "@/server/archboard/lib/pane-registry";
 import { placeOfVault } from "@archboard/workspace/repository-listing";

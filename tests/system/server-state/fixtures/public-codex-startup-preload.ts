@@ -81,7 +81,7 @@ if (
 ) {
 	const cleanupPath = resolve(
 		import.meta.dir,
-		"../../../../src/runtime/engine/server-startup-cleanup.ts",
+		"../../../../packages/server-lifecycle/src/runtime/operations/server-startup-cleanup.ts",
 	);
 	const actualCleanup = await import(cleanupPath);
 	await Promise.resolve(

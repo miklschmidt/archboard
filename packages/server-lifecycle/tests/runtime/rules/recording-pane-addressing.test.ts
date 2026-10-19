@@ -4,7 +4,7 @@ import {
 	resolvePaneSpec,
 	soloPane,
 	type PaneRegistration,
-} from "@/runtime/engine/panes";
+} from "#runtime/rules/panes.ts";
 import { parseBoardKey } from "@archboard/board/address";
 
 // Which pane a caller means, beside a recording page's pane (TASK-304).
