@@ -1,10 +1,10 @@
 ---
 id: TASK-500.06
 title: Vault boards bind the code at its package paths
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-19 02:53'
-updated_date: '2026-10-19 23:00'
+updated_date: '2026-10-19 23:11'
 labels: []
 dependencies:
   - TASK-500.05
@@ -20,8 +20,8 @@ Each package move renames the files that .archboard/vault boards bind with bindi
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every binding in .archboard/vault resolves to a file that exists, and the code check on each board reports no BINDING_PATH_MISSING
-- [ ] #2 The Archboard board shows the workspace packages and their layers as parts, adopted from a proposal named for this task
+- [x] #1 Every binding in .archboard/vault resolves to a file that exists, and the code check on each board reports no BINDING_PATH_MISSING
+- [x] #2 The Archboard board shows the workspace packages and their layers as parts, adopted from a proposal named for this task
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -40,3 +40,9 @@ Rebinding: current variants were rebound in place, not through proposals, becaus
 Code check: BINDING_PATH_MISSING 307 -> 0, ANCHOR_PATH_MISSING 2480 -> 0. Remaining warnings: 8 ANCHOR_SYMBOL_MISSING and 3 ANCHOR_MISMATCH (variantsOf x2, carriedFamily) existed before the move. 79 new ANCHOR_MISMATCH: a module that was one directory now spans role folders (clients/, hooks/, rules/, state/, services/...), and a binding names one path, so an anchor that names a definition in a sibling role folder of the same behavior is outside the bound code (40 on Browser application). Bindings were chosen per node by the role folder that minimised these against the check.
 Footprint of Archboard@TASK-500.06 against main: namedAndChanged = Workspace packages and the 16 packages; changedNotNamed = Repository checkout, Codex home, Recorded talks, Clipboard owner, whose files only moved into packages/workspace, codex-app-server, walkthrough and apps/cli (bindings updated, meaning unchanged); proposal introduced no code-check finding (findings identical with and without --variant).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All 17 vault boards bind files and anchors that exist (BINDING_PATH_MISSING 307 to 0, ANCHOR_PATH_MISSING 2,480 to 0) through the archboard CLI, and the Archboard board shows the 16 packages in their layers, the three apps and the 17 direct imports, adopted from Archboard@TASK-500.06 (version 67). Known limit: a binding names one path, and a behavior now spans several role folders, so 79 ANCHOR_MISMATCH warnings are new (Browser application 40); tracked in a follow-up task. bin/archboard check reports 0 diagnostics and bun run check passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
