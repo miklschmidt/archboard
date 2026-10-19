@@ -196,6 +196,8 @@
 				"src/ui/semantic-board-canvas/components/**",
 				"src/ui/semantic-board-canvas/hooks/**",
 				"src/ui/semantic-board-canvas/lib/**",
+				// Where the canvas lands in apps/web: its folder below each role of the ui area.
+				"apps/web/src/ui/{api,clients,components,constants,hooks,rules,state,workers}/semantic-board-canvas/**",
 				"packages/workbench/src/ui/components/subtitles/**",
 				"packages/workbench/src/ui/hooks/subtitles/**",
 				"packages/workbench/src/ui/rules/subtitles/**",

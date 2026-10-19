@@ -1,7 +1,8 @@
 // How a module specifier written in a file resolves to a repository file: `@/` aliases,
 // relative paths, `#` imports through the `imports` of the package, app or root that owns the
-// importing file, and `@archboard/<name>` through the `exports` of a workspace package. It reads
-// manifests and the file system, and it knows nothing about which rule asks.
+// importing file, `@archboard/<name>` through the `exports` of a workspace package, and
+// `@archboard-app/<name>` to the app that the workspace name stands for. It reads manifests and
+// the file system, and it knows nothing about which rule asks.
 import fs from "node:fs";
 import path from "node:path";
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
@@ -16,6 +17,9 @@ import {
 
 /** `@archboard/<name>` and the subpath after it, if any. */
 const PACKAGE_SPECIFIER = /^@archboard\/([^/]+)(\/.+)?$/;
+
+/** `@archboard-app/<name>` and the subpath after it, if any: the workspace name of an app. */
+const APP_SPECIFIER = /^@archboard-app\/([^/?#]+)(?:[/?#].*)?$/;
 
 /** A specifier of a workspace package, and the repository file its `exports` map it to. */
 interface PackageImport {
@@ -281,6 +285,20 @@ function resolvePackageSpecifier(context: RuleContext, source: string): PackageI
 }
 
 /**
+ * Resolve `@archboard-app/<name>` and any subpath of it to the app it names. Bun links every
+ * workspace into `node_modules`, so such a specifier reaches the files of the app, but an app
+ * has no `exports`: no subpath of it is public.
+ * @param context The rule context supplying the working directory.
+ * @param source The specifier as written.
+ * @returns The app's repository path (`apps/<name>`), or undefined when no such app exists.
+ */
+function resolveAppSpecifier(context: RuleContext, source: string): string | undefined {
+	const name = APP_SPECIFIER.exec(source)?.[1];
+	const root = name ? `apps/${name}` : undefined;
+	return root && readManifestField(context, root, "name") !== undefined ? root : undefined;
+}
+
+/**
  * The public subpaths through which an import reaches a file of a package.
  * @param context The rule context supplying the working directory.
  * @param file The file of the package.
@@ -312,4 +330,10 @@ function isTestingSubpath(subpath: string): boolean {
 	return subpath === "./testing" || subpath.startsWith("./testing/");
 }
 
-export { exportedSubpaths, isTestingSubpath, resolvePackageSpecifier, resolveSourcePath };
+export {
+	exportedSubpaths,
+	isTestingSubpath,
+	resolveAppSpecifier,
+	resolvePackageSpecifier,
+	resolveSourcePath,
+};

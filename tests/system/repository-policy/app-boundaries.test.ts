@@ -81,6 +81,11 @@ function expectJudged(
 	expect(found.filter((entry) => allowed.includes(entry.file))).toEqual([]);
 }
 
+/** A file that imports `clip` from a specifier and re-exports it. */
+function importing(from: string): string {
+	return `import { clip } from "${from}";\nexport { clip };\n`;
+}
+
 function linkInto(root: string, link: string, target: string): void {
 	fs.mkdirSync(path.dirname(path.join(root, link)), { recursive: true });
 	fs.symlinkSync(path.join(root, target), path.join(root, link));
@@ -180,6 +185,53 @@ describe("an app is held to the rules of a package", () => {
 					"tests/system/policy/app.test.ts": NOT_AN_APP_IMPORT,
 				});
 			},
+		);
+	});
+
+	test("the workspace name of an app is no way in, for anyone and in every import form", async () => {
+		// Catches a bare @archboard-app/<name> specifier, which Bun resolves through the workspace
+		// link in node_modules, earning no diagnostic: it names the app and any subpath of it, and
+		// even the owning app may not use its own name, because an app exports nothing.
+		const named = "@archboard-app/cli/src/runtime/clipboard.ts";
+		await withProject(
+			{
+				...world,
+				"packages/alpha/src/runtime/static.ts": importing(named),
+				"packages/alpha/src/runtime/root.ts": importing("@archboard-app/cli"),
+				"packages/alpha/src/runtime/dynamic.ts": `export const loaded = import("${named}");\n`,
+				"packages/alpha/src/runtime/query.ts": importing(`${named}?raw`),
+				"packages/alpha/tests/app.test.ts": importing(named),
+				"apps/web/src/ui/components/Cross.ts": importing(named),
+				"apps/web/tests/mock.test.ts": `import { mock } from "bun:test";\n\nmock.module("${named}", () => ({}));\n`,
+				"apps/server/src/server/reexport.ts": `export { clip } from "${named}";\n`,
+				"apps/cli/src/cli/self.ts": importing(named),
+				"apps/cli/src/cli/self-root.ts": importing("@archboard-app/cli"),
+				"scripts/consumer.ts": importing(named),
+				"src/domain/consumer/index.ts": importing(named),
+				"tests/system/policy/app.test.ts": importing(named),
+				// Not an app, and not a package: an npm name that happens to share the scope.
+				"scripts/npm.ts": importing("@archboard-app/missing/src/x.ts"),
+			},
+			(root) =>
+				expectJudged(
+					root,
+					{
+						"packages/alpha/src/runtime/static.ts": NOT_AN_APP_IMPORT,
+						"packages/alpha/src/runtime/root.ts": NOT_AN_APP_IMPORT,
+						"packages/alpha/src/runtime/dynamic.ts": NOT_AN_APP_IMPORT,
+						"packages/alpha/src/runtime/query.ts": NOT_AN_APP_IMPORT,
+						"packages/alpha/tests/app.test.ts": NOT_AN_APP_IMPORT,
+						"apps/web/src/ui/components/Cross.ts": NOT_AN_APP_IMPORT,
+						"apps/web/tests/mock.test.ts": NOT_AN_APP_IMPORT,
+						"apps/server/src/server/reexport.ts": NOT_AN_APP_IMPORT,
+						"apps/cli/src/cli/self.ts": NOT_AN_APP_IMPORT,
+						"apps/cli/src/cli/self-root.ts": NOT_AN_APP_IMPORT,
+						"scripts/consumer.ts": NOT_AN_APP_IMPORT,
+						"src/domain/consumer/index.ts": NOT_AN_APP_IMPORT,
+						"tests/system/policy/app.test.ts": NOT_AN_APP_IMPORT,
+					},
+					["scripts/npm.ts"],
+				),
 		);
 	});
 
