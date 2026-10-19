@@ -1,8 +1,8 @@
 // The messages the person sent that the conversation does not show yet, and
 // how the timeline and a delivery's answer move them on. Pure.
 
-import type { WorkbenchComposerSubmissionResult } from "@/ui/workbench-composer";
-import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
+import type { WorkbenchComposerSubmissionResult } from "@archboard/workbench/composer";
+import type { BrowserWorkbenchState } from "@archboard/workbench/browser-transport";
 
 /** Where one held message stands. */
 type HeldState = "waiting" | "sending" | "delivered" | "failed" | "unknown";

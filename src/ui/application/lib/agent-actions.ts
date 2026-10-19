@@ -8,7 +8,10 @@ import { gestureTab, openAuthTab } from "@/ui/application/agent-setup-ports";
 import type { VoiceOwner, WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import type { AgentActions } from "@/ui/workbench/contracts";
 import type { DraftStore } from "@/ui/workbench";
-import { projectTimelineTurns, type ConversationTurn } from "@/ui/workbench-timeline";
+import {
+	projectTimelineTurns,
+	type ConversationTurn,
+} from "@archboard/workbench/conversation-timeline";
 import type { BrowserTimeline } from "@archboard/workbench/browser-model";
 
 /** What the actions act on. */

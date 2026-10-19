@@ -5,8 +5,8 @@
 
 import type { AgentPhase, AgentSetup } from "@/ui/agent-setup";
 import type { VoiceSession, VoiceSessionStatus, VoiceSessionView } from "@/ui/voice-session";
-import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@/ui/voice-output-level";
-import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
+import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@archboard/workbench/voice-output-level";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
 
 import type { SpokenLine, VoiceStanding } from "@/ui/walkthrough-recording/lib/pacing";
 

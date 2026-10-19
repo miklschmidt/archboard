@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { INITIAL_REALTIME_STATE, REALTIME_PHASES, REALTIME_TRANSITIONS } from "@/ui/codex-realtime";
-import type { RealtimeState } from "@/ui/codex-realtime";
+import {
+	INITIAL_REALTIME_STATE,
+	REALTIME_PHASES,
+	REALTIME_TRANSITIONS,
+} from "@archboard/workbench/realtime-contract";
+import type { RealtimeState } from "@archboard/workbench/realtime-contract";
 import {
 	projectVoiceSession,
 	VOICE_SESSION_FAILURE_CODES,

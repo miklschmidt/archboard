@@ -1,6 +1,6 @@
 // What the queue needs from a workbench transport, and nothing more.
 //
-// `@/ui/workbench-transport` implements this port (TASK-150.07). The queue
+// `@archboard/workbench/browser-transport` implements this port (TASK-150.07). The queue
 // never owns, starts or attaches a transport: it reads one authoritative state
 // through the port it is handed and emits the five queue commands the gateway
 // publishes, each against the target captured when the control was offered.

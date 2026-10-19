@@ -168,7 +168,7 @@ function dropOldest(items: readonly SizedItem[], room: number): readonly SizedIt
  * The direction matters for correctness, not presentation. A budget cut must
  * remove the *oldest* history, because the newest turn is the one every current
  * decision reads: the browser composer decides idle-versus-running from it
- * (`src/ui/workbench-composer/lib/link.ts`), and this projection is the only
+ * (`ui/rules/composer/link.ts`), and this projection is the only
  * place it can see an in-progress turn. Trimming from the tail hid a running
  * turn on any thread long enough to hit `maxTurns` or `maxBytes`, which made a
  * steer look like a fresh start. The oldest retained turn carries the

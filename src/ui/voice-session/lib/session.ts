@@ -2,7 +2,7 @@
 // guards around it, and the projection; the media owner and the transport it
 // reads are constructed elsewhere and are never disposed here.
 
-import type { RealtimeState } from "@/ui/codex-realtime";
+import type { RealtimeState } from "@archboard/workbench/realtime-contract";
 import type {
 	VoiceSession,
 	VoiceSessionBinding,

@@ -1,6 +1,6 @@
 // One adapter over one pane's fake media owner and fake transport.
 
-import type { RealtimeMediaSnapshot } from "@/ui/codex-realtime";
+import type { RealtimeMediaSnapshot } from "@archboard/workbench/workbench-media";
 import { createVoiceSession } from "@/ui/voice-session";
 import type { VoiceSession } from "@/ui/voice-session";
 import {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { RealtimeState } from "@/ui/codex-realtime";
+import type { RealtimeState } from "@archboard/workbench/realtime-contract";
 import { projectVoiceSession } from "@/ui/voice-session";
 import type { VoiceSessionProjectionInput, VoiceSessionView } from "@/ui/voice-session";
 import {

@@ -45,7 +45,7 @@ import {
 import {
 	createBrowserWorkbenchTransport,
 	type BrowserWorkbenchTransport,
-} from "@/ui/workbench-transport";
+} from "@archboard/workbench/browser-transport";
 
 /** Inputs for one application pane. */
 interface ApplicationPaneProps {

@@ -61,8 +61,8 @@ timeout -k 5s 25s bun test \
 timeout -k 5s 25s bun test \
   packages/workbench/tests/server/services/gateway/sequenced-delivery.test.ts \
   packages/workbench/tests/server/services/actions/text-actions.test.ts \
-  src/ui/workbench-transport/tests/stream-reduction.test.ts \
-  src/ui/workbench-composer/tests
+  packages/workbench/tests/ui/clients/transport/stream-reduction.test.ts \
+  packages/workbench/tests/ui/rules/composer packages/workbench/tests/ui/state/composer
 
 timeout -k 5s 25s bun test \
   packages/codex-app-server/tests/runtime/operations/semantic-context-publisher.test.ts \

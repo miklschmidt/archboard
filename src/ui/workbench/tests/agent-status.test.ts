@@ -5,7 +5,7 @@ import { createIdentityAuthorities } from "@archboard/codex-app-server/identity"
 import type { AgentSetupSnapshot, HeldMessage } from "@/ui/agent-setup";
 import { agentStatus } from "@/ui/workbench";
 import type { AgentView } from "@/ui/workbench/contracts";
-import type { ConversationTurn } from "@/ui/workbench-timeline";
+import type { ConversationTurn } from "@archboard/workbench/conversation-timeline";
 
 const { decoder } = createIdentityAuthorities().identity;
 const threadId = decoder.adoptThreadId("thread-status");

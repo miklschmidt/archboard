@@ -1,7 +1,7 @@
 // The steps of the plan the agent is on, each done, now or next, as the agent
 // dock lists them: at most a few, around the one it is on.
 
-import type { ConversationTurn } from "@/ui/workbench-timeline";
+import type { ConversationTurn } from "@archboard/workbench/conversation-timeline";
 
 /** Whether a plan step is behind the agent, what it is on, or still to come. */
 type StepState = "done" | "now" | "next";

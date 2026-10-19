@@ -9,9 +9,9 @@
 
 import type { BrowserVoicePresentation } from "@archboard/workbench/browser-model";
 import type { LoginId } from "@archboard/codex-app-server/identity";
-import type { WorkbenchComposerSubmissionResult } from "@/ui/workbench-composer";
-import type { ThreadLinkLoginParams } from "@/ui/workbench-thread-link/transport-port";
-import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
+import type { WorkbenchComposerSubmissionResult } from "@archboard/workbench/composer";
+import type { ThreadLinkLoginParams } from "@archboard/workbench/thread-link-controller";
+import type { BrowserWorkbenchState } from "@archboard/workbench/browser-transport";
 
 import {
 	arrivedAfterAll,

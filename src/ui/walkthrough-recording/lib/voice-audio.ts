@@ -12,7 +12,10 @@
 // recording mixes the stream itself, and a muted element still plays it,
 // which is what keeps Chrome handing a WebRTC track's sound to Web Audio.
 
-import { browserAudioElements, type BrowserAudioElementPort } from "@/ui/codex-workbench-media";
+import {
+	browserAudioElements,
+	type BrowserAudioElementPort,
+} from "@archboard/workbench/workbench-media";
 
 /**
  * The media owner's audio elements, each passing the voice it plays to a recording.

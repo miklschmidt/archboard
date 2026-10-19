@@ -4,7 +4,7 @@
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/workbench/browser-approvals";
 import { type BrowserSnapshot } from "@archboard/workbench/browser-model";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
+import type { BrowserWorkbenchState } from "@archboard/workbench/browser-transport";
 
 const { decoder, validator } = createIdentityAuthorities().identity;
 

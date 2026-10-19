@@ -10,7 +10,7 @@ import type { VoiceSession, VoiceSessionStatus } from "@/ui/voice-session";
 import type {
 	ThreadLinkActionCompletion,
 	ThreadLinkController,
-} from "@/ui/workbench-thread-link/contracts";
+} from "@archboard/workbench/thread-link-controller";
 
 /** Why a step reports nothing of its own: a later action on the pane replaced it. */
 const REPLACED = "A later action on this pane replaced this one before it settled.";

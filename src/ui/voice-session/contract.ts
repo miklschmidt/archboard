@@ -4,10 +4,15 @@
 // owns one binding, the guards around it, and the projection.
 
 import type { BrowserSnapshot, BrowserVoicePresentation } from "@archboard/workbench/browser-model";
-import type { RealtimeMediaSnapshot } from "@/ui/codex-realtime";
-import type { BrowserWorkbenchMediaState } from "@/ui/codex-workbench-media";
-import type { VoiceOutputLevelSource } from "@/ui/voice-output-level";
-import type { BrowserWorkbenchCapabilities, BrowserWorkbenchState } from "@/ui/workbench-transport";
+import type {
+	RealtimeMediaSnapshot,
+	BrowserWorkbenchMediaState,
+} from "@archboard/workbench/workbench-media";
+import type { VoiceOutputLevelSource } from "@archboard/workbench/voice-output-level";
+import type {
+	BrowserWorkbenchCapabilities,
+	BrowserWorkbenchState,
+} from "@archboard/workbench/browser-transport";
 
 /**
  * Every state the persistent voice control may present. `agent_speaking` is the

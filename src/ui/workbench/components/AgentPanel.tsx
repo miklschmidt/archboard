@@ -21,9 +21,9 @@ import { IconAction } from "@/ui/workbench/components/IconAction";
 import { PendingWork } from "@/ui/workbench/components/PendingWork";
 import { SignInCard } from "@/ui/workbench/components/SignInCard";
 import { VoiceLines } from "@/ui/workbench/components/VoiceLines";
-import { AgentRuntimeProvider } from "@/ui/workbench-runtime";
-import { Conversation } from "@/ui/workbench-thread";
-import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
+import { AgentRuntimeProvider } from "@archboard/workbench/conversation-runtime";
+import { Conversation } from "@archboard/workbench/conversation-thread";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
 import type { DraftStore } from "@/ui/workbench/lib/draft-store";
 
 /** Inputs for the panel. */

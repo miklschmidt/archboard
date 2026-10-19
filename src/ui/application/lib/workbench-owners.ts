@@ -13,14 +13,16 @@ import {
 import {
 	createWorkbenchComposerController,
 	type WorkbenchComposerController,
-} from "@/ui/workbench-composer";
+} from "@archboard/workbench/composer";
 import {
 	createWorkbenchQueueController,
 	type WorkbenchQueueController,
 } from "@/ui/workbench-queue";
-import { createThreadLinkController } from "@/ui/workbench-thread-link";
-import type { ThreadLinkController } from "@/ui/workbench-thread-link/contracts";
-import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
+import {
+	createThreadLinkController,
+	type ThreadLinkController,
+} from "@archboard/workbench/thread-link-controller";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
 
 /** The approvals controller's state as the cards read it. */
 interface ApprovalDecisions {

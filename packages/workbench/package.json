@@ -36,6 +36,14 @@
 		"./semantic-context": "./src/server/api/semantic-context.ts",
 		"./pane-tabs": "./src/server/api/pane-tabs.ts",
 		"./voice": "./src/server/api/voice.ts",
-		"./wiring": "./src/server/api/wiring.ts"
+		"./wiring": "./src/server/api/wiring.ts",
+		"./browser-transport": "./src/ui/api/browser-transport.ts",
+		"./composer": "./src/ui/api/composer.ts",
+		"./conversation-runtime": "./src/ui/api/conversation-runtime.ts",
+		"./conversation-thread": "./src/ui/api/conversation-thread.ts",
+		"./conversation-timeline": "./src/ui/api/conversation-timeline.ts",
+		"./thread-link-controller": "./src/ui/api/thread-link-controller.ts",
+		"./voice-output-level": "./src/ui/api/voice-output-level.ts",
+		"./workbench-media": "./src/ui/api/workbench-media.ts"
 	}
 }

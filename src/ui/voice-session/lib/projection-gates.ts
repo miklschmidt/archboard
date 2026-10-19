@@ -3,14 +3,14 @@
 // and voice projections.
 
 import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
-import type { BrowserWorkbenchMediaState } from "@/ui/codex-workbench-media";
+import type { BrowserWorkbenchMediaState } from "@archboard/workbench/workbench-media";
 import type {
 	VoiceSessionFailure,
 	VoiceSessionFailureCode,
 	VoiceSessionProjectionInput,
 } from "@/ui/voice-session/contract";
 import { presentedFailure } from "@/ui/voice-session/lib/failure";
-import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
+import type { BrowserWorkbenchState } from "@archboard/workbench/browser-transport";
 
 type MediaUnavailable = Extract<BrowserWorkbenchMediaState, { readonly state: "unavailable" }>;
 

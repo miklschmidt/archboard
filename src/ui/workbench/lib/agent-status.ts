@@ -10,9 +10,12 @@ import type {
 } from "@archboard/workbench/browser-approvals";
 import type { AgentPhase } from "@/ui/agent-setup";
 import type { AgentView } from "@/ui/workbench/contracts";
-import { activityLabel, runSummary } from "@/ui/workbench-thread";
-import type { ActivityItem } from "@/ui/workbench-runtime";
-import type { ConversationItem, ConversationTurn } from "@/ui/workbench-timeline";
+import { activityLabel, runSummary } from "@archboard/workbench/conversation-thread";
+import type { ActivityItem } from "@archboard/workbench/conversation-runtime";
+import type {
+	ConversationItem,
+	ConversationTurn,
+} from "@archboard/workbench/conversation-timeline";
 
 /** How the line is lit. */
 type StatusTone = "quiet" | "working" | "attention" | "failed";

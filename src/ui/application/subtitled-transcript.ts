@@ -7,7 +7,7 @@
 
 import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type { SubtitleSource } from "@/ui/voice-subtitles";
-import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
 
 /** What of the voice the subtitles read: whether it carries audio, whose it is, and what it said. */
 type SubtitledVoice = Pick<BrowserSnapshot["voice"], "state" | "recording"> & {
