@@ -9,7 +9,7 @@
 // the former path.
 
 import { gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
-import { filesOfBinding } from "@archboard/code-binding/binding-files";
+import { filesOfBinding } from "@archboard/code-binding/bindings";
 
 /**
  * The size above which a commit is large: code-maat's default for the largest

@@ -19,9 +19,9 @@ import {
 	type RefCodes,
 	type RepoCheckout,
 } from "@/runtime/code-check/lib/ref-code";
-import type { CheckoutSnapshot } from "@archboard/code-binding/checkout-snapshot";
+import type { CheckoutSnapshot } from "@archboard/code-binding/resolution";
 import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
-import type { DocumentReference } from "@archboard/code-binding/code-binding";
+import type { DocumentReference } from "@archboard/code-binding/bindings";
 
 /** What reading the references needs of the pass. */
 interface DocumentReading {

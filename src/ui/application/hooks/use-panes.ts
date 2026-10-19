@@ -5,7 +5,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { CodeTargetNotice } from "@archboard/code-binding/code-target-open";
+import type { CodeTargetNotice } from "@archboard/code-binding/opening";
 import type { BrowserWorkbenchMediaOwnerOptions } from "@/ui/codex-workbench-media";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { initialPaneList, type PaneList } from "@/ui/application/pane-list";

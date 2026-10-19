@@ -4,7 +4,7 @@
 
 import type { ReactNode } from "react";
 
-import type { CodeTargetNoticeAction } from "@archboard/code-binding/code-target-open";
+import type { CodeTargetNoticeAction } from "@archboard/code-binding/opening";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { OutlineNode } from "@/ui/board-catalog";
 import type {

@@ -122,9 +122,9 @@ split by behavior.
   by name (`export { a } from "#shared/rules/x.ts"`, `export type { T } from ...`, never `export *`)
   from the private files that define the names, and it holds no second definition. A public name
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
-  Private production files never import an api file, because the api files sit above them. `board`
-  and `codex-app-server` adopt it for `shared/` and `runtime/`, and `workspace` also for `server/`.
-  `tests/system/repository-policy/package-api.test.ts` holds the three rules.
+  Private production files never import an api file, because the api files sit above them. `board`,
+  `codex-app-server` and `code-binding` adopt it for `shared/` and `runtime/`, and `workspace` also
+  for `server/`. `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
   `exports` does not name. It also refuses a relative path that reaches a private file of another
   package.
@@ -179,16 +179,17 @@ another checkout loads nothing else first. `module-paths` is not here: the serve
 `src/` from its own depth.
 
 The fifth is `code-binding` (`@archboard/code-binding`). It knows what a node's code binding is and
-where its path lives in a checkout. Everything in `shared/` is safe for the browser, with no Node
-import. `./code-binding` holds the binding, anchor and document-reference schemas. `board` will
-import them and the resolver parses with `CodeBindingSchema`, so they stay here. `./code-target-open`
-is the wire contract of the open route and `./opener-settings` the contract of the opener settings.
-`./binding-files` and `./opener-executable` are pure rules. The rest is Node-bound, in `runtime/`.
-`./checkout-snapshot` captures the registered checkouts and the paths of some bindings once, then
-resolves a binding or a repository against that snapshot alone. `./binding-resolver` holds the
-result types and the resolution rules that the snapshot feeds. `./vault-checkout` finds the
-checkout that holds a vault and the checkouts a reader of that vault resolves identities in.
-`./code-target-link` chooses the URL a card opens.
+where its path lives in a checkout. It adopts the `api/` role for `shared/` and `runtime/` and
+exposes 3 subpaths, where it exposed 9 files. Everything in `shared/api/` is safe for the browser,
+with no Node import. `./bindings` holds the binding, anchor and document-reference schemas and the
+files a binding names. `board` imports them and the resolver parses with `CodeBindingSchema`, so
+they stay here. `./opening` holds the wire contract of the open route, the contract of the opener
+settings and the pure rules for an opener executable. `./resolution` is Node-bound, in
+`runtime/api/`. It captures the registered checkouts and the paths of some bindings once, then
+resolves a binding or a repository against that snapshot alone. It also carries the result types
+and the resolution rules that the snapshot feeds, the checkout that holds a vault with the
+checkouts a reader of that vault resolves identities in, and the GitHub URL that a card opens when
+the code is not local.
 
 The sixth is `codex-app-server` (`@archboard/codex-app-server`). It is one private Codex app-server
 session over stdio. The package is complete. It holds the shared files, the wire protocol, the

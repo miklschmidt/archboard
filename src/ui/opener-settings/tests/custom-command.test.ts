@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { PATH_TOKEN } from "@archboard/code-binding/opener-settings";
+import { PATH_TOKEN } from "@archboard/code-binding/opening";
 import {
 	argvOfText,
 	checkCustomCommand,

@@ -62,7 +62,7 @@ function effectiveTraffic(
 				volume: traffic.volume ?? DEFAULT_TRAFFIC_VOLUME,
 			};
 }
-import { CodeAnchorSchema, CodeBindingSchema } from "@archboard/code-binding/code-binding";
+import { CodeAnchorSchema, CodeBindingSchema } from "@archboard/code-binding/bindings";
 import {
 	DescriptionSchema,
 	DisplayNameSchema,

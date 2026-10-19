@@ -24,7 +24,7 @@ import {
 	type FileFacts,
 	type Unparsed,
 } from "@/runtime/code-facts/index";
-import type { LocalCodeTarget } from "@archboard/code-binding/binding-resolver";
+import type { LocalCodeTarget } from "@archboard/code-binding/resolution";
 
 /** Where the files of a path hold a symbol. */
 type Held =

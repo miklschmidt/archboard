@@ -8,7 +8,7 @@
 // version the preview read is the version the move states, so a board written
 // since is refused rather than moved as nobody saw it.
 
-import { vaultIdentity } from "@archboard/code-binding/vault-checkout";
+import { vaultIdentity } from "@archboard/code-binding/resolution";
 import type { MoveEnd, MovedDrillDown } from "#shared/protocol/board-move.ts";
 import type { SemanticBoard } from "#shared/schemas/board-document.ts";
 import { resolveSemanticBoard } from "#runtime/store/former-names.ts";

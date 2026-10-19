@@ -11,7 +11,7 @@
 
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";
-import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/code-binding";
+import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/bindings";
 import { messagesOf } from "@archboard/board/flow";
 import type { SemanticNode } from "@archboard/board/content";
 import type { DiagnosticSubject, EvidenceKind, VaultDiagnostic } from "@archboard/board/policy";

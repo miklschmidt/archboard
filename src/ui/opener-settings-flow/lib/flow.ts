@@ -5,14 +5,12 @@
 import type {
 	CodeTargetNotice,
 	CodeTargetOpenFailure,
-} from "@archboard/code-binding/code-target-open";
-import type {
 	OpenerSelection,
 	OpenerSelectionReply,
 	OpenerSettingsReply,
 	OpenerSettingsTestRequest,
 	OpenerTestReply,
-} from "@archboard/code-binding/opener-settings";
+} from "@archboard/code-binding/opening";
 import {
 	fetchOpenerSettings,
 	resetOpenerSettings,

@@ -30,7 +30,7 @@ import {
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
-import type { CodeAnchor } from "@archboard/code-binding/code-binding";
+import type { CodeAnchor } from "@archboard/code-binding/bindings";
 import { describeSubject } from "@archboard/board/policy";
 
 /** The adapters whose every use names the address it reaches: a Terraform reference, a flake input. */

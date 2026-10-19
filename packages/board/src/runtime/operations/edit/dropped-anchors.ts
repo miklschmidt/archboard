@@ -7,7 +7,7 @@
 // next write can put it back (ADR 0046). A subject the batch did not state
 // keeps its anchor, so only a restatement can drop one.
 
-import type { CodeAnchor } from "@archboard/code-binding/code-binding";
+import type { CodeAnchor } from "@archboard/code-binding/bindings";
 import { messagesOf } from "#shared/rules/flow-steps.ts";
 import { type FlowMessage } from "#shared/schemas/views.ts";
 import { type SemanticEdge, type VariantContent } from "#shared/schemas/content.ts";

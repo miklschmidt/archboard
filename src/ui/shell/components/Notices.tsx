@@ -11,10 +11,7 @@ import {
 } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import {
-	GitHubHttpsUrlSchema,
-	type CodeTargetNoticeAction,
-} from "@archboard/code-binding/code-target-open";
+import { GitHubHttpsUrlSchema, type CodeTargetNoticeAction } from "@archboard/code-binding/opening";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/ui/components/alert";
 import { Button, buttonVariants } from "@/ui/components/button";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "@/ui/shell/types/contracts";

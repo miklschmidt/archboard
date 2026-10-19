@@ -15,15 +15,12 @@
 import {
 	resolveLocalCodeTarget,
 	type CheckoutSnapshot,
-} from "@archboard/code-binding/checkout-snapshot";
-import {
 	type LocalCodeTargetResult,
 	type OtherRef,
-} from "@archboard/code-binding/binding-resolver";
+} from "@archboard/code-binding/resolution";
 import { normalizeBoundPath } from "@/runtime/history-lens/lib/commits";
 import type { BehindSkip } from "@/shared/code-check/index";
-import { bindingPathOf } from "@archboard/code-binding/binding-files";
-import { type CodeBinding } from "@archboard/code-binding/code-binding";
+import { bindingPathOf, type CodeBinding } from "@archboard/code-binding/bindings";
 import type { SemanticNode, VariantContent } from "@archboard/board/content";
 
 /** A part the lens reads: where its checkout is, and the path it binds there. */

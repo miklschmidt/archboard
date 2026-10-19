@@ -39,7 +39,7 @@ import {
 	releaseHold,
 	withBoardLockIfFreeSync,
 } from "#runtime/store/lock/lock.ts";
-import { vaultIdentity } from "@archboard/code-binding/vault-checkout";
+import { vaultIdentity } from "@archboard/code-binding/resolution";
 import { mintId } from "#shared/rules/ids.ts";
 import type { MoveEnd, MovedDrillDown } from "#shared/protocol/board-move.ts";
 import type { SemanticBoard } from "#shared/schemas/board-document.ts";

@@ -2,7 +2,7 @@
 // owners it wakes. Rebound every render over the owners that exist by then;
 // nothing here diffs rendered state.
 
-import type { CodeTargetNotice } from "@archboard/code-binding/code-target-open";
+import type { CodeTargetNotice } from "@archboard/code-binding/opening";
 import { agentBoardChange, NO_AGENT_ACTIVITY } from "@/ui/application/agent-activity";
 import {
 	boardErrorNotice,

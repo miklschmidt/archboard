@@ -28,7 +28,7 @@ import { SemanticViewSchema } from "#shared/schemas/views.ts";
 import { VariantContentSchema } from "#shared/schemas/content.ts";
 import { VariantStandingSchema } from "#shared/schemas/reconciliation.ts";
 import { VariantLifecycleSchema } from "#shared/schemas/vocabulary.ts";
-import { DocumentReferenceSchema } from "@archboard/code-binding/code-binding";
+import { DocumentReferenceSchema } from "@archboard/code-binding/bindings";
 
 /**
  * The contract version of the document itself. A reader that does not

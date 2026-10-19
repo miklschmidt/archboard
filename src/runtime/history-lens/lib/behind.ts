@@ -15,10 +15,7 @@
 // Nothing is written anywhere, and the memory goes with the process.
 
 import fs from "node:fs";
-import {
-	snapshotCheckoutAccess,
-	type CheckoutSnapshot,
-} from "@archboard/code-binding/checkout-snapshot";
+import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@archboard/code-binding/resolution";
 import { isoTime, markedCommit } from "@/runtime/history-lens/lib/answer-commit";
 import {
 	commitsByBoundPath,
@@ -29,7 +26,7 @@ import { gitAnswer, gitSays, gitText, type GitRunOptions } from "@/runtime/histo
 import { lastChangeOf, type LastChange } from "@/runtime/history-lens/lib/last-change";
 import { partReading, type PartReading, type ReadPart } from "@/runtime/history-lens/lib/parts";
 import type { BehindCommit, BoardBehind } from "@/shared/code-check/index";
-import type { CodeBinding } from "@archboard/code-binding/code-binding";
+import type { CodeBinding } from "@archboard/code-binding/bindings";
 import { currentVariant, type SemanticBoard } from "@archboard/board/document";
 
 /** One board to read, as the store read it, and the file it lives in. */
