@@ -6,7 +6,7 @@ The history of the move is in `docs/design/package-map.md` and `docs/design/apps
 
 ## Layout
 
-All source lives in workspaces. The root `package.json` lists `packages/*` and `apps/*` in
+Product source lives in workspaces. The root `package.json` lists `packages/*` and `apps/*` in
 `workspaces`, and `bun install` links each one into `node_modules`.
 
 ```text
@@ -21,9 +21,9 @@ There is no top-level `src/` or `frontend/`, and no `@/` alias. Lint refuses a s
 either root and an import that starts with `@/`.
 `tests/system/repository-policy/workspace-layout.test.ts` holds the end state.
 
-Inside a package or an app, the folders below `src/` are areas: `shared`, `runtime`, `server`, `ui`,
-and `cli` in the CLI app. Each area has role folders, and a role folder has one folder for each
-behavior. See [Area directions](#area-directions). For frontend concern placement, naming, and
+The named areas below `src/` are `shared`, `runtime`, `server`, `ui`, and `cli` in the CLI app.
+A package can also hold files and folders outside these areas, such as `src/types.ts` or `src/types/`.
+Each area has role folders, and a role folder has one folder for each behavior. See [Area directions](#area-directions). For frontend concern placement, naming, and
 React ownership, read [frontend.md](frontend.md).
 
 The entries are `apps/cli/src/bin.ts`, `apps/server/src/server.ts` and `apps/web/src/main.tsx`.
@@ -33,8 +33,8 @@ Do not add implementation to them.
 
 - **Inside a package or an app, imports use `#`.** The `package.json` of each declares
   `"imports": { "#*": "./src/*", "#tests/*": "./tests/*" }`. Re-exports and dynamic and type
-  imports follow the same rule. Spell out the file extension. A relative import is refused
-  everywhere, and JavaScript source is rejected. Sibling imports in `scripts/` and `tools/` stay
+  imports follow the same rule. Spell out the file extension. Relative imports and JavaScript
+  source are refused within these workspaces. Sibling imports in `scripts/` and `tools/` stay
   relative and state the exception on the line. Scripts, tools and root tests have no `#` imports.
 - **Another package is reached only through its `exports`.** See [Packages](#packages).
 - **Nothing imports an app.** See [Apps](#apps).
@@ -53,7 +53,7 @@ A package or app test can import the implementation files of its own owner. Prod
 scripts, and tools never import test-owned source. Bun-discoverable tests outside these owners
 are refused.
 
-All JavaScript-like source inside any test owner is TypeScript. Test files stay under 500
+All JavaScript-like source inside any test owner is TypeScript. Test files stay at or below 500
 physical lines outside the UI. TASK-150 applies the approved 600-physical-line limit to all
 authored UI source, including tests, comments and blank lines. Put large test data in a named
 non-TypeScript fixture instead.
@@ -105,7 +105,7 @@ split by behavior.
 - **The area directions hold inside a package.** The folders under `src/` are areas, so `ui` never
   imports `runtime` or `server` of the same package. The direction is judged by the area folder of
   the imported file, so it also holds across packages. A test in `tests/<area>/` counts for that
-  area. A folder of `src/` that is no area is refused.
+  area.
 - **A package test can import any file of its own package.** It imports only the exports of another
   package. It never imports the support of another test owner.
 - **Production code never imports a `tests/` folder.** It never imports a `./testing` export of a
@@ -121,8 +121,8 @@ and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` 
 `errorMessage` functions differ on purpose: `./errno` says `unknown error` for a value that is no
 Error or string, and `./thrown-error` stringifies it.
 
-The third is `process` (`@archboard/process`). It owns a child process group and ends it, and every
-file sits in `runtime/processes/`. It adopts the `api/` role for `runtime/` and exposes 4 subpaths,
+The third is `process` (`@archboard/process`). It owns a child process group and ends it. Its implementation
+sits in `runtime/processes/`. It adopts the `api/` role for `runtime/` and exposes 4 subpaths,
 where it exposed 6 files. `./observation` reads the process table. `./git-group` carries the
 operations on the group of a Git command: capturing it, asking whether it or another member exists,
 and the TERM-then-KILL end of it. `./codex-group` carries the Codex process-group operations and
@@ -713,7 +713,7 @@ An app is a layer-8 workspace in `apps/<name>/` that holds what the packages lef
   `apps/cli/src/{cli,runtime}/`, `apps/server/src/server/`. The thin entries are
   `apps/cli/src/bin.ts`, `apps/server/src/server.ts` and `apps/web/src/main.tsx`; the last counts as
   browser code. Other files directly in `src/` and a folder beside `src/` and `tests/` that holds
-  source are refused. So is a folder of `src/` that is no area, in an app and in a package.
+  source are refused. An app also refuses a folder of `src/` that is no area.
 - **A package or an app has no `lib/` folder.** Name the role of the folder.
 - **Tests** follow `apps/<name>/tests/` like a package's. Its `ui/` folder is held to the UI lint
   policy.
@@ -798,11 +798,11 @@ behavior has an index: a caller imports the file that defines a name.
   `src/ui/theme/`, because a stylesheet is no role; the plugin judges TypeScript only. Its `@source` paths are
   relative to it. `vite.config.ts` stays at the repository root and names the root, the output and the dev server's
   `fs.allow`, which lets the dev server serve `packages/` and `node_modules` outside the root.
-- `src/ui/` is the `ui` area. Each behavior is a folder under each role it needs. `application` (the root, the pane
-  records and lists, the agent surfaces, the workspace port), `shell` (the frame, the navigator and its rows),
-  `pane-session` (one pane's socket, status, reading and registration), `board-routing` (the address bar as the
-  workspace), `board-catalog` (the listing of boards and its cache), `board-move`, `vault-diagnostics`,
-  `walkthrough-recording` and `walkthrough-replay` are the behaviors of the shell. The canvas is the `semantic-board-canvas`
+- `src/ui/` is the `ui` area. Each behavior is a folder under each role it needs.
+  `application` owns the root, the pane records and lists, the agent surfaces and the workspace port.
+  `shell` owns the frame, navigator and rows. `pane-session` owns one pane's socket, status, reading and registration.
+  `board-routing` owns the address bar as the workspace. `board-catalog` owns the listing of boards and its cache.
+  `board-move`, `vault-diagnostics`, `walkthrough-recording` and `walkthrough-replay` complete the shell behaviors. The canvas is the `semantic-board-canvas`
   behavior, the name that the frame-clock override of `.oxlintrc.jsonc` matches, and the variant lifecycle is
   `variant-lifecycle`. `rules/` holds the pure parts, `state/` what outlives a render (stores, the pane core, the
   recorder), `clients/` what touches the outside (the server calls, sockets, storage, audio, the page's own
@@ -846,9 +846,8 @@ machine-observable. An upgrade should fail at type-check time at each incompatib
 
 ## Area directions
 
-These directions keep transport and I/O details apart. They hold between the area folders of one
-package or app, between packages, and for tests, which count for the area of their folder
-(`tests/ui/` is `ui`).
+These directions keep transport and I/O details apart. They hold within and between packages and apps.
+A test counts for the area of its folder (`tests/ui/` is `ui`).
 
 - `shared` depends on no other area.
 - `runtime` depends on `shared` and `server`. It never imports `cli` or `ui`.
