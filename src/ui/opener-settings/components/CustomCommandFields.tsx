@@ -3,15 +3,17 @@
 import { useCallback, useId, type ChangeEvent, type JSX } from "react";
 
 import { LINE_TOKEN, PATH_TOKEN } from "@archboard/code-binding/opening";
-import { Field, FieldDescription, FieldLabel } from "@/ui/components/field";
-import { Input } from "@/ui/components/input";
 import {
+	Field,
+	FieldDescription,
+	FieldLabel,
+	Input,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupText,
 	InputGroupTextarea,
-} from "@/ui/components/input-group";
-import { FieldIssues, Technical } from "@/ui/dialog-parts";
+} from "@archboard/ui-kit/controls";
+import { FieldIssues, Technical } from "@archboard/ui-kit/dialog-parts";
 import type { CustomCommandDraft, CustomCommandIssues } from "@/ui/opener-settings/types/contracts";
 
 /** Inputs for the custom command fields. */

@@ -7,7 +7,7 @@
 
 import { useCallback, type JSX } from "react";
 
-import { Button } from "@/ui/components/button";
+import { Button } from "@archboard/ui-kit/controls";
 import {
 	Dialog,
 	DialogClose,
@@ -16,8 +16,8 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-} from "@/ui/components/dialog";
-import { BusyText, CANCEL_BUTTON_CLASS } from "@/ui/dialog-parts";
+} from "@archboard/ui-kit/overlays";
+import { BusyText, CANCEL_BUTTON_CLASS } from "@archboard/ui-kit/dialog-parts";
 import { MoveRefusal } from "@/ui/board-move/components/MoveRefusal";
 import { MoveRewrites } from "@/ui/board-move/components/MoveRewrites";
 import { MoveTargets } from "@/ui/board-move/components/MoveTargets";

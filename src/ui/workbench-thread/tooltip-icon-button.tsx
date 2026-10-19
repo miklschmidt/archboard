@@ -1,8 +1,13 @@
 import { type ComponentPropsWithRef, forwardRef } from "react";
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/ui/components/tooltip";
-import { Button } from "@/ui/components/button";
-import { cn } from "@/ui/components/class-names";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@archboard/ui-kit/overlays";
+import { Button } from "@archboard/ui-kit/controls";
+import { cn } from "@archboard/ui-kit/class-names";
 
 export type TooltipIconButtonProps = ComponentPropsWithRef<typeof Button> & {
 	tooltip: string;

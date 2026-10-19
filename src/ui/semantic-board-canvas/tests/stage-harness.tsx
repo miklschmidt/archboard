@@ -9,7 +9,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { PaneChromeContext, usePaneChrome, type PaneChrome } from "@/ui/components/PaneChrome";
+import { PaneChromeContext, usePaneChrome, type PaneChrome } from "@archboard/ui-kit/display";
 import {
 	PaneVaultContext,
 	SemanticBoardStage,

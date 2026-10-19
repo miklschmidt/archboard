@@ -16,7 +16,7 @@ import type { JSX } from "react";
 
 import type { ChangeKind, FieldChange } from "@archboard/board/comparison";
 import type { ReconciliationIssue } from "@archboard/board/reconciliation";
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 import {
 	CodeBlock,
 	type CodeStanding,

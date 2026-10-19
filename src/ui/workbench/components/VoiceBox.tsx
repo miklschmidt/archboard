@@ -41,7 +41,7 @@ import {
 	VOICE_BOX_OUT_MS,
 	VOICE_WORD_IN_MS,
 } from "@archboard/timing/voice";
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 import { OrbSlot } from "@/ui/voice-orb";
 import { SubtitleWords, SubtitlesToggle, type SubtitleSource } from "@/ui/voice-subtitles";
 import { MuteAction, type MuteActions } from "@/ui/workbench/components/MuteAction";

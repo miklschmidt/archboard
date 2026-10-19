@@ -29,16 +29,16 @@ import {
 } from "@remixicon/react";
 import { useCallback, type JSX, type ReactNode } from "react";
 
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-} from "@/ui/components/dropdown-menu";
-import { usePaneChrome } from "@/ui/components/PaneChrome";
-import { Tabs, TabsList, TabsTrigger } from "@/ui/components/tabs";
-import { RepositoryName } from "@/ui/repository-name";
+} from "@archboard/ui-kit/overlays";
+import { usePaneChrome } from "@archboard/ui-kit/display";
+import { Tabs, TabsList, TabsTrigger } from "@archboard/ui-kit/controls";
+import { RepositoryName } from "@archboard/ui-kit/repository-name";
 import { LevelMark } from "@/ui/semantic-board-canvas/components/LevelMark";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 import { SidebarToggle } from "@/ui/semantic-board-canvas/components/SidebarToggle";

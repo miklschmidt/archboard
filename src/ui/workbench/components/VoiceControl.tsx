@@ -16,7 +16,7 @@
 import { RiErrorWarningLine, RiMicLine, RiPhoneLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 import { OrbHost, OrbSlot } from "@/ui/voice-orb";
 import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
 import { useCircleState } from "@/ui/workbench/hooks/use-circle-state";

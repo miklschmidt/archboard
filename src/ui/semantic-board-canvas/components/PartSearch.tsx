@@ -27,8 +27,8 @@ import {
 } from "react";
 
 import { addressedVariant } from "@archboard/board/document";
-import { cn } from "@/ui/components/class-names";
-import { usePaneChrome } from "@/ui/components/PaneChrome";
+import { cn } from "@archboard/ui-kit/class-names";
+import { usePaneChrome } from "@archboard/ui-kit/display";
 import { useSearchRequested } from "@/ui/semantic-board-canvas/hooks/use-search-request";
 import {
 	searchShortcutKeys,

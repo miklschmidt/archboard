@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX, type RefObject } from "react";
 
 import type { OpenerSettingsReply } from "@archboard/code-binding/opening";
-import { Button } from "@/ui/components/button";
+import { Button } from "@archboard/ui-kit/controls";
 import {
 	Dialog,
 	DialogClose,
@@ -13,8 +13,8 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-} from "@/ui/components/dialog";
-import { Separator } from "@/ui/components/separator";
+} from "@archboard/ui-kit/overlays";
+import { Separator } from "@archboard/ui-kit/display";
 import type {
 	CustomCommandDraft,
 	CustomCommandIssues,
@@ -31,7 +31,12 @@ import { OpenerChoiceGroup } from "@/ui/opener-settings/components/OpenerChoiceG
 import { RepositoryField } from "@/ui/opener-settings/components/RepositoryField";
 import { TestResultAlert } from "@/ui/opener-settings/components/TestResultAlert";
 import { formatCommand } from "@/ui/opener-settings/lib/format-command";
-import { BusyText, CANCEL_BUTTON_CLASS, DialogErrorAlert, Technical } from "@/ui/dialog-parts";
+import {
+	BusyText,
+	CANCEL_BUTTON_CLASS,
+	DialogErrorAlert,
+	Technical,
+} from "@archboard/ui-kit/dialog-parts";
 
 /** Inputs for the effective command line. */
 interface EffectiveOpenerProps {

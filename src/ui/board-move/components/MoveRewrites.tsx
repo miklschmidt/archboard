@@ -8,7 +8,7 @@ import type { JSX } from "react";
 
 import type { BoardMovePreview, MovedDrillDown } from "@archboard/board/commands";
 import { MoveRefusal } from "@/ui/board-move/components/MoveRefusal";
-import { BusyText, Technical } from "@/ui/dialog-parts";
+import { BusyText, Technical } from "@archboard/ui-kit/dialog-parts";
 
 /** Inputs for the rewrites. */
 interface MoveRewritesProps {

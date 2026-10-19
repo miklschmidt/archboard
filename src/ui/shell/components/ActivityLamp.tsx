@@ -6,7 +6,7 @@
 
 import type { JSX } from "react";
 
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 
 /** What the lamp says. */
 type LampState = "claimed" | "wrote" | "inside";

@@ -6,7 +6,7 @@
 import { useCallback, type JSX } from "react";
 
 import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
-import { Button } from "@/ui/components/button";
+import { Button } from "@archboard/ui-kit/controls";
 import {
 	projectApproval,
 	projectDynamicApproval,

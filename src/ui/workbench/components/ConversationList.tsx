@@ -7,7 +7,7 @@
 import { useCallback, useMemo, type JSX } from "react";
 
 import type { BrowserWorkhorses } from "@/shared/codex-browser-model";
-import { ToggleGroup, ToggleGroupItem } from "@/ui/components/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@archboard/ui-kit/controls";
 
 /** One workhorse as the list draws it. */
 type Workhorse = BrowserWorkhorses["entries"][number];

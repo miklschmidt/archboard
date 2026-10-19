@@ -5,10 +5,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
 
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 
 import { lineInk } from "@/transformers/semantic-renderer/index";
-import { TooltipContent, Tooltip } from "@/ui/components/tooltip";
+import { TooltipContent, Tooltip } from "@archboard/ui-kit/overlays";
 import {
 	RelationshipSample,
 	TypeSample,

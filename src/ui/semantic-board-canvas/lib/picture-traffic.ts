@@ -15,7 +15,7 @@
 // SMIL, which still moves it: a picture never stands still for want of a
 // translation, it only costs more.
 
-import { PICTURE_CLOCK } from "@/ui/frame-clock";
+import { PICTURE_CLOCK } from "@archboard/ui-kit/frame-clock";
 
 /** The SMIL elements a picture can carry. */
 const SMIL = "animateTransform";

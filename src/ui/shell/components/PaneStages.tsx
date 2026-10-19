@@ -7,8 +7,7 @@
 
 import { useMemo, type JSX, type ReactNode } from "react";
 
-import { PaneChromeContext, type PaneChrome } from "@/ui/components/PaneChrome";
-import { Separator } from "@/ui/components/separator";
+import { PaneChromeContext, type PaneChrome, Separator } from "@archboard/ui-kit/display";
 import { ClaimBanner } from "@/ui/shell/components/ClaimBanner";
 import { PaneControls, PaneLetter } from "@/ui/shell/components/PaneControls";
 import { useKept } from "@/ui/shell/hooks/use-kept";

@@ -3,7 +3,7 @@
 import { RiErrorWarningLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { Alert, AlertDescription, AlertTitle } from "@/ui/components/alert";
+import { Alert, AlertDescription, AlertTitle } from "@archboard/ui-kit/display";
 
 /** Inputs for the refusal. */
 interface MoveRefusalProps {

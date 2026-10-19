@@ -3,7 +3,7 @@ import { useCallback, useState, type JSX } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 
 import type { VaultCheck } from "@archboard/board/policy";
-import { Button } from "@/ui/components/button";
+import { Button } from "@archboard/ui-kit/controls";
 import {
 	Dialog,
 	DialogContent,
@@ -12,7 +12,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
-} from "@/ui/components/dialog";
+} from "@archboard/ui-kit/overlays";
 import { DiagnosticList } from "@/ui/vault-diagnostics/components/DiagnosticList";
 import { useVaultCheck } from "@/ui/vault-diagnostics/hooks/use-vault-check";
 import { useVaultRepair } from "@/ui/vault-diagnostics/hooks/use-vault-repair";

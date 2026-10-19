@@ -12,10 +12,9 @@ import {
 import { useCallback, type JSX } from "react";
 
 import { GitHubHttpsUrlSchema, type CodeTargetNoticeAction } from "@archboard/code-binding/opening";
-import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/ui/components/alert";
-import { Button, buttonVariants } from "@/ui/components/button";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@archboard/ui-kit/display";
+import { Button, buttonVariants, IconButton } from "@archboard/ui-kit/controls";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "@/ui/shell/types/contracts";
-import { IconButton } from "@/ui/components/IconButton";
 
 /** A 24px outline action with two-pixel corners. */
 const ACTION_CLASS = "rounded-chip font-medium";

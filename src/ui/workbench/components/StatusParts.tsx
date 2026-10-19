@@ -4,8 +4,8 @@
 import { RiExternalLinkLine, RiStopFill } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import { clockDuration, shortAge } from "@/ui/components/age";
-import { Button } from "@/ui/components/button";
+import { clockDuration, shortAge } from "@archboard/ui-kit/time";
+import { Button } from "@archboard/ui-kit/controls";
 import type { AgentStatus, StatusTone } from "@/ui/workbench/lib/agent-status";
 import type { AgentActions } from "@/ui/workbench/contracts";
 

@@ -9,7 +9,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import type { PaneChrome } from "@/ui/components/PaneChrome";
+import type { PaneChrome } from "@archboard/ui-kit/display";
 import { EXPLAINED_BOARD, drawing } from "@/ui/semantic-board-canvas/tests/render-answers";
 import { mountStage, part, server, settle } from "@/ui/semantic-board-canvas/tests/stage-harness";
 import {

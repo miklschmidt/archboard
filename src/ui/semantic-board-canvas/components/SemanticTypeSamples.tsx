@@ -15,7 +15,7 @@ import {
 	standingMark,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/index";
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
 import { paletteInk } from "@/ui/semantic-board-canvas/lib/palette";
 

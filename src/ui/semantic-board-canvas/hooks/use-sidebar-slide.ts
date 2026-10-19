@@ -13,7 +13,7 @@
 import { useEffect, useState } from "react";
 
 import { SIDEBAR_MS, SLIDE_SETTLED_MS } from "@archboard/timing";
-import { frameClock } from "@/ui/frame-clock";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 
 /** Where the sidebar is. */
 type Place = "docked" | "floating" | "away";

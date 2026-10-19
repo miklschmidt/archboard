@@ -5,9 +5,15 @@
 import { useCallback, useId, type JSX } from "react";
 
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import { Field, FieldLabel, FieldLegend, FieldSet } from "@/ui/components/field";
-import { RadioGroup, RadioGroupItem } from "@/ui/components/radio-group";
-import { RepositoryName } from "@/ui/repository-name";
+import {
+	Field,
+	FieldLabel,
+	FieldLegend,
+	FieldSet,
+	RadioGroup,
+	RadioGroupItem,
+} from "@archboard/ui-kit/controls";
+import { RepositoryName } from "@archboard/ui-kit/repository-name";
 
 /** Inputs for the target choice. */
 interface MoveTargetsProps {

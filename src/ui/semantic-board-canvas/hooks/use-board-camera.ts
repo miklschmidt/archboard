@@ -23,7 +23,7 @@ import {
 } from "react";
 
 import { BOARD_RESIZE_SETTLE_MS, EXPLORING_MS } from "@archboard/timing";
-import { frameClock } from "@/ui/frame-clock";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { useCameraGlide } from "@/ui/semantic-board-canvas/hooks/use-camera-glide";
 import {
 	useCameraMotion,

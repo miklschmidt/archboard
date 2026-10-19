@@ -9,9 +9,9 @@
 import { RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { Button } from "@/ui/components/button";
-import { cn } from "@/ui/components/class-names";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
+import { Button } from "@archboard/ui-kit/controls";
+import { cn } from "@archboard/ui-kit/class-names";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@archboard/ui-kit/overlays";
 
 /** What a key that has nowhere to go looks like: dimmed, flat, and out of the pointer's way. */
 const SPENT =

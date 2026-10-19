@@ -7,8 +7,8 @@
 import { cn } from "cn";
 import type { JSX, ReactNode } from "react";
 
-import { buttonVariants } from "@/ui/components/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
+import { buttonVariants } from "@archboard/ui-kit/controls";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@archboard/ui-kit/overlays";
 
 /** Inputs for the icon action. */
 interface IconActionProps {

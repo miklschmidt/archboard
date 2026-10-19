@@ -8,7 +8,7 @@
 
 import type { JSX } from "react";
 
-import { Button } from "@/ui/components/button";
+import { Button } from "@archboard/ui-kit/controls";
 import { failureWords } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
 
 /** Inputs for the disclosure. */

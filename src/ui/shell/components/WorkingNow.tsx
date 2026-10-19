@@ -11,9 +11,8 @@ import { useCallback, useState, type JSX, type MouseEvent } from "react";
 import { SHELL_AGE_TICK_MS } from "@archboard/timing";
 import { ActivityLamp } from "@/ui/shell/components/ActivityLamp";
 import { PaneChips } from "@/ui/shell/components/PaneChips";
-import { useClock } from "@/ui/components/use-clock";
-import { RepositoryName } from "@/ui/repository-name";
-import { shortAge } from "@/ui/components/age";
+import { useClock, shortAge } from "@archboard/ui-kit/time";
+import { RepositoryName } from "@archboard/ui-kit/repository-name";
 import {
 	FACTS_GAP,
 	FACTS_INSET,

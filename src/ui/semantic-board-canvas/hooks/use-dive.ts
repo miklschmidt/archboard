@@ -18,7 +18,7 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type RefObject } from "react";
 
 import { EXPLORING_MS } from "@archboard/timing";
-import { frameClock } from "@/ui/frame-clock";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type {
 	SemanticDrawing,
 	SemanticRenderRequest,

@@ -9,7 +9,7 @@ import type {
 	OpenerSettingsTestRequest,
 	OpenerTestReply,
 } from "@archboard/code-binding/opening";
-import { type DialogError } from "@/ui/dialog-parts";
+import type { DialogError } from "@archboard/ui-kit/dialog-parts";
 
 /** The three actions, each with its own in-flight state. */
 interface OpenerSettingsBusy {

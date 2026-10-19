@@ -18,9 +18,9 @@ import { useSyncExternalStore, type JSX } from "react";
 
 import { SUBTITLE_LINGER_MS } from "@archboard/timing";
 import { SUBTITLE_OUT_MS, SUBTITLE_SWAP_MS } from "@archboard/timing/voice";
-import { TooltipProvider } from "@/ui/components/tooltip";
-import { driveFramesFrom } from "@/ui/frame-clock";
-import { createSteppedClock } from "@/ui/frame-clock/replay";
+import { TooltipProvider } from "@archboard/ui-kit/overlays";
+import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
+import { createSteppedClock } from "@archboard/ui-kit/stepped-clock";
 import {
 	SubtitlesToggle,
 	VoiceSubtitles,

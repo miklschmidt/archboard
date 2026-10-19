@@ -4,7 +4,7 @@
 
 import { useEffect, useRef, type CSSProperties, type JSX } from "react";
 
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 import type { OrbMode } from "@/ui/voice-orb/lib/orb-dynamics";
 import { runOrb, type OrbRunner } from "@/ui/voice-orb/lib/orb-runner";
 import { SIZE } from "@/ui/voice-orb/lib/orb-painter";

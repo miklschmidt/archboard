@@ -4,8 +4,8 @@ import { RiCheckLine, RiErrorWarningLine } from "@remixicon/react";
 import type { JSX } from "react";
 
 import type { CodeTargetOpenFailure } from "@archboard/code-binding/opening";
-import { Alert, AlertDescription, AlertTitle } from "@/ui/components/alert";
-import { Technical } from "@/ui/dialog-parts";
+import { Alert, AlertDescription, AlertTitle } from "@archboard/ui-kit/display";
+import { Technical } from "@archboard/ui-kit/dialog-parts";
 import type { OpenerTestResult } from "@/ui/opener-settings/types/contracts";
 
 /** Inputs for the test result. */
