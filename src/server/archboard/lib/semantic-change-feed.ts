@@ -12,7 +12,7 @@
 // it can say it has read up to.
 
 import { mintId } from "@archboard/board/ids";
-import { MoveEndSchema, type MoveEnd } from "@archboard/board/board-move";
+import { MoveEndSchema, type MoveEnd } from "@archboard/board/commands";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { onBoardBroadcast } from "@/server/archboard/lib/pane-registry";
 

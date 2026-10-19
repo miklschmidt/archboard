@@ -10,7 +10,7 @@
 
 import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
 
-import type { SemanticWalkthrough } from "@archboard/board/walkthrough";
+import type { SemanticWalkthrough } from "@archboard/board/content";
 import { KeyTip } from "@/ui/semantic-board-canvas/components/PresentationKeys";
 
 /** Inputs for one segment. */

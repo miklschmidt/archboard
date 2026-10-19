@@ -20,7 +20,7 @@ import {
 	currentWriteSession,
 	requestJson,
 } from "@/runtime/engine/server-client";
-import { BoardMoveAnswerSchema, type BoardMoveAnswer } from "@archboard/board/board-move";
+import { BoardMoveAnswerSchema, type BoardMoveAnswer } from "@archboard/board/commands";
 import {
 	SemanticBoardSchema,
 	SemanticBoardLevelSchema,

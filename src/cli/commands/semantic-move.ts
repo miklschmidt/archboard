@@ -13,7 +13,7 @@ import {
 	MoveEndSchema,
 	MovedDrillDownSchema,
 	type MovedDrillDown,
-} from "@archboard/board/board-move";
+} from "@archboard/board/commands";
 import { moveSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import { defineCommand } from "@/cli/command-contract/contract";
 import {

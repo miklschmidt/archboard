@@ -1,0 +1,99 @@
+import { describe, expect, test } from "bun:test";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const packagesRoot = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"../../../packages",
+);
+
+// An `api/` folder is a package's interface over private implementation (docs/agents/boundaries.md,
+// "Packages"). A package that adopts it points the `exports` of an area only into that area's
+// `api/`, and nothing private reaches back up into it. `board` adopts it for `src/shared`.
+const ADOPTERS = [{ name: "board", area: "shared" }];
+
+const API_IMPORT = /["'`]#[a-z]+\/api\//;
+const EXPORT_STAR = /\bexport\s*\*/;
+
+function exportsOutsideApi(exports: Record<string, string>, area: string): string[] {
+	const prefix = `./src/${area}/`;
+	return Object.entries(exports).flatMap(([subpath, target]) =>
+		target.startsWith(prefix) && !new RegExp(`^\\./src/${area}/api/[^/]+\\.ts$`).test(target)
+			? [`${subpath} -> ${target}`]
+			: [],
+	);
+}
+
+function isApiFile(file: string): boolean {
+	return file.split("/").includes("api");
+}
+
+function privateFilesImportingApi(files: Record<string, string>): string[] {
+	return Object.entries(files).flatMap(([file, text]) =>
+		!isApiFile(file) && API_IMPORT.test(text) ? [file] : [],
+	);
+}
+
+function apiFilesWithExportStar(files: Record<string, string>): string[] {
+	return Object.entries(files).flatMap(([file, text]) =>
+		isApiFile(file) && EXPORT_STAR.test(text) ? [file] : [],
+	);
+}
+
+function productionFiles(name: string): Record<string, string> {
+	const src = path.join(packagesRoot, name, "src");
+	return Object.fromEntries(
+		fs
+			.readdirSync(src, { recursive: true, encoding: "utf8" })
+			.filter((file) => /\.tsx?$/.test(file))
+			.map((file) => [file, fs.readFileSync(path.join(src, file), "utf8")]),
+	);
+}
+
+describe.each(ADOPTERS)("the api folder of $name", ({ name, area }) => {
+	const manifest = JSON.parse(
+		fs.readFileSync(path.join(packagesRoot, name, "package.json"), "utf8"),
+	) as { exports: Record<string, string> };
+	const files = productionFiles(name);
+
+	test(`every export into src/${area} points into src/${area}/api`, () => {
+		expect(exportsOutsideApi(manifest.exports, area)).toEqual([]);
+	});
+
+	test("no private production file imports an api file", () => {
+		expect(privateFilesImportingApi(files)).toEqual([]);
+	});
+
+	test("no api file uses export *", () => {
+		expect(apiFilesWithExportStar(files)).toEqual([]);
+	});
+});
+
+describe("the api checks", () => {
+	test("each check names a violation in a synthetic package", () => {
+		expect(
+			exportsOutsideApi(
+				{
+					"./document": "./src/shared/api/document.ts",
+					"./ids": "./src/shared/rules/ids.ts",
+					"./write": "./src/runtime/operations/write/write.ts",
+					"./nested": "./src/shared/api/deeper/nested.ts",
+				},
+				"shared",
+			),
+		).toEqual([
+			"./ids -> ./src/shared/rules/ids.ts",
+			"./nested -> ./src/shared/api/deeper/nested.ts",
+		]);
+
+		const files = {
+			"shared/api/document.ts": `export { a } from "#shared/rules/a.ts";\n`,
+			"shared/api/star.ts": `export * from "#shared/rules/a.ts";\n`,
+			"shared/rules/b.ts": `import { a } from "#shared/api/document.ts";\n`,
+			"runtime/c.ts": `import { a } from "#shared/rules/a.ts";\n`,
+		};
+		expect(privateFilesImportingApi(files)).toEqual(["shared/rules/b.ts"]);
+		expect(apiFilesWithExportStar(files)).toEqual(["shared/api/star.ts"]);
+	});
+});

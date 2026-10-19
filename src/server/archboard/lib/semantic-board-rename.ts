@@ -26,7 +26,7 @@ import { claimBoard, claimOn, releaseClaim } from "@archboard/board/lock";
 import { forgetDoing, recentDoing, recordDoing } from "@archboard/board/doing";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
-import { BoardRenameInputSchema } from "@archboard/board/resolution-input";
+import { BoardRenameInputSchema } from "@archboard/board/commands";
 import { renameTransition } from "@archboard/board/rename";
 import { writeSemanticBoard, type SemanticWriteResult } from "@archboard/board/write";
 import type { VaultDiagnostic } from "@archboard/board/policy";

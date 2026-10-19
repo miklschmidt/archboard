@@ -42,6 +42,7 @@ packages/<name>/
       constants/      # fixed values, such as every duration
       rules/          # pure functions: compare, reconcile, policy
       protocol/       # wire contracts between browser, server and Codex
+      api/            # the interface files of this area, for a package that adopts the role
     runtime/          # code that runs in Bun
       store/          # files, locks, registries, the atomic write, file formats
       operations/     # one write or read a caller asks for: edit, move, rename, settle
@@ -72,6 +73,13 @@ splits by behavior, not by a longer file prefix. For example, `runtime/operation
 module root. It can also refuse a folder name that is not in the list above, so `lib/` does not
 return. A type that two areas share goes in `types`, so no area imports another area only to reach
 a type.
+
+An `api/` folder holds the public interface of an area over its private role folders. Each file is
+a curated list of named re-exports (`export { a } from "#shared/rules/x.ts"`, never `export *`),
+and carries only the names that code outside the package imports. `exports` points only into
+`api/` for a package that adopts it, and a private file never imports an api file. The `exports`
+then name a few interfaces of the package, not one subpath for each file that something imports.
+`board` adopts it for `shared/` first, with thirteen api files.
 
 The role lists are guidance, not a closed list, until every existing file has a home that
 describes it. A first pass found that `websocket-connection.ts` and `semantic-disk-watch.ts` fit

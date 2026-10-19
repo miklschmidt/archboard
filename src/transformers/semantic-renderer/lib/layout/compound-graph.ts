@@ -4,8 +4,8 @@
 // leaves from. Each engine chooses ranks and attachment faces.
 import type { ElkLabel, ElkNode } from "@archboard/elk-rs";
 import { inspectContainer } from "@archboard/board/container-interface";
-import { type ChangeKind } from "@archboard/board/compare-variants";
-import { type SemanticEdge, type VariantContent } from "@archboard/board/content";
+import type { ChangeKind } from "@archboard/board/comparison";
+import type { SemanticEdge, VariantContent } from "@archboard/board/content";
 import type {
 	MeasuredArchitecture,
 	MeasuredNode,

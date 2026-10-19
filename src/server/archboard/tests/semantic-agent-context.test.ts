@@ -24,9 +24,9 @@ import {
 	BoardCreateInputSchema,
 	BoardBranchInputSchema,
 	VariantEditInputSchema,
-} from "@archboard/board/board-input";
+} from "@archboard/board/commands";
 import { type SemanticBoard, findVariant, currentVariant } from "@archboard/board/document";
-import { findView } from "@archboard/board/scope";
+import { findView } from "@archboard/board/views";
 import type { SemanticPaneContext } from "@archboard/board/pane-context";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-agent-context-"));

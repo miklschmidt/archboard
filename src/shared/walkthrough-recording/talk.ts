@@ -20,8 +20,11 @@ import {
 	DiagramThemeSchema,
 	LayoutEngineSchema,
 } from "@archboard/board/render-reply";
-import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
-import { parseSemanticBoard } from "@archboard/board/parse-board";
+import {
+	addressedVariant,
+	type SemanticBoard,
+	parseSemanticBoard,
+} from "@archboard/board/document";
 import { VaultCheckSchema } from "@archboard/board/policy";
 import { RecordingLanguageSchema } from "@/shared/walkthrough-recording/lib/language";
 

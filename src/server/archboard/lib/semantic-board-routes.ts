@@ -22,7 +22,7 @@ import {
 	LegendLayoutSchema,
 	type LegendLayout,
 } from "@archboard/board/render-reply";
-import { type SemanticBoard } from "@archboard/board/document";
+import type { SemanticBoard } from "@archboard/board/document";
 import { listSemanticBoards } from "@archboard/board/listing";
 import { checkSemanticVault } from "@archboard/board/diagnostics";
 import { readSemanticBoard } from "@archboard/board/read";

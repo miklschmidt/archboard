@@ -2,13 +2,9 @@
 // entry for one flow step, which may be a message, a decision or a loop.
 
 import { z } from "zod";
-import { isMessage, stepWords } from "@archboard/board/flow-steps";
+import { isMessage, stepWords } from "@archboard/board/flow";
 import { SubjectStandingSchema } from "@archboard/board/render-reply";
-import {
-	type FieldChange,
-	type PlacedStep,
-	type SubjectChange,
-} from "@archboard/board/compare-variants";
+import type { FieldChange, PlacedStep, SubjectChange } from "@archboard/board/comparison";
 
 /** One field that moved, and what it moved between. */
 const MovedFieldSchema = z.object({

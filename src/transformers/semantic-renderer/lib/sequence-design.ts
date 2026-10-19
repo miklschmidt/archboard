@@ -1,5 +1,5 @@
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
-import type { MessageKind } from "@archboard/board/vocabulary";
+import type { MessageKind } from "@archboard/board/flow";
 import { SHADOW_REACH } from "@/transformers/semantic-renderer/lib/svg/shadow";
 import { headReach, type Head, type Weight } from "@/transformers/semantic-renderer/lib/svg/styles";
 

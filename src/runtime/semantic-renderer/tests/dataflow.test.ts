@@ -1,7 +1,7 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
 import type { DiagramBox, DiagramTheme } from "@archboard/board/render-reply";
-import { type VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
 import {
 	renderDataFlow,
 	renderSemanticView,

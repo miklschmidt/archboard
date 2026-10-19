@@ -5,7 +5,7 @@ import { expect, test } from "bun:test";
 import { renderArchitecture, renderBoard } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import { type DiagramAtlas } from "@archboard/board/render-reply";
+import type { DiagramAtlas } from "@archboard/board/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 // The scheduler is a hidden part that only calls out: nothing holds it below

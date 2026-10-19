@@ -11,7 +11,7 @@ import {
 	SemanticBoardSchema,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { type VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
 
 // The interface measures of competing proposals, side by side (ADR 0044): what
 // an agent reads to design a module twice. The counts themselves belong to

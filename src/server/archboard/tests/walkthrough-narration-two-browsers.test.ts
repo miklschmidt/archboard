@@ -14,7 +14,7 @@ import { writeSemanticBoard } from "@archboard/board/write";
 import { createBoardTransition } from "@archboard/board/transitions";
 import { readSemanticBoard } from "@archboard/board/read";
 import { semanticBoardAddress } from "@archboard/board/location";
-import { BoardCreateInputSchema } from "@archboard/board/board-input";
+import { BoardCreateInputSchema } from "@archboard/board/commands";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import type { SemanticPaneContext, SemanticPanePresentation } from "@archboard/board/pane-context";
 

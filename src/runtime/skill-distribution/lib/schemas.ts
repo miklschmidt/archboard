@@ -8,7 +8,7 @@
 // named as runtime obligations rather than silently left out.
 
 import { z } from "zod";
-import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/board-input";
+import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/commands";
 import { SEMANTIC_BOARD_SCHEMA_VERSION, SemanticBoardSchema } from "@archboard/board/document";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/configuration";
 

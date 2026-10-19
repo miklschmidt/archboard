@@ -8,8 +8,14 @@
 // the vault policy it read, and the renderer host it installed; what the answer
 // is travels on nothing else (ADR 0023).
 
-import { drawingOf, drawnSubjects } from "@archboard/board/drawing";
-import { findView, scopedContent, type ReadingScope } from "@archboard/board/scope";
+import { drawingOf, drawnSubjects } from "@archboard/board/comparison";
+import {
+	findView,
+	scopedContent,
+	type ReadingScope,
+	type DiagramGrammar,
+	type SemanticView,
+} from "@archboard/board/views";
 import {
 	addressedVariant,
 	nothingBuilt,
@@ -17,18 +23,16 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { type DiagramGrammar } from "@archboard/board/vocabulary";
-import {
-	type LayoutEngineName,
-	type FontSource,
-	type LegendLayout,
-	type NothingDrawnReason,
-	type OfferedView,
-	type SemanticRenderReply,
-	type StandaloneTheme,
+import type {
+	LayoutEngineName,
+	FontSource,
+	LegendLayout,
+	NothingDrawnReason,
+	OfferedView,
+	SemanticRenderReply,
+	StandaloneTheme,
 } from "@archboard/board/render-reply";
-import { type SemanticView } from "@archboard/board/views";
-import { type ToldStanding } from "@archboard/board/reconciliation";
+import type { ToldStanding } from "@archboard/board/reconciliation";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import { SemanticRenderError, renderSemanticView } from "@/transformers/semantic-renderer/index";
 import { placedStanding } from "@/transformers/semantic-renderer/picture-key";

@@ -104,6 +104,7 @@ packages/<name>/
   src/
     types.ts        # only for types that more than one area uses
     <area>/<role>/  # areas: shared, runtime, server, ui. Roles: constants, rules, store, ...
+    <area>/api/     # the interface files of an area, in a package that adopts the role
   tests/            # internal tests, in folders that follow the areas
 ```
 
@@ -116,6 +117,14 @@ split by behavior.
   `@archboard/<name>/<subpath>` for a subpath that `exports` names. TypeScript, Bun and Vite resolve
   it through the workspace link, so no path alias exists for a package. A file that `exports` does
   not name is private.
+- **An `api/` folder is the package's interface over private implementation.** A package that
+  adopts it points the `exports` of an area only into that area's `api/`. An api file re-exports
+  by name (`export { a } from "#shared/rules/x.ts"`, `export type { T } from ...`, never `export *`)
+  from the private files that define the names, and it holds no second definition. A public name
+  needs a concrete caller outside the package, so a name nobody outside imports stays private.
+  Private production files never import an api file, because the api files sit above them. `board`
+  adopts it for `shared/` first. `tests/system/repository-policy/package-api.test.ts` holds the
+  three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
   `exports` does not name. It also refuses a relative path that reaches a private file of another
   package.
@@ -219,7 +228,7 @@ holds only Zod schemas.
   entry limits. The input normalizers, the brief builder, the fitter and the bounded-text and
   listener-diagnostic helpers are private. The barrel `codex-semantic-context/index.ts` is gone: a
   name is imported from the file that defines it. The package reads board schemas by value from
-  `@archboard/board` (`./vocabulary`, `./reconciliation`, `./pane-context`) to normalize the
+  `@archboard/board` (`./views`, `./document`, `./reconciliation`, `./pane-context`) to normalize the
   architecture a pane reports.
 - A test that needs the process owner's injected dependencies imports
   `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
@@ -228,25 +237,45 @@ holds only Zod schemas.
 The seventh is `board` (`@archboard/board`). It is the board document, its policy and its one
 reader and writer. The package is complete. It has two areas. `shared/` holds the code that the
 browser and the server both run, and imports no Node module. `runtime/` holds the store and runs
-only in Bun. Browser code imports only `shared/` exports. The `shared/` folder follows the role names:
+only in Bun. Browser code imports only `shared/` exports. The `shared/` folder keeps its code in
+private role folders and exposes it through `shared/api/`, the first use of the `api/` role. The
+role folders are:
 
-- `schemas/` are the data shapes. `./document` is the board aggregate and the variant address
-  functions, and `./content` is what one variant holds: nodes, relationships and drill-downs.
-  `./views`, `./walkthrough` and `./vocabulary` are the parts it is built from, and `primitives`
-  is private. `./reconciliation` is the standing of a variant against its predecessor,
-  `./draft-ref` reads the code a draft is read against and `./policy` is the semantic policy and
-  the vault check. The binding, anchor and document-reference schemas are not here. They stay in
-  `code-binding`.
-- `protocol/` are the wire contracts. `./board-input` is what an agent may say, `./render-reply`
-  what a render answers, `./board-listing` the answer of the listing route, `./board-move` the move
-  to another vault, `./resolution-input` the choice of a side and `./pane-context` what a pane
-  reports about its reading.
-- `rules/` are pure functions. `rules/ids.ts` is the one place that mints an id, and `./ids` is its
-  export. `rules/coherence/` holds the checks a shape cannot state, and `./parse-board` reads an
-  untrusted value as a board. `rules/compare/` compares two variants, their interfaces and the
-  drawing of a proposal against current. `rules/reconcile/` brings a proposal forward when its
-  predecessor moves. `rules/inspect/` reads one container or one group off a variant. `./scope`
-  and `./flow-steps` stand beside them.
+- `schemas/` are the data shapes: the board aggregate, what one variant holds, the views, the
+  walkthrough, the vocabulary, the semantic policy, the standing of a variant against its
+  predecessor and the draft references. `primitives` is private. The binding, anchor and
+  document-reference schemas are not here. They stay in `code-binding`.
+- `protocol/` are the wire contracts: what an agent may say, what a render answers, the answer of
+  the listing route, the move to another vault, the choice of a side and what a pane reports about
+  its reading.
+- `rules/` are pure functions. `rules/ids.ts` is the one place that mints an id. `rules/coherence/`
+  holds the checks a shape cannot state and the one parse of an untrusted value as a board.
+  `rules/compare/` compares two variants, their interfaces and the drawing of a proposal against
+  current. `rules/reconcile/` brings a proposal forward when its predecessor moves.
+  `rules/inspect/` reads one container or one group off a variant. `scope.ts` and `flow-steps.ts`
+  stand beside them.
+
+The thirteen files of `shared/api/` are the whole browser-safe interface. Each carries only the
+names that code outside the package imports. A name sits in the file of its meaning, not of the
+private file that defines it:
+
+- `./document` is the board aggregate, the variant address and lifecycle, how a variant is found,
+  the draft references and `parseSemanticBoard`.
+- `./content` is what one variant holds (nodes, relationships, drill-downs), the walkthrough, edge
+  emphasis and the reading of groups.
+- `./flow` is the flow step shapes, the message kind and the reading of a flow's steps.
+- `./views` is a view, the scope of a view and the diagram grammar.
+- `./policy` is the semantic policy, its evidence and palette, and the vault check with the
+  diagnostic helpers that read it.
+- `./comparison` compares two variants and draws the proposal against current.
+- `./container-interface` reads and compares what a container exposes to its callers.
+- `./commands` is what an agent may say: create, edit, branch, adopt, rename, shelve and move.
+- `./render-reply` is what a render answers and the theme it draws with.
+- `./pane-context` is what a pane reports about its reading, and its route.
+- `./board-listing` is the answer of the listing route.
+- `./reconciliation` is the issue shapes of a reconciliation. They stay independent of the
+  reconciliation algorithm, which is private.
+- `./ids` is the id mint.
 
 The `runtime/` folder is the one place a board file is read or written (CLAUDE.md, "The file is the
 board"). Every write goes through `@archboard/workspace/atomic-write` and is committed before it is
@@ -266,9 +295,9 @@ answered. The lock is deny by default. The folder has two roles:
   (`./propagate`; adopt, shelve, restore and inheritance are private) are the other behaviors.
 
 The package has no barrel. In the old `index.ts`, the names of the document, the input, the render
-reply, the reconciliation and the comparison came from one import. An importer now names the file
-that defines each name. The same holds for the runtime half. `semantic-board-store/index.ts` and
-`engine/board.ts` forwarded names, and both are gone. `./integrity`, `./positions`, `./primitives`,
+reply, the reconciliation and the comparison came from one import. An importer now names the api
+file that carries each name. The runtime half still exports one file for each behavior.
+`semantic-board-store/index.ts` and `engine/board.ts` forwarded names, and both are gone. `./integrity`, `./positions`, `./primitives`,
 `./reconcile-candidate` and `./reconcile` were exported only because the store imported them. The
 store is inside the package now, so these five are private, and no file outside the package
 imported one. `board` imports only `timing`, `diagnostics`, `process`, `workspace` and

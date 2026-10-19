@@ -80,7 +80,7 @@
 // A subject can be added and unsettled at once and both marks stay legible,
 // because they never share a corner.
 //
-import type { ChangeKind } from "@archboard/board/compare-variants";
+import type { ChangeKind } from "@archboard/board/comparison";
 import { coord, union, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { PALETTE, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { tag, wrap, type Attributes } from "@/transformers/semantic-renderer/lib/svg/primitives";

@@ -9,8 +9,7 @@
 // Only heights are decided here. A frame's sides come from the ink of what it
 // holds, which is known once every column's bars are (`frames.ts`).
 
-import { isMessage } from "@archboard/board/flow-steps";
-import { type FlowMessage, type FlowStep } from "@archboard/board/views";
+import { isMessage, type FlowMessage, type FlowStep } from "@archboard/board/flow";
 import {
 	FRAME_GAP,
 	FRAME_GUARD_HEIGHT,

@@ -10,9 +10,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/board-input";
-import { parseSemanticBoard } from "@archboard/board/parse-board";
-import { SemanticBoardSchema } from "@archboard/board/document";
+import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/commands";
+import { parseSemanticBoard, SemanticBoardSchema } from "@archboard/board/document";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/configuration";
 import {

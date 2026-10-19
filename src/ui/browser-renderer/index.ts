@@ -11,7 +11,7 @@
 // browser paints it.
 
 import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
-import { type SemanticBoard } from "@archboard/board/document";
+import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import {
 	renderBoard,

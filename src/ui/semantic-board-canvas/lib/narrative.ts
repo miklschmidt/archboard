@@ -13,7 +13,7 @@
 // them asking the other.
 
 import type { SemanticVariant } from "@archboard/board/document";
-import type { WalkthroughBeat } from "@archboard/board/walkthrough";
+import type { WalkthroughBeat } from "@archboard/board/content";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { subjectOf } from "@/ui/semantic-board-canvas/lib/board-document";
 import { unionRect, type FitTarget, type Rect } from "@/ui/semantic-board-canvas/lib/camera";

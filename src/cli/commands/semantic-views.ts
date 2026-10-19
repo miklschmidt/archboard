@@ -10,7 +10,7 @@
 // their layouts in the server's cache for the render that follows.
 
 import { z } from "zod";
-import { EVERYTHING_VIEW } from "@archboard/board/scope";
+import { EVERYTHING_VIEW } from "@archboard/board/views";
 import {
 	LayoutEngineSchema,
 	OfferedViewSchema,

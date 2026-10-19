@@ -1,7 +1,7 @@
 // Which variant `semantic compare` reads another against: the one named, or the
 // one its picture is drawn against.
 
-import { comparedWith } from "@archboard/board/drawing";
+import { comparedWith } from "@archboard/board/comparison";
 import {
 	resolveVariant,
 	type SemanticBoard,

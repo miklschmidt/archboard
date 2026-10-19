@@ -14,7 +14,7 @@
 
 import type { JSX } from "react";
 
-import type { ChangeKind, FieldChange } from "@archboard/board/compare-variants";
+import type { ChangeKind, FieldChange } from "@archboard/board/comparison";
 import type { ReconciliationIssue } from "@archboard/board/reconciliation";
 import { cn } from "@/ui/components/class-names";
 import {

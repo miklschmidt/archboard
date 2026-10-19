@@ -23,7 +23,7 @@
 
 import { useCallback, type JSX } from "react";
 
-import { EVERYTHING_VIEW } from "@archboard/board/scope";
+import { EVERYTHING_VIEW } from "@archboard/board/views";
 import type { SemanticOfferedView } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import {
 	SidebarChoice,

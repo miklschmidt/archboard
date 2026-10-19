@@ -11,7 +11,7 @@
 // stands inside it with the same room on every side. It widens to the right
 // when its own words need more room than its messages do.
 
-import type { FlowDecision, FlowLoop } from "@archboard/board/views";
+import type { FlowDecision, FlowLoop } from "@archboard/board/flow";
 import { PILL_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import { NEST_INSET, PILL_TEXT_SIZE } from "@/transformers/semantic-renderer/lib/design";
 import {

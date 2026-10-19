@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import { type DrawnBoard } from "@archboard/board/render-reply";
+import type { DrawnBoard } from "@archboard/board/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { markCounts } from "@/transformers/semantic-renderer/picture-key";
 import { renderBoard, type BoardRenderChoices } from "@/runtime/semantic-renderer/index";

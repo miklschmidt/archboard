@@ -1,5 +1,4 @@
-import { placingGroups } from "@archboard/board/groups";
-import { type SemanticEdge, type SemanticNode } from "@archboard/board/content";
+import { placingGroups, type SemanticEdge, type SemanticNode } from "@archboard/board/content";
 import type { LineLook } from "@/transformers/semantic-renderer/lib/drawing";
 import {
 	drillDirection,

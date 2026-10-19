@@ -17,8 +17,7 @@
 // whole reason the roles exist: a bundle that carried a size but no face would
 // let a painter and a measurement disagree about what they were talking about.
 
-import type { EdgeEmphasis } from "@archboard/board/vocabulary";
-import type { SemanticEdge } from "@archboard/board/content";
+import type { EdgeEmphasis, SemanticEdge } from "@archboard/board/content";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 import { relationshipAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";

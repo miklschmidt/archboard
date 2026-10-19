@@ -6,7 +6,7 @@ import { expect } from "bun:test";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import { type DrawnBoard, type LayoutEngineName } from "@archboard/board/render-reply";
+import type { DrawnBoard, LayoutEngineName } from "@archboard/board/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /**

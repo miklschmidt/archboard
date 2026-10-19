@@ -21,7 +21,7 @@ import {
 	routeEnds,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { type VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
 
 /**
  * One architecture, as its own contract reads it.

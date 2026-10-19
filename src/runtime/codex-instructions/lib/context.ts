@@ -4,7 +4,8 @@ import {
 	ADDITIONAL_CONTEXT_POLICY,
 	type OperationOutcome,
 } from "@/runtime/codex-instructions/lib/context-policy";
-import { DiagramGrammarSchema, VariantLifecycleSchema } from "@archboard/board/vocabulary";
+import { DiagramGrammarSchema } from "@archboard/board/views";
+import { VariantLifecycleSchema } from "@archboard/board/document";
 import { ReconciliationKindSchema } from "@archboard/board/reconciliation";
 import { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
 

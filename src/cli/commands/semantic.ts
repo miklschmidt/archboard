@@ -20,7 +20,7 @@ import {
 	BoardCreateInputSchema,
 	ConfirmableRefusalSchema,
 	VariantEditInputSchema,
-} from "@archboard/board/board-input";
+} from "@archboard/board/commands";
 import {
 	branchSemanticBoardOnServer,
 	createSemanticBoardOnServer,

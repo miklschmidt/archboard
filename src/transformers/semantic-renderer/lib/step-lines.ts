@@ -8,9 +8,8 @@
 // grammar stays the view's choice, and the line is a reading of content the
 // board already holds.
 
-import { messagesOf } from "@archboard/board/flow-steps";
-import { type FlowMessage } from "@archboard/board/views";
-import { type SemanticEdge, type VariantContent } from "@archboard/board/content";
+import { messagesOf, type FlowMessage } from "@archboard/board/flow";
+import type { SemanticEdge, VariantContent } from "@archboard/board/content";
 
 /** The content as the architecture reading draws it, and which lines are steps. */
 interface StepLines {

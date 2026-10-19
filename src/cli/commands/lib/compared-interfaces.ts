@@ -6,8 +6,8 @@
 // sets no comparison status, so nothing here carries a `standing`.
 
 import { z } from "zod";
-import { compareInterfaces, type InterfaceChange } from "@archboard/board/compare-interfaces";
-import { type SemanticNode, type VariantContent } from "@archboard/board/content";
+import { compareInterfaces, type InterfaceChange } from "@archboard/board/container-interface";
+import type { SemanticNode, VariantContent } from "@archboard/board/content";
 
 /** One part named in the interface section: enough to find it on the board. */
 const InterfacePartSchema = z.object({ id: z.string(), name: z.string(), kind: z.string() });

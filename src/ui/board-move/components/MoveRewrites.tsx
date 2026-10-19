@@ -6,7 +6,7 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { JSX } from "react";
 
-import type { BoardMovePreview, MovedDrillDown } from "@archboard/board/board-move";
+import type { BoardMovePreview, MovedDrillDown } from "@archboard/board/commands";
 import { MoveRefusal } from "@/ui/board-move/components/MoveRefusal";
 import { BusyText, Technical } from "@/ui/dialog-parts";
 

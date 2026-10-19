@@ -12,8 +12,7 @@
 import { copyFileSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 
-import { parseSemanticBoard } from "@archboard/board/parse-board";
-import { type SemanticBoard } from "@archboard/board/document";
+import { parseSemanticBoard, type SemanticBoard } from "@archboard/board/document";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { ROOT, attempt, run, scratch, type Ran } from "./tools.ts";

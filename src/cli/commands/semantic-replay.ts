@@ -5,7 +5,7 @@
 import { z } from "zod";
 
 import { DiagramThemeSchema, LayoutEngineSchema } from "@archboard/board/render-reply";
-import { parseSemanticBoard } from "@archboard/board/parse-board";
+import { parseSemanticBoard } from "@archboard/board/document";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { TalkFileError, readTalk, renderTalk } from "@/runtime/walkthrough-recorder";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";

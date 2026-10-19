@@ -21,7 +21,7 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { type SemanticWalkthrough } from "@archboard/board/walkthrough";
+import type { SemanticWalkthrough } from "@archboard/board/content";
 import {
 	panePresentations,
 	type UserPresentationChange,

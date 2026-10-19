@@ -32,9 +32,9 @@ import type {
 	NamedReason,
 } from "@/shared/footprint/index";
 import { nodesAtOwnRef } from "@/runtime/history-lens/lib/own-ref";
-import { compareVariants } from "@archboard/board/compare-variants";
+import { compareVariants } from "@archboard/board/comparison";
 import { emptyContent, type SemanticNode } from "@archboard/board/content";
-import { type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 
 /** What to read: the variant the commits are read against, the ref, and the proposal to set it against. */
 interface FootprintRequest {

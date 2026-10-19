@@ -19,7 +19,7 @@
 // running again with the experiment applied and AGAINST pointing at the save.
 import fs from "node:fs";
 import path from "node:path";
-import { parseSemanticBoard } from "@archboard/board/parse-board";
+import { parseSemanticBoard } from "@archboard/board/document";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
