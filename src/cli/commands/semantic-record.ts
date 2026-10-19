@@ -21,7 +21,7 @@ import {
 } from "@/shared/walkthrough-recording";
 import { currentWriteDoing } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
-import { repositoryOfVault } from "@/runtime/engine/repo-registry";
+import { repositoryOfVault } from "@archboard/workspace/repo-registry";
 import {
 	checkSemanticVaultOnServer,
 	discardSemanticBoardOnServer,

@@ -90,6 +90,10 @@
       "name": "@archboard/timing",
       "version": "0.0.0",
     },
+    "packages/workspace": {
+      "name": "@archboard/workspace",
+      "version": "0.0.0",
+    },
   },
   "patchedDependencies": {
     "libavoid-js@0.5.0-beta.5": "patches/libavoid-js@0.5.0-beta.5.patch",
@@ -115,6 +119,8 @@
     "@archboard/process": ["@archboard/process@workspace:packages/process"],
 
     "@archboard/timing": ["@archboard/timing@workspace:packages/timing"],
+
+    "@archboard/workspace": ["@archboard/workspace@workspace:packages/workspace"],
 
     "@assistant-ui/core": ["@assistant-ui/core@0.3.16", "", { "dependencies": { "assistant-stream": "^0.3.40", "nanoid": "^6.0.1" }, "peerDependencies": { "@assistant-ui/store": "^0.3.0", "@assistant-ui/tap": "^0.9.0", "@types/react": "*", "assistant-cloud": "^0.1.42", "react": "^18 || ^19", "zustand": "^5.0.11" }, "optionalPeers": ["@types/react", "assistant-cloud", "react", "zustand"] }, "sha512-fZ9ud+z7hEjegu6NrHyMEcQKCdij2KRcqpLsyOYzHE9LhnBv59Q29jU287EkD0NZE0SG4YTo5/klzz7C/lKA+Q=="],
 

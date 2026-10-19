@@ -9,11 +9,11 @@
 
 import fs from "fs";
 import path from "path";
-import { writeFileAtomic } from "@/runtime/engine/atomic-write";
-import { stateDir } from "@/runtime/engine/state-dir";
+import { writeFileAtomic } from "#runtime/store/atomic-write.ts";
+import { stateDir } from "#runtime/services/state-dir.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { LOCK_LEASE_MS, LOCK_POLL_MS } from "@archboard/timing";
-import { LanguageServersSchema, type LanguageServers } from "@/shared/language-servers/index";
+import { LanguageServersSchema, type LanguageServers } from "#runtime/store/language-servers.ts";
 
 /** New entries are declared; observed is retained for existing registry files. */
 type RepoSource = "declared" | "observed";

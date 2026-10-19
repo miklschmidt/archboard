@@ -3,7 +3,7 @@
 
 import { expect, test } from "bun:test";
 
-import type { RepositoryEntry } from "@/shared/repositories/index";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import {
 	SHOP,
 	SHOP_BOARDS,

@@ -34,10 +34,12 @@ const WORKTREE_PORT_COUNT = 10000;
 const CHECKOUT_BIN = path.join("bin", "archboard");
 
 /**
- * The real path of the archboard checkout whose source this process runs.
- * This file is `src/runtime/engine/source-checkout.ts` in it.
+ * The real path of the archboard checkout whose source this process runs: the
+ * nearest directory above this file that is an archboard checkout. This file
+ * lives in `packages/workspace/src/runtime/services/` of it, so no depth
+ * decides, and the package's own directory is not taken for the checkout.
  */
-const SOURCE_CHECKOUT = fs.realpathSync(fileURLToPath(new URL("../../..", import.meta.url)));
+const SOURCE_CHECKOUT = sourceCheckoutAbove(path.dirname(fileURLToPath(import.meta.url)));
 
 /**
  * The port a linked worktree's server listens on: a hash of its root path into
@@ -100,6 +102,25 @@ function isArchboardCheckout(root: string): boolean {
 		);
 	} catch {
 		return false;
+	}
+}
+
+/**
+ * The real path of the nearest archboard checkout at or above a directory.
+ * @param directory Where to start.
+ * @returns The checkout's real path.
+ * @throws {Error} When no archboard checkout is above the directory.
+ */
+function sourceCheckoutAbove(directory: string): string {
+	for (let current = path.resolve(directory); ; current = path.dirname(current)) {
+		if (isArchboardCheckout(current)) {
+			return fs.realpathSync(current);
+		}
+		if (path.dirname(current) === current) {
+			throw new Error(
+				`${directory} is not inside an archboard checkout, so it runs no source of one`,
+			);
+		}
 	}
 }
 

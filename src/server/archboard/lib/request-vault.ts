@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
-import { isVaultLayout } from "@/runtime/engine/vault-finder";
+import { isVaultLayout } from "@archboard/workspace/vault-finder";
 import { bodyOf, queryString } from "@/server/archboard/lib/request-board";
 
 /** The query parameter, and the body field, that name the vault. */

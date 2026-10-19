@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { VAULT_ORIGINS } from "@/runtime/engine/vault-finder";
+import { VAULT_ORIGINS } from "@archboard/workspace/vault-finder";
 
 const PaneRefSchema = z.looseObject({
 	paneId: z.string(),

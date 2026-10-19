@@ -21,7 +21,7 @@
 //     an empty one as a board. A semantic board keeps no images outside its
 //     note.
 
-import { unlinkDurably } from "@/runtime/engine/atomic-write";
+import { unlinkDurably } from "@archboard/workspace/atomic-write";
 import { claimWriterId, releaseClaim } from "@/runtime/engine/board-lock";
 import type { SemanticBoardLocation } from "@/runtime/semantic-board-store/lib/location";
 import {

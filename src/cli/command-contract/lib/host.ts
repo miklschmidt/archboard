@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
-import { writeFileAtomicExclusive } from "@/runtime/engine/atomic-write";
+import { writeFileAtomicExclusive } from "@archboard/workspace/atomic-write";
 import type { PendingArtifact } from "@/cli/command-contract/contract";
 
 /**

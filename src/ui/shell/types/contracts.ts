@@ -5,7 +5,7 @@
 import type { ReactNode } from "react";
 
 import type { CodeTargetNoticeAction } from "@/shared/code-target";
-import type { RepositoryEntry } from "@/shared/repositories/index";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { OutlineNode } from "@/ui/board-catalog";
 import type {
 	AgentActivityEntry,

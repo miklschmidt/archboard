@@ -6,7 +6,7 @@ import {
 	RepositoryListingSchema,
 	type CheckoutChoice,
 	type RepositoryListing,
-} from "@/shared/repositories/index";
+} from "@archboard/workspace/repositories";
 import { cancellable, json, mutation } from "@/ui/server-requests";
 
 /**

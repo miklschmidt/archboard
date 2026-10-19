@@ -4,8 +4,8 @@ import { join } from "node:path";
 
 import { resolveLocalCodeTargets, snapshotCheckoutAccess } from "../index.ts";
 import { resolveLocalCodeTargetsForDiagnostics, type ResolverDiagnostics } from "../diagnostics.ts";
-import { repoIdentityAt, repoRootOf } from "../../engine/git.ts";
-import { chosenCheckouts } from "../../engine/repo-registry.ts";
+import { repoIdentityAt, repoRootOf } from "@archboard/workspace/git";
+import { chosenCheckouts } from "@archboard/workspace/repo-registry";
 import { createResolverFixture, type ResolverFixture } from "./support.ts";
 
 let fixture: ResolverFixture;

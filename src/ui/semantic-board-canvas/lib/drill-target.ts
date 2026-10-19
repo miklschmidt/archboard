@@ -13,7 +13,7 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
-import type { RepositoryEntry } from "@/shared/repositories/index";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { readBoard } from "@/ui/semantic-board-canvas/lib/board-document";
 
 /** A repository a drill-down can name, as this machine lists it. */

@@ -75,7 +75,7 @@ jobs:
         run: >-
           bun test --isolate --max-concurrency=1
           packages/process/tests src/runtime/codex-process/tests
-          src/runtime/engine/tests/git-async.test.ts
+          packages/workspace/tests/runtime/clients/git-async.test.ts
           src/runtime/engine/tests/pidfile.test.ts
           src/runtime/headless-chromium/tests/startup.test.ts
           src/runtime/semantic-board-store/tests/policy.test.ts src/runtime/semantic-board-store/tests/renaming.test.ts

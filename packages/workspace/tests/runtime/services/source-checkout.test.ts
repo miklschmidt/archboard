@@ -4,10 +4,23 @@
 // a `.git` directory or file, a package.json and a `bin/archboard`.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	realpathSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkoutPort, handOffTarget, worktreePort } from "@/runtime/engine/source-checkout";
+import {
+	checkoutPort,
+	handOffTarget,
+	SOURCE_CHECKOUT,
+	worktreePort,
+} from "#runtime/services/source-checkout.ts";
 
 let scratch = "";
 
@@ -41,6 +54,13 @@ function checkout(name: string, options: { linked?: boolean; packageName?: strin
 	}
 	return root;
 }
+
+test("the running source is the checkout that holds packages/ and src/, not the package", () => {
+	// This file is packages/workspace/tests/runtime/services/ below the checkout.
+	expect(SOURCE_CHECKOUT).toBe(realpathSync(join(import.meta.dir, "..", "..", "..", "..", "..")));
+	expect(existsSync(join(SOURCE_CHECKOUT, "packages", "workspace", "package.json"))).toBe(true);
+	expect(existsSync(join(SOURCE_CHECKOUT, "src", "bin.ts"))).toBe(true);
+});
 
 test("the main checkout keeps 3000 and a linked worktree takes a stable port in 10000 to 19999", () => {
 	expect(checkoutPort(checkout("main"))).toBe(3000);

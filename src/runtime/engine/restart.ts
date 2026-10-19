@@ -5,7 +5,7 @@
 // The build is package.json's `build:frontend`, so the one place that says how
 // to build stays there.
 
-import { SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
+import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import { frontendBuild } from "@/runtime/engine/staleness";
 import {
 	type EnsureResult,

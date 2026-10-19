@@ -30,7 +30,7 @@
 // one, the move stops before it deletes the source note and says to run it again.
 // A lease that a stopped writer left on one of them is cleared before the pass.
 
-import { unlinkDurably } from "@/runtime/engine/atomic-write";
+import { unlinkDurably } from "@archboard/workspace/atomic-write";
 import {
 	BoardHeldError,
 	claimWriterId,

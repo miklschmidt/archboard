@@ -38,12 +38,12 @@ import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
 import { arrivedOnBoard, noBrowserBody } from "@/server/archboard/lib/pane-routes";
 import { vaultOfRequest } from "@/server/archboard/lib/request-vault";
 import { movePaneVault } from "@/server/archboard/lib/pane-vaults";
-import { placeOfVault, type VaultPlace } from "@/server/archboard/lib/repositories";
+import { placeOfVault, type VaultPlace } from "@archboard/workspace/repository-listing";
 import { followRegistry } from "@/server/archboard/lib/repository-routes";
 import {
 	chooseKnownCheckout,
 	repositoryOfVault as registeredRepositoryOf,
-} from "@/runtime/engine/repo-registry";
+} from "@archboard/workspace/repo-registry";
 
 /**
  * Point one pane at one board.

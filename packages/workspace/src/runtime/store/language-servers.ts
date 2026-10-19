@@ -7,16 +7,10 @@
 
 import path from "node:path";
 import { z } from "zod";
-
-/**
- * The languages with no server of Archboard's own. `c` is the whole C family:
- * C, C++ and Objective-C, which one clangd reads. TypeScript is not here: its
- * server needs no configuration.
- */
-const CONFIGURABLE_LANGUAGES = ["python", "csharp", "swift", "c"] as const;
-
-/** A language whose server an agent configures. */
-type ConfigurableLanguage = (typeof CONFIGURABLE_LANGUAGES)[number];
+import {
+	CONFIGURABLE_LANGUAGES,
+	type ConfigurableLanguage,
+} from "#shared/schemas/configurable-languages.ts";
 
 /**
  * A command: a name found on the `PATH`, or the absolute path of a program. A
@@ -70,10 +64,8 @@ function configureCommand(language: ConfigurableLanguage, repo?: string): string
 }
 
 export {
-	type ConfigurableLanguage,
 	type ConfiguredServer,
 	type LanguageServers,
-	CONFIGURABLE_LANGUAGES,
 	ConfiguredServerSchema,
 	LanguageServersSchema,
 	configureCommand,

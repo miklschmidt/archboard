@@ -2,8 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { OpenerSelection } from "@/shared/code-target";
-import { writeFileAtomic } from "@/runtime/engine/atomic-write";
-import { stateDir } from "@/runtime/engine/state-dir";
+import { writeFileAtomic } from "@archboard/workspace/atomic-write";
+import { stateDir } from "@archboard/workspace/state-dir";
 import { validateOpenerSelection } from "@/server/code-opener/lib/planning";
 
 interface OpenerConfigurationSuccess {

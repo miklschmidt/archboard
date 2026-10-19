@@ -24,7 +24,7 @@ import {
 	RepoRegistryError,
 	repositoryOfVault,
 	setLanguageServer,
-} from "@/runtime/engine/repo-registry";
+} from "#runtime/store/repo-registry.ts";
 
 /**
  * The root of the chosen checkout of an identity.

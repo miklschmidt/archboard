@@ -152,6 +152,17 @@ script that a Git command runs under, and callers find it with `import.meta.reso
 TERM-then-KILL escalation. The cleanup takes its error type from the caller, so the package does
 not import `codex-process`.
 
+The fourth is `workspace` (`@archboard/workspace`). It knows where a vault, a checkout and the state
+directory are. `./repositories` and `./configurable-languages` are in `shared/schemas/` and safe for
+the browser, with no Node import. The rest is Node-bound. `./language-servers` holds the validation
+of a server command, which uses `node:path`, so the browser never imports it. `./repo-registry`,
+`./atomic-write` and `./state-dir` read and write the registry and the state directory.
+`./git`, `./vault-finder` and `./source-checkout` find a repository, a vault and the checkout whose
+source runs. `./repository-listing` is the answer of `GET /api/repositories`. `source-checkout`
+finds the checkout by walking up to the nearest directory that is an archboard checkout, so the
+depth of the file decides nothing. `module-paths` is not here: the server derives its `src/` from
+its own depth.
+
 ## Vendor-owned data
 
 When a dependency owns a data structure and publishes its TypeScript type, that exported type is

@@ -8,7 +8,7 @@ import { parseBoardKey } from "@/runtime/engine/board";
 import { buildPanesReport } from "@/runtime/engine/panes";
 import { serverUrl } from "@/server/archboard/lib/listener-address";
 import { boardForPane, panes } from "@/server/archboard/lib/pane-registry";
-import { placeOfVault } from "@/server/archboard/lib/repositories";
+import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { statedVault } from "@/server/archboard/lib/request-vault";
 import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
 import type { SemanticPaneContext } from "@/shared/semantic-pane-context";

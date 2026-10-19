@@ -7,10 +7,10 @@ import {
 	registryPath,
 	RepoRegistryError,
 	type RegistryListing,
-} from "@/runtime/engine/repo-registry";
+} from "@archboard/workspace/repo-registry";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { commandLine } from "@/cli/commands/lib/command-line";
-import { LanguageServersSchema } from "@/shared/language-servers/index";
+import { LanguageServersSchema } from "@archboard/workspace/language-servers";
 
 const tail = z.array(z.string()).default([]);
 

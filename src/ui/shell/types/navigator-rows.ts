@@ -3,7 +3,7 @@
 // board's historical and shelved variants. Every row carries its depth and the
 // repository it is in, and nothing else places it.
 
-import type { RepositoryEntry } from "@/shared/repositories/index";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { OutlineNode } from "@/ui/board-catalog";
 import type { TextRange } from "@/ui/shell/lib/text-match";
 import type { ShellRepository } from "@/ui/shell/types/contracts";

@@ -75,7 +75,10 @@
 			"kind": "module",
 			"parent": "Board runtime",
 			"responsibility": "Temp file, fsync, rename",
-			"binding": { "repo": "archboard", "path": "src/runtime/engine/atomic-write.ts" }
+			"binding": {
+				"repo": "archboard",
+				"path": "packages/workspace/src/runtime/store/atomic-write.ts"
+			}
 		},
 		{
 			"as": "presentation",
