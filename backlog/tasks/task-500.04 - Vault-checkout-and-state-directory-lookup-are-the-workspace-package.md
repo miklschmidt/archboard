@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-19 01:59'
-updated_date: '2026-10-19 02:33'
+updated_date: '2026-10-19 02:48'
 labels: []
 dependencies:
   - TASK-500.03
@@ -38,3 +38,9 @@ workspace is layer 2 of docs/design/package-map.md: shared/repositories, shared/
 6. exports: the minimum used outside, including ./atomic-write. Move the tests of the moved files into packages/workspace/tests. If a moved file imports a file that stays in src/, stop and report it instead of working around it.
 7. Rewrite importers, read the diff, hand-fix the reported strings and the census fixture string in tests/system/process-contracts/codex-workbench-crash-replacement.test.ts. Update docs/agents/boundaries.md. bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Moved 13 sources and 4 tests into packages/workspace (bcf744b6d). shared/language-servers split: shared/schemas/configurable-languages.ts (browser safe, export ./configurable-languages) and runtime/store/language-servers.ts (node:path command validation, ./language-servers). SOURCE_CHECKOUT walks up to the nearest archboard checkout instead of counting depth; a test pins it. Browser safety traced with a throwaway import-graph script (0 node imports reachable from frontend/main.tsx and src/ui) and bun run build:frontend. Vault bindings in .archboard/vault still name the old paths.
+<!-- SECTION:NOTES:END -->
