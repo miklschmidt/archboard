@@ -8,7 +8,7 @@ import { z } from "zod";
 import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
 import { FootprintReplySchema, LocalityReplySchema } from "@archboard/code-intel/history";
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { prepareEvidenceFixture } from "./evidence-fixture.ts";
 import {
 	Terminal,
@@ -25,7 +25,7 @@ import {
 	type Page,
 	type Producer,
 	type TakeServer,
-	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 
 type Fixture = Awaited<ReturnType<typeof prepareEvidenceFixture>>;

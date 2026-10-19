@@ -2,9 +2,9 @@
 // filming steps, what is stopped on a signal, the producer contract, the take's server and the tools. Each producer imports this
 // surface rather than every sibling it uses.
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 export { Browser, now, type Page } from "./browser.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 export { encodeThumbnail, type Crop } from "./encode.ts";
 export {
 	Terminal,
@@ -17,9 +17,9 @@ export {
 	stageUrl,
 	withTake,
 	type Moment,
-	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./film.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 export { holding } from "./holding.ts";
 export {
 	attachmentFile,
@@ -27,9 +27,9 @@ export {
 	readmeFile,
 	type MakeContext,
 	type Producer,
-	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./producer.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 export { readBoard, startServer, type TakeServer, type TrackedVault } from "./server.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 export { ffmpeg, inOrder, pyftsubsetCommand, run, scratch, scratchRoot } from "./tools.ts";

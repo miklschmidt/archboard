@@ -12,7 +12,7 @@ import {
 	withTake,
 	type Page,
 	type Producer,
-	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 
 const BOARD = "Web shop";

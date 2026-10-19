@@ -14,7 +14,7 @@ import { dirname, join, relative } from "node:path";
 
 import { parseSemanticBoard, type SemanticBoard } from "@archboard/board/document";
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { ROOT, attempt, run, scratch, type Ran } from "./tools.ts";
 
 /** The tracked vaults a take can be filmed over. */

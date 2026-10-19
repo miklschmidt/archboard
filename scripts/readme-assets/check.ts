@@ -6,7 +6,7 @@
 
 import { resolve } from "node:path";
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { MANIFEST_PATH, assess, checkoutFacts, readManifest, type StaleAsset } from "./manifest.ts";
 
 const root = resolve(import.meta.dir, "../..");

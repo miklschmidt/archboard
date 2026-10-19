@@ -31,8 +31,8 @@ const evaluatedAt = Date.now();
 const loaded = new Set<string>();
 
 const repoRoot = SOURCE_CHECKOUT;
-/** The folders that hold source: the modules, the workspace packages and the apps. */
-const sourceRoots = ["src", "packages", "apps"].map((root) => path.join(repoRoot, root) + path.sep);
+/** The folders that hold source: the workspace packages and the apps. */
+const sourceRoots = ["packages", "apps"].map((root) => path.join(repoRoot, root) + path.sep);
 
 interface SourceState {
 	/** The real path of the checkout whose source this process runs (ADR 0049). */
@@ -55,7 +55,7 @@ interface SourceState {
  * can answer the question. It also cannot drift: a module added tomorrow is in
  * the registry the moment something imports it.
  *
- * Everything outside `src/`, `packages/` and `apps/` is dropped. Editing a dependency is not a thing
+ * Everything outside `packages/` and `apps/` is dropped. Editing a dependency is not a thing
  * this is about, and a change under `dist/` is the other half, below.
  * @returns When the source was read and which file has moved since, if any.
  */
@@ -88,7 +88,7 @@ function sourceState(): SourceState {
 }
 
 /**
- * Every TypeScript file of `src/`, `packages/` or `apps/` this process has evaluated so far, accumulated
+ * Every TypeScript file of `packages/` or `apps/` this process has evaluated so far, accumulated
  * across calls so a module that was loaded lazily is not forgotten.
  * @returns Absolute paths of the loaded source files.
  */

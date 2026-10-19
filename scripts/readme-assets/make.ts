@@ -13,7 +13,7 @@ import { join } from "node:path";
 
 import { resolveProjectCodexExecutable } from "@archboard/codex-app-server/process";
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { PRODUCERS } from "./assets.ts";
 import {
 	MANIFEST_PATH,
@@ -22,9 +22,9 @@ import {
 	writeManifest,
 	type ReadmeAsset,
 	type ReadmeManifest,
-	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./manifest.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { disagreements, inRepository, type Need, type Producer } from "./producer.ts";
 import {
 	ROOT,
@@ -34,7 +34,7 @@ import {
 	requireEncoders,
 	run,
 	toolLines,
-	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./tools.ts";
 
 /** The largest image GitHub takes as an attachment: an upload of 21 MB was refused with HTTP 422. */

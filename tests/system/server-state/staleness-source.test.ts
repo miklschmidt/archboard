@@ -65,7 +65,7 @@ describe.serial("source staleness", () => {
 		// checkout's source refuses (ADR 0049).
 		expect(first.source.checkout).toBe(realpathSync.native(repoRoot));
 		expect(first.source.stale).toBeFalse();
-		expect(first.source.newestFile).toMatch(/^(src|packages|apps)\//);
+		expect(first.source.newestFile).toMatch(/^(packages|apps)\//);
 		expect(Number.isNaN(Date.parse(first.source.evaluatedAt))).toBeFalse();
 		expect(Number.isNaN(Date.parse(first.source.newestAt))).toBeFalse();
 		const quiet = cli();
