@@ -145,7 +145,7 @@ test(
 					),
 				),
 			]);
-			expect(result.signal).toBeNull();
+			expect(result).toEqual({ code: 1, signal: null });
 			expect(readFileSync(server.outcomePath, "utf8")).toBe("listen-cancelled");
 
 			const childPid = records(fixture.logPath).find(

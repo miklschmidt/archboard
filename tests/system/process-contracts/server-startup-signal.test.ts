@@ -92,7 +92,9 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 		let output = "";
 		server.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));
 		server.stderr.on("data", (chunk: Buffer) => (output += chunk.toString()));
-		const serverExit = new Promise<void>((resolve) => server.once("exit", () => resolve()));
+		const serverExit = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
+			(resolve) => server.once("exit", (code, signal) => resolve({ code, signal })),
+		);
 		resources.defer(async () => {
 			if (!processExists(serverPid)) {
 				return;
@@ -118,7 +120,7 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 		}
 
 		server.kill("SIGTERM");
-		await Promise.race([
+		const stopped = await Promise.race([
 			serverExit,
 			new Promise<never>((_resolve, reject) =>
 				setTimeout(
@@ -127,6 +129,7 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 				),
 			),
 		]);
+		expect(stopped).toEqual({ code: 1, signal: null });
 		await waitForProcessExit(serverPid);
 		await waitForProcessExit(childPid);
 		expect(processExists(serverPid)).toBeFalse();
