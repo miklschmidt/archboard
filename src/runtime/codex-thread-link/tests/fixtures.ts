@@ -6,11 +6,11 @@ import type {
 } from "../../codex-epoch/index.js";
 import type {
 	SessionLoadedThreadPageResult,
-	SessionParams,
 	SessionThread,
 	SessionThreadPageResult,
 	SessionThreadSource,
-} from "../../codex-session/index.js";
+} from "@archboard/codex-app-server/session-responses";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
 import type { ThreadLinkCurrentEpoch, ThreadLinkStatus, ThreadLinkTarget } from "../index.js";
 
 interface ThreadOptions {

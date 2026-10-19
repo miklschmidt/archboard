@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CodexResponseByMethod } from "@archboard/codex-app-server/app-server-contract";
+import type { CodexResponseByMethod } from "#shared/protocol/app-server-contract.ts";
 import {
 	ConfigLayerMetadataSchema,
 	ConfigLayerSchema,
@@ -28,7 +28,7 @@ import {
 	ThreadSchema,
 	TurnStartSchema,
 } from "#runtime/schemas/thread-schemas.ts";
-import { QueuedSubmissionSchema } from "#runtime/schemas/item-schemas.ts";
+import { QueuedSubmissionSchema } from "#runtime/schemas/session-contract.ts";
 import type { ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
 import { FiniteNumberSchema, looseObject } from "#runtime/schemas/scalars.ts";
 import { codexIngressSchemas } from "#runtime/schemas/vendor-schema.ts";

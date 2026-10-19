@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export { CodexSafeI64Schema } from "@archboard/codex-app-server/app-server-contract";
+export { CodexSafeI64Schema } from "#shared/protocol/app-server-contract.ts";
 
 /** Use only where Codex's generated contract deliberately says JsonValue. */
 export const JsonValueSchema = z.json();
@@ -36,6 +36,11 @@ export const IntegerSchema = FiniteNumberSchema.int();
 export const NonNegativeIntegerSchema = IntegerSchema.nonnegative();
 export const RequestIdSchema = z.union([z.string(), IntegerSchema]);
 
+/** The optional cursor and limit of a paged list request. */
+export const NullablePageSchema = {
+	cursor: z.string().nullable().optional(),
+	limit: FiniteNumberSchema.nullable().optional(),
+} as const;
 export const NullableStringSchema = z.string().nullable();
 export const NullableNumberSchema = FiniteNumberSchema.nullable();
 export const NullableIntegerSchema = IntegerSchema.nullable();

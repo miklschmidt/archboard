@@ -3,7 +3,7 @@ import type {
 	RealtimeTranscriptRecord,
 } from "@/shared/codex-realtime-contract";
 import type { TurnId } from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type {
 	SpokenApprovalArmInput,
 	SpokenApprovalFallbackReason,

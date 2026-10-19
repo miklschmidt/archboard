@@ -176,9 +176,11 @@ checkout that holds a vault and the checkouts a reader of that vault resolves id
 `./code-target-link` chooses the URL a card opens.
 
 The sixth is `codex-app-server` (`@archboard/codex-app-server`). It is one private Codex app-server
-session over stdio, and it grows in the next task (the transport and session). It holds the shared
-files, the wire protocol and the process owner. Every export in `shared/` is safe for the browser,
-with no Node import. Every export in `runtime/` is Node-bound, and the browser imports none of them.
+session over stdio. It holds the shared files, the wire protocol, the process owner, the stdio
+transport and the session. `codex-semantic-context` joins it later, with the board package. Every
+export in `shared/` is safe for the browser, with no Node import. The exports in `runtime/` are
+runtime-only by policy: the browser imports none of them, though a file such as `./session-contract`
+holds only Zod schemas.
 
 - `shared/`: `./app-server-contract` is the authored wrapper over the generated protocol types. The
   generated tree is ignored by git. It lives in `src/shared/protocol/generated`, and
@@ -188,18 +190,27 @@ with no Node import. Every export in `runtime/` is Node-bound, and the browser i
   opt-in (`bun run test:opt-in:capacity`). `./workbench-identity` holds the identity brands, the
   correlations and the ledger.
 - `runtime/protocol/` and `runtime/schemas/` are the Zod schemas and decoders of the wire.
-  `./protocol-decoder` decodes each message, `./protocol-methods` lists the methods and
-  `./protocol-version` pins the Codex version. `./client-request-schemas`, `./request-schemas`,
-  `./response-schemas`, `./server-response-schemas`, `./authored-schemas`, `./core-schemas`,
-  `./item-schemas` and `./thread-schemas` are the schemas that code outside the package reads.
-  These subpaths are the ones outside code imports today, and most become private when the
-  transport and session move in.
+  `./protocol-decoder` decodes each message and `./protocol-version` pins the Codex version. Outside
+  tests build their notification fixtures with the decoder. The method lists, the request and
+  response schemas and the thread, item and core schemas are private. The package exported sixteen
+  subpaths before the transport and session moved in, and nine of them are private files now.
+  `./session-contract` is where code outside the package validates: the reply to a server request,
+  the supported login parameters, the queue parameters and a queued submission. It also names
+  `SessionUserInput`, the type of a user input that Codex reports. `./session-responses` holds the decoded
+  results of a session request, such as `SessionThread`.
+- `runtime/clients/` is the stdio transport. `./transport` creates it, `./transport-types` holds the
+  types of its requests, notifications and server requests, and `./transport-errors` holds its error
+  classes. `runtime/operations/` settles a request, routes a reverse request and adopts the identities
+  of a response. `runtime/protocol/wire.ts` decodes the JSON frames.
+- `runtime/services/` holds the session. `./session` creates it and `./session-api` holds its
+  interface, its options, its errors and its control symbol. The session's storage proof is in
+  `runtime/store/`. The transport's write-capacity test is opt-in too
+  (`bun run test:opt-in:capacity`).
 - `runtime/processes/` owns the `codex app-server` child. `./process` creates it and reports its
   lifecycle. `runtime/store/` prepares and locks the private Codex home. `runtime/services/`
-  holds the child's environment, its diagnostics buffer and the executable check. `./executable`
-  finds the Codex executable of the checkout whose source runs, through `SOURCE_CHECKOUT` of
-  `workspace`, and refuses a global one or one of another checkout. Nothing else in `runtime/` is
-  exported.
+  also holds the child's environment, its diagnostics buffer and the executable check.
+  `./executable` finds the Codex executable of the checkout whose source runs, through
+  `SOURCE_CHECKOUT` of `workspace`, and refuses a global one or one of another checkout.
 - A test that needs the process owner's injected dependencies imports
   `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
   package has no `./testing` export.

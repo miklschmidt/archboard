@@ -1,7 +1,7 @@
 import { WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 } from "@/runtime/codex-instructions";
 import type { EpochTransaction } from "@/runtime/codex-epoch";
-import { CodexSessionMutationError } from "@/runtime/codex-session";
-import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "@/runtime/codex-thread-tools";
 import type { OperationId, ThreadId, TurnId } from "@archboard/codex-app-server/workbench-identity";
 import {

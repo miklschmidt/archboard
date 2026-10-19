@@ -3,7 +3,7 @@ import {
 	type RealtimeTranscriptRecord,
 } from "@/shared/codex-realtime-contract";
 import type { TrustedIdentityDecoder } from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type { ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
 
 /**

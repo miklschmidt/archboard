@@ -1,4 +1,4 @@
-import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
 import {
 	COORDINATOR_REPLAY_LIMITS,
 	type CoordinatorToolCancellation,

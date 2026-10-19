@@ -1,4 +1,4 @@
-import type { SessionThreadItem, SessionTurn } from "../../../../runtime/codex-session/index.js";
+import type { SessionThreadItem, SessionTurn } from "@archboard/codex-app-server/session-responses";
 import type { ThreadLinkSnapshot } from "../../../../runtime/codex-thread-link/index.js";
 import type { IdentityAuthorities, ThreadId } from "@archboard/codex-app-server/workbench-identity";
 

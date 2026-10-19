@@ -5,7 +5,7 @@ import {
 	type CodexRealtimeAdapter,
 } from "../../../src/runtime/codex-realtime/index.js";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
-import type { SessionParams } from "../../../src/runtime/codex-session/index.js";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../src/runtime/codex-spoken-approval/index.js";
 import { createCodexBrowserModel } from "../../../src/shared/codex-browser-model/index.js";
 import {

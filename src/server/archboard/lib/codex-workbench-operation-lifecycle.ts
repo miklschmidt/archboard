@@ -19,8 +19,8 @@ import type {
 	DynamicWaitOwner,
 } from "@/runtime/codex-dynamic-tools";
 import type { CodexWaitGraph, WaitOwner } from "@/runtime/codex-wait-graph";
-import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
-import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 
 /**
  * The shared OperationId authority plus exact once-only terminal disposition.

@@ -5,12 +5,8 @@ import type {
 	EpochSnapshot,
 	EpochTransaction,
 } from "@/runtime/codex-epoch";
-import type {
-	CodexSession,
-	SessionParams,
-	SessionResponse,
-	SessionThread,
-} from "@/runtime/codex-session";
+import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session-api";
+import type { SessionResponse, SessionThread } from "@archboard/codex-app-server/session-responses";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
@@ -129,7 +125,7 @@ interface CodexWorkhorseStart {
 	readonly start: (input: WorkhorseStartInput) => Promise<WorkhorseSnapshot>;
 	readonly snapshot: () => WorkhorseSnapshot;
 }
-import type { CODEX_SESSION_THREAD_SOURCE } from "@/runtime/codex-session";
+import type { CODEX_SESSION_THREAD_SOURCE } from "@archboard/codex-app-server/session-api";
 
 export {
 	type WorkhorseThreadStartParams,

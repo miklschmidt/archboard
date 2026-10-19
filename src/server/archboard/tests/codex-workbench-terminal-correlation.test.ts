@@ -5,7 +5,7 @@ import {
 	type DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
 import { createCodexWaitGraph } from "../../../runtime/codex-wait-graph/index.js";
 import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";

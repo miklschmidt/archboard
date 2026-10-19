@@ -1,4 +1,7 @@
-import { CodexSessionMutationError, type CodexSession } from "@/runtime/codex-session";
+import {
+	CodexSessionMutationError,
+	type CodexSession,
+} from "@archboard/codex-app-server/session-api";
 import type {
 	CoordinatorCallbackContextPort,
 	CoordinatorCallbackMutationResult,

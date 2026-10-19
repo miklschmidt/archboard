@@ -9,7 +9,7 @@
 // coordinator turn belongs with the workhorses it gave work to, and a turn that gave none with the
 // conversation the tab showed when it started, so the session keeps both for each turn.
 
-import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type {
 	TrustedIdentityDecoder,
 	TurnId,

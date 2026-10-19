@@ -5,12 +5,15 @@ import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks
 import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
 import type { CodexCoordinator } from "@/runtime/codex-coordinator";
 import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
-import type { CodexSession } from "@/runtime/codex-session";
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
 import type { SemanticContextPublisher } from "@/runtime/codex-semantic-context";
 import type { CodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
 import type { ThreadUnload } from "@/runtime/codex-thread-unload";
-import type { CodexTransport, TransportServerNotification } from "@/runtime/codex-transport";
-import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import type {
+	CodexTransport,
+	TransportServerNotification,
+} from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
 import type { WorkhorseOperationEventListener } from "@/runtime/codex-workhorse-operations";
 import type {
 	ChildEpoch,

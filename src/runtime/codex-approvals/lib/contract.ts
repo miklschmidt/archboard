@@ -15,7 +15,7 @@ import type {
 	ReverseResponse,
 	TransportServerRequest,
 	TransportServerRequestListener,
-} from "@/runtime/codex-transport/server-requests";
+} from "@archboard/codex-app-server/transport-types";
 
 type Unsubscribe = () => void;
 

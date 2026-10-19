@@ -1,4 +1,4 @@
-import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import {
 	ATTENTION_FLAGS,
 	threadIdWire,

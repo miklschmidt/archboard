@@ -7,12 +7,12 @@ import type {
 	TerminalApprovalState,
 } from "@/runtime/codex-approvals/lib/contract";
 import { CodexApprovalError } from "@/runtime/codex-approvals/lib/contract";
-import type { ReverseResponse } from "@/runtime/codex-transport/server-requests";
-import { CodexServerResponseSchema } from "@archboard/codex-app-server/server-response-schemas";
+import type { ReverseResponse } from "@archboard/codex-app-server/transport-types";
+import { CodexServerResponseSchema } from "@archboard/codex-app-server/session-contract";
 import {
 	CodexTransportOwnershipError,
 	CodexTransportUsageError,
-} from "@/runtime/codex-transport/errors";
+} from "@archboard/codex-app-server/transport-errors";
 
 type RecordValue = Record<string, unknown>;
 

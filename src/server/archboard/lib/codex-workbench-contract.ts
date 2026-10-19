@@ -12,14 +12,14 @@ import type {
 } from "@/runtime/codex-dynamic-tools";
 import type { CodexEpochStoreOptions } from "@/runtime/codex-epoch";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
-import type { CodexSessionOptions } from "@/runtime/codex-session";
+import type { CodexSessionOptions } from "@archboard/codex-app-server/session-api";
 import type { CodexRealtimeAdapterOptions } from "@/runtime/codex-realtime";
 import type { SemanticContextPublisherOptions } from "@/runtime/codex-semantic-context";
 import type { CodexSpokenApprovalGateOptions } from "@/runtime/codex-spoken-approval";
 import type { CodexThreadContextControllerOptions } from "@/runtime/codex-thread-context";
 import type { CodexThreadLinkOptions } from "@/runtime/codex-thread-link";
-import type { CodexTransportOptions } from "@/runtime/codex-transport";
-import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { CodexTransportOptions } from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
 import type { WorkhorseOperationOptions } from "@/runtime/codex-workhorse-operations";
 import type { WorkhorseQueueOptions } from "@/runtime/codex-workhorse-queue";
 import type { CodexWorkhorseStartOptions } from "@/runtime/codex-workhorse-start";

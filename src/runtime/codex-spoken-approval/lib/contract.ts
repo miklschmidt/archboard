@@ -1,8 +1,11 @@
 import type { ApprovalSettlement, CodexApprovalBroker } from "@/runtime/codex-approvals";
 import type { CodexCoordinator } from "@/runtime/codex-coordinator";
 import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
-import type { CodexSession } from "@/runtime/codex-session";
-import type { DynamicServerRequest, TransportServerNotification } from "@/runtime/codex-transport";
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
+import type {
+	DynamicServerRequest,
+	TransportServerNotification,
+} from "@archboard/codex-app-server/transport-types";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type {
 	ChildEpoch,

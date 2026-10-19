@@ -1,5 +1,5 @@
 import { createCodexProcess } from "@archboard/codex-app-server/process";
-import { createCodexTransport } from "@/runtime/codex-transport";
+import { createCodexTransport } from "@archboard/codex-app-server/transport";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,

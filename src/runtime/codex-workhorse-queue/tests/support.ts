@@ -1,10 +1,10 @@
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
 import {
-	CodexSessionMutationError,
 	type SessionQueueAddResult,
 	type SessionQueueListResult,
 	type SessionQueueStartResult,
 	type SessionQueueUpdateResult,
-} from "../../codex-session/index.js";
+} from "@archboard/codex-app-server/session-responses";
 import { createTextUserInput } from "../../codex-instructions/index.js";
 import {
 	createCodexWorkhorseQueue,

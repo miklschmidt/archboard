@@ -1,7 +1,8 @@
 import type { ApprovalSettlement } from "@/runtime/codex-approvals";
 import type { DynamicToolRefusalReason } from "@/runtime/codex-coordinator-tool-contract";
 import { createTurnStartParams, type TurnStartParams } from "@/runtime/codex-instructions";
-import type { SessionParams, SessionResponse } from "@/runtime/codex-session";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
+import type { SessionResponse } from "@archboard/codex-app-server/session-responses";
 import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-contract";
 import {
 	type IdentityAuthority,

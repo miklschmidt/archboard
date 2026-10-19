@@ -13,7 +13,7 @@ import {
 	type DynamicToolApprovalRequest,
 	type DynamicToolApprovalDecision,
 } from "@/runtime/codex-dynamic-tools/lib/contract";
-import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
 import {
 	createPrompt,
 	dynamicEffectHash,

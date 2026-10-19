@@ -7,7 +7,7 @@ import {
 } from "@/runtime/codex-coordinator-tool-contract";
 import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "@/runtime/codex-instructions";
 import type { CanonicalNamespace } from "@/runtime/codex-coordinator-tool-contract";
-import type { CodexSession, SessionParams } from "@/runtime/codex-session";
+import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session-api";
 import {
 	CodexCoordinatorError,
 	type CoordinatorModel,

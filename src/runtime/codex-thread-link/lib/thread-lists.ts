@@ -1,9 +1,9 @@
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
 import type {
-	CodexSession,
 	SessionLoadedThreadPageResult,
 	SessionThread,
 	SessionThreadPageResult,
-} from "@/runtime/codex-session";
+} from "@archboard/codex-app-server/session-responses";
 import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import { CodexThreadLinkError } from "@/runtime/codex-thread-link/lib/contract";
 import {

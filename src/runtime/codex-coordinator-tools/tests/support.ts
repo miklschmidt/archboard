@@ -14,7 +14,7 @@ import type {
 import type {
 	DynamicServerRequest,
 	ReverseResponse,
-} from "../../codex-transport/server-requests.js";
+} from "@archboard/codex-app-server/transport-types";
 import {
 	COORDINATOR_TOOLS_OWNER,
 	createCodexCoordinatorTools,

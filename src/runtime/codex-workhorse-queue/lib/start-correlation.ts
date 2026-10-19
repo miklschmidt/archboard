@@ -1,4 +1,4 @@
-import type { SessionQueuedSubmission } from "@/runtime/codex-session";
+import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session-responses";
 import type { QueuedSubmissionId } from "@archboard/codex-app-server/workbench-identity";
 import {
 	CodexWorkhorseQueueError,

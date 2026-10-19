@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createCodexDynamicTools, decodeDynamicCursor } from "../index.js";
 import { parseDynamicToolCallResponse } from "../../codex-thread-tools/index.js";
-import { CodexSessionMutationError } from "../../codex-session/index.js";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
 import {
 	CALLER_WIRE_ID,
 	CHECKOUT_ROOT,

@@ -18,7 +18,7 @@ import type {
 	DynamicToolApprovalPort,
 	DynamicToolApprovalRequest,
 } from "@/runtime/codex-dynamic-tools";
-import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 
 interface PendingDynamicApproval {
 	readonly request: DynamicApprovalOwnerRequest;

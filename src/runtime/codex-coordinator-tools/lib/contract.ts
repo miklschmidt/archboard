@@ -12,7 +12,7 @@ import type {
 	DynamicServerRequest,
 	ReverseResponse,
 	TransportServerRequest,
-} from "@/runtime/codex-transport/server-requests";
+} from "@archboard/codex-app-server/transport-types";
 import type {
 	ChildEpoch,
 	ChildId,

@@ -7,7 +7,7 @@ import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../src/runtime/codex-spoke
 import type {
 	ReverseResponse,
 	TransportServerRequest,
-} from "../../../src/runtime/codex-transport/server-requests.js";
+} from "@archboard/codex-app-server/transport-types";
 import { createCodexBrowserModel } from "../../../src/shared/codex-browser-model/index.js";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import type {

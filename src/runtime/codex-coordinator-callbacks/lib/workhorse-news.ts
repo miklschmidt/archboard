@@ -9,7 +9,10 @@
 // workhorse it is about. What reaches the coordinator is one plain sentence; it reads the rest
 // through inspect_workhorse.
 
-import type { DynamicServerRequest, TransportServerNotification } from "@/runtime/codex-transport";
+import type {
+	DynamicServerRequest,
+	TransportServerNotification,
+} from "@archboard/codex-app-server/transport-types";
 import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CoordinatorCallback,

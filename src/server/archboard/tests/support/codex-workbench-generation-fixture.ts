@@ -1,8 +1,8 @@
 import {
 	CODEX_SESSION_CONTROL,
-	createCodexSession,
 	type ControlledCodexSession,
-} from "../../../../runtime/codex-session/index.js";
+} from "@archboard/codex-app-server/session-api";
+import { createCodexSession } from "@archboard/codex-app-server/session";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,

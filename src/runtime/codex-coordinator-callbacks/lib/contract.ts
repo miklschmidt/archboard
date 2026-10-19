@@ -1,5 +1,5 @@
 import type { CoordinatorSnapshot } from "@/runtime/codex-coordinator";
-import type { SessionParams } from "@/runtime/codex-session";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
 import type {
 	PaneFocusEvent,
 	PaneSelectionEvent,
@@ -27,7 +27,7 @@ import type {
 	CodexTransport,
 	DynamicServerRequest,
 	TransportServerNotification,
-} from "@/runtime/codex-transport";
+} from "@archboard/codex-app-server/transport-types";
 import type {
 	ChildEpoch,
 	ChildId,

@@ -11,7 +11,7 @@ import {
 	type ThreadId,
 } from "@archboard/codex-app-server/workbench-identity";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
-import type { SessionParams } from "../../codex-session/index.js";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
 import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import type {
 	DynamicServerRequest,
 	TransportServerRequest,
-} from "../../codex-transport/server-requests.js";
+} from "@archboard/codex-app-server/transport-types";
 import {
 	COORDINATOR_TOOLS_OWNER,
 	isCoordinatorToolRequest,

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import type { SessionParams, SessionResponse } from "../../codex-session/index.js";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
+import type { SessionResponse } from "@archboard/codex-app-server/session-responses";
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_NAMESPACE,

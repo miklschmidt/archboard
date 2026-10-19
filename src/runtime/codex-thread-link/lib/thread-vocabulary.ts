@@ -1,5 +1,5 @@
 import { ADDITIONAL_CONTEXT_POLICY } from "@/runtime/codex-instructions";
-import type { SessionThread } from "@/runtime/codex-session";
+import type { SessionThread } from "@archboard/codex-app-server/session-responses";
 import { CODEX_THREAD_STATUS_TYPES } from "@archboard/codex-app-server/app-server-contract";
 import {
 	CodexThreadLinkError,

@@ -19,7 +19,10 @@ import type {
 	WorkhorseNewsSituation,
 } from "@/runtime/codex-coordinator-callbacks";
 import { createTurnStartParams, type ArchboardContext } from "@/runtime/codex-instructions";
-import { CodexSessionMutationError, type CodexSession } from "@/runtime/codex-session";
+import {
+	CodexSessionMutationError,
+	type CodexSession,
+} from "@archboard/codex-app-server/session-api";
 
 /** What the port needs of the workbench around it. */
 interface OutcomeReportParts {

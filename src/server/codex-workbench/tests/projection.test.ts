@@ -8,7 +8,7 @@ import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-ap
 import type {
 	HumanApprovalMethod,
 	TransportServerRequest,
-} from "../../../runtime/codex-transport/server-requests.js";
+} from "@archboard/codex-app-server/transport-types";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import {
 	createIdentityAuthorities,

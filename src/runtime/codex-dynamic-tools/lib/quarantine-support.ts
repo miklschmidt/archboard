@@ -1,3 +1,4 @@
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 import {
 	logicalToolCallKey,
 	type JsonRpcRequestId,
@@ -7,10 +8,7 @@ import {
 	ARCHBOARD_APP_NAMESPACE,
 	type DynamicToolCallResponse,
 } from "@/runtime/codex-thread-tools";
-import {
-	CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP,
-	type DynamicServerRequest,
-} from "@/runtime/codex-transport";
+import { type DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
 import {
 	type CodexDynamicToolsOptions,
 	type DynamicEpochTeardownProof,
@@ -24,7 +22,8 @@ import type { DynamicOperationSettlement } from "@/runtime/codex-dynamic-tools/l
 import { validateDynamicCall } from "@/runtime/codex-dynamic-tools/lib/request-validation";
 import { invalidDynamicResponse } from "@/runtime/codex-dynamic-tools/lib/response";
 
-const DYNAMIC_QUARANTINE_WIRE_CAP = CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP;
+/** The transport's pending reverse-request ceiling, which logical quarantine shares. */
+const DYNAMIC_QUARANTINE_WIRE_CAP = CODEX_APP_SERVER_CAPACITY.outbound.pendingReverseRequests;
 
 interface Deferred<Value> {
 	readonly promise: Promise<Value>;

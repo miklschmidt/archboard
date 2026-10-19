@@ -9,8 +9,8 @@ import type {
 	SessionThreadStartResult,
 	SessionTurn,
 	SessionTurnResult,
-} from "../../codex-session/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
+} from "@archboard/codex-app-server/session-responses";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
 import type {
 	IdentityAuthorities,
 	ThreadId,

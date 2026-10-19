@@ -1,20 +1,20 @@
 import { z } from "zod";
 
-import type { CodexClientRequestParamsByMethod } from "@archboard/codex-app-server/app-server-contract";
+import type { CodexClientRequestParamsByMethod } from "#shared/protocol/app-server-contract.ts";
 import type {
 	LoginId,
 	QueuedSubmissionId,
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "#shared/rules/workbench-identity.ts";
 import {
 	ApprovalsReviewerSchema,
+	ClientUserInputSchema,
 	ConversationTextRoleSchema,
 	CyberAccessProgramSchema,
 	ImageDetailSchema,
 	inputImageReference,
-	userImageReference,
 	PersonalitySchema,
 	ReasoningEffortSchema,
 	ReasoningSummarySchema,
@@ -34,19 +34,18 @@ import {
 	ClientInfoSchema,
 	LoginAccountParamsSchema,
 } from "#runtime/protocol/request-schemas.ts";
+import { JsonRecordSchema, JsonValueSchema, NullablePageSchema } from "#runtime/schemas/scalars.ts";
 import {
-	FiniteNumberSchema,
-	JsonRecordSchema,
-	JsonValueSchema,
-	NonNegativeIntegerSchema,
-} from "#runtime/schemas/scalars.ts";
+	ThreadQueueAddParamsSchema,
+	ThreadQueueDeleteParamsSchema,
+	ThreadQueueListParamsSchema,
+	ThreadQueueReorderParamsSchema,
+	ThreadQueueStartParamsSchema,
+	ThreadQueueUpdateParamsSchema,
+} from "#runtime/schemas/session-contract.ts";
 import { TurnItemsViewSchema } from "#runtime/schemas/thread-schemas.ts";
 import { codexIngressSchemas } from "#runtime/schemas/vendor-schema.ts";
 
-const NullablePageSchema = {
-	cursor: z.string().nullable().optional(),
-	limit: FiniteNumberSchema.nullable().optional(),
-} as const;
 const SortDirectionSchema = z.enum(["asc", "desc"]);
 const ThreadSourceKindSchema = z.enum([
 	"cli",
@@ -92,34 +91,6 @@ const ClientSandboxPolicySchema = z.discriminatedUnion("type", [
 		excludeTmpdirEnvVar: z.boolean(),
 		excludeSlashTmp: z.boolean(),
 	}),
-]);
-const ClientTextElementSchema = z.strictObject({
-	byteRange: z.strictObject({ start: NonNegativeIntegerSchema, end: NonNegativeIntegerSchema }),
-	placeholder: z.string().nullable(),
-});
-const ClientUserInputSchema = z.discriminatedUnion("type", [
-	z.strictObject({
-		type: z.literal("text"),
-		text: z.string(),
-		text_elements: z.array(ClientTextElementSchema),
-	}),
-	z
-		.strictObject({
-			type: z.literal("image"),
-			detail: ImageDetailSchema.optional(),
-			url: z.string().optional(),
-			fileId: z.string().optional(),
-		})
-		.transform(userImageReference),
-	z.strictObject({
-		type: z.literal("localImage"),
-		detail: ImageDetailSchema.optional(),
-		path: z.string(),
-	}),
-	z.strictObject({ type: z.literal("audio"), url: z.string() }),
-	z.strictObject({ type: z.literal("localAudio"), path: z.string() }),
-	z.strictObject({ type: z.literal("skill"), name: z.string(), path: z.string() }),
-	z.strictObject({ type: z.literal("mention"), name: z.string(), path: z.string() }),
 ]);
 const ClientFunctionCallOutputBodySchema = z.union([
 	z.string(),
@@ -358,32 +329,6 @@ const TurnSteerParamsSchema = z.strictObject({
 	expectedTurnId: z.string(),
 });
 const TurnInterruptParamsSchema = z.strictObject({ threadId: z.string(), turnId: z.string() });
-const ThreadQueueAddParamsSchema = z.strictObject({
-	threadId: z.string(),
-	input: z.array(ClientUserInputSchema),
-	clientUserMessageId: z.string(),
-});
-const ThreadQueueListParamsSchema = z.strictObject({
-	threadId: z.string(),
-	...NullablePageSchema,
-});
-const ThreadQueueUpdateParamsSchema = z.strictObject({
-	threadId: z.string(),
-	queuedSubmissionId: z.string(),
-	input: z.array(ClientUserInputSchema),
-});
-const ThreadQueueDeleteParamsSchema = z.strictObject({
-	threadId: z.string(),
-	queuedSubmissionId: z.string(),
-});
-const ThreadQueueReorderParamsSchema = z.strictObject({
-	threadId: z.string(),
-	queuedSubmissionIds: z.array(z.string()),
-});
-const ThreadQueueStartParamsSchema = z.strictObject({
-	threadId: z.string(),
-	queuedSubmissionId: z.string().nullable().optional(),
-});
 const ThreadInjectItemsParamsSchema = z.strictObject({
 	threadId: z.string(),
 	items: z.array(JsonValueSchema),
@@ -480,13 +425,6 @@ type ClientRequestInputPayloads = {
 type ClientRequestInput<Method extends ClientRequestMethod> =
 	Method extends ClientRequestMethodWithoutParams ? undefined : ClientRequestInputPayloads[Method];
 
-type ThreadQueueAddParams = z.infer<typeof ThreadQueueAddParamsSchema>;
-type ThreadQueueListParams = z.infer<typeof ThreadQueueListParamsSchema>;
-type ThreadQueueUpdateParams = z.infer<typeof ThreadQueueUpdateParamsSchema>;
-type ThreadQueueDeleteParams = z.infer<typeof ThreadQueueDeleteParamsSchema>;
-type ThreadQueueReorderParams = z.infer<typeof ThreadQueueReorderParamsSchema>;
-type ThreadQueueStartParams = z.infer<typeof ThreadQueueStartParamsSchema>;
-
 type PreserveNullish<Value, Identity> = Identity | Extract<Value, null | undefined>;
 type BrandIdentityField<Key, Value> = Key extends "threadId" | "parentThreadId" | "ancestorThreadId"
 	? PreserveNullish<Value, ThreadId>
@@ -525,23 +463,11 @@ type CodexSessionRequestParams<Method extends ClientRequestMethod> =
 	CodexSessionRequestPayloads[Method];
 
 export {
-	ThreadQueueAddParamsSchema,
-	ThreadQueueListParamsSchema,
-	ThreadQueueUpdateParamsSchema,
-	ThreadQueueDeleteParamsSchema,
-	ThreadQueueReorderParamsSchema,
-	ThreadQueueStartParamsSchema,
 	CLIENT_REQUEST_PARAM_SCHEMAS,
 	type ClientRequestPayloads,
 	type ClientRequestParams,
 	type ClientRequestInputPayloads,
 	type ClientRequestInput,
-	type ThreadQueueAddParams,
-	type ThreadQueueListParams,
-	type ThreadQueueUpdateParams,
-	type ThreadQueueDeleteParams,
-	type ThreadQueueReorderParams,
-	type ThreadQueueStartParams,
 	type CodexSessionTurnSteerParams,
 	type CodexSessionRequestPayloads,
 	type CodexSessionRequestParams,

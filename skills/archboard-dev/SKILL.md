@@ -366,7 +366,7 @@ only at this point: nothing states a version that nobody re-read.
    required field to the fixtures. These include the fake Codex servers under
    `tests/system/server-state/fixtures` and `tests/system/process-contracts`,
    whose payloads only the system lane decodes.
-   Done: type-check and the `src/runtime/codex-*` tests pass.
+   Done: type-check, the `packages/codex-app-server` tests and the `src/runtime/codex-*` tests pass.
 5. Re-read every version-bound claim.
    `git grep -n "<old version>" -- ':!bun.lock' ':!backlog'` finds them. Code
    and TypeScript fixtures take the version from `CODEX_PROTOCOL_VERSION` or

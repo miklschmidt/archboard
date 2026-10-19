@@ -1,5 +1,5 @@
 import type { CodexEpochStore } from "@/runtime/codex-epoch";
-import type { CodexSession } from "@/runtime/codex-session";
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
 import type { ArchboardContext, ThreadInjectItemsParams } from "@/runtime/codex-instructions";
 import type {
 	CodexThreadLinkPort,

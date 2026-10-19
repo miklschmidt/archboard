@@ -1,5 +1,5 @@
 import type { EpochOperationRecord } from "@/runtime/codex-epoch";
-import type { SessionThread } from "@/runtime/codex-session";
+import type { SessionThread } from "@archboard/codex-app-server/session-responses";
 import type {
 	ThreadLink,
 	ThreadLinkCondition,

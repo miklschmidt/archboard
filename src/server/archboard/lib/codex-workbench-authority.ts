@@ -15,7 +15,7 @@ import {
 } from "@/runtime/codex-dynamic-tools";
 import type { CodexEpochStore, EpochOperationRecord } from "@/runtime/codex-epoch";
 import type { CodexThreadLinkPort, ThreadLinkClassification } from "@/runtime/codex-thread-link";
-import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 
 export interface ServerDynamicAuthorityOptions {

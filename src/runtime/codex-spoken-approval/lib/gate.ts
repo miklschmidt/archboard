@@ -7,7 +7,10 @@ import {
 	IdentityValidationError,
 	type TurnId,
 } from "@archboard/codex-app-server/workbench-identity";
-import type { DynamicServerRequest, TransportServerNotification } from "@/runtime/codex-transport";
+import type {
+	DynamicServerRequest,
+	TransportServerNotification,
+} from "@archboard/codex-app-server/transport-types";
 import type {
 	CodexSpokenApprovalGate,
 	CodexSpokenApprovalGateOptions,

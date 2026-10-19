@@ -5,7 +5,7 @@
 // output is carried as the operator's own terminal would show it, because the
 // browser on the loopback-bound server shares the operator's trust boundary.
 
-import type { SessionThreadItem, SessionTurn } from "@/runtime/codex-session";
+import type { SessionThreadItem, SessionTurn } from "@archboard/codex-app-server/session-responses";
 import type { CodexServerNotificationParamsByMethod } from "@archboard/codex-app-server/app-server-contract";
 import { BROWSER_TIMELINE_LIMITS as LIMITS } from "@/shared/codex-browser-model";
 import type {

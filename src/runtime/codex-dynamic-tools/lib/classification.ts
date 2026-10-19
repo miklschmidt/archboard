@@ -1,5 +1,5 @@
 import { GeneralThreadToolNameSchema } from "@/runtime/codex-thread-tools";
-import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
 import { CodexDynamicToolsError } from "@/runtime/codex-dynamic-tools/lib/errors";
 import type {
 	DynamicCallerAuthority,

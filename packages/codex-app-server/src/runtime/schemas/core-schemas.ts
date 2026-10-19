@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	CodexThreadStatusSchema,
 	CodexTurnStatusSchema,
-} from "@archboard/codex-app-server/app-server-contract";
+} from "#shared/protocol/app-server-contract.ts";
 
 import {
 	FiniteNumberSchema,
@@ -340,6 +340,35 @@ const UserInputSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("mention"), name: z.string(), path: z.string() }),
 ]);
 
+const ClientTextElementSchema = z.strictObject({
+	byteRange: z.strictObject({ start: NonNegativeIntegerSchema, end: NonNegativeIntegerSchema }),
+	placeholder: z.string().nullable(),
+});
+const ClientUserInputSchema = z.discriminatedUnion("type", [
+	z.strictObject({
+		type: z.literal("text"),
+		text: z.string(),
+		text_elements: z.array(ClientTextElementSchema),
+	}),
+	z
+		.strictObject({
+			type: z.literal("image"),
+			detail: ImageDetailSchema.optional(),
+			url: z.string().optional(),
+			fileId: z.string().optional(),
+		})
+		.transform(userImageReference),
+	z.strictObject({
+		type: z.literal("localImage"),
+		detail: ImageDetailSchema.optional(),
+		path: z.string(),
+	}),
+	z.strictObject({ type: z.literal("audio"), url: z.string() }),
+	z.strictObject({ type: z.literal("localAudio"), path: z.string() }),
+	z.strictObject({ type: z.literal("skill"), name: z.string(), path: z.string() }),
+	z.strictObject({ type: z.literal("mention"), name: z.string(), path: z.string() }),
+]);
+
 const InputImageSchema = looseObject({
 	type: z.literal("input_image"),
 	image_url: z.string().optional(),
@@ -413,6 +442,7 @@ export {
 	userImageReference,
 	inputImageReference,
 	UserInputSchema,
+	ClientUserInputSchema,
 	InputImageSchema,
 	FunctionCallOutputContentItemSchema,
 	FunctionCallOutputBodySchema,

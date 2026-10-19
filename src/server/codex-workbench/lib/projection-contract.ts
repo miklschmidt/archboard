@@ -35,7 +35,7 @@ import type {
 	SessionResponsePayloads,
 	SessionThreadItem,
 	SessionTurn,
-} from "@/runtime/codex-session";
+} from "@archboard/codex-app-server/session-responses";
 import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
 import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-contract";
 import type { SpokenApprovalSnapshot } from "@/runtime/codex-spoken-approval";

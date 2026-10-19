@@ -1,4 +1,4 @@
-import { CODEX_SESSION_CONTROL } from "@/runtime/codex-session";
+import { CODEX_SESSION_CONTROL } from "@archboard/codex-app-server/session-api";
 import {
 	createCodexWorkbenchGenerationLifecycle,
 	type CodexWorkbenchComponents,

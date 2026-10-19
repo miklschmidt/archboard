@@ -3,7 +3,7 @@ import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-id
 import type {
 	ReverseResponse,
 	TransportServerRequest,
-} from "../../codex-transport/server-requests.js";
+} from "@archboard/codex-app-server/transport-types";
 import {
 	applyPatchRequest,
 	commandRequestWithAvailableDecisions,

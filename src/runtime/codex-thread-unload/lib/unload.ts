@@ -1,10 +1,9 @@
 import type {
 	CodexSession,
 	SessionNotificationHandler,
-	SessionResponse,
-	SessionThread,
-} from "@/runtime/codex-session";
-import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+} from "@archboard/codex-app-server/session-api";
+import type { SessionResponse, SessionThread } from "@archboard/codex-app-server/session-responses";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type {
 	IdentityValidator,
 	ThreadId,

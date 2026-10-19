@@ -14,17 +14,15 @@
 		"./app-server-capacity": "./src/shared/constants/app-server-capacity.ts",
 		"./workbench-identity": "./src/shared/rules/workbench-identity.ts",
 		"./protocol-version": "./src/runtime/protocol/protocol-version.ts",
-		"./protocol-methods": "./src/runtime/protocol/protocol-methods.ts",
 		"./protocol-decoder": "./src/runtime/protocol/protocol-decoder.ts",
-		"./client-request-schemas": "./src/runtime/protocol/client-request-schemas.ts",
-		"./request-schemas": "./src/runtime/protocol/request-schemas.ts",
-		"./response-schemas": "./src/runtime/protocol/response-schemas.ts",
-		"./server-response-schemas": "./src/runtime/protocol/server-response-schemas.ts",
-		"./authored-schemas": "./src/runtime/schemas/authored-schemas.ts",
-		"./core-schemas": "./src/runtime/schemas/core-schemas.ts",
-		"./item-schemas": "./src/runtime/schemas/item-schemas.ts",
-		"./thread-schemas": "./src/runtime/schemas/thread-schemas.ts",
+		"./session-contract": "./src/runtime/schemas/session-contract.ts",
 		"./process": "./src/runtime/processes/process.ts",
-		"./executable": "./src/runtime/services/executable.ts"
+		"./executable": "./src/runtime/services/executable.ts",
+		"./transport": "./src/runtime/clients/transport.ts",
+		"./transport-types": "./src/runtime/clients/transport-types.ts",
+		"./transport-errors": "./src/runtime/clients/transport-errors.ts",
+		"./session": "./src/runtime/services/session.ts",
+		"./session-api": "./src/runtime/services/session-api.ts",
+		"./session-responses": "./src/runtime/schemas/session-responses.ts"
 	}
 }

@@ -1,6 +1,6 @@
 import { describe, expect, jest, test } from "bun:test";
 
-import { CodexSessionMutationError } from "../../codex-session/index.js";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
 import type {
 	CodexCoordinatorError,
 	CoordinatorEffectiveSettings,

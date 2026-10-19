@@ -13,8 +13,8 @@ import {
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
 } from "@/runtime/codex-instructions";
-import { CODEX_SESSION_THREAD_SOURCE } from "@/runtime/codex-session";
-import type { SessionParams } from "@/runtime/codex-session";
+import { CODEX_SESSION_THREAD_SOURCE } from "@archboard/codex-app-server/session-api";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
 
 const WORKHORSE_OPERATION_KIND = "create_thread";
 const WORKHORSE_CLEANUP_OPERATION_KIND = "thread_delete";

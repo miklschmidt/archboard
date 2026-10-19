@@ -264,12 +264,6 @@ const ThreadItemEntrySchema = looseObject({
 	completedAtMs: FiniteNumberSchema.nullable(),
 });
 
-const QueuedSubmissionSchema = looseObject({
-	id: z.string(),
-	input: z.array(UserInputSchema),
-	clientUserMessageId: z.string(),
-});
-
 const RealtimeInitialItemSchema = looseObject({
 	role: ConversationTextRoleSchema,
 	text: z.string(),
@@ -290,7 +284,6 @@ export {
 	DynamicToolCallOutputContentItemSchema,
 	ThreadItemSchema,
 	ThreadItemEntrySchema,
-	QueuedSubmissionSchema,
 	RealtimeInitialItemSchema,
 	RealtimeOutputAudioDeltaSchema,
 };

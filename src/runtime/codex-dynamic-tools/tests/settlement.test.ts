@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CodexSessionMutationError } from "../../codex-session/index.js";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
 import { parseDynamicToolCallResponse } from "../../codex-thread-tools/index.js";
 import { createCodexDynamicTools } from "../index.js";
 import {
