@@ -9,7 +9,7 @@
 // press does nothing, and the tooltip and the name say why. It is not taken
 // out of the row, so the row does not change size with what the page is doing.
 
-import { cn } from "#ui/components/class-names.ts";
+import { cn } from "#ui/rules/class-names.ts";
 import type { JSX, ReactNode } from "react";
 
 import { buttonVariants } from "#ui/components/button.tsx";

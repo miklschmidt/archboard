@@ -15,7 +15,7 @@
 		"components": "@/../packages/ui-kit/src/ui/components",
 		"ui": "@/../packages/ui-kit/src/ui/components",
 		"lib": "@/../packages/ui-kit/src/ui/components",
-		"utils": "@/../packages/ui-kit/src/ui/components/class-names",
+		"utils": "@/../packages/ui-kit/src/ui/rules/class-names",
 		"hooks": "@/../packages/ui-kit/src/ui/components"
 	},
 	"rtl": false,

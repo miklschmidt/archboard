@@ -410,6 +410,7 @@ class FakeBrowser extends TrackedTarget implements RealtimeMediaDevices {
 	newElement(): { readonly audio: FakeAudio; readonly element: HTMLMediaElement } {
 		const audio = new FakeAudio(this);
 		this.audios.push(audio);
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The neutral realtime server contract hands the session a browser media element; this fake implements exactly the members the session touches, and the WeakMap below is how the fake environment finds it again.
 		const element = audio as unknown as HTMLMediaElement;
 		this.elements.set(element, audio);
 		return { audio, element };

@@ -28,6 +28,12 @@ Use concern folders inside a module as needed:
 | `types/`      | Type definitions                                 |
 | `tests/`      | Module contract tests and their private support  |
 
+A package's `ui/` area has no module root. It keeps role folders directly
+below `ui/` (`api/`, `clients/`, `components/`, `constants/`, `hooks/`,
+`rules/`, `state/`, `workers/`) with behavior folders below a role. Its `api/`
+files are its public interface, so they may re-export hooks. The same naming
+rules hold, and the tests in `tests/ui/` are held to the UI lint policy.
+
 All these subfolders remain private. At the module root, expose only the
 entrypoints that callers need. An intentionally public hook, component or API
 can live there.

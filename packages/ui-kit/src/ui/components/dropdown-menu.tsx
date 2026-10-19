@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
-import { cn } from "#ui/components/class-names.ts";
+import { cn } from "#ui/rules/class-names.ts";
 import { RiArrowRightSLine, RiCheckLine } from "@remixicon/react";
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {

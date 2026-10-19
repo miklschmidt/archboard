@@ -416,6 +416,7 @@ class FakeMediaBrowser extends EventTarget implements RealtimeMediaDevices {
 			create: () => {
 				const audio = new FakeAudioElement();
 				this.audio.push(audio);
+				// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The owner mounts a browser audio element and hands it to the neutral realtime server contract; this fake implements exactly the members the owner and the session touch, and the WeakMap is how the fake environment finds it again.
 				const element = audio as unknown as HTMLAudioElement;
 				this.elements.set(element, audio);
 				return element;

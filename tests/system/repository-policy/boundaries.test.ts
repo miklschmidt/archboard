@@ -453,6 +453,7 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 		);
 	});
 
+	// The tests of a package's ui area are linted by the UI policy: ui-lint-policy.test.ts.
 	test("the area directions hold between the folders of one package", async () => {
 		await withProject(
 			{
@@ -461,15 +462,12 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					'import { work } from "#runtime/work.ts";\nexport { work };\n',
 				"packages/alpha/src/ui/screen.ts":
 					'import { work } from "#runtime/work.ts";\nexport { work };\n',
-				"packages/alpha/tests/ui/screen.test.ts":
-					'import { work } from "#runtime/work.ts";\nexport { work };\n',
 				"src/shared/screen/index.ts": 'import { beta } from "@archboard/beta";\nexport { beta };\n',
 			},
 			(root) => {
 				for (const file of [
 					"packages/alpha/src/shared/leak.ts",
 					"packages/alpha/src/ui/screen.ts",
-					"packages/alpha/tests/ui/screen.test.ts",
 					"src/shared/screen/index.ts",
 				]) {
 					expectRule(lint(root, [file]), "archboard(import-boundaries)");
