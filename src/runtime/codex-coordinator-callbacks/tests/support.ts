@@ -21,7 +21,7 @@ import {
 	restoreIdentityAuthorities,
 	type IdentityAuthorities,
 	type LogicalToolCallCorrelation,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,

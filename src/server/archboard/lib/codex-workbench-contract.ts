@@ -23,7 +23,7 @@ import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requ
 import type { WorkhorseOperationOptions } from "@/runtime/codex-workhorse-operations";
 import type { WorkhorseQueueOptions } from "@/runtime/codex-workhorse-queue";
 import type { CodexWorkhorseStartOptions } from "@/runtime/codex-workhorse-start";
-import type { IdentityLedger, OperationId } from "@/shared/codex-workbench-identity";
+import type { IdentityLedger, OperationId } from "@archboard/codex-app-server/workbench-identity";
 import type { CodexWorkbenchGatewayOptions } from "@/server/codex-workbench";
 import type {
 	CodexWorkbenchComponents,

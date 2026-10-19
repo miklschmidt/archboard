@@ -23,7 +23,7 @@ import type {
 	TrustedIdentityDecoder,
 	TrustedOperationIdDecoder,
 	WireRequestCorrelation,
-} from "../index.js";
+} from "#shared/rules/workbench-identity.ts";
 
 type IsAssignable<From, To> = [From] extends [To] ? true : false;
 type Equal<A, B> = [A, B] extends [B, A] ? true : false;

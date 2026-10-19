@@ -11,7 +11,7 @@ import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
 	type ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	BROWSER_SNAPSHOT_MAX_BYTES,
 	BROWSER_SNAPSHOT_MIN_BYTES,

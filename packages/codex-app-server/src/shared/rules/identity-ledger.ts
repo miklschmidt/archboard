@@ -9,12 +9,12 @@ import {
 	type LogicalToolCallCorrelationInput,
 	type WireRequestCorrelation,
 	type WireRequestCorrelationInput,
-} from "@/shared/codex-workbench-identity/lib/identity-correlations";
+} from "#shared/rules/identity-correlations.ts";
 import {
 	OPERATION_ID_MAX_ISSUE_ATTEMPTS,
 	operationWireValue,
 	requireOperationToken,
-} from "@/shared/codex-workbench-identity/lib/identity-operations";
+} from "#shared/rules/identity-operations.ts";
 import {
 	encodeRawIdentity,
 	encodeRawJsonRpcRequestId,
@@ -39,7 +39,7 @@ import {
 	type QueuedSubmissionId,
 	type ThreadId,
 	type TurnId,
-} from "@/shared/codex-workbench-identity/lib/identity-values";
+} from "#shared/schemas/identity-values.ts";
 
 /**
  * Process-lifetime identity facts and issuance history. The ledger is data only;

@@ -2,11 +2,11 @@ import type {
 	CodexClientNotificationByMethod,
 	CodexResponseByMethod,
 	CodexServerNotificationParamsByMethod,
-} from "@/shared/codex-app-server-contract";
+} from "@archboard/codex-app-server/app-server-contract";
 import {
 	CODEX_CLIENT_REQUEST_METHODS,
 	CODEX_SERVER_REQUEST_METHODS,
-} from "@/shared/codex-app-server-contract";
+} from "@archboard/codex-app-server/app-server-contract";
 
 /** Supported client-to-server requests from the generated Codex union. */
 const CLIENT_REQUEST_METHODS = CODEX_CLIENT_REQUEST_METHODS;

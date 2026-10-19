@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import type { WorkhorseOperationEvent } from "../index.js";
 import { notification, rawTurn, rejected } from "./evidence.js";
 import { useFixtureGroup } from "./fixture-group.js";

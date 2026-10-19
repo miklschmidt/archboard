@@ -19,7 +19,7 @@ import type {
 	IdentityValidator,
 	ThreadId,
 	TrustedIdentityDecoder,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 
 type CoordinatorModel = SessionResponse<"model/list">["data"][number];
 type CoordinatorStartResponse = SessionResponse<"thread/start">;

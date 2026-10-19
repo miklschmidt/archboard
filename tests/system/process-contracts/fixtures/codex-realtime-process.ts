@@ -30,7 +30,7 @@ import {
 	createIdentityAuthority,
 	type IdentityAuthority,
 	type WireRequestCorrelation,
-} from "../../../../src/shared/codex-workbench-identity/index.ts";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { RealtimeSemanticEvent } from "../../../../src/shared/codex-realtime-contract/index.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../../..");

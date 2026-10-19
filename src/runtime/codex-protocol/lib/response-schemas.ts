@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CodexResponseByMethod } from "@/shared/codex-app-server-contract";
+import type { CodexResponseByMethod } from "@archboard/codex-app-server/app-server-contract";
 import {
 	ConfigLayerMetadataSchema,
 	ConfigLayerSchema,

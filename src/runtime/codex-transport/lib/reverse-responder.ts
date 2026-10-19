@@ -16,7 +16,7 @@ import type {
 } from "@/runtime/codex-transport/lib/types";
 import { hasOwn, isRecord, jsonLine } from "@/runtime/codex-transport/lib/wire";
 import { cloneAndFreeze } from "@/runtime/codex-transport/lib/public-values";
-import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 
 interface ReverseResponderOptions {
 	readonly reverseRequests: Map<string, ReverseRecord>;

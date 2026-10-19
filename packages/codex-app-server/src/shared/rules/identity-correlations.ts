@@ -14,7 +14,7 @@ import {
 	type JsonRpcRequestId,
 	type ThreadId,
 	type TurnId,
-} from "@/shared/codex-workbench-identity/lib/identity-values";
+} from "#shared/schemas/identity-values.ts";
 
 const TEXT_LIMIT = 256;
 

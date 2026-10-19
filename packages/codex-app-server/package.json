@@ -1,0 +1,17 @@
+{
+	"name": "@archboard/codex-app-server",
+	"version": "0.0.0",
+	"private": true,
+	"description": "One private Codex app-server session over stdio: the generated protocol contract and its wrapper, the connection capacity, and the workbench identities.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./app-server-contract": "./src/shared/protocol/app-server-contract.ts",
+		"./app-server-capacity": "./src/shared/constants/app-server-capacity.ts",
+		"./workbench-identity": "./src/shared/rules/workbench-identity.ts"
+	}
+}

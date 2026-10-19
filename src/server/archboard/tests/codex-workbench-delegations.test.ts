@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import {
 	createIdentityAuthorities,
 	type TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	coordinatorTurnsShownIn,
 	MAX_DELEGATIONS,

@@ -9,7 +9,7 @@ import {
 	type EpochTransaction,
 } from "../../codex-epoch/index.js";
 import type { CoordinatorEpochPort } from "../index.js";
-import type { IdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 
 class FakeEpoch implements CoordinatorEpochPort {
 	readonly records: EpochOperationRecord[] = [];

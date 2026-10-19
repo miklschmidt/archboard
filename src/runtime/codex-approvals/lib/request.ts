@@ -27,7 +27,7 @@ import {
 	type ItemRequest,
 	type LegacyRequest,
 } from "@/runtime/codex-approvals/lib/request-identity";
-import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
+import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
 
 /** The part of a request a binding is completed from. */

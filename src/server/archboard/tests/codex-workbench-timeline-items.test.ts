@@ -4,7 +4,7 @@ import type { SessionThreadItem } from "../../../runtime/codex-session/index.js"
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import { createServerTimelineOwner } from "../codex-workbench-adapters.js";
 import {
 	dynamicToolCallItem,

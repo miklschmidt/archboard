@@ -9,8 +9,8 @@ import {
 	type CodexCoordinatorToolsOptions,
 } from "@/runtime/codex-coordinator-tools/lib/contract";
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
-import type { LogicalToolCallCorrelation } from "@/shared/codex-workbench-identity";
-import { IdentityValidationError } from "@/shared/codex-workbench-identity";
+import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/workbench-identity";
+import { IdentityValidationError } from "@archboard/codex-app-server/workbench-identity";
 import { z } from "zod";
 
 class CoordinatorToolValidationError extends Error {

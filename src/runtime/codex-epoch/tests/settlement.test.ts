@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import { createCodexEpochStore, type EpochStageInput } from "../index.js";
 
 const INSTRUCTION_HASH = "1".repeat(64);

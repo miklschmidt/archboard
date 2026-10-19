@@ -6,7 +6,7 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 
 /** The only queue operations exposed to Archboard callers. */
 const WORKHORSE_QUEUE_OPERATIONS = Object.freeze([

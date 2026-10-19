@@ -1,5 +1,5 @@
 import type { BrowserActionContext, BrowserThreadLinkActions } from "@/server/codex-workbench";
-import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
+import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,

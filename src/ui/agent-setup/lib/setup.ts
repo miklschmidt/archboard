@@ -8,7 +8,7 @@
 // reason, and nothing is retried behind the person's back.
 
 import type { BrowserVoicePresentation } from "@/shared/codex-browser-model";
-import type { LoginId } from "@/shared/codex-workbench-identity";
+import type { LoginId } from "@archboard/codex-app-server/workbench-identity";
 import type { WorkbenchComposerSubmissionResult } from "@/ui/workbench-composer";
 import type { ThreadLinkLoginParams } from "@/ui/workbench-thread-link/transport-port";
 import type { BrowserWorkbenchState } from "@/ui/workbench-transport";

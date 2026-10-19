@@ -23,7 +23,7 @@ import {
 	type ChildId,
 	type IdentityAuthorities,
 	type ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	createCodexWorkhorseStart,
 	type CodexWorkhorseStart,

@@ -5,7 +5,7 @@ import {
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
 } from "../../../shared/codex-realtime-contract/index.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { fitBrowserSnapshotBounded } from "../index.js";
 import { startCommand } from "./helpers.js";
 import { createGatewayHarness } from "./support.js";

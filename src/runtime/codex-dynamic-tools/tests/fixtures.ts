@@ -15,7 +15,7 @@ import type {
 	IdentityAuthorities,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,

@@ -6,7 +6,7 @@ import {
 import type { CodexTransport } from "@/runtime/codex-transport";
 import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
 import { CodexSessionError, type SessionServerRequest } from "@/runtime/codex-session/lib/contract";
-import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
+import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 
 const INVALID_PARAMS_CODE = -32602;
 

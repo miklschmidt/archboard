@@ -18,8 +18,8 @@ import type {
 	OperationId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import type { GeneralThreadToolName } from "../../codex-thread-tools/index.js";
 import type {
 	CodexDynamicToolsOptions,

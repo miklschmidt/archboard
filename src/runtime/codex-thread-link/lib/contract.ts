@@ -13,7 +13,7 @@ import type {
 	SessionThreadPageResult,
 	SessionThreadSource,
 } from "@/runtime/codex-session";
-import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
+import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	ThreadLinkReason as AuthoredThreadLinkReason,
 	ThreadLinkState as AuthoredThreadLinkState,

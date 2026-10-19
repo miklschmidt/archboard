@@ -9,7 +9,7 @@ import type {
 	IdentityValidator,
 	ThreadId,
 	TrustedIdentityDecoder,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 
 /**
  * What became of a thread given up: Codex's answer to its unsubscribe, or why the thread could not

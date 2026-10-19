@@ -263,7 +263,8 @@ test("an edit that landed and left a proposal in disagreement carries its repair
 });
 
 test("the context an operation delivers is the board's grounding, not a summary of it", async () => {
-	const { createIdentityAuthority } = await import("@/shared/codex-workbench-identity");
+	const { createIdentityAuthority } =
+		await import("@archboard/codex-app-server/workbench-identity");
 	const { createSemanticContextPublisher } = await import("@/runtime/codex-semantic-context");
 	const authority = createIdentityAuthority();
 	const gateway = nodeId("Front door");

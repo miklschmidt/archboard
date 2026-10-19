@@ -1,13 +1,13 @@
 import { z } from "zod";
 
-import type { CodexClientRequestParamsByMethod } from "@/shared/codex-app-server-contract";
+import type { CodexClientRequestParamsByMethod } from "@archboard/codex-app-server/app-server-contract";
 import type {
 	LoginId,
 	QueuedSubmissionId,
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	ApprovalsReviewerSchema,
 	ConversationTextRoleSchema,

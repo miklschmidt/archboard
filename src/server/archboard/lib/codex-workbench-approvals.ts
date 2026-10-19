@@ -12,7 +12,7 @@ import type {
 	BrowserCommandId,
 	IdentityAuthorities,
 	ThreadId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	DynamicToolApprovalDecision,
 	DynamicToolApprovalPort,

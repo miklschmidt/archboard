@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export { CodexSafeI64Schema } from "@/shared/codex-app-server-contract";
+export { CodexSafeI64Schema } from "@archboard/codex-app-server/app-server-contract";
 
 /** Use only where Codex's generated contract deliberately says JsonValue. */
 export const JsonValueSchema = z.json();

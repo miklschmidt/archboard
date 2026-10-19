@@ -4,7 +4,7 @@ import {
 	type ThreadLinkBindingSnapshot,
 	type ThreadLinkSnapshot,
 } from "@/runtime/codex-thread-link";
-import type { ChildEpoch, ChildId } from "@/shared/codex-workbench-identity";
+import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/workbench-identity";
 import {
 	CodexThreadContextControllerError,
 	type CodexThreadContextBinding,

@@ -1,7 +1,7 @@
 import type { EpochOperationRecord } from "@/runtime/codex-epoch";
 import type { SessionThread } from "@/runtime/codex-session";
 import { CODEX_SESSION_THREAD_SOURCE } from "@/runtime/codex-session";
-import type { ThreadId } from "@/shared/codex-workbench-identity";
+import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import { cloneAndFreeze } from "@/runtime/codex-thread-link/lib/provenance";
 import {
 	CodexThreadLinkError,

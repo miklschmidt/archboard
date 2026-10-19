@@ -5,7 +5,7 @@ import type {
 	DynamicToolCallId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { DynamicMutationToolName } from "@/runtime/codex-dynamic-tools/lib/vocabulary";
 
 interface DynamicWaitOwner extends WaitOwner {

@@ -7,7 +7,7 @@ import type {
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
-} from "../../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { CodexWorkbenchGateway } from "../../../codex-workbench/index.js";
 import type {
 	CodexWorkbenchGeneration,

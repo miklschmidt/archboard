@@ -1,4 +1,4 @@
-import type { IdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	EpochOperationOutcome,
 	EpochOperationRecord,

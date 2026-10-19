@@ -7,7 +7,7 @@ import {
 	createIdentityAuthority,
 	type IdentityAuthority,
 	type WireRequestCorrelation,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import { createCodexSession, type CodexSession, type CodexSessionStorage } from "../index.js";
 import type { ResponseMethod, ResponsePayloads } from "../../codex-protocol/index.js";
 import type {

@@ -6,7 +6,10 @@ import type {
 	BrowserSnapshot,
 	DeliveryOutcome,
 } from "@/shared/codex-browser-model";
-import type { BrowserCommandId, JsonRpcRequestId } from "@/shared/codex-workbench-identity";
+import type {
+	BrowserCommandId,
+	JsonRpcRequestId,
+} from "@archboard/codex-app-server/workbench-identity";
 import { parseApprovalResponse } from "@/runtime/codex-approvals";
 import { SupportedLoginAccountParamsSchema } from "@/runtime/codex-protocol";
 import type { BrowserLeaseManager } from "@/server/codex-workbench/lib/lease";

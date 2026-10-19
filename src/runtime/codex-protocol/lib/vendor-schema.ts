@@ -1,6 +1,6 @@
 import type { z } from "zod";
 
-import type { CodexIngressConformance } from "@/shared/codex-app-server-contract";
+import type { CodexIngressConformance } from "@archboard/codex-app-server/app-server-contract";
 
 type SchemaConformance<Wire, Schema extends z.ZodType> = Schema &
 	CodexIngressConformance<Wire, z.input<Schema>, z.output<Schema>>;

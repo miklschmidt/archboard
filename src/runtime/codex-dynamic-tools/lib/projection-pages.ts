@@ -5,7 +5,7 @@ import type {
 	SessionLoadedThreadPageResult,
 	CodexSession,
 } from "@/runtime/codex-session";
-import type { ThreadId } from "@/shared/codex-workbench-identity";
+import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import { CodexDynamicToolsError } from "@/runtime/codex-dynamic-tools/lib/contract";
 
 /** The thread sources the projection reads, and so the only ones a listing can report. */

@@ -1,4 +1,7 @@
-import type { CodexIngressConformance, CodexOutputConformance } from "../index.js";
+import type {
+	CodexIngressConformance,
+	CodexOutputConformance,
+} from "#shared/protocol/app-server-contract.ts";
 
 type Equal<Left, Right> = [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;
 type Assert<Value extends true> = Value;

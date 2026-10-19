@@ -4,7 +4,7 @@ import type {
 	ChildId,
 	IdentityAuthorities,
 	BrowserCommandId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { BrowserCommandLease } from "@/shared/codex-browser-model";
 import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
 import type {

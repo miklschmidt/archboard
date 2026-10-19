@@ -1,5 +1,9 @@
 import { createCodexBrowserModel } from "@/shared/codex-browser-model";
-import type { ChildEpoch, ChildId, IdentityAuthorities } from "@/shared/codex-workbench-identity";
+import type {
+	ChildEpoch,
+	ChildId,
+	IdentityAuthorities,
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	CodexWorkbenchGatewayError,
 	type BrowserConnectionId,

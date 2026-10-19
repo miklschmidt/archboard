@@ -2,7 +2,7 @@
 // wire records that cross the socket as JSON and are parsed like anything the
 // gateway sends, plus the branded identities a typed draft needs.
 
-import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@/shared/codex-browser-model";
 import type { BrowserCommandDraft } from "@/ui/workbench-transport";
 

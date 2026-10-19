@@ -1,7 +1,7 @@
 // Branded identities for the projection tests, minted through the real
 // authority so no test asserts a plain string into an identity type.
 
-import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 
 const authorities = createIdentityAuthorities();
 const { decoder, issuer, validator } = authorities.identity;

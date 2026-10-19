@@ -1,4 +1,4 @@
-import type { ChildEpoch, ChildId } from "../../../shared/codex-workbench-identity/index.js";
+import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	DynamicEpochTeardownProof,
 	DynamicFailClosedShutdownOwner,

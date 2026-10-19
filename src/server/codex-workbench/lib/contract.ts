@@ -13,7 +13,7 @@ import type {
 	IdentityAuthorities,
 	JsonRpcRequestId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,

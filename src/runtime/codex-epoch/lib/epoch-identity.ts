@@ -1,6 +1,11 @@
 import { isAbsolute, resolve } from "node:path";
 
-import type { ChildEpoch, ChildId, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
+import type {
+	ChildEpoch,
+	ChildId,
+	ThreadId,
+	TurnId,
+} from "@archboard/codex-app-server/workbench-identity";
 import { CodexEpochError, type CodexEpochErrorCode } from "@/runtime/codex-epoch/lib/contract";
 
 const CHILD_PATTERN = /^archboard:child:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;

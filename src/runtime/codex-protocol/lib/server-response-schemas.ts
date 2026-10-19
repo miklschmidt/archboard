@@ -3,11 +3,11 @@ import { z } from "zod";
 import type {
 	CodexOutputConformance,
 	CodexServerResponseByMethod,
-} from "@/shared/codex-app-server-contract";
+} from "@archboard/codex-app-server/app-server-contract";
 import {
 	CodexCommandExecutionApprovalDecisionSchema,
 	CodexFileChangeApprovalDecisionSchema,
-} from "@/shared/codex-app-server-contract";
+} from "@archboard/codex-app-server/app-server-contract";
 import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,

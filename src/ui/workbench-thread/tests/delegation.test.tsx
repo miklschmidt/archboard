@@ -4,7 +4,7 @@ import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
 
-import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { toThreadMessageLike } from "@/ui/workbench-runtime";
 import { mergeConversation, type ConversationTurn } from "@/ui/workbench-timeline";
 import { Conversation } from "@/ui/workbench-thread";

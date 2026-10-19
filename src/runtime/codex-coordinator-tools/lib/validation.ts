@@ -29,8 +29,11 @@ import type {
 	DynamicServerRequest,
 	TransportServerRequest,
 } from "@/runtime/codex-transport/server-requests";
-import type { LogicalToolCallCorrelation, TurnId } from "@/shared/codex-workbench-identity";
-import { logicalToolCallKey } from "@/shared/codex-workbench-identity";
+import type {
+	LogicalToolCallCorrelation,
+	TurnId,
+} from "@archboard/codex-app-server/workbench-identity";
+import { logicalToolCallKey } from "@archboard/codex-app-server/workbench-identity";
 import {
 	CoordinatorToolValidationError,
 	assertLogicalCall,

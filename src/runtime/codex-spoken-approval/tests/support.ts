@@ -14,7 +14,7 @@ import {
 	type IdentityAuthority,
 	type ThreadId,
 	type TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	COORDINATOR_CAPABILITY_POLICY,
 	type CoordinatorSnapshot,

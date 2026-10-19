@@ -19,7 +19,7 @@ import {
 	createIdentityLedger,
 	type IdentityAuthorities,
 	type IdentityLedger,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import { createCodexWorkbenchGateway } from "@/server/codex-workbench";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import {

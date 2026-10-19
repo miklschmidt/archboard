@@ -4,7 +4,7 @@ import { CodexEpochError } from "../../codex-epoch/index.ts";
 import type { ThreadInjectItemsParams } from "../../codex-instructions/index.ts";
 import { CodexSessionMutationError } from "../../codex-session/index.ts";
 import type { ThreadLinkSnapshot } from "../../codex-thread-link/index.ts";
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.ts";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import {
 	createHarness,
 	FEED_ID,

@@ -13,7 +13,7 @@ import type {
 	OperationIdValidator,
 	TrustedIdentityDecoder,
 	TrustedOperationIdDecoder,
-} from "@/shared/codex-workbench-identity/lib/identity-capabilities";
+} from "#shared/schemas/identity-capabilities.ts";
 import {
 	assertCurrent,
 	logicalToolCallKey,
@@ -23,7 +23,7 @@ import {
 	type LogicalToolCallCorrelationInput,
 	type WireRequestCorrelation,
 	type WireRequestCorrelationInput,
-} from "@/shared/codex-workbench-identity/lib/identity-correlations";
+} from "#shared/rules/identity-correlations.ts";
 import {
 	adopt,
 	adoptCodexResponseIdentities,
@@ -43,8 +43,8 @@ import {
 	type AdoptedCodexResponseIdentityBatch,
 	type CodexResponseIdentityBatch,
 	type IdentityLedger,
-} from "@/shared/codex-workbench-identity/lib/identity-ledger";
-import { OPERATION_ID_MAX_BYTES } from "@/shared/codex-workbench-identity/lib/identity-operations";
+} from "#shared/rules/identity-ledger.ts";
+import { OPERATION_ID_MAX_BYTES } from "#shared/rules/identity-operations.ts";
 import {
 	CANONICAL_ITEM_ID_MAX_LENGTH,
 	IdentityValidationError,
@@ -71,7 +71,7 @@ import {
 	type RealtimeSessionId,
 	type ThreadId,
 	type TurnId,
-} from "@/shared/codex-workbench-identity/lib/identity-values";
+} from "#shared/schemas/identity-values.ts";
 
 /**
  * Builds the validator: the epoch facts every owner may compare against.

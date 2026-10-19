@@ -22,8 +22,8 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
-import type { CodexThreadStatusType } from "@/shared/codex-app-server-contract";
+} from "@archboard/codex-app-server/workbench-identity";
+import type { CodexThreadStatusType } from "@archboard/codex-app-server/app-server-contract";
 
 /** The only four operations the coordinator may dispatch to its workhorse. */
 const WORKHORSE_OPERATION_NAMES = Object.freeze([

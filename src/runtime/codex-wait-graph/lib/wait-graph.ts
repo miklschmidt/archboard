@@ -3,7 +3,7 @@ import type {
 	DynamicToolCallId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 
 interface WaitOwner {
 	readonly child: ChildId;

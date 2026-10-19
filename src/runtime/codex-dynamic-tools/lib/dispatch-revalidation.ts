@@ -1,5 +1,5 @@
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
-import type { OperationId, TurnId } from "@/shared/codex-workbench-identity";
+import type { OperationId, TurnId } from "@archboard/codex-app-server/workbench-identity";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,

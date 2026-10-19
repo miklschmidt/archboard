@@ -9,7 +9,7 @@ import type {
 import type {
 	ItemId,
 	RealtimeSessionId as WireRealtimeSessionId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CodexRealtimeBinding,
 	CodexRealtimeGeneration,

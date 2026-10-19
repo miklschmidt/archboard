@@ -1,7 +1,10 @@
 import type { ResponseMethod } from "@/runtime/codex-protocol";
 import type { TransportServerRequest } from "@/runtime/codex-transport/lib/types";
 import type { FrameWriterJob } from "@/runtime/codex-transport/lib/frame-writer";
-import type { JsonRpcRequestId, WireRequestCorrelation } from "@/shared/codex-workbench-identity";
+import type {
+	JsonRpcRequestId,
+	WireRequestCorrelation,
+} from "@archboard/codex-app-server/workbench-identity";
 import type { CodexRequestFailureReason } from "@/runtime/codex-transport/lib/errors";
 
 interface PendingRequest {

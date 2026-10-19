@@ -20,7 +20,7 @@ import type {
 	ThreadId,
 	TurnId,
 	TrustedIdentityDecoder,
-} from "@/shared/codex-workbench-identity/index";
+} from "@archboard/codex-app-server/workbench-identity";
 
 const JsonValueSchema = z.json();
 

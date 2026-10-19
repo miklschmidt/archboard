@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { parseTabSessionId, type BrowserActionContext } from "../../codex-workbench/index.js";
 import { createServerRealtimeActions } from "../codex-workbench-adapters.js";
 

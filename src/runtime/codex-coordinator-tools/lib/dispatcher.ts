@@ -1,5 +1,9 @@
 import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
-import type { ChildEpoch, ChildId, JsonRpcRequestId } from "@/shared/codex-workbench-identity";
+import type {
+	ChildEpoch,
+	ChildId,
+	JsonRpcRequestId,
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	COORDINATOR_TOOLS_OWNER,
 	COORDINATOR_REPLAY_LIMITS,

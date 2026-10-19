@@ -1,5 +1,5 @@
-import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
-import type { WireRequestCorrelation } from "@/shared/codex-workbench-identity";
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
+import type { WireRequestCorrelation } from "@archboard/codex-app-server/workbench-identity";
 
 type CodexRequestFailureReason =
 	| "cancelled"

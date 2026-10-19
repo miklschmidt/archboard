@@ -25,7 +25,7 @@ import type {
 	OperationId,
 	ThreadId,
 	TrustedIdentityDecoder,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 
 type WorkhorseThreadStartParams = SessionParams<"thread/start">;
 type WorkhorseStartResponse = SessionResponse<"thread/start">;

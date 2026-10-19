@@ -10,7 +10,7 @@ import {
 	type CoordinatorToolsServerRequest,
 } from "../index.js";
 import { CHECKOUT, fixture, responseEnvelope, type CoordinatorToolsFixture } from "./support.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 
 function dispatch(fixtureValue: CoordinatorToolsFixture, request: DynamicServerRequest) {
 	return fixtureValue.dispatcher.dispatch(request as CoordinatorToolsServerRequest);

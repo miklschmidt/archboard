@@ -13,7 +13,7 @@ import type {
 	ChildId,
 	IdentityAuthorities,
 	IdentityLedger,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { CodexWorkbenchGateway } from "@/server/codex-workbench";
 import type { CodexWorkbenchSessions } from "@/server/archboard/lib/codex-workbench-sessions";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";

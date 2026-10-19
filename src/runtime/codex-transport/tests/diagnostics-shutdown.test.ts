@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { CodexTransportUsageError } from "../errors.js";
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 import { createHarness, flushStreams } from "./fake-child.js";
 
 describe("Codex app-server transport diagnostics and shutdown", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { restoreIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import { restoreIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import { type SessionCurrentTimeRequest } from "../index.js";
 import { createSessionFixture, reverseRequest } from "./support.js";
 import { createTransportSessionFixture } from "./transport-chain-support.js";

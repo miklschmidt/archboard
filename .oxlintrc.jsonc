@@ -42,7 +42,7 @@
 		".agents/**",
 		".claude/**",
 		"docs/design/vendor/**",
-		"src/shared/codex-app-server-contract/generated/**",
+		"packages/codex-app-server/src/shared/protocol/generated/**",
 		// Tests outside src/ui are held to .oxlintrc.tests.jsonc instead.
 		"tests/**",
 		"src/runtime/*/tests/**",

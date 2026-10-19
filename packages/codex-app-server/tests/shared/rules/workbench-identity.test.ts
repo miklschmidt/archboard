@@ -7,9 +7,9 @@ import {
 	createIdentityAuthority,
 	restoreIdentityAuthorities,
 	restoreIdentityAuthority,
-} from "../index.ts";
-import type { CodexIdentity, WireRequestCorrelation } from "../index.ts";
-import { withOperationNonceSequence } from "./support.ts";
+} from "#shared/rules/workbench-identity.ts";
+import type { CodexIdentity, WireRequestCorrelation } from "#shared/rules/workbench-identity.ts";
+import { withOperationNonceSequence } from "#tests/shared/support/identity-nonce.ts";
 
 function errorCode(action: () => unknown): string {
 	try {

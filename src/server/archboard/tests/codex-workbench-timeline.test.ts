@@ -10,7 +10,7 @@ import type { TransportServerNotification } from "../../../runtime/codex-transpo
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import { createServerTimelineOwner } from "../codex-workbench-adapters.js";
 import {
 	agentMessageItem,

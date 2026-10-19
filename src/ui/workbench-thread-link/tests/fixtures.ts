@@ -10,8 +10,8 @@ import type {
 	BrowserThreadLink,
 	DeliveryOutcome,
 } from "@/shared/codex-browser-model";
-import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
-import type { ThreadId } from "@/shared/codex-workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import {
 	THREAD_LINK_MODULE_COMMANDS,
 	type ThreadLinkPaneCapture,

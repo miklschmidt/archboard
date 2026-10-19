@@ -1,4 +1,4 @@
-import type { OperationId } from "@/shared/codex-workbench-identity";
+import type { OperationId } from "@archboard/codex-app-server/workbench-identity";
 import {
 	CodexDynamicOperationTerminalizationError,
 	CodexDynamicToolsError,

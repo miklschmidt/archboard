@@ -12,7 +12,7 @@ import {
 	type ChildEpoch,
 	type ChildId,
 	type OperationId,
-} from "@/shared/codex-workbench-identity/lib/identity-values";
+} from "#shared/schemas/identity-values.ts";
 
 const OPERATION_ID_MAX_BYTES = 128 as const;
 const OPERATION_ID_MAX_ISSUE_ATTEMPTS = 16 as const;

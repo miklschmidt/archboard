@@ -6,7 +6,7 @@ import type { DynamicDispatcherRegistration } from "../server-requests.js";
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 
 export type WireFrame = Record<string, unknown>;
 

@@ -4,7 +4,7 @@ import { createCodexBrowserModel } from "../../../shared/codex-browser-model/ind
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";

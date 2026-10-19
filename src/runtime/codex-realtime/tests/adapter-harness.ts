@@ -10,7 +10,7 @@ import {
 	type ChildId,
 	type ItemId,
 	type ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	decodeServerNotification,
 	type DecodedServerNotification,

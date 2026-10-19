@@ -20,7 +20,7 @@ import { COORDINATOR_EFFORT, COORDINATOR_MODEL, createCodexCoordinator } from ".
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import { FakeEpoch } from "./fake-epoch.js";
 

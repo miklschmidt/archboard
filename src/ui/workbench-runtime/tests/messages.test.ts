@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { toThreadMessageLike } from "@/ui/workbench-runtime";
 import type { ConversationTurn } from "@/ui/workbench-timeline";
 

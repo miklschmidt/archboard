@@ -17,7 +17,7 @@ import type {
 	LogicalToolCallCorrelation,
 	ThreadId,
 	WireRequestCorrelation,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CodexRemoteError,
 	CodexRequestFailureReason,

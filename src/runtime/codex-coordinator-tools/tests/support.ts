@@ -33,7 +33,7 @@ import {
 	type OperationId,
 	type ThreadId,
 	type TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import { bindingFor, readyAuthority } from "./authority-support.js";
 import {
 	parseRealtimeCorrelationId,

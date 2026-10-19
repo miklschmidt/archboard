@@ -9,7 +9,7 @@ import { withProductionState } from "@/server/archboard/tests/support/production
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,

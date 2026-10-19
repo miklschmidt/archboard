@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-import { CodexThreadStatusSchema, CodexTurnStatusSchema } from "@/shared/codex-app-server-contract";
+import {
+	CodexThreadStatusSchema,
+	CodexTurnStatusSchema,
+} from "@archboard/codex-app-server/app-server-contract";
 
 import {
 	FiniteNumberSchema,

@@ -12,7 +12,7 @@ import type {
 	IdentityAuthority,
 	RealtimeSessionId,
 	ThreadId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { CodexSession, SessionNotificationHandler } from "@/runtime/codex-session";
 import type { FreshSemanticBrief } from "@/runtime/codex-semantic-context";
 import type {

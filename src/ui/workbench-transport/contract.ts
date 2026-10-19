@@ -6,7 +6,7 @@
 import type {
 	CodexServerResponseByMethod,
 	CodexLoginAccountParams,
-} from "@/shared/codex-app-server-contract";
+} from "@archboard/codex-app-server/app-server-contract";
 import type {
 	BrowserGatewayAccountReadResult,
 	BrowserGatewayAction,

@@ -3,7 +3,7 @@ import type { CodexSession } from "../../../runtime/codex-session/index.js";
 import { decodeServerNotification } from "../../../runtime/codex-protocol/index.js";
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 import { createCodexWorkbenchGateway } from "../../codex-workbench/index.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import {
 	projectionHarness,

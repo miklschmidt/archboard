@@ -1,7 +1,7 @@
 import type {
 	RealtimeSessionId as WireRealtimeSessionId,
 	ThreadId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { SessionParams } from "@/runtime/codex-session";
 
 import {

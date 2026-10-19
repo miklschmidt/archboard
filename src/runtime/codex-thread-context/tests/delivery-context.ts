@@ -7,7 +7,7 @@
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type { SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
 import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
-import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
+import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
 
 /** Who the context is built for, and the two fields a test may vary. */
 interface ContextFor {

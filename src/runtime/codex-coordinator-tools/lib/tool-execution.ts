@@ -9,7 +9,7 @@ import {
 	type DynamicToolRefusalReason,
 	type ManageWorkhorseQueueInput,
 } from "@/runtime/codex-coordinator-tool-contract";
-import type { OperationId } from "@/shared/codex-workbench-identity";
+import type { OperationId } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CodexCoordinatorToolsOptions,
 	DynamicToolResponse,

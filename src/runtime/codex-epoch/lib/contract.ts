@@ -1,4 +1,9 @@
-import type { ChildEpoch, ChildId, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
+import type {
+	ChildEpoch,
+	ChildId,
+	ThreadId,
+	TurnId,
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	ActiveEpoch,
 	EpochManifest,

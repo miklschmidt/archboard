@@ -2,7 +2,7 @@ import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import type {
@@ -28,7 +28,7 @@ import type {
 	ThreadId,
 	TurnId,
 	BrowserCommandId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,

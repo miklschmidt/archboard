@@ -11,7 +11,11 @@ import type {
 	LoginAccountParams,
 	ResponseMethod,
 } from "@/runtime/codex-protocol";
-import type { IdentityAuthority, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
+import type {
+	IdentityAuthority,
+	ThreadId,
+	TurnId,
+} from "@archboard/codex-app-server/workbench-identity";
 import type { SessionResponsePayloads } from "@/runtime/codex-session/lib/results";
 
 export type { BedrockSetupParams } from "@/runtime/codex-protocol";

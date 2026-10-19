@@ -1,4 +1,4 @@
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.ts";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import {
 	createSemanticContextPublisher,
 	type SemanticContextInput,

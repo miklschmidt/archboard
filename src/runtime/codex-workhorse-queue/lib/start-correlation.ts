@@ -1,5 +1,5 @@
 import type { SessionQueuedSubmission } from "@/runtime/codex-session";
-import type { QueuedSubmissionId } from "@/shared/codex-workbench-identity";
+import type { QueuedSubmissionId } from "@archboard/codex-app-server/workbench-identity";
 import {
 	CodexWorkhorseQueueError,
 	type QueueSnapshot,

@@ -13,7 +13,7 @@ import {
 	createIdentityAuthorities,
 	IdentityValidationError,
 	type IdentityAuthorities,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	projectCodexBrowserState,
 	type BrowserProjectionInput,

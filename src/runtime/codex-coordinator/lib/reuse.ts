@@ -1,4 +1,4 @@
-import type { ChildEpoch, ChildId } from "@/shared/codex-workbench-identity";
+import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/workbench-identity";
 import { CODEX_SESSION_THREAD_SOURCE } from "@/runtime/codex-session";
 import type { ThreadLinkClassification } from "@/runtime/codex-thread-link";
 import {

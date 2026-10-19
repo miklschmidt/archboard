@@ -6,8 +6,8 @@ import { z } from "zod";
 import {
 	CodexFileChangeApprovalDecisionSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,
-} from "@/shared/codex-app-server-contract/index";
-import type { CodexCommandExecutionApprovalDecision } from "@/shared/codex-app-server-contract/index";
+} from "@archboard/codex-app-server/app-server-contract";
+import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/app-server-contract";
 import {
 	BROWSER_PERMISSION_FILE_ACCESS,
 	TimestampSchema,

@@ -6,7 +6,7 @@ import {
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
-} from "../../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	createCodexWorkbenchSessions,
 	type CodexWorkbenchComponentFactories,

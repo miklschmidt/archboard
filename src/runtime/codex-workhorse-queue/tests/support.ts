@@ -16,8 +16,8 @@ import {
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { QueuedSubmissionId } from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
+import type { QueuedSubmissionId } from "@archboard/codex-app-server/workbench-identity";
 
 type QueueAddParams = Parameters<WorkhorseQueueSessionPort["queueAdd"]>[0];
 type QueueListParams = Parameters<WorkhorseQueueSessionPort["queueListPage"]>[0];

@@ -2,7 +2,7 @@ import {
 	parseRealtimeItemId,
 	type RealtimeTranscriptRecord,
 } from "@/shared/codex-realtime-contract";
-import type { TrustedIdentityDecoder } from "@/shared/codex-workbench-identity";
+import type { TrustedIdentityDecoder } from "@archboard/codex-app-server/workbench-identity";
 import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import type { ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
 
