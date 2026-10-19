@@ -25,6 +25,7 @@ function answering(body: unknown, status = 200): ReturnType<typeof mock> {
 		),
 	);
 	// The test stands in for the browser's fetch; only the reply matters.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 	globalThis.fetch = fetchMock as unknown as typeof fetch;
 	return fetchMock;
 }

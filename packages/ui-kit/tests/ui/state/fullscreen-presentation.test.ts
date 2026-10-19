@@ -119,6 +119,7 @@ class FullscreenRootFake {
 	 */
 	asElement(): HTMLElement {
 		// The presentation reads only ownerDocument, isConnected and requestFullscreen.
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 		return this as unknown as HTMLElement;
 	}
 }

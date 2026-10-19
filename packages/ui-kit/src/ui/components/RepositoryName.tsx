@@ -1,7 +1,7 @@
 import { RiGithubLine } from "@remixicon/react";
 import type { ComponentProps, JSX } from "react";
 
-import { cn } from "#ui/components/class-names.ts";
+import { cn } from "#ui/rules/class-names.ts";
 import { shownRepository } from "#ui/rules/shown-name.ts";
 
 /** GitHub's mark, which stands in for the host of a repository on GitHub. */

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { cn } from "#ui/components/class-names.ts";
+import { cn } from "#ui/rules/class-names.ts";
 
 import { Button } from "#ui/components/button.tsx";
 import { RiCloseLine } from "@remixicon/react";

@@ -1,5 +1,5 @@
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
-import { cn } from "#ui/components/class-names.ts";
+import { cn } from "#ui/rules/class-names.ts";
 import { RiCheckLine } from "@remixicon/react";
 
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {

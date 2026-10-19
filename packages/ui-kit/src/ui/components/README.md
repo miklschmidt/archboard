@@ -5,7 +5,7 @@ CLI (`shadcn` 4.21.0, see package.json) from preset
 [`b3QvqlIdU`](https://ui.shadcn.com/create?preset=b3QvqlIdU) on 2026-09-05
 with `iconLibrary: remixicon`, so the CLI wrote `@remixicon/react` imports.
 Class merging is the registry's own `cn` engine, configured once in
-`packages/ui-kit/src/ui/components/class-names.ts` (through its official
+`packages/ui-kit/src/ui/rules/class-names.ts` (through its official
 `createCn`, the `utils` alias in `components.json`) so the Archboard type
 roles (`text-technical`, `text-body`, `text-control`,
 `text-title`, `text-nav`, `text-name` and the rest) merge as font sizes
@@ -69,7 +69,7 @@ correctness check rather than a style rule.
   convenience carries a documented statement-level accessibility suppression.
 - `label.tsx`: one documented statement-level suppression for the
   association rule, which cannot see the spread `htmlFor`.
-- Every file: `cn` comes from `#ui/components/class-names.ts` (see above) instead of the
+- Every file: `cn` comes from `#ui/rules/class-names.ts` (see above) instead of the
   bare `cn` package. Same engine, same semantics, plus the type roles and the
   elevations.
 - `tooltip.tsx`: the positioner is `pointer-events-none`, so a tooltip that is

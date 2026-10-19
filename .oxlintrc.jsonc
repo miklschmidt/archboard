@@ -1,6 +1,6 @@
 // The approved analysis policy (TASK-150) for every authored source file: src/**,
 // frontend/**, scripts/**, tools/** and vite.config.ts (TASK-151). Tests outside src/ui
-// are linted by .oxlintrc.tests.jsonc.
+// and packages/*/tests/ui are linted by .oxlintrc.tests.jsonc.
 // jsdoc-extra supplies only rules absent from Oxlint; these rules check TypeScript too.
 {
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
@@ -43,12 +43,14 @@
 		".claude/**",
 		"docs/design/vendor/**",
 		"packages/codex-app-server/src/shared/protocol/generated/**",
-		// Tests outside src/ui are held to .oxlintrc.tests.jsonc instead.
+		// Tests outside src/ui and packages/*/tests/ui are held to .oxlintrc.tests.jsonc instead.
 		"tests/**",
 		"src/runtime/*/tests/**",
 		"src/server/*/tests/**",
 		"src/cli/*/tests/**",
 		"packages/*/tests/**",
+		"!packages/*/tests/ui",
+		"!packages/*/tests/ui/**",
 	],
 	"settings": {
 		"react": {

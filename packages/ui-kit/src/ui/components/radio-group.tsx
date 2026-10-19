@@ -2,7 +2,7 @@
 
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
-import { cn } from "#ui/components/class-names.ts";
+import { cn } from "#ui/rules/class-names.ts";
 
 function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
 	return (

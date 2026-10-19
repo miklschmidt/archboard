@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "#ui/components/class-names.ts";
+import { cn } from "#ui/rules/class-names.ts";
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
 	return (
