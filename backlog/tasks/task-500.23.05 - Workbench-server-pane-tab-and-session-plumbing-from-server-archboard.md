@@ -4,6 +4,7 @@ title: 'Workbench server: pane, tab and session plumbing from server/archboard'
 status: To Do
 assignee: []
 created_date: '2026-10-19 14:14'
+updated_date: '2026-10-19 15:54'
 labels: []
 dependencies:
   - TASK-500.23.04
@@ -23,3 +24,9 @@ Fifth move: the 15 server/archboard files that the workbench needs, listed in do
 - [ ] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
 - [ ] #3 bun run check passes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Import closure of the listed files (computed with /tmp/sa.ts on the @/server/archboard imports) is 79 files, 19.7k source lines, with no import leaving server/archboard: all lib/codex-* and lib/codex-workbench-* files, the four root codex-workbench-{application,browser,generation,production}.ts files, module-paths.ts and narrated-subjects.ts besides the plumbing named in the description. A moved file cannot import what stays, so the whole closure moves; codex-workbench-adapters.ts and codex-workbench-owner.ts (outside the closure) stay as app wiring and import the package.
+<!-- SECTION:NOTES:END -->
