@@ -36,16 +36,6 @@ function errorCode(cause: unknown): string | undefined {
 }
 
 /**
- * Whether a thrown value carries the given errno-style code.
- * @param cause Whatever a catch clause received.
- * @param code The code to look for, such as `ESRCH`.
- * @returns True when the value's `code` is exactly that string.
- */
-function hasErrorCode(cause: unknown, code: string): boolean {
-	return errorCode(cause) === code;
-}
-
-/**
  * Build an Error with a code the CLI can branch on, without an unchecked cast.
  * @param message What went wrong, for a person.
  * @param code The machine-readable code, such as `SERVER_UNREACHABLE`.
@@ -55,4 +45,4 @@ function codedError(message: string, code: string): CodedError {
 	return Object.assign(new Error(message), { code });
 }
 
-export { type CodedError, errorMessage, asError, errorCode, hasErrorCode, codedError };
+export { errorMessage, asError, errorCode, codedError };
