@@ -8,7 +8,7 @@ import { vaultIn } from "../support/test-vault.ts";
 
 // The public path to a container's interface: state a board with a container
 // in it, and ask the command line what its interface is. The pure derivation
-// owns the semantics (src/shared/semantic-board/tests); this owner is for the
+// owns the semantics (packages/board/tests); this owner is for the
 // claim that a command with no browser answers them, in an answer that its own
 // schema accepts, and refuses what names no container.
 

@@ -7,12 +7,9 @@
 
 import { expect, test } from "bun:test";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
-import {
-	SemanticBoardSchema,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	type SemanticRenderReply,
-} from "@/shared/semantic-board/index";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
+import { type SemanticRenderReply } from "@archboard/board/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 
 const API = { id: "api", name: "Intake API", kind: "service" };

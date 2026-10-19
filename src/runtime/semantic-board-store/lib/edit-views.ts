@@ -16,16 +16,9 @@
 //   Board views keep their selections. Each variant draws the selected subjects
 //   it has, including an explicit empty reading when none are present.
 
-import type {
-	SemanticFlow,
-	SemanticEdge,
-	SemanticNode,
-	SemanticView,
-	SemanticViewInput,
-	VariantContent,
-	VariantEditInput,
-	ViewScope,
-} from "@/shared/semantic-board/index";
+import type { SemanticFlow, SemanticView, ViewScope } from "@archboard/board/views";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
+import type { SemanticViewInput, VariantEditInput } from "@archboard/board/board-input";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import { idFor, named, namedOne, place } from "@/runtime/semantic-board-store/lib/references";
 import { byHandle, type Batch } from "@/runtime/semantic-board-store/lib/batch";

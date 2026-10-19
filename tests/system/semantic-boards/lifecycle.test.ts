@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { SemanticBoard } from "@archboard/board/document";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { vaultUrl } from "../support/http.ts";
 import { runServerCli } from "../support/run-cli.ts";

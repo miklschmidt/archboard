@@ -53,8 +53,8 @@ import {
 import { readsSameCode, targetIn, type RefCodes } from "@/runtime/code-check/lib/ref-code";
 import type { CheckoutSnapshot } from "@archboard/code-binding/checkout-snapshot";
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
-import type { SemanticNode } from "@/shared/semantic-board/index";
-import { describeSubject } from "@/shared/semantic-policy/index";
+import type { SemanticNode } from "@archboard/board/content";
+import { describeSubject } from "@archboard/board/policy";
 
 /** The adapters whose anchor may name a declaration that joins two parts and that neither end binds. */
 const JOINED_BY_DECLARATION = new Set<FileFacts["adapter"] | undefined>(["kubernetes"]);

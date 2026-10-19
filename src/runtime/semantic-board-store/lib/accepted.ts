@@ -7,11 +7,11 @@
 
 import {
 	nextVersion,
-	parseSemanticBoard,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	type SemanticBoard,
-} from "@/shared/semantic-board/index";
-import type { SemanticPolicy } from "@/shared/semantic-policy/index";
+} from "@archboard/board/document";
+import { parseSemanticBoard } from "@archboard/board/parse-board";
+import type { SemanticPolicy } from "@archboard/board/policy";
 import { newVocabularyProblem } from "@/runtime/semantic-board-store/lib/vocabulary";
 
 /**

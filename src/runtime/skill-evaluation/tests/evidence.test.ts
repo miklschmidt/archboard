@@ -7,7 +7,7 @@
 // cumulative usage, not its own.
 
 import { describe, expect, test } from "bun:test";
-import { SemanticBoardSchema } from "@/shared/semantic-board/index";
+import { SemanticBoardSchema } from "@archboard/board/document";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import {
 	callUsageFrom,

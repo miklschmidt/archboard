@@ -15,7 +15,7 @@ import { z } from "zod";
 import type * as ServerModule from "@/server/archboard/index";
 import type * as RouteModule from "@/server/archboard/footprint";
 import { FootprintReplySchema, type FootprintAnswer } from "@/shared/footprint/index";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
+import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],

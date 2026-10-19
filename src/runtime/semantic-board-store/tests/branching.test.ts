@@ -3,7 +3,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { compareVariants } from "@archboard/board/compare-variants";
+import { BoardShelveInputSchema, BoardAdoptInputSchema } from "@archboard/board/resolution-input";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-branching-"));
 const writer = { kind: "agent" as const };
@@ -24,7 +30,7 @@ beforeEach(async () => {
 		board,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "system",
 				nodes: [
@@ -65,9 +71,7 @@ async function branch(on: string, from: string, name: string) {
 		board: on,
 		writer,
 		expectedVersion: read(on).version,
-		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from, name }),
-		),
+		transition: store.branchVariantTransition(BoardBranchInputSchema.parse({ from, name })),
 	});
 }
 
@@ -120,7 +124,7 @@ test("a proposal is edited like any other variant, and its predecessor does not 
 		writer,
 		expectedVersion: before.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: PROPOSAL,
 				nodes: [{ name: "Queue", kind: "queue" }],
 				edges: [{ from: "Gateway", to: "Queue", kind: "queue" }],
@@ -133,7 +137,7 @@ test("a proposal is edited like any other variant, and its predecessor does not 
 
 	// And the difference between the two is derived, not written down.
 	const proposal = after.variants.find((variant) => variant.name === PROPOSAL)!;
-	const comparison = contract.compareVariants(baseline.content, proposal.content);
+	const comparison = compareVariants(baseline.content, proposal.content);
 	const queue = proposal.content.nodes.find((node) => node.name === "Queue")!;
 	expect(comparison.nodes.get(queue.id)?.kind).toBe("added");
 	// Adding a node does not make its neighbours changed.
@@ -159,7 +163,7 @@ test("a branch is one version, written against the version it was asked for", as
 		writer,
 		expectedVersion: before.version,
 		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({
+			BoardBranchInputSchema.parse({
 				from: before.variants[0]!.name,
 				name: "Derived from a stale read",
 			}),
@@ -192,7 +196,7 @@ async function write(transition: store.SemanticTransition) {
  * @returns What the write did.
  */
 async function edit(batch: Record<string, unknown>) {
-	return write(store.editVariantTransition(contract.VariantEditInputSchema.parse(batch)));
+	return write(store.editVariantTransition(VariantEditInputSchema.parse(batch)));
 }
 
 test("an edit restates the summary of the variant it lands on, and a record refuses it", async () => {
@@ -221,12 +225,10 @@ test("an edit restates the summary of the variant it lands on, and a record refu
 	await branch(board, baseline, "Spare");
 	await write(
 		store.shelveVariantTransition(
-			contract.BoardShelveInputSchema.parse({ variant: "Spare", reason: "not carried out" }),
+			BoardShelveInputSchema.parse({ variant: "Spare", reason: "not carried out" }),
 		),
 	);
-	await write(
-		store.adoptVariantTransition(contract.BoardAdoptInputSchema.parse({ variant: PROPOSAL })),
-	);
+	await write(store.adoptVariantTransition(BoardAdoptInputSchema.parse({ variant: PROPOSAL })));
 	const records = read(board);
 	const shelved = await edit({ variant: "Spare", summary: "Rewritten" });
 	expect(shelved.outcome === "rejected" && shelved.code).toBe("VARIANT_SHELVED");
@@ -272,9 +274,7 @@ test("a variant's documents: an edit replaces the edited list, a branch copies i
 	expect(emptied).not.toHaveProperty("documents");
 
 	// A superseded architecture is a record: refused, nothing written.
-	await write(
-		store.adoptVariantTransition(contract.BoardAdoptInputSchema.parse({ variant: PROPOSAL })),
-	);
+	await write(store.adoptVariantTransition(BoardAdoptInputSchema.parse({ variant: PROPOSAL })));
 	const records = read(board);
 	const historical = await edit({ variant: baseline, documents: [plan] });
 	expect(historical.outcome === "rejected" && historical.code).toBe("VARIANT_HISTORICAL");
@@ -289,7 +289,7 @@ test("a new board's first variant holds the documents its payload names", async 
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name,
 				level: "system",
 				lifecycle: "draft",

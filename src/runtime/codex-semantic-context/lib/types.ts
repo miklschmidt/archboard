@@ -5,13 +5,10 @@ import type {
 	ThreadId,
 	TurnId,
 } from "@archboard/codex-app-server/workbench-identity";
-import type {
-	ChangeKind,
-	DiagramGrammar,
-	ReconciliationKind,
-	VariantLifecycle,
-} from "@/shared/semantic-board/index";
-import type { SemanticSubjectKind } from "@/shared/semantic-pane-context/index";
+import type { ChangeKind } from "@archboard/board/compare-variants";
+import type { DiagramGrammar, VariantLifecycle } from "@archboard/board/vocabulary";
+import type { ReconciliationKind } from "@archboard/board/reconciliation";
+import type { SemanticSubjectKind } from "@archboard/board/pane-context";
 
 type SemanticChangeOrigin = "human" | "agent" | "mixed";
 type SemanticChangeSignificance = "layout" | "structural" | "cosmetic";
@@ -201,7 +198,7 @@ interface SemanticDifferencesInput {
  * One thing somebody has to settle before this proposal is coherent again.
  *
  * `repair` is written where the disagreement is found — the reconciliation in
- * `@/shared/semantic-board` — and carried verbatim rather than reworded. The
+ * `@archboard/board/reconcile` — and carried verbatim rather than reworded. The
  * same sentence reaches the write answer and the pane, so a person and an agent
  * read one wording of one disagreement; an agent that invents its own there is
  * guessing at a decision it did not make, in words nobody else is using.

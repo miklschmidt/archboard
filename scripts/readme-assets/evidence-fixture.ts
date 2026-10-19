@@ -4,13 +4,13 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { currentVariant } from "@archboard/board/document";
 import {
-	currentVariant,
 	type BoardCreateInput,
 	type SemanticEdgeInput,
 	type SemanticNodeInput,
 	type VariantEditInput,
-} from "@/shared/semantic-board";
+} from "@archboard/board/board-input";
 
 import {
 	inOrder,

@@ -3,12 +3,9 @@
 // message (a branch, a loop's condition), so it is drawn whole under the message
 // it qualifies, never truncated, and the message's row grows to hold it.
 
-import {
-	messagesOf,
-	type FlowMessage,
-	type MessageKind,
-	type SemanticFlow,
-} from "@/shared/semantic-board/index";
+import { messagesOf } from "@archboard/board/flow-steps";
+import { type FlowMessage, type SemanticFlow } from "@archboard/board/views";
+import { type MessageKind } from "@archboard/board/vocabulary";
 import {
 	NOTE_SIZE,
 	PILL_PADDING_X,

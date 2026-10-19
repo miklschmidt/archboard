@@ -25,8 +25,9 @@
 //     reads it, so a former name of the board and the vault's own repository
 //     identity both open it.
 
-import type { DrillDown, SemanticBoard, SemanticNode } from "@/shared/semantic-board/index";
-import type { SharedSymbol, VaultDiagnostic } from "@/shared/semantic-policy/index";
+import type { DrillDown, SemanticNode } from "@archboard/board/content";
+import type { SemanticBoard } from "@archboard/board/document";
+import type { SharedSymbol, VaultDiagnostic } from "@archboard/board/policy";
 import { contentCheckedVariants } from "@/runtime/semantic-board-store/lib/content-checks";
 import type { DrillLookup } from "@/runtime/semantic-board-store/lib/drill-down";
 import { nodeSubject } from "@/runtime/semantic-board-store/lib/subject";

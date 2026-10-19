@@ -3,7 +3,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	VariantEditInputSchema,
+	BoardBranchInputSchema,
+} from "@archboard/board/board-input";
+import { DEFAULT_TRAFFIC_VOLUME, DEFAULT_TRAFFIC_SPEED } from "@archboard/board/content";
+import { compareVariants } from "@archboard/board/compare-variants";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-edge-identity-"));
 const writer = { kind: "agent" as const };
@@ -19,7 +25,7 @@ beforeEach(async () => {
 				board,
 				writer,
 				transition: store.createBoardTransition(
-					contract.BoardCreateInputSchema.parse({
+					BoardCreateInputSchema.parse({
 						name: board,
 						level: "module",
 						nodes: [
@@ -36,9 +42,7 @@ beforeEach(async () => {
 	expect((await branch("current", "Proposal")).outcome).toBe("applied");
 });
 
-afterAll(() => {
-	rmSync(vault, { recursive: true, force: true });
-});
+afterAll(() => rmSync(vault, { recursive: true, force: true }));
 
 /** Read this test's persisted board. */
 function read() {
@@ -59,7 +63,7 @@ function edit(input: unknown) {
 		board,
 		writer,
 		expectedVersion: read().version,
-		transition: store.editVariantTransition(contract.VariantEditInputSchema.parse(input)),
+		transition: store.editVariantTransition(VariantEditInputSchema.parse(input)),
 	});
 }
 
@@ -81,9 +85,7 @@ function branch(from: string, name: string) {
 		board,
 		writer,
 		expectedVersion: read().version,
-		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from, name }),
-		),
+		transition: store.branchVariantTransition(BoardBranchInputSchema.parse({ from, name })),
 	});
 }
 
@@ -161,10 +163,7 @@ test("equivalent traffic can be restated on a continuing relationship", async ()
 				edges: [
 					{
 						...changed,
-						traffic: {
-							volume: contract.DEFAULT_TRAFFIC_VOLUME,
-							speed: contract.DEFAULT_TRAFFIC_SPEED,
-						},
+						traffic: { volume: DEFAULT_TRAFFIC_VOLUME, speed: DEFAULT_TRAFFIC_SPEED },
 					},
 				],
 			})
@@ -195,9 +194,9 @@ test("a continuing relationship keeps its id across endpoint, kind and traffic c
 		to: variant().content.nodes[2]!.id,
 		kind: "data",
 	});
-	expect(
-		contract.compareVariants(predecessor.content, variant().content).edges.get(edge.id)?.kind,
-	).toBe("changed");
+	expect(compareVariants(predecessor.content, variant().content).edges.get(edge.id)?.kind).toBe(
+		"changed",
+	);
 });
 
 test("successive edits keep a continuing id despite multiple differences from the predecessor", async () => {
@@ -237,7 +236,7 @@ test("a replacement gets a new identity and compares as removed plus added", asy
 	expect(replacement.id).not.toBe(edge.id);
 	// Other ends: a different unit, so the write says nothing about it.
 	expect(written.outcome === "applied" ? written.warnings : null).toEqual([]);
-	const comparison = contract.compareVariants(before.content, variant().content);
+	const comparison = compareVariants(before.content, variant().content);
 	expect(comparison.edges.get(edge.id)?.kind).toBe("removed");
 	expect(comparison.edges.get(replacement.id)?.kind).toBe("added");
 });
@@ -266,7 +265,7 @@ test("explicit removal and idless addition declares replacement even with one pr
 	const twin = variant().content.edges[0]!;
 	expect(twin.id).not.toBe(edge.id);
 	expect(warningsOf(reAdded)).toEqual([]);
-	const comparison = contract.compareVariants(variant("Initial").content, variant().content);
+	const comparison = compareVariants(variant("Initial").content, variant().content);
 	expect(comparison.edges.get(edge.id)?.kind).toBe("removed");
 	expect(comparison.edges.get(twin.id)?.kind).toBe("added");
 	const replaced = await edit({

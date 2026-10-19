@@ -1,4 +1,5 @@
-import { placingGroups, type SemanticEdge, type SemanticNode } from "@/shared/semantic-board/index";
+import { placingGroups } from "@archboard/board/groups";
+import { type SemanticEdge, type SemanticNode } from "@archboard/board/content";
 import type { LineLook } from "@/transformers/semantic-renderer/lib/drawing";
 import {
 	drillDirection,
@@ -8,7 +9,7 @@ import {
 	DEFAULT_SEMANTIC_POLICY,
 	type PaletteColor,
 	type SemanticPolicy,
-} from "@/shared/semantic-policy/index";
+} from "@archboard/board/policy";
 
 /** The independent visual channels of a node in this reading. */
 interface NodeAppearance {

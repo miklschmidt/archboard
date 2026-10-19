@@ -19,8 +19,8 @@ import {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
 	VariantEditInputSchema,
-	wasDrawn,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/board-input";
+import { wasDrawn } from "@archboard/board/render-reply";
 import {
 	branchVariantTransition,
 	createBoardTransition,

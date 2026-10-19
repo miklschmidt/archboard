@@ -6,8 +6,8 @@
 // 4 px under its tab and a region of cards 20 px, against 14 at its sides.
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { REGION_INSET } from "@/transformers/semantic-renderer/config";
 import { bodyShift, pointsOf } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";

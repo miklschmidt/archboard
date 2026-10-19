@@ -12,7 +12,7 @@ import { memo, useCallback, useEffect, useMemo, useState, type JSX, type ReactNo
 import { boardAncestors, useVaultBoards } from "@/ui/board-catalog";
 import { useVaultPolicyRefresh } from "@/ui/vault-diagnostics";
 
-import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
+import type { PanePresentRequest, SemanticPanePart } from "@archboard/board/pane-context";
 import { PartSearchHost } from "@/ui/application/components/PartSearchHost";
 import { useDrillRepositories } from "@/ui/application/hooks/use-drill-repositories";
 import type { PaneCallbacks } from "@/ui/application/hooks/use-panes";

@@ -8,7 +8,7 @@
 
 import { useCallback, useId, type JSX } from "react";
 
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import {
 	Select,
 	SelectContent,

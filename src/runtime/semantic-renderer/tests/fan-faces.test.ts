@@ -7,7 +7,7 @@
 // them from the side (Skill evaluation's "Grading").
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { roundBridges, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";

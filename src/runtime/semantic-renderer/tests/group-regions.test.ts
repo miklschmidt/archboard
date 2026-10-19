@@ -9,7 +9,7 @@
 // under the APCA floor for a mark on the page or a tray's floor.
 
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import {

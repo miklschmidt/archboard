@@ -36,7 +36,7 @@ import { LevelMark } from "@/ui/semantic-board-canvas/components/LevelMark";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 import { useSectionSpy } from "@/ui/semantic-board-canvas/hooks/use-section-spy";
 import type { PagePlace } from "@/ui/semantic-board-canvas/hooks/use-stage-tab";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { VariantContent } from "@archboard/board/content";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";

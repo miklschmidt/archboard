@@ -9,8 +9,8 @@ import type {
 } from "@/runtime/codex-semantic-context";
 import { readSemanticBoard } from "@/runtime/semantic-board-store";
 import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
-import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
+import type { SemanticBoard } from "@archboard/board/document";
+import type { SemanticPaneContext } from "@archboard/board/pane-context";
 import { checkoutOfVault } from "@archboard/workspace/vault-finder";
 import type {
 	CodexWorkbenchComponents,

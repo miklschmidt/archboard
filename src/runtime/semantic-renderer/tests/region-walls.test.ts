@@ -4,8 +4,8 @@
 // (n21 in the second) a card beside it, to its right.
 
 import { expect, test } from "bun:test";
-import type { DiagramBox } from "@/shared/semantic-board/index";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import type { DiagramBox } from "@archboard/board/render-reply";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	corridorPoints,

@@ -10,7 +10,7 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 	LayoutEngineSchema,
 	type LayoutEngineName,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
 
 /** Where the choice is remembered. */
 const LAYOUT_ENGINE_KEY = "archboard.layout-engine";

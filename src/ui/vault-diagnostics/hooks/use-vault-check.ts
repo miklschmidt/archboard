@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
-import type { VaultCheck } from "@/shared/semantic-policy";
+import type { VaultCheck } from "@archboard/board/policy";
 import { semanticBoardKeys, vaultCheckQuery } from "@/ui/semantic-board-canvas";
 
 /**

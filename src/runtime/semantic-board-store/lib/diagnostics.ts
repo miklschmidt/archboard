@@ -2,13 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { normalizeBoardKey } from "@/runtime/engine/board";
 import { errorMessage } from "@archboard/diagnostics/errno";
-import {
-	currentVariant,
-	overviewContent,
-	type SemanticBoard,
-	type SemanticNode,
-} from "@/shared/semantic-board/index";
-import type { VaultCheck, VaultDiagnostic } from "@/shared/semantic-policy/index";
+import { currentVariant, type SemanticBoard } from "@archboard/board/document";
+import { overviewContent } from "@archboard/board/scope";
+import { type SemanticNode } from "@archboard/board/content";
+import type { VaultCheck, VaultDiagnostic } from "@archboard/board/policy";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
 import {
 	semanticBoardAddress,

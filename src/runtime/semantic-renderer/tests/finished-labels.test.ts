@@ -4,8 +4,8 @@
 // What this catches: an engine's drawing that silently loses a label.
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
-import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routeLabels } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";

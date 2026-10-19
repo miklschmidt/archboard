@@ -7,13 +7,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import {
-	addressedVariant,
-	DiagramThemeSchema,
-	type DiagramTheme,
-	type SemanticBoard,
-} from "@/shared/semantic-board/index";
-import type { VaultCheck } from "@/shared/semantic-policy/index";
+import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
+import { DiagramThemeSchema, type DiagramTheme } from "@archboard/board/render-reply";
+import type { VaultCheck } from "@archboard/board/policy";
 import { SKILL_EVAL_TALK_STEP_MS } from "@archboard/timing";
 import { RecordingContainerSchema, type RecordingContainer } from "@/shared/walkthrough-recording";
 import {

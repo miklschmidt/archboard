@@ -1,7 +1,7 @@
 // An exchange told on one clock (ADR 0027): every message sends its pulse in its
 // turn, at one speed, and waits until the one before it has arrived.
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_TRAFFIC_SPEED } from "@/shared/semantic-board/index";
+import { DEFAULT_TRAFFIC_SPEED } from "@archboard/board/content";
 import { FLOW_CYCLE_CAP_MS } from "@archboard/timing";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
 import { messageBeams, slidingSpeedOf } from "@/runtime/semantic-renderer/tests/drawn-traffic";

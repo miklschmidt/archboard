@@ -1,7 +1,7 @@
 // What the pulse tests draw: the parts, the exchanges and the pictures of them,
 // and the readers of the markup that say where a pulse is.
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { VariantContent } from "@archboard/board/content";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
 import { pointsOf } from "@/runtime/semantic-renderer/tests/drawn-traffic";
 

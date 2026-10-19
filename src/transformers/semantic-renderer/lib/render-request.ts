@@ -1,15 +1,15 @@
 // What a render asks for, and what it answers: shared by every grammar's
 // render, so the architecture, the sequence and the flowchart read one request.
 
-import type { SemanticPolicy } from "@/shared/semantic-policy/index";
+import type { SemanticPolicy } from "@archboard/board/policy";
 import type {
 	DiagramAtlas,
-	DiagramGrammar,
 	FontSource,
 	LayoutEngineName,
 	StandaloneTheme,
-	VariantContent,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
+import type { DiagramGrammar } from "@archboard/board/vocabulary";
+import type { VariantContent } from "@archboard/board/content";
 import type { ReadingDirection } from "@/transformers/semantic-renderer/lib/drawing";
 import type { ExportFrame } from "@/transformers/semantic-renderer/lib/svg/export-frame";
 import type { StatedStandings } from "@/transformers/semantic-renderer/lib/svg/standing";

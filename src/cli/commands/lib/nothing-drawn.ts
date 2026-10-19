@@ -2,7 +2,7 @@
 // the board holds nothing, or the chosen view names nothing the variant holds.
 
 import { CliUsageError } from "@/cli/command-contract/contract";
-import type { NothingDrawn } from "@/shared/semantic-board/index";
+import type { NothingDrawn } from "@archboard/board/render-reply";
 
 /** The refusal of a view that draws nothing on the chosen variant, as a command declares it. */
 const viewEmptyRefusal = {

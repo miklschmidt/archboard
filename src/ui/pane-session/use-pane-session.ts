@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import type { SemanticPanePart } from "@/shared/semantic-pane-context";
+import type { SemanticPanePart } from "@archboard/board/pane-context";
 
 import { createPaneCore, type PaneCore } from "@/ui/pane-session/core";
 import { usePaneContact, type PaneContact } from "@/ui/pane-session/hooks/use-pane-contact";

@@ -17,7 +17,7 @@ import {
 	DEFAULT_SEMANTIC_POLICY,
 	VaultCheckSchema,
 	type VaultCheck,
-} from "@/shared/semantic-policy/index";
+} from "@archboard/board/policy";
 import { makeStandInVault } from "./stand-in-vault.ts";
 
 const clean: VaultCheck = {

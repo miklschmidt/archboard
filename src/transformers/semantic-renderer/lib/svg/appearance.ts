@@ -1,4 +1,4 @@
-import type { PaletteColor } from "@/shared/semantic-policy/index";
+import type { PaletteColor } from "@archboard/board/policy";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { token, type Palette } from "@/transformers/semantic-renderer/lib/theme";

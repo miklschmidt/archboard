@@ -3,7 +3,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/board-input";
+import { type VariantContent, subjectIds } from "@archboard/board/content";
+import { messagesOf } from "@archboard/board/flow-steps";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-walkthroughs-"));
 const writer = { kind: "agent" as const };
@@ -61,9 +63,7 @@ beforeEach(async () => {
 		vault,
 		board,
 		writer,
-		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({ ...SEED, name: board }),
-		),
+		transition: store.createBoardTransition(BoardCreateInputSchema.parse({ ...SEED, name: board })),
 	});
 });
 afterAll(() => {
@@ -74,7 +74,7 @@ afterAll(() => {
  * The board as it now stands, or a failure naming what went wrong.
  * @returns The one variant's content.
  */
-const held = (): contract.VariantContent => {
+const held = (): VariantContent => {
 	const read = store.readSemanticBoard(vault, board);
 	if (!read.ok) throw new Error(read.problem);
 	return read.board.variants[0]!.content;
@@ -93,7 +93,7 @@ const edit = async (edit_: Record<string, unknown>) => {
 		board,
 		writer,
 		expectedVersion: read.board.version,
-		transition: store.editVariantTransition(contract.VariantEditInputSchema.parse(edit_)),
+		transition: store.editVariantTransition(VariantEditInputSchema.parse(edit_)),
 	});
 };
 
@@ -117,7 +117,7 @@ test("an explanation lands in one batch and reads back resolved", () => {
 	expect(walkthrough.beats[0]!.subjects).toEqual([]);
 
 	// Minted against the whole family: nothing on the board answers twice.
-	const ids = contract.subjectIds(content);
+	const ids = subjectIds(content);
 	expect(new Set(ids).size).toBe(ids.length);
 }, 20_000);
 
@@ -312,7 +312,7 @@ test("a beat can be about a step inside a decision, by the handle the same write
 	});
 	expect(written.outcome).toBe("applied");
 	const flow = held().flows.find((one) => one.name === "Checked ingest")!;
-	const stored = contract.messagesOf(flow.steps).find((step) => step.label === "store")!;
+	const stored = messagesOf(flow.steps).find((step) => step.label === "store")!;
 	expect(held().walkthroughs[0]!.beats[0]!.subjects).toEqual([stored.id]);
 }, 20_000);
 

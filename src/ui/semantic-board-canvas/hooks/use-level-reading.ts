@@ -18,7 +18,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { SemanticPanePart } from "@/shared/semantic-pane-context";
+import type { SemanticPanePart } from "@archboard/board/pane-context";
 import type { DrillNavigation } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 

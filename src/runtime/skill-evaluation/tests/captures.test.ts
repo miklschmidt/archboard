@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { SemanticBoard } from "@archboard/board/document";
 import {
 	CAPTURE_TILE_SIDE_PX,
 	captureFromReceipt,

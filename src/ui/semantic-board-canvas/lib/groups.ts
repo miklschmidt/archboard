@@ -1,13 +1,14 @@
 // Which groups a pane offers, and what choosing one selects: every member of
 // it, across whatever contains each one.
 //
-// Membership is read from the board (`isMemberOf` in `@/shared/semantic-board`),
+// Membership is read from the board (`isMemberOf` in `@archboard/board/groups`),
 // never inferred from containment or from the regions the picture draws (ADR
 // 0023): a member the view hides is still a member, and simply is not drawn to
 // be seen selected.
 
-import { groupsUsed, isMemberOf, type SemanticVariant } from "@/shared/semantic-board/index";
-import type { SemanticPolicy } from "@/shared/semantic-policy/index";
+import { groupsUsed, isMemberOf } from "@archboard/board/groups";
+import { type SemanticVariant } from "@archboard/board/document";
+import type { SemanticPolicy } from "@archboard/board/policy";
 
 /** What the vault calls each group, and its colour, by id. */
 type GroupNames = SemanticPolicy["groups"];

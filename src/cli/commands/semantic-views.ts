@@ -10,14 +10,14 @@
 // their layouts in the server's cache for the render that follows.
 
 import { z } from "zod";
+import { EVERYTHING_VIEW } from "@archboard/board/scope";
 import {
-	EVERYTHING_VIEW,
 	LayoutEngineSchema,
 	OfferedViewSchema,
 	PictureMarksSchema,
 	RenderedVariantSchema,
 	type SemanticRenderReply,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
 import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";

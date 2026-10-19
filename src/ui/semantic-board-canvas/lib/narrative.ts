@@ -12,7 +12,8 @@
 // and the diagram agree about which subjects this view draws without either of
 // them asking the other.
 
-import type { SemanticVariant, WalkthroughBeat } from "@/shared/semantic-board/index";
+import type { SemanticVariant } from "@archboard/board/document";
+import type { WalkthroughBeat } from "@archboard/board/walkthrough";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { subjectOf } from "@/ui/semantic-board-canvas/lib/board-document";
 import { unionRect, type FitTarget, type Rect } from "@/ui/semantic-board-canvas/lib/camera";

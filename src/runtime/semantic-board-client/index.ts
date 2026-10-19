@@ -3,7 +3,7 @@ import {
 	VaultDiagnosticSchema,
 	type VaultDiagnostic,
 	type VaultCheck,
-} from "@/shared/semantic-policy/index";
+} from "@archboard/board/policy";
 // How the CLI reaches a semantic board: through the running Archboard server, never the
 // vault directly.
 //
@@ -20,20 +20,21 @@ import {
 	currentWriteSession,
 	requestJson,
 } from "@/runtime/engine/server-client";
+import { BoardMoveAnswerSchema, type BoardMoveAnswer } from "@archboard/board/board-move";
 import {
-	BoardMoveAnswerSchema,
-	type BoardMoveAnswer,
 	SemanticBoardSchema,
 	SemanticBoardLevelSchema,
-	ReconciliationIssueSchema,
+	type SemanticBoard,
+} from "@archboard/board/document";
+import { ReconciliationIssueSchema } from "@archboard/board/reconciliation";
+import {
 	SemanticRenderReplySchema,
 	type FontSource,
-	type SemanticBoard,
 	type SemanticRenderReply,
 	type LayoutEngineName,
 	type StandaloneTheme,
 	type LegendLayout,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
 
 /** One board in the vault's semantic listing. */
 const SemanticBoardEntrySchema = z.object({

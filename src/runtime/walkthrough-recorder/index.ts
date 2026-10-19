@@ -23,8 +23,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { DiagramTheme, LayoutEngineName, SemanticBoard } from "@/shared/semantic-board/index";
-import type { VaultCheck } from "@/shared/semantic-policy/index";
+import type { DiagramTheme, LayoutEngineName } from "@archboard/board/render-reply";
+import type { SemanticBoard } from "@archboard/board/document";
+import type { VaultCheck } from "@archboard/board/policy";
 import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
 import { RECORDING_CALL_MS } from "@archboard/timing";
 import {

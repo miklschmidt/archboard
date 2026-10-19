@@ -5,14 +5,12 @@
 import {
 	currentVariant,
 	findVariant,
-	messagesOf,
 	type SemanticBoard,
-	type SemanticFlow,
-	type SemanticNode,
 	type SemanticVariant,
-	type SemanticView,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
+import { messagesOf } from "@archboard/board/flow-steps";
+import { type SemanticFlow, type SemanticView } from "@archboard/board/views";
+import { type SemanticNode, type VariantContent } from "@archboard/board/content";
 import {
 	beatReferences,
 	beatsOf,

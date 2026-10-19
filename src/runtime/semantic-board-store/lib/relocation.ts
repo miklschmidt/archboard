@@ -22,7 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { moveFileDurably, writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { withBoardLockIfFreeSync, type HolderKind } from "@/runtime/engine/board-lock";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { SemanticBoard } from "@archboard/board/document";
 import { boardFormerlyCalled } from "@/runtime/semantic-board-store/lib/former-names";
 import {
 	locateSemanticBoard,

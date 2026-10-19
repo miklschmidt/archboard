@@ -6,7 +6,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/board-input";
+import { messagesOf } from "@archboard/board/flow-steps";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-anchors-"));
 const writer = { kind: "agent" as const };
@@ -24,7 +25,7 @@ beforeEach(async () => {
 		board,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "module",
 				nodes: [
@@ -79,7 +80,7 @@ function edit(input: unknown) {
 		board,
 		writer,
 		expectedVersion: read.board.version,
-		transition: store.editVariantTransition(contract.VariantEditInputSchema.parse(input)),
+		transition: store.editVariantTransition(VariantEditInputSchema.parse(input)),
 	});
 }
 
@@ -97,7 +98,7 @@ function warningsOf(result: Awaited<ReturnType<typeof edit>>) {
 test("a new board keeps the anchors and the binding symbol the agent wrote", () => {
 	const content = current();
 	expect(content.edges[0]?.anchor).toEqual(CALL);
-	expect(contract.messagesOf(content.flows[0]?.steps ?? []).map((step) => step.anchor)).toEqual([
+	expect(messagesOf(content.flows[0]?.steps ?? []).map((step) => step.anchor)).toEqual([
 		CALL,
 		REPLY,
 	]);
@@ -108,7 +109,7 @@ test("an anchor is stated whole: a missing field is refused at the boundary", ()
 	const { symbol: _symbol, ...unnamed } = CALL;
 	for (const anchor of [unnamed, { ...CALL, symbol: " " }, { ...CALL, line: 12 }]) {
 		const stated = { from: "Checkout", to: "Orders", kind: "call", anchor };
-		expect(contract.VariantEditInputSchema.safeParse({ edges: [stated] }).success).toBe(false);
+		expect(VariantEditInputSchema.safeParse({ edges: [stated] }).success).toBe(false);
 	}
 });
 
@@ -128,13 +129,13 @@ test("restating a relationship without its anchor drops it and says so", async (
 
 test("restating a flow drops the anchor of each step stated without one, and says so", async () => {
 	const flow = current().flows[0]!;
-	const [placed, accepted] = contract.messagesOf(flow.steps);
+	const [placed, accepted] = messagesOf(flow.steps);
 	const { anchor: _anchor, ...bare } = accepted!;
 	const result = await edit({ flows: [{ ...flow, steps: [placed, bare] }] });
 	expect(warningsOf(result)).toEqual([
 		["ANCHOR_DROPPED", `flows.${flow.id}.steps.${accepted!.id}.anchor`],
 	]);
-	expect(contract.messagesOf(current().flows[0]?.steps ?? []).map((step) => step.anchor)).toEqual([
+	expect(messagesOf(current().flows[0]?.steps ?? []).map((step) => step.anchor)).toEqual([
 		CALL,
 		undefined,
 	]);

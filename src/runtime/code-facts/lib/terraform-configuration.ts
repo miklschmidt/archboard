@@ -45,7 +45,7 @@ import {
 import { reachedFrom } from "@/runtime/code-facts/lib/terraform-reach";
 import { directoryOf, terraformModules } from "@/runtime/code-facts/lib/terraform-resolution";
 import { lastName } from "@/runtime/code-facts/lib/text-reading";
-import type { EvidenceKind } from "@/shared/semantic-policy/index";
+import type { EvidenceKind } from "@archboard/board/policy";
 
 /** One declaration of the root module's address space. */
 interface Declaration {

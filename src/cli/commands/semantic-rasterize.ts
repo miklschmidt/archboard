@@ -9,7 +9,7 @@ import {
 	DiagramThemeSchema,
 	LayoutEngineSchema,
 	type DrawnBoard,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
 import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import {
 	RASTER_MAX_SCALE,

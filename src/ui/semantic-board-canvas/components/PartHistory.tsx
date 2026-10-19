@@ -16,7 +16,8 @@ import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import type { BehindSkip } from "@/shared/code-check/index";
 import type { LocalityAnswer, LocalityCommit, LocalityPeriod } from "@/shared/locality/index";
-import type { SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
+import type { SemanticNode } from "@archboard/board/content";
+import type { SemanticVariant } from "@archboard/board/document";
 import { KindIcon } from "@/ui/semantic-board-canvas/components/KindMarks";
 import {
 	SidebarChoice,

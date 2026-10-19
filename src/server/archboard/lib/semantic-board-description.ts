@@ -5,12 +5,8 @@
 // says what sort of board this is at all. The voice coordinator reads it aloud,
 // which is why the punctuation here is not decoration.
 
-import {
-	nothingBuilt,
-	type SemanticBoard,
-	type SemanticVariant,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+import { nothingBuilt, type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
+import { type VariantContent } from "@archboard/board/content";
 
 /**
  * A count and the word for what it counts, pluralised.

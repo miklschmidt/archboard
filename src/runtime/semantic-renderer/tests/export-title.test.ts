@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { DiagramBox, DrawnBoard } from "@/shared/semantic-board/index";
+import type { DiagramBox, DrawnBoard } from "@archboard/board/render-reply";
 import { exported, paintedBody } from "@/runtime/semantic-renderer/tests/export-board";
 
 // A title is drawn above an exported picture (TASK-467): the drawing moves down

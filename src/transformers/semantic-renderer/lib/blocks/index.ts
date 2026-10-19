@@ -7,7 +7,9 @@
 // routed where the layout engines run, and the one that reads best is chosen
 // here (`solves.ts`); here the geometry becomes the drawing.
 import type { ElkNode } from "@archboard/elk-rs";
-import { isMemberOf, type ChangeKind, type VariantContent } from "@/shared/semantic-board/index";
+import { isMemberOf } from "@archboard/board/groups";
+import { type ChangeKind } from "@archboard/board/compare-variants";
+import { type VariantContent } from "@archboard/board/content";
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,

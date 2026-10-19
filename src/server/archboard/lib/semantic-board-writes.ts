@@ -19,12 +19,14 @@ import {
 import { z } from "zod";
 import {
 	BoardAdoptInputSchema,
-	BoardBranchInputSchema,
-	BoardCreateInputSchema,
 	BoardShelveInputSchema,
 	ResolutionInputSchema,
+} from "@archboard/board/resolution-input";
+import {
+	BoardBranchInputSchema,
+	BoardCreateInputSchema,
 	VariantEditInputSchema,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/board-input";
 import type { DescendantOutcome } from "@/runtime/semantic-board-store/index";
 import {
 	adoptVariantTransition,

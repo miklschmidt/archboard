@@ -11,7 +11,7 @@ import type {
 	MarkedSubjects,
 	PictureMarks,
 	RenderedChanges,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
 import { markCounts } from "@/transformers/semantic-renderer/picture-key";
 import { drawnAgainst } from "@/cli/commands/lib/semantic-input";
 

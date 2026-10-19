@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { describeSubject, type VaultDiagnostic } from "@/shared/semantic-policy";
+import { describeSubject, type VaultDiagnostic } from "@archboard/board/policy";
 
 /**
  * The last check stays visible while the next check is pending or failed.

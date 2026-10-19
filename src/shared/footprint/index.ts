@@ -18,7 +18,7 @@
 import { z } from "zod";
 import { HistoryAttributionSchema } from "@/shared/history-attribution/index";
 import { BehindCommitSchema, BehindPartSchema, BehindSkipSchema } from "@/shared/code-check/index";
-import { SubjectStandingSchema } from "@/shared/semantic-board/index";
+import { SubjectStandingSchema } from "@archboard/board/render-reply";
 
 /** How the comparison marks a part, relationship or step that it names. */
 const NamedStatusSchema = SubjectStandingSchema.exclude(["unchanged"]);

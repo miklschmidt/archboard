@@ -62,12 +62,9 @@ import {
 } from "@/runtime/code-facts/index";
 import { nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "@/shared/code-check/index";
-import {
-	inspectContainer,
-	type ContainerInterface,
-	type SemanticNode,
-} from "@/shared/semantic-board/index";
-import { describeSubject } from "@/shared/semantic-policy/index";
+import { inspectContainer, type ContainerInterface } from "@archboard/board/container-interface";
+import { type SemanticNode } from "@archboard/board/content";
+import { describeSubject } from "@archboard/board/policy";
 
 /** What judging the containers of one board needs. */
 interface InterfaceReading {

@@ -11,7 +11,7 @@
 // Read by docs/design/wide-board-layout-fixtures/measure.ts, which prints it
 // for every board and compares two runs measure by measure.
 
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { VariantContent } from "@archboard/board/content";
 import type { RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
 	fitOf,

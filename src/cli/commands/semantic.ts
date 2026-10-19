@@ -10,17 +10,17 @@
 // not a concession to machines: nodes, their containment and their
 // relationships are a structure, and a flag grammar for a structure is a second
 // contract to keep in step with the first. The one contract is the Zod schema
-// in `src/shared/semantic-board`, and what arrives here is parsed against it
+// in `@archboard/board`, and what arrives here is parsed against it
 // before it is sent.
 
 import { z } from "zod";
-import { diagnosticLine } from "@/shared/semantic-policy/index";
+import { diagnosticLine } from "@archboard/board/policy";
 import {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
 	ConfirmableRefusalSchema,
 	VariantEditInputSchema,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/board-input";
 import {
 	branchSemanticBoardOnServer,
 	createSemanticBoardOnServer,

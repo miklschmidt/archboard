@@ -22,7 +22,7 @@ import {
 	resolveVariant,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 

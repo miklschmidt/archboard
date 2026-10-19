@@ -11,7 +11,7 @@ import {
 	productionPane as pane,
 } from "./support/codex-production.ts";
 import { createRequester, sleep, waitFor } from "./support/http.ts";
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@/shared/semantic-pane-context";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
 
 /** As much of a board as this test reads back. */
 interface SemanticBoardReply {

@@ -10,7 +10,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
-import { SemanticVariantSchema } from "@/shared/semantic-board/index";
+import { SemanticVariantSchema } from "@archboard/board/document";
 import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
 import { openableAt, subjectTip, tipAnchor, tipTargetAt } from "@/ui/semantic-board-canvas/tips";
 

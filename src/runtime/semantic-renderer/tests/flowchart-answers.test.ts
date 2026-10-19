@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { VariantContent } from "@archboard/board/content";
 import {
 	distanceToOutline,
 	drawnLines,

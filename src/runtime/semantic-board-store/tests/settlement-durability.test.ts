@@ -3,7 +3,12 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { ResolutionInputSchema } from "@archboard/board/resolution-input";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-durability-"));
 const writer = { kind: "agent" as const };
@@ -25,7 +30,7 @@ beforeEach(async () => {
 		board,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "system",
 				nodes: [{ name: "API", kind: "service", responsibility: "Serves requests" }],
@@ -74,9 +79,7 @@ async function branch(from: string, name: string) {
 		board,
 		writer,
 		expectedVersion: read().version,
-		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from, name }),
-		),
+		transition: store.branchVariantTransition(BoardBranchInputSchema.parse({ from, name })),
 	});
 }
 
@@ -93,7 +96,7 @@ async function rename(on: string, to: string) {
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: on,
 				nodes: [{ id: apiId, name: to, kind: "service" }],
 			}),
@@ -114,7 +117,7 @@ async function settle(on: string, side: "mine" | "theirs") {
 		writer,
 		expectedVersion: read().version,
 		transition: store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: on,
 				choices: [{ subject: apiId, field: "name", side }],
 			}),
@@ -130,7 +133,7 @@ test("a decision stays decided when the next one is made", async () => {
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: A,
 				nodes: [{ id: apiId, name: "Gateway", kind: "service", responsibility: "Serves the edge" }],
 			}),
@@ -142,7 +145,7 @@ test("a decision stays decided when the next one is made", async () => {
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: baseline,
 				nodes: [
 					{ id: apiId, name: "Public API", kind: "service", responsibility: "Serves everybody" },
@@ -169,7 +172,7 @@ test("a decision stays decided when the next one is made", async () => {
 		writer,
 		expectedVersion: read().version,
 		transition: store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: A,
 				choices: [{ subject: apiId, field: "responsibility", side: "theirs" }],
 			}),
@@ -199,7 +202,7 @@ test("a draft waiting on an ancestor cannot settle anything of its own", async (
 		writer,
 		expectedVersion: read().version,
 		transition: store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: B,
 				choices: [{ subject: apiId, field: "name", side: "mine" }],
 			}),
@@ -215,7 +218,7 @@ test("taking a value the predecessor no longer writes means not writing one", as
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: baseline,
 				nodes: [{ id: apiId, name: "API", kind: "service", description: "the front door" }],
 			}),
@@ -228,7 +231,7 @@ test("taking a value the predecessor no longer writes means not writing one", as
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: A,
 				nodes: [{ id: apiId, name: "API", kind: "service", description: "the only way in" }],
 			}),
@@ -240,7 +243,7 @@ test("taking a value the predecessor no longer writes means not writing one", as
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: baseline,
 				nodes: [{ id: apiId, name: "API", kind: "service" }],
 			}),
@@ -252,7 +255,7 @@ test("taking a value the predecessor no longer writes means not writing one", as
 		writer,
 		expectedVersion: read().version,
 		transition: store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: A,
 				choices: [{ subject: apiId, field: "description", side: "theirs" }],
 			}),

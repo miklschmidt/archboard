@@ -6,7 +6,7 @@ import { afterAll, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 import * as store from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import * as contract from "@/shared/semantic-board/index";
+import { BoardCreateInputSchema } from "@archboard/board/board-input";
 
 const vault = createConfiguredTestVault("archboard-overview-budget-");
 
@@ -40,7 +40,7 @@ async function create(name: string, parts: number, inAreas = 0): Promise<void> {
 		board: name,
 		writer: { kind: "agent" },
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name,
 				level: "service",
 				nodes: [...areas, ...nodes],
@@ -76,7 +76,7 @@ test("a relationship between a container and a part inside it is warned, either 
 		board: "Nested",
 		writer: { kind: "agent" },
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: "Nested",
 				level: "service",
 				nodes: [

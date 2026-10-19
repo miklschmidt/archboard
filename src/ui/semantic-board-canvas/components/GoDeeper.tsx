@@ -25,7 +25,8 @@ import {
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/code-binding";
-import type { DrillDown, SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
+import type { DrillDown } from "@archboard/board/content";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import { Button } from "@/ui/components/button";
 import { cn } from "@/ui/components/class-names";
 import { drillWay, drillWayWords, type DrillWay } from "@/ui/semantic-board-canvas/lib/drill-way";

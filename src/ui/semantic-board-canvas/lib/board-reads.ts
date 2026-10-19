@@ -8,7 +8,7 @@
 
 import type { RememberedFindings } from "@/shared/code-check/index";
 import type { LocalityAnswer } from "@/shared/locality/index";
-import type { VaultCheck } from "@/shared/semantic-policy/index";
+import type { VaultCheck } from "@archboard/board/policy";
 import {
 	fetchCodeFindings,
 	fetchLocality,

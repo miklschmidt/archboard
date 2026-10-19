@@ -2,7 +2,7 @@
 // group and for a container alike: enough to find the subject on the board.
 
 import { z } from "zod";
-import type { SemanticEdge, SemanticNode } from "@/shared/semantic-board/index";
+import type { SemanticEdge, SemanticNode } from "@archboard/board/content";
 
 /** One node as the inspection names it: enough to find it on the board. */
 const InspectedNodeSchema = z.object({

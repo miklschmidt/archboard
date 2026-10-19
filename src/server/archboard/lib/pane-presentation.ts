@@ -18,7 +18,7 @@ import type {
 	PanePresentRequest,
 	SemanticPaneContext,
 	SemanticPanePresentation,
-} from "@/shared/semantic-pane-context/index";
+} from "@archboard/board/pane-context";
 import { PRESENTATION_ARRIVAL_TIMEOUT_MS } from "@archboard/timing";
 import { paneBoardOf, panes, sendToPane } from "@/server/archboard/lib/pane-registry";
 

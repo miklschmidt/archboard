@@ -13,18 +13,16 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { errorMessage } from "@archboard/diagnostics/errno";
+import { acceptedBoardNames, listedBoard, type BoardListing } from "@archboard/board/board-listing";
 import {
-	acceptedBoardNames,
 	LayoutEngineSchema,
-	listedBoard,
-	type BoardListing,
 	type LayoutEngineName,
-	type SemanticBoard,
 	StandaloneThemeSchema,
 	type StandaloneTheme,
 	LegendLayoutSchema,
 	type LegendLayout,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
+import { type SemanticBoard } from "@archboard/board/document";
 import {
 	listSemanticBoards,
 	checkSemanticVault,

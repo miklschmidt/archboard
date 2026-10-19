@@ -11,7 +11,7 @@ import type {
 	PanePresentRequest,
 	SemanticPaneContext,
 	SemanticPanePresentation,
-} from "@/shared/semantic-pane-context/index";
+} from "@archboard/board/pane-context";
 
 /** One port over one live pane, keeping what the pane was sent and what a user did. */
 function harness(live = true) {

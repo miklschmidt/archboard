@@ -14,7 +14,7 @@
 // refused unless the request forces it: adopting it would leave out what that
 // later adoption brought, and nothing else would say so (ADR 0037).
 
-import type { Adoption, SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
+import type { Adoption, SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import { unsettledAncestor } from "@/runtime/semantic-board-store/lib/propagate";
 import { BRANCH_INSTEAD } from "@/runtime/semantic-board-store/lib/shelve";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";

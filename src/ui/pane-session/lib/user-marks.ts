@@ -6,7 +6,7 @@
 // Whatever changes without a mark is told to nobody, which is what keeps a change the canvas or
 // an agent caused from being told to the voice model as the user's.
 
-import type { SemanticPaneContext, SemanticPanePart } from "@/shared/semantic-pane-context";
+import type { SemanticPaneContext, SemanticPanePart } from "@archboard/board/pane-context";
 
 /** The parts of a reading the marks are compared by. */
 type MarkedReading = Pick<SemanticPaneContext, "board" | "variant" | "view" | "selection">;

@@ -32,7 +32,7 @@
 // each of those stands against it (TASK-309): the picture marks what was added and changed, and
 // the voice can only explain what it is told.
 
-import type { ChangeKind } from "@/shared/semantic-board/index";
+import type { ChangeKind } from "@archboard/board/compare-variants";
 import { languageName, type RecordingNarration } from "@/shared/walkthrough-recording";
 
 /** How much of a walkthrough's name a start carries, in characters. */

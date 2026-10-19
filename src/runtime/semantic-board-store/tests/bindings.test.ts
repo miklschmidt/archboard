@@ -10,8 +10,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import * as contract from "@/shared/semantic-board/index";
-import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { type SemanticBoard } from "@archboard/board/document";
+import { BoardAdoptInputSchema } from "@archboard/board/resolution-input";
+import type { VaultDiagnostic } from "@archboard/board/policy";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const vault = createConfiguredTestVault("archboard-bindings-");
@@ -55,7 +61,7 @@ async function create(input: Record<string, unknown>, into: string = vault): Pro
 		vault: into,
 		board: String(input["name"]),
 		writer,
-		transition: store.createBoardTransition(contract.BoardCreateInputSchema.parse(input)),
+		transition: store.createBoardTransition(BoardCreateInputSchema.parse(input)),
 	});
 	if (written.outcome !== "applied") throw new Error(`seed refused: ${JSON.stringify(written)}`);
 }
@@ -65,7 +71,7 @@ async function create(input: Record<string, unknown>, into: string = vault): Pro
  * @param board Its name.
  * @returns The saved family.
  */
-function read(board: string): contract.SemanticBoard {
+function read(board: string): SemanticBoard {
 	const result = store.readSemanticBoard(vault, board);
 	if (!result.ok) throw new Error(result.problem);
 	return result.board;
@@ -156,7 +162,7 @@ test("a binding a frozen variant carries is not reported once it is history", as
 		writer,
 		expectedVersion: read("rebound-system").version,
 		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from: baseline, name: "Where it went" }),
+			BoardBranchInputSchema.parse({ from: baseline, name: "Where it went" }),
 		),
 	});
 	expect(branched.outcome).toBe("applied");
@@ -166,7 +172,7 @@ test("a binding a frozen variant carries is not reported once it is history", as
 		writer,
 		expectedVersion: read("rebound-system").version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: "Where it went",
 				nodes: [{ name: "Moved", kind: "module", binding: { repo: REPO, path: PRESENT } }],
 			}),
@@ -179,7 +185,7 @@ test("a binding a frozen variant carries is not reported once it is history", as
 		writer,
 		expectedVersion: read("rebound-system").version,
 		transition: store.adoptVariantTransition(
-			contract.BoardAdoptInputSchema.parse({ variant: "Where it went" }),
+			BoardAdoptInputSchema.parse({ variant: "Where it went" }),
 		),
 	});
 	expect(adopted.outcome).toBe("applied");
@@ -207,7 +213,7 @@ test("a binding on a draft is ahead of the code until adoption says the code is 
 		writer,
 		expectedVersion: read("planned-system").version,
 		transition: store.adoptVariantTransition(
-			contract.BoardAdoptInputSchema.parse({ variant: read("planned-system").variants[0]!.name }),
+			BoardAdoptInputSchema.parse({ variant: read("planned-system").variants[0]!.name }),
 		),
 	});
 	expect(adopted.outcome).toBe("applied");

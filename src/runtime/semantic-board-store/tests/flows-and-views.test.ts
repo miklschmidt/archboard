@@ -3,7 +3,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	VariantEditInputSchema,
+	BoardBranchInputSchema,
+} from "@archboard/board/board-input";
+import { scopedContent } from "@archboard/board/scope";
+import { messagesOf, everyStep } from "@archboard/board/flow-steps";
+import { BoardAdoptInputSchema } from "@archboard/board/resolution-input";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-flows-"));
 const writer = { kind: "agent" as const };
@@ -52,9 +59,7 @@ beforeEach(async () => {
 		vault,
 		board,
 		writer,
-		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({ ...SEED, name: board }),
-		),
+		transition: store.createBoardTransition(BoardCreateInputSchema.parse({ ...SEED, name: board })),
 	});
 });
 afterAll(() => {
@@ -79,7 +84,7 @@ test("flows and views land in one batch and read back resolved", () => {
 	expect(content.flows[0]!.participants.every((p) => nodeIds.has(p))).toBe(true);
 
 	// Two views over the same identities: the sequence one keeps its flow's nodes.
-	const drawn = contract.scopedContent(content, scope);
+	const drawn = scopedContent(content, scope);
 	expect(drawn.nodes.map((n) => n.name).toSorted()).toEqual(["CLI", "Server", "Vault"]);
 	expect(drawn.flows).toHaveLength(1);
 }, 20_000);
@@ -93,7 +98,7 @@ test("a node cannot be taken out from under a flow without saying so", async () 
 		writer,
 		expectedVersion: read.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({ removeNodes: ["Vault"] }),
+			VariantEditInputSchema.parse({ removeNodes: ["Vault"] }),
 		),
 	});
 	expect(refused.outcome === "rejected" && refused.code).toBe("NODE_IN_FLOW");
@@ -110,7 +115,7 @@ test("a board view keeps a stale selection and explicitly draws nothing", async 
 		writer,
 		expectedVersion: read.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({ removeFlows: ["One edit"] }),
+			VariantEditInputSchema.parse({ removeFlows: ["One edit"] }),
 		),
 	});
 	expect(applied.outcome).toBe("applied");
@@ -118,7 +123,7 @@ test("a board view keeps a stale selection and explicitly draws nothing", async 
 	const content = applied.board.variants[0]!.content;
 	expect(applied.board.views).toEqual(read.board.views);
 	expect(view.scope.kind === "selection" && view.scope.flows).toEqual([selectedFlow]);
-	expect(contract.scopedContent(content, view.scope)).toEqual({
+	expect(scopedContent(content, view.scope)).toEqual({
 		nodes: [],
 		edges: [],
 		flows: [],
@@ -140,7 +145,7 @@ test("a step keeps its id when its flow is rewritten, and a stated id must name 
 		writer,
 		expectedVersion: before.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				flows: [
 					{
 						id: flow.id,
@@ -160,7 +165,7 @@ test("a step keeps its id when its flow is rewritten, and a stated id must name 
 	if (rewritten.outcome !== "applied") return;
 	const after = rewritten.board.variants[0]!.content.flows[0]!;
 	expect(after.steps.map((s) => s.id).slice(0, 2)).toEqual([moved, kept]);
-	expect(contract.messagesOf(after.steps)[1]!.label).toBe("state the change, precisely");
+	expect(messagesOf(after.steps)[1]!.label).toBe("state the change, precisely");
 	expect(after.steps[2]!.id).not.toBe(kept);
 
 	// A step id that names nothing is a typo, not a new step.
@@ -170,7 +175,7 @@ test("a step keeps its id when its flow is rewritten, and a stated id must name 
 		writer,
 		expectedVersion: rewritten.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				flows: [
 					{
 						id: flow.id,
@@ -194,7 +199,7 @@ test("a stated flow or view id that names nothing is refused", async () => {
 		writer,
 		expectedVersion: read.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				flows: [
 					{
 						id: "nof1ow",
@@ -214,7 +219,7 @@ test("a stated flow or view id that names nothing is refused", async () => {
 		writer,
 		expectedVersion: read.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				views: [{ id: "nov1ew", name: "Ghost", grammar: "architecture" }],
 			}),
 		),
@@ -232,7 +237,7 @@ test("a board view can select an identity held only by another variant without c
 		writer,
 		expectedVersion: initial.board.version,
 		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from: baseline.name, name: "With queue" }),
+			BoardBranchInputSchema.parse({ from: baseline.name, name: "With queue" }),
 		),
 	});
 	expect(branched.outcome).toBe("applied");
@@ -244,7 +249,7 @@ test("a board view can select an identity held only by another variant without c
 		writer,
 		expectedVersion: branched.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: "With queue",
 				nodes: [{ name: "Queue", kind: "queue" }],
 			}),
@@ -258,7 +263,7 @@ test("a board view can select an identity held only by another variant without c
 		writer,
 		expectedVersion: extended.board.version,
 		transition: store.adoptVariantTransition(
-			contract.BoardAdoptInputSchema.parse({ variant: "With queue", reason: "queue it" }),
+			BoardAdoptInputSchema.parse({ variant: "With queue", reason: "queue it" }),
 		),
 	});
 	expect(adopted.outcome).toBe("applied");
@@ -274,7 +279,7 @@ test("a board view can select an identity held only by another variant without c
 		writer,
 		expectedVersion: adopted.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: baseline.name,
 				views: [
 					{
@@ -301,7 +306,7 @@ test("a board view can select an identity held only by another variant without c
 		writer,
 		expectedVersion: viewed.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: baseline.name,
 				nodes: [{ ...historicalNode, name: "Historical CLI" }],
 				views: [{ name: "Must not land", grammar: "architecture" }],
@@ -323,7 +328,7 @@ test("a node keeps everything it was written with, including where it drills dow
 		board: "drilling",
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: "drilling",
 				level: "system",
 				nodes: [
@@ -342,7 +347,7 @@ test("a node keeps everything it was written with, including where it drills dow
 		writer,
 		expectedVersion: read.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				nodes: [
 					{
 						id: node.id,
@@ -424,7 +429,7 @@ test("a decision and a loop land with ids of their own, keep them on a rewrite, 
 		board,
 		writer,
 		expectedVersion: read.board.version,
-		transition: store.editVariantTransition(contract.VariantEditInputSchema.parse(branching({}))),
+		transition: store.editVariantTransition(VariantEditInputSchema.parse(branching({}))),
 	});
 	if (written.outcome !== "applied") throw new Error(`refused: ${JSON.stringify(written)}`);
 	const steps = written.board.variants[0]!.content.flows[0]!.steps;
@@ -432,9 +437,9 @@ test("a decision and a loop land with ids of their own, keep them on a rewrite, 
 	if (decision.kind !== "decision") throw new Error("no decision");
 	const loop = decision.alternatives[1]!.steps[0]!;
 	if (loop.kind !== "loop") throw new Error("no loop");
-	const write = contract.messagesOf(loop.steps)[0]!;
+	const write = messagesOf(loop.steps)[0]!;
 	// Every step got an id of its own, and a message names its parts by id.
-	const minted = contract.everyStep(steps).map((step) => step.id);
+	const minted = everyStep(steps).map((step) => step.id);
 	expect(new Set(minted).size).toBe(minted.length);
 	const nodes = new Map(
 		written.board.variants[0]!.content.nodes.map((node) => [node.name, node.id]),
@@ -448,13 +453,13 @@ test("a decision and a loop land with ids of their own, keep them on a rewrite, 
 		writer,
 		expectedVersion: written.board.version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse(
+			VariantEditInputSchema.parse(
 				branching({ decision: decision.id, loop: loop.id, write: write.id }),
 			),
 		),
 	});
 	if (rewritten.outcome !== "applied") throw new Error("refused");
-	const kept = contract.everyStep(rewritten.board.variants[0]!.content.flows[0]!.steps);
+	const kept = everyStep(rewritten.board.variants[0]!.content.flows[0]!.steps);
 	expect(kept.map((step) => step.id)).toEqual(
 		expect.arrayContaining([ask, decision.id, loop.id, write.id]),
 	);

@@ -8,7 +8,8 @@
 // nowhere to land, and is refused saying so rather than as a reference to
 // nothing. What the batch itself named in `removeEdges` is gone either way.
 
-import type { SemanticEdge, SemanticEdgeInput, SemanticNode } from "@/shared/semantic-board/index";
+import type { SemanticEdge, SemanticNode } from "@archboard/board/content";
+import type { SemanticEdgeInput } from "@archboard/board/board-input";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import { place, resolveNode } from "@/runtime/semantic-board-store/lib/references";
 import { subjectOrder } from "@/runtime/semantic-board-store/lib/subject-order";

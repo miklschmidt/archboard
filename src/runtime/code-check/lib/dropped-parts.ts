@@ -25,8 +25,9 @@ import { sourceAt } from "@/runtime/history-lens/index";
 import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
 import { bindingPathOf, filesOfBinding } from "@archboard/code-binding/binding-files";
 import { type CodeBinding } from "@archboard/code-binding/code-binding";
-import { draftRefs } from "@/shared/semantic-board/draft-ref";
-import type { SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
+import { draftRefs } from "@archboard/board/draft-ref";
+import type { SemanticNode } from "@archboard/board/content";
+import type { SemanticVariant } from "@archboard/board/document";
 
 /** What holding dropped parts to code needs from the pass. */
 interface DroppedContext {

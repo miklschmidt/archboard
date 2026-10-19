@@ -10,7 +10,7 @@ import {
 	addressedVariant,
 	SemanticBoardSchema,
 	type SemanticBoard,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	SemanticPolicySchema,
@@ -18,7 +18,7 @@ import {
 	VaultDiagnosticSchema,
 	type SemanticPolicy,
 	type VaultDiagnostic,
-} from "@/shared/semantic-policy/index";
+} from "@archboard/board/policy";
 import { askedTalkPlace, writeTalk } from "@/runtime/walkthrough-recorder";
 import { archboard, archboardOk, type CliContext } from "@/runtime/skill-evaluation/lib/archboard";
 import type { InspectionRequest, RenderRequest } from "@/runtime/skill-evaluation/lib/outcomes";

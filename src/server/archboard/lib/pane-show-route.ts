@@ -24,7 +24,7 @@ import {
 	addressedVariant,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
 import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
 import {
 	boardForPane,

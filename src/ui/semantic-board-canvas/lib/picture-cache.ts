@@ -26,7 +26,7 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 	SemanticRenderReplySchema,
 	type SemanticRenderReply,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/render-reply";
 import {
 	comparisonKey,
 	type SemanticRenderRequest,

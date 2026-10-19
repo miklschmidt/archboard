@@ -7,8 +7,8 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { SemanticBoardSchema } from "@/shared/semantic-board/index";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { SemanticBoardSchema } from "@archboard/board/document";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { framesOf } from "@/shared/walkthrough-recording/talk";
 import { askedTalkPlace, writeTalk } from "@/runtime/walkthrough-recorder";
 import {

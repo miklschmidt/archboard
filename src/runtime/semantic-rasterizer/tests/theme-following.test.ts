@@ -13,7 +13,7 @@ import {
 	renderSemanticView,
 	type RenderedDiagram,
 } from "@/runtime/semantic-renderer/index";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
+import { VariantContentSchema } from "@archboard/board/content";
 import { themeColor } from "@/shared/theme/server";
 import {
 	SEMANTIC_RASTER_CLEANUP_MS,

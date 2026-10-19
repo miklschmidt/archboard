@@ -1,4 +1,4 @@
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 // A semantic board in, one self-contained SVG plus its geometry out.
 //
 // This module is an in-repository fork of both grammars of the PR
@@ -23,11 +23,8 @@ import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-
 // Page pictures take the page's colour tokens (`lib/theme.ts`). Only documents
 // that stand alone are drawn for a theme.
 
-import {
-	DEFAULT_LAYOUT_ENGINE,
-	type LayoutEngineName,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+import { DEFAULT_LAYOUT_ENGINE, type LayoutEngineName } from "@archboard/board/render-reply";
+import { type VariantContent } from "@archboard/board/content";
 import {
 	SemanticRenderError,
 	type DiagramRenderRequest,

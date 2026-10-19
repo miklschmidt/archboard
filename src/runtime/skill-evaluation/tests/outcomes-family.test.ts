@@ -12,7 +12,7 @@ import {
 	type OutcomeCheck,
 	type Reading,
 } from "@/runtime/skill-evaluation/index";
-import { SemanticBoardSchema, type SemanticBoard } from "@/shared/semantic-board/index";
+import { SemanticBoardSchema, type SemanticBoard } from "@archboard/board/document";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import { AFTER, BEFORE, passes, READING } from "@/runtime/skill-evaluation/tests/reading-fixture";
 

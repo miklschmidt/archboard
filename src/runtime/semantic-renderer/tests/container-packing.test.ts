@@ -1,6 +1,6 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { measureArchitecture } from "@/runtime/semantic-renderer/measurement";

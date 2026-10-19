@@ -14,7 +14,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { SemanticSubjectRef } from "@/shared/semantic-pane-context";
+import type { SemanticSubjectRef } from "@archboard/board/pane-context";
 import { boardAddressOf, sameBoardName } from "@/ui/semantic-board-canvas";
 
 /** One picked subject, as the viewer described it. */

@@ -25,8 +25,8 @@ import {
 	variantNamed,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
-import type { SemanticPolicy } from "@/shared/semantic-policy/index";
+} from "@archboard/board/document";
+import type { SemanticPolicy } from "@archboard/board/policy";
 
 /** One board the check reads, the variant it reads, and the file it lives in. */
 interface BoardToCheck {

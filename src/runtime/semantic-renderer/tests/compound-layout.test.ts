@@ -2,7 +2,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import nearMiss from "./near-miss-columns.json";
 import { describe, expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { measureArchitecture } from "@/runtime/semantic-renderer/measurement";
 import {
 	distanceToFrame,

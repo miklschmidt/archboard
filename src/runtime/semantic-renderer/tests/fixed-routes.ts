@@ -1,6 +1,6 @@
 // Fixed orthogonal routes, rounded as they reach crossing treatment, so a
 // test exercises the crossing pass independently of any placement engine.
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 import {
 	bridgeCrossings,
 	curveThrough,

@@ -25,17 +25,14 @@ import {
 import { claimBoard, claimOn, releaseClaim } from "@/runtime/engine/board-lock";
 import { forgetDoing, recentDoing, recordDoing } from "@/runtime/engine/board-doing";
 import { errorMessage } from "@archboard/diagnostics/errno";
-import {
-	addressedVariant,
-	BoardRenameInputSchema,
-	type SemanticBoard,
-} from "@/shared/semantic-board/index";
+import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
+import { BoardRenameInputSchema } from "@archboard/board/resolution-input";
 import {
 	renameTransition,
 	writeSemanticBoard,
 	type SemanticWriteResult,
 } from "@/runtime/semantic-board-store/index";
-import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
+import type { VaultDiagnostic } from "@archboard/board/policy";
 import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
 import {
 	aggregateOf,

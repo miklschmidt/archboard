@@ -51,7 +51,7 @@
 
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/configurable-languages";
 import { z } from "zod";
-import { EvidenceKindSchema, VaultDiagnosticSchema } from "@/shared/semantic-policy/index";
+import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/board/policy";
 
 /** The part, relationship or step an entry is about, as every diagnostic names it. */
 const CodeCheckSubjectSchema = VaultDiagnosticSchema.shape.subject.unwrap();

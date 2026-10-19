@@ -12,7 +12,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CodeCheck from "@/runtime/code-check/index";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
+import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 /** A repository with no remote is named by its directory, here with a space. */
 const IDENTITY = "my project";

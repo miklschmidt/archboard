@@ -6,7 +6,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 import {
 	PANE_VAULT,
 	chooseVariantInShell,

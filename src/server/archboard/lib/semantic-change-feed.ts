@@ -11,8 +11,8 @@
 // board needs to know when what it was told stopped being true, and a cursor
 // it can say it has read up to.
 
-import { mintId } from "@/shared/ids/ids";
-import { MoveEndSchema, type MoveEnd } from "@/shared/semantic-board/index";
+import { mintId } from "@archboard/board/ids";
+import { MoveEndSchema, type MoveEnd } from "@archboard/board/board-move";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { onBoardBroadcast } from "@/server/archboard/lib/pane-registry";
 

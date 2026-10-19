@@ -6,7 +6,7 @@
 // removes the original. The write lands (the board is valid), and the answer
 // says what happened at each step, so the rule teaches itself.
 
-import { effectiveTraffic, type SemanticEdge } from "@/shared/semantic-board/index";
+import { effectiveTraffic, type SemanticEdge } from "@archboard/board/content";
 
 /** A notice a write answers with, before the write boundary names the file. */
 interface WriteNotice {

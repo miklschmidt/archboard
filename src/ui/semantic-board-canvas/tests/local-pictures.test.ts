@@ -11,8 +11,8 @@
 import { afterEach, expect, test } from "bun:test";
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 
-import type { BoardListing } from "@/shared/semantic-board/index";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import type { BoardListing } from "@archboard/board/board-listing";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
 import {
 	announceSemanticBoardChange,

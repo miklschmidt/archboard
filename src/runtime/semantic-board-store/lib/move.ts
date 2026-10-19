@@ -40,8 +40,9 @@ import {
 	withBoardLockIfFreeSync,
 } from "@/runtime/engine/board-lock";
 import { vaultIdentity } from "@archboard/code-binding/vault-checkout";
-import { mintId } from "@/shared/ids/ids";
-import type { MoveEnd, MovedDrillDown, SemanticBoard } from "@/shared/semantic-board/index";
+import { mintId } from "@archboard/board/ids";
+import type { MoveEnd, MovedDrillDown } from "@archboard/board/board-move";
+import type { SemanticBoard } from "@archboard/board/document";
 import { acceptedBoard } from "@/runtime/semantic-board-store/lib/accepted";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
 import { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";

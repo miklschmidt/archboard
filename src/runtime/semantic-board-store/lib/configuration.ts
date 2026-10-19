@@ -9,7 +9,7 @@ import {
 	createSemanticPolicySchema,
 	type SemanticPolicy,
 	type VaultDiagnostic,
-} from "@/shared/semantic-policy/index";
+} from "@archboard/board/policy";
 
 const SEMANTIC_BOARD_CONFIG_PATH = path.join(".archboard", "config.yaml");
 const SemanticBoardConfigurationSchema = createSemanticPolicySchema(

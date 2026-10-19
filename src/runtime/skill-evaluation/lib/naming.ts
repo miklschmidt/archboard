@@ -14,7 +14,7 @@ import {
 	resolveVariant,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
 
 /** How well a candidate name answers the name a check asked for. */
 const NO_MATCH = 0;

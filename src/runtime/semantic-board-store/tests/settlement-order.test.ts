@@ -3,7 +3,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { ResolutionInputSchema } from "@archboard/board/resolution-input";
+import { messagesOf } from "@archboard/board/flow-steps";
 
 // Settling a disagreement about order rather than about a field.
 //
@@ -29,7 +35,7 @@ beforeEach(async () => {
 		board,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "system",
 				nodes: [{ name: "API", kind: "service" }],
@@ -44,7 +50,7 @@ beforeEach(async () => {
 		writer,
 		expectedVersion: read().version,
 		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from: baseline, name: A }),
+			BoardBranchInputSchema.parse({ from: baseline, name: A }),
 		),
 	});
 });
@@ -85,7 +91,7 @@ async function tellAFlow() {
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: baseline,
 				flows: [
 					{
@@ -120,7 +126,7 @@ async function retell(on: string, order: readonly number[]) {
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: on,
 				flows: [{ ...flow, steps: order.map((at) => flow.steps[at]) }],
 			}),
@@ -143,7 +149,7 @@ async function settleOrder(on: string, choices?: readonly number[]) {
 		writer,
 		expectedVersion: read().version,
 		transition: store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: on,
 				choices: answering.map((issue) => ({
 					subject: issue.subject,
@@ -159,8 +165,7 @@ test("an order this proposal means is kept, and stays kept when the predecessor 
 	await tellAFlow();
 	await retell(A, [2, 0, 1]);
 	await retell(baseline, [0, 2, 1]);
-	const told = () =>
-		contract.messagesOf(variant(A).content.flows[0]!.steps).map((step) => step.label);
+	const told = () => messagesOf(variant(A).content.flows[0]!.steps).map((step) => step.label);
 	expect(variant(A).reconciliation?.issues.every((one) => one.kind === "competing-order")).toBe(
 		true,
 	);
@@ -179,7 +184,7 @@ test("an order this proposal means is kept, and stays kept when the predecessor 
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: baseline,
 				nodes: [{ name: "Ledger", kind: "service" }],
 			}),
@@ -217,7 +222,7 @@ async function rename(on: string, to: string) {
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({
+			VariantEditInputSchema.parse({
 				variant: on,
 				nodes: [{ id: apiId, name: to, kind: "service" }],
 			}),
@@ -245,9 +250,11 @@ test("an order settled while something else stays open leaves a base a board may
 	expect(settled.outcome, settled.outcome === "rejected" ? settled.problem : "").toBe("applied");
 	const after = variant(A).reconciliation;
 	expect(after?.issues.map((one) => one.kind)).toEqual(["competing-field"]);
-	expect(
-		contract.messagesOf(variant(A).content.flows[0]?.steps ?? []).map((step) => step.label),
-	).toEqual(["writes", "asks", "checks"]);
+	expect(messagesOf(variant(A).content.flows[0]?.steps ?? []).map((step) => step.label)).toEqual([
+		"writes",
+		"asks",
+		"checks",
+	]);
 
 	// And the argument that is left is still answerable afterwards.
 	const rest = await settleOrder(A);

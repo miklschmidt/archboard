@@ -23,7 +23,7 @@ import {
 import { namedEntry, variantNamed, viewNamed } from "@/runtime/skill-evaluation/lib/naming";
 import { sequentially } from "@/runtime/skill-evaluation/lib/process";
 import type { CaptureDeclaration, CaptureRequest } from "@/runtime/skill-evaluation/lib/suite";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { SemanticBoard } from "@archboard/board/document";
 
 /**
  * The longest side a capture keeps whole before it is also cut into tiles.

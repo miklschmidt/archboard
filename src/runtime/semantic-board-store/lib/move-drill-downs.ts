@@ -21,12 +21,9 @@
 // This half is pure: it reads no file. Which board a name opens is a question
 // about the source vault, answered by the caller (`move.ts`).
 
-import type {
-	DrillDown,
-	MovedDrillDown,
-	SemanticBoard,
-	SemanticNode,
-} from "@/shared/semantic-board/index";
+import type { DrillDown, SemanticNode } from "@archboard/board/content";
+import type { MovedDrillDown } from "@archboard/board/board-move";
+import type { SemanticBoard } from "@archboard/board/document";
 
 /** The two repository identities of a move, when the vault has one. */
 interface MoveIdentities {

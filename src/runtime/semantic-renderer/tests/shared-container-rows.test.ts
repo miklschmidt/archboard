@@ -1,6 +1,7 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { type DiagramBox, type VariantContent } from "@/shared/semantic-board/index";
+import { type DiagramBox } from "@archboard/board/render-reply";
+import { type VariantContent } from "@archboard/board/content";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";

@@ -1,5 +1,5 @@
 import { transform, type Selector, type StyleRule, type Declaration } from "lightningcss";
-import type { DiagramTheme } from "@/shared/semantic-board/index";
+import type { DiagramTheme } from "@archboard/board/render-reply";
 import { exportColor } from "@/shared/theme/lib/colors";
 
 /** Only color declarations live in the shared stylesheet. */

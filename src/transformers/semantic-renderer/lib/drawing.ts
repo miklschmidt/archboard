@@ -1,5 +1,5 @@
 // Measurement and placement meet here; painters consume these values unchanged.
-import type { SemanticEdge, SemanticNode } from "@/shared/semantic-board/index";
+import type { SemanticEdge, SemanticNode } from "@archboard/board/content";
 import type { DiagramFont } from "@/transformers/semantic-renderer/lib/fonts";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Curve } from "@/transformers/semantic-renderer/lib/layout/curves";

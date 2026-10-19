@@ -6,8 +6,8 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { installRendererHost, rendererHost } from "@/transformers/semantic-renderer/host";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
+import type { VariantContent } from "@archboard/board/content";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 
 const policy = SemanticPolicySchema.parse({

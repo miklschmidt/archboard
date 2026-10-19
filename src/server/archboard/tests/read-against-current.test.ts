@@ -13,11 +13,11 @@ import { semanticBoardAddress } from "@/runtime/semantic-board-store/index";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	SemanticBoardSchema,
-	WalkthroughBeatSchema,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
-import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
+} from "@archboard/board/document";
+import { WalkthroughBeatSchema } from "@archboard/board/walkthrough";
+import type { SemanticPaneContext } from "@archboard/board/pane-context";
 
 const GATEWAY = { id: "gw", name: "Gateway", kind: "service", order: 1000 };
 const INTAKE = { id: "in", name: "Legacy intake", kind: "service", order: 2000 };

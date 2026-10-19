@@ -8,7 +8,7 @@ import {
 	currentVariant,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
 
 /** A request the route turns away, with the code the CLI maps to its exit status. */
 interface Refusal {

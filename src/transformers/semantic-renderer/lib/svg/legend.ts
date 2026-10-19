@@ -14,8 +14,8 @@
 // Laid out in a row that wraps at a width, it sits under a picture; in a
 // column, beside one.
 
-import type { LegendLayout } from "@/shared/semantic-board/index";
-import { PaletteColorSchema } from "@/shared/semantic-policy/index";
+import type { LegendLayout } from "@archboard/board/render-reply";
+import { PaletteColorSchema } from "@archboard/board/policy";
 import { DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/config";
 import { CHIP_THICKNESS, ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
 import { CARD_NOTE_FONT, fontAttributes } from "@/transformers/semantic-renderer/lib/fonts";

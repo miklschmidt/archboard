@@ -15,8 +15,8 @@ import {
 	type BoardRenderChoices,
 	type BoardRenderOutcome,
 } from "@/transformers/semantic-renderer/board";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
-import type { SemanticPolicy } from "@/shared/semantic-policy/index";
+import type { SemanticBoard } from "@archboard/board/document";
+import type { SemanticPolicy } from "@archboard/board/policy";
 import { installBunHost } from "@/runtime/semantic-renderer/lib/bun-host";
 
 /**

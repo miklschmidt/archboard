@@ -18,7 +18,7 @@ import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	SemanticBoardSchema,
 	type SemanticBoard,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-history-lens-"));

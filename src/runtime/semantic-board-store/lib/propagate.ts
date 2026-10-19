@@ -27,13 +27,9 @@
 //   waits. Its content is left exactly as it is, which is coherent, and it
 //   records the ancestor whose decision it is waiting for.
 
-import {
-	reconcileVariant,
-	type ReconciliationIssue,
-	type SemanticBoard,
-	type SemanticVariant,
-	type VariantStanding,
-} from "@/shared/semantic-board/index";
+import { reconcileVariant } from "@archboard/board/reconcile";
+import { type ReconciliationIssue, type VariantStanding } from "@archboard/board/reconciliation";
+import { type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
 
 /** What one descendant did about an edit above it. */
 interface DescendantOutcome {

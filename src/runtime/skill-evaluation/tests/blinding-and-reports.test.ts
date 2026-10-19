@@ -6,9 +6,9 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { SemanticBoardSchema } from "@/shared/semantic-board/index";
+import { SemanticBoardSchema } from "@archboard/board/document";
 import { withFixtureOrders } from "./fixture-orders.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import {
 	anonymousRunId,
 	buildReport,

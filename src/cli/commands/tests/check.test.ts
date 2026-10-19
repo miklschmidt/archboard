@@ -11,7 +11,7 @@ import {
 	type DiagnosticSubject,
 	type SharedSymbol,
 	type VaultCheck,
-} from "@/shared/semantic-policy/index";
+} from "@archboard/board/policy";
 import { makeStandInVault } from "./stand-in-vault.ts";
 
 const ledger: DiagnosticSubject = { kind: "node", id: "AbCd", name: "Ledger" };

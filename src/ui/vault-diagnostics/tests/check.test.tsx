@@ -5,7 +5,7 @@ import { act, createElement, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 
 import { semanticBoardKeys } from "@/ui/semantic-board-canvas";
-import { DEFAULT_SEMANTIC_POLICY, type VaultCheck } from "@/shared/semantic-policy";
+import { DEFAULT_SEMANTIC_POLICY, type VaultCheck } from "@archboard/board/policy";
 import { useVaultCheck, useVaultPolicyRefresh } from "@/ui/vault-diagnostics";
 
 /** The vault the check reads. */

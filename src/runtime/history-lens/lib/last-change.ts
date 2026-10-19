@@ -19,12 +19,12 @@ import path from "node:path";
 import { gitBytes, gitSays, gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { parseLog } from "@/runtime/history-lens/lib/commits";
 import { decodeSemanticBoardDocument } from "@/runtime/semantic-board-store/index";
+import { compareVariants } from "@archboard/board/compare-variants";
 import {
-	compareVariants,
 	currentVariant,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
 
 /** Where a board's last change is, or why it cannot be found. */
 type LastChange =

@@ -3,9 +3,9 @@ import {
 	nodeAppearances,
 	lineAppearance,
 } from "@/transformers/semantic-renderer/lib/semantic-appearance";
-import type { SemanticPolicy } from "@/shared/semantic-policy/index";
+import type { SemanticPolicy } from "@archboard/board/policy";
 // Paint a complete drawing. Placement, wrapping and routing are already settled.
-import type { DiagramAtlas } from "@/shared/semantic-board/index";
+import type { DiagramAtlas } from "@archboard/board/render-reply";
 import type {
 	DrawingEdge,
 	DrawingNode,

@@ -30,8 +30,8 @@ import {
 	type ClaimEndCause,
 	type LockRequest,
 } from "@/runtime/engine/board-lock";
-import { mintId } from "@/shared/ids/ids";
-import { type SemanticBoard } from "@/shared/semantic-board/index";
+import { mintId } from "@archboard/board/ids";
+import { type SemanticBoard } from "@archboard/board/document";
 import {
 	locateSemanticBoard,
 	semanticBoardAddress,
@@ -54,7 +54,7 @@ import { refuse, type SemanticRefusalCode } from "@/runtime/semantic-board-store
 import type { SemanticTransition } from "@/runtime/semantic-board-store/lib/transitions";
 import type { DescendantOutcome } from "@/runtime/semantic-board-store/lib/propagate";
 import type { WriteNotice } from "@/runtime/semantic-board-store/lib/replaced-relationships";
-import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
+import type { VaultDiagnostic } from "@archboard/board/policy";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
 import { acceptedBoard } from "@/runtime/semantic-board-store/lib/accepted";
 

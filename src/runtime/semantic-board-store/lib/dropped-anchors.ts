@@ -8,12 +8,9 @@
 // keeps its anchor, so only a restatement can drop one.
 
 import type { CodeAnchor } from "@archboard/code-binding/code-binding";
-import {
-	messagesOf,
-	type FlowMessage,
-	type SemanticEdge,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+import { messagesOf } from "@archboard/board/flow-steps";
+import { type FlowMessage } from "@archboard/board/views";
+import { type SemanticEdge, type VariantContent } from "@archboard/board/content";
 import type { WriteNotice } from "@/runtime/semantic-board-store/lib/replaced-relationships";
 
 /**

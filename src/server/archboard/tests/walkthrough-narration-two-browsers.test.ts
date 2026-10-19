@@ -11,12 +11,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as server from "@/server/archboard/index";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import { BoardCreateInputSchema } from "@archboard/board/board-input";
 import type { PaneRegistration } from "@/runtime/engine/panes";
-import type {
-	SemanticPaneContext,
-	SemanticPanePresentation,
-} from "@/shared/semantic-pane-context/index";
+import type { SemanticPaneContext, SemanticPanePresentation } from "@archboard/board/pane-context";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-two-browsers-"));
 
@@ -41,7 +38,7 @@ async function writeBoard(name: string, walkthroughs: readonly { name: string }[
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name,
 				level: "system",
 				nodes: [{ name: "Gateway", kind: "service" }],

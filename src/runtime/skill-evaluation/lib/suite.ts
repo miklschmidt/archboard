@@ -6,11 +6,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import {
-	DiagramGrammarSchema,
-	DiagramThemeSchema,
-	VariantLifecycleSchema,
-} from "@/shared/semantic-board/index";
+import { DiagramGrammarSchema, VariantLifecycleSchema } from "@archboard/board/vocabulary";
+import { DiagramThemeSchema } from "@archboard/board/render-reply";
 import {
 	FixtureSchema,
 	HomePathSchema,

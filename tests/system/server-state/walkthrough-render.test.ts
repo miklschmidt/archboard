@@ -10,7 +10,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { TalkSchema } from "@/shared/walkthrough-recording/talk";
 import { renderTalk, writeTalk, askedTalkPlace } from "@/runtime/walkthrough-recorder";
 

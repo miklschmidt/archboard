@@ -21,7 +21,7 @@ import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { queryString } from "@/server/archboard/lib/request-board";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { FootprintReplySchema, type FootprintAnswer } from "@/shared/footprint/index";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { SemanticBoard } from "@archboard/board/document";
 import {
 	type FootprintVariants,
 	isRefusal,

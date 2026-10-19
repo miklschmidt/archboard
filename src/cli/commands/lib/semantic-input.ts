@@ -2,7 +2,7 @@ import {
 	diagnosticLine,
 	VaultDiagnosticSchema,
 	type VaultDiagnostic,
-} from "@/shared/semantic-policy/index";
+} from "@archboard/board/policy";
 // What a person types into a semantic board command, before it is a command.
 //
 // Reading a stated architecture off a file or standard input, refusing what is
@@ -21,13 +21,15 @@ import {
 } from "@/runtime/semantic-board-client/index";
 import {
 	addressedVariant,
-	LegendLayoutSchema,
 	SemanticBoardSchema,
-	type RenderedChanges,
-	type RenderedVariant,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
+import {
+	LegendLayoutSchema,
+	type RenderedChanges,
+	type RenderedVariant,
+} from "@archboard/board/render-reply";
 
 /**
  * What a variant option means when it is left out, said the same way by every

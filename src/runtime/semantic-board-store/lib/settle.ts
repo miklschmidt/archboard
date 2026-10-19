@@ -18,16 +18,11 @@ import {
 	isOrder,
 	reorderedInto,
 } from "@/runtime/semantic-board-store/lib/settle-order";
-import {
-	reconcileVariant,
-	subjectsAsIn,
-	type Choice,
-	type ReconciliationIssue,
-	type ResolutionInput,
-	type SemanticBoard,
-	type SemanticVariant,
-	type VariantStanding,
-} from "@/shared/semantic-board/index";
+import { reconcileVariant } from "@archboard/board/reconcile";
+import { type ReconciliationIssue, type VariantStanding } from "@archboard/board/reconciliation";
+import { subjectsAsIn } from "@archboard/board/reconcile-candidate";
+import { type Choice, type ResolutionInput } from "@archboard/board/resolution-input";
+import { type SemanticBoard, type SemanticVariant } from "@archboard/board/document";
 import {
 	propagateEdit,
 	withoutStanding,

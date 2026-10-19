@@ -25,7 +25,8 @@ import type { WalkedCommit } from "@/runtime/history-lens/lib/commits";
 import type { ReadPart } from "@/runtime/history-lens/lib/parts";
 import { relatedSymbols } from "@/runtime/history-lens/lib/symbol-attribution";
 import type { CoupledPair } from "@/shared/locality/index";
-import { messagesOf, type VariantContent } from "@/shared/semantic-board/index";
+import { messagesOf } from "@archboard/board/flow-steps";
+import { type VariantContent } from "@archboard/board/content";
 
 /**
  * code-maat's `--min-shared-revs`: the fewest commits a coupled pair shares.

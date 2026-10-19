@@ -10,10 +10,10 @@
 // container a packed region holds; and a caption run past the wall of a
 // region round a container.
 import { expect, test } from "bun:test";
-import type { RenderedDiagram } from "@/runtime/semantic-renderer/index";
-import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import { placingGroups, type VariantContent } from "@/shared/semantic-board/index";
+import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
+import { SemanticPolicySchema } from "@archboard/board/policy";
+import { placingGroups } from "@archboard/board/groups";
+import { type VariantContent } from "@archboard/board/content";
 import { routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import {
 	bodyShift,

@@ -6,7 +6,7 @@ import type { PaneRegistration } from "@/runtime/engine/panes";
 import { listSemanticBoards, readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { statedVariant } from "@/runtime/engine/board";
 import { aggregateOf, paneAddress } from "@/server/archboard/lib/pane-board-key";
-import { addressedVariant } from "@/shared/semantic-board/index";
+import { addressedVariant } from "@archboard/board/document";
 import { sleep, watchBoardLocks, type WatchedBoard } from "@/runtime/engine/board-lock";
 import { PANE_SETTLE_CAP_MS } from "@archboard/timing";
 import type { BrowserConnectionInstance } from "@/server/archboard/codex-workbench-browser";

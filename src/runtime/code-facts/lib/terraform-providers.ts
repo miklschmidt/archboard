@@ -35,7 +35,7 @@
 
 import type { Reference } from "@/runtime/code-facts/lib/facts";
 import { isEnvironmentArgument } from "@/runtime/code-facts/lib/terraform-environment";
-import type { EvidenceKind } from "@/shared/semantic-policy/index";
+import type { EvidenceKind } from "@archboard/board/policy";
 
 /** The evidence kinds a Terraform reference can prove. */
 type TerraformKind = Extract<

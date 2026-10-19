@@ -11,8 +11,8 @@ import {
 	SemanticBoardSchema,
 	type SemanticBoard,
 	type SemanticVariant,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/document";
+import { type VariantContent } from "@archboard/board/content";
 
 // What an agent is answered when it asks what a proposal changed. The reading
 // itself belongs to `compareVariants` and is owned in the shared module; what

@@ -1,6 +1,6 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
-import type { DiagramBox, DiagramTheme } from "@/shared/semantic-board/index";
+import type { DiagramBox, DiagramTheme } from "@archboard/board/render-reply";
 import {
 	renderArchitecture,
 	SemanticRenderError,
@@ -21,7 +21,7 @@ import {
 	routeEnds,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@archboard/board/content";
 
 /**
  * One architecture, as its own contract reads it.

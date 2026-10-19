@@ -4,12 +4,9 @@ import {
 	ADDITIONAL_CONTEXT_POLICY,
 	type OperationOutcome,
 } from "@/runtime/codex-instructions/lib/context-policy";
-import {
-	DiagramGrammarSchema,
-	ReconciliationKindSchema,
-	VariantLifecycleSchema,
-} from "@/shared/semantic-board/index";
-import { SemanticSubjectKindSchema } from "@/shared/semantic-pane-context/index";
+import { DiagramGrammarSchema, VariantLifecycleSchema } from "@archboard/board/vocabulary";
+import { ReconciliationKindSchema } from "@archboard/board/reconciliation";
+import { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
 
 /**
  * UTF-8 byte length of a string, the unit every context size limit is written in.

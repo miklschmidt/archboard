@@ -11,14 +11,14 @@
 // Debounced for the same reason a selection always has been: picking things out
 // is a click a second, and what reads this is a command that runs once a turn.
 //
-// The wire shape is `@/shared/semantic-pane-context`, which the reader of these
+// The wire shape is `@archboard/board/pane-context`, which the reader of these
 // reports owns; nothing about it is restated here.
 
 import {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
 	type SemanticPaneContext,
 	type SemanticPanePart,
-} from "@/shared/semantic-pane-context";
+} from "@archboard/board/pane-context";
 import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
 import { createUserMarks } from "@/ui/pane-session/lib/user-marks";
 import { inVault, post } from "@/ui/server-requests";

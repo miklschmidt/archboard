@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { DiagramTheme } from "@/shared/semantic-board/index";
+import type { DiagramTheme } from "@archboard/board/render-reply";
 import { readThemeColors } from "@/shared/theme/lib/read";
 
 const colors = readThemeColors(readFileSync(new URL("../theme.css", import.meta.url), "utf8"));

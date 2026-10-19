@@ -12,7 +12,12 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { ResolutionInputSchema } from "@archboard/board/resolution-input";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-restoration-"));
 const writer = { kind: "agent" as const };
@@ -30,7 +35,7 @@ beforeEach(async () => {
 		board,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "service",
 				nodes: [
@@ -58,7 +63,7 @@ beforeEach(async () => {
 	};
 	await write(
 		store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from: read().variants[0]!.name, name: DRAFT }),
+			BoardBranchInputSchema.parse({ from: read().variants[0]!.name, name: DRAFT }),
 		),
 	);
 	// The draft renames the helpers, rewords the app and removes the tagging.
@@ -146,7 +151,7 @@ async function write(transition: store.SemanticTransition) {
  * @returns What the write did.
  */
 async function edit(input: unknown) {
-	return write(store.editVariantTransition(contract.VariantEditInputSchema.parse(input)));
+	return write(store.editVariantTransition(VariantEditInputSchema.parse(input)));
 }
 
 /**
@@ -170,7 +175,7 @@ function open(): string[] {
 async function settleFields() {
 	return write(
 		store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: DRAFT,
 				choices: [
 					{ subject: ids.helpers, field: "name", side: "theirs" },
@@ -314,7 +319,7 @@ test("a sibling's node needs confirmation, and a settled removal may be restored
 	await settleFields();
 	await write(
 		store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ name: "Sibling", from: read().variants[0]!.name }),
+			BoardBranchInputSchema.parse({ name: "Sibling", from: read().variants[0]!.name }),
 		),
 	);
 	const added = await edit({ variant: "Sibling", nodes: [{ name: "Only here", kind: "module" }] });
@@ -328,7 +333,7 @@ test("a sibling's node needs confirmation, and a settled removal may be restored
 	// Keeping a removal settles it, but does not discard the inherited identity.
 	const kept = await write(
 		store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: DRAFT,
 				choices: [{ subject: ids.tagged, side: "mine" }],
 			}),
@@ -387,7 +392,7 @@ test("deleted relationships and flows cannot authorize node identities", async (
 	const flow = current.content.flows.find((one) => one.name === "Decode request")!;
 	await write(
 		store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from: "Initial", name: "Kind draft" }),
+			BoardBranchInputSchema.parse({ from: "Initial", name: "Kind draft" }),
 		),
 	);
 	await edit({ variant: "Kind draft", removeEdges: [edge.id], removeFlows: [flow.id] });
@@ -431,7 +436,7 @@ test("a flow the draft dropped comes back under its id and step ids, and settles
 	const flow = variant("Initial").content.flows.find((one) => one.name === "Decode")!;
 	await write(
 		store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from: "Initial", name: "Flow draft" }),
+			BoardBranchInputSchema.parse({ from: "Initial", name: "Flow draft" }),
 		),
 	);
 	await edit({ variant: "Flow draft", removeFlows: [flow.id] });

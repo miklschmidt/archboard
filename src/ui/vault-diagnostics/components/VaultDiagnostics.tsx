@@ -2,7 +2,7 @@ import { RiNotification3Line } from "@remixicon/react";
 import { useCallback, useState, type JSX } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 
-import type { VaultCheck } from "@/shared/semantic-policy";
+import type { VaultCheck } from "@archboard/board/policy";
 import { Button } from "@/ui/components/button";
 import {
 	Dialog,

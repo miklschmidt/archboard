@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { diagramTextWidth } from "@/runtime/semantic-renderer/index";
 import { measureArchitecture, type TextRun } from "@/runtime/semantic-renderer/measurement";
-import { emptyContent, type VariantContent } from "@/shared/semantic-board/index";
+import { emptyContent, type VariantContent } from "@archboard/board/content";
 
 /**
  * A run's width as the host canvas measures the whole line, in the face it is set in.

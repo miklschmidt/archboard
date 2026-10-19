@@ -2,7 +2,12 @@ import { afterAll, beforeEach, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 import * as store from "@/runtime/semantic-board-store/index";
 import { createConfiguredTestVault } from "@/runtime/semantic-board-store/tests/configured-vault";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { BoardShelveInputSchema, BoardAdoptInputSchema } from "@archboard/board/resolution-input";
 
 const vault = createConfiguredTestVault("archboard-shelving-");
 const writer = { kind: "agent" as const };
@@ -25,7 +30,7 @@ beforeEach(async () => {
 		board,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "system",
 				nodes: [
@@ -89,9 +94,7 @@ async function branch(from: string, name: string) {
 		board,
 		writer,
 		expectedVersion: read().version,
-		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from, name }),
-		),
+		transition: store.branchVariantTransition(BoardBranchInputSchema.parse({ from, name })),
 	});
 }
 
@@ -108,7 +111,7 @@ async function edit(on: string, stated: Record<string, unknown>) {
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({ variant: on, ...stated }),
+			VariantEditInputSchema.parse({ variant: on, ...stated }),
 		),
 	});
 }
@@ -136,7 +139,7 @@ async function shelve(name: string, reason = "the parent already says this") {
 		writer,
 		expectedVersion: read().version,
 		transition: store.shelveVariantTransition(
-			contract.BoardShelveInputSchema.parse({ variant: name, reason }),
+			BoardShelveInputSchema.parse({ variant: name, reason }),
 		),
 	});
 }
@@ -152,9 +155,7 @@ async function adopt(name: string) {
 		board,
 		writer,
 		expectedVersion: read().version,
-		transition: store.adoptVariantTransition(
-			contract.BoardAdoptInputSchema.parse({ variant: name }),
-		),
+		transition: store.adoptVariantTransition(BoardAdoptInputSchema.parse({ variant: name })),
 	});
 }
 
@@ -315,7 +316,7 @@ test("the vault checker stops asking a shelved proposal to repair its content", 
 		board: at,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: at,
 				level: "service",
 				nodes: [{ name: "Store", kind: "module" }],
@@ -327,7 +328,7 @@ test("the vault checker stops asking a shelved proposal to repair its content", 
 		board: from,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: from,
 				level: "system",
 				nodes: [
@@ -359,7 +360,7 @@ test("the vault checker stops asking a shelved proposal to repair its content", 
 		writer,
 		expectedVersion: 1,
 		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from: "Initial", name: proposal }),
+			BoardBranchInputSchema.parse({ from: "Initial", name: proposal }),
 		),
 	});
 	expect(branched.outcome).toBe("applied");
@@ -372,7 +373,7 @@ test("the vault checker stops asking a shelved proposal to repair its content", 
 		writer,
 		expectedVersion: 2,
 		transition: store.shelveVariantTransition(
-			contract.BoardShelveInputSchema.parse({
+			BoardShelveInputSchema.parse({
 				variant: proposal,
 				reason: "the link is fine as it is",
 			}),

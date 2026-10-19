@@ -12,7 +12,9 @@
 // hops or is cut beneath one that is not drawn. The page is still the whole
 // layout's page, so the subjects left keep their places on it.
 
-import { everyStep, type SemanticFlow, type VariantContent } from "@/shared/semantic-board/index";
+import { everyStep } from "@archboard/board/flow-steps";
+import { type SemanticFlow } from "@archboard/board/views";
+import { type VariantContent } from "@archboard/board/content";
 import type { LineLook, PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type {

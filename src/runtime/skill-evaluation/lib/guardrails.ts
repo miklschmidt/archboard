@@ -4,7 +4,7 @@
 // a read-only task writes nothing.
 
 import path from "node:path";
-import type { SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import {
 	checkoutOf,
 	namesVault,

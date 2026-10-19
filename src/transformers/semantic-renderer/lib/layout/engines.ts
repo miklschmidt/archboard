@@ -1,7 +1,9 @@
 // Layout engines (TASK-348): each takes an architecture and its measured text
 // and answers the drawing the painter and the atlas read. A render names its
 // engine; nothing outside this seam knows which one drew.
-import type { ChangeKind, LayoutEngineName, VariantContent } from "@/shared/semantic-board/index";
+import type { ChangeKind } from "@archboard/board/compare-variants";
+import type { LayoutEngineName } from "@archboard/board/render-reply";
+import type { VariantContent } from "@archboard/board/content";
 import type {
 	MeasuredArchitecture,
 	PaintedDrawing,

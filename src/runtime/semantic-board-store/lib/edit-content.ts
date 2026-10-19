@@ -30,16 +30,15 @@
 // is left at the end.
 
 import type { RestorableSubjects } from "@/runtime/semantic-board-store/lib/restore";
+import { persistedGroupIds } from "@archboard/board/primitives";
+import { type SemanticBoard } from "@archboard/board/document";
+import { type SemanticView } from "@archboard/board/views";
 import {
-	persistedGroupIds,
-	type SemanticBoard,
-	type SemanticView,
 	type SemanticEdge,
 	type SemanticNode,
-	type SemanticNodeInput,
 	type VariantContent,
-	type VariantEditInput,
-} from "@/shared/semantic-board/index";
+} from "@archboard/board/content";
+import { type SemanticNodeInput, type VariantEditInput } from "@archboard/board/board-input";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import { place, resolveNode } from "@/runtime/semantic-board-store/lib/references";
 import {

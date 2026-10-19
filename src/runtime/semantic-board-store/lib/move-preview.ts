@@ -9,7 +9,8 @@
 // since is refused rather than moved as nobody saw it.
 
 import { vaultIdentity } from "@archboard/code-binding/vault-checkout";
-import type { MoveEnd, MovedDrillDown, SemanticBoard } from "@/shared/semantic-board/index";
+import type { MoveEnd, MovedDrillDown } from "@archboard/board/board-move";
+import type { SemanticBoard } from "@archboard/board/document";
 import { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";
 import { locateSemanticBoard } from "@/runtime/semantic-board-store/lib/location";
 import { checkedMove, type CheckedMove } from "@/runtime/semantic-board-store/lib/move";

@@ -3,7 +3,12 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	VariantEditInputSchema,
+	BoardBranchInputSchema,
+} from "@archboard/board/board-input";
+import { BoardAdoptInputSchema } from "@archboard/board/resolution-input";
 
 // A board for something nobody has built (ADR 0031): created with a draft and
 // no current variant, worked on by commands that name no variant, and adopted
@@ -48,7 +53,7 @@ test("a planned board is written, worked on unqualified, and adopted into existe
 		board,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "system",
 				lifecycle: "draft",
@@ -65,29 +70,27 @@ test("a planned board is written, worked on unqualified, and adopted into existe
 	// An edit and a branch that name no variant land on the draft the board opens.
 	const edited = await write(
 		store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({ nodes: [{ name: "Orders", kind: "service" }] }),
+			VariantEditInputSchema.parse({ nodes: [{ name: "Orders", kind: "service" }] }),
 		),
 	);
 	expect(edited.outcome).toBe("applied");
 	expect(read().variants[0]?.content.nodes).toHaveLength(2);
 	const branched = await write(
-		store.branchVariantTransition(contract.BoardBranchInputSchema.parse({ name: "Queued" })),
+		store.branchVariantTransition(BoardBranchInputSchema.parse({ name: "Queued" })),
 	);
 	expect(branched.outcome).toBe("applied");
 	expect(read().variants[1]?.parent).toBe(root?.id);
 
 	// Asking for the current variant by its word finds nothing to act on.
 	const refused = await write(
-		store.adoptVariantTransition(contract.BoardAdoptInputSchema.parse({ variant: "current" })),
+		store.adoptVariantTransition(BoardAdoptInputSchema.parse({ variant: "current" })),
 	);
 	expect(refused.outcome === "rejected" && refused.code).toBe("UNKNOWN_VARIANT");
 
 	// Adoption is the moment it starts existing: nothing was current, so nothing
 	// becomes history, and the record says it took the designation from nothing.
 	const adopted = await write(
-		store.adoptVariantTransition(
-			contract.BoardAdoptInputSchema.parse({ variant: root?.name ?? "" }),
-		),
+		store.adoptVariantTransition(BoardAdoptInputSchema.parse({ variant: root?.name ?? "" })),
 	);
 	expect(adopted.outcome).toBe("applied");
 	const built = read();

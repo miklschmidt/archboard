@@ -5,7 +5,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 // keyed by the step's id lands on its line.
 
 import { describe, expect, test } from "bun:test";
-import { type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routeEnds } from "@/runtime/semantic-renderer/tests/drawn-routes";
 

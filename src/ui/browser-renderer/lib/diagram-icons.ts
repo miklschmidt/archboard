@@ -8,7 +8,7 @@
 
 import { z } from "zod";
 
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 import { OWN_ICONS } from "@/transformers/semantic-renderer/host";
 
 /** Where the server serves one icon's path data. */

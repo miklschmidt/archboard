@@ -3,7 +3,7 @@
 // or stated, and a relationship landing on a container fails the receiver rule.
 
 import { describe, expect, test } from "bun:test";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { SemanticBoard } from "@archboard/board/document";
 import { evaluateOutcomes, type Reading } from "@/runtime/skill-evaluation/index";
 import { AFTER, passes, READING } from "@/runtime/skill-evaluation/tests/reading-fixture";
 

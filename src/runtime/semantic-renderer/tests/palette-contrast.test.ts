@@ -23,8 +23,8 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
-import type { DiagramTheme } from "@/shared/semantic-board/index";
-import { PaletteColorSchema, SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import type { DiagramTheme } from "@archboard/board/render-reply";
+import { PaletteColorSchema, SemanticPolicySchema } from "@archboard/board/policy";
 import { themeColor } from "@/shared/theme/server";
 
 const COLOURS = PaletteColorSchema.options;

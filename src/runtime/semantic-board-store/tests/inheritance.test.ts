@@ -8,7 +8,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	VariantEditInputSchema,
+	BoardBranchInputSchema,
+} from "@archboard/board/board-input";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-inheritance-"));
 const writer = { kind: "agent" as const };
@@ -21,7 +25,7 @@ beforeEach(async () => {
 	board = `inheritance-${++boards}`;
 	await write(
 		store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "service",
 				nodes: [
@@ -83,7 +87,7 @@ function nodesOf(name: string) {
  * @returns What the write did.
  */
 function edit(input: unknown) {
-	return write(store.editVariantTransition(contract.VariantEditInputSchema.parse(input)));
+	return write(store.editVariantTransition(VariantEditInputSchema.parse(input)));
 }
 
 /**
@@ -93,9 +97,7 @@ function edit(input: unknown) {
  * @returns What the write did.
  */
 function branch(from: string, name: string) {
-	return write(
-		store.branchVariantTransition(contract.BoardBranchInputSchema.parse({ from, name })),
-	);
+	return write(store.branchVariantTransition(BoardBranchInputSchema.parse({ from, name })));
 }
 
 /**

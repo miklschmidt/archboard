@@ -9,8 +9,8 @@
 // two lines closer than a lane without sharing one stroke.
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@/shared/semantic-board/index";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { SemanticPolicySchema } from "@archboard/board/policy";
 import { LABEL_ROUTE_CLEARANCE } from "@/transformers/semantic-renderer/config";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {

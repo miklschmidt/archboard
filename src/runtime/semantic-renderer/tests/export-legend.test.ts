@@ -8,7 +8,7 @@ import {
 	pictureAppearances,
 	type AppliedAppearance,
 } from "@/transformers/semantic-renderer/picture-key";
-import type { DrawnBoard } from "@/shared/semantic-board/index";
+import type { DrawnBoard } from "@archboard/board/render-reply";
 import { exported } from "@/runtime/semantic-renderer/tests/export-board";
 
 // An exported picture can carry the legend of what it draws, under it or beside

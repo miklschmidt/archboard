@@ -1,6 +1,6 @@
 // Measuring badge attachment, occlusion and whitespace on actual rendered routes.
 
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { VariantContent } from "@archboard/board/content";
 import type { RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
 	boxesOverlap,

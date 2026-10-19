@@ -78,6 +78,10 @@
         "vite": "8.2.2",
       },
     },
+    "packages/board": {
+      "name": "@archboard/board",
+      "version": "0.0.0",
+    },
     "packages/code-binding": {
       "name": "@archboard/code-binding",
       "version": "0.0.0",
@@ -108,6 +112,8 @@
     "@radix-ui/react-select@2.3.7": "patches/@radix-ui%2Freact-select@2.3.7.patch",
   },
   "packages": {
+    "@archboard/board": ["@archboard/board@workspace:packages/board"],
+
     "@archboard/code-binding": ["@archboard/code-binding@workspace:packages/code-binding"],
 
     "@archboard/codex-app-server": ["@archboard/codex-app-server@workspace:packages/codex-app-server"],

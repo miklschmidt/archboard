@@ -8,7 +8,7 @@ import type {
 	SemanticContextPublisher,
 	SettledSemanticChangeEvent,
 } from "@/runtime/codex-semantic-context";
-import type { SemanticSubjectKind } from "@/shared/semantic-pane-context/index";
+import type { SemanticSubjectKind } from "@archboard/board/pane-context";
 import type {
 	CodexThreadLinkClassifier,
 	ThreadLinkBindingSnapshot,

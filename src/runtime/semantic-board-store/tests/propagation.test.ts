@@ -3,7 +3,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as store from "@/runtime/semantic-board-store/index";
-import * as contract from "@/shared/semantic-board/index";
+import {
+	BoardCreateInputSchema,
+	BoardBranchInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/board-input";
+import { ResolutionInputSchema } from "@archboard/board/resolution-input";
+import { checkVariantContent } from "@archboard/board/integrity";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-propagation-"));
 const writer = { kind: "agent" as const };
@@ -25,7 +31,7 @@ beforeEach(async () => {
 		board,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({
+			BoardCreateInputSchema.parse({
 				name: board,
 				level: "system",
 				nodes: [
@@ -100,9 +106,7 @@ async function branch(from: string, name: string) {
 		board,
 		writer,
 		expectedVersion: read().version,
-		transition: store.branchVariantTransition(
-			contract.BoardBranchInputSchema.parse({ from, name }),
-		),
+		transition: store.branchVariantTransition(BoardBranchInputSchema.parse({ from, name })),
 	});
 	apiId = read().variants[0]!.content.nodes[0]!.id;
 	return answer;
@@ -121,7 +125,7 @@ async function edit(on: string, stated: Record<string, unknown>) {
 		writer,
 		expectedVersion: read().version,
 		transition: store.editVariantTransition(
-			contract.VariantEditInputSchema.parse({ variant: on, ...stated }),
+			VariantEditInputSchema.parse({ variant: on, ...stated }),
 		),
 	});
 }
@@ -286,7 +290,7 @@ test("a draft recovers fully once it stops naming what its predecessor removed",
 		writer,
 		expectedVersion: read().version,
 		transition: store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({
+			ResolutionInputSchema.parse({
 				variant: A,
 				choices: keptIssues(A).map(asMine),
 			}),
@@ -320,7 +324,7 @@ test("a draft keeps the rest of an edit that removed what it refers to, settled 
 		writer,
 		expectedVersion: read().version,
 		transition: store.settleVariantTransition(
-			contract.ResolutionInputSchema.parse({ variant: A, choices: keptIssues(A).map(asMine) }),
+			ResolutionInputSchema.parse({ variant: A, choices: keptIssues(A).map(asMine) }),
 		),
 	});
 	expect(settled.outcome).toBe("applied");
@@ -328,7 +332,7 @@ test("a draft keeps the rest of an edit that removed what it refers to, settled 
 	expect(variant(A).reconciliation).toBeUndefined();
 	expect(api(A).name).toBe("Gateway");
 	expect(variant(A).content.nodes.map((one) => one.id)).toContain(held);
-	expect(contract.checkVariantContent(variant(A).content, "content")).toEqual([]);
+	expect(checkVariantContent(variant(A).content, "content")).toEqual([]);
 	// And the draft under it, no longer waiting, takes the rename too.
 	expect(variant(B).reconciliation).toBeUndefined();
 	expect(api(B).name).toBe("Gateway");

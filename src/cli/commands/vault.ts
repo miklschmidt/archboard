@@ -11,7 +11,7 @@ import {
 	type CodeCheckAnswer,
 	type CheckTiming,
 } from "@/shared/code-check/index";
-import { diagnosticLine, VaultCheckSchema, type VaultCheck } from "@/shared/semantic-policy/index";
+import { diagnosticLine, VaultCheckSchema, type VaultCheck } from "@archboard/board/policy";
 import { SemanticBoardConfigurationSchema } from "@/runtime/semantic-board-store/index";
 
 const output = {

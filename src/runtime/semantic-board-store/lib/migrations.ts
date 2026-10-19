@@ -3,7 +3,7 @@
 // A step only changes a decoded value. The pure decoder validates the completed
 // document; the disk read boundary persists a migration under the board lease.
 
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
+import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 interface Migration {
 	readonly from: string;
