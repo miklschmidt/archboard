@@ -1,4 +1,4 @@
-import type { ConfiguredServer } from "@archboard/workspace/language-servers";
+import type { ConfiguredServer } from "@archboard/workspace/checkouts";
 
 /**
  * A configured server as a person reads it: its command, then its arguments.

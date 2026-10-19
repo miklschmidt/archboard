@@ -24,11 +24,7 @@ import type { Express, Request, Response } from "express";
 
 import { logger } from "@archboard/diagnostics/logger";
 import { parseBoardKey } from "@archboard/board/address";
-import {
-	chooseKnownCheckout,
-	listRegistry,
-	registryPath,
-} from "@archboard/workspace/repo-registry";
+import { chooseKnownCheckout, listRegistry, registryPath } from "@archboard/workspace/checkouts";
 import { createBrowserOriginGuard } from "@/server/browser-origin";
 import {
 	paneBoardOf,
@@ -43,8 +39,8 @@ import {
 	openingVault,
 	placeOfVault,
 	vaultIn,
-	VAULT_DIRECTORY,
 } from "@archboard/workspace/repository-listing";
+import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import { CheckoutChoiceSchema, type CheckoutChoice } from "@archboard/workspace/repositories";
 
 /**

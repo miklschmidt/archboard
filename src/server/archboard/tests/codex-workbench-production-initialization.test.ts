@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { checkoutPort, SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
-import { findVault } from "@archboard/workspace/vault-finder";
+import { findVault } from "@archboard/workspace/vault";
 import { withProductionState } from "@/server/archboard/tests/support/production-state";
 
 import {

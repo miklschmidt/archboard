@@ -13,11 +13,8 @@ import {
 	repositoryOfVault as registeredRepositoryOf,
 	type RegisteredRepoStatus,
 } from "#runtime/store/repo-registry.ts";
-import { checkoutOfVault, isVaultLayout } from "#runtime/services/vault-finder.ts";
+import { checkoutOfVault, isVaultLayout, VAULT_DIRECTORY } from "#runtime/services/vault-finder.ts";
 import type { RepositoryEntry, RepositoryState } from "#shared/schemas/repositories.ts";
-
-/** Where a checkout keeps its vault (ADR 0049). */
-const VAULT_DIRECTORY = path.join(".archboard", "vault");
 
 /**
  * The canonical vault of a directory, when it holds one the server serves: a `.archboard/vault`
@@ -166,7 +163,6 @@ export {
 	placeOfVault,
 	repositoryOfVault,
 	vaultIn,
-	VAULT_DIRECTORY,
 	type RepositoryEntry,
 	type VaultPlace,
 };

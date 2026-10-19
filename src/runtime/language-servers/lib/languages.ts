@@ -16,7 +16,7 @@ import { compileDatabaseOf } from "@/runtime/language-servers/lib/compile-databa
 import { dotnetProjectOf } from "@/runtime/language-servers/lib/dotnet-solution";
 import { pythonProjectOf } from "@/runtime/language-servers/lib/python-environment";
 import { swiftPackageOf } from "@/runtime/language-servers/lib/swift-package";
-import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/configurable-languages";
+import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 
 /** The project a server answers about for a file. */
 interface Project {

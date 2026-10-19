@@ -123,8 +123,8 @@ split by behavior.
   from the private files that define the names, and it holds no second definition. A public name
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`
-  and `codex-app-server` adopt it for `shared/` and `runtime/`. `tests/system/repository-policy/package-api.test.ts` holds the
-  three rules.
+  and `codex-app-server` adopt it for `shared/` and `runtime/`, and `workspace` also for `server/`.
+  `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
   `exports` does not name. It also refuses a relative path that reaches a private file of another
   package.
@@ -162,15 +162,21 @@ TERM-then-KILL escalation. The cleanup takes its error type from the caller, so 
 not import `codex-app-server`.
 
 The fourth is `workspace` (`@archboard/workspace`). It knows where a vault, a checkout and the state
-directory are. `./repositories` and `./configurable-languages` are in `shared/schemas/` and safe for
-the browser, with no Node import. The rest is Node-bound. `./language-servers` holds the validation
-of a server command, which uses `node:path`, so the browser never imports it. `./repo-registry`,
-`./atomic-write` and `./state-dir` read and write the registry and the state directory.
-`./git`, `./vault-finder` and `./source-checkout` find a repository, a vault and the checkout whose
-source runs. `./repository-listing` is the answer of `GET /api/repositories`. `source-checkout`
+directory are. It adopts the `api/` role for `shared/`, `runtime/` and `server/` and exposes 8
+subpaths, where it exposed 10 files. `./repositories` and `./languages` are in `shared/api/` and safe
+for the browser, with no Node import: the listing schemas of the navigator, and the languages that an
+agent can configure a server for. The rest is Node-bound. `./checkouts` carries what is known of
+checkouts: the Git lookups, the repository registry and the validation of a language server
+command, which uses `node:path`, so the browser never imports it. The registry's
+`repositoryOfVault` is exported as `registeredRepositoryOfVault`, because `./repository-listing`
+defines a different `repositoryOfVault`, the one that the server projection answers with.
+`./vault` finds a vault, `./source-checkout` finds the checkout whose source runs, and
+`./atomic-write` and `./state-dir` write files durably and name the state directory.
+`./repository-listing` is the answer of `GET /api/repositories`, in `server/api/`. `source-checkout`
 finds the checkout by walking up to the nearest directory that is an archboard checkout, so the
-depth of the file decides nothing. `module-paths` is not here: the server derives its `src/` from
-its own depth.
+depth of the file decides nothing, and `bin.ts` loads it lazily, so a command that hands itself to
+another checkout loads nothing else first. `module-paths` is not here: the server derives its
+`src/` from its own depth.
 
 The fifth is `code-binding` (`@archboard/code-binding`). It knows what a node's code binding is and
 where its path lives in a checkout. Everything in `shared/` is safe for the browser, with no Node

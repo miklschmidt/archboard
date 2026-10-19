@@ -52,7 +52,7 @@ import {
 	type UnavailableServer,
 } from "@/runtime/language-servers/index";
 import type { CheckTiming, CodeCheckSkip } from "@/shared/code-check/index";
-import { configureCommand, type LanguageServers } from "@archboard/workspace/language-servers";
+import { configureCommand, type LanguageServers } from "@archboard/workspace/checkouts";
 
 /** Where a server says a use is defined, as the pass reads the checkout. */
 type UseResolution =

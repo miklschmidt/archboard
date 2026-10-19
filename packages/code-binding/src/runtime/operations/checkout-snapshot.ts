@@ -7,8 +7,8 @@ import {
 	repoIdentityAt,
 	repoRootOf,
 	type CheckoutHead,
-} from "@archboard/workspace/git";
-import type { RegisteredRepoStatus } from "@archboard/workspace/repo-registry";
+	type RegisteredRepoStatus,
+} from "@archboard/workspace/checkouts";
 import { checkoutsReadFrom } from "#runtime/services/vault-checkout.ts";
 import {
 	resolveLocalCodeTargetsWith,

@@ -10,15 +10,13 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
-		"./repositories": "./src/shared/schemas/repositories.ts",
-		"./configurable-languages": "./src/shared/schemas/configurable-languages.ts",
-		"./language-servers": "./src/runtime/store/language-servers.ts",
-		"./atomic-write": "./src/runtime/store/atomic-write.ts",
-		"./repo-registry": "./src/runtime/store/repo-registry.ts",
-		"./git": "./src/runtime/clients/git.ts",
-		"./vault-finder": "./src/runtime/services/vault-finder.ts",
-		"./state-dir": "./src/runtime/services/state-dir.ts",
-		"./source-checkout": "./src/runtime/services/source-checkout.ts",
-		"./repository-listing": "./src/server/projections/repository-listing.ts"
+		"./repositories": "./src/shared/api/repositories.ts",
+		"./languages": "./src/shared/api/languages.ts",
+		"./checkouts": "./src/runtime/api/checkouts.ts",
+		"./vault": "./src/runtime/api/vault.ts",
+		"./source-checkout": "./src/runtime/api/source-checkout.ts",
+		"./atomic-write": "./src/runtime/api/atomic-write.ts",
+		"./state-dir": "./src/runtime/api/state-dir.ts",
+		"./repository-listing": "./src/server/api/repositories.ts"
 	}
 }

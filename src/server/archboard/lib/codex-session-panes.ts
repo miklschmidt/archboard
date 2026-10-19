@@ -12,7 +12,7 @@ import type {
 import type { TabSessionId } from "@/server/codex-workbench";
 import { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-pane";
 import type { ContextPane, SemanticInputOwners } from "@/server/archboard/lib/codex-semantic-input";
-import { checkoutOfVault } from "@archboard/workspace/vault-finder";
+import { checkoutOfVault } from "@archboard/workspace/vault";
 import { panes, paneVaults } from "@/server/archboard/lib/pane-registry";
 import { tabSessionOf } from "@/server/archboard/lib/tab-sessions";
 

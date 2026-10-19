@@ -11,8 +11,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { chosenCheckouts, listRegistry } from "@archboard/workspace/repo-registry";
-import { VAULT_DIRECTORY, isVaultLayout, type BoundVault } from "@archboard/workspace/vault-finder";
+import { chosenCheckouts, listRegistry } from "@archboard/workspace/checkouts";
+import { VAULT_DIRECTORY, isVaultLayout, type BoundVault } from "@archboard/workspace/vault";
 import { decodeSemanticBoardDocument } from "#runtime/store/format/decode.ts";
 import { listSemanticBoards } from "#runtime/operations/read/listing.ts";
 

@@ -49,7 +49,7 @@
 // not at the version it names, with no subject: its `path` names the reference
 // as `variants.<id>.documents.<index>` (ADR 0054).
 
-import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/configurable-languages";
+import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/board/policy";
 

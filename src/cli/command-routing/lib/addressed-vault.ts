@@ -6,7 +6,7 @@
 // (TASK-480).
 
 import type { AnsweredVault, RegisteredVault } from "@/cli/command-contract/schemas";
-import { declareIfUnknown, type Declared } from "@archboard/workspace/repo-registry";
+import { declareIfUnknown, type Declared } from "@archboard/workspace/checkouts";
 import { setRequestedVault } from "@/runtime/engine/server-client";
 import { vaultsBoundTo } from "@archboard/board/store-read";
 import {
@@ -14,7 +14,7 @@ import {
 	type FoundVault,
 	type VaultNotFound,
 	type VaultSearch,
-} from "@archboard/workspace/vault-finder";
+} from "@archboard/workspace/vault";
 
 /** A command found no vault; nothing was started and nothing was written. */
 class VaultNotFoundError extends Error {

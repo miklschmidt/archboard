@@ -9,7 +9,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
-import { checkoutOfVault, isVaultLayout, VAULT_DIRECTORY } from "@archboard/workspace/vault-finder";
+import { checkoutOfVault, isVaultLayout, VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import type { CodexWorkbenchWorkhorseActions } from "@/server/archboard/lib/codex-workbench-session-workhorses";
 
 /**

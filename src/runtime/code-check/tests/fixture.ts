@@ -3,7 +3,7 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { LanguageServers } from "@archboard/workspace/language-servers";
+import type { LanguageServers } from "@archboard/workspace/checkouts";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 /**

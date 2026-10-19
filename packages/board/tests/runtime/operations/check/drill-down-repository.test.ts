@@ -14,7 +14,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { declareDirectory } from "@archboard/workspace/repo-registry";
+import { declareDirectory } from "@archboard/workspace/checkouts";
 
 import { DEFAULT_SEMANTIC_POLICY, type VaultDiagnostic } from "#shared/schemas/semantic-policy.ts";
 import { BoardCreateInputSchema } from "#shared/protocol/board-input.ts";
