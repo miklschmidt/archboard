@@ -39,8 +39,8 @@ comparison is exact (kept ids continue, new subjects are added, removed ids are
 removed), and views belong to the board, so both pictures go through the same
 view and a removed subject stays drawn as removed. The current side comes from
 the source: `holdBoard` creates `<vault>/.archboard/locks/<board>.lock`
-exclusively (`board-lock-acquisition.ts`), `releaseHold` unlinks it
-(`board-lock-state.ts`), and `watchBoardLocks` polls those files because a file
+exclusively (`acquisition.ts`), `releaseHold` unlinks it
+(`lease-state.ts`), and `watchBoardLocks` polls those files because a file
 cannot notify another server. The table is a proposal nobody has built, and
 nothing states where its code will live, so it stays unbound.
 

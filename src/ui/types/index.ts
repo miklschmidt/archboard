@@ -99,7 +99,7 @@ export interface AgentActivityEntry {
 /**
  * One thing an agent said it was doing to this board (TASK-095).
  *
- * Mirrors `DoingEntry` in `src/runtime/engine/board-doing.ts`. It is never board
+ * Mirrors `DoingEntry` in `packages/board/src/runtime/store/doing.ts`. It is never board
  * content and it is nowhere in the board file: it is what somebody said while
  * changing something, and it dies with the server.
  */
@@ -114,7 +114,7 @@ export interface DoingEntry {
 }
 
 /**
- * Who holds a board's mutex. Mirrors `LockHolder` in `src/runtime/engine/board-lock.ts`,
+ * Who holds a board's mutex. Mirrors `LockHolder` in `packages/board/src/runtime/store/lock/lock.ts`,
  * which the pane cannot import: that module reads the vault off a filesystem a
  * browser has not got.
  */

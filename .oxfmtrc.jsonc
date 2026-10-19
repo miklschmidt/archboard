@@ -1,5 +1,5 @@
 {
-	// Canonical vault files, the example vault's included, use semantic-board-store's
+	// Canonical vault files, the example vault's included, use the board store's
 	// deterministic serializer.
 	// Reformatting outside that owner would bypass board versions and live updates.
 	// .claude/ is written by Claude Code in its own layout (settings it rewrites,

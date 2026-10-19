@@ -1,0 +1,176 @@
+// What an agent said it was doing, per board of each vault.
+//
+// A person at the wall sees boxes move. Without this they infer the intent
+// afterwards, if they can — which is the connection between a creator and what
+// they are creating being broken for one of the two creators on this canvas
+// (ADR 0016). So an agent says what it is doing on every write, in
+// one line, and the line goes on screen as the write lands.
+//
+// ── This is not the change feed ───────────────────────────────────
+//
+// The feed reports what the board BECAME, computed by diffing it against the
+// last state anybody was told about. This is what somebody SAID they were
+// doing, which is a claim about intent no diff can recover: a move that changes
+// nothing nameable still has one, and a line that turns out to be wrong is
+// still what was said. Neither is routed through the other.
+//
+// ── And it is not board content ───────────────────────────────────
+//
+// It never reaches the note. It is not what is on the board, it is what
+// somebody said while changing it, so it dies with the server — the same
+// carve-out ADR 0015 draws for sockets, panes and what a person has selected.
+// The requirement rides as a query parameter for that reason as much as for
+// DELETE having no body: a field in an element's body is one careless spread
+// away from being persisted.
+//
+// ── One line, and a few of them ───────────────────────────────────
+//
+// A list of one-liners makes current work easy to scan on the
+// display. A list of paragraphs is a log nobody reads, and a transcript is
+// worse. So the line is capped and the list is short, and both caps are here
+// rather than in the middleware, the pane and the injector separately.
+
+import { boardMemoryKey } from "#runtime/store/address.ts";
+import type { HolderKind } from "#runtime/store/lock/lock.ts";
+
+/**
+ * The longest line worth putting on a wall.
+ *
+ * Not a truncation: a caller that writes past it is refused, because being made
+ * to write the sentence is the point and a silently clipped sentence teaches
+ * nothing. Long enough for "rerouting orders through the new payment queue",
+ * short enough that four of them fit in the corner of a board.
+ */
+const DOING_MAX_CHARS = 140;
+
+/** How many are kept per board. The last few actions, not a transcript. */
+const DOING_KEPT = 5;
+
+/** One thing somebody said they were doing, and who said it. */
+interface DoingEntry {
+	/** The line itself, as it was written. */
+	doing: string;
+	/** ISO timestamp of the write it arrived with. */
+	at: string;
+	/**
+	 * Whose it is: the lock holder id of the writer.
+	 *
+	 * Kept because "whose descriptions are whose" is the question ADR 0005 makes
+	 * load-bearing, and because two agents on one board otherwise read as one.
+	 */
+	by: string;
+	kind: HolderKind;
+	/** Was this write part of a claim — a step of a campaign, rather than a lone act? */
+	claimed?: boolean;
+}
+
+interface Store {
+	/** Keyed by `boardMemoryKey`: one server serves several vaults (ADR 0049). */
+	byBoard: Map<string, DoingEntry[]>;
+}
+
+const processStore: Store = { byBoard: new Map<string, DoingEntry[]>() };
+/**
+ * Where the lines are kept, which is this process and nowhere else: what an
+ * agent said it was doing is a fact about a server that is running, not one
+ * the vault has a file for.
+ * @returns The store.
+ */
+const store = (): Store => processStore;
+
+/** A line as it must arrive, or the reason it is refused. */
+type DoingCheck = { ok: true; doing: string } | { ok: false; problem: string };
+
+/**
+ * Is this a line, and is it one line?
+ *
+ * Newlines collapse rather than being refused — a shell heredoc is not a
+ * mistake worth a round trip — but length and emptiness are refusals, because
+ * both mean the caller has not actually said anything.
+ * @param raw What the caller wrote.
+ * @returns The line, or why it is refused.
+ */
+function checkDoing(raw: unknown): DoingCheck {
+	if (typeof raw !== "string" || !raw.trim()) {
+		return { ok: false, problem: "nothing was said" };
+	}
+	const doing = raw.replace(/\s+/g, " ").trim();
+	if (doing.length > DOING_MAX_CHARS) {
+		return {
+			ok: false,
+			problem: `${doing.length} characters, and the cap is ${DOING_MAX_CHARS} — this goes on a wall, not into a log`,
+		};
+	}
+	return { ok: true, doing };
+}
+
+/**
+ * Remember what was said, newest last, oldest dropped.
+ *
+ * One thing said twice running is one line, not two. A single intent can be
+ * several writes — `import` clears the board, batches the scene in and posts
+ * its images, all under the one sentence the caller wrote — and a list showing
+ * that sentence three times has spent three of its five lines saying one thing.
+ * The newest timestamp wins, so the line stays current while it repeats.
+ *
+ * On the words alone, and not on the writer, because an unclaimed agent gets a
+ * fresh id per request — that id is what makes the lock reentrant, not who
+ * anybody is, so keying on it would mean never coalescing. Two agents saying
+ * the same sentence about one board inside five writes therefore read as one
+ * line. That is the cheaper of the two mistakes: the other one is a list that
+ * is the same sentence five times, which is what this is for.
+ * @param vault The vault the board lives in.
+ * @param board Which board it was said about.
+ * @param entry What was said, and who said it.
+ * @returns The board's lines, oldest first.
+ */
+function recordDoing(vault: string, board: string, entry: DoingEntry): DoingEntry[] {
+	const key = boardMemoryKey(vault, board);
+	const { byBoard } = store();
+	const existing = byBoard.get(key) ?? [];
+	const last = existing[existing.length - 1];
+	const repeat = last !== undefined && last.doing === entry.doing;
+	const list = [...(repeat ? existing.slice(0, -1) : existing), entry].slice(-DOING_KEPT);
+	byBoard.set(key, list);
+	return list;
+}
+
+/**
+ * The last few things said about this board, oldest first.
+ * @param vault The vault the board lives in.
+ * @param board Which board.
+ * @returns The lines.
+ */
+function recentDoing(vault: string, board: string): DoingEntry[] {
+	return store().byBoard.get(boardMemoryKey(vault, board)) ?? [];
+}
+
+/**
+ * Forget a board's lines.
+ *
+ * Nothing calls this on the ordinary path — the list is meant to outlive the
+ * work it describes for as long as somebody might still be looking at the
+ * board. It exists for the checks, which run several boards through one server.
+ * @param which The vault and board, or every board of every vault when omitted.
+ * @param which.vault The vault the board lives in.
+ * @param which.board Which board.
+ */
+function forgetDoing(which?: { readonly vault: string; readonly board: string }): void {
+	const { byBoard } = store();
+	if (which === undefined) {
+		byBoard.clear();
+	} else {
+		byBoard.delete(boardMemoryKey(which.vault, which.board));
+	}
+}
+
+export {
+	DOING_MAX_CHARS,
+	DOING_KEPT,
+	type DoingEntry,
+	type DoingCheck,
+	checkDoing,
+	recordDoing,
+	recentDoing,
+	forgetDoing,
+};

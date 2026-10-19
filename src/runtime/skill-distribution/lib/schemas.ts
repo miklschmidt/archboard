@@ -10,7 +10,7 @@
 import { z } from "zod";
 import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/board-input";
 import { SEMANTIC_BOARD_SCHEMA_VERSION, SemanticBoardSchema } from "@archboard/board/document";
-import { SemanticBoardConfigurationSchema } from "@/runtime/semantic-board-store/index";
+import { SemanticBoardConfigurationSchema } from "@archboard/board/configuration";
 
 /** One generated schema: where it goes, and the document itself. */
 interface GeneratedSchema {

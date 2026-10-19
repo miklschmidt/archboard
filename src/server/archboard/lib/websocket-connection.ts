@@ -5,7 +5,7 @@ import { checkBrowserCsrf } from "@/server/browser-origin";
 import type { RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
-import { parseBoardKey } from "@/runtime/engine/board";
+import { parseBoardKey } from "@archboard/board/address";
 import { createServerCodexBrowserSocketSend } from "@/server/archboard/codex-workbench-browser";
 import type { BrowserConnectionInstance } from "@/server/archboard/codex-workbench-browser";
 import { parseTabSessionId, type TabSessionId } from "@/server/codex-workbench";

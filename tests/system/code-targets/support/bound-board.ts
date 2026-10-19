@@ -1,9 +1,7 @@
-import {
-	createBoardTransition,
-	locateSemanticBoard,
-	readSemanticBoard,
-	writeSemanticBoard,
-} from "../../../../src/runtime/semantic-board-store/index.ts";
+import { createBoardTransition } from "@archboard/board/transitions";
+import { locateSemanticBoard } from "@archboard/board/location";
+import { readSemanticBoard } from "@archboard/board/read";
+import { writeSemanticBoard } from "@archboard/board/write";
 
 /** A board written to a vault, and the node whose binding is bound. */
 interface BoundBoard {

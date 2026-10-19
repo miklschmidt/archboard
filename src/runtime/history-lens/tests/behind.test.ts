@@ -12,7 +12,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "@/runtime/history-lens/index";
-import { decodeSemanticBoardDocument } from "@/runtime/semantic-board-store/index";
+import { decodeSemanticBoardDocument } from "@archboard/board/decode";
 import { BoardBehindSchema, type BoardBehind } from "@/shared/code-check/index";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,

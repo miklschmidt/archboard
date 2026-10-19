@@ -5,8 +5,8 @@
 // on two boards, so a pane showing board A has to be able to tell that news
 // about board B is not its business.
 
-import type { DoingEntry } from "@/runtime/engine/board-doing";
-import type { LockHolder } from "@/runtime/engine/lib/board-lock-contracts";
+import type { DoingEntry } from "@archboard/board/doing";
+import type { LockHolder } from "@archboard/board/lock";
 
 /** The shape every JSON route answers with. */
 interface ApiResponse<T = unknown> {

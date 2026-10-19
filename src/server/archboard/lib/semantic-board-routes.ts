@@ -23,12 +23,10 @@ import {
 	type LegendLayout,
 } from "@archboard/board/render-reply";
 import { type SemanticBoard } from "@archboard/board/document";
-import {
-	listSemanticBoards,
-	checkSemanticVault,
-	readSemanticBoard,
-	readSemanticBoardConfiguration,
-} from "@/runtime/semantic-board-store/index";
+import { listSemanticBoards } from "@archboard/board/listing";
+import { checkSemanticVault } from "@archboard/board/diagnostics";
+import { readSemanticBoard } from "@archboard/board/read";
+import { readSemanticBoardConfiguration } from "@archboard/board/configuration";
 import { vaultIdentity } from "@archboard/code-binding/vault-checkout";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
 import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";

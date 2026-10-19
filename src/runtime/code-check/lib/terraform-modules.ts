@@ -39,7 +39,7 @@ import {
 	type Reference,
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
-import { nodeSubject } from "@/runtime/semantic-board-store/index";
+import { nodeSubject } from "@archboard/board/subject";
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import type { SemanticNode } from "@archboard/board/content";
 import { describeSubject } from "@archboard/board/policy";

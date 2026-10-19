@@ -14,11 +14,9 @@
 // draft, and nothing else: a stack of pull requests is all drafts, and a
 // board may have no current variant (TASK-488).
 
-import {
-	listSemanticBoards,
-	readSemanticBoardAt,
-	readSemanticBoardConfiguration,
-} from "@/runtime/semantic-board-store/index";
+import { listSemanticBoards } from "@archboard/board/listing";
+import { readSemanticBoardAt } from "@archboard/board/read";
+import { readSemanticBoardConfiguration } from "@archboard/board/configuration";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
 import {
 	currentVariant,

@@ -7,11 +7,11 @@
 // moved, or this board changed hands.
 
 import type { Response } from "express";
-import { boardLockState, onBoardLockChanged } from "@/runtime/engine/board-lock";
-import type { LockHolder } from "@/runtime/engine/board-lock";
-import { recentDoing, recordDoing } from "@/runtime/engine/board-doing";
-import type { DoingEntry } from "@/runtime/engine/board-doing";
-import { normalizeBoardKey } from "@/runtime/engine/board";
+import { boardLockState, onBoardLockChanged } from "@archboard/board/lock";
+import type { LockHolder } from "@archboard/board/lock";
+import { recentDoing, recordDoing } from "@archboard/board/doing";
+import type { DoingEntry } from "@archboard/board/doing";
+import { normalizeBoardKey } from "@archboard/board/address";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { createAgentActivity } from "@/server/archboard/lib/agent-activity";
 import { broadcastEverywhere } from "@/server/archboard/lib/pane-vaults";

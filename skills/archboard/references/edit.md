@@ -52,12 +52,12 @@ archboard semantic edit "Board store" --expect-version 3 --doing "routing write 
 {
   "nodes": [{ "name": "Replaced relationships", "kind": "module",
     "responsibility": "Names every relationship a batch stated again under a new id",
-    "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/replaced-relationships.ts" } }],
+    "binding": { "repo": "github.com/miklschmidt/archboard", "path": "packages/board/src/runtime/operations/edit/replaced-relationships.ts" } }],
   "edges": [
     { "from": "Edit content", "to": "Replaced relationships", "kind": "call", "label": "replacedRelationships",
-      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/edit-content.ts", "symbol": "replacedRelationships" } },
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "packages/board/src/runtime/operations/edit/content.ts", "symbol": "replacedRelationships" } },
     { "from": "applyUnderLease", "to": "persisted", "kind": "call", "label": "notices as warnings",
-      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "persisted" } }
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "packages/board/src/runtime/operations/write/write.ts", "symbol": "persisted" } }
   ],
   "removeEdges": ["e7Kq2mP1"]
 }

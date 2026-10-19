@@ -4,8 +4,8 @@ import {
 	onBoardLockChanged,
 	onBoardSweep,
 	watchBoardLocks,
-} from "@/runtime/engine/board-lock";
-import { forgetDoing } from "@/runtime/engine/board-doing";
+} from "@archboard/board/lock";
+import { forgetDoing } from "@archboard/board/doing";
 import { removePidFile, sweepDeadPidFiles, writePidFile } from "@/runtime/engine/pidfile";
 import { server } from "@/server/archboard/lib/server-app";
 import { panePresentations } from "@/server/archboard/lib/pane-presentation";

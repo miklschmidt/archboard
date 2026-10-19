@@ -60,7 +60,7 @@ import {
 	type ExposedName,
 	type FactsPass,
 } from "@/runtime/code-facts/index";
-import { nodeSubject } from "@/runtime/semantic-board-store/index";
+import { nodeSubject } from "@archboard/board/subject";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import { inspectContainer, type ContainerInterface } from "@archboard/board/container-interface";
 import { type SemanticNode } from "@archboard/board/content";

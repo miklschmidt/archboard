@@ -1,7 +1,7 @@
 // `archboard semantic move` (ADR 0051, TASK-472.15): the real command moves a
 // board from the vault it finds into the vault found from `--to`, through an
 // owned server with a registry, home and state directory of its own. The store
-// owner (`src/runtime/semantic-board-store/tests/move.test.ts`) holds what the
+// owner (`packages/board/tests/runtime/operations/move/move.test.ts`) holds what the
 // move writes and refuses; this owner holds the command around it: its answer,
 // the files it leaves in both vaults, what the panes of the source vault are
 // told, the checkout a move into a worktree chooses, and the exit status of a

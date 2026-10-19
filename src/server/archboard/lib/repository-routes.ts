@@ -23,7 +23,7 @@ import path from "path";
 import type { Express, Request, Response } from "express";
 
 import { logger } from "@archboard/diagnostics/logger";
-import { parseBoardKey } from "@/runtime/engine/board";
+import { parseBoardKey } from "@archboard/board/address";
 import {
 	chooseKnownCheckout,
 	listRegistry,

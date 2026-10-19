@@ -17,9 +17,9 @@
 // boards. Every pane is told every vault's list, each naming its vault,
 // because the navigator marks the boards of every repository it lists.
 
-import type { DoingEntry } from "@/runtime/engine/board-doing";
-import type { LockHolder } from "@/runtime/engine/board-lock";
-import { boardMemoryKey } from "@/runtime/engine/board";
+import type { DoingEntry } from "@archboard/board/doing";
+import type { LockHolder } from "@archboard/board/lock";
+import { boardMemoryKey } from "@archboard/board/address";
 import type { AgentActivity, AgentActivityMessage } from "@/runtime/engine/types";
 import { ACTIVITY_LINGER_MS } from "@archboard/timing";
 

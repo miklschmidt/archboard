@@ -32,8 +32,8 @@ import type {
 	SemanticReconciliationInput,
 	SemanticSubjectInput,
 } from "@/runtime/codex-semantic-context";
-import { parseBoardKey } from "@/runtime/engine/board";
-import { semanticBoardAddress } from "@/runtime/semantic-board-store";
+import { parseBoardKey } from "@archboard/board/address";
+import { semanticBoardAddress } from "@archboard/board/location";
 import {
 	describeVariant,
 	unbuiltSentence,

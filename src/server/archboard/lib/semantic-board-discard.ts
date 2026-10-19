@@ -10,8 +10,8 @@
 // watch, as it hears any board appear or disappear.
 
 import type { NextFunction, Request, Response } from "express";
-import { forgetDoing } from "@/runtime/engine/board-doing";
-import { discardSemanticBoard } from "@/runtime/semantic-board-store/index";
+import { forgetDoing } from "@archboard/board/doing";
+import { discardSemanticBoard } from "@archboard/board/discard";
 import { announceDoing } from "@/server/archboard/lib/board-announcements";
 import { broadcast } from "@/server/archboard/lib/pane-registry";
 import { settledChangeFields } from "@/server/archboard/lib/semantic-change-feed";

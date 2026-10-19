@@ -16,7 +16,7 @@
 // purpose: it orders archboard's own writes so a writer working from a stale
 // read is refused rather than silently overwriting somebody. It advances
 // exactly once per accepted write, and the write boundary in
-// `src/runtime/semantic-board-store` is the only thing that may advance it.
+// `packages/board/src/runtime/operations/write` is the only thing that may advance it.
 
 import { z } from "zod";
 import {

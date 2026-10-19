@@ -10,7 +10,10 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as server from "@/server/archboard/index";
-import * as store from "@/runtime/semantic-board-store/index";
+import { writeSemanticBoard } from "@archboard/board/write";
+import { createBoardTransition } from "@archboard/board/transitions";
+import { readSemanticBoard } from "@archboard/board/read";
+import { semanticBoardAddress } from "@archboard/board/location";
 import { BoardCreateInputSchema } from "@archboard/board/board-input";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import type { SemanticPaneContext, SemanticPanePresentation } from "@archboard/board/pane-context";
@@ -33,11 +36,11 @@ let reported = 0;
  * @param walkthroughs What it states, if anything.
  */
 async function writeBoard(name: string, walkthroughs: readonly { name: string }[]): Promise<void> {
-	await store.writeSemanticBoard({
+	await writeSemanticBoard({
 		vault,
 		board: name,
 		writer,
-		transition: store.createBoardTransition(
+		transition: createBoardTransition(
 			BoardCreateInputSchema.parse({
 				name,
 				level: "system",
@@ -54,7 +57,7 @@ async function writeBoard(name: string, walkthroughs: readonly { name: string }[
 beforeAll(async () => {
 	await writeBoard(NARRATED, [{ name: "How a request lands" }]);
 	await writeBoard(OTHER, []);
-	const read = store.readSemanticBoard(vault, NARRATED);
+	const read = readSemanticBoard(vault, NARRATED);
 	if (!read.ok) {
 		throw new Error(read.problem);
 	}
@@ -103,7 +106,7 @@ function report(
 	return {
 		paneId: "A",
 		clientId,
-		board: store.semanticBoardAddress(board),
+		board: semanticBoardAddress(board),
 		variant: null,
 		view: null,
 		selection: [],

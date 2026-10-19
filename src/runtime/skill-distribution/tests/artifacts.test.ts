@@ -14,7 +14,7 @@ import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board
 import { parseSemanticBoard } from "@archboard/board/parse-board";
 import { SemanticBoardSchema } from "@archboard/board/document";
 import { withFixtureOrders } from "./fixture-orders.ts";
-import { SemanticBoardConfigurationSchema } from "@/runtime/semantic-board-store/index";
+import { SemanticBoardConfigurationSchema } from "@archboard/board/configuration";
 import {
 	generatedSchemas,
 	INSTALL_DOCUMENT,
