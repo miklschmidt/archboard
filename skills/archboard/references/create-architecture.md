@@ -60,8 +60,8 @@ Keep the real relationship kind when judging routing.
 3. State the architecture in one payload and create the board. The evidence
    behind this one comes from archboard's own source. The Archboard server's
    `editRoute` (`apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts`) calls
-   two functions that the board store exports from its package, `@archboard/board`
-   (`packages/board/src/runtime/operations/write`). It builds the edit with
+   two functions from the public `@archboard/board/store-write` interface
+   (`packages/board/src/runtime/api/store-write.ts`). It builds the edit with
    `editVariantTransition` (`transitions.ts`) and hands it to
    `writeSemanticBoard` (`write.ts`). So the store is a container, bound to
    its directory, and those two are its entry points. Behind them, inside the
