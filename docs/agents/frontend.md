@@ -182,7 +182,7 @@ follow.
 
 ## Theme colors
 
-`src/shared/theme/theme.css` holds the light and dark colors of the shell and
+`packages/renderer/assets/theme.css` holds the light and dark colors of the shell and
 of the diagrams. It has the shadcn colors and the comparison colors
 (`--standing-added`, `--standing-changed`, `--standing-removed`). It also has
 the palette `--semantic-<name>`, whose names the kinds and groups of a vault

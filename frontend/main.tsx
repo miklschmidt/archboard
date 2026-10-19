@@ -22,7 +22,8 @@ if (!root) {
 	throw new Error("The page has no #root element to mount into.");
 }
 
-// Where vite serves the routing engine's WebAssembly from, found the same way as the worker below.
+// Where vite serves the routing engine's WebAssembly from. The renderer package
+// starts its own layout workers, and tells each of them this address.
 const avoidWasmUrl = new URL("../node_modules/libavoid-js/dist/libavoid.wasm", import.meta.url)
 	.href;
 
@@ -30,24 +31,8 @@ const avoidWasmUrl = new URL("../node_modules/libavoid-js/dist/libavoid.wasm", i
 // workers, from the boards this tab reads (TASK-247). The renderer is its own
 // chunk, fetched and started while the application boots, so the shell and a
 // kept picture never wait for it.
-const renderer = import("@/ui/browser-renderer").then((module) => {
-	module.startBrowserRenderer({
-		/**
-		 * Start one engine worker and tell it where the routing engine is served.
-		 * @returns The worker.
-		 */
-		startWorker: () => {
-			const worker = new Worker(
-				new URL("../src/ui/browser-renderer/lib/layout-worker.ts", import.meta.url),
-				{
-					type: "module",
-				},
-			);
-			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker.postMessage has no target origin; this rule applies to windows.
-			worker.postMessage({ cmd: "init", wasmUrl: avoidWasmUrl });
-			return worker;
-		},
-	});
+const renderer = import("@archboard/renderer/browser").then((module) => {
+	module.startBrowserRenderer({ avoidWasmUrl });
 	return module;
 });
 takePicturesFrom(

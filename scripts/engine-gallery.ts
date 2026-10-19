@@ -16,11 +16,11 @@ import { join } from "node:path";
 import { z } from "zod";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import type { SemanticBoard } from "@archboard/board/document";
-import { fitIn } from "@/shared/shell-geometry/index";
+import { fitIn } from "@archboard/renderer/shell-geometry";
 import { locateSemanticBoard } from "@archboard/board/address";
 import { readSemanticBoardAt } from "@archboard/board/store-read";
 import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import { renderBoard } from "@/runtime/semantic-renderer/index";
+import { renderBoard } from "@archboard/renderer/bun";
 
 /** One drawing under one engine. */
 interface Drawn {

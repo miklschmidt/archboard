@@ -15,7 +15,7 @@
 // flow's frame, its columns and its rows. Nothing here reads the picture.
 
 import type { SemanticVariant } from "@archboard/board/document";
-import { FIT_MARGIN } from "@/shared/shell-geometry/index";
+import { FIT_MARGIN } from "@archboard/renderer/shell-geometry";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { unionRect, type Camera, type Rect } from "@/ui/semantic-board-canvas/lib/camera";
 

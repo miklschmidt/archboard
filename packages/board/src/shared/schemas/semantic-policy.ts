@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Stable vocabulary names; their light and dark colors live in shared/theme/theme.css. */
+/** Stable vocabulary names; their light and dark colors live in packages/renderer/assets/theme.css. */
 const PaletteColorSchema = z.enum([
 	"red",
 	"orange",

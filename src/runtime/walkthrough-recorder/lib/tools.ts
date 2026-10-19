@@ -8,7 +8,7 @@ import {
 	discoveredChromiumPath,
 	launchHeadlessChromium,
 	type HeadlessChromium,
-} from "@/runtime/headless-chromium";
+} from "@archboard/renderer/headless-chromium";
 import { findFfmpeg, probeFfmpeg, type FfmpegCommand } from "@/runtime/video-encoder";
 import { WalkthroughRecordingError } from "@/runtime/walkthrough-recorder/lib/errors";
 

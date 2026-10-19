@@ -21,7 +21,7 @@ import {
 	SidebarPanel,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebar";
 import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
-import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
+import type { AppliedAppearance } from "@archboard/renderer/picture";
 import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 import type { OpenDown } from "@/ui/semantic-board-canvas/lib/drill-target";

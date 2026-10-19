@@ -25,7 +25,7 @@ function em(shellPixels: number): string {
 }
 
 /**
- * The lockup as markup for a page that has loaded src/shared/theme/theme.css and names the display
+ * The lockup as markup for a page that has loaded the renderer package's theme.css and names the display
  * face "Archboard Display". Its proportions are the shell's: at a name of 18px the mark is 22 by
  * 21, 10 away, and the name's line is 21 high.
  * @param size The name's font size, in pixels; the mark scales with it.

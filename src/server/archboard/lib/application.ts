@@ -8,7 +8,8 @@ import {
 	createCodeOpenerRouter,
 	isCodeOpenerBodyRoute,
 } from "@/server/code-opener";
-import { diagramIconPaths } from "@/runtime/semantic-renderer/index";
+import { DIAGRAM_FONTS_DIRECTORY } from "@archboard/renderer/assets";
+import { diagramIconPaths } from "@archboard/renderer/bun";
 import { app } from "@/server/archboard/lib/server-app";
 import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
@@ -63,7 +64,7 @@ app.use(express.static(path.join(moduleDir, "../dist/frontend")));
 // drawn in another has boxes that do not fit their words.
 app.use(
 	"/assets/diagram-fonts",
-	express.static(path.join(moduleDir, "ui/shell/assets/fonts"), {
+	express.static(DIAGRAM_FONTS_DIRECTORY, {
 		immutable: true,
 		maxAge: "1y",
 	}),

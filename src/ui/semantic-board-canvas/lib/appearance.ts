@@ -4,10 +4,7 @@
 // (`pictureAppearances`, `keyOf`), which an exported legend reads too; this
 // reads one subject from the picture on screen, for its tip.
 
-import {
-	appearanceFrom,
-	type AppliedAppearance,
-} from "@/transformers/semantic-renderer/picture-key";
+import { appearanceFrom, type AppliedAppearance } from "@archboard/renderer/picture";
 
 /** Where the renderer draws a kind's icon inside a subject's group. */
 const ICON = "[data-type-icon] svg";

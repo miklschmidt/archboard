@@ -10,11 +10,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { PageRegion } from "@/runtime/semantic-rasterizer/index";
+import type { PageRegion } from "@archboard/renderer/rasterizer";
 import {
 	SemanticRasterReceiptSchema,
 	type SemanticRasterReceipt,
-} from "@/runtime/semantic-rasterizer/receipt";
+} from "@archboard/renderer/rasterizer";
 import {
 	archboard,
 	type CliAnswer,

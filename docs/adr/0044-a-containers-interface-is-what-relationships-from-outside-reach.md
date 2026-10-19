@@ -74,7 +74,7 @@ A relationship enters every container whose inside holds its end and not its
 start. It leaves every container whose inside holds its start and not its end.
 The renderer uses the same rule to carry a line into and out of containers
 (`project` and `between` in
-`src/transformers/semantic-renderer/lib/blocks/tree.ts`).
+`packages/renderer/src/shared/rules/blocks/tree/tree.ts`).
 
 An entry point is always a child of the container, never a part deeper down. A
 relationship from outside that ends deeper down makes an entry point of the

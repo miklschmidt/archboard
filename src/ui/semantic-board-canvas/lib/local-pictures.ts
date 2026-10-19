@@ -38,10 +38,7 @@ import {
 } from "@archboard/board/document";
 import { wasDrawn, type SemanticRenderReply } from "@archboard/board/render-reply";
 import type { SemanticPolicy } from "@archboard/board/policy";
-import type {
-	BoardRenderChoices,
-	BoardRenderOutcome,
-} from "@/transformers/semantic-renderer/board";
+import type { BoardRenderChoices, BoardRenderOutcome } from "@archboard/renderer/picture";
 import {
 	SemanticBoardError,
 	comparisonKey,

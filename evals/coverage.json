@@ -52,14 +52,14 @@
 					"expectedUse": "an author renders SVG to read; the harness captures every requested board, view and variant as a PNG; a bitmap is never authored or supplied by the author",
 					"scenarios": ["S00", "S02", "S05", "S07", "S09", "S12"],
 					"evidence": "harness-check",
-					"owner": "captures declared per scenario, taken after every run; src/runtime/semantic-rasterizer/tests and tests/system/semantic-boards/rasterize.test.ts own pixels, size and selectors"
+					"owner": "captures declared per scenario, taken after every run; packages/renderer/tests/runtime/services/rasterizer and tests/system/semantic-boards/rasterize.test.ts own pixels, size and selectors"
 				},
 				{
 					"path": "Chromium startup in a macOS host sandbox",
 					"expectedUse": "request approved execution outside the sandbox for the same rasterization, recording, or replay command when the preflight refuses startup",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/headless-chromium/tests/startup.test.ts proves native sandbox detection without an agent marker, no executable launch, and clean refusal; headless-chromium.test.ts proves ordinary startup and teardown"
+					"owner": "packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts proves native sandbox detection without an agent marker, no executable launch, and clean refusal; headless-chromium.test.ts proves ordinary startup and teardown"
 				},
 				{
 					"path": "semantic render and semantic rasterize without --out: raw SVG or PNG stdout for clipboard pipelines",
@@ -87,28 +87,28 @@
 					"expectedUse": "draw a picture or a recording relative to a named variant, such as the pull request below a stacked one: it marks only what the drawn variant changes over it, carries no Planned frame, and the receipt names the variant under comparedWith",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/draw-against.test.ts owns the CLI in SVG and PNG with its refusals; src/runtime/semantic-renderer/tests/drawn-against.test.ts owns the marks and the missing frame; tests/system/server-state/walkthrough-replay.test.ts owns a talk read against a variant"
+					"owner": "tests/system/semantic-boards/draw-against.test.ts owns the CLI in SVG and PNG with its refusals; packages/renderer/tests/runtime/operations/comparison/drawn-against.test.ts owns the marks and the missing frame; tests/system/server-state/walkthrough-replay.test.ts owns a talk read against a variant"
 				},
 				{
 					"path": "semantic render --theme auto",
 					"expectedUse": "one SVG for a document, README or pull request that shows the ground of the reader's colour scheme; a PNG takes light or dark",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/theme.test.ts owns the declared tokens; src/runtime/semantic-rasterizer/tests/theme-following.test.ts owns the ground under each colour scheme as an image, a background and inline"
+					"owner": "packages/renderer/tests/runtime/operations/architecture/theme.test.ts owns the declared tokens; packages/renderer/tests/runtime/services/rasterizer/theme-following.test.ts owns the ground under each colour scheme as an image, a background and inline"
 				},
 				{
 					"path": "semantic render/rasterize --title",
 					"expectedUse": "draw a title above an exported picture: the board, view, variant and comparison by default, or the given text",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/export-title.test.ts owns the band and the moved picture on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
+					"owner": "packages/renderer/tests/runtime/operations/export/export-title.test.ts owns the band and the moved picture on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
 				},
 				{
 					"path": "semantic render/rasterize --legend and --legend-only",
 					"expectedUse": "draw the key of an exported picture under or beside it, or alone; --legend-only needs --legend",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/export-legend.test.ts owns the content against the page key and the placement on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
+					"owner": "packages/renderer/tests/runtime/operations/export/export-legend.test.ts owns the content against the page key and the placement on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
 				},
 				{
 					"path": "semantic views: every view of a board with what it draws at a variant",
@@ -122,7 +122,7 @@
 					"expectedUse": "read what the picture draws and marks by id and name before looking at it; marks are the key's counts, null when the picture marks no comparison",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/drawn-marks.test.ts owns the key's counts and the answer's subjects against the drawn marks in all three grammars; tests/system/semantic-boards/view-listing.test.ts and rasterize.test.ts own the receipts"
+					"owner": "packages/renderer/tests/runtime/operations/marks/drawn-marks.test.ts owns the key's counts and the answer's subjects against the drawn marks in all three grammars; tests/system/semantic-boards/view-listing.test.ts and rasterize.test.ts own the receipts"
 				}
 			]
 		},
@@ -467,7 +467,7 @@
 					"expectedUse": "an empty selection draws nothing",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests (NothingDrawn) and scope tests"
+					"owner": "packages/renderer/tests/runtime (NothingDrawn) and scope tests"
 				},
 				{
 					"path": "a declared view captured as itself, never the whole variant in its place",
@@ -730,56 +730,56 @@
 					"expectedUse": "compare stable identities and Standing; geometry may change without an architectural change",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/fresh-proposal.test.ts; src/ui/semantic-board-canvas/tests/picture-transition.test.tsx"
+					"owner": "packages/renderer/tests/runtime/operations/comparison/fresh-proposal.test.ts; src/ui/semantic-board-canvas/tests/picture-transition.test.tsx"
 				},
 				{
 					"path": "compact semantic containers and direct outgoing relationships",
 					"expectedUse": "author actual containment and relationships; the renderer packs independent cards, keeps compact equal insets and routes to real endpoints using shared ports without forcing a flank",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/container-packing.test.ts"
+					"owner": "packages/renderer/tests/runtime/operations/containers/container-packing.test.ts"
 				},
 				{
 					"path": "outside relationships share container rows",
 					"expectedUse": "author real containment and relationships; outside callers and dependencies may sit beside their connected children without changing ownership",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/shared-container-rows.test.ts"
+					"owner": "packages/renderer/tests/runtime/operations/containers/shared-container-rows.test.ts"
 				},
 				{
 					"path": "relationships avoid unrelated containers",
 					"expectedUse": "author real containment and relationships; routes may enter an endpoint's container but do not pass through a container unrelated to either endpoint",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/foreign-frame-routing.test.ts"
+					"owner": "packages/renderer/tests/runtime/foreign-frame-routing.test.ts"
 				},
 				{
 					"path": "stable horizontal sibling ordering between variants",
 					"expectedUse": "preserve subject identities; equivalent sibling cards keep horizontal order in fresh slots without freezing positions or ranks",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/sibling-order.test.ts"
+					"owner": "packages/renderer/tests/runtime/operations/blocks/sibling-order.test.ts"
 				},
 				{
 					"path": "relationship channel routing separation",
 					"expectedUse": "author real relationships; matching kind, comparison standing and local direction may share a port while differing channels use distinct ports and tracks; cards and external container arrivals jointly offer aligned channels with room for reserved labels",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/relationship-kind-routing.test.ts; src/runtime/semantic-renderer/tests/aligned-kind-ports.test.ts; src/runtime/semantic-renderer/tests/matched-kind-channels.test.ts; src/runtime/semantic-renderer/tests/route-labels.test.ts; src/runtime/semantic-renderer/tests/forced-label-direction.test.ts; src/runtime/semantic-renderer/tests/channel-projection.test.ts; src/runtime/semantic-renderer/tests/projection-fallback.test.ts"
+					"owner": "packages/renderer/tests/runtime/operations/routes/relationship-kind-routing.test.ts; packages/renderer/tests/runtime/aligned-kind-ports.test.ts; packages/renderer/tests/runtime/operations/routes/matched-kind-channels.test.ts; packages/renderer/tests/runtime/operations/labels/route-labels.test.ts; packages/renderer/tests/runtime/forced-label-direction.test.ts; packages/renderer/tests/runtime/operations/routes/channel-projection.test.ts; packages/renderer/tests/runtime/projection-fallback.test.ts"
 				},
 				{
 					"path": "fixed bend and arrow approach clearance",
 					"expectedUse": "author real relationships; the renderer reserves space for fixed-radius bends and full straight arrow approaches instead of shrinking visible geometry",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/route-approach.test.ts; src/runtime/semantic-renderer/tests/crossing-rounding.test.ts"
+					"owner": "packages/renderer/tests/runtime/operations/routes/route-approach.test.ts; packages/renderer/tests/runtime/operations/crossings/crossing-rounding.test.ts"
 				},
 				{
 					"path": "automatic downward column wrapping",
 					"expectedUse": "author the real branching path and containment; the renderer selects downward columns by how the completed routed picture fits the pane while keeping containers together, without authored placement",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/automatic-columns.test.ts; src/transformers/semantic-renderer/tests/fold-columns.test.ts"
+					"owner": "packages/renderer/tests/runtime/operations/blocks/automatic-columns.test.ts; packages/renderer/tests/shared/rules/blocks/fold-columns.test.ts"
 				},
 				{
 					"path": "continuing relationship identity across multiple changed fields or an endpoint",
@@ -882,7 +882,7 @@
 					"expectedUse": "a new kind with a stated dash and arrowhead",
 					"scenarios": ["S08"],
 					"evidence": "harness-check",
-					"owner": "config-has relationshipKinds signal (dashed, open); dotted/none owned by src/runtime/semantic-renderer/tests policy"
+					"owner": "config-has relationshipKinds signal (dashed, open); dotted/none owned by packages/renderer/tests/runtime policy"
 				},
 				{
 					"path": "config.relationshipKinds.<key>.evidence [call, configured-path, permission, import, build-dependency, provisioning], optional; the default vocabulary carries it and other has none",
@@ -896,7 +896,7 @@
 					"expectedUse": "presentation from policy, not from the board",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests policy and grouping"
+					"owner": "packages/renderer/tests/runtime policy and grouping"
 				},
 				{
 					"path": "consumer-defined vocabularies, not a closed list",
@@ -1082,7 +1082,7 @@
 					"expectedUse": "render --view names a view; absent draws the variant",
 					"scenarios": ["S02", "S12"],
 					"evidence": "harness-check",
-					"owner": "render-ok with and without --view; src/runtime/semantic-renderer/tests"
+					"owner": "render-ok with and without --view; packages/renderer/tests/runtime"
 				},
 				{
 					"path": "visual verification by looking: readability, clipping, overlap, endpoints, sequence order",

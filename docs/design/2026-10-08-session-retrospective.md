@@ -16,7 +16,7 @@ The agent reproduced the startup failure inside the sandbox and successful start
 
 CI means automatic tests on a hosted runner. The repository already runs `bun run check` in CI. Its Ubuntu job explicitly excludes every browser test and the opener persistence test. Therefore, green hosted results do not cover the browser failures that this session repaired.
 
-The new macOS sandbox regression has another gap. Ubuntu skips it through `test.skipIf(process.platform !== "darwin")`. The macOS job selects other test paths and does not select `src/runtime/headless-chromium/tests/startup.test.ts`. Neither hosted job exercises the new native sandbox refusal.
+The new macOS sandbox regression has another gap. Ubuntu skips it through `test.skipIf(process.platform !== "darwin")`. The macOS job selects other test paths and does not select `packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts`. Neither hosted job exercises the new native sandbox refusal.
 
 Add the existing startup regression to the macOS job. Exercise the repaired macOS fixture boundaries there as well. Restore the browser lane through TASK-142 and opener persistence through TASK-141. These tasks already own the exclusions, so additional tasks for the same work add no coverage.
 
@@ -24,7 +24,7 @@ TASK-142 still names obsolete browser owners and a fixed count of 16. The sessio
 
 Completion means that hosted runs exercise the native sandbox refusal and every normal browser owner with the existing assertions. The hosted run must also include opener persistence after its cancellation repair.
 
-Sources: [CI workflow](../../.github/workflows/ci.yml), [startup regression](../../src/runtime/headless-chromium/tests/startup.test.ts), [test lanes](../agents/test-suite.md), TASK-141, TASK-142, and TASK-450. The transcript records the final counts at line 1556.
+Sources: [CI workflow](../../.github/workflows/ci.yml), [startup regression](../../packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts), [test lanes](../agents/test-suite.md), TASK-141, TASK-142, and TASK-450. The transcript records the final counts at line 1556.
 
 ## 2 High priority Make the browser toolchain reproducible
 

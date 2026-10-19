@@ -264,7 +264,7 @@ test("code that did not parse holds no facts, a name found only there is unparse
 test("the regular expression tree-sitter-typescript 0.23.2 cannot parse leaves the rest of primitives.ts its facts", async () => {
 	// The one file of this repository the grammar fails on (ADR 0046).
 	const repository = join(import.meta.dir, "..", "..", "..", "..", "..", "..", "..");
-	const file = "src/transformers/semantic-renderer/lib/svg/primitives.ts";
+	const file = "packages/renderer/src/shared/rules/svg/page/primitives.ts";
 	const text = readFileSync(join(repository, file), "utf8");
 	const own = fixtureCheckout({ [file]: text });
 	try {

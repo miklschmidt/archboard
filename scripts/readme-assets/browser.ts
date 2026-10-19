@@ -15,8 +15,8 @@ import {
 	type DevTools,
 	type HeadlessChromium,
 	type JsonRecord,
-} from "@/runtime/headless-chromium";
-import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
+} from "@archboard/renderer/headless-chromium";
+import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { chromiumPath, inOrder } from "./tools.ts";

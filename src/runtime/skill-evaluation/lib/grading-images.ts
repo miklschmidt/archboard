@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { readPngDimensions } from "@/runtime/semantic-rasterizer";
+import { readPngDimensions } from "@archboard/renderer/rasterizer";
 import { CAPTURE_TILE_SIDE_PX, tileRegions } from "@/runtime/skill-evaluation/lib/captures";
 import { graderLayout } from "@/runtime/skill-evaluation/lib/grader-layout";
 import type { GraderName } from "@/runtime/skill-evaluation/lib/suite";

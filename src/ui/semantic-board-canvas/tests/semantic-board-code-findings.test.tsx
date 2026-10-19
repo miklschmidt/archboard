@@ -15,7 +15,7 @@
 import { expect, test } from "bun:test";
 import { act } from "@testing-library/react";
 
-import { cornerWarning, lineWarning } from "@/transformers/semantic-renderer/index";
+import { cornerWarning, lineWarning } from "@archboard/renderer/picture";
 import { cameraNow } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import {
 	drawing,

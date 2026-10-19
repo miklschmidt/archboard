@@ -7,13 +7,13 @@ import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JS
 
 import { cn } from "@archboard/ui-kit/class-names";
 
-import { lineInk } from "@/transformers/semantic-renderer/index";
+import { lineInk } from "@archboard/renderer/picture";
 import { TooltipContent, Tooltip } from "@archboard/ui-kit/overlays";
 import {
 	RelationshipSample,
 	TypeSample,
 } from "@/ui/semantic-board-canvas/components/SemanticTypeSamples";
-import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
+import type { AppliedAppearance } from "@archboard/renderer/picture";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import { paletteInk } from "@/ui/semantic-board-canvas/lib/palette";
 import { vaultCheckQuery } from "@/ui/semantic-board-canvas/lib/queries";

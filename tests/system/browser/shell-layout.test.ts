@@ -9,8 +9,8 @@ import {
 	REFERENCE_PANE,
 	SHELL_VIEWPORT,
 	STAGE,
-} from "@/shared/shell-geometry/index";
-import { readThemeColors, themeColor } from "@/shared/theme/server";
+} from "@archboard/renderer/shell-geometry";
+import { readThemeColors, themeColor } from "@archboard/renderer/theme";
 
 import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,

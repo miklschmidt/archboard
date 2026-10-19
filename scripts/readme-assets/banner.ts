@@ -7,7 +7,7 @@
 // a sheet tilted away from the reader, and sets the lockup (lockup.ts) beside it. The ground of the
 // page is the ground of GitHub's page in the colour mode of the banner, and the drawing is given
 // the same ground, so the banner shows no edge where it lies on the README. The page loads the
-// theme's colours from src/shared/theme/theme.css and the display face from the repository. It is
+// theme's colours from the renderer package's theme.css and the display face from its fonts. It is
 // photographed at two pixels per CSS pixel and scaled down, so the tilt is sampled finely. Repeated
 // makes agree to within a few anti-aliased pixels of the tilted sheet, not byte for byte.
 
@@ -15,6 +15,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
+
+import { DIAGRAM_FONTS_DIRECTORY, THEME_STYLESHEET } from "@archboard/renderer/assets";
 
 import {
 	Browser,
@@ -50,7 +52,7 @@ const PIXEL_RATIO = 2;
 const NAME_SIZE = 120;
 
 /** The display face the name is set in. */
-const DISPLAY_FACE = "src/ui/shell/assets/fonts/BigShouldersDisplay-wght.ttf";
+const DISPLAY_FACE = join(DIAGRAM_FONTS_DIRECTORY, "BigShouldersDisplay-wght.ttf");
 
 /** The files it writes. */
 const FILES = {
@@ -85,15 +87,6 @@ const READY_SCRIPT = `(async () => {
 })()`;
 
 /**
- * The address of a repository file, for the page.
- * @param path The file, from the repository root.
- * @returns Its file URL.
- */
-function fileUrl(path: string): string {
-	return pathToFileURL(inRepository(path)).toString();
-}
-
-/**
  * The banner of one theme, as a page. GitHub's ground is the ground of the whole banner and of the
  * drawing, so nothing marks where the sheet ends. The drawing lies on it as a tilted sheet, and the
  * ground washes over the sheet's far edges, so the left third stays calm for the lockup.
@@ -103,9 +96,9 @@ function fileUrl(path: string): string {
  */
 function bannerPage(theme: Theme, drawing: string): string {
 	return `<!doctype html><html data-theme="${theme}" style="--ground: ${GROUND[theme]}"><head><meta charset="utf-8">
-<link rel="stylesheet" href="${fileUrl("src/shared/theme/theme.css")}">
+<link rel="stylesheet" href="${pathToFileURL(THEME_STYLESHEET).toString()}">
 <style>
-@font-face { font-family: "Archboard Display"; src: url("${fileUrl(DISPLAY_FACE)}") format("truetype"); font-weight: 100 900; font-display: block; }
+@font-face { font-family: "Archboard Display"; src: url("${pathToFileURL(DISPLAY_FACE).toString()}") format("truetype"); font-weight: 100 900; font-display: block; }
 body { position: relative; margin: 0; width: ${BANNER.width}px; height: ${BANNER.height}px; overflow: hidden; background: var(--ground); }
 .sheet { position: absolute; left: 900px; top: -10px; line-height: 0;
 	transform-origin: 0 0; transform: perspective(2400px) rotateX(48deg) rotateZ(-9deg) scale(0.74); }

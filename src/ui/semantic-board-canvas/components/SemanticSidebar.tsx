@@ -31,7 +31,7 @@ import {
 	type RefObject,
 } from "react";
 
-import { SIDEBAR_WIDTH } from "@/shared/shell-geometry/index";
+import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
 import { SIDEBAR_MS } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/class-names";
 import { IconButton, Tabs, TabsContent, TabsList, TabsTrigger } from "@archboard/ui-kit/controls";

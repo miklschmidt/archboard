@@ -54,7 +54,7 @@ This record decides the version with all of these changes.
 ## Decision
 
 The picture is lit from above. A card, a chip and a label stand on the page as
-blocks (`src/transformers/semantic-renderer/lib/svg/slab.ts`). A container is
+blocks (`packages/renderer/src/shared/rules/svg/parts/slab.ts`). A container is
 cut into the page as a tray (`lib/svg/tray.ts`). A group's region is drawn on
 what holds it, with no face of its own (`lib/svg/regions.ts`). The sizes are
 in `lib/design.ts`.
@@ -229,7 +229,7 @@ in `lib/design.ts`.
     translucent, and its head and its pulses take the same ink (TASK-409).
 14. **The colors are tokens.** The faces, edges, walls, floors, highlights and
     shadows come from the `--slab-*` and `--tray-*` tokens in
-    `src/shared/theme/theme.css`, in both themes. A group region's frame, its
+    `packages/renderer/assets/theme.css`, in both themes. A group region's frame, its
     corners, its tab, its caption and a grouped card's face are tones of the
     group's own color token (`--semantic-*`). Each is a relative OKLCH color
     (`toned` in `lib/svg/colour.ts`): the token's hue, a lightness of its own

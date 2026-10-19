@@ -11,7 +11,7 @@
 import { useMemo, type JSX } from "react";
 
 import type { CodeEvidence, CodeFinding } from "@archboard/code-intel/code-check";
-import { lineWarning } from "@/transformers/semantic-renderer/index";
+import { lineWarning } from "@archboard/renderer/picture";
 import {
 	SidebarGlyph,
 	SidebarSection,

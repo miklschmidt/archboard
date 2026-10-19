@@ -21,7 +21,7 @@
 // such a line when it is undecided: a group of the line's words that holds only
 // the mark.
 
-import { cornerWarning, lineWarning } from "@/transformers/semantic-renderer/index";
+import { cornerWarning, lineWarning } from "@archboard/renderer/picture";
 import {
 	lineTo,
 	mix,

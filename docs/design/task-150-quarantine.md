@@ -11,7 +11,7 @@ The former `frontend/main.tsx` and `frontend/index.html` are removed. The full b
 - `src/ui/board-preview/index.ts` and its focused test remain for the independently useful Chromium/emulation renderer probes. Its imports reach only `canvas/elements.ts`, `types/index.ts` and vendor types.
 - `src/ui/canvas/changes.ts` remains for `tests/system/label-geometry/support/label-cycle.ts` and the existing label-human-round-trip owner.
 - `src/ui/canvas/elements.ts` remains for preview conversion/guards, with `src/ui/types/index.ts` as its type-only closure. No hooks, JSX or mounted session composition is retained.
-- Official font binaries, licenses, provenance and wordmark remain at `src/ui/shell/assets/`; asset hash and deterministic wordmark owners remain active.
+- Official font binaries, licenses, provenance and wordmark remain at `packages/renderer/assets/`; asset hash and deterministic wordmark owners remain active.
 - The two renderer probes, label round-trip owner, backend/runtime/shared source, browser inventory and browser support remain active and strict. There is no early port from the archive.
 
 The coordinator approved these existing mixed-use dependencies in TASK-150.01.01 notes. Every retained file receives the full applicable policy. TASK-150.01.02 repairs it.

@@ -5,10 +5,7 @@ import { useMemo } from "react";
 
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { Leaving } from "@/ui/semantic-board-canvas/hooks/use-departure";
-import {
-	pictureAppearances,
-	type AppliedAppearance,
-} from "@/transformers/semantic-renderer/picture-key";
+import { pictureAppearances, type AppliedAppearance } from "@archboard/renderer/picture";
 
 /** The key to a pane with no picture yet: nothing drawn, nothing to explain. */
 const NO_APPEARANCES: ReadonlyMap<string, AppliedAppearance> = new Map();

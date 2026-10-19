@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 
-import { diagramTextWidth } from "@/runtime/semantic-renderer/index";
+import { diagramTextWidth } from "@archboard/renderer/bun";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";

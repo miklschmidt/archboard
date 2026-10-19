@@ -29,7 +29,7 @@ import {
 } from "@archboard/board/store-write";
 import { readSemanticBoard } from "@archboard/board/store-read";
 import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import { renderBoard } from "@/runtime/semantic-renderer/index";
+import { renderBoard } from "@archboard/renderer/bun";
 
 const [named] = process.argv.slice(2);
 if (named === undefined) {

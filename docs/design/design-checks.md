@@ -149,7 +149,7 @@ terraform-aws-vpc `b3abd6df2e` and nixpkgs `9dfea86cda`. This repository was at
 What causes the error lines:
 
 - TypeScript: one regular expression with raw control characters, in
-  `src/transformers/semantic-renderer/lib/svg/primitives.ts`.
+  `packages/renderer/src/shared/rules/svg/page/primitives.ts`.
 - C and C++: macros that the grammar cannot expand, for example
   `SQLITE_NOINLINE` and `LLVM_DEBUG(...; ...)`.
 - Swift: newer syntax, for example module selectors and `#if` around an

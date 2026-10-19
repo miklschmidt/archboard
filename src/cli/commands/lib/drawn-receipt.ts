@@ -12,7 +12,7 @@ import type {
 	PictureMarks,
 	RenderedChanges,
 } from "@archboard/board/render-reply";
-import { markCounts } from "@/transformers/semantic-renderer/picture-key";
+import { markCounts } from "@archboard/renderer/picture";
 import { drawnAgainst } from "@/cli/commands/lib/semantic-input";
 
 /** What a receipt says about its picture. */

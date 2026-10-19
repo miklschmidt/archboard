@@ -14,12 +14,11 @@ const RENDERER_MODULE = "virtual:archboard-renderer";
 
 /** Everything a picture drawn in the browser depends on, besides the board. */
 const RENDERER_SOURCES = [
-	"src/transformers/semantic-renderer",
-	"src/ui/browser-renderer",
-	"src/runtime/semantic-renderer/lib/layout-worker.ts",
+	"packages/renderer/src/shared",
+	"packages/renderer/src/ui",
+	"packages/renderer/src/runtime/processes/layout-worker.ts",
 	"packages/board/src/shared",
 	"packages/code-binding/src/shared",
-	"src/shared/shell-geometry",
 	"packages/timing/src",
 	"node_modules/@chenglou/pretext/package.json",
 	"node_modules/@remixicon/react/package.json",
