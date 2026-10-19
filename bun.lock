@@ -78,6 +78,18 @@
         "vite": "8.2.2",
       },
     },
+    "apps/cli": {
+      "name": "@archboard-app/cli",
+      "version": "0.0.0",
+    },
+    "apps/server": {
+      "name": "@archboard-app/server",
+      "version": "0.0.0",
+    },
+    "apps/web": {
+      "name": "@archboard-app/web",
+      "version": "0.0.0",
+    },
     "packages/board": {
       "name": "@archboard/board",
       "version": "0.0.0",
@@ -148,6 +160,12 @@
     "@radix-ui/react-select@2.3.7": "patches/@radix-ui%2Freact-select@2.3.7.patch",
   },
   "packages": {
+    "@archboard-app/cli": ["@archboard-app/cli@workspace:apps/cli"],
+
+    "@archboard-app/server": ["@archboard-app/server@workspace:apps/server"],
+
+    "@archboard-app/web": ["@archboard-app/web@workspace:apps/web"],
+
     "@archboard/board": ["@archboard/board@workspace:packages/board"],
 
     "@archboard/code-binding": ["@archboard/code-binding@workspace:packages/code-binding"],

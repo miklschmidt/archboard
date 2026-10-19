@@ -1,12 +1,27 @@
 // Facts about where a file sits in the repository: its module or package, its
 // test owner, and what a module specifier written in it resolves to. Every rule
 // that reasons about layout (docs/agents/boundaries.md) reads them from here.
-import fs from "node:fs";
 import path from "node:path";
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
 import type { RuleContext } from "./rule-api.ts";
 
 const ROOT_SOURCE_ENTRYPOINTS = new Set(["src/bin.ts", "src/server.ts"]);
+
+/** The browser entry of the web app. It sits above `ui/` and counts as browser code. */
+const BROWSER_ENTRYPOINTS = new Set(["apps/web/src/main.tsx"]);
+
+/** The thin entries of the apps: the files a process or the page starts from. */
+const APP_ENTRYPOINTS = new Set([
+	"apps/cli/src/bin.ts",
+	"apps/server/src/server.ts",
+	...BROWSER_ENTRYPOINTS,
+]);
+
+/**
+ * The prefix of the temporary root `package.json` import entry (`"#web/*": "./apps/web/src/*"`)
+ * through which the root `src/` modules reach the web app while it moves (TASK-500.24).
+ */
+const ROOT_WEB_IMPORT_PREFIX = "#web/";
 
 const MODULE_AREAS = new Set([
 	"cli",
@@ -21,6 +36,9 @@ const MODULE_AREAS = new Set([
 
 const GENERIC_BUCKET_SEGMENTS = new Set(["compatibility", "core", "migration", "misc", "utils"]);
 
+/** A workspace has no `lib/` folder: name the role of the folder instead. */
+const WORKSPACE_BUCKET_SEGMENTS = new Set(["lib"]);
+
 const AREA_IMPORT_DENIALS: Readonly<Record<string, ReadonlySet<string>>> = {
 	cli: new Set(["privileged", "server", "ui"]),
 	domain: new Set(["cli", "privileged", "runtime", "server", "transformers", "ui"]),
@@ -34,9 +52,6 @@ const AREA_IMPORT_DENIALS: Readonly<Record<string, ReadonlySet<string>>> = {
 
 const SOURCE_ALIAS_PREFIX = "@/";
 
-/** `@archboard/<name>` and the subpath after it, if any. */
-const PACKAGE_SPECIFIER = /^@archboard\/([^/]+)(\/.+)?$/;
-
 interface SourceModule {
 	area: string;
 	name: string;
@@ -44,30 +59,30 @@ interface SourceModule {
 	rest: string;
 }
 
-/** A file of a workspace package: `packages/<name>/src/...` or `packages/<name>/tests/...`. */
-interface PackageFile {
+/**
+ * A file of a workspace owner: `packages/<name>/(src|tests)/...` or `apps/<name>/(src|tests)/...`.
+ * Two files belong to one owner when their `root` is equal.
+ */
+interface WorkspaceFile {
+	kind: "package" | "app";
 	name: string;
+	/** `packages/<name>` or `apps/<name>`. */
 	root: string;
+	folder: "src" | "tests";
+	/** The path below `src/` or `tests/`. */
+	rest: string;
 	area: string | undefined;
 }
 
-/** Where a file sits for the area rules: a module under `src/<area>/` or a folder of a package. */
+/** Where a file sits for the area rules: a module under `src/<area>/` or a folder of a workspace owner. */
 interface AreaOwner {
-	kind: "module" | "package";
+	kind: "module" | "workspace";
 	area: string;
 	root: string;
 }
 
 interface TestOwner {
 	root: string;
-}
-
-/** A specifier of a workspace package, and the repository file its `exports` map it to. */
-interface PackageImport {
-	/** The export subpath that the specifier asks for: `.` or `./voice`. */
-	subpath: string;
-	/** The repository path of the exported file, or undefined when `exports` does not name it. */
-	target: string | undefined;
 }
 
 /**
@@ -110,286 +125,15 @@ function isSourceFile(relativePath: string): boolean {
 }
 
 /**
- * Whether a path is a state file: `state.ts` or anything under a `state/` directory.
+ * Whether a path is a state file: `state.ts` or anything under a `state/` directory, however deep.
  * @param relativePath The path to test.
  * @returns Whether the state-files-pure rule owns the file.
  */
 function isStateFile(relativePath: string): boolean {
 	return (
-		/(^|\/)state\/[^/]+\.[jt]sx?$/.test(relativePath) || /(^|\/)state\.[jt]sx?$/.test(relativePath)
+		/(^|\/)state\/(?:.+\/)?[^/]+\.[jt]sx?$/.test(relativePath) ||
+		/(^|\/)state\.[jt]sx?$/.test(relativePath)
 	);
-}
-
-/**
- * Resolve a module specifier to a repository path without touching the file
- * system: `@/` aliases map into `src/`, relative specifiers resolve against
- * the importing file, and anything else is a package.
- * @param fromRelativePath The importing file's repository path.
- * @param source The specifier as written.
- * @returns The repository path, or undefined for packages and escapes above the root.
- */
-function sourceToRepoPath(fromRelativePath: string, source: string): string | undefined {
-	if (source.startsWith(SOURCE_ALIAS_PREFIX)) {
-		const resolved = path.posix.normalize(
-			path.posix.join("src", source.slice(SOURCE_ALIAS_PREFIX.length)),
-		);
-		return resolved === "src" || resolved.startsWith("src/") ? resolved : undefined;
-	}
-
-	if (!source.startsWith(".")) {
-		return undefined;
-	}
-
-	const resolved = path.posix.normalize(
-		path.posix.join(path.posix.dirname(fromRelativePath), source),
-	);
-	return resolved.startsWith("../") ? undefined : resolved;
-}
-
-/**
- * Drop a Vite resource query or fragment (`?raw`, `#hash`) from a specifier.
- * @param source The specifier as written.
- * @returns The specifier's path part.
- */
-function stripQueryAndFragment(source: string): string {
-	return source.split(/[?#]/, 1)[0] ?? "";
-}
-
-/**
- * The files a specifier may denote once TypeScript resolution rules apply:
- * extensionless directories and files, and `.js` spellings of `.ts` sources.
- * @param unresolvedPath The specifier's repository path.
- * @returns The candidate paths in resolution order.
- */
-function resolutionCandidates(unresolvedPath: string): string[] {
-	const extension = path.posix.extname(unresolvedPath);
-	const stem = unresolvedPath.slice(0, unresolvedPath.length - extension.length);
-	const candidates = [unresolvedPath];
-	if (!extension) {
-		candidates.push(
-			`${unresolvedPath}.ts`,
-			`${unresolvedPath}.tsx`,
-			`${unresolvedPath}/index.ts`,
-			`${unresolvedPath}/index.tsx`,
-		);
-	} else if (extension === ".js" || extension === ".jsx") {
-		candidates.push(`${stem}.ts`, `${stem}.tsx`);
-	} else if (extension === ".mjs") {
-		candidates.push(`${stem}.mts`);
-	} else if (extension === ".cjs") {
-		candidates.push(`${stem}.cts`);
-	}
-	return candidates;
-}
-
-/**
- * Whether a repository path is an existing regular file.
- * @param context The rule context supplying the working directory.
- * @param candidate The repository path to test.
- * @returns Whether the file exists.
- */
-function isExistingFile(context: RuleContext, candidate: string): boolean {
-	try {
-		return fs.statSync(path.resolve(context.cwd, candidate)).isFile();
-	} catch {
-		return false;
-	}
-}
-
-/**
- * Resolve a specifier to the repository file it imports.
- * @param context The rule context supplying the working directory.
- * @param fromRelativePath The importing file's repository path.
- * @param source The specifier as written.
- * @returns The imported file's repository path, or undefined when it is not a local file.
- */
-function resolveSourcePath(
-	context: RuleContext,
-	fromRelativePath: string,
-	source: string,
-): string | undefined {
-	const packageImport = resolvePackageSpecifier(context, source);
-	if (packageImport) {
-		return packageImport.target;
-	}
-	const unresolvedPath = source.startsWith("#")
-		? resolveSubpathImport(context, fromRelativePath, source.split("?", 1)[0] ?? "")
-		: sourceToRepoPath(fromRelativePath, stripQueryAndFragment(source));
-	if (!unresolvedPath) {
-		return undefined;
-	}
-	const written = resolutionCandidates(unresolvedPath).find((candidate) =>
-		isExistingFile(context, candidate),
-	);
-	return written && throughSymlinks(context, written);
-}
-
-/**
- * The repository path of a file with every symlink resolved, so that a path
- * through `node_modules/@archboard/<name>` names the package file it links to.
- * @param context The rule context supplying the working directory.
- * @param repoPath The existing file's repository path as written.
- * @returns The path of the real file, or the written path when the file lies outside the repository.
- */
-function throughSymlinks(context: RuleContext, repoPath: string): string {
-	const real = path.relative(
-		fs.realpathSync(context.cwd),
-		fs.realpathSync(path.resolve(context.cwd, repoPath)),
-	);
-	return real.startsWith("..") ? repoPath : normalizePath(real);
-}
-
-/**
- * What a workspace package's `package.json` exports: each public subpath and
- * the repository file it names. A package is a directory under `packages/`, so
- * an `@archboard/` name with no such directory (an npm dependency) is not one.
- * @param context The rule context supplying the working directory.
- * @param name The package's name without the scope.
- * @returns Subpath to repository path, or undefined when no such package exists.
- * @throws {Error} When `exports` holds anything but file paths: a package has no build step.
- */
-function packageExports(context: RuleContext, name: string): Map<string, string> | undefined {
-	const declared = readManifestField(context, name, "exports");
-	if (declared === undefined) {
-		return undefined;
-	}
-	const entries = typeof declared === "object" && declared !== null ? Object.entries(declared) : [];
-	return new Map(
-		entries.map(([subpath, file]) => {
-			if (typeof file !== "string") {
-				throw new Error(`packages/${name}/package.json: exports "${subpath}" must be a file path`);
-			}
-			return [subpath, path.posix.join("packages", name, file)];
-		}),
-	);
-}
-
-/**
- * A field of a workspace package's manifest.
- * @param context The rule context supplying the working directory.
- * @param name The package's name without the scope.
- * @param field The manifest field to read.
- * @returns The field's value (null when absent), or undefined when no such package exists.
- */
-function readManifestField(context: RuleContext, name: string, field: string): unknown {
-	try {
-		const manifest: unknown = JSON.parse(
-			fs.readFileSync(path.resolve(context.cwd, "packages", name, "package.json"), "utf8"),
-		);
-		return typeof manifest === "object" && manifest !== null
-			? (Reflect.get(manifest, field) ?? null)
-			: null;
-	} catch {
-		return undefined;
-	}
-}
-
-/**
- * The `imports` entries of a package: the key and the file path it maps to.
- * @param context The rule context supplying the working directory.
- * @param own The package.
- * @returns The entries, none when the package declares no `imports`.
- * @throws {Error} When an entry is anything but a file path.
- */
-function subpathImports(context: RuleContext, own: PackageFile): Array<[string, string]> {
-	const declared = readManifestField(context, own.name, "imports");
-	if (typeof declared !== "object" || declared === null) {
-		return [];
-	}
-	return Object.entries(declared).map(([key, target]) => {
-		if (typeof target !== "string") {
-			throw new Error(`${own.root}/package.json: imports "${key}" must be a file path`);
-		}
-		return [key, target];
-	});
-}
-
-/**
- * Resolve a `#` specifier through the `imports` field of the importing file's own package,
- * as Node, TypeScript, Bun and Vite do: the longest matching key wins, and `*` carries the rest.
- * @param context The rule context supplying the working directory.
- * @param fromRelativePath The importing file's repository path.
- * @param source The specifier as written, with its query dropped.
- * @returns The repository path the specifier names, or undefined when it names none.
- */
-function resolveSubpathImport(
-	context: RuleContext,
-	fromRelativePath: string,
-	source: string,
-): string | undefined {
-	const own = packageAt(fromRelativePath);
-	const best = own
-		? subpathImports(context, own)
-				.map(([key, target]) => ({ key, mapped: mapSubpathImport(key, target, source) }))
-				.filter((entry) => entry.mapped !== undefined)
-				.toSorted((left, right) => right.key.length - left.key.length)[0]
-		: undefined;
-	return own && best?.mapped !== undefined ? path.posix.join(own.root, best.mapped) : undefined;
-}
-
-/**
- * Apply one `imports` entry to a specifier.
- * @param key The entry's key, with at most one `*`.
- * @param target The entry's target, which repeats the `*`.
- * @param source The specifier as written.
- * @returns The mapped target, or undefined when the key does not match.
- */
-function mapSubpathImport(key: string, target: string, source: string): string | undefined {
-	const star = key.indexOf("*");
-	if (star === -1) {
-		return source === key ? target : undefined;
-	}
-	const head = key.slice(0, star);
-	const tail = key.slice(star + 1);
-	const fits = source.length >= head.length + tail.length;
-	return fits && source.startsWith(head) && source.endsWith(tail)
-		? target.replace("*", source.slice(head.length, source.length - tail.length))
-		: undefined;
-}
-
-/**
- * Resolve `@archboard/<name>[/subpath]` through the package's `exports`.
- * @param context The rule context supplying the working directory.
- * @param source The specifier as written.
- * @returns The exported file, or undefined when the specifier names no workspace package.
- */
-function resolvePackageSpecifier(context: RuleContext, source: string): PackageImport | undefined {
-	const [, name, rest] = PACKAGE_SPECIFIER.exec(stripQueryAndFragment(source)) ?? [];
-	const exported = name ? packageExports(context, name) : undefined;
-	const subpath = rest ? `.${rest}` : ".";
-	return exported ? { subpath, target: exported.get(subpath) } : undefined;
-}
-
-/**
- * The public subpaths through which an import reaches a package file.
- * @param context The rule context supplying the working directory.
- * @param file The file of the package.
- * @param repoPath The file's repository path.
- * @param requested The subpath that a specifier asked for, if the import is one.
- * @returns The requested subpath, or else every subpath that exports the file. None means private.
- */
-function exportedSubpaths(
-	context: RuleContext,
-	file: PackageFile,
-	repoPath: string,
-	requested: string | undefined,
-): string[] {
-	if (requested) {
-		return [requested];
-	}
-	const exported = packageExports(context, file.name);
-	return [...(exported ?? [])]
-		.filter(([, target]) => target === repoPath)
-		.map(([subpath]) => subpath);
-}
-
-/**
- * Whether an export subpath is test support, which production code never imports.
- * @param subpath The subpath of a package export.
- * @returns Whether it is `./testing` or below it.
- */
-function isTestingSubpath(subpath: string): boolean {
-	return subpath === "./testing" || subpath.startsWith("./testing/");
 }
 
 /**
@@ -403,25 +147,104 @@ function areaFolder(rest: string): string | undefined {
 }
 
 /**
- * The package a file belongs to.
+ * The package or app a file belongs to: the one place that tells the two owners apart.
  * @param relativePath The file's repository path.
- * @returns The package, or undefined outside `packages/<name>/src` and `packages/<name>/tests`.
+ * @returns The owner's file, or undefined outside `<packages|apps>/<name>/(src|tests)`.
  */
-function packageAt(relativePath: string): PackageFile | undefined {
-	const [, name, folder, rest] = /^packages\/([^/]+)\/(src|tests)\/(.+)$/.exec(relativePath) ?? [];
-	if (!name || !folder || !rest) {
+function workspaceAt(relativePath: string): WorkspaceFile | undefined {
+	const [, group, name, folder, rest] =
+		/^(packages|apps)\/([^/]+)\/(src|tests)\/(.+)$/.exec(relativePath) ?? [];
+	if (!group || !name || !folder || !rest) {
 		return undefined;
 	}
-	return { name, root: `packages/${name}`, area: areaFolder(rest) };
+	return workspaceFile(relativePath, { group, name, folder, rest });
 }
 
 /**
- * Whether a path is product source: a module under `src/` or a package's `src/`.
+ * The record of a file that the workspace pattern matched.
  * @param relativePath The file's repository path.
- * @returns Whether the path is under `src/` or `packages/<name>/src/`.
+ * @param parts The pattern's groups: `packages` or `apps`, the name, `src` or `tests`, and the rest.
+ * @param parts.group The folder that holds the owner.
+ * @param parts.name The owner's directory name.
+ * @param parts.folder `src` or `tests`.
+ * @param parts.rest The file's path below that folder.
+ * @returns The owner's file.
+ */
+function workspaceFile(
+	relativePath: string,
+	parts: { group: string; name: string; folder: string; rest: string },
+): WorkspaceFile {
+	const { group, name, folder, rest } = parts;
+	return {
+		kind: group === "apps" ? "app" : "package",
+		name,
+		root: `${group}/${name}`,
+		folder: folder === "tests" ? "tests" : "src",
+		rest,
+		area: areaOfWorkspaceFile(relativePath, rest),
+	};
+}
+
+/**
+ * The area of a file of a package or an app. The web app's browser entry has none below
+ * `src/`, and counts as browser code.
+ * @param relativePath The file's repository path.
+ * @param rest The file's path below `src/` or `tests/`.
+ * @returns The area, or undefined for a file in no area.
+ */
+function areaOfWorkspaceFile(relativePath: string, rest: string): string | undefined {
+	return BROWSER_ENTRYPOINTS.has(relativePath) ? "ui" : areaFolder(rest);
+}
+
+/**
+ * Whether a path is product source: a module under `src/`, or the `src/` of a package or app.
+ * @param relativePath The file's repository path.
+ * @returns Whether the path is under `src/`, `packages/<name>/src/` or `apps/<name>/src/`.
  */
 function isProductSourcePath(relativePath: string): boolean {
-	return relativePath.startsWith("src/") || /^packages\/[^/]+\/src\//.test(relativePath);
+	return relativePath.startsWith("src/") || workspaceAt(relativePath)?.folder === "src";
+}
+
+/**
+ * Whether a path is a thin entry: a root entry or the entry of an app.
+ * @param relativePath The file's repository path.
+ * @returns Whether the file may hold startup wiring only.
+ */
+function isEntrypoint(relativePath: string): boolean {
+	return ROOT_SOURCE_ENTRYPOINTS.has(relativePath) || APP_ENTRYPOINTS.has(relativePath);
+}
+
+/**
+ * Whether a path is an app's flat file below its `src/`, which only an entry may be.
+ * @param relativePath The file's repository path.
+ * @returns Whether the file sits directly in `apps/<name>/src/`.
+ */
+function isFlatAppSource(relativePath: string): boolean {
+	return /^apps\/[^/]+\/src\/[^/]+$/.test(relativePath);
+}
+
+/**
+ * What is wrong with where an app's file sits, beyond the area rules.
+ * @param relativePath The file's repository path.
+ * @returns "legacy-root" below an app folder other than `src/` and `tests/`, "unknown-area" for
+ * a folder below `src/` that is no area, and undefined when the placement is right.
+ */
+function appPlacementProblem(relativePath: string): "legacy-root" | "unknown-area" | undefined {
+	const [, folder, rest] = /^apps\/[^/]+\/([^/]+)\/(.+)$/.exec(relativePath) ?? [];
+	if (folder === undefined || rest === undefined || folder === "tests") {
+		return undefined;
+	}
+	return folder === "src" ? appSourceProblem(rest) : "legacy-root";
+}
+
+/**
+ * What is wrong with where a file sits below an app's `src/`.
+ * @param rest The file's path below `src/`.
+ * @returns "unknown-area" for a folder that is no area, and undefined otherwise.
+ */
+function appSourceProblem(rest: string): "unknown-area" | undefined {
+	const [first = ""] = rest.split("/");
+	return rest.includes("/") && !MODULE_AREAS.has(first) ? "unknown-area" : undefined;
 }
 
 /**
@@ -434,8 +257,8 @@ function areaOwnerAt(relativePath: string): AreaOwner | undefined {
 	if (module) {
 		return { kind: "module", area: module.area, root: module.root };
 	}
-	const file = packageAt(relativePath);
-	return file?.area ? { kind: "package", area: file.area, root: file.root } : undefined;
+	const file = workspaceAt(relativePath);
+	return file?.area ? { kind: "workspace", area: file.area, root: file.root } : undefined;
 }
 
 /**
@@ -496,7 +319,7 @@ function isTestFile(relativePath: string): boolean {
 }
 
 /**
- * The test owner of a file: a module's or package's `tests/` folder, or `tests/system`.
+ * The test owner of a file: a module's, package's or app's `tests/` folder, or `tests/system`.
  * @param relativePath The file's repository path.
  * @returns The owner, or undefined for product source.
  */
@@ -506,9 +329,9 @@ function testOwnerAt(relativePath: string): TestOwner | undefined {
 		return { root: `${module.root}/tests` };
 	}
 
-	const packageTests = /^packages\/[^/]+\/tests(?=\/)/.exec(relativePath);
-	if (packageTests) {
-		return { root: packageTests[0] };
+	const workspaceTests = /^(?:packages|apps)\/[^/]+\/tests(?=\/)/.exec(relativePath);
+	if (workspaceTests) {
+		return { root: workspaceTests[0] };
 	}
 
 	if (relativePath === "tests/system" || relativePath.startsWith("tests/system/")) {
@@ -539,38 +362,53 @@ function isTypedTestSource(relativePath: string): boolean {
 }
 
 /**
- * Whether any path segment is a refused generic bucket name.
+ * Whether any path segment is a refused generic bucket name. A package or an app also
+ * refuses `lib`; the modules of root `src/` still keep a `lib/` folder.
  * @param relativePath The file's repository path.
  * @returns Whether the path passes through such a segment.
  */
 function hasGenericBucket(relativePath: string): boolean {
-	return relativePath.split("/").some((segment) => GENERIC_BUCKET_SEGMENTS.has(segment));
+	const refused =
+		workspaceAt(relativePath)?.folder === "src" ? WORKSPACE_BUCKET_SEGMENTS : undefined;
+	return relativePath
+		.split("/")
+		.some((segment) => GENERIC_BUCKET_SEGMENTS.has(segment) || refused?.has(segment) === true);
+}
+
+/**
+ * Whether a path is browser code that sits outside a `ui/` folder.
+ * @param relativePath The file's repository path.
+ * @returns Whether the path is the web app's browser entry.
+ */
+function isBrowserEntrypoint(relativePath: string): boolean {
+	return BROWSER_ENTRYPOINTS.has(relativePath);
 }
 
 export {
 	AREA_IMPORT_DENIALS,
-	ROOT_SOURCE_ENTRYPOINTS,
+	ROOT_WEB_IMPORT_PREFIX,
 	SOURCE_ALIAS_PREFIX,
+	normalizePath,
+	appPlacementProblem,
 	areaOwnerAt,
-	exportedSubpaths,
 	getRepoRelativePath,
 	hasGenericBucket,
+	isBrowserEntrypoint,
+	isEntrypoint,
+	isFlatAppSource,
 	isModuleInternal,
 	isProductSourcePath,
 	isSourceFile,
 	isStateFile,
 	isTestFile,
-	isTestingSubpath,
 	isTypedTestSource,
 	moduleAt,
-	packageAt,
-	resolvePackageSpecifier,
-	resolveSourcePath,
 	sameModule,
 	sameTestOwner,
 	testOwnerAt,
+	workspaceAt,
 	type AreaOwner,
-	type PackageFile,
 	type SourceModule,
 	type TestOwner,
+	type WorkspaceFile,
 };

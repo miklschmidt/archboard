@@ -14,7 +14,10 @@
 		"src/ui/**/*.mts",
 		"src/ui/**/*.cts",
 		"packages/*/src/ui/**/*.ts",
-		"packages/*/src/ui/**/*.tsx"
+		"packages/*/src/ui/**/*.tsx",
+		"apps/*/src/ui/**/*.ts",
+		"apps/*/src/ui/**/*.tsx",
+		"apps/web/src/main.tsx"
 	],
 	"exclude": ["node_modules", "dist", "src/ui/**/tests/**", "src/ui/**/*.test.ts"]
 }

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -123,8 +124,9 @@ describe.each(ADOPTERS)("the api folder of $name", ({ name, areas, executables =
 	});
 });
 
-// Code outside `packages/` reaches a package through its public name (`@archboard/<name>/<subpath>`),
-// never through a literal path into `packages/<name>/src/`. Such a path loads or mocks a private
+// Code outside `packages/` (the apps too, which are the top layer) reaches a package through its
+// public name (`@archboard/<name>/<subpath>`), never through a literal path into
+// `packages/<name>/src/`. Such a path loads or mocks a private
 // file and passes the package boundary unseen, because lint reads only literal import arguments. A
 // generated subprocess script gets the file of the public name from `import.meta.resolve`. These
 // places name a package file as a file, not as a module to load, and each says why.
@@ -136,7 +138,7 @@ const PRIVATE_PATH_FILE_USES: Record<string, string> = {
 	"tests/system/server-state/staleness-source.test.ts":
 		"touches a package file to age the source the server runs",
 };
-const OUTSIDE_PACKAGES = ["tests", "scripts", "src"];
+const OUTSIDE_PACKAGES = ["tests", "scripts", "src", "apps"];
 const SKIPPED_TREES = new Set(["node_modules", "dist", "generated", ".git"]);
 const CODE_FILE = /\.(?:[cm]?[jt]sx?)$/;
 const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*)/;
@@ -162,18 +164,23 @@ function privatePackagePathLines(
 	);
 }
 
-function codeFilesOutsidePackages(): string[] {
-	return OUTSIDE_PACKAGES.flatMap((top) => {
+/** The code files below the top folders of a repository; a top folder that does not exist is skipped. */
+function codeFilesBelow(base: string, tops: readonly string[]): string[] {
+	return tops.flatMap((top) => {
 		const walk = (directory: string): string[] =>
-			fs.readdirSync(path.join(repoRoot, directory), { withFileTypes: true }).flatMap((entry) => {
+			fs.readdirSync(path.join(base, directory), { withFileTypes: true }).flatMap((entry) => {
 				const relative = path.join(directory, entry.name);
 				if (entry.isDirectory()) {
 					return SKIPPED_TREES.has(entry.name) ? [] : walk(relative);
 				}
 				return CODE_FILE.test(entry.name) ? [relative] : [];
 			});
-		return walk(top);
+		return fs.existsSync(path.join(base, top)) ? walk(top) : [];
 	});
+}
+
+function codeFilesOutsidePackages(): string[] {
+	return codeFilesBelow(repoRoot, OUTSIDE_PACKAGES);
 }
 
 describe("no code outside the packages names a private package path", () => {
@@ -196,6 +203,27 @@ describe("no code outside the packages names a private package path", () => {
 					).map((line) => `${file}:${line}`),
 		);
 		expect(violations).toEqual([]);
+	});
+
+	test("the scan reaches the source and the tests of an app, and no app need exist", () => {
+		// Catches an app that loads a private package file by path: apps hold the code that
+		// sits above every package, and the scan listed only tests, scripts and src.
+		const base = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-package-api-"));
+		try {
+			expect(codeFilesBelow(base, OUTSIDE_PACKAGES)).toEqual([]);
+			for (const file of ["apps/cli/src/cli/run.ts", "apps/cli/tests/run.test.ts"]) {
+				fs.mkdirSync(path.join(base, path.dirname(file)), { recursive: true });
+				fs.writeFileSync(path.join(base, file), "export const run = 1;\n");
+			}
+			fs.mkdirSync(path.join(base, "apps/cli/node_modules"), { recursive: true });
+			fs.writeFileSync(path.join(base, "apps/cli/node_modules/skipped.ts"), "");
+			expect(codeFilesBelow(base, OUTSIDE_PACKAGES).toSorted()).toEqual([
+				"apps/cli/src/cli/run.ts",
+				"apps/cli/tests/run.test.ts",
+			]);
+		} finally {
+			fs.rmSync(base, { recursive: true, force: true });
+		}
 	});
 
 	test("the scan names a private path and spares the rest, in a synthetic file", () => {

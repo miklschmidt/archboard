@@ -1,0 +1,119 @@
+// Real Oxlint subprocesses over temporary projects, for the boundary tests of the plugin: each
+// project holds the files a test names plus the repository's own tests config as `.oxlintrc.jsonc`.
+import { expect } from "bun:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+const oxlint = path.join(repoRoot, "node_modules/.bin/oxlint");
+const plugin = path.join(repoRoot, "tools/oxlint-plugin-archboard.ts");
+
+interface CommandResult {
+	exitCode: number;
+	output: string;
+}
+
+function run(cwd: string, cmd: string[]): CommandResult {
+	const result = Bun.spawnSync({
+		cmd,
+		cwd,
+		env: {
+			...process.env,
+			PATH: `${path.join(repoRoot, "node_modules/.bin")}:${process.env["PATH"] ?? ""}`,
+		},
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	return {
+		exitCode: result.exitCode,
+		output: `${result.stdout.toString()}${result.stderr.toString()}`,
+	};
+}
+
+function repositoryOxlintConfig(): string {
+	const authored = fs.readFileSync(path.join(repoRoot, ".oxlintrc.tests.jsonc"), "utf8");
+	const relativePlugin = '"./tools/oxlint-plugin-archboard.ts"';
+	if (!authored.includes(relativePlugin)) {
+		throw new Error("repository Oxlint plugin path is missing");
+	}
+	return authored.replace(relativePlugin, JSON.stringify(plugin));
+}
+
+async function withProject<T>(
+	files: Record<string, string>,
+	check: (root: string) => T | Promise<T>,
+): Promise<T> {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-boundaries-"));
+	try {
+		fs.writeFileSync(path.join(root, ".oxlintrc.jsonc"), repositoryOxlintConfig());
+		for (const [relative, content] of Object.entries(files)) {
+			const target = path.join(root, relative);
+			fs.mkdirSync(path.dirname(target), { recursive: true });
+			fs.writeFileSync(target, content);
+		}
+		return await check(root);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+}
+
+function lintCommand(relativePaths: string[]): string[] {
+	return [oxlint, "--config=.oxlintrc.jsonc", "--format=default", ...relativePaths];
+}
+
+function lint(root: string, relativePaths: string[]): CommandResult {
+	return run(root, lintCommand(relativePaths));
+}
+
+function expectPass(result: CommandResult): void {
+	expect(result.exitCode, result.output).toBe(0);
+}
+
+function expectRule(result: CommandResult, rule: string, guidance?: string): void {
+	expect(result.exitCode, result.output).not.toBe(0);
+	expect(result.output).toContain(rule);
+	if (guidance) {
+		expect(result.output).toContain(guidance);
+	}
+}
+
+/** One diagnostic of a lint run: the file, the rule as `plugin(rule)`, and the message. */
+interface Diagnostic {
+	file: string;
+	code: string;
+	message: string;
+}
+
+/**
+ * Lint files and read every diagnostic, so a test names what each file earns.
+ * @param root The project directory.
+ * @param relativePaths The files to lint.
+ * @returns The diagnostics of all the files.
+ */
+function diagnosticsOf(root: string, relativePaths: string[]): Diagnostic[] {
+	const result = run(root, [oxlint, "--config=.oxlintrc.jsonc", "--format=json", ...relativePaths]);
+	const parsed: unknown = JSON.parse(result.output);
+	const list =
+		typeof parsed === "object" && parsed !== null && "diagnostics" in parsed
+			? parsed.diagnostics
+			: [];
+	return (Array.isArray(list) ? list : []).map((entry: Record<string, string>) => ({
+		file: entry["filename"] ?? "",
+		code: entry["code"] ?? "",
+		message: entry["message"] ?? "",
+	}));
+}
+
+export {
+	diagnosticsOf,
+	expectPass,
+	expectRule,
+	lint,
+	plugin,
+	repoRoot,
+	withProject,
+	type CommandResult,
+	type Diagnostic,
+};

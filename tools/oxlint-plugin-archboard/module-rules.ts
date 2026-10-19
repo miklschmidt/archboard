@@ -3,34 +3,38 @@
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
 import { createRule, report, sourceImportVisitors, type RuleContext } from "./rule-api.ts";
 import {
+	exportedSubpaths,
+	isTestingSubpath,
+	resolvePackageSpecifier,
+	resolveSourcePath,
+	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+} from "./import-resolution.ts";
+import {
 	AREA_IMPORT_DENIALS,
+	ROOT_WEB_IMPORT_PREFIX,
 	SOURCE_ALIAS_PREFIX,
 	areaOwnerAt,
-	exportedSubpaths,
 	getRepoRelativePath,
 	isModuleInternal,
 	isSourceFile,
 	isTestFile,
-	isTestingSubpath,
 	isTypedTestSource,
 	moduleAt,
-	packageAt,
-	resolvePackageSpecifier,
-	resolveSourcePath,
 	sameModule,
 	sameTestOwner,
 	testOwnerAt,
+	workspaceAt,
 	type AreaOwner,
-	type PackageFile,
 	type SourceModule,
 	type TestOwner,
+	type WorkspaceFile,
 	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
 } from "./source-layout.ts";
 
 /**
  * Whether an import crosses an area direction that the documented map forbids.
  * Inside one module the folders are private to it, so nothing is judged. Inside
- * one package they are areas, and the same direction rules hold between them.
+ * one package or app they are areas, and the same direction rules hold between them.
  * @param importer The importing file's area owner.
  * @param imported The imported file's area owner.
  * @returns Whether the import is refused.
@@ -119,8 +123,7 @@ function deepImportMessage(importer: Importer, imported: SourceModule): string |
 
 /**
  * The message a file of a package earns when another file imports it. Production
- * code never imports test support. Another package may import only what
- * `exports` names.
+ * code never imports test support. Another owner may import only what `exports` names.
  * @param importer The importing file.
  * @param imported The imported file's package.
  * @param importedPath The imported file's repository path.
@@ -130,7 +133,7 @@ function deepImportMessage(importer: Importer, imported: SourceModule): string |
  */
 function packageImportMessage(
 	importer: Importer,
-	imported: PackageFile,
+	imported: WorkspaceFile,
 	importedPath: string,
 	requested: string | undefined,
 ): string | undefined {
@@ -139,35 +142,76 @@ function packageImportMessage(
 		return "noProductTestImport";
 	}
 	const isPrivate =
-		subpaths.length === 0 && packageAt(importer.relativePath)?.name !== imported.name;
+		subpaths.length === 0 && workspaceAt(importer.relativePath)?.root !== imported.root;
 	return isPrivate ? "noDeepImportAcrossPackages" : undefined;
+}
+
+/**
+ * The message a file of an app earns when another file imports it. Nothing imports an app:
+ * only the app's own source and tests reach its files. The one exception is temporary: the
+ * root `src/` modules reach the web app through the root `#web/*` import while it moves.
+ * @param importer The importing file.
+ * @param imported The imported file's app.
+ * @param source The specifier as written.
+ * @returns The message id, or undefined when the import is allowed.
+ */
+function appImportMessage(
+	importer: Importer,
+	imported: WorkspaceFile,
+	source: string,
+): string | undefined {
+	if (workspaceAt(importer.relativePath)?.root === imported.root) {
+		return undefined;
+	}
+	const throughRootEntry =
+		imported.root === "apps/web" &&
+		importer.relativePath.startsWith("src/") &&
+		source.startsWith(ROOT_WEB_IMPORT_PREFIX);
+	return throughRootEntry ? undefined : "noImportOfApp";
 }
 
 /**
  * The module-entrypoints message an import of a resolved file earns.
  * @param importer The importing file.
  * @param importedPath The imported file's repository path.
+ * @param source The specifier as written.
  * @param requested The export subpath the specifier asked for, when it names a package.
  * @returns The message id, or undefined when the import is allowed.
  */
 function importedFileMessage(
 	importer: Importer,
 	importedPath: string,
+	source: string,
 	requested?: string,
 ): string | undefined {
 	const importedOwner = testOwnerAt(importedPath);
 	if (importedOwner) {
 		return testImportMessage(importer, importedOwner, importedPath);
 	}
-	const importedPackage = packageAt(importedPath);
-	if (importedPackage) {
-		return packageImportMessage(importer, importedPackage, importedPath, requested);
+	const importedFile = workspaceAt(importedPath);
+	if (importedFile) {
+		return importedFile.kind === "app"
+			? appImportMessage(importer, importedFile, source)
+			: packageImportMessage(importer, importedFile, importedPath, requested);
 	}
 	const imported = moduleAt(importedPath);
 	if (!imported || !isModuleInternal(imported)) {
 		return undefined;
 	}
 	return deepImportMessage(importer, imported);
+}
+
+/**
+ * The message a local-looking specifier earns when it names no existing file. A bare
+ * package name is no local specifier, and a relative one is judged by `absolute-imports`.
+ * @param source The specifier as written.
+ * @returns The message id, or undefined for a specifier that is not an alias or a `#` import.
+ */
+function unresolvedMessage(source: string): string | undefined {
+	if (source.startsWith(SOURCE_ALIAS_PREFIX)) {
+		return "noUnresolvedSourceAlias";
+	}
+	return source.startsWith("#") ? "noUnresolvedSubpathImport" : undefined;
 }
 
 /**
@@ -180,14 +224,14 @@ function entrypointMessage(importer: Importer, source: string): string | undefin
 	const packageImport = resolvePackageSpecifier(importer.context, source);
 	if (packageImport) {
 		return packageImport.target
-			? importedFileMessage(importer, packageImport.target, packageImport.subpath)
+			? importedFileMessage(importer, packageImport.target, source, packageImport.subpath)
 			: "noDeepImportAcrossPackages";
 	}
 	const importedPath = resolveSourcePath(importer.context, importer.relativePath, source);
 	if (!importedPath) {
-		return source.startsWith(SOURCE_ALIAS_PREFIX) ? "noUnresolvedSourceAlias" : undefined;
+		return unresolvedMessage(source);
 	}
-	return importedFileMessage(importer, importedPath);
+	return importedFileMessage(importer, importedPath, source);
 }
 
 /**
@@ -219,14 +263,18 @@ const moduleEntrypoints = createRule(
 			"Import another module through one of its root entrypoint files, not through its implementation subfolders.",
 		noDeepImportAcrossPackages:
 			"Import another package only through a path that its package.json exports names. Every other file of a package is private.",
+		noImportOfApp:
+			"Nothing imports an app: only the app's own source and tests reach its files. Move shared behavior into a package and import it through the package's exports.",
 		noUnresolvedSourceAlias:
 			"Canonical @/ imports must resolve to a source module entrypoint and stay inside src/.",
+		noUnresolvedSubpathImport:
+			"A # import must name an existing file through the imports field of the package.json that owns the importing file: a package, an app, or the root for files in src/.",
 		noProductTestImport:
 			"Product, scripts, and tools must not import test-owned source or a package's ./testing export. Move shared behavior behind a product module root entrypoint or a package export.",
 		noCrossOwnerTestImport:
-			"Test-owned source may import helpers only from its own owner (its module tests folder, or tests/system), and the preload's real-time declaration.",
+			"Test-owned source may import helpers only from its own owner (its module, package or app tests folder, or tests/system), and the preload's real-time declaration.",
 		noTestOutsideTestsDirectory:
-			"Bun test files must live under src/<area>/<module>/tests, packages/<name>/tests or tests/system.",
+			"Bun test files must live under src/<area>/<module>/tests, packages/<name>/tests, apps/<name>/tests or tests/system.",
 		testsThroughEntrypoints:
 			"Tests must import product modules through module-root entrypoint files; implementation subfolders are private.",
 		untypedTestSource:
@@ -268,7 +316,7 @@ const moduleEntrypoints = createRule(
 const absoluteImports = createRule(
 	{
 		useAlias:
-			"Use an @/ alias for local imports in src/ and a # import in a package; relative and filesystem-absolute imports are not allowed.",
+			"Use an @/ alias for local imports in src/ and a # import in a package or an app; relative and filesystem-absolute imports are not allowed.",
 	},
 	(context) => {
 		return sourceImportVisitors((source, node) => {
