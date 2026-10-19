@@ -6,7 +6,7 @@ import { readBoardCatalogue, watchBoardCatalogue } from "@archboard/board/store-
 import {
 	createCoordinatorCallbackContextPort,
 	createCoordinatorCallbackRealtimePort,
-} from "@/runtime/codex-coordinator-callbacks";
+} from "@archboard/workbench/coordinator";
 import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";
 import type {
 	CodexWorkbenchSessionBindings,

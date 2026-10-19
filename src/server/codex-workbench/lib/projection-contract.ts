@@ -38,7 +38,7 @@ import type {
 } from "@archboard/codex-app-server/session";
 import type { ThreadLinkSnapshot } from "@archboard/workbench/thread-link";
 import type { RealtimeTranscriptRecord } from "@archboard/workbench/realtime-contract";
-import type { SpokenApprovalSnapshot } from "@/runtime/codex-spoken-approval";
+import type { SpokenApprovalSnapshot } from "@archboard/workbench/coordinator";
 
 interface CodexAccountProjectionInput {
 	readonly kind: "codex_account_response";

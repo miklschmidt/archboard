@@ -1,5 +1,5 @@
 import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../../runtime/codex-spoken-approval/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/workbench/coordinator";
 import type { ThreadLinkSnapshot } from "@archboard/workbench/thread-link";
 import type { IdentityAuthorities, ThreadId } from "@archboard/codex-app-server/identity";
 import {

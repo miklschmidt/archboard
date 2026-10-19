@@ -5,7 +5,7 @@ import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkCasToken,
 } from "@archboard/workbench/thread-link";
-import type { CodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
+import type { CodexWorkhorseStart } from "@archboard/workbench/workhorses";
 import type {
 	CodexThreadContextBindingToken,
 	CodexThreadContextController,

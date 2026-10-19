@@ -17,7 +17,7 @@
 import type {
 	CoordinatorCallbackTurnPort,
 	WorkhorseNewsSituation,
-} from "@/runtime/codex-coordinator-callbacks";
+} from "@archboard/workbench/coordinator";
 import { createTurnStartParams, type ArchboardContext } from "@archboard/workbench/instructions";
 import { CodexSessionMutationError, type CodexSession } from "@archboard/codex-app-server/session";
 

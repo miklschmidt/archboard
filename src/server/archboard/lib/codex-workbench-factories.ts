@@ -3,8 +3,8 @@ import {
 	ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
 	ARCHBOARD_COORDINATOR_NAMESPACE,
 	TELL_COORDINATOR_OWNER,
-} from "@/runtime/codex-coordinator-callbacks";
-import { COORDINATOR_DYNAMIC_DISPATCHERS } from "@/runtime/codex-coordinator-tools";
+	COORDINATOR_DYNAMIC_DISPATCHERS,
+} from "@archboard/workbench/coordinator";
 import { createCodexDynamicTools } from "@archboard/workbench/dynamic-tools";
 import { createCodexEpochStore } from "@archboard/workbench/epoch";
 import { createCodexSession } from "@archboard/codex-app-server/session";

@@ -3,7 +3,8 @@ import { expect, test } from "bun:test";
 import {
 	CALLBACK_MAX_UTF8_BYTES,
 	type CoordinatorCallbackDelivery,
-} from "../../../runtime/codex-coordinator-callbacks/index.js";
+	EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
+} from "@archboard/workbench/coordinator";
 import type { CodexRealtimeGeneration } from "@archboard/workbench/realtime";
 import { SEMANTIC_CONTEXT_LIMITS } from "@archboard/codex-app-server/semantic-context";
 import {
@@ -17,7 +18,6 @@ import {
 	parseRealtimeSessionId,
 } from "@archboard/workbench/realtime-contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import {
 	projectServerBrowserReadiness,
 	type ServerReadinessInput,

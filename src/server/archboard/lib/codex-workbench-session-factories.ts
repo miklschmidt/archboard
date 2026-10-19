@@ -6,20 +6,22 @@
 // built before it, in dependency order. A component that fails to build unwinds the ones built
 // before it, so a half-built session or workhorse leaves nothing running.
 
-import { createCodexCoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
 import {
+	createCodexCoordinatorCallbacks,
 	createCodexCoordinatorTools,
 	type CoordinatorToolDispatcher,
-} from "@/runtime/codex-coordinator-tools";
-import { createCodexCoordinator } from "@/runtime/codex-coordinator";
+	createCodexCoordinator,
+	createCodexSpokenApprovalGate,
+} from "@archboard/workbench/coordinator";
 import { createCodexRealtimeAdapter } from "@archboard/workbench/realtime";
 import { createSemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
-import { createCodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
 import { createCodexThreadContextController } from "@archboard/workbench/thread-tools";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
-import { createCodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
+import {
+	createCodexWorkhorseOperations,
+	createCodexWorkhorseStart,
+} from "@archboard/workbench/workhorses";
 import { createCodexWorkhorseQueue } from "@archboard/workbench/workhorse-queue";
-import { createCodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
 import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";
 import type {
 	CodexWorkbenchSessionBindings,

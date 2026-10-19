@@ -13,9 +13,11 @@ import type { TransportServerNotification } from "@archboard/codex-app-server/tr
 import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { CodexThreadContextController } from "@archboard/workbench/thread-tools";
-import type { CodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
+import type {
+	CodexWorkhorseOperations,
+	CodexWorkhorseStart,
+} from "@archboard/workbench/workhorses";
 import type { CodexWorkhorseQueue } from "@archboard/workbench/workhorse-queue";
-import type { CodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
 import type {
 	OperationId,
 	ThreadId,

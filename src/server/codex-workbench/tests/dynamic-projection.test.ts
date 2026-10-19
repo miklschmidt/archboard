@@ -4,7 +4,7 @@ import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
 } from "@archboard/workbench/dynamic-tools";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/workbench/coordinator";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {

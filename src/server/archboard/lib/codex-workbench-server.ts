@@ -1,6 +1,6 @@
 import type { ArchboardContext } from "@archboard/workbench/instructions";
 import type { CodexRealtimeAdapterOptions } from "@archboard/workbench/realtime";
-import type { CoordinatorCallbackCanvas } from "@/runtime/codex-coordinator-callbacks";
+import type { CoordinatorCallbackCanvas } from "@archboard/workbench/coordinator";
 import type { CodexProcessGroupIdentity } from "@archboard/process/codex-group";
 import type {
 	SemanticContextPublisherOptions,

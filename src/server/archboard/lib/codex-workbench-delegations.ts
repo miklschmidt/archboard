@@ -14,7 +14,7 @@ import type { TrustedIdentityDecoder, TurnId } from "@archboard/codex-app-server
 import type {
 	WorkhorseOperationCorrelation,
 	WorkhorseOperationEvent,
-} from "@/runtime/codex-workhorse-operations";
+} from "@archboard/workbench/workhorses";
 
 /** The part of an operation event the record is made from. */
 interface DelegationEvent {
