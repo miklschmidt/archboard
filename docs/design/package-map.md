@@ -17,8 +17,8 @@ four with `walkthrough` and four with `voice`. The area folders (`shared`, `runt
 A package owns one behavior. The area folders move inside the package, and the area rules still
 hold there: the `ui` folder of a package never imports its `runtime` or `server` folder. Each
 package names its public files in `exports`, and a file that is not named is private. There is no
-`index.ts` barrel. A package that serves both the browser and the server exposes one subpath for
-each side, for example `@archboard/workbench/ui` and `@archboard/workbench/runtime`. Lint refuses
+`index.ts` barrel. A package that serves both the browser and the server keeps their subpaths
+apart, for example `@archboard/workbench/browser-contract` and `@archboard/workbench/server`. Lint refuses
 the server-side subpaths from browser code and replaces the `archboard/import-boundaries` rule for
 the module root. The lint resolver must learn package specifiers first, because it ignores them
 today (`tools/oxlint-plugin-archboard/source-layout.ts:116`).
