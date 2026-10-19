@@ -284,29 +284,40 @@ describe("the lint configs split app tests the way they split package tests", ()
 
 describe("the frame clock rule follows the board canvas into apps/web", () => {
 	// A frame-clocked file reads the browser's clock directly, which a recording cannot step.
-	const CLOCK_READ = "export const stamp = (): number => Date.now();\n";
+	const CLOCK_READ = "export const stamp = [Date.now(), requestAnimationFrame];\n";
 	const canvas = [
-		"apps/web/src/ui/components/semantic-board-canvas/stamp.ts",
-		"apps/web/src/ui/hooks/semantic-board-canvas/stamp.ts",
+		"apps/web/src/ui/api/semantic-board-canvas/stamp.ts",
+		"apps/web/src/ui/clients/semantic-board-canvas/stamp.ts",
+		"apps/web/src/ui/components/semantic-board-canvas/Stamp.tsx",
+		"apps/web/src/ui/constants/semantic-board-canvas/stamp.ts",
+		"apps/web/src/ui/hooks/semantic-board-canvas/use-stamp.ts",
+		"apps/web/src/ui/rules/semantic-board-canvas/stamp.ts",
 		"apps/web/src/ui/state/semantic-board-canvas/stamp.ts",
 		"apps/web/src/ui/workers/semantic-board-canvas/stamp.ts",
 	];
+	const tests = canvas.map((file) => file.replace("/src/", "/tests/"));
 	const sibling = [
-		"apps/web/src/ui/components/shell/stamp.ts",
-		"apps/web/src/ui/hooks/semantic-board-canvasx/stamp.ts",
+		"apps/web/src/ui/components/shell/Stamp.tsx",
+		"apps/web/src/ui/hooks/semantic-board-canvasx/use-stamp.ts",
 	];
-	const files = Object.fromEntries([...canvas, ...sibling].map((file) => [file, CLOCK_READ]));
+	const files = Object.fromEntries(
+		[...canvas, ...tests, ...sibling].map((file) => [file, CLOCK_READ]),
+	);
 
 	test("restricts the clocks at a canvas path of apps/web and leaves its sibling behaviors alone", () => {
 		// Catches the restriction vanishing when the canvas leaves src/ui: the override named only
 		// the old paths. A sibling behavior stays free to read the clock, so it was not widened.
 		withProject({ ".oxlintrc.jsonc": repositoryConfig(".oxlintrc.jsonc") }, files, (root) => {
 			for (const file of canvas) {
-				refused(lint(root, ".oxlintrc.jsonc", file), "eslint(no-restricted-properties)");
+				const result = lint(root, ".oxlintrc.jsonc", file);
+				refused(result, "eslint(no-restricted-properties)");
+				refused(result, "eslint(no-restricted-globals)");
 			}
-			for (const file of sibling) {
+			// Sibling behaviors and canvas tests keep their browser clocks.
+			for (const file of [...sibling, ...tests]) {
 				const result = lint(root, ".oxlintrc.jsonc", file);
 				expect(result.output, file).not.toContain("no-restricted-properties");
+				expect(result.exitCode, result.output).toBe(0);
 			}
 		});
 	});
