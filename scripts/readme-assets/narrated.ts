@@ -21,7 +21,7 @@ import {
 	type MakeContext,
 	type Producer,
 	type TrackedVault,
-	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 
 /** The lower-left 16:9 part of a 1920x1080 recording, where the step's caption sits. */

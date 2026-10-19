@@ -1,6 +1,6 @@
 // Driving the real shell in a private headless Chromium, and filming what it paints.
 //
-// The browser is the product's own (src/runtime/headless-chromium, ADR 0020): its own process
+// The browser is the product's own (packages/renderer/src/runtime/processes/headless-chromium, ADR 0020): its own process
 // group, a private profile, loopback DevTools only, and a teardown with proof. What the
 // walkthrough recorder cannot do is here: a take acts like a person (it moves a pointer, hovers,
 // double-clicks, types and presses keys) while the server redraws on CLI writes, so it is filmed
@@ -18,7 +18,7 @@ import {
 } from "@archboard/renderer/headless-chromium";
 import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { chromiumPath, inOrder } from "./tools.ts";
 
 /** How long a DevTools call or a page evaluation may take. */

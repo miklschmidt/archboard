@@ -30,9 +30,9 @@ import {
 	type MakeContext,
 	type Producer,
 	type TakeServer,
-	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { lockupMarkup } from "./lockup.ts";
 
 /** The board and the proposal the banner shows. */

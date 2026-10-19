@@ -538,7 +538,8 @@ function contractIsCurrent(): boolean {
 /**
  * Remove the generated tree that checkouts made before the contract moved into the package keep:
  * it is ignored by git but linted and formatted nowhere any more, and nothing reads it. Only a real
- * directory named exactly `generated` goes, and the old folder goes with it once it is empty.
+ * directory named exactly `generated` goes, and the folders it leaves empty go with it, up to the
+ * old root `src/`, which no longer exists once nothing is left in it.
  */
 function removeLegacyGeneratedTree(): void {
 	const legacyContractRoot = join(repositoryRoot, "src/shared/codex-app-server-contract");
@@ -553,8 +554,22 @@ function removeLegacyGeneratedTree(): void {
 		);
 	}
 	rmSync(legacyGeneratedRoot, { recursive: true });
-	if (readdirSync(legacyContractRoot).length === 0) {
-		rmdirSync(legacyContractRoot);
+	removeEmptyFolders([
+		legacyContractRoot,
+		dirname(legacyContractRoot),
+		join(repositoryRoot, "src"),
+	]);
+}
+
+/**
+ * Remove each folder that exists and holds nothing, in the order given.
+ * @param folders The folders to try, innermost first.
+ */
+function removeEmptyFolders(folders: readonly string[]): void {
+	for (const folder of folders) {
+		if (entryExists(folder) && readdirSync(folder).length === 0) {
+			rmdirSync(folder);
+		}
 	}
 }
 

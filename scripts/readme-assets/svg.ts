@@ -20,7 +20,7 @@ import {
 	type Producer,
 	type TakeServer,
 	type TrackedVault,
-	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 
 /** One README diagram, drawn in both themes. */
