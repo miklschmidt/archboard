@@ -13,7 +13,7 @@ import { createCodexBrowserModel } from "../../../shared/codex-browser-model/ind
 import {
 	createIdentityAuthorities,
 	type IdentityAuthority,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import { projectCodexBrowserState, type BrowserProjectionInput } from "../index.js";
 import { createGatewayHarness } from "./support.js";
 

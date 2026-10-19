@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
-import type { IdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import type { IdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
 import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@archboard/timing";
 import { projectionHarness } from "./support/codex-workbench-projection-harness.js";

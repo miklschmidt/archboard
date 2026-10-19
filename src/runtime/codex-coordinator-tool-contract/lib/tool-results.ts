@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	CODEX_THREAD_STATUS_TYPES,
 	CodexThreadStatusTypeSchema,
-} from "@/shared/codex-app-server-contract";
+} from "@archboard/codex-app-server/app-server-contract";
 import type {
 	JsonSchema,
 	CoordinatorToolName,

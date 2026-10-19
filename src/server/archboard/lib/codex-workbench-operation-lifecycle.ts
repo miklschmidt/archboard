@@ -3,7 +3,7 @@ import type {
 	ChildId,
 	IdentityAuthorities,
 	OperationId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	DynamicCallerAuthority,
 	DynamicEpochTeardownProof,

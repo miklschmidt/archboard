@@ -9,7 +9,7 @@ import {
 	type ChildEpoch,
 	type ChildId,
 	type ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import { decodeServerNotification } from "../../codex-protocol/index.js";
 import { CodexSessionMutationError, type SessionParams } from "../../codex-session/index.js";
 import {

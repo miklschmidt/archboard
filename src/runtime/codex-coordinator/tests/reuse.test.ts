@@ -7,7 +7,7 @@ import type {
 	CoordinatorSnapshot,
 	CoordinatorThreadLinkClassification,
 } from "../index.js";
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import { createCodexCoordinator } from "../index.js";
 import { WORKING_DIRECTORY, fixture, type Fixture } from "./support.js";
 

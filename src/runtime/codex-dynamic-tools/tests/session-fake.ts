@@ -8,7 +8,7 @@ import type {
 	SessionThreadStartResult,
 	SessionTurnResult,
 } from "../../codex-session/index.js";
-import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
+import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 
 class FakeSession {
 	readonly calls: Array<{ readonly method: string; readonly params: unknown }> = [];

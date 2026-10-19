@@ -13,7 +13,7 @@ import type {
 	OperationAuthority,
 	OperationId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 
 export class FakeQueue implements CodexWorkhorseQueue<OperationId> {
 	readonly calls: string[] = [];

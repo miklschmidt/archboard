@@ -1,7 +1,7 @@
 import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
 import type { SessionThreadItem, SessionTurn } from "@/runtime/codex-session";
 import { BROWSER_TIMELINE_LIMITS as LIMITS } from "@/shared/codex-browser-model";
-import type { ThreadId } from "@/shared/codex-workbench-identity";
+import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CodexTimelineItemProjectionInput,
 	CodexTimelinePlanInput,

@@ -19,7 +19,7 @@ import type {
 	LogicalToolCallCorrelation,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { BrowserRealtimeActions, TabSessionId } from "@/server/codex-workbench";
 import type { TabSessionEnding } from "@/server/archboard/lib/codex-workbench-session-end";
 import type { CoordinatorTurnHome } from "@/server/archboard/lib/codex-workbench-delegations";

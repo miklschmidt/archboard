@@ -10,7 +10,7 @@ import type { EpochTransaction } from "@/runtime/codex-epoch";
 import type { SessionParams, SessionThread, SessionTurn } from "@/runtime/codex-session";
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 import { ARCHBOARD_APP_DYNAMIC_TOOLS } from "@/runtime/codex-thread-tools";
-import type { OperationId, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
+import type { OperationId, ThreadId, TurnId } from "@archboard/codex-app-server/workbench-identity";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,

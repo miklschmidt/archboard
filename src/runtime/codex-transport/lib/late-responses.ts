@@ -1,4 +1,4 @@
-import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 import { decodeJsonRpcError, decodeResponseEnvelope } from "@/runtime/codex-protocol";
 import type { ResponseMethod } from "@/runtime/codex-protocol";
 import { redactRemoteError } from "@/runtime/codex-transport/lib/errors";

@@ -6,7 +6,7 @@ import type {
 	SemanticContextPublisherOptions,
 	SettledSemanticChangeEvent,
 } from "@/runtime/codex-semantic-context";
-import type { LogicalToolCallCorrelation } from "@/shared/codex-workbench-identity";
+import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/workbench-identity";
 import type { BrowserLeaseLedger, TabSessionId } from "@/server/codex-workbench";
 import type {
 	CodexWorkbenchComponents,

@@ -4,7 +4,7 @@ import type {
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	ChangeKind,
 	DiagramGrammar,

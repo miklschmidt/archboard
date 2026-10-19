@@ -4,7 +4,7 @@ import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/inde
 import {
 	createIdentityAuthorities,
 	createIdentityAuthority,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	parseTabSessionId,
 	type BrowserActionContext,

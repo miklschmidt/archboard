@@ -10,7 +10,7 @@
 // through inspect_workhorse.
 
 import type { DynamicServerRequest, TransportServerNotification } from "@/runtime/codex-transport";
-import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
+import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCurrentChild,

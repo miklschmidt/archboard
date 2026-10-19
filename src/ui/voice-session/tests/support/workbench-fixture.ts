@@ -2,8 +2,8 @@
 // with the overrides they need: another child, epoch, workhorse or
 // coordinator, and server coordinator and voice states.
 
-import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
-import type { IdentityAuthorities } from "@/shared/codex-workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import type { IdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import {
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createCodexBrowserModel,

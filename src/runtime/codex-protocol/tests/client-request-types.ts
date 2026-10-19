@@ -10,7 +10,7 @@ import type {
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 
 type Equal<Left, Right> = [Left, Right] extends [Right, Left] ? true : false;
 type Assert<Value extends true> = Value;

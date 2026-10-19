@@ -4,7 +4,7 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	isRecord,
 	isUnknownArray,

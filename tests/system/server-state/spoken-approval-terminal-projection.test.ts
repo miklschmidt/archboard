@@ -8,7 +8,7 @@ import {
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
 } from "../../../src/shared/codex-realtime-contract/index.js";
-import { createIdentityAuthorities } from "../../../src/shared/codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { projectCodexBrowserState } from "../../../src/server/codex-workbench/index.js";
 import type { BrowserProjectionInput } from "../../../src/server/codex-workbench/index.js";
 

@@ -1,4 +1,4 @@
-import type { CodexServerResponseByMethod } from "@/shared/codex-app-server-contract";
+import type { CodexServerResponseByMethod } from "@archboard/codex-app-server/app-server-contract";
 import type {
 	ApprovalId,
 	ChildEpoch,
@@ -9,7 +9,7 @@ import type {
 	JsonRpcRequestId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	HumanApprovalMethod,
 	ReverseResponse,

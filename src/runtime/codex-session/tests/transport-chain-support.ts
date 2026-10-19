@@ -5,7 +5,7 @@ import { PassThrough, Writable } from "node:stream";
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	createCodexTransport,
 	type CodexTransport,

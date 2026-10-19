@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 import { CodexTransportRequestError } from "../errors.js";
 import { captureRejection, createHarness } from "./fake-child.js";
 

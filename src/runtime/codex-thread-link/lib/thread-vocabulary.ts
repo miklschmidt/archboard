@@ -1,6 +1,6 @@
 import { ADDITIONAL_CONTEXT_POLICY } from "@/runtime/codex-instructions";
 import type { SessionThread } from "@/runtime/codex-session";
-import { CODEX_THREAD_STATUS_TYPES } from "@/shared/codex-app-server-contract";
+import { CODEX_THREAD_STATUS_TYPES } from "@archboard/codex-app-server/app-server-contract";
 import {
 	CodexThreadLinkError,
 	type ThreadLinkAllowedSource,

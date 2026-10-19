@@ -1,5 +1,5 @@
 import type { BrowserSnapshot, DeliveryOutcome } from "@/shared/codex-browser-model/index";
-import type { BrowserCommandId, TurnId } from "@/shared/codex-workbench-identity/index";
+import type { BrowserCommandId, TurnId } from "@archboard/codex-app-server/workbench-identity";
 import type { AnswerSdp } from "@/shared/codex-realtime-contract/index";
 
 /**

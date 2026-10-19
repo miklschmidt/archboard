@@ -7,7 +7,7 @@ import { createCodexEpochStore } from "../../codex-epoch/index.js";
 import {
 	createIdentityAuthorities,
 	restoreIdentityAuthorities,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import { buildFixture, prepareFixture, type Fixture } from "./support.js";
 
 interface FixtureGroup {

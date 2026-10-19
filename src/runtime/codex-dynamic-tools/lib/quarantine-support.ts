@@ -1,4 +1,7 @@
-import { logicalToolCallKey, type JsonRpcRequestId } from "@/shared/codex-workbench-identity";
+import {
+	logicalToolCallKey,
+	type JsonRpcRequestId,
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,

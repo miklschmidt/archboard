@@ -9,7 +9,7 @@ import type {
 	TransportServerRequest,
 } from "../../../src/runtime/codex-transport/server-requests.js";
 import { createCodexBrowserModel } from "../../../src/shared/codex-browser-model/index.js";
-import { createIdentityAuthorities } from "../../../src/shared/codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	BrowserOwnerProjection,
 	BrowserWorkbenchActions,

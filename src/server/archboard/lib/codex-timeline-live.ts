@@ -5,7 +5,10 @@
 // notification is about is read here too.
 
 import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
-import type { ThreadId, TrustedIdentityDecoder } from "@/shared/codex-workbench-identity";
+import type {
+	ThreadId,
+	TrustedIdentityDecoder,
+} from "@archboard/codex-app-server/workbench-identity";
 import type { CodexTimelinePlanInput, CodexTimelineUsageInput } from "@/server/codex-workbench";
 import type { TimelineLiveState } from "@/server/archboard/lib/codex-timeline-budget";
 import { boundedPlan } from "@/server/archboard/lib/codex-timeline-evidence";

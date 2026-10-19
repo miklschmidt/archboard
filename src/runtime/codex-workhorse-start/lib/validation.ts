@@ -1,6 +1,11 @@
 import type { EpochExecutionProof, EpochOperationRecord } from "@/runtime/codex-epoch";
 import type { ThreadLinkBindingSnapshot, ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
-import type { ChildEpoch, ChildId, OperationId, ThreadId } from "@/shared/codex-workbench-identity";
+import type {
+	ChildEpoch,
+	ChildId,
+	OperationId,
+	ThreadId,
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
 	WORKHORSE_CLEANUP_RPC,

@@ -1,5 +1,5 @@
 import type { CodexProcessChild } from "@/runtime/codex-process";
-import type { IdentityAuthorities } from "@/shared/codex-workbench-identity";
+import type { IdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import { appendFailure, failureMessage } from "@/server/archboard/lib/codex-workbench-failures";
 import type {

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	createIdentityAuthority,
 	IdentityValidationError,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { ResponseMethod, ResponsePayloads } from "../../codex-protocol/index.js";
 import {
 	CodexSessionMutationError,

@@ -1,4 +1,8 @@
-import type { ChildId, DynamicToolCallId, ThreadId } from "@/shared/codex-workbench-identity";
+import type {
+	ChildId,
+	DynamicToolCallId,
+	ThreadId,
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CodexDynamicToolsOptions,
 	DynamicCallerAuthority,

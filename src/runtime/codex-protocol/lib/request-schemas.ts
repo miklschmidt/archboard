@@ -3,7 +3,7 @@ import { z } from "zod";
 import type {
 	CodexClientNotificationByMethod,
 	CodexServerRequestParamsByMethod,
-} from "@/shared/codex-app-server-contract";
+} from "@archboard/codex-app-server/app-server-contract";
 import { CommandActionSchema } from "@/runtime/codex-protocol/lib/item-schemas";
 import type {
 	ClientNotificationMethod,

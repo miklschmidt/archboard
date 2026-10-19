@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CODEX_APP_SERVER_CAPACITY } from "../index.js";
+import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
 
 describe("Codex app-server capacity policy", () => {
 	test("publishes the capacity contract and relationships", () => {

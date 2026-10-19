@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import { createCodexTransport } from "../index.js";
 import type { CodexTransport } from "../index.js";
 import { createHarness, FakeChild, flushStreams } from "./fake-child.js";

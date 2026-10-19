@@ -4,7 +4,7 @@ import {
 	decodeServerNotification,
 	JSON_RPC_ERROR_CODES,
 } from "@/runtime/codex-protocol";
-import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
+import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import {
 	CodexTransportUsageError,
 	type CodexRemoteError,

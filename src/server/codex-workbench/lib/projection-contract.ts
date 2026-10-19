@@ -18,11 +18,11 @@ import type {
 	OperationId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CodexResponseByMethod,
 	CodexServerNotificationParamsByMethod,
-} from "@/shared/codex-app-server-contract";
+} from "@archboard/codex-app-server/app-server-contract";
 import type {
 	ApprovalOwnerView,
 	ApprovalState,

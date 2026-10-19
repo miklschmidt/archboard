@@ -4,7 +4,7 @@ import type {
 	RealtimeItemId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
 } from "../index.js";
-import type { RealtimeSessionId as WireRealtimeSessionId } from "../../codex-workbench-identity/index.js";
+import type { RealtimeSessionId as WireRealtimeSessionId } from "@archboard/codex-app-server/workbench-identity";
 
 declare const browserSession: BrowserRealtimeSessionId;
 declare const browserCorrelation: RealtimeCorrelationId;

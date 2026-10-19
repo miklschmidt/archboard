@@ -1,4 +1,4 @@
-import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
+import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import { CODEX_COMPOSED_SHUTDOWN_MS } from "@archboard/timing";
 import {
 	attachChildListeners,

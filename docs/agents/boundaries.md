@@ -175,6 +175,17 @@ result types and the resolution rules that the snapshot feeds. `./vault-checkout
 checkout that holds a vault and the checkouts a reader of that vault resolves identities in.
 `./code-target-link` chooses the URL a card opens.
 
+The sixth is `codex-app-server` (`@archboard/codex-app-server`). It is one private Codex app-server
+session over stdio, and it grows in the next two tasks (the protocol and process ownership, then the
+transport and session). For now it holds the shared files, and every export is safe for the browser,
+with no Node import. `./app-server-contract` is the authored wrapper over the generated protocol
+types. The generated tree is ignored by git. It lives in `src/shared/protocol/generated`, and
+`scripts/generate-codex-app-server-contract.ts` writes it on `bun install` and creates its parent
+directories. The wrapper imports it with `#` and only as types, and no other file of the package or
+outside it does. `./app-server-capacity` holds the connection capacity constants, and its test is
+opt-in (`bun run test:opt-in:capacity`). `./workbench-identity` holds the identity brands, the
+correlations and the ledger. Its other files are private.
+
 ## Vendor-owned data
 
 When a dependency owns a data structure and publishes its TypeScript type, that exported type is

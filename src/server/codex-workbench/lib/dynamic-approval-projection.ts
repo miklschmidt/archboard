@@ -7,7 +7,7 @@ import {
 	IdentityValidationError,
 	type TrustedIdentityDecoder,
 	type TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { DynamicApprovalOwnerView } from "@/server/codex-workbench/lib/projection-contract";
 
 type DynamicProjectionModel = Pick<

@@ -11,7 +11,7 @@ import { CodexApprovalError as ApprovalError } from "@/runtime/codex-approvals/l
 import type { ApprovalRecord } from "@/runtime/codex-approvals/lib/approval-record";
 import { isTerminal, sameBinding, snapshotOf } from "@/runtime/codex-approvals/lib/approval-record";
 import { spokenEligibility as assessSpokenEligibility } from "@/runtime/codex-approvals/lib/response";
-import type { JsonRpcRequestId } from "@/shared/codex-workbench-identity";
+import type { JsonRpcRequestId } from "@archboard/codex-app-server/workbench-identity";
 
 /** What the read-only surface needs from the broker that owns the approvals. */
 export interface ApprovalViewContext {

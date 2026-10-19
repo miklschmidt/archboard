@@ -7,7 +7,7 @@ import {
 	createCodexBrowserModel,
 	type BrowserSnapshot,
 } from "@/shared/codex-browser-model";
-import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserCommandDraft,

@@ -5,7 +5,7 @@ import type {
 	ChildId,
 	LoginId,
 	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,

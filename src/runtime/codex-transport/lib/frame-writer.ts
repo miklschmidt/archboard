@@ -1,6 +1,6 @@
 import type { Writable } from "node:stream";
 
-import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 import { CodexTransportWriteError } from "@/runtime/codex-transport/lib/errors";
 
 type FrameWriterLane = "regular" | "response";

@@ -16,7 +16,7 @@ import type {
 	ChildId,
 	IdentityAuthority,
 	ThreadId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 
 /** The one exact child capability a delivery is allowed to use. */
 interface CodexThreadContextExecution {

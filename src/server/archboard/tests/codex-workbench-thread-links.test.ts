@@ -6,7 +6,7 @@ import { expect, test } from "bun:test";
 import {
 	createIdentityAuthorities,
 	type ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import { parseTabSessionId, workhorseLinkKey } from "../../codex-workbench/index.js";
 import {
 	clearServerThreadContextForLease,

@@ -172,11 +172,11 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					'import { privateValue } from "../target/lib?raw";\nexport { privateValue };\n',
 				"src/domain/importer/require.ts":
 					'const privateValue = require("../target/lib");\nexport { privateValue };\n',
-				"src/shared/codex-app-server-contract/index.ts": "export type ClientRequest = unknown;\n",
-				"src/shared/codex-app-server-contract/generated/ClientRequest.ts":
+				"src/shared/wire-contract/index.ts": "export type ClientRequest = unknown;\n",
+				"src/shared/wire-contract/generated/ClientRequest.ts":
 					"export type ClientRequest = unknown;\n",
 				"src/runtime/codex-session/index.ts":
-					'import type { ClientRequest } from "../../shared/codex-app-server-contract/generated/ClientRequest.js";\nexport type Request = ClientRequest;\n',
+					'import type { ClientRequest } from "../../shared/wire-contract/generated/ClientRequest.js";\nexport type Request = ClientRequest;\n',
 			},
 			(root) => {
 				for (const file of ["extensionless.ts", "raw.ts"]) {

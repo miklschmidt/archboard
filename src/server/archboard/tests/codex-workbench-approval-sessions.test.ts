@@ -17,7 +17,7 @@ import {
 	type DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { parseTabSessionId } from "../../codex-workbench/index.js";
 import {
 	createServerDynamicApprovalOwner,

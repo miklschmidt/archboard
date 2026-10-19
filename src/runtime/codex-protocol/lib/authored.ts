@@ -5,7 +5,7 @@ import type {
 	CodexInitializeCapabilities,
 	CodexLoginAccountParams,
 	CodexOutputConformance,
-} from "@/shared/codex-app-server-contract";
+} from "@archboard/codex-app-server/app-server-contract";
 import {
 	boundedText,
 	JsonValueSchema,

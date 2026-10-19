@@ -10,7 +10,7 @@ import {
 	type SessionRequestIdentityField,
 } from "@/runtime/codex-session/lib/results";
 import { requestParams } from "@/runtime/codex-session/lib/session-failures";
-import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
+import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 
 /** The methods this session sends and reads an answer to. */
 type OutboundMethod = Extract<ClientRequestMethod, ResponseMethod>;

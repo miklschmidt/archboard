@@ -21,7 +21,7 @@ import type {
 	ThreadId,
 	TrustedIdentityDecoder,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type { BrowserThreadLinkActions, CodexQueueProjectionInput } from "@/server/codex-workbench";
 
 /** The runtime owners one workhorse runs on. */

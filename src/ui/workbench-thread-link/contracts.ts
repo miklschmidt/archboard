@@ -2,7 +2,7 @@
 // workhorse, and how one action settles.
 
 import type { BrowserThreadLink } from "@/shared/codex-browser-model";
-import type { LoginId, ThreadId } from "@/shared/codex-workbench-identity";
+import type { LoginId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	ThreadLinkCommandName,
 	ThreadLinkLoginParams,

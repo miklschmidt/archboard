@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { classifyCodexThreadLink } from "../index.js";
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import { currentEpoch, loadedPage, thread, threadPage } from "./fixtures.js";
 import {
 	realEpochFixture,

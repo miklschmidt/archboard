@@ -351,7 +351,7 @@ only at this point: nothing states a version that nobody re-read.
    `scripts/generate-codex-app-server-contract.ts` and `CODEX_PROTOCOL_VERSION`
    in `src/runtime/codex-protocol/lib/version.ts`. `bun install` updates
    `bun.lock` and generates the new contract beside the old one under
-   `src/shared/codex-app-server-contract/generated/versions/`. So
+   `packages/codex-app-server/src/shared/protocol/generated/versions/`. So
    `diff -r` of the two version directories is the wire change. A fresh
    worktree runs `bun install` at the old pin first, so the old contract
    exists to diff.

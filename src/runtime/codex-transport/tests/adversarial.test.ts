@@ -7,11 +7,11 @@ import {
 	CodexTransportWriteError,
 } from "../errors.js";
 import type { TransportServerRequest } from "../server-requests.js";
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	captureRejection,
 	createHarness,

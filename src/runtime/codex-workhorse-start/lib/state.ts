@@ -1,4 +1,9 @@
-import type { ChildEpoch, ChildId, OperationId, ThreadId } from "@/shared/codex-workbench-identity";
+import type {
+	ChildEpoch,
+	ChildId,
+	OperationId,
+	ThreadId,
+} from "@archboard/codex-app-server/workbench-identity";
 import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
 import { cloneAndFreeze } from "@/runtime/codex-workhorse-start/lib/immutability";
 import type {

@@ -82,6 +82,10 @@
       "name": "@archboard/code-binding",
       "version": "0.0.0",
     },
+    "packages/codex-app-server": {
+      "name": "@archboard/codex-app-server",
+      "version": "0.0.0",
+    },
     "packages/diagnostics": {
       "name": "@archboard/diagnostics",
       "version": "0.0.0",
@@ -105,6 +109,8 @@
   },
   "packages": {
     "@archboard/code-binding": ["@archboard/code-binding@workspace:packages/code-binding"],
+
+    "@archboard/codex-app-server": ["@archboard/codex-app-server@workspace:packages/codex-app-server"],
 
     "@archboard/diagnostics": ["@archboard/diagnostics@workspace:packages/diagnostics"],
 

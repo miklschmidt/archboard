@@ -1,5 +1,5 @@
-import { createIdentityAuthorities } from "../index.ts";
-import type { IdentityAuthorities } from "../index.ts";
+import { createIdentityAuthorities } from "#shared/rules/workbench-identity.ts";
+import type { IdentityAuthorities } from "#shared/rules/workbench-identity.ts";
 
 function formatUuid(raw: string): string {
 	return `${raw.slice(0, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}-${raw.slice(16, 20)}-${raw.slice(20)}`;

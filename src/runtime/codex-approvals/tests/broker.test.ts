@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { ApprovalBinding, ApprovalResponse, SpokenEligibilityReason } from "../index.js";
-import type { IdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import type { TransportServerRequest } from "../../codex-transport/server-requests.js";
 import {
 	applyPatchRequest,

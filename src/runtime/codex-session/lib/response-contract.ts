@@ -33,7 +33,7 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 
 type ProtocolObjectFields<
 	Schema extends z.ZodObject,

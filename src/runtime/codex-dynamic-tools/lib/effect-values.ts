@@ -1,4 +1,4 @@
-import type { LogicalToolCallCorrelation } from "@/shared/codex-workbench-identity";
+import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/workbench-identity";
 import {
 	canonicalDynamicApprovalJson,
 	dynamicApprovalHashForCanonicalJson,

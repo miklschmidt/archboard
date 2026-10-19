@@ -1,7 +1,11 @@
 import type { CodexSession, SessionThreadTurnPageResult } from "@/runtime/codex-session";
 import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
-import type { ThreadId, TrustedIdentityDecoder, TurnId } from "@/shared/codex-workbench-identity";
+import type {
+	ThreadId,
+	TrustedIdentityDecoder,
+	TurnId,
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	BrowserConnectionInstance,
 	CodexTimelineProjectionInput,

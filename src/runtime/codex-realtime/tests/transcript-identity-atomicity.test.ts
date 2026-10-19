@@ -12,7 +12,7 @@ import {
 	type IdentityAuthority,
 	type IdentityLedger,
 	type ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import { decodeServerNotification } from "../../codex-protocol/index.js";
 import type { SessionParams } from "../../codex-session/index.js";
 import {

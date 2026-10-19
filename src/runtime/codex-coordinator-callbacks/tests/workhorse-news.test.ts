@@ -15,7 +15,7 @@ import type {
 	DynamicServerRequest,
 	TransportServerNotification,
 } from "../../codex-transport/server-requests.js";
-import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
+import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import { TELL_COORDINATOR_OWNER } from "../index.js";
 import { close, harness } from "./support.js";
 

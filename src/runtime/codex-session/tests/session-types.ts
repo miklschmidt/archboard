@@ -5,7 +5,7 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CodexSession,
 	ExactSessionRequestIdentityTuple,

@@ -36,7 +36,7 @@
 		".agents/**",
 		".claude/**",
 		"docs/design/vendor/**",
-		"src/shared/codex-app-server-contract/generated/**",
+		"packages/codex-app-server/src/shared/protocol/generated/**",
 		"src/ui/**",
 	],
 	"settings": {

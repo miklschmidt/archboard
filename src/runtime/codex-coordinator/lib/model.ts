@@ -1,4 +1,4 @@
-import type { ThreadId } from "@/shared/codex-workbench-identity";
+import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_NAMESPACE,

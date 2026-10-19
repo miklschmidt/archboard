@@ -1,4 +1,4 @@
-import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 import { CodexTransportUsageError } from "@/runtime/codex-transport/lib/errors";
 import type {
 	TransportExit,

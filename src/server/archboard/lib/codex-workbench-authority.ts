@@ -4,7 +4,7 @@ import type {
 	IdentityAuthorities,
 	OperationId,
 	ThreadId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicCallerAuthority,

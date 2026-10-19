@@ -3,7 +3,7 @@
 // thread workhorse news came from, and for pane news the workhorse the semantic publisher names,
 // which is the one voice is bound to.
 
-import type { ThreadId } from "@/shared/codex-workbench-identity";
+import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	CoordinatorCallbackLinkCorrelation,
 	CoordinatorCallbackOptions,

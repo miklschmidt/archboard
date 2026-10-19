@@ -5,7 +5,10 @@ import {
 	type CodexProcessSnapshot,
 } from "@/runtime/codex-process";
 import type { CodexTransport } from "@/runtime/codex-transport";
-import type { IdentityAuthorities, IdentityLedger } from "@/shared/codex-workbench-identity";
+import type {
+	IdentityAuthorities,
+	IdentityLedger,
+} from "@archboard/codex-app-server/workbench-identity";
 import type { CodexWorkbenchGateway } from "@/server/codex-workbench";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import { appendFailure } from "@/server/archboard/lib/codex-workbench-failures";

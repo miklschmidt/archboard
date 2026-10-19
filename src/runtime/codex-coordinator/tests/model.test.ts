@@ -16,7 +16,7 @@ import {
 	type CoordinatorModel,
 } from "../index.js";
 import type { CodexCoordinatorError } from "../index.js";
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 
 const WORKING_DIRECTORY = "/state/codex-workbench/coordinator";
 

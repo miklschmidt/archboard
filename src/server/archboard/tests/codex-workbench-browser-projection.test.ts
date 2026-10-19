@@ -16,7 +16,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "../../../shared/codex-realtime-contract/index.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import {
 	projectServerBrowserReadiness,

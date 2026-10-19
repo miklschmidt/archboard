@@ -1,7 +1,7 @@
 import { createTextUserInput } from "@/runtime/codex-instructions";
 import type { ThreadLinkClassification } from "@/runtime/codex-thread-link";
 import type { QueueAddResult } from "@/runtime/codex-workhorse-queue";
-import type { OperationId } from "@/shared/codex-workbench-identity";
+import type { OperationId } from "@archboard/codex-app-server/workbench-identity";
 import type {
 	DelegateToWorkhorseRequest,
 	DelegateToWorkhorseResult,

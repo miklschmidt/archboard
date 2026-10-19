@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createCodexWaitGraph, type OwnedWaitCleanupCause, type WaitOwner } from "../index.ts";
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.ts";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 
 function identities() {
 	const authority = createIdentityAuthority();

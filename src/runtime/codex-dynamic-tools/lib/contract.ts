@@ -21,7 +21,7 @@ import type {
 	OperationId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	ArchboardAppNamespaceSpec,
 	ToolArguments,

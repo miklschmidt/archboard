@@ -23,7 +23,7 @@ import {
 	type ChildId,
 	type IdentityAuthority,
 	type ThreadId,
-} from "../../../shared/codex-workbench-identity/index.ts";
+} from "@archboard/codex-app-server/workbench-identity";
 import { baseContext } from "./delivery-context.ts";
 import {
 	createCodexThreadContextDelivery,

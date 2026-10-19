@@ -7,12 +7,12 @@ import {
 	type ServerRequestMethod,
 	type ServerRequestPayloads,
 } from "@/runtime/codex-protocol";
-import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/app-server-capacity";
 import type {
 	IdentityAuthority,
 	JsonRpcRequestId,
 	WireRequestCorrelation,
-} from "@/shared/codex-workbench-identity";
+} from "@archboard/codex-app-server/workbench-identity";
 import { CodexTransportUsageError } from "@/runtime/codex-transport/lib/errors";
 import type {
 	DynamicDispatcherRegistration,

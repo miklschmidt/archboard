@@ -10,7 +10,7 @@ import type {
 import { COORDINATOR_EFFORT, COORDINATOR_MODEL } from "@/runtime/codex-coordinator/lib/model";
 import { sameValue } from "@/runtime/codex-coordinator/lib/state";
 import { CODEX_SESSION_THREAD_SOURCE, CodexSessionMutationError } from "@/runtime/codex-session";
-import type { ThreadId } from "@/shared/codex-workbench-identity";
+import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import type { TransportServerNotification } from "@/runtime/codex-transport";
 
 const COORDINATOR_THREAD_SOURCE = CODEX_SESSION_THREAD_SOURCE;

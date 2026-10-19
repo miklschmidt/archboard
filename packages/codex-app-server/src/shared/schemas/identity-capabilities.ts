@@ -7,11 +7,11 @@ import type {
 	LogicalToolCallCorrelationInput,
 	WireRequestCorrelation,
 	WireRequestCorrelationInput,
-} from "@/shared/codex-workbench-identity/lib/identity-correlations";
+} from "#shared/rules/identity-correlations.ts";
 import type {
 	AdoptedCodexResponseIdentityBatch,
 	CodexResponseIdentityBatch,
-} from "@/shared/codex-workbench-identity/lib/identity-ledger";
+} from "#shared/rules/identity-ledger.ts";
 import type {
 	ApprovalId,
 	BrowserCommandId,
@@ -28,7 +28,7 @@ import type {
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
-} from "@/shared/codex-workbench-identity/lib/identity-values";
+} from "#shared/schemas/identity-values.ts";
 
 interface IdentityValidator {
 	readonly childId: ChildId;

@@ -4,7 +4,7 @@ import type {
 	SessionThread,
 	SessionThreadPageResult,
 } from "@/runtime/codex-session";
-import type { ThreadId } from "@/shared/codex-workbench-identity";
+import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import { CodexThreadLinkError } from "@/runtime/codex-thread-link/lib/contract";
 import {
 	ALLOWED_SOURCES,

@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const realRepositoryRoot = realpathSync(repositoryRoot);
-const contractRoot = join(repositoryRoot, "src/shared/codex-app-server-contract");
+const contractRoot = join(repositoryRoot, "packages/codex-app-server/src/shared/protocol");
 const generatedRoot = join(contractRoot, "generated");
 const versionsRoot = join(generatedRoot, "versions");
 const currentRoot = join(generatedRoot, "current");
@@ -542,6 +542,7 @@ async function main(): Promise<void> {
 		return;
 	}
 	const codexEntry = resolveLocalCodexEntry();
+	mkdirSync(contractRoot, { recursive: true });
 	requireOwnedDirectory(contractRoot, join("generated", "versions"));
 	await generateContract(codexEntry);
 }

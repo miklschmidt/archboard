@@ -1,9 +1,6 @@
 import type { CoordinatorToolCoordinatorAuthority } from "../index.js";
 import type { WorkhorseOperationBinding } from "../../codex-workhorse-operations/index.js";
-import type {
-	IdentityAuthority,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import type { IdentityAuthority, ThreadId } from "@archboard/codex-app-server/workbench-identity";
 
 export function readyAuthority(
 	identity: IdentityAuthority,

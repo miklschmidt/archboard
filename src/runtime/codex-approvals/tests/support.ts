@@ -11,7 +11,7 @@ import {
 	type ChildEpoch,
 	type ChildId,
 	type IdentityAuthority,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	HumanApprovalMethod,
 	ReverseResponse,

@@ -10,7 +10,10 @@
 // conversation the tab showed when it started, so the session keeps both for each turn.
 
 import type { TransportServerNotification } from "@/runtime/codex-transport";
-import type { TrustedIdentityDecoder, TurnId } from "@/shared/codex-workbench-identity";
+import type {
+	TrustedIdentityDecoder,
+	TurnId,
+} from "@archboard/codex-app-server/workbench-identity";
 import type {
 	WorkhorseOperationCorrelation,
 	WorkhorseOperationEvent,

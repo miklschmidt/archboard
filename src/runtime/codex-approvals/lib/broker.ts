@@ -41,7 +41,7 @@ import {
 	validateApprovalResponse,
 } from "@/runtime/codex-approvals/lib/response";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
-import type { JsonRpcRequestId } from "@/shared/codex-workbench-identity";
+import type { JsonRpcRequestId } from "@archboard/codex-app-server/workbench-identity";
 import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
 
 /**

@@ -6,7 +6,7 @@ import type {
 	SessionThreadTurnPageResult,
 } from "../../../runtime/codex-session/index.js";
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { createServerTimelineOwner } from "../codex-workbench-adapters.js";
 import { flush, turnFixture } from "./support/codex-workbench-timeline-fixture.js";
 

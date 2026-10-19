@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { normalizeCodexJsonWire } from "@/shared/codex-app-server-contract";
+import { normalizeCodexJsonWire } from "@archboard/codex-app-server/app-server-contract";
 import {
 	CODEX_PROTOCOL_VERSION,
 	isSupportedCodexUserAgent,

@@ -9,7 +9,7 @@ import {
 	waitForState,
 	withHarness,
 } from "./fixtures/codex-realtime-process.ts";
-import { createIdentityAuthority } from "../../../src/shared/codex-workbench-identity/index.ts";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import { parseRealtimeItemId } from "../../../src/shared/codex-realtime-contract/index.ts";
 import {
 	browserCorrelation,

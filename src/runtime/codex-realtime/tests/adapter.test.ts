@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import { decodeServerNotification } from "../../codex-protocol/index.js";
 import { parseRealtimeItemId } from "../../../shared/codex-realtime-contract/index.js";
 import { CodexSessionMutationError } from "../../codex-session/index.js";
