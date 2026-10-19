@@ -1,19 +1,17 @@
-// How a module specifier written in a file resolves to a repository file: `@/` aliases,
-// relative paths, `#` imports through the `imports` of the package, app or root that owns the
-// importing file, `@archboard/<name>` through the `exports` of a workspace package, and
-// `@archboard-app/<name>` to the app that the workspace name stands for. It reads manifests and
-// the file system, and it knows nothing about which rule asks.
+// How a module specifier written in a file resolves to a repository file: relative paths,
+// `#` imports through the `imports` of the package or app that owns the importing file,
+// `@archboard/<name>` through the `exports` of a workspace package, and `@archboard-app/<name>`
+// to the app that the workspace name stands for. It reads manifests and the file system, and
+// it knows nothing about which rule asks.
 import fs from "node:fs";
 import path from "node:path";
-// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 import type { RuleContext } from "./rule-api.ts";
 import {
-	SOURCE_ALIAS_PREFIX,
-	isRootSource,
 	normalizePath,
 	workspaceAt,
 	type WorkspaceFile,
-	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./source-layout.ts";
 
 /** `@archboard/<name>` and the subpath after it, if any. */
@@ -32,20 +30,13 @@ interface PackageImport {
 
 /**
  * Resolve a module specifier to a repository path without touching the file
- * system: `@/` aliases map into `src/`, relative specifiers resolve against
- * the importing file, and anything else is a package.
+ * system: relative specifiers resolve against the importing file, and anything
+ * else is a package.
  * @param fromRelativePath The importing file's repository path.
  * @param source The specifier as written.
  * @returns The repository path, or undefined for packages and escapes above the root.
  */
 function sourceToRepoPath(fromRelativePath: string, source: string): string | undefined {
-	if (source.startsWith(SOURCE_ALIAS_PREFIX)) {
-		const resolved = path.posix.normalize(
-			path.posix.join("src", source.slice(SOURCE_ALIAS_PREFIX.length)),
-		);
-		return resolved === "src" || resolved.startsWith("src/") ? resolved : undefined;
-	}
-
 	if (!source.startsWith(".")) {
 		return undefined;
 	}
@@ -177,7 +168,7 @@ function packageExports(context: RuleContext, name: string): Map<string, string>
 /**
  * A field of the `package.json` of an owner's root.
  * @param context The rule context supplying the working directory.
- * @param ownerRoot The owner's repository path: `packages/<name>`, `apps/<name>` or `.`.
+ * @param ownerRoot The owner's repository path: `packages/<name>` or `apps/<name>`.
  * @param field The manifest field to read.
  * @returns The field's value (null when absent), or undefined when the owner has no manifest.
  */
@@ -217,8 +208,7 @@ function subpathImports(context: RuleContext, ownerRoot: string): Array<[string,
 /**
  * Resolve a `#` specifier through the `imports` field of the importing file's own package or app,
  * as Node, TypeScript, Bun and Vite do: the longest matching key wins, and `*` carries the rest.
- * A root `src/` file and the browser entry in `frontend/` are owned by the root `package.json`;
- * a file in no owner has no `imports`.
+ * A file in no owner (a script, a tool, a root test) has no `imports`.
  * @param context The rule context supplying the working directory.
  * @param fromRelativePath The importing file's repository path.
  * @param source The specifier as written, with its query dropped.
@@ -229,7 +219,7 @@ function resolveSubpathImport(
 	fromRelativePath: string,
 	source: string,
 ): string | undefined {
-	const ownerRoot = importsOwnerRoot(fromRelativePath);
+	const ownerRoot = workspaceAt(fromRelativePath)?.root;
 	const best = ownerRoot
 		? subpathImports(context, ownerRoot)
 				.map(([key, target]) => ({ key, mapped: mapSubpathImport(key, target, source) }))
@@ -239,18 +229,6 @@ function resolveSubpathImport(
 	return ownerRoot && best?.mapped !== undefined
 		? path.posix.join(ownerRoot, best.mapped)
 		: undefined;
-}
-
-/**
- * The root whose `package.json` owns the `#` imports of a file.
- * @param relativePath The file's repository path.
- * @returns The package or app root, `.` for a root file, or undefined for any other file.
- */
-function importsOwnerRoot(relativePath: string): string | undefined {
-	if (isRootSource(relativePath)) {
-		return ".";
-	}
-	return workspaceAt(relativePath)?.root;
 }
 
 /**

@@ -1,11 +1,15 @@
 // The plugin holds an app (`apps/<name>`) to the rules of a package, with one difference: nothing
 // imports an app. Each test lints one fixture project with the rules alone, so it names the
 // rule that refuses each file. How the repository's configs route a path is ui-lint-policy.test.ts.
-import { describe, expect, test } from "bun:test";
-import fs from "node:fs";
-import path from "node:path";
+import { describe, test } from "bun:test";
 
-import { diagnosticsOf, plugin, withProject } from "./support/oxlint-project.ts";
+import {
+	expectJudged,
+	importing,
+	linkInto,
+	plugin,
+	withProject,
+} from "./support/oxlint-project.ts";
 
 const RULES = JSON.stringify({
 	categories: { correctness: "off" },
@@ -36,7 +40,6 @@ const appManifest = (name: string): string =>
 
 const world: Record<string, string> = {
 	".oxlintrc.jsonc": RULES,
-	"package.json": JSON.stringify({ imports: { "#web/*": "./apps/web/src/*" } }),
 	"apps/cli/package.json": appManifest("cli"),
 	"apps/web/package.json": appManifest("web"),
 	"apps/server/package.json": appManifest("server"),
@@ -63,33 +66,6 @@ const world: Record<string, string> = {
 	}),
 	"packages/beta/src/runtime/beta.ts": "export const beta = 1;\n",
 };
-
-/** Lint the files of a project, and name what each refused file earns and what passes. */
-function expectJudged(
-	root: string,
-	refused: Record<string, string>,
-	allowed: readonly string[] = [],
-): void {
-	const found = diagnosticsOf(root, [...Object.keys(refused), ...allowed]);
-	for (const [file, phrase] of Object.entries(refused)) {
-		const messages = found.filter((entry) => entry.file === file).map((entry) => entry.message);
-		expect(
-			messages.some((message) => message.includes(phrase)),
-			`${file} should be refused for "${phrase}", got: ${JSON.stringify(messages)}`,
-		).toBe(true);
-	}
-	expect(found.filter((entry) => allowed.includes(entry.file))).toEqual([]);
-}
-
-/** A file that imports `clip` from a specifier and re-exports it. */
-function importing(from: string): string {
-	return `import { clip } from "${from}";\nexport { clip };\n`;
-}
-
-function linkInto(root: string, link: string, target: string): void {
-	fs.mkdirSync(path.dirname(path.join(root, link)), { recursive: true });
-	fs.symlinkSync(path.join(root, target), path.join(root, link));
-}
 
 describe("an app is held to the rules of a package", () => {
 	test("an app reaches its own files, its own tests and the exports of a package", async () => {
@@ -167,7 +143,6 @@ describe("an app is held to the rules of a package", () => {
 				"apps/server/src/server/reexport.ts":
 					'export { clip } from "../../../cli/src/runtime/clipboard.js";\n',
 				"scripts/consumer.ts": `import { clip } from "../${clip}";\nexport { clip };\n`,
-				"src/domain/consumer/index.ts": `import { clip } from "../../../${clip}";\nexport { clip };\n`,
 				"tests/system/policy/app.test.ts": `import { clip } from "../../../${clip}";\nexport { clip };\n`,
 			},
 			(root) => {
@@ -181,7 +156,6 @@ describe("an app is held to the rules of a package", () => {
 					"apps/web/tests/mock.test.ts": NOT_AN_APP_IMPORT,
 					"apps/server/src/server/reexport.ts": NOT_AN_APP_IMPORT,
 					"scripts/consumer.ts": NOT_AN_APP_IMPORT,
-					"src/domain/consumer/index.ts": NOT_AN_APP_IMPORT,
 					"tests/system/policy/app.test.ts": NOT_AN_APP_IMPORT,
 				});
 			},
@@ -207,7 +181,6 @@ describe("an app is held to the rules of a package", () => {
 				"apps/cli/src/cli/self.ts": importing(named),
 				"apps/cli/src/cli/self-root.ts": importing("@archboard-app/cli"),
 				"scripts/consumer.ts": importing(named),
-				"src/domain/consumer/index.ts": importing(named),
 				"tests/system/policy/app.test.ts": importing(named),
 				// Not an app, and not a package: an npm name that happens to share the scope.
 				"scripts/npm.ts": importing("@archboard-app/missing/src/x.ts"),
@@ -227,7 +200,6 @@ describe("an app is held to the rules of a package", () => {
 						"apps/cli/src/cli/self.ts": NOT_AN_APP_IMPORT,
 						"apps/cli/src/cli/self-root.ts": NOT_AN_APP_IMPORT,
 						"scripts/consumer.ts": NOT_AN_APP_IMPORT,
-						"src/domain/consumer/index.ts": NOT_AN_APP_IMPORT,
 						"tests/system/policy/app.test.ts": NOT_AN_APP_IMPORT,
 					},
 					["scripts/npm.ts"],
@@ -279,7 +251,7 @@ describe("an app is held to the rules of a package", () => {
 					'import { nope } from "#nope/x.ts";\nexport { nope };\n',
 				"scripts/hash.ts": 'import { Card } from "#ui/components/Card.tsx";\nexport { Card };\n',
 				"apps/cli/src/cli/other-app.ts":
-					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
+					'import { Card } from "#ui/components/Card.tsx";\nexport { Card };\n',
 			},
 			(root) =>
 				expectJudged(root, {
@@ -289,82 +261,6 @@ describe("an app is held to the rules of a package", () => {
 					"scripts/hash.ts": UNRESOLVED,
 					"apps/cli/src/cli/other-app.ts": UNRESOLVED,
 				}),
-		);
-	});
-
-	test("the root #web/* entry is open to the root src modules and the browser entry, and to nothing else", async () => {
-		// Catches the temporary transition entry widening: only files of root src/ and the browser
-		// entry frontend/main.tsx reach the web source through it, and neither the web tests nor
-		// any other owner do.
-		await withProject(
-			{
-				...world,
-				"src/ui/consumer/index.ts":
-					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
-				"src/ui/consumer/dynamic.ts":
-					'export const loaded = import("#web/ui/components/Card.tsx");\n',
-				"src/ui/consumer/reexport.ts": 'export { Card } from "#web/ui/components/Card.tsx";\n',
-				"src/ui/consumer/tests.ts":
-					'import { webSupport } from "#web/../tests/support.ts";\nexport { webSupport };\n',
-				"src/ui/consumer/missing.ts":
-					'import { nope } from "#web/ui/components/Missing.tsx";\nexport { nope };\n',
-				"src/ui/consumer/relative.ts":
-					'import { Card } from "../../../apps/web/src/ui/components/Card.js";\nexport { Card };\n',
-				"frontend/main.tsx":
-					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
-				"frontend/other.ts":
-					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
-				"scripts/web.ts": 'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
-				"tests/system/policy/web.test.ts":
-					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
-				"packages/alpha/src/ui/web.ts":
-					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
-				"apps/web/src/ui/components/root-import.ts": importing("#web/ui/components/Card.tsx"),
-				"apps/server/src/server/root-import.ts": importing("#web/ui/components/Card.tsx"),
-				"src/ui/consumer/server.ts": importing("#web/../../server/src/server/host.ts"),
-				"src/ui/consumer/prefix.ts": importing("#webbing/ui/components/Card.tsx"),
-			},
-			(root) =>
-				expectJudged(
-					root,
-					{
-						"src/ui/consumer/tests.ts": PRODUCT_TESTS,
-						"src/ui/consumer/missing.ts": UNRESOLVED,
-						"src/ui/consumer/relative.ts": NOT_AN_APP_IMPORT,
-						"frontend/other.ts": UNRESOLVED,
-						"scripts/web.ts": UNRESOLVED,
-						"tests/system/policy/web.test.ts": UNRESOLVED,
-						"packages/alpha/src/ui/web.ts": UNRESOLVED,
-						"apps/web/src/ui/components/root-import.ts": UNRESOLVED,
-						"apps/server/src/server/root-import.ts": UNRESOLVED,
-						"src/ui/consumer/server.ts": NOT_AN_APP_IMPORT,
-						"src/ui/consumer/prefix.ts": UNRESOLVED,
-					},
-					[
-						"src/ui/consumer/index.ts",
-						"src/ui/consumer/dynamic.ts",
-						"src/ui/consumer/reexport.ts",
-						"frontend/main.tsx",
-					],
-				),
-		);
-	});
-
-	test.each([
-		"#web/runtime/work.ts",
-		"#web/server/host.ts",
-		"#web/server/host.ts?raw",
-		"@archboard/beta",
-		"@/server/host/index.ts",
-	])("the root browser entry refuses the server or runtime target of %s", async (source) => {
-		// The temporary #web entry must preserve browser area checks for every resolved target.
-		await withProject(
-			{
-				...world,
-				"frontend/main.tsx": importing(source),
-				"src/server/host/index.ts": "export const clip = 1;\n",
-			},
-			(root) => expectJudged(root, { "frontend/main.tsx": AREA }),
 		);
 	});
 
@@ -402,9 +298,10 @@ describe("an app is held to the rules of a package", () => {
 });
 
 describe("the layout rules cover the source of an app", () => {
-	test("entries are thin, and the source of an app sits in role folders of an area", async () => {
-		// Catches implementation in an app entry, flat source beside it, and a reintroduced
-		// legacy root: each would escape the area rules and the module layout.
+	test("entries are thin, and the source of an app or a package sits in role folders of an area", async () => {
+		// Catches implementation in an app entry, flat source beside it, a reintroduced legacy
+		// root and a folder that is no area: each would escape the area rules. A package may keep
+		// other folders beside src/, such as its assets.
 		const implementation = "export function start() { return 1; }\n";
 		await withProject(
 			{
@@ -416,6 +313,8 @@ describe("the layout rules cover the source of an app", () => {
 				"apps/cli/src/server.ts": "export const other = 1;\n",
 				"apps/web/frontend/main.tsx": "export const legacy = 1;\n",
 				"apps/web/src/pages/page.ts": "export const page = 1;\n",
+				"packages/alpha/src/domain/widget.ts": "export const widget = 1;\n",
+				"packages/alpha/assets/fonts/readme.ts": "export const assets = 1;\n",
 				"apps/cli/src/cli/run.ts": "export const run = 1;\n",
 				"apps/cli/src/runtime/clipboard.ts": "export const clip = 1;\n",
 				"apps/web/tests/unit/setup.ts": "export const setup = 1;\n",
@@ -431,20 +330,21 @@ describe("the layout rules cover the source of an app", () => {
 						"apps/cli/src/server.ts": "reserved for thin",
 						"apps/web/frontend/main.tsx": "legacy root",
 						"apps/web/src/pages/page.ts": "role folder of an area",
+						"packages/alpha/src/domain/widget.ts": "role folder of an area",
 					},
 					[
 						"apps/cli/src/cli/run.ts",
 						"apps/cli/src/runtime/clipboard.ts",
 						"apps/web/tests/unit/setup.ts",
+						"packages/alpha/assets/fonts/readme.ts",
 					],
 				),
 		);
 	});
 
-	test("a package or an app has no lib folder and no compat names; root modules keep lib", async () => {
+	test("a package or an app has no lib folder and no compat names", async () => {
 		// Catches a lib bucket and a compatibility shim in the source of a package or an app. The
-		// tests of an app may keep a fixture folder of that name, and root src/ modules still
-		// keep their lib/ folder until they move.
+		// tests of an app may keep a fixture folder of that name.
 		await withProject(
 			{
 				...world,
@@ -453,18 +353,17 @@ describe("the layout rules cover the source of an app", () => {
 				"packages/alpha/src/runtime/lib/impl.ts": "export const impl = 1;\n",
 				"apps/cli/src/runtime/shim.ts": "export const compat = 1;\n",
 				"apps/cli/tests/lib/fixture.ts": "export const compat = 1;\n",
-				"src/domain/widget/lib/impl.ts": "export const impl = 1;\n",
 			},
 			(root) =>
 				expectJudged(
 					root,
 					{
-						"apps/cli/src/runtime/lib/impl.ts": "buckets",
-						"apps/cli/src/runtime/utils/impl.ts": "buckets",
-						"packages/alpha/src/runtime/lib/impl.ts": "buckets",
+						"apps/cli/src/runtime/lib/impl.ts": "Do not put source in",
+						"apps/cli/src/runtime/utils/impl.ts": "Do not put source in",
+						"packages/alpha/src/runtime/lib/impl.ts": "Do not put source in",
 						"apps/cli/src/runtime/shim.ts": "compatibility or shim",
 					},
-					["apps/cli/tests/lib/fixture.ts", "src/domain/widget/lib/impl.ts"],
+					["apps/cli/tests/lib/fixture.ts"],
 				),
 		);
 	});

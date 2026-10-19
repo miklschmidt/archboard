@@ -5,9 +5,6 @@
 		"jsx": "react-jsx",
 		"moduleDetection": "force",
 		"moduleResolution": "bundler",
-		"paths": {
-			"@/*": ["./src/*"]
-		},
 		"allowImportingTsExtensions": true,
 		"allowJs": false,
 		"checkJs": false,

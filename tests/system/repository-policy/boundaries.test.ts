@@ -1,11 +1,60 @@
-import { describe, expect, test } from "bun:test";
-import fs from "node:fs";
-import path from "node:path";
+// The plugin's rules about packages and tests, one fixture project per test. Apps are
+// app-boundaries.test.ts. Each test names the regression it catches.
+import { describe, test } from "bun:test";
 
-import { expectPass, expectRule, lint, plugin, withProject } from "./support/oxlint-project.ts";
+import {
+	expectJudged,
+	expectPass,
+	expectRule,
+	linkInto,
+	lint,
+	plugin,
+	withProject,
+} from "./support/oxlint-project.ts";
+
+const NOT_EXPORTED = "exports names";
+const PRODUCT_TESTS = "test-owned source";
+const FOREIGN_TESTS = "only from its own";
+const AREA = "forbidden Archboard area";
+
+// A package states its interface in `exports`: the area rules hold between the folders of
+// one package, only an export is public, and `./testing` is for tests alone.
+const IMPORTS = { "#*": "./src/*", "#tests/*": "./tests/*" };
+const packageFiles = {
+	"packages/alpha/package.json": JSON.stringify({
+		name: "@archboard/alpha",
+		imports: IMPORTS,
+		exports: {
+			".": "./src/shared/constants/value.ts",
+			"./testing": "./src/shared/testing.ts",
+		},
+	}),
+	"packages/alpha/src/shared/constants/value.ts": "export const value = 1;\n",
+	"packages/alpha/src/shared/constants/private.ts": "export const privateValue = 1;\n",
+	"packages/alpha/src/shared/generated/ClientRequest.ts": "export type ClientRequest = unknown;\n",
+	"packages/alpha/src/shared/testing.ts": "export const fixture = 1;\n",
+	"packages/alpha/src/runtime/work.ts": "export const work = 1;\n",
+	"packages/alpha/tests/support.ts": "export const support = 1;\n",
+	"packages/gamma/package.json": JSON.stringify({
+		name: "@archboard/gamma",
+		imports: IMPORTS,
+		exports: { ".": "./src/shared/both.ts", "./testing": "./src/shared/both.ts" },
+	}),
+	"packages/gamma/src/shared/both.ts": "export const both = 1;\n",
+	"packages/beta/package.json": JSON.stringify({
+		name: "@archboard/beta",
+		imports: IMPORTS,
+		exports: { ".": "./src/runtime/beta.ts" },
+	}),
+	"packages/beta/src/runtime/beta.ts": "export const beta = 1;\n",
+	"tests/system/policy/support.ts": "export const systemSupport = 1;\n",
+	"tests/system/repository-policy/support/test-wall-clock.ts":
+		"export function declareTestWallClockBudget() {}\n",
+};
 
 describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
-	test("local source uses aliases and TypeScript", async () => {
+	test("local source uses # imports and TypeScript", async () => {
+		// Catches a relative import or a JavaScript file in a package, which no other lane refuses.
 		await withProject(
 			{
 				".oxlintrc.jsonc": JSON.stringify({
@@ -13,271 +62,66 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					jsPlugins: [plugin],
 					rules: { "archboard/absolute-imports": "error", "archboard/typescript-source": "error" },
 				}),
-				"src/ui/source/allowed.ts": 'import "@/shared/source";',
-				"src/ui/source/relative.ts": 'import "./allowed";',
-				"src/ui/source/javascript.js": "export const value = 1;",
 				"packages/alpha/package.json": JSON.stringify({ imports: { "#*": "./src/*" } }),
 				"packages/alpha/src/shared/sibling.ts": 'import "#shared/other.ts";',
 				"packages/alpha/src/shared/relative.ts": 'import "./other";',
 				"packages/alpha/src/shared/escape.ts": 'import "../../../beta/src/shared/other";',
+				"packages/alpha/src/shared/javascript.js": "export const value = 1;",
 			},
 			(root) => {
-				expectPass(
-					lint(root, ["src/ui/source/allowed.ts", "packages/alpha/src/shared/sibling.ts"]),
-				);
+				expectPass(lint(root, ["packages/alpha/src/shared/sibling.ts"]));
 				for (const file of ["escape", "relative"]) {
 					expectRule(
 						lint(root, [`packages/alpha/src/shared/${file}.ts`]),
 						"archboard(absolute-imports)",
 					);
 				}
-				expectRule(lint(root, ["src/ui/source/relative.ts"]), "archboard(absolute-imports)");
-				expectRule(lint(root, ["src/ui/source/javascript.js"]), "archboard(typescript-source)");
+				expectRule(
+					lint(root, ["packages/alpha/src/shared/javascript.js"]),
+					"archboard(typescript-source)",
+				);
 			},
 		);
 	});
 
-	test("allows root entrypoints, documented dependency directions, and flat test owners", async () => {
+	test("the @/ alias is refused wherever it is spelled", async () => {
+		// Catches the alias creeping back through a tsconfig `paths` entry: whatever resolves it,
+		// the lint refuses the spelling in a package, an app, a script and every kind of test.
+		const aliased = 'import { shared } from "@/shared/source.ts";\nexport { shared };\n';
+		const files = [
+			"packages/alpha/src/shared/aliased.ts",
+			"packages/alpha/tests/aliased.test.ts",
+			"apps/cli/src/cli/aliased.ts",
+			"scripts/aliased.ts",
+			"tests/system/policy/aliased.test.ts",
+		];
 		await withProject(
-			{
-				"src/shared/common/index.ts": "export const sharedValue = 1;\n",
-				"src/domain/target/index.ts": "export const domainValue = 1;\n",
-				"src/domain/allowed/index.ts":
-					'import { sharedValue } from "../../shared/common/index.js";\nimport { domainValue } from "../target";\n\nexport const value = sharedValue + domainValue;\n',
-				"src/domain/tested/index.ts": "export const moduleValue = 1;\n",
-				"src/domain/tested/tests/support.ts": "export const support = 1;\n",
-				"src/domain/tested/tests/widget.spec.ts":
-					'import { moduleValue } from "../index.js";\nimport { support } from "./support.js";\n\nexport const value = moduleValue + support;\n',
-				"tests/system/policy/support.ts": "export const support = 1;\n",
-				"tests/system/policy/system.test.ts":
-					'import { moduleValue } from "../../../src/domain/tested/index.js";\nimport { support } from "./support.js";\n\nexport const value = moduleValue + support;\n',
-				"src/cli/command-contract/tests/public-runner-fixture.ts":
-					"export const publicRunnerFixture = true;\n",
-				"tests/system/repository-policy/support/test-wall-clock.ts":
-					"export function declareTestWallClockBudget() {}\n",
-				"src/domain/tested/tests/real-time.test.ts":
-					'import { declareTestWallClockBudget } from "../../../../tests/system/repository-policy/support/test-wall-clock.js";\nexport { declareTestWallClockBudget };\n',
-			},
+			{ ...packageFiles, ...Object.fromEntries(files.map((file) => [file, aliased])) },
+			(root) => expectJudged(root, Object.fromEntries(files.map((file) => [file, "@/ alias"]))),
+		);
+	});
+
+	test("source in the retired roots src/ and frontend/ is refused", async () => {
+		// Catches a legacy root coming back: a module, a flat file, the browser entry and a nested
+		// frontend tree each sit outside every package and app, so no other rule would judge them.
+		const legacy = [
+			"src/domain/widget/index.ts",
+			"src/shared/value.ts",
+			"src/server.ts",
+			"frontend/main.tsx",
+			"frontend/src/ui/pane.ts",
+		];
+		await withProject(
+			Object.fromEntries(legacy.map((file) => [file, "export const value = 1;\n"])),
 			(root) =>
-				expectPass(
-					lint(root, [
-						"src/domain/allowed/index.ts",
-						"src/domain/tested/tests/widget.spec.ts",
-						"src/domain/tested/tests/real-time.test.ts",
-						"tests/system/policy/system.test.ts",
-						"src/cli/command-contract/tests/public-runner-fixture.ts",
-					]),
-				),
+				expectJudged(root, Object.fromEntries(legacy.map((file) => [file, "top-level src/"]))),
 		);
 	});
 
-	test("rejects root implementation, forbidden directions, and unmapped flat source", async () => {
-		await withProject(
-			{
-				"src/server.ts": "export function implementation() { return true; }\n",
-				"src/transformers/target/index.ts": "export const transformed = 1;\n",
-				"src/domain/forbidden/index.ts":
-					'import { transformed } from "../../transformers/target/index.js";\nexport { transformed };\n',
-				"src/cli/freepass.ts": "export const flat = true;\n",
-			},
-			(root) => {
-				expectRule(lint(root, ["src/server.ts"]), "archboard(root-implementation-modules)");
-				expectRule(lint(root, ["src/domain/forbidden/index.ts"]), "archboard(import-boundaries)");
-				expectRule(lint(root, ["src/cli/freepass.ts"]), "archboard(mapped-source-paths)");
-			},
-		);
-	});
-
-	test("rejects extensionless, Vite raw, CommonJS, and cross-module deep imports", async () => {
-		await withProject(
-			{
-				"src/domain/target/index.ts": "export const value = 1;\n",
-				"src/domain/target/lib/index.ts": "export const privateValue = 1;\n",
-				"src/domain/importer/extensionless.ts":
-					'import { privateValue } from "../target/lib";\nexport { privateValue };\n',
-				"src/domain/importer/raw.ts":
-					'import { privateValue } from "../target/lib?raw";\nexport { privateValue };\n',
-				"src/domain/importer/require.ts":
-					'const privateValue = require("../target/lib");\nexport { privateValue };\n',
-				"src/shared/wire-contract/index.ts": "export type ClientRequest = unknown;\n",
-				"src/shared/wire-contract/generated/ClientRequest.ts":
-					"export type ClientRequest = unknown;\n",
-				"src/runtime/codex-session/index.ts":
-					'import type { ClientRequest } from "../../shared/wire-contract/generated/ClientRequest.js";\nexport type Request = ClientRequest;\n',
-			},
-			(root) => {
-				for (const file of ["extensionless.ts", "raw.ts"]) {
-					expectRule(lint(root, [`src/domain/importer/${file}`]), "archboard(module-entrypoints)");
-				}
-				const required = lint(root, ["src/domain/importer/require.ts"]);
-				expectRule(required, "archboard(module-entrypoints)");
-				expect(required.output).toContain("typescript(no-require-imports)");
-				expectRule(
-					lint(root, ["src/runtime/codex-session/index.ts"]),
-					"archboard(module-entrypoints)",
-					"root entrypoint",
-				);
-			},
-		);
-	});
-
-	test("rejects deep product imports and imports across test owners", async () => {
-		await withProject(
-			{
-				"src/domain/target/index.ts": "export const value = 1;\n",
-				"src/domain/target/lib/index.ts": "export const privateValue = 1;\n",
-				"src/domain/target/tests/support.ts": "export const moduleSupport = 1;\n",
-				"src/domain/other/index.ts": "export const value = 1;\n",
-				"src/domain/other/lib/index.ts": "export const privateValue = 1;\n",
-				"src/domain/other/tests/support.ts": "export const otherSupport = 1;\n",
-				"src/domain/target/tests/deep-own.test.ts":
-					'import { privateValue } from "../lib/index.js";\nexport { privateValue };\n',
-				"src/domain/target/tests/deep-other.test.ts":
-					'import { privateValue } from "../../other/lib/index.js";\nexport { privateValue };\n',
-				"src/domain/target/tests/cross-module.test.ts":
-					'import { otherSupport } from "../../other/tests/support.js";\nexport { otherSupport };\n',
-				"src/domain/target/tests/cross-system.test.ts":
-					'import { systemSupport } from "../../../../tests/system/policy/support.js";\nexport { systemSupport };\n',
-				"tests/system/policy/support.ts": "export const systemSupport = 1;\n",
-				"tests/system/policy/deep.spec.ts":
-					'import { privateValue } from "../../../src/domain/target/lib/index.js";\nexport { privateValue };\n',
-				"tests/system/policy/cross-module.test.ts":
-					'import { moduleSupport } from "../../../src/domain/target/tests/support.js";\nexport { moduleSupport };\n',
-				"src/domain/product/index.ts":
-					'import { moduleSupport } from "../target/tests/support.js";\nexport { moduleSupport };\n',
-				"src/domain/product/system.ts":
-					'import { systemSupport } from "../../../tests/system/policy/support.js";\nexport { systemSupport };\n',
-			},
-			(root) => {
-				for (const file of [
-					"src/domain/target/tests/deep-own.test.ts",
-					"src/domain/target/tests/deep-other.test.ts",
-					"tests/system/policy/deep.spec.ts",
-				]) {
-					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "module-root entrypoint");
-				}
-				for (const file of [
-					"src/domain/target/tests/cross-module.test.ts",
-					"src/domain/target/tests/cross-system.test.ts",
-					"tests/system/policy/cross-module.test.ts",
-				]) {
-					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "only from its own");
-				}
-				for (const file of ["src/domain/product/index.ts", "src/domain/product/system.ts"]) {
-					expectRule(
-						lint(root, [file]),
-						"archboard(module-entrypoints)",
-						"must not import test-owned source",
-					);
-				}
-			},
-		);
-	});
-
-	test("rejects every misplaced test spelling and co-located test", async () => {
-		await withProject(
-			{
-				"src/domain/widget/widget.test.ts": "export const misplaced = true;\n",
-				"tests/misplaced.spec.ts": "export const misplaced = true;\n",
-				"tests/widget_test.ts": "export const misplaced = true;\n",
-				"tests/widget_spec.ts": "export const misplaced = true;\n",
-			},
-			(root) => {
-				for (const file of [
-					"src/domain/widget/widget.test.ts",
-					"tests/misplaced.spec.ts",
-					"tests/widget_test.ts",
-					"tests/widget_spec.ts",
-				]) {
-					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "must live under");
-				}
-			},
-		);
-	});
-
-	test("rejects untyped support and test sources over 500 lines", async () => {
-		await withProject(
-			{
-				"src/domain/widget/index.ts": "export const value = 1;\n",
-				"src/domain/widget/tests/untyped.js": "export const untyped = true;\n",
-				"tests/system/policy/untyped.jsx": "export const untyped = true;\n",
-				"src/domain/widget/tests/oversized.test.ts": "// fixture\n".repeat(501),
-				"tests/system/policy/oversized.test.ts": "// fixture\n".repeat(501),
-			},
-			(root) => {
-				for (const file of [
-					"src/domain/widget/tests/untyped.js",
-					"tests/system/policy/untyped.jsx",
-				]) {
-					expectRule(
-						lint(root, [file]),
-						"archboard(module-entrypoints)",
-						"must use .ts, .tsx, .mts or .cts",
-					);
-				}
-				for (const file of [
-					"src/domain/widget/tests/oversized.test.ts",
-					"tests/system/policy/oversized.test.ts",
-				]) {
-					expectRule(lint(root, [file]), "eslint(max-lines)", "Maximum allowed is 500");
-				}
-			},
-		);
-	});
-
-	// The root compiler now covers every retained TypeScript source extension.
-	// src/ui is owned by the separate UI policy (600 physical lines), so the
-	// tests configuration's 500-line cap is proven on a non-UI area.
-	test("accepts compiler-covered TSX owners and still caps them", async () => {
-		await withProject(
-			{
-				"src/domain/widget/index.ts": "export const value = 1;\n",
-				"src/domain/widget/tests/rendered.test.tsx": "export const rendered = true;\n",
-				"src/domain/widget/tests/oversized.test.tsx": "// fixture\n".repeat(501),
-			},
-			(root) => {
-				expectPass(lint(root, ["src/domain/widget/tests/rendered.test.tsx"]));
-				expectRule(
-					lint(root, ["src/domain/widget/tests/oversized.test.tsx"]),
-					"eslint(max-lines)",
-					"Maximum allowed is 500",
-				);
-			},
-		);
-	});
-
-	// A package states its interface in `exports`: the area rules hold between the folders of
-	// one package, only an export is public, and `./testing` is for tests alone.
-	const IMPORTS = { "#*": "./src/*", "#tests/*": "./tests/*" };
-	const packageFiles = {
-		"packages/alpha/package.json": JSON.stringify({
-			name: "@archboard/alpha",
-			imports: IMPORTS,
-			exports: {
-				".": "./src/shared/constants/value.ts",
-				"./testing": "./src/shared/testing.ts",
-			},
-		}),
-		"packages/alpha/src/shared/constants/value.ts": "export const value = 1;\n",
-		"packages/alpha/src/shared/constants/private.ts": "export const privateValue = 1;\n",
-		"packages/alpha/src/shared/testing.ts": "export const fixture = 1;\n",
-		"packages/alpha/src/runtime/work.ts": "export const work = 1;\n",
-		"packages/alpha/tests/support.ts": "export const support = 1;\n",
-		"packages/gamma/package.json": JSON.stringify({
-			name: "@archboard/gamma",
-			imports: IMPORTS,
-			exports: { ".": "./src/shared/both.ts", "./testing": "./src/shared/both.ts" },
-		}),
-		"packages/gamma/src/shared/both.ts": "export const both = 1;\n",
-		"packages/beta/package.json": JSON.stringify({
-			name: "@archboard/beta",
-			imports: IMPORTS,
-			exports: { ".": "./src/runtime/beta.ts" },
-		}),
-		"packages/beta/src/runtime/beta.ts": "export const beta = 1;\n",
-	};
-
-	test("a package exposes its exports, and a test reaches the private files of its own package", async () => {
+	test("allows the documented directions, test owners and the wall-clock declaration", async () => {
+		// Catches a rule that refuses what the layout allows: a runtime file reading a shared one,
+		// a test reading the private files and the support of its own package, the real-time
+		// declaration every owner may use, and the root suite reading a package export.
 		await withProject(
 			{
 				...packageFiles,
@@ -285,103 +129,135 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					'import { value } from "#shared/constants/value.ts";\nexport { value };\n',
 				"packages/alpha/tests/own.test.ts":
 					'import { privateValue } from "#shared/constants/private.ts";\nimport { support } from "#tests/support.ts";\nexport { privateValue, support };\n',
+				"packages/alpha/tests/real-time.test.ts":
+					'import { declareTestWallClockBudget } from "../../../tests/system/repository-policy/support/test-wall-clock.js";\nexport { declareTestWallClockBudget };\n',
 				"packages/beta/tests/public.test.ts":
 					'import { value } from "@archboard/alpha";\nimport { fixture } from "@archboard/alpha/testing";\nexport { fixture, value };\n',
 				"packages/alpha/tests/own-testing.test.ts":
 					'import { fixture } from "#shared/testing.ts";\nimport { fixture as exported } from "@archboard/alpha/testing";\nexport { exported, fixture };\n',
 				"packages/beta/src/runtime/gamma.ts":
 					'import { both } from "@archboard/gamma";\nexport { both };\n',
-				"src/domain/consumer/index.ts":
-					'import { value } from "@archboard/alpha";\nimport { elk } from "@archboard/not-a-workspace-package";\nexport { elk, value };\n',
+				"packages/beta/src/runtime/npm.ts":
+					'import { elk } from "@archboard/not-a-workspace-package";\nexport { elk };\n',
+				"tests/system/policy/system.test.ts":
+					'import { value } from "@archboard/alpha";\nimport { systemSupport } from "./support.js";\nexport { systemSupport, value };\n',
 			},
 			(root) =>
-				expectPass(
-					lint(root, [
-						"packages/alpha/src/runtime/ok.ts",
-						"packages/alpha/tests/own.test.ts",
-						"packages/beta/tests/public.test.ts",
-						"packages/alpha/tests/own-testing.test.ts",
-						"packages/beta/src/runtime/gamma.ts",
-						"src/domain/consumer/index.ts",
-					]),
-				),
+				expectJudged(root, {}, [
+					"packages/alpha/src/runtime/ok.ts",
+					"packages/alpha/tests/own.test.ts",
+					"packages/alpha/tests/real-time.test.ts",
+					"packages/beta/tests/public.test.ts",
+					"packages/alpha/tests/own-testing.test.ts",
+					"packages/beta/src/runtime/gamma.ts",
+					"packages/beta/src/runtime/npm.ts",
+					"tests/system/policy/system.test.ts",
+				]),
 		);
 	});
 
-	test("a package refuses deep imports, and production never imports tests or ./testing", async () => {
+	test("a package refuses deep imports in every spelling, from a package and from the root suite", async () => {
+		// Catches a private file of a package reached by an extensionless path, a Vite query, a
+		// CommonJS require, a generated-code path, a subpath specifier, a symlink, a mock or the
+		// root suite: each passes the package boundary unseen unless the resolver reads it.
+		const deep = "../../../alpha/src/shared/constants/private";
+		const deepFromTests = "../../alpha/src/shared/constants/private";
 		await withProject(
 			{
 				...packageFiles,
-				"src/domain/deep/relative.ts":
-					'import { privateValue } from "../../../packages/alpha/src/shared/constants/private.js";\nexport { privateValue };\n',
-				"src/domain/deep/specifier.ts":
+				"packages/beta/src/runtime/relative.ts": `import { privateValue } from "${deep}.js";\nexport { privateValue };\n`,
+				"packages/beta/src/runtime/extensionless.ts": `import { privateValue } from "${deep}";\nexport { privateValue };\n`,
+				"packages/beta/src/runtime/raw.ts": `import { privateValue } from "${deep}?raw";\nexport { privateValue };\n`,
+				"packages/beta/src/runtime/require.ts": `const privateValue = require("${deep}");\nexport { privateValue };\n`,
+				"packages/beta/src/runtime/generated.ts":
+					'import type { ClientRequest } from "../../../alpha/src/shared/generated/ClientRequest.js";\nexport type Request = ClientRequest;\n',
+				"packages/beta/src/runtime/specifier.ts":
 					'import { privateValue } from "@archboard/alpha/src/shared/constants/private.ts";\nexport { privateValue };\n',
-				"packages/beta/tests/deep.test.ts":
-					'import { privateValue } from "../../alpha/src/shared/constants/private.js";\nexport { privateValue };\n',
-				"src/domain/product/testing.ts":
-					'import { fixture } from "@archboard/alpha/testing";\nexport { fixture };\n',
+				"packages/beta/src/runtime/linked.ts":
+					'import { privateValue } from "../../../../node_modules/@archboard/alpha/src/shared/constants/private.js";\nexport { privateValue };\n',
+				"packages/beta/tests/deep.test.ts": `import { privateValue } from "${deepFromTests}.js";\nexport { privateValue };\n`,
+				"packages/beta/tests/mock-bun.test.ts": `import { mock } from "bun:test";\n\nmock.module("${deepFromTests}.js", () => ({}));\n`,
+				"packages/beta/tests/mock-vitest.test.ts": `import { vi } from "vitest";\n\nvi.mock("${deepFromTests}.js");\n`,
+				"tests/system/policy/deep.test.ts": `import { privateValue } from "../../../packages/alpha/src/shared/constants/private.js";\nexport { privateValue };\n`,
+			},
+			(root) => {
+				linkInto(root, "node_modules/@archboard/alpha", "packages/alpha");
+				expectJudged(root, {
+					"packages/beta/src/runtime/relative.ts": NOT_EXPORTED,
+					"packages/beta/src/runtime/extensionless.ts": NOT_EXPORTED,
+					"packages/beta/src/runtime/raw.ts": NOT_EXPORTED,
+					"packages/beta/src/runtime/require.ts": NOT_EXPORTED,
+					"packages/beta/src/runtime/generated.ts": NOT_EXPORTED,
+					"packages/beta/src/runtime/specifier.ts": NOT_EXPORTED,
+					"packages/beta/src/runtime/linked.ts": NOT_EXPORTED,
+					"packages/beta/tests/deep.test.ts": NOT_EXPORTED,
+					"packages/beta/tests/mock-bun.test.ts": NOT_EXPORTED,
+					"packages/beta/tests/mock-vitest.test.ts": NOT_EXPORTED,
+					"tests/system/policy/deep.test.ts": NOT_EXPORTED,
+				});
+				expectRule(
+					lint(root, ["packages/beta/src/runtime/require.ts"]),
+					"typescript(no-require-imports)",
+				);
+			},
+		);
+	});
+
+	test("production never imports a tests folder or ./testing, and a test reads only its own owner's support", async () => {
+		// Catches product code that borrows test support (a package's tests, the root suite's
+		// support, an own `./testing` export) and a test that borrows the support of another owner.
+		await withProject(
+			{
+				...packageFiles,
 				"packages/beta/src/runtime/testing.ts":
 					'import { fixture } from "@archboard/alpha/testing";\nexport { fixture };\n',
+				"packages/beta/src/runtime/both.ts":
+					'import { both } from "@archboard/gamma/testing";\nexport { both };\n',
+				"packages/beta/src/runtime/both-path.ts":
+					'import { both } from "../../../gamma/src/shared/both.js";\nexport { both };\n',
 				"packages/alpha/src/runtime/tests.ts":
 					'import { support } from "#tests/support.ts";\nexport { support };\n',
-				"packages/beta/tests/foreign.test.ts":
-					'import { support } from "../../alpha/tests/support.js";\nexport { support };\n',
 				"packages/alpha/src/runtime/own-testing.ts":
 					'import { fixture } from "@archboard/alpha/testing";\nexport { fixture };\n',
 				"packages/alpha/src/runtime/own-testing-path.ts":
 					'import { fixture } from "#shared/testing.ts";\nexport { fixture };\n',
-				"src/domain/product/both.ts":
-					'import { both } from "@archboard/gamma/testing";\nexport { both };\n',
-				"packages/beta/src/runtime/both-path.ts":
-					'import { both } from "../../../gamma/src/shared/both.js";\nexport { both };\n',
-				"src/domain/deep/linked.ts":
-					'import { privateValue } from "../../../node_modules/@archboard/alpha/src/shared/constants/private.js";\nexport { privateValue };\n',
+				"packages/beta/src/runtime/foreign-tests.ts":
+					'import { support } from "../../../alpha/tests/support.js";\nexport { support };\n',
+				"packages/beta/src/runtime/system.ts":
+					'import { systemSupport } from "../../../../tests/system/policy/support.js";\nexport { systemSupport };\n',
+				"packages/beta/tests/foreign.test.ts":
+					'import { support } from "../../alpha/tests/support.js";\nexport { support };\n',
 				"packages/beta/tests/linked.test.ts":
 					'import { support } from "../../../node_modules/@archboard/alpha/tests/support.js";\nexport { support };\n',
-				"packages/beta/tests/mock-bun.test.ts":
-					'import { mock } from "bun:test";\n\nmock.module("../../alpha/src/shared/constants/private.js", () => ({}));\n',
-				"packages/beta/tests/mock-vitest.test.ts":
-					'import { vi } from "vitest";\n\nvi.mock("../../alpha/src/shared/constants/private.js");\n',
+				"packages/alpha/tests/cross-system.test.ts":
+					'import { systemSupport } from "../../../tests/system/policy/support.js";\nexport { systemSupport };\n',
+				"tests/system/policy/cross-package.test.ts":
+					'import { support } from "../../../packages/alpha/tests/support.js";\nexport { support };\n',
 			},
 			(root) => {
-				fs.mkdirSync(path.join(root, "node_modules/@archboard"), { recursive: true });
-				fs.symlinkSync(
-					path.join(root, "packages/alpha"),
-					path.join(root, "node_modules/@archboard/alpha"),
-				);
-				for (const file of [
-					"src/domain/deep/relative.ts",
-					"src/domain/deep/specifier.ts",
-					"packages/beta/tests/deep.test.ts",
-					"src/domain/deep/linked.ts",
-					"packages/beta/tests/mock-bun.test.ts",
-					"packages/beta/tests/mock-vitest.test.ts",
-				]) {
-					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "exports names");
-				}
-				for (const file of [
-					"src/domain/product/testing.ts",
-					"packages/beta/src/runtime/testing.ts",
-					"packages/alpha/src/runtime/tests.ts",
-					"packages/alpha/src/runtime/own-testing.ts",
-					"packages/alpha/src/runtime/own-testing-path.ts",
-					"src/domain/product/both.ts",
-					"packages/beta/src/runtime/both-path.ts",
-				]) {
-					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "test-owned source");
-				}
-				for (const file of [
-					"packages/beta/tests/foreign.test.ts",
-					"packages/beta/tests/linked.test.ts",
-				]) {
-					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "only from its own");
-				}
+				linkInto(root, "node_modules/@archboard/alpha", "packages/alpha");
+				expectJudged(root, {
+					"packages/beta/src/runtime/testing.ts": PRODUCT_TESTS,
+					"packages/beta/src/runtime/both.ts": PRODUCT_TESTS,
+					"packages/beta/src/runtime/both-path.ts": PRODUCT_TESTS,
+					"packages/alpha/src/runtime/tests.ts": PRODUCT_TESTS,
+					"packages/alpha/src/runtime/own-testing.ts": PRODUCT_TESTS,
+					"packages/alpha/src/runtime/own-testing-path.ts": PRODUCT_TESTS,
+					"packages/beta/src/runtime/foreign-tests.ts": PRODUCT_TESTS,
+					"packages/beta/src/runtime/system.ts": PRODUCT_TESTS,
+					"packages/beta/tests/foreign.test.ts": FOREIGN_TESTS,
+					"packages/beta/tests/linked.test.ts": FOREIGN_TESTS,
+					"packages/alpha/tests/cross-system.test.ts": FOREIGN_TESTS,
+					"tests/system/policy/cross-package.test.ts": FOREIGN_TESTS,
+				});
 			},
 		);
 	});
 
 	// The tests of a package's ui area are linted by the UI policy: ui-lint-policy.test.ts.
-	test("the area directions hold between the folders of one package", async () => {
+	test("the area directions hold between the folders of one package and between packages", async () => {
+		// Catches an area import that the owner parser does not see: shared reaching runtime,
+		// ui reaching runtime, and shared code of one package reaching the runtime export of another.
 		await withProject(
 			{
 				...packageFiles,
@@ -389,16 +265,58 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					'import { work } from "#runtime/work.ts";\nexport { work };\n',
 				"packages/alpha/src/ui/screen.ts":
 					'import { work } from "#runtime/work.ts";\nexport { work };\n',
-				"src/shared/screen/index.ts": 'import { beta } from "@archboard/beta";\nexport { beta };\n',
+				"packages/gamma/src/shared/screen.ts":
+					'import { beta } from "@archboard/beta";\nexport { beta };\n',
+			},
+			(root) =>
+				expectJudged(root, {
+					"packages/alpha/src/shared/leak.ts": AREA,
+					"packages/alpha/src/ui/screen.ts": AREA,
+					"packages/gamma/src/shared/screen.ts": AREA,
+				}),
+		);
+	});
+
+	test("rejects every misplaced test spelling and co-located test", async () => {
+		// Catches a test that Bun would run but no test owner holds: next to its source, in the
+		// root tests folder, in either suffix spelling.
+		const misplaced = [
+			"packages/alpha/src/shared/widget.test.ts",
+			"tests/misplaced.spec.ts",
+			"tests/widget_test.ts",
+			"tests/widget_spec.ts",
+		];
+		await withProject(
+			Object.fromEntries(misplaced.map((file) => [file, "export const misplaced = true;\n"])),
+			(root) =>
+				expectJudged(root, Object.fromEntries(misplaced.map((file) => [file, "must live under"]))),
+		);
+	});
+
+	test("rejects untyped test sources, and caps test files at 500 lines", async () => {
+		// Catches JavaScript test support that the root tsc never sees, and a test file past the
+		// cap of the tests config, in a package, in the root suite, and in TSX too.
+		await withProject(
+			{
+				"packages/alpha/tests/runtime/untyped.js": "export const untyped = true;\n",
+				"tests/system/policy/untyped.jsx": "export const untyped = true;\n",
+				"packages/alpha/tests/runtime/rendered.test.tsx": "export const rendered = true;\n",
+				"packages/alpha/tests/runtime/oversized.test.ts": "// fixture\n".repeat(501),
+				"packages/alpha/tests/runtime/oversized.test.tsx": "// fixture\n".repeat(501),
+				"tests/system/policy/oversized.test.ts": "// fixture\n".repeat(501),
 			},
 			(root) => {
-				for (const file of [
-					"packages/alpha/src/shared/leak.ts",
-					"packages/alpha/src/ui/screen.ts",
-					"src/shared/screen/index.ts",
-				]) {
-					expectRule(lint(root, [file]), "archboard(import-boundaries)");
-				}
+				expectJudged(
+					root,
+					{
+						"packages/alpha/tests/runtime/untyped.js": "must use .ts",
+						"tests/system/policy/untyped.jsx": "must use .ts",
+						"packages/alpha/tests/runtime/oversized.test.ts": "too many lines",
+						"packages/alpha/tests/runtime/oversized.test.tsx": "too many lines",
+						"tests/system/policy/oversized.test.ts": "too many lines",
+					},
+					["packages/alpha/tests/runtime/rendered.test.tsx"],
+				);
 			},
 		);
 	});

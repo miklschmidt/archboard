@@ -106,10 +106,55 @@ function diagnosticsOf(root: string, relativePaths: string[]): Diagnostic[] {
 	}));
 }
 
+/**
+ * Lint files in one run and name what each refused file earns and what passes.
+ * @param root The project directory.
+ * @param refused Each file that must be refused, with a phrase of the message that names why.
+ * @param allowed The files that must earn no diagnostic.
+ */
+function expectJudged(
+	root: string,
+	refused: Record<string, string>,
+	allowed: readonly string[] = [],
+): void {
+	const found = diagnosticsOf(root, [...Object.keys(refused), ...allowed]);
+	for (const [file, phrase] of Object.entries(refused)) {
+		const messages = found.filter((entry) => entry.file === file).map((entry) => entry.message);
+		expect(
+			messages.some((message) => message.includes(phrase)),
+			`${file} should be refused for "${phrase}", got: ${JSON.stringify(messages)}`,
+		).toBe(true);
+	}
+	expect(found.filter((entry) => allowed.includes(entry.file))).toEqual([]);
+}
+
+/**
+ * A file that imports `clip` from a specifier and re-exports it.
+ * @param from The specifier.
+ * @returns The file's text.
+ */
+function importing(from: string): string {
+	return `import { clip } from "${from}";\nexport { clip };\n`;
+}
+
+/**
+ * Link a path of the project to another one, as `bun install` links a workspace.
+ * @param root The project directory.
+ * @param link The path of the link.
+ * @param target The path it names.
+ */
+function linkInto(root: string, link: string, target: string): void {
+	fs.mkdirSync(path.dirname(path.join(root, link)), { recursive: true });
+	fs.symlinkSync(path.join(root, target), path.join(root, link));
+}
+
 export {
 	diagnosticsOf,
+	expectJudged,
 	expectPass,
 	expectRule,
+	importing,
+	linkInto,
 	lint,
 	plugin,
 	repoRoot,

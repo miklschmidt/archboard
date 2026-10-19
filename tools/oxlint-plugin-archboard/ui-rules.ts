@@ -1,14 +1,12 @@
 // The frontend concern placement and naming rules of docs/agents/frontend.md,
-// for authored source under src/ui/<module>, packages/<name>/src/ui and
-// apps/<name>/src/ui. A module keeps its concerns in named private folders. The
-// ui area of a package or an app keeps them as role folders directly below ui/,
-// with behavior folders below a role. The web app's browser entry, main.tsx, sits
-// above ui/ and counts as browser code for the React import rule only.
+// for authored source under packages/<name>/src/ui and apps/<name>/src/ui. The ui
+// area keeps its code as role folders directly below ui/, with behavior folders
+// below a role. The web app's browser entry, main.tsx, sits above ui/ and counts
+// as browser code for the React import rule only.
 // Components are PascalCase, hooks are use-prefixed kebab-case, and everything
-// else is scoped kebab-case. React lives in components and hooks; a module's root
-// files are its public interface and may hold an intentionally public component,
-// hook or API. A package or an app has no ui root: a package's public interface is
-// its `exports`, and nothing imports an app.
+// else is scoped kebab-case. React lives in components and hooks. A package or an
+// app has no ui root: a package's public interface is its `exports`, and nothing
+// imports an app.
 import {
 	createRule,
 	report,
@@ -16,20 +14,16 @@ import {
 	type RuleContext,
 	type RuleVisitors,
 	type VisitedNode,
-	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./rule-api.ts";
 import {
 	getRepoRelativePath,
 	isBrowserEntrypoint,
-	moduleAt,
-	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./source-layout.ts";
 
-/** The concern folders a UI module may keep private implementation in. */
-const MODULE_CONCERNS = new Set(["api", "components", "hooks", "lib", "state", "tests", "types"]);
-
 /** The role folders the ui area of a package or an app may hold. */
-const WORKSPACE_ROLES = new Set([
+const UI_ROLES = new Set([
 	"api",
 	"clients",
 	"components",
@@ -40,20 +34,8 @@ const WORKSPACE_ROLES = new Set([
 	"workers",
 ]);
 
-/** The concerns whose files are plain scoped kebab-case, not components or hooks. */
-const SCOPED_CONCERNS = new Set([
-	"api",
-	"clients",
-	"constants",
-	"lib",
-	"rules",
-	"state",
-	"types",
-	"workers",
-]);
-
 /** A file of the ui area of a package or an app: its source or its tests. */
-const WORKSPACE_UI_FILE = /^(?:packages|apps)\/[^/]+\/(src|tests)\/ui\/(.+)$/u;
+const UI_FILE = /^(?:packages|apps)\/[^/]+\/(src|tests)\/ui\/(.+)$/u;
 
 /** The extensions this rule names; JavaScript is refused by `typescript-source`. */
 const TYPESCRIPT_SOURCE = /\.tsx?$/u;
@@ -63,11 +45,9 @@ const KEBAB_CASE = /^[a-z0-9]+(?:-[a-z0-9]+)*\.tsx?$/u;
 const HOOK_FILE = /^use-[a-z0-9]+(?:-[a-z0-9]+)*\.tsx?$/u;
 const HOOK_NAME = /^use[A-Z]/u;
 
-/** A TypeScript file of UI code: where it sits below its module or ui area. */
+/** A TypeScript file of UI code: where it sits below the `ui/` folder of its package or app. */
 interface UiFile {
-	/** A module under `src/ui`, or the ui area of a package or an app. */
-	owner: "module" | "workspace";
-	/** The path below the module root or the `ui/` folder of the package or app. */
+	/** The path below the `ui/` folder. */
 	rest: string;
 	/** Whether the file belongs to the owner's tests. */
 	test: boolean;
@@ -75,48 +55,22 @@ interface UiFile {
 
 /** Where one authored UI file sits: its concern and its name. */
 interface UiFilePlacement {
-	/** The owner's kind, which decides the concern folders it may hold. */
-	owner: UiFile["owner"];
-	/** The concern folder, or "" for a file at the module root. */
+	/** The role folder, or "" for a file directly in `ui/`. */
 	concern: string;
 	basename: string;
 }
 
 /**
- * The UI file a path names, in a module under `src/ui` or in the ui area of a package or an app.
+ * The UI file a path names, in the ui area of a package or an app, in its source or its tests.
  * @param relativePath The file's repository path.
  * @returns The file, or undefined for anything that is not TypeScript UI code.
  */
 function uiFileAt(relativePath: string): UiFile | undefined {
-	return TYPESCRIPT_SOURCE.test(relativePath)
-		? (moduleUiFileAt(relativePath) ?? workspaceUiFileAt(relativePath))
-		: undefined;
-}
-
-/**
- * The UI file a path names in a module under `src/ui`.
- * @param relativePath The file's repository path.
- * @returns The file, or undefined outside such a module.
- */
-function moduleUiFileAt(relativePath: string): UiFile | undefined {
-	const module = moduleAt(relativePath);
-	return module?.area === "ui"
-		? {
-				owner: "module",
-				rest: module.rest,
-				test: module.rest === "tests" || module.rest.startsWith("tests/"),
-			}
-		: undefined;
-}
-
-/**
- * The UI file a path names in the ui area of a package or an app, in its source or its tests.
- * @param relativePath The file's repository path.
- * @returns The file, or undefined outside such an area.
- */
-function workspaceUiFileAt(relativePath: string): UiFile | undefined {
-	const [, folder, rest] = WORKSPACE_UI_FILE.exec(relativePath) ?? [];
-	return rest === undefined ? undefined : { owner: "workspace", rest, test: folder === "tests" };
+	if (!TYPESCRIPT_SOURCE.test(relativePath)) {
+		return undefined;
+	}
+	const [, folder, rest] = UI_FILE.exec(relativePath) ?? [];
+	return rest === undefined ? undefined : { rest, test: folder === "tests" };
 }
 
 /**
@@ -131,35 +85,17 @@ function uiPlacementOf(relativePath: string): UiFilePlacement | undefined {
 }
 
 /**
- * Where a UI file sits below its module root or its package's `ui/` folder.
+ * Where a UI file sits below the `ui/` folder of its package or app.
  * @param file The UI file.
- * @returns The owner, the first folder and the file name.
+ * @returns The first folder and the file name.
  */
 function placementOf(file: UiFile): UiFilePlacement {
 	const segments = file.rest.split("/");
 	const [first = ""] = segments;
 	return {
-		owner: file.owner,
 		concern: segments.length > 1 ? first : "",
 		basename: segments.at(-1) ?? "",
 	};
-}
-
-/**
- * The naming message a module-root file's basename earns. Root files are the
- * module's public interface: `index` keeps its conventional name, a component
- * is PascalCase, and everything else is scoped kebab-case.
- * @param basename The file's name.
- * @returns The message id, or undefined when the name is right.
- */
-function rootNamingMessage(basename: string): string | undefined {
-	if (basename === "index.ts" || basename === "index.tsx") {
-		return undefined;
-	}
-	if (basename.endsWith(".tsx")) {
-		return PASCAL_CASE.test(basename) ? undefined : "rootComponentFileName";
-	}
-	return KEBAB_CASE.test(basename) ? undefined : "scopedFileName";
 }
 
 /**
@@ -187,21 +123,7 @@ function namingMessage(placement: UiFilePlacement): string | undefined {
 	if (concern === "hooks") {
 		return HOOK_FILE.test(basename) ? undefined : "hookFileName";
 	}
-	return SCOPED_CONCERNS.has(concern) ? scopedNamingMessage(basename) : rootNamingMessage(basename);
-}
-
-/**
- * Whether a file sits in a folder its owner may hold. A module may keep files at
- * its root; the ui area of a package or an app holds role folders only.
- * @param placement The file's owner, concern and name.
- * @returns Whether the concern is allowed.
- */
-function isKnownConcern(placement: UiFilePlacement): boolean {
-	const { owner, concern } = placement;
-	if (concern === "") {
-		return owner === "module";
-	}
-	return (owner === "module" ? MODULE_CONCERNS : WORKSPACE_ROLES).has(concern);
+	return scopedNamingMessage(basename);
 }
 
 /**
@@ -210,45 +132,39 @@ function isKnownConcern(placement: UiFilePlacement): boolean {
  * @returns The message ids in report order.
  */
 function placementMessages(placement: UiFilePlacement): string[] {
-	const messages: string[] = [];
-	if (!isKnownConcern(placement)) {
-		messages.push("unknownConcern");
-		return messages;
+	if (!UI_ROLES.has(placement.concern)) {
+		return ["unknownConcern"];
 	}
 	const naming = namingMessage(placement);
-	if (naming) {
-		messages.push(naming);
-	}
-	return messages;
+	return naming ? [naming] : [];
 }
 
 /**
  * Whether React markup may be written in a file at this placement.
  * @param placement The file's concern and name.
- * @returns True for the components concern and the module's own root files.
+ * @returns True for the components concern.
  */
 function holdsMarkup(placement: UiFilePlacement): boolean {
-	return placement.concern === "components" || placement.concern === "";
+	return placement.concern === "components";
 }
 
 /**
  * Whether a React hook may be declared in a file at this placement.
  * @param placement The file's concern and name.
- * @returns True for the hooks concern and a module's own root files.
+ * @returns True for the hooks concern.
  */
 function holdsHooks(placement: UiFilePlacement): boolean {
-	return placement.concern === "hooks" || placement.concern === "";
+	return placement.concern === "hooks";
 }
 
 /**
- * Whether a React hook may be re-exported by name from a file at this
- * placement. The `api` folder of a package or an app holds its public interface, as a
- * module's root files do, and it re-exports hooks without declaring them.
+ * Whether a React hook may be re-exported by name from a file at this placement. The `api`
+ * folder holds the public interface and re-exports hooks without declaring them.
  * @param placement The file's concern and name.
- * @returns True where a hook may be declared and for a package's api files.
+ * @returns True where a hook may be declared and for api files.
  */
 function reexportsHooks(placement: UiFilePlacement): boolean {
-	return holdsHooks(placement) || (placement.owner === "workspace" && placement.concern === "api");
+	return holdsHooks(placement) || placement.concern === "api";
 }
 
 /**
@@ -359,16 +275,13 @@ function declaredFunctionName(declaration: ExportedDeclaration): string[] {
 const uiConcernPlacement = createRule(
 	{
 		unknownConcern:
-			"A UI module keeps private code in api, components, hooks, lib, state, tests or types. The ui area of a package or an app keeps it in api, clients, components, constants, hooks, rules, state or workers, never at its root. Name the concern the file belongs to.",
+			"The ui area of a package or an app keeps its code in api, clients, components, constants, hooks, rules, state or workers, never at its root. Name the concern the file belongs to.",
 		componentFileName: "Name a component file in PascalCase after the component it exports.",
 		hookFileName: "Name a hook file in kebab-case with a use- prefix.",
 		scopedFileName: "Name a non-React file in scoped kebab-case.",
-		rootComponentFileName:
-			"A module-root component file is PascalCase; only index.tsx keeps its conventional name.",
 		hookOutsideHooks:
-			"React hooks belong to the hooks concern, or to an intentionally public module-root entrypoint or a package or app api file.",
-		markupOutsideComponents:
-			"React markup belongs to the components concern, or to an intentionally public module-root entrypoint.",
+			"React hooks belong to the hooks concern, or to an api file that re-exports them.",
+		markupOutsideComponents: "React markup belongs to the components concern.",
 	},
 	(context) => {
 		const placement = uiPlacementOf(getRepoRelativePath(context));
