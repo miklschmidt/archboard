@@ -247,7 +247,7 @@ answered. The lock is deny by default. The folder has two roles:
   levels and kinds and `./bound-vaults` the vaults that hold boards of one repository. `./doing` is
   the line an agent said about its write. `store/format/` holds `./decode` and the schema
   migrations. `store/lock/` is the one-writer lease, its claims and its announcements. `./lock` is
-  the only lock file that outside code imports. `target.ts` and `former-names.ts` are private.
+  the only lock file that outside code imports. `former-names.ts` is private.
 - `operations/` is one write or one read that a caller asks for. `write/` holds the write
   boundary (`./write`), the pure transitions it applies (`./transitions`), `./accepted` and
   `./discard`. `read/` holds `./read`, `./listing` and `./catalogue`. `check/` holds the vault
