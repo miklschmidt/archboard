@@ -1,11 +1,11 @@
 ---
 id: TASK-500.03
 title: Child process groups are the process package
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 01:59'
-updated_date: '2026-10-19 02:29'
+updated_date: '2026-10-19 02:33'
 labels: []
 dependencies:
   - TASK-500.02
@@ -21,10 +21,10 @@ process is layer 1 of docs/design/package-map.md: shared/process-observation, ru
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 process-group-cleanup no longer imports anything from codex-process process-contract, and the Codex code supplies its own error type
-- [ ] #2 packages/process holds the process-group, observation and group-termination code in role folders with an exports interface, and every importer uses @archboard/process
-- [ ] #3 The tests of the moved code live in packages/process/tests, including the real-OS process-group tests
-- [ ] #4 bun run check passes
+- [x] #1 process-group-cleanup no longer imports anything from codex-process process-contract, and the Codex code supplies its own error type
+- [x] #2 packages/process holds the process-group, observation and group-termination code in role folders with an exports interface, and every importer uses @archboard/process
+- [x] #3 The tests of the moved code live in packages/process/tests, including the real-OS process-group tests
+- [x] #4 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,3 +43,9 @@ process is layer 1 of docs/design/package-map.md: shared/process-observation, ru
 <!-- SECTION:NOTES:BEGIN -->
 Step 1 done: group cleanup diagnostics.failure returns Error. Step 2: packages/process holds observation, group, git-owner, git-group-termination, codex-group, group-cleanup under runtime/processes. No ./testing export: the two testing.ts files only served tests that moved into the package, which import private files directly. process-group-freeze.test.ts stays in codex-process/tests: it drives createCodexProcessForTesting and the Codex test support, so moving it would make process depend on codex-process. The git owner script is found with import.meta.resolve('@archboard/process/git-owner').
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/process holds eight runtime files in runtime/processes (observation, frozen-group, linux-stat, group, git-owner, git-group-termination, codex-group, group-cleanup) behind six exports. The CodexProcessError edge is cut: group-cleanup takes a plain Error and the Codex code still supplies CodexProcessError. The git owner script is found with import.meta.resolve of @archboard/process/git-owner. process-group-freeze.test.ts stays in codex-process because it drives the Codex owner. The two testing.ts entry files were deleted because only the moved tests used them. bun run check passes. Codex review of 130686c05..81d80f67c found no defects. Advice kept for 500.04: the move codemod must report URL and filesystem strings instead of rewriting them, source-checkout.ts derives the repository root from its depth, and the language-server definitions must be split from path validation. No board is affected.
+<!-- SECTION:FINAL_SUMMARY:END -->
