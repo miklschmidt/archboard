@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 45,
+	"version": 48,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-17T09:58:53.407Z",
+	"updatedAt": "2026-10-19T22:48:51.528Z",
 	"views": [
 		{
 			"id": "MTm8t3yK",
@@ -5044,7 +5044,7 @@
 						"parent": "EMV2VjBX",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/session.ts"
+							"path": "apps/cli/src/cli/operations/invocation/session.ts"
 						}
 					},
 					{
@@ -5056,7 +5056,7 @@
 						"parent": "EMV2VjBX",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/registry.ts"
+							"path": "apps/cli/src/cli/rules/routing/registry.ts"
 						}
 					},
 					{
@@ -5068,7 +5068,7 @@
 						"parent": "EMV2VjBX",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/global-flags.ts"
+							"path": "apps/cli/src/cli/rules/routing/global-flags.ts"
 						}
 					},
 					{
@@ -5080,7 +5080,7 @@
 						"parent": "EMV2VjBX",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/dispatch.ts"
+							"path": "apps/cli/src/cli/rules/routing/dispatch.ts"
 						}
 					},
 					{
@@ -5092,7 +5092,7 @@
 						"parent": "EMV2VjBX",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/session.ts",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
 							"symbol": "runInterruptibleCommand"
 						}
 					},
@@ -5104,7 +5104,7 @@
 						"responsibility": "The seam a bound command is run through, with its contract and the signal",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-contract/runner.ts"
+							"path": "apps/cli/src/cli/operations/execution/runner.ts"
 						}
 					},
 					{
@@ -5116,7 +5116,7 @@
 						"parent": "EMV2VjBX",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/exit-codes.ts"
+							"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts"
 						}
 					},
 					{
@@ -5127,7 +5127,7 @@
 						"responsibility": "The table of every command, and the caller that hands this module its argv",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/run.ts"
+							"path": "apps/cli/src/cli/operations/invocation/run.ts"
 						},
 						"drillDown": {
 							"board": "Command interface",
@@ -5145,7 +5145,7 @@
 						"parent": "EMV2VjBX",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/help.ts"
+							"path": "apps/cli/src/cli/rules/routing/help.ts"
 						}
 					},
 					{
@@ -5157,7 +5157,7 @@
 						"description": "The board, the doing line, the expected version and the writing session are set once per invocation and ride on every request from here, not from each call site. It also formats a refused board write for the reader.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/engine/server-client.ts"
+							"path": "packages/server-lifecycle/src/runtime/clients"
 						}
 					},
 					{
@@ -5169,7 +5169,7 @@
 						"description": "Callers outside the module import only src/cli/command-routing/index.ts. Every file under lib/ is private, so the parts the command catalogue reaches are the entry points that index re-exports (runCliWith, registryOf), and the rest are hidden parts.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing"
+							"path": "apps/cli/src/cli/protocol/routing"
 						}
 					},
 					{
@@ -5181,7 +5181,7 @@
 						"parent": "EMV2VjBX",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/addressed-vault.ts"
+							"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts"
 						}
 					},
 					{
@@ -5193,7 +5193,7 @@
 						"description": "TASK-472.09. No environment variable names a vault any longer: a set ARCHBOARD_VAULT is refused before the command runs, and the finder's origin is -C or working-directory. isVaultLayout says whether a path is the .archboard/vault of a directory, and checkoutOfVault gives the directory that holds it. The finder refuses a vault whose link leads out of that layout as VAULT_NOT_FOUND (reason vault-outside-layout), before the command registers anything. The server uses isVaultLayout and checkoutOfVault to serve only vaults in that layout. TASK-480: in a checkout with no vault, the finder asks the lookup it is given for the known vaults whose boards bind the checkout's repository, and the refusal names each one as the -C to give, with its boards.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/engine/vault-finder.ts"
+							"path": "packages/workspace/src/runtime/services/vault-finder.ts"
 						}
 					},
 					{
@@ -5204,7 +5204,7 @@
 						"responsibility": "Every checkout and untracked vault known on this machine, the chosen checkout of each repository and a name for each that no other has; every running server watches its file",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/engine/repo-registry.ts"
+							"path": "packages/workspace/src/runtime/store/repo-registry.ts"
 						}
 					},
 					{
@@ -5216,7 +5216,7 @@
 						"description": "TASK-472.15. A --to that finds no vault is refused naming --to; a holder the registry does not know is registered.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-move.ts"
+							"path": "apps/cli/src/cli/operations/semantic/board/move.ts"
 						}
 					},
 					{
@@ -5228,7 +5228,7 @@
 						"description": "TASK-480. The known vaults are the ones the navigator lists: the vault of each chosen checkout and each untracked vault that exist, in the .archboard/vault layout. A board counts when a node of any variant binds the repository. Each file is decoded in memory, so no lease is taken and no migration is written in another repository's vault.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/bound-vaults.ts"
+							"path": "packages/board/src/runtime/store/bound-vaults.ts"
 						}
 					}
 				],
@@ -5243,7 +5243,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/session.ts",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
 							"symbol": "usageLine"
 						}
 					},
@@ -5261,7 +5261,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/session.ts",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
 							"symbol": "takeBoardFlag"
 						}
 					},
@@ -5279,7 +5279,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/session.ts",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
 							"symbol": "dispatchedCommand"
 						}
 					},
@@ -5297,7 +5297,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/session.ts",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
 							"symbol": "runInterruptibleCommand"
 						}
 					},
@@ -5315,7 +5315,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/session.ts",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
 							"symbol": "runCommand"
 						}
 					},
@@ -5329,7 +5329,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/session.ts",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
 							"symbol": "reportFailure"
 						}
 					},
@@ -5347,7 +5347,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/run.ts",
+							"path": "apps/cli/src/cli/operations/invocation/run.ts",
 							"symbol": "runCliWith"
 						}
 					},
@@ -5361,7 +5361,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/dispatch.ts",
+							"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
 							"symbol": "childOf"
 						}
 					},
@@ -5375,7 +5375,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/run.ts",
+							"path": "apps/cli/src/cli/operations/invocation/run.ts",
 							"symbol": "registryOf"
 						}
 					},
@@ -5393,7 +5393,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/session.ts",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
 							"symbol": "setRequestedBoard"
 						}
 					},
@@ -5407,7 +5407,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/exit-codes.ts",
+							"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 							"symbol": "formatBoardRefusal"
 						}
 					},
@@ -5421,7 +5421,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/run.ts",
+							"path": "apps/cli/src/cli/operations/invocation/run.ts",
 							"symbol": "contract"
 						}
 					},
@@ -5435,7 +5435,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/session.ts",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
 							"symbol": "addressVault"
 						}
 					},
@@ -5449,7 +5449,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/addressed-vault.ts",
+							"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 							"symbol": "findVault"
 						}
 					},
@@ -5463,7 +5463,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/addressed-vault.ts",
+							"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 							"symbol": "declareIfUnknown"
 						}
 					},
@@ -5477,7 +5477,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/addressed-vault.ts",
+							"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 							"symbol": "setRequestedVault"
 						}
 					},
@@ -5491,7 +5491,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/engine/repo-registry.ts",
+							"path": "packages/workspace/src/runtime/store/repo-registry.ts",
 							"symbol": "vaultHolder"
 						}
 					},
@@ -5505,7 +5505,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-move.ts",
+							"path": "apps/cli/src/cli/operations/semantic/board/move.ts",
 							"symbol": "findVaultOf"
 						}
 					},
@@ -5519,7 +5519,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/addressed-vault.ts",
+							"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 							"symbol": "vaultsBoundTo"
 						}
 					},
@@ -5533,7 +5533,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/bound-vaults.ts",
+							"path": "packages/board/src/runtime/store/bound-vaults.ts",
 							"symbol": "listRegistry"
 						}
 					},
@@ -5547,7 +5547,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/bound-vaults.ts",
+							"path": "packages/board/src/runtime/store/bound-vaults.ts",
 							"symbol": "isVaultLayout"
 						}
 					}
@@ -5575,7 +5575,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/commands/run.ts",
+									"path": "apps/cli/src/cli/operations/invocation/run.ts",
 									"symbol": "runCliWith"
 								}
 							},
@@ -5595,7 +5595,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "helpText"
 												}
 											},
@@ -5607,7 +5607,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/help.ts",
+													"path": "apps/cli/src/cli/rules/routing/help.ts",
 													"symbol": "helpText"
 												}
 											}
@@ -5624,7 +5624,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "isVersionRequest"
 												}
 											}
@@ -5641,7 +5641,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "reportUnknownCommand"
 												}
 											}
@@ -5658,7 +5658,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "takeShared"
 												}
 											},
@@ -5670,7 +5670,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/global-flags.ts",
+													"path": "apps/cli/src/cli/rules/routing/global-flags.ts",
 													"symbol": "takeGlobalFlag"
 												}
 											},
@@ -5682,7 +5682,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "dispatchedCommand"
 												}
 											},
@@ -5694,7 +5694,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/dispatch.ts",
+													"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
 													"symbol": "dispatchedCommand"
 												}
 											},
@@ -5707,7 +5707,7 @@
 												"note": "throws CliUsageError; A failed invocation says what happens next",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "assertSharedApplies"
 												}
 											},
@@ -5719,7 +5719,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "applyShared"
 												}
 											},
@@ -5732,7 +5732,7 @@
 												"note": "only a command that reads -C finds one; Addressing a vault draws it",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "addressVault"
 												}
 											},
@@ -5744,7 +5744,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/addressed-vault.ts",
+													"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 													"symbol": "addressVault"
 												}
 											},
@@ -5756,7 +5756,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "runInterruptibleCommand"
 												}
 											},
@@ -5768,7 +5768,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "runCommand"
 												}
 											},
@@ -5788,7 +5788,7 @@
 																"kind": "async",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/cli/command-routing/lib/session.ts",
+																	"path": "apps/cli/src/cli/operations/invocation/session.ts",
 																	"symbol": "interrupt"
 																}
 															},
@@ -5800,7 +5800,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/cli/command-contract/runner.ts",
+																	"path": "apps/cli/src/cli/operations/execution/runner.ts",
 																	"symbol": "runCommand"
 																}
 															},
@@ -5812,7 +5812,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/cli/command-routing/lib/session.ts",
+																	"path": "apps/cli/src/cli/operations/invocation/session.ts",
 																	"symbol": "runInterruptibleCommand"
 																}
 															}
@@ -5829,7 +5829,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/cli/command-contract/runner.ts",
+																	"path": "apps/cli/src/cli/operations/execution/runner.ts",
 																	"symbol": "runCommand"
 																}
 															}
@@ -5845,7 +5845,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "runInterruptibleCommand"
 												}
 											}
@@ -5861,7 +5861,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/commands/run.ts",
+									"path": "apps/cli/src/cli/operations/invocation/run.ts",
 									"symbol": "runCli"
 								}
 							}
@@ -5898,7 +5898,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/session.ts",
+													"path": "apps/cli/src/cli/operations/invocation/session.ts",
 													"symbol": "addressVault"
 												}
 											},
@@ -5910,7 +5910,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/addressed-vault.ts",
+													"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 													"symbol": "findVault"
 												}
 											},
@@ -5922,7 +5922,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/engine/vault-finder.ts",
+													"path": "packages/workspace/src/runtime/services/vault-finder.ts",
 													"symbol": "findVault"
 												}
 											},
@@ -5942,7 +5942,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/cli/command-routing/lib/addressed-vault.ts",
+																	"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 																	"symbol": "VaultNotFoundError"
 																}
 															}
@@ -5959,7 +5959,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/cli/command-routing/lib/addressed-vault.ts",
+																	"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 																	"symbol": "declareIfUnknown"
 																}
 															},
@@ -5979,7 +5979,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/engine/repo-registry.ts",
+																					"path": "packages/workspace/src/runtime/store/repo-registry.ts",
 																					"symbol": "declareIfUnknown"
 																				}
 																			}
@@ -5996,7 +5996,7 @@
 																				"kind": "self",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/engine/repo-registry.ts",
+																					"path": "packages/workspace/src/runtime/store/repo-registry.ts",
 																					"symbol": "declareDirectory"
 																				}
 																			},
@@ -6008,7 +6008,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/engine/repo-registry.ts",
+																					"path": "packages/workspace/src/runtime/store/repo-registry.ts",
 																					"symbol": "declareIfUnknown"
 																				}
 																			},
@@ -6020,7 +6020,7 @@
 																				"kind": "self",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/cli/command-routing/lib/addressed-vault.ts",
+																					"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 																					"symbol": "registrationLine"
 																				}
 																			}
@@ -6037,7 +6037,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/engine/repo-registry.ts",
+																					"path": "packages/workspace/src/runtime/store/repo-registry.ts",
 																					"symbol": "declareIfUnknown"
 																				}
 																			},
@@ -6049,7 +6049,7 @@
 																				"kind": "self",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/cli/command-routing/lib/addressed-vault.ts",
+																					"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 																					"symbol": "register"
 																				}
 																			}
@@ -6065,7 +6065,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/cli/command-routing/lib/addressed-vault.ts",
+																	"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 																	"symbol": "setRequestedVault"
 																}
 															},
@@ -6077,7 +6077,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/cli/command-routing/lib/addressed-vault.ts",
+																	"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 																	"symbol": "addressVault"
 																}
 															}
@@ -6108,7 +6108,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/command-routing/lib/session.ts",
+									"path": "apps/cli/src/cli/operations/invocation/session.ts",
 									"symbol": "dispatchedCommand"
 								}
 							},
@@ -6128,7 +6128,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/dispatch.ts",
+													"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
 													"symbol": "childOf"
 												}
 											},
@@ -6140,7 +6140,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/registry.ts",
+													"path": "apps/cli/src/cli/rules/routing/registry.ts",
 													"symbol": "childOf"
 												}
 											},
@@ -6152,7 +6152,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/dispatch.ts",
+													"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
 													"symbol": "dispatchedCommand"
 												}
 											}
@@ -6169,7 +6169,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/dispatch.ts",
+													"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
 													"symbol": "childOf"
 												}
 											},
@@ -6181,7 +6181,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/registry.ts",
+													"path": "apps/cli/src/cli/rules/routing/registry.ts",
 													"symbol": "childOf"
 												}
 											},
@@ -6193,7 +6193,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/dispatch.ts",
+													"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
 													"symbol": "dispatchedCommand"
 												}
 											}
@@ -6210,7 +6210,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/dispatch.ts",
+													"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
 													"symbol": "childOf"
 												}
 											},
@@ -6222,7 +6222,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/registry.ts",
+													"path": "apps/cli/src/cli/rules/routing/registry.ts",
 													"symbol": "childOf"
 												}
 											},
@@ -6234,7 +6234,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/dispatch.ts",
+													"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
 													"symbol": "dispatchedCommand"
 												}
 											}
@@ -6251,7 +6251,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/dispatch.ts",
+													"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
 													"symbol": "bareSelection"
 												}
 											}
@@ -6268,7 +6268,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/dispatch.ts",
+													"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
 													"symbol": "dispatchedCommand"
 												}
 											}
@@ -6296,7 +6296,7 @@
 								"note": "a removed board form, an unknown subcommand, a stated option the command does not read, no vault, or the command itself",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/command-routing/lib/session.ts",
+									"path": "apps/cli/src/cli/operations/invocation/session.ts",
 									"symbol": "runCliWith"
 								}
 							},
@@ -6308,7 +6308,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/command-routing/lib/session.ts",
+									"path": "apps/cli/src/cli/operations/invocation/session.ts",
 									"symbol": "reportFailure"
 								}
 							},
@@ -6332,7 +6332,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/exit-codes.ts",
+													"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 													"symbol": "formatBoardRefusal"
 												}
 											},
@@ -6344,7 +6344,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/engine/server-client.ts",
+													"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
 													"symbol": "formatBoardRefusal"
 												}
 											},
@@ -6356,7 +6356,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/exit-codes.ts",
+													"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 													"symbol": "errorMessage"
 												}
 											}
@@ -6380,7 +6380,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/exit-codes.ts",
+													"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 													"symbol": "reportFailure"
 												}
 											}
@@ -6400,7 +6400,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/command-routing/lib/exit-codes.ts",
+									"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 									"symbol": "reportFailure"
 								}
 							},
@@ -6412,7 +6412,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/command-routing/lib/session.ts",
+									"path": "apps/cli/src/cli/operations/invocation/session.ts",
 									"symbol": "exitCodeFor"
 								}
 							},
@@ -6432,7 +6432,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/exit-codes.ts",
+													"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 													"symbol": "exitCodeFor"
 												}
 											}
@@ -6449,7 +6449,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/exit-codes.ts",
+													"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 													"symbol": "declaredExit"
 												}
 											}
@@ -6466,7 +6466,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/exit-codes.ts",
+													"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 													"symbol": "isBoardRefusalCode"
 												}
 											}
@@ -6483,7 +6483,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/exit-codes.ts",
+													"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 													"symbol": "WELL_KNOWN_EXIT_CODES"
 												}
 											}
@@ -6500,7 +6500,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/command-routing/lib/exit-codes.ts",
+													"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 													"symbol": "exitCodeFor"
 												}
 											}
@@ -6516,7 +6516,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/command-routing/lib/exit-codes.ts",
+									"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
 									"symbol": "exitCodeFor"
 								}
 							}

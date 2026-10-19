@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 88,
+	"version": 127,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-17T02:13:37.180Z",
+	"updatedAt": "2026-10-19T22:45:56.018Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -16053,7 +16053,7 @@
 						"description": "Mounts one pane per pane id (its session and its stage together, ApplicationPane), composes the agent's owners over the focused pane's transport, keeps voice on the pane it was started for, lays its subtitles or voice box over that pane (over the presented pane in a fullscreen presentation, and then tells the dock and the box that no dock is on screen), and connects routing, the catalog, notices, settings, narration, subtitles and a recording page. Both panes carry the tab's session, so the agent is the same whichever pane has focus. A pane opens in the vault the server was started with and then follows the vault its session reports, and its stage is given that vault. A board the person opens in the navigator is shown in the vault of the repository it was listed under, and a checkout the person chooses there is chosen through the catalog. The person's own acts decide which workhorse's conversation the dock shows: focusing a pane, opening a board in one, picking a workhorse from the dock's list and Fix with Codex tell the server through the one activation the application builds, and what an agent does to a pane never does. Fix with Codex activates the pane in front, reads the workbench again, and only then asks, so the repair goes to the workhorse of the repository diagnosed. It holds no board content.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application"
+							"path": "apps/web/src/ui/clients/application"
 						}
 					},
 					{
@@ -16069,7 +16069,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas"
+							"path": "apps/web/src/ui/clients/semantic-board-canvas"
 						},
 						"drillDown": {
 							"board": "Board viewer",
@@ -16091,7 +16091,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session"
+							"path": "apps/web/src/ui/clients/pane-session"
 						}
 					},
 					{
@@ -16107,7 +16107,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-routing"
+							"path": "apps/web/src/ui/hooks/board-routing"
 						}
 					},
 					{
@@ -16120,7 +16120,7 @@
 						"parent": "wlbLOPSH",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-catalog"
+							"path": "apps/web/src/ui/clients/board-catalog"
 						}
 					},
 					{
@@ -16136,7 +16136,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench"
+							"path": "packages/workbench/src/ui"
 						},
 						"drillDown": {
 							"board": "Agent workbench",
@@ -16158,7 +16158,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-session"
+							"path": "packages/workbench/src/ui/state/voice-session"
 						},
 						"drillDown": {
 							"board": "Voice coordinator",
@@ -16177,7 +16177,7 @@
 						"parent": "wlbLOPSH",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/code-target"
+							"path": "packages/code-opener/src/ui"
 						}
 					},
 					{
@@ -16188,7 +16188,7 @@
 						"responsibility": "Owns every board and answers every read",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/index.ts"
+							"path": "apps/server/src/server"
 						},
 						"drillDown": {
 							"board": "Archboard server",
@@ -16206,7 +16206,7 @@
 						"description": "No row runs across the frame: each column has its own 40px top row (the brand bar over the navigator, a pane's header, the conversation's header), and the rows line up. The pane centre is the fullscreen root, so presenting a pane never remounts it, and a presented pane gets a slim bar with its exit and the one voice key. The navigator lists every repository with the boards of its chosen checkout under it, says in a repository's row when its checkout is gone or has no vault, and offers a menu of the repository's known checkouts.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/shell"
+							"path": "apps/web/src/ui/components/shell"
 						}
 					},
 					{
@@ -16221,7 +16221,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/browser-renderer"
+							"path": "packages/renderer/src/ui"
 						},
 						"drillDown": {
 							"board": "Semantic renderer",
@@ -16239,7 +16239,7 @@
 						"parent": "wlbLOPSH",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/server-requests/index.ts"
+							"path": "packages/server-requests/src/ui/clients/server-requests.ts"
 						}
 					},
 					{
@@ -16255,7 +16255,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/agent-setup"
+							"path": "packages/workbench/src/ui/state/agent-setup"
 						}
 					},
 					{
@@ -16270,7 +16270,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench-transport"
+							"path": "packages/workbench/src/ui/clients/transport"
 						}
 					},
 					{
@@ -16286,7 +16286,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-subtitles"
+							"path": "packages/workbench/src/ui/components/subtitles"
 						}
 					},
 					{
@@ -16302,7 +16302,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording"
+							"path": "apps/web/src/ui/state/walkthrough-recording"
 						}
 					},
 					{
@@ -16319,7 +16319,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/lib/tab-session.ts"
+							"path": "apps/web/src/ui/clients/pane-session/tab-session.ts"
 						}
 					},
 					{
@@ -16335,7 +16335,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay"
+							"path": "apps/web/src/ui/clients/walkthrough-replay"
 						}
 					},
 					{
@@ -16352,7 +16352,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/frame-clock"
+							"path": "packages/ui-kit/src/ui/state/frame-clock"
 						}
 					},
 					{
@@ -16368,7 +16368,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-orb"
+							"path": "packages/workbench/src/ui/components/orb"
 						}
 					},
 					{
@@ -16384,7 +16384,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/lib/pane-vault.ts",
+							"path": "apps/web/src/ui/state/semantic-board-canvas/pane-vault.ts",
 							"symbol": "PaneVaultContext"
 						}
 					},
@@ -16398,7 +16398,7 @@
 						"parent": "wlbLOPSH",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-move"
+							"path": "apps/web/src/ui/clients/board-move"
 						}
 					},
 					{
@@ -16414,7 +16414,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/lib/shown-conversation.ts",
+							"path": "apps/web/src/ui/clients/application/shown-conversation.ts",
 							"symbol": "conversationActivation"
 						}
 					},
@@ -16458,7 +16458,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/index.tsx",
+							"path": "apps/web/src/ui/components/application/Application.tsx",
 							"symbol": "Shell"
 						}
 					},
@@ -16472,7 +16472,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/components/ApplicationPane.tsx",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 							"symbol": "usePaneSession"
 						}
 					},
@@ -16486,7 +16486,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+							"path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
 							"symbol": "open"
 						}
 					},
@@ -16500,7 +16500,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-catalog/hooks/use-board-catalog.ts",
+							"path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
 							"symbol": "semanticBoardListQuery"
 						}
 					},
@@ -16518,7 +16518,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 							"symbol": "fetch"
 						}
 					},
@@ -16532,7 +16532,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/lib/pane-socket.ts",
+							"path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
 							"symbol": "WebSocket"
 						}
 					},
@@ -16546,7 +16546,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/lib/pane-core.ts",
+							"path": "apps/web/src/ui/state/pane-session/pane-core.ts",
 							"symbol": "activateCodeTarget"
 						}
 					},
@@ -16560,7 +16560,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/code-target/api.ts",
+							"path": "packages/code-opener/src/ui/clients/code-target-requests.ts",
 							"symbol": "mutation"
 						}
 					},
@@ -16574,7 +16574,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/components/ApplicationPane.tsx",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 							"symbol": "SemanticBoardStage"
 						}
 					},
@@ -16592,7 +16592,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 							"symbol": "draw"
 						}
 					},
@@ -16606,7 +16606,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/components/AgentSurfaceSlots.tsx",
+							"path": "apps/web/src/ui/components/application/AgentSurfaceSlots.tsx",
 							"symbol": "AgentDock"
 						}
 					},
@@ -16624,7 +16624,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/server-requests/index.ts",
+							"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 							"symbol": "fetch"
 						}
 					},
@@ -16638,7 +16638,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/hooks/use-workspace-addressing.ts",
+							"path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
 							"symbol": "useWorkspaceAddress"
 						}
 					},
@@ -16652,7 +16652,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/index.tsx",
+							"path": "apps/web/src/ui/components/application/Application.tsx",
 							"symbol": "useBoardCatalog"
 						}
 					},
@@ -16666,7 +16666,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-catalog/lib/queries.ts",
+							"path": "apps/web/src/ui/clients/board-catalog/queries.ts",
 							"symbol": "fetchPaneInventory"
 						}
 					},
@@ -16680,7 +16680,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/shell/components/Navigator.tsx",
+							"path": "apps/web/src/ui/components/shell/Navigator.tsx",
 							"symbol": "listedBoard"
 						}
 					},
@@ -16694,7 +16694,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/api.ts",
+							"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
 							"symbol": "post"
 						}
 					},
@@ -16708,7 +16708,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/lib/socket-messages.ts",
+							"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
 							"symbol": "announceSemanticBoardChange"
 						}
 					},
@@ -16722,7 +16722,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/workbench-socket.ts",
+							"path": "apps/web/src/ui/clients/pane-session/workbench-socket.ts",
 							"symbol": "createTransport"
 						}
 					},
@@ -16736,7 +16736,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench-transport/lib/socket-run.ts",
+							"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
 							"symbol": "send"
 						}
 					},
@@ -16750,7 +16750,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/lib/agent-actions.ts",
+							"path": "apps/web/src/ui/clients/application/agent-actions.ts",
 							"symbol": "state"
 						}
 					},
@@ -16764,7 +16764,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/hooks/use-workbench.ts",
+							"path": "apps/web/src/ui/hooks/application/use-workbench.ts",
 							"symbol": "createAgentSetup"
 						}
 					},
@@ -16778,7 +16778,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/agent-setup/lib/setup.ts",
+							"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 							"symbol": "createConversation"
 						}
 					},
@@ -16792,7 +16792,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/agent-setup/lib/setup.ts",
+							"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 							"symbol": "startVoice"
 						}
 					},
@@ -16806,7 +16806,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/lib/voice-store.ts",
+							"path": "apps/web/src/ui/state/application/voice-store.ts",
 							"symbol": "createVoiceSession"
 						}
 					},
@@ -16820,7 +16820,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-session/lib/session.ts",
+							"path": "packages/workbench/src/ui/state/voice-session/session.ts",
 							"symbol": "capabilities"
 						}
 					},
@@ -16834,7 +16834,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/components/PaneSubtitles.tsx",
+							"path": "apps/web/src/ui/components/application/PaneSubtitles.tsx",
 							"symbol": "VoiceSubtitles"
 						}
 					},
@@ -16848,7 +16848,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/hooks/use-page-recording.ts",
+							"path": "apps/web/src/ui/hooks/application/use-page-recording.ts",
 							"symbol": "openWalkthroughRecorder"
 						}
 					},
@@ -16862,7 +16862,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 							"symbol": "talk"
 						}
 					},
@@ -16876,7 +16876,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/voice-sources.ts",
+							"path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
 							"symbol": "level"
 						}
 					},
@@ -16890,7 +16890,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 							"symbol": "recordedStep"
 						}
 					},
@@ -16904,7 +16904,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/lib/pane-socket.ts",
+							"path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
 							"symbol": "tabSessionId"
 						}
 					},
@@ -16918,7 +16918,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 							"symbol": "createSteppedClock"
 						}
 					},
@@ -16932,7 +16932,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 							"symbol": "SemanticBoardStage"
 						}
 					},
@@ -16946,7 +16946,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 							"symbol": "readBoardsFrom"
 						}
 					},
@@ -16960,7 +16960,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 							"symbol": "VoiceBox"
 						}
 					},
@@ -16974,7 +16974,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 							"symbol": "RecordingStage"
 						}
 					},
@@ -16988,7 +16988,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/hooks/use-camera-glide.ts",
+							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-glide.ts",
 							"symbol": "frameClock"
 						}
 					},
@@ -17002,7 +17002,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-subtitles/hooks/use-subtitle-fade.ts",
+							"path": "packages/workbench/src/ui/hooks/subtitles/use-subtitle-fade.ts",
 							"symbol": "frameClock"
 						}
 					},
@@ -17016,7 +17016,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 							"symbol": "subscribe"
 						}
 					},
@@ -17030,7 +17030,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench/components/VoiceControl.tsx",
+							"path": "packages/workbench/src/ui/components/voice/VoiceControl.tsx",
 							"symbol": "OrbHost"
 						}
 					},
@@ -17044,7 +17044,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench/components/VoiceBox.tsx",
+							"path": "packages/workbench/src/ui/components/voice/VoiceBox.tsx",
 							"symbol": "SubtitleWords"
 						}
 					},
@@ -17058,7 +17058,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/index.tsx",
+							"path": "apps/web/src/ui/components/application/Application.tsx",
 							"symbol": "OrbStageProvider"
 						}
 					},
@@ -17072,7 +17072,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/shell/components/BoardLine.tsx",
+							"path": "apps/web/src/ui/components/shell/BoardLine.tsx",
 							"symbol": "LevelMark"
 						}
 					},
@@ -17086,7 +17086,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 							"symbol": "createBoardQueryClient"
 						}
 					},
@@ -17100,7 +17100,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench/hooks/use-voice-box-presence.ts",
+							"path": "packages/workbench/src/ui/hooks/voice/use-voice-box-presence.ts",
 							"symbol": "frameClock"
 						}
 					},
@@ -17114,7 +17114,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 							"symbol": "OrbHost"
 						}
 					},
@@ -17128,7 +17128,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 							"symbol": "inVault"
 						}
 					},
@@ -17142,7 +17142,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/components/ApplicationPane.tsx",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 							"symbol": "PaneVaultContext"
 						}
 					},
@@ -17156,7 +17156,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/hooks/use-pane-vault.ts",
+							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-pane-vault.ts",
 							"symbol": "PaneVaultContext"
 						}
 					},
@@ -17170,7 +17170,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-catalog/api/repositories.ts",
+							"path": "apps/web/src/ui/clients/board-catalog/repositories.ts",
 							"symbol": "json"
 						}
 					},
@@ -17184,7 +17184,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/hooks/use-pane-views.ts",
+							"path": "apps/web/src/ui/hooks/application/use-pane-views.ts",
 							"symbol": "servedVault"
 						}
 					},
@@ -17198,7 +17198,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 							"symbol": "PaneVaultContext"
 						}
 					},
@@ -17212,7 +17212,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/hooks/use-drill-repositories.ts",
+							"path": "apps/web/src/ui/hooks/application/use-drill-repositories.ts",
 							"symbol": "useDrillRepositories"
 						}
 					},
@@ -17226,7 +17226,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/shell/components/PaneControls.tsx",
+							"path": "apps/web/src/ui/components/shell/PaneControls.tsx",
 							"symbol": "MoveBoardControl"
 						}
 					},
@@ -17240,7 +17240,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-move/hooks/use-board-move.ts",
+							"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 							"symbol": "repositoriesQuery"
 						}
 					},
@@ -17254,7 +17254,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-move/api/move.ts",
+							"path": "apps/web/src/ui/clients/board-move/move.ts",
 							"symbol": "inVault"
 						}
 					},
@@ -17268,7 +17268,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-move/components/MoveBoardControl.tsx",
+							"path": "apps/web/src/ui/components/board-move/MoveBoardControl.tsx",
 							"symbol": "boardAddressOf"
 						}
 					},
@@ -17282,7 +17282,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/index.tsx",
+							"path": "apps/web/src/ui/components/application/Application.tsx",
 							"symbol": "conversationActivation"
 						}
 					},
@@ -17296,7 +17296,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/lib/shown-conversation.ts",
+							"path": "apps/web/src/ui/clients/application/shown-conversation.ts",
 							"symbol": "showConversation"
 						}
 					},
@@ -17310,7 +17310,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench/components/AgentDock.tsx",
+							"path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
 							"symbol": "showConversation"
 						}
 					}
@@ -17335,7 +17335,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/application/components/ApplicationPane.tsx",
+									"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 									"symbol": "usePaneSession"
 								}
 							},
@@ -17347,7 +17347,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/pane-session/lib/pane-socket.ts",
+									"path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
 									"symbol": "WebSocket"
 								}
 							},
@@ -17359,7 +17359,7 @@
 								"kind": "async",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/pane-session/lib/socket-messages.ts",
+									"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
 									"symbol": "paneBoard"
 								}
 							},
@@ -17371,7 +17371,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/application/components/ApplicationPane.tsx",
+									"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 									"symbol": "SemanticBoardStage"
 								}
 							},
@@ -17383,7 +17383,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+									"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 									"symbol": "fetchSemanticBoardDocument"
 								}
 							},
@@ -17395,7 +17395,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+									"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 									"symbol": "fetchSemanticBoardDocument"
 								}
 							},
@@ -17407,7 +17407,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+									"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 									"symbol": "fetchVaultCheck"
 								}
 							},
@@ -17419,7 +17419,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+									"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 									"symbol": "fetchVaultCheck"
 								}
 							},
@@ -17439,7 +17439,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "readCachedPicture"
 												}
 											}
@@ -17456,7 +17456,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "draw"
 												}
 											},
@@ -17468,7 +17468,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "drawn"
 												}
 											},
@@ -17480,7 +17480,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "writeCachedPicture"
 												}
 											}
@@ -17508,7 +17508,7 @@
 								"kind": "async",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/pane-session/lib/socket-messages.ts",
+									"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
 									"symbol": "boardChanged"
 								}
 							},
@@ -17520,7 +17520,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/pane-session/lib/socket-messages.ts",
+									"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
 									"symbol": "announceSemanticBoardChange"
 								}
 							},
@@ -17540,7 +17540,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/hooks/use-semantic-board-changes.ts",
+													"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts",
 													"symbol": "readBoardAgain"
 												}
 											},
@@ -17552,7 +17552,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 													"symbol": "fetchSemanticBoardDocument"
 												}
 											},
@@ -17564,7 +17564,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 													"symbol": "fetchSemanticBoardDocument"
 												}
 											},
@@ -17576,7 +17576,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "draw"
 												}
 											},
@@ -17588,7 +17588,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "drawn"
 												}
 											}
@@ -17620,7 +17620,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/application/hooks/use-workspace-addressing.ts",
+									"path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
 									"symbol": "useWorkspaceAddress"
 								}
 							},
@@ -17632,7 +17632,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-routing/restore.ts",
+									"path": "apps/web/src/ui/rules/board-routing/restore.ts",
 									"symbol": "restoreOutcome"
 								}
 							},
@@ -17657,7 +17657,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+															"path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
 															"symbol": "commandsOver"
 														}
 													}
@@ -17674,7 +17674,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+															"path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
 															"symbol": "commandsOver"
 														}
 													},
@@ -17686,7 +17686,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/application/lib/workspace-port.ts",
+															"path": "apps/web/src/ui/clients/application/workspace-port.ts",
 															"symbol": "showThroughServer"
 														}
 													},
@@ -17698,7 +17698,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/pane-session/api.ts",
+															"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
 															"symbol": "showBoard"
 														}
 													},
@@ -17718,7 +17718,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/pane-session/api.ts",
+																			"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
 																			"symbol": "showBoard"
 																		}
 																	},
@@ -17730,7 +17730,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/application/lib/workspace-port.ts",
+																			"path": "apps/web/src/ui/clients/application/workspace-port.ts",
 																			"symbol": "showThroughServer"
 																		}
 																	},
@@ -17742,7 +17742,7 @@
 																		"kind": "async",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/pane-session/lib/socket-messages.ts",
+																			"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
 																			"symbol": "paneBoard"
 																		}
 																	},
@@ -17754,7 +17754,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+																			"path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
 																			"symbol": "answerOperation"
 																		}
 																	},
@@ -17766,7 +17766,7 @@
 																		"kind": "self",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/board-routing/operation.ts",
+																			"path": "apps/web/src/ui/state/board-routing/operation.ts",
 																			"symbol": "operationSettled"
 																		}
 																	}
@@ -17783,7 +17783,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/pane-session/api.ts",
+																			"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
 																			"symbol": "showBoard"
 																		}
 																	},
@@ -17795,7 +17795,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/application/lib/workspace-port.ts",
+																			"path": "apps/web/src/ui/clients/application/workspace-port.ts",
 																			"symbol": "showThroughServer"
 																		}
 																	},
@@ -17807,7 +17807,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/application/lib/workspace-port.ts",
+																			"path": "apps/web/src/ui/clients/application/workspace-port.ts",
 																			"symbol": "OpenOutcome"
 																		}
 																	},
@@ -17819,7 +17819,7 @@
 																		"kind": "self",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/board-routing/restore.ts",
+																			"path": "apps/web/src/ui/rules/board-routing/restore.ts",
 																			"symbol": "boardUnreachable"
 																		}
 																	}
@@ -17841,7 +17841,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+									"path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
 									"symbol": "publishAddress"
 								}
 							}
@@ -17866,7 +17866,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/workbench/components/AgentComposer.tsx",
+									"path": "packages/workbench/src/ui/components/panel/AgentComposer.tsx",
 									"symbol": "onSend"
 								}
 							},
@@ -17878,7 +17878,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/application/lib/agent-actions.ts",
+									"path": "apps/web/src/ui/clients/application/agent-actions.ts",
 									"symbol": "agentActions"
 								}
 							},
@@ -17895,7 +17895,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/agent-setup/lib/setup.ts",
+											"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 											"symbol": "pump"
 										}
 									},
@@ -17915,7 +17915,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/agent-setup/lib/setup.ts",
+															"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 															"symbol": "failWaiting"
 														}
 													}
@@ -17932,7 +17932,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/agent-setup/lib/setup.ts",
+															"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 															"symbol": "askSignIn"
 														}
 													},
@@ -17944,7 +17944,7 @@
 														"kind": "async",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/workbench-transport/lib/socket-run.ts",
+															"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
 															"symbol": "sendRequest"
 														}
 													}
@@ -17961,7 +17961,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/agent-setup/lib/setup.ts",
+															"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 															"symbol": "advance"
 														}
 													}
@@ -17978,7 +17978,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/agent-setup/lib/setup.ts",
+															"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 															"symbol": "link"
 														}
 													},
@@ -17990,7 +17990,7 @@
 														"kind": "async",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/workbench-transport/lib/socket-run.ts",
+															"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
 															"symbol": "sendRequest"
 														}
 													}
@@ -18007,7 +18007,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/agent-setup/lib/setup.ts",
+															"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 															"symbol": "deliverNext"
 														}
 													},
@@ -18019,7 +18019,7 @@
 														"kind": "async",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/workbench-transport/lib/socket-run.ts",
+															"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
 															"symbol": "sendRequest"
 														}
 													}
@@ -18035,7 +18035,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/workbench-transport/lib/socket-run.ts",
+											"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
 											"symbol": "onMessage"
 										}
 									},
@@ -18047,7 +18047,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/agent-setup/lib/setup.ts",
+											"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 											"symbol": "connect"
 										}
 									}
@@ -18061,7 +18061,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/agent-setup/lib/setup.ts",
+									"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 									"symbol": "prune"
 								}
 							}
@@ -18086,7 +18086,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/workbench/lib/circle-state.ts",
+									"path": "packages/workbench/src/ui/rules/dock/circle-state.ts",
 									"symbol": "talk"
 								}
 							},
@@ -18098,7 +18098,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/application/lib/agent-actions.ts",
+									"path": "apps/web/src/ui/clients/application/agent-actions.ts",
 									"symbol": "agentActions"
 								}
 							},
@@ -18111,7 +18111,7 @@
 								"note": "the same phases as a message waits on: see Send a message to the agent",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/agent-setup/lib/setup.ts",
+									"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 									"symbol": "startVoice"
 								}
 							},
@@ -18123,7 +18123,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/agent-setup/lib/setup.ts",
+									"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 									"symbol": "startTalk"
 								}
 							},
@@ -18135,7 +18135,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/voice-session/lib/binding.ts",
+									"path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
 									"symbol": "captureBinding"
 								}
 							},
@@ -18147,7 +18147,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/voice-session/lib/binding.ts",
+									"path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
 									"symbol": "captureBinding"
 								}
 							},
@@ -18167,7 +18167,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/voice-session/lib/session.ts",
+													"path": "packages/workbench/src/ui/state/voice-session/session.ts",
 													"symbol": "startNew"
 												}
 											},
@@ -18179,7 +18179,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/voice-session/lib/session.ts",
+													"path": "packages/workbench/src/ui/state/voice-session/session.ts",
 													"symbol": "run"
 												}
 											}
@@ -18196,7 +18196,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/voice-session/lib/binding.ts",
+													"path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
 													"symbol": "captureBinding"
 												}
 											}
@@ -18226,7 +18226,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+									"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 									"symbol": "start"
 								}
 							},
@@ -18238,7 +18238,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+									"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 									"symbol": "TalkCapture"
 								}
 							},
@@ -18250,7 +18250,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+									"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 									"symbol": "talk"
 								}
 							},
@@ -18262,7 +18262,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/agent-setup/lib/setup.ts",
+									"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 									"symbol": "startTalk"
 								}
 							},
@@ -18279,7 +18279,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-recording/lib/voice-sources.ts",
+											"path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
 											"symbol": "level"
 										}
 									},
@@ -18291,7 +18291,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-recording/lib/voice-sources.ts",
+											"path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
 											"symbol": "readVoice"
 										}
 									},
@@ -18303,7 +18303,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+											"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 											"symbol": "subscribe"
 										}
 									},
@@ -18315,7 +18315,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+											"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 											"symbol": "reading"
 										}
 									},
@@ -18327,7 +18327,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-recording/lib/pacing.ts",
+											"path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts",
 											"symbol": "pace"
 										}
 									},
@@ -18351,7 +18351,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+															"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 															"symbol": "begin"
 														}
 													}
@@ -18368,7 +18368,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+															"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 															"symbol": "recordedStep"
 														}
 													}
@@ -18386,7 +18386,7 @@
 														"note": "the recorder outside the page reads the state, then takes the voice and the log",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+															"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 															"symbol": "finish"
 														}
 													},
@@ -18398,7 +18398,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+															"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 															"symbol": "stop"
 														}
 													}
@@ -18415,7 +18415,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/pacing.ts",
+															"path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts",
 															"symbol": "failed"
 														}
 													},
@@ -18427,7 +18427,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+															"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 															"symbol": "stop"
 														}
 													}
@@ -18457,7 +18457,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+									"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 									"symbol": "load"
 								}
 							},
@@ -18469,7 +18469,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+									"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 									"symbol": "readBoardsFrom"
 								}
 							},
@@ -18481,7 +18481,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+									"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 									"symbol": "createSteppedClock"
 								}
 							},
@@ -18493,7 +18493,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+									"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 									"symbol": "SemanticBoardStage"
 								}
 							},
@@ -18510,7 +18510,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+											"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 											"symbol": "draw"
 										}
 									}
@@ -18524,7 +18524,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+									"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 									"symbol": "load"
 								}
 							},
@@ -18541,7 +18541,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+											"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 											"symbol": "frame"
 										}
 									},
@@ -18553,7 +18553,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+											"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 											"symbol": "advanceTo"
 										}
 									},
@@ -18565,7 +18565,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+											"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 											"symbol": "playTo"
 										}
 									},
@@ -18577,7 +18577,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+											"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 											"symbol": "SemanticPaneReading"
 										}
 									},
@@ -18597,7 +18597,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+															"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 															"symbol": "runFrame"
 														}
 													},
@@ -18617,7 +18617,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+																			"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 																			"symbol": "frame"
 																		}
 																	}
@@ -18634,7 +18634,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+																			"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 																			"symbol": "violationsOf"
 																		}
 																	}
@@ -18655,7 +18655,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-replay/lib/frame-readiness.ts",
+															"path": "apps/web/src/ui/clients/walkthrough-replay/frame-readiness.ts",
 															"symbol": "notReady"
 														}
 													}
@@ -18686,7 +18686,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/shell/components/PaneControls.tsx",
+									"path": "apps/web/src/ui/components/shell/PaneControls.tsx",
 									"symbol": "MoveBoardControl"
 								}
 							},
@@ -18698,7 +18698,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-move/hooks/use-board-move.ts",
+									"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 									"symbol": "repositoriesQuery"
 								}
 							},
@@ -18710,7 +18710,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-move/hooks/use-board-move.ts",
+									"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 									"symbol": "targetsOf"
 								}
 							},
@@ -18722,7 +18722,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-move/hooks/use-board-move.ts",
+									"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 									"symbol": "useMoveTarget"
 								}
 							},
@@ -18734,7 +18734,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-move/api/move.ts",
+									"path": "apps/web/src/ui/clients/board-move/move.ts",
 									"symbol": "previewMove"
 								}
 							},
@@ -18746,7 +18746,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/server-requests/index.ts",
+									"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 									"symbol": "fetch"
 								}
 							},
@@ -18766,7 +18766,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/server-requests/index.ts",
+													"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 													"symbol": "plainFailure"
 												}
 											},
@@ -18778,7 +18778,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/board-move/api/move.ts",
+													"path": "apps/web/src/ui/clients/board-move/move.ts",
 													"symbol": "previewMove"
 												}
 											}
@@ -18795,7 +18795,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/server-requests/index.ts",
+													"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 													"symbol": "json"
 												}
 											},
@@ -18807,7 +18807,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/board-move/api/move.ts",
+													"path": "apps/web/src/ui/clients/board-move/move.ts",
 													"symbol": "previewMove"
 												}
 											},
@@ -18819,7 +18819,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/board-move/components/MoveRewrites.tsx",
+													"path": "apps/web/src/ui/components/board-move/MoveRewrites.tsx",
 													"symbol": "MoveRewrites"
 												}
 											},
@@ -18831,7 +18831,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/board-move/api/move.ts",
+													"path": "apps/web/src/ui/clients/board-move/move.ts",
 													"symbol": "moveBoard"
 												}
 											},
@@ -18843,7 +18843,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/server-requests/index.ts",
+													"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 													"symbol": "fetch"
 												}
 											},
@@ -18863,7 +18863,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/server-requests/index.ts",
+																	"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 																	"symbol": "post"
 																}
 															},
@@ -18875,7 +18875,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/board-move/api/move.ts",
+																	"path": "apps/web/src/ui/clients/board-move/move.ts",
 																	"symbol": "moveBoard"
 																}
 															},
@@ -18887,7 +18887,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/board-move/hooks/use-board-move.ts",
+																	"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 																	"symbol": "onMoved"
 																}
 															}
@@ -18904,7 +18904,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/server-requests/index.ts",
+																	"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 																	"symbol": "plainFailure"
 																}
 															},
@@ -18916,7 +18916,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/board-move/api/move.ts",
+																	"path": "apps/web/src/ui/clients/board-move/move.ts",
 																	"symbol": "moveBoard"
 																}
 															},
@@ -18928,7 +18928,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/board-move/hooks/use-board-move.ts",
+																	"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 																	"symbol": "readAgain"
 																}
 															}
@@ -19046,7 +19046,7 @@
 						"description": "Mounts one pane per pane id (its session and its stage together, ApplicationPane), composes the agent's owners over the focused pane's transport, keeps voice on the pane it was started for, lays its subtitles or voice box over that pane (over the presented pane in a fullscreen presentation, and then tells the dock and the box that no dock is on screen), and connects routing, the catalog, notices, settings, narration, subtitles and a recording page. Both panes carry the tab's session, so the agent is the same whichever pane has focus. A pane opens in the vault the server was started with and then follows the vault its session reports, and its stage is given that vault. A board the person opens in the navigator is shown in the vault of the repository it was listed under, and a checkout the person chooses there is chosen through the catalog. The person's own acts decide which workhorse's conversation the dock shows: focusing a pane, opening a board in one, picking a workhorse from the dock's list and Fix with Codex tell the server through the one activation the application builds, and what an agent does to a pane never does. Fix with Codex activates the pane in front, reads the workbench again, and only then asks, so the repair goes to the workhorse of the repository diagnosed. It holds no board content.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application"
+							"path": "apps/web/src/ui/clients/application"
 						}
 					},
 					{
@@ -19062,7 +19062,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas"
+							"path": "apps/web/src/ui/clients/semantic-board-canvas"
 						},
 						"drillDown": {
 							"board": "Board viewer",
@@ -19084,7 +19084,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session"
+							"path": "apps/web/src/ui/clients/pane-session"
 						}
 					},
 					{
@@ -19100,7 +19100,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-routing"
+							"path": "apps/web/src/ui/hooks/board-routing"
 						}
 					},
 					{
@@ -19113,7 +19113,7 @@
 						"parent": "wlbLOPSH",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-catalog"
+							"path": "apps/web/src/ui/clients/board-catalog"
 						}
 					},
 					{
@@ -19129,7 +19129,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench"
+							"path": "packages/workbench/src/ui"
 						},
 						"drillDown": {
 							"board": "Agent workbench",
@@ -19151,7 +19151,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-session"
+							"path": "packages/workbench/src/ui/state/voice-session"
 						},
 						"drillDown": {
 							"board": "Voice coordinator",
@@ -19170,7 +19170,7 @@
 						"parent": "wlbLOPSH",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/code-target"
+							"path": "packages/code-opener/src/ui"
 						}
 					},
 					{
@@ -19181,7 +19181,7 @@
 						"responsibility": "Owns every board and answers every read",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/index.ts"
+							"path": "apps/server/src/server"
 						},
 						"drillDown": {
 							"board": "Archboard server",
@@ -19199,7 +19199,7 @@
 						"description": "No row runs across the frame: each column has its own 40px top row (the brand bar over the navigator, a pane's header, the conversation's header), and the rows line up. The pane centre is the fullscreen root, so presenting a pane never remounts it, and a presented pane gets a slim bar with its exit and the one voice key. The navigator lists every repository with the boards of its chosen checkout under it, says in a repository's row when its checkout is gone or has no vault, and offers a menu of the repository's known checkouts.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/shell"
+							"path": "apps/web/src/ui/components/shell"
 						}
 					},
 					{
@@ -19214,7 +19214,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/browser-renderer"
+							"path": "packages/renderer/src/ui"
 						},
 						"drillDown": {
 							"board": "Semantic renderer",
@@ -19232,7 +19232,7 @@
 						"parent": "wlbLOPSH",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/server-requests/index.ts"
+							"path": "packages/server-requests/src/ui/clients/server-requests.ts"
 						}
 					},
 					{
@@ -19248,7 +19248,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/agent-setup"
+							"path": "packages/workbench/src/ui/state/agent-setup"
 						}
 					},
 					{
@@ -19263,7 +19263,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench-transport"
+							"path": "packages/workbench/src/ui/clients/transport"
 						}
 					},
 					{
@@ -19279,7 +19279,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-subtitles"
+							"path": "packages/workbench/src/ui/components/subtitles"
 						}
 					},
 					{
@@ -19295,7 +19295,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording"
+							"path": "apps/web/src/ui/state/walkthrough-recording"
 						}
 					},
 					{
@@ -19312,7 +19312,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/lib/tab-session.ts"
+							"path": "apps/web/src/ui/clients/pane-session/tab-session.ts"
 						}
 					},
 					{
@@ -19328,7 +19328,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay"
+							"path": "apps/web/src/ui/clients/walkthrough-replay"
 						}
 					},
 					{
@@ -19345,7 +19345,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/frame-clock"
+							"path": "packages/ui-kit/src/ui/state/frame-clock"
 						}
 					},
 					{
@@ -19361,7 +19361,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-orb"
+							"path": "packages/workbench/src/ui/components/orb"
 						}
 					},
 					{
@@ -19377,7 +19377,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/lib/pane-vault.ts",
+							"path": "apps/web/src/ui/state/semantic-board-canvas/pane-vault.ts",
 							"symbol": "PaneVaultContext"
 						}
 					},
@@ -19391,7 +19391,7 @@
 						"parent": "wlbLOPSH",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-move"
+							"path": "apps/web/src/ui/clients/board-move"
 						}
 					},
 					{
@@ -19407,7 +19407,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/lib/shown-conversation.ts",
+							"path": "apps/web/src/ui/clients/application/shown-conversation.ts",
 							"symbol": "conversationActivation"
 						}
 					},
@@ -19451,7 +19451,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/index.tsx",
+							"path": "apps/web/src/ui/components/application/Application.tsx",
 							"symbol": "Shell"
 						}
 					},
@@ -19465,7 +19465,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/components/ApplicationPane.tsx",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 							"symbol": "usePaneSession"
 						}
 					},
@@ -19479,7 +19479,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+							"path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
 							"symbol": "open"
 						}
 					},
@@ -19493,7 +19493,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-catalog/hooks/use-board-catalog.ts",
+							"path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
 							"symbol": "semanticBoardListQuery"
 						}
 					},
@@ -19511,7 +19511,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 							"symbol": "fetch"
 						}
 					},
@@ -19525,7 +19525,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/lib/pane-socket.ts",
+							"path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
 							"symbol": "WebSocket"
 						}
 					},
@@ -19539,7 +19539,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/lib/pane-core.ts",
+							"path": "apps/web/src/ui/state/pane-session/pane-core.ts",
 							"symbol": "activateCodeTarget"
 						}
 					},
@@ -19553,7 +19553,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/code-target/api.ts",
+							"path": "packages/code-opener/src/ui/clients/code-target-requests.ts",
 							"symbol": "mutation"
 						}
 					},
@@ -19567,7 +19567,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/components/ApplicationPane.tsx",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 							"symbol": "SemanticBoardStage"
 						}
 					},
@@ -19585,7 +19585,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 							"symbol": "draw"
 						}
 					},
@@ -19599,7 +19599,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/components/AgentSurfaceSlots.tsx",
+							"path": "apps/web/src/ui/components/application/AgentSurfaceSlots.tsx",
 							"symbol": "AgentDock"
 						}
 					},
@@ -19617,7 +19617,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/server-requests/index.ts",
+							"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 							"symbol": "fetch"
 						}
 					},
@@ -19631,7 +19631,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/hooks/use-workspace-addressing.ts",
+							"path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
 							"symbol": "useWorkspaceAddress"
 						}
 					},
@@ -19645,7 +19645,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/index.tsx",
+							"path": "apps/web/src/ui/components/application/Application.tsx",
 							"symbol": "useBoardCatalog"
 						}
 					},
@@ -19659,7 +19659,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-catalog/lib/queries.ts",
+							"path": "apps/web/src/ui/clients/board-catalog/queries.ts",
 							"symbol": "fetchPaneInventory"
 						}
 					},
@@ -19673,7 +19673,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/shell/components/Navigator.tsx",
+							"path": "apps/web/src/ui/components/shell/Navigator.tsx",
 							"symbol": "listedBoard"
 						}
 					},
@@ -19687,7 +19687,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/api.ts",
+							"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
 							"symbol": "post"
 						}
 					},
@@ -19701,7 +19701,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/lib/socket-messages.ts",
+							"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
 							"symbol": "announceSemanticBoardChange"
 						}
 					},
@@ -19715,7 +19715,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/workbench-socket.ts",
+							"path": "apps/web/src/ui/clients/pane-session/workbench-socket.ts",
 							"symbol": "createTransport"
 						}
 					},
@@ -19729,7 +19729,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench-transport/lib/socket-run.ts",
+							"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
 							"symbol": "send"
 						}
 					},
@@ -19743,7 +19743,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/lib/agent-actions.ts",
+							"path": "apps/web/src/ui/clients/application/agent-actions.ts",
 							"symbol": "state"
 						}
 					},
@@ -19757,7 +19757,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/hooks/use-workbench.ts",
+							"path": "apps/web/src/ui/hooks/application/use-workbench.ts",
 							"symbol": "createAgentSetup"
 						}
 					},
@@ -19771,7 +19771,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/agent-setup/lib/setup.ts",
+							"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 							"symbol": "createConversation"
 						}
 					},
@@ -19785,7 +19785,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/agent-setup/lib/setup.ts",
+							"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 							"symbol": "startVoice"
 						}
 					},
@@ -19799,7 +19799,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/lib/voice-store.ts",
+							"path": "apps/web/src/ui/state/application/voice-store.ts",
 							"symbol": "createVoiceSession"
 						}
 					},
@@ -19813,7 +19813,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-session/lib/session.ts",
+							"path": "packages/workbench/src/ui/state/voice-session/session.ts",
 							"symbol": "capabilities"
 						}
 					},
@@ -19827,7 +19827,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/components/PaneSubtitles.tsx",
+							"path": "apps/web/src/ui/components/application/PaneSubtitles.tsx",
 							"symbol": "VoiceSubtitles"
 						}
 					},
@@ -19841,7 +19841,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/hooks/use-page-recording.ts",
+							"path": "apps/web/src/ui/hooks/application/use-page-recording.ts",
 							"symbol": "openWalkthroughRecorder"
 						}
 					},
@@ -19855,7 +19855,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 							"symbol": "talk"
 						}
 					},
@@ -19869,7 +19869,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/voice-sources.ts",
+							"path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
 							"symbol": "level"
 						}
 					},
@@ -19883,7 +19883,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 							"symbol": "recordedStep"
 						}
 					},
@@ -19897,7 +19897,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/lib/pane-socket.ts",
+							"path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
 							"symbol": "tabSessionId"
 						}
 					},
@@ -19911,7 +19911,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 							"symbol": "createSteppedClock"
 						}
 					},
@@ -19925,7 +19925,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 							"symbol": "SemanticBoardStage"
 						}
 					},
@@ -19939,7 +19939,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 							"symbol": "readBoardsFrom"
 						}
 					},
@@ -19953,7 +19953,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 							"symbol": "VoiceBox"
 						}
 					},
@@ -19967,7 +19967,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 							"symbol": "RecordingStage"
 						}
 					},
@@ -19981,7 +19981,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/hooks/use-camera-glide.ts",
+							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-glide.ts",
 							"symbol": "frameClock"
 						}
 					},
@@ -19995,7 +19995,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-subtitles/hooks/use-subtitle-fade.ts",
+							"path": "packages/workbench/src/ui/hooks/subtitles/use-subtitle-fade.ts",
 							"symbol": "frameClock"
 						}
 					},
@@ -20009,7 +20009,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 							"symbol": "subscribe"
 						}
 					},
@@ -20023,7 +20023,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench/components/VoiceControl.tsx",
+							"path": "packages/workbench/src/ui/components/voice/VoiceControl.tsx",
 							"symbol": "OrbHost"
 						}
 					},
@@ -20037,7 +20037,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench/components/VoiceBox.tsx",
+							"path": "packages/workbench/src/ui/components/voice/VoiceBox.tsx",
 							"symbol": "SubtitleWords"
 						}
 					},
@@ -20051,7 +20051,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/index.tsx",
+							"path": "apps/web/src/ui/components/application/Application.tsx",
 							"symbol": "OrbStageProvider"
 						}
 					},
@@ -20065,7 +20065,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/shell/components/BoardLine.tsx",
+							"path": "apps/web/src/ui/components/shell/BoardLine.tsx",
 							"symbol": "LevelMark"
 						}
 					},
@@ -20079,7 +20079,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+							"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 							"symbol": "createBoardQueryClient"
 						}
 					},
@@ -20093,7 +20093,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench/hooks/use-voice-box-presence.ts",
+							"path": "packages/workbench/src/ui/hooks/voice/use-voice-box-presence.ts",
 							"symbol": "frameClock"
 						}
 					},
@@ -20107,7 +20107,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 							"symbol": "OrbHost"
 						}
 					},
@@ -20121,7 +20121,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 							"symbol": "inVault"
 						}
 					},
@@ -20135,7 +20135,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/components/ApplicationPane.tsx",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 							"symbol": "PaneVaultContext"
 						}
 					},
@@ -20149,7 +20149,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/hooks/use-pane-vault.ts",
+							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-pane-vault.ts",
 							"symbol": "PaneVaultContext"
 						}
 					},
@@ -20163,7 +20163,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-catalog/api/repositories.ts",
+							"path": "apps/web/src/ui/clients/board-catalog/repositories.ts",
 							"symbol": "json"
 						}
 					},
@@ -20177,7 +20177,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/hooks/use-pane-views.ts",
+							"path": "apps/web/src/ui/hooks/application/use-pane-views.ts",
 							"symbol": "servedVault"
 						}
 					},
@@ -20191,7 +20191,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 							"symbol": "PaneVaultContext"
 						}
 					},
@@ -20205,7 +20205,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/hooks/use-drill-repositories.ts",
+							"path": "apps/web/src/ui/hooks/application/use-drill-repositories.ts",
 							"symbol": "useDrillRepositories"
 						}
 					},
@@ -20219,7 +20219,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/shell/components/PaneControls.tsx",
+							"path": "apps/web/src/ui/components/shell/PaneControls.tsx",
 							"symbol": "MoveBoardControl"
 						}
 					},
@@ -20233,7 +20233,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-move/hooks/use-board-move.ts",
+							"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 							"symbol": "repositoriesQuery"
 						}
 					},
@@ -20247,7 +20247,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-move/api/move.ts",
+							"path": "apps/web/src/ui/clients/board-move/move.ts",
 							"symbol": "inVault"
 						}
 					},
@@ -20261,7 +20261,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/board-move/components/MoveBoardControl.tsx",
+							"path": "apps/web/src/ui/components/board-move/MoveBoardControl.tsx",
 							"symbol": "boardAddressOf"
 						}
 					},
@@ -20275,7 +20275,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/index.tsx",
+							"path": "apps/web/src/ui/components/application/Application.tsx",
 							"symbol": "conversationActivation"
 						}
 					},
@@ -20289,7 +20289,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/lib/shown-conversation.ts",
+							"path": "apps/web/src/ui/clients/application/shown-conversation.ts",
 							"symbol": "showConversation"
 						}
 					},
@@ -20303,7 +20303,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench/components/AgentDock.tsx",
+							"path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
 							"symbol": "showConversation"
 						}
 					}
@@ -20328,7 +20328,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/application/components/ApplicationPane.tsx",
+									"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 									"symbol": "usePaneSession"
 								}
 							},
@@ -20340,7 +20340,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/pane-session/lib/pane-socket.ts",
+									"path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
 									"symbol": "WebSocket"
 								}
 							},
@@ -20352,7 +20352,7 @@
 								"kind": "async",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/pane-session/lib/socket-messages.ts",
+									"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
 									"symbol": "paneBoard"
 								}
 							},
@@ -20364,7 +20364,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/application/components/ApplicationPane.tsx",
+									"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 									"symbol": "SemanticBoardStage"
 								}
 							},
@@ -20376,7 +20376,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+									"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 									"symbol": "fetchSemanticBoardDocument"
 								}
 							},
@@ -20388,7 +20388,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+									"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 									"symbol": "fetchSemanticBoardDocument"
 								}
 							},
@@ -20400,7 +20400,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+									"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 									"symbol": "fetchVaultCheck"
 								}
 							},
@@ -20412,7 +20412,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+									"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 									"symbol": "fetchVaultCheck"
 								}
 							},
@@ -20432,7 +20432,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "readCachedPicture"
 												}
 											}
@@ -20449,7 +20449,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "draw"
 												}
 											},
@@ -20461,7 +20461,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "drawn"
 												}
 											},
@@ -20473,7 +20473,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "writeCachedPicture"
 												}
 											}
@@ -20501,7 +20501,7 @@
 								"kind": "async",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/pane-session/lib/socket-messages.ts",
+									"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
 									"symbol": "boardChanged"
 								}
 							},
@@ -20513,7 +20513,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/pane-session/lib/socket-messages.ts",
+									"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
 									"symbol": "announceSemanticBoardChange"
 								}
 							},
@@ -20533,7 +20533,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/hooks/use-semantic-board-changes.ts",
+													"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts",
 													"symbol": "readBoardAgain"
 												}
 											},
@@ -20545,7 +20545,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 													"symbol": "fetchSemanticBoardDocument"
 												}
 											},
@@ -20557,7 +20557,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
 													"symbol": "fetchSemanticBoardDocument"
 												}
 											},
@@ -20569,7 +20569,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "draw"
 												}
 											},
@@ -20581,7 +20581,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts",
+													"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
 													"symbol": "drawn"
 												}
 											}
@@ -20613,7 +20613,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/application/hooks/use-workspace-addressing.ts",
+									"path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
 									"symbol": "useWorkspaceAddress"
 								}
 							},
@@ -20625,7 +20625,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-routing/restore.ts",
+									"path": "apps/web/src/ui/rules/board-routing/restore.ts",
 									"symbol": "restoreOutcome"
 								}
 							},
@@ -20650,7 +20650,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+															"path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
 															"symbol": "commandsOver"
 														}
 													}
@@ -20667,7 +20667,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+															"path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
 															"symbol": "commandsOver"
 														}
 													},
@@ -20679,7 +20679,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/application/lib/workspace-port.ts",
+															"path": "apps/web/src/ui/clients/application/workspace-port.ts",
 															"symbol": "showThroughServer"
 														}
 													},
@@ -20691,7 +20691,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/pane-session/api.ts",
+															"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
 															"symbol": "showBoard"
 														}
 													},
@@ -20711,7 +20711,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/pane-session/api.ts",
+																			"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
 																			"symbol": "showBoard"
 																		}
 																	},
@@ -20723,7 +20723,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/application/lib/workspace-port.ts",
+																			"path": "apps/web/src/ui/clients/application/workspace-port.ts",
 																			"symbol": "showThroughServer"
 																		}
 																	},
@@ -20735,7 +20735,7 @@
 																		"kind": "async",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/pane-session/lib/socket-messages.ts",
+																			"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
 																			"symbol": "paneBoard"
 																		}
 																	},
@@ -20747,7 +20747,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+																			"path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
 																			"symbol": "answerOperation"
 																		}
 																	},
@@ -20759,7 +20759,7 @@
 																		"kind": "self",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/board-routing/operation.ts",
+																			"path": "apps/web/src/ui/state/board-routing/operation.ts",
 																			"symbol": "operationSettled"
 																		}
 																	}
@@ -20776,7 +20776,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/pane-session/api.ts",
+																			"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
 																			"symbol": "showBoard"
 																		}
 																	},
@@ -20788,7 +20788,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/application/lib/workspace-port.ts",
+																			"path": "apps/web/src/ui/clients/application/workspace-port.ts",
 																			"symbol": "showThroughServer"
 																		}
 																	},
@@ -20800,7 +20800,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/application/lib/workspace-port.ts",
+																			"path": "apps/web/src/ui/clients/application/workspace-port.ts",
 																			"symbol": "OpenOutcome"
 																		}
 																	},
@@ -20812,7 +20812,7 @@
 																		"kind": "self",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/board-routing/restore.ts",
+																			"path": "apps/web/src/ui/rules/board-routing/restore.ts",
 																			"symbol": "boardUnreachable"
 																		}
 																	}
@@ -20834,7 +20834,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-routing/hooks/use-workspace-address.ts",
+									"path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
 									"symbol": "publishAddress"
 								}
 							}
@@ -20859,7 +20859,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/workbench/components/AgentComposer.tsx",
+									"path": "packages/workbench/src/ui/components/panel/AgentComposer.tsx",
 									"symbol": "onSend"
 								}
 							},
@@ -20871,7 +20871,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/application/lib/agent-actions.ts",
+									"path": "apps/web/src/ui/clients/application/agent-actions.ts",
 									"symbol": "agentActions"
 								}
 							},
@@ -20888,7 +20888,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/agent-setup/lib/setup.ts",
+											"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 											"symbol": "pump"
 										}
 									},
@@ -20908,7 +20908,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/agent-setup/lib/setup.ts",
+															"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 															"symbol": "failWaiting"
 														}
 													}
@@ -20925,7 +20925,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/agent-setup/lib/setup.ts",
+															"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 															"symbol": "askSignIn"
 														}
 													},
@@ -20937,7 +20937,7 @@
 														"kind": "async",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/workbench-transport/lib/socket-run.ts",
+															"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
 															"symbol": "sendRequest"
 														}
 													}
@@ -20954,7 +20954,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/agent-setup/lib/setup.ts",
+															"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 															"symbol": "advance"
 														}
 													}
@@ -20971,7 +20971,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/agent-setup/lib/setup.ts",
+															"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 															"symbol": "link"
 														}
 													},
@@ -20983,7 +20983,7 @@
 														"kind": "async",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/workbench-transport/lib/socket-run.ts",
+															"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
 															"symbol": "sendRequest"
 														}
 													}
@@ -21000,7 +21000,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/agent-setup/lib/setup.ts",
+															"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 															"symbol": "deliverNext"
 														}
 													},
@@ -21012,7 +21012,7 @@
 														"kind": "async",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/workbench-transport/lib/socket-run.ts",
+															"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
 															"symbol": "sendRequest"
 														}
 													}
@@ -21028,7 +21028,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/workbench-transport/lib/socket-run.ts",
+											"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
 											"symbol": "onMessage"
 										}
 									},
@@ -21040,7 +21040,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/agent-setup/lib/setup.ts",
+											"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 											"symbol": "connect"
 										}
 									}
@@ -21054,7 +21054,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/agent-setup/lib/setup.ts",
+									"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 									"symbol": "prune"
 								}
 							}
@@ -21079,7 +21079,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/workbench/lib/circle-state.ts",
+									"path": "packages/workbench/src/ui/rules/dock/circle-state.ts",
 									"symbol": "talk"
 								}
 							},
@@ -21091,7 +21091,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/application/lib/agent-actions.ts",
+									"path": "apps/web/src/ui/clients/application/agent-actions.ts",
 									"symbol": "agentActions"
 								}
 							},
@@ -21104,7 +21104,7 @@
 								"note": "the same phases as a message waits on: see Send a message to the agent",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/agent-setup/lib/setup.ts",
+									"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 									"symbol": "startVoice"
 								}
 							},
@@ -21116,7 +21116,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/agent-setup/lib/setup.ts",
+									"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 									"symbol": "startTalk"
 								}
 							},
@@ -21128,7 +21128,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/voice-session/lib/binding.ts",
+									"path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
 									"symbol": "captureBinding"
 								}
 							},
@@ -21140,7 +21140,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/voice-session/lib/binding.ts",
+									"path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
 									"symbol": "captureBinding"
 								}
 							},
@@ -21160,7 +21160,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/voice-session/lib/session.ts",
+													"path": "packages/workbench/src/ui/state/voice-session/session.ts",
 													"symbol": "startNew"
 												}
 											},
@@ -21172,7 +21172,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/voice-session/lib/session.ts",
+													"path": "packages/workbench/src/ui/state/voice-session/session.ts",
 													"symbol": "run"
 												}
 											}
@@ -21189,7 +21189,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/voice-session/lib/binding.ts",
+													"path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
 													"symbol": "captureBinding"
 												}
 											}
@@ -21219,7 +21219,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+									"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 									"symbol": "start"
 								}
 							},
@@ -21231,7 +21231,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+									"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 									"symbol": "TalkCapture"
 								}
 							},
@@ -21243,7 +21243,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+									"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 									"symbol": "talk"
 								}
 							},
@@ -21255,7 +21255,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/agent-setup/lib/setup.ts",
+									"path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
 									"symbol": "startTalk"
 								}
 							},
@@ -21272,7 +21272,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-recording/lib/voice-sources.ts",
+											"path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
 											"symbol": "level"
 										}
 									},
@@ -21284,7 +21284,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-recording/lib/voice-sources.ts",
+											"path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
 											"symbol": "readVoice"
 										}
 									},
@@ -21296,7 +21296,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+											"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 											"symbol": "subscribe"
 										}
 									},
@@ -21308,7 +21308,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+											"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 											"symbol": "reading"
 										}
 									},
@@ -21320,7 +21320,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-recording/lib/pacing.ts",
+											"path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts",
 											"symbol": "pace"
 										}
 									},
@@ -21344,7 +21344,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+															"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 															"symbol": "begin"
 														}
 													}
@@ -21361,7 +21361,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+															"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 															"symbol": "recordedStep"
 														}
 													}
@@ -21379,7 +21379,7 @@
 														"note": "the recorder outside the page reads the state, then takes the voice and the log",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+															"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 															"symbol": "finish"
 														}
 													},
@@ -21391,7 +21391,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+															"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 															"symbol": "stop"
 														}
 													}
@@ -21408,7 +21408,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/pacing.ts",
+															"path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts",
 															"symbol": "failed"
 														}
 													},
@@ -21420,7 +21420,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+															"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 															"symbol": "stop"
 														}
 													}
@@ -21450,7 +21450,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+									"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 									"symbol": "load"
 								}
 							},
@@ -21462,7 +21462,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+									"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 									"symbol": "readBoardsFrom"
 								}
 							},
@@ -21474,7 +21474,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+									"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 									"symbol": "createSteppedClock"
 								}
 							},
@@ -21486,7 +21486,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-replay/components/ReplayStage.tsx",
+									"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
 									"symbol": "SemanticBoardStage"
 								}
 							},
@@ -21503,7 +21503,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+											"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 											"symbol": "draw"
 										}
 									}
@@ -21517,7 +21517,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+									"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 									"symbol": "load"
 								}
 							},
@@ -21534,7 +21534,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+											"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 											"symbol": "frame"
 										}
 									},
@@ -21546,7 +21546,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+											"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 											"symbol": "advanceTo"
 										}
 									},
@@ -21558,7 +21558,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+											"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 											"symbol": "playTo"
 										}
 									},
@@ -21570,7 +21570,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+											"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 											"symbol": "SemanticPaneReading"
 										}
 									},
@@ -21590,7 +21590,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+															"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 															"symbol": "runFrame"
 														}
 													},
@@ -21610,7 +21610,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+																			"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 																			"symbol": "frame"
 																		}
 																	}
@@ -21627,7 +21627,7 @@
 																		"kind": "return",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/ui/walkthrough-replay/lib/replay-page.ts",
+																			"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 																			"symbol": "violationsOf"
 																		}
 																	}
@@ -21648,7 +21648,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-replay/lib/frame-readiness.ts",
+															"path": "apps/web/src/ui/clients/walkthrough-replay/frame-readiness.ts",
 															"symbol": "notReady"
 														}
 													}
@@ -21679,7 +21679,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/shell/components/PaneControls.tsx",
+									"path": "apps/web/src/ui/components/shell/PaneControls.tsx",
 									"symbol": "MoveBoardControl"
 								}
 							},
@@ -21691,7 +21691,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-move/hooks/use-board-move.ts",
+									"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 									"symbol": "repositoriesQuery"
 								}
 							},
@@ -21703,7 +21703,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-move/hooks/use-board-move.ts",
+									"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 									"symbol": "targetsOf"
 								}
 							},
@@ -21715,7 +21715,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-move/hooks/use-board-move.ts",
+									"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 									"symbol": "useMoveTarget"
 								}
 							},
@@ -21727,7 +21727,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/board-move/api/move.ts",
+									"path": "apps/web/src/ui/clients/board-move/move.ts",
 									"symbol": "previewMove"
 								}
 							},
@@ -21739,7 +21739,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/ui/server-requests/index.ts",
+									"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 									"symbol": "fetch"
 								}
 							},
@@ -21759,7 +21759,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/server-requests/index.ts",
+													"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 													"symbol": "plainFailure"
 												}
 											},
@@ -21771,7 +21771,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/board-move/api/move.ts",
+													"path": "apps/web/src/ui/clients/board-move/move.ts",
 													"symbol": "previewMove"
 												}
 											}
@@ -21788,7 +21788,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/server-requests/index.ts",
+													"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 													"symbol": "json"
 												}
 											},
@@ -21800,7 +21800,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/board-move/api/move.ts",
+													"path": "apps/web/src/ui/clients/board-move/move.ts",
 													"symbol": "previewMove"
 												}
 											},
@@ -21812,7 +21812,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/board-move/components/MoveRewrites.tsx",
+													"path": "apps/web/src/ui/components/board-move/MoveRewrites.tsx",
 													"symbol": "MoveRewrites"
 												}
 											},
@@ -21824,7 +21824,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/board-move/api/move.ts",
+													"path": "apps/web/src/ui/clients/board-move/move.ts",
 													"symbol": "moveBoard"
 												}
 											},
@@ -21836,7 +21836,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/server-requests/index.ts",
+													"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 													"symbol": "fetch"
 												}
 											},
@@ -21856,7 +21856,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/server-requests/index.ts",
+																	"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 																	"symbol": "post"
 																}
 															},
@@ -21868,7 +21868,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/board-move/api/move.ts",
+																	"path": "apps/web/src/ui/clients/board-move/move.ts",
 																	"symbol": "moveBoard"
 																}
 															},
@@ -21880,7 +21880,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/board-move/hooks/use-board-move.ts",
+																	"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 																	"symbol": "onMoved"
 																}
 															}
@@ -21897,7 +21897,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/server-requests/index.ts",
+																	"path": "packages/server-requests/src/ui/clients/server-requests.ts",
 																	"symbol": "plainFailure"
 																}
 															},
@@ -21909,7 +21909,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/board-move/api/move.ts",
+																	"path": "apps/web/src/ui/clients/board-move/move.ts",
 																	"symbol": "moveBoard"
 																}
 															},
@@ -21921,7 +21921,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/ui/board-move/hooks/use-board-move.ts",
+																	"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
 																	"symbol": "readAgain"
 																}
 															}

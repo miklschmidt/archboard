@@ -72,7 +72,7 @@ by having no upward link, which is why the breadcrumb exists.
 
 | Level   | Board                     | Scope                                                          |
 | ------- | ------------------------- | -------------------------------------------------------------- |
-| System  | `Archboard`               | The processes that run, and what they keep                     |
+| System  | `Archboard`               | The processes, what they keep, and the packages in layers      |
 | Service | `Command interface`       | CLI application modules and its command groups                 |
 | Service | `Archboard server`        | Archboard server modules and the one write boundary            |
 | Service | `Browser application`     | Browser application modules                                    |

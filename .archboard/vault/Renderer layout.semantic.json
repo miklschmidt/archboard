@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 49,
+	"version": 50,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-16T02:58:39.275Z",
+	"updatedAt": "2026-10-19T22:35:55.428Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -6672,7 +6672,7 @@
 						"parent": "5UnSr8ZQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/index.ts"
+							"path": "packages/renderer/src/shared/rules/render/diagram.ts"
 						},
 						"drillDown": {
 							"board": "Semantic renderer",
@@ -6690,7 +6690,7 @@
 						"parent": "5UnSr8ZQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/measurement.ts"
+							"path": "packages/renderer/src/shared/rules/text/measurement.ts"
 						}
 					},
 					{
@@ -6702,7 +6702,7 @@
 						"parent": "5UnSr8ZQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts"
+							"path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts"
 						}
 					},
 					{
@@ -6729,7 +6729,7 @@
 						"parent": "e10t6gst",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/layout/compound-graph.ts"
+							"path": "packages/renderer/src/shared/rules/layout/compound-graph.ts"
 						}
 					},
 					{
@@ -6742,7 +6742,7 @@
 						"parent": "e10t6gst",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/engine.ts"
+							"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts"
 						}
 					},
 					{
@@ -6771,7 +6771,7 @@
 						"parent": "e10t6gst",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/layout/engines.ts"
+							"path": "packages/renderer/src/shared/rules/layout/engines.ts"
 						}
 					},
 					{
@@ -6784,7 +6784,7 @@
 						"parent": "tppVDaSZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/index.ts"
+							"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts"
 						}
 					},
 					{
@@ -6797,7 +6797,7 @@
 						"parent": "tppVDaSZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/place.ts"
+							"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts"
 						}
 					},
 					{
@@ -6810,7 +6810,7 @@
 						"parent": "tppVDaSZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/card-layout.ts"
+							"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts"
 						}
 					},
 					{
@@ -6822,7 +6822,7 @@
 						"parent": "tppVDaSZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/pack.ts"
+							"path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts"
 						}
 					},
 					{
@@ -6834,7 +6834,7 @@
 						"parent": "tppVDaSZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/trunks.ts"
+							"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts"
 						}
 					},
 					{
@@ -6847,7 +6847,7 @@
 						"parent": "tppVDaSZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/entry-row.ts"
+							"path": "packages/renderer/src/shared/rules/blocks/cards/entry-row.ts"
 						}
 					},
 					{
@@ -6872,7 +6872,7 @@
 						"responsibility": "Lays the board out as blocks: ranks the cards of each block, packs blocks, routes the lines between them and keeps the solve that reads best",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks"
+							"path": "packages/renderer/src/shared/rules/blocks"
 						}
 					}
 				],
@@ -6891,7 +6891,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/index.ts",
+							"path": "packages/renderer/src/shared/rules/render/diagram.ts",
 							"symbol": "measureArchitecture"
 						}
 					},
@@ -6905,7 +6905,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+							"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 							"symbol": "prepareWithSegments"
 						}
 					},
@@ -6932,7 +6932,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/layout/engines.ts",
+							"path": "packages/renderer/src/shared/rules/layout/engines.ts",
 							"symbol": "layoutTracks"
 						}
 					},
@@ -6946,7 +6946,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+							"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 							"symbol": "canvasWidth"
 						}
 					},
@@ -6964,7 +6964,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+							"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
 							"symbol": "compoundGraph"
 						}
 					},
@@ -6982,7 +6982,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/engine.ts",
+							"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
 							"symbol": "createLayoutEngine"
 						}
 					},
@@ -7000,7 +7000,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/index.ts",
+							"path": "packages/renderer/src/shared/rules/render/diagram.ts",
 							"symbol": "paintArchitecture"
 						}
 					},
@@ -7018,7 +7018,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/engine.ts",
+							"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
 							"symbol": "placeBlocks"
 						}
 					},
@@ -7036,7 +7036,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/card-layout.ts",
+							"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
 							"symbol": "renderJSON"
 						}
 					},
@@ -7054,7 +7054,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/trunks.ts",
+							"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
 							"symbol": "processTransaction"
 						}
 					},
@@ -7068,7 +7068,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/index.ts",
+							"path": "packages/renderer/src/shared/rules/render/diagram.ts",
 							"symbol": "layoutEngine"
 						}
 					},
@@ -7082,7 +7082,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/layout/engines.ts",
+							"path": "packages/renderer/src/shared/rules/layout/engines.ts",
 							"symbol": "layoutBlocks"
 						}
 					},
@@ -7100,7 +7100,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/place.ts",
+							"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
 							"symbol": "CardLayout"
 						}
 					},
@@ -7114,7 +7114,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/place.ts",
+							"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
 							"symbol": "PackLayout"
 						}
 					},
@@ -7128,7 +7128,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/pack.ts",
+							"path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
 							"symbol": "TrunkRouter"
 						}
 					},
@@ -7142,7 +7142,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/card-layout.ts",
+							"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
 							"symbol": "entryRowEdges"
 						}
 					},
@@ -7156,7 +7156,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/index.ts",
+							"path": "packages/renderer/src/shared/rules/render/diagram.ts",
 							"symbol": "entryPointsOf"
 						}
 					},
@@ -7170,7 +7170,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/blocks/place.ts",
+							"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
 							"symbol": "routedWeighed"
 						}
 					},
@@ -7184,7 +7184,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts",
+							"path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
 							"symbol": "farSizeFor"
 						}
 					}
@@ -7209,7 +7209,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/index.ts",
+									"path": "packages/renderer/src/shared/rules/render/diagram.ts",
 									"symbol": "renderArchitecture"
 								}
 							},
@@ -7230,7 +7230,7 @@
 												"note": "the last 64 layouts are remembered, by content, standing, engine and policy",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/index.ts",
+													"path": "packages/renderer/src/shared/rules/render/diagram.ts",
 													"symbol": "layoutRemembered"
 												}
 											}
@@ -7247,7 +7247,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/index.ts",
+													"path": "packages/renderer/src/shared/rules/render/diagram.ts",
 													"symbol": "measureArchitecture"
 												}
 											},
@@ -7259,7 +7259,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+													"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 													"symbol": "measureArchitecture"
 												}
 											},
@@ -7271,7 +7271,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/index.ts",
+													"path": "packages/renderer/src/shared/rules/render/diagram.ts",
 													"symbol": "layoutEngine"
 												}
 											},
@@ -7292,7 +7292,7 @@
 																"note": "Track unless the render asks for Blocks",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/transformers/semantic-renderer/lib/layout/engines.ts",
+																	"path": "packages/renderer/src/shared/rules/layout/engines.ts",
 																	"symbol": "layoutTracks"
 																}
 															}
@@ -7309,7 +7309,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/transformers/semantic-renderer/lib/layout/engines.ts",
+																	"path": "packages/renderer/src/shared/rules/layout/engines.ts",
 																	"symbol": "layoutBlocks"
 																}
 															}
@@ -7325,7 +7325,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+													"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
 													"symbol": "drawnBlocks"
 												}
 											}
@@ -7341,7 +7341,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/index.ts",
+									"path": "packages/renderer/src/shared/rules/render/diagram.ts",
 									"symbol": "paintArchitecture"
 								}
 							},
@@ -7353,7 +7353,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts",
+									"path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
 									"symbol": "paintArchitecture"
 								}
 							},
@@ -7365,7 +7365,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts",
+									"path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
 									"symbol": "paintArchitecture"
 								}
 							}
@@ -7389,7 +7389,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/index.ts",
+									"path": "packages/renderer/src/shared/rules/render/diagram.ts",
 									"symbol": "measureArchitecture"
 								}
 							},
@@ -7409,7 +7409,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+													"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 													"symbol": "measureNode"
 												}
 											}
@@ -7426,7 +7426,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+													"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 													"symbol": "measureNode"
 												}
 											}
@@ -7450,7 +7450,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+													"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 													"symbol": "measureSlab"
 												}
 											}
@@ -7475,7 +7475,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 											"symbol": "prepareWithSegments"
 										}
 									},
@@ -7501,7 +7501,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 											"symbol": "prepareWithSegments"
 										}
 									},
@@ -7513,7 +7513,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 											"symbol": "measureNaturalWidth"
 										}
 									},
@@ -7525,7 +7525,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 											"symbol": "measureNaturalWidth"
 										}
 									}
@@ -7540,7 +7540,7 @@
 								"note": "a relationship label is clamped the same way, 40 to 200 wide",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+									"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 									"symbol": "CARD_WIDTH"
 								}
 							},
@@ -7557,7 +7557,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 											"symbol": "layoutWithLines"
 										}
 									},
@@ -7569,7 +7569,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 											"symbol": "layoutWithLines"
 										}
 									},
@@ -7587,7 +7587,7 @@
 												"note": "the painted width wins over the sum of segments, so no character is cut",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/canvas-text.ts",
+													"path": "packages/renderer/src/shared/rules/text/canvas-text.ts",
 													"symbol": "canvasWidth"
 												}
 											},
@@ -7599,7 +7599,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/canvas-text.ts",
+													"path": "packages/renderer/src/shared/rules/text/canvas-text.ts",
 													"symbol": "canvasWidth"
 												}
 											}
@@ -7615,7 +7615,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+									"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 									"symbol": "measureSlab"
 								}
 							},
@@ -7627,7 +7627,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/measurement.ts",
+									"path": "packages/renderer/src/shared/rules/text/measurement.ts",
 									"symbol": "measureArchitecture"
 								}
 							}
@@ -7652,7 +7652,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/layout/engines.ts",
+									"path": "packages/renderer/src/shared/rules/layout/engines.ts",
 									"symbol": "layoutTracks"
 								}
 							},
@@ -7664,7 +7664,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
 									"symbol": "compoundGraph"
 								}
 							},
@@ -7676,7 +7676,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/layout/compound-graph.ts",
+									"path": "packages/renderer/src/shared/rules/layout/compound-graph.ts",
 									"symbol": "compoundGraph"
 								}
 							},
@@ -7689,7 +7689,7 @@
 								"note": "joins kept whole or apart; the solve runs on a layout worker",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
 									"symbol": "drawnBlocks"
 								}
 							},
@@ -7701,7 +7701,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/engine.ts",
+									"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
 									"symbol": "placeBlocks"
 								}
 							},
@@ -7713,7 +7713,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/blocks/place.ts",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
 									"symbol": "placeBlocks"
 								}
 							},
@@ -7725,7 +7725,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/engine.ts",
+									"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
 									"symbol": "createLayoutEngine"
 								}
 							},
@@ -7738,7 +7738,7 @@
 								"note": "weighed as drawn: crossings, line length and fit in the reference pane of the tuned 1.4 page shape",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
 									"symbol": "drawnBlocks"
 								}
 							},
@@ -7758,7 +7758,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+													"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
 													"symbol": "drawnBlocks"
 												}
 											},
@@ -7770,7 +7770,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/engine.ts",
+													"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
 													"symbol": "placeBlocks"
 												}
 											},
@@ -7782,7 +7782,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/blocks/place.ts",
+													"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
 													"symbol": "placeBlocks"
 												}
 											},
@@ -7794,7 +7794,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/engine.ts",
+													"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
 													"symbol": "createLayoutEngine"
 												}
 											},
@@ -7806,7 +7806,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+													"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
 													"symbol": "drawnBlocks"
 												}
 											}
@@ -7826,7 +7826,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
 									"symbol": "drawnBlocks"
 								}
 							},
@@ -7838,7 +7838,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
 									"symbol": "drawnBlocks"
 								}
 							},
@@ -7850,7 +7850,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/blocks/index.ts",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
 									"symbol": "drawnBlocks"
 								}
 							}
@@ -7890,7 +7890,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/place.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
 															"symbol": "PackLayout"
 														}
 													},
@@ -7902,7 +7902,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/pack.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
 															"symbol": "PackLayout"
 														}
 													},
@@ -7914,7 +7914,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/pack.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
 															"symbol": "TrunkRouter"
 														}
 													},
@@ -7926,7 +7926,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/trunks.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
 															"symbol": "processTransaction"
 														}
 													},
@@ -7938,7 +7938,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/trunks.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
 															"symbol": "processTransaction"
 														}
 													},
@@ -7950,7 +7950,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/trunks.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
 															"symbol": "TrunkRouter"
 														}
 													},
@@ -7962,7 +7962,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/pack.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
 															"symbol": "PackLayout"
 														}
 													}
@@ -7979,7 +7979,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/place.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
 															"symbol": "CardLayout"
 														}
 													},
@@ -7991,7 +7991,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/card-layout.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
 															"symbol": "entryRowEdges"
 														}
 													},
@@ -8003,7 +8003,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/entry-row.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/cards/entry-row.ts",
 															"symbol": "entryRowEdges"
 														}
 													},
@@ -8015,7 +8015,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/card-layout.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
 															"symbol": "renderJSON"
 														}
 													},
@@ -8027,7 +8027,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/card-layout.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
 															"symbol": "renderJSON"
 														}
 													},
@@ -8039,7 +8039,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/card-layout.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
 															"symbol": "routed"
 														}
 													},
@@ -8051,7 +8051,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/transformers/semantic-renderer/lib/blocks/card-layout.ts",
+															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
 															"symbol": "CardLayout"
 														}
 													}
@@ -8069,7 +8069,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/blocks/place.ts",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
 									"symbol": "routedWeighed"
 								}
 							},
@@ -8081,7 +8081,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/transformers/semantic-renderer/lib/blocks/trunks.ts",
+									"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
 									"symbol": "routedWeighed"
 								}
 							},
@@ -8101,7 +8101,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/transformers/semantic-renderer/lib/blocks/place.ts",
+													"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
 													"symbol": "settledOrNot"
 												}
 											}
