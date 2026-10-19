@@ -36,11 +36,11 @@ import {
 	writeSemanticBoard,
 	type SemanticWriteResult,
 } from "@archboard/board/store-write";
-import { broadcast } from "@/server/archboard/lib/pane-registry";
-import { settledChangeFields } from "@/server/archboard/lib/semantic-change-feed";
+import { broadcast } from "@archboard/workbench/pane-registry";
+import { settledChangeFields } from "@archboard/workbench/semantic-context";
 import { checkDoing } from "@archboard/board/doing";
 import { announceDoing, refuseUndescribedWrite } from "@/server/archboard/lib/board-announcements";
-import { vaultOfRequest } from "@/server/archboard/lib/request-vault";
+import { vaultOfRequest } from "@archboard/workbench/request";
 
 /**
  * Tell every pane holding this board that it has changed, so the pane asks for

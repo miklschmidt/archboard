@@ -4,7 +4,7 @@ title: 'Workbench server: pane, tab and session plumbing from server/archboard'
 status: To Do
 assignee: []
 created_date: '2026-10-19 14:14'
-updated_date: '2026-10-19 15:54'
+updated_date: '2026-10-19 16:14'
 labels: []
 dependencies:
   - TASK-500.23.04
@@ -24,6 +24,12 @@ Fifth move: the 15 server/archboard files that the workbench needs, listed in do
 - [ ] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
 - [ ] #3 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Move the 79-file import closure (all lib/codex-*, the four root codex-workbench-* facades deleted, module-paths, narrated-subjects and the 15 plumbing files) into packages/workbench/src/server/{protocol,rules,projections,services}/<concept>/ with the prefix codex-workbench- dropped from names. Importers go through 7 curated api files (wiring, pane-registry, pane-tabs, semantic-context, voice, request, listener). The two re-export barrels codex-workbench-adapters.ts and codex-workbench-owner.ts had only tests as importers, so they are deleted and 43 tests plus 10 fixtures move into packages/workbench/tests/server; only the host's route, lifetime and startup tests stay. module-paths takes src from SOURCE_CHECKOUT. Two value cycles that the move would have brought in are cut (wiring-hooks.ts, publishProjection in generation/owners.ts).
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 

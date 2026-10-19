@@ -19,9 +19,14 @@ import {
 } from "@archboard/board/lock";
 import { readSemanticBoard } from "@archboard/board/store-read";
 import { callerGone, trackMutationWork } from "@/server/archboard/lib/mutation-work";
-import { boardOfRequest, bodyOf, bodyString } from "@/server/archboard/lib/request-board";
-import { aggregateOf } from "@/server/archboard/lib/pane-registry";
-import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
+import {
+	boardOfRequest,
+	bodyOf,
+	bodyString,
+	requireVault,
+	vaultOfRequest,
+} from "@archboard/workbench/request";
+import { aggregateOf } from "@archboard/workbench/pane-registry";
 
 /**
  * Answer a lock failure, unless the caller has already gone after cancelling

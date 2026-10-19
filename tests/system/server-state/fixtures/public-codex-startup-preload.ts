@@ -33,7 +33,7 @@ if (
 ) {
 	const applicationPath = resolve(
 		import.meta.dir,
-		"../../../../src/server/archboard/lib/codex-workbench-application.ts",
+		"../../../../packages/workbench/src/server/services/owner/application.ts",
 	);
 	const actualApplicationModule = await import(applicationPath);
 	const createApplication = actualApplicationModule.createServerCodexWorkbenchApplication;

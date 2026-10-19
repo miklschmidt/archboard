@@ -25,18 +25,17 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
+import { publishPaneContext } from "@archboard/workbench/wiring";
 import {
 	boardForPane,
 	paneFromRequest,
 	paneResponse,
 	sendToPane,
-} from "@/server/archboard/lib/pane-registry";
-import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
+} from "@archboard/workbench/pane-registry";
+import { semanticPaneContextFor } from "@archboard/workbench/semantic-context";
 import type { SemanticAgentSwitch } from "@archboard/codex-app-server/semantic-context";
-import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
+import { bodyOf, messageOf, vaultOfRequest } from "@archboard/workbench/request";
 import { arrivedOnBoard, noBrowserBody } from "@/server/archboard/lib/pane-routes";
-import { vaultOfRequest } from "@/server/archboard/lib/request-vault";
 import { movePaneVault } from "@/server/archboard/lib/pane-vaults";
 import { placeOfVault, type VaultPlace } from "@archboard/workspace/repository-listing";
 import { followRegistry } from "@/server/archboard/lib/repository-routes";

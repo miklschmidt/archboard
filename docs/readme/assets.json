@@ -78,7 +78,7 @@
 				"src/cli/commands/semantic-replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
 				"packages/workbench/src/runtime/services/realtime",
-				"src/server/archboard/lib/walkthrough-narration.ts",
+				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts"
 			],
 			"hash": "4414a45cca43106c803596062013b14a871af13f92175ce63b2a70e6d3a4e33f"
@@ -154,7 +154,7 @@
 				"src/cli/commands/semantic-replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
 				"packages/workbench/src/runtime/services/realtime",
-				"src/server/archboard/lib/walkthrough-narration.ts",
+				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
@@ -205,7 +205,7 @@
 				"src/cli/commands/semantic-replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
 				"packages/workbench/src/runtime/services/realtime",
-				"src/server/archboard/lib/walkthrough-narration.ts",
+				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],

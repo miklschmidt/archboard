@@ -10,7 +10,7 @@ import {
 	createServerApplicationLifetime,
 } from "@/server/archboard/lib/application-lifetime";
 import { server } from "@/server/archboard/lib/server-app";
-import { prepareCodexWorkbench, stopCodexWorkbench } from "@/server/archboard/lib/codex-wiring";
+import { prepareCodexWorkbench, stopCodexWorkbench } from "@archboard/workbench/wiring";
 import { checkoutWork, mutationAdmission } from "@/server/archboard/lib/server-owners";
 import {
 	closeBrowserOwners,
@@ -27,8 +27,8 @@ import {
 	isLoopbackGuardedHost,
 	logHttpServerError,
 	PORT,
-} from "@/server/archboard/lib/listener-address";
-import { messageOf } from "@/server/archboard/lib/request-board";
+} from "@archboard/workbench/listener";
+import { messageOf } from "@archboard/workbench/request";
 import { unwatchRegistry, watchRegistry } from "@/server/archboard/lib/repository-routes";
 import { serverStartupFailureMessage } from "@/server/archboard/lib/startup-error";
 import {

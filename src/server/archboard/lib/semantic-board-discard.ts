@@ -13,15 +13,15 @@ import type { NextFunction, Request, Response } from "express";
 import { forgetDoing } from "@archboard/board/doing";
 import { discardSemanticBoard } from "@archboard/board/store-write";
 import { announceDoing } from "@/server/archboard/lib/board-announcements";
-import { broadcast } from "@/server/archboard/lib/pane-registry";
-import { settledChangeFields } from "@/server/archboard/lib/semantic-change-feed";
+import { broadcast } from "@archboard/workbench/pane-registry";
+import { settledChangeFields } from "@archboard/workbench/semantic-context";
 import {
 	answerRefusal,
 	describedWrite,
 	writerOf,
 } from "@/server/archboard/lib/semantic-board-writes";
 import { expectedVersion, statedEnvelope } from "@/server/archboard/lib/semantic-write-requests";
-import { vaultOfRequest } from "@/server/archboard/lib/request-vault";
+import { vaultOfRequest } from "@archboard/workbench/request";
 
 /**
  * Tell everything that shows the board that it is gone.

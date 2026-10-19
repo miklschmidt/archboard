@@ -6,11 +6,11 @@ import type { Request, Response } from "express";
 
 import { parseBoardKey } from "@archboard/board/address";
 import { buildPanesReport } from "@archboard/server-lifecycle/panes";
-import { serverUrl } from "@/server/archboard/lib/listener-address";
-import { boardForPane, panes } from "@/server/archboard/lib/pane-registry";
+import { serverUrl } from "@archboard/workbench/listener";
+import { boardForPane, panes } from "@archboard/workbench/pane-registry";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
-import { statedVault } from "@/server/archboard/lib/request-vault";
-import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
+import { statedVault } from "@archboard/workbench/request";
+import { semanticPaneContextFor } from "@archboard/workbench/semantic-context";
 import type { SemanticPaneContext } from "@archboard/board/pane-context";
 
 /**

@@ -12,25 +12,22 @@ import {
 	writePidFile,
 } from "@archboard/server-lifecycle/server-host";
 import { server } from "@/server/archboard/lib/server-app";
-import { panePresentations } from "@/server/archboard/lib/pane-presentation";
-import { forgetSemanticPaneContexts } from "@/server/archboard/lib/semantic-pane-context";
-import { forgetSemanticBoardFiles } from "@/server/archboard/lib/semantic-disk-watch";
-import { codexWiring } from "@/server/archboard/lib/codex-wiring";
 import {
-	formatHostForUrl,
-	HOST,
-	logHttpServerError,
-	PORT,
-} from "@/server/archboard/lib/listener-address";
+	panePresentations,
+	forgetSemanticPaneContexts,
+} from "@archboard/workbench/semantic-context";
+import { forgetSemanticBoardFiles } from "@/server/archboard/lib/semantic-disk-watch";
+import { codexWiring } from "@archboard/workbench/wiring";
+import { formatHostForUrl, HOST, logHttpServerError, PORT } from "@archboard/workbench/listener";
 import {
 	acceptedSockets,
 	clientIds,
 	codexSocketInstances,
 	forgetDisplay,
 	rejectPendingLayouts,
-} from "@/server/archboard/lib/pane-registry";
-import { forgetTabSessions } from "@/server/archboard/lib/tab-sessions";
-import { messageOf } from "@/server/archboard/lib/request-board";
+} from "@archboard/workbench/pane-registry";
+import { forgetTabSessions } from "@archboard/workbench/pane-tabs";
+import { messageOf } from "@archboard/workbench/request";
 
 /**
  * Forget every engine-level announcement, watch and record this process holds.

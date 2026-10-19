@@ -16,8 +16,8 @@ import {
 	createCodexWorkbenchGateway,
 } from "@archboard/workbench/gateway";
 import { parseTabSessionId } from "@archboard/workbench/tab-session";
-import { createServerRealtimeActions } from "../../../src/server/archboard/codex-workbench-adapters.js";
-import { createServerCodexBrowserSocketOwner } from "../../../src/server/archboard/codex-workbench-browser.js";
+import { createServerRealtimeActions } from "@archboard/workbench/voice";
+import { createServerCodexBrowserSocketOwner } from "@archboard/workbench/wiring";
 
 async function delivered() {
 	return { outcome: "delivered" as const };
