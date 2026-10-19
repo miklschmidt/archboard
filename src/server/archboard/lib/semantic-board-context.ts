@@ -31,7 +31,7 @@ import type {
 	SemanticIssueInput,
 	SemanticReconciliationInput,
 	SemanticSubjectInput,
-} from "@/runtime/codex-semantic-context";
+} from "@archboard/codex-app-server/semantic-context-types";
 import { parseBoardKey } from "@archboard/board/address";
 import { semanticBoardAddress } from "@archboard/board/location";
 import {

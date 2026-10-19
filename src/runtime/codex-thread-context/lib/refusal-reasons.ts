@@ -1,6 +1,9 @@
 import { CodexEpochError } from "@/runtime/codex-epoch";
 import { ADDITIONAL_CONTEXT_POLICY } from "@/runtime/codex-instructions";
-import type { SemanticCursor, SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
+import type {
+	SemanticCursor,
+	SettledSemanticChangeEvent,
+} from "@archboard/codex-app-server/semantic-context-types";
 import { CodexThreadLinkError, type ThreadLinkReasonCode } from "@/runtime/codex-thread-link";
 import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
 import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";

@@ -15,10 +15,8 @@ import {
 	parseRealtimeSessionId,
 } from "../../../shared/codex-realtime-contract/index.js";
 import { createCodexRealtimeAdapter } from "../../../runtime/codex-realtime/index.js";
-import {
-	createSemanticContextPublisher,
-	type SemanticContextInput,
-} from "../../../runtime/codex-semantic-context/index.js";
+import { createSemanticContextPublisher } from "@archboard/codex-app-server/semantic-context-publisher";
+import { type SemanticContextInput } from "@archboard/codex-app-server/semantic-context-types";
 import type { SessionParams } from "@archboard/codex-app-server/session-api";
 import {
 	createBrowserLeaseLedger,

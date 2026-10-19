@@ -1,13 +1,20 @@
 import { describe, expect, test } from "bun:test";
 
 import { CODEX_SEMANTIC_FRESHNESS_MS } from "@archboard/timing";
+import { SemanticContextLifecycleError } from "#runtime/operations/semantic-context-publisher.ts";
+import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 import {
-	SemanticContextLifecycleError,
-	SEMANTIC_CONTEXT_LIMITS,
 	type SemanticContextInput,
 	type SettledSemanticChangeEvent,
-} from "../index.ts";
-import { context, change, picked, sourceHarness, harness, utf8 } from "./publisher-harness.ts";
+} from "#runtime/schemas/semantic-context-types.ts";
+import {
+	context,
+	change,
+	picked,
+	sourceHarness,
+	harness,
+	utf8,
+} from "#tests/runtime/support/semantic-publisher-harness.ts";
 describe("semantic context publisher", () => {
 	test("publishes focus and selection immediately without a settle path", () => {
 		const h = harness();

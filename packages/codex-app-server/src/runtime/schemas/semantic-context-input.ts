@@ -1,4 +1,4 @@
-import { SEMANTIC_CONTEXT_LIMITS } from "@/runtime/codex-semantic-context/lib/limits";
+import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 import type {
 	SemanticArchitecture,
 	SemanticContextInput,
@@ -14,7 +14,7 @@ import type {
 	SemanticUserChange,
 	SemanticThreadLink,
 	SemanticWorkhorse,
-} from "@/runtime/codex-semantic-context/lib/types";
+} from "#runtime/schemas/semantic-context-types.ts";
 import {
 	byteLength,
 	clipJsonUtf8,
@@ -28,8 +28,8 @@ import {
 	SemanticContextInputError,
 	textValue,
 	type BoundedValue,
-} from "@/runtime/codex-semantic-context/lib/bounded-text";
-import { normalizeArchitecture } from "@/runtime/codex-semantic-context/lib/normalize-architecture";
+} from "#runtime/services/semantic-bounded-text.ts";
+import { normalizeArchitecture } from "#runtime/schemas/semantic-architecture-input.ts";
 
 interface NormalizedContext {
 	readonly repository: string;

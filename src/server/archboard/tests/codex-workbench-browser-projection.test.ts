@@ -5,7 +5,7 @@ import {
 	type CoordinatorCallbackDelivery,
 } from "../../../runtime/codex-coordinator-callbacks/index.js";
 import type { CodexRealtimeGeneration } from "../../../runtime/codex-realtime/index.js";
-import { SEMANTIC_CONTEXT_LIMITS } from "../../../runtime/codex-semantic-context/index.js";
+import { SEMANTIC_CONTEXT_LIMITS } from "@archboard/codex-app-server/semantic-context-limits";
 import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,

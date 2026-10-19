@@ -5,7 +5,7 @@ import type { CodexProcessGroupIdentity } from "@archboard/process/codex-group";
 import type {
 	SemanticContextPublisherOptions,
 	SettledSemanticChangeEvent,
-} from "@/runtime/codex-semantic-context";
+} from "@archboard/codex-app-server/semantic-context-types";
 import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/workbench-identity";
 import type { BrowserLeaseLedger, TabSessionId } from "@/server/codex-workbench";
 import type {

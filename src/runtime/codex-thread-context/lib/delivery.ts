@@ -6,7 +6,7 @@ import {
 	createThreadInjectItemsParams,
 	type ThreadInjectItemsParams,
 } from "@/runtime/codex-instructions";
-import type { SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkClassification,

@@ -10,7 +10,7 @@ import type {
 import type {
 	SemanticContextPublisher,
 	SettledSemanticChangeEvent,
-} from "@/runtime/codex-semantic-context";
+} from "@archboard/codex-app-server/semantic-context-types";
 import type {
 	ChildEpoch,
 	ChildId,

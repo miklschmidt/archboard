@@ -14,7 +14,7 @@ import type { CodexEpochStoreOptions } from "@/runtime/codex-epoch";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
 import type { CodexSessionOptions } from "@archboard/codex-app-server/session-api";
 import type { CodexRealtimeAdapterOptions } from "@/runtime/codex-realtime";
-import type { SemanticContextPublisherOptions } from "@/runtime/codex-semantic-context";
+import type { SemanticContextPublisherOptions } from "@archboard/codex-app-server/semantic-context-types";
 import type { CodexSpokenApprovalGateOptions } from "@/runtime/codex-spoken-approval";
 import type { CodexThreadContextControllerOptions } from "@/runtime/codex-thread-context";
 import type { CodexThreadLinkOptions } from "@/runtime/codex-thread-link";

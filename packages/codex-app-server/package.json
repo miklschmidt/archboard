@@ -23,6 +23,9 @@
 		"./transport-errors": "./src/runtime/clients/transport-errors.ts",
 		"./session": "./src/runtime/services/session.ts",
 		"./session-api": "./src/runtime/services/session-api.ts",
-		"./session-responses": "./src/runtime/schemas/session-responses.ts"
+		"./session-responses": "./src/runtime/schemas/session-responses.ts",
+		"./semantic-context-publisher": "./src/runtime/operations/semantic-context-publisher.ts",
+		"./semantic-context-types": "./src/runtime/schemas/semantic-context-types.ts",
+		"./semantic-context-limits": "./src/runtime/services/semantic-context-limits.ts"
 	}
 }

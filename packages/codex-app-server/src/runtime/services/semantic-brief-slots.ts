@@ -8,11 +8,62 @@
 // an agent an empty selection, which is indistinguishable from nobody having
 // selected anything.
 //
-// Apart from `fit.ts` because the two tables are most of a file on their own
+// Apart from `semantic-brief-fit.ts` because the two tables are most of a file on their own
 // and the fitting algorithm reads better without them in the middle of it.
 
-import { SEMANTIC_CONTEXT_ELLIPSIS } from "@/runtime/codex-semantic-context/lib/limits";
-import type { BriefContext, FitParts, TextSlot } from "@/runtime/codex-semantic-context/lib/fit";
+import { SEMANTIC_CONTEXT_ELLIPSIS } from "#runtime/services/semantic-context-limits.ts";
+import type { NormalizedContext } from "#runtime/schemas/semantic-context-input.ts";
+import type {
+	SemanticArchitecture,
+	SemanticDifference,
+	SemanticFreshness,
+	SemanticIssue,
+	SemanticSubject,
+} from "#runtime/schemas/semantic-context-types.ts";
+
+interface MutableArchitecture {
+	variant: SemanticArchitecture["variant"];
+	view: SemanticArchitecture["view"];
+	selection: { count: number; subjects: SemanticSubject[] };
+	differences: {
+		added: number;
+		removed: number;
+		changed: number;
+		subjects: SemanticDifference[];
+	} | null;
+	reconciliation: {
+		required: boolean;
+		count: number;
+		blockedBy: string | null;
+		issues: SemanticIssue[];
+	};
+}
+
+type BriefContext = {
+	-readonly [Key in keyof NormalizedContext]: Key extends "architecture"
+		? MutableArchitecture
+		: NormalizedContext[Key];
+};
+
+interface FitParts {
+	readonly context: BriefContext;
+	readonly feedId: string;
+	ambiguity: string[];
+	description: string;
+	freshness: SemanticFreshness;
+	staleness: {
+		state: "current" | "stale";
+		reasons: string[];
+	};
+	truncated: boolean;
+}
+
+interface TextSlot {
+	readonly original: string | null;
+	readonly empty: string | null;
+	readonly minimum: string | null;
+	readonly set: (value: string | null) => void;
+}
 
 /**
  * A trimmed identity as it appears in a brief. A brief is display text under a byte ceiling: an
@@ -298,4 +349,4 @@ function descriptiveSlots(context: BriefContext, parts: FitParts): readonly Text
 	];
 }
 
-export { descriptiveSlots, textSlots };
+export { type BriefContext, type FitParts, type TextSlot, descriptiveSlots, textSlots };

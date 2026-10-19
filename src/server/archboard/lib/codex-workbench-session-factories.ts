@@ -13,7 +13,7 @@ import {
 } from "@/runtime/codex-coordinator-tools";
 import { createCodexCoordinator } from "@/runtime/codex-coordinator";
 import { createCodexRealtimeAdapter } from "@/runtime/codex-realtime";
-import { createSemanticContextPublisher } from "@/runtime/codex-semantic-context";
+import { createSemanticContextPublisher } from "@archboard/codex-app-server/semantic-context-publisher";
 import { createCodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
 import { createCodexThreadContextController } from "@/runtime/codex-thread-context";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";

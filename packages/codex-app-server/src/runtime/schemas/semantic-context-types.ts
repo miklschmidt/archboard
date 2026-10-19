@@ -4,7 +4,7 @@ import type {
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "#shared/rules/workbench-identity.ts";
 import type { ChangeKind } from "@archboard/board/compare-variants";
 import type { DiagramGrammar, VariantLifecycle } from "@archboard/board/vocabulary";
 import type { ReconciliationKind } from "@archboard/board/reconciliation";

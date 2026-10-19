@@ -8,63 +8,31 @@
 // cannot say which cursor it belongs to is not a usable brief, so it is refused
 // instead.
 //
-// Apart from `brief.ts` because building a brief and squeezing one are two
+// Apart from `semantic-brief.ts` because building a brief and squeezing one are two
 // jobs, and the slot table for the second is most of a file on its own.
 
-import { SEMANTIC_CONTEXT_LIMITS } from "@/runtime/codex-semantic-context/lib/limits";
+import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 import {
 	byteLength,
 	clipJsonUtf8,
 	fail,
 	jsonStringByteLength,
 	type NormalizedContext,
-} from "@/runtime/codex-semantic-context/lib/normalize";
+} from "#runtime/schemas/semantic-context-input.ts";
 import type {
-	SemanticArchitecture,
 	SemanticDifference,
 	SemanticFreshness,
 	SemanticIssue,
 	SemanticStaleness,
 	SemanticSubject,
-} from "@/runtime/codex-semantic-context/lib/types";
-import { descriptiveSlots, textSlots } from "@/runtime/codex-semantic-context/lib/slots";
-
-interface MutableArchitecture {
-	variant: SemanticArchitecture["variant"];
-	view: SemanticArchitecture["view"];
-	selection: { count: number; subjects: SemanticSubject[] };
-	differences: {
-		added: number;
-		removed: number;
-		changed: number;
-		subjects: SemanticDifference[];
-	} | null;
-	reconciliation: {
-		required: boolean;
-		count: number;
-		blockedBy: string | null;
-		issues: SemanticIssue[];
-	};
-}
-
-type BriefContext = {
-	-readonly [Key in keyof NormalizedContext]: Key extends "architecture"
-		? MutableArchitecture
-		: NormalizedContext[Key];
-};
-
-interface FitParts {
-	readonly context: BriefContext;
-	readonly feedId: string;
-	ambiguity: string[];
-	description: string;
-	freshness: SemanticFreshness;
-	staleness: {
-		state: "current" | "stale";
-		reasons: string[];
-	};
-	truncated: boolean;
-}
+} from "#runtime/schemas/semantic-context-types.ts";
+import {
+	descriptiveSlots,
+	textSlots,
+	type BriefContext,
+	type FitParts,
+	type TextSlot,
+} from "#runtime/services/semantic-brief-slots.ts";
 
 /**
  * An independent copy of a normalized context, so fitting a brief can trim fields in place without changing the context the caller holds.
@@ -145,13 +113,6 @@ function serializableBrief(
  */
 function render(context: BriefContext, parts: FitParts): string {
 	return JSON.stringify(serializableBrief(context, parts));
-}
-
-interface TextSlot {
-	readonly original: string | null;
-	readonly empty: string | null;
-	readonly minimum: string | null;
-	readonly set: (value: string | null) => void;
 }
 
 /**
@@ -353,4 +314,4 @@ function squeeze(
 	return { ...parts, brief: rendered(context, parts) };
 }
 
-export { type BriefContext, type FitParts, type TextSlot, copyContext, fitAggregate };
+export { copyContext, fitAggregate };

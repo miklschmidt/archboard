@@ -34,7 +34,7 @@ import {
 	readyDelegatedWorkhorse,
 	workhorseOfCheckout,
 } from "@/server/archboard/lib/codex-checkouts";
-import type { SemanticContextPublisherOptions } from "@/runtime/codex-semantic-context";
+import type { SemanticContextPublisherOptions } from "@archboard/codex-app-server/semantic-context-types";
 
 /** What building one tab session's bindings needs from around it. */
 interface SessionBindingContext {

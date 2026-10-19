@@ -1,5 +1,5 @@
 import type { ThreadInjectItemsParams } from "@/runtime/codex-instructions";
-import type { SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
 import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
 import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import type { CodexThreadContextEventId } from "@/runtime/codex-thread-context/lib/contract";

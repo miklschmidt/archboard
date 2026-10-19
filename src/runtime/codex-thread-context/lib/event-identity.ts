@@ -1,4 +1,7 @@
-import type { SemanticCursor, SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
+import type {
+	SemanticCursor,
+	SettledSemanticChangeEvent,
+} from "@archboard/codex-app-server/semantic-context-types";
 import type {
 	CodexThreadContextDeliveryReason,
 	CodexThreadContextEventId,
