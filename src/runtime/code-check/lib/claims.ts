@@ -10,7 +10,7 @@
 // the plain check tests.
 
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
-import { edgeSubjects, nodeSubject } from "@archboard/board/subject";
+import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";
 import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/code-binding";
 import { messagesOf } from "@archboard/board/flow";
 import type { SemanticNode } from "@archboard/board/content";

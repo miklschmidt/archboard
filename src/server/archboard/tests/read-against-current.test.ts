@@ -9,7 +9,7 @@ import { expect, test } from "bun:test";
 
 import { semanticBoardContext } from "@/server/archboard/index";
 import { narratedSubjects } from "@/server/archboard/narrated-subjects";
-import { semanticBoardAddress } from "@archboard/board/location";
+import { semanticBoardAddress } from "@archboard/board/address";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	SemanticBoardSchema,

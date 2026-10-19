@@ -10,8 +10,9 @@ const packagesRoot = path.resolve(
 
 // An `api/` folder is a package's interface over private implementation (docs/agents/boundaries.md,
 // "Packages"). A package that adopts it points the `exports` of an area only into that area's
-// `api/`, and nothing private reaches back up into it. `board` adopts it for `src/shared`.
-const ADOPTERS = [{ name: "board", area: "shared" }];
+// `api/`, and nothing private reaches back up into it. `board` adopts it for `src/shared` and
+// `src/runtime`.
+const ADOPTERS = [{ name: "board", areas: ["shared", "runtime"] }];
 
 const API_IMPORT = /["'`]#[a-z]+\/api\//;
 const EXPORT_STAR = /\bexport\s*\*/;
@@ -71,13 +72,13 @@ function productionFiles(name: string): Record<string, string> {
 	);
 }
 
-describe.each(ADOPTERS)("the api folder of $name", ({ name, area }) => {
+describe.each(ADOPTERS)("the api folder of $name", ({ name, areas }) => {
 	const manifest = JSON.parse(
 		fs.readFileSync(path.join(packagesRoot, name, "package.json"), "utf8"),
 	) as { exports: Record<string, string> };
 	const files = productionFiles(name);
 
-	test(`every export into src/${area} points into src/${area}/api`, () => {
+	test.each(areas)("every export into src/%s points into its api folder", (area) => {
 		expect(exportsOutsideApi(manifest.exports, area)).toEqual([]);
 	});
 
@@ -106,6 +107,16 @@ describe("the api checks", () => {
 			"./ids -> ./src/shared/rules/ids.ts",
 			"./nested -> ./src/shared/api/deeper/nested.ts",
 		]);
+		expect(
+			exportsOutsideApi(
+				{
+					"./lock": "./src/runtime/api/lock.ts",
+					"./write": "./src/runtime/operations/write/write.ts",
+					"./ids": "./src/shared/api/ids.ts",
+				},
+				"runtime",
+			),
+		).toEqual(["./write -> ./src/runtime/operations/write/write.ts"]);
 
 		const files = {
 			"shared/api/document.ts": `export { a } from "#shared/rules/a.ts";\n`,

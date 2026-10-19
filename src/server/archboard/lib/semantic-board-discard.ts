@@ -11,7 +11,7 @@
 
 import type { NextFunction, Request, Response } from "express";
 import { forgetDoing } from "@archboard/board/doing";
-import { discardSemanticBoard } from "@archboard/board/discard";
+import { discardSemanticBoard } from "@archboard/board/store-write";
 import { announceDoing } from "@/server/archboard/lib/board-announcements";
 import { broadcast } from "@/server/archboard/lib/pane-registry";
 import { settledChangeFields } from "@/server/archboard/lib/semantic-change-feed";

@@ -12,14 +12,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as server from "@/server/archboard/index";
-import { writeSemanticBoard } from "@archboard/board/write";
 import {
+	writeSemanticBoard,
 	createBoardTransition,
 	branchVariantTransition,
 	editVariantTransition,
-} from "@archboard/board/transitions";
-import { readSemanticBoard } from "@archboard/board/read";
-import { semanticBoardAddress } from "@archboard/board/location";
+} from "@archboard/board/store-write";
+import { readSemanticBoard } from "@archboard/board/store-read";
+import { semanticBoardAddress } from "@archboard/board/address";
 import {
 	BoardCreateInputSchema,
 	BoardBranchInputSchema,

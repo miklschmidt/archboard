@@ -17,9 +17,9 @@ import { z } from "zod";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import type { SemanticBoard } from "@archboard/board/document";
 import { fitIn } from "@/shared/shell-geometry/index";
-import { locateSemanticBoard } from "@archboard/board/location";
-import { readSemanticBoardAt } from "@archboard/board/read";
-import { readSemanticBoardConfiguration } from "@archboard/board/configuration";
+import { locateSemanticBoard } from "@archboard/board/address";
+import { readSemanticBoardAt } from "@archboard/board/store-read";
+import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
 
 /** One drawing under one engine. */

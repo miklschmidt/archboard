@@ -17,7 +17,7 @@ import {
 	releaseHold,
 	takeClaimRevocation,
 } from "@archboard/board/lock";
-import { readSemanticBoard } from "@archboard/board/read";
+import { readSemanticBoard } from "@archboard/board/store-read";
 import { callerGone, trackMutationWork } from "@/server/archboard/lib/mutation-work";
 import { boardOfRequest, bodyOf, bodyString } from "@/server/archboard/lib/request-board";
 import { aggregateOf } from "@/server/archboard/lib/pane-registry";

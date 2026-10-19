@@ -13,7 +13,7 @@ import { z } from "zod";
 import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/commands";
 import { parseSemanticBoard, SemanticBoardSchema } from "@archboard/board/document";
 import { withFixtureOrders } from "./fixture-orders.ts";
-import { SemanticBoardConfigurationSchema } from "@archboard/board/configuration";
+import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
 import {
 	generatedSchemas,
 	INSTALL_DOCUMENT,

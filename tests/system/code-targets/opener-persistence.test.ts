@@ -38,10 +38,10 @@ describe("machine-wide opener persistence", () => {
 				await using resources = new AsyncDisposableStack();
 				const vault = mkdtempSync(join(tmpdir(), "archboard-opener-vault-"));
 				resources.defer(() => rmSync(vault, { recursive: true }));
-				const { createBoardTransition } = await import("@archboard/board/transitions");
-				const { locateSemanticBoard } = await import("@archboard/board/location");
-				const { readSemanticBoard } = await import("@archboard/board/read");
-				const { writeSemanticBoard } = await import("@archboard/board/write");
+				const { createBoardTransition, writeSemanticBoard } =
+					await import("@archboard/board/store-write");
+				const { locateSemanticBoard } = await import("@archboard/board/address");
+				const { readSemanticBoard } = await import("@archboard/board/store-read");
 				const { createOpenerFixture } = await import("./support/opener-fixture.ts");
 				const timeline: ActivationTimelineEntry[] = [];
 				const fixture = await createOpenerFixture({
