@@ -27,7 +27,7 @@
 // An entry also holds the language servers that an agent configured for that
 // checkout (`repo language-server`, ADR 0046). They belong to the checkout, so
 // they stay while the same root registers again and go with `repo forget`.
-// The file and its lock are in `lib/registry-file.ts`.
+// The file and its lock are in `runtime/store/registry-file.ts`.
 
 import fs from "fs";
 import path from "path";
