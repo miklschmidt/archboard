@@ -1,11 +1,11 @@
 ---
 id: TASK-500.15
 title: Shared presentation parts are the ui-kit package
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 11:09'
-updated_date: '2026-10-19 11:10'
+updated_date: '2026-10-19 11:40'
 labels: []
 dependencies:
   - TASK-500.14.04
@@ -21,9 +21,9 @@ ui-kit is layer 0 of docs/design/package-map.md: ui/components, dialog-parts, fr
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 packages/ui-kit holds the five ui modules in ui/ role folders (components, hooks, state) with api files, and every importer uses @archboard/ui-kit
-- [ ] #2 Its tests live in the package, outside code uses only its curated api interface files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
-- [ ] #3 bun run check passes
+- [x] #1 packages/ui-kit holds the five ui modules in ui/ role folders (components, hooks, state) with api files, and every importer uses @archboard/ui-kit
+- [x] #2 Its tests live in the package, outside code uses only its curated api interface files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -33,3 +33,9 @@ ui-kit is layer 0 of docs/design/package-map.md: ui/components, dialog-parts, fr
 2. Move the tests with the code (packages/<name>/tests/ui/...). Fix every path that names the old modules: components.json (shadcn aliases), vite.config.ts, tsconfig, .oxlintrc*, docs, skills, ci.yml, evals/coverage.json, scripts. Tailwind class scanning must still see the moved components: compare the built stylesheet before and after.
 3. Browser safety trace not needed for ui-only packages, but build:frontend must pass and the package graph and package api tests must pass (add each new package to the ADOPTERS list). bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/ui-kit holds ui/components, dialog-parts, frame-clock, fullscreen-presentation and repository-name behind ten curated api files (85 names; code outside imported 29 paths before). The built stylesheet is byte-identical (157,738 bytes) with one Tailwind source glob over packages/*/src/ui/**/*, which also covers later UI packages. components.json aliases resolve through the @/* mapping. Codex checked 1,779 bindings across 163 files with no definition, alias or type difference. bun run check passed; Codex's two findings (readme asset sources missing server-requests, a stale README mapping) are fixed.
+<!-- SECTION:FINAL_SUMMARY:END -->
