@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 
-import { learnServedVault, servedVault } from "@/ui/server-requests";
+import { learnServedVault, servedVault } from "#ui/clients/server-requests.ts";
 
 // A server started without a vault opens a page in no vault when the machine
 // knows no repository with one (ADR 0049). The page must say so rather than

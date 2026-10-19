@@ -16,7 +16,7 @@ import type { PaneReadings, PickedSubject } from "@/ui/application/hooks/use-pan
 import type { Panes } from "@/ui/application/hooks/use-panes";
 import type { PaneTheme } from "@/ui/pane-session";
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
-import { servedVault } from "@/ui/server-requests";
+import { servedVault } from "@archboard/server-requests";
 import type { RecordedStep } from "@/ui/walkthrough-recording";
 
 /** Something the shell lays over one pane's picture. */

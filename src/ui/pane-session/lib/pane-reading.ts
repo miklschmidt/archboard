@@ -21,7 +21,7 @@ import {
 } from "@archboard/board/pane-context";
 import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
 import { createUserMarks } from "@/ui/pane-session/lib/user-marks";
-import { inVault, post } from "@/ui/server-requests";
+import { inVault, post } from "@archboard/server-requests";
 
 /** What one pane is reading, before its identity, count and moment are stamped on. */
 type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence" | "byUser">;

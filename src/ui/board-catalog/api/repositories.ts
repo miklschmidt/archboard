@@ -7,7 +7,7 @@ import {
 	type CheckoutChoice,
 	type RepositoryListing,
 } from "@archboard/workspace/repositories";
-import { cancellable, json, mutation } from "@/ui/server-requests";
+import { cancellable, json, mutation } from "@archboard/server-requests";
 
 /**
  * Every repository the navigator lists, with the vault each one reads.

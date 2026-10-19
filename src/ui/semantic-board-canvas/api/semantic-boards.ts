@@ -17,7 +17,7 @@ import { z } from "zod";
 import { RememberedFindingsSchema, type RememberedFindings } from "@/shared/code-check/index";
 import { LocalityReplySchema, type LocalityAnswer } from "@/shared/locality/index";
 import { VaultCheckSchema, type VaultCheck } from "@archboard/board/policy";
-import { inVault } from "@/ui/server-requests";
+import { inVault } from "@archboard/server-requests";
 import {
 	BoardListingSchema,
 	type BoardListing,

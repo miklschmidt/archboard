@@ -5,7 +5,7 @@
 // written since is refused rather than moved as nobody saw it.
 
 import type { BoardMoveAnswer, BoardMovePreview } from "@archboard/board/commands";
-import { cancellable, inVault, json, post } from "@/ui/server-requests";
+import { cancellable, inVault, json, post } from "@archboard/server-requests";
 
 /** Which board to move, from which vault, to which vault. */
 interface MoveAsked {

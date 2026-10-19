@@ -19,7 +19,7 @@ import {
 	type OpenerSettingsReply,
 	type OpenerTestReply,
 } from "@archboard/code-binding/opening";
-import { mutation, strictReply, type ReplySchema } from "@/ui/server-requests";
+import { mutation, strictReply, type ReplySchema } from "@archboard/server-requests";
 
 /**
  * The failure reported when the server's reply matches no schema.

@@ -17,7 +17,7 @@ const { act, cleanup, fireEvent, render, within } = await import("@testing-libra
 const { createElement } = await import("react");
 const { Application } = await import("@/ui/application");
 const { createBoardRoutingHost } = await import("@/ui/board-routing");
-const { learnServedVault } = await import("@/ui/server-requests");
+const { learnServedVault } = await import("@archboard/server-requests");
 
 /** The vault the faked server was started with, and the repository it is the chosen checkout of. */
 const SERVED = Object.freeze({
