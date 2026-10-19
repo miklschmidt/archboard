@@ -1,5 +1,5 @@
 import { logger } from "@archboard/diagnostics/logger";
-import { checkoutOfVault } from "@archboard/workspace/vault-finder";
+import { checkoutOfVault } from "@archboard/workspace/vault";
 import { semanticChangeFeed } from "@/server/archboard/lib/semantic-change-feed";
 import { workbenchFeedFor } from "@/server/archboard/lib/codex-workbench-feed";
 

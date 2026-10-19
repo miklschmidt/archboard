@@ -6,8 +6,8 @@
 import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, sep } from "node:path";
 
-import type { UntrackedVault } from "@archboard/workspace/repo-registry";
-import { VAULT_DIRECTORY } from "@archboard/workspace/vault-finder";
+import type { UntrackedVault } from "@archboard/workspace/checkouts";
+import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
 /**
  * Make the vault of a directory.

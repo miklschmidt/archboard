@@ -21,7 +21,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import type { Language } from "@/runtime/language-servers/lib/languages";
-import type { LanguageServers } from "@archboard/workspace/language-servers";
+import type { LanguageServers } from "@archboard/workspace/checkouts";
 
 /** The server one language uses in a checkout, or why it has none. */
 type LanguageServer =

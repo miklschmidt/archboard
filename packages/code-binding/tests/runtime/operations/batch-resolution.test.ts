@@ -10,8 +10,7 @@ import {
 	resolveLocalCodeTargetsWith,
 	type ResolverDependencies,
 } from "#runtime/operations/binding-resolver.ts";
-import { repoIdentityAt, repoRootOf } from "@archboard/workspace/git";
-import { chosenCheckouts } from "@archboard/workspace/repo-registry";
+import { repoIdentityAt, repoRootOf, chosenCheckouts } from "@archboard/workspace/checkouts";
 import {
 	createResolverFixture,
 	type ResolverFixture,

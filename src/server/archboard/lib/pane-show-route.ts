@@ -42,8 +42,8 @@ import { placeOfVault, type VaultPlace } from "@archboard/workspace/repository-l
 import { followRegistry } from "@/server/archboard/lib/repository-routes";
 import {
 	chooseKnownCheckout,
-	repositoryOfVault as registeredRepositoryOf,
-} from "@archboard/workspace/repo-registry";
+	registeredRepositoryOfVault as registeredRepositoryOf,
+} from "@archboard/workspace/checkouts";
 
 /**
  * Point one pane at one board.

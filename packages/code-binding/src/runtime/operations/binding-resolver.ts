@@ -3,8 +3,7 @@ import path from "node:path";
 
 import { CodeBindingSchema, type CodeBinding } from "#shared/schemas/code-binding.ts";
 import { type CodeTargetFailureCode } from "#shared/schemas/code-target-open.ts";
-import type { CheckoutHead } from "@archboard/workspace/git";
-import type { RegisteredRepo } from "@archboard/workspace/repo-registry";
+import type { CheckoutHead, RegisteredRepo } from "@archboard/workspace/checkouts";
 
 type ResolutionFailureCode = Extract<
 	CodeTargetFailureCode,

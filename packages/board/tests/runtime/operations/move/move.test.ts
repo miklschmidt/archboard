@@ -31,7 +31,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { boardLockState, holdBoard, releaseHold } from "#runtime/store/lock/lock.ts";
-import { declareDirectory } from "@archboard/workspace/repo-registry";
+import { declareDirectory } from "@archboard/workspace/checkouts";
 import { type SemanticTransition } from "#runtime/operations/write/transitions.ts";
 import { type SemanticBoard } from "#shared/schemas/board-document.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "#shared/schemas/semantic-policy.ts";

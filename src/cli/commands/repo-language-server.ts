@@ -1,20 +1,18 @@
 import { z } from "zod";
-import { inspectCheckout } from "@archboard/workspace/git";
 import {
+	inspectCheckout,
 	chosenCheckouts,
 	listRegistry,
 	registryPath,
 	setLanguageServer,
 	type RegisteredRepo,
-} from "@archboard/workspace/repo-registry";
-import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
-import { commandLine } from "@/cli/commands/lib/command-line";
-import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/configurable-languages";
-import {
 	ConfiguredServerSchema,
 	LanguageServersSchema,
 	type ConfiguredServer,
-} from "@archboard/workspace/language-servers";
+} from "@archboard/workspace/checkouts";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { commandLine } from "@/cli/commands/lib/command-line";
+import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 
 const tail = z.array(z.string()).default([]);
 

@@ -97,7 +97,7 @@ function vaultsFoundFrom(
 	environment: Record<string, string>,
 	directories: readonly string[],
 ): string[] {
-	const finder = fileURLToPath(import.meta.resolve("@archboard/workspace/vault-finder"));
+	const finder = fileURLToPath(import.meta.resolve("@archboard/workspace/vault"));
 	const script = `const { findVault } = await import(${JSON.stringify(finder)});
 for (const cwd of process.argv.slice(1)) {
 	const found = await findVault({ directory: null, environment: undefined, cwd });

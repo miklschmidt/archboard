@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { chmodSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { declareDirectory, setLanguageServer } from "@archboard/workspace/repo-registry";
+import { declareDirectory, setLanguageServer } from "@archboard/workspace/checkouts";
 import { checkoutsReadFrom } from "#runtime/services/vault-checkout.ts";
 import {
 	resolveRegisteredCheckout,

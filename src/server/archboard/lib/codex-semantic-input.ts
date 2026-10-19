@@ -11,7 +11,7 @@ import { readSemanticBoard } from "@archboard/board/store-read";
 import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPaneContext } from "@archboard/board/pane-context";
-import { checkoutOfVault } from "@archboard/workspace/vault-finder";
+import { checkoutOfVault } from "@archboard/workspace/vault";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchSessionComponents,
