@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server` and `code-binding` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `process` for `runtime/` and `ui-kit` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `process` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -350,6 +350,15 @@ shadcn CLI resolves only the `@/` path.
   `packages/*/src/ui`.
 - A component that no code outside the package imports, such as `Combobox` and `AlertDialog`, has
   no api name and stays private.
+
+The ninth is `server-requests` (`@archboard/server-requests`). It is the browser's one way of speaking
+JSON to the Archboard server, and the browser side of the rule that every call names its vault
+(ADR 0049). It has one file, `ui/clients/server-requests.ts`, and its `.` export is the one api
+file, `ui/api/server-requests.ts`, with 10 names, where the module was imported through one path.
+It carries the request helpers (`json`, `post`, `mutation`, `strictReply`, `cancellable`), the
+vault and board query builders (`inVault`, `boardQuery`) and the vault a page opens in
+(`learnServedVault`, `servedVault`). The reply guards `isRecord` and `trustReply` stay private. It
+holds the one module-level value, the served vault, which the page learns once before it draws.
 
 ## Vendor-owned data
 

@@ -1,0 +1,15 @@
+{
+	"name": "@archboard/server-requests",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Every browser call to the server: the JSON requests, the refusal read one way, and the vault a page opens in, which each call names (ADR 0049).",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		".": "./src/ui/api/server-requests.ts"
+	}
+}

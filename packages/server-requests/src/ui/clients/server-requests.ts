@@ -232,13 +232,11 @@ export {
 	boardQuery,
 	cancellable,
 	inVault,
-	isRecord,
 	json,
 	learnServedVault,
 	mutation,
 	post,
 	servedVault,
 	strictReply,
-	trustReply,
 	type ReplySchema,
 };

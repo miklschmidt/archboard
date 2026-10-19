@@ -14,7 +14,7 @@ import {
 	createLocalPictureSource,
 	takePicturesFrom,
 } from "@/ui/semantic-board-canvas";
-import { learnServedVault } from "@/ui/server-requests";
+import { learnServedVault } from "@archboard/server-requests";
 import { startWalkthroughReplay } from "@/ui/walkthrough-replay";
 
 const root = document.getElementById("root");

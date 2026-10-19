@@ -12,7 +12,7 @@ import {
 	type ShownConversationReply,
 	type ShownConversationRequest,
 } from "@/shared/shown-conversation";
-import { boardQuery, cancellable, inVault, json, post } from "@/ui/server-requests";
+import { boardQuery, cancellable, inVault, json, post } from "@archboard/server-requests";
 import type { BoardIdentity, BrowserPaneListing, LockHolder } from "@/ui/types";
 
 /** What one pane tells the server it has in front of the human. */
