@@ -33,7 +33,7 @@ Remix, per repository policy).
 (run when the module was `src/ui/workbench-thread`) reported that the CLI would overwrite six shared components in
 `src/ui/components` (button, skeleton, tooltip, collapsible, textarea, dialog),
 create `avatar`, `use-attachment-src` and `use-copy-to-clipboard` there,
-edit `src/ui/theme/app.css`, and add `lucide-react`, `tw-shimmer` and `zustand`.
+edit `apps/web/src/ui/theme/app.css`, and add `lucide-react`, `tw-shimmer` and `zustand`.
 Each of those touches a module or dependency this task does not own, so the
 CLI was not run to apply. The files below were written from the same registry
 payloads the CLI resolves (fetched with `curl` from the URLs listed), byte for

@@ -3,7 +3,7 @@
    to sRGB for a picture that stands alone. Keep each a literal colour in OKLCH.
    Every token is a role, not a colour name; components reach them through
    Tailwind's utilities (`bg-sidebar`, `text-primary-text` and so on), which
-   src/ui/theme/app.css registers. The depth of the shell (the elevation and
+   apps/web/src/ui/theme/app.css registers. The depth of the shell (the elevation and
    its shadows) is not a colour and lives in app.css.
 
    Neutrals. Warm graphite and chalk: the hue of every neutral sits near the

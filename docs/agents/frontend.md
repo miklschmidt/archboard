@@ -8,9 +8,8 @@ that workflow and keep its state out of the application root.
 
 ## Placement
 
-The browser app is moving to `apps/web/src/ui/<role>/<behavior>/`.
-For modules that remain under `src/ui/`, keep `src/ui/<module>` flat.
-Name each module for the behavior that it owns.
+The browser app lives in `apps/web/src/ui/<role>/<behavior>/`.
+Name each behavior folder for the behavior that it owns.
 Feature-specific UI, state and commands belong to that module. A visual section
 with its own workflow is a feature owner, not only a shared component.
 Reusable domain behavior belongs in a named peer module, and generic UI belongs
@@ -18,17 +17,18 @@ in the existing shared UI modules. Application and shell composition connect
 those owners through their public interfaces. Shared primitives and reusable
 domain modules must not depend on application or shell composition.
 
-Use concern folders inside a module as needed:
+Use role folders as needed:
 
-| Concern       | Contents                                         |
-| ------------- | ------------------------------------------------ |
-| `components/` | React components and their composite parts       |
-| `hooks/`      | React hooks                                      |
-| `state/`      | State definitions and selectors                  |
-| `lib/`        | Non-React helpers, adapters, and bridge wrappers |
-| `api/`        | Non-React calls across external boundaries       |
-| `types/`      | Type definitions                                 |
-| `tests/`      | Module contract tests and their private support  |
+| Role          | Contents                                                           |
+| ------------- | ------------------------------------------------------------------ |
+| `components/` | React components and their composite parts                         |
+| `hooks/`      | React hooks                                                        |
+| `state/`      | State definitions, stores and selectors                            |
+| `rules/`      | Pure, non-React logic, contracts and types                         |
+| `clients/`    | What touches the outside: server calls, sockets, storage, the page |
+| `constants/`  | Named constants                                                    |
+| `workers/`    | Browser workers                                                    |
+| `api/`        | A package's public interface (an app has none)                     |
 
 The `ui/` area of a package or an app has no module root. It keeps role folders
 directly below `ui/` (`api/`, `clients/`, `components/`, `constants/`, `hooks/`,
@@ -37,9 +37,9 @@ directly below `ui/` (`api/`, `clients/`, `components/`, `constants/`, `hooks/`,
 no `api/`, because nothing imports an app. The same naming rules hold, and the
 tests in `tests/ui/` are held to the UI lint policy.
 
-All these subfolders remain private. At the module root, expose only the
-entrypoints that callers need. An intentionally public hook, component or API
-can live there.
+All these folders are private. A package exposes only its `exports`, and nothing
+imports an app. `apps/web/src/ui/theme/` holds the one stylesheet; it is no role,
+and the placement rule judges TypeScript only.
 
 Keep a small private concern in a single scoped file in the applicable folder.
 If there is no code to place in a folder, do not create the folder. Do not nest folders
@@ -47,11 +47,10 @@ without need within a concern. If only one component consumes a hook or a state
 helper, it still belongs to its own concern. If a separate type
 file only adds navigation, keep a private type with its owner.
 
-Keep the existing model of public entrypoints, with focused `index.ts`
-interfaces. Re-export hubs that expose unrelated implementation are not module
-interfaces. If another module needs shared behavior, extract that behavior to an
-applicable owner. Never reach into the private concern folders of a neighbor.
-Use the existing test owners. Do not colocate tests in `components/` or `hooks/`.
+An app has no index files and no barrels: a caller imports the file that defines
+a name. If another behavior needs shared behavior, extract that behavior to an
+applicable owner. Use the existing test owners. Do not colocate tests in
+`components/` or `hooks/`.
 
 ## Files and components
 
@@ -104,7 +103,7 @@ not add imports or a second state path before that work.
   navigation. The URL
   represents browser display intent, and the board file remains the board
   authority. Selection, pending edits and live voice remain session state.
-- `src/ui/board-routing` delivers that contract (TASK-166) and owns it. The
+- The `board-routing` behavior of the web app delivers that contract (TASK-166) and owns it. The
   workspace lives in search parameters on the one route at `/`: `paneA`, `paneB`,
   `repoA`, `repoB`, `viewA`, `viewB` and `pane`. It uses search parameters because the Archboard server serves the
   page only at `/`. With a path scheme, every direct load gets a 404 answer.
@@ -167,11 +166,10 @@ scopes. Existing generated/vendor conventions keep only their documented
 exceptions. Backend and CLI structure is outside this adoption.
 
 `archboard/ui-concern-placement` enforces the half of these rules that a machine
-can check, over authored UI source in `src/ui/`, packages and apps. It checks the concern
+can check, over authored UI source in packages and apps. It checks the role
 folder names above and PascalCase component files. It checks `use-` prefixed kebab-case hook
 files and scoped kebab-case everywhere else. It also permits React markup and
-hook exports only in `components/`, `hooks/` or an intentionally public
-entrypoint at the module root.
+hook exports only in `components/` and `hooks/`; a package's `api/` files may re-export hooks.
 
 `archboard/named-react-imports` enforces the named-import rule above over the
 same source, tests included. Nothing authored reaches React through its
@@ -204,7 +202,7 @@ cards and the shade of a container's header slab, and the `--tray-*` colors a
 container's neutral well. A header's face is `--background`, or the floor of
 the tray around it. A group region has no token of
 its own: it is drawn in tones of its group's `--semantic-<name>` (ADR 0044).
-`src/ui/theme/app.css` imports the file and holds every value that is not a
+`apps/web/src/ui/theme/app.css` imports the file and holds every value that is not a
 color.
 
 The file holds only custom properties that each hold one literal color, in two

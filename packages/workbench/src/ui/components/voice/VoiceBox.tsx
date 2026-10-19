@@ -23,7 +23,7 @@
 // presentation has no dock to take the voice back, so the box carries it there whatever the
 // person wants of subtitles, and the subtitles control then decides only whether there are words.
 // A recording is drawn with this same box at the foot of the same walkthrough box
-// (src/ui/walkthrough-replay): the orb follows the recorded voice, and the keys are drawn as here,
+// (apps/web/src/ui/clients/walkthrough-replay): the orb follows the recorded voice, and the keys are drawn as here,
 // with nobody to press them.
 //
 // The box comes with the voice and leaves with it. It stays mounted while it leaves,

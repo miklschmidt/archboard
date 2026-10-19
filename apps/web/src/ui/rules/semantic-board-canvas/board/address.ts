@@ -18,7 +18,7 @@
 // name the branch command accepts and nothing can open. Splitting at the last
 // would take only the tail of such a name and look up a variant nobody has.
 //
-// `@/ui/board-routing` carries pane board keys as opaque strings, and takes the
+// the board-routing behavior carries pane board keys as opaque strings, and takes the
 // server's answer to an open as the spelling of the board it reached, so nothing
 // in the address bar has to learn this spelling. There was a `semantic:` prefix
 // here while two kinds of board existed, marking the ones the legacy open path

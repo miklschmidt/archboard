@@ -45,8 +45,7 @@ The two limits are capacity safeguards, not a general runtime or asymptotic guar
 Root `src/` holds no process entrypoint any more: the entries are `apps/cli/src/bin.ts` and
 `apps/server/src/server.ts`. Do not add implementation to them.
 
-Browser code is moving from `src/ui/<module>` to `apps/web/src/ui/<role>/<behavior>/`.
-Modules that remain under `src/ui/` keep the module rules. Build host files can stay outside
+Browser code lives in `apps/web/src/ui/<role>/<behavior>/`. Build host files can stay outside
 `src/`. For frontend concern placement, naming, and React ownership, read [frontend.md](frontend.md).
 
 ## Import rules
@@ -81,7 +80,7 @@ blank lines. Put large test data in a named non-TypeScript fixture instead.
 Local imports use `@/` aliases, including same-module imports, re-exports and
 dynamic/type imports. The private-module and area rules still apply, and
 JavaScript source is rejected. This holds for every authored source file
-(TASK-151), not only `src/ui`. The alias resolves into `src/` alone, so the few
+(TASK-151), not only UI source. The alias resolves into `src/` alone, so the few
 sibling imports in `scripts/` and `tools/` stay relative and say so on the line. A file in a
 package imports its own package relatively, as [Packages](#packages) says.
 
@@ -339,9 +338,10 @@ shadcn CLI resolves through the `@/*` mapping. Generated imports still need the 
   that moves what a pane draws over time. `./stepped-clock` is the clock that a renderer steps,
   which the page that renders a recording frame by frame drives. `./fullscreen-presentation` owns
   presenting one pane fullscreen. `./repository-name` is a repository's name as the chrome shows it.
-- Tailwind finds class names by scanning source files. `src/ui/theme/app.css` names
-  `packages/*/src/ui/**/*` with `@source`, so the `ui` area of every package is scanned (a bare
-  `packages/*/src/ui` matches nothing). `tsconfig.frontend.json` includes `packages/*/src/ui`.
+- Tailwind finds class names by scanning source files. `apps/web/src/ui/theme/app.css` turns the scan of
+  Vite's root off (`source(none)`), names `apps/web/src` and names `packages/*/src/ui/**/*` with `@source`, so the
+  `ui` area of every package is scanned (a bare `packages/*/src/ui` matches nothing). `tsconfig.frontend.json`
+  includes `packages/*/src/ui`.
 - A component that no code outside the package imports, such as `Combobox` and `AlertDialog`, has
   no api name and stays private.
 
@@ -411,7 +411,7 @@ only in Bun.
   `startBrowserRenderer({ avoidWasmUrl })` and draws a board with `drawBoardHere`. The worker is started inside the
   package with `new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" })`, which Vite
   bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The page
-  tells the worker where the routing engine's WebAssembly is, because `frontend/main.tsx` finds it in the root
+  tells the worker where the routing engine's WebAssembly is, because `apps/web/src/main.tsx` finds it in the root
   `node_modules`, where `libavoid-js` does not export it.
 - `./picture` is what a pane reads of a picture besides its pixels: the key it lists, the inks and marks the canvas draws
   with, the code warnings, and what a render asks and answers. `./shell-geometry` is the shell's fixed geometry and the
@@ -423,8 +423,8 @@ only in Bun.
   OFL texts and `README.md`, and `assets/theme.css` holds the colors of both themes. No package file reads a `src/`
   path. `./assets` exports `DIAGRAM_FONTS_DIRECTORY` and `THEME_STYLESHEET`, computed from the package's own place. The
   server's `/assets/diagram-fonts` route, `readme:assets` and the theme parity test take the path from there.
-  `src/ui/theme/app.css` is not a package file, so it names `packages/renderer/assets/` with relative `@import` and
-  `url()` paths, which Vite resolves. `vite.config.ts` hashes `packages/renderer/src/shared`, `src/ui` and the Bun worker
+  `apps/web/src/ui/theme/app.css` is not a package file, so it names `packages/renderer/assets/` with relative `@import` and
+  `url()` paths, which Vite resolves. `vite.config.ts` hashes `packages/renderer/src/shared`, `packages/renderer/src/ui` and the Bun worker
   into the renderer build, so a picture kept by an older build is never shown.
 - Tailwind scans the `ui` area of every package, and the renderer's `ui` area holds no class names. The browser
   measurement contract (`tests/system/browser/measured-text.test.ts`) holds the Bun canvas, which loads from the root
@@ -553,7 +553,7 @@ The file of `shared/api/` (`./browser-contract`) holds 12 names and is safe for 
 path into a runtime or server area: the pane session imports it as well as the server. The 3 files of `ui/api/`
 (`./controllers`, `./agent` and `./voice`) hold 58 names and are safe for the browser too. The file of `runtime/api/`
 (`./runtime`) holds 8 names and the 3 of `server/api/` (`./server`, `./panes` and `./host`) hold 82, and they run only
-in Bun. The browser imports none of them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/` or
+in Bun. The browser imports none of them, and a trace from `apps/web/src` reaches no file of `runtime/` or
 `server/`. `ui/` never imports the `runtime/` or `server/` of the package, and the shared files it reads are the
 private ones, not the api files. An api file lists a name only when code outside the package imports it, and a test
 outside the package counts as that code. The approvals, the gateway envelope and the realtime commands of the shared
@@ -678,7 +678,7 @@ owners and the actions that carry out a pane's command) is private, and its test
 
 **Ui.** `ui/` is the browser side of the workbench: the transport, the conversation and the composer (TASK-500.23.06),
 and over them the dock, the panes, the approvals, the queue, the agent setup and the voice (TASK-500.23.07). The
-modules of `src/ui/` that stay (`application`, `shell`, `pane-session`, the walkthrough replay and the rest) import the
+web app (`apps/web/src/ui`: the application, the shell, the pane session, the walkthrough replay and the rest) imports the
 api files. A private file reads the shared contracts through their defining files (`#shared/...`), never through an
 api file. `ui/` keeps its code in the role folders that `code-opener` uses, with one folder for each behavior.
 
@@ -716,7 +716,7 @@ api file. `ui/` keeps its code in the role folders that `code-opener` uses, with
   folders of `components/`, `hooks/`, `rules/` and `state/` read no browser clock: they ask the frame clock of
   `ui-kit`, so a recording renders them frame by frame (the override in `.oxlintrc.jsonc`). Tailwind finds the class
   names through the `@source` of every package's `ui` area.
-- The 3 api files group what `src/ui/` imports. `./controllers` is the transport and the controllers over it (12 names):
+- The 3 api files group what the web app imports. `./controllers` is the transport and the controllers over it (12 names):
   the transport with its state, and the controllers of the thread link and sign-in, the approvals, the queue and the
   composer. `./agent` is the agent as the application shows it (18 names): the setup that a message or a press of Talk
   carries itself through, the dock and the panel with the view and actions they take and the draft store, the hook that
@@ -737,9 +737,9 @@ An app is a layer-8 workspace in `apps/<name>/` that holds what the packages lef
 `workspaces` field. The lint plugin holds an app to the rules of a package, with these differences:
 
 - **Nothing imports an app.** Only the app's own source and tests reach its files. A package, another
-  app, a script and a test of another owner are refused. The one temporary exception is the root
-  `"#web/*": "./apps/web/src/*"` entry of `package.json`: a file under root `src/` and the browser
-  entry `frontend/main.tsx` may import through it, and nothing else may. TASK-500.24.06 removes it.
+  app, a script and a test of another owner are refused. The root `package.json` has no `imports` entry
+  for an app any more. The lint plugin still holds the branches of the old `#web/*` allowance, and
+  TASK-500.24.06 removes them.
 - **An app imports a package only through its `exports`.** Inside an app, imports use the `#`
   entries of its own `package.json`, as in a package. A `#` import that names no existing file is
   an error whoever owns the importing file.
@@ -820,29 +820,34 @@ of `dist/`.
 
 ### `apps/web`
 
-`apps/web` is the browser app. It moves in two steps (TASK-500.24.04 and TASK-500.24.05). So far it
-holds the board canvas and the variant lifecycle with their tests. The `src/ui` modules and
-`frontend/main.tsx` that have not moved reach them through the temporary root entry, with the file
-spelled out: `#web/ui/components/semantic-board-canvas/LevelMark.tsx`. Inside the app the same file is
-`#ui/components/semantic-board-canvas/LevelMark.tsx`. The canvas has no index: a caller imports the
-file that defines a name.
+`apps/web` is the browser app (TASK-500.24.04 and TASK-500.24.05). It holds the whole `src/ui` of the old tree, its
+entry, the page and the stylesheet. Inside the app a file is `#ui/components/semantic-board-canvas/LevelMark.tsx`. No
+behavior has an index: a caller imports the file that defines a name.
 
-- `src/ui/` is the `ui` area. The canvas is the `semantic-board-canvas` behavior folder under each
-  role, which is the name the frame-clock override of `.oxlintrc.jsonc` matches. `components/` and
-  `hooks/` hold its React code flat. `rules/` holds the pure parts in `camera/` (arithmetic of the
-  camera, its glide, motion, dive and reveal), `walkthrough/`, `drilling/`, `board/` (reading a
-  board's document, its groups, reach and addresses) and `picture/` (parsing and morphing a drawn
-  line). `state/` holds what outlives a render: the camera store, the drill trail, the board-change
-  announcements and the pane vault and repository contexts. `clients/` holds what touches the outside:
-  `reads/` (the server calls, the query options, the kept pictures and the pictures drawn in the
-  page), `picture/` (carrying one picture into the next on the pane's surface, and its traffic) and
-  `subjects/` (reading and marking the subjects in the drawn SVG, their tips, lit ink and code
-  marks). The variant lifecycle is `components/variant-lifecycle/` and `rules/variant-lifecycle/`.
-- Nothing there imports a stay-behind `src/ui` module: the canvas reaches only packages and itself.
-  The stay-behind modules import it.
-- The tests are in `tests/ui/<role>/semantic-board-canvas/`, in the folders of the code they cover.
-  `tests/ui/support/semantic-board-canvas/` holds the stage harness and the probes and fixtures that
-  the stage tests share. The stage tests live in `components/`.
+- `src/main.tsx` is the browser entry. It starts the pictures drawn in the page, mounts the application or the
+  renderer of a recorded talk, and finds the routing engine's WebAssembly with a file URL
+  (`../../../node_modules/libavoid-js/dist/libavoid.wasm`), since the package exports only its entry. `index.html` and
+  `favicon.svg` sit beside `src/`; Vite takes `apps/web` as its root and writes the bundle to the repository's
+  `dist/frontend`, which `apps/server` serves. `index.html` links `/src/ui/theme/app.css`. That file is the only one in
+  `src/ui/theme/`, because a stylesheet is no role; the plugin judges TypeScript only. Its `@source` paths are
+  relative to it. `vite.config.ts` stays at the repository root and names the root, the output and the dev server's
+  `fs.allow`, which lets the dev server serve `packages/` and `node_modules` outside the root.
+- `src/ui/` is the `ui` area. Each behavior is a folder under each role it needs. `application` (the root, the pane
+  records and lists, the agent surfaces, the workspace port), `shell` (the frame, the navigator and its rows),
+  `pane-session` (one pane's socket, status, reading and registration), `board-routing` (the address bar as the
+  workspace), `board-catalog` (the listing of boards and its cache), `board-move`, `vault-diagnostics`,
+  `walkthrough-recording` and `walkthrough-replay` are the old modules. The canvas is the `semantic-board-canvas`
+  behavior, the name that the frame-clock override of `.oxlintrc.jsonc` matches, and the variant lifecycle is
+  `variant-lifecycle`. `rules/` holds the pure parts, `state/` what outlives a render (stores, the pane core, the
+  recorder), `clients/` what touches the outside (the server calls, sockets, storage, audio, the page's own
+  document), `components/` and `hooks/` the React code. `clients/renderer-build/` holds the declaration of the
+  `virtual:archboard-renderer` module that `vite.config.ts` serves, a `.d.ts` that sits in a role folder because the
+  files directly in `src/` are for entries.
+- The canvas has no index either. Its parts are in `rules/` (`camera/`, `walkthrough/`, `drilling/`, `board/`,
+  `picture/`), `state/`, and `clients/` (`reads/`, `picture/`, `subjects/`).
+- The tests are in `tests/ui/<role>/<behavior>/`, in the folders of the code they cover. `tests/ui/support/<behavior>/`
+  holds the harnesses and fixtures that tests share. `tests/contracts/` holds the one test that holds the recorder's page
+  address to the address bar's reading of it: it imports a Bun-side package export, which no `ui` test may.
 
 ## Vendor-owned data
 

@@ -185,7 +185,7 @@ and no voice. These module owners hold the parts:
 
 - `packages/walkthrough/tests/runtime/services` and `processes`: finding and running ffmpeg.
 - `packages/walkthrough/tests/shared/protocol`: the talk's contract.
-- `src/ui/walkthrough-replay/tests`: the frame that shows each event.
+- `apps/web/tests/ui/rules/walkthrough-replay`: the frame that shows each event.
 - `packages/ui-kit/tests/ui/state/frame-clock`: the stepped clock.
 - `packages/walkthrough/tests/runtime/store` and `operations`: the talk on disk and the browsers'
   flags.
@@ -248,7 +248,7 @@ statement. Keep queries scoped to the mounted container, or obtain document-boun
 query helpers after registration. Existing stage tests use `act` and
 `fireEvent` without introducing another DOM lifecycle owner.
 
-The `renderToStaticMarkup` owners elsewhere in `src/ui/` do not need a DOM.
+The `renderToStaticMarkup` owners elsewhere in `apps/web/tests/ui/` do not need a DOM.
 Do not add a shared harness or migrate unrelated owners solely to change their
 test setup.
 
@@ -256,20 +256,20 @@ test setup.
 
 Every transitional package check now has one final owner lane:
 
-| Former key                                                                     | Final lane         | Native owner selector                                                                                        |
-| ------------------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `test:suites`, `test:boundaries`                                               | repository         | `tests/system/repository-policy/`                                                                            |
-| `test:contracts`                                                               | modules and system | `apps/cli/tests/`, `tests/system/cli/`                                                                       |
-| `test:inspection`                                                              | modules and system | `src/runtime/board-inspection/tests/`, `tests/system/board-inspection/`                                      |
-| `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                            |
-| `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `packages/*/tests/`, `src/ui/canvas/tests/`, `tests/system/server-state/`, `tests/system/process-contracts/` |
-| `test:cli`, `test:install`, `test:repos`                                       | system             | `tests/system/cli/`                                                                                          |
-| `test:one-write`                                                               | system             | `tests/system/process-contracts/promotion-delete-bridge-one-write.test.ts`                                   |
-| `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`             | system             | `tests/system/server-state/`                                                                                 |
-| `test:geometry`, `test:labels`                                                 | modules and system | `packages/*/tests/`, `tests/system/label-geometry/`                                                          |
-| `test:text`, `test:library`                                                    | modules            | `packages/*/tests/`                                                                                          |
-| `test:boards`                                                                  | system             | `tests/system/boards/`                                                                                       |
-| `test:browser`                                                                 | serial-browser     | `BROWSER_TEST_PATHS`                                                                                         |
+| Former key                                                                     | Final lane         | Native owner selector                                                                                      |
+| ------------------------------------------------------------------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `test:suites`, `test:boundaries`                                               | repository         | `tests/system/repository-policy/`                                                                          |
+| `test:contracts`                                                               | modules and system | `apps/cli/tests/`, `tests/system/cli/`                                                                     |
+| `test:inspection`                                                              | modules and system | `src/runtime/board-inspection/tests/`, `tests/system/board-inspection/`                                    |
+| `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                          |
+| `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `packages/*/tests/`, `apps/web/tests/ui/`, `tests/system/server-state/`, `tests/system/process-contracts/` |
+| `test:cli`, `test:install`, `test:repos`                                       | system             | `tests/system/cli/`                                                                                        |
+| `test:one-write`                                                               | system             | `tests/system/process-contracts/promotion-delete-bridge-one-write.test.ts`                                 |
+| `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`             | system             | `tests/system/server-state/`                                                                               |
+| `test:geometry`, `test:labels`                                                 | modules and system | `packages/*/tests/`, `tests/system/label-geometry/`                                                        |
+| `test:text`, `test:library`                                                    | modules            | `packages/*/tests/`                                                                                        |
+| `test:boards`                                                                  | system             | `tests/system/boards/`                                                                                     |
+| `test:browser`                                                                 | serial-browser     | `BROWSER_TEST_PATHS`                                                                                       |
 
 ## The serial browser lane
 

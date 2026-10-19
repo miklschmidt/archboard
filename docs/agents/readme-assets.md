@@ -66,7 +66,7 @@ clip.webp -coalesce -delete 0-99 -delete 1--1 -level 94%,100% frame.png`): it mu
 
 The banner's lockup, the mark beside the name, comes from
 `scripts/readme-assets/lockup.ts`. A test in the repository lane holds that mark
-to the one the shell draws in `src/ui/shell/components/Brand.tsx`. The banner
+to the one the shell draws in `apps/web/src/ui/components/shell/Brand.tsx`. The banner
 also writes `docs/assets/archboard-social-card.jpg`, GitHub's social preview, cut
 from the dark banner. GitHub does not read it from the repository: the owner
 uploads it by hand under Social preview in the repository's settings.

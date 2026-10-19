@@ -1,7 +1,7 @@
 // The lockup the README's art sets: the mark beside the name. The mark is a gold peak with a
 // second stroke inside it and a swoosh over its shoulder, in the theme's gradient from --mark-hi
 // to --mark-lo. The name is archboard in the display face's tracked capitals. The shell draws the
-// same lockup (src/ui/shell/components/Brand.tsx), and the repository lane holds this geometry to
+// same lockup (apps/web/src/ui/components/shell/Brand.tsx), and the repository lane holds this geometry to
 // the shell's, so the two cannot drift.
 
 /** The mark's geometry, as the shell draws it. */

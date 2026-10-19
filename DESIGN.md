@@ -117,7 +117,7 @@ components:
 
 This file records the shell as it stands in code. Two files are normative:
 `packages/renderer/assets/theme.css` holds the colours of both themes, which the shell
-and every picture paint with, and `src/ui/theme/app.css` holds the elevation of
+and every picture paint with, and `apps/web/src/ui/theme/app.css` holds the elevation of
 both themes, type, space, shape, the shadow utilities and the gold finish. If this file and those files disagree, those files win and this
 file is stale.
 
