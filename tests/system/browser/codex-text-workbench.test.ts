@@ -99,17 +99,18 @@ function agentSurface(browser: Browser): Promise<AgentSurface> {
 	})()`);
 }
 
-/** The pane's canvas, remembered on first sight so its identity can be checked at the end. */
+/** The pane's canvas, remembered once drawn (the loading stage is replaced) so its identity can be checked at the end. */
 function paneCanvas(
 	browser: Browser,
 ): Promise<{ panes: number; board: string | null; drawn: boolean }> {
 	return browser.eval(`(() => {
 		const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
-		if (canvas && !window.__codexTextWorkbenchCanvas) window.__codexTextWorkbenchCanvas = canvas;
+		const drawn = canvas?.getAttribute('data-state') === 'drawn';
+		if (canvas && drawn && !window.__codexTextWorkbenchCanvas) window.__codexTextWorkbenchCanvas = canvas;
 		return {
 			panes: document.querySelectorAll('${PANE_SECTIONS}').length,
 			board: ${BOARD_NAME_EXPRESSION},
-			drawn: canvas?.getAttribute('data-state') === 'drawn',
+			drawn,
 		};
 	})()`);
 }
