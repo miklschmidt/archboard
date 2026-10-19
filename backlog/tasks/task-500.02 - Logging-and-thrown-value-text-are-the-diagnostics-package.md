@@ -1,11 +1,11 @@
 ---
 id: TASK-500.02
 title: Logging and thrown-value text are the diagnostics package
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 01:59'
-updated_date: '2026-10-19 02:12'
+updated_date: '2026-10-19 02:15'
 labels: []
 dependencies:
   - TASK-500.01
@@ -21,10 +21,10 @@ diagnostics is layer 0 of docs/design/package-map.md. shared/thrown-error, runti
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 packages/diagnostics holds the four sources in shared/ and runtime/ role folders, with an exports interface and no index.ts barrel, and every importer uses @archboard/diagnostics
-- [ ] #2 The browser bundle imports only a subpath that holds no Node import
-- [ ] #3 The tests of the moved code live in packages/diagnostics/tests and import their private files with # specifiers
-- [ ] #4 bun run check passes
+- [x] #1 packages/diagnostics holds the four sources in shared/ and runtime/ role folders, with an exports interface and no index.ts barrel, and every importer uses @archboard/diagnostics
+- [x] #2 The browser bundle imports only a subpath that holds no Node import
+- [x] #3 The tests of the moved code live in packages/diagnostics/tests and import their private files with # specifiers
+- [x] #4 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,3 +43,9 @@ diagnostics is layer 0 of docs/design/package-map.md. shared/thrown-error, runti
 <!-- SECTION:NOTES:BEGIN -->
 Moved with /tmp/pm/move-package.ts (a map of old path to package, file and export subpath; it rewrites importers by resolving specifiers like the lint plugin). 50 files rewritten. Both errorMessage functions kept: ./errno says 'unknown error' for a non-Error non-string, ./thrown-error stringifies. No browser code imports the package today; the browser may import only ./errno, ./thrown-error and ./unknown-record.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/diagnostics holds logger (runtime/services), errno, thrown-error and unknown-record (shared/rules) behind four exports, with no barrel. 50 importers use @archboard/diagnostics/<subpath>. The two errorMessage functions keep their different behavior for non-Error values; unifying them needs one policy and an audit of callers, left for a later task. No browser code imports the package today, and Codex traced 799 browser-reachable files to confirm none reaches it. logger.test.ts moved to packages/diagnostics/tests. bun run check passes (4859 module, 253 system, 30 repository tests and the 19 serial browser files). Codex review of 843003fe6 found no defects. No board is affected: no vault binding names a moved path.
+<!-- SECTION:FINAL_SUMMARY:END -->
