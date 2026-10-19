@@ -12,7 +12,7 @@
 //   control would make one keystroke start a second turn whose predecessor
 //   may already be running; clearing it outright would lose the words.
 
-import type { DeliveryOutcome } from "@/shared/codex-browser-model";
+import type { DeliveryOutcome } from "@archboard/workbench/browser-model";
 import type { WorkbenchComposerDraftDisposition } from "@/ui/workbench-composer/types/contract";
 
 const DISPOSITIONS: Readonly<Record<DeliveryOutcome, WorkbenchComposerDraftDisposition>> = {

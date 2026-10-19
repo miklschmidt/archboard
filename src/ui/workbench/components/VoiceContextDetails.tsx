@@ -6,7 +6,7 @@
 import { RiFileCopyLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import { IconAction } from "@/ui/workbench/components/IconAction";
 import { clockTime, counted } from "@/ui/workbench/lib/format";
 

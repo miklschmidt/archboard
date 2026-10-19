@@ -4,7 +4,10 @@
 // effect hash exactly as the server published them. Nothing here can retarget
 // an effect or widen it.
 
-import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+} from "@archboard/workbench/browser-approvals";
 import type {
 	WorkbenchApprovalDraftResult,
 	WorkbenchApprovalField,

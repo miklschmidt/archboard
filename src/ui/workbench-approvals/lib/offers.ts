@@ -2,7 +2,7 @@
 // also be answered by voice. Offers exist only while a request is pending
 // and this browser holds authority; every other state is read-only.
 
-import type { BrowserApproval } from "@/shared/codex-browser-model";
+import type { BrowserApproval } from "@archboard/workbench/browser-approvals";
 import type {
 	WorkbenchApprovalOffer,
 	WorkbenchApprovalPhase,

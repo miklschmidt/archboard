@@ -4,12 +4,12 @@
 // forgets to pass its captured target is not silently retargeted onto
 // whatever the pane moved to.
 
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@/shared/codex-browser-model";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/workbench/browser-approvals";
 import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
 import { createIdentityAuthorities, type ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	THREAD_LINK_MODULE_COMMANDS,

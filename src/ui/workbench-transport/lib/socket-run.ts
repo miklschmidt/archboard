@@ -3,7 +3,7 @@
 // time; a retired run answers nothing and touches nothing.
 
 import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
-import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserCommandLease, BrowserSnapshot } from "@archboard/workbench/browser-model";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserGatewayAction,

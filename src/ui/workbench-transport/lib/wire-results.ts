@@ -1,13 +1,13 @@
 // The wire parsers for what a request answers with: the response envelope,
 // the pushed event envelope, command results and account results.
 
-import { BROWSER_GATEWAY_ERROR_CODES } from "@/shared/codex-browser-gateway";
-import { DeliveryOutcomeSchema, type DeliveryOutcome } from "@/shared/codex-browser-model";
+import { BROWSER_GATEWAY_ERROR_CODES } from "@archboard/workbench/browser-gateway";
+import { DeliveryOutcomeSchema, type DeliveryOutcome } from "@archboard/workbench/browser-model";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 	type AnswerSdp,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type {
 	BrowserGatewayErrorCode,
 	BrowserWorkbenchAccountReadResult,

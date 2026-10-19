@@ -36,7 +36,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 
 interface ResponseWrite {
 	readonly request: DynamicServerRequest;

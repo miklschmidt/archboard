@@ -1,8 +1,8 @@
 import type {
 	BrowserDynamicApproval,
 	BrowserDynamicApprovalEffect,
-	BrowserSchemas,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-approvals";
+import type { BrowserSchemas } from "@archboard/workbench/browser-model";
 import {
 	IdentityValidationError,
 	type TrustedIdentityDecoder,

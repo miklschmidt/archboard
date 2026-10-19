@@ -4,7 +4,7 @@
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type { CommandOutcome, RealtimeCorrelation } from "@/ui/codex-realtime";
 
 type StopMode = "delivered" | "rejected" | "not_delivered" | "outcome_unknown" | "paused";

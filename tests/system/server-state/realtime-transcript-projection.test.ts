@@ -7,11 +7,11 @@ import {
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../src/runtime/codex-spoken-approval/index.js";
-import { createCodexBrowserModel } from "../../../src/shared/codex-browser-model/index.js";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "../../../src/shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 import {
 	createIdentityAuthorities,
 	type ChildEpoch,

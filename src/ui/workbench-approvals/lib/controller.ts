@@ -4,7 +4,10 @@
 // out once, against the target captured when it was made, and its result is
 // kept beside the card until the server's own record replaces it.
 
-import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+} from "@archboard/workbench/browser-approvals";
 import type {
 	WorkbenchApprovalCard,
 	WorkbenchApprovalDecisionResult,

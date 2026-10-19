@@ -1,5 +1,5 @@
-import type { createCodexBrowserModel } from "@/shared/codex-browser-model";
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { createCodexBrowserModel } from "@archboard/workbench/browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import {
 	CodexWorkbenchGatewayError,
 	type BrowserLeaseRecord,

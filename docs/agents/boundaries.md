@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `workbench` for `shared/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -542,6 +542,33 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
   because the spawn imports that private file, and `package-api.test.ts` names it.
 - The tests are in `tests/`: `runtime/store/` holds the pid file, `runtime/operations/` the cleanup of a failed start
   and `runtime/rules/` the pane addressing. The end-to-end owners stay in `tests/system/`.
+
+The sixteenth is `workbench` (`@archboard/workbench`). It is the Codex workbench: the coordinator, the workhorses, the
+conversation and the voice (layer 7, the last). It grows over TASK-500.23.01 to .07, one move for each step up its
+import graph, and the later moves add `runtime/`, `server/` and `ui/`. So far it holds the browser-safe contracts that
+the browser and the server exchange. It adopts the `api/` role for `shared/` and exposes 5 subpaths with 100 names, where
+code outside imported 4 module paths. It imports `codex-app-server`, `walkthrough` and `timing`, and nothing from
+`src/`. The 5 files of `shared/api/` are safe for the browser, with no Node import and no path into a runtime or
+server area: the pane transport and the voice session import them as well as the server.
+
+- `./realtime-contract` is the realtime voice session: its phases and the transitions between them, the ids that name
+  a session, an item and a correlation, and the commands, outcomes and events that the browser and the server exchange
+  about it. The contract is `shared/protocol/realtime-contract.ts` and the transitions are
+  `shared/rules/realtime-state.ts`.
+- `./browser-model` is the snapshot that a pane renders, the commands it sends and the outcome of a command.
+  `createCodexBrowserModel` binds every schema to one identity authority, so nothing the browser exchanges can name a
+  child, an epoch or an identity that the session did not issue. `./browser-approvals` is the approvals in that
+  snapshot: the ordinary approval, the dynamic approval with its effect and canonical hash, and the spoken approval.
+  They are `shared/schemas/browser/` (the model, the scalars and the families of the snapshot) and
+  `shared/schemas/dynamic-approval/`, with the canonical hash and the lifecycle check in `shared/rules/`.
+- `./browser-gateway` is the wire envelope of the workbench gateway: the actions it accepts, its messages and its
+  error codes (`shared/protocol/gateway-envelope.ts`). `./shown-conversation` is the route that tells the server which
+  checkout's conversation the dock shows, and what it answers (`shared/protocol/shown-conversation.ts`).
+- The dynamic approval keeps its expiry in `@archboard/timing`, so the api files do not re-export it. A caller imports
+  `CODEX_APPROVAL_EXPIRY_MS` from there.
+- The tests are in `tests/`: `shared/protocol/` holds the identity types of the realtime contract, `shared/rules/` the
+  canonical hash and `shared/schemas/` the browser states and the dynamic approval. `shared/support/` holds the fixture
+  model they share.
 
 ## Vendor-owned data
 

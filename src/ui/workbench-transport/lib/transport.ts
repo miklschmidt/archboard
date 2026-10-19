@@ -4,7 +4,7 @@
 // only composes the session, lease, command and prepared-action owners over
 // one core.
 
-import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserCommandLease, BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchAccountReadResult,

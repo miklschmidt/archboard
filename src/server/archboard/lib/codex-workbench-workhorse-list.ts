@@ -9,7 +9,10 @@
 // the tab shows it whatever conversation is shown.
 
 import type { ApprovalFamily, CodexApprovalBroker } from "@/runtime/codex-approvals";
-import { BROWSER_WORKHORSE_LIMIT, type BrowserWorkhorses } from "@/shared/codex-browser-model";
+import {
+	BROWSER_WORKHORSE_LIMIT,
+	type BrowserWorkhorses,
+} from "@archboard/workbench/browser-model";
 import type { TabSessionId } from "@/server/codex-workbench";
 import type { CodexWorkbenchTabSession } from "@/server/archboard/lib/codex-workbench-session-contract";
 import type { CodexWorkbenchWorkhorse } from "@/server/archboard/lib/codex-workbench-session-workhorses";

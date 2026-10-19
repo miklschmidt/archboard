@@ -4,7 +4,10 @@
 // applies speaks, so the line never says two things at once. Pure.
 
 import { AGENT_QUIET_MS } from "@archboard/timing";
-import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+} from "@archboard/workbench/browser-approvals";
 import type { AgentPhase } from "@/ui/agent-setup";
 import type { AgentView } from "@/ui/workbench/contracts";
 import { activityLabel, runSummary } from "@/ui/workbench-thread";

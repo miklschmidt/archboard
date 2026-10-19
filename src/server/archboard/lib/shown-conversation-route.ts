@@ -16,7 +16,7 @@ import {
 	ShownConversationRequestSchema,
 	type ShownConversationRefusal,
 	type ShownConversationReply,
-} from "@/shared/shown-conversation";
+} from "@archboard/workbench/shown-conversation";
 import { logger } from "@archboard/diagnostics/logger";
 import type { TabSessionId } from "@/server/codex-workbench";
 import { codexWiring } from "@/server/archboard/lib/codex-wiring";

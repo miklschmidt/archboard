@@ -3,13 +3,13 @@
 // what the module sent and lets a test publish a new authoritative state,
 // which is the only way anything in this module is allowed to change.
 
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@/shared/codex-browser-model";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/workbench/browser-approvals";
 import type {
 	BrowserQueue,
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { WorkbenchQueueEntry } from "@/ui/workbench-queue/contracts";
 import type {

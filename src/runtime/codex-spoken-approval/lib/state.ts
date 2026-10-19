@@ -4,7 +4,7 @@ import type { DynamicServerRequest } from "@archboard/codex-app-server/transport
 import type {
 	RealtimeCorrelation,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type {
 	ApprovalId,
 	ChildEpoch,

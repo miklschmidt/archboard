@@ -20,7 +20,7 @@ import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type { CoordinatorRetirement } from "@/runtime/codex-coordinator";
 import type { RealtimePresentation } from "@/runtime/codex-realtime";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";

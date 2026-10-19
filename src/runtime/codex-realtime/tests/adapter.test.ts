@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
-import { parseRealtimeItemId } from "../../../shared/codex-realtime-contract/index.js";
+import { parseRealtimeItemId } from "@archboard/workbench/realtime-contract";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	COORDINATOR_WIRE_THREAD_ID,

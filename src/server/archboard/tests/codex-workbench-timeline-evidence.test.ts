@@ -7,7 +7,7 @@ import type { TransportServerNotification } from "@archboard/codex-app-server/tr
 import {
 	BROWSER_TIMELINE_LIMITS,
 	createCodexBrowserModel,
-} from "../../../shared/codex-browser-model/index.js";
+} from "@archboard/workbench/browser-model";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,

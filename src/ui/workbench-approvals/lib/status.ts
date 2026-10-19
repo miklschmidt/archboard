@@ -2,7 +2,10 @@
 // whether this browser may still decide it. An unknown outcome stays
 // unknown: nothing here reads a lost answer as either result.
 
-import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+} from "@archboard/workbench/browser-approvals";
 import type {
 	WorkbenchApprovalPhase,
 	WorkbenchApprovalStatus,

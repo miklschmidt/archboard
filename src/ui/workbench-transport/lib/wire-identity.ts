@@ -5,7 +5,7 @@
 // deliberately preserves the shared model's exact object, enum, cross-field
 // and bounded-text checks instead of copying those schemas into the UI.
 
-import type { IdentityContext } from "@/shared/codex-browser-model";
+import type { IdentityContext } from "@archboard/workbench/browser-model";
 import type {
 	ApprovalId,
 	BrowserCommandId,

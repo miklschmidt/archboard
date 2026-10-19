@@ -2,7 +2,7 @@
 // person chose, the refusals it makes before anything leaves the browser, and
 // the one state owner the official assistant-ui composer submits through.
 
-import type { BrowserSnapshot, DeliveryOutcome } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot, DeliveryOutcome } from "@archboard/workbench/browser-model";
 import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchState,

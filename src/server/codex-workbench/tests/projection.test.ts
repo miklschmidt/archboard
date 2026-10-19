@@ -9,7 +9,7 @@ import type {
 	HumanApprovalMethod,
 	TransportServerRequest,
 } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthority,

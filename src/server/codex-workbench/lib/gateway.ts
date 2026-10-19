@@ -1,4 +1,4 @@
-import { createCodexBrowserModel } from "@/shared/codex-browser-model";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import type {
 	ChildEpoch,
 	ChildId,

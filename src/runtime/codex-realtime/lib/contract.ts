@@ -5,7 +5,7 @@ import type {
 	RealtimeCorrelationId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type {
 	ChildEpoch,
 	ChildId,

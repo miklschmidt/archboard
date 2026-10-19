@@ -28,7 +28,7 @@ import {
 	type IdentityAuthority,
 	type WireRequestCorrelation,
 } from "@archboard/codex-app-server/identity";
-import type { RealtimeSemanticEvent } from "../../../../src/shared/codex-realtime-contract/index.ts";
+import type { RealtimeSemanticEvent } from "@archboard/workbench/realtime-contract";
 
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const DEFAULTS = {

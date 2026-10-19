@@ -17,7 +17,7 @@ import type {
 import type {
 	RealtimeCorrelation,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "@archboard/timing";
 import {
 	failure,

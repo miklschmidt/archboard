@@ -2,11 +2,11 @@
 // commands and media-ready publications and answers realtime commands the way
 // the gateway does.
 
-import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserCommandLease, BrowserSnapshot } from "@archboard/workbench/browser-model";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import {
 	mediaLease,
 	workbenchSnapshot,

@@ -6,7 +6,7 @@ import type {
 	BrowserApproval,
 	BrowserDynamicApproval,
 	BrowserSpokenApproval,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-approvals";
 import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/contract";
 import type { ApprovalChoice } from "@/ui/workbench/contracts";
 import { clockTime, counted } from "@/ui/workbench/lib/format";

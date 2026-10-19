@@ -1,7 +1,7 @@
 // Every sentence the composer says, in one place: its own refusals, the
 // transport's refusals in the composer's words, and the outcome messages.
 
-import type { DeliveryOutcome } from "@/shared/codex-browser-model";
+import type { DeliveryOutcome } from "@archboard/workbench/browser-model";
 import type {
 	WorkbenchComposerAction,
 	WorkbenchComposerRefusalCode,

@@ -1,4 +1,7 @@
-import { canTransitionRealtimeState, type RealtimeState } from "@/shared/codex-realtime-contract";
+import {
+	canTransitionRealtimeState,
+	type RealtimeState,
+} from "@archboard/workbench/realtime-contract";
 
 /**
  * The state steps a user input (text, speech or a final user transcript segment) implies from

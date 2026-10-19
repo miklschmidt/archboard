@@ -10,7 +10,7 @@ export {
 	REALTIME_PHASES,
 	REALTIME_TRANSITIONS,
 	transitionRealtimeState,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 export type {
 	AnswerSdp,
 	AppendNotDeliveredReason,
@@ -45,4 +45,4 @@ export type {
 	RecoveryRequest,
 	RemoteMediaAttachment,
 	StopRequest,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";

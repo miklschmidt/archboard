@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import { createThreadLinkController } from "@/ui/workbench-thread-link";
 import type {
 	ThreadLinkActionSnapshot,

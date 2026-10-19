@@ -7,7 +7,7 @@
 // waits and says what it waits on; a failure stays on the message with the
 // reason, and nothing is retried behind the person's back.
 
-import type { BrowserVoicePresentation } from "@/shared/codex-browser-model";
+import type { BrowserVoicePresentation } from "@archboard/workbench/browser-model";
 import type { LoginId } from "@archboard/codex-app-server/identity";
 import type { WorkbenchComposerSubmissionResult } from "@/ui/workbench-composer";
 import type { ThreadLinkLoginParams } from "@/ui/workbench-thread-link/transport-port";

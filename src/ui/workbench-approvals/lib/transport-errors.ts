@@ -1,8 +1,8 @@
 // Reading a thrown transport error without depending on the transport's
 // error class: the facts it carries are read structurally.
 
-import { BROWSER_GATEWAY_ERROR_CODES } from "@/shared/codex-browser-gateway";
-import type { DeliveryOutcome } from "@/shared/codex-browser-model";
+import { BROWSER_GATEWAY_ERROR_CODES } from "@archboard/workbench/browser-gateway";
+import type { DeliveryOutcome } from "@archboard/workbench/browser-model";
 import type {
 	WorkbenchTransportErrorCode,
 	WorkbenchTransportErrorFacts,

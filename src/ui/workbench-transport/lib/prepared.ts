@@ -2,7 +2,7 @@
 // once, revalidate the intent, and dispatch once. Everything is serialised
 // behind one tail so a second action cannot slip between claim and dispatch.
 
-import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserCommandLease, BrowserSnapshot } from "@archboard/workbench/browser-model";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserCommandDraft,

@@ -5,7 +5,10 @@
 
 import { useCallback, type JSX } from "react";
 
-import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+} from "@archboard/workbench/browser-approvals";
 import { Button } from "@archboard/ui-kit/controls";
 import {
 	projectApproval,

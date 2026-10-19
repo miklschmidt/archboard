@@ -5,9 +5,9 @@
 import type {
 	BrowserApproval,
 	BrowserDynamicApproval,
-	BrowserSnapshot,
 	DYNAMIC_APPROVAL_DECISIONS,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-approvals";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/contract";
 import type { AgentSetupSnapshot } from "@/ui/agent-setup";
 import type { ThreadLinkLoginParams } from "@/ui/workbench-thread-link/transport-port";

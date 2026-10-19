@@ -9,7 +9,7 @@ import type { VoiceOwner, WorkbenchOwners } from "@/ui/application/lib/workbench
 import type { AgentActions } from "@/ui/workbench/contracts";
 import type { DraftStore } from "@/ui/workbench";
 import { projectTimelineTurns, type ConversationTurn } from "@/ui/workbench-timeline";
-import type { BrowserTimeline } from "@/shared/codex-browser-model";
+import type { BrowserTimeline } from "@archboard/workbench/browser-model";
 
 /** What the actions act on. */
 interface AgentActionTargets {

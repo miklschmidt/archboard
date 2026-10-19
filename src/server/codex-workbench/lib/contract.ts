@@ -1,11 +1,11 @@
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
-	BrowserDynamicApprovalResponse,
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
+import type { BrowserDynamicApprovalResponse } from "@archboard/workbench/browser-approvals";
 import type {
 	BrowserCommandId,
 	ChildEpoch,
@@ -19,7 +19,7 @@ import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
 } from "@/runtime/codex-thread-link";
-import type { AnswerSdp } from "@/shared/codex-realtime-contract";
+import type { AnswerSdp } from "@archboard/workbench/realtime-contract";
 import type { ApprovalOwnerView, ApprovalResponse } from "@/runtime/codex-approvals";
 import type { SupportedLoginAccountParams } from "@archboard/codex-app-server/session";
 import type {
@@ -30,7 +30,7 @@ import type {
 	BrowserGatewayMessage,
 	BrowserGatewaySnapshotMessage,
 	BrowserSnapshotDelta,
-} from "@/shared/codex-browser-gateway";
+} from "@archboard/workbench/browser-gateway";
 import type { BrowserOwnerProjection } from "@/server/codex-workbench/lib/projection-contract";
 import type { TabSessionId } from "@/server/codex-workbench/lib/tab-session";
 

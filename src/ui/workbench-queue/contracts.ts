@@ -2,7 +2,7 @@
 // entry may do, the reorder plan, the settlement of one command, and the
 // actions the committed queue panel calls (`@/ui/workbench/contracts`).
 
-import type { BrowserQueue, BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserQueue, BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type {
 	WorkbenchCommandIntent,
 	WorkbenchTransportCapabilities,

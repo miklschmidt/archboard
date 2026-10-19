@@ -5,7 +5,7 @@
 // retargeted. The controller holds no message list: the only turn a person
 // ever sees came from the server snapshot through the runtime.
 
-import type { DeliveryOutcome } from "@/shared/codex-browser-model";
+import type { DeliveryOutcome } from "@archboard/workbench/browser-model";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserWorkbenchCommandResult,

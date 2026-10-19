@@ -5,10 +5,8 @@ import {
 	type DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
-import {
-	CODEX_APPROVAL_EXPIRY_MS,
-	createCodexBrowserModel,
-} from "../../../shared/codex-browser-model/index.js";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {
 	createIdentityAuthorities,
 	IdentityValidationError,

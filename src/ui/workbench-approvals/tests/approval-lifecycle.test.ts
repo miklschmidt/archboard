@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval } from "@/shared/codex-browser-model";
+import type { BrowserApproval } from "@archboard/workbench/browser-approvals";
 import {
 	approvalDecisionSignature,
 	approvalFocusReturn,

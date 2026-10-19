@@ -1,8 +1,8 @@
 import {
 	BROWSER_PERMISSION_FILE_ACCESS,
-	type BrowserApproval,
 	JsonValueSchema,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
+import { type BrowserApproval } from "@archboard/workbench/browser-approvals";
 import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
 
 type OwnerApprovalRequest = ApprovalOwnerView["request"];

@@ -5,14 +5,12 @@ import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,
 } from "../../../runtime/codex-spoken-approval/index.js";
-import {
-	BROWSER_SPOKEN_APPROVAL_REASONS,
-	createCodexBrowserModel,
-} from "../../../shared/codex-browser-model/index.js";
+import { BROWSER_SPOKEN_APPROVAL_REASONS } from "@archboard/workbench/browser-approvals";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,

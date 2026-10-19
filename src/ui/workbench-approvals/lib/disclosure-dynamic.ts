@@ -2,7 +2,7 @@
 // the exact target, prompt and fork boundary, both OperationIds, the
 // immutable effect hash, and the tool result once the server published one.
 
-import type { BrowserDynamicApproval } from "@/shared/codex-browser-model";
+import type { BrowserDynamicApproval } from "@archboard/workbench/browser-approvals";
 import type { WorkbenchApprovalDisclosure } from "@/ui/workbench-approvals/contracts";
 import { row, timestampText } from "@/ui/workbench-approvals/lib/disclosure";
 

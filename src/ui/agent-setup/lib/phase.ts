@@ -2,7 +2,7 @@
 // derived from the workbench transport's published state, each of which says
 // what, if anything, stands between them and talking to the agent. Pure.
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type { LoginId } from "@archboard/codex-app-server/identity";
 import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
 

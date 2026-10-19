@@ -2,7 +2,7 @@
 // labels, the server's spoken-eligibility vocabulary in human words, and the
 // transport's refusals.
 
-import type { BrowserApproval } from "@/shared/codex-browser-model";
+import type { BrowserApproval } from "@archboard/workbench/browser-approvals";
 import type {
 	WorkbenchApprovalFamily,
 	WorkbenchApprovalPhase,

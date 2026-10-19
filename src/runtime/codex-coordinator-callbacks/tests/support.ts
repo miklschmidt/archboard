@@ -25,7 +25,7 @@ import {
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 
 interface Identities {
 	readonly authorities: IdentityAuthorities;

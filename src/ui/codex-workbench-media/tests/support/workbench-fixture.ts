@@ -3,11 +3,9 @@
 // string into an identity type.
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import {
-	BROWSER_IDLE_SPOKEN_APPROVAL,
-	createCodexBrowserModel,
-} from "@/shared/codex-browser-model";
-import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browser-model";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/workbench/browser-approvals";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
+import type { BrowserCommandLease, BrowserSnapshot } from "@archboard/workbench/browser-model";
 
 const authorities = createIdentityAuthorities();
 const authority = authorities.identity;

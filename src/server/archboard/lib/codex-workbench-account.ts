@@ -4,7 +4,7 @@ import type {
 	ControlledCodexSession,
 	SessionLoginParams,
 } from "@archboard/codex-app-server/session";
-import { createCodexBrowserModel } from "@/shared/codex-browser-model";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import type { ServerBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
 

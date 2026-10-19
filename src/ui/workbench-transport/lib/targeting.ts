@@ -5,10 +5,10 @@
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
-	BrowserDynamicApproval,
 	BrowserSnapshot,
 	BrowserThreadLink,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
+import type { BrowserDynamicApproval } from "@archboard/workbench/browser-approvals";
 import type {
 	BrowserCommandAuthority,
 	BrowserCommandDraft,

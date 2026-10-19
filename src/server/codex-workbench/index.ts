@@ -25,13 +25,9 @@ export {
 
 export type {
 	BrowserAccount,
-	BrowserApproval,
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserCoordinator,
-	BrowserDynamicApproval,
-	BrowserDynamicApprovalEffect,
-	BrowserDynamicApprovalResponse,
 	BrowserLogin,
 	BrowserOperationOutcome,
 	BrowserQueue,
@@ -43,7 +39,13 @@ export type {
 	BrowserTimeline,
 	BrowserVoice,
 	DeliveryOutcome,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
+export type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+	BrowserDynamicApprovalEffect,
+	BrowserDynamicApprovalResponse,
+} from "@archboard/workbench/browser-approvals";
 
 export type {
 	BrowserAccountActions,

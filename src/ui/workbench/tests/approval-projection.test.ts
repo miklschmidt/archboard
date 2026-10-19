@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval, BrowserSpokenApproval } from "@/shared/codex-browser-model";
+import type {
+	BrowserApproval,
+	BrowserSpokenApproval,
+} from "@archboard/workbench/browser-approvals";
 import { projectApproval, spokenApprovalLine } from "@/ui/workbench/approval-projection";
 import { identities } from "@/ui/workbench/tests/identities";
 
