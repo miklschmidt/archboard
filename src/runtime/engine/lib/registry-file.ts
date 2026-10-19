@@ -11,7 +11,7 @@ import fs from "fs";
 import path from "path";
 import { writeFileAtomic } from "@/runtime/engine/atomic-write";
 import { stateDir } from "@/runtime/engine/state-dir";
-import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
+import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { LOCK_LEASE_MS, LOCK_POLL_MS } from "@archboard/timing";
 import { LanguageServersSchema, type LanguageServers } from "@/shared/language-servers/index";
 

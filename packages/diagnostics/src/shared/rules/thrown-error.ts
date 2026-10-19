@@ -3,7 +3,7 @@
 // `code` a system call or a server refusal attached. Narrowing lives here so
 // the reading sites stay honest about what they know.
 
-import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
+import { isRecord, stringAt } from "#shared/rules/unknown-record.ts";
 
 /** An error that carries a machine-readable code beside its message. */
 type CodedError = Error & { code: string };

@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { logger } from "@/runtime/engine/logger";
-import { errorCode, errorMessage } from "@/runtime/engine/lib/thrown-error";
+import { logger } from "@archboard/diagnostics/logger";
+import { errorCode, errorMessage } from "@archboard/diagnostics/thrown-error";
 
 /**
  * The real path of a script, so symlinked bins compare equal to their target.

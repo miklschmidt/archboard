@@ -20,7 +20,7 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
-import { errorMessage } from "@/shared/thrown-error/index";
+import { errorMessage } from "@archboard/diagnostics/errno";
 import { semanticBoardAddress } from "@/runtime/semantic-board-store/lib/location";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import type {

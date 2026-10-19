@@ -14,7 +14,7 @@ import {
 	type StopResult,
 	stopServer,
 } from "@/runtime/engine/spawn";
-import { codedError } from "@/runtime/engine/lib/thrown-error";
+import { codedError } from "@archboard/diagnostics/thrown-error";
 
 interface RestartResult extends EnsureResult {
 	stop: StopResult;

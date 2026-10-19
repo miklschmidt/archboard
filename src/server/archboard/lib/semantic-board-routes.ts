@@ -12,7 +12,7 @@
 
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { errorMessage } from "@/shared/thrown-error/index";
+import { errorMessage } from "@archboard/diagnostics/errno";
 import {
 	acceptedBoardNames,
 	LayoutEngineSchema,

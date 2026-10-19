@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "@/runtime/engine/board-lock";
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import * as timing from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-lease-"));

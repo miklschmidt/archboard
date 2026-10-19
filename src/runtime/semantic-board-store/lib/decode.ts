@@ -4,7 +4,7 @@
 
 import { migrateSemanticBoardDocument } from "@/runtime/semantic-board-store/lib/migrations";
 import { parseSemanticBoard, type SemanticBoardParse } from "@/shared/semantic-board/index";
-import { errorMessage } from "@/shared/thrown-error/index";
+import { errorMessage } from "@archboard/diagnostics/errno";
 
 type DecodedSemanticBoard =
 	| (Extract<SemanticBoardParse, { readonly ok: true }> & {

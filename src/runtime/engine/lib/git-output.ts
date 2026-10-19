@@ -5,7 +5,7 @@
 // keeps at most a fixed budget and says the moment it is passed, leaving the
 // caller to decide that the command is over.
 
-import { asError } from "@/runtime/engine/lib/thrown-error";
+import { asError } from "@archboard/diagnostics/thrown-error";
 
 const GIT_OUTPUT_LIMIT_BYTES = 64 * 1024;
 

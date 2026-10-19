@@ -21,7 +21,7 @@ import {
 	processGroupHasOtherMember,
 	type ProcessGroupIdentity,
 } from "@/runtime/engine/process-group";
-import { asError, errorMessage } from "@/runtime/engine/lib/thrown-error";
+import { asError, errorMessage } from "@archboard/diagnostics/thrown-error";
 import { stopAndKillOwnedGroup } from "@/runtime/engine/lib/git-group-termination";
 import { GitCommandError } from "@/runtime/engine/lib/git-failure";
 import type { GitFailure } from "@/runtime/engine/lib/git-failure";

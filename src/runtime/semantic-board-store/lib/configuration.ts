@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { errnoCode, errorMessage } from "@/shared/thrown-error/index";
+import { errnoCode, errorMessage } from "@archboard/diagnostics/errno";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	createSemanticPolicySchema,

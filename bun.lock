@@ -78,6 +78,10 @@
         "vite": "8.2.2",
       },
     },
+    "packages/diagnostics": {
+      "name": "@archboard/diagnostics",
+      "version": "0.0.0",
+    },
     "packages/timing": {
       "name": "@archboard/timing",
       "version": "0.0.0",
@@ -88,6 +92,8 @@
     "@radix-ui/react-select@2.3.7": "patches/@radix-ui%2Freact-select@2.3.7.patch",
   },
   "packages": {
+    "@archboard/diagnostics": ["@archboard/diagnostics@workspace:packages/diagnostics"],
+
     "@archboard/elk-rs": ["@archboard/elk-rs@0.11.3", "", { "optionalDependencies": { "@archboard/elk-rs-darwin-arm64": "0.11.3", "@archboard/elk-rs-darwin-x64": "0.11.3", "@archboard/elk-rs-linux-arm64-gnu": "0.11.3", "@archboard/elk-rs-linux-x64-gnu": "0.11.3", "@archboard/elk-rs-linux-x64-musl": "0.11.3", "@archboard/elk-rs-win32-x64-msvc": "0.11.3" } }, "sha512-XHLs7ryOb0qnVqSQdb0ktpPa8PXCx3ert0m1wldCie+XjMwWegTNVSbuaHCoPa16czNTXqZnqVQbMjGgtB6NtA=="],
 
     "@archboard/elk-rs-darwin-arm64": ["@archboard/elk-rs-darwin-arm64@0.11.3", "", { "os": "darwin", "cpu": "arm64" }, "sha512-bTGbGvJiP6W0Mh/eiVgpWJd6ai57BM7hMyPitzr/MFVigq+Aq9U0jH5Q7LtZz1w2dlNlWakaHGPIIY59JSs/mA=="],

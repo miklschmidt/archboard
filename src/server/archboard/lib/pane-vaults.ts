@@ -4,7 +4,7 @@
 // machine rather than one vault goes to every tab.
 
 import { WebSocket } from "ws";
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import {
 	clientIds,

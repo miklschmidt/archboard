@@ -11,7 +11,7 @@
 // downstream can do with a board with holes in it is draw a wrong picture.
 
 import fs from "node:fs";
-import { errnoCode, errorMessage } from "@/shared/thrown-error/index";
+import { errnoCode, errorMessage } from "@archboard/diagnostics/errno";
 import { mintId } from "@/shared/ids/ids";
 import { parseSemanticBoard, type SemanticBoard } from "@/shared/semantic-board/index";
 import { writeFileAtomic } from "@/runtime/engine/atomic-write";

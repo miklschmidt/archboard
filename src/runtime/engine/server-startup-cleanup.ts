@@ -15,7 +15,7 @@ import type {
 	CodexProcessGroupInspection,
 	CodexProcessGroupSignal,
 } from "@/runtime/codex-process/process-group";
-import { errorMessage } from "@/runtime/engine/lib/thrown-error";
+import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import type {
 	ServerStartupProtocolReader,
 	FailedServerCleanupProtocol,

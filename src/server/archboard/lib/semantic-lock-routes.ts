@@ -6,7 +6,7 @@
 // ever asks of the lock is that somebody else's claim be given back.
 
 import type { Express, Request, Response } from "express";
-import { errorMessage } from "@/shared/thrown-error/index";
+import { errorMessage } from "@archboard/diagnostics/errno";
 import {
 	BoardLockCancelledError,
 	boardLockState,

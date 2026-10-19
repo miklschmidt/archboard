@@ -21,7 +21,7 @@ import fs from "node:fs";
 
 import { boardMemoryKey } from "@/runtime/engine/board";
 import { onBoardSweep } from "@/runtime/engine/board-lock";
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { locateSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { broadcast, onBoardBroadcast } from "@/server/archboard/lib/pane-registry";

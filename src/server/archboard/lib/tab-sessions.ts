@@ -15,7 +15,7 @@
 // only the person's own act in the browser changes it, through the activation route. What an
 // agent does to a pane never does, so it never changes while somebody types. It ends with the tab.
 
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
 import type { CodexWorkbenchComponents } from "@/server/archboard/codex-workbench-generation";
 import type { TabSessionId } from "@/server/codex-workbench";

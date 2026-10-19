@@ -18,7 +18,7 @@ import {
 } from "@/runtime/engine/board";
 import type { BoardIdentity } from "@/runtime/engine/board";
 import type { PaneRegistration } from "@/runtime/engine/panes";
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import {
 	addressedVariant,

@@ -1,4 +1,4 @@
-import { closeLogger, forceCloseLogger, logger } from "@/runtime/engine/logger";
+import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
 import { removePidFile } from "@/runtime/engine/pidfile";
 import { SERVER_HTTP_STOP_GRACE_MS } from "@archboard/timing";
 import {

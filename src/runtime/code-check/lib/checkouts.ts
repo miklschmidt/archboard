@@ -21,7 +21,7 @@ import { listReadableFiles } from "@/runtime/code-check/lib/readable-files";
 import { neverRead, pairOf } from "@/runtime/code-facts/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
 import { bindingPathOf, filesOfBinding, type CodeBinding } from "@/shared/code-target/index";
-import { errorMessage } from "@/shared/thrown-error/index";
+import { errorMessage } from "@archboard/diagnostics/errno";
 
 /** A registered checkout the pass reads: its canonical root, and the files Git does not ignore. */
 interface ReadCheckout {

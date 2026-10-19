@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-19 01:59'
-updated_date: '2026-10-19 02:00'
+updated_date: '2026-10-19 02:12'
 labels: []
 dependencies:
   - TASK-500.01
@@ -37,3 +37,9 @@ diagnostics is layer 0 of docs/design/package-map.md. shared/thrown-error, runti
 5. Rewrite every importer (src, tests, scripts, frontend, tools, mock.module and dynamic imports) to @archboard/diagnostics/<subpath>. Write a reusable codemod at /tmp/pm/move-package.ts for the next package tasks.
 6. Update docs/agents/boundaries.md only where it names the old paths. Run bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Moved with /tmp/pm/move-package.ts (a map of old path to package, file and export subpath; it rewrites importers by resolving specifiers like the lint plugin). 50 files rewritten. Both errorMessage functions kept: ./errno says 'unknown error' for a non-Error non-string, ./thrown-error stringifies. No browser code imports the package today; the browser may import only ./errno, ./thrown-error and ./unknown-record.
+<!-- SECTION:NOTES:END -->

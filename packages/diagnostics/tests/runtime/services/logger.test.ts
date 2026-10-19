@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import winston from "winston";
 
-import { closeLogger } from "../logger.js";
+import { closeLogger } from "#runtime/services/logger.ts";
 
 test("logger lifecycle flushes and closes every owned transport", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-logger-lifecycle-"));
