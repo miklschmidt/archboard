@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-19 14:14'
+updated_date: '2026-10-19 16:59'
 labels: []
 dependencies:
   - TASK-500.23.05
@@ -25,3 +26,9 @@ Sixth move: the UI modules with no workbench UI above them: workbench-transport,
 - [ ] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
 - [ ] #3 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Move the nine UI modules into packages/workbench/src/ui in role folders (components, hooks, state, clients, rules) with tests in packages/workbench/tests/ui. Unbarrel the nine index.ts files, rewrite importers by name to eight browser-safe api files (src/ui/api), point the assistant-ui lint ownership at the thread and runtime folders, update docs and the ADOPTERS entry. Verify with tsc, lint, the package and policy tests, the browser trace and build:frontend, then bun run check.
+<!-- SECTION:PLAN:END -->

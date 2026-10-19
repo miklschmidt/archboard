@@ -4,7 +4,7 @@
 
 import type { BrowserTimeline } from "@archboard/workbench/browser-model";
 import type { SnapshotStore } from "@/ui/application/lib/snapshot-cache";
-import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
 
 /** One item of a published turn. */
 type TimelineItem = BrowserTimeline["turns"][number]["items"][number];

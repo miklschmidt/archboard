@@ -328,10 +328,10 @@
 				"packages/ui-kit/src/ui/components/toggle-group.tsx",
 				"packages/ui-kit/src/ui/components/toggle.tsx",
 				"packages/ui-kit/src/ui/components/tooltip.tsx",
-				// TASK-150.05: official assistant-ui base-nova registry source (workbench-thread/README.md)
-				"src/ui/workbench-thread/markdown-text.tsx",
-				"src/ui/workbench-thread/tooltip-icon-button.tsx",
-				"src/ui/workbench-thread/use-copy-to-clipboard.ts",
+				// TASK-150.05: official assistant-ui base-nova registry source (packages/workbench/src/ui/components/thread/README.md)
+				"packages/workbench/src/ui/components/thread/markdown-text.tsx",
+				"packages/workbench/src/ui/components/thread/tooltip-icon-button.tsx",
+				"packages/workbench/src/ui/hooks/thread/use-copy-to-clipboard.ts",
 			],
 			"rules": {
 				"complexity": "off",

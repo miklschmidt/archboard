@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createAgentSetup, type AgentSetupPorts, type AuthTab } from "@/ui/agent-setup";
-import type { WorkbenchComposerSubmissionResult } from "@/ui/workbench-composer";
+import type { WorkbenchComposerSubmissionResult } from "@archboard/workbench/composer";
 import {
 	STAGES,
 	conversation,

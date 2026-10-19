@@ -8,7 +8,7 @@ import {
 	voicePort,
 } from "@/ui/application/agent-setup-ports";
 import type { VoiceSessionStatus, VoiceSessionView } from "@/ui/voice-session";
-import type { ThreadLinkActionSnapshot } from "@/ui/workbench-thread-link/contracts";
+import type { ThreadLinkActionSnapshot } from "@archboard/workbench/thread-link-controller";
 
 /**
  * A voice session view in one status.

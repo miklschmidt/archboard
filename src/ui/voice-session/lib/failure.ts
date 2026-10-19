@@ -7,7 +7,7 @@ import type {
 	RealtimeRecoverableErrorReason,
 	RealtimeState,
 	RealtimeTerminalErrorReason,
-} from "@/ui/codex-realtime";
+} from "@archboard/workbench/realtime-contract";
 import type { VoiceSessionFailure, VoiceSessionFailureCode } from "@/ui/voice-session/contract";
 
 const RECOVERABLE_CODES = {

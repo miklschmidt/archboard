@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 
 import { vaultRepairRequest } from "@/ui/vault-diagnostics/api";
-import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
 
 /**
  * Ask the agent to repair the vault, and check again whenever a turn ends.

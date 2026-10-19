@@ -2,7 +2,7 @@
 // output level source the media owner currently holds. Sources come and go
 // with realtime sessions; subscribers here never notice the swap.
 
-import type { VoiceOutputLevelSource } from "@/ui/voice-output-level";
+import type { VoiceOutputLevelSource } from "@archboard/workbench/voice-output-level";
 
 /**
  * Does nothing; the release of a source that was never followed.

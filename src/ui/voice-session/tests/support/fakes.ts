@@ -7,16 +7,18 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "@archboard/workbench/realtime-contract";
+import type { RealtimeCorrelation, RealtimeState } from "@archboard/workbench/realtime-contract";
 import type {
-	RealtimeCorrelation,
 	RealtimeMediaSnapshot,
-	RealtimeState,
-} from "@/ui/codex-realtime";
-import type { BrowserWorkbenchMediaState } from "@/ui/codex-workbench-media";
-import type { VoiceOutputLevelSource } from "@/ui/voice-output-level";
+	BrowserWorkbenchMediaState,
+} from "@archboard/workbench/workbench-media";
+import type { VoiceOutputLevelSource } from "@archboard/workbench/voice-output-level";
 import type { VoiceRealtimePort, VoiceTransportPort } from "@/ui/voice-session";
 import { snapshot } from "@/ui/voice-session/tests/support/workbench-fixture";
-import type { BrowserWorkbenchCapabilities, BrowserWorkbenchState } from "@/ui/workbench-transport";
+import type {
+	BrowserWorkbenchCapabilities,
+	BrowserWorkbenchState,
+} from "@archboard/workbench/browser-transport";
 
 /**
  * A correlation whose session and correlation ids are both the given id.

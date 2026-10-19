@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `workbench` for `shared/`, `runtime/` and `server/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -545,16 +545,19 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
 
 The sixteenth is `workbench` (`@archboard/workbench`). It is the Codex workbench: the coordinator, the workhorses, the
 conversation and the voice (layer 7, the last). It grows over TASK-500.23.01 to .07, one move for each step up its
-import graph, and the later moves add the UI. So far it holds the browser-safe contracts that the browser and the server
-exchange, the Codex runtime under them (the foundation, and over it the coordinator and the workhorses) and the server
-side: the gateway over the runtime, and the sessions, generations and pane plumbing that wire it into the Archboard
-server. It adopts the `api/` role for `shared/`, `runtime/` and `server/` and exposes 27 subpaths. It imports
-`board`, `codex-app-server`, `diagnostics`, `process`, `server-lifecycle`, `timing`, `walkthrough` and `workspace`, and
-nothing from `src/`.
+import graph. So far it holds the browser-safe contracts that the browser and the server exchange, the Codex runtime
+under them (the foundation, and over it the coordinator and the workhorses), the server side (the gateway over the
+runtime, and the sessions, generations and pane plumbing that wire it into the Archboard server) and the first of the
+browser UI (the transport, the conversation, the composer and the realtime media). It adopts the `api/` role for
+`shared/`, `runtime/`, `server/` and `ui/` and exposes 35 subpaths. It imports `board`, `codex-app-server`,
+`diagnostics`, `process`, `server-lifecycle`, `timing`, `ui-kit`, `walkthrough` and `workspace`, and nothing from
+`src/`.
 The 5 files of `shared/api/` hold 100 names and are safe for the browser, with no Node import and no path into a runtime
-or server area: the pane transport and the voice session import them as well as the server. The 12 files of
+or server area: the pane transport and the voice session import them as well as the server. The 8 files of
+`ui/api/` hold 31 names and are safe for the browser too. The 12 files of
 `runtime/api/` hold 204 names and the 10 of `server/api/` hold 82, and they run only in Bun. The browser imports none of
-them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/` or `server/`.
+them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/` or `server/`. `ui/` never imports
+the `runtime/` or `server/` of the package, and the shared files it reads are the private ones, not the api files.
 
 **Shared.**
 
@@ -681,6 +684,43 @@ owners and the actions that carry out a pane's command) is private, and its test
   owners, fixtures and harness that the generation, owner, session, action and timeline tests share, and
   `support/gateway/` those of the gateway and the projection tests. Only the tests of the host's own routes, lifetime
   and startup stay in `src/server/archboard/tests/`.
+
+**Ui.** `ui/` is the browser side of the workbench that has no workbench UI above it: the modules `workbench-transport`,
+`-timeline`, `-thread-link`, `-runtime`, `-thread` and `-composer`, `voice-output-level`, `codex-realtime` and
+`codex-workbench-media` of `src/ui/`. The modules that draw the dock, the panes, the approvals, the queue, the agent
+setup and the voice (`src/ui/workbench` and its neighbors) stay in `src/ui/` until TASK-500.23.07, and they import
+the api files. A private file reads the shared contracts through their defining files (`#shared/...`), never through an
+api file. `ui/` keeps its code in the role folders that `code-opener` uses, with one folder for each behavior.
+
+- `components/` holds the React components: `thread/` (the conversation as a person reads it, with the files placed
+  from the assistant-ui registry and the README that records them) and
+  `runtime/` (the provider of the assistant-ui runtime). `hooks/` holds `runtime/` (the hook that reads the
+  conversation) and `thread/` (the copy hook of the registry).
+- `state/` holds the contracts and the controllers that own state without React: `transport/` (the transport's typed
+  surface and its error), `timeline/`, `thread-link/` (the contracts, the port a transport satisfies and the
+  controller), `composer/` (the contract and the controller the assistant-ui composer submits through) and
+  `realtime/` (the neutral realtime contract, the ports of the media session and its contract).
+- `clients/` holds what talks to the server or the browser platform: `transport/` (the socket reducer, its session,
+  lease, command and prepared-action owners), `wire/` (the parsers of what the socket carries), `realtime/` (the
+  WebRTC media session and its start sequence), `media/` (the owner of the microphone, the mute and the audio
+  elements over one transport) and `output-level/` (the measured level of the model's voice).
+- `rules/` holds the pure decisions: `transport/` (which commands the state answers and what a command is bound to),
+  `timeline/` (the projection of the server's timelines into turns), `thread-link/` (how a link command settles),
+  `runtime/` (turns into assistant-ui messages), `thread/` (the words of an activity run) and `composer/` (intent,
+  draft policy, keys and the link a composer reads).
+- assistant-ui is imported only in the `thread/` and `runtime/` folders of these role folders, and
+  `@assistant-ui/react-markdown` only in `thread/` (the lint rule `archboard/assistant-ui-imports`). Tailwind finds the
+  class names through the `@source` of every package's `ui` area.
+- The api files group what a caller does: `./browser-transport` (the transport and its state and capabilities),
+  `./composer`, `./thread-link-controller`, `./conversation-timeline` (the projection and the turns it makes),
+  `./conversation-runtime` (the provider, the hook and the activity items), `./conversation-thread` (the rendered
+  conversation and the words of its activity), `./workbench-media` (the media owner, the audio elements and the
+  snapshot of the realtime session) and `./voice-output-level`. A caller that needs a realtime phase or a state
+  imports it from `./realtime-contract`. The surface is every name that `src/ui/` imports today, so TASK-500.23.08
+  can trim the names that only the modules of TASK-500.23.07 use.
+- The tests are in `tests/ui/`, in the folders of the code they cover. `support/` holds the fake socket and fixtures
+  of the transport, the harness of the prepared commands, the fakes of the media session and the media owner, and the
+  fixtures of the thread link and the composer.
 
 ## Vendor-owned data
 

@@ -3,7 +3,8 @@
 // no history, and chooses no recovery: an actionable failure becomes an
 // offered control and the person decides.
 
-import type { RealtimeMediaSnapshot, RealtimeState } from "@/ui/codex-realtime";
+import type { RealtimeMediaSnapshot } from "@archboard/workbench/workbench-media";
+import type { RealtimeState } from "@archboard/workbench/realtime-contract";
 import type {
 	VoiceSessionControls,
 	VoiceSessionFailure,

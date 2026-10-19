@@ -3,13 +3,13 @@
 // owner that follows the pane's workbench transport generations. Nothing
 // renders from these; actions read them when a person acts.
 
-import { createBrowserWorkbenchMediaOwner } from "@/ui/codex-workbench-media";
-import type {
-	BrowserWorkbenchMediaOwner,
-	BrowserWorkbenchMediaOwnerOptions,
-} from "@/ui/codex-workbench-media";
+import {
+	createBrowserWorkbenchMediaOwner,
+	type BrowserWorkbenchMediaOwner,
+	type BrowserWorkbenchMediaOwnerOptions,
+} from "@archboard/workbench/workbench-media";
 import type { PaneSession as SessionOf } from "@/ui/pane-session";
-import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
 
 /** The session of one pane, over the production transport. */
 type PaneSession = SessionOf<BrowserWorkbenchTransport>;

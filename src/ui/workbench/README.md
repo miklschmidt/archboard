@@ -2,8 +2,8 @@
 
 The agent's surfaces in the shell. They all read one `AgentView` and act through one
 `AgentActions` (`contracts.ts`). The application composes both from the workbench owners.
-The owners are `src/ui/workbench-runtime`, `-thread`, `-composer`, `-queue`, `-approvals`
-and `-transport`, and `src/ui/voice-session`. This module draws them.
+The owners are the runtime, thread, composer and transport of `packages/workbench/src/ui`,
+`src/ui/workbench-queue`, `src/ui/workbench-approvals` and `src/ui/voice-session`. This module draws them.
 
 - `components/AgentDock.tsx`: the dock at the foot of the navigator. While voice is off it
   is calm: what the agent is on, its plan under it, and at the foot a key to talk and a key
@@ -11,7 +11,7 @@ and `-transport`, and `src/ui/voice-session`. This module draws them.
   state, the voice's own line, mute and subtitles. When the layout turns,
   `hooks/use-dock-motion.ts` plays every part from its old place to its new one.
 - `components/AgentPanel.tsx`: the conversation beside the navigator. It opens on request
-  only. It holds the assistant-ui thread (`src/ui/workbench-thread`), which shows the
+  only. It holds the assistant-ui thread (`packages/workbench/src/ui/components/thread`), which shows the
   workhorse's turns and, marked as its own, the voice coordinator's. Before anybody signs
   in, it holds the sign-in instead. On request it shows the session's details. At its foot
   are `PendingWork`, which shows what the conversation does not hold yet, and `ApprovalCard`,
@@ -49,7 +49,7 @@ shared component. Put both on a plain `className` string, or put the role on an 
 
 The composer sends with Enter. While a turn runs, Enter steers it and Ctrl or Cmd with Enter
 queues the message to run after it. Shift with Enter starts a new line. The logic is in
-`src/ui/workbench-composer`. The composer says which board the agent will read, from
+`packages/workbench/src/ui/rules/composer`. The composer says which board the agent will read, from
 `AgentView.context`.
 
 ## Approvals

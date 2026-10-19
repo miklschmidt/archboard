@@ -252,7 +252,7 @@ const REPLAY_PAGE_GLOBAL = "archboardReplay";
 /**
  * How many samples the shell's voice meter reads a level from: the window of a Web Audio analyser
  * left at its default size, which is what the meter the orb follows live is
- * (src/ui/voice-output-level).
+ * (`packages/workbench/src/ui/clients/output-level`).
  */
 const LEVEL_WINDOW_SAMPLES = 2048;
 

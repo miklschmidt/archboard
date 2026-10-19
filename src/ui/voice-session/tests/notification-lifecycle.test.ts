@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { RealtimeMediaSnapshot } from "@/ui/codex-realtime";
+import type { RealtimeMediaSnapshot } from "@archboard/workbench/workbench-media";
 import {
 	capabilities,
 	connectedState,
