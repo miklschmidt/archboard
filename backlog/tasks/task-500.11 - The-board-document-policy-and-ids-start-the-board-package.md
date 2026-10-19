@@ -1,11 +1,11 @@
 ---
 id: TASK-500.11
 title: 'The board document, policy and ids start the board package'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 04:29'
-updated_date: '2026-10-19 04:31'
+updated_date: '2026-10-19 04:57'
 labels: []
 dependencies:
   - TASK-500.09
@@ -22,10 +22,10 @@ board is layer 4 of docs/design/package-map.md: the board document and its one r
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 packages/board holds the four shared modules in shared/ role folders with a few exports (document, policy, ids and pane context as the importers need them), no barrel, and every importer uses @archboard/board
-- [ ] #2 Every export the browser reaches holds no node: import, proven by a trace from frontend and src/ui plus build:frontend
-- [ ] #3 The tests of the moved code live in packages/board/tests, and ids stay defined once in the package (CLAUDE.md: no second site mints an id)
-- [ ] #4 bun run check passes
+- [x] #1 packages/board holds the four shared modules in shared/ role folders with a few exports (document, policy, ids and pane context as the importers need them), no barrel, and every importer uses @archboard/board
+- [x] #2 Every export the browser reaches holds no node: import, proven by a trace from frontend and src/ui plus build:frontend
+- [x] #3 The tests of the moved code live in packages/board/tests, and ids stay defined once in the package (CLAUDE.md: no second site mints an id)
+- [x] #4 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,3 +37,9 @@ board is layer 4 of docs/design/package-map.md: the board document and its one r
 4. exports: the minimum that code outside the package imports, grouped by what importers need; report the count. Browser-reachable ones hold no node: import (trace + build:frontend). Ids stay defined once; update AGENTS.md (CLAUDE.md symlinks to it) where it names src/shared/ids/ids.ts.
 5. Tests move to packages/board/tests/shared/<role>/. Update docs/agents/boundaries.md, skills, ci.yml, evals/coverage.json, vite.config.ts and other mentions of the old paths. bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/board starts with the shared half: 34 source files and 17 tests under schemas, protocol and rules (coherence, compare, inspect, reconcile). Only semantic-board/index.ts was a barrel (deleted, with parseSemanticBoard moved to rules/coherence/parse-board.ts); semantic-policy and semantic-pane-context hold real code and moved as files. 366 importers were unbarreled by script, 16 redirected where reconcile/variant.ts and integrity.ts re-exported foreign names (that re-export caused an initialization cycle, now gone), and every export loads alone in a fresh process. The package has 28 exports. Codex verified all 272 old names, 1,428 named imports, 129 schemas defined once, no cycle, and a browser trace of 13 board subpaths with 0 node: imports. bun run check passed. Codex found no defect, and said 28 near-file-level subpaths is an interim surface: five exist only for the store (integrity, positions, primitives, reconcile-candidate, reconcile) and go private in TASK-500.12; later consolidation is TASK-500.14.
+<!-- SECTION:FINAL_SUMMARY:END -->
