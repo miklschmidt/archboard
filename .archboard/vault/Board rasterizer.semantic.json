@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 61,
+	"version": 68,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-17T09:58:45.193Z",
+	"updatedAt": "2026-10-19T22:48:19.106Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -19087,7 +19087,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-rasterize.ts"
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts"
 						},
 						"drillDown": {
 							"board": "Command interface",
@@ -19109,7 +19109,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/index.ts"
+							"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts"
 						}
 					},
 					{
@@ -19124,7 +19124,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/bounds.ts"
+							"path": "packages/renderer/src/runtime/operations/rasterizer/bounds.ts"
 						}
 					},
 					{
@@ -19139,7 +19139,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/session.ts"
+							"path": "packages/renderer/src/runtime/services/rasterizer"
 						}
 					},
 					{
@@ -19151,7 +19151,7 @@
 						"parent": "IzgAi2R1",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/headless-chromium/lib/launch.ts"
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/launch.ts"
 						}
 					},
 					{
@@ -19163,7 +19163,7 @@
 						"parent": "IzgAi2R1",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/headless-chromium/lib/devtools.ts"
+							"path": "packages/renderer/src/runtime/clients/headless-chromium/devtools.ts"
 						}
 					},
 					{
@@ -19179,7 +19179,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/page.ts"
+							"path": "packages/renderer/src/runtime/services/rasterizer/page.ts"
 						}
 					},
 					{
@@ -19194,7 +19194,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/png.ts"
+							"path": "packages/renderer/src/runtime/operations/rasterizer/png.ts"
 						}
 					},
 					{
@@ -19209,7 +19209,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/receipt.ts"
+							"path": "packages/renderer/src/runtime/operations/rasterizer/receipt.ts"
 						}
 					},
 					{
@@ -19231,7 +19231,7 @@
 						"parent": "jeDfgVfS",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/headless-chromium"
+							"path": "packages/renderer/src/runtime/processes/headless-chromium"
 						}
 					},
 					{
@@ -19243,7 +19243,7 @@
 						"parent": "IzgAi2R1",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/headless-chromium/lib/process.ts"
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts"
 						}
 					},
 					{
@@ -19254,7 +19254,7 @@
 						"responsibility": "Draws the SVG, serves the recording and replay pages, and starts the voice that narrates a recording",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard"
+							"path": "apps/server/src/server"
 						},
 						"drillDown": {
 							"board": "Archboard server",
@@ -19276,7 +19276,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-record.ts"
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts"
 						},
 						"drillDown": {
 							"board": "Command interface",
@@ -19298,7 +19298,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder"
+							"path": "packages/walkthrough/src/runtime"
 						}
 					},
 					{
@@ -19314,7 +19314,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/drive.ts"
+							"path": "packages/walkthrough/src/runtime/clients/recording-page.ts"
 						}
 					},
 					{
@@ -19342,7 +19342,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording"
+							"path": "apps/web/src/ui/state/walkthrough-recording"
 						}
 					},
 					{
@@ -19358,7 +19358,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-replay.ts"
+							"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts"
 						},
 						"drillDown": {
 							"board": "Command interface",
@@ -19377,7 +19377,7 @@
 						"parent": "ZAj4RMzN",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/render.ts"
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts"
 						}
 					},
 					{
@@ -19393,7 +19393,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/talk-files.ts"
+							"path": "packages/walkthrough/src/runtime/store/talk-files.ts"
 						}
 					},
 					{
@@ -19409,7 +19409,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/talk-capture.ts"
+							"path": "apps/web/src/ui/clients/walkthrough-recording/talk-capture.ts"
 						}
 					},
 					{
@@ -19425,7 +19425,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-replay/index.ts"
+							"path": "apps/web/src/ui/clients/walkthrough-replay/start-replay.ts"
 						}
 					},
 					{
@@ -19441,7 +19441,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/video-encoder"
+							"path": "packages/walkthrough/src/runtime/processes/video-encoder.ts"
 						}
 					},
 					{
@@ -19469,7 +19469,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/frame-order.ts"
+							"path": "packages/walkthrough/src/runtime/operations/frame-order.ts"
 						}
 					},
 					{
@@ -19481,7 +19481,7 @@
 						"parent": "KeEVHJEm",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer"
+							"path": "packages/renderer/src/runtime/services/rasterizer"
 						}
 					},
 					{
@@ -19494,7 +19494,7 @@
 						"parent": "ZAj4RMzN",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/index.ts"
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts"
 						}
 					},
 					{
@@ -19506,7 +19506,7 @@
 						"parent": "ZAj4RMzN",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/tools.ts"
+							"path": "packages/walkthrough/src/runtime/services/recording-tools.ts"
 						}
 					},
 					{
@@ -19517,7 +19517,7 @@
 						"responsibility": "Grades captured images using their PNG dimensions",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/grading-images.ts"
+							"path": "packages/skills/src/runtime/store/grading-images.ts"
 						},
 						"drillDown": {
 							"board": "Skill evaluation",
@@ -19579,7 +19579,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-rasterize.ts",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
 							"symbol": "createSemanticRasterizer"
 						}
 					},
@@ -19593,7 +19593,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/index.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 							"symbol": "boundsRefusal"
 						}
 					},
@@ -19611,7 +19611,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/index.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 							"symbol": "RasterSession"
 						}
 					},
@@ -19630,7 +19630,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 							"symbol": "launchHeadlessChromium"
 						}
 					},
@@ -19644,7 +19644,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/headless-chromium/lib/process.ts",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
 							"symbol": "Bun.spawn"
 						}
 					},
@@ -19663,7 +19663,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 							"symbol": "DevTools.evaluate"
 						}
 					},
@@ -19681,7 +19681,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/headless-chromium/lib/devtools.ts",
+							"path": "packages/renderer/src/runtime/clients/headless-chromium/devtools.ts",
 							"symbol": "WebSocket"
 						}
 					},
@@ -19699,7 +19699,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 							"symbol": "checkedReadiness"
 						}
 					},
@@ -19713,7 +19713,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 							"symbol": "regionOf"
 						}
 					},
@@ -19727,7 +19727,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/page.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
 							"symbol": "readPngDimensions"
 						}
 					},
@@ -19741,7 +19741,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-rasterize.ts",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
 							"symbol": "SemanticRasterReceiptSchema"
 						}
 					},
@@ -19755,7 +19755,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/headless-chromium/lib/launch.ts",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/launch.ts",
 							"symbol": "spawnChromium"
 						}
 					},
@@ -19769,7 +19769,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/headless-chromium/lib/launch.ts",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/launch.ts",
 							"symbol": "DevTools"
 						}
 					},
@@ -19784,7 +19784,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/index.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 							"symbol": "discoveredChromiumPath"
 						}
 					},
@@ -19798,7 +19798,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-rasterize.ts",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
 							"symbol": "drawRequest"
 						}
 					},
@@ -19812,7 +19812,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-record.ts",
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
 							"symbol": "semanticRecordContract"
 						}
 					},
@@ -19827,7 +19827,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-record.ts",
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
 							"symbol": "recordWalkthrough"
 						}
 					},
@@ -19842,7 +19842,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/tools.ts",
+							"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
 							"symbol": "discoveredChromiumPath"
 						}
 					},
@@ -19861,7 +19861,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/tools.ts",
+							"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
 							"symbol": "launchHeadlessChromium"
 						}
 					},
@@ -19876,7 +19876,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/index.ts",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 							"symbol": "DevTools.readBlobTo"
 						}
 					},
@@ -19894,7 +19894,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/index.ts",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 							"symbol": "drive"
 						}
 					},
@@ -19913,7 +19913,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/drive.ts",
+							"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
 							"symbol": "PAGE"
 						}
 					},
@@ -19937,7 +19937,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 							"symbol": "WalkthroughRecorder.start"
 						}
 					},
@@ -19951,7 +19951,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/tools.ts",
+							"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
 							"symbol": "probeFfmpeg"
 						}
 					},
@@ -19965,7 +19965,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/index.ts",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 							"symbol": "writeTalk"
 						}
 					},
@@ -19983,7 +19983,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/index.ts",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 							"symbol": "renderTalk"
 						}
 					},
@@ -19997,7 +19997,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+							"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 							"symbol": "TalkCapture"
 						}
 					},
@@ -20012,7 +20012,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-replay.ts",
+							"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
 							"symbol": "readTalk"
 						}
 					},
@@ -20027,7 +20027,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-replay.ts",
+							"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
 							"symbol": "renderTalk"
 						}
 					},
@@ -20042,7 +20042,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 							"symbol": "HeadlessChromium.openWindow"
 						}
 					},
@@ -20061,7 +20061,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 							"symbol": "PAGE"
 						}
 					},
@@ -20080,7 +20080,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 							"symbol": "DevTools.call"
 						}
 					},
@@ -20094,7 +20094,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 							"symbol": "openVideoEncoder"
 						}
 					},
@@ -20112,7 +20112,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/video-encoder/lib/encode.ts",
+							"path": "packages/walkthrough/src/runtime/processes/video-encoder.ts",
 							"symbol": "Bun.spawn"
 						}
 					},
@@ -20126,7 +20126,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/video-encoder/lib/ffmpeg.ts",
+							"path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
 							"symbol": "NIX_ARGV"
 						}
 					},
@@ -20140,7 +20140,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/video-encoder/lib/ffmpeg.ts",
+							"path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
 							"symbol": "NIX_ARGV"
 						}
 					},
@@ -20154,7 +20154,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 							"symbol": "startBrowser"
 						}
 					},
@@ -20169,7 +20169,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-record.ts",
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
 							"symbol": "requireFreshPlace"
 						}
 					},
@@ -20183,7 +20183,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 							"symbol": "FrameOrder"
 						}
 					},
@@ -20197,7 +20197,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/frame-order.ts",
+							"path": "packages/walkthrough/src/runtime/operations/frame-order.ts",
 							"symbol": "writeFrame"
 						}
 					},
@@ -20212,7 +20212,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/commands/semantic-rasterize.ts",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
 							"symbol": "RASTER_MIN_SCALE"
 						}
 					},
@@ -20226,7 +20226,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/page.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
 							"symbol": "bitmapSizeOf"
 						}
 					},
@@ -20240,7 +20240,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 							"symbol": "voiceSamples"
 						}
 					},
@@ -20254,7 +20254,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/headless-chromium/lib/process.ts",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
 							"symbol": "isJsonRecord"
 						}
 					},
@@ -20268,7 +20268,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/page.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
 							"symbol": "isJsonRecord"
 						}
 					},
@@ -20282,7 +20282,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 							"symbol": "HeadlessChromiumError"
 						}
 					},
@@ -20296,7 +20296,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/walkthrough-recorder/index.ts",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 							"symbol": "startBrowser"
 						}
 					},
@@ -20310,7 +20310,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/grading-images.ts",
+							"path": "packages/skills/src/runtime/store/grading-images.ts",
 							"symbol": "readPngDimensions"
 						}
 					}
@@ -20336,7 +20336,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/commands/semantic-rasterize.ts",
+									"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
 									"symbol": "captureBoard"
 								}
 							},
@@ -20348,7 +20348,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-rasterizer/index.ts",
+									"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 									"symbol": "boundsRefusal"
 								}
 							},
@@ -20360,7 +20360,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-rasterizer/lib/bounds.ts",
+									"path": "packages/renderer/src/runtime/operations/rasterizer/bounds.ts",
 									"symbol": "boundsRefusal"
 								}
 							},
@@ -20380,7 +20380,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-rasterizer/index.ts",
+													"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 													"symbol": "admissionFailure"
 												}
 											}
@@ -20405,7 +20405,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-rasterizer/index.ts",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 																	"symbol": "startSession"
 																}
 															},
@@ -20417,7 +20417,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 																	"symbol": "launchHeadlessChromium"
 																}
 															}
@@ -20437,7 +20437,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-rasterizer/index.ts",
+													"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 													"symbol": "runOnSession"
 												}
 											},
@@ -20449,7 +20449,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+													"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 													"symbol": "writeFileSync"
 												}
 											},
@@ -20461,7 +20461,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+													"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 													"symbol": "load"
 												}
 											},
@@ -20478,7 +20478,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+															"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 															"symbol": "load"
 														}
 													},
@@ -20500,7 +20500,7 @@
 												"note": "pauses the traffic animation at its first frame and loads every declared face",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+													"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 													"symbol": "READINESS_SCRIPT"
 												}
 											},
@@ -20519,7 +20519,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+													"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 													"symbol": "checkedReadiness"
 												}
 											},
@@ -20539,7 +20539,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-rasterizer/lib/page.ts",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
 																	"symbol": "checkedReadiness"
 																}
 															},
@@ -20551,7 +20551,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 																	"symbol": "captureFailure"
 																}
 															},
@@ -20563,7 +20563,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-rasterizer/index.ts",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 																	"symbol": "retireFailed"
 																}
 															}
@@ -20580,7 +20580,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 																	"symbol": "shoot"
 																}
 															},
@@ -20600,7 +20600,7 @@
 																"note": "reads the size from the PNG's own header",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 																	"symbol": "checkedBitmap"
 																}
 															},
@@ -20620,7 +20620,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-rasterizer/lib/page.ts",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
 																					"symbol": "checkedBitmap"
 																				}
 																			},
@@ -20632,7 +20632,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 																					"symbol": "captureFailure"
 																				}
 																			},
@@ -20644,7 +20644,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-rasterizer/index.ts",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 																					"symbol": "retireFailed"
 																				}
 																			}
@@ -20661,7 +20661,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-rasterizer/lib/page.ts",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
 																					"symbol": "checkedBitmap"
 																				}
 																			},
@@ -20673,7 +20673,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-rasterizer/lib/session.ts",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
 																					"symbol": "capture"
 																				}
 																			},
@@ -20685,7 +20685,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-rasterizer/index.ts",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 																					"symbol": "runOnSession"
 																				}
 																			}
@@ -20709,7 +20709,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/commands/semantic-rasterize.ts",
+									"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
 									"symbol": "captureBoard"
 								}
 							},
@@ -20721,7 +20721,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-rasterizer/index.ts",
+									"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 									"symbol": "stopOnce"
 								}
 							},
@@ -20734,7 +20734,7 @@
 								"note": "an unclean teardown fails the command, beside the capture",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-rasterizer/index.ts",
+									"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
 									"symbol": "stopOnce"
 								}
 							}
@@ -20762,7 +20762,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/commands/semantic-record.ts",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
 									"symbol": "semanticRecordContract"
 								}
 							},
@@ -20781,7 +20781,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/commands/semantic-record.ts",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
 									"symbol": "requireFreshPlace"
 								}
 							},
@@ -20793,7 +20793,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/commands/semantic-record.ts",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
 									"symbol": "recordWalkthrough"
 								}
 							},
@@ -20806,7 +20806,7 @@
 								"note": "ARCHBOARD_FFMPEG, then PATH, then nix run nixpkgs#ffmpeg-headless",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/walkthrough-recorder/lib/tools.ts",
+									"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
 									"symbol": "probeFfmpeg"
 								}
 							},
@@ -20833,7 +20833,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/tools.ts",
+													"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
 													"symbol": "resolveEncoder"
 												}
 											}
@@ -20851,7 +20851,7 @@
 												"note": "nothing is captured in this pass, so it needs no GPU",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/tools.ts",
+													"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
 													"symbol": "launchHeadlessChromium"
 												}
 											},
@@ -20863,7 +20863,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/index.ts",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 													"symbol": "openRecordingPage"
 												}
 											},
@@ -20875,7 +20875,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/index.ts",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 													"symbol": "recordingPageUrl"
 												}
 											},
@@ -20892,7 +20892,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/runtime/walkthrough-recorder/lib/drive.ts",
+															"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
 															"symbol": "ready"
 														}
 													},
@@ -20913,7 +20913,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/drive.ts",
+													"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
 													"symbol": "begin"
 												}
 											},
@@ -20925,7 +20925,7 @@
 												"kind": "async",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/walkthrough-recording/lib/recorder.ts",
+													"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
 													"symbol": "WalkthroughRecorder.start"
 												}
 											},
@@ -20938,7 +20938,7 @@
 												"note": "the voice plays through a muted element, so nobody hears a recording; its samples and every event share the 48 kHz audio clock",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/ui/walkthrough-recording/lib/talk-capture.ts",
+													"path": "apps/web/src/ui/clients/walkthrough-recording/talk-capture.ts",
 													"symbol": "TalkCapture"
 												}
 											},
@@ -20955,7 +20955,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/ui/walkthrough-recording/lib/pacing.ts",
+															"path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts",
 															"symbol": "pace"
 														}
 													}
@@ -20975,7 +20975,7 @@
 														"note": "each new step is told to the command as progress",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/runtime/walkthrough-recorder/lib/drive.ts",
+															"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
 															"symbol": "finished"
 														}
 													},
@@ -20996,7 +20996,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/drive.ts",
+													"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
 													"symbol": "logOf"
 												}
 											},
@@ -21008,7 +21008,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/index.ts",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 													"symbol": "pageHandle"
 												}
 											},
@@ -21020,7 +21020,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/index.ts",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 													"symbol": "talkedWith"
 												}
 											},
@@ -21033,7 +21033,7 @@
 												"note": "a board drawn at another version fails the recording before this, and nothing is kept",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/index.ts",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 													"symbol": "writeTalk"
 												}
 											},
@@ -21046,7 +21046,7 @@
 												"note": "with the ffmpeg proven above; the frames are drawn as One replay shows",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/index.ts",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 													"symbol": "renderTalk"
 												}
 											},
@@ -21058,7 +21058,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 													"symbol": "renderTalk"
 												}
 											},
@@ -21070,7 +21070,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/index.ts",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
 													"symbol": "recordWalkthrough"
 												}
 											},
@@ -21091,7 +21091,7 @@
 																"note": "only at the version that was recorded",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/cli/commands/semantic-record.ts",
+																	"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
 																	"symbol": "discardRecorded"
 																}
 															}
@@ -21130,7 +21130,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/commands/semantic-replay.ts",
+									"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
 									"symbol": "readTalk"
 								}
 							},
@@ -21149,7 +21149,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/cli/commands/semantic-replay.ts",
+									"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
 									"symbol": "renderTalk"
 								}
 							},
@@ -21161,7 +21161,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/video-encoder/lib/ffmpeg.ts",
+									"path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
 									"symbol": "probeFfmpeg"
 								}
 							},
@@ -21188,7 +21188,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/cli/commands/semantic-replay.ts",
+													"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
 													"symbol": "semanticReplayContract"
 												}
 											}
@@ -21205,7 +21205,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 													"symbol": "voiceSamples"
 												}
 											},
@@ -21223,7 +21223,7 @@
 														"note": "no GPU and no partial raster, so every render of a talk is the same",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+															"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 															"symbol": "startBrowsers"
 														}
 													}
@@ -21237,7 +21237,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 													"symbol": "openVideoEncoder"
 												}
 											},
@@ -21250,7 +21250,7 @@
 												"note": "the page's files come from the Archboard server: no socket, no pane, no voice",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 													"symbol": "openReplayPage"
 												}
 											},
@@ -21267,7 +21267,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+															"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 															"symbol": "pageReady"
 														}
 													},
@@ -21289,7 +21289,7 @@
 												"note": "the page reads the board and the policy only from the talk",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 													"symbol": "loadTalk"
 												}
 											},
@@ -21315,7 +21315,7 @@
 														"note": "the clock steps to the frame's time; the answer waits until the frame is drawn and still",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+															"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 															"symbol": "drawFrames"
 														}
 													},
@@ -21342,7 +21342,7 @@
 																		"kind": "sync",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+																			"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 																			"symbol": "screenshot"
 																		}
 																	},
@@ -21361,7 +21361,7 @@
 																		"kind": "sync",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+																			"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 																			"symbol": "FrameOrder"
 																		}
 																	},
@@ -21374,7 +21374,7 @@
 																		"note": "a frame that arrives before its turn is held back",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/runtime/walkthrough-recorder/lib/frame-order.ts",
+																			"path": "packages/walkthrough/src/runtime/operations/frame-order.ts",
 																			"symbol": "writeFrame"
 																		}
 																	}
@@ -21397,7 +21397,7 @@
 												"note": "the picture is drawn, so the browser goes before ffmpeg finishes",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 													"symbol": "stopAll"
 												}
 											},
@@ -21410,7 +21410,7 @@
 												"note": "ffmpeg pads the voice to the last frame and moves the index to the front",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 													"symbol": "renderTalk"
 												}
 											},
@@ -21423,7 +21423,7 @@
 												"note": "only once the browser has stopped and ffmpeg has exited",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 													"symbol": "renameSync"
 												}
 											},
@@ -21435,7 +21435,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/walkthrough-recorder/lib/render.ts",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
 													"symbol": "renderTalk"
 												}
 											}

@@ -4,9 +4,9 @@
 	"id": "IbGtfJE2",
 	"name": "Skill evaluation",
 	"level": "service",
-	"version": 37,
+	"version": 38,
 	"createdAt": "2026-09-17T21:09:15.501Z",
-	"updatedAt": "2026-10-16T02:58:40.019Z",
+	"updatedAt": "2026-10-19T22:35:56.957Z",
 	"views": [
 		{
 			"id": "pth4q0ZY",
@@ -7614,7 +7614,7 @@
 						"parent": "PCxTuzNW",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/suite.ts"
+							"path": "packages/skills/src/runtime/schemas/suite.ts"
 						}
 					},
 					{
@@ -7627,7 +7627,7 @@
 						"parent": "PCxTuzNW",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/batch.ts"
+							"path": "packages/skills/src/runtime/operations/runs/batch.ts"
 						}
 					},
 					{
@@ -7640,7 +7640,7 @@
 						"parent": "8O4XNZOZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/isolation.ts"
+							"path": "packages/skills/src/runtime/processes/isolation.ts"
 						}
 					},
 					{
@@ -7652,7 +7652,7 @@
 						"parent": "8O4XNZOZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/flask.ts"
+							"path": "packages/skills/src/runtime/processes/flask.ts"
 						}
 					},
 					{
@@ -7664,7 +7664,7 @@
 						"parent": "8O4XNZOZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/server.ts"
+							"path": "packages/skills/src/runtime/processes/server.ts"
 						}
 					},
 					{
@@ -7677,7 +7677,7 @@
 						"parent": "8O4XNZOZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/install.ts"
+							"path": "packages/skills/src/runtime/operations/runs/install.ts"
 						}
 					},
 					{
@@ -7690,7 +7690,7 @@
 						"parent": "8O4XNZOZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts"
+							"path": "packages/skills/src/runtime/operations/runs/author.ts"
 						}
 					},
 					{
@@ -7703,7 +7703,7 @@
 						"parent": "hu0RfGwG",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/guardrails.ts"
+							"path": "packages/skills/src/runtime/rules/audit/guardrails.ts"
 						}
 					},
 					{
@@ -7715,7 +7715,7 @@
 						"parent": "hu0RfGwG",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/outcomes.ts"
+							"path": "packages/skills/src/runtime/rules/outcomes/outcomes.ts"
 						}
 					},
 					{
@@ -7728,7 +7728,7 @@
 						"parent": "hu0RfGwG",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/captures.ts"
+							"path": "packages/skills/src/runtime/operations/runs/captures.ts"
 						}
 					},
 					{
@@ -7744,7 +7744,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/grading-run.ts"
+							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts"
 						}
 					},
 					{
@@ -7759,7 +7759,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/codex-grader.ts"
+							"path": "packages/skills/src/runtime/clients/codex-grader.ts"
 						}
 					},
 					{
@@ -7774,7 +7774,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/claude-grader.ts"
+							"path": "packages/skills/src/runtime/clients/claude-grader.ts"
 						}
 					},
 					{
@@ -7790,7 +7790,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/records.ts"
+							"path": "packages/skills/src/runtime/store/records.ts"
 						}
 					},
 					{
@@ -7814,7 +7814,7 @@
 						"description": "Finds the run's vault from the Flask checkout it runs in, as it does for any repository. The first command there registers the checkout.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/bin.ts"
+							"path": "apps/cli/src/bin.ts"
 						},
 						"drillDown": {
 							"board": "Command interface",
@@ -7831,7 +7831,7 @@
 						"responsibility": "One per run, on its own port. It starts with no vault, and every call names the run's vault",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/index.ts"
+							"path": "apps/server/src/server"
 						},
 						"drillDown": {
 							"board": "Archboard server",
@@ -7865,7 +7865,7 @@
 						"parent": "8O4XNZOZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/archboard.ts"
+							"path": "packages/skills/src/runtime/processes/archboard.ts"
 						}
 					},
 					{
@@ -7878,7 +7878,7 @@
 						"parent": "PCxTuzNW",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/citations.ts"
+							"path": "packages/skills/src/runtime/services/citations.ts"
 						}
 					},
 					{
@@ -7890,7 +7890,7 @@
 						"parent": "8O4XNZOZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/vault.ts"
+							"path": "packages/skills/src/runtime/operations/runs/vault.ts"
 						}
 					},
 					{
@@ -7903,7 +7903,7 @@
 						"parent": "hu0RfGwG",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/classify.ts"
+							"path": "packages/skills/src/runtime/rules/audit/classify.ts"
 						}
 					},
 					{
@@ -7919,7 +7919,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/grading-retry.ts"
+							"path": "packages/skills/src/runtime/operations/grading/grading-retry.ts"
 						}
 					},
 					{
@@ -7932,7 +7932,7 @@
 						"parent": "hu0RfGwG",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/reaudit.ts"
+							"path": "packages/skills/src/runtime/operations/runs/reaudit.ts"
 						}
 					},
 					{
@@ -7945,7 +7945,7 @@
 						"parent": "tDDQDe92",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/report.ts"
+							"path": "packages/skills/src/runtime/rules/reports/report.ts"
 						}
 					},
 					{
@@ -7992,7 +7992,7 @@
 						"parent": "PCxTuzNW",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/pin-versions.ts"
+							"path": "packages/skills/src/runtime/operations/runs/pin-versions.ts"
 						}
 					}
 				],
@@ -8025,7 +8025,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/suite.ts",
+							"path": "packages/skills/src/runtime/schemas/suite.ts",
 							"symbol": "readJson"
 						}
 					},
@@ -8089,7 +8089,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/batch.ts",
+							"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 							"symbol": "executeRun"
 						}
 					},
@@ -8103,7 +8103,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts",
+							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 							"symbol": "prepareRunDirectory"
 						}
 					},
@@ -8117,7 +8117,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts",
+							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 							"symbol": "checkoutFlask"
 						}
 					},
@@ -8131,7 +8131,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts",
+							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 							"symbol": "startServer"
 						}
 					},
@@ -8145,7 +8145,7 @@
 						"emphasis": "hero",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts",
+							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 							"symbol": "installSkill"
 						}
 					},
@@ -8163,7 +8163,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts",
+							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 							"symbol": "authorArgv"
 						}
 					},
@@ -8177,7 +8177,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts",
+							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 							"symbol": "evaluateGuardrails"
 						}
 					},
@@ -8191,7 +8191,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts",
+							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 							"symbol": "evaluateOutcomes"
 						}
 					},
@@ -8205,7 +8205,7 @@
 						"emphasis": "hero",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts",
+							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 							"symbol": "captureDeclared"
 						}
 					},
@@ -8219,7 +8219,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/server.ts",
+							"path": "packages/skills/src/runtime/processes/server.ts",
 							"symbol": "startServer"
 						}
 					},
@@ -8233,7 +8233,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 							"symbol": "codexGrader"
 						}
 					},
@@ -8247,7 +8247,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 							"symbol": "claudeGrader"
 						}
 					},
@@ -8261,7 +8261,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/codex-grader.ts",
+							"path": "packages/skills/src/runtime/clients/codex-grader.ts",
 							"symbol": "codexGraderArgv"
 						}
 					},
@@ -8275,7 +8275,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/claude-grader.ts",
+							"path": "packages/skills/src/runtime/clients/claude-grader.ts",
 							"symbol": "claudeGraderArgv"
 						}
 					},
@@ -8289,7 +8289,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/records.ts",
+							"path": "packages/skills/src/runtime/store/records.ts",
 							"symbol": "graderIdentity"
 						}
 					},
@@ -8303,7 +8303,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/install.ts",
+							"path": "packages/skills/src/runtime/operations/runs/install.ts",
 							"symbol": "archboardOk"
 						}
 					},
@@ -8317,7 +8317,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/captures.ts",
+							"path": "packages/skills/src/runtime/operations/runs/captures.ts",
 							"symbol": "archboard"
 						}
 					},
@@ -8335,7 +8335,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/archboard.ts",
+							"path": "packages/skills/src/runtime/processes/archboard.ts",
 							"symbol": "archboard"
 						}
 					},
@@ -8349,7 +8349,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/suite.ts",
+							"path": "packages/skills/src/runtime/schemas/suite.ts",
 							"symbol": "citationProblem"
 						}
 					},
@@ -8363,7 +8363,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/batch.ts",
+							"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 							"symbol": "keepBatchSkill"
 						}
 					},
@@ -8377,7 +8377,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/batch.ts",
+							"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 							"symbol": "ensureFlaskCache"
 						}
 					},
@@ -8391,7 +8391,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts",
+							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 							"symbol": "layFixture"
 						}
 					},
@@ -8405,7 +8405,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/vault.ts",
+							"path": "packages/skills/src/runtime/operations/runs/vault.ts",
 							"symbol": "archboardOk"
 						}
 					},
@@ -8419,7 +8419,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/author.ts",
+							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 							"symbol": "classifyCommands"
 						}
 					},
@@ -8433,7 +8433,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/isolation.ts",
+							"path": "packages/skills/src/runtime/processes/isolation.ts",
 							"symbol": "writeCliWrapper"
 						}
 					},
@@ -8447,7 +8447,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/engine/lib/server-client-transport.ts",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
 							"symbol": "fetch"
 						}
 					},
@@ -8461,7 +8461,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 							"symbol": "settleRetry"
 						}
 					},
@@ -8475,7 +8475,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 							"symbol": "checkoutFlask"
 						}
 					},
@@ -8489,7 +8489,7 @@
 						"emphasis": "hero",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/records.ts",
+							"path": "packages/skills/src/runtime/store/records.ts",
 							"symbol": "buildReport"
 						}
 					},
@@ -8503,7 +8503,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/records.ts",
+							"path": "packages/skills/src/runtime/store/records.ts",
 							"symbol": "exposureAudit"
 						}
 					},
@@ -8517,7 +8517,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/reaudit.ts",
+							"path": "packages/skills/src/runtime/operations/runs/reaudit.ts",
 							"symbol": "classifyCommands"
 						}
 					},
@@ -8531,7 +8531,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/records.ts",
+							"path": "packages/skills/src/runtime/store/records.ts",
 							"symbol": "citationProblem"
 						}
 					},
@@ -8545,7 +8545,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/records.ts",
+							"path": "packages/skills/src/runtime/store/records.ts",
 							"symbol": "resumeSelection"
 						}
 					},
@@ -8559,7 +8559,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/codex-grader.ts",
+							"path": "packages/skills/src/runtime/clients/codex-grader.ts",
 							"symbol": "fillCodexHome"
 						}
 					},
@@ -8573,7 +8573,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/batch.ts",
+							"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 							"symbol": "digestOf"
 						}
 					},
@@ -8587,7 +8587,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 							"symbol": "digestOf"
 						}
 					},
@@ -8601,7 +8601,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 							"symbol": "BATCH_SKILL_DIRECTORY"
 						}
 					},
@@ -8615,7 +8615,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/report.ts",
+							"path": "packages/skills/src/runtime/rules/reports/report.ts",
 							"symbol": "CATALOGUE_ROWS"
 						}
 					},
@@ -8629,7 +8629,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/codex-grader.ts",
+							"path": "packages/skills/src/runtime/clients/codex-grader.ts",
 							"symbol": "unwrapped"
 						}
 					},
@@ -8643,7 +8643,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/guardrails.ts",
+							"path": "packages/skills/src/runtime/rules/audit/guardrails.ts",
 							"symbol": "unwrapped"
 						}
 					},
@@ -8657,7 +8657,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/outcomes.ts",
+							"path": "packages/skills/src/runtime/rules/outcomes/outcomes.ts",
 							"symbol": "CHECK_KINDS"
 						}
 					},
@@ -8685,7 +8685,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/skill-evaluation/lib/pin-versions.ts",
+							"path": "packages/skills/src/runtime/operations/runs/pin-versions.ts",
 							"symbol": "GRADER_NAMES"
 						}
 					}
@@ -8724,7 +8724,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/suite.ts",
+									"path": "packages/skills/src/runtime/schemas/suite.ts",
 									"symbol": "loadSuite"
 								}
 							},
@@ -8781,7 +8781,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/batch.ts",
+																	"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 																	"symbol": "runBatch"
 																}
 															}
@@ -8806,7 +8806,7 @@
 																				"kind": "self",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/skill-evaluation/lib/batch.ts",
+																					"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 																					"symbol": "validateResume"
 																				}
 																			}
@@ -8826,7 +8826,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/batch.ts",
+																	"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 																	"symbol": "keepBatchSkill"
 																}
 															},
@@ -8838,7 +8838,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/citations.ts",
+																	"path": "packages/skills/src/runtime/services/citations.ts",
 																	"symbol": "keepBatchSkill"
 																}
 															},
@@ -8851,7 +8851,7 @@
 																"note": "a resumed batch refuses a copy that differs from the digest it recorded",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/batch.ts",
+																	"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 																	"symbol": "digestOf"
 																}
 															},
@@ -8863,7 +8863,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/install.ts",
+																	"path": "packages/skills/src/runtime/operations/runs/install.ts",
 																	"symbol": "digestOf"
 																}
 															},
@@ -8875,7 +8875,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/batch.ts",
+																	"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 																	"symbol": "ensureFlaskCache"
 																}
 															},
@@ -8900,7 +8900,7 @@
 																						"kind": "self",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/batch.ts",
+																							"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 																							"symbol": "alreadyDone"
 																						}
 																					}
@@ -8917,7 +8917,7 @@
 																						"kind": "sync",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/batch.ts",
+																							"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 																							"symbol": "executeRun"
 																						}
 																					},
@@ -8929,7 +8929,7 @@
 																						"kind": "return",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/author.ts",
+																							"path": "packages/skills/src/runtime/operations/runs/author.ts",
 																							"symbol": "executeRun"
 																						}
 																					}
@@ -8947,7 +8947,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/batch.ts",
+																	"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 																	"symbol": "runBatch"
 																}
 															}
@@ -8982,7 +8982,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "prepareRunDirectory"
 								}
 							},
@@ -8994,7 +8994,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/isolation.ts",
+									"path": "packages/skills/src/runtime/processes/isolation.ts",
 									"symbol": "prepareRunDirectory"
 								}
 							},
@@ -9014,7 +9014,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "checkoutFlask"
 												}
 											},
@@ -9026,7 +9026,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/flask.ts",
+													"path": "packages/skills/src/runtime/processes/flask.ts",
 													"symbol": "checkoutFlask"
 												}
 											}
@@ -9043,7 +9043,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "emptyCheckout"
 												}
 											},
@@ -9055,7 +9055,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/flask.ts",
+													"path": "packages/skills/src/runtime/processes/flask.ts",
 													"symbol": "emptyCheckout"
 												}
 											}
@@ -9071,7 +9071,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "fillCodexHome"
 								}
 							},
@@ -9083,7 +9083,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "startServer"
 								}
 							},
@@ -9095,7 +9095,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/server.ts",
+									"path": "packages/skills/src/runtime/processes/server.ts",
 									"symbol": "startServer"
 								}
 							},
@@ -9107,7 +9107,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/server.ts",
+									"path": "packages/skills/src/runtime/processes/server.ts",
 									"symbol": "healthPid"
 								}
 							},
@@ -9119,7 +9119,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/server.ts",
+									"path": "packages/skills/src/runtime/processes/server.ts",
 									"symbol": "startServer"
 								}
 							},
@@ -9139,7 +9139,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "installSkill"
 												}
 											},
@@ -9151,7 +9151,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/install.ts",
+													"path": "packages/skills/src/runtime/operations/runs/install.ts",
 													"symbol": "installSkill"
 												}
 											}
@@ -9168,7 +9168,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "installSkill"
 												}
 											},
@@ -9180,7 +9180,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/install.ts",
+													"path": "packages/skills/src/runtime/operations/runs/install.ts",
 													"symbol": "installSkill"
 												}
 											}
@@ -9196,7 +9196,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "layFixture"
 								}
 							},
@@ -9208,7 +9208,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/vault.ts",
+									"path": "packages/skills/src/runtime/operations/runs/vault.ts",
 									"symbol": "layFixture"
 								}
 							},
@@ -9220,7 +9220,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "readVault"
 								}
 							},
@@ -9232,7 +9232,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/vault.ts",
+									"path": "packages/skills/src/runtime/operations/runs/vault.ts",
 									"symbol": "readVault"
 								}
 							},
@@ -9252,7 +9252,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "forgetCheckout"
 												}
 											}
@@ -9290,7 +9290,7 @@
 								"note": "ends at the pinned timeout, or when the batch is cancelled",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "authorArgv"
 								}
 							},
@@ -9307,7 +9307,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/isolation.ts",
+											"path": "packages/skills/src/runtime/processes/isolation.ts",
 											"symbol": "writeCliWrapper"
 										}
 									},
@@ -9319,7 +9319,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/engine/lib/server-client-transport.ts",
+											"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
 											"symbol": "fetch"
 										}
 									},
@@ -9331,7 +9331,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/engine/lib/server-client-transport.ts",
+											"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
 											"symbol": "fetch"
 										}
 									},
@@ -9343,7 +9343,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/isolation.ts",
+											"path": "packages/skills/src/runtime/processes/isolation.ts",
 											"symbol": "writeCliWrapper"
 										}
 									}
@@ -9357,7 +9357,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "runAuthorProcess"
 								}
 							},
@@ -9369,7 +9369,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "classifyCommands"
 								}
 							},
@@ -9381,7 +9381,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/classify.ts",
+									"path": "packages/skills/src/runtime/rules/audit/classify.ts",
 									"symbol": "classifyCommands"
 								}
 							},
@@ -9393,7 +9393,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "readVault"
 								}
 							},
@@ -9405,7 +9405,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/vault.ts",
+									"path": "packages/skills/src/runtime/operations/runs/vault.ts",
 									"symbol": "readVault"
 								}
 							},
@@ -9417,7 +9417,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "captureDeclared"
 								}
 							},
@@ -9429,7 +9429,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/captures.ts",
+									"path": "packages/skills/src/runtime/operations/runs/captures.ts",
 									"symbol": "captureDeclared"
 								}
 							},
@@ -9441,7 +9441,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "evaluateOutcomes"
 								}
 							},
@@ -9453,7 +9453,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/outcomes.ts",
+									"path": "packages/skills/src/runtime/rules/outcomes/outcomes.ts",
 									"symbol": "evaluateOutcomes"
 								}
 							},
@@ -9465,7 +9465,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "evaluateGuardrails"
 								}
 							},
@@ -9477,7 +9477,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/guardrails.ts",
+									"path": "packages/skills/src/runtime/rules/audit/guardrails.ts",
 									"symbol": "evaluateGuardrails"
 								}
 							},
@@ -9497,7 +9497,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "statusOf"
 												}
 											}
@@ -9514,7 +9514,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "statusOf"
 												}
 											}
@@ -9531,7 +9531,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "statusOf"
 												}
 											}
@@ -9548,7 +9548,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "statusOf"
 												}
 											}
@@ -9564,7 +9564,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "assemble"
 								}
 							}
@@ -9589,7 +9589,7 @@
 								"note": "the world, the install, the fixture, the author process or the reading after it",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "executeRun"
 								}
 							},
@@ -9609,7 +9609,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "partialCaptures"
 												}
 											}
@@ -9626,7 +9626,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "partialCaptures"
 												}
 											}
@@ -9643,7 +9643,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "readVault"
 												}
 											},
@@ -9655,7 +9655,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/vault.ts",
+													"path": "packages/skills/src/runtime/operations/runs/vault.ts",
 													"symbol": "readVault"
 												}
 											},
@@ -9667,7 +9667,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "captureDeclared"
 												}
 											},
@@ -9679,7 +9679,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/captures.ts",
+													"path": "packages/skills/src/runtime/operations/runs/captures.ts",
 													"symbol": "captureDeclared"
 												}
 											}
@@ -9703,7 +9703,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "failedRun"
 												}
 											}
@@ -9720,7 +9720,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/author.ts",
+													"path": "packages/skills/src/runtime/operations/runs/author.ts",
 													"symbol": "failedRun"
 												}
 											}
@@ -9736,7 +9736,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "failedRun"
 								}
 							},
@@ -9748,7 +9748,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/author.ts",
+									"path": "packages/skills/src/runtime/operations/runs/author.ts",
 									"symbol": "executeRun"
 								}
 							}
@@ -9797,7 +9797,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+													"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 													"symbol": "assertPinnedVersion"
 												}
 											}
@@ -9814,7 +9814,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+													"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 													"symbol": "digestOf"
 												}
 											},
@@ -9826,7 +9826,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/install.ts",
+													"path": "packages/skills/src/runtime/operations/runs/install.ts",
 													"symbol": "digestOf"
 												}
 											},
@@ -9846,7 +9846,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+																	"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 																	"symbol": "stageSkill"
 																}
 															}
@@ -9863,7 +9863,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+																	"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 																	"symbol": "checkoutFlask"
 																}
 															},
@@ -9875,7 +9875,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/flask.ts",
+																	"path": "packages/skills/src/runtime/processes/flask.ts",
 																	"symbol": "checkoutFlask"
 																}
 															},
@@ -9900,7 +9900,7 @@
 																						"kind": "sync",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+																							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 																							"symbol": "codexGrader"
 																						}
 																					},
@@ -9912,7 +9912,7 @@
 																						"kind": "sync",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/codex-grader.ts",
+																							"path": "packages/skills/src/runtime/clients/codex-grader.ts",
 																							"symbol": "codexGraderArgv"
 																						}
 																					},
@@ -9924,7 +9924,7 @@
 																						"kind": "return",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/codex-grader.ts",
+																							"path": "packages/skills/src/runtime/clients/codex-grader.ts",
 																							"symbol": "codexGrader"
 																						}
 																					},
@@ -9936,7 +9936,7 @@
 																						"kind": "return",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/codex-grader.ts",
+																							"path": "packages/skills/src/runtime/clients/codex-grader.ts",
 																							"symbol": "codexGrader"
 																						}
 																					}
@@ -9953,7 +9953,7 @@
 																						"kind": "sync",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+																							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 																							"symbol": "claudeGrader"
 																						}
 																					},
@@ -9965,7 +9965,7 @@
 																						"kind": "sync",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/claude-grader.ts",
+																							"path": "packages/skills/src/runtime/clients/claude-grader.ts",
 																							"symbol": "claudeGraderArgv"
 																						}
 																					},
@@ -9977,7 +9977,7 @@
 																						"kind": "return",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/claude-grader.ts",
+																							"path": "packages/skills/src/runtime/clients/claude-grader.ts",
 																							"symbol": "claudeGrader"
 																						}
 																					},
@@ -9989,7 +9989,7 @@
 																						"kind": "return",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/claude-grader.ts",
+																							"path": "packages/skills/src/runtime/clients/claude-grader.ts",
 																							"symbol": "claudeGrader"
 																						}
 																					}
@@ -10005,7 +10005,7 @@
 																		"kind": "self",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+																			"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 																			"symbol": "recordCall"
 																		}
 																	},
@@ -10025,7 +10025,7 @@
 																						"kind": "sync",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+																							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 																							"symbol": "shortAnswers"
 																						}
 																					},
@@ -10037,7 +10037,7 @@
 																						"kind": "return",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/grading-retry.ts",
+																							"path": "packages/skills/src/runtime/operations/grading/grading-retry.ts",
 																							"symbol": "shortAnswers"
 																						}
 																					},
@@ -10050,7 +10050,7 @@
 																						"note": "through the chosen grader",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+																							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 																							"symbol": "retryShortAnswers"
 																						}
 																					},
@@ -10062,7 +10062,7 @@
 																						"kind": "sync",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+																							"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 																							"symbol": "settleRetry"
 																						}
 																					},
@@ -10074,7 +10074,7 @@
 																						"kind": "return",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/skill-evaluation/lib/grading-retry.ts",
+																							"path": "packages/skills/src/runtime/operations/grading/grading-retry.ts",
 																							"symbol": "settleRetry"
 																						}
 																					}
@@ -10096,7 +10096,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+																	"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 																	"symbol": "retryOwed"
 																}
 															},
@@ -10108,7 +10108,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+																	"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 																	"symbol": "gradeBatch"
 																}
 															}
@@ -10156,7 +10156,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/records.ts",
+									"path": "packages/skills/src/runtime/store/records.ts",
 									"symbol": "resumeSelection"
 								}
 							},
@@ -10168,7 +10168,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/batch.ts",
+									"path": "packages/skills/src/runtime/operations/runs/batch.ts",
 									"symbol": "resumeSelection"
 								}
 							},
@@ -10185,7 +10185,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/records.ts",
+											"path": "packages/skills/src/runtime/store/records.ts",
 											"symbol": "exposureAudit"
 										}
 									},
@@ -10197,7 +10197,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/reaudit.ts",
+											"path": "packages/skills/src/runtime/operations/runs/reaudit.ts",
 											"symbol": "classifyCommands"
 										}
 									},
@@ -10209,7 +10209,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/classify.ts",
+											"path": "packages/skills/src/runtime/rules/audit/classify.ts",
 											"symbol": "classifyCommands"
 										}
 									},
@@ -10221,7 +10221,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/reaudit.ts",
+											"path": "packages/skills/src/runtime/operations/runs/reaudit.ts",
 											"symbol": "exposureAudit"
 										}
 									},
@@ -10233,7 +10233,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/records.ts",
+											"path": "packages/skills/src/runtime/store/records.ts",
 											"symbol": "citationProblem"
 										}
 									},
@@ -10245,7 +10245,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/citations.ts",
+											"path": "packages/skills/src/runtime/services/citations.ts",
 											"symbol": "citationProblem"
 										}
 									},
@@ -10257,7 +10257,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/records.ts",
+											"path": "packages/skills/src/runtime/store/records.ts",
 											"symbol": "graderIdentity"
 										}
 									},
@@ -10269,7 +10269,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/grading-run.ts",
+											"path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
 											"symbol": "graderIdentity"
 										}
 									},
@@ -10281,7 +10281,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/records.ts",
+											"path": "packages/skills/src/runtime/store/records.ts",
 											"symbol": "buildReport"
 										}
 									},
@@ -10293,7 +10293,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/skill-evaluation/lib/report.ts",
+											"path": "packages/skills/src/runtime/rules/reports/report.ts",
 											"symbol": "buildReport"
 										}
 									}
@@ -10315,7 +10315,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/skill-evaluation/lib/records.ts",
+													"path": "packages/skills/src/runtime/store/records.ts",
 													"symbol": "buildBatchReport"
 												}
 											}
@@ -10335,7 +10335,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/records.ts",
+									"path": "packages/skills/src/runtime/store/records.ts",
 									"symbol": "writeReport"
 								}
 							},
@@ -10347,7 +10347,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/skill-evaluation/lib/records.ts",
+									"path": "packages/skills/src/runtime/store/records.ts",
 									"symbol": "writeReport"
 								}
 							}

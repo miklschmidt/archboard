@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 76,
+	"version": 78,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-18T16:06:05.052Z",
+	"updatedAt": "2026-10-19T22:40:46.466Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -22370,7 +22370,7 @@
 						"responsibility": "Every write of a board comes through it, and every read but the command line's search for the vaults that hold a checkout's boards",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard"
+							"path": "apps/server/src/server"
 						},
 						"drillDown": {
 							"board": "Archboard server",
@@ -22389,7 +22389,7 @@
 						"parent": "ZqkmwupZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/location.ts"
+							"path": "packages/board/src/runtime/store/location.ts"
 						}
 					},
 					{
@@ -22402,7 +22402,7 @@
 						"parent": "ZqkmwupZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/listing.ts"
+							"path": "packages/board/src/runtime/operations/read/listing.ts"
 						}
 					},
 					{
@@ -22415,7 +22415,7 @@
 						"parent": "ZqkmwupZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/read.ts"
+							"path": "packages/board/src/runtime/operations/read/read.ts"
 						}
 					},
 					{
@@ -22431,7 +22431,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/transitions.ts"
+							"path": "packages/board/src/runtime/operations/write/transitions.ts"
 						}
 					},
 					{
@@ -22447,7 +22447,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/edit-content.ts"
+							"path": "packages/board/src/runtime/operations/edit/content.ts"
 						}
 					},
 					{
@@ -22463,7 +22463,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/propagate.ts"
+							"path": "packages/board/src/runtime/operations/variant/propagate.ts"
 						}
 					},
 					{
@@ -22479,7 +22479,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/settle.ts"
+							"path": "packages/board/src/runtime/operations/settle/settle.ts"
 						}
 					},
 					{
@@ -22495,7 +22495,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/write.ts"
+							"path": "packages/board/src/runtime/operations/write/write.ts"
 						}
 					},
 					{
@@ -22510,7 +22510,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/engine/atomic-write.ts"
+							"path": "packages/workspace/src/runtime/store/atomic-write.ts"
 						}
 					},
 					{
@@ -22525,7 +22525,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts"
+							"path": "packages/board/src/runtime/operations/check/diagnostics.ts"
 						}
 					},
 					{
@@ -22541,7 +22541,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/drill-down.ts"
+							"path": "packages/board/src/runtime/operations/check/drill-down.ts"
 						}
 					},
 					{
@@ -22557,7 +22557,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/replaced-relationships.ts"
+							"path": "packages/board/src/runtime/operations/edit/replaced-relationships.ts"
 						}
 					},
 					{
@@ -22573,7 +22573,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/adopt.ts"
+							"path": "packages/board/src/runtime/operations/variant/adopt.ts"
 						}
 					},
 					{
@@ -22589,7 +22589,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/shelve.ts"
+							"path": "packages/board/src/runtime/operations/variant/shelve.ts"
 						}
 					},
 					{
@@ -22605,7 +22605,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/rename.ts"
+							"path": "packages/board/src/runtime/operations/rename/rename.ts"
 						}
 					},
 					{
@@ -22618,7 +22618,7 @@
 						"parent": "ZqkmwupZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/former-names.ts"
+							"path": "packages/board/src/runtime/store/former-names.ts"
 						}
 					},
 					{
@@ -22634,7 +22634,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/relocation.ts"
+							"path": "packages/board/src/runtime/operations/rename/relocation.ts"
 						}
 					},
 					{
@@ -22650,7 +22650,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/discard.ts"
+							"path": "packages/board/src/runtime/operations/write/discard.ts"
 						}
 					},
 					{
@@ -22665,7 +22665,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/engine/board-lock.ts"
+							"path": "packages/board/src/runtime/store/lock"
 						}
 					},
 					{
@@ -22680,7 +22680,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/bindings.ts"
+							"path": "packages/board/src/runtime/operations/check/bindings.ts"
 						}
 					},
 					{
@@ -22692,7 +22692,7 @@
 						"parent": "ZqkmwupZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/configuration.ts"
+							"path": "packages/board/src/runtime/store/configuration.ts"
 						}
 					},
 					{
@@ -22708,7 +22708,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/dropped-anchors.ts"
+							"path": "packages/board/src/runtime/operations/edit/dropped-anchors.ts"
 						}
 					},
 					{
@@ -22719,7 +22719,7 @@
 						"responsibility": "Reads historical board bytes from Git without changing the vault",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/history-lens"
+							"path": "packages/code-intel/src/runtime/operations/history-lens"
 						}
 					},
 					{
@@ -22731,7 +22731,7 @@
 						"parent": "ZqkmwupZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/decode.ts",
+							"path": "packages/board/src/runtime/store/format/decode.ts",
 							"symbol": "decodeSemanticBoardDocument"
 						}
 					},
@@ -22744,7 +22744,7 @@
 						"description": "The one rule that every reader of a vault resolves a repository identity by (ADR 0049): the vault's own checkout for its own identity, the chosen checkout for any other. The binding checks use it to find a bound file, and the drill-down checks use it to find the vault a link into another repository opens, and to tell a link that names the vault's own repository from one that leaves it.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/code-target/lib/vault-checkout.ts"
+							"path": "packages/code-binding/src/runtime/services/vault-checkout.ts"
 						}
 					},
 					{
@@ -22760,7 +22760,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move.ts"
+							"path": "packages/board/src/runtime/operations/move/move.ts"
 						}
 					},
 					{
@@ -22773,7 +22773,7 @@
 						"parent": "IbkA2Se8",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move-preview.ts"
+							"path": "packages/board/src/runtime/operations/move/preview.ts"
 						}
 					},
 					{
@@ -22819,7 +22819,7 @@
 						"responsibility": "Reads boards directly once: in a checkout with no vault, to name the known vaults that hold boards of its code",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing"
+							"path": "apps/cli/src/cli/operations/invocation"
 						},
 						"drillDown": {
 							"board": "Command dispatch",
@@ -22838,7 +22838,7 @@
 						"parent": "ZqkmwupZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/bound-vaults.ts",
+							"path": "packages/board/src/runtime/store/bound-vaults.ts",
 							"symbol": "vaultsBoundTo"
 						}
 					}
@@ -22854,7 +22854,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-context.ts",
+							"path": "packages/workbench/src/server/projections/semantic-context/board-context.ts",
 							"symbol": "semanticBoardAddress"
 						}
 					},
@@ -22868,7 +22868,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
 							"symbol": "listSemanticBoards"
 						}
 					},
@@ -22882,7 +22882,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
 							"symbol": "readSemanticBoard"
 						}
 					},
@@ -22896,7 +22896,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
 							"symbol": "editVariantTransition"
 						}
 					},
@@ -22910,7 +22910,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+							"path": "packages/board/src/runtime/operations/write/transitions.ts",
 							"symbol": "editContent"
 						}
 					},
@@ -22924,7 +22924,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+							"path": "packages/board/src/runtime/operations/write/transitions.ts",
 							"symbol": "propagateEdit"
 						}
 					},
@@ -22938,7 +22938,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+							"path": "packages/board/src/runtime/operations/write/transitions.ts",
 							"symbol": "settleVariant"
 						}
 					},
@@ -22952,7 +22952,7 @@
 						"emphasis": "hero",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
 							"symbol": "writeSemanticBoard"
 						}
 					},
@@ -22966,7 +22966,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/write.ts",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
 							"symbol": "locateSemanticBoard"
 						}
 					},
@@ -22980,7 +22980,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/write.ts",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
 							"symbol": "readSemanticBoardAtUnderLease"
 						}
 					},
@@ -22994,7 +22994,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/write.ts",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
 							"symbol": "apply"
 						}
 					},
@@ -23008,7 +23008,7 @@
 						"emphasis": "hero",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+							"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 							"symbol": "writeFileAtomic"
 						}
 					},
@@ -23022,7 +23022,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
 							"symbol": "checkSemanticVault"
 						}
 					},
@@ -23036,7 +23036,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+							"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 							"symbol": "semanticDrillDownDiagnostics"
 						}
 					},
@@ -23050,7 +23050,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/edit-content.ts",
+							"path": "packages/board/src/runtime/operations/edit/content.ts",
 							"symbol": "replacedRelationships"
 						}
 					},
@@ -23064,7 +23064,7 @@
 						"emphasis": "hero",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/write.ts",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
 							"symbol": "writeBoardFile"
 						}
 					},
@@ -23078,7 +23078,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/write.ts",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
 							"symbol": "withBoardLock"
 						}
 					},
@@ -23092,7 +23092,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/write.ts",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
 							"symbol": "resolveSemanticBoard"
 						}
 					},
@@ -23106,7 +23106,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/read.ts",
+							"path": "packages/board/src/runtime/operations/read/read.ts",
 							"symbol": "resolveSemanticBoard"
 						}
 					},
@@ -23120,7 +23120,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/read.ts",
+							"path": "packages/board/src/runtime/operations/read/read.ts",
 							"symbol": "withBoardLockIfFreeSync"
 						}
 					},
@@ -23134,7 +23134,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/read.ts",
+							"path": "packages/board/src/runtime/operations/read/read.ts",
 							"symbol": "writeFileAtomic"
 						}
 					},
@@ -23148,7 +23148,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/former-names.ts",
+							"path": "packages/board/src/runtime/store/former-names.ts",
 							"symbol": "listSemanticBoards"
 						}
 					},
@@ -23162,7 +23162,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+							"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 							"symbol": "withBoardLockIfFreeSync"
 						}
 					},
@@ -23176,7 +23176,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+							"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 							"symbol": "boardFormerlyCalled"
 						}
 					},
@@ -23190,7 +23190,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+							"path": "packages/board/src/runtime/operations/write/transitions.ts",
 							"symbol": "adoptVariant"
 						}
 					},
@@ -23204,7 +23204,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+							"path": "packages/board/src/runtime/operations/write/transitions.ts",
 							"symbol": "shelveVariant"
 						}
 					},
@@ -23218,7 +23218,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
 							"symbol": "renameTransition"
 						}
 					},
@@ -23232,7 +23232,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-discard.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-discard.ts",
 							"symbol": "discardSemanticBoard"
 						}
 					},
@@ -23246,7 +23246,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/discard.ts",
+							"path": "packages/board/src/runtime/operations/write/discard.ts",
 							"symbol": "underBoardLease"
 						}
 					},
@@ -23260,7 +23260,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/discard.ts",
+							"path": "packages/board/src/runtime/operations/write/discard.ts",
 							"symbol": "unlinkDurably"
 						}
 					},
@@ -23274,7 +23274,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/discard.ts",
+							"path": "packages/board/src/runtime/operations/write/discard.ts",
 							"symbol": "releaseClaim"
 						}
 					},
@@ -23288,7 +23288,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+							"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 							"symbol": "semanticBindingDiagnostics"
 						}
 					},
@@ -23302,7 +23302,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
 							"symbol": "readSemanticBoardConfiguration"
 						}
 					},
@@ -23316,7 +23316,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/read.ts",
+							"path": "packages/board/src/runtime/operations/read/read.ts",
 							"symbol": "readSemanticBoardConfiguration"
 						}
 					},
@@ -23330,7 +23330,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/write.ts",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
 							"symbol": "readSemanticBoardConfiguration"
 						}
 					},
@@ -23344,7 +23344,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/edit-content.ts",
+							"path": "packages/board/src/runtime/operations/edit/content.ts",
 							"symbol": "droppedAnchors"
 						}
 					},
@@ -23358,7 +23358,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+							"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 							"symbol": "semanticBoardAddress"
 						}
 					},
@@ -23372,7 +23372,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/drill-down.ts",
+							"path": "packages/board/src/runtime/operations/check/drill-down.ts",
 							"symbol": "semanticBoardAddress"
 						}
 					},
@@ -23386,7 +23386,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/former-names.ts",
+							"path": "packages/board/src/runtime/store/former-names.ts",
 							"symbol": "locateSemanticBoard"
 						}
 					},
@@ -23400,7 +23400,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/listing.ts",
+							"path": "packages/board/src/runtime/operations/read/listing.ts",
 							"symbol": "locateSemanticBoard"
 						}
 					},
@@ -23414,7 +23414,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/read.ts",
+							"path": "packages/board/src/runtime/operations/read/read.ts",
 							"symbol": "semanticBoardAddress"
 						}
 					},
@@ -23428,7 +23428,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+							"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 							"symbol": "semanticBoardAddress"
 						}
 					},
@@ -23442,7 +23442,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/rename.ts",
+							"path": "packages/board/src/runtime/operations/rename/rename.ts",
 							"symbol": "semanticBoardAddress"
 						}
 					},
@@ -23456,7 +23456,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+							"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 							"symbol": "readSemanticBoardAt"
 						}
 					},
@@ -23470,7 +23470,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+							"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 							"symbol": "readSemanticBoardConfiguration"
 						}
 					},
@@ -23484,7 +23484,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/adopt.ts",
+							"path": "packages/board/src/runtime/operations/variant/adopt.ts",
 							"symbol": "unsettledAncestor"
 						}
 					},
@@ -23498,7 +23498,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/settle.ts",
+							"path": "packages/board/src/runtime/operations/settle/settle.ts",
 							"symbol": "propagateEdit"
 						}
 					},
@@ -23512,7 +23512,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/shelve.ts",
+							"path": "packages/board/src/runtime/operations/variant/shelve.ts",
 							"symbol": "withoutStanding"
 						}
 					},
@@ -23526,7 +23526,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/board-announcements.ts",
+							"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
 							"symbol": "onBoardLockChanged"
 						}
 					},
@@ -23540,7 +23540,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/adopt.ts",
+							"path": "packages/board/src/runtime/operations/variant/adopt.ts",
 							"symbol": "BRANCH_INSTEAD"
 						}
 					},
@@ -23554,7 +23554,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/history-lens/lib/last-change.ts",
+							"path": "packages/code-intel/src/runtime/operations/history-lens/last-change.ts",
 							"symbol": "decodeSemanticBoardDocument"
 						}
 					},
@@ -23568,7 +23568,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/read.ts",
+							"path": "packages/board/src/runtime/operations/read/read.ts",
 							"symbol": "decodeSemanticBoardDocument"
 						}
 					},
@@ -23582,7 +23582,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/code-check-route.ts",
+							"path": "apps/server/src/server/routes/code-check/code-check-route.ts",
 							"symbol": "createBehindReading"
 						}
 					},
@@ -23596,7 +23596,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/drill-down.ts",
+							"path": "packages/board/src/runtime/operations/check/drill-down.ts",
 							"symbol": "checkoutsReadFrom"
 						}
 					},
@@ -23610,7 +23610,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/bindings.ts",
+							"path": "packages/board/src/runtime/operations/check/bindings.ts",
 							"symbol": "checkoutsReadFrom"
 						}
 					},
@@ -23624,7 +23624,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/drill-down.ts",
+							"path": "packages/board/src/runtime/operations/check/drill-down.ts",
 							"symbol": "resolveSemanticBoard"
 						}
 					},
@@ -23638,7 +23638,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/drill-down.ts",
+							"path": "packages/board/src/runtime/operations/check/drill-down.ts",
 							"symbol": "decodeSemanticBoardDocument"
 						}
 					},
@@ -23652,7 +23652,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
 							"symbol": "vaultIdentity"
 						}
 					},
@@ -23666,7 +23666,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-move.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-move.ts",
 							"symbol": "moveSemanticBoard"
 						}
 					},
@@ -23680,7 +23680,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move.ts",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
 							"symbol": "holdBoard"
 						}
 					},
@@ -23694,7 +23694,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move.ts",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
 							"symbol": "boardBefore"
 						}
 					},
@@ -23708,7 +23708,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move.ts",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
 							"symbol": "resolveSemanticBoard"
 						}
 					},
@@ -23722,7 +23722,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move.ts",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
 							"symbol": "vaultIdentity"
 						}
 					},
@@ -23736,7 +23736,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move.ts",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
 							"symbol": "writeBoardFile"
 						}
 					},
@@ -23750,7 +23750,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move.ts",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
 							"symbol": "unlinkDurably"
 						}
 					},
@@ -23764,7 +23764,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move.ts",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
 							"symbol": "locateSemanticBoard"
 						}
 					},
@@ -23778,7 +23778,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move.ts",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
 							"symbol": "readSemanticBoardConfiguration"
 						}
 					},
@@ -23792,7 +23792,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/semantic-board-move.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-move.ts",
 							"symbol": "previewSemanticMove"
 						}
 					},
@@ -23806,7 +23806,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+							"path": "packages/board/src/runtime/operations/move/preview.ts",
 							"symbol": "checkedMove"
 						}
 					},
@@ -23820,7 +23820,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+							"path": "packages/board/src/runtime/operations/move/preview.ts",
 							"symbol": "resolveSemanticBoard"
 						}
 					},
@@ -23834,7 +23834,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+							"path": "packages/board/src/runtime/operations/move/preview.ts",
 							"symbol": "locateSemanticBoard"
 						}
 					},
@@ -23848,7 +23848,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+							"path": "packages/board/src/runtime/operations/move/preview.ts",
 							"symbol": "vaultIdentity"
 						}
 					},
@@ -23862,7 +23862,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+							"path": "packages/board/src/runtime/operations/move/preview.ts",
 							"symbol": "readSemanticBoardAtAsLeased"
 						}
 					},
@@ -23876,7 +23876,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/write.ts",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
 							"symbol": "apply"
 						}
 					},
@@ -23890,7 +23890,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-routing/lib/addressed-vault.ts",
+							"path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
 							"symbol": "vaultsBoundTo"
 						}
 					},
@@ -23904,7 +23904,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/bound-vaults.ts",
+							"path": "packages/board/src/runtime/store/bound-vaults.ts",
 							"symbol": "listSemanticBoards"
 						}
 					},
@@ -23918,7 +23918,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/bound-vaults.ts",
+							"path": "packages/board/src/runtime/store/bound-vaults.ts",
 							"symbol": "decodeSemanticBoardDocument"
 						}
 					}
@@ -23945,7 +23945,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/semantic-board-writes.ts",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
 									"symbol": "editVariantTransition"
 								}
 							},
@@ -23957,7 +23957,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+									"path": "packages/board/src/runtime/operations/write/transitions.ts",
 									"symbol": "editVariantTransition"
 								}
 							},
@@ -23969,7 +23969,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/semantic-board-writes.ts",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
 									"symbol": "writeSemanticBoard"
 								}
 							},
@@ -23981,7 +23981,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/write.ts",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "underBoardLease"
 								}
 							},
@@ -24001,7 +24001,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/write.ts",
+													"path": "packages/board/src/runtime/operations/write/write.ts",
 													"symbol": "admit"
 												}
 											}
@@ -24018,7 +24018,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/write.ts",
+													"path": "packages/board/src/runtime/operations/write/write.ts",
 													"symbol": "withBoardLock"
 												}
 											},
@@ -24038,7 +24038,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/write.ts",
+																	"path": "packages/board/src/runtime/operations/write/write.ts",
 																	"symbol": "underBoardLease"
 																}
 															}
@@ -24055,7 +24055,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/write.ts",
+																	"path": "packages/board/src/runtime/operations/write/write.ts",
 																	"symbol": "underBoardLease"
 																}
 															},
@@ -24067,7 +24067,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/write.ts",
+																	"path": "packages/board/src/runtime/operations/write/write.ts",
 																	"symbol": "readSemanticBoardAtUnderLease"
 																}
 															},
@@ -24079,7 +24079,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/read.ts",
+																	"path": "packages/board/src/runtime/operations/read/read.ts",
 																	"symbol": "readSemanticBoardAtUnderLease"
 																}
 															},
@@ -24099,7 +24099,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/write.ts",
+																					"path": "packages/board/src/runtime/operations/write/write.ts",
 																					"symbol": "boardBefore"
 																				}
 																			}
@@ -24116,7 +24116,7 @@
 																				"kind": "sync",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/write.ts",
+																					"path": "packages/board/src/runtime/operations/write/write.ts",
 																					"symbol": "apply"
 																				}
 																			},
@@ -24128,7 +24128,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+																					"path": "packages/board/src/runtime/operations/write/transitions.ts",
 																					"symbol": "TransitionResult"
 																				}
 																			},
@@ -24148,7 +24148,7 @@
 																								"kind": "return",
 																								"anchor": {
 																									"repo": "github.com/miklschmidt/archboard",
-																									"path": "src/runtime/semantic-board-store/lib/write.ts",
+																									"path": "packages/board/src/runtime/operations/write/write.ts",
 																									"symbol": "rejected"
 																								}
 																							}
@@ -24165,7 +24165,7 @@
 																								"kind": "self",
 																								"anchor": {
 																									"repo": "github.com/miklschmidt/archboard",
-																									"path": "src/runtime/semantic-board-store/lib/write.ts",
+																									"path": "packages/board/src/runtime/operations/write/write.ts",
 																									"symbol": "acceptable"
 																								}
 																							},
@@ -24185,7 +24185,7 @@
 																												"kind": "return",
 																												"anchor": {
 																													"repo": "github.com/miklschmidt/archboard",
-																													"path": "src/runtime/semantic-board-store/lib/write.ts",
+																													"path": "packages/board/src/runtime/operations/write/write.ts",
 																													"symbol": "misaddressedRefusal"
 																												}
 																											}
@@ -24203,7 +24203,7 @@
 																												"note": "A rename moves the file first; see A rename moves the file.",
 																												"anchor": {
 																													"repo": "github.com/miklschmidt/archboard",
-																													"path": "src/runtime/semantic-board-store/lib/write.ts",
+																													"path": "packages/board/src/runtime/operations/write/write.ts",
 																													"symbol": "writeBoardFile"
 																												}
 																											},
@@ -24215,7 +24215,7 @@
 																												"kind": "sync",
 																												"anchor": {
 																													"repo": "github.com/miklschmidt/archboard",
-																													"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																													"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																													"symbol": "writeFileAtomic"
 																												}
 																											},
@@ -24227,7 +24227,7 @@
 																												"kind": "return",
 																												"anchor": {
 																													"repo": "github.com/miklschmidt/archboard",
-																													"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																													"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																													"symbol": "writeFileAtomic"
 																												}
 																											},
@@ -24239,7 +24239,7 @@
 																												"kind": "return",
 																												"anchor": {
 																													"repo": "github.com/miklschmidt/archboard",
-																													"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																													"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																													"symbol": "writeBoardFile"
 																												}
 																											},
@@ -24251,7 +24251,7 @@
 																												"kind": "return",
 																												"anchor": {
 																													"repo": "github.com/miklschmidt/archboard",
-																													"path": "src/runtime/semantic-board-store/lib/write.ts",
+																													"path": "packages/board/src/runtime/operations/write/write.ts",
 																													"symbol": "persisted"
 																												}
 																											}
@@ -24298,7 +24298,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/semantic-board-rename.ts",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
 									"symbol": "renameTransition"
 								}
 							},
@@ -24310,7 +24310,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/rename.ts",
+									"path": "packages/board/src/runtime/operations/rename/rename.ts",
 									"symbol": "renameTransition"
 								}
 							},
@@ -24322,7 +24322,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/semantic-board-rename.ts",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
 									"symbol": "writeSemanticBoard"
 								}
 							},
@@ -24334,7 +24334,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/write.ts",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "resolveSemanticBoard"
 								}
 							},
@@ -24346,7 +24346,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/former-names.ts",
+									"path": "packages/board/src/runtime/store/former-names.ts",
 									"symbol": "resolveSemanticBoard"
 								}
 							},
@@ -24358,7 +24358,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/write.ts",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "withBoardLock"
 								}
 							},
@@ -24370,7 +24370,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/write.ts",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "apply"
 								}
 							},
@@ -24382,7 +24382,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/rename.ts",
+									"path": "packages/board/src/runtime/operations/rename/rename.ts",
 									"symbol": "renamedBoard"
 								}
 							},
@@ -24394,7 +24394,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/rename.ts",
+									"path": "packages/board/src/runtime/operations/rename/rename.ts",
 									"symbol": "renameTransition"
 								}
 							},
@@ -24406,7 +24406,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/write.ts",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "relocation"
 								}
 							},
@@ -24426,7 +24426,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+													"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 													"symbol": "writeFileAtomic"
 												}
 											},
@@ -24438,7 +24438,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+													"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 													"symbol": "writeFileAtomic"
 												}
 											}
@@ -24455,7 +24455,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+													"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 													"symbol": "fileTaken"
 												}
 											},
@@ -24467,7 +24467,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+													"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 													"symbol": "withBoardLockIfFreeSync"
 												}
 											},
@@ -24487,7 +24487,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																	"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																	"symbol": "underNewName"
 																}
 															}
@@ -24504,7 +24504,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																	"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																	"symbol": "boardFormerlyCalled"
 																}
 															},
@@ -24516,7 +24516,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/former-names.ts",
+																	"path": "packages/board/src/runtime/store/former-names.ts",
 																	"symbol": "boardFormerlyCalled"
 																}
 															},
@@ -24536,7 +24536,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																					"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																					"symbol": "takenBy"
 																				}
 																			}
@@ -24553,7 +24553,7 @@
 																				"kind": "sync",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																					"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																					"symbol": "moveFileDurably"
 																				}
 																			},
@@ -24565,7 +24565,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																					"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																					"symbol": "moveFileDurably"
 																				}
 																			},
@@ -24578,7 +24578,7 @@
 																				"note": "If this write fails, the file is moved back and the error is thrown.",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																					"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																					"symbol": "writeFileAtomic"
 																				}
 																			},
@@ -24590,7 +24590,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																					"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																					"symbol": "writeFileAtomic"
 																				}
 																			}
@@ -24614,7 +24614,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+									"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 									"symbol": "writeBoardFile"
 								}
 							},
@@ -24626,7 +24626,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/write.ts",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "persisted"
 								}
 							}
@@ -24653,7 +24653,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/semantic-board-routes.ts",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
 									"symbol": "readSemanticBoard"
 								}
 							},
@@ -24665,7 +24665,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/read.ts",
+									"path": "packages/board/src/runtime/operations/read/read.ts",
 									"symbol": "resolveSemanticBoard"
 								}
 							},
@@ -24677,7 +24677,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/former-names.ts",
+									"path": "packages/board/src/runtime/store/former-names.ts",
 									"symbol": "locateSemanticBoard"
 								}
 							},
@@ -24689,7 +24689,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/location.ts",
+									"path": "packages/board/src/runtime/store/location.ts",
 									"symbol": "locateSemanticBoard"
 								}
 							},
@@ -24713,7 +24713,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/former-names.ts",
+													"path": "packages/board/src/runtime/store/former-names.ts",
 													"symbol": "listSemanticBoards"
 												}
 											},
@@ -24725,7 +24725,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/listing.ts",
+													"path": "packages/board/src/runtime/operations/read/listing.ts",
 													"symbol": "locateSemanticBoard"
 												}
 											},
@@ -24737,7 +24737,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/location.ts",
+													"path": "packages/board/src/runtime/store/location.ts",
 													"symbol": "locateSemanticBoard"
 												}
 											},
@@ -24749,7 +24749,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/listing.ts",
+													"path": "packages/board/src/runtime/operations/read/listing.ts",
 													"symbol": "listSemanticBoards"
 												}
 											},
@@ -24762,7 +24762,7 @@
 												"note": "With no match, the name's own location is the answer.",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/former-names.ts",
+													"path": "packages/board/src/runtime/store/former-names.ts",
 													"symbol": "formerKeysAt"
 												}
 											}
@@ -24778,7 +24778,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/former-names.ts",
+									"path": "packages/board/src/runtime/store/former-names.ts",
 									"symbol": "resolveSemanticBoard"
 								}
 							},
@@ -24790,7 +24790,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/read.ts",
+									"path": "packages/board/src/runtime/operations/read/read.ts",
 									"symbol": "readSemanticBoardConfiguration"
 								}
 							},
@@ -24802,7 +24802,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/configuration.ts",
+									"path": "packages/board/src/runtime/store/configuration.ts",
 									"symbol": "readSemanticBoardConfiguration"
 								}
 							},
@@ -24814,7 +24814,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/read.ts",
+									"path": "packages/board/src/runtime/operations/read/read.ts",
 									"symbol": "textAt"
 								}
 							},
@@ -24834,7 +24834,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/read.ts",
+													"path": "packages/board/src/runtime/operations/read/read.ts",
 													"symbol": "readAt"
 												}
 											}
@@ -24852,7 +24852,7 @@
 												"note": "An older schema is upgraded in memory; see A read upgrades an older document.",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/read.ts",
+													"path": "packages/board/src/runtime/operations/read/read.ts",
 													"symbol": "decodeSemanticBoardDocument"
 												}
 											},
@@ -24864,7 +24864,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/decode.ts",
+													"path": "packages/board/src/runtime/store/format/decode.ts",
 													"symbol": "decodeSemanticBoardDocument"
 												}
 											},
@@ -24884,7 +24884,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/read.ts",
+																	"path": "packages/board/src/runtime/operations/read/read.ts",
 																	"symbol": "verifiedRead"
 																}
 															}
@@ -24901,7 +24901,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/read.ts",
+																	"path": "packages/board/src/runtime/operations/read/read.ts",
 																	"symbol": "verifiedRead"
 																}
 															},
@@ -24913,7 +24913,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/read.ts",
+																	"path": "packages/board/src/runtime/operations/read/read.ts",
 																	"symbol": "readSemanticBoardAt"
 																}
 															}
@@ -24946,7 +24946,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/semantic-board-routes.ts",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
 									"symbol": "readSemanticBoard"
 								}
 							},
@@ -24958,7 +24958,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/read.ts",
+									"path": "packages/board/src/runtime/operations/read/read.ts",
 									"symbol": "decodeSemanticBoardDocument"
 								}
 							},
@@ -24970,7 +24970,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/decode.ts",
+									"path": "packages/board/src/runtime/store/format/decode.ts",
 									"symbol": "decodeSemanticBoardDocument"
 								}
 							},
@@ -24982,7 +24982,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/read.ts",
+									"path": "packages/board/src/runtime/operations/read/read.ts",
 									"symbol": "withBoardLockIfFreeSync"
 								}
 							},
@@ -25002,7 +25002,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/read.ts",
+													"path": "packages/board/src/runtime/operations/read/read.ts",
 													"symbol": "persistBoardMigration"
 												}
 											},
@@ -25014,7 +25014,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/read.ts",
+													"path": "packages/board/src/runtime/operations/read/read.ts",
 													"symbol": "writeFileAtomic"
 												}
 											},
@@ -25026,7 +25026,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/read.ts",
+													"path": "packages/board/src/runtime/operations/read/read.ts",
 													"symbol": "writeFileAtomic"
 												}
 											}
@@ -25043,7 +25043,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/read.ts",
+													"path": "packages/board/src/runtime/operations/read/read.ts",
 													"symbol": "pendingRead"
 												}
 											}
@@ -25059,7 +25059,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/read.ts",
+									"path": "packages/board/src/runtime/operations/read/read.ts",
 									"symbol": "readSemanticBoardAt"
 								}
 							}
@@ -25084,7 +25084,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/semantic-board-discard.ts",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-discard.ts",
 									"symbol": "discardSemanticBoard"
 								}
 							},
@@ -25096,7 +25096,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/discard.ts",
+									"path": "packages/board/src/runtime/operations/write/discard.ts",
 									"symbol": "underBoardLease"
 								}
 							},
@@ -25108,7 +25108,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/write.ts",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "withBoardLock"
 								}
 							},
@@ -25120,7 +25120,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/discard.ts",
+									"path": "packages/board/src/runtime/operations/write/discard.ts",
 									"symbol": "boardBefore"
 								}
 							},
@@ -25132,7 +25132,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/write.ts",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "boardBefore"
 								}
 							},
@@ -25152,7 +25152,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/discard.ts",
+													"path": "packages/board/src/runtime/operations/write/discard.ts",
 													"symbol": "discardUnderLease"
 												}
 											}
@@ -25169,7 +25169,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/discard.ts",
+													"path": "packages/board/src/runtime/operations/write/discard.ts",
 													"symbol": "unlinkDurably"
 												}
 											},
@@ -25181,7 +25181,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/discard.ts",
+													"path": "packages/board/src/runtime/operations/write/discard.ts",
 													"symbol": "unlinkDurably"
 												}
 											},
@@ -25201,7 +25201,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/discard.ts",
+																	"path": "packages/board/src/runtime/operations/write/discard.ts",
 																	"symbol": "releaseClaim"
 																}
 															}
@@ -25221,7 +25221,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/discard.ts",
+													"path": "packages/board/src/runtime/operations/write/discard.ts",
 													"symbol": "discardSemanticBoard"
 												}
 											}
@@ -25251,7 +25251,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/write.ts",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "apply"
 								}
 							},
@@ -25271,7 +25271,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+													"path": "packages/board/src/runtime/operations/write/transitions.ts",
 													"symbol": "editableVariant"
 												}
 											}
@@ -25288,7 +25288,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+													"path": "packages/board/src/runtime/operations/write/transitions.ts",
 													"symbol": "editVariantTransition"
 												}
 											},
@@ -25300,7 +25300,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+													"path": "packages/board/src/runtime/operations/write/transitions.ts",
 													"symbol": "editContent"
 												}
 											},
@@ -25320,7 +25320,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/edit-content.ts",
+																	"path": "packages/board/src/runtime/operations/edit/content.ts",
 																	"symbol": "editContent"
 																}
 															},
@@ -25332,7 +25332,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+																	"path": "packages/board/src/runtime/operations/write/transitions.ts",
 																	"symbol": "editVariantTransition"
 																}
 															}
@@ -25349,7 +25349,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/edit-content.ts",
+																	"path": "packages/board/src/runtime/operations/edit/content.ts",
 																	"symbol": "replacedRelationships"
 																}
 															},
@@ -25361,7 +25361,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/replaced-relationships.ts",
+																	"path": "packages/board/src/runtime/operations/edit/replaced-relationships.ts",
 																	"symbol": "replacedRelationships"
 																}
 															},
@@ -25373,7 +25373,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/edit-content.ts",
+																	"path": "packages/board/src/runtime/operations/edit/content.ts",
 																	"symbol": "droppedAnchors"
 																}
 															},
@@ -25385,7 +25385,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/dropped-anchors.ts",
+																	"path": "packages/board/src/runtime/operations/edit/dropped-anchors.ts",
 																	"symbol": "droppedAnchors"
 																}
 															},
@@ -25397,7 +25397,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/edit-content.ts",
+																	"path": "packages/board/src/runtime/operations/edit/content.ts",
 																	"symbol": "editContent"
 																}
 															},
@@ -25417,7 +25417,7 @@
 																				"kind": "self",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+																					"path": "packages/board/src/runtime/operations/write/transitions.ts",
 																					"symbol": "carriedFamily"
 																				}
 																			}
@@ -25442,7 +25442,7 @@
 																								"kind": "sync",
 																								"anchor": {
 																									"repo": "github.com/miklschmidt/archboard",
-																									"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+																									"path": "packages/board/src/runtime/operations/write/transitions.ts",
 																									"symbol": "propagateEdit"
 																								}
 																							},
@@ -25467,7 +25467,7 @@
 																														"kind": "self",
 																														"anchor": {
 																															"repo": "github.com/miklschmidt/archboard",
-																															"path": "src/runtime/semantic-board-store/lib/propagate.ts",
+																															"path": "packages/board/src/runtime/operations/variant/propagate.ts",
 																															"symbol": "blocked"
 																														}
 																													}
@@ -25484,7 +25484,7 @@
 																														"kind": "self",
 																														"anchor": {
 																															"repo": "github.com/miklschmidt/archboard",
-																															"path": "src/runtime/semantic-board-store/lib/propagate.ts",
+																															"path": "packages/board/src/runtime/operations/variant/propagate.ts",
 																															"symbol": "answerFor"
 																														}
 																													}
@@ -25501,7 +25501,7 @@
 																														"kind": "self",
 																														"anchor": {
 																															"repo": "github.com/miklschmidt/archboard",
-																															"path": "src/runtime/semantic-board-store/lib/propagate.ts",
+																															"path": "packages/board/src/runtime/operations/variant/propagate.ts",
 																															"symbol": "answerFor"
 																														}
 																													}
@@ -25519,7 +25519,7 @@
 																								"kind": "return",
 																								"anchor": {
 																									"repo": "github.com/miklschmidt/archboard",
-																									"path": "src/runtime/semantic-board-store/lib/propagate.ts",
+																									"path": "packages/board/src/runtime/operations/variant/propagate.ts",
 																									"symbol": "propagateEdit"
 																								}
 																							}
@@ -25543,7 +25543,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/transitions.ts",
+																	"path": "packages/board/src/runtime/operations/write/transitions.ts",
 																	"symbol": "editVariantTransition"
 																}
 															}
@@ -25578,7 +25578,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/semantic-board-routes.ts",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
 									"symbol": "checkSemanticVault"
 								}
 							},
@@ -25590,7 +25590,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+									"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 									"symbol": "readSemanticBoardConfiguration"
 								}
 							},
@@ -25602,7 +25602,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/configuration.ts",
+									"path": "packages/board/src/runtime/store/configuration.ts",
 									"symbol": "readSemanticBoardConfiguration"
 								}
 							},
@@ -25619,7 +25619,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+											"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 											"symbol": "readSemanticBoardAt"
 										}
 									},
@@ -25631,7 +25631,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/semantic-board-store/lib/read.ts",
+											"path": "packages/board/src/runtime/operations/read/read.ts",
 											"symbol": "readSemanticBoardAt"
 										}
 									},
@@ -25651,7 +25651,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+															"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 															"symbol": "readBoardFile"
 														}
 													}
@@ -25673,7 +25673,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+									"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 									"symbol": "drillTargets"
 								}
 							},
@@ -25690,7 +25690,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+											"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 											"symbol": "semanticDrillDownDiagnostics"
 										}
 									},
@@ -25710,7 +25710,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/runtime/semantic-board-store/lib/drill-down.ts",
+															"path": "packages/board/src/runtime/operations/check/drill-down.ts",
 															"symbol": "checkoutsReadFrom"
 														}
 													},
@@ -25722,7 +25722,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/runtime/semantic-board-store/lib/drill-down.ts",
+															"path": "packages/board/src/runtime/operations/check/drill-down.ts",
 															"symbol": "checkoutsReadFrom"
 														}
 													}
@@ -25742,7 +25742,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/semantic-board-store/lib/drill-down.ts",
+											"path": "packages/board/src/runtime/operations/check/drill-down.ts",
 											"symbol": "semanticDrillDownDiagnostics"
 										}
 									},
@@ -25754,7 +25754,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+											"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 											"symbol": "semanticBindingDiagnostics"
 										}
 									},
@@ -25766,7 +25766,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/semantic-board-store/lib/bindings.ts",
+											"path": "packages/board/src/runtime/operations/check/bindings.ts",
 											"symbol": "checkoutsReadFrom"
 										}
 									},
@@ -25778,7 +25778,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/semantic-board-store/lib/bindings.ts",
+											"path": "packages/board/src/runtime/operations/check/bindings.ts",
 											"symbol": "checkoutsReadFrom"
 										}
 									},
@@ -25790,7 +25790,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/semantic-board-store/lib/bindings.ts",
+											"path": "packages/board/src/runtime/operations/check/bindings.ts",
 											"symbol": "semanticBindingDiagnostics"
 										}
 									},
@@ -25802,7 +25802,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+											"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 											"symbol": "semanticOverviewDiagnostics"
 										}
 									},
@@ -25814,7 +25814,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+											"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 											"symbol": "semanticContainerLineDiagnostics"
 										}
 									}
@@ -25828,7 +25828,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/diagnostics.ts",
+									"path": "packages/board/src/runtime/operations/check/diagnostics.ts",
 									"symbol": "checkSemanticVault"
 								}
 							}
@@ -25855,7 +25855,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/semantic-board-move.ts",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-move.ts",
 									"symbol": "moveSemanticBoard"
 								}
 							},
@@ -25867,7 +25867,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/move.ts",
+									"path": "packages/board/src/runtime/operations/move/move.ts",
 									"symbol": "moveSemanticBoard"
 								}
 							},
@@ -25879,7 +25879,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/move.ts",
+									"path": "packages/board/src/runtime/operations/move/move.ts",
 									"symbol": "vaultIdentity"
 								}
 							},
@@ -25891,7 +25891,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/move.ts",
+									"path": "packages/board/src/runtime/operations/move/move.ts",
 									"symbol": "vaultIdentity"
 								}
 							},
@@ -25911,7 +25911,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/move.ts",
+													"path": "packages/board/src/runtime/operations/move/move.ts",
 													"symbol": "moveSemanticBoard"
 												}
 											}
@@ -25928,7 +25928,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/move.ts",
+													"path": "packages/board/src/runtime/operations/move/move.ts",
 													"symbol": "holdBoard"
 												}
 											},
@@ -25940,7 +25940,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/move.ts",
+													"path": "packages/board/src/runtime/operations/move/move.ts",
 													"symbol": "holdBoard"
 												}
 											},
@@ -25960,7 +25960,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/move.ts",
+																	"path": "packages/board/src/runtime/operations/move/move.ts",
 																	"symbol": "holdIn"
 																}
 															}
@@ -25977,7 +25977,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/move.ts",
+																	"path": "packages/board/src/runtime/operations/move/move.ts",
 																	"symbol": "clearLapsedLeases"
 																}
 															},
@@ -25989,7 +25989,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/move.ts",
+																	"path": "packages/board/src/runtime/operations/move/move.ts",
 																	"symbol": "boardBefore"
 																}
 															},
@@ -26001,7 +26001,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/write.ts",
+																	"path": "packages/board/src/runtime/operations/write/write.ts",
 																	"symbol": "boardBefore"
 																}
 															},
@@ -26021,7 +26021,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/move.ts",
+																					"path": "packages/board/src/runtime/operations/move/move.ts",
 																					"symbol": "checkedMove"
 																				}
 																			}
@@ -26038,7 +26038,7 @@
 																				"kind": "sync",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/move.ts",
+																					"path": "packages/board/src/runtime/operations/move/move.ts",
 																					"symbol": "writeBoardFile"
 																				}
 																			},
@@ -26050,7 +26050,7 @@
 																				"kind": "sync",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																					"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																					"symbol": "writeFileAtomic"
 																				}
 																			},
@@ -26062,7 +26062,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																					"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																					"symbol": "writeFileAtomic"
 																				}
 																			},
@@ -26074,7 +26074,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																					"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																					"symbol": "writeBoardFile"
 																				}
 																			},
@@ -26091,7 +26091,7 @@
 																						"kind": "sync",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
-																							"path": "src/runtime/semantic-board-store/lib/move.ts",
+																							"path": "packages/board/src/runtime/operations/move/move.ts",
 																							"symbol": "withBoardLockIfFreeSync"
 																						}
 																					},
@@ -26111,7 +26111,7 @@
 																										"kind": "return",
 																										"anchor": {
 																											"repo": "github.com/miklschmidt/archboard",
-																											"path": "src/runtime/semantic-board-store/lib/move.ts",
+																											"path": "packages/board/src/runtime/operations/move/move.ts",
 																											"symbol": "stopped"
 																										}
 																									}
@@ -26128,7 +26128,7 @@
 																										"kind": "sync",
 																										"anchor": {
 																											"repo": "github.com/miklschmidt/archboard",
-																											"path": "src/runtime/semantic-board-store/lib/move.ts",
+																											"path": "packages/board/src/runtime/operations/move/move.ts",
 																											"symbol": "writeBoardFile"
 																										}
 																									},
@@ -26140,7 +26140,7 @@
 																										"kind": "return",
 																										"anchor": {
 																											"repo": "github.com/miklschmidt/archboard",
-																											"path": "src/runtime/semantic-board-store/lib/relocation.ts",
+																											"path": "packages/board/src/runtime/operations/rename/relocation.ts",
 																											"symbol": "writeBoardFile"
 																										}
 																									}
@@ -26158,7 +26158,7 @@
 																				"kind": "sync",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/move.ts",
+																					"path": "packages/board/src/runtime/operations/move/move.ts",
 																					"symbol": "unlinkDurably"
 																				}
 																			},
@@ -26170,7 +26170,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/move.ts",
+																					"path": "packages/board/src/runtime/operations/move/move.ts",
 																					"symbol": "unlinkDurably"
 																				}
 																			},
@@ -26190,7 +26190,7 @@
 																								"kind": "sync",
 																								"anchor": {
 																									"repo": "github.com/miklschmidt/archboard",
-																									"path": "src/runtime/semantic-board-store/lib/move.ts",
+																									"path": "packages/board/src/runtime/operations/move/move.ts",
 																									"symbol": "releaseClaim"
 																								}
 																							}
@@ -26210,7 +26210,7 @@
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "src/runtime/semantic-board-store/lib/move.ts",
+																					"path": "packages/board/src/runtime/operations/move/move.ts",
 																					"symbol": "moveSemanticBoard"
 																				}
 																			}
@@ -26246,7 +26246,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/semantic-board-move.ts",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-move.ts",
 									"symbol": "previewSemanticMove"
 								}
 							},
@@ -26258,7 +26258,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+									"path": "packages/board/src/runtime/operations/move/preview.ts",
 									"symbol": "previewSemanticMove"
 								}
 							},
@@ -26270,7 +26270,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+									"path": "packages/board/src/runtime/operations/move/preview.ts",
 									"symbol": "vaultIdentity"
 								}
 							},
@@ -26282,7 +26282,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+									"path": "packages/board/src/runtime/operations/move/preview.ts",
 									"symbol": "vaultIdentity"
 								}
 							},
@@ -26302,7 +26302,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+													"path": "packages/board/src/runtime/operations/move/preview.ts",
 													"symbol": "previewSemanticMove"
 												}
 											}
@@ -26319,7 +26319,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+													"path": "packages/board/src/runtime/operations/move/preview.ts",
 													"symbol": "checkedMove"
 												}
 											},
@@ -26331,7 +26331,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/semantic-board-store/lib/move.ts",
+													"path": "packages/board/src/runtime/operations/move/move.ts",
 													"symbol": "checkedMove"
 												}
 											},
@@ -26351,7 +26351,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/move.ts",
+																	"path": "packages/board/src/runtime/operations/move/move.ts",
 																	"symbol": "checkedMove"
 																}
 															},
@@ -26363,7 +26363,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+																	"path": "packages/board/src/runtime/operations/move/preview.ts",
 																	"symbol": "previewSemanticMove"
 																}
 															}
@@ -26380,7 +26380,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/move.ts",
+																	"path": "packages/board/src/runtime/operations/move/move.ts",
 																	"symbol": "checkedMove"
 																}
 															},
@@ -26397,7 +26397,7 @@
 																		"kind": "self",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+																			"path": "packages/board/src/runtime/operations/move/preview.ts",
 																			"symbol": "rewritesOf"
 																		}
 																	}
@@ -26411,7 +26411,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/semantic-board-store/lib/move-preview.ts",
+																	"path": "packages/board/src/runtime/operations/move/preview.ts",
 																	"symbol": "previewSemanticMove"
 																}
 															}

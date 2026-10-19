@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 61,
+	"version": 75,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-17T04:19:22.571Z",
+	"updatedAt": "2026-10-19T22:54:18.879Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -7902,7 +7902,7 @@
 						"parent": "WkOwgUIR",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/codex-workbench"
+							"path": "packages/workbench/src/server/services/gateway"
 						}
 					},
 					{
@@ -7918,7 +7918,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-tools"
+							"path": "packages/workbench/src/runtime/services/coordinator-tools"
 						},
 						"drillDown": {
 							"board": "Voice coordinator",
@@ -7937,7 +7937,7 @@
 						"parent": "QkrB0Q3B",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations"
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
 						}
 					},
 					{
@@ -7950,7 +7950,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start"
+							"path": "packages/workbench/src/runtime/services/workhorse-start"
 						}
 					},
 					{
@@ -7963,7 +7963,7 @@
 						"parent": "QkrB0Q3B",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-queue"
+							"path": "packages/workbench/src/runtime/services/workhorse-queue"
 						}
 					},
 					{
@@ -7975,7 +7975,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link"
+							"path": "packages/workbench/src/runtime/rules/thread-link"
 						}
 					},
 					{
@@ -7987,7 +7987,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-tools"
+							"path": "packages/workbench/src/runtime/protocol/thread-tools"
 						}
 					},
 					{
@@ -7999,7 +7999,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-instructions"
+							"path": "packages/workbench/src/runtime/rules/instructions"
 						}
 					},
 					{
@@ -8014,7 +8014,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-epoch"
+							"path": "packages/workbench/src/runtime/store/epoch"
 						}
 					},
 					{
@@ -8027,7 +8027,7 @@
 						"parent": "FZjiPawv",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools"
+							"path": "packages/workbench/src/runtime/services/dynamic-tools"
 						}
 					},
 					{
@@ -8039,7 +8039,7 @@
 						"parent": "FZjiPawv",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-wait-graph"
+							"path": "packages/workbench/src/runtime/state/wait-graph"
 						}
 					},
 					{
@@ -8053,7 +8053,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-session"
+							"path": "packages/codex-app-server/src/runtime/services/session.ts"
 						},
 						"drillDown": {
 							"board": "Codex session",
@@ -8075,7 +8075,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts"
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts"
 						},
 						"drillDown": {
 							"board": "Voice coordinator",
@@ -8097,7 +8097,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks"
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks"
 						}
 					},
 					{
@@ -8110,7 +8110,7 @@
 						"parent": "WkOwgUIR",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts"
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts"
 						}
 					},
 					{
@@ -8157,7 +8157,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 							"symbol": "turnStart"
 						}
 					},
@@ -8175,7 +8175,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 							"symbol": "delegate"
 						}
 					},
@@ -8189,7 +8189,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 							"symbol": "add"
 						}
 					},
@@ -8203,7 +8203,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 							"symbol": "classify"
 						}
 					},
@@ -8217,7 +8217,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -8231,7 +8231,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 							"symbol": "queueAdd"
 						}
 					},
@@ -8245,7 +8245,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "classifyAndBind"
 						}
 					},
@@ -8259,7 +8259,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -8273,7 +8273,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "threadStart"
 						}
 					},
@@ -8287,7 +8287,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "ARCHBOARD_APP_MANIFEST_SHA256"
 						}
 					},
@@ -8301,7 +8301,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
 						}
 					},
@@ -8315,7 +8315,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+							"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 							"symbol": "addEdgeSet"
 						}
 					},
@@ -8329,7 +8329,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/mutation-staging.ts",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -8343,7 +8343,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-browser-gateway.ts",
+							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
 							"symbol": "add"
 						}
 					},
@@ -8357,7 +8357,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-thread-links.ts",
+							"path": "packages/workbench/src/server/services/actions/thread-links.ts",
 							"symbol": "start"
 						}
 					},
@@ -8375,7 +8375,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 							"symbol": "turnStart"
 						}
 					},
@@ -8389,7 +8389,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "ARCHBOARD_COORDINATOR_MANIFEST_SHA256"
 						}
 					},
@@ -8403,7 +8403,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 							"symbol": "classify"
 						}
 					},
@@ -8417,7 +8417,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/classification.ts",
+							"path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/classification.ts",
 							"symbol": "GeneralThreadToolNameSchema"
 						}
 					},
@@ -8431,7 +8431,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/mutation-staging.ts",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
 							"symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
 						}
 					},
@@ -8445,7 +8445,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link/lib/binding.ts",
+							"path": "packages/workbench/src/runtime/rules/thread-link/binding.ts",
 							"symbol": "assertCurrent"
 						}
 					},
@@ -8459,7 +8459,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks/lib/realtime.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
 							"symbol": "realtimeAppendText"
 						}
 					},
@@ -8473,7 +8473,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/mutations.ts",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutations.ts",
 							"symbol": "threadStart"
 						}
 					},
@@ -8487,7 +8487,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link/lib/classifier.ts",
+							"path": "packages/workbench/src/runtime/rules/thread-link/classifier.ts",
 							"symbol": "threadRead"
 						}
 					},
@@ -8501,7 +8501,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link/lib/link-shape.ts",
+							"path": "packages/workbench/src/runtime/rules/thread-link/link-shape.ts",
 							"symbol": "ADDITIONAL_CONTEXT_POLICY"
 						}
 					},
@@ -8515,7 +8515,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-tools/lib/binding.ts",
+							"path": "packages/workbench/src/runtime/protocol/thread-tools/binding.ts",
 							"symbol": "assertCanonicalInstructionBytes"
 						}
 					},
@@ -8529,7 +8529,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 							"symbol": "createTextUserInput"
 						}
 					},
@@ -8543,7 +8543,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-queue/lib/mutation-inputs.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-queue/mutation-inputs.ts",
 							"symbol": "createTextUserInput"
 						}
 					},
@@ -8557,7 +8557,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-browser-gateway.ts",
+							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
 							"symbol": "workhorse"
 						}
 					},
@@ -8571,7 +8571,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "turnInterrupt"
 						}
 					},
@@ -8585,7 +8585,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseQueue"
 						}
 					},
@@ -8599,7 +8599,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseOperations"
 						}
 					},
@@ -8613,7 +8613,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseStart"
 						}
 					},
@@ -8627,7 +8627,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 							"symbol": "stopWork"
 						}
 					}
@@ -8649,7 +8649,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							},
@@ -8661,7 +8661,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+									"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 									"symbol": "threadRead"
 								}
 							},
@@ -8673,7 +8673,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+									"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 									"symbol": "threadRead"
 								}
 							},
@@ -8694,7 +8694,7 @@
 												"note": "a start needs an idle thread and a steer needs an active one",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "CodexWorkbenchGatewayError"
 												}
 											}
@@ -8711,7 +8711,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -8723,7 +8723,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "turnStart"
 												}
 											}
@@ -8739,7 +8739,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							}
@@ -8763,7 +8763,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "CodexWorkbenchWorkhorse"
 								}
 							},
@@ -8775,7 +8775,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "CodexWorkbenchWorkhorse"
 								}
 							},
@@ -8787,7 +8787,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/command-dispatch.ts",
+									"path": "packages/workbench/src/server/operations/command/command-dispatch.ts",
 									"symbol": "createBrowserActionDispatch"
 								}
 							},
@@ -8804,7 +8804,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									},
@@ -8816,7 +8816,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									}
@@ -8830,7 +8830,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 									"symbol": "queueAdd"
 								}
 							},
@@ -8842,7 +8842,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 									"symbol": "queueAdd"
 								}
 							},
@@ -8859,7 +8859,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									},
@@ -8871,7 +8871,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									}
@@ -8893,7 +8893,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "runMutation"
 												}
 											}
@@ -8910,7 +8910,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "runMutation"
 												}
 											}
@@ -8926,7 +8926,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							}
@@ -8952,7 +8952,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "delegate"
 								}
 							},
@@ -8965,7 +8965,7 @@
 								"note": "one operation at a time, so two effects never interleave on one thread",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/operations.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts",
 									"symbol": "enqueue"
 								}
 							},
@@ -8977,7 +8977,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -8989,7 +8989,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -9009,7 +9009,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -9021,7 +9021,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "assertActiveForQueue"
 												}
 											},
@@ -9033,7 +9033,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "assertActiveForQueue"
 												}
 											},
@@ -9045,7 +9045,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "add"
 												}
 											},
@@ -9057,7 +9057,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "queueAdd"
 												}
 											},
@@ -9069,7 +9069,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "queueAdd"
 												}
 											},
@@ -9081,7 +9081,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "add"
 												}
 											},
@@ -9093,7 +9093,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/durable-settlement.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											}
@@ -9110,7 +9110,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -9122,7 +9122,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "assertIdleForDelegate"
 												}
 											},
@@ -9134,7 +9134,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "assertIdleForDelegate"
 												}
 											},
@@ -9146,7 +9146,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -9158,7 +9158,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -9170,7 +9170,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "correlateTurnStart"
 												}
 											},
@@ -9182,7 +9182,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "correlateTurnStart"
 												}
 											},
@@ -9194,7 +9194,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/durable-settlement.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											}
@@ -9210,7 +9210,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "delegate"
 								}
 							}
@@ -9235,7 +9235,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "steer"
 								}
 							},
@@ -9247,7 +9247,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/operations.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts",
 									"symbol": "enqueue"
 								}
 							},
@@ -9259,7 +9259,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -9271,7 +9271,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -9291,7 +9291,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "assertExpectedTurn"
 												}
 											}
@@ -9308,7 +9308,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -9320,7 +9320,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "revalidateSteer"
 												}
 											},
@@ -9332,7 +9332,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "revalidateSteer"
 												}
 											},
@@ -9344,7 +9344,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "turnSteer"
 												}
 											},
@@ -9356,7 +9356,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "turnSteer"
 												}
 											},
@@ -9368,7 +9368,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/durable-settlement.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											},
@@ -9380,7 +9380,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "createSteer"
 												}
 											}
@@ -9407,7 +9407,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "stopWork"
 								}
 							},
@@ -9432,7 +9432,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+															"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 															"symbol": "stopWorkhorses"
 														}
 													}
@@ -9449,7 +9449,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+															"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 															"symbol": "turnInterrupt"
 														}
 													},
@@ -9461,7 +9461,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+															"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 															"symbol": "turnInterrupt"
 														}
 													}
@@ -9479,7 +9479,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "stopWorkhorses"
 								}
 							}
@@ -9504,7 +9504,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "createCodexWorkhorseStart"
 								}
 							},
@@ -9516,7 +9516,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "stageOperation"
 								}
 							},
@@ -9528,7 +9528,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "stageOperation"
 								}
 							},
@@ -9540,7 +9540,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+									"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 									"symbol": "createWorkhorseThreadStartParams"
 								}
 							},
@@ -9552,7 +9552,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "threadStart"
 								}
 							},
@@ -9564,7 +9564,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "threadStart"
 								}
 							},
@@ -9584,7 +9584,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "rollbackOperation"
 												}
 											}
@@ -9601,7 +9601,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "markOutcomeUnknown"
 												}
 											}
@@ -9618,7 +9618,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "commitOperation"
 												}
 											},
@@ -9630,7 +9630,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "classifyAndBind"
 												}
 											},
@@ -9642,7 +9642,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "classifyAndBind"
 												}
 											},
@@ -9662,7 +9662,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-workhorse-start/lib/cleanup.ts",
+																	"path": "packages/workbench/src/runtime/services/workhorse-start/cleanup.ts",
 																	"symbol": "threadDelete"
 																}
 															},
@@ -9674,7 +9674,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-workhorse-start/lib/cleanup.ts",
+																	"path": "packages/workbench/src/runtime/services/workhorse-start/cleanup.ts",
 																	"symbol": "threadDelete"
 																}
 															}
@@ -9698,7 +9698,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "createCodexWorkhorseStart"
 								}
 							}
@@ -9721,7 +9721,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 									"symbol": "settle"
 								}
 							},
@@ -9742,7 +9742,7 @@
 												"note": "the call was malformed, the thread is not the coordinator's workhorse, or no voice session is live",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 													"symbol": "ANSWERS"
 												}
 											}
@@ -9759,7 +9759,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 													"symbol": "enqueue"
 												}
 											},
@@ -9771,7 +9771,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/callbacks.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
 													"symbol": "drain"
 												}
 											},
@@ -9783,7 +9783,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 													"symbol": "classifyForDelivery"
 												}
 											},
@@ -9795,7 +9795,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 													"symbol": "classifyForDelivery"
 												}
 											},
@@ -9815,7 +9815,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 																	"symbol": "refuseBeforeAttempt"
 																}
 															}
@@ -9832,7 +9832,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 																	"symbol": "deliverThroughCoordinatorTurn"
 																}
 															}
@@ -9848,7 +9848,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/callbacks.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
 													"symbol": "enqueue"
 												}
 											}
@@ -9864,7 +9864,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 									"symbol": "answerFor"
 								}
 							}
@@ -9886,7 +9886,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+									"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 									"symbol": "waitForDynamicThreads"
 								}
 							},
@@ -9903,7 +9903,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+											"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 											"symbol": "resolveWaitTargets"
 										}
 									}
@@ -9917,7 +9917,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+									"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 									"symbol": "addEdgeSet"
 								}
 							},
@@ -9929,7 +9929,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+									"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 									"symbol": "addEdgeSet"
 								}
 							},
@@ -9950,7 +9950,7 @@
 												"note": "the thread waiting on something that waits on it is refused instead of hanging until a timeout",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "claimWaitOwnership"
 												}
 											}
@@ -9967,7 +9967,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "waitForTargets"
 												}
 											},
@@ -9980,7 +9980,7 @@
 												"note": "also on cancellation, interruption and disconnect",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "releaseWaitOwner"
 												}
 											},
@@ -9992,7 +9992,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "releaseWaitOwner"
 												}
 											}
@@ -10097,7 +10097,7 @@
 						"parent": "WkOwgUIR",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/codex-workbench"
+							"path": "packages/workbench/src/server/services/gateway"
 						}
 					},
 					{
@@ -10113,7 +10113,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-tools"
+							"path": "packages/workbench/src/runtime/services/coordinator-tools"
 						},
 						"drillDown": {
 							"board": "Voice coordinator",
@@ -10132,7 +10132,7 @@
 						"parent": "QkrB0Q3B",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations"
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
 						}
 					},
 					{
@@ -10145,7 +10145,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start"
+							"path": "packages/workbench/src/runtime/services/workhorse-start"
 						}
 					},
 					{
@@ -10158,7 +10158,7 @@
 						"parent": "QkrB0Q3B",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-queue"
+							"path": "packages/workbench/src/runtime/services/workhorse-queue"
 						}
 					},
 					{
@@ -10170,7 +10170,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link"
+							"path": "packages/workbench/src/runtime/rules/thread-link"
 						}
 					},
 					{
@@ -10182,7 +10182,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-tools"
+							"path": "packages/workbench/src/runtime/protocol/thread-tools"
 						}
 					},
 					{
@@ -10194,7 +10194,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-instructions"
+							"path": "packages/workbench/src/runtime/rules/instructions"
 						}
 					},
 					{
@@ -10209,7 +10209,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-epoch"
+							"path": "packages/workbench/src/runtime/store/epoch"
 						}
 					},
 					{
@@ -10222,7 +10222,7 @@
 						"parent": "FZjiPawv",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools"
+							"path": "packages/workbench/src/runtime/services/dynamic-tools"
 						}
 					},
 					{
@@ -10234,7 +10234,7 @@
 						"parent": "FZjiPawv",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-wait-graph"
+							"path": "packages/workbench/src/runtime/state/wait-graph"
 						}
 					},
 					{
@@ -10248,7 +10248,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-session"
+							"path": "packages/codex-app-server/src/runtime/services/session.ts"
 						},
 						"drillDown": {
 							"board": "Codex session",
@@ -10270,7 +10270,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts"
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts"
 						},
 						"drillDown": {
 							"board": "Voice coordinator",
@@ -10292,7 +10292,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks"
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks"
 						}
 					},
 					{
@@ -10305,7 +10305,7 @@
 						"parent": "WkOwgUIR",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts"
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts"
 						}
 					},
 					{
@@ -10352,7 +10352,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 							"symbol": "turnStart"
 						}
 					},
@@ -10370,7 +10370,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 							"symbol": "delegate"
 						}
 					},
@@ -10384,7 +10384,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 							"symbol": "add"
 						}
 					},
@@ -10398,7 +10398,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 							"symbol": "classify"
 						}
 					},
@@ -10412,7 +10412,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -10426,7 +10426,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 							"symbol": "queueAdd"
 						}
 					},
@@ -10440,7 +10440,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "classifyAndBind"
 						}
 					},
@@ -10454,7 +10454,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -10468,7 +10468,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "threadStart"
 						}
 					},
@@ -10482,7 +10482,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "ARCHBOARD_APP_MANIFEST_SHA256"
 						}
 					},
@@ -10496,7 +10496,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
 						}
 					},
@@ -10510,7 +10510,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+							"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 							"symbol": "addEdgeSet"
 						}
 					},
@@ -10524,7 +10524,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/mutation-staging.ts",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -10538,7 +10538,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-browser-gateway.ts",
+							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
 							"symbol": "add"
 						}
 					},
@@ -10552,7 +10552,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-thread-links.ts",
+							"path": "packages/workbench/src/server/services/actions/thread-links.ts",
 							"symbol": "start"
 						}
 					},
@@ -10570,7 +10570,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 							"symbol": "turnStart"
 						}
 					},
@@ -10584,7 +10584,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "ARCHBOARD_COORDINATOR_MANIFEST_SHA256"
 						}
 					},
@@ -10598,7 +10598,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 							"symbol": "classify"
 						}
 					},
@@ -10612,7 +10612,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/classification.ts",
+							"path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/classification.ts",
 							"symbol": "GeneralThreadToolNameSchema"
 						}
 					},
@@ -10626,7 +10626,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/mutation-staging.ts",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
 							"symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
 						}
 					},
@@ -10640,7 +10640,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link/lib/binding.ts",
+							"path": "packages/workbench/src/runtime/rules/thread-link/binding.ts",
 							"symbol": "assertCurrent"
 						}
 					},
@@ -10654,7 +10654,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks/lib/realtime.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
 							"symbol": "realtimeAppendText"
 						}
 					},
@@ -10668,7 +10668,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/mutations.ts",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutations.ts",
 							"symbol": "threadStart"
 						}
 					},
@@ -10682,7 +10682,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link/lib/classifier.ts",
+							"path": "packages/workbench/src/runtime/rules/thread-link/classifier.ts",
 							"symbol": "threadRead"
 						}
 					},
@@ -10696,7 +10696,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link/lib/link-shape.ts",
+							"path": "packages/workbench/src/runtime/rules/thread-link/link-shape.ts",
 							"symbol": "ADDITIONAL_CONTEXT_POLICY"
 						}
 					},
@@ -10710,7 +10710,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-tools/lib/binding.ts",
+							"path": "packages/workbench/src/runtime/protocol/thread-tools/binding.ts",
 							"symbol": "assertCanonicalInstructionBytes"
 						}
 					},
@@ -10724,7 +10724,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 							"symbol": "createTextUserInput"
 						}
 					},
@@ -10738,7 +10738,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-queue/lib/mutation-inputs.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-queue/mutation-inputs.ts",
 							"symbol": "createTextUserInput"
 						}
 					},
@@ -10752,7 +10752,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-browser-gateway.ts",
+							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
 							"symbol": "workhorse"
 						}
 					},
@@ -10766,7 +10766,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseQueue"
 						}
 					},
@@ -10780,7 +10780,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseOperations"
 						}
 					},
@@ -10794,7 +10794,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseStart"
 						}
 					},
@@ -10808,7 +10808,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 							"symbol": "stopWork"
 						}
 					},
@@ -10822,7 +10822,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/codex-workbench/lib/command-dispatch.ts",
+							"path": "packages/workbench/src/server/operations/command/command-dispatch.ts",
 							"symbol": "interrupt"
 						}
 					},
@@ -10836,7 +10836,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "stopWorkhorses"
 						}
 					}
@@ -10858,7 +10858,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							},
@@ -10870,7 +10870,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+									"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 									"symbol": "threadRead"
 								}
 							},
@@ -10882,7 +10882,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+									"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 									"symbol": "threadRead"
 								}
 							},
@@ -10903,7 +10903,7 @@
 												"note": "a start needs an idle thread and a steer needs an active one",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "CodexWorkbenchGatewayError"
 												}
 											}
@@ -10920,7 +10920,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -10932,7 +10932,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "turnStart"
 												}
 											}
@@ -10948,7 +10948,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							}
@@ -10972,7 +10972,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "CodexWorkbenchWorkhorse"
 								}
 							},
@@ -10984,7 +10984,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "CodexWorkbenchWorkhorse"
 								}
 							},
@@ -10996,7 +10996,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/command-dispatch.ts",
+									"path": "packages/workbench/src/server/operations/command/command-dispatch.ts",
 									"symbol": "createBrowserActionDispatch"
 								}
 							},
@@ -11013,7 +11013,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									},
@@ -11025,7 +11025,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									}
@@ -11039,7 +11039,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 									"symbol": "queueAdd"
 								}
 							},
@@ -11051,7 +11051,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 									"symbol": "queueAdd"
 								}
 							},
@@ -11068,7 +11068,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									},
@@ -11080,7 +11080,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									}
@@ -11102,7 +11102,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "runMutation"
 												}
 											}
@@ -11119,7 +11119,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "runMutation"
 												}
 											}
@@ -11135,7 +11135,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							}
@@ -11161,7 +11161,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "delegate"
 								}
 							},
@@ -11174,7 +11174,7 @@
 								"note": "one operation at a time, so two effects never interleave on one thread",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/operations.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts",
 									"symbol": "enqueue"
 								}
 							},
@@ -11186,7 +11186,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -11198,7 +11198,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -11218,7 +11218,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -11230,7 +11230,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "assertActiveForQueue"
 												}
 											},
@@ -11242,7 +11242,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "assertActiveForQueue"
 												}
 											},
@@ -11254,7 +11254,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "add"
 												}
 											},
@@ -11266,7 +11266,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "queueAdd"
 												}
 											},
@@ -11278,7 +11278,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "queueAdd"
 												}
 											},
@@ -11290,7 +11290,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "add"
 												}
 											},
@@ -11302,7 +11302,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/durable-settlement.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											}
@@ -11319,7 +11319,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -11331,7 +11331,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "assertIdleForDelegate"
 												}
 											},
@@ -11343,7 +11343,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "assertIdleForDelegate"
 												}
 											},
@@ -11355,7 +11355,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -11367,7 +11367,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -11379,7 +11379,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "correlateTurnStart"
 												}
 											},
@@ -11391,7 +11391,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "correlateTurnStart"
 												}
 											},
@@ -11403,7 +11403,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/durable-settlement.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											}
@@ -11419,7 +11419,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "delegate"
 								}
 							}
@@ -11444,7 +11444,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "steer"
 								}
 							},
@@ -11456,7 +11456,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/operations.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts",
 									"symbol": "enqueue"
 								}
 							},
@@ -11468,7 +11468,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -11480,7 +11480,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -11500,7 +11500,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "assertExpectedTurn"
 												}
 											}
@@ -11517,7 +11517,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -11529,7 +11529,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "revalidateSteer"
 												}
 											},
@@ -11541,7 +11541,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "revalidateSteer"
 												}
 											},
@@ -11553,7 +11553,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "turnSteer"
 												}
 											},
@@ -11565,7 +11565,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "turnSteer"
 												}
 											},
@@ -11577,7 +11577,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/durable-settlement.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											},
@@ -11589,7 +11589,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "createSteer"
 												}
 											}
@@ -11620,7 +11620,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "stopWork"
 								}
 							},
@@ -11812,7 +11812,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "stopWorkhorses"
 								}
 							}
@@ -11837,7 +11837,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "createCodexWorkhorseStart"
 								}
 							},
@@ -11849,7 +11849,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "stageOperation"
 								}
 							},
@@ -11861,7 +11861,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "stageOperation"
 								}
 							},
@@ -11873,7 +11873,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+									"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 									"symbol": "createWorkhorseThreadStartParams"
 								}
 							},
@@ -11885,7 +11885,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "threadStart"
 								}
 							},
@@ -11897,7 +11897,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "threadStart"
 								}
 							},
@@ -11917,7 +11917,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "rollbackOperation"
 												}
 											}
@@ -11934,7 +11934,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "markOutcomeUnknown"
 												}
 											}
@@ -11951,7 +11951,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "commitOperation"
 												}
 											},
@@ -11963,7 +11963,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "classifyAndBind"
 												}
 											},
@@ -11975,7 +11975,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "classifyAndBind"
 												}
 											},
@@ -11995,7 +11995,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-workhorse-start/lib/cleanup.ts",
+																	"path": "packages/workbench/src/runtime/services/workhorse-start/cleanup.ts",
 																	"symbol": "threadDelete"
 																}
 															},
@@ -12007,7 +12007,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-workhorse-start/lib/cleanup.ts",
+																	"path": "packages/workbench/src/runtime/services/workhorse-start/cleanup.ts",
 																	"symbol": "threadDelete"
 																}
 															}
@@ -12031,7 +12031,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "createCodexWorkhorseStart"
 								}
 							}
@@ -12054,7 +12054,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 									"symbol": "settle"
 								}
 							},
@@ -12075,7 +12075,7 @@
 												"note": "the call was malformed, the thread is not the coordinator's workhorse, or no voice session is live",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 													"symbol": "ANSWERS"
 												}
 											}
@@ -12092,7 +12092,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 													"symbol": "enqueue"
 												}
 											},
@@ -12104,7 +12104,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/callbacks.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
 													"symbol": "drain"
 												}
 											},
@@ -12116,7 +12116,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 													"symbol": "classifyForDelivery"
 												}
 											},
@@ -12128,7 +12128,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 													"symbol": "classifyForDelivery"
 												}
 											},
@@ -12148,7 +12148,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 																	"symbol": "refuseBeforeAttempt"
 																}
 															}
@@ -12165,7 +12165,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 																	"symbol": "deliverThroughCoordinatorTurn"
 																}
 															}
@@ -12181,7 +12181,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/callbacks.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
 													"symbol": "enqueue"
 												}
 											}
@@ -12197,7 +12197,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 									"symbol": "answerFor"
 								}
 							}
@@ -12219,7 +12219,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+									"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 									"symbol": "waitForDynamicThreads"
 								}
 							},
@@ -12236,7 +12236,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+											"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 											"symbol": "resolveWaitTargets"
 										}
 									}
@@ -12250,7 +12250,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+									"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 									"symbol": "addEdgeSet"
 								}
 							},
@@ -12262,7 +12262,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+									"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 									"symbol": "addEdgeSet"
 								}
 							},
@@ -12283,7 +12283,7 @@
 												"note": "the thread waiting on something that waits on it is refused instead of hanging until a timeout",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "claimWaitOwnership"
 												}
 											}
@@ -12300,7 +12300,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "waitForTargets"
 												}
 											},
@@ -12313,7 +12313,7 @@
 												"note": "also on cancellation, interruption and disconnect",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "releaseWaitOwner"
 												}
 											},
@@ -12325,7 +12325,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "releaseWaitOwner"
 												}
 											}
@@ -12352,7 +12352,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							},
@@ -12364,7 +12364,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-browser-gateway.ts",
+									"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
 									"symbol": "workhorse"
 								}
 							},
@@ -12398,7 +12398,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							}
@@ -12424,7 +12424,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "inspect"
 								}
 							},
@@ -12436,7 +12436,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/operations.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts",
 									"symbol": "enqueue"
 								}
 							},
@@ -12449,7 +12449,7 @@
 								"note": "Codex's canonical source for the workhorse is vscode; Archboard's ownership records prove it is the owned one",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -12489,7 +12489,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/queue.ts",
 													"symbol": "list"
 												}
 											},
@@ -12501,7 +12501,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "queueListPage"
 												}
 											},
@@ -12671,7 +12671,7 @@
 						"parent": "WkOwgUIR",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/codex-workbench"
+							"path": "packages/workbench/src/server/services/gateway"
 						}
 					},
 					{
@@ -12687,7 +12687,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-tools"
+							"path": "packages/workbench/src/runtime/services/coordinator-tools"
 						},
 						"drillDown": {
 							"board": "Voice coordinator",
@@ -12706,7 +12706,7 @@
 						"parent": "QkrB0Q3B",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations"
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
 						}
 					},
 					{
@@ -12719,7 +12719,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start"
+							"path": "packages/workbench/src/runtime/services/workhorse-start"
 						}
 					},
 					{
@@ -12732,7 +12732,7 @@
 						"parent": "QkrB0Q3B",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-queue"
+							"path": "packages/workbench/src/runtime/services/workhorse-queue"
 						}
 					},
 					{
@@ -12744,7 +12744,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link"
+							"path": "packages/workbench/src/runtime/rules/thread-link"
 						}
 					},
 					{
@@ -12756,7 +12756,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-tools"
+							"path": "packages/workbench/src/runtime/protocol/thread-tools"
 						}
 					},
 					{
@@ -12769,7 +12769,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-instructions"
+							"path": "packages/workbench/src/runtime/rules/instructions"
 						}
 					},
 					{
@@ -12784,7 +12784,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-epoch"
+							"path": "packages/workbench/src/runtime/store/epoch"
 						}
 					},
 					{
@@ -12797,7 +12797,7 @@
 						"parent": "FZjiPawv",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools"
+							"path": "packages/workbench/src/runtime/services/dynamic-tools"
 						}
 					},
 					{
@@ -12809,7 +12809,7 @@
 						"parent": "FZjiPawv",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-wait-graph"
+							"path": "packages/workbench/src/runtime/state/wait-graph"
 						}
 					},
 					{
@@ -12823,7 +12823,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-session"
+							"path": "packages/codex-app-server/src/runtime/services/session.ts"
 						},
 						"drillDown": {
 							"board": "Codex session",
@@ -12845,7 +12845,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts"
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts"
 						},
 						"drillDown": {
 							"board": "Voice coordinator",
@@ -12867,7 +12867,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks"
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks"
 						}
 					},
 					{
@@ -12880,7 +12880,7 @@
 						"parent": "WkOwgUIR",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts"
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts"
 						}
 					},
 					{
@@ -12927,7 +12927,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 							"symbol": "turnStart"
 						}
 					},
@@ -12945,7 +12945,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 							"symbol": "delegate"
 						}
 					},
@@ -12959,7 +12959,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 							"symbol": "add"
 						}
 					},
@@ -12973,7 +12973,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 							"symbol": "classify"
 						}
 					},
@@ -12987,7 +12987,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -13001,7 +13001,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 							"symbol": "queueAdd"
 						}
 					},
@@ -13015,7 +13015,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "classifyAndBind"
 						}
 					},
@@ -13029,7 +13029,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -13043,7 +13043,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "threadStart"
 						}
 					},
@@ -13057,7 +13057,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "ARCHBOARD_APP_MANIFEST_SHA256"
 						}
 					},
@@ -13071,7 +13071,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
 						}
 					},
@@ -13085,7 +13085,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+							"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 							"symbol": "addEdgeSet"
 						}
 					},
@@ -13099,7 +13099,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/mutation-staging.ts",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -13113,7 +13113,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-browser-gateway.ts",
+							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
 							"symbol": "add"
 						}
 					},
@@ -13127,7 +13127,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-thread-links.ts",
+							"path": "packages/workbench/src/server/services/actions/thread-links.ts",
 							"symbol": "start"
 						}
 					},
@@ -13145,7 +13145,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 							"symbol": "turnStart"
 						}
 					},
@@ -13159,7 +13159,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "ARCHBOARD_COORDINATOR_MANIFEST_SHA256"
 						}
 					},
@@ -13173,7 +13173,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 							"symbol": "classify"
 						}
 					},
@@ -13187,7 +13187,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/classification.ts",
+							"path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/classification.ts",
 							"symbol": "GeneralThreadToolNameSchema"
 						}
 					},
@@ -13201,7 +13201,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/mutation-staging.ts",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
 							"symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
 						}
 					},
@@ -13215,7 +13215,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link/lib/binding.ts",
+							"path": "packages/workbench/src/runtime/rules/thread-link/binding.ts",
 							"symbol": "assertCurrent"
 						}
 					},
@@ -13229,7 +13229,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-callbacks/lib/realtime.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
 							"symbol": "realtimeAppendText"
 						}
 					},
@@ -13243,7 +13243,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-dynamic-tools/lib/mutations.ts",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutations.ts",
 							"symbol": "threadStart"
 						}
 					},
@@ -13257,7 +13257,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link/lib/classifier.ts",
+							"path": "packages/workbench/src/runtime/rules/thread-link/classifier.ts",
 							"symbol": "threadRead"
 						}
 					},
@@ -13271,7 +13271,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link/lib/link-shape.ts",
+							"path": "packages/workbench/src/runtime/rules/thread-link/link-shape.ts",
 							"symbol": "ADDITIONAL_CONTEXT_POLICY"
 						}
 					},
@@ -13285,7 +13285,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-tools/lib/binding.ts",
+							"path": "packages/workbench/src/runtime/protocol/thread-tools/binding.ts",
 							"symbol": "assertCanonicalInstructionBytes"
 						}
 					},
@@ -13299,7 +13299,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 							"symbol": "createTextUserInput"
 						}
 					},
@@ -13313,7 +13313,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-queue/lib/mutation-inputs.ts",
+							"path": "packages/workbench/src/runtime/services/workhorse-queue/mutation-inputs.ts",
 							"symbol": "createTextUserInput"
 						}
 					},
@@ -13327,7 +13327,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-browser-gateway.ts",
+							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
 							"symbol": "workhorse"
 						}
 					},
@@ -13341,7 +13341,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "turnInterrupt"
 						}
 					},
@@ -13355,7 +13355,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseQueue"
 						}
 					},
@@ -13369,7 +13369,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseOperations"
 						}
 					},
@@ -13383,7 +13383,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseStart"
 						}
 					},
@@ -13397,7 +13397,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 							"symbol": "stopWork"
 						}
 					}
@@ -13419,7 +13419,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							},
@@ -13431,7 +13431,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+									"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 									"symbol": "threadRead"
 								}
 							},
@@ -13443,7 +13443,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+									"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 									"symbol": "threadRead"
 								}
 							},
@@ -13464,7 +13464,7 @@
 												"note": "a start needs an idle thread and a steer needs an active one",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "CodexWorkbenchGatewayError"
 												}
 											}
@@ -13481,7 +13481,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -13493,7 +13493,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/server/archboard/lib/codex-workbench-text-actions.ts",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "turnStart"
 												}
 											}
@@ -13509,7 +13509,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							}
@@ -13533,7 +13533,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "CodexWorkbenchWorkhorse"
 								}
 							},
@@ -13545,7 +13545,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "CodexWorkbenchWorkhorse"
 								}
 							},
@@ -13557,7 +13557,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/command-dispatch.ts",
+									"path": "packages/workbench/src/server/operations/command/command-dispatch.ts",
 									"symbol": "createBrowserActionDispatch"
 								}
 							},
@@ -13574,7 +13574,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									},
@@ -13586,7 +13586,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									}
@@ -13600,7 +13600,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 									"symbol": "queueAdd"
 								}
 							},
@@ -13612,7 +13612,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 									"symbol": "queueAdd"
 								}
 							},
@@ -13629,7 +13629,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									},
@@ -13641,7 +13641,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									}
@@ -13663,7 +13663,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "runMutation"
 												}
 											}
@@ -13680,7 +13680,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "runMutation"
 												}
 											}
@@ -13696,7 +13696,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/codex-workbench/lib/gateway-execution.ts",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							}
@@ -13722,7 +13722,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "delegate"
 								}
 							},
@@ -13735,7 +13735,7 @@
 								"note": "one operation at a time, so two effects never interleave on one thread",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/operations.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts",
 									"symbol": "enqueue"
 								}
 							},
@@ -13747,7 +13747,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -13759,7 +13759,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -13779,7 +13779,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -13791,7 +13791,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "assertActiveForQueue"
 												}
 											},
@@ -13803,7 +13803,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "assertActiveForQueue"
 												}
 											},
@@ -13815,7 +13815,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "add"
 												}
 											},
@@ -13827,7 +13827,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "queueAdd"
 												}
 											},
@@ -13839,7 +13839,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-queue/lib/queue.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "queueAdd"
 												}
 											},
@@ -13851,7 +13851,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/turns.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "add"
 												}
 											},
@@ -13863,7 +13863,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/durable-settlement.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											}
@@ -13880,7 +13880,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -13892,7 +13892,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "assertIdleForDelegate"
 												}
 											},
@@ -13904,7 +13904,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "assertIdleForDelegate"
 												}
 											},
@@ -13916,7 +13916,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -13928,7 +13928,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -13940,7 +13940,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "correlateTurnStart"
 												}
 											},
@@ -13952,7 +13952,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/direct-delegate.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "correlateTurnStart"
 												}
 											},
@@ -13964,7 +13964,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/durable-settlement.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											}
@@ -13980,7 +13980,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "delegate"
 								}
 							}
@@ -14005,7 +14005,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "steer"
 								}
 							},
@@ -14017,7 +14017,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/operations.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts",
 									"symbol": "enqueue"
 								}
 							},
@@ -14029,7 +14029,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -14041,7 +14041,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-operations/lib/validation.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -14061,7 +14061,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "assertExpectedTurn"
 												}
 											}
@@ -14078,7 +14078,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/events.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -14090,7 +14090,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "revalidateSteer"
 												}
 											},
@@ -14102,7 +14102,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "revalidateSteer"
 												}
 											},
@@ -14114,7 +14114,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "turnSteer"
 												}
 											},
@@ -14126,7 +14126,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "turnSteer"
 												}
 											},
@@ -14138,7 +14138,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/durable-settlement.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											},
@@ -14150,7 +14150,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-operations/lib/steer.ts",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "createSteer"
 												}
 											}
@@ -14177,7 +14177,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-tools/lib/tool-execution.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "stopWork"
 								}
 							},
@@ -14202,7 +14202,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+															"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 															"symbol": "stopWorkhorses"
 														}
 													}
@@ -14219,7 +14219,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+															"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 															"symbol": "turnInterrupt"
 														}
 													},
@@ -14231,7 +14231,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+															"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 															"symbol": "turnInterrupt"
 														}
 													}
@@ -14249,7 +14249,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/server/archboard/lib/codex-workbench-session-workhorses.ts",
+									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "stopWorkhorses"
 								}
 							}
@@ -14274,7 +14274,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "createCodexWorkhorseStart"
 								}
 							},
@@ -14286,7 +14286,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "stageOperation"
 								}
 							},
@@ -14298,7 +14298,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "stageOperation"
 								}
 							},
@@ -14310,7 +14310,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/model.ts",
+									"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
 									"symbol": "createWorkhorseThreadStartParams"
 								}
 							},
@@ -14322,7 +14322,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "threadStart"
 								}
 							},
@@ -14334,7 +14334,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "threadStart"
 								}
 							},
@@ -14354,7 +14354,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "rollbackOperation"
 												}
 											}
@@ -14371,7 +14371,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "markOutcomeUnknown"
 												}
 											}
@@ -14388,7 +14388,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "commitOperation"
 												}
 											},
@@ -14400,7 +14400,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "classifyAndBind"
 												}
 											},
@@ -14412,7 +14412,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "classifyAndBind"
 												}
 											},
@@ -14432,7 +14432,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-workhorse-start/lib/cleanup.ts",
+																	"path": "packages/workbench/src/runtime/services/workhorse-start/cleanup.ts",
 																	"symbol": "threadDelete"
 																}
 															},
@@ -14444,7 +14444,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-workhorse-start/lib/cleanup.ts",
+																	"path": "packages/workbench/src/runtime/services/workhorse-start/cleanup.ts",
 																	"symbol": "threadDelete"
 																}
 															}
@@ -14468,7 +14468,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-workhorse-start/lib/start.ts",
+									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "createCodexWorkhorseStart"
 								}
 							}
@@ -14491,7 +14491,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 									"symbol": "settle"
 								}
 							},
@@ -14512,7 +14512,7 @@
 												"note": "the call was malformed, the thread is not the coordinator's workhorse, or no voice session is live",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 													"symbol": "ANSWERS"
 												}
 											}
@@ -14529,7 +14529,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 													"symbol": "enqueue"
 												}
 											},
@@ -14541,7 +14541,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/callbacks.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
 													"symbol": "drain"
 												}
 											},
@@ -14553,7 +14553,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 													"symbol": "classifyForDelivery"
 												}
 											},
@@ -14565,7 +14565,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 													"symbol": "classifyForDelivery"
 												}
 											},
@@ -14585,7 +14585,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 																	"symbol": "refuseBeforeAttempt"
 																}
 															}
@@ -14602,7 +14602,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts",
+																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 																	"symbol": "deliverThroughCoordinatorTurn"
 																}
 															}
@@ -14618,7 +14618,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-coordinator-callbacks/lib/callbacks.ts",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
 													"symbol": "enqueue"
 												}
 											}
@@ -14634,7 +14634,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 									"symbol": "answerFor"
 								}
 							}
@@ -14656,7 +14656,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+									"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 									"symbol": "waitForDynamicThreads"
 								}
 							},
@@ -14673,7 +14673,7 @@
 										"kind": "self",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+											"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 											"symbol": "resolveWaitTargets"
 										}
 									}
@@ -14687,7 +14687,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+									"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 									"symbol": "addEdgeSet"
 								}
 							},
@@ -14699,7 +14699,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+									"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 									"symbol": "addEdgeSet"
 								}
 							},
@@ -14720,7 +14720,7 @@
 												"note": "the thread waiting on something that waits on it is refused instead of hanging until a timeout",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "claimWaitOwnership"
 												}
 											}
@@ -14737,7 +14737,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "waitForTargets"
 												}
 											},
@@ -14750,7 +14750,7 @@
 												"note": "also on cancellation, interruption and disconnect",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "releaseWaitOwner"
 												}
 											},
@@ -14762,7 +14762,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "src/runtime/codex-dynamic-tools/lib/wait.ts",
+													"path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
 													"symbol": "releaseWaitOwner"
 												}
 											}
