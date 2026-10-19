@@ -9,9 +9,12 @@ import type {
 } from "@/runtime/codex-coordinator/lib/contract";
 import { COORDINATOR_EFFORT, COORDINATOR_MODEL } from "@/runtime/codex-coordinator/lib/model";
 import { sameValue } from "@/runtime/codex-coordinator/lib/state";
-import { CODEX_SESSION_THREAD_SOURCE, CodexSessionMutationError } from "@/runtime/codex-session";
+import {
+	CODEX_SESSION_THREAD_SOURCE,
+	CodexSessionMutationError,
+} from "@archboard/codex-app-server/session-api";
 import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 
 const COORDINATOR_THREAD_SOURCE = CODEX_SESSION_THREAD_SOURCE;
 

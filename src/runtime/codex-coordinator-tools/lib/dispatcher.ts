@@ -1,4 +1,4 @@
-import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";
 import type {
 	ChildEpoch,
 	ChildId,

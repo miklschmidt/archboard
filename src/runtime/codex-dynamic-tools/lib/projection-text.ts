@@ -1,4 +1,8 @@
-import type { SessionThread, SessionThreadItem, SessionTurn } from "@/runtime/codex-session";
+import type {
+	SessionThread,
+	SessionThreadItem,
+	SessionTurn,
+} from "@archboard/codex-app-server/session-responses";
 import { isRecord, projectionError } from "@/runtime/codex-dynamic-tools/lib/projection-pages";
 
 /**

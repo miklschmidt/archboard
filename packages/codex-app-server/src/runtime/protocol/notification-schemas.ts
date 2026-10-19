@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CodexServerNotificationParamsByMethod } from "@archboard/codex-app-server/app-server-contract";
+import type { CodexServerNotificationParamsByMethod } from "#shared/protocol/app-server-contract.ts";
 import {
 	AuthModeSchema,
 	PlanTypeSchema,

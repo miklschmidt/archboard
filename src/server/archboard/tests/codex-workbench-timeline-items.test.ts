@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import type { SessionThreadItem } from "../../../runtime/codex-session/index.js";
+import type { SessionThreadItem } from "@archboard/codex-app-server/session-responses";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,

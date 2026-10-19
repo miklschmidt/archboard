@@ -1,4 +1,4 @@
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import type { Fixture } from "./support.js";
 import { turn } from "./support.js";

@@ -28,7 +28,7 @@ import {
 import type {
 	DynamicServerRequest,
 	TransportServerRequest,
-} from "@/runtime/codex-transport/server-requests";
+} from "@archboard/codex-app-server/transport-types";
 import type {
 	LogicalToolCallCorrelation,
 	TurnId,

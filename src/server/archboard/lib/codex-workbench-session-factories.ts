@@ -16,7 +16,7 @@ import { createCodexRealtimeAdapter } from "@/runtime/codex-realtime";
 import { createSemanticContextPublisher } from "@/runtime/codex-semantic-context";
 import { createCodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
 import { createCodexThreadContextController } from "@/runtime/codex-thread-context";
-import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";
 import { createCodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
 import { createCodexWorkhorseQueue } from "@/runtime/codex-workhorse-queue";
 import { createCodexWorkhorseStart } from "@/runtime/codex-workhorse-start";

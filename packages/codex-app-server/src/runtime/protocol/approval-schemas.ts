@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	CodexCommandExecutionApprovalDecisionSchema,
 	CodexFileChangeApprovalDecisionSchema,
-} from "@archboard/codex-app-server/app-server-contract";
+} from "#shared/protocol/app-server-contract.ts";
 
 import { FileChangeSchema } from "#runtime/schemas/item-schemas.ts";
 import {

@@ -1,34 +1,11 @@
 import { z } from "zod";
 
 import type {
-	CodexIngressConformance,
 	CodexInitializeCapabilities,
 	CodexLoginAccountParams,
-	CodexOutputConformance,
-} from "@archboard/codex-app-server/app-server-contract";
-import { boundedText, JsonValueSchema, optionalNullableText } from "#runtime/schemas/scalars.ts";
-
-/**
- * Proves a handwritten schema for a value Archboard sends to Codex against the generated
- * wire type, so a protocol bump fails at type-check rather than on the wire.
- * @returns An identity function that only accepts a schema whose output conforms to the wire type.
- */
-function codexOutputSchema<Wire>() {
-	return <Schema extends z.ZodType>(
-		schema: Schema & CodexOutputConformance<Wire, z.output<Schema>>,
-	): Schema => schema;
-}
-
-/**
- * Proves a handwritten schema for a value Archboard receives from Codex against the generated
- * wire type in both its input and output shapes.
- * @returns An identity function that only accepts a schema conforming to the wire type.
- */
-function codexIngressSchema<Wire>() {
-	return <Schema extends z.ZodType>(
-		schema: Schema & CodexIngressConformance<Wire, z.input<Schema>, z.output<Schema>>,
-	): Schema => schema;
-}
+} from "#shared/protocol/app-server-contract.ts";
+import { boundedText, JsonValueSchema } from "#runtime/schemas/scalars.ts";
+import { codexOutputSchema } from "#runtime/schemas/vendor-schema.ts";
 
 const INITIALIZE_CAPABILITIES = Object.freeze({
 	experimentalApi: true,
@@ -98,54 +75,7 @@ const LoginPoliciesSchema = z.tuple([
 	ExactLoginPolicySchema("amazonBedrockAccessKeys", "supported"),
 ]);
 
-const ApiKeyLoginSchema = z
-	.object({ type: z.literal("apiKey"), apiKey: boundedText(16_384) })
-	.strict();
-const ChatgptLoginSchema = z
-	.object({
-		type: z.literal("chatgpt"),
-		codexStreamlinedLogin: z.boolean().optional(),
-		useHostedLoginSuccessPage: z.boolean().optional(),
-		appBrand: z.enum(["codex", "chatgpt"]).nullable().optional(),
-	})
-	.strict();
-const BedrockApiKeyLoginSchema = z
-	.object({
-		type: z.literal("amazonBedrock"),
-		apiKey: boundedText(16_384),
-		region: boundedText(256),
-	})
-	.strict();
-const BedrockAccessKeysLoginSchema = z
-	.object({
-		type: z.literal("amazonBedrockAccessKeys"),
-		accessKeyId: boundedText(256),
-		secretAccessKey: boundedText(16_384),
-		sessionToken: optionalNullableText(16_384),
-		region: boundedText(256),
-	})
-	.strict();
-
 type LoginAccountParams = CodexLoginAccountParams;
-
-type SupportedLoginVariant = Extract<
-	(typeof LOGIN_POLICIES)[number],
-	{ readonly policy: "supported" }
->["variant"];
-type SupportedCodexLoginAccountParams = Extract<
-	CodexLoginAccountParams,
-	{ type: SupportedLoginVariant }
->;
-
-const SupportedLoginAccountParamsSchema = codexIngressSchema<SupportedCodexLoginAccountParams>()(
-	z.discriminatedUnion("type", [
-		ApiKeyLoginSchema,
-		ChatgptLoginSchema,
-		BedrockApiKeyLoginSchema,
-		BedrockAccessKeysLoginSchema,
-	]),
-);
-type SupportedLoginAccountParams = z.infer<typeof SupportedLoginAccountParamsSchema>;
 
 const BedrockSetupParamsSchema = z.discriminatedUnion("type", [
 	z
@@ -187,8 +117,6 @@ export {
 	LoginPolicySchema,
 	LoginPoliciesSchema,
 	type LoginAccountParams,
-	SupportedLoginAccountParamsSchema,
-	type SupportedLoginAccountParams,
 	BedrockSetupParamsSchema,
 	type BedrockSetupParams,
 	BEDROCK_SETUP_POLICIES,

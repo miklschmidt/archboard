@@ -2,7 +2,7 @@ import type {
 	RealtimeSessionId as WireRealtimeSessionId,
 	ThreadId,
 } from "@archboard/codex-app-server/workbench-identity";
-import type { SessionParams } from "@/runtime/codex-session";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
 
 import {
 	voicePresentationPrompt,

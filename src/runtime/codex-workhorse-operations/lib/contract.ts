@@ -1,7 +1,8 @@
 import type { CodexEpochStore, EpochExecutionProof, EpochTransaction } from "@/runtime/codex-epoch";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
-import type { CodexSession, SessionParams, SessionTurn } from "@/runtime/codex-session";
-import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session-api";
+import type { SessionTurn } from "@archboard/codex-app-server/session-responses";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import type { CodexSession } from "../../../runtime/codex-session/index.js";
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import { createCodexWorkbenchGateway } from "../../codex-workbench/index.js";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";

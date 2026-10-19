@@ -1,10 +1,10 @@
 import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
 import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
-import type { CodexSession } from "@/runtime/codex-session";
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
 import type {
 	DynamicServerRequest,
 	TransportServerRequest,
-} from "@/runtime/codex-transport/server-requests";
+} from "@archboard/codex-app-server/transport-types";
 import type { CodexWorkbenchSessions } from "@/server/archboard/lib/codex-workbench-sessions";
 
 interface CodexWorkbenchRequestOwners {

@@ -1,4 +1,5 @@
-import type { CodexSession, SessionQueuedSubmission } from "@/runtime/codex-session";
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
+import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session-responses";
 import type {
 	ChildEpoch,
 	ChildId,

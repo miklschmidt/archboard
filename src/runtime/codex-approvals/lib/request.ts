@@ -28,7 +28,7 @@ import {
 	type LegacyRequest,
 } from "@/runtime/codex-approvals/lib/request-identity";
 import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";
 
 /** The part of a request a binding is completed from. */
 type BindingSource = Pick<ApprovalRequest, "child" | "epoch" | "binding">;

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { CodexEpochError } from "../../codex-epoch/index.ts";
 import type { ThreadInjectItemsParams } from "../../codex-instructions/index.ts";
-import { CodexSessionMutationError } from "../../codex-session/index.ts";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
 import type { ThreadLinkSnapshot } from "../../codex-thread-link/index.ts";
 import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
 import {

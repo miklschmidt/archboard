@@ -4,7 +4,7 @@ import {
 	type CodexProcessChild,
 	type CodexProcessSnapshot,
 } from "@archboard/codex-app-server/process";
-import type { CodexTransport } from "@/runtime/codex-transport";
+import type { CodexTransport } from "@archboard/codex-app-server/transport-types";
 import type {
 	IdentityAuthorities,
 	IdentityLedger,

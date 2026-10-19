@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
-import type { CodexSession } from "../../../runtime/codex-session/index.js";
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import {
 	BROWSER_TIMELINE_LIMITS,
 	createCodexBrowserModel,

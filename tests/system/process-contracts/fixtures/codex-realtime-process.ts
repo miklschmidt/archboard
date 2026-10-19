@@ -17,15 +17,13 @@ import {
 	type CodexRealtimeAdapter,
 	type CodexRealtimeBinding,
 } from "../../../../src/runtime/codex-realtime/index.ts";
+import { createCodexSession } from "@archboard/codex-app-server/session";
+import { type CodexSession } from "@archboard/codex-app-server/session-api";
+import { createCodexTransport } from "@archboard/codex-app-server/transport";
 import {
-	createCodexSession,
-	type CodexSession,
-} from "../../../../src/runtime/codex-session/index.ts";
-import {
-	createCodexTransport,
 	type CodexTransport,
 	type CodexTransportChild,
-} from "../../../../src/runtime/codex-transport/index.ts";
+} from "@archboard/codex-app-server/transport-types";
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,

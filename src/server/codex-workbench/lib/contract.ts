@@ -21,7 +21,7 @@ import type {
 } from "@/runtime/codex-thread-link";
 import type { AnswerSdp } from "@/shared/codex-realtime-contract";
 import type { ApprovalOwnerView, ApprovalResponse } from "@/runtime/codex-approvals";
-import type { SupportedLoginAccountParams } from "@archboard/codex-app-server/authored-schemas";
+import type { SupportedLoginAccountParams } from "@archboard/codex-app-server/session-contract";
 import type {
 	BrowserGatewayAccountReadResult,
 	BrowserGatewayCommandResult,

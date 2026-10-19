@@ -13,7 +13,10 @@ import type {
 	RealtimeSessionId,
 	ThreadId,
 } from "@archboard/codex-app-server/workbench-identity";
-import type { CodexSession, SessionNotificationHandler } from "@/runtime/codex-session";
+import type {
+	CodexSession,
+	SessionNotificationHandler,
+} from "@archboard/codex-app-server/session-api";
 import type { FreshSemanticBrief } from "@/runtime/codex-semantic-context";
 import type {
 	RealtimePresentation,

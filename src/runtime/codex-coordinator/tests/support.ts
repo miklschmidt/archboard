@@ -4,9 +4,8 @@ import type { ServerNotificationPayloads } from "@archboard/codex-app-server/pro
 import type {
 	CodexSessionMutationError,
 	SessionParams,
-	SessionResponse,
-	SessionThread,
-} from "../../codex-session/index.js";
+} from "@archboard/codex-app-server/session-api";
+import type { SessionResponse, SessionThread } from "@archboard/codex-app-server/session-responses";
 import type {
 	CoordinatorModel,
 	CoordinatorSessionPort,
@@ -21,7 +20,7 @@ import {
 	createIdentityAuthority,
 	type IdentityAuthority,
 } from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import { FakeEpoch } from "./fake-epoch.js";
 
 const WORKING_DIRECTORY = "/state/codex-workbench/coordinator";

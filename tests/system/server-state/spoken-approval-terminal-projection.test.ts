@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { createCodexApprovalBroker } from "../../../src/runtime/codex-approvals/index.js";
 import type { SpokenApprovalSnapshot } from "../../../src/runtime/codex-spoken-approval/index.js";
-import type { TransportServerRequest } from "../../../src/runtime/codex-transport/server-requests.js";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";
 import { createCodexBrowserModel } from "../../../src/shared/codex-browser-model/index.js";
 import {
 	parseRealtimeItemId,

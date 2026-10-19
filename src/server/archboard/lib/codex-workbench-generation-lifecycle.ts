@@ -5,9 +5,9 @@ import {
 	CODEX_SESSION_CONTROL,
 	type CodexSession,
 	type ControlledCodexSession,
-} from "@/runtime/codex-session";
+} from "@archboard/codex-app-server/session-api";
 import type { CodexThreadLinkPort } from "@/runtime/codex-thread-link";
-import type { CodexTransport } from "@/runtime/codex-transport";
+import type { CodexTransport } from "@archboard/codex-app-server/transport-types";
 import type {
 	ChildEpoch,
 	ChildId,

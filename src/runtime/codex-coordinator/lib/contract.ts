@@ -5,13 +5,14 @@ import type {
 	EpochTransaction,
 } from "@/runtime/codex-epoch";
 import type { COORDINATOR_IDENTITY } from "@/runtime/codex-coordinator-tool-contract";
-import type { CodexSession, SessionParams, SessionResponse } from "@/runtime/codex-session";
+import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session-api";
+import type { SessionResponse } from "@archboard/codex-app-server/session-responses";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
 	ThreadLinkTarget,
 } from "@/runtime/codex-thread-link";
-import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type { ThreadUnload } from "@/runtime/codex-thread-unload";
 import type {
 	ChildEpoch,

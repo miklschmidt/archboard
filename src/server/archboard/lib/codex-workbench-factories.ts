@@ -7,13 +7,14 @@ import {
 import { COORDINATOR_DYNAMIC_DISPATCHERS } from "@/runtime/codex-coordinator-tools";
 import { createCodexDynamicTools } from "@/runtime/codex-dynamic-tools";
 import { createCodexEpochStore } from "@/runtime/codex-epoch";
-import { createCodexSession } from "@/runtime/codex-session";
+import { createCodexSession } from "@archboard/codex-app-server/session";
 import { createCodexThreadLink } from "@/runtime/codex-thread-link";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 } from "@/runtime/codex-thread-tools";
-import { createCodexTransport, type CodexTransport } from "@/runtime/codex-transport";
+import { createCodexTransport } from "@archboard/codex-app-server/transport";
+import { type CodexTransport } from "@archboard/codex-app-server/transport-types";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,

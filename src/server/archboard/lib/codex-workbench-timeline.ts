@@ -1,5 +1,6 @@
-import type { CodexSession, SessionThreadTurnPageResult } from "@/runtime/codex-session";
-import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
+import type { SessionThreadTurnPageResult } from "@archboard/codex-app-server/session-responses";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
 import type {
 	ThreadId,

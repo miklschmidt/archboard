@@ -1,10 +1,9 @@
+import type { SessionParams, CodexSession } from "@archboard/codex-app-server/session-api";
 import type {
-	SessionParams,
 	SessionThread,
 	SessionThreadPageResult,
 	SessionLoadedThreadPageResult,
-	CodexSession,
-} from "@/runtime/codex-session";
+} from "@archboard/codex-app-server/session-responses";
 import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import { CodexDynamicToolsError } from "@/runtime/codex-dynamic-tools/lib/contract";
 

@@ -10,7 +10,7 @@ import type {
 	ReverseResponse,
 	ResponseOwner,
 	TransportServerRequest,
-} from "../../codex-transport/server-requests.js";
+} from "@archboard/codex-app-server/transport-types";
 import type {
 	ChildEpoch,
 	ChildId,

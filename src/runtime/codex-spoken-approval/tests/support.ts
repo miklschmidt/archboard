@@ -28,14 +28,10 @@ import {
 	type CodexApprovalBroker,
 } from "../../codex-approvals/index.js";
 import { ARCHBOARD_VOICE_MANIFEST_SHA256 } from "../../codex-coordinator-tool-contract/index.js";
-import type { TransportServerRequest } from "../../codex-transport/server-requests.js";
-import type { TransportServerNotification } from "../../codex-transport/index.js";
-import type {
-	CodexSession,
-	SessionParams,
-	SessionResponse,
-	SessionTurn,
-} from "../../codex-session/index.js";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session-api";
+import type { SessionResponse, SessionTurn } from "@archboard/codex-app-server/session-responses";
 import type { ArchboardContext } from "../../codex-instructions/index.js";
 import {
 	createCodexSpokenApprovalGate,

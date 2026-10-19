@@ -24,7 +24,7 @@
 import { answerUnownedTellCoordinator } from "@/runtime/codex-coordinator-callbacks";
 import { COORDINATOR_TOOLS_OWNER, refusedResponse } from "@/runtime/codex-coordinator-tools";
 import { createCodexThreadUnload } from "@/runtime/codex-thread-unload";
-import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type { WorkhorseOperationEventListener } from "@/runtime/codex-workhorse-operations";
 import type { IdentityAuthority, ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import { workhorseLinkKey, type TabSessionId } from "@/server/codex-workbench";

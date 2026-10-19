@@ -19,7 +19,7 @@ import {
 	createSemanticContextPublisher,
 	type SemanticContextInput,
 } from "../../../runtime/codex-semantic-context/index.js";
-import type { SessionParams } from "../../../runtime/codex-session/index.js";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
 import {
 	createBrowserLeaseLedger,
 	createCodexWorkbenchGateway,

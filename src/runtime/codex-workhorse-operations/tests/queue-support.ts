@@ -1,5 +1,5 @@
 import { createTextUserInput } from "../../codex-instructions/index.js";
-import type { SessionQueuedSubmission } from "../../codex-session/index.js";
+import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session-responses";
 import {
 	CodexWorkhorseQueueError,
 	type CodexWorkhorseQueue,

@@ -4,7 +4,7 @@
 // spelling of their ids, and bounded so a long-lived server cannot grow. Which thread a
 // notification is about is read here too.
 
-import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type {
 	ThreadId,
 	TrustedIdentityDecoder,

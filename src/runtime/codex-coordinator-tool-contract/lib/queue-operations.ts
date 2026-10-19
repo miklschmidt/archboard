@@ -12,7 +12,7 @@ import {
 	type ThreadQueueReorderParams,
 	type ThreadQueueStartParams,
 	type ThreadQueueUpdateParams,
-} from "@archboard/codex-app-server/client-request-schemas";
+} from "@archboard/codex-app-server/session-contract";
 import { deepFreeze } from "@/runtime/codex-coordinator-tool-contract/lib/manifest";
 import type { QueueOperation } from "@/runtime/codex-coordinator-tool-contract/lib/tool-inputs";
 

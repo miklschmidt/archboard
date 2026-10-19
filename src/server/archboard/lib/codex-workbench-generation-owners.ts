@@ -1,5 +1,5 @@
 import type { CodexRealtimeGeneration } from "@/runtime/codex-realtime";
-import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import type { WorkhorseOperationBinding } from "@/runtime/codex-workhorse-operations";
 import type {
 	CodexWorkbenchComponents,

@@ -1,4 +1,5 @@
-import type { SessionParams, SessionThread, SessionTurn } from "../../codex-session/index.js";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
+import type { SessionThread, SessionTurn } from "@archboard/codex-app-server/session-responses";
 import type {
 	SessionLoadedThreadPageResult,
 	SessionThreadItemPageResult,
@@ -7,7 +8,7 @@ import type {
 	SessionThreadForkResult,
 	SessionThreadStartResult,
 	SessionTurnResult,
-} from "../../codex-session/index.js";
+} from "@archboard/codex-app-server/session-responses";
 import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 
 class FakeSession {

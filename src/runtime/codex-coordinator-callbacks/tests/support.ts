@@ -12,10 +12,10 @@ import {
 } from "../index.js";
 import { COORDINATOR_CAPABILITY_POLICY } from "../../codex-coordinator/index.js";
 import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoch/index.js";
-import { CodexSessionMutationError } from "../../codex-session/index.js";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
 import { semanticInput, semanticSources, type SemanticSources } from "./semantic-sources.js";
 import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
-import type { ReverseResponse } from "../../codex-transport/server-requests.js";
+import type { ReverseResponse } from "@archboard/codex-app-server/transport-types";
 import type { WorkhorseOperationEvent } from "../../codex-workhorse-operations/index.js";
 import {
 	restoreIdentityAuthorities,

@@ -14,7 +14,7 @@ import { describe, expect, test } from "bun:test";
 import type {
 	DynamicServerRequest,
 	TransportServerNotification,
-} from "../../codex-transport/server-requests.js";
+} from "@archboard/codex-app-server/transport-types";
 import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import { TELL_COORDINATOR_OWNER } from "../index.js";
 import { close, harness } from "./support.js";

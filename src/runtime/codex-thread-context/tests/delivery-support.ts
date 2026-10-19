@@ -3,7 +3,7 @@ import type {
 	EpochExecutionProof,
 	EpochExecutionRequest,
 } from "../../codex-epoch/index.ts";
-import type { CodexSession } from "../../codex-session/index.ts";
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
 import type { ArchboardContext } from "../../codex-instructions/index.ts";
 import type {
 	CodexThreadLinkPort,

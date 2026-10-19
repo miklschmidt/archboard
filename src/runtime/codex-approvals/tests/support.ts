@@ -16,11 +16,11 @@ import type {
 	HumanApprovalMethod,
 	ReverseResponse,
 	TransportServerRequest,
-} from "../../codex-transport/server-requests.js";
+} from "@archboard/codex-app-server/transport-types";
 import {
 	CodexTransportOwnershipError,
 	CodexTransportUsageError,
-} from "../../codex-transport/errors.js";
+} from "@archboard/codex-app-server/transport-errors";
 
 export interface CapturedResponse {
 	readonly request: TransportServerRequest;

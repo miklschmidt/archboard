@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
+import type { CodexSession } from "@archboard/codex-app-server/session-api";
 import type {
-	CodexSession,
 	SessionThreadItem,
 	SessionThreadTurnPageResult,
-} from "../../../runtime/codex-session/index.js";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
+} from "@archboard/codex-app-server/session-responses";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,

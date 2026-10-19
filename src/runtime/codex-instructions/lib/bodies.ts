@@ -1,7 +1,7 @@
 import path from "node:path";
 import { z } from "zod";
 
-import type { UserInputSchema } from "@archboard/codex-app-server/core-schemas";
+import type { SessionUserInput } from "@archboard/codex-app-server/session-contract";
 import {
 	ArchboardContextSchema,
 	canonicalContext,
@@ -30,8 +30,7 @@ const TextUserInputSchema = z.strictObject({
 	text: boundedPrompt,
 	text_elements: z.tuple([]),
 });
-type GeneratedUserInput = z.infer<typeof UserInputSchema>;
-type TextUserInput = Extract<GeneratedUserInput, { type: "text" }>;
+type TextUserInput = Extract<SessionUserInput, { type: "text" }>;
 const CanonicalContextValueSchema = z.string().superRefine((value, issueContext) => {
 	try {
 		decodeCanonicalContext(value);

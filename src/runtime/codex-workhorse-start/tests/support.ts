@@ -7,12 +7,12 @@ import {
 	type CodexEpochStore,
 	type EpochStageInput,
 } from "../../codex-epoch/index.js";
+import type { SessionParams } from "@archboard/codex-app-server/session-api";
 import type {
-	SessionParams,
 	SessionResponse,
 	SessionThread,
 	SessionTurn,
-} from "../../codex-session/index.js";
+} from "@archboard/codex-app-server/session-responses";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,

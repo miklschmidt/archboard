@@ -1,4 +1,7 @@
-import { CodexSessionMutationError, type SessionParams } from "@/runtime/codex-session";
+import {
+	CodexSessionMutationError,
+	type SessionParams,
+} from "@archboard/codex-app-server/session-api";
 import {
 	createThreadInjectItemsParams,
 	type ThreadInjectItemsParams,

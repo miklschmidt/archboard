@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { COORDINATOR_REPLAY_LIMITS, type CoordinatorToolsServerRequest } from "../index.js";
-import type { DynamicServerRequest } from "../../codex-transport/index.js";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
 import {
 	CHECKOUT,
 	copyRequest,
