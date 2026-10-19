@@ -1,0 +1,19 @@
+{
+	"name": "@archboard/code-intel",
+	"version": "0.0.0",
+	"private": true,
+	"description": "What the code says about a board: the code facts of a checkout, the code check of a board's claims, the history lens over Git, the language servers that resolve names, and the browser-safe answers they give.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./code-check": "./src/shared/api/code-check.ts",
+		"./history": "./src/shared/api/history.ts",
+		"./code-check-run": "./src/runtime/api/code-check-run.ts",
+		"./code-facts": "./src/runtime/api/code-facts.ts",
+		"./history-lens": "./src/runtime/api/history-lens.ts"
+	}
+}

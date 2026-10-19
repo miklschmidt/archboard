@@ -123,7 +123,7 @@ split by behavior.
   from the private files that define the names, and it holds no second definition. A public name
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
-  `codex-app-server` and `code-binding` adopt it for `shared/` and `runtime/`, `workspace` also for
+  `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
   `server/`, `process` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
@@ -358,6 +358,40 @@ It carries the request helpers (`json`, `post`, `mutation`, `strictReply`, `canc
 vault and board query builders (`inVault`, `boardQuery`) and the vault a page opens in
 (`learnServedVault`, `servedVault`). The reply guards `isRecord` and `trustReply` stay private. It
 holds the one module-level value, the served vault, which the page learns once before it draws.
+
+The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board: the code
+facts of a checkout, the code check of a board's claims, the history lens over Git and the language
+servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
+subpaths with 36 names, where code outside imported 7 module paths. It imports `board`,
+`code-binding`, `workspace`, `diagnostics` and `timing`, and nothing from `src/`. The 2 files of
+`shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
+`runtime/api/` are Node-bound and run only in Bun.
+
+- `./code-check` is the answer of the code check and of the route that remembers it: the findings,
+  their evidence, what the check skipped, how far a board is behind its code and the timings. The
+  schema is in `shared/protocol/code-check.ts`. `./history` is the answers of the locality and
+  footprint routes and the label of a commit's attribution, from `shared/protocol/` and
+  `shared/schemas/`.
+- `./code-check-run` reads the boards to check, runs the pass and reads the plans an agent names.
+  `./history-lens` creates the behind and locality readings and reads a footprint. `./code-facts`
+  creates the code facts and finds a symbol, which the code opener uses to place a line.
+- The language servers have no api file, because no code outside the package imports them. The code
+  check opens them through its own session. A name needs a caller outside the package before it
+  becomes public.
+- `runtime/operations/` holds the reading and judging: `code-facts/` has the language-agnostic
+  facts, `modules/` for what a module exposes, and one folder for each language or format
+  (`typescript/`, `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `nix/`, `kubernetes/`, `compose/`,
+  `terraform/`); `code-check/` has the pass, `claims/`, `evidence/` and `interfaces/`;
+  `history-lens/` and `language-servers/` hold the rest. `runtime/services/code-facts/` holds the
+  reader that caches facts by content, the grammars and the tree-sitter query files. `runtime/clients/`
+  runs Git for the lens and speaks JSON-RPC to a server. `runtime/processes/language-servers/` owns
+  the server child.
+- The query files (`*.scm`) stay beside `grammars.ts`, which reads them with
+  `new URL(..., import.meta.url)`. The wasm of each grammar is found with `import.meta.resolve`,
+  and the TypeScript package with `Bun.resolveSync`, both from the root `node_modules`, which Bun
+  finds by walking up from the package.
+- The fixture projects of the code facts tests are in `tests/runtime/support/code-facts/fixtures/`,
+  with their dotfiles. A test finds them through `FIXTURES` of the `checkout.ts` beside them.
 
 ## Vendor-owned data
 

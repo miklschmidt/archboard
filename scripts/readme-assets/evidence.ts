@@ -5,9 +5,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
-import { CodeCheckAnswerSchema } from "@/shared/code-check";
-import { FootprintReplySchema } from "@/shared/footprint";
-import { LocalityReplySchema } from "@/shared/locality";
+import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
+import { FootprintReplySchema, LocalityReplySchema } from "@archboard/code-intel/history";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { prepareEvidenceFixture } from "./evidence-fixture.ts";

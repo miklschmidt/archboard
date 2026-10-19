@@ -8,17 +8,17 @@
 // summary for a person. It reads, and it writes
 // nothing: not to the board, not to any file (ADR 0015).
 
-import { historyAttributionLabel } from "@/shared/history-attribution/index";
+import {
+	historyAttributionLabel,
+	LocalityReplySchema,
+	PeriodStartSchema,
+	type LocalityAnswer,
+} from "@archboard/code-intel/history";
 import { z } from "zod";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { SelectorSchema } from "@/cli/commands/lib/semantic-input";
 import { requestJson } from "@/runtime/engine/server-client";
-import {
-	LocalityReplySchema,
-	PeriodStartSchema,
-	type LocalityAnswer,
-} from "@/shared/locality/index";
 
 const LocalityInputSchema = z.object({
 	name: z.string(),

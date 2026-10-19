@@ -22,6 +22,7 @@ const ADOPTERS: {
 	{ name: "code-binding", areas: ["shared", "runtime"] },
 	{ name: "ui-kit", areas: ["ui"] },
 	{ name: "server-requests", areas: ["ui"] },
+	{ name: "code-intel", areas: ["shared", "runtime"] },
 	{
 		name: "process",
 		areas: ["runtime"],

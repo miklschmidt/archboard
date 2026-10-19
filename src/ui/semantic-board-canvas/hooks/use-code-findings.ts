@@ -10,7 +10,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-import type { RememberedFindings, RememberedReading } from "@/shared/code-check/index";
+import type { RememberedFindings, RememberedReading } from "@archboard/code-intel/code-check";
 import { codeFindingsQuery } from "@/ui/semantic-board-canvas/lib/queries";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 

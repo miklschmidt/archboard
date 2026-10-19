@@ -14,10 +14,10 @@
 // current variant says that its architecture is built (ADR 0031).
 
 import type { Express, Request, Response } from "express";
-import { createLocalityReading } from "@/runtime/history-lens/index";
+import { createLocalityReading } from "@archboard/code-intel/history-lens";
 import { readSemanticBoard } from "@archboard/board/store-read";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
-import { PeriodStartSchema, type LocalityAnswer } from "@/shared/locality/index";
+import { PeriodStartSchema, type LocalityAnswer } from "@archboard/code-intel/history";
 import {
 	resolveVariant,
 	type SemanticBoard,

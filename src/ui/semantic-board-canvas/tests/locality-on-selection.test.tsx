@@ -15,7 +15,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, expect, jest, test } from "bun:test";
 import { createElement, type JSX } from "react";
 
-import type { LocalityAnswer } from "@/shared/locality/index";
+import type { LocalityAnswer } from "@archboard/code-intel/history";
 import { VAULT_CHECK_POLL_MS } from "@archboard/timing";
 
 GlobalRegistrator.register();

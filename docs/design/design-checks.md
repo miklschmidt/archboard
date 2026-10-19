@@ -817,7 +817,7 @@ section says.
 On 2026-10-06 the user named the providers to cover first: AWS, Google Cloud,
 Azure, and Kubernetes through the `kubernetes` and `helm` providers.
 TASK-367.18 gives each one a table in
-`src/runtime/code-facts/lib/terraform-providers.ts`. The table maps a
+`packages/code-intel/src/runtime/operations/code-facts/terraform/terraform-providers.ts`. The table maps a
 resource or data source type to the kind of evidence that each of its
 arguments gives. An argument is a path of attribute and nested block names,
 such as `default_action.target_group_arn`. The rule of ADR 0046 decides each
@@ -1274,7 +1274,7 @@ check and a temporary vault:
 - The dogfood vault: the join changed no finding. The repository has no
   compose file, and no relationship of the vault is unsupported.
 - Terraform and Kubernetes were not tried on a real project. Their join is
-  owned by `src/runtime/code-check/tests/network-hop.test.ts`: a Lambda
+  owned by `packages/code-intel/tests/runtime/operations/code-check/infrastructure/network-hop.test.ts`: a Lambda
   function's `environment` block, and a Deployment's `env` and `envFrom`.
 
 The independent review planted what the trials did not have. A value that

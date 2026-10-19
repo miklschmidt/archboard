@@ -16,7 +16,7 @@ import { join } from "node:path";
 import express from "express";
 import type * as ServerModule from "@/server/archboard/index";
 import type * as RouteModule from "@/server/archboard/code-check";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 import { VaultCheckSchema } from "@archboard/board/policy";
 

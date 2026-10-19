@@ -11,7 +11,7 @@ import { afterAll, beforeAll, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as CodeCheck from "@/runtime/code-check/index";
+import type * as CodeCheck from "@archboard/code-intel/code-check-run";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 /** A repository with no remote is named by its directory, here with a space. */
@@ -102,7 +102,7 @@ beforeAll(async () => {
 			variants: [{ id: "v1", name: "Built", lifecycle: "current", content }],
 		}),
 	);
-	({ checkCode, readBoardsToCheck } = await import("@/runtime/code-check/index"));
+	({ checkCode, readBoardsToCheck } = await import("@archboard/code-intel/code-check-run"));
 	({ runCli } = await import("@/cli/commands/run"));
 });
 

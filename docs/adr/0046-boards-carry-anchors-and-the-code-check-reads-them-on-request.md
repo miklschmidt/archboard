@@ -10,7 +10,7 @@ TASK-368.11 and TASK-369.02, and Proposal 1 of the
 [design checks](../design/design-checks.md).
 
 Amended by TASK-367.13 (2026-10-06): the language servers are their own
-module, `src/runtime/language-servers`. They are not a part of code facts,
+module, `packages/code-intel/src/runtime/operations/language-servers`. They are not a part of code facts,
 because a process to start and stop is a concern apart from the facts of a
 file.
 
@@ -812,14 +812,14 @@ documents as a list (Bun 1.4.2, measured on 2026-10-06).
 
 The engine is two modules under `docs/agents/boundaries.md`:
 
-- `src/runtime/code-facts` owns the grammars, the query files, the adapters, the
+- `packages/code-intel/src/runtime/operations/code-facts` owns the grammars, the query files, the adapters, the
   cache and the language servers. The check asks it for the code facts of a
   file and for the resolution of candidates. The check never sees tree-sitter, a
   grammar or a language server.
-- `src/runtime/code-check` reads boards through the store's interface, holds
+- `packages/code-intel/src/runtime/operations/code-check` reads boards through the store's interface, holds
   anchors, bindings and relationships against code facts, and gives findings.
 
-The schema of the answer lives in `src/shared/code-check`. The schema of the
+The schema of the answer lives in `packages/code-intel/src/shared/protocol/code-check.ts`. The schema of the
 anchor lives beside the schema of the binding in `packages/code-binding/src/shared`. The
 evidence kinds live in `src/shared/semantic-policy`, because the vault
 configuration names them. The route is mounted in `src/server/archboard`, and

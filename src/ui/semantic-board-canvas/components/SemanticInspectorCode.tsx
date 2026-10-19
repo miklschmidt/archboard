@@ -10,7 +10,7 @@
 
 import { useMemo, type JSX } from "react";
 
-import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
+import type { CodeEvidence, CodeFinding } from "@archboard/code-intel/code-check";
 import { lineWarning } from "@/transformers/semantic-renderer/index";
 import {
 	SidebarGlyph,
