@@ -9,7 +9,7 @@ import {
 } from "@archboard/process/codex-group";
 
 import { pidFilePath, readPidFile, sweepDeadPidFiles, writePidFile } from "../pidfile.js";
-import { stateDir } from "../state-dir.js";
+import { stateDir } from "@archboard/workspace/state-dir";
 
 const HOME_VARIABLES = ["HOME", "USERPROFILE", "LOCALAPPDATA", "XDG_STATE_HOME"] as const;
 const CHILD_BOUND_MS = 5_000;

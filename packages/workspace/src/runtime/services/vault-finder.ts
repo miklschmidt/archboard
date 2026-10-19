@@ -16,8 +16,8 @@
 
 import fs from "fs";
 import path from "path";
-import { repoIdentityAt, repoRootOf } from "@/runtime/engine/git";
-import { isDirectory } from "@/runtime/engine/lib/registry-file";
+import { repoIdentityAt, repoRootOf } from "#runtime/clients/git.ts";
+import { isDirectory } from "#runtime/store/registry-file.ts";
 
 /** A vault is the `.archboard/vault` of a directory (ADR 0049). */
 const VAULT_DIRECTORY = path.join(".archboard", "vault");

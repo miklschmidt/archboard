@@ -6,7 +6,7 @@ import { mutationAdmission } from "@/server/archboard/lib/server-owners";
 import { serverPhase } from "@/server/archboard/lib/server-startup";
 import { moduleDir } from "@/server/archboard/lib/module-paths";
 import { clients } from "@/server/archboard/lib/pane-registry";
-import { openingVault } from "@/server/archboard/lib/repositories";
+import { openingVault } from "@archboard/workspace/repository-listing";
 
 /**
  * Serve the frontend's page.

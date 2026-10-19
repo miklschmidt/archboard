@@ -17,12 +17,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { existingDir, GitCommandError, repoIdentityFor } from "@/runtime/engine/git";
+import { existingDir, GitCommandError, repoIdentityFor } from "@archboard/workspace/git";
 import {
 	chosenCheckouts,
 	listRegistry,
 	type RegisteredRepoStatus,
-} from "@/runtime/engine/repo-registry";
+} from "@archboard/workspace/repo-registry";
 import { GIT_COMMAND_TIMEOUT_MS } from "@archboard/timing";
 
 /** The checkout that holds a vault: its canonical root, and what it calls itself. */

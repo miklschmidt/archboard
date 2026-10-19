@@ -1,0 +1,24 @@
+{
+	"name": "@archboard/workspace",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Where a vault, a checkout and the state directory are: the repository registry, the Git lookups, the language server configuration and the atomic write.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./repositories": "./src/shared/schemas/repositories.ts",
+		"./configurable-languages": "./src/shared/schemas/configurable-languages.ts",
+		"./language-servers": "./src/runtime/store/language-servers.ts",
+		"./atomic-write": "./src/runtime/store/atomic-write.ts",
+		"./repo-registry": "./src/runtime/store/repo-registry.ts",
+		"./git": "./src/runtime/clients/git.ts",
+		"./vault-finder": "./src/runtime/services/vault-finder.ts",
+		"./state-dir": "./src/runtime/services/state-dir.ts",
+		"./source-checkout": "./src/runtime/services/source-checkout.ts",
+		"./repository-listing": "./src/server/projections/repository-listing.ts"
+	}
+}

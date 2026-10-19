@@ -7,7 +7,11 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { chosenCheckouts, declareDirectory, forgetDirectory } from "@/runtime/engine/repo-registry";
+import {
+	chosenCheckouts,
+	declareDirectory,
+	forgetDirectory,
+} from "@archboard/workspace/repo-registry";
 import {
 	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,

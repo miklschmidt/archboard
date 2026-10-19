@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { PanesReport } from "../../../../src/runtime/engine/panes.ts";
-import type { RepositoryListing } from "../../../../src/shared/repositories/index.ts";
+import type { RepositoryListing } from "@archboard/workspace/repositories";
 
 type PanesBody = PanesReport & { success: boolean };
 type HealthBody = { websocket_clients: number };

@@ -23,10 +23,10 @@ import {
 } from "@archboard/process/group";
 import { asError, errorMessage } from "@archboard/diagnostics/thrown-error";
 import { stopAndKillOwnedGroup } from "@archboard/process/git-group-termination";
-import { GitCommandError } from "@/runtime/engine/lib/git-failure";
-import type { GitFailure } from "@/runtime/engine/lib/git-failure";
-import { drainBounded } from "@/runtime/engine/lib/git-output";
-import type { BoundedDrain, DrainOutcome } from "@/runtime/engine/lib/git-output";
+import { GitCommandError } from "#runtime/clients/git-failure.ts";
+import type { GitFailure } from "#runtime/clients/git-failure.ts";
+import { drainBounded } from "#runtime/clients/git-output.ts";
+import type { BoundedDrain, DrainOutcome } from "#runtime/clients/git-output.ts";
 
 // The owner script is an export of the process package, which Bun resolves to its file.
 const GIT_PROCESS_OWNER = fileURLToPath(import.meta.resolve("@archboard/process/git-owner"));

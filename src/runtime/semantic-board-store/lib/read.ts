@@ -14,7 +14,7 @@ import fs from "node:fs";
 import { errnoCode, errorMessage } from "@archboard/diagnostics/errno";
 import { mintId } from "@/shared/ids/ids";
 import { parseSemanticBoard, type SemanticBoard } from "@/shared/semantic-board/index";
-import { writeFileAtomic } from "@/runtime/engine/atomic-write";
+import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { claimWriterId, withBoardLockIfFreeSync } from "@/runtime/engine/board-lock";
 import {
 	semanticBoardAddress,

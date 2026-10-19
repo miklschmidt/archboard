@@ -2,8 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { CodeBinding } from "@/shared/code-target";
-import { checkoutHead, repoIdentityAt, repoRootOf, type CheckoutHead } from "@/runtime/engine/git";
-import type { RegisteredRepoStatus } from "@/runtime/engine/repo-registry";
+import {
+	checkoutHead,
+	repoIdentityAt,
+	repoRootOf,
+	type CheckoutHead,
+} from "@archboard/workspace/git";
+import type { RegisteredRepoStatus } from "@archboard/workspace/repo-registry";
 import { checkoutsReadFrom, vaultIdentity } from "@/runtime/code-target/lib/vault-checkout";
 import {
 	isPathWithin,

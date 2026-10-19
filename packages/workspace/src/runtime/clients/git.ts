@@ -6,9 +6,9 @@
 import fs from "fs";
 import path from "path";
 
-import { git, type GitOptions } from "@/runtime/engine/lib/git-command";
-import { GitCommandError } from "@/runtime/engine/lib/git-failure";
-import type { GitFailure } from "@/runtime/engine/lib/git-failure";
+import { git, type GitOptions } from "#runtime/clients/git-command.ts";
+import { GitCommandError } from "#runtime/clients/git-failure.ts";
+import type { GitFailure } from "#runtime/clients/git-failure.ts";
 
 /** How a caller cancels a Git inspection. */
 type InspectOptions = Pick<GitOptions, "signal" | "timeoutMs">;

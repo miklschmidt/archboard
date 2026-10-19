@@ -7,7 +7,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
-import { findVault, type VaultFinding } from "@/runtime/engine/vault-finder";
+import { findVault, type VaultFinding } from "#runtime/services/vault-finder.ts";
 
 let scratch = "";
 

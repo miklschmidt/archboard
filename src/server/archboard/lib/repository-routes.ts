@@ -24,7 +24,11 @@ import type { Express, Request, Response } from "express";
 
 import { logger } from "@archboard/diagnostics/logger";
 import { parseBoardKey } from "@/runtime/engine/board";
-import { chooseKnownCheckout, listRegistry, registryPath } from "@/runtime/engine/repo-registry";
+import {
+	chooseKnownCheckout,
+	listRegistry,
+	registryPath,
+} from "@archboard/workspace/repo-registry";
 import { createBrowserOriginGuard } from "@/server/browser-origin";
 import {
 	paneBoardOf,
@@ -40,8 +44,8 @@ import {
 	placeOfVault,
 	vaultIn,
 	VAULT_DIRECTORY,
-} from "@/server/archboard/lib/repositories";
-import { CheckoutChoiceSchema, type CheckoutChoice } from "@/shared/repositories/index";
+} from "@archboard/workspace/repository-listing";
+import { CheckoutChoiceSchema, type CheckoutChoice } from "@archboard/workspace/repositories";
 
 /**
  * The repositories, as the navigator lists them.

@@ -11,7 +11,7 @@ import {
 } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 
-import type { RepositoryEntry } from "@/shared/repositories/index";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import {
 	composeListing,
 	EMPTY_LISTING,

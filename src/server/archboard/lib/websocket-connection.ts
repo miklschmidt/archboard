@@ -30,7 +30,11 @@ import {
 import { forgetTabSession, noteTabSession } from "@/server/archboard/lib/tab-sessions";
 import { isRecord } from "@/server/archboard/lib/request-board";
 import { namedVault, VAULT_PARAMETER, type NamedVault } from "@/server/archboard/lib/request-vault";
-import { openingVault, placeOfVault, repositoryOfVault } from "@/server/archboard/lib/repositories";
+import {
+	openingVault,
+	placeOfVault,
+	repositoryOfVault,
+} from "@archboard/workspace/repository-listing";
 
 /**
  * Retire the client-id keyed state of a socket that owned its pane identity:

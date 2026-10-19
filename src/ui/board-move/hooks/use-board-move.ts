@@ -15,7 +15,7 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 
-import type { RepositoryEntry } from "@/shared/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { repositoriesQuery } from "@/ui/board-catalog";
 import { moveBoard, previewMove, type MoveAsked } from "@/ui/board-move/api/move";
 import type { PaneStatus } from "@/ui/types";

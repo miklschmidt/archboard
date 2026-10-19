@@ -4,7 +4,7 @@ import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { withBoard, withVault, withWriteClaims } from "@/runtime/engine/lib/server-client-session";
 import { isBoardRefusal } from "@/runtime/engine/lib/server-client-refusal";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
-import { SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
+import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 
 /** Identity marker the Archboard server puts in /health (v1.1+). */
 const ARCHBOARD_SERVICE_NAME = "archboard-server";

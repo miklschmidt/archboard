@@ -4,7 +4,7 @@
 
 import { useCallback, useId, type JSX } from "react";
 
-import type { RepositoryEntry } from "@/shared/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { Field, FieldLabel, FieldLegend, FieldSet } from "@/ui/components/field";
 import { RadioGroup, RadioGroupItem } from "@/ui/components/radio-group";
 import { RepositoryName } from "@/ui/repository-name";

@@ -17,7 +17,7 @@ import {
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
-import { stateDir } from "@/runtime/engine/state-dir";
+import { stateDir } from "@archboard/workspace/state-dir";
 import {
 	TALK_SAMPLE_RATE,
 	TALK_VERSION,

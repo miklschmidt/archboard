@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { VAULT_DIRECTORY } from "@/runtime/engine/vault-finder";
+import { VAULT_DIRECTORY } from "@archboard/workspace/vault-finder";
 import { initializeSemanticBoardConfiguration } from "@/runtime/semantic-board-store/index";
 import type { CommandContext } from "@/cli/command-contract/contract";
 import { expandHome } from "@/cli/commands/lib/skill-destination";

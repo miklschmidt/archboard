@@ -6,8 +6,8 @@ import {
 	type CodeBinding,
 	type CodeTargetFailureCode,
 } from "@/shared/code-target";
-import type { CheckoutHead } from "@/runtime/engine/git";
-import type { RegisteredRepo } from "@/runtime/engine/repo-registry";
+import type { CheckoutHead } from "@archboard/workspace/git";
+import type { RegisteredRepo } from "@archboard/workspace/repo-registry";
 
 type ResolutionFailureCode = Extract<
 	CodeTargetFailureCode,

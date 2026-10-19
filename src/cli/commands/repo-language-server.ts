@@ -1,20 +1,20 @@
 import { z } from "zod";
-import { inspectCheckout } from "@/runtime/engine/git";
+import { inspectCheckout } from "@archboard/workspace/git";
 import {
 	chosenCheckouts,
 	listRegistry,
 	registryPath,
 	setLanguageServer,
 	type RegisteredRepo,
-} from "@/runtime/engine/repo-registry";
+} from "@archboard/workspace/repo-registry";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { commandLine } from "@/cli/commands/lib/command-line";
+import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/configurable-languages";
 import {
-	CONFIGURABLE_LANGUAGES,
 	ConfiguredServerSchema,
 	LanguageServersSchema,
 	type ConfiguredServer,
-} from "@/shared/language-servers/index";
+} from "@archboard/workspace/language-servers";
 
 const tail = z.array(z.string()).default([]);
 

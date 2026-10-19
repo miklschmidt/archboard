@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkoutPort, SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
-import { findVault } from "@/runtime/engine/vault-finder";
+import { checkoutPort, SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { findVault } from "@archboard/workspace/vault-finder";
 import { withProductionState } from "@/server/archboard/tests/support/production-state";
 
 import {

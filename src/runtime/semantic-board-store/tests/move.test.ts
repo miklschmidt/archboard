@@ -20,7 +20,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { boardLockState, holdBoard, releaseHold } from "@/runtime/engine/board-lock";
-import { declareDirectory } from "@/runtime/engine/repo-registry";
+import { declareDirectory } from "@archboard/workspace/repo-registry";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import type * as ContractModule from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";

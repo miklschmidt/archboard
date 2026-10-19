@@ -23,7 +23,7 @@ import {
 	type SyntheticEvent,
 } from "react";
 
-import type { RepositoryEntry } from "@/shared/repositories/index";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { GitHubMark } from "@/ui/repository-name";
 import { shownRepository } from "@/ui/repository-name/shown-name";
 import { InsideLamp } from "@/ui/shell/components/ActivityLamp";

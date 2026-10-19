@@ -9,7 +9,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { declareDirectory } from "@/runtime/engine/repo-registry";
+import { declareDirectory } from "@archboard/workspace/repo-registry";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import type * as ContractModule from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY, type VaultDiagnostic } from "@/shared/semantic-policy/index";

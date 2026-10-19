@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { logger } from "@archboard/diagnostics/logger";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
-import { stateDir } from "@/runtime/engine/state-dir";
+import { stateDir } from "@archboard/workspace/state-dir";
 import {
 	ownerRecord,
 	recordedOwnerIsGone,

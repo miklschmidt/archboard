@@ -6,7 +6,7 @@ import {
 	verifyCodexExecutable,
 } from "@/runtime/codex-process/executable";
 import { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
-import { stateDir } from "@/runtime/engine/state-dir";
+import { stateDir } from "@archboard/workspace/state-dir";
 import { PORT, serverUrl } from "@/server/archboard/lib/listener-address";
 import type { InstallProductionCodexWorkbenchOptions } from "@/server/archboard/lib/codex-workbench";
 import { createProductionBindings } from "@/server/archboard/lib/codex-workbench-bindings";

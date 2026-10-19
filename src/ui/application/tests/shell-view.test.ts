@@ -10,7 +10,7 @@ import {
 	type PaneRecords,
 } from "@/ui/application/pane-records";
 import { assembleShellView } from "@/ui/application/shell-view";
-import type { RepositoryEntry } from "@/shared/repositories/index";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { BoardCatalog } from "@/ui/board-catalog";
 import { EMPTY_LISTING } from "@/ui/board-catalog/listing";
 import type { BoardListing } from "@/ui/types";

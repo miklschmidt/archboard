@@ -1,6 +1,6 @@
 import net from "net";
 import { logger } from "@archboard/diagnostics/logger";
-import { checkoutPort, SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
+import { checkoutPort, SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 
 // The CLI names the port when it starts a server. Started by hand, a server
 // takes its checkout's own port, as the CLI of that checkout expects (ADR 0049).

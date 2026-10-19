@@ -7,7 +7,7 @@ import {
 	type ShowBoardResponse,
 } from "@/runtime/engine/server-client";
 import { paneWords } from "@/runtime/engine/panes";
-import { findVault } from "@/runtime/engine/vault-finder";
+import { findVault } from "@archboard/workspace/vault-finder";
 import { CliUsageError, defineCommand, type TokenParameter } from "@/cli/command-contract/contract";
 import { PaneRefSchema } from "@/cli/command-contract/schemas";
 import { serverBrowserRefusals } from "@/cli/command-contract/common";

@@ -8,7 +8,7 @@ import { PassThrough } from "node:stream";
 
 import { holderOf, vaultIn } from "./test-vault.ts";
 import { TEST_SERVER_HEALTH_POLL_MS } from "./timing.ts";
-import { stateDir } from "../../../src/runtime/engine/state-dir.ts";
+import { stateDir } from "@archboard/workspace/state-dir";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const serverPath = path.join(repoRoot, "src/server.ts");

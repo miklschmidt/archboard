@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { DEFAULT_ARCHBOARD_URL } from "@/runtime/engine/source-checkout";
+import { DEFAULT_ARCHBOARD_URL } from "@archboard/workspace/source-checkout";
 
 // Load environment variables once for every entry point (CLI and Archboard server)
 dotenv.config({ quiet: true });

@@ -36,7 +36,7 @@ import {
 	repoRootOf,
 	worktreePaths,
 	type CheckoutGitInspection,
-} from "@/runtime/engine/git";
+} from "#runtime/clients/git.ts";
 import {
 	changeRegistry,
 	isDirectory,
@@ -49,13 +49,10 @@ import {
 	type Registry,
 	type UntrackedVault,
 	type UntrackedVaultStatus,
-} from "@/runtime/engine/lib/registry-file";
-import { VAULT_DIRECTORY, vaultHolder } from "@/runtime/engine/vault-finder";
-import type {
-	ConfigurableLanguage,
-	ConfiguredServer,
-	LanguageServers,
-} from "@/shared/language-servers/index";
+} from "#runtime/store/registry-file.ts";
+import { VAULT_DIRECTORY, vaultHolder } from "#runtime/services/vault-finder.ts";
+import type { ConfiguredServer, LanguageServers } from "#runtime/store/language-servers.ts";
+import type { ConfigurableLanguage } from "#shared/schemas/configurable-languages.ts";
 
 /** How a caller cancels the git calls a declaration has to make. */
 interface DeclareOptions {

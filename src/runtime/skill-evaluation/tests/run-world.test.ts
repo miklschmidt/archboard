@@ -10,6 +10,7 @@ import { expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	authorConfigToml,
 	prepareRunDirectory,
@@ -96,7 +97,7 @@ function vaultsFoundFrom(
 	environment: Record<string, string>,
 	directories: readonly string[],
 ): string[] {
-	const finder = path.resolve(import.meta.dir, "../../engine/vault-finder.ts");
+	const finder = fileURLToPath(import.meta.resolve("@archboard/workspace/vault-finder"));
 	const script = `const { findVault } = await import(${JSON.stringify(finder)});
 for (const cwd of process.argv.slice(1)) {
 	const found = await findVault({ directory: null, environment: undefined, cwd });

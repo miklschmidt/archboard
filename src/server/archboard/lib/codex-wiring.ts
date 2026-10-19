@@ -1,5 +1,5 @@
 import { logger } from "@archboard/diagnostics/logger";
-import { checkoutOfVault } from "@/runtime/engine/vault-finder";
+import { checkoutOfVault } from "@archboard/workspace/vault-finder";
 import { semanticChangeFeed } from "@/server/archboard/lib/semantic-change-feed";
 import { workbenchFeedFor } from "@/server/archboard/lib/codex-workbench-feed";
 
@@ -46,7 +46,7 @@ import {
 	shownCheckoutOf,
 	tabSessionOf,
 } from "@/server/archboard/lib/tab-sessions";
-import { repositoryOfVault, vaultIn } from "@/server/archboard/lib/repositories";
+import { repositoryOfVault, vaultIn } from "@archboard/workspace/repository-listing";
 import {
 	boundSessionOf,
 	changePane,

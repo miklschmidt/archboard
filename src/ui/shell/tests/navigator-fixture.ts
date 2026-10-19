@@ -5,7 +5,7 @@
 import { afterAll, afterEach } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import type { Root } from "react-dom/client";
-import type { RepositoryEntry } from "@/shared/repositories/index";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { OutlineNode } from "@/ui/board-catalog";
 import type { ShellActions, ShellPane, ShellRepository, ShellView } from "@/ui/shell";
 import type { AgentActivityEntry, BoardListing, CatalogBoard, ListedVariant } from "@/ui/types";

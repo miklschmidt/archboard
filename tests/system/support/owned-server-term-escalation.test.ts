@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { z } from "zod";
 
-import { stateDir } from "../../../src/runtime/engine/state-dir.ts";
+import { stateDir } from "@archboard/workspace/state-dir";
 import { processExists, startOwnedServer } from "./owned-server.ts";
 import { holderOf, vaultIn } from "./test-vault.ts";
 
