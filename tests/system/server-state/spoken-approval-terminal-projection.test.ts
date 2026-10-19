@@ -9,8 +9,10 @@ import {
 	parseRealtimeSessionId,
 } from "@archboard/workbench/realtime-contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { projectCodexBrowserState } from "../../../src/server/codex-workbench/index.js";
-import type { BrowserProjectionInput } from "../../../src/server/codex-workbench/index.js";
+import {
+	projectCodexBrowserState,
+	type BrowserProjectionInput,
+} from "@archboard/workbench/projection";
 
 const NOW = 1_700_000_000_000;
 

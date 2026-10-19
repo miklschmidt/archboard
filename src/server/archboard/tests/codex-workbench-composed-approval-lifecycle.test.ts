@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
-import { parseTabSessionId, type BrowserGatewayMessage } from "../../codex-workbench/index.js";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
+import { type BrowserGatewayMessage } from "@archboard/workbench/browser-gateway";
 import { composeCodexWorkbenchGeneration } from "../codex-workbench-generation.js";
 import { askApproval, createApprovalGateway } from "./support/codex-workbench-approval-gateway.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";

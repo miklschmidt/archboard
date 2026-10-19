@@ -28,7 +28,7 @@ const ADOPTERS: {
 	{ name: "walkthrough", areas: ["shared", "runtime"] },
 	{ name: "skills", areas: ["runtime"] },
 	{ name: "server-lifecycle", areas: ["runtime"] },
-	{ name: "workbench", areas: ["shared", "runtime"] },
+	{ name: "workbench", areas: ["shared", "runtime", "server"] },
 	{
 		name: "process",
 		areas: ["runtime"],

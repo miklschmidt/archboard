@@ -4,10 +4,10 @@ import type {
 	BrowserProjectionPort,
 	BrowserRealtimeActions,
 	BrowserWorkbenchActions,
-	BrowserLeaseLedger,
 	CodexWorkbenchGatewayOptions,
-	TabSessionId,
-} from "@/server/codex-workbench";
+} from "@archboard/workbench/gateway";
+import type { BrowserLeaseLedger } from "@archboard/workbench/leases";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
 import type { OperationId, ThreadId } from "@archboard/codex-app-server/identity";

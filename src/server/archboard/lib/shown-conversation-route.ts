@@ -18,7 +18,7 @@ import {
 	type ShownConversationReply,
 } from "@archboard/workbench/shown-conversation";
 import { logger } from "@archboard/diagnostics/logger";
-import type { TabSessionId } from "@/server/codex-workbench";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 import { codexWiring } from "@/server/archboard/lib/codex-wiring";
 import { paneCheckoutOf, panesOfTabSession } from "@/server/archboard/lib/codex-session-panes";
 import { panes, paneVaults } from "@/server/archboard/lib/pane-registry";

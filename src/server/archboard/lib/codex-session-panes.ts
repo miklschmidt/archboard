@@ -9,7 +9,7 @@ import type {
 	CodexWorkbenchTabSession,
 	CodexWorkbenchWorkhorse,
 } from "@/server/archboard/codex-workbench-generation";
-import type { TabSessionId } from "@/server/codex-workbench";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 import { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-pane";
 import type { ContextPane, SemanticInputOwners } from "@/server/archboard/lib/codex-semantic-input";
 import { checkoutOfVault } from "@archboard/workspace/vault";

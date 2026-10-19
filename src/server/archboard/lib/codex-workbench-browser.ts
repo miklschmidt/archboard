@@ -3,12 +3,12 @@ import { WebSocket } from "ws";
 
 import type {
 	BrowserConnectionInstance,
-	BrowserGatewayMessage,
-	BrowserSnapshot,
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
-	TabSessionId,
-} from "@/server/codex-workbench";
+} from "@archboard/workbench/gateway";
+import type { BrowserGatewayMessage } from "@archboard/workbench/browser-gateway";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 import type { BrowserGatewayAction } from "@archboard/workbench/browser-gateway";
 
 const RequestIdSchema = z.string().min(1).max(128);

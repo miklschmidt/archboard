@@ -1,4 +1,4 @@
-import type { BrowserActionContext, BrowserThreadLinkActions } from "@/server/codex-workbench";
+import type { BrowserActionContext, BrowserThreadLinkActions } from "@archboard/workbench/gateway";
 import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexThreadLinkPort,

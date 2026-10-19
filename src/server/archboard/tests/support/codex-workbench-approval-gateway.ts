@@ -5,10 +5,10 @@ import type { IdentityAuthorities, ThreadId } from "@archboard/codex-app-server/
 import {
 	createCodexWorkbenchGateway,
 	type BrowserActionResult,
-	type BrowserOwnerProjection,
 	type BrowserWorkbenchActions,
-	type TabSessionId,
-} from "../../../codex-workbench/index.js";
+} from "@archboard/workbench/gateway";
+import { type BrowserOwnerProjection } from "@archboard/workbench/projection";
+import { type TabSessionId } from "@archboard/workbench/tab-session";
 import { createServerOrdinaryApprovalActions } from "../../codex-workbench-adapters.js";
 
 async function delivered(): Promise<BrowserActionResult> {

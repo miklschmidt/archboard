@@ -8,12 +8,12 @@
 import type { SessionThreadItem, SessionTurn } from "@archboard/codex-app-server/session";
 import type { CodexServerNotificationParamsByMethod } from "@archboard/codex-app-server/contract";
 import { BROWSER_TIMELINE_LIMITS as LIMITS } from "@archboard/workbench/browser-model";
-import type {
-	CodexTimelineFileChangeEntry,
-	CodexTimelinePlanInput,
-	CodexTimelineTurnProjectionInput,
-} from "@/server/codex-workbench";
-import { redactSecrets } from "@/server/codex-workbench";
+import {
+	type CodexTimelineFileChangeEntry,
+	type CodexTimelinePlanInput,
+	type CodexTimelineTurnProjectionInput,
+	redactSecrets,
+} from "@archboard/workbench/projection";
 import {
 	boundedText,
 	optionalBoundedText,

@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { parseTabSessionId, type BrowserActionContext } from "../../codex-workbench/index.js";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
+import { type BrowserActionContext } from "@archboard/workbench/gateway";
 import { createServerRealtimeActions } from "../codex-workbench-adapters.js";
 
 /** The checkout of the fixture's pane. */

@@ -4,6 +4,7 @@ title: 'Workbench server: server/codex-workbench'
 status: To Do
 assignee: []
 created_date: '2026-10-19 14:14'
+updated_date: '2026-10-19 15:38'
 labels: []
 dependencies:
   - TASK-500.23.03
@@ -23,3 +24,13 @@ Fourth move: server/codex-workbench (11,500 lines): the routes, sessions and lif
 - [ ] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
 - [ ] #3 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. List every import of src/server/codex-workbench: only itself, @archboard/workbench api files, codex-app-server, timing, node:crypto and zod (verified).
+2. Lay it out under packages/workbench/src/server/{protocol,rules,projections,services,operations}/<concept>/ and tests/server/... with the shared fixtures in tests/server/support/gateway/.
+3. Rewrite the barrel importers by name to four api files (gateway, projection, tab-session, leases) and the names the barrel re-exported from shared api files to those shared api files; delete index.ts.
+4. Add ./gateway ./projection ./tab-session ./leases to exports, add server to the workbench ADOPTERS entry, update boundaries.md, package-map.md and the voice-acceptance command.
+5. Verify: tsc x2, lint, bun test packages/workbench, repository-policy, load.ts, cycles.ts, browser trace, bun run check.
+<!-- SECTION:PLAN:END -->

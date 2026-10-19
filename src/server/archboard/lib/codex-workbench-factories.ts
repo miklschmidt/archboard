@@ -20,7 +20,7 @@ import {
 	type IdentityAuthorities,
 	type IdentityLedger,
 } from "@archboard/codex-app-server/identity";
-import { createCodexWorkbenchGateway } from "@/server/codex-workbench";
+import { createCodexWorkbenchGateway } from "@archboard/workbench/gateway";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import {
 	buildProductionTabSession,

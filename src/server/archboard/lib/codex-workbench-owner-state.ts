@@ -6,7 +6,7 @@ import {
 } from "@archboard/codex-app-server/process";
 import type { CodexTransport } from "@archboard/codex-app-server/transport";
 import type { IdentityAuthorities, IdentityLedger } from "@archboard/codex-app-server/identity";
-import type { CodexWorkbenchGateway } from "@/server/codex-workbench";
+import type { CodexWorkbenchGateway } from "@archboard/workbench/gateway";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import { appendFailure } from "@/server/archboard/lib/codex-workbench-failures";
 import {

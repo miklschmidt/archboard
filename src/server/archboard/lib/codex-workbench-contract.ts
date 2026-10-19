@@ -30,7 +30,7 @@ import type {
 } from "@archboard/workbench/workhorses";
 import type { WorkhorseQueueOptions } from "@archboard/workbench/workhorse-queue";
 import type { IdentityLedger, OperationId } from "@archboard/codex-app-server/identity";
-import type { CodexWorkbenchGatewayOptions } from "@/server/codex-workbench";
+import type { CodexWorkbenchGatewayOptions } from "@archboard/workbench/gateway";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,

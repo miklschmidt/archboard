@@ -1,8 +1,8 @@
 import type {
 	BrowserOwnerProjection,
 	CodexQueueProjectionInput,
-	CodexWorkbenchGatewayOptions,
-} from "@/server/codex-workbench";
+} from "@archboard/workbench/projection";
+import type { CodexWorkbenchGatewayOptions } from "@archboard/workbench/gateway";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
 import type {
 	CodexWorkbenchSessionComponents,

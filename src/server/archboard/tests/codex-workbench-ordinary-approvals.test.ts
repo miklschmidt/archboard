@@ -5,11 +5,11 @@ import {
 	createIdentityAuthorities,
 	createIdentityAuthority,
 } from "@archboard/codex-app-server/identity";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
 import {
-	parseTabSessionId,
 	type BrowserActionContext,
 	type BrowserApprovalCommand,
-} from "../../codex-workbench/index.js";
+} from "@archboard/workbench/gateway";
 import {
 	cancelTabSessionApprovals,
 	createServerOrdinaryApprovalActions,

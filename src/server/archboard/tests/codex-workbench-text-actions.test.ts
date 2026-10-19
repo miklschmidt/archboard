@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { parseTabSessionId } from "../../codex-workbench/index.js";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
 import { ArchboardContextSchema } from "@archboard/workbench/instructions";
 import { createServerCanonicalTextActions } from "../codex-workbench-adapters.js";
 

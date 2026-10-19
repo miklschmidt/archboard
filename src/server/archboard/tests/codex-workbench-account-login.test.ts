@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import { createCodexWorkbenchGateway } from "../../codex-workbench/index.js";
+import { createCodexWorkbenchGateway } from "@archboard/workbench/gateway";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {

@@ -4,7 +4,7 @@ import type {
 	BrowserAccountProjectionInput,
 	BrowserOwnerProjection,
 	CodexQueueProjectionInput,
-} from "@/server/codex-workbench";
+} from "@archboard/workbench/projection";
 
 /**
  * The account and login facts this adapter learns from its own command

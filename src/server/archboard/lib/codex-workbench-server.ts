@@ -7,7 +7,8 @@ import type {
 	SettledSemanticChangeEvent,
 } from "@archboard/codex-app-server/semantic-context";
 import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/identity";
-import type { BrowserLeaseLedger, TabSessionId } from "@/server/codex-workbench";
+import type { BrowserLeaseLedger } from "@archboard/workbench/leases";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,

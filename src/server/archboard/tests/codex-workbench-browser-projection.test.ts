@@ -24,7 +24,7 @@ import {
 } from "../codex-workbench-adapters.js";
 import { processFacts } from "./support/codex-workbench-process-fixture.js";
 import { projectionHarness } from "./support/codex-workbench-projection-harness.js";
-import { createCodexWorkbenchGateway } from "../../codex-workbench/index.js";
+import { createCodexWorkbenchGateway } from "@archboard/workbench/gateway";
 
 const identity = createIdentityAuthorities();
 const readinessSchema = createCodexBrowserModel(identity).BrowserReadinessSchema;

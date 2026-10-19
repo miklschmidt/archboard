@@ -8,7 +8,7 @@ import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages
 import { parseBoardKey } from "@archboard/board/address";
 import { createServerCodexBrowserSocketSend } from "@/server/archboard/codex-workbench-browser";
 import type { BrowserConnectionInstance } from "@/server/archboard/codex-workbench-browser";
-import { parseTabSessionId, type TabSessionId } from "@/server/codex-workbench";
+import { parseTabSessionId, type TabSessionId } from "@archboard/workbench/tab-session";
 import { agentActivity, tellPaneAboutLock } from "@/server/archboard/lib/board-announcements";
 import { server } from "@/server/archboard/lib/server-app";
 import { codexWiring } from "@/server/archboard/lib/codex-wiring";

@@ -27,7 +27,7 @@ import { createCodexThreadUnload } from "@archboard/workbench/thread-link";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { WorkhorseOperationEventListener } from "@archboard/workbench/workhorses";
 import type { IdentityAuthority, ThreadId } from "@archboard/codex-app-server/identity";
-import { workhorseLinkKey, type TabSessionId } from "@/server/codex-workbench";
+import { workhorseLinkKey, type TabSessionId } from "@archboard/workbench/tab-session";
 import {
 	endTabSession,
 	settleEach,

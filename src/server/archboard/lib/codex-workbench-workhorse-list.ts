@@ -13,7 +13,7 @@ import {
 	BROWSER_WORKHORSE_LIMIT,
 	type BrowserWorkhorses,
 } from "@archboard/workbench/browser-model";
-import type { TabSessionId } from "@/server/codex-workbench";
+import type { TabSessionId } from "@archboard/workbench/tab-session";
 import type { CodexWorkbenchTabSession } from "@/server/archboard/lib/codex-workbench-session-contract";
 import type { CodexWorkbenchWorkhorse } from "@/server/archboard/lib/codex-workbench-session-workhorses";
 import { workhorseApprovalLink } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";

@@ -10,14 +10,12 @@ import type {
 } from "@archboard/codex-app-server/transport";
 import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type {
-	BrowserOwnerProjection,
-	BrowserWorkbenchActions,
-} from "../../../src/server/codex-workbench/index.js";
+import type { BrowserOwnerProjection } from "@archboard/workbench/projection";
 import {
+	type BrowserWorkbenchActions,
 	createCodexWorkbenchGateway,
-	parseTabSessionId,
-} from "../../../src/server/codex-workbench/index.js";
+} from "@archboard/workbench/gateway";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
 import { createServerRealtimeActions } from "../../../src/server/archboard/codex-workbench-adapters.js";
 import { createServerCodexBrowserSocketOwner } from "../../../src/server/archboard/codex-workbench-browser.js";
 

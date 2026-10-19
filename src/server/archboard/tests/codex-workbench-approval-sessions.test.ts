@@ -18,7 +18,7 @@ import {
 } from "@archboard/workbench/dynamic-tools";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "@archboard/workbench/thread-tools";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { parseTabSessionId } from "../../codex-workbench/index.js";
+import { parseTabSessionId } from "@archboard/workbench/tab-session";
 import {
 	createServerDynamicApprovalOwner,
 	visibleApprovalViews,

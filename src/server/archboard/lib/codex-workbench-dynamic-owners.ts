@@ -17,7 +17,7 @@ import {
 	type ServerDynamicLifecycleOwner,
 } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
 import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";
-import { parseWorkhorseLinkKey, type TabSessionId } from "@/server/codex-workbench";
+import { parseWorkhorseLinkKey, type TabSessionId } from "@archboard/workbench/tab-session";
 import {
 	closedTransport,
 	requireCreated,
