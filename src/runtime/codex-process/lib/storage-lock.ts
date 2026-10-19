@@ -6,7 +6,7 @@ import {
 	type CodexStorageError,
 	type CodexStorageFileSystem,
 } from "@/runtime/codex-process/lib/storage-contract";
-import { ownerRecord, recordedOwnerIsGone, recordedOwnerPid } from "@/shared/process-observation";
+import { ownerRecord, recordedOwnerIsGone, recordedOwnerPid } from "@archboard/process/observation";
 
 /**
  * Build the lock-release retry for a lock file that is still held, so a caller can

@@ -9,8 +9,8 @@ import {
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
-} from "@/runtime/codex-process/process-group";
-import { listProcessGroupObservations } from "@/shared/process-observation";
+} from "@archboard/process/codex-group";
+import { listProcessGroupObservations } from "@archboard/process/observation";
 
 /** How to run one process. */
 interface ProcessRequest {

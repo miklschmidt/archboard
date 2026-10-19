@@ -31,7 +31,7 @@ import {
 	type CodexStorageFailureCode,
 	type PreparedCodexStorage,
 } from "@/runtime/codex-process/lib/storage";
-import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/lib/process-group";
+import type { CodexProcessGroupIdentity } from "@archboard/process/codex-group";
 
 /**
  * Make a startup failure terminal and rethrow it so the caller unwinds. The function never

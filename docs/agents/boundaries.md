@@ -144,6 +144,14 @@ and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` 
 `errorMessage` functions differ on purpose: `./errno` says `unknown error` for a value that is no
 Error or string, and `./thrown-error` stringifies it.
 
+The third is `process` (`@archboard/process`). It owns a child process group and ends it, and every
+file sits in `runtime/processes/`. `./observation` reads the process table. `./group` and
+`./git-group-termination` signal a group and end the group of a Git command. `./git-owner` is the
+script that a Git command runs under, and callers find it with `import.meta.resolve`.
+`./codex-group` holds the Codex process-group operations, and `./group-cleanup` is their
+TERM-then-KILL escalation. The cleanup takes its error type from the caller, so the package does
+not import `codex-process`.
+
 ## Vendor-owned data
 
 When a dependency owns a data structure and publishes its TypeScript type, that exported type is

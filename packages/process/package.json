@@ -1,0 +1,20 @@
+{
+	"name": "@archboard/process",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Child process groups: observe, signal and end a group, and the Git command owner that runs in its own.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./observation": "./src/runtime/processes/observation.ts",
+		"./group": "./src/runtime/processes/group.ts",
+		"./git-owner": "./src/runtime/processes/git-owner.ts",
+		"./git-group-termination": "./src/runtime/processes/git-group-termination.ts",
+		"./codex-group": "./src/runtime/processes/codex-group.ts",
+		"./group-cleanup": "./src/runtime/processes/group-cleanup.ts"
+	}
+}

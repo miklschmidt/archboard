@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { readProcessObservation } from "@/shared/process-observation";
+import { readProcessObservation } from "@archboard/process/observation";
 
 import {
 	TEST_GIT_OPENER_CASE_TIMEOUT_MS,

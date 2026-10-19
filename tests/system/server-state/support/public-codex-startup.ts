@@ -2,7 +2,7 @@ import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
-import { listProcessObservations } from "@/shared/process-observation";
+import { listProcessObservations } from "@archboard/process/observation";
 import { listOnlyVault, vaultIn } from "../../support/test-vault.ts";
 
 const repositoryRoot = join(import.meta.dir, "../../../..");

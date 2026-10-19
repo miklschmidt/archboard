@@ -14,7 +14,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { GIT_PROCESS_GROUP_CLEANUP_MS } from "@archboard/timing";
-import { readProcessObservation } from "../../../shared/process-observation/index.ts";
+import { readProcessObservation } from "@archboard/process/observation";
 import { git } from "../git.js";
 
 /** Ceiling for the fake Git child to publish its startup marker; it normally does so at once. */
@@ -26,7 +26,7 @@ const TEST_GIT_FIXTURE_START_MS = 5000;
  */
 const TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS = 30_000;
 
-const GIT_PROCESS_OWNER = fileURLToPath(new URL("../git-process-owner.ts", import.meta.url));
+const GIT_PROCESS_OWNER = fileURLToPath(import.meta.resolve("@archboard/process/git-owner"));
 
 const FAKE_GIT = `#!/bin/sh
 mode="$1"

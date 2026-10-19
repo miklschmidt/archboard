@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupOperations,
-} from "../../../src/runtime/codex-process/process-group.ts";
+} from "@archboard/process/codex-group";
 import { completeCapturedServerCleanup } from "./owned-server-forced-cleanup.ts";
 
 const group = (pid: number): CodexProcessGroupIdentity => ({

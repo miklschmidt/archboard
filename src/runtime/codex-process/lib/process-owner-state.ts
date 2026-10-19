@@ -17,11 +17,11 @@ import {
 	type CodexProcessTestOptions,
 	type Timer,
 } from "@/runtime/codex-process/lib/process-contract";
-import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/lib/process-group";
+import type { CodexProcessGroupIdentity } from "@archboard/process/codex-group";
 import {
 	createProcessGroupCleanup,
 	type ProcessGroupCleanup,
-} from "@/runtime/codex-process/lib/process-group-cleanup";
+} from "@archboard/process/group-cleanup";
 import {
 	diagnosticSecrets,
 	truncateUtf8,

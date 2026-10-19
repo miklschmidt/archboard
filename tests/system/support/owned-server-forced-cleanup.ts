@@ -6,8 +6,8 @@ import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
 	type CodexProcessGroupOperations,
-} from "../../../src/runtime/codex-process/process-group.ts";
-import { listProcessObservations, readProcessObservation } from "@/shared/process-observation";
+} from "@archboard/process/codex-group";
+import { listProcessObservations, readProcessObservation } from "@archboard/process/observation";
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 

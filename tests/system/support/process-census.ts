@@ -1,4 +1,4 @@
-import { listProcessObservations, readProcessObservation } from "@/shared/process-observation";
+import { listProcessObservations, readProcessObservation } from "@archboard/process/observation";
 
 interface ProcessIdentity {
 	readonly pid: number;

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 import type { Readable } from "node:stream";
-import { readProcessObservation } from "@/shared/process-observation";
+import { readProcessObservation } from "@archboard/process/observation";
 
 import { CodexProcessError } from "../process.js";
 import { createCodexProcessForTesting as createCodexProcess } from "../testing.js";

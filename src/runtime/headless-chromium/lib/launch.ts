@@ -6,7 +6,7 @@
 import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
 
-import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/process-group";
+import type { CodexProcessGroupIdentity } from "@archboard/process/codex-group";
 
 import { DevTools, isJsonRecord, type JsonRecord } from "@/runtime/headless-chromium/lib/devtools";
 import {
