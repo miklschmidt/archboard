@@ -1,11 +1,11 @@
 ---
 id: TASK-500.13
 title: The semantic context is in the codex-app-server package
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 04:29'
-updated_date: '2026-10-19 05:23'
+updated_date: '2026-10-19 05:41'
 labels: []
 dependencies:
   - TASK-500.12
@@ -21,9 +21,9 @@ runtime/codex-semantic-context (3,441 lines) belongs to codex-app-server in the 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 codex-semantic-context lives in packages/codex-app-server in runtime/ role folders, every importer uses the package exports, and the package imports board only through @archboard/board
-- [ ] #2 The tests of the moved code live in packages/codex-app-server/tests, and the package graph test passes (codex-app-server is layer 5, board layer 4)
-- [ ] #3 bun run check passes
+- [x] #1 codex-semantic-context lives in packages/codex-app-server in runtime/ role folders, every importer uses the package exports, and the package imports board only through @archboard/board
+- [x] #2 The tests of the moved code live in packages/codex-app-server/tests, and the package graph test passes (codex-app-server is layer 5, board layer 4)
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -33,3 +33,9 @@ runtime/codex-semantic-context (3,441 lines) belongs to codex-app-server in the 
 2. The package imports board by @archboard/board/... subpaths (layer 4 < 5) and nothing from src/. The package graph test must pass.
 3. exports: the minimum used outside. Tests move to packages/codex-app-server/tests/runtime/<role>/. Update ci.yml, evals/coverage.json, docs, skills, boundaries.md. bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+runtime/codex-semantic-context is in packages/codex-app-server under operations (publisher), schemas (brief, context and architecture input, types) and services (limits, fit, slots, listener diagnostics, bounded text); the barrel is deleted and three exports were added (17 in total). The package imports board by @archboard/board subpaths; the package graph test passes. A fit and slots import cycle was broken by moving four types into the slots file. Codex verified all 63 former barrel names, renamed files identical apart from imports, and no browser path into the moved modules. bun run check passed. No defects found.
+<!-- SECTION:FINAL_SUMMARY:END -->
