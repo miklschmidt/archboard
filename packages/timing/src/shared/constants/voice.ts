@@ -32,4 +32,4 @@ export {
 	VOICE_TRACE_MS,
 	VOICE_TRACE_STEP_MS,
 	VOICE_WORD_IN_MS,
-} from "./voice-motion";
+} from "#shared/constants/voice-motion.ts";

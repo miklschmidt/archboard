@@ -5,6 +5,10 @@
 	"description": "Every duration in Archboard, with what each one pulls against.",
 	"license": "BUSL-1.1",
 	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
 	"exports": {
 		".": "./src/shared/constants/timing.ts",
 		"./voice": "./src/shared/constants/voice.ts"

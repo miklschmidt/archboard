@@ -89,17 +89,21 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 				"src/ui/source/allowed.ts": 'import "@/shared/source";',
 				"src/ui/source/relative.ts": 'import "./allowed";',
 				"src/ui/source/javascript.js": "export const value = 1;",
-				"packages/alpha/src/shared/sibling.ts": 'import "./other";',
+				"packages/alpha/package.json": JSON.stringify({ imports: { "#*": "./src/*" } }),
+				"packages/alpha/src/shared/sibling.ts": 'import "#shared/other.ts";',
+				"packages/alpha/src/shared/relative.ts": 'import "./other";',
 				"packages/alpha/src/shared/escape.ts": 'import "../../../beta/src/shared/other";',
 			},
 			(root) => {
 				expectPass(
 					lint(root, ["src/ui/source/allowed.ts", "packages/alpha/src/shared/sibling.ts"]),
 				);
-				expectRule(
-					lint(root, ["packages/alpha/src/shared/escape.ts"]),
-					"archboard(absolute-imports)",
-				);
+				for (const file of ["escape", "relative"]) {
+					expectRule(
+						lint(root, [`packages/alpha/src/shared/${file}.ts`]),
+						"archboard(absolute-imports)",
+					);
+				}
 				expectRule(lint(root, ["src/ui/source/relative.ts"]), "archboard(absolute-imports)");
 				expectRule(lint(root, ["src/ui/source/javascript.js"]), "archboard(typescript-source)");
 			},
@@ -317,9 +321,11 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 
 	// A package states its interface in `exports`: the area rules hold between the folders of
 	// one package, only an export is public, and `./testing` is for tests alone.
+	const IMPORTS = { "#*": "./src/*", "#tests/*": "./tests/*" };
 	const packageFiles = {
 		"packages/alpha/package.json": JSON.stringify({
 			name: "@archboard/alpha",
+			imports: IMPORTS,
 			exports: {
 				".": "./src/shared/constants/value.ts",
 				"./testing": "./src/shared/testing.ts",
@@ -332,11 +338,13 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 		"packages/alpha/tests/support.ts": "export const support = 1;\n",
 		"packages/gamma/package.json": JSON.stringify({
 			name: "@archboard/gamma",
+			imports: IMPORTS,
 			exports: { ".": "./src/shared/both.ts", "./testing": "./src/shared/both.ts" },
 		}),
 		"packages/gamma/src/shared/both.ts": "export const both = 1;\n",
 		"packages/beta/package.json": JSON.stringify({
 			name: "@archboard/beta",
+			imports: IMPORTS,
 			exports: { ".": "./src/runtime/beta.ts" },
 		}),
 		"packages/beta/src/runtime/beta.ts": "export const beta = 1;\n",
@@ -347,13 +355,13 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 			{
 				...packageFiles,
 				"packages/alpha/src/runtime/ok.ts":
-					'import { value } from "../shared/constants/value.js";\nexport { value };\n',
+					'import { value } from "#shared/constants/value.ts";\nexport { value };\n',
 				"packages/alpha/tests/own.test.ts":
-					'import { privateValue } from "../src/shared/constants/private.js";\nimport { support } from "./support.js";\nexport { privateValue, support };\n',
+					'import { privateValue } from "#shared/constants/private.ts";\nimport { support } from "#tests/support.ts";\nexport { privateValue, support };\n',
 				"packages/beta/tests/public.test.ts":
 					'import { value } from "@archboard/alpha";\nimport { fixture } from "@archboard/alpha/testing";\nexport { fixture, value };\n',
 				"packages/alpha/tests/own-testing.test.ts":
-					'import { fixture } from "../src/shared/testing.js";\nimport { fixture as exported } from "@archboard/alpha/testing";\nexport { exported, fixture };\n',
+					'import { fixture } from "#shared/testing.ts";\nimport { fixture as exported } from "@archboard/alpha/testing";\nexport { exported, fixture };\n',
 				"packages/beta/src/runtime/gamma.ts":
 					'import { both } from "@archboard/gamma";\nexport { both };\n',
 				"src/domain/consumer/index.ts":
@@ -388,13 +396,13 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 				"packages/beta/src/runtime/testing.ts":
 					'import { fixture } from "@archboard/alpha/testing";\nexport { fixture };\n',
 				"packages/alpha/src/runtime/tests.ts":
-					'import { support } from "../../tests/support.js";\nexport { support };\n',
+					'import { support } from "#tests/support.ts";\nexport { support };\n',
 				"packages/beta/tests/foreign.test.ts":
 					'import { support } from "../../alpha/tests/support.js";\nexport { support };\n',
 				"packages/alpha/src/runtime/own-testing.ts":
 					'import { fixture } from "@archboard/alpha/testing";\nexport { fixture };\n',
 				"packages/alpha/src/runtime/own-testing-path.ts":
-					'import { fixture } from "../shared/testing.js";\nexport { fixture };\n',
+					'import { fixture } from "#shared/testing.ts";\nexport { fixture };\n',
 				"src/domain/product/both.ts":
 					'import { both } from "@archboard/gamma/testing";\nexport { both };\n',
 				"packages/beta/src/runtime/both-path.ts":
@@ -450,11 +458,11 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 			{
 				...packageFiles,
 				"packages/alpha/src/shared/leak.ts":
-					'import { work } from "../runtime/work.js";\nexport { work };\n',
+					'import { work } from "#runtime/work.ts";\nexport { work };\n',
 				"packages/alpha/src/ui/screen.ts":
-					'import { work } from "../runtime/work.js";\nexport { work };\n',
+					'import { work } from "#runtime/work.ts";\nexport { work };\n',
 				"packages/alpha/tests/ui/screen.test.ts":
-					'import { work } from "../../src/runtime/work.js";\nexport { work };\n',
+					'import { work } from "#runtime/work.ts";\nexport { work };\n',
 				"src/shared/screen/index.ts": 'import { beta } from "@archboard/beta";\nexport { beta };\n',
 			},
 			(root) => {

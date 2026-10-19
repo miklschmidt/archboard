@@ -33,7 +33,7 @@ folder with one file for each kind. A type derived from a schema stays beside it
 
 ```text
 packages/<name>/
-  package.json        # exports: the interface
+  package.json        # exports: the interface. imports: #* for src/, #tests/* for tests/
   tests/              # internal tests, can import private files
   src/
     types.ts          # or types/, only for types that several areas use
@@ -108,6 +108,8 @@ a test import private files of its own package (`module-rules.ts:92`). It must a
 rules inside one package, which it skips today (`module-rules.ts:38`).
 
 - An internal test imports private files of its own package and only public `exports` of another.
+- A file imports its own package with `#` specifiers, such as `#shared/constants/timing.ts`, never with a relative path.
+  The `imports` field resolves from the nearest `package.json`, so a `#` specifier cannot reach another package.
 - A root test imports only public `exports`.
 - Production code never imports a `tests/` folder.
 - Production code never imports `./testing`, even when the file lives outside `tests/`.

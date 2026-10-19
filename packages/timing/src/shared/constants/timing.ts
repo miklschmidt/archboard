@@ -453,9 +453,13 @@ export {
 	PRESENTATION_BOX_STEP_MS,
 	PRESENTATION_STEP_MS,
 	SUBJECT_TIP_DELAY_MS,
-} from "./diagram-motion";
-export { EXPLORING_MS } from "./exploring";
-export { AGENT_PANEL_SLIDE_MS, SIDEBAR_MS, SLIDE_SETTLED_MS } from "./column-motion";
+} from "#shared/constants/diagram-motion.ts";
+export { EXPLORING_MS } from "#shared/constants/exploring.ts";
+export {
+	AGENT_PANEL_SLIDE_MS,
+	SIDEBAR_MS,
+	SLIDE_SETTLED_MS,
+} from "#shared/constants/column-motion.ts";
 export {
 	RECORDING_ENCODE_FINISH_MS,
 	RECORDING_ENCODER_PROBE_MS,
@@ -476,8 +480,11 @@ export {
 	RECORDING_STEP_MAX_MS,
 	RECORDING_TAIL_MS,
 	RECORDING_VOICE_START_MS,
-} from "./walkthrough-recording";
-export { RECORDING_FRAME_READY_MS, RECORDING_REPLAY_PREROLL_MS } from "./walkthrough-replay";
+} from "#shared/constants/walkthrough-recording.ts";
+export {
+	RECORDING_FRAME_READY_MS,
+	RECORDING_REPLAY_PREROLL_MS,
+} from "#shared/constants/walkthrough-replay.ts";
 export {
 	ACTIVITY_LINGER_MS,
 	CLAIM_DEFAULT_MS,
@@ -489,7 +496,7 @@ export {
 	LOCK_STEAL_GUARD_MS,
 	LOCK_WAIT_CAP_MS,
 	LOCK_WATCH_MS,
-} from "./board-locks";
+} from "#shared/constants/board-locks.ts";
 export {
 	REPORT_PROGRESS_MS,
 	REPORT_IDLE_SETTLE_MS,
@@ -576,13 +583,13 @@ export const SKILL_EVAL_CODEX_TERM_GRACE_MS = 10_000;
 
 // ── History lens (ADR 0045) ─────────────────────────────────────────────
 
-export { LOCALITY_DEFAULT_PERIOD_MS } from "./history-lens";
+export { LOCALITY_DEFAULT_PERIOD_MS } from "#shared/constants/history-lens.ts";
 
 // ── Code check (ADR 0046) ────────────────────────────────────────────────
-export { LANGUAGE_SERVER_STOP_MS } from "./code-check";
+export { LANGUAGE_SERVER_STOP_MS } from "#shared/constants/code-check.ts";
 
-export { createElapsedClock } from "./elapsed-clock";
-export { CODEX_GROUP_FREEZE_MS } from "./codex-group-freeze";
+export { createElapsedClock } from "#shared/constants/elapsed-clock.ts";
+export { CODEX_GROUP_FREEZE_MS } from "#shared/constants/codex-group-freeze.ts";
 
 export {
 	SERVER_HTTP_STOP_GRACE_MS,
@@ -590,4 +597,4 @@ export {
 	SERVER_STOP_PIDFILE_POLL_MS,
 	SERVER_STOP_PIDFILE_WAIT_MS,
 	SERVER_STOP_PROBE_POLL_MS,
-} from "./server-stop";
+} from "#shared/constants/server-stop.ts";
