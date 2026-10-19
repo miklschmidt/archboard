@@ -1,10 +1,10 @@
 ---
 id: TASK-500.23.05
 title: 'Workbench server: pane, tab and session plumbing from server/archboard'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-19 14:14'
-updated_date: '2026-10-19 16:14'
+updated_date: '2026-10-19 16:36'
 labels: []
 dependencies:
   - TASK-500.23.04
@@ -20,9 +20,9 @@ Fifth move: the 15 server/archboard files that the workbench needs, listed in do
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 packages/workbench/src/server holds those files in role folders with api files that the rest of server/archboard imports, and none of them is left in server/archboard
-- [ ] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
-- [ ] #3 bun run check passes
+- [x] #1 packages/workbench/src/server holds those files in role folders with api files that the rest of server/archboard imports, and none of them is left in server/archboard
+- [x] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -36,3 +36,9 @@ Move the 79-file import closure (all lib/codex-*, the four root codex-workbench-
 <!-- SECTION:NOTES:BEGIN -->
 Import closure of the listed files (computed with /tmp/sa.ts on the @/server/archboard imports) is 79 files, 19.7k source lines, with no import leaving server/archboard: all lib/codex-* and lib/codex-workbench-* files, the four root codex-workbench-{application,browser,generation,production}.ts files, module-paths.ts and narrated-subjects.ts besides the plumbing named in the description. A moved file cannot import what stays, so the whole closure moves; codex-workbench-adapters.ts and codex-workbench-owner.ts (outside the closure) stay as app wiring and import the package.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The Codex workbench server wiring and pane plumbing (79 files, 19.7k lines, 43 tests) live in packages/workbench/src/server in role folders; src/server/archboard keeps only the host. Codex reviewed 136cda93a: bindings and module state matched, one finding (server api names with no outside caller) fixed in df286a4b4; the remaining unused names in the other api files are removed in TASK-500.23.08 once the UI has moved. bun run check passed (one pre-existing EEXIST race in a concurrent-start test passed on rerun; Codex found the code and test unchanged).
+<!-- SECTION:FINAL_SUMMARY:END -->
