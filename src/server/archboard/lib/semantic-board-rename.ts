@@ -33,13 +33,8 @@ import {
 	type SemanticWriteResult,
 } from "@archboard/board/store-write";
 import type { VaultDiagnostic } from "@archboard/board/policy";
-import { publishPaneContext } from "@archboard/workbench/wiring";
-import {
-	aggregateOf,
-	paneBoards,
-	paneVaults,
-	sendToPane,
-} from "@archboard/workbench/pane-registry";
+import { publishPaneContext } from "@archboard/workbench/server";
+import { aggregateOf, paneBoards, paneVaults, sendToPane } from "@archboard/workbench/panes";
 import { arrivedOnBoard } from "@/server/archboard/lib/pane-routes";
 import { acceptedIdentity } from "@/server/archboard/lib/pane-show-route";
 import {

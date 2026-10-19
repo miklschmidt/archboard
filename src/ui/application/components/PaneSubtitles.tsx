@@ -22,8 +22,9 @@ import {
 	useSubtitlesWanted,
 	useVoiceBoxed,
 	type SubtitleSource,
-} from "@archboard/workbench/voice-subtitles";
-import { VoiceBox, useVoiceSurface } from "@archboard/workbench/voice-surface";
+	VoiceBox,
+	useVoiceSurface,
+} from "@archboard/workbench/voice";
 
 /** Inputs for a pane's subtitles. */
 interface PaneSubtitlesProps {

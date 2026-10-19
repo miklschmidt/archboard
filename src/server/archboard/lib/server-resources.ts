@@ -15,19 +15,21 @@ import { server } from "@/server/archboard/lib/server-app";
 import {
 	panePresentations,
 	forgetSemanticPaneContexts,
-} from "@archboard/workbench/semantic-context";
-import { forgetSemanticBoardFiles } from "@/server/archboard/lib/semantic-disk-watch";
-import { codexWiring } from "@archboard/workbench/wiring";
-import { formatHostForUrl, HOST, logHttpServerError, PORT } from "@archboard/workbench/listener";
-import {
 	acceptedSockets,
 	clientIds,
 	codexSocketInstances,
 	forgetDisplay,
 	rejectPendingLayouts,
-} from "@archboard/workbench/pane-registry";
-import { forgetTabSessions } from "@archboard/workbench/pane-tabs";
-import { messageOf } from "@archboard/workbench/request";
+} from "@archboard/workbench/panes";
+import { forgetSemanticBoardFiles } from "@/server/archboard/lib/semantic-disk-watch";
+import { codexWiring, forgetTabSessions } from "@archboard/workbench/server";
+import {
+	formatHostForUrl,
+	HOST,
+	logHttpServerError,
+	PORT,
+	messageOf,
+} from "@archboard/workbench/host";
 
 /**
  * Forget every engine-level announcement, watch and record this process holds.

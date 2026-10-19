@@ -550,32 +550,32 @@ browser and the server exchange, the Codex runtime under them (the foundation, a
 workhorses), the server side (the gateway over the runtime, and the sessions, generations and pane plumbing that wire
 it into the Archboard server) and the browser UI (the transport, the conversation and the composer, then the dock, the
 panes, the approvals, the queue, the agent setup and the voice). It adopts the `api/` role for
-`shared/`, `runtime/`, `server/` and `ui/` and exposes 43 subpaths. It imports `board`, `codex-app-server`,
+`shared/`, `runtime/`, `server/` and `ui/` and exposes 8 subpaths, each an api file that carries only the names that code
+outside the package imports (TASK-500.23.08). It imports `board`, `codex-app-server`,
 `diagnostics`, `process`, `server-lifecycle`, `timing`, `ui-kit`, `walkthrough` and `workspace`, and nothing from
 `src/`.
-The 5 files of `shared/api/` hold 100 names and are safe for the browser, with no Node import and no path into a runtime
-or server area: the pane transport and the voice session import them as well as the server. The 16 files of
-`ui/api/` hold 72 names and are safe for the browser too. The 12 files of
-`runtime/api/` hold 204 names and the 10 of `server/api/` hold 82, and they run only in Bun. The browser imports none of
-them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/` or `server/`. `ui/` never imports
-the `runtime/` or `server/` of the package, and the shared files it reads are the private ones, not the api files.
+The file of `shared/api/` (`./browser-contract`) holds 12 names and is safe for the browser, with no Node import and no
+path into a runtime or server area: the pane session imports it as well as the server. The 3 files of `ui/api/`
+(`./controllers`, `./agent` and `./voice`) hold 58 names and are safe for the browser too. The file of `runtime/api/`
+(`./runtime`) holds 8 names and the 3 of `server/api/` (`./server`, `./panes` and `./host`) hold 82, and they run only
+in Bun. The browser imports none of them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/` or
+`server/`. `ui/` never imports the `runtime/` or `server/` of the package, and the shared files it reads are the
+private ones, not the api files. An api file lists a name only when code outside the package imports it, and a test
+outside the package counts as that code. The approvals, the gateway envelope and the realtime commands of the shared
+contracts have no such importer, so they are private.
 
 **Shared.**
 
-- `./realtime-contract` is the realtime voice session: its phases and the transitions between them, the ids that name
-  a session, an item and a correlation, and the commands, outcomes and events that the browser and the server exchange
-  about it. The contract is `shared/protocol/realtime-contract.ts` and the transitions are
-  `shared/rules/realtime-state.ts`.
-- `./browser-model` is the snapshot that a pane renders, the commands it sends and the outcome of a command.
-  `createCodexBrowserModel` binds every schema to one identity authority, so nothing the browser exchanges can name a
-  child, an epoch or an identity that the session did not issue. `./browser-approvals` is the approvals in that
-  snapshot: the ordinary approval, the dynamic approval with its effect and canonical hash, and the spoken approval.
-  They are `shared/schemas/browser/` (the model, the scalars and the families of the snapshot) and
-  `shared/schemas/dynamic-approval/`, with the canonical hash and the lifecycle check in `shared/rules/`.
-- `./browser-gateway` is the wire envelope of the workbench gateway: the actions it accepts, its messages and its
-  error codes (`shared/protocol/gateway-envelope.ts`). `./shown-conversation` is the route that tells the server which
-  checkout's conversation the dock shows, and what it answers (`shared/protocol/shown-conversation.ts`).
-- The dynamic approval keeps its expiry in `@archboard/timing`, so the api files do not re-export it. A caller imports
+- `./browser-contract` is what the browser and the server exchange: `BrowserSnapshot` and `BrowserTimeline`, the snapshot
+  that a pane renders, and `createCodexBrowserModel`, which binds every schema to one identity authority, so nothing the
+  browser exchanges can name a child, an epoch or an identity that the session did not issue. It also holds the route
+  that tells the server which checkout's conversation the dock shows, and what it answers
+  (`shared/protocol/shown-conversation.ts`), and the three parsers and the event type of the realtime ids (a session, an
+  item and a correlation) that the process-contract tests read from the wire (`shared/protocol/realtime-contract.ts`).
+  The model, the scalars and the families of the snapshot are `shared/schemas/browser/`, and the ordinary, dynamic and
+  spoken approvals in it are `shared/schemas/dynamic-approval/`, with the canonical hash and the lifecycle check in
+  `shared/rules/`. The gateway envelope and the realtime commands stay private.
+- The dynamic approval keeps its expiry in `@archboard/timing`, so the api file does not re-export it. A caller imports
   `CODEX_APPROVAL_EXPIRY_MS` from there.
 - The tests are in `tests/`: `shared/protocol/` holds the identity types of the realtime contract, `shared/rules/` the
   canonical hash and `shared/schemas/` the browser states and the dynamic approval. `shared/support/` holds the fixture
@@ -614,17 +614,12 @@ grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `
 - The two instruction documents and the four manifests (the voice and the workhorse manifests of the
   coordinator, and the `archboard_app` and `archboard_coordinator` namespaces) are data files that sit beside the code
   that reads them, found with `import.meta.resolve` of a `#` path, so no file depends on its own depth. Their digests are pinned in the code, and a changed byte is a review.
-- `./thread-link` is a pane's link to a thread: `createCodexThreadLink`, its ports and snapshots, and the unload of a
-  thread. `./epoch` is the epoch store and the proofs and transactions that its operations carry. `./instructions` is the
-  authored instructions, the context and the builders of a turn's parameters. `./approvals` is the broker and the owner
-  view a pane renders. `./dynamic-tools` is the dispatcher with its ports, the authority token issuer and the wait graph.
-  `./realtime` is the voice adapter and the presentation a walkthrough narrates through. `./thread-tools` is the
-  `archboard_app` manifest, the parse of a tool-call response and the thread context controller. `./workhorse-queue` is
-  the queue of one workhorse. `./coordinator-tools` is what the coordinator may call: the manifests with their digests,
-  the names and the input schemas. `./coordinator-tool-results` is what a coordinator tool answers.
-  `./coordinator` is the voice coordinator and what runs around it: `createCodexCoordinator`, the callbacks that tell it
-  what happened, the dispatcher that answers its tool calls and the spoken approval gate. `./workhorses` is the start of
-  a workhorse thread and the operations that the coordinator asks of one.
+- `./runtime` holds the 8 names that the system tests outside the package build the gateway and the projection from, and
+  nothing in `src/` imports it: the approval broker (`createCodexApprovalBroker`), the realtime voice adapter
+  (`createCodexRealtimeAdapter` with its binding), the parse of a tool-call response (`parseDynamicToolCallResponse`) and
+  the empty spoken approval snapshot. The coordinator, the workhorses, the epoch store, the thread link, the
+  instructions, the dynamic tools, the queue and the tool manifests are private: the server area reads them through
+  their defining files, and a test of one of them lives in the package.
 - The tests are in `tests/runtime/`, in the folders of the code they cover. `support/dynamic-tools/` holds the fakes and
   fixtures that the dynamic-tools tests share. The capacity test of the dynamic tools is opt-in
   (`bun run test:opt-in:capacity`).
@@ -673,14 +668,13 @@ owners and the actions that carry out a pane's command) is private, and its test
   reported and the settled change feed. `services/request/` reads the board and the vault a call names, and
   `services/host/` holds where the server listens and where its source and frontend are (`module-paths.ts` takes them
   from `SOURCE_CHECKOUT`, so no depth decides).
-- `./gateway` is the gateway and the two types its caller names. `./projection` is the projection of the browser state
-  and its input. `./tab-session` is the tab session id.
-- The api files that the host imports group what a caller does. `./wiring` installs the workbench into the server and
-  is where the panes reach it (its hooks, its preparation and stop, the browser socket owner). `./pane-registry` is the
-  open panes, their sockets and the broadcast every write announces through. `./pane-tabs` is which tab a pane
-  belongs to and the conversation a tab shows. `./semantic-context` is the settled change feed, the context the
-  panes report and the steps they present. `./voice` is the route of the voice start trace and the actions of a tab's
-  voice session. `./request` is the vault and the body a call names, and `./listener` is where the server listens.
+- The 3 api files group what a caller does. `./server` is the workbench on the server (24 names): the wiring through
+  which panes and routes reach it (its hooks, its preparation and stop, the browser socket owner); the gateway and the
+  projection of the browser state, which the system tests compose with the runtime pieces; the actions of a tab's voice
+  session and the route of the voice start trace; and the tab sessions, that is, which tab a pane belongs to, the
+  conversation a tab shows and the tab session id. `./panes` is the open panes, their sockets and the broadcast every
+  write announces through, with the settled change feed, the context the panes report and the steps they present (38
+  names). `./host` is the vault and the body a call names and where the server listens (20 names).
 - The tests are in `tests/server/`, in the folders of the code they cover. `support/generation/` holds the fake
   owners, fixtures and harness that the generation, owner, session, action and timeline tests share, and
   `support/gateway/` those of the gateway and the projection tests. Only the tests of the host's own routes, lifetime
@@ -726,16 +720,15 @@ api file. `ui/` keeps its code in the role folders that `code-opener` uses, with
   folders of `components/`, `hooks/`, `rules/` and `state/` read no browser clock: they ask the frame clock of
   `ui-kit`, so a recording renders them frame by frame (the override in `.oxlintrc.jsonc`). Tailwind finds the class
   names through the `@source` of every package's `ui` area.
-- The api files group what a caller does: `./browser-transport` (the transport and its state and capabilities),
-  `./composer`, `./thread-link-controller`, `./conversation-timeline` (the projection and the turns it makes),
-  `./conversation-runtime` (the provider, the hook and the activity items), `./conversation-thread` (the rendered
-  conversation and the words of its activity), `./workbench-media` (the media owner, the audio elements and the
-  snapshot of the realtime session) and `./voice-output-level`. A caller that needs a realtime phase or a state
-  imports it from `./realtime-contract`. The eight files of TASK-500.23.07 name what `src/ui/` imports from the rest:
-  `./agent-setup` (the setup, its snapshot and its phase), `./voice-session`, `./agent-surfaces` (the dock, the
-  panel, the view and actions they take, and the draft store), `./voice-surface` (the voice box, the key of a
-  presentation, the surface the application offers them and the voice view), `./voice-subtitles`, `./voice-orb`,
-  `./approvals-controller` and `./queue-controller`. TASK-500.23.08 trims the names that only the package itself uses.
+- The 3 api files group what `src/ui/` imports. `./controllers` is the transport and the controllers over it (12 names):
+  the transport with its state, and the controllers of the thread link and sign-in, the approvals, the queue and the
+  composer. `./agent` is the agent as the application shows it (18 names): the setup that a message or a press of Talk
+  carries itself through, the dock and the panel with the view and actions they take and the draft store, the hook that
+  reads the conversation, and the projection of the server's timelines into turns. `./voice` is the voice (28 names): the
+  voice session, the media owner with its audio elements and the snapshot of the realtime session, the measured output
+  level, the orb's stage, the subtitles with the person's wish to have them, and the voice box with the key of a
+  presentation. The rendered conversation and the words of its activity (`Conversation`, `activityLabel`, `runSummary`)
+  are private: the panel in the package renders them.
 - The tests are in `tests/ui/`, in the folders of the code they cover. `support/` holds the fake socket and fixtures
   of the transport, the harness of the prepared commands, the fakes of the media session and the media owner, the
   fixtures of the thread link, the composer, the approvals, the queue, the agent setup and the voice session, and the

@@ -2,9 +2,9 @@
 // the last item, a plan step — heard as the transport publishes, so the agent
 // dock can say a turn has gone quiet without reading the clock while it draws.
 
-import type { BrowserTimeline } from "@archboard/workbench/browser-model";
+import type { BrowserTimeline } from "@archboard/workbench/browser-contract";
 import type { SnapshotStore } from "@/ui/application/lib/snapshot-cache";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
 
 /** One item of a published turn. */
 type TimelineItem = BrowserTimeline["turns"][number]["items"][number];

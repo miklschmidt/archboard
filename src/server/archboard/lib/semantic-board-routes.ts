@@ -39,7 +39,7 @@ import {
 	editRoute,
 	resolveRoute,
 } from "@/server/archboard/lib/semantic-board-writes";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/request";
+import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 
 /**
  * The theme a render stands alone in. Absent asks for the page's picture, which

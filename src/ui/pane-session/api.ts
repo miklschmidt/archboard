@@ -11,7 +11,7 @@ import {
 	SHOWN_CONVERSATION_ROUTE,
 	type ShownConversationReply,
 	type ShownConversationRequest,
-} from "@archboard/workbench/shown-conversation";
+} from "@archboard/workbench/browser-contract";
 import { boardQuery, cancellable, inVault, json, post } from "@archboard/server-requests";
 import type { BoardIdentity, BrowserPaneListing, LockHolder } from "@/ui/types";
 

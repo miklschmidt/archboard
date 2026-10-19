@@ -16,7 +16,7 @@ import {
 import { DiagnosticList } from "@/ui/vault-diagnostics/components/DiagnosticList";
 import { useVaultCheck } from "@/ui/vault-diagnostics/hooks/use-vault-check";
 import { useVaultRepair } from "@/ui/vault-diagnostics/hooks/use-vault-repair";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
 
 interface VaultDiagnosticsProps {
 	/** The focused pane's vault: the bell speaks for the repository in front of the person. */

@@ -20,7 +20,7 @@ import {
 	RECORDING_TAIL_MS,
 	RECORDING_VOICE_START_MS,
 } from "@archboard/timing";
-import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-contract";
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
 
 /**

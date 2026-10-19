@@ -5,7 +5,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { Conversation } from "@archboard/workbench/conversation-runtime";
+import type { Conversation } from "@archboard/workbench/agent";
 
 const STORAGE_KEY = "archboard.agent.panel";
 

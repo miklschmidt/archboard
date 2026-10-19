@@ -25,16 +25,16 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { publishPaneContext } from "@archboard/workbench/wiring";
+import { publishPaneContext } from "@archboard/workbench/server";
 import {
 	boardForPane,
 	paneFromRequest,
 	paneResponse,
 	sendToPane,
-} from "@archboard/workbench/pane-registry";
-import { semanticPaneContextFor } from "@archboard/workbench/semantic-context";
+	semanticPaneContextFor,
+} from "@archboard/workbench/panes";
 import type { SemanticAgentSwitch } from "@archboard/codex-app-server/semantic-context";
-import { bodyOf, messageOf, vaultOfRequest } from "@archboard/workbench/request";
+import { bodyOf, messageOf, vaultOfRequest } from "@archboard/workbench/host";
 import { arrivedOnBoard, noBrowserBody } from "@/server/archboard/lib/pane-routes";
 import { movePaneVault } from "@/server/archboard/lib/pane-vaults";
 import { placeOfVault, type VaultPlace } from "@archboard/workspace/repository-listing";

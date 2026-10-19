@@ -6,9 +6,15 @@ import type { RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
 import { parseBoardKey } from "@archboard/board/address";
-import { createServerCodexBrowserSocketSend, codexWiring } from "@archboard/workbench/wiring";
-import type { BrowserConnectionInstance } from "@archboard/workbench/gateway";
-import { parseTabSessionId, type TabSessionId } from "@archboard/workbench/tab-session";
+import {
+	createServerCodexBrowserSocketSend,
+	codexWiring,
+	type BrowserConnectionInstance,
+	parseTabSessionId,
+	type TabSessionId,
+	forgetTabSession,
+	noteTabSession,
+} from "@archboard/workbench/server";
 import { agentActivity, tellPaneAboutLock } from "@/server/archboard/lib/board-announcements";
 import { server } from "@/server/archboard/lib/server-app";
 import {
@@ -25,14 +31,8 @@ import {
 	panes,
 	socketVaults,
 	syncLockWatch,
-} from "@archboard/workbench/pane-registry";
-import { forgetTabSession, noteTabSession } from "@archboard/workbench/pane-tabs";
-import {
-	isRecord,
-	namedVault,
-	VAULT_PARAMETER,
-	type NamedVault,
-} from "@archboard/workbench/request";
+} from "@archboard/workbench/panes";
+import { isRecord, namedVault, VAULT_PARAMETER, type NamedVault } from "@archboard/workbench/host";
 import {
 	openingVault,
 	placeOfVault,

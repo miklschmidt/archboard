@@ -62,11 +62,10 @@ import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
 import { servedVault } from "@archboard/server-requests";
 import type { BoardListing } from "@/ui/types";
 import { RecordingStage } from "@/ui/walkthrough-recording";
-import { OrbStageProvider } from "@archboard/workbench/voice-orb";
-import { VoiceSurfaceProvider } from "@archboard/workbench/voice-surface";
+import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
 import { AgentDockSlot, AgentPanelSlot } from "@/ui/application/components/AgentSurfaceSlots";
 import { PresentationVoiceKey } from "@/ui/application/components/PresentationVoiceKey";
-import type { AgentContext } from "@archboard/workbench/agent-surfaces";
+import type { AgentContext } from "@archboard/workbench/agent";
 import {
 	SETTINGS_TRIGGER_ID,
 	Shell,

@@ -1,4 +1,4 @@
-import { publishPaneContext } from "@archboard/workbench/wiring";
+import { publishPaneContext } from "@archboard/workbench/server";
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "@archboard/diagnostics/logger";
@@ -11,7 +11,13 @@ import {
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { frontendState } from "@archboard/server-lifecycle/server-host";
 import { PANE_LAYOUT_TIMEOUT_MS } from "@archboard/timing";
-import { serverUrl } from "@archboard/workbench/listener";
+import {
+	serverUrl,
+	bodyOf,
+	messageOf,
+	requireVault,
+	vaultOfRequest,
+} from "@archboard/workbench/host";
 import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";
 import {
 	aggregateOf,
@@ -30,15 +36,14 @@ import {
 	settleAfterLayout,
 	type PendingPaneClose,
 	type PendingPaneOpen,
-} from "@archboard/workbench/pane-registry";
+} from "@archboard/workbench/panes";
 import { tellPaneAboutLock } from "@/server/archboard/lib/board-announcements";
 import { noteBoardShown } from "@/server/archboard/lib/semantic-disk-watch";
 import { showPaneRoute } from "@/server/archboard/lib/pane-show-route";
 import { shownConversationRoute } from "@/server/archboard/lib/shown-conversation-route";
-import { SHOWN_CONVERSATION_ROUTE } from "@archboard/workbench/shown-conversation";
+import { SHOWN_CONVERSATION_ROUTE } from "@archboard/workbench/browser-contract";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import { getPanesRoute } from "@/server/archboard/lib/pane-report-route";
-import { bodyOf, messageOf, requireVault, vaultOfRequest } from "@archboard/workbench/request";
 
 /**
  * No pane means no browser, which is a different thing from a bad request.

@@ -11,20 +11,19 @@ import {
 import { DIAGRAM_FONTS_DIRECTORY } from "@archboard/renderer/assets";
 import { diagramIconPaths } from "@archboard/renderer/bun";
 import { app } from "@/server/archboard/lib/server-app";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/request";
+import { requireVault, vaultOfRequest, moduleDir } from "@archboard/workbench/host";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { mountCodeCheckRoute } from "@/server/archboard/lib/code-check-route";
 import { mountFootprintRoute } from "@/server/archboard/lib/footprint-route";
 import { startServer } from "@/server/archboard/lib/server-startup";
-import { moduleDir } from "@archboard/workbench/listener";
 import { mountMutationAdmission, trackMutationWork } from "@/server/archboard/lib/mutation-work";
 import { mountPaneRoutes } from "@/server/archboard/lib/pane-routes";
 import { mountRepositoryRoutes } from "@/server/archboard/lib/repository-routes";
 import { mountSemanticLockRoutes } from "@/server/archboard/lib/semantic-lock-routes";
 import { mountSemanticBoardRoutes } from "@/server/archboard/lib/semantic-board-routes";
 import { mountLocalityRoute } from "@/server/archboard/lib/locality-route";
-import { mountVoiceStartTraceRoute } from "@archboard/workbench/voice";
-import { mountSemanticPaneContextRoutes } from "@archboard/workbench/semantic-context";
+import { mountVoiceStartTraceRoute } from "@archboard/workbench/server";
+import { mountSemanticPaneContextRoutes } from "@archboard/workbench/panes";
 import { watchSemanticBoardFiles } from "@/server/archboard/lib/semantic-disk-watch";
 import { mountServiceRoutes } from "@/server/archboard/lib/service-routes";
 

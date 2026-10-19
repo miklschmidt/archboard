@@ -25,8 +25,8 @@ import {
 	bodyString,
 	requireVault,
 	vaultOfRequest,
-} from "@archboard/workbench/request";
-import { aggregateOf } from "@archboard/workbench/pane-registry";
+} from "@archboard/workbench/host";
+import { aggregateOf } from "@archboard/workbench/panes";
 
 /**
  * Answer a lock failure, unless the caller has already gone after cancelling

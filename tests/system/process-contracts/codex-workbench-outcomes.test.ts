@@ -5,7 +5,7 @@ import { join } from "node:path";
 import {
 	parseDynamicToolCallResponse,
 	type ParsedDynamicToolCallResponse,
-} from "@archboard/workbench/thread-tools";
+} from "@archboard/workbench/runtime";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,

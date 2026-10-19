@@ -1,14 +1,17 @@
 import { expect, test } from "bun:test";
 
-import type { AgentSetup, AgentSetupSnapshot, TalkOptions } from "@archboard/workbench/agent-setup";
+import type { AgentSetup, AgentSetupSnapshot } from "@archboard/workbench/agent";
 import {
 	narrate,
 	releaseWhenVoiceEnds,
 	threadLinkStep,
 	voicePort,
 } from "@/ui/application/agent-setup-ports";
-import type { VoiceSessionStatus, VoiceSessionView } from "@archboard/workbench/voice-session";
-import type { ThreadLinkActionSnapshot } from "@archboard/workbench/thread-link-controller";
+import type { VoiceSessionStatus, VoiceSessionView } from "@archboard/workbench/voice";
+import type { ThreadLinkController } from "@archboard/workbench/controllers";
+
+type TalkOptions = NonNullable<Parameters<AgentSetup["talk"]>[0]>;
+type ThreadLinkActionSnapshot = ReturnType<ThreadLinkController["snapshot"]>;
 
 /**
  * A voice session view in one status.

@@ -9,13 +9,13 @@ import type {
 	AgentSetupPorts,
 	AuthTab,
 	SetupStepResult,
-} from "@archboard/workbench/agent-setup";
+} from "@archboard/workbench/agent";
 import type { AgentFocus } from "@/ui/application/lib/agent-focus";
-import type { VoiceSession, VoiceSessionStatus } from "@archboard/workbench/voice-session";
+import type { VoiceSession, VoiceSessionStatus } from "@archboard/workbench/voice";
 import type {
 	ThreadLinkActionCompletion,
 	ThreadLinkController,
-} from "@archboard/workbench/thread-link-controller";
+} from "@archboard/workbench/controllers";
 
 /** Why a step reports nothing of its own: a later action on the pane replaced it. */
 const REPLACED = "A later action on this pane replaced this one before it settled.";

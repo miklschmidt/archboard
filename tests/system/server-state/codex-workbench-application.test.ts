@@ -2,22 +2,24 @@ import { expect, test } from "bun:test";
 import { createServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
-import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/workbench/coordinator";
+import {
+	createCodexApprovalBroker,
+	EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
+} from "@archboard/workbench/runtime";
 import type {
 	ReverseResponse,
 	TransportServerRequest,
 } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type { BrowserOwnerProjection } from "@archboard/workbench/projection";
 import {
+	type BrowserOwnerProjection,
 	type BrowserWorkbenchActions,
 	createCodexWorkbenchGateway,
-} from "@archboard/workbench/gateway";
-import { parseTabSessionId } from "@archboard/workbench/tab-session";
-import { createServerRealtimeActions } from "@archboard/workbench/voice";
-import { createServerCodexBrowserSocketOwner } from "@archboard/workbench/wiring";
+	parseTabSessionId,
+	createServerRealtimeActions,
+	createServerCodexBrowserSocketOwner,
+} from "@archboard/workbench/server";
 
 async function delivered() {
 	return { outcome: "delivered" as const };
