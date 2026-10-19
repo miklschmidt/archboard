@@ -3,7 +3,7 @@ import { useMemo } from "react";
 
 import type { OutlineNode } from "@/ui/board-catalog/lib/outline";
 import { halfOf, outlineOf } from "@/ui/board-catalog/lib/vault-boards";
-import { semanticBoardListQuery } from "@/ui/semantic-board-canvas";
+import { semanticBoardListQuery } from "#web/ui/clients/semantic-board-canvas/reads/queries.ts";
 import type { CatalogBoard } from "@/ui/types";
 
 /** One vault's boards, as a pane reads them. */

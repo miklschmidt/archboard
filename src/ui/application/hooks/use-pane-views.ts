@@ -15,7 +15,7 @@ import type { Narration } from "@/ui/application/hooks/use-narration";
 import type { PaneReadings, PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import type { Panes } from "@/ui/application/hooks/use-panes";
 import type { PaneTheme } from "@/ui/pane-session";
-import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
+import type { SemanticPaneReading } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 import { servedVault } from "@archboard/server-requests";
 import type { RecordedStep } from "@/ui/walkthrough-recording";
 

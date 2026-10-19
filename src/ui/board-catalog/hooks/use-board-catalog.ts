@@ -24,14 +24,14 @@ import {
 	paneInventoryQuery,
 	repositoriesQuery,
 } from "@/ui/board-catalog/lib/queries";
+import { boardAddressOf } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
+import { onSemanticBoardChange } from "#web/ui/state/semantic-board-canvas/board-changes.ts";
+import { readAgain } from "#web/ui/clients/semantic-board-canvas/reads/read-again.ts";
 import {
-	boardAddressOf,
-	onSemanticBoardChange,
-	readAgain,
 	semanticBoardKeys,
 	semanticBoardListQuery,
-	type SemanticBoardListing,
-} from "@/ui/semantic-board-canvas";
+} from "#web/ui/clients/semantic-board-canvas/reads/queries.ts";
+import { type SemanticBoardListing } from "#web/ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BoardListing, BrowserPaneListing } from "@/ui/types";
 
 /** One repository, and the boards of its chosen checkout's vault. */

@@ -16,7 +16,9 @@ import {
 	type RowHandlers,
 } from "@/ui/shell/components/TreeRow";
 import type { VariantRow } from "@/ui/shell/types/navigator-rows";
-import { VariantMark, variantRecedes, type Lane } from "@/ui/variant-lifecycle";
+import { VariantMark } from "#web/ui/components/variant-lifecycle/VariantMark.tsx";
+import { variantRecedes } from "#web/ui/rules/variant-lifecycle/lifecycle.ts";
+import { type Lane } from "#web/ui/rules/variant-lifecycle/timeline.ts";
 
 /**
  * A variant row's accessible name.

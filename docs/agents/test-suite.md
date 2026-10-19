@@ -232,7 +232,7 @@ system owners keep a plain Node-like global, because a suite-wide `document`
 would change what those owners prove.
 
 Reuse the module's existing rendered-test harness when one exists. Semantic
-board stage tests use `src/ui/semantic-board-canvas/tests/stage-harness.tsx`,
+board stage tests use `apps/web/tests/ui/support/semantic-board-canvas/stage-harness.tsx`,
 which owns DOM registration, measured viewport setup, fetch restoration and
 Testing Library cleanup. Other rendered owners use `GlobalRegistrator` from
 `@happy-dom/global-registrator` with React's `act` and `createRoot`, or

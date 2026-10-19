@@ -6,7 +6,8 @@
 // than a quiet trip to the server.
 
 import type { Talk } from "@archboard/walkthrough/talk";
-import { sameBoardName, type BoardReads } from "@/ui/semantic-board-canvas";
+import { sameBoardName } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
+import { type BoardReads } from "#web/ui/clients/semantic-board-canvas/reads/board-reads.ts";
 
 /**
  * Board reads answered from a talk.

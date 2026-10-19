@@ -8,7 +8,7 @@ import {
 	nothingBuiltOn,
 	vaultHalf,
 } from "@/ui/board-catalog/listing";
-import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
+import type { SemanticBoardEntry } from "#web/ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BrowserPaneListing } from "@/ui/types";
 
 /**
@@ -198,7 +198,8 @@ test("a failed pane read does not report the listing as unreadable", () => {
 
 test("a refresh reads the listings again, and a reload every cached board resource, documents and repositories included", async () => {
 	const { QueryClient } = await import("@tanstack/react-query");
-	const { semanticBoardKeys } = await import("@/ui/semantic-board-canvas");
+	const { semanticBoardKeys } =
+		await import("#web/ui/clients/semantic-board-canvas/reads/queries.ts");
 	const { boardCatalogKeys } = await import("@/ui/board-catalog");
 	const { catalogCommandsFor } = await import("@/ui/board-catalog");
 	const client = new QueryClient();

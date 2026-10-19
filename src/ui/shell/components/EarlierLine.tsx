@@ -13,7 +13,7 @@ import {
 	TreeRowName,
 	type RowHandlers,
 } from "@/ui/shell/components/TreeRow";
-import type { Lane } from "@/ui/variant-lifecycle";
+import type { Lane } from "#web/ui/rules/variant-lifecycle/timeline.ts";
 import type { EarlierRow } from "@/ui/shell/types/navigator-rows";
 
 /**

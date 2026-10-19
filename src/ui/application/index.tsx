@@ -58,7 +58,7 @@ import {
 } from "@/ui/board-catalog";
 import { useOpeningAddress, type WorkspaceAddressing } from "@/ui/board-routing";
 import { TooltipProvider } from "@archboard/ui-kit/overlays";
-import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
+import { boardAddressOf, boardKeyFor } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 import { servedVault } from "@archboard/server-requests";
 import type { BoardListing } from "@/ui/types";
 import { RecordingStage } from "@/ui/walkthrough-recording";

@@ -21,7 +21,7 @@ import {
 	RECORDING_VOICE_START_MS,
 } from "@archboard/timing";
 import type { BrowserSnapshot } from "@archboard/workbench/browser-contract";
-import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
+import type { SemanticPaneReading } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 
 /**
  * One line of the voice session's transcript, as far as pacing reads it: who said it, whether

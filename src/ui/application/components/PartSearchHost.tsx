@@ -4,7 +4,8 @@
 import { useCallback, useEffect, useMemo, useRef, type JSX } from "react";
 
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
-import { PartSearch, sameBoardName, type PartHit } from "@/ui/semantic-board-canvas";
+import { PartSearch, type PartHit } from "#web/ui/components/semantic-board-canvas/PartSearch.tsx";
+import { sameBoardName } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 import type { CatalogBoard } from "@/ui/types";
 
 /** Inputs for the search host. */

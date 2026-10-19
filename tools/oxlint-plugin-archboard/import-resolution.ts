@@ -9,6 +9,7 @@ import path from "node:path";
 import type { RuleContext } from "./rule-api.ts";
 import {
 	SOURCE_ALIAS_PREFIX,
+	isRootSource,
 	normalizePath,
 	workspaceAt,
 	type WorkspaceFile,
@@ -216,7 +217,8 @@ function subpathImports(context: RuleContext, ownerRoot: string): Array<[string,
 /**
  * Resolve a `#` specifier through the `imports` field of the importing file's own package or app,
  * as Node, TypeScript, Bun and Vite do: the longest matching key wins, and `*` carries the rest.
- * A root `src/` file is owned by the root `package.json`; a file in no owner has no `imports`.
+ * A root `src/` file and the browser entry in `frontend/` are owned by the root `package.json`;
+ * a file in no owner has no `imports`.
  * @param context The rule context supplying the working directory.
  * @param fromRelativePath The importing file's repository path.
  * @param source The specifier as written, with its query dropped.
@@ -242,10 +244,10 @@ function resolveSubpathImport(
 /**
  * The root whose `package.json` owns the `#` imports of a file.
  * @param relativePath The file's repository path.
- * @returns The package or app root, `.` for a root `src/` file, or undefined for any other file.
+ * @returns The package or app root, `.` for a root file, or undefined for any other file.
  */
 function importsOwnerRoot(relativePath: string): string | undefined {
-	if (relativePath.startsWith("src/")) {
+	if (isRootSource(relativePath)) {
 		return ".";
 	}
 	return workspaceAt(relativePath)?.root;

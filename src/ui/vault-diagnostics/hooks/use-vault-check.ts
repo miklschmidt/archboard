@@ -2,7 +2,10 @@ import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-q
 import { useEffect, useRef } from "react";
 
 import type { VaultCheck } from "@archboard/board/policy";
-import { semanticBoardKeys, vaultCheckQuery } from "@/ui/semantic-board-canvas";
+import {
+	semanticBoardKeys,
+	vaultCheckQuery,
+} from "#web/ui/clients/semantic-board-canvas/reads/queries.ts";
 
 /**
  * Read the shared checker; disk edits become visible without reopening the vault.

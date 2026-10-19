@@ -9,11 +9,9 @@ import { rendererBuild } from "virtual:archboard-renderer";
 import { replayAskedOf } from "@archboard/walkthrough/talk";
 import { Application } from "@/ui/application";
 import { createBoardRoutingHost } from "@/ui/board-routing";
-import {
-	browserPictureStorage,
-	createLocalPictureSource,
-	takePicturesFrom,
-} from "@/ui/semantic-board-canvas";
+import { browserPictureStorage } from "#web/ui/clients/semantic-board-canvas/reads/picture-cache.ts";
+import { createLocalPictureSource } from "#web/ui/clients/semantic-board-canvas/reads/local-pictures.ts";
+import { takePicturesFrom } from "#web/ui/clients/semantic-board-canvas/reads/picture-source.ts";
 import { learnServedVault } from "@archboard/server-requests";
 import { startWalkthroughReplay } from "@/ui/walkthrough-replay";
 

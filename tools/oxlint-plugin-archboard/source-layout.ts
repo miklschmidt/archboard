@@ -21,6 +21,9 @@ const APP_ENTRYPOINTS = new Set([
  */
 const ROOT_WEB_IMPORT_PREFIX = "#web/";
 
+/** The browser entry that still sits outside `src/` until the web app takes it (TASK-500.24.05). */
+const ROOT_BROWSER_ENTRY = "frontend/main.tsx";
+
 const MODULE_AREAS = new Set([
 	"cli",
 	"domain",
@@ -374,6 +377,17 @@ function hasGenericBucket(relativePath: string): boolean {
 }
 
 /**
+ * Whether a file belongs to the root `package.json` rather than to a package or an app: the
+ * root `src/` modules and the browser entry in `frontend/`. These are the files that own the
+ * root `imports` and may reach the web app through `#web/*` while it moves.
+ * @param relativePath The file's repository path.
+ * @returns Whether the root manifest owns the file's `#` imports.
+ */
+function isRootSource(relativePath: string): boolean {
+	return relativePath.startsWith("src/") || relativePath === ROOT_BROWSER_ENTRY;
+}
+
+/**
  * Whether a path is browser code that sits outside a `ui/` folder.
  * @param relativePath The file's repository path.
  * @returns Whether the path is the web app's browser entry.
@@ -396,6 +410,7 @@ export {
 	isFlatAppSource,
 	isModuleInternal,
 	isProductSourcePath,
+	isRootSource,
 	isSourceFile,
 	isStateFile,
 	isTestFile,

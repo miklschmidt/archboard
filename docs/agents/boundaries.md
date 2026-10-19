@@ -737,8 +737,8 @@ An app is a layer-8 workspace in `apps/<name>/` that holds what the packages lef
 
 - **Nothing imports an app.** Only the app's own source and tests reach its files. A package, another
   app, a script and a test of another owner are refused. The one temporary exception is the root
-  `"#web/*": "./apps/web/src/*"` entry of `package.json`: a file under root `src/` may import
-  through it, and nothing else may. TASK-500.24.06 removes it.
+  `"#web/*": "./apps/web/src/*"` entry of `package.json`: a file under root `src/` and the browser
+  entry `frontend/main.tsx` may import through it, and nothing else may. TASK-500.24.06 removes it.
 - **An app imports a package only through its `exports`.** Inside an app, imports use the `#`
   entries of its own `package.json`, as in a package. A `#` import that names no existing file is
   an error whoever owns the importing file.
@@ -816,6 +816,32 @@ of `dist/`.
 - The tests are in `tests/server/`, in the folders of the code they cover. `lifecycle/lifetime/` also holds the
   proof that a stop force-reaps a real process group. The system tests that start the whole server stay in
   `tests/system/`.
+
+### `apps/web`
+
+`apps/web` is the browser app. It moves in two steps (TASK-500.24.04 and TASK-500.24.05). So far it
+holds the board canvas and the variant lifecycle with their tests. The `src/ui` modules and
+`frontend/main.tsx` that have not moved reach them through the temporary root entry, with the file
+spelled out: `#web/ui/components/semantic-board-canvas/LevelMark.tsx`. Inside the app the same file is
+`#ui/components/semantic-board-canvas/LevelMark.tsx`. The canvas has no index: a caller imports the
+file that defines a name.
+
+- `src/ui/` is the `ui` area. The canvas is the `semantic-board-canvas` behavior folder under each
+  role, which is the name the frame-clock override of `.oxlintrc.jsonc` matches. `components/` and
+  `hooks/` hold its React code flat. `rules/` holds the pure parts in `camera/` (arithmetic of the
+  camera, its glide, motion, dive and reveal), `walkthrough/`, `drilling/`, `board/` (reading a
+  board's document, its groups, reach and addresses) and `picture/` (parsing and morphing a drawn
+  line). `state/` holds what outlives a render: the camera store, the drill trail, the board-change
+  announcements and the pane vault and repository contexts. `clients/` holds what touches the outside:
+  `reads/` (the server calls, the query options, the kept pictures and the pictures drawn in the
+  page), `picture/` (carrying one picture into the next on the pane's surface, and its traffic) and
+  `subjects/` (reading and marking the subjects in the drawn SVG, their tips, lit ink and code
+  marks). The variant lifecycle is `components/variant-lifecycle/` and `rules/variant-lifecycle/`.
+- Nothing there imports a stay-behind `src/ui` module: the canvas reaches only packages and itself.
+  The stay-behind modules import it.
+- The tests are in `tests/ui/<role>/semantic-board-canvas/`, in the folders of the code they cover.
+  `tests/ui/support/semantic-board-canvas/` holds the stage harness and the probes and fixtures that
+  the stage tests share. The stage tests live in `components/`.
 
 ## Vendor-owned data
 

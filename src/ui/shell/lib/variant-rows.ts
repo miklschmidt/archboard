@@ -9,7 +9,7 @@
 // Earlier row. Pure.
 
 import { listedBoard } from "@/ui/board-catalog";
-import { sameBoardName } from "@/ui/semantic-board-canvas";
+import { sameBoardName } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 import { boardRowId, earlierRowId, variantRowId } from "@/ui/shell/lib/row-ids";
 import { matchIn } from "@/ui/shell/lib/text-match";
 import type {
@@ -22,7 +22,7 @@ import type {
 	VariantRow,
 } from "@/ui/shell/types/navigator-rows";
 import type { BoardListing, CatalogBoard, ListedVariant } from "@/ui/types";
-import { variantOrder, variantRecedes } from "@/ui/variant-lifecycle";
+import { variantOrder, variantRecedes } from "#web/ui/rules/variant-lifecycle/lifecycle.ts";
 
 /** Where a board's variants go: their first depth, under the board's row. */
 type VariantPlace = RowPlace & { readonly parentId: string };

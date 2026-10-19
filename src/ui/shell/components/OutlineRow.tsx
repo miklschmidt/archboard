@@ -13,7 +13,7 @@ import type { RowHandlers } from "@/ui/shell/components/TreeRow";
 import { VariantLine } from "@/ui/shell/components/VariantLine";
 import { sameData } from "@/ui/shell/lib/same-data";
 import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
-import type { Lane } from "@/ui/variant-lifecycle";
+import type { Lane } from "#web/ui/rules/variant-lifecycle/timeline.ts";
 
 /** Inputs for one row. */
 interface OutlineRowProps extends RowHandlers {

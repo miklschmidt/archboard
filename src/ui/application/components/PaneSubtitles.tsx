@@ -16,7 +16,7 @@
 import { useSyncExternalStore, type JSX } from "react";
 
 import { subtitledTranscript, type VoiceFeed } from "@/ui/application/subtitled-transcript";
-import { useOverlayPlace } from "@/ui/semantic-board-canvas";
+import { useOverlayPlace } from "#web/ui/hooks/semantic-board-canvas/use-overlay-place.ts";
 import {
 	VoiceSubtitles,
 	useSubtitlesWanted,

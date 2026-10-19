@@ -159,7 +159,7 @@ function canonicalBinding(vault: string, boardKey: string, subjectId: string): B
  * What a pane board key names: the board, and which of its variants.
  *
  * Split at the first `@`, which is the one spelling a pane and an address use
- * (`@/ui/semantic-board-canvas` holds the browser's half of it).
+ * (`apps/web/src/ui/rules/semantic-board-canvas/board/address.ts` holds the browser's half of it).
  * @param key The board key.
  * @returns The board name and the variant, when it names one.
  */

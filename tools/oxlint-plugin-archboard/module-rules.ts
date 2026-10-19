@@ -17,6 +17,7 @@ import {
 	areaOwnerAt,
 	getRepoRelativePath,
 	isModuleInternal,
+	isRootSource,
 	isSourceFile,
 	isTestFile,
 	isTypedTestSource,
@@ -150,7 +151,8 @@ function packageImportMessage(
 /**
  * The message a file of an app earns when another file imports it. Nothing imports an app:
  * only the app's own source and tests reach its files. The one exception is temporary: the
- * root `src/` modules reach the web app through the root `#web/*` import while it moves.
+ * root `src/` modules and the browser entry in `frontend/` reach the web app through the root
+ * `#web/*` import while it moves.
  * @param importer The importing file.
  * @param imported The imported file's app.
  * @param source The specifier as written.
@@ -166,7 +168,7 @@ function appImportMessage(
 	}
 	const throughRootEntry =
 		imported.root === "apps/web" &&
-		importer.relativePath.startsWith("src/") &&
+		isRootSource(importer.relativePath) &&
 		source.startsWith(ROOT_WEB_IMPORT_PREFIX);
 	return throughRootEntry ? undefined : "noImportOfApp";
 }

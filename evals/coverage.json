@@ -322,7 +322,7 @@
 					"expectedUse": "link to a named variant; never falls back to current",
 					"scenarios": ["S04"],
 					"evidence": "harness-check",
-					"owner": "node-drilldown named; src/ui/semantic-board-canvas/tests drill address (missing named target refused)"
+					"owner": "node-drilldown named; apps/web/tests/ui/components/semantic-board-canvas drill address (missing named target refused)"
 				},
 				{
 					"path": "node.drillDown.repo",
@@ -494,7 +494,7 @@
 					"expectedUse": "each allowed class",
 					"scenarios": ["S05", "S13"],
 					"evidence": "harness-check",
-					"owner": "walkthrough-beat-references subjectKinds [step]; fixture S13 references nodes; runtime tests for edge and flow subjects; src/ui/semantic-board-canvas/tests narrative (a relationship or step brings the parts at its ends, and several named cards bring the relationships between them)"
+					"owner": "walkthrough-beat-references subjectKinds [step]; fixture S13 references nodes; runtime tests for edge and flow subjects; apps/web/tests/ui/components/semantic-board-canvas narrative (a relationship or step brings the parts at its ends, and several named cards bring the relationships between them)"
 				},
 				{
 					"path": "introductory beat with no subjects",
@@ -508,7 +508,7 @@
 					"expectedUse": "every beat names its view explicitly, including consecutive beats that use the same view",
 					"scenarios": ["S05"],
 					"evidence": "author-run",
-					"owner": "grader walkthrough.beat-subjects; src/ui/semantic-board-canvas/tests narrative (omitted view keeps the presentation)"
+					"owner": "grader walkthrough.beat-subjects; apps/web/tests/ui/components/semantic-board-canvas narrative (omitted view keeps the presentation)"
 				},
 				{
 					"path": "WALKTHROUGH_VIEW_MISSING on authored beats without view; view schema descriptions announce that the property will become required soon",
@@ -730,7 +730,7 @@
 					"expectedUse": "compare stable identities and Standing; geometry may change without an architectural change",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/comparison/fresh-proposal.test.ts; src/ui/semantic-board-canvas/tests/picture-transition.test.tsx"
+					"owner": "packages/renderer/tests/runtime/operations/comparison/fresh-proposal.test.ts; apps/web/tests/ui/clients/semantic-board-canvas/picture/picture-transition.test.tsx"
 				},
 				{
 					"path": "compact semantic containers and direct outgoing relationships",
@@ -972,14 +972,14 @@
 					"expectedUse": "the answer names a member the view does not draw",
 					"scenarios": ["S09"],
 					"evidence": "grader",
-					"owner": "grader inspect.hidden-members; src/ui/semantic-board-canvas/tests/semantic-board-groups.test.tsx"
+					"owner": "grader inspect.hidden-members; apps/web/tests/ui/components/semantic-board-canvas/semantic-board-groups.test.tsx"
 				},
 				{
 					"path": "browser selection/emphasis/clear, pane-local refresh, coexistence with other presentation state",
 					"expectedUse": "viewer behaviour, not authored JSON",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "tests/system/browser/semantic-board-groups.test.ts; src/ui/semantic-board-canvas/tests/semantic-board-groups.test.tsx"
+					"owner": "tests/system/browser/semantic-board-groups.test.ts; apps/web/tests/ui/components/semantic-board-canvas/semantic-board-groups.test.tsx"
 				},
 				{
 					"path": "legacy singular group field refused",
