@@ -206,32 +206,22 @@ function isFlatAppSource(relativePath: string): boolean {
 }
 
 /**
- * What is wrong with where a file of a package or an app sits, beyond the area rules.
+ * What is wrong with where a file of an app sits, beyond the area rules.
  * @param relativePath The file's repository path.
  * @returns "legacy-root" below an app folder other than `src/` and `tests/`, "unknown-area" for
- * a folder below `src/` that is no area, and undefined when the placement is right. A package may
- * keep other folders beside `src/` and `tests/`, such as its assets.
+ * a folder below an app's `src/` that is no area, and undefined when the placement is right.
+ * Package folders keep their own layout, including types shared between areas and assets.
  */
 function placementProblem(relativePath: string): "legacy-root" | "unknown-area" | undefined {
-	const [, group, folder, rest] =
-		/^(packages|apps)\/[^/]+\/([^/]+)\/(.+)$/.exec(relativePath) ?? [];
+	const [, folder, rest] = /^apps\/[^/]+\/([^/]+)\/(.+)$/.exec(relativePath) ?? [];
 	if (rest === undefined || folder === "tests") {
 		return undefined;
 	}
-	return folder === "src" ? sourceProblem(rest) : outsideSourceProblem(group);
+	return folder === "src" ? sourceProblem(rest) : "legacy-root";
 }
 
 /**
- * What is wrong with a file that sits beside the `src/` and `tests/` of its owner.
- * @param group `packages` or `apps`, the folder that holds the owner.
- * @returns "legacy-root" for an app, which keeps source in `src/` only, and undefined for a package.
- */
-function outsideSourceProblem(group: string | undefined): "legacy-root" | undefined {
-	return group === "apps" ? "legacy-root" : undefined;
-}
-
-/**
- * What is wrong with where a file sits below the `src/` of a package or an app.
+ * What is wrong with where a file sits below an app's `src/`.
  * @param rest The file's path below `src/`.
  * @returns "unknown-area" for a folder that is no area, and undefined otherwise.
  */

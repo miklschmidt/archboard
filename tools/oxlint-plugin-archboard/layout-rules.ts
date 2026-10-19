@@ -285,7 +285,7 @@ const mappedSourcePaths = createRule(
 		noLegacyAppRoot:
 			"An app keeps source in apps/<name>/src and tests in apps/<name>/tests, never in a legacy root such as frontend or lib.",
 		noUnmappedPath:
-			"Source in a package or an app lives in a role folder of an area (cli, runtime, server, shared or ui) under src/<area>/. Only the thin entrypoints of an app sit directly in its src.",
+			"Source in an app lives in a role folder of an area (cli, runtime, server, shared or ui) under src/<area>/. Only the thin entrypoints of an app sit directly in its src.",
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);

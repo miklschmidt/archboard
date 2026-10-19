@@ -71,12 +71,9 @@ function expectPass(result: CommandResult): void {
 	expect(result.exitCode, result.output).toBe(0);
 }
 
-function expectRule(result: CommandResult, rule: string, guidance?: string): void {
+function expectRule(result: CommandResult, rule: string): void {
 	expect(result.exitCode, result.output).not.toBe(0);
 	expect(result.output).toContain(rule);
-	if (guidance) {
-		expect(result.output).toContain(guidance);
-	}
 }
 
 /** One diagnostic of a lint run: the file, the rule as `plugin(rule)`, and the message. */
@@ -109,7 +106,7 @@ function diagnosticsOf(root: string, relativePaths: string[]): Diagnostic[] {
 /**
  * Lint files in one run and name what each refused file earns and what passes.
  * @param root The project directory.
- * @param refused Each file that must be refused, with a phrase of the message that names why.
+ * @param refused Each file that must be refused, with its stable diagnostic rule code.
  * @param allowed The files that must earn no diagnostic.
  */
 function expectJudged(
@@ -118,12 +115,12 @@ function expectJudged(
 	allowed: readonly string[] = [],
 ): void {
 	const found = diagnosticsOf(root, [...Object.keys(refused), ...allowed]);
-	for (const [file, phrase] of Object.entries(refused)) {
-		const messages = found.filter((entry) => entry.file === file).map((entry) => entry.message);
+	for (const [file, code] of Object.entries(refused)) {
+		const diagnostics = found.filter((entry) => entry.file === file);
 		expect(
-			messages.some((message) => message.includes(phrase)),
-			`${file} should be refused for "${phrase}", got: ${JSON.stringify(messages)}`,
-		).toBe(true);
+			diagnostics.map((entry) => entry.code),
+			JSON.stringify(diagnostics),
+		).toContain(code);
 	}
 	expect(found.filter((entry) => allowed.includes(entry.file))).toEqual([]);
 }
