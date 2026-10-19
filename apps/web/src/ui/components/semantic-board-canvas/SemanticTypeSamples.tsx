@@ -257,7 +257,7 @@ interface Share {
 /**
  * How much of its kind's colour a chip's face and its front edge carry: the
  * shares the picture's chip takes (`typeChip` in the renderer's
- * `lib/svg/appearance.ts`).
+ * `packages/renderer/src/shared/rules/svg/parts/appearance.ts`).
  */
 const CHIP_FACE: Share = { light: 14, dark: 20 };
 const CHIP_EDGE: Share = { light: 45, dark: 20 };

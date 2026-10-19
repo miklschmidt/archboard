@@ -1,4 +1,4 @@
-// The graph Track and Blocks lay out (lib/blocks): semantic containment,
+// The graph Track and Blocks lay out (shared/rules/blocks): semantic containment,
 // measured dimensions, which children are entry points of the container
 // around them, and which point of a flowchart's decision each of its answers
 // leaves from. Each engine chooses ranks and attachment faces.
