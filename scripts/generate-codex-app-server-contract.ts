@@ -9,6 +9,7 @@ import {
 	readdirSync,
 	realpathSync,
 	renameSync,
+	rmdirSync,
 	rmSync,
 	symlinkSync,
 	unlinkSync,
@@ -535,9 +536,33 @@ function contractIsCurrent(): boolean {
 }
 
 /**
+ * Remove the generated tree that checkouts made before the contract moved into the package keep:
+ * it is ignored by git but linted and formatted nowhere any more, and nothing reads it. Only a real
+ * directory named exactly `generated` goes, and the old folder goes with it once it is empty.
+ */
+function removeLegacyGeneratedTree(): void {
+	const legacyContractRoot = join(repositoryRoot, "src/shared/codex-app-server-contract");
+	const legacyGeneratedRoot = join(legacyContractRoot, "generated");
+	if (!entryExists(legacyGeneratedRoot)) {
+		return;
+	}
+	const entry = lstatSync(legacyGeneratedRoot);
+	if (!entry.isDirectory() || entry.isSymbolicLink()) {
+		throw new Error(
+			`Refusing to remove ${relative(repositoryRoot, legacyGeneratedRoot)}: not a plain directory`,
+		);
+	}
+	rmSync(legacyGeneratedRoot, { recursive: true });
+	if (readdirSync(legacyContractRoot).length === 0) {
+		rmdirSync(legacyContractRoot);
+	}
+}
+
+/**
  * Generate the contract unless `--ensure` finds it already published.
  */
 async function main(): Promise<void> {
+	removeLegacyGeneratedTree();
 	if (process.argv.includes("--ensure") && contractIsCurrent()) {
 		return;
 	}
