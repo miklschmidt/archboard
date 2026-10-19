@@ -42,12 +42,6 @@ model, and detector code accept only those snapshot records. The snapshot owner 
 separate 2,000,000-comparison limit; a stopped pair pass retains completed findings and comparisons.
 The two limits are capacity safeguards, not a general runtime or asymptotic guarantee.
 
-`src/shared/finding-raster/index.ts` owns the pure fixed mapping from a schema-v3 finding focus box
-to PNG scale and dimensions. Both the browser exporter and manifest validator use it. The CLI-side
-`src/cli/finding-rendering/index.ts` owns the sole manifest schema, finding digest and file naming,
-PNG validation, and ordered file-set assembly. Browser messaging and vault reads remain adapters;
-neither module owns a second geometry or bounds calculation.
-
 Root `src/` files are thin process entrypoints only. The one existing entrypoint is `src/server.ts`;
 the CLI's entry is `apps/cli/src/bin.ts`. Do not add implementation to these files.
 

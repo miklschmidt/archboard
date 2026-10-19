@@ -16,7 +16,7 @@ bun run build    # builds the browser bundle into dist/frontend
 `bun install` installs the Codex version that `package.json` pins. The server
 runs only that Codex, never one on your `PATH`. The install also generates the
 Codex app-server contract and the generated references of the skill. Bun runs
-the CLI and the server from `src/`, so nothing else is built (ADR 0014).
+the CLI and the server directly from TypeScript, so nothing else is built (ADR 0014).
 
 A new worktree needs its own `bun install` and `bun run build`. A
 `node_modules` that links to another checkout fails the contract check.
