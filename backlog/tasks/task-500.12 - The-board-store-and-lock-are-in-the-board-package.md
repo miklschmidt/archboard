@@ -1,11 +1,11 @@
 ---
 id: TASK-500.12
 title: The board store and lock are in the board package
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 04:29'
-updated_date: '2026-10-19 04:58'
+updated_date: '2026-10-19 05:23'
 labels: []
 dependencies:
   - TASK-500.11
@@ -21,10 +21,10 @@ The runtime half of board: runtime/semantic-board-store (10,055 lines, the one p
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The store and the engine board files live in packages/board in runtime/ role folders with exports for what outside code uses (store, lock, address as needed), no forwarding barrel, and every importer uses @archboard/board
-- [ ] #2 runtime/engine holds no board file any more, and the package imports only lower packages and nothing from src/
-- [ ] #3 The tests of the moved code live in packages/board/tests, and the persistence tests (atomic write, lock lease, claims) still pass unchanged in behavior
-- [ ] #4 bun run check passes
+- [x] #1 The store and the engine board files live in packages/board in runtime/ role folders with exports for what outside code uses (store, lock, address as needed), no forwarding barrel, and every importer uses @archboard/board
+- [x] #2 runtime/engine holds no board file any more, and the package imports only lower packages and nothing from src/
+- [x] #3 The tests of the moved code live in packages/board/tests, and the persistence tests (atomic write, lock lease, claims) still pass unchanged in behavior
+- [x] #4 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,3 +37,9 @@ The runtime half of board: runtime/semantic-board-store (10,055 lines, the one p
 5. runtime/engine then holds no board file; grep to prove. The package imports only lower packages and nothing from src/. Check depth-dependent paths (import.meta.url) and fix them.
 6. Tests move to packages/board/tests/runtime/<role>/ with support under tests/runtime/support/. Update ci.yml, evals/coverage.json, vite.config.ts, docs, skills and boundaries.md (add that board is complete and name which exports became private). bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The board package is complete. runtime/semantic-board-store and the engine board files (address, doing, catalogue, lock and its six lib files) are in packages/board/src/runtime under store (format, lock) and operations (write, read, check, edit, move, rename, settle, variant); runtime/engine holds no board file, which ends the board and server-lifecycle import cycle. Exports went from 28 to 43: five shared ones became private and twenty runtime ones were added. engine/board.ts was a pure forwarder and is deleted; the dead board-target.ts was deleted. Verified: 54 moved implementation files identical apart from imports, 1,316 import bindings kept their definition, all 43 exports load alone in a fresh process, no value cycle, lock error class identity kept, browser reaches 23 shared board files and no runtime file. bun run check passed. Codex review found no behavior regression and one stale doc line (fixed). Codex advice for TASK-500.14: consolidate to about 18 public files before the workbench and apps move.
+<!-- SECTION:FINAL_SUMMARY:END -->
