@@ -3,7 +3,7 @@ import type {
 	CoordinatorCallbacks,
 } from "@/runtime/codex-coordinator-callbacks";
 import type { CodexRealtimeGeneration } from "@/runtime/codex-realtime";
-import type { BrowserVoiceContext } from "@/shared/codex-browser-model";
+import type { BrowserVoiceContext } from "@archboard/workbench/browser-model";
 
 /**
  * Whether one delivery was captured under exactly the realtime generation now

@@ -22,7 +22,7 @@ import type {
 import type {
 	RealtimeCorrelationId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type {
 	CodexTransport,
 	DynamicServerRequest,

@@ -3,7 +3,7 @@
 // answering it is refused rather than retargeted. This module never writes a
 // protocol response or mutates server state; the gateway and its broker own both.
 
-import type { DeliveryOutcome } from "@/shared/codex-browser-model";
+import type { DeliveryOutcome } from "@archboard/workbench/browser-model";
 import type {
 	WorkbenchApprovalDecisionResult,
 	WorkbenchApprovalDraftResult,

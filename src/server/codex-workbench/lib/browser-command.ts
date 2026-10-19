@@ -2,10 +2,10 @@ import { createHash } from "node:crypto";
 
 import type {
 	BrowserCommand,
-	BrowserDynamicApprovalResponse,
 	BrowserSnapshot,
 	DeliveryOutcome,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
+import type { BrowserDynamicApprovalResponse } from "@archboard/workbench/browser-approvals";
 import type { BrowserCommandId, JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 import { parseApprovalResponse } from "@/runtime/codex-approvals";
 import { SupportedLoginAccountParamsSchema } from "@archboard/codex-app-server/session";

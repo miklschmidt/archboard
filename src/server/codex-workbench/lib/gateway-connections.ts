@@ -1,9 +1,9 @@
-import type { createCodexBrowserModel } from "@/shared/codex-browser-model";
+import type { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import type {
 	BrowserCommandLease,
 	BrowserOperationOutcome,
 	BrowserSnapshot,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
 import type { IdentityAuthorities, JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 import {
 	CodexWorkbenchGatewayError,

@@ -134,6 +134,10 @@
       "name": "@archboard/walkthrough",
       "version": "0.0.0",
     },
+    "packages/workbench": {
+      "name": "@archboard/workbench",
+      "version": "0.0.0",
+    },
     "packages/workspace": {
       "name": "@archboard/workspace",
       "version": "0.0.0",
@@ -185,6 +189,8 @@
     "@archboard/ui-kit": ["@archboard/ui-kit@workspace:packages/ui-kit"],
 
     "@archboard/walkthrough": ["@archboard/walkthrough@workspace:packages/walkthrough"],
+
+    "@archboard/workbench": ["@archboard/workbench@workspace:packages/workbench"],
 
     "@archboard/workspace": ["@archboard/workspace@workspace:packages/workspace"],
 

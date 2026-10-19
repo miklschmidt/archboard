@@ -4,7 +4,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { fitBrowserSnapshotBounded } from "../index.js";
 import { startCommand } from "./helpers.js";

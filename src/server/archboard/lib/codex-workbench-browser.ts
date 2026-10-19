@@ -9,7 +9,7 @@ import type {
 	CodexWorkbenchGateway,
 	TabSessionId,
 } from "@/server/codex-workbench";
-import type { BrowserGatewayAction } from "@/shared/codex-browser-gateway";
+import type { BrowserGatewayAction } from "@archboard/workbench/browser-gateway";
 
 const RequestIdSchema = z.string().min(1).max(128);
 const RequestBase = { type: z.literal("codex_workbench_request"), requestId: RequestIdSchema };

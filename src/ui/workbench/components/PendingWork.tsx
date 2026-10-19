@@ -6,7 +6,7 @@
 import { RiArrowDownLine, RiArrowUpLine, RiCloseLine, RiSendPlaneLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type { HeldMessage, SetupStep } from "@/ui/agent-setup";
 import { ApprovalCard } from "@/ui/workbench/components/ApprovalCard";
 import { IconAction } from "@/ui/workbench/components/IconAction";

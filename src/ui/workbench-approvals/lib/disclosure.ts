@@ -2,7 +2,7 @@
 // broker's identity, the effect, a safe link, and the notices that say what
 // the server did not publish or what this browser will not do.
 
-import type { BrowserApproval } from "@/shared/codex-browser-model";
+import type { BrowserApproval } from "@archboard/workbench/browser-approvals";
 import type {
 	WorkbenchApprovalDisclosure,
 	WorkbenchApprovalLink,

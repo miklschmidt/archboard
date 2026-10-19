@@ -4,7 +4,7 @@
 // change, a retirement or an incompatibility is decided.
 
 import { SOCKET_RECONNECT_MS } from "@archboard/timing";
-import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserCommandLease, BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type {
 	BrowserWorkbenchCommandIntent,
 	BrowserWorkbenchCommandTarget,

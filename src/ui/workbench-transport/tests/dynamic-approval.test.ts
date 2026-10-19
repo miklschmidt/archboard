@@ -2,10 +2,10 @@ import { afterEach, expect, test } from "bun:test";
 
 import {
 	BROWSER_IDLE_SPOKEN_APPROVAL,
-	CODEX_APPROVAL_EXPIRY_MS,
-	createCodexBrowserModel,
 	type BrowserDynamicApproval,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-approvals";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	createBrowserWorkbenchTransport,

@@ -9,7 +9,7 @@
 // that arrives. Those events are one change, so they are told as one: the first of a burst asks
 // for a microtask, and whatever else arrives before it runs rides along.
 
-import type { RealtimeSemanticEventListener } from "@/shared/codex-realtime-contract";
+import type { RealtimeSemanticEventListener } from "@archboard/workbench/realtime-contract";
 
 /** What the transcript changes are read from. */
 interface TranscriptEvents {

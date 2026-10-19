@@ -4,7 +4,7 @@
 // never something silently merged. The voice coordinator's turns are projected
 // the same way and stand among the workhorse's by when they started.
 
-import type { BrowserTimeline } from "@/shared/codex-browser-model";
+import type { BrowserTimeline } from "@archboard/workbench/browser-model";
 import type {
 	ConversationOutcome,
 	ConversationOwner,

@@ -4,7 +4,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import {
 	assertRealtimeTransition,
 	canTransitionRealtimeState,

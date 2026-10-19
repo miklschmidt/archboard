@@ -10,7 +10,7 @@ import {
 	type BrowserCommand,
 	type BrowserCommandLease,
 	type BrowserSnapshot,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
 import type {
 	BrowserWorkbenchDeltaMessage,
 	BrowserWorkbenchGatewayMessage,

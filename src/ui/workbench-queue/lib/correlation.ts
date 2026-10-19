@@ -2,7 +2,7 @@
 // its active turn, its child, the coordinator that queues through it, and
 // how many pending approvals hold it.
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type {
 	WorkbenchQueueCorrelation,
 	WorkbenchQueueState,

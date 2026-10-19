@@ -1,7 +1,7 @@
 // The media owner's published state, its options, and the pure helpers over
 // the transport snapshot it reads.
 
-import type { BrowserCommandLease } from "@/shared/codex-browser-model";
+import type { BrowserCommandLease } from "@archboard/workbench/browser-model";
 import { browserRealtimeMediaSupported } from "@/ui/codex-realtime";
 import type {
 	AppendOutcome,
@@ -16,7 +16,7 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type { StartOperation, VoicePresentation } from "@/ui/codex-workbench-media/lib/realtime";
 
 /** Where the owner stands: installing, ready to start, or why it cannot. */

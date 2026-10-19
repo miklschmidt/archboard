@@ -6,7 +6,7 @@
 
 import type { JSX, ReactNode } from "react";
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 
 /** The usage Codex last reported for the conversation. */
 type BrowserTimelineUsage = NonNullable<NonNullable<BrowserSnapshot["timeline"]>["usage"]>;

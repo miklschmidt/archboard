@@ -2,7 +2,7 @@
 // the server published it. A secret default is never projected, so it can never
 // be echoed either.
 
-import type { BrowserApproval } from "@/shared/codex-browser-model";
+import type { BrowserApproval } from "@archboard/workbench/browser-approvals";
 import type {
 	WorkbenchApprovalControl,
 	WorkbenchApprovalField,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,

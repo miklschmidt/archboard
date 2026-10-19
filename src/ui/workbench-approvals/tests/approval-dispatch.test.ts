@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval, BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserApproval } from "@archboard/workbench/browser-approvals";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import {
 	applyApprovalFormEvent,
 	initialApprovalForm,

@@ -2,7 +2,7 @@ import type {
 	CommandOutcome,
 	RealtimeTranscriptRecord,
 	RecoveryRequest,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import { realtimeErrorMessage } from "@/runtime/codex-realtime/lib/binding";
 import type { CodexRealtimeAdapterOptions } from "@/runtime/codex-realtime/lib/contract";
 import type { RealtimeSessionOps } from "@/runtime/codex-realtime/lib/session-ops";

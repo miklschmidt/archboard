@@ -16,7 +16,7 @@ import type {
 	BrowserGatewayMessage,
 	BrowserGatewaySnapshotMessage,
 	BrowserSnapshotDelta,
-} from "@/shared/codex-browser-gateway";
+} from "@archboard/workbench/browser-gateway";
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
@@ -24,7 +24,7 @@ import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
 
 /**
  * The pane's socket to the Archboard server, as the transport sees it. It is

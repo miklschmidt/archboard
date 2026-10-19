@@ -2,11 +2,8 @@
 // authority, so a snapshot the contract would refuse fails here instead of
 // proving something about a shape the server can never publish.
 
-import {
-	BROWSER_IDLE_SPOKEN_APPROVAL,
-	createCodexBrowserModel,
-	type BrowserSnapshot,
-} from "@/shared/codex-browser-model";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/workbench/browser-approvals";
+import { createCodexBrowserModel, type BrowserSnapshot } from "@archboard/workbench/browser-model";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	BrowserWorkbenchTransportError,

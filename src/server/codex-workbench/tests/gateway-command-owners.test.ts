@@ -14,7 +14,7 @@ import { createGatewayHarness, type GatewayHarness } from "./support.js";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 
 const openHarnesses: GatewayHarness[] = [];
 

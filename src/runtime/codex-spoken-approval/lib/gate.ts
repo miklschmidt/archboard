@@ -2,7 +2,7 @@ import type {
 	RealtimeCorrelation,
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import { IdentityValidationError, type TurnId } from "@archboard/codex-app-server/identity";
 import type {
 	DynamicServerRequest,

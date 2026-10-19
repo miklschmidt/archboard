@@ -35,7 +35,7 @@ import { tellPaneAboutLock } from "@/server/archboard/lib/board-announcements";
 import { noteBoardShown } from "@/server/archboard/lib/semantic-disk-watch";
 import { showPaneRoute } from "@/server/archboard/lib/pane-show-route";
 import { shownConversationRoute } from "@/server/archboard/lib/shown-conversation-route";
-import { SHOWN_CONVERSATION_ROUTE } from "@/shared/shown-conversation";
+import { SHOWN_CONVERSATION_ROUTE } from "@archboard/workbench/shown-conversation";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import { getPanesRoute } from "@/server/archboard/lib/pane-report-route";
 import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";

@@ -3,7 +3,7 @@ import {
 	canonicalDynamicApprovalJson,
 	dynamicApprovalHashForCanonicalJson,
 	type DynamicApprovalCanonicalEffect,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-approvals";
 import {
 	CodexDynamicToolsError,
 	type DynamicApprovalIdentity,

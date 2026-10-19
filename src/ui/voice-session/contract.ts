@@ -3,7 +3,7 @@
 // returns. The realtime module owns media and the state machine; this module
 // owns one binding, the guards around it, and the projection.
 
-import type { BrowserSnapshot, BrowserVoicePresentation } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot, BrowserVoicePresentation } from "@archboard/workbench/browser-model";
 import type { RealtimeMediaSnapshot } from "@/ui/codex-realtime";
 import type { BrowserWorkbenchMediaState } from "@/ui/codex-workbench-media";
 import type { VoiceOutputLevelSource } from "@/ui/voice-output-level";

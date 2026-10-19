@@ -3,7 +3,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 	type RealtimeSemanticEvent,
-} from "../../../shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 import {
 	createIdentityAuthority,
 	type ChildEpoch,

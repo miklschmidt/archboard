@@ -7,7 +7,7 @@
 
 import type { SessionThreadItem, SessionTurn } from "@archboard/codex-app-server/session";
 import type { CodexServerNotificationParamsByMethod } from "@archboard/codex-app-server/contract";
-import { BROWSER_TIMELINE_LIMITS as LIMITS } from "@/shared/codex-browser-model";
+import { BROWSER_TIMELINE_LIMITS as LIMITS } from "@archboard/workbench/browser-model";
 import type {
 	CodexTimelineFileChangeEntry,
 	CodexTimelinePlanInput,

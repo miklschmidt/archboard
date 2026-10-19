@@ -4,6 +4,7 @@ title: Workbench shared contracts are browser-safe api files of the workbench pa
 status: To Do
 assignee: []
 created_date: '2026-10-19 14:13'
+updated_date: '2026-10-19 14:36'
 labels: []
 dependencies:
   - TASK-500.14.04
@@ -23,3 +24,9 @@ First move of the workbench package (layer 7, the largest, about 60,000 lines). 
 - [ ] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
 - [ ] #3 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Create packages/workbench; move the four shared modules into shared/{protocol,rules,schemas} role folders; expose five browser-safe api files (realtime-contract, browser-model, browser-approvals, browser-gateway, shown-conversation); delete the index barrels; rewrite importers by (file, name); tests move to packages/workbench/tests/shared; update boundaries, package-map, package-api ADOPTERS, assets.json.
+<!-- SECTION:PLAN:END -->

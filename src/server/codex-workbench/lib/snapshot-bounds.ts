@@ -1,5 +1,5 @@
-import { BROWSER_SNAPSHOT_DELTA_KEYS } from "@/shared/codex-browser-gateway";
-import type { BrowserSnapshot, BrowserTimeline } from "@/shared/codex-browser-model";
+import { BROWSER_SNAPSHOT_DELTA_KEYS } from "@archboard/workbench/browser-gateway";
+import type { BrowserSnapshot, BrowserTimeline } from "@archboard/workbench/browser-model";
 import type { BrowserSnapshotDelta } from "@/server/codex-workbench/lib/contract";
 
 export const BROWSER_SNAPSHOT_MAX_BYTES = 1_048_576;

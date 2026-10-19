@@ -22,7 +22,7 @@ import type {
 	RealtimeItemId,
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type {
 	DynamicToolRefusalReason,
 	ResolveSpokenApprovalInput,

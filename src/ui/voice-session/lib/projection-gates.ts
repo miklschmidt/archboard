@@ -2,7 +2,7 @@
 // state machine: the transport, the media owner, and the server's coordinator
 // and voice projections.
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type { BrowserWorkbenchMediaState } from "@/ui/codex-workbench-media";
 import type {
 	VoiceSessionFailure,

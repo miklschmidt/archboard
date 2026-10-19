@@ -5,7 +5,7 @@ import { IdentityValidationError } from "@archboard/codex-app-server/identity";
 import type {
 	RealtimeCorrelation,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 
 /** Why one spoken approval step refused, in both the person's and the tool call's vocabulary. */
 interface CallValidationFailure {

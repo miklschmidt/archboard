@@ -2,7 +2,7 @@ import type {
 	BrowserThreadLink,
 	BrowserThreadLinkSourcePresentation,
 	BrowserTimeline,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
 import type {
 	BrowserProjectionInput,
 	CodexTimelineItemProjectionInput,

@@ -47,7 +47,6 @@
 		"tests/**",
 		"src/runtime/*/tests/**",
 		"src/server/*/tests/**",
-		"src/shared/*/tests/**",
 		"src/cli/*/tests/**",
 		"packages/*/tests/**",
 	],

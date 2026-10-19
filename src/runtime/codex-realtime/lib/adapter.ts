@@ -14,7 +14,7 @@ import {
 	type RealtimeSemanticEventListener,
 	type RealtimeState,
 	type RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {
 	CodexRealtimeAdapter,

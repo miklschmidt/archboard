@@ -2,7 +2,7 @@
 // to the target it was composed against, refuse a subject that moved, then
 // send it once and read its result.
 
-import type { BrowserCommand, BrowserCommandLease } from "@/shared/codex-browser-model";
+import type { BrowserCommand, BrowserCommandLease } from "@archboard/workbench/browser-model";
 import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchCommandResult,

@@ -6,7 +6,7 @@ import { expect, test } from "bun:test";
 import type {
 	RealtimeSemanticEvent,
 	RealtimeSemanticEventListener,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import { watchTranscriptChanges } from "@/server/archboard";
 
 /** A voice session whose events the test emits by hand. */

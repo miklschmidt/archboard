@@ -6,8 +6,8 @@
 import type {
 	BrowserApproval,
 	BrowserDynamicApproval,
-	BrowserSnapshot,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-approvals";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type {
 	WorkbenchApprovalBeaconEntry,
 	WorkbenchApprovalCard,

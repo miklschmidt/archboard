@@ -1,7 +1,10 @@
 // Approval fixtures for every ordinary family and every dynamic effect,
 // parsed through the closed model.
 
-import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+} from "@archboard/workbench/browser-approvals";
 import {
 	APPROVAL_ID,
 	CHILD,

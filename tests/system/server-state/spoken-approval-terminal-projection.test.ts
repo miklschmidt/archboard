@@ -3,11 +3,11 @@ import { expect, test } from "bun:test";
 import { createCodexApprovalBroker } from "../../../src/runtime/codex-approvals/index.js";
 import type { SpokenApprovalSnapshot } from "../../../src/runtime/codex-spoken-approval/index.js";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "../../../src/shared/codex-browser-model/index.js";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "../../../src/shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { projectCodexBrowserState } from "../../../src/server/codex-workbench/index.js";
 import type { BrowserProjectionInput } from "../../../src/server/codex-workbench/index.js";

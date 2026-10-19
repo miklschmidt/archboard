@@ -11,11 +11,11 @@ import {
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
 	createCodexBrowserModel,
 	type BrowserReadiness,
-} from "../../../shared/codex-browser-model/index.js";
+} from "@archboard/workbench/browser-model";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import {

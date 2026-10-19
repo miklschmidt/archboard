@@ -4,7 +4,10 @@
 // fails with one sentence, except a recording refused over live voice
 // (TASK-304), which fails with the gateway's reason.
 
-import type { BrowserCommandLease, BrowserVoicePresentation } from "@/shared/codex-browser-model";
+import type {
+	BrowserCommandLease,
+	BrowserVoicePresentation,
+} from "@archboard/workbench/browser-model";
 import type {
 	AppendOutcome,
 	CommandOutcome,

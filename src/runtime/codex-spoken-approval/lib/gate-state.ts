@@ -1,7 +1,7 @@
 import type {
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type { TurnId } from "@archboard/codex-app-server/identity";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {

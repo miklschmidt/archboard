@@ -5,7 +5,7 @@ import type {
 	BrowserSemanticDelivery,
 	BrowserSettings,
 	BrowserVoice,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
 import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
 import type {
 	BrowserProjectionInput,

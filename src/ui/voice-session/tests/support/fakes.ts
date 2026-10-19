@@ -2,11 +2,11 @@
 // a realtime port with its own output level source, both publishing the way
 // the real owners do.
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@/shared/codex-realtime-contract";
+} from "@archboard/workbench/realtime-contract";
 import type {
 	RealtimeCorrelation,
 	RealtimeMediaSnapshot,

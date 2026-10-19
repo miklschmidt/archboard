@@ -1,7 +1,7 @@
 // Lease identity: claim, renew and release, each refusing an answer whose
 // identity moved, and the account read that shares their reconciliation.
 
-import type { BrowserCommandLease } from "@/shared/codex-browser-model";
+import type { BrowserCommandLease } from "@archboard/workbench/browser-model";
 import type { BrowserWorkbenchAccountReadResult } from "@/ui/workbench-transport/contract";
 import { accountReady } from "@/ui/workbench-transport/lib/capabilities";
 import {

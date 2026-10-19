@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 import { COORDINATOR_CAPABILITY_POLICY } from "../../codex-coordinator/index.js";
 import {
 	cleanup,

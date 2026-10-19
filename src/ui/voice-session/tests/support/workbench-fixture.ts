@@ -6,11 +6,9 @@ import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
-import {
-	BROWSER_IDLE_SPOKEN_APPROVAL,
-	createCodexBrowserModel,
-} from "@/shared/codex-browser-model";
-import type { BrowserSnapshot, CodexBrowserModel } from "@/shared/codex-browser-model";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/workbench/browser-approvals";
+import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
+import type { BrowserSnapshot, CodexBrowserModel } from "@archboard/workbench/browser-model";
 
 type Coordinator = BrowserSnapshot["coordinator"];
 type Voice = BrowserSnapshot["voice"];

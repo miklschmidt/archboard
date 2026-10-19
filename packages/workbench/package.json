@@ -1,0 +1,19 @@
+{
+	"name": "@archboard/workbench",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The Codex workbench: the coordinator, the workhorses, the conversation and the voice. It grows over TASK-500.23.01 to .07; so far it holds the browser-safe contracts that the browser and the server exchange.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./realtime-contract": "./src/shared/api/realtime-contract.ts",
+		"./browser-model": "./src/shared/api/browser-model.ts",
+		"./browser-approvals": "./src/shared/api/browser-approvals.ts",
+		"./browser-gateway": "./src/shared/api/browser-gateway.ts",
+		"./shown-conversation": "./src/shared/api/shown-conversation.ts"
+	}
+}

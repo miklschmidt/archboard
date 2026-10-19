@@ -15,7 +15,7 @@ import {
 	type ConversationOwner,
 	type ConversationTurn,
 } from "@/ui/workbench-timeline";
-import type { BrowserTimeline } from "@/shared/codex-browser-model";
+import type { BrowserTimeline } from "@archboard/workbench/browser-model";
 import type { BrowserWorkbenchState, BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 /** The conversation, or why it could not be read. */

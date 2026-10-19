@@ -1,7 +1,7 @@
 // What the composer may target right now, read from the transport's published
 // state and nothing else: the pane's link and the authoritative in-progress turn.
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot } from "@archboard/workbench/browser-model";
 import type {
 	BrowserWorkbenchState,
 	WorkbenchComposerLink,

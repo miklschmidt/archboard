@@ -10,7 +10,7 @@ import type {
 	BrowserSnapshot,
 	BrowserVoiceContext,
 	BrowserWorkhorses,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
 import type {
 	BrowserCommandId,
 	ChildEpoch,
@@ -37,7 +37,7 @@ import type {
 	SessionTurn,
 } from "@archboard/codex-app-server/session";
 import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
-import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-contract";
+import type { RealtimeTranscriptRecord } from "@archboard/workbench/realtime-contract";
 import type { SpokenApprovalSnapshot } from "@/runtime/codex-spoken-approval";
 
 interface CodexAccountProjectionInput {

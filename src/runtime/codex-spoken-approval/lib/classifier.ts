@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { boundedWireText } from "@/shared/codex-browser-model";
+import { boundedWireText } from "@archboard/workbench/browser-model";
 
 const SPOKEN_APPROVAL_CLASSIFIER_SHA256 =
 	"1873dd2050fe6f6ce41cd27f43af18d8c7a3cd4af9755dd7b0322e375f636380";

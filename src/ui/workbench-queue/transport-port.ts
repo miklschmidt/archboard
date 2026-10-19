@@ -10,7 +10,7 @@
 import type {
 	BrowserGatewayCommandResult,
 	BrowserGatewayErrorCode,
-} from "@/shared/codex-browser-gateway";
+} from "@archboard/workbench/browser-gateway";
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
@@ -18,7 +18,7 @@ import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-model";
 
 /** Every command name the browser contract publishes. */
 type WorkbenchCommandName = BrowserCommand["command"];

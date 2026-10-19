@@ -6,8 +6,8 @@
 import type {
 	BrowserApproval,
 	BrowserDynamicApproval,
-	DeliveryOutcome,
-} from "@/shared/codex-browser-model";
+} from "@archboard/workbench/browser-approvals";
+import type { DeliveryOutcome } from "@archboard/workbench/browser-model";
 import type {
 	ApprovalCommandDraft,
 	WorkbenchCommandIntent,

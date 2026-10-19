@@ -13,7 +13,7 @@ import {
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-contract/index.js";
+} from "@archboard/workbench/realtime-contract";
 import { createCodexRealtimeAdapter } from "../../../runtime/codex-realtime/index.js";
 import {
 	createSemanticContextPublisher,
