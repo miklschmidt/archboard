@@ -12,10 +12,8 @@ import type {
 	TerminalApprovalState,
 } from "#runtime/services/approvals/contract.ts";
 import { CodexApprovalError as ApprovalError } from "#runtime/services/approvals/contract.ts";
-import {
-	failedSettlement,
-	toSpokenEffectPresentation,
-} from "#runtime/services/approvals/response.ts";
+import { failedSettlement } from "#runtime/services/approvals/response.ts";
+import { toSpokenEffectPresentation } from "#runtime/services/approvals/spoken-presentation.ts";
 import {
 	type ApprovalResponseByKind,
 	type ApprovalResponseHandlers,

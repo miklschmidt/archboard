@@ -420,10 +420,6 @@ function isRefusedByTransport(error: unknown): boolean {
 
 export { effectiveCommandDecisions, isRecord, type RecordValue };
 export {
-	toSpokenEffectPresentation,
-	spokenEligibility,
-} from "#runtime/services/approvals/spoken-presentation.ts";
-export {
 	parseApprovalResponse,
 	validateApprovalResponse,
 	toServerResponse,
