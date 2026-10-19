@@ -330,8 +330,8 @@ module draws with, in the `ui` area, and imports nothing from `src/`. It adopts 
 `ui/components/` holds the shadcn Base UI components with their `README.md` and the dialog parts in
 `dialog-parts/`; `ui/state/` holds the frame clock and the fullscreen presentation; `ui/rules/`,
 `ui/hooks/` and `ui/constants/` hold the small helpers. The `components` aliases in
-`components.json` name `ui/components/` as `@/../packages/ui-kit/src/ui/components`, because the
-shadcn CLI resolves only the `@/` path.
+`components.json` name `ui/components/` as `@/../packages/ui-kit/src/ui/components`, which the
+shadcn CLI resolves through the `@/*` mapping. Generated imports still need the `#` rewrite.
 
 - `./controls` is what a person acts on: buttons, inputs, selects, tabs, toggles and form fields,
   and `usesCommandKey`, the platform's modifier for shortcuts.
@@ -345,9 +345,8 @@ shadcn CLI resolves only the `@/` path.
   which the page that renders a recording frame by frame drives. `./fullscreen-presentation` owns
   presenting one pane fullscreen. `./repository-name` is a repository's name as the chrome shows it.
 - Tailwind finds class names by scanning source files. `src/ui/theme/app.css` names
-  `packages/ui-kit/src/ui` with `@source`, and a glob over the packages matched nothing, so a
-  package that draws with classes needs its own line there. `tsconfig.frontend.json` includes
-  `packages/*/src/ui`.
+  `packages/*/src/ui/**/*` with `@source`, so the `ui` area of every package is scanned (a bare
+  `packages/*/src/ui` matches nothing). `tsconfig.frontend.json` includes `packages/*/src/ui`.
 - A component that no code outside the package imports, such as `Combobox` and `AlertDialog`, has
   no api name and stays private.
 

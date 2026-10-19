@@ -56,7 +56,8 @@ Fetched and not placed (their workflows are not product workflows):
 ## Mechanical rewrites (every file)
 
 - `"use client"` directives dropped (Vite, no RSC).
-- `@/components/ui/<name>` → `@/ui/components/<name>`;
+- `@/components/ui/<name>` → `@archboard/ui-kit/<controls|overlays|display>`
+  (the api file that exports it);
   `@/components/assistant-ui/elements/<name>[.aui]` →
   `@/ui/workbench-thread/<name>`; `@/hooks/use-copy-to-clipboard`
   → `@/ui/workbench-thread/use-copy-to-clipboard`; `@/lib/utils` → `cn`.
