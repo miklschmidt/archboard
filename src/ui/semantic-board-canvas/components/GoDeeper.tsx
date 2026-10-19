@@ -428,7 +428,7 @@ interface CodeRowProps {
  * The way to the code: the file the part is bound to, opened in the person's
  * editor, and its path to copy. A binding that names a symbol shows it under
  * the path, and the server opens the file at the line that defines it where it
- * finds that line and the opener takes one (`src/server/code-opener`).
+ * finds that line and the opener takes one (`@archboard/code-opener`).
  * @param props The binding and the shell's way of opening it.
  * @returns The row.
  */

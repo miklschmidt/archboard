@@ -1,4 +1,4 @@
-import { launchOpener } from "../../../../src/server/code-opener/index.ts";
+import { launchOpener } from "@archboard/code-opener/opener";
 
 const [encoded] = process.argv.slice(2);
 if (encoded === undefined || encoded.length === 0) {

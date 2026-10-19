@@ -12,7 +12,7 @@ import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { planOpenerCommand } from "../../../src/server/code-opener/index.ts";
+import { planOpenerCommand } from "@archboard/code-opener/opener";
 import { TEST_OPENER_LIFECYCLE } from "../support/timing.ts";
 import {
 	createOpenerFixture,

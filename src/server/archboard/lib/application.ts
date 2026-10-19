@@ -2,12 +2,12 @@ import path from "path";
 import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
-import { createBrowserOriginGuard } from "@/server/browser-origin";
+import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import {
 	createCodeOpenerPreguard,
 	createCodeOpenerRouter,
 	isCodeOpenerBodyRoute,
-} from "@/server/code-opener";
+} from "@archboard/code-opener/opener";
 import { DIAGRAM_FONTS_DIRECTORY } from "@archboard/renderer/assets";
 import { diagramIconPaths } from "@archboard/renderer/bun";
 import { app } from "@/server/archboard/lib/server-app";
