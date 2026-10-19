@@ -11,7 +11,7 @@ import type { PaneList } from "@/ui/application/pane-list";
 import type { BrowserWorkbenchMediaOwnerOptions } from "@archboard/workbench/voice";
 import type { Workbench } from "@/ui/application/hooks/use-workbench";
 import type { WorkspaceAddress } from "@/ui/board-routing";
-import { boardAddressOf } from "@/ui/semantic-board-canvas";
+import { boardAddressOf } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 import {
 	openWalkthroughRecorder,
 	useWalkthroughRecording,

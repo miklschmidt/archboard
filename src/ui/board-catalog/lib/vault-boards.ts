@@ -4,7 +4,7 @@
 
 import { buildOutline, type OutlineNode } from "@/ui/board-catalog/lib/outline";
 import { vaultHalf, type VaultHalf } from "@/ui/board-catalog/listing";
-import type { SemanticBoardListing } from "@/ui/semantic-board-canvas";
+import type { SemanticBoardListing } from "#web/ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { CatalogBoard } from "@/ui/types";
 
 const halves = new WeakMap<SemanticBoardListing, VaultHalf>();

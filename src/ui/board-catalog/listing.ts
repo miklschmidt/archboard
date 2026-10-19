@@ -4,8 +4,15 @@
 // meet. Pure: no React, no fetching.
 
 import { asksForDesignation } from "@archboard/board/document";
-import { boardAddressOf, boardKeyFor, sameBoardName } from "@/ui/semantic-board-canvas";
-import type { SemanticBoardEntry, SemanticBoardListing } from "@/ui/semantic-board-canvas";
+import {
+	boardAddressOf,
+	boardKeyFor,
+	sameBoardName,
+} from "#web/ui/rules/semantic-board-canvas/board/address.ts";
+import type {
+	SemanticBoardEntry,
+	SemanticBoardListing,
+} from "#web/ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BoardListing, BrowserPaneListing, CatalogBoard, ListedVariant } from "@/ui/types";
 
 /** The listing before either half has been read. */

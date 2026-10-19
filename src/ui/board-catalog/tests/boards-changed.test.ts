@@ -9,7 +9,7 @@ import { expect, test } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 
 import { catalogCommandsFor } from "@/ui/board-catalog";
-import { semanticBoardKeys } from "@/ui/semantic-board-canvas";
+import { semanticBoardKeys } from "#web/ui/clients/semantic-board-canvas/reads/queries.ts";
 
 const SHOP = "/work/shop/.archboard/vault";
 const BILLING = "/work/billing/.archboard/vault";

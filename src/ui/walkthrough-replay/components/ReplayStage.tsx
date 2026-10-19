@@ -17,12 +17,10 @@ import { useMemo, useSyncExternalStore, type JSX } from "react";
 
 import type { Talk } from "@archboard/walkthrough/talk";
 import { TooltipProvider } from "@archboard/ui-kit/overlays";
-import {
-	PaneVaultContext,
-	SemanticBoardStage,
-	useOverlayPlace,
-	type SemanticPaneReading,
-} from "@/ui/semantic-board-canvas";
+import { PaneVaultContext } from "#web/ui/state/semantic-board-canvas/pane-vault.ts";
+import { SemanticBoardStage } from "#web/ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
+import { useOverlayPlace } from "#web/ui/hooks/semantic-board-canvas/use-overlay-place.ts";
+import { type SemanticPaneReading } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 import {
 	OrbHost,
 	OrbStageProvider,

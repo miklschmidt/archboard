@@ -1,6 +1,10 @@
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import { NOTHING_READ, type PaneReading } from "@/ui/pane-session";
-import { boardAddressOf, boardKeyFor, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
+import {
+	boardAddressOf,
+	boardKeyFor,
+	type SemanticPaneReading,
+} from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 
 /**
  * What this pane is reading, as the server records it.

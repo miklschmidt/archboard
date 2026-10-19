@@ -23,7 +23,7 @@ import {
 
 import { listedBoard, listedBoardKey } from "@/ui/board-catalog";
 import { Skeleton } from "@archboard/ui-kit/display";
-import { boardAddressOf } from "@/ui/semantic-board-canvas";
+import { boardAddressOf } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 import { BoardOutline } from "@/ui/shell/components/BoardOutline";
 import { NavigatorFilter } from "@/ui/shell/components/NavigatorFilter";
 import { WorkingNow, type WorkingEntry } from "@/ui/shell/components/WorkingNow";

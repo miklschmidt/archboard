@@ -188,12 +188,7 @@
 			// recording can render it frame by frame against a clock it steps
 			// (TASK-381). Nothing here reads the browser's clocks directly.
 			"files": [
-				"src/ui/semantic-board-canvas/*.ts",
-				"src/ui/semantic-board-canvas/api/**",
-				"src/ui/semantic-board-canvas/components/**",
-				"src/ui/semantic-board-canvas/hooks/**",
-				"src/ui/semantic-board-canvas/lib/**",
-				// Where the canvas lands in apps/web: its folder below each role of the ui area.
+				// The board canvas of apps/web: its folder below each role of the ui area.
 				"apps/web/src/ui/{api,clients,components,constants,hooks,rules,state,workers}/semantic-board-canvas/**",
 				"packages/workbench/src/ui/components/subtitles/**",
 				"packages/workbench/src/ui/hooks/subtitles/**",

@@ -292,9 +292,10 @@ describe("an app is held to the rules of a package", () => {
 		);
 	});
 
-	test("the root #web/* entry is open to the root src modules and to nothing else", async () => {
-		// Catches the temporary transition entry widening: only files of root src/ reach the web
-		// source through it, and neither the web tests nor any other owner do.
+	test("the root #web/* entry is open to the root src modules and the browser entry, and to nothing else", async () => {
+		// Catches the temporary transition entry widening: only files of root src/ and the browser
+		// entry frontend/main.tsx reach the web source through it, and neither the web tests nor
+		// any other owner do.
 		await withProject(
 			{
 				...world,
@@ -309,6 +310,10 @@ describe("an app is held to the rules of a package", () => {
 					'import { nope } from "#web/ui/components/Missing.tsx";\nexport { nope };\n',
 				"src/ui/consumer/relative.ts":
 					'import { Card } from "../../../apps/web/src/ui/components/Card.js";\nexport { Card };\n',
+				"frontend/main.tsx":
+					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
+				"frontend/other.ts":
+					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
 				"scripts/web.ts": 'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
 				"tests/system/policy/web.test.ts":
 					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
@@ -322,11 +327,17 @@ describe("an app is held to the rules of a package", () => {
 						"src/ui/consumer/tests.ts": PRODUCT_TESTS,
 						"src/ui/consumer/missing.ts": UNRESOLVED,
 						"src/ui/consumer/relative.ts": NOT_AN_APP_IMPORT,
+						"frontend/other.ts": UNRESOLVED,
 						"scripts/web.ts": UNRESOLVED,
 						"tests/system/policy/web.test.ts": UNRESOLVED,
 						"packages/alpha/src/ui/web.ts": UNRESOLVED,
 					},
-					["src/ui/consumer/index.ts", "src/ui/consumer/dynamic.ts", "src/ui/consumer/reexport.ts"],
+					[
+						"src/ui/consumer/index.ts",
+						"src/ui/consumer/dynamic.ts",
+						"src/ui/consumer/reexport.ts",
+						"frontend/main.tsx",
+					],
 				),
 		);
 	});

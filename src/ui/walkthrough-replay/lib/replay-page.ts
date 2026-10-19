@@ -30,14 +30,16 @@ import {
 import { createBoardQueryClient } from "@/ui/board-catalog";
 import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { createSteppedClock, type SteppedClock } from "@archboard/ui-kit/stepped-clock";
+import { chooseLayoutEngine } from "#web/ui/clients/semantic-board-canvas/reads/layout-engine.ts";
 import {
-	chooseLayoutEngine,
 	pictureSource,
-	readBoardsFrom,
-	sameBoardName,
 	takePicturesFrom,
+} from "#web/ui/clients/semantic-board-canvas/reads/picture-source.ts";
+import { readBoardsFrom } from "#web/ui/clients/semantic-board-canvas/reads/board-reads.ts";
+import {
+	sameBoardName,
 	type SemanticPaneReading,
-} from "@/ui/semantic-board-canvas";
+} from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 import { ReplayStage } from "@/ui/walkthrough-replay/components/ReplayStage";
 import { FrameReadiness } from "@/ui/walkthrough-replay/lib/frame-readiness";
 import { TalkPlayback } from "@/ui/walkthrough-replay/lib/talk-playback";

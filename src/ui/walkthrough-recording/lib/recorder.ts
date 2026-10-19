@@ -20,9 +20,9 @@ import { TALK_SAMPLE_RATE, type TalkLog } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/workbench/voice";
 import {
 	sameBoardName,
-	type SemanticBoardStageProps,
 	type SemanticPaneReading,
-} from "@/ui/semantic-board-canvas";
+} from "#web/ui/rules/semantic-board-canvas/board/address.ts";
+import { type SemanticBoardStageProps } from "#web/ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
 
 import {
 	pace,

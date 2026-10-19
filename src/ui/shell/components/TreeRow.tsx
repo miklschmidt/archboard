@@ -33,7 +33,11 @@ import {
 	TREE_STEP,
 } from "@/ui/shell/lib/tree-grid";
 import type { TextRange } from "@/ui/shell/lib/text-match";
-import { TimelineLane, type Lane, type LaneGeometry } from "@/ui/variant-lifecycle";
+import {
+	TimelineLane,
+	type LaneGeometry,
+} from "#web/ui/components/variant-lifecycle/TimelineLane.tsx";
+import { type Lane } from "#web/ui/rules/variant-lifecycle/timeline.ts";
 
 /** The disclosure column, as wide as the grid says. */
 const DISCLOSURE_STYLE: CSSProperties = { width: DISCLOSURE_WIDTH };

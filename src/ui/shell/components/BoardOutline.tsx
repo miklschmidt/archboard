@@ -20,7 +20,7 @@ import { outlineKey, type OutlineKeyAction } from "@/ui/shell/lib/outline-keys";
 import { rowSelected } from "@/ui/shell/lib/navigator-rows";
 import { ROW_GUTTER } from "@/ui/shell/lib/tree-grid";
 import { treeGuides } from "@/ui/shell/lib/tree-guides";
-import { timelineLanes, type Lane } from "@/ui/variant-lifecycle";
+import { timelineLanes, type Lane } from "#web/ui/rules/variant-lifecycle/timeline.ts";
 
 /**
  * The timeline lanes of every board's variants: each run of a board's variant

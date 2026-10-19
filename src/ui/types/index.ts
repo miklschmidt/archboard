@@ -6,7 +6,7 @@
 // copy the browser could edit (ADR 0023), so there is nothing in this file that
 // a pane could write back.
 
-import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
+import type { SemanticBoardEntry } from "#web/ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 
 /** A board's address: what it is called, and which of its variants is shown. */
 export interface BoardIdentity {

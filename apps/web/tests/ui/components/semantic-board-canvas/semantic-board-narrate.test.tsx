@@ -1,0 +1,129 @@
+// The control that narrates a walkthrough aloud, in the board tab's rows and at the
+// foot of the box of a presented one.
+//
+// What these catch: a Narrate control that is taken out of its row while voice
+// runs or another pane is active, which resizes the row and moves everything
+// under it, and a held control that still starts a narration when pressed.
+
+import { act, fireEvent } from "@testing-library/react";
+import { expect, test } from "bun:test";
+
+import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
+import { EXPLAINED_BOARD } from "#tests/ui/support/semantic-board-canvas/render-answers.ts";
+import {
+	drawing,
+	mountStage,
+	server,
+	settle,
+} from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
+import { offers } from "#tests/ui/support/semantic-board-canvas/presentation-probes.ts";
+
+/**
+ * A narration that records what it was asked to start.
+ * @param held Why it cannot start now, or null.
+ * @returns The narration and what it started.
+ */
+function narrating(held: string | null): {
+	readonly narration: WalkthroughNarration;
+	readonly started: string[];
+} {
+	const started: string[] = [];
+	return {
+		narration: {
+			held,
+			/**
+			 * Record the narration.
+			 * @param id The walkthrough's id.
+			 */
+			start: (id) => {
+				started.push(id);
+			},
+		},
+		started,
+	};
+}
+
+/**
+ * Mount a pane over a board that explains itself.
+ * @param narration What the shell offers, or none.
+ * @returns Settles once the board tab lists its walkthroughs.
+ */
+async function mountExplained(narration?: WalkthroughNarration): Promise<void> {
+	server.documents["pipeline"] = EXPLAINED_BOARD;
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage(null, { narration });
+	await settle();
+	await settle();
+}
+
+/**
+ * Every Narrate control on screen, in the sidebar's rows.
+ * @returns The controls, in row order.
+ */
+function narrateControls(): HTMLElement[] {
+	return [...document.querySelectorAll<HTMLElement>("[data-slot='semantic-walkthrough-narrate']")];
+}
+
+test("every row has a Narrate control, and pressing one starts that row's walkthrough", async () => {
+	const free = narrating(null);
+	await mountExplained(free.narration);
+	expect(narrateControls()).toHaveLength(2);
+	expect(narrateControls().map((control) => control.getAttribute("aria-disabled"))).toEqual([
+		null,
+		null,
+	]);
+
+	act(() => {
+		fireEvent.click(narrateControls()[1] ?? document.body);
+	});
+	expect(free.started).toEqual(["deploy"]);
+});
+
+test("while voice runs every row keeps its control, dimmed, and says why, and pressing one starts nothing", async () => {
+	const held = narrating("Voice is on. End it to narrate.");
+	await mountExplained(held.narration);
+	expect(narrateControls()).toHaveLength(2);
+	for (const control of narrateControls()) {
+		expect(control.getAttribute("aria-disabled")).toBe("true");
+		expect(control.getAttribute("aria-label")).toContain("Voice is on");
+	}
+
+	act(() => {
+		fireEvent.click(narrateControls()[0] ?? document.body);
+	});
+	expect(held.started).toEqual([]);
+
+	// The foot of a presented walkthrough's box keeps its key in the same way, and says why.
+	act(() => {
+		fireEvent.click(offers()[0] ?? document.body);
+	});
+	await settle();
+	const foot = document.querySelector("[data-slot='semantic-presentation-narrate']");
+	expect(foot?.getAttribute("aria-disabled")).toBe("true");
+	expect(foot?.textContent).toContain("Voice is on");
+	act(() => {
+		fireEvent.click(foot ?? document.body);
+	});
+	expect(held.started).toEqual([]);
+});
+
+test("the key at the foot of a presented walkthrough's box narrates that walkthrough", async () => {
+	const free = narrating(null);
+	await mountExplained(free.narration);
+	act(() => {
+		fireEvent.click(offers()[0] ?? document.body);
+	});
+	await settle();
+	const foot = document.querySelector("[data-slot='semantic-presentation-narrate']");
+	expect(foot?.getAttribute("aria-disabled")).toBeNull();
+	act(() => {
+		fireEvent.click(foot ?? document.body);
+	});
+	expect(free.started).toEqual(["tour"]);
+});
+
+test("a page that narrates nothing by hand offers no Narrate control", async () => {
+	await mountExplained();
+	expect(offers()).toHaveLength(2);
+	expect(narrateControls()).toHaveLength(0);
+});

@@ -9,7 +9,7 @@
 import { RiErrorWarningLine, RiGitBranchLine } from "@remixicon/react";
 import type { CSSProperties, JSX } from "react";
 
-import { LevelMark } from "@/ui/semantic-board-canvas";
+import { LevelMark } from "#web/ui/components/semantic-board-canvas/LevelMark.tsx";
 import { InsideLamp, MarkerLamp } from "@/ui/shell/components/ActivityLamp";
 import { PaneChips } from "@/ui/shell/components/PaneChips";
 import {

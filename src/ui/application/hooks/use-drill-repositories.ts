@@ -10,7 +10,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 
 import { repositoriesQuery } from "@/ui/board-catalog";
-import { boardKeyFor, type Dive, type RepositoryPlaces } from "@/ui/semantic-board-canvas";
+import { boardKeyFor } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
+import { type Dive } from "#web/ui/hooks/semantic-board-canvas/use-drill-down.ts";
+import { type RepositoryPlaces } from "#web/ui/rules/semantic-board-canvas/drilling/drill-target.ts";
 
 /** The repositories a pane's drill-downs lead into, and the move into one. */
 interface DrillRepositories {

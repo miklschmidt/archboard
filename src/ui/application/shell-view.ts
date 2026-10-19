@@ -15,7 +15,7 @@ import {
 	type BoardCatalog,
 	type RepositoryBoards,
 } from "@/ui/board-catalog";
-import { boardAddressOf } from "@/ui/semantic-board-canvas";
+import { boardAddressOf } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 import type {
 	ShellNotice,
 	ShellPane,

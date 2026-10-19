@@ -31,17 +31,19 @@ import {
 } from "@/ui/pane-session/workbench-socket";
 import {
 	boardAddressOf,
-	NoBoardHeader,
-	PaneVaultContext,
-	RepositoryPlacesContext,
-	SemanticBoardStage,
-	usePaneVault,
-	type SelectedSubject,
-	type SemanticBoardStageProps,
 	type SemanticPaneReading,
 	type SemanticTarget,
-	type WalkthroughNarration,
-} from "@/ui/semantic-board-canvas";
+} from "#web/ui/rules/semantic-board-canvas/board/address.ts";
+import { NoBoardHeader } from "#web/ui/components/semantic-board-canvas/PaneHeader.tsx";
+import { PaneVaultContext } from "#web/ui/state/semantic-board-canvas/pane-vault.ts";
+import { RepositoryPlacesContext } from "#web/ui/state/semantic-board-canvas/repository-places.ts";
+import {
+	SemanticBoardStage,
+	type SemanticBoardStageProps,
+} from "#web/ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
+import { usePaneVault } from "#web/ui/hooks/semantic-board-canvas/use-pane-vault.ts";
+import { type SelectedSubject } from "#web/ui/rules/semantic-board-canvas/board/board-document.ts";
+import { type WalkthroughNarration } from "#web/ui/rules/semantic-board-canvas/walkthrough/narration.ts";
 import {
 	createBrowserWorkbenchTransport,
 	type BrowserWorkbenchTransport,

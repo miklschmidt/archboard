@@ -12,7 +12,7 @@
 // dropped: it must never start later, with nobody asking. It holds no React
 // state, so the order can be read, and tested, on its own.
 
-import type { WalkthroughNarration } from "@/ui/semantic-board-canvas";
+import type { WalkthroughNarration } from "#web/ui/rules/semantic-board-canvas/walkthrough/narration.ts";
 
 /** Where the shell is, as far as a narration needs to know. */
 interface ShellState {

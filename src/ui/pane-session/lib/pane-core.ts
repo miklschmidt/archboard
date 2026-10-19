@@ -7,7 +7,7 @@
 // separate read, made by the viewer through the query cache.
 
 import type { SemanticPanePart } from "@archboard/board/pane-context";
-import { boardAddressOf } from "@/ui/semantic-board-canvas";
+import { boardAddressOf } from "#web/ui/rules/semantic-board-canvas/board/address.ts";
 import { takeBoardBack } from "@/ui/pane-session/api";
 import { createPaneArrival } from "@/ui/pane-session/lib/pane-arrival";
 import { createPaneReportDeadline } from "@/ui/pane-session/lib/pane-deadline";

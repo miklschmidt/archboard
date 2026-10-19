@@ -2,7 +2,7 @@ import { afterAll, expect, spyOn, test } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 import { createPaneCore } from "@/ui/pane-session/core";
-import { onSemanticBoardChange } from "@/ui/semantic-board-canvas";
+import { onSemanticBoardChange } from "#web/ui/state/semantic-board-canvas/board-changes.ts";
 import type { PaneStatus } from "@/ui/types";
 
 GlobalRegistrator.register({ url: "http://localhost/" });
