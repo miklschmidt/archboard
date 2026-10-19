@@ -79,7 +79,7 @@ the browser shows.
 - No test addresses a vault through the environment. A set variable that names a
   vault is refused by every command, so one that you export fails the tests
   loudly and never receives a test's writes. A command test under
-  `src/` runs the CLI in its own process. It names a temporary vault with `-C <dir>` and sets
+  `apps/cli/tests/` runs the CLI in its own process. It names a temporary vault with `-C <dir>` and sets
   `ARCHBOARD_REPOS` to a temporary file.
 - To check that no test writes your registry, set `ARCHBOARD_REPOS` to a path
   that does not exist before a lane. After the lane, the file must still be
