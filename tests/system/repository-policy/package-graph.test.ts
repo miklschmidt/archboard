@@ -3,7 +3,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const packagesRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../packages");
+const packagesRoot = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"../../../packages",
+);
 
 // Layers of docs/design/package-map.md. A package may import only a lower layer. The table
 // lists planned packages too, so a package that lands later is already placed.
@@ -52,7 +55,7 @@ function packageDirectories(): string[] {
 		.readdirSync(packagesRoot, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory())
 		.map((entry) => entry.name)
-		.sort();
+		.toSorted();
 }
 
 function readEdges(directories: string[]): Edge[] {
@@ -78,7 +81,9 @@ function layerViolations(edges: Edge[], layers: Record<string, number>): string[
 		const source = layers[from];
 		const target = layers[to];
 		return source !== undefined && target !== undefined && target >= source
-			? [`${file} imports "${specifier}": layer ${source} (${from}) takes in layer ${target} (${to})`]
+			? [
+					`${file} imports "${specifier}": layer ${source} (${from}) takes in layer ${target} (${to})`,
+				]
 			: [];
 	});
 }
@@ -107,6 +112,10 @@ function findCycle(edges: Edge[]): string[] | undefined {
 	return undefined;
 }
 
+function edge(from: string, to: string): Edge {
+	return { from, to, file: `${from}/src/a.ts`, specifier: `@archboard/${to}` };
+}
+
 const directories = packageDirectories();
 const edges = readEdges(directories);
 
@@ -125,12 +134,6 @@ describe("the package graph", () => {
 	});
 
 	test("the detector names a cycle and an upward edge in a synthetic graph", () => {
-		const edge = (from: string, to: string): Edge => ({
-			from,
-			to,
-			file: `${from}/src/a.ts`,
-			specifier: `@archboard/${to}`,
-		});
 		const synthetic = [edge("process", "timing"), edge("workspace", "process")];
 		expect(findCycle(synthetic)).toBeUndefined();
 		expect(layerViolations(synthetic, LAYERS)).toEqual([]);
