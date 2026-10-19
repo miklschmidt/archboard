@@ -5,7 +5,7 @@
 // ghosts. No pane at all is the normal state of a headless server, not an
 // error.
 
-import { type BoardIdentity } from "@/runtime/engine/board";
+import { type BoardIdentity } from "@archboard/board/address";
 
 /** A rectangle in page coordinates. */
 interface Rect {

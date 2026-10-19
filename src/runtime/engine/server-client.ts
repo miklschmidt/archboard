@@ -11,7 +11,7 @@
 // lives in `lib/server-client-session.ts` and rides on every request from
 // there rather than from every call site.
 
-import type { BoardIdentity } from "@/runtime/engine/board";
+import type { BoardIdentity } from "@archboard/board/address";
 import type { SourceState } from "@/runtime/engine/staleness";
 import {
 	type BoardRefusal,

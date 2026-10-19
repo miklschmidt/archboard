@@ -18,7 +18,7 @@
 import path from "node:path";
 import { gitBytes, gitSays, gitText, type GitRunOptions } from "@/runtime/history-lens/lib/git";
 import { parseLog } from "@/runtime/history-lens/lib/commits";
-import { decodeSemanticBoardDocument } from "@/runtime/semantic-board-store/index";
+import { decodeSemanticBoardDocument } from "@archboard/board/decode";
 import { compareVariants } from "@archboard/board/compare-variants";
 import {
 	currentVariant,

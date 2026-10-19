@@ -1,5 +1,5 @@
-import { boardLockState } from "@/runtime/engine/board-lock";
-import { recentDoing } from "@/runtime/engine/board-doing";
+import { boardLockState } from "@archboard/board/lock";
+import { recentDoing } from "@archboard/board/doing";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { ArchboardContextSchema, type ArchboardContext } from "@/runtime/codex-instructions";
 import type {
@@ -7,7 +7,7 @@ import type {
 	SemanticContextInput,
 	SettledSemanticChangeEvent,
 } from "@/runtime/codex-semantic-context";
-import { readSemanticBoard } from "@/runtime/semantic-board-store";
+import { readSemanticBoard } from "@archboard/board/read";
 import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPaneContext } from "@archboard/board/pane-context";

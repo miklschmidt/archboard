@@ -63,7 +63,8 @@ rules that will not stop you:
 
 - **The file is the board, and nothing holds a copy of it** (ADR 0015, ADR 0023).
   One `.semantic.json` document per board holds every variant of it, and
-  `src/runtime/semantic-board-store` is the one place one is read or written.
+  `packages/board/src/runtime` (the `store` and `operations` folders of `@archboard/board`) is
+  the one place one is read or written.
   Every write goes through `atomic-write.ts`, fsync included, and is committed
   before it is answered.
 - **Agents author, users read.** The browser is a viewer and writes no board

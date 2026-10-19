@@ -21,15 +21,12 @@
 
 import type { NextFunction, Request, Response } from "express";
 import type { z } from "zod";
-import { parseBoardKey } from "@/runtime/engine/board";
-import { forgetDoing } from "@/runtime/engine/board-doing";
+import { parseBoardKey } from "@archboard/board/address";
+import { forgetDoing } from "@archboard/board/doing";
 import { BoardMoveInputSchema } from "@archboard/board/board-move";
-import {
-	moveSemanticBoard,
-	previewSemanticMove,
-	semanticBoardAddress,
-	type SemanticMoveResult,
-} from "@/runtime/semantic-board-store/index";
+import { moveSemanticBoard, type SemanticMoveResult } from "@archboard/board/move";
+import { previewSemanticMove } from "@archboard/board/move-preview";
+import { semanticBoardAddress } from "@archboard/board/location";
 import { announceDoing } from "@/server/archboard/lib/board-announcements";
 import {
 	aggregateOf,

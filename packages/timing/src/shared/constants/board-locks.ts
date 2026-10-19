@@ -7,7 +7,7 @@
 
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
 //
-// `src/runtime/engine/board-lock.ts` reads these. It was built
+// `packages/board/src/runtime/store/lock` reads these. It was built
 // against them rather than around them, and the two it added since — the
 // poll and the steal guard — are here for the reason the first three were: a
 // number that governs the lock and lives next to the lock is a number the next

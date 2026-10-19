@@ -48,7 +48,7 @@ import type { EnvironmentJoin } from "@/runtime/code-check/lib/environment-join"
 import type { BoardEvidence, Piece } from "@/runtime/code-check/lib/evidence";
 import { differingCode } from "@/runtime/code-check/lib/part-code";
 import type { PartCode, ReadPart, SkippedPart } from "@/runtime/code-check/lib/part-code";
-import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
+import { edgeSubjects, nodeSubject } from "@archboard/board/subject";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import { messagesOf } from "@archboard/board/flow-steps";
 import { type SemanticEdge } from "@archboard/board/content";

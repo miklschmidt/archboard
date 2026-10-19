@@ -82,7 +82,7 @@ async function lockMode(): Promise<void> {
 		throw new Error("ARCHBOARD_TEST_REPO_ROOT is required.");
 	}
 	const { holdBoard, releaseHold } = await import(
-		join(repoRoot, "src/runtime/engine/board-lock.ts")
+		join(repoRoot, "packages/board/src/runtime/store/lock/lock.ts")
 	);
 	const vault = process.env["ARCHBOARD_TEST_LOCK_VAULT"];
 	if (!vault) {

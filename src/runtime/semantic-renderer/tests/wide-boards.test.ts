@@ -12,11 +12,9 @@ import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/board/rend
 import { type VariantContent } from "@archboard/board/content";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
-import {
-	locateSemanticBoard,
-	readSemanticBoardAt,
-	readSemanticBoardConfiguration,
-} from "@/runtime/semantic-board-store/index";
+import { locateSemanticBoard } from "@archboard/board/location";
+import { readSemanticBoardAt } from "@archboard/board/read";
+import { readSemanticBoardConfiguration } from "@archboard/board/configuration";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import {
 	labelsAcrossWalls,

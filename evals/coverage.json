@@ -17,21 +17,21 @@
 					"expectedUse": "fixtures name the initial variant; an author may",
 					"scenarios": ["S02", "S06"],
 					"evidence": "harness-check",
-					"owner": "variant-exists on the fixture-named variant; src/runtime/semantic-board-store/tests"
+					"owner": "variant-exists on the fixture-named variant; packages/board/tests/runtime"
 				},
 				{
 					"path": "empty board then population",
 					"expectedUse": "a board may start empty and be filled by edits",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests (create with empty content, then edit)"
+					"owner": "packages/board/tests/runtime (create with empty content, then edit)"
 				},
 				{
 					"path": "edit.level (board-level level change)",
 					"expectedUse": "level moves with the board, not a variant",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests level change"
+					"owner": "packages/board/tests/runtime level change"
 				},
 				{
 					"path": "node.name, node.kind, node.responsibility, node.description",
@@ -273,7 +273,7 @@
 					"expectedUse": "every relationship and step carries its line of evidence; restating one without it drops it with ANCHOR_DROPPED; comparison ignores it",
 					"scenarios": ["S00", "S07"],
 					"evidence": "author-run",
-					"owner": "grader edge.anchor, step.anchor; src/runtime/semantic-board-store/tests/anchors.test.ts; packages/board/tests/shared/rules/compare/comparison.test.ts and reconciliation.test.ts"
+					"owner": "grader edge.anchor, step.anchor; packages/board/tests/runtime/operations/edit/anchors.test.ts; packages/board/tests/shared/rules/compare/comparison.test.ts and reconciliation.test.ts"
 				},
 				{
 					"path": "archboard check --code [--variant <draft>]: ANCHOR_PATH_MISSING, ANCHOR_SYMBOL_MISSING, ANCHOR_MISMATCH (the anchor's symbol is defined in the checkout outside the bound code of both ends, or the anchored file uses it only as an evidence kind the relationship kind does not accept), BINDING_SYMBOL_MISSING and, on a named draft, BINDING_PATH_MISSING, each a warning whose subject is a node, an edge or a step; RELATIONSHIP_UNDRAWN once on the part that bound parts' code reaches with no relationship, a warning when its evidence is resolved and information on candidates; RELATIONSHIP_BACKWARDS and RELATIONSHIP_UNSUPPORTED, information, for a relationship with no anchor; across a network hop, an environment value bound code reads joined with the compose service, Kubernetes workload or Terraform resource that runs that code and sets it to another part's address as configured-path evidence (a candidate where the infrastructure leaves a choice), and RELATIONSHIP_UNSUPPORTED naming the side with no evidence in missing (code or infrastructure); each finding with evidence names its kind and whether it is resolved or a candidate; skipped subjects and checkouts listed with the reason, symbol-unparsed (found only in code that did not parse), ends-overlap (a relationship whose ends hold one another), language-server-missing (a checkout with no configured server for a language, said once for the checkout and the language, naming the command that configures one), language-server-unready (a project its server cannot answer about, said once for it: a Swift package with no index, which the check never builds, a C# checkout with no solution or project file, or a C, C++ or Objective-C file with no compile_commands.json or one that lists no command) and language-server-failed (a server that did not start or answer, said once for its checkout) among them; a --variant no board has as a draft refused NO_SUCH_DRAFT",
@@ -308,7 +308,7 @@
 					"expectedUse": "only when confirmed; preserved on restate",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/code-binding/tests and semantic-board-store tests (binding fields round-trip)"
+					"owner": "packages/code-binding/tests and board store tests (binding fields round-trip)"
 				},
 				{
 					"path": "node.drillDown.board + variant {kind: current}",
@@ -329,14 +329,14 @@
 					"expectedUse": "only when the detail board is in another repository: the identity a binding names, never a path; without it the link stays in the board's own vault. DRILL_DOWN_UNKNOWN_REPOSITORY (the repository has no usable checkout on this machine) and DRILL_DOWN_UNKNOWN_BOARD (the chosen checkout's vault lacks the board) are reported by check",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests/drill-down-repository.test.ts (the link without repo stays local, the chosen checkout's vault, the target's level, a former or recased name, the vault's own identity, an unknown or gone repository, no write to the other vault); tests/system/cli/drill-down-repository.test.ts (archboard check over two checkouts with a registry of their own); packages/board/tests/shared/protocol/board-listing.test.ts (the schema refuses a path; the listed link carries repo) and comparison.test.ts (a changed repo is a changed drill-down). Mechanical validation: no Flask scenario links to a board of another repository"
+					"owner": "packages/board/tests/runtime/operations/check/drill-down-repository.test.ts (the link without repo stays local, the chosen checkout's vault, the target's level, a former or recased name, the vault's own identity, an unknown or gone repository, no write to the other vault); tests/system/cli/drill-down-repository.test.ts (archboard check over two checkouts with a registry of their own); packages/board/tests/shared/protocol/board-listing.test.ts (the schema refuses a path; the listed link carries repo) and comparison.test.ts (a changed repo is a changed drill-down). Mechanical validation: no Flask scenario links to a board of another repository"
 				},
 				{
 					"path": "archboard semantic move <board> --to <dir> --expect-version <n> --doing <line>: the whole board, with every variant, former name and id, into the vault found from --to; the drill-downs whose meaning the move changes rewritten to name a repository identity and listed in rewritten; MOVE_SAME_REPOSITORY, BOARD_EXISTS, MOVE_NEEDS_IDENTITY, BOARD_HELD, MOVE_STOPPED (the board in both vaults until the same move runs again)",
 					"expectedUse": "only when the user asks to move a board to the repository it belongs in; a stopped move is run again, never repaired by hand, and each repository commits its own half",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests/move.test.ts (the whole note, both rewrite directions, each refusal, the stopped move and its re-run); tests/system/cli/semantic-move.test.ts (the command through an owned server: the answer, the files in both vaults, the target registered, the panes of the source vault, the checkout a move into a worktree chooses, a refusal's exit status). Mechanical validation: no Flask scenario has a second repository to move a board to"
+					"owner": "packages/board/tests/runtime/operations/move/move.test.ts (the whole note, both rewrite directions, each refusal, the stopped move and its re-run); tests/system/cli/semantic-move.test.ts (the command through an owned server: the answer, the files in both vaults, the target registered, the panes of the source vault, the checkout a move into a worktree chooses, a refusal's exit status). Mechanical validation: no Flask scenario has a second repository to move a board to"
 				},
 				{
 					"path": "detail boards separate from proposals",
@@ -398,7 +398,7 @@
 					"expectedUse": "restating a flow keeps step ids where stated",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests (flow restate keeps step ids); compare tests (sequence position meaningful)"
+					"owner": "packages/board/tests/runtime (flow restate keeps step ids); compare tests (sequence position meaningful)"
 				}
 			]
 		},
@@ -515,7 +515,7 @@
 					"expectedUse": "repair each warned beat with an explicit view; writes still succeed while view remains optional",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests/walkthroughs.test.ts (creation, omission after an explicit view, repeated explicit views, repair, and untouched walkthroughs). Mechanical author feedback uses a runtime owner. Schema descriptions come from the shared guidance in packages/board/src/shared/schemas/walkthrough.ts."
+					"owner": "packages/board/tests/runtime/operations/edit/walkthroughs.test.ts (creation, omission after an explicit view, repeated explicit views, repair, and untouched walkthroughs). Mechanical author feedback uses a runtime owner. Schema descriptions come from the shared guidance in packages/board/src/shared/schemas/walkthrough.ts."
 				},
 				{
 					"path": "stable beat identity across reword/reorder/add/remove",
@@ -591,7 +591,7 @@
 					"expectedUse": "a beat references a step created in the same write",
 					"scenarios": ["S05", "S12"],
 					"evidence": "author-run",
-					"owner": "grader authoring.handles, view.edge-isolation; src/runtime/semantic-board-store/tests handles"
+					"owner": "grader authoring.handles, view.edge-isolation; packages/board/tests/runtime handles"
 				},
 				{
 					"path": "one batched edit; full-definition replacement with field preservation",
@@ -605,14 +605,14 @@
 					"expectedUse": "each collection",
 					"scenarios": ["S01", "S02", "S13"],
 					"evidence": "harness-check",
-					"owner": "no-edge-between (removeEdges), nodes-absent (removeNodes); removeFlows/removeViews/removeWalkthroughs owned by src/runtime/semantic-board-store/tests"
+					"owner": "no-edge-between (removeEdges), nodes-absent (removeNodes); removeFlows/removeViews/removeWalkthroughs owned by packages/board/tests/runtime"
 				},
 				{
 					"path": "nested steps/beats removed through the enclosing definition",
 					"expectedUse": "restate the flow or walkthrough without them",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests"
+					"owner": "packages/board/tests/runtime"
 				},
 				{
 					"path": "untouched subjects remain untouched",
@@ -646,14 +646,14 @@
 					"expectedUse": "a proposal derived from a stated variant",
 					"scenarios": ["S02", "S04", "S12"],
 					"evidence": "harness-check",
-					"owner": "variant-exists draft; --from owned by src/runtime/semantic-board-store/tests"
+					"owner": "variant-exists draft; --from owned by packages/board/tests/runtime"
 				},
 				{
 					"path": "competing branches / descendants",
 					"expectedUse": "two drafts off one parent",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests lifecycle"
+					"owner": "packages/board/tests/runtime lifecycle"
 				},
 				{
 					"path": "proposal summary",
@@ -667,14 +667,14 @@
 					"expectedUse": "summary in the semantic edit batch replaces the target variant's summary in the same write",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests/branching.test.ts, an edit restates the summary"
+					"owner": "packages/board/tests/runtime/operations/variant/branching.test.ts, an edit restates the summary"
 				},
 				{
 					"path": "variant.documents: create.documents and edit.documents ({ repo, path, branch?, commit? }), copied by semantic branch, returned by semantic show, and DOCUMENT_PATH_MISSING from archboard check --code",
 					"expectedUse": "a draft that draws a design document, an ADR or a task names each, at the commit it was drawn from; an edit states the whole list of the variant it lands on, [] removes it; a later pull request finds the design draft through the document it names",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests/branching.test.ts (an edit replaces the edited list, a branch copies it, a record refuses it; a new board's first variant holds them); src/runtime/code-check/tests/documents.test.ts (a file missing at the named version, a directory, a branch the checkout cannot resolve, an unregistered repository, a draft read with --variant). No author run is asked to name documents: no scenario draws from a design document"
+					"owner": "packages/board/tests/runtime/operations/variant/branching.test.ts (an edit replaces the edited list, a branch copies it, a record refuses it; a new board's first variant holds them); src/runtime/code-check/tests/documents.test.ts (a file missing at the named version, a directory, a branch the checkout cannot resolve, an unregistered repository, a draft read with --variant). No author run is asked to name documents: no scenario draws from a design document"
 				},
 				{
 					"path": "lifecycle draft | current | historical",
@@ -786,14 +786,14 @@
 					"expectedUse": "restate a continuing relationship by id; explicit removal plus an idless addition declares replacement",
 					"scenarios": ["S01", "S10"],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests/edge-identity.test.ts; tests/system/semantic-boards/edge-identity.test.ts"
+					"owner": "packages/board/tests/runtime/operations/edit/edge-identity.test.ts; tests/system/semantic-boards/edge-identity.test.ts"
 				},
 				{
 					"path": "restore absent inherited node and relationship identities",
 					"expectedUse": "repair a proposal by restating known predecessor or reconciliation-base identities in one ordinary edit; invented and wrong-kind ids stay refused",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests/restoration.test.ts; src/runtime/semantic-board-store/tests/edge-identity.test.ts; tests/system/semantic-boards/edge-identity.test.ts"
+					"owner": "packages/board/tests/runtime/operations/variant/restoration.test.ts; packages/board/tests/runtime/operations/edit/edge-identity.test.ts; tests/system/semantic-boards/edge-identity.test.ts"
 				},
 				{
 					"path": "consistent shared-view comparison",
@@ -841,7 +841,7 @@
 					"expectedUse": "a draft under an unsettled draft waits; the family lands whole",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests family"
+					"owner": "packages/board/tests/runtime family"
 				},
 				{
 					"path": "choices with subject and optional field; partial resolution leaving outstanding issues",
@@ -910,7 +910,7 @@
 					"expectedUse": "read the refusal, configure, retry",
 					"scenarios": ["S08"],
 					"evidence": "author-run",
-					"owner": "grader config.before-board; the refusal itself: src/runtime/semantic-board-store/tests policy (unknown kind rejected)"
+					"owner": "grader config.before-board; the refusal itself: packages/board/tests/runtime policy (unknown kind rejected)"
 				}
 			]
 		},
@@ -944,7 +944,7 @@
 					"expectedUse": "the document stores a sorted set or omits it",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests groups; src/runtime/semantic-board-store/tests grouping"
+					"owner": "packages/board/tests groups; packages/board/tests/runtime grouping"
 				},
 				{
 					"path": "display-name change without semantic delta; independent membership reconciliation",
@@ -986,7 +986,7 @@
 					"expectedUse": "never written",
 					"scenarios": ["S03"],
 					"evidence": "harness-check",
-					"owner": "check-clean (legacy group is unreadable); src/runtime/semantic-board-store/tests grouping"
+					"owner": "check-clean (legacy group is unreadable); packages/board/tests/runtime grouping"
 				}
 			]
 		},
@@ -1054,7 +1054,7 @@
 					"expectedUse": "a name matching two nodes is refused; use the id",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-board-store/tests edit-content (ambiguous name)"
+					"owner": "packages/board/tests/runtime edit-content (ambiguous name)"
 				},
 				{
 					"path": "dangling or wrong-kind references, identity collisions, participant membership, empty selections, empty walkthroughs, invalid traffic/repeat",
@@ -1068,7 +1068,7 @@
 					"expectedUse": "configure the vocabulary the request asked for rather than bend the board",
 					"scenarios": ["S08"],
 					"evidence": "author-run",
-					"owner": "grader config.before-board (configure first, or repair a refusal by configuring; never bend the meaning); the refusal itself: src/runtime/semantic-board-store/tests policy"
+					"owner": "grader config.before-board (configure first, or repair a refusal by configuring; never bend the meaning); the refusal itself: packages/board/tests/runtime policy"
 				},
 				{
 					"path": "default versus explicit values; partial traffic overrides",

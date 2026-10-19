@@ -14,8 +14,8 @@
 // included, reaches the voice model as a step chosen by hand does.
 
 import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
-import { parseBoardKey, statedVariant } from "@/runtime/engine/board";
-import { readSemanticBoard } from "@/runtime/semantic-board-store";
+import { parseBoardKey, statedVariant } from "@archboard/board/address";
+import { readSemanticBoard } from "@archboard/board/read";
 import {
 	addressedVariant,
 	type SemanticBoard,

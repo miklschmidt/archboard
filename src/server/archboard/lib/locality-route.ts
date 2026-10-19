@@ -15,7 +15,7 @@
 
 import type { Express, Request, Response } from "express";
 import { createLocalityReading } from "@/runtime/history-lens/index";
-import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
+import { readSemanticBoard } from "@archboard/board/read";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { PeriodStartSchema, type LocalityAnswer } from "@/shared/locality/index";
 import {

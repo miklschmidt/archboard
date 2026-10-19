@@ -12,7 +12,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as server from "@/server/archboard/index";
-import * as store from "@/runtime/semantic-board-store/index";
+import { writeSemanticBoard } from "@archboard/board/write";
+import {
+	createBoardTransition,
+	branchVariantTransition,
+	editVariantTransition,
+} from "@archboard/board/transitions";
+import { readSemanticBoard } from "@archboard/board/read";
+import { semanticBoardAddress } from "@archboard/board/location";
 import {
 	BoardCreateInputSchema,
 	BoardBranchInputSchema,
@@ -31,11 +38,11 @@ const PROPOSAL = "Queued ingest";
 let reported = 0;
 
 beforeAll(async () => {
-	await store.writeSemanticBoard({
+	await writeSemanticBoard({
 		vault,
 		board: BOARD,
 		writer,
-		transition: store.createBoardTransition(
+		transition: createBoardTransition(
 			BoardCreateInputSchema.parse({
 				name: BOARD,
 				level: "system",
@@ -64,7 +71,7 @@ afterAll(() => {
  * @returns The board.
  */
 function board(): SemanticBoard {
-	const answer = store.readSemanticBoard(vault, BOARD);
+	const answer = readSemanticBoard(vault, BOARD);
 	if (!answer.ok) {
 		throw new Error(answer.problem);
 	}
@@ -89,7 +96,7 @@ function reading(
 	return {
 		paneId: "pane-a",
 		clientId: "client-a",
-		board: store.semanticBoardAddress(BOARD),
+		board: semanticBoardAddress(BOARD),
 		variant:
 			found === undefined || found === null
 				? null
@@ -169,24 +176,24 @@ test("an id the variant no longer holds is reported rather than passed on", () =
 });
 
 test("a proposal reaches the agent with its differences derived, not authored", async () => {
-	await store.writeSemanticBoard({
+	await writeSemanticBoard({
 		vault,
 		board: BOARD,
 		writer,
 		expectedVersion: board().version,
-		transition: store.branchVariantTransition(
+		transition: branchVariantTransition(
 			BoardBranchInputSchema.parse({
 				from: currentVariant(board())?.name ?? "",
 				name: PROPOSAL,
 			}),
 		),
 	});
-	await store.writeSemanticBoard({
+	await writeSemanticBoard({
 		vault,
 		board: BOARD,
 		writer,
 		expectedVersion: board().version,
-		transition: store.editVariantTransition(
+		transition: editVariantTransition(
 			VariantEditInputSchema.parse({
 				variant: PROPOSAL,
 				nodes: [{ name: "Queue", kind: "queue" }],
@@ -221,24 +228,24 @@ test("an edit that landed and left a proposal in disagreement carries its repair
 	const gateway = nodeId("Gateway");
 	// The proposal renames the node one way and the state it came from renames
 	// it another. The second write is the one that lands and leaves work behind.
-	await store.writeSemanticBoard({
+	await writeSemanticBoard({
 		vault,
 		board: BOARD,
 		writer,
 		expectedVersion: board().version,
-		transition: store.editVariantTransition(
+		transition: editVariantTransition(
 			VariantEditInputSchema.parse({
 				variant: PROPOSAL,
 				nodes: [{ id: gateway, name: "Public API", kind: "service" }],
 			}),
 		),
 	});
-	const landed = await store.writeSemanticBoard({
+	const landed = await writeSemanticBoard({
 		vault,
 		board: BOARD,
 		writer,
 		expectedVersion: board().version,
-		transition: store.editVariantTransition(
+		transition: editVariantTransition(
 			VariantEditInputSchema.parse({
 				variant: currentVariant(board())?.name ?? "",
 				nodes: [{ id: gateway, name: "Front door", kind: "service" }],
@@ -325,12 +332,12 @@ test("the context an operation delivers is the board's grounding, not a summary 
 
 test("the description reads as sentences, because a coordinator says it out loud", async () => {
 	const unterminated = "What the pipeline becomes once a board is meaning rather than a drawing";
-	await store.writeSemanticBoard({
+	await writeSemanticBoard({
 		vault,
 		board: BOARD,
 		writer,
 		expectedVersion: board().version,
-		transition: store.branchVariantTransition(
+		transition: branchVariantTransition(
 			BoardBranchInputSchema.parse({
 				from: currentVariant(board())?.name ?? "",
 				name: "Narrated",

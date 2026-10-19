@@ -8,7 +8,7 @@
 
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { semanticBoardAddress } from "@/runtime/semantic-board-store/index";
+import { semanticBoardAddress } from "@archboard/board/location";
 
 /**
  * Read a stated command against its schema, answering the caller when it is

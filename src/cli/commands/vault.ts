@@ -12,7 +12,7 @@ import {
 	type CheckTiming,
 } from "@/shared/code-check/index";
 import { diagnosticLine, VaultCheckSchema, type VaultCheck } from "@archboard/board/policy";
-import { SemanticBoardConfigurationSchema } from "@/runtime/semantic-board-store/index";
+import { SemanticBoardConfigurationSchema } from "@archboard/board/configuration";
 
 const output = {
 	cases: [

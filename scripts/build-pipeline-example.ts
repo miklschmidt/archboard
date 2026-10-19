@@ -25,10 +25,10 @@ import {
 	branchVariantTransition,
 	createBoardTransition,
 	editVariantTransition,
-	readSemanticBoard,
-	readSemanticBoardConfiguration,
-	writeSemanticBoard,
-} from "@/runtime/semantic-board-store/index";
+} from "@archboard/board/transitions";
+import { readSemanticBoard } from "@archboard/board/read";
+import { readSemanticBoardConfiguration } from "@archboard/board/configuration";
+import { writeSemanticBoard } from "@archboard/board/write";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
 
 const [named] = process.argv.slice(2);

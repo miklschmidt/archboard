@@ -15,11 +15,11 @@ import {
 	paneBoardAddress,
 	parseBoardKey,
 	statedVariant,
-} from "@/runtime/engine/board";
-import type { BoardIdentity } from "@/runtime/engine/board";
+} from "@archboard/board/address";
+import type { BoardIdentity } from "@archboard/board/address";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { logger } from "@archboard/diagnostics/logger";
-import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
+import { readSemanticBoard } from "@archboard/board/read";
 import {
 	addressedVariant,
 	type SemanticBoard,

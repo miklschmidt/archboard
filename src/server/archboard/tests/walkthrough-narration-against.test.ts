@@ -11,7 +11,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as server from "@/server/archboard/index";
-import * as store from "@/runtime/semantic-board-store/index";
+import { writeSemanticBoard } from "@archboard/board/write";
+import { semanticBoardAddress } from "@archboard/board/location";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
@@ -79,7 +80,7 @@ const stacked: SemanticBoard = SemanticBoardSchema.parse({
 let reported = 0;
 
 beforeAll(async () => {
-	await store.writeSemanticBoard({
+	await writeSemanticBoard({
 		vault,
 		board: BOARD,
 		writer: { kind: "agent" },
@@ -119,7 +120,7 @@ function report(presentation: SemanticPanePresentation | null): SemanticPaneCont
 	return {
 		paneId: "A",
 		clientId: CLIENT,
-		board: store.semanticBoardAddress(BOARD),
+		board: semanticBoardAddress(BOARD),
 		variant: { id: "v3", name: "This pull request", lifecycle: "draft" },
 		view: null,
 		selection: [],

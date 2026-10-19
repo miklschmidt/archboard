@@ -5,7 +5,7 @@ import {
 	soloPane,
 	type PaneRegistration,
 } from "@/runtime/engine/panes";
-import { parseBoardKey } from "@/runtime/engine/board";
+import { parseBoardKey } from "@archboard/board/address";
 
 // Which pane a caller means, beside a recording page's pane (TASK-304).
 //

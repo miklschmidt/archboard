@@ -21,17 +21,14 @@ import {
 	paneBoardAddress,
 	parseBoardKey,
 	statedVariant,
-} from "@/runtime/engine/board";
-import { claimBoard, claimOn, releaseClaim } from "@/runtime/engine/board-lock";
-import { forgetDoing, recentDoing, recordDoing } from "@/runtime/engine/board-doing";
+} from "@archboard/board/address";
+import { claimBoard, claimOn, releaseClaim } from "@archboard/board/lock";
+import { forgetDoing, recentDoing, recordDoing } from "@archboard/board/doing";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
 import { BoardRenameInputSchema } from "@archboard/board/resolution-input";
-import {
-	renameTransition,
-	writeSemanticBoard,
-	type SemanticWriteResult,
-} from "@/runtime/semantic-board-store/index";
+import { renameTransition } from "@archboard/board/rename";
+import { writeSemanticBoard, type SemanticWriteResult } from "@archboard/board/write";
 import type { VaultDiagnostic } from "@archboard/board/policy";
 import { publishPaneContext } from "@/server/archboard/lib/codex-wiring";
 import {

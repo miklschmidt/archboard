@@ -215,17 +215,18 @@ holds only Zod schemas.
   `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
   package has no `./testing` export.
 
-The seventh is `board` (`@archboard/board`). It is the board document and its policy. This first
-half holds the code that the browser and the server both run, so every file is in `shared/` and
-imports no Node module. The runtime half, the store and the lock, follows in the next task and
-will bring the package its own `runtime/` area. The `shared/` folder follows the role names:
+The seventh is `board` (`@archboard/board`). It is the board document, its policy and its one
+reader and writer. The package is complete. It has two areas. `shared/` holds the code that the
+browser and the server both run, and imports no Node module. `runtime/` holds the store and runs
+only in Bun. Browser code imports only `shared/` exports. The `shared/` folder follows the role names:
 
 - `schemas/` are the data shapes. `./document` is the board aggregate and the variant address
   functions, and `./content` is what one variant holds: nodes, relationships and drill-downs.
-  `./views`, `./walkthrough`, `./vocabulary` and `./primitives` are the parts it is built from.
-  `./reconciliation` is the standing of a variant against its predecessor, `./draft-ref` reads the
-  code a draft is read against and `./policy` is the semantic policy and the vault check. The
-  binding, anchor and document-reference schemas are not here. They stay in `code-binding`.
+  `./views`, `./walkthrough` and `./vocabulary` are the parts it is built from, and `primitives`
+  is private. `./reconciliation` is the standing of a variant against its predecessor,
+  `./draft-ref` reads the code a draft is read against and `./policy` is the semantic policy and
+  the vault check. The binding, anchor and document-reference schemas are not here. They stay in
+  `code-binding`.
 - `protocol/` are the wire contracts. `./board-input` is what an agent may say, `./render-reply`
   what a render answers, `./board-listing` the answer of the listing route, `./board-move` the move
   to another vault, `./resolution-input` the choice of a side and `./pane-context` what a pane
@@ -234,14 +235,35 @@ will bring the package its own `runtime/` area. The `shared/` folder follows the
   export. `rules/coherence/` holds the checks a shape cannot state, and `./parse-board` reads an
   untrusted value as a board. `rules/compare/` compares two variants, their interfaces and the
   drawing of a proposal against current. `rules/reconcile/` brings a proposal forward when its
-  predecessor moves. `rules/inspect/` reads one container or one group off a variant. `./scope`,
-  `./flow-steps` and `./positions` stand beside them.
+  predecessor moves. `rules/inspect/` reads one container or one group off a variant. `./scope`
+  and `./flow-steps` stand beside them.
+
+The `runtime/` folder is the one place a board file is read or written (CLAUDE.md, "The file is the
+board"). Every write goes through `@archboard/workspace/atomic-write` and is committed before it is
+answered. The lock is deny by default. The folder has two roles:
+
+- `store/` holds files, locks, registries and file formats. `./address` is a board's identity, its
+  key and its vault path. `./location` is where the note lives, `./configuration` the vault's
+  levels and kinds and `./bound-vaults` the vaults that hold boards of one repository. `./doing` is
+  the line an agent said about its write. `store/format/` holds `./decode` and the schema
+  migrations. `store/lock/` is the one-writer lease, its claims and its announcements. `./lock` is
+  the only lock file that outside code imports. `target.ts` and `former-names.ts` are private.
+- `operations/` is one write or one read that a caller asks for. `write/` holds the write
+  boundary (`./write`), the pure transitions it applies (`./transitions`), `./accepted` and
+  `./discard`. `read/` holds `./read`, `./listing` and `./catalogue`. `check/` holds the vault
+  check (`./diagnostics`, `./subject`). `edit/` turns one batch of stated changes into content.
+  `move/` (`./move`, `./move-preview`), `rename/` (`./rename`), `settle/` and `variant/`
+  (`./propagate`; adopt, shelve, restore and inheritance are private) are the other behaviors.
 
 The package has no barrel. In the old `index.ts`, the names of the document, the input, the render
 reply, the reconciliation and the comparison came from one import. An importer now names the file
-that defines each name. `./integrity`, `./positions`, `./primitives` and `./reconcile-candidate`
-are exported only because the store, which has not moved yet, imports them. They become private
-when the store joins the package.
+that defines each name. The same holds for the runtime half. `semantic-board-store/index.ts` and
+`engine/board.ts` forwarded names, and both are gone. `./integrity`, `./positions`, `./primitives`,
+`./reconcile-candidate` and `./reconcile` were exported only because the store imported them. The
+store is inside the package now, so these five are private, and no file outside the package
+imported one. `board` imports only `timing`, `diagnostics`, `process`, `workspace` and
+`code-binding`, and nothing from `src/`. The rest of `runtime/engine` imports `board`, and `board`
+imports nothing back, so the old import cycle between them is gone.
 
 ## Vendor-owned data
 

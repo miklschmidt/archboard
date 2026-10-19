@@ -5,7 +5,7 @@ current architecture. Keep them in Git. Edit them through the CLI so writes,
 versions, claims, and live browser announcements retain their normal guarantees.
 Rendered SVGs are disposable; there is no second set of authored input files to
 regenerate these boards from.
-Their JSON formatting belongs to `semantic-board-store`; the source formatter
+Their JSON formatting belongs to the board store (`packages/board/src/runtime`); the source formatter
 excludes these files so it cannot change a board outside its write boundary.
 The authored `.archboard/config.yaml` inside the vault defines its shared levels,
 node kinds, relationship kinds and appearance. Run `archboard semantic config`
