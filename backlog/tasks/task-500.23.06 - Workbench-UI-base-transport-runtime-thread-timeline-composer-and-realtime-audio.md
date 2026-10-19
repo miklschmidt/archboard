@@ -3,10 +3,10 @@ id: TASK-500.23.06
 title: >-
   Workbench UI base: transport, runtime, thread, timeline, composer and realtime
   audio
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-19 14:14'
-updated_date: '2026-10-19 16:59'
+updated_date: '2026-10-19 17:05'
 labels: []
 dependencies:
   - TASK-500.23.05
@@ -22,9 +22,9 @@ Sixth move: the UI modules with no workbench UI above them: workbench-transport,
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 packages/workbench/src/ui holds those modules in role folders with browser-safe api files, and they are gone from src/ui
-- [ ] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
-- [ ] #3 bun run check passes
+- [x] #1 packages/workbench/src/ui holds those modules in role folders with browser-safe api files, and they are gone from src/ui
+- [x] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -32,3 +32,9 @@ Sixth move: the UI modules with no workbench UI above them: workbench-transport,
 <!-- SECTION:PLAN:BEGIN -->
 Move the nine UI modules into packages/workbench/src/ui in role folders (components, hooks, state, clients, rules) with tests in packages/workbench/tests/ui. Unbarrel the nine index.ts files, rewrite importers by name to eight browser-safe api files (src/ui/api), point the assistant-ui lint ownership at the thread and runtime folders, update docs and the ADOPTERS entry. Verify with tsc, lint, the package and policy tests, the browser trace and build:frontend, then bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Nine workbench UI modules (94 files) live in packages/workbench/src/ui in role folders behind eight browser-safe api files (31 names). The assistant-ui lint ownership rule now matches behavior folders in the package; Codex probed 204 cases and found no weakening. Codex reviewed 14be0b573 with no findings (1,559 bindings compared; 214 test declarations preserved). bun run check exited 0 and the built CSS was byte-identical.
+<!-- SECTION:FINAL_SUMMARY:END -->
