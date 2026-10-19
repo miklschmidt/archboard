@@ -83,7 +83,7 @@ jobs:
           packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts
           packages/board/tests/runtime/store/policy.test.ts packages/board/tests/runtime/operations/rename/renaming.test.ts
           packages/code-binding/tests/runtime/operations/resolution.test.ts
-          src/server/archboard/tests/codex-workbench-production-initialization.test.ts
-          src/server/archboard/tests/codex-workbench-approval-sessions.test.ts
+          packages/workbench/tests/server/services/owner/production-initialization.test.ts
+          packages/workbench/tests/server/services/actions/approval-sessions.test.ts
           src/cli/commands/tests/language-server-configuration.test.ts
           tests/system/semantic-boards/lifecycle.test.ts tests/system/process-contracts/codex-workbench-storage.test.ts

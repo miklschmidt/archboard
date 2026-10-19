@@ -4,8 +4,8 @@ import { logger } from "@archboard/diagnostics/logger";
 import { frontendState, sourceState } from "@archboard/server-lifecycle/server-host";
 import { mutationAdmission } from "@/server/archboard/lib/server-owners";
 import { serverPhase } from "@/server/archboard/lib/server-startup";
-import { moduleDir } from "@/server/archboard/lib/module-paths";
-import { clients } from "@/server/archboard/lib/pane-registry";
+import { moduleDir } from "@archboard/workbench/listener";
+import { clients } from "@archboard/workbench/pane-registry";
 import { openingVault } from "@archboard/workspace/repository-listing";
 
 /**

@@ -19,16 +19,16 @@ import {
 } from "@archboard/workbench/shown-conversation";
 import { logger } from "@archboard/diagnostics/logger";
 import type { TabSessionId } from "@archboard/workbench/tab-session";
-import { codexWiring } from "@/server/archboard/lib/codex-wiring";
-import { paneCheckoutOf, panesOfTabSession } from "@/server/archboard/lib/codex-session-panes";
-import { panes, paneVaults } from "@/server/archboard/lib/pane-registry";
-import { bodyOf } from "@/server/archboard/lib/request-board";
-import { vaultOfRequest } from "@/server/archboard/lib/request-vault";
+import { codexWiring } from "@archboard/workbench/wiring";
 import {
+	paneCheckoutOf,
+	panesOfTabSession,
 	currentShownCheckout,
 	showConversation,
 	tabSessionOf,
-} from "@/server/archboard/lib/tab-sessions";
+} from "@archboard/workbench/pane-tabs";
+import { panes, paneVaults } from "@archboard/workbench/pane-registry";
+import { bodyOf, vaultOfRequest } from "@archboard/workbench/request";
 
 /** The pane an activation happened in, and the tab it belongs to. */
 interface ActivatedPane {

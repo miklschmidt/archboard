@@ -18,7 +18,7 @@
 import type { Express, Request, Response } from "express";
 import { readFootprint, type FootprintRequest } from "@archboard/code-intel/history-lens";
 import { readSemanticBoard } from "@archboard/board/store-read";
-import { queryString } from "@/server/archboard/lib/request-board";
+import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/request";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { FootprintReplySchema, type FootprintAnswer } from "@archboard/code-intel/history";
 import type { SemanticBoard } from "@archboard/board/document";
@@ -29,7 +29,6 @@ import {
 	variantsOf,
 } from "@/server/archboard/lib/footprint-variants";
 import { errorMessage } from "@archboard/diagnostics/errno";
-import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface FootprintRouteDependencies {

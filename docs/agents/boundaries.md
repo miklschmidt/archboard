@@ -179,8 +179,8 @@ defines a different `repositoryOfVault`, the one that the server projection answ
 `./repository-listing` is the answer of `GET /api/repositories`, in `server/api/`. `source-checkout`
 finds the checkout by walking up to the nearest directory that is an archboard checkout, so the
 depth of the file decides nothing, and `bin.ts` loads it lazily, so a command that hands itself to
-another checkout loads nothing else first. `module-paths` is not here: the server derives its
-`src/` from its own depth.
+another checkout loads nothing else first. `module-paths` is not here: it moved into `workbench`, which
+derives `src/` from `SOURCE_CHECKOUT`.
 
 The fifth is `code-binding` (`@archboard/code-binding`). It knows what a node's code binding is and
 where its path lives in a checkout. It adopts the `api/` role for `shared/` and `runtime/` and
@@ -545,13 +545,15 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
 
 The sixteenth is `workbench` (`@archboard/workbench`). It is the Codex workbench: the coordinator, the workhorses, the
 conversation and the voice (layer 7, the last). It grows over TASK-500.23.01 to .07, one move for each step up its
-import graph, and the later moves add the rest of `server/` and `ui/`. So far it holds the browser-safe contracts that
-the browser and the server exchange, the Codex runtime under them (the foundation, and over it the coordinator and the
-workhorses) and the server's gateway over the runtime. It adopts the `api/` role for `shared/`, `runtime/` and `server/`
-and exposes 21 subpaths. It imports `codex-app-server`, `board`, `walkthrough` and `timing`, and nothing from `src/`.
+import graph, and the later moves add the UI. So far it holds the browser-safe contracts that the browser and the server
+exchange, the Codex runtime under them (the foundation, and over it the coordinator and the workhorses) and the server
+side: the gateway over the runtime, and the sessions, generations and pane plumbing that wire it into the Archboard
+server. It adopts the `api/` role for `shared/`, `runtime/` and `server/` and exposes 28 subpaths. It imports
+`board`, `codex-app-server`, `diagnostics`, `process`, `server-lifecycle`, `timing`, `walkthrough` and `workspace`, and
+nothing from `src/`.
 The 5 files of `shared/api/` hold 100 names and are safe for the browser, with no Node import and no path into a runtime
 or server area: the pane transport and the voice session import them as well as the server. The 12 files of
-`runtime/api/` hold 204 names and the 4 of `server/api/` hold 41, and they run only in Bun. The browser imports none of
+`runtime/api/` hold 204 names and the 11 of `server/api/` hold 115, and they run only in Bun. The browser imports none of
 them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/` or `server/`.
 
 **Shared.**
@@ -623,29 +625,63 @@ grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `
   fixtures that the dynamic-tools tests share. The capacity test of the dynamic tools is opt-in
   (`bun run test:opt-in:capacity`).
 
-**Server.** `server/` is the gateway that serves the browser's workbench connections. It reads the runtime and the
-shared contracts through their private files, and no private file imports an api file. It is the code that was
-`src/server/codex-workbench/`: the host in `src/server/archboard/` wires it with the owners that act (the actions of a
-pane, the readers of the runtime) and imports only `server/api/`.
+**Server.** `server/` is the workbench on the Archboard server. It reads the runtime and the shared contracts through
+their private files, and no private file imports an api file. The host in `src/server/archboard/` keeps the routes and
+the application. It imports only `server/api/`, and only what a route or the application itself calls: the pane
+registry, the tab sessions, the request context, the wiring and the listener. Everything else (the generations, the
+owners and the actions that carry out a pane's command) is private, and its tests are in the package. Its parts were
+`src/server/codex-workbench/` (the gateway) and the Codex files, the pane and tab plumbing and the request context of
+`src/server/archboard/lib/`.
 
 - `protocol/` holds `gateway/contract.ts` (the options, the owners' ports, the connection and the gateway that the host
-  wires, with the error a command is refused with) and `projection/projection-contract.ts` (what the host hands the
-  projection to read).
-- `rules/` holds `tab-session/` (the tab session id and the key that links one to the workhorse of a checkout) and
+  wires, with the error a command is refused with), `projection/projection-contract.ts` (what the host hands the
+  projection to read) and `generation/` (the components, sessions and tab sessions of a generation of the workbench in
+  `contract.ts`, `session-contract.ts` and `generation-contract.ts`, and `host.ts`, what a generation needs of the
+  server around it).
+- `rules/` holds `tab-session/` (the tab session id and the key that links one to the workhorse of a checkout),
   `snapshot/` (the byte budget of a snapshot and a delta, the fit and the diff that keep them inside it, and the
-  redaction of secret keys).
-- `projections/browser-state/` turns the owners' state into the snapshot a pane renders: the timeline, the thread link,
-  the ordinary, dynamic and spoken approvals, and the whole of it in `projection.ts`.
+  redaction of secret keys), `timeline/` (bounding the text and evidence of a timeline item), `pane/` (what a pane's
+  board key names, and the pane that work nobody's command started presents through), `semantic-context/` (the sentence
+  that describes a variant, and the subjects a narrated step highlights) and `generation/` (the readiness a pane is shown
+  and the failures a generation reports).
+- `projections/` turns the owners' state into what a pane or the voice reads. `browser-state/` is the snapshot a pane
+  renders: the timeline, the thread link, the ordinary, dynamic and spoken approvals, the workhorse list and the voice
+  context, and the whole of it in `projection.ts`. `timeline/` reads a thread into the timeline within its budget.
+  `semantic-context/` is the board as an agent is told it (`board-context.ts`, `semantic-input.ts`), the walkthrough step
+  the voice explains, and the canvas of a tab.
 - `services/gateway/` is the gateway: `gateway.ts` takes a connection, and its connections, execution (the command
   surface and the cache a retry is answered from) and leases files hold what one connection and one command need.
   `services/lease/` is the ledger and the manager of the browser command leases. `operations/command/` admits a browser
   command (the readiness, the thread link and the lease it needs) and dispatches it to the one action that carries it
   out, so a command with no action is not one this gateway serves.
+- `services/generation/` composes one generation of the workbench over a Codex child (`workbench.ts`, `compose.ts`,
+  `factories.ts`, `hooks.ts`, the bindings and the owners record) and tears it down in order (`lifecycle.ts`,
+  `shutdown-steps.ts`, `operation-lifecycle.ts`). `services/owner/` is the owner that lives for one server application
+  and replaces generations (`lifecycle.ts`, `owner-state.ts`, `owner-transitions.ts`), the application stage and the
+  production installation, and the wiring that panes reach the workbench through (`wiring.ts`, with its state in
+  `wiring-hooks.ts` so that the pane context can publish without importing it back). `services/sessions/` holds the tab
+  sessions of a generation, how one ends, its workhorses, what each owner is bound to, the panes it is read through,
+  the delegations and the checkouts. `services/actions/` is what a pane's command does: the account, the dynamic and
+  ordinary approvals, the queue, the text and the thread link. `services/voice/` is one tab's voice session, the
+  outcome the coordinator is told, the start trace and the transcript. `services/dynamic-tools/` is the authority,
+  routing and wait of a dynamic tool call. `services/browser-socket/` publishes to the sockets of a browser.
+  `services/panes/` is the pane registry, the pane presentation, the tab sessions, the context each pane last
+  reported and the settled change feed. `services/request/` reads the board and the vault a call names, and
+  `services/host/` holds where the server listens and where its source and frontend are (`module-paths.ts` takes them
+  from `SOURCE_CHECKOUT`, so no depth decides).
 - `./gateway` is the gateway and the types of its owners. `./projection` is the projection of the browser state with its
   inputs, the snapshot budget and the redaction of secrets. `./tab-session` is the tab session id and the workhorse link
   key. `./leases` is the ledger of the browser command leases that the pane registry creates.
-- The tests are in `tests/server/`, in the folders of the code they cover. `support/gateway/` holds the fake owners, the
-  fixtures and the helpers that the gateway and the projection tests share.
+- The api files that the host imports group what a caller does. `./wiring` installs the workbench into the server and
+  is where the panes reach it (its hooks, its preparation and stop, the browser socket owner). `./pane-registry` is the
+  open panes, their sockets and the broadcast every write announces through. `./pane-tabs` is which tab a pane
+  belongs to and the conversation a tab shows. `./semantic-context` is the settled change feed, the context the
+  panes report and the steps they present. `./voice` is the route of the voice start trace and the actions of a tab's
+  voice session. `./request` is the vault and the body a call names, and `./listener` is where the server listens.
+- The tests are in `tests/server/`, in the folders of the code they cover. `support/generation/` holds the fake
+  owners, fixtures and harness that the generation, owner, session, action and timeline tests share, and
+  `support/gateway/` those of the gateway and the projection tests. Only the tests of the host's own routes, lifetime
+  and startup stay in `src/server/archboard/tests/`.
 
 ## Vendor-owned data
 

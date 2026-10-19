@@ -176,7 +176,12 @@ because the code above them needs them below it. If no second caller appears, me
   (`lib/codex-workbench-sessions.ts:105`), ordered teardown
   (`lib/codex-workbench-generation-lifecycle.ts:217`) and cancellation
   (`lib/codex-workbench-operation-lifecycle.ts:334`) belong to `workbench`. So do 15 files of pane
-  and tab plumbing that the workbench needs. They are listed here.
+  and tab plumbing that the workbench needs. TASK-500.23.05 moved them, with the rest of their
+  import closure (79 files: all the Codex files of `lib/`, the four root `codex-workbench-*.ts`
+  facades, which it deleted, `module-paths` and `narrated-subjects`), into
+  `packages/workbench/src/server/`. It also deleted `codex-workbench-adapters.ts` and
+  `codex-workbench-owner.ts`, which only re-exported moved names for tests, and moved those tests.
+  The 15 files:
   - `pane-registry`, `tab-sessions`, `tab-canvas`, `pane-presentation` and `pane-board-key`.
   - `semantic-change-feed`, `semantic-board-context`, `semantic-board-description` and
     `semantic-pane-context`.

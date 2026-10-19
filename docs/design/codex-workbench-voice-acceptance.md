@@ -60,7 +60,7 @@ timeout -k 5s 25s bun test \
 
 timeout -k 5s 25s bun test \
   packages/workbench/tests/server/services/gateway/sequenced-delivery.test.ts \
-  src/server/archboard/tests/codex-workbench-text-actions.test.ts \
+  packages/workbench/tests/server/services/actions/text-actions.test.ts \
   src/ui/workbench-transport/tests/stream-reduction.test.ts \
   src/ui/workbench-composer/tests
 

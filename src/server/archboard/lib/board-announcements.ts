@@ -19,7 +19,7 @@ import {
 	paneVaults,
 	sendToPane,
 	syncLockWatch,
-} from "@/server/archboard/lib/pane-registry";
+} from "@archboard/workbench/pane-registry";
 
 /**
  * A board's writer changed, so every pane showing it is told (ADR 0016).

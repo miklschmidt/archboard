@@ -35,14 +35,14 @@ import {
 	broadcast,
 	paneBoardOf,
 	sendToPane,
-} from "@/server/archboard/lib/pane-registry";
+} from "@archboard/workbench/pane-registry";
 import { arrivedOnBoard } from "@/server/archboard/lib/pane-routes";
 import { chooseShownCheckout, type ShowChoice } from "@/server/archboard/lib/pane-show-route";
 import { movePaneVault, paneClientsOfVault } from "@/server/archboard/lib/pane-vaults";
 import { repositoryOfVault } from "@archboard/workspace/repository-listing";
 import { followRegistry } from "@/server/archboard/lib/repository-routes";
-import { namedVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
-import { settledChangeFields } from "@/server/archboard/lib/semantic-change-feed";
+import { namedVault, vaultOfRequest } from "@archboard/workbench/request";
+import { settledChangeFields } from "@archboard/workbench/semantic-context";
 import {
 	answerRefusal,
 	describedWrite,

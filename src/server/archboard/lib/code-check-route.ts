@@ -35,7 +35,7 @@ import {
 	type PlanRefused,
 } from "@archboard/code-intel/code-check-run";
 import { createBehindReading } from "@archboard/code-intel/history-lens";
-import { queryString } from "@/server/archboard/lib/request-board";
+import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/request";
 import {
 	createCodeFindingsMemory,
 	type CodeFindingsMemory,
@@ -43,7 +43,6 @@ import {
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { errorMessage } from "@archboard/diagnostics/errno";
-import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /**
  * What one request asks for: the vault it reads, the draft to read where a
