@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { sourceOf } from "./support/package-sources.ts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const packagesRoot = path.join(repoRoot, "packages");
@@ -39,9 +40,6 @@ const ADOPTERS: {
 	},
 ];
 
-const API_IMPORT = /["'`]#[a-z]+\/api\//;
-const EXPORT_STAR = /\bexport\s*\*/;
-
 function exportsOutsideApi(
 	exports: Record<string, string>,
 	area: string,
@@ -64,17 +62,32 @@ function isApiFile(file: string): boolean {
 /** The api subpaths of a package: the `exports` keys that point into an `api/` folder. */
 function apiSubpaths(exports: Record<string, string>): string[] {
 	return Object.entries(exports).flatMap(([subpath, target]) =>
-		isApiFile(target) ? [subpath.slice(2)] : [],
+		isApiFile(target) ? [subpath === "." ? "" : subpath.slice(2)] : [],
 	);
 }
 
 /** Whether a file names an api file, by `#` specifier or by the package's own name. */
-function importsApi(text: string, name: string, subpaths: readonly string[]): boolean {
-	const own = new RegExp(`["'\`]@archboard/${name}/([^"'\`?]+)`, "g");
-	return (
-		API_IMPORT.test(text) ||
-		[...text.matchAll(own)].some(([, subpath]) => subpaths.includes(subpath ?? ""))
-	);
+function importsApi(
+	text: string,
+	name: string,
+	subpaths: readonly string[],
+	file: string,
+): boolean {
+	return sourceOf(text).imports.some((specifier) => {
+		const source = specifier.split("?")[0] ?? "";
+		if (/^#[a-z]+\/api\//.test(source)) return true;
+		if (
+			source.startsWith(".") &&
+			isApiFile(path.posix.normalize(path.posix.join(path.posix.dirname(file), source)))
+		)
+			return true;
+		if (source.startsWith("file:") && isApiFile(source)) return true;
+		const own = `@archboard/${name}`;
+		return (
+			(source === own && subpaths.includes("")) ||
+			(source.startsWith(`${own}/`) && subpaths.includes(source.slice(own.length + 1)))
+		);
+	});
 }
 
 function privateFilesImportingApi(
@@ -83,13 +96,13 @@ function privateFilesImportingApi(
 	subpaths: readonly string[],
 ): string[] {
 	return Object.entries(files).flatMap(([file, text]) =>
-		!isApiFile(file) && importsApi(text, name, subpaths) ? [file] : [],
+		!isApiFile(file) && importsApi(text, name, subpaths, file) ? [file] : [],
 	);
 }
 
 function apiFilesWithExportStar(files: Record<string, string>): string[] {
 	return Object.entries(files).flatMap(([file, text]) =>
-		isApiFile(file) && EXPORT_STAR.test(text) ? [file] : [],
+		isApiFile(file) && sourceOf(text).exportStar ? [file] : [],
 	);
 }
 
@@ -133,15 +146,16 @@ describe.each(ADOPTERS)("the api folder of $name", ({ name, areas, executables =
 const PRIVATE_PATH_FILE_USES: Record<string, string> = {
 	"scripts/generate-codex-app-server-contract.ts": "writes the generated contract into the package",
 	"tests/system/repository-policy/package-api.test.ts": "holds the synthetic paths of its own scan",
+	"tests/system/repository-policy/package-graph.test.ts":
+		"holds disposable graph fixtures with intentional private imports",
 	"tests/system/server-state/fixtures/public-codex-startup-preload.ts":
 		"replaces the cleanup timing of the one private file that the launcher's spawn imports",
 	"tests/system/server-state/staleness-source.test.ts":
 		"touches a package file to age the source the server runs",
 };
-const OUTSIDE_PACKAGES = ["tests", "scripts", "src", "apps"];
+const OUTSIDE_PACKAGES = ["tests", "scripts", "tools", "apps"];
 const SKIPPED_TREES = new Set(["node_modules", "dist", "generated", ".git"]);
 const CODE_FILE = /\.(?:[cm]?[jt]sx?)$/;
-const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*)/;
 
 /** The line numbers of string literals that name a private path of one of the packages. */
 function privatePackagePathLines(
@@ -150,18 +164,21 @@ function privatePackagePathLines(
 	executableTargets: readonly string[],
 ): number[] {
 	const pattern = new RegExp(
-		`["'\`][^"'\`\\n]*\\bpackages/(${packageNames.join("|")})/src/([^"'\`\\s]*)`,
+		`(?:^|/)packages/(${packageNames.join("|")})/src/([^"'\`\\s);]*)`,
 		"g",
 	);
-	return text.split("\n").flatMap((line, index) =>
-		COMMENT_LINE.test(line) ||
-		[...line.matchAll(pattern)].every(([, name, rest = ""]) => {
-			const file = `./src/${rest}`;
-			return rest.split("/").includes("api") || executableTargets.includes(`${name}:${file}`);
-		})
-			? []
-			: [index + 1],
-	);
+	return [
+		...new Set(
+			sourceOf(text).strings.flatMap(({ text: literal, line }) =>
+				[...literal.matchAll(pattern)].some(
+					([, name, rest = ""]) =>
+						/\.[cm]?[jt]sx?$/.test(rest) && !executableTargets.includes(`${name}:./src/${rest}`),
+				)
+					? [line]
+					: [],
+			),
+		),
+	];
 }
 
 /** The code files below the top folders of a repository; a top folder that does not exist is skipped. */
@@ -230,10 +247,10 @@ describe("no code outside the packages names a private package path", () => {
 		const text = [
 			`mock.module("../../packages/board/src/runtime/store/doing.ts", () => ({}));`, // 1: private
 			`const p = join(root, \`packages/board/src/shared/ids/ids.ts\`);`, // 2: private
-			`import x from "../../packages/board/src/shared/api/ids.ts";`, // 3: api file
+			`import x from "../../packages/board/src/shared/api/ids.ts";`, // 3: a public file still needs its exported name
 			`const e = "packages/process/src/runtime/processes/git-owner.ts";`, // 4: executable
 			`const f = "packages/alpha/src/shared/x.ts";`, // 5: not a package here
-			` * Mirrors \`packages/board/src/runtime/store/doing.ts\`.`, // 6: comment
+			`/** Mirrors \`packages/board/src/runtime/store/doing.ts\`. */`, // 6: comment
 			`// "packages/board/src/runtime/store/doing.ts"`, // 7: comment
 		].join("\n");
 		expect(
@@ -242,7 +259,7 @@ describe("no code outside the packages names a private package path", () => {
 				["board", "process"],
 				["process:./src/runtime/processes/git-owner.ts"],
 			),
-		).toEqual([1, 2]);
+		).toEqual([1, 2, 3]);
 	});
 });
 
@@ -291,10 +308,14 @@ describe("the api checks", () => {
 			"runtime/c.ts": `import { a } from "#shared/rules/a.ts";\n`,
 			"runtime/d.ts": `import { mintId } from "@archboard/board/ids";\n`,
 			"runtime/e.ts": `import { x } from "@archboard/board/private-thing";\n`,
+			"shared/rules/relative.ts": `import { a } from "../api/document.ts";\n`,
+			"shared/rules/type.ts": `type A = import("../api/document.ts").A;\n`,
 		};
 		expect(privateFilesImportingApi(files, "board", ["document", "ids"])).toEqual([
 			"shared/rules/b.ts",
 			"runtime/d.ts",
+			"shared/rules/relative.ts",
+			"shared/rules/type.ts",
 		]);
 		expect(apiFilesWithExportStar(files)).toEqual(["shared/api/star.ts"]);
 	});
