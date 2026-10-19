@@ -254,6 +254,9 @@ function appSourceProblem(rest: string): "unknown-area" | undefined {
  * @returns The owner, or undefined for a file in no area.
  */
 function areaOwnerAt(relativePath: string): AreaOwner | undefined {
+	if (relativePath === ROOT_BROWSER_ENTRY) {
+		return { kind: "workspace", area: "ui", root: "." };
+	}
 	const module = moduleAt(relativePath);
 	if (module) {
 		return { kind: "module", area: module.area, root: module.root };

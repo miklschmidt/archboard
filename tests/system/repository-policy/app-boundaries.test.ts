@@ -319,6 +319,10 @@ describe("an app is held to the rules of a package", () => {
 					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
 				"packages/alpha/src/ui/web.ts":
 					'import { Card } from "#web/ui/components/Card.tsx";\nexport { Card };\n',
+				"apps/web/src/ui/components/root-import.ts": importing("#web/ui/components/Card.tsx"),
+				"apps/server/src/server/root-import.ts": importing("#web/ui/components/Card.tsx"),
+				"src/ui/consumer/server.ts": importing("#web/../../server/src/server/host.ts"),
+				"src/ui/consumer/prefix.ts": importing("#webbing/ui/components/Card.tsx"),
 			},
 			(root) =>
 				expectJudged(
@@ -331,6 +335,10 @@ describe("an app is held to the rules of a package", () => {
 						"scripts/web.ts": UNRESOLVED,
 						"tests/system/policy/web.test.ts": UNRESOLVED,
 						"packages/alpha/src/ui/web.ts": UNRESOLVED,
+						"apps/web/src/ui/components/root-import.ts": UNRESOLVED,
+						"apps/server/src/server/root-import.ts": UNRESOLVED,
+						"src/ui/consumer/server.ts": NOT_AN_APP_IMPORT,
+						"src/ui/consumer/prefix.ts": UNRESOLVED,
 					},
 					[
 						"src/ui/consumer/index.ts",
@@ -339,6 +347,24 @@ describe("an app is held to the rules of a package", () => {
 						"frontend/main.tsx",
 					],
 				),
+		);
+	});
+
+	test.each([
+		"#web/runtime/work.ts",
+		"#web/server/host.ts",
+		"#web/server/host.ts?raw",
+		"@archboard/beta",
+		"@/server/host/index.ts",
+	])("the root browser entry refuses the server or runtime target of %s", async (source) => {
+		// The temporary #web entry must preserve browser area checks for every resolved target.
+		await withProject(
+			{
+				...world,
+				"frontend/main.tsx": importing(source),
+				"src/server/host/index.ts": "export const clip = 1;\n",
+			},
+			(root) => expectJudged(root, { "frontend/main.tsx": AREA }),
 		);
 	});
 
