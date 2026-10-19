@@ -6,7 +6,7 @@ changing tests or CI, or when a browser check fails.
 `bun run test` type-checks and runs `build:frontend`, then runs four normal
 native lanes in this order:
 
-- `test:modules`: isolated module-owned and package-owned product tests discovered under `src/`,
+- `test:modules`: isolated package-owned and app-owned product tests discovered under
   `packages/` and `apps/`;
 - `test:system`: system product owners under the seven explicit non-browser
   directories, with `--max-concurrency=1` because they own real processes and

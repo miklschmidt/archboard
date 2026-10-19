@@ -77,12 +77,11 @@ All JavaScript-like source inside any test owner is TypeScript. The pre-task
 600-physical-line limit to all authored UI source, including tests, comments and
 blank lines. Put large test data in a named non-TypeScript fixture instead.
 
-Local imports use `@/` aliases, including same-module imports, re-exports and
-dynamic/type imports. The private-module and area rules still apply, and
-JavaScript source is rejected. This holds for every authored source file
-(TASK-151), not only UI source. The alias resolves into `src/` alone, so the few
-sibling imports in `scripts/` and `tools/` stay relative and say so on the line. A file in a
-package imports its own package relatively, as [Packages](#packages) says.
+Local imports in a package or app use its own `#` entries, including re-exports and
+dynamic/type imports. Spell out the file extension. The private-module and area rules still
+apply, and JavaScript source is rejected. Sibling imports in `scripts/` and `tools/` stay
+relative and state the exception on the line. The root `@/` mapping remains for the old
+module rules until TASK-500.24.06. No browser source uses it.
 
 Oxlint also rejects generic `core`, `utils`, `misc`, `migration`, and `compatibility` buckets. Name
 the module for the behavior it owns.
@@ -324,8 +323,9 @@ module draws with, in the `ui` area, and imports nothing from `src/`. It adopts 
 `ui/components/` holds the shadcn Base UI components with their `README.md` and the dialog parts in
 `dialog-parts/`; `ui/state/` holds the frame clock and the fullscreen presentation; `ui/rules/`,
 `ui/hooks/` and `ui/constants/` hold the small helpers. The `components` aliases in
-`components.json` name `ui/components/` as `@/../packages/ui-kit/src/ui/components`, which the
-shadcn CLI resolves through the `@/*` mapping. Generated imports still need the `#` rewrite.
+`components.json` name `ui/components/` as `packages/ui-kit/src/ui/components`. The shadcn CLI
+resolves these paths from the repository root. They do not depend on the old `src/` directory.
+Generated imports still need the package-local `#` rewrite.
 
 - `./controls` is what a person acts on: buttons, inputs, selects, tabs, toggles and form fields,
   and `usesCommandKey`, the platform's modifier for shortcuts.
