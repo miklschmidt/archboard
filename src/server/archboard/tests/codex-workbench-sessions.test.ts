@@ -1,9 +1,6 @@
 import { expect, test } from "bun:test";
 
-import {
-	createIdentityAuthorities,
-	type ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities, type ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	parseTabSessionId,
 	workhorseLinkKey,

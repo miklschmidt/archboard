@@ -8,7 +8,7 @@ import type {
 	JsonRpcRequestId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 
 export function commandApprovalOwnerFixture(input: {
 	readonly identity: IdentityAuthority;

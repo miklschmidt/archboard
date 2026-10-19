@@ -8,9 +8,9 @@ import type {
 	CodexWorkbenchGatewayOptions,
 	TabSessionId,
 } from "@/server/codex-workbench";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
-import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session-responses";
-import type { OperationId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
+import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
+import type { OperationId, ThreadId } from "@archboard/codex-app-server/identity";
 import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@archboard/timing";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";

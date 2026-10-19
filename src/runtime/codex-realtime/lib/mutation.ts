@@ -3,7 +3,7 @@ import type {
 	RealtimeCorrelationId,
 	RealtimeSessionId,
 } from "@/shared/codex-realtime-contract";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import { realtimeErrorMessage } from "@/runtime/codex-realtime/lib/binding";
 
 interface MutationRequest {

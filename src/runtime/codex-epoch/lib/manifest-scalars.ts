@@ -1,11 +1,6 @@
 import { isAbsolute, resolve } from "node:path";
 
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+import type { ChildEpoch, ChildId, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 
 const CHILD_TOKEN = /^archboard:child:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
 const EPOCH_TOKENS =

@@ -1,7 +1,6 @@
 import type { CodexEpochStore, EpochExecutionProof, EpochTransaction } from "@/runtime/codex-epoch";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
-import type { SessionThread } from "@archboard/codex-app-server/session-responses";
+import type { CodexSession, SessionThread } from "@archboard/codex-app-server/session";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
@@ -9,11 +8,11 @@ import type {
 	ThreadLinkTarget,
 } from "@/runtime/codex-thread-link";
 import type { CodexWaitGraph } from "@/runtime/codex-wait-graph";
-import type { CodexTransport } from "@archboard/codex-app-server/transport-types";
 import type {
+	CodexTransport,
 	DynamicServerRequest,
 	ReverseResponse,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/transport";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -22,7 +21,7 @@ import type {
 	OperationId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	ArchboardAppNamespaceSpec,
 	ToolArguments,

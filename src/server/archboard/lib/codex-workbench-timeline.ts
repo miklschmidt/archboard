@@ -1,12 +1,14 @@
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
-import type { SessionThreadTurnPageResult } from "@archboard/codex-app-server/session-responses";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import type {
+	CodexSession,
+	SessionThreadTurnPageResult,
+} from "@archboard/codex-app-server/session";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
 import type {
 	ThreadId,
 	TrustedIdentityDecoder,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	BrowserConnectionInstance,
 	CodexTimelineProjectionInput,

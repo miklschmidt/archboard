@@ -1,6 +1,6 @@
 import type { ApprovalBinding, ApprovalSettlement } from "@/runtime/codex-approvals";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type {
 	RealtimeCorrelation,
 	RealtimeTranscriptRecord,
@@ -13,7 +13,7 @@ import type {
 	JsonRpcRequestId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	SpokenApprovalArmInput,
 	SpokenApprovalFallbackReason,

@@ -11,7 +11,7 @@ import {
 	type ThreadLinkNonExecutableSnapshot,
 	type ThreadLinkSnapshot,
 } from "../index.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 import { loadedPage, session, thread, threadPage } from "./fixtures.ts";
 import { realEpochFixture, type RealEpochFixture } from "./epoch-fixtures.ts";
 

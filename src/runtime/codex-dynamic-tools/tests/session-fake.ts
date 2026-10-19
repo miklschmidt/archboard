@@ -1,6 +1,7 @@
-import type { SessionParams } from "@archboard/codex-app-server/session-api";
-import type { SessionThread, SessionTurn } from "@archboard/codex-app-server/session-responses";
 import type {
+	SessionParams,
+	SessionThread,
+	SessionTurn,
 	SessionLoadedThreadPageResult,
 	SessionThreadItemPageResult,
 	SessionThreadPageResult,
@@ -8,8 +9,8 @@ import type {
 	SessionThreadForkResult,
 	SessionThreadStartResult,
 	SessionTurnResult,
-} from "@archboard/codex-app-server/session-responses";
-import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/session";
+import type { ThreadId } from "@archboard/codex-app-server/identity";
 
 class FakeSession {
 	readonly calls: Array<{ readonly method: string; readonly params: unknown }> = [];

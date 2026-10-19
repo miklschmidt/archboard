@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { ApprovalBinding, ApprovalResponse } from "../index.js";
-import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import type { IdentityAuthority } from "@archboard/codex-app-server/identity";
 import {
 	closeBroker,
 	commandRequestWithAvailableDecisions,

@@ -3,7 +3,7 @@ import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthorities,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	CodexWorkbenchGatewayError,
 	type BrowserConnectionId,

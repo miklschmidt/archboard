@@ -3,7 +3,7 @@ import {
 	type BrowserActionContext,
 	type BrowserTextActions,
 } from "@/server/codex-workbench";
-import type { OperationId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
+import type { OperationId, ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	createTurnStartParams,
 	createTurnSteerParams,

@@ -1,7 +1,7 @@
 import type { DynamicWaitOwner } from "../../../../runtime/codex-dynamic-tools/index.js";
 import type { CodexWaitGraph } from "../../../../runtime/codex-wait-graph/index.js";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../../runtime/codex-thread-tools/index.js";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createServerDynamicLifecycleOwner } from "../../codex-workbench-adapters.js";
 
 /** One current child plus one foreign child, with their wire spellings. */

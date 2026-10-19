@@ -1,6 +1,6 @@
-import type { SessionThread } from "@archboard/codex-app-server/session-responses";
+import type { SessionThread } from "@archboard/codex-app-server/session";
 import type { GeneralThreadToolName } from "@/runtime/codex-thread-tools";
-import { isCodexThreadStatusType } from "@archboard/codex-app-server/app-server-contract";
+import { isCodexThreadStatusType } from "@archboard/codex-app-server/contract";
 
 type DynamicToolName = GeneralThreadToolName;
 const DYNAMIC_MUTATION_TOOL_NAMES = [

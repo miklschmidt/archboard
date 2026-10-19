@@ -23,7 +23,7 @@ import type {
 	ThreadId,
 	TrustedIdentityDecoder,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 
 const WIRE_IDENTITY_MAX_BYTES = 16_384;
 

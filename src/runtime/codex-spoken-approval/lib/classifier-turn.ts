@@ -1,13 +1,9 @@
 import type { ApprovalSettlement } from "@/runtime/codex-approvals";
 import type { DynamicToolRefusalReason } from "@/runtime/codex-coordinator-tool-contract";
 import { createTurnStartParams, type TurnStartParams } from "@/runtime/codex-instructions";
-import type { SessionParams } from "@archboard/codex-app-server/session-api";
-import type { SessionResponse } from "@archboard/codex-app-server/session-responses";
+import type { SessionParams, SessionResponse } from "@archboard/codex-app-server/session";
 import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-contract";
-import {
-	type IdentityAuthority,
-	type TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+import type { IdentityAuthority, TurnId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexSpokenApprovalGateOptions,
 	SpokenApprovalFallbackReason,

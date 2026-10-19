@@ -6,7 +6,7 @@ import type {
 	SemanticArchitectureInput,
 	SemanticContextInput,
 	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context-types";
+} from "@archboard/codex-app-server/semantic-context";
 import { readSemanticBoard } from "@archboard/board/store-read";
 import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
 import type { SemanticBoard } from "@archboard/board/document";

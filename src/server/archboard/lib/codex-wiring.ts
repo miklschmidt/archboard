@@ -7,7 +7,7 @@ import type {
 	SemanticAgentSwitch,
 	SemanticUserChange,
 	SettledChangeSourceEvent,
-} from "@archboard/codex-app-server/semantic-context-types";
+} from "@archboard/codex-app-server/semantic-context";
 import {
 	serverStartupOwnershipRecord,
 	writeServerStartupProtocolRecord,

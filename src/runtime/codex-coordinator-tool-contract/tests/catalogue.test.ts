@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
+import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
 import { describe, expect, test } from "bun:test";
 
 import {

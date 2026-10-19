@@ -16,7 +16,7 @@
 // that went.
 
 import type { BrowserActionContext, BrowserRealtimeActions } from "@/server/codex-workbench";
-import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
+import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,

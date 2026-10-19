@@ -5,7 +5,7 @@ import { createCodexBrowserModel } from "../../../shared/codex-browser-model/ind
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	projectCodexBrowserState,
 	type BrowserProjectionInput,

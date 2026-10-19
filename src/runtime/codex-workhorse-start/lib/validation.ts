@@ -5,7 +5,7 @@ import type {
 	ChildId,
 	OperationId,
 	ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
 	WORKHORSE_CLEANUP_RPC,

@@ -9,7 +9,7 @@ import {
 import {
 	createIdentityAuthority,
 	restoreIdentityAuthority,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	currentEpoch,
 	loadedPage,

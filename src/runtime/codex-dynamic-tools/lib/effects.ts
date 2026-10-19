@@ -1,4 +1,4 @@
-import type { ChildEpoch, ChildId, TurnId } from "@archboard/codex-app-server/workbench-identity";
+import type { ChildEpoch, ChildId, TurnId } from "@archboard/codex-app-server/identity";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import {
 	CodexDynamicToolsError,
@@ -13,7 +13,7 @@ import {
 	type DynamicToolApprovalRequest,
 	type DynamicToolApprovalDecision,
 } from "@/runtime/codex-dynamic-tools/lib/contract";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import {
 	createPrompt,
 	dynamicEffectHash,

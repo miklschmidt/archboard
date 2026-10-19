@@ -1,7 +1,7 @@
 import {
 	CODEX_PROTOCOL_BINARY_VERSION,
 	CODEX_PROTOCOL_VERSION,
-} from "@archboard/codex-app-server/protocol-version";
+} from "@archboard/codex-app-server/protocol";
 import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { EventEmitter } from "node:events";
 import { tmpdir } from "node:os";
@@ -17,18 +17,17 @@ import {
 	type CodexRealtimeAdapter,
 	type CodexRealtimeBinding,
 } from "../../../../src/runtime/codex-realtime/index.ts";
-import { createCodexSession } from "@archboard/codex-app-server/session";
-import { type CodexSession } from "@archboard/codex-app-server/session-api";
-import { createCodexTransport } from "@archboard/codex-app-server/transport";
+import { createCodexSession, type CodexSession } from "@archboard/codex-app-server/session";
 import {
+	createCodexTransport,
 	type CodexTransport,
 	type CodexTransportChild,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/transport";
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
 	type WireRequestCorrelation,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type { RealtimeSemanticEvent } from "../../../../src/shared/codex-realtime-contract/index.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../../..");

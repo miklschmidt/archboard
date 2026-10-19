@@ -1,16 +1,16 @@
 import { expect, test } from "bun:test";
 
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type {
+	CodexSession,
 	SessionThreadItem,
 	SessionThreadTurnPageResult,
-} from "@archboard/codex-app-server/session-responses";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/session";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import { createServerTimelineOwner } from "../codex-workbench-adapters.js";
 import {
 	agentMessageItem,

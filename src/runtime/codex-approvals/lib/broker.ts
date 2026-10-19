@@ -41,8 +41,8 @@ import {
 	validateApprovalResponse,
 } from "@/runtime/codex-approvals/lib/response";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
-import type { JsonRpcRequestId } from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { JsonRpcRequestId } from "@archboard/codex-app-server/identity";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
 
 /**
  * Build the broker that owns every approval Codex asks for. It stages each request, publishes it, answers it exactly once, and settles it terminally: the answer is proven against the binding it was made under, and an approval that cannot be proven falls back to the narrowest response its family has rather than granting anything.

@@ -3,10 +3,10 @@ import { ADDITIONAL_CONTEXT_POLICY } from "@/runtime/codex-instructions";
 import type {
 	SemanticCursor,
 	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context-types";
+} from "@archboard/codex-app-server/semantic-context";
 import { CodexThreadLinkError, type ThreadLinkReasonCode } from "@/runtime/codex-thread-link";
 import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
-import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
+import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexThreadContextDeliveryOptions,
 	CodexThreadContextTarget,

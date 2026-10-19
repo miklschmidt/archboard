@@ -1,5 +1,7 @@
-import { QueuedSubmissionSchema } from "@archboard/codex-app-server/session-contract";
-import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session-responses";
+import {
+	QueuedSubmissionSchema,
+	type SessionQueuedSubmission,
+} from "@archboard/codex-app-server/session";
 import type {
 	QueueSnapshot,
 	WorkhorseQueueBinding,

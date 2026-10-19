@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { classifyCodexThreadLink } from "../index.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 import { currentEpoch, loadedPage, session, thread, threadPage } from "./fixtures.ts";
 import {
 	realEpochFixture,

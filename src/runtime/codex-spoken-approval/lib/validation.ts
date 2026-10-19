@@ -8,12 +8,16 @@ import type {
 	SpokenApprovalArmInput,
 	SpokenApprovalFallbackReason,
 } from "@/runtime/codex-spoken-approval/lib/contract";
-import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import type {
+	IdentityAuthority,
+	ChildEpoch,
+	ChildId,
+	ThreadId,
+} from "@archboard/codex-app-server/identity";
 import type {
 	RealtimeCorrelation,
 	RealtimeTranscriptRecord,
 } from "@/shared/codex-realtime-contract";
-import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/workbench-identity";
 import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "@archboard/timing";
 import {
 	failure,

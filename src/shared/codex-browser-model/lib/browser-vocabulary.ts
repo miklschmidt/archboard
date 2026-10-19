@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { assertCurrentTarget } from "@/shared/codex-browser-model/lib/scalars";
 import type { IdentityContext } from "@/shared/codex-browser-model/lib/scalars";
-import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/workbench-identity";
+import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/identity";
 
 const TimestampSchema = z.number().int().nonnegative();
 const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);

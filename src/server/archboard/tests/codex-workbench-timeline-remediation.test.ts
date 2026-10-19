@@ -1,15 +1,17 @@
 import { expect, test } from "bun:test";
 
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
-import type { CodexSession } from "@archboard/codex-app-server/session-api";
-import type { SessionThreadTurnPageResult } from "@archboard/codex-app-server/session-responses";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import type {
+	CodexSession,
+	SessionThreadTurnPageResult,
+} from "@archboard/codex-app-server/session";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
 	type ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	BROWSER_SNAPSHOT_MAX_BYTES,
 	BROWSER_SNAPSHOT_MIN_BYTES,

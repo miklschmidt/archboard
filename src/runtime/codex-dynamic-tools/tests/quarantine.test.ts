@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createCodexDynamicTools, type CodexDynamicTools } from "../index.js";
 import { parseDynamicToolCallResponse } from "../../codex-thread-tools/index.js";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	FakeApproval,
 	dynamicDecision,

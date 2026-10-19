@@ -1,4 +1,4 @@
-import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
+import type { ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
@@ -7,7 +7,7 @@ import {
 } from "@/runtime/codex-coordinator-tool-contract";
 import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "@/runtime/codex-instructions";
 import type { CanonicalNamespace } from "@/runtime/codex-coordinator-tool-contract";
-import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session-api";
+import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session";
 import {
 	CodexCoordinatorError,
 	type CoordinatorModel,

@@ -1,9 +1,9 @@
 import type { BrowserWorkbenchActions } from "@/server/codex-workbench";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {
 	ControlledCodexSession,
 	SessionLoginParams,
-} from "@archboard/codex-app-server/session-api";
+} from "@archboard/codex-app-server/session";
 import { createCodexBrowserModel } from "@/shared/codex-browser-model";
 import type { ServerBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";

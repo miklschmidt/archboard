@@ -11,7 +11,7 @@ import {
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type { ThreadLinkTarget } from "../index.ts";
 
 const INSTRUCTION_HASH = "1".repeat(64);

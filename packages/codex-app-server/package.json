@@ -10,22 +10,12 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
-		"./app-server-contract": "./src/shared/protocol/app-server-contract.ts",
-		"./app-server-capacity": "./src/shared/constants/app-server-capacity.ts",
-		"./workbench-identity": "./src/shared/rules/workbench-identity.ts",
-		"./protocol-version": "./src/runtime/protocol/protocol-version.ts",
-		"./protocol-decoder": "./src/runtime/protocol/protocol-decoder.ts",
-		"./session-contract": "./src/runtime/schemas/session-contract.ts",
-		"./process": "./src/runtime/processes/process.ts",
-		"./executable": "./src/runtime/services/executable.ts",
-		"./transport": "./src/runtime/clients/transport.ts",
-		"./transport-types": "./src/runtime/clients/transport-types.ts",
-		"./transport-errors": "./src/runtime/clients/transport-errors.ts",
-		"./session": "./src/runtime/services/session.ts",
-		"./session-api": "./src/runtime/services/session-api.ts",
-		"./session-responses": "./src/runtime/schemas/session-responses.ts",
-		"./semantic-context-publisher": "./src/runtime/operations/semantic-context-publisher.ts",
-		"./semantic-context-types": "./src/runtime/schemas/semantic-context-types.ts",
-		"./semantic-context-limits": "./src/runtime/services/semantic-context-limits.ts"
+		"./contract": "./src/shared/api/contract.ts",
+		"./identity": "./src/shared/api/identity.ts",
+		"./protocol": "./src/runtime/api/protocol.ts",
+		"./process": "./src/runtime/api/process.ts",
+		"./transport": "./src/runtime/api/transport.ts",
+		"./session": "./src/runtime/api/session.ts",
+		"./semantic-context": "./src/runtime/api/semantic-context.ts"
 	}
 }

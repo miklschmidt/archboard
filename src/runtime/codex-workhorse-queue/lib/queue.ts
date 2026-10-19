@@ -1,4 +1,4 @@
-import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session-responses";
+import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
 import {
 	CodexWorkhorseQueueError,
 	type CodexWorkhorseQueue,

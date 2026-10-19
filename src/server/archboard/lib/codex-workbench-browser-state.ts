@@ -1,8 +1,5 @@
-import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session-responses";
-import type {
-	OperationAuthority,
-	OperationId,
-} from "@archboard/codex-app-server/workbench-identity";
+import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
+import type { OperationAuthority, OperationId } from "@archboard/codex-app-server/identity";
 import type {
 	BrowserAccountProjectionInput,
 	BrowserOwnerProjection,

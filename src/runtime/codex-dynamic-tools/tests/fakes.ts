@@ -10,16 +10,16 @@ import type {
 	ReverseResponse,
 	ResponseOwner,
 	TransportServerRequest,
-} from "@archboard/codex-app-server/transport-types";
-import type {
-	ChildEpoch,
-	ChildId,
-	DynamicToolCallId,
-	OperationId,
-	ThreadId,
-	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/transport";
+import {
+	type ChildEpoch,
+	type ChildId,
+	type DynamicToolCallId,
+	type OperationId,
+	type ThreadId,
+	type TurnId,
+	createIdentityAuthorities,
+} from "@archboard/codex-app-server/identity";
 import type { GeneralThreadToolName } from "../../codex-thread-tools/index.js";
 import type {
 	CodexDynamicToolsOptions,

@@ -1,15 +1,15 @@
 // The semantic events the callbacks owners publish: one board, one pane, one settled change, as
 // the harness in support.ts names them.
 
-import { createSemanticContextPublisher } from "@archboard/codex-app-server/semantic-context-publisher";
 import {
+	createSemanticContextPublisher,
 	type PaneFocusEvent,
 	type PaneSelectionEvent,
 	type SemanticContextInput,
 	type SemanticContextPublisher,
 	type SettledChangeSourceEvent,
 	type SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context-types";
+} from "@archboard/codex-app-server/semantic-context";
 import type { Identities } from "./support.js";
 
 function semanticInput(ids: Identities, active: boolean): SemanticContextInput {

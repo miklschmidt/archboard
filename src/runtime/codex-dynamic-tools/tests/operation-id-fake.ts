@@ -1,4 +1,4 @@
-import type { OperationId } from "@archboard/codex-app-server/workbench-identity";
+import type { OperationId } from "@archboard/codex-app-server/identity";
 import type {
 	DynamicOperationIdPort,
 	DynamicOperationTerminalDisposition,

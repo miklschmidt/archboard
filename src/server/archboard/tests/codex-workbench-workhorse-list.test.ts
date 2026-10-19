@@ -5,7 +5,7 @@
 
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { parseTabSessionId, type TabSessionId } from "../../codex-workbench/index.js";
 import {
 	readWorkhorseList,

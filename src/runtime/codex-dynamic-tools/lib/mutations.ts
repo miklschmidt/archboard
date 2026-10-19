@@ -1,7 +1,7 @@
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type { EpochTransaction } from "@/runtime/codex-epoch";
-import type { SessionThread, SessionTurn } from "@archboard/codex-app-server/session-responses";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { SessionThread, SessionTurn } from "@archboard/codex-app-server/session";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,

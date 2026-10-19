@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { CoordinatorToolName } from "../../codex-coordinator-tool-contract/index.js";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { CoordinatorToolsServerRequest } from "../index.js";
 import { copyRequest, fixture, responseEnvelope, type CoordinatorToolsFixture } from "./support.js";
 

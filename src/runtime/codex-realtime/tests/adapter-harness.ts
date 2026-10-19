@@ -10,13 +10,13 @@ import {
 	type ChildId,
 	type ItemId,
 	type ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	decodeServerNotification,
 	type DecodedServerNotification,
-} from "@archboard/codex-app-server/protocol-decoder";
-import type { SessionParams } from "@archboard/codex-app-server/session-api";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/protocol";
+import type { SessionParams } from "@archboard/codex-app-server/session";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,

@@ -14,8 +14,8 @@ import type {
 	JsonRpcRequestId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/identity";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
 
 type HumanRequest = Extract<TransportServerRequest, { readonly owner: "codex-approvals" }>;
 type OwnedRequest<Method extends HumanRequest["method"]> = Extract<

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { AGENT_QUIET_MS } from "@archboard/timing";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { AgentSetupSnapshot, HeldMessage } from "@/ui/agent-setup";
 import { agentStatus } from "@/ui/workbench";
 import type { AgentView } from "@/ui/workbench/contracts";

@@ -9,7 +9,7 @@ import {
 	CodexTokenUsageBreakdownSchema,
 	CodexTurnPlanStepStatusSchema,
 	CodexTurnStatusSchema,
-} from "@archboard/codex-app-server/app-server-contract";
+} from "@archboard/codex-app-server/contract";
 import {
 	BROWSER_TIMELINE_LIMITS as LIMITS,
 	refineCurrentTarget,

@@ -3,7 +3,7 @@ import type {
 	CoordinatorToolCoordinatorAuthority,
 } from "@/runtime/codex-coordinator-tools/lib/contract";
 import { fail } from "@/runtime/codex-coordinator-tools/lib/call-identity";
-import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/workbench-identity";
+import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/identity";
 import type { WorkhorseOperationBinding } from "@/runtime/codex-workhorse-operations";
 
 /** A server fact that claims a child and epoch. */

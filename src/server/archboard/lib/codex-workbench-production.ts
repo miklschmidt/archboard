@@ -4,7 +4,7 @@ import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
-} from "@archboard/codex-app-server/executable";
+} from "@archboard/codex-app-server/process";
 import { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { PORT, serverUrl } from "@/server/archboard/lib/listener-address";

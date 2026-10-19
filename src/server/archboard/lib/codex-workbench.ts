@@ -3,7 +3,7 @@ import { createCodexTransport } from "@archboard/codex-app-server/transport";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import {
 	CODEX_WORKBENCH_OWNER,

@@ -13,14 +13,13 @@ import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 } from "@/runtime/codex-thread-tools";
-import { createCodexTransport } from "@archboard/codex-app-server/transport";
-import { type CodexTransport } from "@archboard/codex-app-server/transport-types";
+import { createCodexTransport, type CodexTransport } from "@archboard/codex-app-server/transport";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
 	type IdentityAuthorities,
 	type IdentityLedger,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import { createCodexWorkbenchGateway } from "@/server/codex-workbench";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import {

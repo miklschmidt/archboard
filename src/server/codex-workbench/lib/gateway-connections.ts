@@ -4,10 +4,7 @@ import type {
 	BrowserOperationOutcome,
 	BrowserSnapshot,
 } from "@/shared/codex-browser-model";
-import type {
-	IdentityAuthorities,
-	JsonRpcRequestId,
-} from "@archboard/codex-app-server/workbench-identity";
+import type { IdentityAuthorities, JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 import {
 	CodexWorkbenchGatewayError,
 	type BrowserActionContext,

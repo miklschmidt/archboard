@@ -1,4 +1,4 @@
-import { CODEX_SESSION_CONTROL } from "@archboard/codex-app-server/session-api";
+import { CODEX_SESSION_CONTROL } from "@archboard/codex-app-server/session";
 import type {
 	CodexWorkbenchStopReason,
 	GenerationState,

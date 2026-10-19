@@ -1,6 +1,6 @@
-import type { SessionThreadItem, SessionTurn } from "@archboard/codex-app-server/session-responses";
+import type { SessionThreadItem, SessionTurn } from "@archboard/codex-app-server/session";
 import type { ThreadLinkSnapshot } from "../../../../runtime/codex-thread-link/index.js";
-import type { IdentityAuthorities, ThreadId } from "@archboard/codex-app-server/workbench-identity";
+import type { IdentityAuthorities, ThreadId } from "@archboard/codex-app-server/identity";
 
 type Item<Type extends SessionThreadItem["type"]> = Extract<SessionThreadItem, { type: Type }>;
 type ItemInput<Type extends SessionThreadItem["type"]> = Omit<Item<Type>, "id">;

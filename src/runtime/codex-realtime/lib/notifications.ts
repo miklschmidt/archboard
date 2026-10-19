@@ -1,4 +1,4 @@
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { liveItemId, upsertLiveItem } from "@/runtime/codex-realtime/lib/live-items";
 import * as phase from "@/runtime/codex-realtime/lib/phase";
 import type { RealtimeSessionOps } from "@/runtime/codex-realtime/lib/session-ops";

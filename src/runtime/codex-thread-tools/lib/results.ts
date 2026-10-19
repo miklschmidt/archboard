@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	CodexThreadStatusTypeSchema,
 	CodexTurnStatusSchema,
-} from "@archboard/codex-app-server/app-server-contract";
+} from "@archboard/codex-app-server/contract";
 
 import {
 	GeneralThreadToolNameSchema,

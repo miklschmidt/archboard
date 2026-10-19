@@ -3,7 +3,7 @@ import type {
 	ChildId,
 	IdentityAuthorities,
 	OperationId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	DynamicCallerAuthority,
 	DynamicEpochTeardownProof,
@@ -19,8 +19,10 @@ import type {
 	DynamicWaitOwner,
 } from "@/runtime/codex-dynamic-tools";
 import type { CodexWaitGraph, WaitOwner } from "@/runtime/codex-wait-graph";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+import type {
+	DynamicServerRequest,
+	TransportServerNotification,
+} from "@archboard/codex-app-server/transport";
 
 /**
  * The shared OperationId authority plus exact once-only terminal disposition.

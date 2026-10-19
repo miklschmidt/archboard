@@ -8,7 +8,7 @@ import type {
 	BrowserSnapshot,
 	DYNAMIC_APPROVAL_DECISIONS,
 } from "@/shared/codex-browser-model";
-import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/app-server-contract";
+import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/contract";
 import type { AgentSetupSnapshot } from "@/ui/agent-setup";
 import type { ThreadLinkLoginParams } from "@/ui/workbench-thread-link/transport-port";
 import type { Conversation } from "@/ui/workbench-runtime";

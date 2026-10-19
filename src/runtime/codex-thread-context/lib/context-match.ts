@@ -1,5 +1,5 @@
 import type { ArchboardContext } from "@/runtime/codex-instructions";
-import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context-types";
+import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context";
 import type { DeliveryTarget } from "@/runtime/codex-thread-context/lib/delivery-state";
 import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context/lib/event-identity";
 import { sameStringValues } from "@/runtime/codex-thread-context/lib/link-equality";

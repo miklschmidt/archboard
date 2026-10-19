@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 import {
 	createCodexEpochStore,
 	defaultCodexEpochFileSystem,

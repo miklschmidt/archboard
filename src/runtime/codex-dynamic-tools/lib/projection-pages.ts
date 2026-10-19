@@ -1,10 +1,11 @@
-import type { SessionParams, CodexSession } from "@archboard/codex-app-server/session-api";
 import type {
+	SessionParams,
+	CodexSession,
 	SessionThread,
 	SessionThreadPageResult,
 	SessionLoadedThreadPageResult,
-} from "@archboard/codex-app-server/session-responses";
-import type { ThreadId } from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/session";
+import type { ThreadId } from "@archboard/codex-app-server/identity";
 import { CodexDynamicToolsError } from "@/runtime/codex-dynamic-tools/lib/contract";
 
 /** The thread sources the projection reads, and so the only ones a listing can report. */

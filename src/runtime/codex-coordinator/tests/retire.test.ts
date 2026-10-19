@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
-import type { SessionThread } from "@archboard/codex-app-server/session-responses";
+import { CodexSessionMutationError, type SessionThread } from "@archboard/codex-app-server/session";
 import type { CoordinatorRetirement, CoordinatorSnapshot } from "../index.js";
 import { fixture, type Fixture } from "./support.js";
 

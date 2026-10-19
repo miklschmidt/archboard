@@ -3,7 +3,7 @@ import type {
 	ChildId,
 	OperationId,
 	ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
 import { cloneAndFreeze } from "@/runtime/codex-workhorse-start/lib/immutability";
 import type {

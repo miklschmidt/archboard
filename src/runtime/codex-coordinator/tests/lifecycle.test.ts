@@ -1,6 +1,6 @@
 import { describe, expect, jest, test } from "bun:test";
 
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session-api";
+import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import type {
 	CodexCoordinatorError,
 	CoordinatorEffectiveSettings,
@@ -13,7 +13,7 @@ import {
 	createCoordinatorSettingsUpdateParams,
 	createCoordinatorThreadStartParams,
 } from "../index.js";
-import { createIdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
 import { WORKING_DIRECTORY, coordinatorModel, fixture, type Fixture } from "./support.js";
 

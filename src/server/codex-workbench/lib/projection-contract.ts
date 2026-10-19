@@ -18,11 +18,11 @@ import type {
 	OperationId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	CodexResponseByMethod,
 	CodexServerNotificationParamsByMethod,
-} from "@archboard/codex-app-server/app-server-contract";
+} from "@archboard/codex-app-server/contract";
 import type {
 	ApprovalOwnerView,
 	ApprovalState,
@@ -35,7 +35,7 @@ import type {
 	SessionResponsePayloads,
 	SessionThreadItem,
 	SessionTurn,
-} from "@archboard/codex-app-server/session-responses";
+} from "@archboard/codex-app-server/session";
 import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
 import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-contract";
 import type { SpokenApprovalSnapshot } from "@/runtime/codex-spoken-approval";

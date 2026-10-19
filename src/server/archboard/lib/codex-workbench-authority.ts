@@ -4,7 +4,7 @@ import type {
 	IdentityAuthorities,
 	OperationId,
 	ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicCallerAuthority,
@@ -15,7 +15,7 @@ import {
 } from "@/runtime/codex-dynamic-tools";
 import type { CodexEpochStore, EpochOperationRecord } from "@/runtime/codex-epoch";
 import type { CodexThreadLinkPort, ThreadLinkClassification } from "@/runtime/codex-thread-link";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 
 export interface ServerDynamicAuthorityOptions {

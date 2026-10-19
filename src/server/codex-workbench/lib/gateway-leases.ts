@@ -1,8 +1,5 @@
 import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browser-model";
-import type {
-	BrowserCommandId,
-	IdentityAuthorities,
-} from "@archboard/codex-app-server/workbench-identity";
+import type { BrowserCommandId, IdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	createBrowserLeaseManager,
 	sessionLeaseLedger,

@@ -16,7 +16,7 @@ import {
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import { projectCodexBrowserState, type BrowserProjectionInput } from "../index.js";
 import { commandApprovalOwnerFixture } from "./approval-owner-fixture.js";
 

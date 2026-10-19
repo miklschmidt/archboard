@@ -2,7 +2,7 @@
 // minted through the real identity authorities so no test asserts a plain
 // string into an identity type.
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createCodexBrowserModel,

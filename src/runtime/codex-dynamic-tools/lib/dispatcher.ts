@@ -1,5 +1,5 @@
 import type { DynamicToolCallResponse, GeneralThreadToolName } from "@/runtime/codex-thread-tools";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport-types";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import {
 	CodexDynamicOperationTerminalizationError,
 	CodexDynamicToolsError,

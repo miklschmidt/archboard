@@ -1,11 +1,14 @@
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol-version";
+import {
+	CODEX_PROTOCOL_VERSION,
+	type ServerNotificationPayloads,
+} from "@archboard/codex-app-server/protocol";
 import type { ActiveEpoch } from "../../codex-epoch/index.js";
-import type { ServerNotificationPayloads } from "@archboard/codex-app-server/protocol-decoder";
 import type {
 	CodexSessionMutationError,
 	SessionParams,
-} from "@archboard/codex-app-server/session-api";
-import type { SessionResponse, SessionThread } from "@archboard/codex-app-server/session-responses";
+	SessionResponse,
+	SessionThread,
+} from "@archboard/codex-app-server/session";
 import type {
 	CoordinatorModel,
 	CoordinatorSessionPort,
@@ -19,8 +22,8 @@ import { COORDINATOR_EFFORT, COORDINATOR_MODEL, createCodexCoordinator } from ".
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
-} from "@archboard/codex-app-server/workbench-identity";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/identity";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { FakeEpoch } from "./fake-epoch.js";
 
 const WORKING_DIRECTORY = "/state/codex-workbench/coordinator";

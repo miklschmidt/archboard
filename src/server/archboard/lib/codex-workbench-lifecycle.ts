@@ -3,7 +3,7 @@ import type {
 	CodexProcessChild,
 	CodexProcessSnapshot,
 } from "@archboard/codex-app-server/process";
-import type { IdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import { appendFailure, failureMessage } from "@/server/archboard/lib/codex-workbench-failures";
 import {

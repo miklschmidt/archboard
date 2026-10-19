@@ -3,14 +3,14 @@ import { describe, expect, test } from "bun:test";
 import type {
 	DynamicServerRequest,
 	TransportServerRequest,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/transport";
 import {
 	COORDINATOR_TOOLS_OWNER,
 	isCoordinatorToolRequest,
 	type CoordinatorToolsServerRequest,
 } from "../index.js";
 import { CHECKOUT, fixture, responseEnvelope, type CoordinatorToolsFixture } from "./support.js";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/workbench-identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 
 function dispatch(fixtureValue: CoordinatorToolsFixture, request: DynamicServerRequest) {
 	return fixtureValue.dispatcher.dispatch(request as CoordinatorToolsServerRequest);

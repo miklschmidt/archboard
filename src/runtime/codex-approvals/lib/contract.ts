@@ -1,4 +1,4 @@
-import type { CodexServerResponseByMethod } from "@archboard/codex-app-server/app-server-contract";
+import type { CodexServerResponseByMethod } from "@archboard/codex-app-server/contract";
 import type {
 	ApprovalId,
 	ChildEpoch,
@@ -9,13 +9,13 @@ import type {
 	JsonRpcRequestId,
 	ThreadId,
 	TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import type {
 	HumanApprovalMethod,
 	ReverseResponse,
 	TransportServerRequest,
 	TransportServerRequestListener,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/transport";
 
 type Unsubscribe = () => void;
 

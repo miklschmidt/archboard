@@ -1,3 +1,4 @@
+import type * as CodexProcessInterface from "@archboard/codex-app-server/process";
 import { mock } from "bun:test";
 import { appendFileSync } from "node:fs";
 import path from "node:path";
@@ -18,8 +19,7 @@ const executableModulePath = path.resolve(
 	import.meta.dir,
 	"../../../../packages/codex-app-server/src/runtime/services/executable.ts",
 );
-const executableModule =
-	await import("../../../../packages/codex-app-server/src/runtime/services/executable.ts");
+const executableModule: typeof CodexProcessInterface = await import(executableModulePath);
 await Promise.resolve(
 	mock.module(executableModulePath, (): typeof executableModule => ({
 		...executableModule,

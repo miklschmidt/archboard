@@ -14,12 +14,12 @@ import {
 	type IdentityAuthority,
 	type ThreadId,
 	type TurnId,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import {
 	COORDINATOR_CAPABILITY_POLICY,
 	type CoordinatorSnapshot,
 } from "../../codex-coordinator/index.js";
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol-decoder";
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import {
 	createCodexApprovalBroker,
 	type ApprovalBindingInput,
@@ -28,10 +28,16 @@ import {
 	type CodexApprovalBroker,
 } from "../../codex-approvals/index.js";
 import { ARCHBOARD_VOICE_MANIFEST_SHA256 } from "../../codex-coordinator-tool-contract/index.js";
-import type { TransportServerRequest } from "@archboard/codex-app-server/transport-types";
-import type { TransportServerNotification } from "@archboard/codex-app-server/transport-types";
-import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session-api";
-import type { SessionResponse, SessionTurn } from "@archboard/codex-app-server/session-responses";
+import type {
+	TransportServerRequest,
+	TransportServerNotification,
+} from "@archboard/codex-app-server/transport";
+import type {
+	CodexSession,
+	SessionParams,
+	SessionResponse,
+	SessionTurn,
+} from "@archboard/codex-app-server/session";
 import type { ArchboardContext } from "../../codex-instructions/index.js";
 import {
 	createCodexSpokenApprovalGate,

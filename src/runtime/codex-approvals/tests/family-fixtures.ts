@@ -1,9 +1,9 @@
 import type { ApprovalFamily, ApprovalResponse, TerminalApprovalState } from "../index.js";
-import type { IdentityAuthority } from "@archboard/codex-app-server/workbench-identity";
+import type { IdentityAuthority } from "@archboard/codex-app-server/identity";
 import type {
 	ReverseResponse,
 	TransportServerRequest,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/transport";
 import {
 	applyPatchRequest,
 	commandRequestWithAvailableDecisions,

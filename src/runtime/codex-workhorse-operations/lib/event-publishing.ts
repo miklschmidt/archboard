@@ -1,4 +1,4 @@
-import type { QueuedSubmissionId } from "@archboard/codex-app-server/workbench-identity";
+import type { QueuedSubmissionId } from "@archboard/codex-app-server/identity";
 import type {
 	WorkhorseOperationCorrelation,
 	WorkhorseOperationDelivery,

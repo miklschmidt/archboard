@@ -1,7 +1,7 @@
 import type { ApprovalSnapshot, SpokenApprovalEffectPresentation } from "@/runtime/codex-approvals";
 import type { DynamicToolRefusalReason } from "@/runtime/codex-coordinator-tool-contract";
 import type { SpokenApprovalFallbackReason } from "@/runtime/codex-spoken-approval/lib/contract";
-import { IdentityValidationError } from "@archboard/codex-app-server/workbench-identity";
+import { IdentityValidationError } from "@archboard/codex-app-server/identity";
 import type {
 	RealtimeCorrelation,
 	RealtimeTranscriptRecord,

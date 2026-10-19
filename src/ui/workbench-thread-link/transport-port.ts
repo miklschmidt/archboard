@@ -11,7 +11,7 @@ import type {
 	BrowserGatewayCommandResult,
 	BrowserGatewayErrorCode,
 } from "@/shared/codex-browser-gateway";
-import type { CodexLoginAccountParams } from "@archboard/codex-app-server/app-server-contract";
+import type { CodexLoginAccountParams } from "@archboard/codex-app-server/contract";
 import type {
 	BrowserCommand,
 	BrowserCommandLease,

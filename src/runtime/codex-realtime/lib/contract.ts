@@ -12,12 +12,9 @@ import type {
 	IdentityAuthority,
 	RealtimeSessionId,
 	ThreadId,
-} from "@archboard/codex-app-server/workbench-identity";
-import type {
-	CodexSession,
-	SessionNotificationHandler,
-} from "@archboard/codex-app-server/session-api";
-import type { FreshSemanticBrief } from "@archboard/codex-app-server/semantic-context-types";
+} from "@archboard/codex-app-server/identity";
+import type { CodexSession, SessionNotificationHandler } from "@archboard/codex-app-server/session";
+import type { FreshSemanticBrief } from "@archboard/codex-app-server/semantic-context";
 import type {
 	RealtimePresentation,
 	RealtimePresentationChange,

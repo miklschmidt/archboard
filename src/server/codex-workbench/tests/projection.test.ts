@@ -8,12 +8,12 @@ import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-ap
 import type {
 	HumanApprovalMethod,
 	TransportServerRequest,
-} from "@archboard/codex-app-server/transport-types";
+} from "@archboard/codex-app-server/transport";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthority,
-} from "@archboard/codex-app-server/workbench-identity";
+} from "@archboard/codex-app-server/identity";
 import { projectCodexBrowserState, type BrowserProjectionInput } from "../index.js";
 import { createGatewayHarness } from "./support.js";
 
