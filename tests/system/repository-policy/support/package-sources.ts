@@ -52,6 +52,20 @@ function sourceOf(text: string): Source {
 			specifier = literal(node.argument);
 		} else if (node.type === "ImportExpression") {
 			specifier = literal(node.source);
+		} else if (
+			node.type === "NewExpression" &&
+			node.callee.type === "Identifier" &&
+			node.callee.name === "URL"
+		) {
+			const base = node.arguments[1];
+			const target = literal(node.arguments[0]);
+			if (
+				base &&
+				text.slice(base.start ?? 0, base.end ?? 0).replace(/\s/g, "") === "import.meta.url" &&
+				target &&
+				/\.[cm]?[jt]sx?(?:[?#]|$)/.test(target)
+			)
+				specifier = target;
 		} else if (node.type === "CallExpression") {
 			const callee = text.slice(node.callee.start ?? 0, node.callee.end ?? 0).replace(/\s/g, "");
 			if (
