@@ -1,35 +1,35 @@
 # Package map: from 110 modules to workspace packages
 
-Status: proposal, revised after a second opinion. No file moved yet. It is the input for the
-decision to replace `src/<area>/<module>` and its `index.ts` barrels with workspace packages that
-declare their interface in `package.json` `exports`.
+Status: done (TASK-500). All 16 packages and 3 apps landed, and the root `src/`, `frontend/` and
+`@/` alias are gone (TASK-500.24.06). This file is the record of the decisions. The rules that lint
+enforces today are in `docs/agents/boundaries.md`.
 
 ## Why
 
-A scan of `src` found 110 modules. 72 have one file at the root, 97 of the 99 `index.ts` files only
-re-export, and 24 modules have at most one importing module. The name prefixes show the real
-modules: 32 start with `codex`, nine with `workbench`, nine with `semantic`, seven with `code`,
-four with `walkthrough` and four with `voice`. The area folders (`shared`, `runtime`, `server`,
-`ui`) cut each of these in pieces. A caller must learn many small interfaces to use one behavior.
+A scan of the old `src` found 110 modules. 72 had one file at the root, 97 of the 99 `index.ts`
+files only re-exported, and 24 modules had at most one importing module. The name prefixes showed
+the real modules: 32 started with `codex`, nine with `workbench`, nine with `semantic`, seven with
+`code`, four with `walkthrough` and four with `voice`. The area folders (`shared`, `runtime`,
+`server`, `ui`) cut each of these in pieces. A caller had to learn many small interfaces to use one
+behavior.
 
 ## Target shape
 
-A package owns one behavior. The area folders move inside the package, and the area rules still
+A package owns one behavior. The area folders moved inside the package, and the area rules still
 hold there: the `ui` folder of a package never imports its `runtime` or `server` folder. Each
 package names its public files in `exports`, and a file that is not named is private. There is no
 `index.ts` barrel. A package that serves both the browser and the server keeps their subpaths
-apart, for example `@archboard/workbench/browser-contract` and `@archboard/workbench/server`. Lint refuses
-the server-side subpaths from browser code and replaces the `archboard/import-boundaries` rule for
-the module root. The lint resolver must learn package specifiers first, because it ignores them
-today (`tools/oxlint-plugin-archboard/source-layout.ts:116`).
+apart, for example `@archboard/workbench/browser-contract` and `@archboard/workbench/server`. Lint
+refuses the server-side subpaths from browser code (`archboard/import-boundaries`), and its
+resolver reads the `exports` of a package.
 
-Inside a package, every area has role folders. There is no catch-all `lib/` folder. Today
-`server/archboard/lib` holds 109 files, `runtime/semantic-board-store/lib` holds 44, and
-`shared/semantic-board/lib` holds 29. The role names below come from the file names in those
-folders. A type that more than one area uses lives at the package root, next to the area folders.
-A package with few such types has one `types.ts`. A package with several kinds has a `types/`
-folder with one file for each kind. A type derived from a schema stays beside its schema
-(`shared/semantic-board/lib/content.ts:173`). A private type stays beside its implementation.
+Inside a package, every area has role folders. There is no catch-all `lib/` folder. Before the move
+`server/archboard/lib` held 109 files, `runtime/semantic-board-store/lib` held 44, and
+`shared/semantic-board/lib` held 29. The role names come from the file names in those folders. A
+type that more than one area uses lives at the package root, next to the area folders. A package
+with few such types has one `types.ts`. A package with several kinds has a `types/` folder with one
+file for each kind. A type derived from a schema stays beside its schema. A private type stays
+beside its implementation.
 
 ```text
 packages/<name>/
@@ -68,11 +68,10 @@ tests/                # root suite: integration, system and browser tests
 ```
 
 A package keeps only the areas and folders that it needs. A folder that grows past about 12 files
-splits by behavior, not by a longer file prefix. For example, `runtime/operations/` can hold
-`edit/` and `move/`. Lint applies the area rules to the folders of each package, in place of the
-module root. It can also refuse a folder name that is not in the list above, so `lib/` does not
-return. A type that two areas share goes in `types`, so no area imports another area only to reach
-a type.
+splits by behavior, not by a longer file prefix. For example, `runtime/operations/` holds `edit/`
+and `move/`. Lint applies the area rules to the folders of each package and refuses `lib/`, so it
+does not return. A type that two areas share goes in `types`, so no area imports another area only
+to reach a type.
 
 An `api/` folder holds the public interface of an area over its private role folders. Each file is
 a curated list of named re-exports (`export { a } from "#shared/rules/x.ts"`, never `export *`),
@@ -89,7 +88,7 @@ none of the first names, so `sockets/` and `watchers/` exist. A role folder grou
 does not sort each helper by type. For example, `runtime/store/format/` holds `decode.ts` and the
 migrations, `runtime/operations/settle/` holds the ordering logic, and `runtime/services/queue/`
 holds the queue with its validation and reconciliation. Only some Codex files are long-lived
-objects, so `services/` holds those and no more. The theme loader reads files, so it moves to
+objects, so `services/` holds those and no more. The theme loader reads files, so it moved to
 `runtime`, and the CSS stays an asset (`runtime/store/theme/source.ts`).
 
 ## Tests
@@ -97,25 +96,20 @@ objects, so `services/` holds those and no more. The theme loader reads files, s
 Each package has a `tests/` folder at its root, next to `src/`. Each app has one too. It holds the
 tests of the behavior inside that package or app. Its subfolders follow the area folders, for
 example `tests/runtime/store/`. An internal test can import any private file of its own package.
-This reverses today's rule, which bars a test from importing its own implementation
-(`docs/agents/boundaries.md:59`). Today a public `testing.ts` exists only to expose one internal
-parser (`src/shared/process-observation/testing.ts:1`). Direct tests of such behavior are cheaper.
-Persistence guarantees still get tests through the public exports
-(`src/runtime/semantic-board-store/tests/one-write.test.ts:19`).
+This reversed the rule of the module layout, which barred a test from importing its own
+implementation and needed a public `testing.ts` only to expose one internal parser. Direct tests of
+such behavior are cheaper. Persistence guarantees still get tests through the public exports.
 
 The speed gain is a hypothesis. Measure it on one package first. The check is the run time of the
 tests that move, before and after, and the setup lines that disappear.
 
 The root `tests/` folder holds the integration tests. A test there covers behavior that crosses
 packages, such as a CLI call against a running server or a browser workflow. It imports only the
-public `exports` of a package, as an outside caller does. The root configuration declares this
-suite as a Vitest project, because Vitest does not treat the root configuration as a project by
-itself. It keeps the process and browser serialization of `docs/agents/test-suite.md:9`.
+public `exports` of a package, as an outside caller does. It keeps the process and browser
+serialization of `docs/agents/test-suite.md`. A later Vitest conversion declares this suite as a
+project, because Vitest does not treat the root configuration as a project by itself.
 
-Lint enforces these rules. The plugin needs three changes together. It must recognize the new
-package directories as owners (`tools/oxlint-plugin-archboard/source-layout.ts:259`). It must let
-a test import private files of its own package (`module-rules.ts:92`). It must apply the area
-rules inside one package, which it skips today (`module-rules.ts:38`).
+Lint enforces these rules (`tools/oxlint-plugin-archboard/`):
 
 - An internal test imports private files of its own package and only public `exports` of another.
 - A file imports its own package with `#` specifiers, such as `#shared/constants/timing.ts`, never with a relative path.
@@ -127,11 +121,12 @@ rules inside one package, which it skips today (`module-rules.ts:38`).
 
 ## Map
 
-The assignment is by file, not only by module, because `runtime/engine` and `server/archboard`
-hold several behaviors each. A script read every production import under `src` (type, value and
-dynamic) and checked the assignment below. It finds no package cycle and no package that imports
-an app, once the cut listed in the next section is made. The layer is the longest dependency chain
-below the package. Packages in one layer do not depend on each other.
+The assignment was by file, not only by module, because `runtime/engine` and `server/archboard`
+held several behaviors each. A script read every production import (type, value and dynamic) and
+checked it. It found no package cycle and no package that imports an app. The layer is the longest
+dependency chain below the package. Packages in one layer do not depend on each other.
+`tests/system/repository-policy/package-graph.test.ts` holds both rules now. The "Takes in" column
+names the old modules.
 
 | Layer | Package            | Takes in                                                                                                                                                                                                                                                                                   | About                                                                        |
 | ----- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
@@ -166,22 +161,19 @@ because the code above them needs them below it. If no second caller appears, me
 - `voice` is not a package. The voice UI reaches into the workbench transport, and the spoken
   approval code reaches back into the realtime code, so the two form one behavior. The coordinator
   already owns voice (see the Codex entry in `CLAUDE.md`).
-- `runtime/engine` held four behaviors. Process groups go to `process`. Vault and git lookup and the
-  atomic write go to `workspace`. The board lock and board files go to `board`. The server start,
-  restart and client files stay in `server-lifecycle`. `board` and `server-lifecycle` import each
-  other today. That cycle ends with this split.
+- `runtime/engine` held four behaviors. Process groups went to `process`. Vault and git lookup and
+  the atomic write went to `workspace`. The board lock and board files went to `board`. The server
+  start, restart and client files stayed in `server-lifecycle`. `board` and `server-lifecycle`
+  imported each other. That cycle ended with this split.
 - `shared/code-target` is part of the board model, and `runtime/code-target` reads the checkout, so
   both sit below `board`. The opener (server routes and settings UI) sits above `code-intel`.
-- `server/archboard` is 27,700 lines and imports 28 Codex modules. The session ownership
-  (`lib/codex-workbench-sessions.ts:105`), ordered teardown
-  (`lib/codex-workbench-generation-lifecycle.ts:217`) and cancellation
-  (`lib/codex-workbench-operation-lifecycle.ts:334`) belong to `workbench`. So do 15 files of pane
-  and tab plumbing that the workbench needs. TASK-500.23.05 moved them, with the rest of their
-  import closure (79 files: all the Codex files of `lib/`, the four root `codex-workbench-*.ts`
-  facades, which it deleted, `module-paths` and `narrated-subjects`), into
-  `packages/workbench/src/server/`. It also deleted `codex-workbench-adapters.ts` and
-  `codex-workbench-owner.ts`, which only re-exported moved names for tests, and moved those tests.
-  The 15 files:
+- `server/archboard` was 27,700 lines and imported 28 Codex modules. The session ownership,
+  the ordered teardown and the cancellation belong to `workbench`. So do 15 files of pane and tab
+  plumbing that the workbench needs. TASK-500.23.05 moved them, with the rest of their import
+  closure (79 files: all the Codex files of `lib/`, the four root `codex-workbench-*.ts` facades,
+  which it deleted, `module-paths` and `narrated-subjects`), into `packages/workbench/src/server/`.
+  It also deleted `codex-workbench-adapters.ts` and `codex-workbench-owner.ts`, which only
+  re-exported moved names for tests, and moved those tests. The 15 files:
   - `pane-registry`, `tab-sessions`, `tab-canvas`, `pane-presentation` and `pane-board-key`.
   - `semantic-change-feed`, `semantic-board-context`, `semantic-board-description` and
     `semantic-pane-context`.
@@ -197,46 +189,45 @@ because the code above them needs them below it. If no second caller appears, me
   `packages/workbench/src/ui/`, in the role folders `components/`, `hooks/`, `state/`, `clients/` and `rules/`.
   TASK-500.23.07 moved the seven above them (`workbench`, `agent-setup`, `workbench-approvals`, `workbench-queue`,
   `voice-orb`, `voice-subtitles` and `voice-session`, 132 files with their tests, and nine barrels gone). The 16 api
-  files of `ui/` are safe for the browser, and the modules that stay in `src/ui/` import them.
+  files of `ui/` are safe for the browser, and `apps/web` imports them.
 
-## Changes the move needs
+## Decisions the move made
 
-- Cut one edge: `codex-process/lib/process-group-cleanup.ts` imports `CodexProcessError` from
-  `process-contract`. Make the cleanup take a generic error type, or `process` depends on
-  `codex-app-server`.
-- Browser safety. The canvas imports `shared/code-check`, which imports `shared/language-servers`,
-  which imports `node:path` (`ui/semantic-board-canvas/api/semantic-boards.ts:17`,
-  `shared/code-check/index.ts:52`, `shared/language-servers/index.ts:8`). `code-intel` needs a
-  browser subpath that holds no Node import. `shared/language-servers` now sits in `workspace`,
-  which makes the same split necessary there.
-- Keep the binding, anchor and document-reference schemas in `code-binding`. `board` imports them
-  (`shared/semantic-board/lib/content.ts:65`, `lib/aggregate.ts:31`), and the resolver in
-  `code-binding` parses with `CodeBindingSchema` (`runtime/code-target/lib/resolver-core.ts:330`).
-  If the schemas moved into `board`, the two packages would depend on each other.
-- Do not write one `exports` entry for each file. Put the interface in a few files per package. For
-  example, `board` exposes `./document`, `./policy` and `./store`, and `board-lock` stays private to
-  it. `atomic-write` stays in `workspace` with a public export, because the repository registry and
-  the code opener use it too (`runtime/engine/lib/registry-file.ts:12`,
-  `packages/code-opener/src/server/store/configuration.ts`). `workbench` exposes eight: `./browser-contract` for the browser, `./runtime` and the three of the server (`./server`, `./panes`, `./host`) for Bun, and the three of the UI (`./controllers`, `./agent`, `./voice`) for the browser. It keeps the browser-safe files apart from the Bun-only files, and each file lists only the names that code outside the package imports.
-  `renderer` exposes `./browser`, `./bun` and six more. The browser file starts its own layout worker, so no `./worker` export exists.
-- Keep these working. Update both TypeScript configurations too.
-  - The generated contract path and its ignored output
-    (`scripts/generate-codex-app-server-contract.ts:23`, `.gitignore:32`).
-  - Codex executable resolution (`runtime/codex-process/lib/executable.ts:143`).
-  - The `@napi-rs/canvas` and font assets (`runtime/services/bun-host.ts`).
-  - The browser measurement contract (`tests/system/browser/measured-text.test.ts:19`).
-  - The worker and WASM URLs (`frontend/main.tsx:26`).
-  - The digest and stylesheet paths in `vite.config.ts` (lines 16 and 86).
+- The cleanup of a process group takes its error type from the caller, so `process` does not
+  depend on `codex-app-server`.
+- Browser safety. The canvas imports the code check, which read the language servers, which imports
+  `node:path`. `code-intel` and `workspace` each have a browser subpath that holds no Node import.
+- The binding, anchor and document-reference schemas stay in `code-binding`. `board` imports them,
+  and the resolver in `code-binding` parses with `CodeBindingSchema`. If the schemas lived in
+  `board`, the two packages depend on each other.
+- There is no `exports` entry for each file. The interface is a few files per package. For example,
+  `board` exposes `./document`, `./policy` and `./store`, and `board-lock` stays private to it.
+  `atomic-write` stays in `workspace` with a public export, because the repository registry and the
+  code opener use it too. `workbench` exposes eight: `./browser-contract` for the browser,
+  `./runtime` and the three of the server (`./server`, `./panes`, `./host`) for Bun, and the three
+  of the UI (`./controllers`, `./agent`, `./voice`) for the browser. It keeps the browser-safe files
+  apart from the Bun-only files, and each file lists only the names that code outside the package
+  imports. `renderer` exposes `./browser`, `./bun` and six more. The browser file starts its own
+  layout worker, so no `./worker` export exists.
+- These keep working, in both TypeScript configurations:
+  - The generated contract path and its ignored output (`scripts/generate-codex-app-server-contract.ts`).
+  - Codex executable resolution.
+  - The `@napi-rs/canvas` and font assets.
+  - The browser measurement contract (`tests/system/browser/measured-text.test.ts`).
+  - The worker and WASM URLs (`apps/web/src/main.tsx`).
+  - The digest and stylesheet paths in `vite.config.ts`.
 
 ## Order
 
-1. Teach the lint resolver and both `tsconfig` files about workspace `exports`. Keep the old rules
-   running beside them until the last package moves.
+1. Teach the lint resolver and both `tsconfig` files about workspace `exports`.
 2. Pilot `timing`, which has no dependency.
 3. Extract `diagnostics`, `process`, `workspace` and `code-binding`, and split `runtime/engine`.
 4. Move `codex-app-server`, then `workbench`.
 5. Move `board`, `code-intel` and `code-opener`.
-6. Move `renderer`, `walkthrough` and `skills`, then leave the rest in the three apps.
+6. Move `renderer`, `walkthrough` and `skills`, then the rest into the three apps
+   (`docs/design/apps-migration.md`).
+7. Remove the root `src/`, `frontend/` and the `@/` alias, and the old module rules of the plugin
+   (TASK-500.24.06).
 
 The Vite+ conversion, and the move of the tests from `bun test` to `vp test`, are separate tasks
 that follow the first two steps. The test move is also the place to delete tests that do not check
@@ -248,9 +239,9 @@ The Vite+ test guide says that Vitest requires Node (`^22.18.0 || ^24.11.0 || >=
 guide does not mention Bun. The Bun 1.4 release notes say that Vitest runs under Bun, with the
 `threads` and `forks` pools and with `--coverage` (https://bun.com/blog/bun-v1.4#vitest). The
 installed Bun is 1.4.3. The product runs on Bun. Production code calls `Bun.YAML`
-(`runtime/semantic-board-store/lib/configuration.ts:142`), and 27 production files use other Bun
+(`packages/board/src/runtime/store/configuration.ts`), and 27 production files use other Bun
 APIs. The test harness starts servers with `process.execPath`
-(`tests/system/support/owned-server.ts:240`), which names the wrong executable if Vitest runs in
+(`tests/system/support/owned-server.ts`), which names the wrong executable if Vitest runs in
 Node.
 
 Run a short trial before the test move. Start Vitest under Bun, with a few board-write and

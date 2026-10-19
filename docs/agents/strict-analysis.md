@@ -1,13 +1,15 @@
 # Analysis policy
 
-TASK-150 applied the maintainer-approved lint policy to `src/ui/**` so the UI
+TASK-150 applied the maintainer-approved lint policy to the UI so the UI
 rebuild did not wait on a repository-wide migration. TASK-151 adopted the same
-policy, unchanged, for every other authored source file: `src/**`, `scripts/**`,
-`tools/**` and `vite.config.ts`; the browser entry under `frontend/**` joined it on
-2026-09-21. Tests stay on the repository's pre-policy rules by the maintainer's
-decision (2026-09-06), generated Codex declarations stay
-lint-excluded and compiler-checked, and the earlier full-catalogue requirement is
-superseded.
+policy, unchanged, for every other authored source file. Today that is
+`packages/**`, `apps/**`, `scripts/**`, `tools/**` and `vite.config.ts`. The old
+roots `src/` and `frontend/` are gone, and so is the `@/` alias. Local imports
+use the `#` entries of the package or app (`docs/agents/boundaries.md`). Tests
+stay on the repository's pre-policy rules by the maintainer's decision
+(2026-09-06), except the tests of a `ui/` area, which the policy holds.
+Generated Codex declarations stay lint-excluded and compiler-checked, and the
+earlier full-catalogue requirement is superseded.
 
 ## Ordinary commands and repository boundary
 

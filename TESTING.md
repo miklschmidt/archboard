@@ -59,7 +59,7 @@ call. The browser names the one that
 status 400. The server starts without a vault. A server keeps the source
 that it read at start:
 
-- After you edit a file under `apps/`, `packages/` or `src/`, run `./bin/archboard restart`. It
+- After you edit a file under `apps/` or `packages/`, run `./bin/archboard restart`. It
   stops the server, builds the frontend and starts the server again. Until
   you do, `status` reports the changed file under `stale`.
 - After you edit frontend code, run `bun run build` and reload the page.
