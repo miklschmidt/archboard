@@ -4,7 +4,7 @@
 // its transport and hears the new pane's state the moment focus moves.
 
 import type { VoiceOwner, WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
-import type { BrowserWorkbenchState } from "@archboard/workbench/browser-transport";
+import type { BrowserWorkbenchState } from "@archboard/workbench/controllers";
 
 /** While no pane has a transport. */
 const NO_TRANSPORT: BrowserWorkbenchState = Object.freeze({

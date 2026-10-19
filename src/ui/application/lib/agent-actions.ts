@@ -3,15 +3,16 @@
 // that needs a provider's sign-in page opens its tab from the person's own
 // gesture, so the browser lets it through.
 
-import type { AgentSetup } from "@archboard/workbench/agent-setup";
-import { gestureTab, openAuthTab } from "@/ui/application/agent-setup-ports";
-import type { VoiceOwner, WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
-import type { AgentActions, DraftStore } from "@archboard/workbench/agent-surfaces";
 import {
+	type AgentSetup,
+	type AgentActions,
+	type DraftStore,
 	projectTimelineTurns,
 	type ConversationTurn,
-} from "@archboard/workbench/conversation-timeline";
-import type { BrowserTimeline } from "@archboard/workbench/browser-model";
+} from "@archboard/workbench/agent";
+import { gestureTab, openAuthTab } from "@/ui/application/agent-setup-ports";
+import type { VoiceOwner, WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
+import type { BrowserTimeline } from "@archboard/workbench/browser-contract";
 
 /** What the actions act on. */
 interface AgentActionTargets {

@@ -1,9 +1,11 @@
 ---
 id: TASK-500.23.08
 title: Workbench export surface is the names that outside code imports
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-19 16:36'
+updated_date: '2026-10-19 18:02'
 labels: []
 dependencies:
   - TASK-500.23.07
@@ -23,3 +25,9 @@ Moving the workbench in seven steps moved the importers of its api names into th
 - [ ] #2 docs/agents/boundaries.md and docs/design/package-map.md state the final subpaths and counts; package-api and package-graph tests pass
 - [ ] #3 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Scan every workbench export with the AST scan (/tmp/pm/api/scan.ts): names that src, tests, scripts, frontend or other packages import. 2. Drop every other name; derive TalkOptions and ThreadLinkActionSnapshot in their one src test. 3. Regroup the 160 remaining names into 8 api files by caller concern: shared browser-contract; runtime runtime; server server, panes, host; ui controllers, agent, voice. 4. Rewrite importers with regroup.ts (definition-checked), delete the old api files and exports. 5. Update boundaries.md and package-map.md. 6. Verify: tsc x2, lint, workbench tests, repository-policy, load/cycles/browser trace, build:frontend, bun run check.
+<!-- SECTION:PLAN:END -->

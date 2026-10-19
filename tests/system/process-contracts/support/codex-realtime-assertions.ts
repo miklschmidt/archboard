@@ -6,7 +6,7 @@ import { latestState, type RealtimeHarness, waitFor } from "../fixtures/codex-re
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@archboard/workbench/realtime-contract";
+} from "@archboard/workbench/browser-contract";
 
 function browserCorrelation(suffix = "") {
 	return {

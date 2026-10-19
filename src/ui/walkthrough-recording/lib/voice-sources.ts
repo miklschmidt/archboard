@@ -3,14 +3,14 @@
 // said. Everything is read from the owners the server already has; nothing
 // here holds state of its own.
 
-import type { AgentPhase, AgentSetup } from "@archboard/workbench/agent-setup";
-import type {
-	VoiceSession,
-	VoiceSessionStatus,
-	VoiceSessionView,
-} from "@archboard/workbench/voice-session";
-import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@archboard/workbench/voice-output-level";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
+import type { AgentPhase, AgentSetup } from "@archboard/workbench/agent";
+import {
+	type VoiceSession,
+	type VoiceSessionStatus,
+	type VoiceSessionView,
+	VOICE_OUTPUT_SPEAKING_LEVEL,
+} from "@archboard/workbench/voice";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
 
 import type { SpokenLine, VoiceStanding } from "@/ui/walkthrough-recording/lib/pacing";
 

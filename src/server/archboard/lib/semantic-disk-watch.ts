@@ -23,7 +23,7 @@ import { boardMemoryKey, locateSemanticBoard } from "@archboard/board/address";
 import { onBoardSweep } from "@archboard/board/lock";
 import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
-import { broadcast, onBoardBroadcast } from "@archboard/workbench/pane-registry";
+import { broadcast, onBoardBroadcast } from "@archboard/workbench/panes";
 
 /**
  * What a board's file looked like when it was last seen, by the board's memory

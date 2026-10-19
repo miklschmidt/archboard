@@ -16,19 +16,19 @@ import {
 	ShownConversationRequestSchema,
 	type ShownConversationRefusal,
 	type ShownConversationReply,
-} from "@archboard/workbench/shown-conversation";
+} from "@archboard/workbench/browser-contract";
 import { logger } from "@archboard/diagnostics/logger";
-import type { TabSessionId } from "@archboard/workbench/tab-session";
-import { codexWiring } from "@archboard/workbench/wiring";
 import {
+	type TabSessionId,
+	codexWiring,
 	paneCheckoutOf,
 	panesOfTabSession,
 	currentShownCheckout,
 	showConversation,
 	tabSessionOf,
-} from "@archboard/workbench/pane-tabs";
-import { panes, paneVaults } from "@archboard/workbench/pane-registry";
-import { bodyOf, vaultOfRequest } from "@archboard/workbench/request";
+} from "@archboard/workbench/server";
+import { panes, paneVaults } from "@archboard/workbench/panes";
+import { bodyOf, vaultOfRequest } from "@archboard/workbench/host";
 
 /** The pane an activation happened in, and the tab it belongs to. */
 interface ActivatedPane {

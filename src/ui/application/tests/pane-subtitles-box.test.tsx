@@ -22,10 +22,13 @@ import type { VoiceFeed } from "@/ui/application/subtitled-transcript";
 import { TooltipProvider } from "@archboard/ui-kit/overlays";
 import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { createSteppedClock } from "@archboard/ui-kit/stepped-clock";
-import { OrbStageProvider } from "@archboard/workbench/voice-orb";
-import { subtitlePreference } from "@archboard/workbench/voice-subtitles";
-import { VoiceSurfaceProvider, type AgentVoiceView } from "@archboard/workbench/voice-surface";
-import type { AgentActions } from "@archboard/workbench/agent-surfaces";
+import {
+	OrbStageProvider,
+	subtitlePreference,
+	VoiceSurfaceProvider,
+	type AgentVoiceView,
+} from "@archboard/workbench/voice";
+import type { AgentActions } from "@archboard/workbench/agent";
 
 /**
  * How wide the stand-in canvas measures a text.

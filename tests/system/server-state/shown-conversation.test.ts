@@ -16,7 +16,7 @@ import {
 } from "./support/codex-production.ts";
 import { createRequester } from "./support/http.ts";
 import { coordinatorModelFixture } from "./fixtures/fake-codex-production-data.ts";
-import { SHOWN_CONVERSATION_ROUTE } from "@archboard/workbench/shown-conversation";
+import { SHOWN_CONVERSATION_ROUTE } from "@archboard/workbench/browser-contract";
 
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");

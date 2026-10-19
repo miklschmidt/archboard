@@ -7,9 +7,9 @@ import {
 	createBrowserWorkbenchMediaOwner,
 	type BrowserWorkbenchMediaOwner,
 	type BrowserWorkbenchMediaOwnerOptions,
-} from "@archboard/workbench/workbench-media";
+} from "@archboard/workbench/voice";
 import type { PaneSession as SessionOf } from "@/ui/pane-session";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
 
 /** The session of one pane, over the production transport. */
 type PaneSession = SessionOf<BrowserWorkbenchTransport>;

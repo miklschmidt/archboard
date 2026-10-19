@@ -10,14 +10,14 @@ import type { Workbench } from "@/ui/application/hooks/use-workbench";
 import { agentActions } from "@/ui/application/lib/agent-actions";
 import type { ApprovalDecisions } from "@/ui/application/lib/workbench-owners";
 import type { SnapshotStore } from "@/ui/application/lib/snapshot-cache";
-import type {
-	AgentActions,
-	AgentContext,
-	AgentView,
-	DraftStore,
-} from "@archboard/workbench/agent-surfaces";
-import type { AgentVoiceView } from "@archboard/workbench/voice-surface";
-import { useConversation } from "@archboard/workbench/conversation-runtime";
+import {
+	type AgentActions,
+	type AgentContext,
+	type AgentView,
+	type DraftStore,
+	useConversation,
+} from "@archboard/workbench/agent";
+import type { AgentVoiceView } from "@archboard/workbench/voice";
 
 /** What the agent hook reads beyond the workbench. */
 interface AgentInputs {

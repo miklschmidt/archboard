@@ -26,8 +26,8 @@ voice session (`state/queue`, `state/approvals` and `state/voice-session`), all 
 - `components/voice/TalkControl.tsx`: the one key of a fullscreen presentation's bar, Talk and then
   End voice.
 
-The application reaches them through `@archboard/workbench/agent-surfaces` (`AgentDock`, `AgentPanel`,
-the view and the actions, and `createDraftStore`) and `@archboard/workbench/voice-surface` (`VoiceBox`,
+The application reaches them through `@archboard/workbench/agent` (`AgentDock`, `AgentPanel`,
+the view and the actions, and `createDraftStore`) and `@archboard/workbench/voice` (`VoiceBox`,
 `TalkControl`, `VoiceSurfaceProvider`, `useVoiceSurface`, `useCircleState` and the voice view).
 
 Type roles come from the theme's `text-technical`, `text-body`, `text-control` and

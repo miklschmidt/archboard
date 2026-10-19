@@ -35,7 +35,7 @@ import {
 	type PlanRefused,
 } from "@archboard/code-intel/code-check-run";
 import { createBehindReading } from "@archboard/code-intel/history-lens";
-import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/request";
+import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import {
 	createCodeFindingsMemory,
 	type CodeFindingsMemory,

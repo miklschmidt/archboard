@@ -4,7 +4,7 @@
 
 import type { JSX } from "react";
 
-import { TalkControl, useVoiceSurface } from "@archboard/workbench/voice-surface";
+import { TalkControl, useVoiceSurface } from "@archboard/workbench/voice";
 
 /**
  * The key that starts and ends voice, for the presentation's bar.

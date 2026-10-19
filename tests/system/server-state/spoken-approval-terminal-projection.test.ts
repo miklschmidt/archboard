@@ -1,18 +1,17 @@
 import { expect, test } from "bun:test";
 
-import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
-import type { SpokenApprovalSnapshot } from "@archboard/workbench/coordinator";
-import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {
+	createCodexApprovalBroker,
+	type SpokenApprovalSnapshot,
+} from "@archboard/workbench/runtime";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
+import {
+	createCodexBrowserModel,
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "@archboard/workbench/realtime-contract";
+} from "@archboard/workbench/browser-contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import {
-	projectCodexBrowserState,
-	type BrowserProjectionInput,
-} from "@archboard/workbench/projection";
+import { projectCodexBrowserState, type BrowserProjectionInput } from "@archboard/workbench/server";
 
 const NOW = 1_700_000_000_000;
 

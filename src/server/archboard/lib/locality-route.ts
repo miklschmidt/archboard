@@ -24,7 +24,7 @@ import {
 	type SemanticVariant,
 } from "@archboard/board/document";
 import { errorMessage } from "@archboard/diagnostics/errno";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/request";
+import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface LocalityRouteDependencies {

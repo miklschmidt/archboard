@@ -13,8 +13,8 @@ import {
 	panes,
 	socketVaults,
 	syncLockWatch,
-} from "@archboard/workbench/pane-registry";
-import { forgetSemanticPaneContext } from "@archboard/workbench/semantic-context";
+	forgetSemanticPaneContext,
+} from "@archboard/workbench/panes";
 
 /**
  * Broadcast something to every admitted client of every vault: news about the

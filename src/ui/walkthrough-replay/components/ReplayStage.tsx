@@ -23,17 +23,19 @@ import {
 	useOverlayPlace,
 	type SemanticPaneReading,
 } from "@/ui/semantic-board-canvas";
-import { OrbHost, OrbStageProvider, useOrbPlacement } from "@archboard/workbench/voice-orb";
-import type { SubtitleSource } from "@archboard/workbench/voice-subtitles";
-import { RecordingStage } from "@/ui/walkthrough-recording";
-import type { TalkPlayback } from "@/ui/walkthrough-replay/lib/talk-playback";
 import {
+	OrbHost,
+	OrbStageProvider,
+	useOrbPlacement,
+	type SubtitleSource,
 	VoiceBox,
 	useCircleState,
 	type VoiceBoxProps,
 	type AgentVoiceView,
 	type VoiceLevel,
-} from "@archboard/workbench/voice-surface";
+} from "@archboard/workbench/voice";
+import { RecordingStage } from "@/ui/walkthrough-recording";
+import type { TalkPlayback } from "@/ui/walkthrough-replay/lib/talk-playback";
 
 /** Inputs for the rendered picture. */
 interface ReplayStageProps {

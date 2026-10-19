@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { parseDynamicToolCallResponse } from "@archboard/workbench/thread-tools";
+import { parseDynamicToolCallResponse } from "@archboard/workbench/runtime";
 import { waitFor } from "../server-state/support/http.ts";
 import { processExists } from "../support/owned-server.ts";
 import {

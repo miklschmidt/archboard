@@ -31,7 +31,7 @@ import {
 	paneVaults,
 	sendBoardlessToPane,
 	sendToPane,
-} from "@archboard/workbench/pane-registry";
+} from "@archboard/workbench/panes";
 import { broadcastEverywhere, movePaneVault } from "@/server/archboard/lib/pane-vaults";
 import { arrivedOnBoard } from "@/server/archboard/lib/pane-routes";
 import {

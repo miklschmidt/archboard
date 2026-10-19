@@ -10,11 +10,11 @@
 
 import { useEffect, useMemo } from "react";
 
-import type { AgentSetup } from "@archboard/workbench/agent-setup";
+import type { AgentSetup } from "@archboard/workbench/agent";
 import { narrate } from "@/ui/application/agent-setup-ports";
 import { createNarrator, offerNarration } from "@/ui/application/narrator";
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas";
-import type { AgentVoiceView, VoiceStage } from "@archboard/workbench/voice-surface";
+import type { AgentVoiceView, VoiceStage } from "@archboard/workbench/voice";
 
 /** What narrating reads of the agent over the panes. */
 interface NarrationSources {

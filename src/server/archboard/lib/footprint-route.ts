@@ -18,7 +18,7 @@
 import type { Express, Request, Response } from "express";
 import { readFootprint, type FootprintRequest } from "@archboard/code-intel/history-lens";
 import { readSemanticBoard } from "@archboard/board/store-read";
-import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/request";
+import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { FootprintReplySchema, type FootprintAnswer } from "@archboard/code-intel/history";
 import type { SemanticBoard } from "@archboard/board/document";

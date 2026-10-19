@@ -3,25 +3,22 @@ import { expect, test } from "bun:test";
 import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
-} from "@archboard/workbench/realtime";
+	EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
+} from "@archboard/workbench/runtime";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/workbench/coordinator";
-import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {
+	createCodexBrowserModel,
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@archboard/workbench/realtime-contract";
+} from "@archboard/workbench/browser-contract";
 import {
 	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
-import {
-	projectCodexBrowserState,
-	type BrowserProjectionInput,
-} from "@archboard/workbench/projection";
+import { projectCodexBrowserState, type BrowserProjectionInput } from "@archboard/workbench/server";
 
 const LINKED_THREAD = "projection-linked-thread";
 const COORDINATOR_THREAD = "projection-coordinator-thread";

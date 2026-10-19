@@ -1,6 +1,6 @@
 import { expect } from "bun:test";
 
-import { parseDynamicToolCallResponse } from "@archboard/workbench/thread-tools";
+import { parseDynamicToolCallResponse } from "@archboard/workbench/runtime";
 import { reverseResponses } from "./codex-workbench-lifecycle.ts";
 
 const operationPattern = /^archboard:operation:h[a-f0-9]{32}\.h[a-f0-9]{32}\.h[a-f0-9]{32}$/;

@@ -5,24 +5,18 @@
 
 import { createSnapshotCache, type SnapshotStore } from "@/ui/application/lib/snapshot-cache";
 import { createProgressClock } from "@/ui/application/lib/progress-clock";
-import type { VoiceSession } from "@archboard/workbench/voice-session";
+import type { VoiceSession } from "@archboard/workbench/voice";
 import {
 	createWorkbenchApprovalsController,
 	type WorkbenchApprovalsController,
-} from "@archboard/workbench/approvals-controller";
-import {
 	createWorkbenchComposerController,
 	type WorkbenchComposerController,
-} from "@archboard/workbench/composer";
-import {
 	createWorkbenchQueueController,
 	type WorkbenchQueueController,
-} from "@archboard/workbench/queue-controller";
-import {
 	createThreadLinkController,
 	type ThreadLinkController,
-} from "@archboard/workbench/thread-link-controller";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
+	type BrowserWorkbenchTransport,
+} from "@archboard/workbench/controllers";
 
 /** The approvals controller's state as the cards read it. */
 interface ApprovalDecisions {

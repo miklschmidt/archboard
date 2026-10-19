@@ -18,7 +18,7 @@ import {
 	type SetStateAction,
 } from "react";
 
-import { createAgentSetup, type AgentSetup } from "@archboard/workbench/agent-setup";
+import { createAgentSetup, type AgentSetup } from "@archboard/workbench/agent";
 import { createAgentFocus } from "@/ui/application/lib/agent-focus";
 import { createVoiceStore } from "@/ui/application/lib/voice-store";
 import type { PaneHandles } from "@/ui/application/lib/pane-handles";
@@ -32,7 +32,7 @@ import {
 	createWorkbenchTransportPublication,
 	type WorkbenchTransportPublication,
 } from "@/ui/pane-session/workbench-publication";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/browser-transport";
+import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
 
 /** The transports by pane id; null while a pane has none. */
 type PaneTransports = Readonly<Record<string, BrowserWorkbenchTransport | null>>;
