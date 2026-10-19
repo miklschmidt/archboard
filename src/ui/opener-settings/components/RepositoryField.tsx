@@ -4,17 +4,19 @@
 import { useCallback, useId, type JSX, type ReactNode } from "react";
 
 import type { OpenerSettingsReply } from "@archboard/code-binding/opening";
-import { Badge } from "@/ui/components/badge";
-import { Field, FieldDescription, FieldLabel } from "@/ui/components/field";
+import { Badge } from "@archboard/ui-kit/display";
 import {
+	Field,
+	FieldDescription,
+	FieldLabel,
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/ui/components/select";
-import { Technical } from "@/ui/dialog-parts";
-import { RepositoryName } from "@/ui/repository-name";
+} from "@archboard/ui-kit/controls";
+import { Technical } from "@archboard/ui-kit/dialog-parts";
+import { RepositoryName } from "@archboard/ui-kit/repository-name";
 
 type CheckoutChoice = OpenerSettingsReply["repositories"][number];
 

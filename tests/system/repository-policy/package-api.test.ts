@@ -20,6 +20,7 @@ const ADOPTERS: {
 	{ name: "codex-app-server", areas: ["shared", "runtime"] },
 	{ name: "workspace", areas: ["shared", "runtime", "server"] },
 	{ name: "code-binding", areas: ["shared", "runtime"] },
+	{ name: "ui-kit", areas: ["ui"] },
 	{
 		name: "process",
 		areas: ["runtime"],

@@ -1,0 +1,24 @@
+{
+	"name": "@archboard/ui-kit",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The shared presentation parts: the shadcn Base UI components, the dialog parts, the frame clock, fullscreen presentation, time as text and a repository's shown name.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./controls": "./src/ui/api/controls.ts",
+		"./overlays": "./src/ui/api/overlays.ts",
+		"./display": "./src/ui/api/display.ts",
+		"./class-names": "./src/ui/api/class-names.ts",
+		"./dialog-parts": "./src/ui/api/dialog-parts.ts",
+		"./time": "./src/ui/api/time.ts",
+		"./frame-clock": "./src/ui/api/frame-clock.ts",
+		"./stepped-clock": "./src/ui/api/stepped-clock.ts",
+		"./fullscreen-presentation": "./src/ui/api/fullscreen-presentation.ts",
+		"./repository-name": "./src/ui/api/repository-name.ts"
+	}
+}

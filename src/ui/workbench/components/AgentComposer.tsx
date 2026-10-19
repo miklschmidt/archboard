@@ -15,7 +15,7 @@ import {
 	type KeyboardEvent,
 } from "react";
 
-import { usesCommandKey } from "@/ui/components/command-key";
+import { usesCommandKey } from "@archboard/ui-kit/controls";
 import type { AgentContext } from "@/ui/workbench/contracts";
 import type { DraftStore } from "@/ui/workbench/lib/draft-store";
 

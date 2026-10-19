@@ -15,7 +15,7 @@ import {
 import type { JSX } from "react";
 
 import type { VariantLifecycle } from "@archboard/board/document";
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 
 /** The mark of each lifecycle. */
 const LIFECYCLE_ICONS: Readonly<Record<VariantLifecycle, RemixiconComponentType>> = {

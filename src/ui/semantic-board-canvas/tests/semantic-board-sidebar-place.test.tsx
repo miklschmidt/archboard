@@ -17,7 +17,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { beforeAll, expect, test } from "bun:test";
 import { createElement } from "react";
 
-import type { PaneChrome } from "@/ui/components/PaneChrome";
+import type { PaneChrome } from "@archboard/ui-kit/display";
 import { PartSearch } from "@/ui/semantic-board-canvas/index";
 import { EXPLAINED_BOARD } from "@/ui/semantic-board-canvas/tests/render-answers";
 import {

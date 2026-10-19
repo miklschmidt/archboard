@@ -12,8 +12,7 @@ import {
 import type { JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS } from "@archboard/timing";
-import { clockDuration } from "@/ui/components/age";
-import { useClock } from "@/ui/components/use-clock";
+import { clockDuration, useClock } from "@archboard/ui-kit/time";
 import type { ConversationDataParts } from "@/ui/workbench-runtime";
 import { DelegatedFrom } from "@/ui/workbench-thread/components/VoiceTurn";
 

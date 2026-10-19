@@ -8,7 +8,7 @@ import {
 	createFullscreenPresentation,
 	type FullscreenPresentation,
 	type FullscreenPresentationSnapshot,
-} from "@/ui/fullscreen-presentation";
+} from "@archboard/ui-kit/fullscreen-presentation";
 import type { ShellPresentation } from "@/ui/shell";
 
 const IDLE: FullscreenPresentationSnapshot = Object.freeze({ paneId: null, error: null });

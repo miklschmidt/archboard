@@ -5,7 +5,7 @@
 import { RiFolderTransferLine } from "@remixicon/react";
 import { useCallback, useMemo, useState, type JSX } from "react";
 
-import { IconButton } from "@/ui/components/IconButton";
+import { IconButton } from "@archboard/ui-kit/controls";
 import { MoveBoardDialog } from "@/ui/board-move/components/MoveBoardDialog";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import type { PaneStatus } from "@/ui/types";

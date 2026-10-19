@@ -220,7 +220,7 @@ waited for.
 ### The frame clock
 
 Everything that moves on a board's pane reads one clock, `frameClock()` from
-`src/ui/frame-clock`. These things read it:
+`@archboard/ui-kit/frame-clock`. These things read it:
 
 - The camera glide.
 - The picture's transitions.

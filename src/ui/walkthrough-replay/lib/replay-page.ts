@@ -28,8 +28,8 @@ import {
 	type Talk,
 } from "@/shared/walkthrough-recording/talk";
 import { createBoardQueryClient } from "@/ui/board-catalog";
-import { driveFramesFrom } from "@/ui/frame-clock";
-import { createSteppedClock, type SteppedClock } from "@/ui/frame-clock/replay";
+import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
+import { createSteppedClock, type SteppedClock } from "@archboard/ui-kit/stepped-clock";
 import {
 	chooseLayoutEngine,
 	pictureSource,

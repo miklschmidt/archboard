@@ -24,8 +24,7 @@ import {
 } from "react";
 
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import { GitHubMark } from "@/ui/repository-name";
-import { shownRepository } from "@/ui/repository-name/shown-name";
+import { GitHubMark, shownRepository } from "@archboard/ui-kit/repository-name";
 import { InsideLamp } from "@/ui/shell/components/ActivityLamp";
 import {
 	DropdownMenu,
@@ -35,7 +34,7 @@ import {
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
-} from "@/ui/components/dropdown-menu";
+} from "@archboard/ui-kit/overlays";
 import {
 	TreeRow,
 	TreeRowDisclosure,

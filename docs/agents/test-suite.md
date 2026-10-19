@@ -180,7 +180,7 @@ and no voice. These module owners hold the parts:
 - `src/runtime/video-encoder/tests`: finding and running ffmpeg.
 - `src/shared/walkthrough-recording/tests`: the talk's contract.
 - `src/ui/walkthrough-replay/tests`: the frame that shows each event.
-- `src/ui/frame-clock/tests`: the stepped clock.
+- `packages/ui-kit/tests/ui/state/frame-clock`: the stepped clock.
 - `src/runtime/walkthrough-recorder/tests`: the talk on disk and the browsers'
   flags.
 

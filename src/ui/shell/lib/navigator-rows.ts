@@ -7,7 +7,7 @@
 // (variant-rows). Pure: no React.
 
 import type { OutlineBoardNode, OutlineFolder, OutlineNode } from "@/ui/board-catalog";
-import { shownRepository } from "@/ui/repository-name/shown-name";
+import { shownRepository } from "@archboard/ui-kit/repository-name";
 import { repositoryRowId, scopedRowId } from "@/ui/shell/lib/row-ids";
 import { matchIn, type TextRange } from "@/ui/shell/lib/text-match";
 import { listsVariants, paneOnBoard, variantRows } from "@/ui/shell/lib/variant-rows";

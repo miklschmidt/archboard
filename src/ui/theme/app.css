@@ -8,8 +8,11 @@
 @import "../../shared/theme/theme.css";
 
 /* Vite's root is `frontend/`, which is where Tailwind would otherwise look for
-   class names. Every class lives under `src/ui`, one level up from here. */
+   class names. Every class lives under `src/ui`, one level up from here, or in
+   the `ui` area of a package, which sits outside `src`. A glob over the packages
+   matched nothing, so name each package that draws. */
 @source "../";
+@source "../../../packages/ui-kit/src/ui";
 
 /* The theme is an explicit attribute the person chooses; the shell stores it
    on the root element, and the server draws a board in the same palette. */

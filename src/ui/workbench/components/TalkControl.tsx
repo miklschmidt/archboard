@@ -9,8 +9,8 @@
 import { RiErrorWarningLine, RiLoader4Line, RiMicLine, RiPhoneLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { Button } from "@/ui/components/button";
-import { cn } from "@/ui/components/class-names";
+import { Button } from "@archboard/ui-kit/controls";
+import { cn } from "@archboard/ui-kit/class-names";
 import type { AgentActions, AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
 import { ENDABLE, voicePress } from "@/ui/workbench/lib/circle-state";
 

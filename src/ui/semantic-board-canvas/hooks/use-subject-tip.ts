@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { SUBJECT_TIP_DELAY_MS } from "@archboard/timing";
-import { frameClock } from "@/ui/frame-clock";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { tipTargetAt, type TipTarget } from "@/ui/semantic-board-canvas/lib/subject-tips";

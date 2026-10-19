@@ -14,9 +14,9 @@ import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import type { JSX } from "react";
 
 import { VOICE_BOX_OUT_MS } from "@archboard/timing/voice";
-import { TooltipProvider } from "@/ui/components/tooltip";
-import { driveFramesFrom } from "@/ui/frame-clock";
-import { createSteppedClock } from "@/ui/frame-clock/replay";
+import { TooltipProvider } from "@archboard/ui-kit/overlays";
+import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
+import { createSteppedClock } from "@archboard/ui-kit/stepped-clock";
 import { OrbStageProvider } from "@/ui/voice-orb";
 import { subtitlePreference, type SubtitleSource } from "@/ui/voice-subtitles";
 import { VoiceBox } from "@/ui/workbench";

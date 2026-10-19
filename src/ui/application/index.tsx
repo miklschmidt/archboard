@@ -57,7 +57,7 @@ import {
 	type BoardCatalog,
 } from "@/ui/board-catalog";
 import { useOpeningAddress, type WorkspaceAddressing } from "@/ui/board-routing";
-import { TooltipProvider } from "@/ui/components/tooltip";
+import { TooltipProvider } from "@archboard/ui-kit/overlays";
 import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
 import { servedVault } from "@/ui/server-requests";
 import type { BoardListing } from "@/ui/types";

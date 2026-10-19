@@ -8,7 +8,7 @@
 
 import { useCallback, useMemo, type JSX } from "react";
 
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 import type {
 	TimelineEntry,
 	VariantTimeline,

@@ -8,8 +8,8 @@ import { cn } from "cn";
 import { useCallback, useRef, type JSX } from "react";
 import { flushSync } from "react-dom";
 
-import { buttonVariants } from "@/ui/components/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
+import { buttonVariants } from "@archboard/ui-kit/controls";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@archboard/ui-kit/overlays";
 import { useSubtitlesWanted } from "@/ui/voice-subtitles/hooks/use-subtitle-preference";
 import { subtitlePreference, type SubtitlePreference } from "@/ui/voice-subtitles/lib/preference";
 

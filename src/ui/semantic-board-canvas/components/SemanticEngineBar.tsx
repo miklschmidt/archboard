@@ -15,7 +15,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/ui/components/select";
+} from "@archboard/ui-kit/controls";
 import { useLayoutEngine } from "@/ui/semantic-board-canvas/hooks/use-layout-engine";
 import { LAYOUT_ENGINES, chooseLayoutEngine } from "@/ui/semantic-board-canvas/lib/layout-engine";
 

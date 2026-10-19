@@ -4,7 +4,7 @@
 import { useCallback, useId, type JSX } from "react";
 
 import type { OpenerCommand, OpenerSettingsReply } from "@archboard/code-binding/opening";
-import { Badge } from "@/ui/components/badge";
+import { Badge } from "@archboard/ui-kit/display";
 import {
 	Field,
 	FieldContent,
@@ -12,9 +12,10 @@ import {
 	FieldLabel,
 	FieldLegend,
 	FieldSet,
-} from "@/ui/components/field";
-import { RadioGroup, RadioGroupItem } from "@/ui/components/radio-group";
-import { Technical } from "@/ui/dialog-parts";
+	RadioGroup,
+	RadioGroupItem,
+} from "@archboard/ui-kit/controls";
+import { Technical } from "@archboard/ui-kit/dialog-parts";
 import { choiceOfSelection, presetChoice } from "@/ui/opener-settings/lib/custom-command";
 import { formatCommand } from "@/ui/opener-settings/lib/format-command";
 import type { OpenerChoice } from "@/ui/opener-settings/types/contracts";

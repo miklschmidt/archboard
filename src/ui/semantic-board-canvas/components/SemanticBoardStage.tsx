@@ -17,7 +17,7 @@ import { memo, useCallback, useMemo, useRef, useState, type JSX, type ReactNode 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import type { WalkthroughBeat } from "@archboard/board/content";
 import type { SemanticPanePart } from "@archboard/board/pane-context";
-import { usePaneChrome } from "@/ui/components/PaneChrome";
+import { usePaneChrome } from "@archboard/ui-kit/display";
 import type {
 	SemanticDrawing,
 	SemanticRender,

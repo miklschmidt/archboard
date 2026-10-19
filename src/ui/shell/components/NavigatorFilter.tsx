@@ -8,7 +8,7 @@
 import { RiCloseLine, RiSearchLine } from "@remixicon/react";
 import { useCallback, type ChangeEvent, type JSX, type KeyboardEvent, type RefObject } from "react";
 
-import { usesCommandKey } from "@/ui/components/command-key";
+import { usesCommandKey } from "@archboard/ui-kit/controls";
 import { FACTS_INSET, MARKER_WIDTH, markerX, NAME_GAP } from "@/ui/shell/lib/tree-grid";
 
 /**

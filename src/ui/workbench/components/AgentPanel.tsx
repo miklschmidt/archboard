@@ -12,7 +12,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-} from "@/ui/components/dropdown-menu";
+} from "@archboard/ui-kit/overlays";
 import type { AgentActions, AgentView } from "@/ui/workbench/contracts";
 import { AgentComposer } from "@/ui/workbench/components/AgentComposer";
 import { AgentDetails } from "@/ui/workbench/components/AgentDetails";

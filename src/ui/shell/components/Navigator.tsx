@@ -22,7 +22,7 @@ import {
 } from "react";
 
 import { listedBoard, listedBoardKey } from "@/ui/board-catalog";
-import { Skeleton } from "@/ui/components/skeleton";
+import { Skeleton } from "@archboard/ui-kit/display";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import { BoardOutline } from "@/ui/shell/components/BoardOutline";
 import { NavigatorFilter } from "@/ui/shell/components/NavigatorFilter";

@@ -27,8 +27,8 @@ import { useRef, type CSSProperties, type JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@archboard/timing";
 import { DOCK_WASH_MS, VOICE_MORPH_MS, VOICE_SEAT_OUT_MS } from "@archboard/timing/voice";
-import { cn } from "@/ui/components/class-names";
-import { useClock } from "@/ui/components/use-clock";
+import { cn } from "@archboard/ui-kit/class-names";
+import { useClock } from "@archboard/ui-kit/time";
 import { useOrbOffered, useOrbPlacement } from "@/ui/voice-orb";
 import { SubtitlesToggle, useVoiceBoxed } from "@/ui/voice-subtitles";
 import { useDockMotion } from "@/ui/workbench/hooks/use-dock-motion";

@@ -11,7 +11,7 @@
 
 import { useCallback, useMemo, useRef } from "react";
 
-import { frameClock } from "@/ui/frame-clock";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { cameraTransform, type Camera, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 import { glidePath } from "@/ui/semantic-board-canvas/lib/camera-glide";
 import { easeInOut } from "@/ui/semantic-board-canvas/lib/picture-motion";

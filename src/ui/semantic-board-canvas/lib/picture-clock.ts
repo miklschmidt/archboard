@@ -5,7 +5,7 @@
 // to where they rest. The frame clock reads and stands it, so a recording
 // rendered frame by frame carries it the same way.
 
-import { frameClock } from "@/ui/frame-clock";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 
 /**
  * Where a picture's animation clock stands.

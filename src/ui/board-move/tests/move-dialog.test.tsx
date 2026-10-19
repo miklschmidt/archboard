@@ -12,7 +12,7 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, wri
 const { cleanup, fireEvent, render, screen, waitFor } = await import("@testing-library/react");
 const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
 const { createElement } = await import("react");
-const { TooltipProvider } = await import("@/ui/components/tooltip");
+const { TooltipProvider } = await import("@archboard/ui-kit/overlays");
 const { MoveBoardControl } = await import("@/ui/board-move");
 
 const SHOP = "github.com/acme/shop";

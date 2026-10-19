@@ -5,8 +5,8 @@
 import { RiCheckLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { clockDuration } from "@/ui/components/age";
-import { cn } from "@/ui/components/class-names";
+import { clockDuration } from "@archboard/ui-kit/time";
+import { cn } from "@archboard/ui-kit/class-names";
 import type { CardStep } from "@/ui/workbench/lib/plan-steps";
 
 /** Inputs for the steps. */

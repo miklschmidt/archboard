@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server` and `code-binding` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, and `process` for `runtime/`. An export that is a file to run, not a module to import,
+  `server/`, `process` for `runtime/` and `ui-kit` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -323,6 +323,33 @@ store is inside the package now, so these five are private, and no file outside 
 imported one. `board` imports only `timing`, `diagnostics`, `process`, `workspace` and
 `code-binding`, and nothing from `src/`. The rest of `runtime/engine` imports `board`, and `board`
 imports nothing back, so the old import cycle between them is gone.
+
+The eighth is `ui-kit` (`@archboard/ui-kit`). It holds the presentation parts that more than one UI
+module draws with, in the `ui` area, and imports nothing from `src/`. It adopts the `api/` role for
+`ui/` and exposes 10 subpaths, where code outside imported 29 paths. Every export is safe for the browser.
+`ui/components/` holds the shadcn Base UI components with their `README.md` and the dialog parts in
+`dialog-parts/`; `ui/state/` holds the frame clock and the fullscreen presentation; `ui/rules/`,
+`ui/hooks/` and `ui/constants/` hold the small helpers. The `components` aliases in
+`components.json` name `ui/components/` as `@/../packages/ui-kit/src/ui/components`, because the
+shadcn CLI resolves only the `@/` path.
+
+- `./controls` is what a person acts on: buttons, inputs, selects, tabs, toggles and form fields,
+  and `usesCommandKey`, the platform's modifier for shortcuts.
+- `./overlays` is the dialog, the dropdown menu and the tooltip. `./display` is the alert, the
+  badge, the separator, the skeleton, the pane chrome and the resizable panels. `./class-names` is
+  `cn`, the class merger that every component draws with.
+- `./dialog-parts` is the failure alert, progress text, technical values, the field messages and
+  the cancel button class that every dialog surface shares.
+- `./time` is the ticking clock hook and the short age and clock text. `./frame-clock` is the clock
+  that moves what a pane draws over time. `./stepped-clock` is the clock that a renderer steps,
+  which the page that renders a recording frame by frame drives. `./fullscreen-presentation` owns
+  presenting one pane fullscreen. `./repository-name` is a repository's name as the chrome shows it.
+- Tailwind finds class names by scanning source files. `src/ui/theme/app.css` names
+  `packages/ui-kit/src/ui` with `@source`, and a glob over the packages matched nothing, so a
+  package that draws with classes needs its own line there. `tsconfig.frontend.json` includes
+  `packages/*/src/ui`.
+- A component that no code outside the package imports, such as `Combobox` and `AlertDialog`, has
+  no api name and stays private.
 
 ## Vendor-owned data
 

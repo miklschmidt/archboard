@@ -4,7 +4,7 @@
 import { RiPuzzleLine } from "@remixicon/react";
 import { useMemo, type CSSProperties, type JSX } from "react";
 
-import { cn } from "@/ui/components/class-names";
+import { cn } from "@archboard/ui-kit/class-names";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 
 /**

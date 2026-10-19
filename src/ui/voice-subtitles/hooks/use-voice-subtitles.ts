@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { SUBTITLE_LINGER_MS } from "@archboard/timing";
-import { frameClock } from "@/ui/frame-clock";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { cuesOf, wordsOf, type LineCount, type SubtitleCue } from "@/ui/voice-subtitles/lib/cues";
 import {
 	progressMark,

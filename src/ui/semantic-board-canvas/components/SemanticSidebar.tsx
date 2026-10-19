@@ -33,9 +33,8 @@ import {
 
 import { SIDEBAR_WIDTH } from "@/shared/shell-geometry/index";
 import { SIDEBAR_MS } from "@archboard/timing";
-import { cn } from "@/ui/components/class-names";
-import { IconButton } from "@/ui/components/IconButton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/components/tabs";
+import { cn } from "@archboard/ui-kit/class-names";
+import { IconButton, Tabs, TabsContent, TabsList, TabsTrigger } from "@archboard/ui-kit/controls";
 import {
 	SearchRequestContext,
 	useSearchRequest,

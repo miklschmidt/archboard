@@ -1,7 +1,7 @@
 // The shell's keyboard shortcuts, in one place: the key test the application
 // runs on the document and the words the tooltip shows beside the action.
 
-import { usesCommandKey } from "@/ui/components/command-key";
+import { usesCommandKey } from "@archboard/ui-kit/controls";
 
 /** The key that presents the active pane, with the platform's command modifier. */
 const PRESENT_KEY = "F";

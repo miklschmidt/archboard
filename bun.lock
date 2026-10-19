@@ -102,6 +102,10 @@
       "name": "@archboard/timing",
       "version": "0.0.0",
     },
+    "packages/ui-kit": {
+      "name": "@archboard/ui-kit",
+      "version": "0.0.0",
+    },
     "packages/workspace": {
       "name": "@archboard/workspace",
       "version": "0.0.0",
@@ -137,6 +141,8 @@
     "@archboard/process": ["@archboard/process@workspace:packages/process"],
 
     "@archboard/timing": ["@archboard/timing@workspace:packages/timing"],
+
+    "@archboard/ui-kit": ["@archboard/ui-kit@workspace:packages/ui-kit"],
 
     "@archboard/workspace": ["@archboard/workspace@workspace:packages/workspace"],
 

@@ -5,7 +5,7 @@
 import { RiFullscreenExitLine } from "@remixicon/react";
 import { useCallback, useEffect, useRef, type JSX, type ReactNode } from "react";
 
-import { Button } from "@/ui/components/button";
+import { Button } from "@archboard/ui-kit/controls";
 import type { ShellActions, ShellPane } from "@/ui/shell/types/contracts";
 
 /** Inputs for the presentation bar. */
