@@ -755,11 +755,15 @@ An app is a layer-8 workspace in `apps/<name>/` that holds what the packages lef
 ### `apps/cli`
 
 `apps/cli` is the command line (TASK-500.24.02). `bin/archboard` stays a regular root file that
-runs `apps/cli/src/bin.ts`; a symlink would break the checkout hand-off, which needs the launcher's
-real path to equal its root path. `bin.ts` loads everything with a dynamic import, in this order:
-the checkout hand-off, then the bootstrap that takes `--url` out of the arguments, then the command
-table. A help request is answered from the table before any runtime configuration loads. Never
-import the server there: the CLI reaches it by spawning `src/server.ts`. Nothing imports the app.
+runs `apps/cli/src/bin.ts`. The checkout hand-off needs the launcher's real path to equal its root
+path, so the launcher cannot be a symlink.
+
+`bin.ts` first imports the checkout hand-off, then the bootstrap that extracts `--url`.
+For commands other than help, it checks for retired environment variables before it imports the
+command table. Help returns before prerequisite checks or command execution. The command table
+still imports configuration and logging modules.
+
+Never import the server there: the CLI reaches it by spawning `src/server.ts`. Nothing imports the app.
 The root `generate:cli-contract` script, the system tests and the skill evaluation spawn it by
 path, and `archboard install-skill --print-source` is how a test learns which skills it ships.
 
