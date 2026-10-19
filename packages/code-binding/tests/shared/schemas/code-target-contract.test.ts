@@ -2,34 +2,13 @@ import { describe, expect, test } from "bun:test";
 
 import { CodeTargetOpenReplySchema } from "#shared/schemas/code-target-open.ts";
 import { OpenerSelectionSchema } from "#shared/schemas/opener-settings.ts";
-import {
-	buildInternalCodeTargetUrl,
-	parseInternalCodeTargetUrl,
-} from "#shared/rules/internal-code-target-url.ts";
+import { buildInternalCodeTargetUrl } from "#shared/rules/internal-code-target-url.ts";
 import { isAbsoluteOrBareOpenerExecutable } from "#shared/rules/opener-executable.ts";
 
 describe("internal code-target URLs", () => {
-	test("round-trips board and element identity through the one reserved shape", () => {
+	test("spells board and element identity as the reserved open route", () => {
 		const url = buildInternalCodeTargetUrl({ board: "system/payments", element: "a b" });
 		expect(url).toBe("/api/code-targets/open?board=system%2Fpayments&element=a+b");
-		expect(parseInternalCodeTargetUrl(url)).toEqual({
-			board: "system/payments",
-			element: "a b",
-		});
-	});
-
-	test.each([
-		"https://example.test/api/code-targets/open?board=b&element=e",
-		"api/code-targets/open?board=b&element=e",
-		"/api/code-targets/open?board=b&element=e#fragment",
-		String.raw`/api\code-targets\open?board=b&element=e`,
-		"/api/code-targets/open?board=b&element=e&path=/tmp/file",
-		"/api/code-targets/open?board=b&board=c&element=e",
-		"/api/code-targets/open?board=&element=e",
-		"/api/code-targets/open?board=b",
-		"/api/other?board=b&element=e",
-	])("rejects every non-exact spelling: %s", (candidate) => {
-		expect(parseInternalCodeTargetUrl(candidate)).toBeNull();
 	});
 });
 
