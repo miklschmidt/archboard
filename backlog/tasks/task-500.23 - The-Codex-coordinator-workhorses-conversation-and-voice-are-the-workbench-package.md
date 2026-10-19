@@ -3,11 +3,11 @@ id: TASK-500.23
 title: >-
   The Codex coordinator, workhorses, conversation and voice are the workbench
   package
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 11:10'
-updated_date: '2026-10-19 14:14'
+updated_date: '2026-10-19 18:17'
 labels: []
 dependencies:
   - TASK-500.14.04
@@ -24,8 +24,8 @@ workbench is layer 7 and the largest: the other runtime/codex-* modules (coordin
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 The plan splits workbench into ordered subtasks, each moving one area with its tests, and the browser-facing contracts are browser-safe api files
-- [ ] #2 Its tests live in the package, outside code uses only its curated api interface files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
-- [ ] #3 bun run check passes
+- [x] #2 Its tests live in the package, outside code uses only its curated api interface files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -33,3 +33,9 @@ workbench is layer 7 and the largest: the other runtime/codex-* modules (coordin
 <!-- SECTION:NOTES:BEGIN -->
 Split into TASK-500.23.01 to .07 in import-graph order (shared contracts, runtime foundation, runtime coordinator, server/codex-workbench, server/archboard plumbing, UI base, UI top). AC 2 and 3 close when .07 is done.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/workbench holds the Codex coordinator, workhorses, conversation and voice in four areas (shared, runtime, server, ui), moved in seven steps (500.23.01 to .07) and then pruned to 8 subpaths (500.23.08). Each step was reviewed by Codex and passed bun run check. src/ holds no workbench module.
+<!-- SECTION:FINAL_SUMMARY:END -->
