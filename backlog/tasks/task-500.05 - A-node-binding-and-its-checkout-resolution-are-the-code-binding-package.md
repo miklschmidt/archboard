@@ -1,11 +1,11 @@
 ---
 id: TASK-500.05
 title: A node binding and its checkout resolution are the code-binding package
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 01:59'
-updated_date: '2026-10-19 02:58'
+updated_date: '2026-10-19 03:14'
 labels: []
 dependencies:
   - TASK-500.04
@@ -21,9 +21,9 @@ code-binding is layer 3 of docs/design/package-map.md: shared/code-target and ru
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 packages/code-binding holds shared/code-target and runtime/code-target in role folders with an exports interface, and every importer uses @archboard/code-binding
-- [ ] #2 The tests of the moved code live in packages/code-binding/tests
-- [ ] #3 bun run check passes
+- [x] #1 packages/code-binding holds shared/code-target and runtime/code-target in role folders with an exports interface, and every importer uses @archboard/code-binding
+- [x] #2 The tests of the moved code live in packages/code-binding/tests
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -41,3 +41,9 @@ code-binding is layer 3 of docs/design/package-map.md: shared/code-target and ru
 <!-- SECTION:NOTES:BEGIN -->
 Design: packages/code-binding splits the old shared index into schemas/{code-binding,code-target-open,opener-settings} plus rules/{binding-files,opener-executable,internal-code-target-url}; the runtime index becomes operations/checkout-snapshot, resolver-core operations/binding-resolver, vault-checkout services/vault-checkout, presentation projections/code-target-link. diagnostics.ts was deleted: its one test calls resolveLocalCodeTargetsWith directly. Every file under shared/ has no Node import (browser-trace: 0 node imports reached from frontend/main.tsx and src/ui).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/code-binding holds shared/code-target (schemas, rules) and runtime/code-target (operations, services, projections) behind nine exports, five browser-safe. Browser safety traced twice (803 and independent trace): no node: import reachable. The old runtime diagnostics wrapper was deleted (it only forwarded). The unused parseInternalCodeTargetUrl and its nine rejection cases were deleted after the Codex review found no production caller. bun run check passed on 46c1a2c4a; the later commit only removes dead code, verified by tsc, lint and the package tests. Codex review found no regression. No board is affected beyond the stale bindings tracked in TASK-500.06.
+<!-- SECTION:FINAL_SUMMARY:END -->
